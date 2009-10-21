@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.perspectives">
+      <perspective
+            class="com.predic8.plugin.membrane.perspectives.MembranePerspective"
+            icon="icons/logo32.png"
+            id="com.predic8.plugin.membrane.perspectives.MembranePerspective"
+            name="Membrane Monitor">
+      </perspective>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
+            name="membrane rules">
+      </category>
+      <category
+            id="com.predic8.plugin.membrane.views.MembraneExchangesViewCategory"
+            name="membrane exchanges">
+      </category>
+      <view
+            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
+            class="com.predic8.plugin.membrane.views.RuleTreeView"
+            icon="icons/rule_tree.png"
+            id="com.predic8.plugin.membrane.views.RuleTreeView"
+            name="Rule Tree"
+            restorable="true">
+      </view>
+      <view
+            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
+            class="com.predic8.plugin.membrane.views.RuleDetailsView"
+            icon="icons/rule_details.png"
+            id="com.predic8.plugin.membrane.views.RuleDetailsView"
+            name="Rule Details"
+            restorable="true">
+      </view>
+      <view
+            category="com.predic8.plugin.membrane.views.MembraneExchangesViewCategory"
+            class="com.predic8.plugin.membrane.views.ExchangeView"
+            icon="icons/message.png"
+            id="com.predic8.plugin.membrane.views.ExchangeView"
+            name="Exchange View"
+            restorable="true">
+      </view>
+      <view
+            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
+            class="com.predic8.plugin.membrane.views.RuleTableView"
+            icon="icons/table.png"
+            id="com.predic8.plugin.membrane.views.RuleTableView"
+            name="Rule Table"
+            restorable="true">
+      </view>
+      <view
+            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
+            class="com.predic8.plugin.membrane.views.RuleStatisticsView"
+            icon="icons/calculator.png"
+            id="com.predic8.plugin.membrane.views.RuleStatisticsView"
+            name="Rule Statistics"
+            restorable="true">
+      </view>
+      <view
+            class="com.predic8.plugin.membrane.views.BrowserView"
+            icon="icons/world_go.png"
+            id="com.predic8.plugin.membrane.views.BrowserView"
+            name="BrowserView"
+            restorable="true">
+      </view>
+      <view
+            class="com.predic8.plugin.membrane.views.ErrorLogView"
+            id="com.predic8.plugin.membrane.views.ErrorLogView"
+            name="Error Log"
+            restorable="true">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="com.predic8.plugin.membrane.actionSet"
+            label="Membrane Action Set"
+            visible="true">
+         <menu
+               id="MembraneMenu"
+               label="&amp;Membrane">
+            <separator
+                  name="membraneRulesGroup">
+            </separator>
+            <separator
+                  name="membraneShowRuleViewsGroup">
+            </separator>
+            <separator
+                  name="membraneConfigurationGroup">
+            </separator>
+         </menu>
+         <action
+               class="com.predic8.plugin.membrane.actions.AddRuleAction"
+               icon="icons/add_rule.png"
+               id="com.predic8.plugin.membrane.actions.AddRuleAction"
+               label="&amp;Add Rule"
+               menubarPath="MembraneMenu/membraneRulesGroup"
+               toolbarPath="membraneRulesGroup"
+               tooltip="Add a new Rule">
+         </action>
+         <action
+               class="com.predic8.plugin.membrane.actions.ShowRuleTreeAction"
+               icon="icons/rule_tree.png"
+               id="com.predic8.plugin.membrane.actions.ShowRuleTreeAction"
+               label="Show Rule Tree"
+               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
+               style="push"
+               toolbarPath="membraneShowRuleViewsGroup">
+         </action>
+         <action
+               class="com.predic8.plugin.membrane.actions.LoadConfigurationAction"
+               icon="icons/folder_add.png"
+               id="com.predic8.plugin.membrane.actions.LoadConfigurationAction"
+               label="Load Configuration"
+               menubarPath="MembraneMenu/membraneConfigurationGroup"
+               style="push"
+               toolbarPath="membraneConfigurationGroup"
+               tooltip="Load Rule Configuration">
+         </action>
+         <action
+               class="com.predic8.plugin.membrane.actions.SaveConfigurationAction"
+               icon="icons/disk.png"
+               id="com.predic8.plugin.membrane.actions.SaveConfigurationAction"
+               label="Save Configuration"
+               menubarPath="MembraneMenu/membraneConfigurationGroup"
+               state="false"
+               style="push"
+               toolbarPath="membraneConfigurationGroup"
+               tooltip="Save Rule Configuration">
+         </action>
+         <action
+               class="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"
+               icon="icons/calculator.png"
+               id="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"
+               label="Show Rule Statistics"
+               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
+               toolbarPath="membraneShowRuleViewsGroup"
+               tooltip="show rule statistics view">
+         </action>
+      </actionSet>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            category="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
+            class="com.predic8.plugin.membrane.preferences.MessagePreferencePage"
+            id="com.predic8.plugin.membrane.preferences.MessagePreferencePage"
+            name="Message Preferences">
+      </page>
+      <page
+            class="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
+            id="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
+            name="Membrane Monitor">
+      </page>
+      <page
+            category="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
+            class="com.predic8.plugin.membrane.preferences.ProxyPreferencePage"
+            id="com.predic8.plugin.membrane.preferences.ProxyPreferencePage"
+            name="Proxy Preferences">
+      </page>
+      <page
+            category="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
+            class="com.predic8.plugin.membrane.preferences.ExchangePreferencePage"
+            id="com.predic8.plugin.membrane.preferences.ExchangePreferencePage"
+            name="Exchange Preferences">
+      </page>
+   </extension>
+   <extension
+         point="org.eclipse.ui.helpSupport">
+      <config
+            class="com.predic8.plugin.membrane.help.MembraneHelpUI">
+      </config>
+   </extension>
+   <extension
+         point="org.eclipse.help.contexts">
+      <contexts
+            file="contexts.xml"
+            plugin="com.predic8.plugin.membrane">
+      </contexts>
+   </extension>
+   <extension
+         point="org.eclipse.help.toc">
+      <toc
+            file="toc.xml">
+      </toc>
+      <toc
+            file="testToc.xml"
+            primary="true">
+      </toc>
+   </extension>
+
+</plugin>
