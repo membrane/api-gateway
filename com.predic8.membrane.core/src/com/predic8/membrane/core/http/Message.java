@@ -17,7 +17,6 @@ package com.predic8.membrane.core.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.SocketException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -57,6 +56,10 @@ public abstract class Message {
 	public void read(InputStream in, boolean readBody) throws IOException, EndOfStreamException {
 		parseStartLine(in);
 		header = new Header(in, new StringBuffer());
+		
+		if (header.is100ContinueExpected()) 
+			return;
+		
 		
 		if (readBody) 
 		  readBody(in);
@@ -137,14 +140,15 @@ public abstract class Message {
 		header.write(out);
 		out.write(Constants.CRLF_BYTES);
 		
+		if (header.is100ContinueExpected()) {
+			out.flush();
+			return;
+		}
+			
 		if (hasBody())
 			body.write(out);
 		
-		try {
-			out.flush();
-		} catch (SocketException e) {
-			log.debug("Socket already shutdown");
-		}
+		out.flush();
 	}
 	
 	public boolean hasBody() {

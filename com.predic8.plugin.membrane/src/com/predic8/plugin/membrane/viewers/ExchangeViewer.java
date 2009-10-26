@@ -16,8 +16,11 @@ package com.predic8.plugin.membrane.viewers;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
@@ -134,7 +137,11 @@ public class ExchangeViewer extends Composite {
 		itemSaveRequest.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				saveMessage(requestComp.getMsg());
+				try {
+					saveMessage(requestComp.getMsg());
+				} catch (Exception e1) {
+					MessageDialog.openError(ExchangeViewer.this.getShell(), "Save Error", e1.getMessage());
+				}
 			}
 		});
 		itemSaveRequest.setEnabled(false);
@@ -186,7 +193,11 @@ public class ExchangeViewer extends Composite {
 		itemSaveResponse.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				saveMessage(responseComp.getMsg());
+				try {
+					saveMessage(responseComp.getMsg());
+				} catch (Exception e1) {
+					MessageDialog.openError(ExchangeViewer.this.getShell(), "Save Error", e1.getMessage());
+				}
 			}
 		});
 		itemSaveResponse.setEnabled(false);
@@ -198,11 +209,12 @@ public class ExchangeViewer extends Composite {
 		vSashForm.setWeights(new int[] { 1, 1 });
 	}
 
-	private void saveMessage(Message message) {
+	private void saveMessage(Message message) throws Exception {
 		if (message == null) 
 			return;
 		
 		String extension = "txt";
+		boolean image = false;
 		
 		if (message.hasBody()) {
 			if (message.getHeader().getContentType() != null) {
@@ -214,7 +226,21 @@ public class ExchangeViewer extends Composite {
 					extension = "js";
 				} else if (message.isXML()) {
 					extension = "xml";
-				} 
+				} else if (message.isImage()) {
+					image = true;
+					String contentType = message.getHeader().getContentType();
+					if (contentType.contains("jpeg")) {
+						extension = "jpg";
+					} else if (contentType.contains("gif")) {
+						extension = "gif";
+					} else if (contentType.contains("png")) {
+						extension = "png";
+					} else if (contentType.contains("bmp")) {
+						extension = "bmp";
+					} else {
+						extension = "bmp";
+					}
+				}  
 			}
 		} 
 		
@@ -227,27 +253,35 @@ public class ExchangeViewer extends Composite {
         fd.setFilterExtensions(filterExt);
         String selected = fd.open();
         if (selected != null && !selected.equals("")) {
-        	PrintWriter writer = null;
+        	OutputStream writer = null;
         	try {
         		File file = new File(selected);
             	if (!file.exists()) {
             		file.createNewFile();
             	}
-            	writer = new PrintWriter(new FileOutputStream(file));
+            	writer = new FileOutputStream(file);
             	if (message.getBody() != null && message.getBody() != null && message.getBody().getContent().length > 0) {
-            		writer.write(new String(message.getBody().getContent()));
-            		writer.flush();
+            		if (image) {
+            			writer.write(message.getBody().getContent());
+            			writer.flush();
+            		} else {
+            			PrintWriter printer = new PrintWriter(writer);
+            			printer.write(new String(message.getBody().getContent()));
+            			printer.flush();
+            		}
             	} else {
+            		PrintWriter printer = new PrintWriter(writer);
             		String headerText = new String(message.getHeader().toString());
-            		System.out.println("header text:" + headerText);
-            		writer.write(headerText);
-            		writer.flush();
+            		printer.write(headerText);
+            		printer.flush();
             	}
-        	} catch (Exception ex) {
-        		ex.printStackTrace();
         	} finally {
         		if (writer != null) {
-        			writer.close();
+        			try {
+						writer.close();
+					} catch (IOException e) {
+						throw e;
+					}
         		}
         	}
         }

@@ -42,6 +42,8 @@ public class Header {
 	
 	public static final String HOST = "Host";
 	
+	public static final String EXPECT = "Expect";
+	
 	public static final String X_FORWARDED_FOR = "X-Forwarded-For";
 	
 	// Header field values
@@ -188,6 +190,10 @@ public class Header {
 		return getFirstValue(HOST);
 	}
 		
+	public boolean is100ContinueExpected() {
+		return "100-continue".equalsIgnoreCase(getFirstValue(EXPECT));
+	}
+	
 	@Override
 	public String toString() {
 		StringBuffer res = new StringBuffer();

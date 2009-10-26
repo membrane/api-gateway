@@ -70,6 +70,21 @@ public class Response extends Message {
 		statusMessage = matcher.group(3);
 	}
 
+	
+	public void read(InputStream in, boolean readBody) throws IOException, EndOfStreamException {
+		parseStartLine(in);
+		
+		if (getStatusCode() == 100) {
+			HttpUtil.readLine(in);
+			return;
+		}
+		
+		header = new Header(in, new StringBuffer());
+		
+		if (readBody) 
+		  readBody(in);
+	}
+	
 
 	protected void readBody(InputStream in) throws IOException {
 		if (isRedirect()) 

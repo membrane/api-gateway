@@ -26,7 +26,6 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HttpClient;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;

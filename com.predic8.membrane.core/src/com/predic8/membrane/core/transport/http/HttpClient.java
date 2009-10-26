@@ -13,7 +13,7 @@
    limitations under the License. */
 
 
-package com.predic8.membrane.core.http;
+package com.predic8.membrane.core.transport.http;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -31,9 +31,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 public class HttpClient {
@@ -147,6 +147,11 @@ public class HttpClient {
 		Response response = new Response();
 		response.read(in, !exchange.getRequest().isHEADRequest());
 		
+		if (response.getStatusCode() == 100) {
+			exchange.getRequest().getBody().write(out);
+			response.read(in, !exchange.getRequest().isHEADRequest());
+		}
+			
 		exchange.setReceived();
 		exchange.setTimeResReceived(System.currentTimeMillis());
 		return response;
