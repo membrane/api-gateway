@@ -17,7 +17,7 @@ package com.predic8.plugin.membrane.components;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.transport.http.HttpResendThread;
 import com.predic8.plugin.membrane.viewers.ExchangeViewer;
 
@@ -43,7 +43,7 @@ public class RequestComp extends BaseComp {
 				copyBodyFromGUIToModel();
 			}
 			
-			(new HttpResendThread(new Request((Request) msg), getExchangeViewer().getExchange().getRule())).start();
+			(new HttpResendThread((HttpExchange)getExchangeViewer().getExchange())).start();
 		}
 	}
 

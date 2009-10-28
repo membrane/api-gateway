@@ -66,7 +66,7 @@ public class RuleTypeSelectionPage extends WizardPage {
 		
 		
 		Label labelFullDescriptionAdvanced = new Label(composite, SWT.WRAP);
-		labelFullDescriptionAdvanced.setText("Offers all available options for rules like virtual host, HTTP method\n" + "and request URL.");
+		labelFullDescriptionAdvanced.setText("Offers all available options for rules like virtual host,\nHTTP method and request URL.");
 		labelFullDescriptionAdvanced.setBounds(120, 10, 100, 100);
 		
 		GridData gridData4ListenDescrLabelAdvanced = new GridData();
@@ -95,9 +95,8 @@ public class RuleTypeSelectionPage extends WizardPage {
 		
 		
 		
-		
 		Label labelFullDescriptionProxy = new Label(composite, SWT.WRAP);
-		labelFullDescriptionProxy.setText("Create a Rule for Proxy");
+		labelFullDescriptionProxy.setText("Works like a regular HTTP Proxy.\nCan a proxy SOAP and HTTP requests.");
 		labelFullDescriptionProxy.setBounds(120, 10, 100, 100);
 		
 		GridData gridData4ListenDescrLabelProxy = new GridData();
@@ -106,7 +105,7 @@ public class RuleTypeSelectionPage extends WizardPage {
 		labelFullDescriptionProxy.setLayoutData(gridData4ListenDescrLabelProxy);
 		
 		btProxyRule = new Button(composite, SWT.RADIO);
-		btProxyRule.setText("Proxy Rule");
+		btProxyRule.setText("HTTP  Proxy Rule");
 		GridData btProxyGridData = new GridData();
 		btProxyGridData.grabExcessHorizontalSpace = true;
 		btProxyRule.setLayoutData(btProxyGridData);

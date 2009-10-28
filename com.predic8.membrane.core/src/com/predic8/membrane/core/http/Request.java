@@ -83,14 +83,14 @@ public class Request extends Message {
 		return method + " " + uri + " HTTP/" + version + Constants.CRLF;
 	}
 	
-	protected void readBody(InputStream in) throws IOException {
-		log.debug("readBody");
-		if (getMethod().equalsIgnoreCase(METHOD_GET)) {
+	protected void createBody(InputStream in) throws IOException {
+		log.debug("createBody");
+		if (!hasBody()) {
 			body = new Body();
 			return;
 		}
 
-		super.readBody(in);
+		super.createBody(in);
 	}
 
 	public boolean isHEADRequest() {

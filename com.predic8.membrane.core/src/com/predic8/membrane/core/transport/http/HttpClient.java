@@ -131,12 +131,12 @@ public class HttpClient {
 	    throw exception;
 	}
 
-	private Response doCall(HttpExchange exchange) throws IOException, SocketException, EndOfStreamException {
-		exchange.getServerThread().setTargetSocket(socket);
-		exchange.setTimeReqSent(System.currentTimeMillis());
-		exchange.getRequest().write(out);
+	private Response doCall(HttpExchange exc) throws IOException, SocketException, EndOfStreamException {
+		exc.getServerThread().setTargetSocket(socket);
+		exc.setTimeReqSent(System.currentTimeMillis());
+		exc.getRequest().write(out);
 		
-		if(!exchange.getRequest().getHeader().hasContentLength() && exchange.getRequest().isHTTP10()){
+		if(!exc.getRequest().getHeader().hasContentLength() && exc.getRequest().isHTTP10()){
 			if (!socket.isOutputShutdown()) {
 				log.info("Shutting down socket outputstream");
 				socket.shutdownOutput();
@@ -145,15 +145,19 @@ public class HttpClient {
 		}
 		
 		Response response = new Response();
-		response.read(in, !exchange.getRequest().isHEADRequest());
+		response.read(in, !exc.getRequest().isHEADRequest());
 		
 		if (response.getStatusCode() == 100) {
-			exchange.getRequest().getBody().write(out);
-			response.read(in, !exchange.getRequest().isHEADRequest());
+			if (exc.getServerThread() instanceof HttpServerThread) {
+				response.write(exc.getServerThread().srcOut);
+			}
+			exc.getRequest().readBody();
+			exc.getRequest().getBody().write(out);
+			response.read(in, !exc.getRequest().isHEADRequest());
 		}
 			
-		exchange.setReceived();
-		exchange.setTimeResReceived(System.currentTimeMillis());
+		exc.setReceived();
+		exc.setTimeResReceived(System.currentTimeMillis());
 		return response;
 	}
 	

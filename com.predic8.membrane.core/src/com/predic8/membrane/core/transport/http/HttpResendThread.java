@@ -18,8 +18,8 @@ import java.io.IOException;
 
 import com.predic8.membrane.core.Core;
 import com.predic8.membrane.core.exchange.HttpExchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
@@ -28,11 +28,12 @@ public class HttpResendThread extends AbstractHttpThread {
 
 	private Rule rule;
 
-	public HttpResendThread(Request request, Rule rule) {
-		exchange = new HttpExchange();
+	public HttpResendThread(HttpExchange exc) {
+		exchange = new HttpExchange(exc);
 		exchange.setServerThread(this);
-		srcReq = request;
-		this.rule = rule;
+		
+		srcReq = exc.getRequest();
+		this.rule = exc.getRule();
 	}
 
 	public void run() {
@@ -49,7 +50,11 @@ public class HttpResendThread extends AbstractHttpThread {
 					targetRes.readBody();
 					client.close();
 				}
-			} //TODO implement resend for proxy rule 
+			} else if (rule instanceof ProxyRule) {
+				targetRes = client.call(exchange);
+				targetRes.readBody();
+				client.close();
+			}
 			
 			exchange.setResponse(targetRes);
 

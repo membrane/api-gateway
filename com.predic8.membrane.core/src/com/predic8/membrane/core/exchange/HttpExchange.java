@@ -14,40 +14,26 @@
 
 package com.predic8.membrane.core.exchange;
 
+import java.util.HashMap;
+
 import com.predic8.membrane.core.transport.http.AbstractHttpThread;
 
 public class HttpExchange extends Exchange {
 	
 	private AbstractHttpThread serverThread;
 	
+	public HttpExchange() {
+		
+	}
+	
+	public HttpExchange(HttpExchange original) {
+		this.properties = new HashMap<String, Object>(original.properties);
+	}
+	
 	@Override
 	public void close() {
-//		closeSourceSocket();
-//		closeTargetSocket();
-	}
 
-//	private void closeTargetSocket() {
-//		if (serverThread.getTargetSocket() == null) 
-//			return;
-//		
-//		try {
-//			
-//			targetSocket.close();
-//		} catch (Exception ex) {
-//			ex.printStackTrace();
-//		}
-//	}
-//
-//	private void closeSourceSocket() {
-//		if (sourceSocket == null) 
-//			return;
-//		
-//		try {
-//			sourceSocket.close();
-//		} catch (Exception ex) {
-//			ex.printStackTrace();
-//		}
-//	}
+	}
 
 	public AbstractHttpThread getServerThread() {
 		return serverThread;
@@ -56,7 +42,5 @@ public class HttpExchange extends Exchange {
 	public void setServerThread(AbstractHttpThread serverThread) {
 		this.serverThread = serverThread;
 	}
-	
-	
 	
 }

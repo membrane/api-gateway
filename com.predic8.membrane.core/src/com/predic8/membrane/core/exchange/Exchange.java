@@ -36,7 +36,7 @@ public class Exchange {
 	private Set<IRuleTreeViewerListener> treeViewerListeners = new HashSet<IRuleTreeViewerListener>();
 	private Rule rule;
 
-	private Map<String, Object> properties = new HashMap<String, Object>();
+	protected Map<String, Object> properties = new HashMap<String, Object>();
 
 	private ExchangeState status = ExchangeState.STARTED;
 

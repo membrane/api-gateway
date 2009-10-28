@@ -26,22 +26,22 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
-
 public class Response extends Message {
 
 	protected static Log log = LogFactory.getLog(Response.class.getName());
-	
+
 	private int statusCode;
-	
+
 	private String statusMessage;
-	
+
 	private static Pattern pattern = Pattern.compile("HTTP/(.+?) (.+?) (.+?)$");
-	
+
 	@Override
 	public String getStartLine() {
-		return "HTTP/" + version + " " + statusCode + " " + statusMessage + Constants.CRLF;
+		return "HTTP/" + version + " " + statusCode + " " + statusMessage
+				+ Constants.CRLF;
 	}
-	
+
 	public int getStatusCode() {
 		return statusCode;
 	}
@@ -59,45 +59,54 @@ public class Response extends Message {
 	}
 
 	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
+
 		Matcher matcher = pattern.matcher(HttpUtil.readLine(in));
 		boolean find = matcher.find();
-	   
+
 		if (!find) {
 			return;
 		}
 		version = matcher.group(1);
-		statusCode =  Integer.parseInt(matcher.group(2));
+		statusCode = Integer.parseInt(matcher.group(2));
 		statusMessage = matcher.group(3);
+
 	}
 
-	
-	public void read(InputStream in, boolean readBody) throws IOException, EndOfStreamException {
+	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
 		parseStartLine(in);
 		
 		if (getStatusCode() == 100) {
 			HttpUtil.readLine(in);
 			return;
 		}
-		
+
 		header = new Header(in, new StringBuffer());
 		
-		if (readBody) 
-		  readBody(in);
+		if (createBody)
+			createBody(in);
 	}
-	
 
-	protected void readBody(InputStream in) throws IOException {
-		if (isRedirect()) 
+	protected void createBody(InputStream in) throws IOException {
+		if (isRedirect())
 			return;
-		super.readBody(in);
+		super.createBody(in);
 	}
 
 	public boolean isRedirect() {
 		return statusCode >= 300 && statusCode < 400;
 	}
-	
+
 	@Override
 	public String getName() {
 		return " " + statusCode;
 	}
+	
+	@Override
+	public boolean hasBody() {
+		if (statusCode == 100) 
+			return false;
+		
+		return super.hasBody();
+	}
+	
 }

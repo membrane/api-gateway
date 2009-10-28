@@ -53,16 +53,12 @@ public abstract class Message {
 		body = new Body(msg.body);
 	}
 
-	public void read(InputStream in, boolean readBody) throws IOException, EndOfStreamException {
+	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
 		parseStartLine(in);
 		header = new Header(in, new StringBuffer());
-		
-		if (header.is100ContinueExpected()) 
-			return;
-		
-		
-		if (readBody) 
-		  readBody(in);
+				
+		if (createBody) 
+		  createBody(in);
 	}
 
 	public void readBody() throws IOException {
@@ -93,8 +89,8 @@ public abstract class Message {
 		header.setContentLength(content.length);
 	}
 	
-	protected void readBody(InputStream in) throws IOException {
-		log.debug("readBody");
+	protected void createBody(InputStream in) throws IOException {
+		log.debug("createBody");
 		if (!isKeepAlive()) {
 			body = new Body(in, header.isChunked());
 			return;
