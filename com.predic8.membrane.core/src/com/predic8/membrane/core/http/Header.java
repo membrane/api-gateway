@@ -169,6 +169,8 @@ public class Header {
 	}
 	
 	public int getContentLength() {
+		if (getFirstValue(CONTENT_LENGTH) == null)
+			return 0;
 		return Integer.parseInt(getFirstValue(CONTENT_LENGTH));
 	}
 	

@@ -13,7 +13,7 @@
    limitations under the License. */
 
 
-package com.predic8.membrane.core.tests.util;
+package com.predic8.membrane.core.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

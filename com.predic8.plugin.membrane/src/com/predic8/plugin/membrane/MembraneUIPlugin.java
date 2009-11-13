@@ -5,7 +5,6 @@ import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.BundleContext;
 
-import com.predic8.membrane.core.Core;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
 /**
@@ -32,12 +31,6 @@ public class MembraneUIPlugin extends AbstractUIPlugin {
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		plugin = this;
-		Core.init("monitor-beans.xml");
-		try {
-			Core.getConfigurationManager().loadConfiguration(System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	/*

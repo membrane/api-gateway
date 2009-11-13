@@ -6,19 +6,18 @@ import org.osgi.framework.BundleContext;
 /**
  * The activator class controls the plug-in life cycle
  */
-public class CoreActivator extends Plugin {
+public class Activator extends Plugin {
 
 	// The plug-in ID
-	public static final String PLUGIN_ID = "com.predic8.membrane.core";
+	public static final String PLUGIN_ID = "com.predic8.membrane.core.tests";
 
 	// The shared instance
-	private static CoreActivator plugin;
+	private static Activator plugin;
 	
 	/**
 	 * The constructor
 	 */
-	public CoreActivator() {
-		
+	public Activator() {
 	}
 
 	/*
@@ -28,12 +27,6 @@ public class CoreActivator extends Plugin {
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		plugin = this;
-		Core.init("monitor-beans.xml");
-		try {
-			Core.getConfigurationManager().loadConfiguration(System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	/*
@@ -50,7 +43,7 @@ public class CoreActivator extends Plugin {
 	 *
 	 * @return the shared instance
 	 */
-	public static CoreActivator getDefault() {
+	public static Activator getDefault() {
 		return plugin;
 	}
 

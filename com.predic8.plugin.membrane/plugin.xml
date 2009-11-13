@@ -73,6 +73,14 @@
             name="Error Log"
             restorable="true">
       </view>
+      <view
+            category="com.predic8.plugin.membrane.views.MembraneExchangesViewCategory"
+            class="com.predic8.plugin.membrane.views.ExchangesView"
+            icon="icons/cascade.png"
+            id="com.predic8.plugin.membrane.views.ExchangesView"
+            name="Exchanges"
+            restorable="true">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.actionSets">
@@ -91,6 +99,9 @@
             </separator>
             <separator
                   name="membraneConfigurationGroup">
+            </separator>
+            <separator
+                  name="membraneExchangesSeparator">
             </separator>
          </menu>
          <action
@@ -140,6 +151,16 @@
                menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
                toolbarPath="membraneShowRuleViewsGroup"
                tooltip="show rule statistics view">
+         </action>
+         <action
+               class="com.predic8.plugin.membrane.actions.ShowExchangesViewAction"
+               icon="icons/cascade.png"
+               id="com.predic8.plugin.membrane.actions.ShowExchangesViewAction"
+               label="Show Exchanges"
+               menubarPath="MembraneMenu/membraneExchangesSeparator"
+               style="push"
+               toolbarPath="membraneExchangesSeparator"
+               tooltip="show exchanges view">
          </action>
       </actionSet>
    </extension>

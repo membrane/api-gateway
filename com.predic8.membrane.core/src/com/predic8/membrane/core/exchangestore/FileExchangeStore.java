@@ -146,4 +146,9 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return null;
 	}
 
+	public Object[] getAllExchanges() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

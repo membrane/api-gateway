@@ -51,4 +51,8 @@ public interface ExchangeStore {
 	
 	
 	public RuleStatistics getStatistics(RuleKey ruleKey);
+	
+	
+	public Object[] getAllExchanges();
+	
 }

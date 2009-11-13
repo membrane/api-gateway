@@ -250,6 +250,8 @@ public class RuleTreeView extends ViewPart {
 					} else {
 						removeAllExchangesAction.setEnabled(false);
 					}
+				} else if (selectedItem instanceof Exchange){
+					onExchangeSelection(selectedItem);
 				}
 				return;
 			}
@@ -262,21 +264,7 @@ public class RuleTreeView extends ViewPart {
 			}
 
 			if (selectedItem instanceof Exchange) {
-				Exchange exchange = (Exchange) selectedItem;
-				enableStopMenu(exchange);
-				IWorkbenchPage page = getViewSite().getPage();
-				try {
-					page.showView(ExchangeView.VIEW_ID);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-
-				ExchangeView exchangeView = (ExchangeView) getSite().getPage().findView(ExchangeView.VIEW_ID);
-				exchangeView.setExchange(exchange);
-
-				ruleEditAction.setEnabled(false);
-				ruleRenameAction.setEnabled(false);
-				removeAllExchangesAction.setEnabled(false);
+				onExchangeSelection(selectedItem);
 			} else if (selectedItem instanceof Rule) {
 				exchangeStopAction.setEnabled(false);
 				ruleEditAction.setEnabled(true);
@@ -300,6 +288,25 @@ public class RuleTreeView extends ViewPart {
 
 			}
 			lastSelectedItem = selectedItem;
+		}
+
+		private void onExchangeSelection(Object selectedItem) {
+			Exchange exchange = (Exchange) selectedItem;
+			enableStopMenu(exchange);
+			IWorkbenchPage page = getViewSite().getPage();
+			try {
+				page.showView(ExchangeView.VIEW_ID);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+
+			ExchangeView exchangeView = (ExchangeView) getSite().getPage().findView(ExchangeView.VIEW_ID);
+			exchangeView.setExchange(exchange);
+			page.bringToTop(exchangeView);
+			
+			ruleEditAction.setEnabled(false);
+			ruleRenameAction.setEnabled(false);
+			removeAllExchangesAction.setEnabled(false);
 		}
 
 	}

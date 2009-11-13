@@ -84,7 +84,13 @@ public class HttpClient {
 			//TODO move to ProxyInterceptor ????
 			exc.getRequest().getHeader().setHost(url.getHost() + ":" +  getTargetPort(url));
 			log.debug("PATH: " + url.getPath());
-			exc.getRequest().setUri(url.getPath());
+			
+			String uri = url.getPath();
+			if (url.getQuery() != null) {
+				uri = uri + "?" + url.getQuery();
+			}
+			
+			exc.getRequest().setUri(uri);
 			
 			init(url.getHost(), getTargetPort(url)); 
 		} else if (exc.getRule() instanceof ForwardingRule){

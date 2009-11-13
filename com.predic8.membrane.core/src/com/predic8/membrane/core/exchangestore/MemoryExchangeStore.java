@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.exchangestore;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,8 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 
 	private Map<RuleKey, List<Exchange>> ruleExchangeMap = new HashMap<RuleKey, List<Exchange>>();
 
+	List<Exchange> totalList = new ArrayList<Exchange>();
+	
 	private int threashold = 1000;
 
 	public void add(Exchange exchange) {
@@ -44,6 +48,8 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 			list.add(exchange);
 			ruleExchangeMap.put(exchange.getRule().getRuleKey(), list);
 		}
+		
+		totalList.add(exchange);
 
 		for (IRuleTreeViewerListener listener : treeViewerListeners) {
 			exchange.addTreeViewerListener(listener);
@@ -61,6 +67,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 			ruleExchangeMap.remove(exchange.getRule().getRuleKey());
 		}
 		exchange.informExchangeViewerOnRemoval();
+		totalList.remove(exchange);
 		for (IRuleTreeViewerListener listener : treeViewerListeners) {
 			listener.removeExchange(exchange);
 		}
@@ -72,6 +79,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 		Exchange[] exchanges = getExchanges(rule.getRuleKey());
 		ruleExchangeMap.remove(rule.getRuleKey());
+		totalList.removeAll(Arrays.asList(exchanges));
 		for (IRuleTreeViewerListener listener : treeViewerListeners) {
 			listener.removeExchanges(rule, exchanges);
 		}
@@ -147,6 +155,13 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		statistics.setBytesSent(bytesSent);
 		statistics.setBytesReceived(bytesReceived);
 		return statistics;
+	}
+
+	public Object[] getAllExchanges() {
+		if (totalList.size() == 0) 
+			return null;
+		
+		return totalList.toArray();
 	}
 
 }

@@ -18,8 +18,6 @@ package com.predic8.membrane.core.interceptor;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
-import javax.activation.MimeType;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -46,7 +44,7 @@ public class WSDLInterceptor implements Interceptor {
 			return Outcome.CONTINUE;
 		
 		
-		if (!(new MimeType(exchange.getResponse().getHeader().getContentType()).match("text/xml")))
+		if (!exchange.getResponse().isXML())
 			return Outcome.CONTINUE;
 		
 		log.debug("Changing endpoint address in WSDL");

@@ -17,8 +17,6 @@
 			<list>
 				<bean class="com.predic8.membrane.core.interceptor.RoutingInterceptor" />
 				 
-				<bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor"/>
-				
 				<bean class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">
 					<property name="exchangeStore" ref="exchangeStore" />
 				</bean>
@@ -26,7 +24,7 @@
 		</property>
 		<property name="outInterceptors">
 			<list>
-				
+				<bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor"/>
 			</list>
 		</property>
 	</bean>
