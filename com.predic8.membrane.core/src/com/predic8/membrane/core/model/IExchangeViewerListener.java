@@ -21,11 +21,7 @@ public interface IExchangeViewerListener {
 	
 	public void addRequest(Request request);
 
-	public void removeRequest();
-
 	public void addResponse(Response response);
-
-	public void removeResponse();
 
 	public void removeExchange();
 

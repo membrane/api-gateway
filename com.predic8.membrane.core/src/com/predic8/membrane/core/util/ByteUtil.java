@@ -14,14 +14,16 @@
 
 package com.predic8.membrane.core.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 public class ByteUtil {
-	
-//	private static Log log = LogFactory.getLog(ByteUtil.class.getName());
-	
+
+	// private static Log log = LogFactory.getLog(ByteUtil.class.getName());
+
 	public static byte[] readByteArray(InputStream in, int length) throws IOException {
 		byte[] content = new byte[length];
 		int offset = 0;
@@ -30,6 +32,54 @@ public class ByteUtil {
 			offset += count;
 		}
 		return content;
+	}
+
+	public static byte[] getByteArrayData(InputStream stream) throws Exception {
+
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+		int c = -1;
+		while ((c = stream.read()) > 0) {
+			bos.write(c);
+		}
+
+		try {
+			bos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return bos.toByteArray();
+	}
+
+	public static byte[] getDecompressedData(byte[] compressedData) throws Exception {
+		Inflater decompressor = new Inflater();
+		decompressor.setInput(compressedData);
+
+		ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedData.length);
+
+		byte[] buf = new byte[1024];
+
+		while (!decompressor.finished()) {
+			try {
+				int count = decompressor.inflate(buf);
+				bos.write(buf, 0, count);
+			} catch (DataFormatException e) {
+				try {
+					bos.close();
+				} catch (IOException ex) {
+				}
+				throw e;
+			}
+		}
+		try {
+			bos.close();
+		} catch (IOException e) {
+		}
+
+		// Get the decompressed data
+		System.err.println("getDecompressedData() returns");
+		return bos.toByteArray();
 	}
 
 }

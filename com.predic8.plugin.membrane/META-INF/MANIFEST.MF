@@ -11,6 +11,7 @@ Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ActivationPolicy: lazy
 Export-Package: com.predic8.plugin.membrane;uses:="org.eclipse.jface.resource,org.eclipse.ui.plugin,org.osgi.framework",
  com.predic8.plugin.membrane.actions;uses:="org.eclipse.jface.action,org.eclipse.ui,org.eclipse.jface.viewers",
+ com.predic8.plugin.membrane.celleditors,
  com.predic8.plugin.membrane.components;
   uses:="com.predic8.membrane.core.http,
    com.predic8.membrane.core,
@@ -27,6 +28,7 @@ Export-Package: com.predic8.plugin.membrane;uses:="org.eclipse.jface.resource,or
    com.predic8.plugin.membrane.viewers,
    org.eclipse.swt.widgets,
    org.eclipse.jface.dialogs",
+ com.predic8.plugin.membrane.filtering,
  com.predic8.plugin.membrane.help;uses:="org.eclipse.help,org.eclipse.ui.help",
  com.predic8.plugin.membrane.listeners;uses:="org.eclipse.swt.custom",
  com.predic8.plugin.membrane.perspectives;uses:="org.eclipse.ui",
@@ -45,6 +47,8 @@ Export-Package: com.predic8.plugin.membrane;uses:="org.eclipse.jface.resource,or
    com.predic8.membrane.core.model,
    com.predic8.plugin.membrane.viewers",
  com.predic8.plugin.membrane.resources,
+ com.predic8.plugin.membrane.sorting,
+ com.predic8.plugin.membrane.viewcomponents,
  com.predic8.plugin.membrane.viewers;
   uses:="com.predic8.membrane.core.http,
    com.predic8.membrane.core,

@@ -36,6 +36,10 @@ public class Request extends Message {
 
 	public static final String METHOD_HEAD = "HEAD";
 
+	public static final String METHOD_DELETE = "DELETE";
+
+	public static final String METHOD_PUT = "PUT";
+
 	private static Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
 	
 	String method;

@@ -81,6 +81,22 @@
             name="Exchanges"
             restorable="true">
       </view>
+      <view
+            category="com.predic8.plugin.membrane.views.MembraneExchangesViewCategory"
+            class="com.predic8.plugin.membrane.views.RequestView"
+            icon="icons/message_out.png"
+            id="com.predic8.plugin.membrane.views.RequestView"
+            name="Request"
+            restorable="true">
+      </view>
+      <view
+            category="com.predic8.plugin.membrane.views.MembraneExchangesViewCategory"
+            class="com.predic8.plugin.membrane.views.ResponseView"
+            icon="icons/message.png"
+            id="com.predic8.plugin.membrane.views.ResponseView"
+            name="Response"
+            restorable="true">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.actionSets">

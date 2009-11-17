@@ -40,8 +40,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 				case 0:
 					if (exchange.getTime() == null)
 						return "unknown";
-					return simpleDateFormat
-							.format(exchange.getTime().getTime());
+					return simpleDateFormat.format(exchange.getTime().getTime());
 
 				case 1:
 					return exchange.getRule().toString();
@@ -69,12 +68,16 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 					return contentType;
 
 				case 7:
+					if (exchange.getResponse() == null)
+						return "";
 					return "" + exchange.getResponse().getStatusCode();
 
 				case 8:
 					return "" + exchange.getRequest().getHeader().getContentLength();
 
 				case 9:
+					if (exchange.getResponse() == null)
+						return "";
 					return "" + exchange.getResponse().getHeader().getContentLength();
 					
 				case 10:

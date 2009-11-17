@@ -12,22 +12,21 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.components;
+package com.predic8.plugin.membrane.viewcomponents;
 
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.viewers.ExchangeViewer;
 
 public class ResponseComp extends BaseComp {
 
-	public ResponseComp(Composite parent, int style, ExchangeViewer exchangeViewer) {
-		super(parent, style, exchangeViewer);
+	public ResponseComp(Composite parent, int style, IBaseCompositeHost host) {
+		super(parent, style, host);
 	}
 
-	public void updateUIStatus(Exchange exchange) {
+	public void updateUIStatus(Exchange exchange, boolean canShowBody) {
 		if (exchange == null) {
 			setMessageEditable(false);
 		} else if (exchange.getErrorMessage() != null && !exchange.getErrorMessage().equals("")) {
@@ -40,16 +39,18 @@ public class ResponseComp extends BaseComp {
 				setMessageEditable(false);
 			}
 		}
+		if (canShowBody)
+			tabManager.setSelectionOnBodyTabItem();
 	}
 
 	@Override
 	public void setFormatEnabled(boolean status) {
-		exchangeViewer.setResponseFormatEnabled(status);
+		compositeHost.setResponseFormatEnabled(status);
 	}
 
 	@Override
 	public void setSaveEnabled(boolean status) {
-		exchangeViewer.setResponseSaveEnabled(status);
+		compositeHost.setResponseSaveEnabled(status);
 	}
 	
 	@Override

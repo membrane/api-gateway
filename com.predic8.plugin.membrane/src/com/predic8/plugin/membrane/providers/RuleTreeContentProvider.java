@@ -135,7 +135,14 @@ public class RuleTreeContentProvider implements ITreeContentProvider, IRuleTreeV
 	public void selectTo(final Object obj) {
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
-				treeViewer.setSelection(new StructuredSelection(obj), true);
+//				final IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();	
+//				IViewPart wpart = page.findView(ExchangesView.VIEW_ID);
+//				
+//				
+//				if (wpart != null && wpart.getSite().getPage().isPartVisible(wpart)) {
+//					return;
+//				}
+//				treeViewer.setSelection(new StructuredSelection(obj), true);
 			}
 		});
 	}

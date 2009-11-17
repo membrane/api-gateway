@@ -12,28 +12,29 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.components;
+package com.predic8.plugin.membrane.viewcomponents;
 
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.transport.http.HttpResendThread;
-import com.predic8.plugin.membrane.viewers.ExchangeViewer;
 
 
 public class RequestComp extends BaseComp {
 
-	public RequestComp(Composite parent, int style, ExchangeViewer exchangeViewer) {
-		super(parent, style, exchangeViewer);
+	public RequestComp(Composite parent, int style, IBaseCompositeHost host) {
+		super(parent, style, host);
 	}
 
-	public void updateUIStatus(Exchange exchange) {
+	public void updateUIStatus(Exchange exchange, boolean canShowBody) {
 		if (exchange == null) {
 			setMessageEditable(false);
 		} else {
 			setMessageEditable(true);
 		}
+		if (canShowBody)
+			tabManager.setSelectionOnBodyTabItem();
 	}
 
 	public void resendRequest() {
@@ -42,14 +43,13 @@ public class RequestComp extends BaseComp {
 				tabManager.setBodyModified(false);
 				copyBodyFromGUIToModel();
 			}
-			
-			(new HttpResendThread((HttpExchange)getExchangeViewer().getExchange())).start();
+			(new HttpResendThread((HttpExchange)getCompositeHost().getExchange())).start();
 		}
 	}
 
 	@Override
 	public void setFormatEnabled(boolean status) {
-		exchangeViewer.setRequestFormatEnabled(status);
+		compositeHost.setRequestFormatEnabled(status);
 	}
 
 	@Override
@@ -59,6 +59,6 @@ public class RequestComp extends BaseComp {
 
 	@Override
 	public void setSaveEnabled(boolean status) {
-		exchangeViewer.setRequestSaveEnabled(status);
+		compositeHost.setRequestSaveEnabled(status);
 	}
 }

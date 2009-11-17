@@ -221,5 +221,13 @@ public abstract class Message {
 		return header.getContentType().indexOf("javascript") > 0;
 	}
 	
+	public boolean isGzip() {
+		return "gzip".equals(header.getContentEncoding());
+	}
+	
+	public boolean isDeflate() {
+		System.err.println("is deflate called " + ("deflate".equals(header.getContentEncoding())));
+		return "deflate".equals(header.getContentEncoding());
+	}
 	
 }

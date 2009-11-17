@@ -90,10 +90,20 @@ public class RuleDetailsComposite extends Composite {
 		Label labelDummy1 = new Label(compositeText, SWT.NONE);
 		labelDummy1.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
-		ruleOptionsRuleKeyGroup = new Group(compositeText, SWT.NONE);
+		
+		Composite groupComposite = new Composite(compositeText, SWT.NONE);
+		GridData groupCompositeGridData = new GridData(GridData.FILL_HORIZONTAL);
+		groupComposite.setLayoutData(groupCompositeGridData);
+		
+		
+		GridLayout gridLayoutGroup = new GridLayout();
+		gridLayoutGroup.numColumns = 2;
+		groupComposite.setLayout(gridLayoutGroup);
+		
+		
+		ruleOptionsRuleKeyGroup = new Group(groupComposite, SWT.NONE);
 		ruleOptionsRuleKeyGroup.setText("Rule Key");
 		ruleOptionsRuleKeyGroup.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-
 		ruleOptionsRuleKeyGroup.setLayout(new RowLayout(SWT.VERTICAL));
 
 		labelHost = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
@@ -101,10 +111,7 @@ public class RuleDetailsComposite extends Composite {
 		labelMethod = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
 		labelPath = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
 
-		Label labelDummy2 = new Label(compositeText, SWT.NONE);
-		labelDummy2.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-
-		ruleOptionsTargetGroup = new Group(compositeText, SWT.NONE);
+		ruleOptionsTargetGroup = new Group(groupComposite, SWT.NONE);
 		ruleOptionsTargetGroup.setText("Target");
 		ruleOptionsTargetGroup.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 		ruleOptionsTargetGroup.setLayout(new RowLayout(SWT.VERTICAL));

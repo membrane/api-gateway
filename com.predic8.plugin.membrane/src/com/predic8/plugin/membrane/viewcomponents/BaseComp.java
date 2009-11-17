@@ -12,26 +12,27 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.components;
+package com.predic8.plugin.membrane.viewcomponents;
 
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.plugin.membrane.components.messagefolder.MessageTabManager;
-import com.predic8.plugin.membrane.viewers.ExchangeViewer;
 
 public abstract class BaseComp extends Composite {
 
 	protected Message msg;
 
-	protected ExchangeViewer exchangeViewer;
-
 	protected MessageTabManager tabManager;
 
-	public BaseComp(Composite parent, int style, ExchangeViewer exchangeViewer) {
+	protected IBaseCompositeHost compositeHost;
+	
+	
+	public BaseComp(Composite parent, int style, IBaseCompositeHost host) {
 		super(parent, style);
-		this.exchangeViewer = exchangeViewer;
+		this.compositeHost = host;
 		GridLayout grid = new GridLayout();
 		grid.verticalSpacing = 1;
 		grid.marginWidth = 0;
@@ -52,10 +53,6 @@ public abstract class BaseComp extends Composite {
 			copyBodyFromGUIToModel();
 		}
 		msg.release();
-	}
-
-	public ExchangeViewer getExchangeViewer() {
-		return exchangeViewer;
 	}
 
 	public Message getMsg() {
@@ -110,5 +107,17 @@ public abstract class BaseComp extends Composite {
 	public void doUpdate() {
 		tabManager.doUpdate(msg);
 	}
+	
+	public abstract void updateUIStatus(Exchange exchange, boolean canShowBody);
 
+	public IBaseCompositeHost getCompositeHost() {
+		return compositeHost;
+	}
+
+	public void setCompositeHost(IBaseCompositeHost compositeHost) {
+		this.compositeHost = compositeHost;
+	}
+
+	
+	
 }

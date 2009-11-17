@@ -11,7 +11,6 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 
 import com.predic8.membrane.core.http.Message;
-import com.predic8.plugin.membrane.components.BaseComp;
 import com.predic8.plugin.membrane.components.BodyTabComposite;
 import com.predic8.plugin.membrane.components.CSSTabComposite;
 import com.predic8.plugin.membrane.components.ErrorTabComposite;
@@ -22,6 +21,7 @@ import com.predic8.plugin.membrane.components.JavaScriptTabComposite;
 import com.predic8.plugin.membrane.components.NullBodyTabComposite;
 import com.predic8.plugin.membrane.components.RawTabComposite;
 import com.predic8.plugin.membrane.components.SOAPTabComposite;
+import com.predic8.plugin.membrane.viewcomponents.BaseComp;
 
 public class MessageTabManager {
 
@@ -95,7 +95,7 @@ public class MessageTabManager {
 			
 		});
 		
-		
+		doUpdate(null);
 
 	}
 	
@@ -159,6 +159,7 @@ public class MessageTabManager {
 		} 
 		
 		currentBodyTabComposite.show();
+		
 		baseComp.setFormatEnabled(currentBodyTabComposite.isFormatSupported());
 	}
 
@@ -211,6 +212,14 @@ public class MessageTabManager {
 
 	public boolean isBodyModified() {
 		return currentBodyTabComposite.isBodyModified();
+	}
+	
+	
+	public void setSelectionOnBodyTabItem() {
+		if (currentBodyTabComposite != null && !currentBodyTabComposite.isDisposed() && currentBodyTabComposite.getTabItem() != null && !currentBodyTabComposite.getTabItem().isDisposed()) {
+			folder.setSelection(currentBodyTabComposite.getTabItem());
+			folder.notifyListeners(SWT.Selection, null);
+		}
 	}
 
 }

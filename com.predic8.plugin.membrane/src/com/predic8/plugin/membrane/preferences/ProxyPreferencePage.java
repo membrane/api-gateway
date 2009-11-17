@@ -53,7 +53,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		useproxy.setText("Use Proxy Server");
 		if (config.props.get(Configuration.PROXY_USE) != null) {
 			useproxy.setSelection((Boolean) config.props.get(Configuration.PROXY_USE));
-		}
+		} 
 
 		Group proxyGroup = new Group(comp, SWT.NONE);
 		proxyGroup.setText("Proxy Settings");
@@ -74,7 +74,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 				txtHost.setText((String) config.props.get(Configuration.PROXY_HOST));
 			else
 				txtHost.setText((String) config.props.get(Configuration.PROXY_HOST));
-		}
+		} 
 		
 
 		lblPort = new Label(proxyGroup, SWT.NONE);

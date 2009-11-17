@@ -61,7 +61,7 @@ public class RuleTreeView extends ViewPart {
 	private RuleEditAction ruleEditAction;
 
 	private RuleRenameAction ruleRenameAction;
-
+	
 	public RuleTreeView() {
 
 	}
@@ -294,15 +294,31 @@ public class RuleTreeView extends ViewPart {
 			Exchange exchange = (Exchange) selectedItem;
 			enableStopMenu(exchange);
 			IWorkbenchPage page = getViewSite().getPage();
-			try {
-				page.showView(ExchangeView.VIEW_ID);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-
-			ExchangeView exchangeView = (ExchangeView) getSite().getPage().findView(ExchangeView.VIEW_ID);
-			exchangeView.setExchange(exchange);
-			page.bringToTop(exchangeView);
+			
+			RequestView requestViewPart = (RequestView)page.findView(RequestView.VIEW_ID);
+			ResponseView responseViewPart = (ResponseView)page.findView(ResponseView.VIEW_ID);
+			
+			if (requestViewPart == null) {
+				try {
+					page.showView(RequestView.VIEW_ID);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			} 
+			
+			if (responseViewPart == null) {
+				try {
+					page.showView(ResponseView.VIEW_ID);
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			} 
+			
+			requestViewPart.setInput(exchange);
+			requestViewPart.updateUIStatus(true);
+			
+			responseViewPart.setInput(exchange);
+			responseViewPart.updateUIStatus(true);
 			
 			ruleEditAction.setEnabled(false);
 			ruleRenameAction.setEnabled(false);
