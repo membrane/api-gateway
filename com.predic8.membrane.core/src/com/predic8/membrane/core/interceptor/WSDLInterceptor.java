@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
@@ -34,6 +35,8 @@ public class WSDLInterceptor implements Interceptor {
 	
 	public Outcome invoke(Exchange exchange) throws Exception {
 		log.debug("invoke");
+		if ( exchange.getRule() instanceof ProxyRule ) return  Outcome.CONTINUE;
+		
 		if (exchange.getResponse() == null) 
 			return Outcome.CONTINUE;
 		
