@@ -6,7 +6,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.views.RuleTableView;
 
 public class ShowRulesTableAction implements IWorkbenchWindowActionDelegate {
@@ -30,7 +30,7 @@ public class ShowRulesTableAction implements IWorkbenchWindowActionDelegate {
 		try {
 			page.showView(RuleTableView.VIEW_ID);
 			RuleTableView ruleTableView = (RuleTableView)window.getActivePage().findView(RuleTableView.VIEW_ID);
-			ruleTableView.getTableViewer().setInput(Core.getRuleManager());
+			ruleTableView.getTableViewer().setInput(Router.getInstance().getRuleManager());
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}

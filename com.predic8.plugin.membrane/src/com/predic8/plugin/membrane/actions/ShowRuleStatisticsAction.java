@@ -6,7 +6,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.views.RuleStatisticsView;
 
 public class ShowRuleStatisticsAction implements IWorkbenchWindowActionDelegate {
@@ -32,7 +32,7 @@ public class ShowRuleStatisticsAction implements IWorkbenchWindowActionDelegate 
 		try {
 			page.showView(RuleStatisticsView.VIEW_ID);
 			RuleStatisticsView ruleStatisticsView = (RuleStatisticsView)window.getActivePage().findView(RuleStatisticsView.VIEW_ID);
-			ruleStatisticsView.setInputForTable(Core.getRuleManager());
+			ruleStatisticsView.setInputForTable(Router.getInstance().getRuleManager());
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();

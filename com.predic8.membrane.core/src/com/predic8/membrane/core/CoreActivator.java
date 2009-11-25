@@ -28,9 +28,9 @@ public class CoreActivator extends Plugin {
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		plugin = this;
-		Core.init("monitor-beans.xml");
+		Router.init("monitor-beans.xml");
 		try {
-			Core.getConfigurationManager().loadConfiguration(System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml");
+			Router.getInstance().getConfigurationManager().loadConfiguration(System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

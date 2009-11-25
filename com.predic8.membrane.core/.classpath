@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry exported="true" kind="lib" path="lib/httpclient-4.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/httpcore-4.0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/spring-beans.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>
@@ -11,7 +13,6 @@
 	<classpathentry exported="true" kind="lib" path="lib/commons-cli-1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/commons-codec-1.3.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/commons-discovery.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-httpclient-3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/stax-api-1.0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/stax2-api-3.0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/woodstox-core-asl-4.0.5.jar"/>

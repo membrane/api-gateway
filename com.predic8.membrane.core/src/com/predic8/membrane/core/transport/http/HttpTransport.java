@@ -36,7 +36,7 @@ public class HttpTransport extends Transport {
 			throw new RuntimeException("Port already used: " + port);
 		}
 
-		HttpEndpointListener portListenerThread = new HttpEndpointListener(port);
+		HttpEndpointListener portListenerThread = new HttpEndpointListener(port, this);
 		portListenerMapping.put(new Integer(port), portListenerThread);
 		portListenerThread.start();
 

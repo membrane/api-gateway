@@ -11,7 +11,7 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.model.IRuleTreeViewerListener;
@@ -54,7 +54,7 @@ public class RuleStatisticsView extends ViewPart implements IRuleTreeViewerListe
 		tableViewer.getTable().setLayoutData(tableGridData);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "RuleStatistics");
 	
-	    Core.getExchangeStore().addTreeViewerListener(this);
+	    Router.getInstance().getExchangeStore().addTreeViewerListener(this);
 	}
 
 	private void createColumns(TableViewer viewer) {
@@ -122,7 +122,7 @@ public class RuleStatisticsView extends ViewPart implements IRuleTreeViewerListe
 			return;
 		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
 			public void run() {
-				tableViewer.setInput(Core.getRuleManager());
+				tableViewer.setInput(Router.getInstance().getRuleManager());
 			}
 		});
 	}

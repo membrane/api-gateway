@@ -4,7 +4,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
 
 public class RemoveAllExchangesAction extends Action {
@@ -22,7 +22,7 @@ public class RemoveAllExchangesAction extends Action {
 		IStructuredSelection selection = (IStructuredSelection) treeViewer.getSelection();
 		Object selectedItem = selection.getFirstElement();
 		if (selectedItem instanceof Rule) {
-			Core.getExchangeStore().removeAllExchanges((Rule) selectedItem);
+			Router.getInstance().getExchangeStore().removeAllExchanges((Rule) selectedItem);
 		}
 	}
 	

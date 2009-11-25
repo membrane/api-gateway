@@ -17,12 +17,19 @@ package com.predic8.membrane.core.util;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.predic8.membrane.core.http.Chunk;
+
 public class ByteUtil {
 
-	// private static Log log = LogFactory.getLog(ByteUtil.class.getName());
+	private static Log log = LogFactory.getLog(ByteUtil.class.getName());
 
 	public static byte[] readByteArray(InputStream in, int length) throws IOException {
 		byte[] content = new byte[length];
@@ -53,33 +60,49 @@ public class ByteUtil {
 	}
 
 	public static byte[] getDecompressedData(byte[] compressedData) throws Exception {
-		Inflater decompressor = new Inflater();
+		Inflater decompressor = new Inflater(true);
 		decompressor.setInput(compressedData);
 
-		ByteArrayOutputStream bos = new ByteArrayOutputStream(compressedData.length);
-
 		byte[] buf = new byte[1024];
-
+		
+		List<Chunk> chunks = new ArrayList<Chunk>();
+		
 		while (!decompressor.finished()) {
 			try {
 				int count = decompressor.inflate(buf);
-				bos.write(buf, 0, count);
-			} catch (DataFormatException e) {
-				try {
-					bos.close();
-				} catch (IOException ex) {
+				if (buf.length == count) {
+					Chunk chunk = new Chunk(buf);
+					chunks.add(chunk);
+				} else if (count < buf.length){
+					byte[] shortContent = new byte[count];
+					for (int j = 0; j < count; j ++) {
+						shortContent[j] = buf[j];
+					}
+					Chunk chunk = new Chunk(shortContent);
+					chunks.add(chunk);
 				}
+			} catch (DataFormatException e) {
 				throw e;
 			}
 		}
-		try {
-			bos.close();
-		} catch (IOException e) {
-		}
-
-		// Get the decompressed data
-		System.err.println("getDecompressedData() returns");
-		return bos.toByteArray();
+		
+		log.debug("Number of decompressed chunks: " + chunks.size());
+		if (chunks.size() > 0) {
+			
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			
+			for (Chunk chunk : chunks) {
+				chunk.write(bos);
+			}
+			
+			try {
+				bos.close();
+			} catch (IOException e) {
+			}
+			return bos.toByteArray();	
+		} 
+		
+		return null;
 	}
 
 }

@@ -90,9 +90,22 @@ public abstract class Message {
 	}
 	
 	protected void createBody(InputStream in) throws IOException {
-		log.debug("createBody");
-		if (!isKeepAlive()) {
-			body = new Body(in, header.isChunked());
+ 		log.debug("createBody");
+		if (isHTTP10()) {
+			if (header.hasContentLength()) {
+				body = new Body(in, header.getContentLength());
+				return;
+			} else {
+				//TODO to implement later 
+				throw new RuntimeException("HTTP 1.0 without Content-Length is not implemented yet");
+			}
+		}
+		if (!isKeepAlive()) {			
+			if (header.hasContentLength()) {
+				body = new Body(in, header.getContentLength());
+			} else {
+				body = new Body(in, -1);
+			}
 			return;
 		}
 		
@@ -226,7 +239,6 @@ public abstract class Message {
 	}
 	
 	public boolean isDeflate() {
-		System.err.println("is deflate called " + ("deflate".equals(header.getContentEncoding())));
 		return "deflate".equals(header.getContentEncoding());
 	}
 	

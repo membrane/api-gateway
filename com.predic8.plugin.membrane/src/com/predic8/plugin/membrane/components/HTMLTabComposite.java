@@ -38,7 +38,9 @@ public class HTMLTabComposite extends BodyTextTabComposite {
 		} else if (msg.isDeflate()) {
 			try {
 				byte[] decompressedData = ByteUtil.getDecompressedData(bodyContent);
-				setBodyText(new String(decompressedData));
+				if (decompressedData != null) {
+					setBodyText(new String(decompressedData));
+				}
 			    return;
 			} catch (Exception e) {
 				setBodyText(new String(bodyContent));

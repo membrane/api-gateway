@@ -6,7 +6,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.HttpTransport;
@@ -28,18 +28,18 @@ public class RemoveTreeElementAction extends Action {
 		if (selectedItem instanceof Exchange) {
 			Exchange selectedExchange = (Exchange) selectedItem;
 			selectedExchange.finishExchange(false);// Don't need to refresh.
-			Core.getExchangeStore().remove(selectedExchange);
+			Router.getInstance().getExchangeStore().remove(selectedExchange);
 			return;
 		}
 
 		if (selectedItem instanceof Rule) {
 			Rule rule = (Rule) selectedItem;
-			Core.getRuleManager().removeRule(rule);
+			Router.getInstance().getRuleManager().removeRule(rule);
 			
 			treeViewer.setSelection(null);
-			if (!Core.getRuleManager().isAnyRuleWithPort(rule.getRuleKey().getPort())) {
+			if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getRuleKey().getPort())) {
 				try {
-					((HttpTransport) Core.getTransport()).closePort(rule.getRuleKey().getPort());
+					((HttpTransport) Router.getInstance().getTransport()).closePort(rule.getRuleKey().getPort());
 				} catch (IOException e2) {
 					e2.printStackTrace();
 				}

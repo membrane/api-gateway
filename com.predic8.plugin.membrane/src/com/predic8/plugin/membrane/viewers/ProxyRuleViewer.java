@@ -12,7 +12,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -89,37 +89,37 @@ public class ProxyRuleViewer extends AbstractRuleViewer {
 			ProxyRuleKey key = new ProxyRuleKey(port);
 			if (key.equals(rule.getRuleKey())) {
 				rule.setName(nameText.getText());
-				Core.getRuleManager().ruleChanged(rule);
+				Router.getInstance().getRuleManager().ruleChanged(rule);
 				return;
 			}
 			
-			if (Core.getRuleManager().getRule(key) != null) {
+			if (Router.getInstance().getRuleManager().getRule(key) != null) {
 				openErrorDialog("Illeagal input! Your rule key conflict with another existent rule.");
 				return;
 			}
 			
 			if (openConfirmDialog("You've changed the rule key, so all the old history will be cleared.")) {
 
-				if (!((HttpTransport) Core.getTransport()).isAnyThreadListeningAt(key.getPort())) {
+				if (!((HttpTransport) Router.getInstance().getTransport()).isAnyThreadListeningAt(key.getPort())) {
 					try {
-						((HttpTransport) Core.getTransport()).addPort(key.getPort());
+						((HttpTransport) Router.getInstance().getTransport()).addPort(key.getPort());
 					} catch (IOException e1) {
 						openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
 						return;
 					}
 				}
-				Core.getRuleManager().removeRule(rule);
-				if (!Core.getRuleManager().isAnyRuleWithPort(rule.getRuleKey().getPort()) && (rule.getRuleKey().getPort() != key.getPort())) {
+				Router.getInstance().getRuleManager().removeRule(rule);
+				if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getRuleKey().getPort()) && (rule.getRuleKey().getPort() != key.getPort())) {
 					try {
-						((HttpTransport) Core.getTransport()).closePort(rule.getRuleKey().getPort());
+						((HttpTransport) Router.getInstance().getTransport()).closePort(rule.getRuleKey().getPort());
 					} catch (IOException e2) {
 						openErrorDialog("Failed to close the obsolete port: " + rule.getRuleKey().getPort());
 					}
 				}
 				rule.setName(nameText.getText().trim());
 				rule.setRuleKey(key);
-				Core.getRuleManager().addRuleIfNew(rule);
-				Core.getRuleManager().ruleChanged(rule);
+				Router.getInstance().getRuleManager().addRuleIfNew(rule);
+				Router.getInstance().getRuleManager().ruleChanged(rule);
 			}
 		} catch (NumberFormatException nfe) {
 			openErrorDialog("Illeagal input! Please check listen port again");

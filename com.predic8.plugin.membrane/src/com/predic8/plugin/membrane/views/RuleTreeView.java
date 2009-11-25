@@ -29,7 +29,7 @@ import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.part.ViewPart;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.rules.Rule;
@@ -121,7 +121,7 @@ public class RuleTreeView extends ViewPart {
 		}, ColumnViewerEditor.DEFAULT);
 
 		// drilDownAdapter = new DrillDownAdapter(ruleTreeViewer);
-		ruleTreeViewer.setInput(Core.getRuleManager());
+		ruleTreeViewer.setInput(Router.getInstance().getRuleManager());
 
 		ruleTreeViewer.addSelectionChangedListener(new RuleTreeSelectionChangeListener());
 
@@ -244,7 +244,7 @@ public class RuleTreeView extends ViewPart {
 			if (lastSelectedItem == selectedItem) {
 				if (selectedItem instanceof Rule) {
 					Rule selectedRule = (Rule) selectedItem;
-					int length = Core.getExchangeStore().getExchanges(selectedRule.getRuleKey()).length;
+					int length = Router.getInstance().getExchangeStore().getExchanges(selectedRule.getRuleKey()).length;
 					if (length > 0) {
 						removeAllExchangesAction.setEnabled(true);
 					} else {
@@ -269,7 +269,7 @@ public class RuleTreeView extends ViewPart {
 				exchangeStopAction.setEnabled(false);
 				ruleEditAction.setEnabled(true);
 				ruleRenameAction.setEnabled(true);
-				int length = Core.getExchangeStore().getNumberOfExchanges(((Rule) selectedItem).getRuleKey());
+				int length = Router.getInstance().getExchangeStore().getNumberOfExchanges(((Rule) selectedItem).getRuleKey());
 				if (length > 0) {
 					removeAllExchangesAction.setEnabled(true);
 				} else {

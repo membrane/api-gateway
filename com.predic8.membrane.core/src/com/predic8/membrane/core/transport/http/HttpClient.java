@@ -142,7 +142,8 @@ public class HttpClient {
 		exc.setTimeReqSent(System.currentTimeMillis());
 		exc.getRequest().write(out);
 		
-		if(!exc.getRequest().getHeader().hasContentLength() && exc.getRequest().isHTTP10()){
+		if(exc.getRequest().isHTTP10()){
+			exc.getServerThread().sourceSocket.shutdownInput();
 			if (!socket.isOutputShutdown()) {
 				log.info("Shutting down socket outputstream");
 				socket.shutdownOutput();

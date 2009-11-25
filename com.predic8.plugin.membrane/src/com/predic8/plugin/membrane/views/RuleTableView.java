@@ -12,7 +12,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.part.ViewPart;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.providers.RuleTableContentProvider;
@@ -59,7 +59,7 @@ public class RuleTableView extends ViewPart implements IRuleChangeListener {
 		tableGridData.grabExcessHorizontalSpace = true;
 		tableViewer.getTable().setLayoutData(tableGridData);
 
-		Core.getRuleManager().addTableViewerListener(this);
+		Router.getInstance().getRuleManager().addTableViewerListener(this);
 	}
 
 	@Override
@@ -88,14 +88,14 @@ public class RuleTableView extends ViewPart implements IRuleChangeListener {
 	}
 
 	public void addRule(Rule rule) {
-		tableViewer.setInput(Core.getRuleManager());
+		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 
 	public void removeRule(Rule rule) {
-		tableViewer.setInput(Core.getRuleManager());
+		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 
 	public void updateRule(Rule rule) {
-		tableViewer.setInput(Core.getRuleManager());
+		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 }

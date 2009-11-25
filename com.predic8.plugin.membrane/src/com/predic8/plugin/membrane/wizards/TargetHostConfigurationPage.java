@@ -12,7 +12,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.components.PortVerifyListener;
 
 public class TargetHostConfigurationPage extends WizardPage {
@@ -64,7 +64,7 @@ public class TargetHostConfigurationPage extends WizardPage {
 		targetHostLabel.setText("Host:");
 
 		ruleOptionsTargetHostTextField = new Text(ruleTargetGroup, SWT.BORDER);
-		ruleOptionsTargetHostTextField.setText(Core.getRuleManager().getDefaultTargetHost());
+		ruleOptionsTargetHostTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
 		ruleOptionsTargetHostTextField.addModifyListener(new ModifyListener(){
 			public void modifyText(ModifyEvent e) {
 				if (ruleOptionsTargetHostTextField.getText().trim().equals("")) {
@@ -93,7 +93,7 @@ public class TargetHostConfigurationPage extends WizardPage {
 		targetPortTextLabel.setText("Port");
 
 		ruleOptionsTargetPortTextField = new Text(ruleTargetGroup,SWT.BORDER);
-		ruleOptionsTargetPortTextField.setText(Core.getRuleManager().getDefaultTargetPort());
+		ruleOptionsTargetPortTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
 		ruleOptionsTargetPortTextField.addVerifyListener(new PortVerifyListener());
 		ruleOptionsTargetPortTextField.addModifyListener(new ModifyListener(){
 			public void modifyText(ModifyEvent e) {

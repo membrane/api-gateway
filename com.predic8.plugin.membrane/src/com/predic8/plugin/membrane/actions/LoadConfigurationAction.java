@@ -8,6 +8,8 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
+import com.predic8.membrane.core.Router;
+
 public class LoadConfigurationAction implements IWorkbenchWindowActionDelegate {
 
 	
@@ -37,7 +39,7 @@ public class LoadConfigurationAction implements IWorkbenchWindowActionDelegate {
 			return;
 
 		try {
-			//Core.getConfigurationManager().loadConfiguration(selected);
+			Router.getInstance().getConfigurationManager().loadConfiguration(selected);
 		} catch (Exception e) {
 			MessageDialog.openError(window.getShell(), "Load Configuration Error", e.getMessage());
 		}

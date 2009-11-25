@@ -10,7 +10,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 
 public class ExchangePreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
@@ -37,7 +37,7 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 		comp.setLayout(new RowLayout(SWT.VERTICAL));
 		autotrack = new Button(comp, SWT.CHECK);
 		autotrack.setText("Autotrack New Exchanges");
-		autotrack.setSelection(Core.getConfigurationManager().getConfiguration().getTrackExchange());
+		autotrack.setSelection(Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange());
 
 		return comp;
 	}
@@ -48,14 +48,14 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 
 	@Override
 	protected void performApply() {
-		Core.getConfigurationManager().getConfiguration().setTrackExchange(autotrack.getSelection());
-		Core.getConfigurationManager().saveConfiguration(Core.getConfigurationManager().getDefaultConfigurationFile());
+		Router.getInstance().getConfigurationManager().getConfiguration().setTrackExchange(autotrack.getSelection());
+		Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 	}
 
 	@Override
 	public boolean performOk() {
-		Core.getConfigurationManager().getConfiguration().setTrackExchange(autotrack.getSelection());
-		Core.getConfigurationManager().saveConfiguration(Core.getConfigurationManager().getDefaultConfigurationFile());
+		Router.getInstance().getConfigurationManager().getConfiguration().setTrackExchange(autotrack.getSelection());
+		Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 		return true;
 	}
 

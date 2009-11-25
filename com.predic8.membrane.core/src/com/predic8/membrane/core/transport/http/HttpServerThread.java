@@ -24,7 +24,6 @@ import java.net.SocketTimeoutException;
 
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Core;
 import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Message;
@@ -36,8 +35,8 @@ import com.predic8.membrane.core.util.HttpUtil;
 public class HttpServerThread extends AbstractHttpThread {
 
 	public static int counter = 0;
-
-	public HttpServerThread(HttpExchange exchange, Socket socket) throws IOException {
+	
+	public HttpServerThread(HttpExchange exchange, Socket socket, HttpTransport transport) throws IOException {
 		this.exchange = exchange;
 		exchange.setServerThread(this);
 		log = LogFactory.getLog(HttpServerThread.class.getName());
@@ -47,6 +46,7 @@ public class HttpServerThread extends AbstractHttpThread {
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut =  new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
 		sourceSocket.setSoTimeout(30000);
+		this.transport = transport;
 	}
 
 	public void run() {
@@ -59,9 +59,9 @@ public class HttpServerThread extends AbstractHttpThread {
 				//exchange.setSrcOut(srcOut);
 				exchange.setTimeReqReceived(System.currentTimeMillis());
 				boolean alive = srcReq.isKeepAlive();
-				if (!alive) {
-					sourceSocket.shutdownInput();
-				}
+//				if (!alive) {
+//					sourceSocket.shutdownInput();
+//				}
 				process();
 				if (!alive) {
 					break;
@@ -109,7 +109,7 @@ public class HttpServerThread extends AbstractHttpThread {
 
 			exchange.setRequest(srcReq);
 			//execute transport interceptors first, because exchange has not a rule yet 
-			if (Outcome.ABORT == invokeInterceptors(exchange, Core.getTransport().getInInterceptors())) 
+			if (Outcome.ABORT == invokeInterceptors(exchange, transport.getInInterceptors())) 
 				throw new AbortException();
 
 			if (Outcome.ABORT == invokeInterceptors(exchange, exchange.getRule().getInInterceptors())) 
@@ -130,7 +130,7 @@ public class HttpServerThread extends AbstractHttpThread {
 			if (Outcome.ABORT == invokeInterceptors(exchange, exchange.getRule().getOutInterceptors()))
 				throw new AbortException();
 			
-			if (Outcome.ABORT == invokeInterceptors(exchange, Core.getTransport().getOutInterceptors()))
+			if (Outcome.ABORT == invokeInterceptors(exchange, transport.getOutInterceptors()))
 				throw new AbortException();
 			
 			synchronized (exchange.getResponse()) {

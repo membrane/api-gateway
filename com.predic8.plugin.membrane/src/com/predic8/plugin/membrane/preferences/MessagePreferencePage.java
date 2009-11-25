@@ -11,7 +11,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.predic8.membrane.core.Configuration;
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 
 /**
@@ -51,7 +51,7 @@ public class MessagePreferencePage extends PreferencePage implements IWorkbenchP
 		Composite comp = new Composite(parent, SWT.NONE);
 		comp.setLayout(new RowLayout(SWT.VERTICAL));
 
-		Configuration config = Core.getConfigurationManager().getConfiguration();
+		Configuration config = Router.getInstance().getConfigurationManager().getConfiguration();
 
 		indentmsg = new Button(comp, SWT.CHECK);
 		indentmsg.setText("Indent Message");
@@ -69,18 +69,18 @@ public class MessagePreferencePage extends PreferencePage implements IWorkbenchP
 	}
 
 	protected void performApply() {
-		Core.getConfigurationManager().getConfiguration().setIndentMessage(indentmsg.getSelection());
-		Core.getConfigurationManager().getConfiguration().setAdjustHostHeader(adjhosthead.getSelection());
+		Router.getInstance().getConfigurationManager().getConfiguration().setIndentMessage(indentmsg.getSelection());
+		Router.getInstance().getConfigurationManager().getConfiguration().setAdjustHostHeader(adjhosthead.getSelection());
 		
-		Core.getConfigurationManager().saveConfiguration(Core.getConfigurationManager().getDefaultConfigurationFile());
+		Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 	}
 	
 	@Override
 	public boolean performOk() {
-		Core.getConfigurationManager().getConfiguration().setIndentMessage(indentmsg.getSelection());
-		Core.getConfigurationManager().getConfiguration().setAdjustHostHeader(adjhosthead.getSelection());
+		Router.getInstance().getConfigurationManager().getConfiguration().setIndentMessage(indentmsg.getSelection());
+		Router.getInstance().getConfigurationManager().getConfiguration().setAdjustHostHeader(adjhosthead.getSelection());
 		
-		Core.getConfigurationManager().saveConfiguration(Core.getConfigurationManager().getDefaultConfigurationFile());
+		Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 		return true;
 	}
 	

@@ -7,7 +7,7 @@ import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 
 public class SaveConfigurationAction implements IWorkbenchWindowActionDelegate {
 
@@ -33,7 +33,7 @@ public class SaveConfigurationAction implements IWorkbenchWindowActionDelegate {
         fd.setFilterExtensions(filterExt);
         String selected = fd.open();
         if (selected != null && !selected.equals("")) {
-        	Core.getConfigurationManager().saveConfiguration(selected);
+        	Router.getInstance().getConfigurationManager().saveConfiguration(selected);
         }
 	}
 

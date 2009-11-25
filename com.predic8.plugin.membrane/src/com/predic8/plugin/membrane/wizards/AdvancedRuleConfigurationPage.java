@@ -13,7 +13,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.components.PortVerifyListener;
 
 public class AdvancedRuleConfigurationPage extends WizardPage {
@@ -68,7 +68,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		listenHostTextField = new Text(ruleKeyGroup, SWT.BORDER);
 		GridData gridData4HostTextField = new GridData(GridData.FILL_HORIZONTAL);
 		listenHostTextField.setLayoutData(gridData4HostTextField);
-		listenHostTextField.setText(Core.getRuleManager().getDefaultHost());
+		listenHostTextField.setText(Router.getInstance().getRuleManager().getDefaultHost());
 		
 		
 		Label labelDummy0 = new Label(ruleKeyGroup, SWT.NONE);
@@ -91,7 +91,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		listenPortTextField = new Text(ruleKeyGroup,SWT.BORDER);
 		listenPortTextField.addVerifyListener(new PortVerifyListener());
 		listenPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		listenPortTextField.setText(Core.getRuleManager().getDefaultListenPort());
+		listenPortTextField.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
 		listenPortTextField.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (listenPortTextField.getText().trim().equals("")) {
@@ -133,7 +133,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		methodCombo = new Combo(ruleKeyGroup, SWT.READ_ONLY);
 		methodCombo.setItems(new String[] { "POST", "GET", "DELETE", "PUT", " * " });
 		methodCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		methodCombo.select(Core.getRuleManager().getDefaultMethod());
+		methodCombo.select(Router.getInstance().getRuleManager().getDefaultMethod());
 		
 		Label labelDummy4 = new Label(ruleKeyGroup, SWT.NONE);
 		GridData gridData4LabelDummy4 = new GridData(GridData.FILL_HORIZONTAL);
@@ -152,7 +152,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		GridData gridData4PathTextField = new GridData(GridData.FILL_HORIZONTAL);
 		gridData4PathTextField.horizontalSpan = 4;
 		pathTextField.setLayoutData(gridData4PathTextField);
-		pathTextField.setText(Core.getRuleManager().getDefaultPath());
+		pathTextField.setText(Router.getInstance().getRuleManager().getDefaultPath());
 		
 		Group ruleOptionsTargetGroup = new Group(composite, SWT.NONE);
 		ruleOptionsTargetGroup.setText("Target");
@@ -165,7 +165,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		ruleOptionsTargetHostLabel.setText("Host");
 
 		targetHostTextField = new Text(ruleOptionsTargetGroup, SWT.BORDER);
-		targetHostTextField.setText(Core.getRuleManager().getDefaultTargetHost());
+		targetHostTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
 		targetHostTextField.addModifyListener(new ModifyListener(){
 			public void modifyText(ModifyEvent e) {
 				if (targetHostTextField.getText().trim().equals("")) {
@@ -192,7 +192,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		ruleOptionsTargetPortTextLabel.setText("Port");
 
 		targetPortTextField = new Text(ruleOptionsTargetGroup,SWT.BORDER);
-		targetPortTextField.setText(Core.getRuleManager().getDefaultTargetPort());
+		targetPortTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
 		targetPortTextField.addVerifyListener(new PortVerifyListener());
 		targetPortTextField.addModifyListener(new ModifyListener(){
 			public void modifyText(ModifyEvent e) {

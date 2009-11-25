@@ -49,6 +49,7 @@ public class Body {
 	public Body(String body) {
 		chunks.add(new Chunk(body));
 		read = true; //because we do not have something to read
+		length = body.length();
 	}
 
 	public Body(Body body) {
@@ -178,7 +179,7 @@ public class Body {
 		int totalLength = 0;
 		int length = 0;
 		chunks.clear();
-		while (this.length > totalLength && (length = inputStream.read(buffer)) > 0) {
+		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
 			out.write(buffer, 0, length);
 			out.flush();

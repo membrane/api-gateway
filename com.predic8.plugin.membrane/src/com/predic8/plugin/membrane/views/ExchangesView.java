@@ -27,7 +27,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Request;
@@ -60,9 +60,9 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 1;
 		gridLayout.marginTop = 25;
-		gridLayout.marginLeft = 15;
+		gridLayout.marginLeft = 2;
 		gridLayout.marginBottom = 30;
-		gridLayout.marginRight = 25;
+		gridLayout.marginRight = 2;
 		gridLayout.verticalSpacing = 20;
 		composite.setLayout(gridLayout);
 
@@ -135,13 +135,13 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		btTrackRequests.addSelectionListener(new SelectionAdapter() {
 			
 			public void widgetSelected(SelectionEvent e) {
-				Core.getConfigurationManager().getConfiguration().setTrackExchange(btTrackRequests.getSelection());
+				Router.getInstance().getConfigurationManager().getConfiguration().setTrackExchange(btTrackRequests.getSelection());
 			}
 			
 		});
-		btTrackRequests.setSelection(Core.getConfigurationManager().getConfiguration().getTrackExchange());
+		btTrackRequests.setSelection(Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange());
 		
-		Core.getExchangeStore().addTreeViewerListener(this);
+		Router.getInstance().getExchangeStore().addTreeViewerListener(this);
 		refreshTable();
 	}
 
@@ -212,8 +212,15 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		refreshTable();
 	}
 
-	public void removeExchange(Exchange exchange) {
-		refreshTable();
+	public void removeExchange(final Exchange exchange) {
+		//refreshTable();
+		if (exchange == null || tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
+			return;
+		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
+			public void run() {
+				tableViewer.remove(exchange);
+			}
+		});
 	}
 
 	public void removeExchanges(Rule parent, Exchange[] exchanges) {
@@ -228,8 +235,16 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 
 	}
 
-	public void setExchangeFinished(Exchange exchange) {
-		refreshTable();
+	public void setExchangeFinished(final Exchange exchange) {
+		//refreshTable();
+		if (exchange == null || tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
+			return;
+		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
+			public void run() {
+				tableViewer.add(exchange);
+			}
+		});
+		
 	}
 
 	private void refreshTable() {
@@ -237,11 +252,11 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 			return;
 		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
 			public void run() {
-				Object[] array = Core.getExchangeStore().getAllExchanges();
+				Object[] array = Router.getInstance().getExchangeStore().getAllExchanges();
 				tableViewer.setInput(array);
 				if (array == null || array.length == 0)
 					return;
-				if (Core.getConfigurationManager().getConfiguration().getTrackExchange()) {
+				if (Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange()) {
 					canShowBody = false;
 					tableViewer.setSelection(new StructuredSelection(array[array.length - 1]), true);
 				}	

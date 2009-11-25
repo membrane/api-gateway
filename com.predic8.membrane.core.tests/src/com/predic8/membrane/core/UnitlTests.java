@@ -25,10 +25,10 @@ import com.predic8.membrane.core.util.ByteUtilTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
 
 
-public class AllTests {
+public class UnitlTests {
 
 	public static Test suite() {
-		TestSuite suite = new TestSuite("Test for com.osmoticweb.monitor");
+		TestSuite suite = new TestSuite("Unit tests for com.predic8.membrane.core");
 		//$JUnit-BEGIN$
 		suite.addTestSuite(HeaderTest.class);
 		suite.addTestSuite(BodyTest.class);

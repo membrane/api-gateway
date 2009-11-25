@@ -2,7 +2,7 @@ package com.predic8.plugin.membrane.components;
 
 import org.eclipse.swt.widgets.TabFolder;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.TextUtil;
 
@@ -55,7 +55,7 @@ public class SOAPTabComposite extends BodyTextTabComposite {
 	}
 	
 	private boolean isBeautifyBody() {
-		return Core.getConfigurationManager().getConfiguration().getIndentMessage();
+		return Router.getInstance().getConfigurationManager().getConfiguration().getIndentMessage();
 	}
 	
 	@Override

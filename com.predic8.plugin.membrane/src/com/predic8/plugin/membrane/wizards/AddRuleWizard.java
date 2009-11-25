@@ -3,7 +3,7 @@ package com.predic8.plugin.membrane.wizards;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.wizard.Wizard;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -50,7 +50,7 @@ public class AddRuleWizard extends Wizard {
 				String targetPort = targetHostConfigPage.getTargetPort();
 
 				ForwardingRuleKey ruleKey = new ForwardingRuleKey("*", "*", ".*", listenPort);
-				if (Core.getRuleManager().getRule(ruleKey) != null) {
+				if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
 					openWarningDialog("You've entered a duplicated rule key.");
 					return false;
 				}
@@ -61,8 +61,8 @@ public class AddRuleWizard extends Wizard {
 				rule.setTargetPort(targetPort);
 				rule.setRuleKey(ruleKey);
 
-				Core.getRuleManager().addRuleIfNew(rule);
-				((HttpTransport) Core.getTransport()).openPort(ruleKey.getPort());
+				Router.getInstance().getRuleManager().addRuleIfNew(rule);
+				((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
 				return true;
 
 			} else if (getContainer().getCurrentPage().getName().equals(AdvancedRuleConfigurationPage.PAGE_NAME)) {
@@ -72,7 +72,7 @@ public class AddRuleWizard extends Wizard {
 				String method = advancedRuleConfigPage.getMethod();
 				
 				ForwardingRuleKey ruleKey = new ForwardingRuleKey(listenHost, method, path, listenPort);
-				if (Core.getRuleManager().getRule(ruleKey) != null) {
+				if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
 					openWarningDialog("You've entered a duplicated rule key.");
 					return false;
 				}
@@ -81,22 +81,22 @@ public class AddRuleWizard extends Wizard {
 				rule.setRuleKey(ruleKey);
 				rule.setTargetHost(advancedRuleConfigPage.getTargetHost());
 				rule.setTargetPort(advancedRuleConfigPage.getTargetHostPort());
-				Core.getRuleManager().addRuleIfNew(rule);
-				((HttpTransport) Core.getTransport()).openPort(ruleKey.getPort());
+				Router.getInstance().getRuleManager().addRuleIfNew(rule);
+				((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
 				return true;
 			} else if (getContainer().getCurrentPage().getName().equals(ProxyRuleConfigurationPage.PAGE_NAME)) {
 				int listenPort = Integer.parseInt(proxyRuleConfigPage.getListenPort());
 				
 				ProxyRuleKey ruleKey = new ProxyRuleKey(listenPort);
-				if (Core.getRuleManager().getRule(ruleKey) != null) {
+				if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
 					openWarningDialog("You've entered a duplicated rule key.");
 					return false;
 				}
 				
 				ProxyRule rule = new ProxyRule(ruleKey);
 				
-				Core.getRuleManager().addRuleIfNew(rule);
-				((HttpTransport) Core.getTransport()).openPort(ruleKey.getPort());
+				Router.getInstance().getRuleManager().addRuleIfNew(rule);
+				((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
 				return true;
 			}
 		} catch (Exception ex) {

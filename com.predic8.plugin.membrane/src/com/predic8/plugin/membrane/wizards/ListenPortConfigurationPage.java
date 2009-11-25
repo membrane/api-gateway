@@ -14,7 +14,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.components.PortVerifyListener;
 
@@ -62,7 +62,7 @@ public class ListenPortConfigurationPage extends WizardPage {
 		ruleOptionsListenPortTextField = new Text(composite,SWT.BORDER);
 		ruleOptionsListenPortTextField.addVerifyListener(new PortVerifyListener());
 		ruleOptionsListenPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		ruleOptionsListenPortTextField.setText(Core.getRuleManager().getDefaultListenPort());
+		ruleOptionsListenPortTextField.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
 		ruleOptionsListenPortTextField.addModifyListener(new ModifyListener() {
 			
 			public void modifyText(ModifyEvent e) {
@@ -94,7 +94,7 @@ public class ListenPortConfigurationPage extends WizardPage {
 		if (!isPageComplete())
 			return false;
 		try {
-			if (((HttpTransport) Core.getTransport()).isAnyThreadListeningAt(Integer.parseInt(ruleOptionsListenPortTextField.getText()))) {
+			if (((HttpTransport) Router.getInstance().getTransport()).isAnyThreadListeningAt(Integer.parseInt(ruleOptionsListenPortTextField.getText()))) {
 				return true;
 			}
 			new ServerSocket(Integer.parseInt(ruleOptionsListenPortTextField.getText())).close();

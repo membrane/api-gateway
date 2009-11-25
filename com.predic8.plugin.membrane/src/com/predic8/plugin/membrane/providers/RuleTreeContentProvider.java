@@ -20,7 +20,7 @@ import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.widgets.Display;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.model.IRuleTreeViewerListener;
@@ -39,7 +39,7 @@ public class RuleTreeContentProvider implements ITreeContentProvider, IRuleTreeV
 		if (parentElement instanceof RuleManager)
 			return ((RuleManager) parentElement).getRules().toArray();
 		if (parentElement instanceof Rule) {
-			return Core.getExchangeStore().getExchanges(((Rule)parentElement).getRuleKey());
+			return Router.getInstance().getExchangeStore().getExchanges(((Rule)parentElement).getRuleKey());
 		}
 		return new Object[] {};
 	}
@@ -100,7 +100,7 @@ public class RuleTreeContentProvider implements ITreeContentProvider, IRuleTreeV
 			}
 		});
 		
-		if (Core.getConfigurationManager().getConfiguration().getTrackExchange()) {
+		if (Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange()) {
 			selectTo(exchange);
 		}
 	}
@@ -108,7 +108,7 @@ public class RuleTreeContentProvider implements ITreeContentProvider, IRuleTreeV
 	private void addExchanges(final Rule rule) {
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
-				treeViewer.add(rule, Core.getExchangeStore().getExchanges(rule.getRuleKey()));
+				treeViewer.add(rule, Router.getInstance().getExchangeStore().getExchanges(rule.getRuleKey()));
 			}
 		});
 	}
@@ -118,7 +118,9 @@ public class RuleTreeContentProvider implements ITreeContentProvider, IRuleTreeV
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
 				treeViewer.remove(exchange);
-				treeViewer.setSelection(new StructuredSelection(exchange.getRule()));
+				Exchange[] objects = Router.getInstance().getExchangeStore().getExchanges(exchange.getRule().getRuleKey());
+				if ( objects == null || objects.length == 0)
+					treeViewer.setSelection(new StructuredSelection(exchange.getRule()));
 				treeViewer.refresh();
 			}
 		});

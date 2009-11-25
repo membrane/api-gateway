@@ -8,7 +8,7 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.statistics.RuleStatistics;
 
@@ -30,7 +30,7 @@ public class RuleStatisticsLabelProvider extends LabelProvider implements ITable
 	public String getColumnText(Object element, int columnIndex) {
 		Rule rule = (Rule)element;
 		
-		RuleStatistics statistics = Core.getExchangeStore().getStatistics(rule.getRuleKey());
+		RuleStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getRuleKey());
 		String min = (statistics.getMin() < 0) ? "" : "" +statistics.getMin(); 
 		String max = (statistics.getMax() < 0) ? "" : "" +statistics.getMax(); 
 		String avg = (statistics.getAvg() < 0) ? "" : nf.format(statistics.getAvg()); 

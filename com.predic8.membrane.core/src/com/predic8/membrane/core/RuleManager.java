@@ -14,13 +14,17 @@
 
 package com.predic8.membrane.core;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.model.IRuleTreeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
@@ -30,6 +34,8 @@ public class RuleManager {
 
 	public static final int EXCHANGE_STORE_NUMBER = 1000;
 
+	private ExchangeStore exchangeStore = new ForgetfulExchangeStore();
+	
 	private Map<RuleKey, Rule> rules = new HashMap<RuleKey, Rule>();
 	private Set<IRuleChangeListener> tableViewerListeners = new HashSet<IRuleChangeListener>();
 
@@ -112,7 +118,7 @@ public class RuleManager {
 			listener.addRule(rule);
 		}
 
-		Core.getExchangeStore().notifyListenersOnRuleAdd(rule);
+		exchangeStore.notifyListenersOnRuleAdd(rule);
 	}
 
 	public Set<RuleKey> getRuleKeys() {
@@ -127,7 +133,7 @@ public class RuleManager {
 		for (IRuleChangeListener listener : tableViewerListeners) {
 			listener.updateRule(rule);
 		}
-		Core.getExchangeStore().refreshAllTreeViewers();
+		exchangeStore.refreshAllTreeViewers();
 	}
 
 	public Rule getRule(RuleKey ruleKey) {
@@ -165,30 +171,38 @@ public class RuleManager {
 	}
 
 	public void addTreeViewerListener(IRuleTreeViewerListener viewer) {
-		Core.getExchangeStore().addTreeViewerListener(viewer);
+		exchangeStore.addTreeViewerListener(viewer);
 
 	}
 
 	public void removeTreeViewerListener(IRuleTreeViewerListener viewer) {
-		Core.getExchangeStore().removeTreeViewerListener(viewer);
+		exchangeStore.removeTreeViewerListener(viewer);
 	}
 
 	public synchronized void removeRule(Rule rule) {
-		Core.getExchangeStore().removeAllExchanges(rule);
+		exchangeStore.removeAllExchanges(rule);
 		rules.remove(rule.getRuleKey());
 
 		for (IRuleChangeListener listener : tableViewerListeners) {
 			listener.removeRule(rule);
 		}
 
-		Core.getExchangeStore().notifyListenersOnRuleRemoval(rule, rules.size());
+		exchangeStore.notifyListenersOnRuleRemoval(rule, rules.size());
 
 	}
 
 	public synchronized void removeAllRules() {
-		Collection<Rule> rules = getRules();
-		for (Rule rule : rules) {
-			removeRule(rule);
+		try {
+			Collection<Rule> rules = getRules();
+			if (rules == null || rules.size() == 0) 
+				return;
+			
+			List<Rule> rulesCopy = new ArrayList<Rule>(rules);
+			for (Rule rule : rulesCopy) {
+				removeRule(rule);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -202,5 +216,15 @@ public class RuleManager {
 			if (rule.getRuleKey().getPort() == port)
 				removeRule(rule);
 		}
-	}	
+	}
+
+	public ExchangeStore getExchangeStore() {
+		return exchangeStore;
+	}
+
+	public void setExchangeStore(ExchangeStore exchangeStore) {
+		this.exchangeStore = exchangeStore;
+	}
+
+	
 }

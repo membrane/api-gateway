@@ -19,7 +19,7 @@ import java.util.StringTokenizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Response;
@@ -37,6 +37,8 @@ public class RoutingInterceptor implements Interceptor {
 
 	private boolean xForwardedForEnabled = true;
 
+	private RuleManager ruleManager;
+	
 	public Outcome invoke(Exchange exc) throws Exception {
 		if (!(exc instanceof HttpExchange)) 
 			throw new RuntimeException("RoutingInterceptor accepts only HttpExchange objects");
@@ -72,20 +74,20 @@ public class RoutingInterceptor implements Interceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private Rule getRule(Exchange exc) {
+	private Rule getRule(HttpExchange exc) {
 		ForwardingRuleKey ruleKey = new ForwardingRuleKey(getHostname(exc), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
-		Rule forwardingRule = Core.getRuleManager().getMatchingRule(ruleKey);
+		Rule forwardingRule = ruleManager.getMatchingRule(ruleKey);
 		if (forwardingRule != null) {
 			log.debug("Matching Rule found for RuleKey " + ruleKey);
 			return forwardingRule;
 		}
 
-		for (Rule rule : Core.getRuleManager().getRules()) {
+		for (Rule rule : ruleManager.getRules()) {
 			log.debug(rule.getClass());
 			if (!(rule instanceof ProxyRule))
 				continue;
 
-			if (rule.getRuleKey().getPort() == ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort()) {
+			if (rule.getRuleKey().getPort() == exc.getServerThread().getSourceSocket().getLocalPort()) {
 				log.debug("proxy rule found: " + rule);
 				return rule;
 			}
@@ -123,7 +125,8 @@ public class RoutingInterceptor implements Interceptor {
 	}
 
 	protected boolean isAdjustHeaderField() {
-		return Core.getConfigurationManager().getConfiguration().getAdjustHostHeader();
+		return true;
+		//TODO return Router.getInstance().getConfigurationManager().getConfiguration().getAdjustHostHeader();
 	}
 
 	@Override
@@ -137,6 +140,14 @@ public class RoutingInterceptor implements Interceptor {
 
 	public void setxForwardedForEnabled(boolean xForwardedForEnabled) {
 		this.xForwardedForEnabled = xForwardedForEnabled;
+	}
+
+	public RuleManager getRuleManager() {
+		return ruleManager;
+	}
+
+	public void setRuleManager(RuleManager ruleManager) {
+		this.ruleManager = ruleManager;
 	}
 
 }

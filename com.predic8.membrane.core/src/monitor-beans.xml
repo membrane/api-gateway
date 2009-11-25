@@ -12,10 +12,20 @@
 		License.
 	-->
 <beans>
+
+	<bean id="router" class="com.predic8.membrane.core.Router">
+		<property name="ruleManager" ref="ruleManager"/>
+		<property name="transport" ref="transport"/>
+		<property name="exchangeStore" ref="exchangeStore"/>
+		<property name="configurationManager" ref="configurationManager"/>
+	</bean>
+
 	<bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
 		<property name="inInterceptors">
 			<list>
-				<bean class="com.predic8.membrane.core.interceptor.RoutingInterceptor" />
+				<bean class="com.predic8.membrane.core.interceptor.RoutingInterceptor">
+					<property name="ruleManager" ref="ruleManager"></property>
+				</bean>
 				 
 				<bean class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">
 					<property name="exchangeStore" ref="exchangeStore" />
@@ -29,12 +39,13 @@
 		</property>
 	</bean>
 	<bean id="ruleManager" class="com.predic8.membrane.core.RuleManager">
-		
+		<property name="exchangeStore" ref="exchangeStore"/>
 	</bean>
 	<bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.MemoryExchangeStore" />
 
 
 	<bean id="configurationStore" class="com.predic8.membrane.core.io.ConfigurationFileStore" />
+
 
 	<bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager"
 		init-method="init">

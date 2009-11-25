@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.RuleKey;
 
@@ -82,7 +82,7 @@ public class RuleOptionsRuleKeyGroup {
 		ruleOptionsHostTextField = new Text(ruleOptionsRuleKeyGroup, SWT.BORDER);
 		gridData4HostTextField = new GridData(GridData.FILL_HORIZONTAL);
 		ruleOptionsHostTextField.setLayoutData(gridData4HostTextField);
-		ruleOptionsHostTextField.setText(Core.getRuleManager().getDefaultHost());
+		ruleOptionsHostTextField.setText(Router.getInstance().getRuleManager().getDefaultHost());
 		
 		
 		Label ruleOptionsTargetHostLabelDummy0 = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
@@ -107,7 +107,7 @@ public class RuleOptionsRuleKeyGroup {
 		ruleOptionsListenPortTextField = new Text(ruleOptionsRuleKeyGroup,SWT.BORDER);
 		ruleOptionsListenPortTextField.addVerifyListener(new PortVerifyListener());
 		ruleOptionsListenPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		ruleOptionsListenPortTextField.setText(Core.getRuleManager().getDefaultListenPort());
+		ruleOptionsListenPortTextField.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
 		
 		
 		Label ruleOptionsTargetHostLabelDummy2 = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
@@ -129,7 +129,7 @@ public class RuleOptionsRuleKeyGroup {
 		ruleOptionsMethodCombo = new Combo(ruleOptionsRuleKeyGroup, SWT.READ_ONLY);
 		ruleOptionsMethodCombo.setItems(new String[] { "POST", "GET", "DELETE", "PUT", " * " });
 		ruleOptionsMethodCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		ruleOptionsMethodCombo.select(Core.getRuleManager().getDefaultMethod());
+		ruleOptionsMethodCombo.select(Router.getInstance().getRuleManager().getDefaultMethod());
 		
 		Label ruleOptionsTargetHostLabelDummy4 = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
 		GridData gridDataForLabelDummy4 = new GridData(GridData.FILL_HORIZONTAL);
@@ -148,7 +148,7 @@ public class RuleOptionsRuleKeyGroup {
 		gridData4PathTextField = new GridData(GridData.FILL_HORIZONTAL);
 		gridData4PathTextField.horizontalSpan = 4;
 		ruleOptionsPathTextField.setLayoutData(gridData4PathTextField);
-		ruleOptionsPathTextField.setText(Core.getRuleManager().getDefaultPath());
+		ruleOptionsPathTextField.setText(Router.getInstance().getRuleManager().getDefaultPath());
 	}
 
 

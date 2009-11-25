@@ -54,6 +54,8 @@ public abstract class AbstractHttpThread extends Thread {
 	protected OutputStream srcOut;
 	
 	
+	protected HttpTransport transport;
+	
 	protected boolean stop = false;
 	
 	
@@ -123,6 +125,15 @@ public abstract class AbstractHttpThread extends Thread {
 	public void setSrcOut(OutputStream srcOut) {
 		this.srcOut = srcOut;
 	}
+
+	public HttpTransport getTransport() {
+		return transport;
+	}
+
+	public void setTransport(HttpTransport transport) {
+		this.transport = transport;
+	}
+	
 	
 	
 }

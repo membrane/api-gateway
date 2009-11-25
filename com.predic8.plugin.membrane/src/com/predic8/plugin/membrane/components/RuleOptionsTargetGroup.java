@@ -24,7 +24,7 @@ import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 
 
 
@@ -54,7 +54,7 @@ public class RuleOptionsTargetGroup {
 		ruleOptionsTargetHostLabel.setText("Host");
 
 		ruleOptionsTargetHostTextField = new Text(ruleOptionsTargetGroup, SWT.BORDER);
-		ruleOptionsTargetHostTextField.setText(Core.getRuleManager().getDefaultTargetHost());
+		ruleOptionsTargetHostTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
 		ruleOptionsTargetHostTextField.addModifyListener(new ModifyListener(){
 			public void modifyText(ModifyEvent e) {
 				//RuleOptionsTargetGroup.this.parent.setEnableOnlyModifyAndRestoreButton(true);
@@ -76,7 +76,7 @@ public class RuleOptionsTargetGroup {
 		ruleOptionsTargetPortTextLabel.setText("Port");
 
 		ruleOptionsTargetPortTextField = new Text(ruleOptionsTargetGroup,SWT.BORDER);
-		ruleOptionsTargetPortTextField.setText(Core.getRuleManager().getDefaultTargetPort());
+		ruleOptionsTargetPortTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
 		ruleOptionsTargetPortTextField.addVerifyListener(new PortVerifyListener());
 		ruleOptionsTargetPortTextField.addModifyListener(new ModifyListener(){
 			public void modifyText(ModifyEvent e) {

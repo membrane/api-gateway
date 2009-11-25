@@ -37,14 +37,6 @@
             restorable="true">
       </view>
       <view
-            category="com.predic8.plugin.membrane.views.MembraneExchangesViewCategory"
-            class="com.predic8.plugin.membrane.views.ExchangeView"
-            icon="icons/message.png"
-            id="com.predic8.plugin.membrane.views.ExchangeView"
-            name="Exchange View"
-            restorable="true">
-      </view>
-      <view
             category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
             class="com.predic8.plugin.membrane.views.RuleTableView"
             icon="icons/table.png"
@@ -130,15 +122,6 @@
                tooltip="Add a new Rule">
          </action>
          <action
-               class="com.predic8.plugin.membrane.actions.ShowRuleTreeAction"
-               icon="icons/rule_tree.png"
-               id="com.predic8.plugin.membrane.actions.ShowRuleTreeAction"
-               label="Show Rule Tree"
-               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
-               style="push"
-               toolbarPath="membraneShowRuleViewsGroup">
-         </action>
-         <action
                class="com.predic8.plugin.membrane.actions.LoadConfigurationAction"
                icon="icons/folder_add.png"
                id="com.predic8.plugin.membrane.actions.LoadConfigurationAction"
@@ -158,6 +141,15 @@
                style="push"
                toolbarPath="membraneConfigurationGroup"
                tooltip="Save Rule Configuration">
+         </action>
+          <action
+               class="com.predic8.plugin.membrane.actions.ShowRuleTreeAction"
+               icon="icons/rule_tree.png"
+               id="com.predic8.plugin.membrane.actions.ShowRuleTreeAction"
+               label="Show Rule Tree"
+               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
+               style="push"
+               toolbarPath="membraneShowRuleViewsGroup">
          </action>
          <action
                class="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"

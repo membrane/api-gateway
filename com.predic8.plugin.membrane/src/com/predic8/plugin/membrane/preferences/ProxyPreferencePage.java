@@ -16,7 +16,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.predic8.membrane.core.Configuration;
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 
 public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
@@ -47,7 +47,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		Composite comp = new Composite(parent, SWT.NONE);
 		comp.setLayout(new RowLayout(SWT.FILL));
 		
-		Configuration config = Core.getConfigurationManager().getConfiguration();
+		Configuration config = Router.getInstance().getConfigurationManager().getConfiguration();
 		
 		useproxy = new Button(comp, SWT.CHECK);
 		useproxy.setText("Use Proxy Server");

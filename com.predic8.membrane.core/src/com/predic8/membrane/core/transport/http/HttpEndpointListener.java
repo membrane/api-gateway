@@ -28,9 +28,12 @@ public class HttpEndpointListener extends Thread {
 	private ServerSocket serverSocket;
 	private ExecutorService executorService;
 	
-	public HttpEndpointListener(int port) throws IOException {
+	private HttpTransport transport;
+	
+	public HttpEndpointListener(int port, HttpTransport transport) throws IOException {
 		serverSocket = new ServerSocket(port);
 		executorService = Executors.newCachedThreadPool();
+		this.transport = transport;
 	}
 
 	public void run() {
@@ -40,7 +43,7 @@ public class HttpEndpointListener extends Thread {
 				Socket socket = serverSocket.accept();
 				HttpExchange exc = new HttpExchange();
 				
-				executorService.execute(new HttpServerThread(exc, socket));
+				executorService.execute(new HttpServerThread(exc, socket, transport));
 			} catch (IOException e) {
 				executorService.shutdown();
 				e.printStackTrace();

@@ -11,7 +11,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Core;
+import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.components.PortVerifyListener;
 
 public class ProxyRuleConfigurationPage extends WizardPage {
@@ -58,7 +58,7 @@ public class ProxyRuleConfigurationPage extends WizardPage {
 		ruleOptionsListenPortTextField = new Text(composite,SWT.BORDER);
 		ruleOptionsListenPortTextField.addVerifyListener(new PortVerifyListener());
 		ruleOptionsListenPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		ruleOptionsListenPortTextField.setText(Core.getRuleManager().getDefaultListenPort());
+		ruleOptionsListenPortTextField.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
 		ruleOptionsListenPortTextField.addModifyListener(new ModifyListener() {
 		
 			public void modifyText(ModifyEvent e) {
