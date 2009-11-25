@@ -1,5 +1,6 @@
 package com.predic8.plugin.membrane.views;
 
+
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.action.IContributionItem;
@@ -13,6 +14,8 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -20,8 +23,10 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
@@ -49,6 +54,8 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	private boolean canShowBody = true;
 
 	private Button btTrackRequests;
+
+	private Text textShowLast;
 	
 	public ExchangesView() {
 
@@ -130,7 +137,13 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		addMenu(tableViewer);
 
 		
-		btTrackRequests = new Button(composite, SWT.CHECK);
+		Composite compControls = new Composite(composite, SWT.NONE);
+		
+		GridLayout gridLayoutForControls = new GridLayout();
+		gridLayoutForControls.numColumns = 5;
+		compControls.setLayout(gridLayoutForControls);
+		
+		btTrackRequests = new Button(compControls, SWT.CHECK);
 		btTrackRequests.setText("Track Requests");
 		btTrackRequests.addSelectionListener(new SelectionAdapter() {
 			
@@ -140,6 +153,27 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 			
 		});
 		btTrackRequests.setSelection(Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange());
+		
+		
+		Label lbPad = new Label(compControls, SWT.NONE);
+		lbPad.setText("   ");
+		GridData gridData4Pad = new GridData(GridData.FILL_BOTH);
+		gridData4Pad.widthHint = 300;
+		lbPad.setLayoutData(gridData4Pad);
+		
+		
+		
+		Label lbShowLast = new Label(compControls, SWT.NONE);
+		lbShowLast.setText("Show last  ");
+		
+		textShowLast = new Text(compControls, SWT.BORDER);
+		GridData gdShowLast = new GridData(GridData.FILL_BOTH);
+		gdShowLast.widthHint = 40;
+		textShowLast.setLayoutData(gdShowLast);
+
+		
+		Label lbExchanges = new Label(compControls, SWT.NONE);
+		lbExchanges.setText(" Exchanges");
 		
 		Router.getInstance().getExchangeStore().addTreeViewerListener(this);
 		refreshTable();
@@ -151,7 +185,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 
 		for (int i = 0; i < titles.length; i++) {
 			final TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
-			column.getColumn().setAlignment(SWT.CENTER);
+			column.getColumn().setAlignment(SWT.LEFT);
 			column.getColumn().setText(titles[i]);
 			column.getColumn().setWidth(bounds[i]);
 			column.getColumn().setResizable(true);

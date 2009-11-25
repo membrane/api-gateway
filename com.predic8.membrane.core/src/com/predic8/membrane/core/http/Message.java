@@ -215,22 +215,38 @@ public abstract class Message {
 	}
 
 	public boolean isImage() {
+		if (header.getContentType() == null) 
+			return false;
 		return header.getContentType().indexOf("image") >= 0;
 	}
 	
 	public boolean isXML() {
+		if (header.getContentType() == null) 
+			return false;
 		return header.getContentType().indexOf("xml") > 0;
 	}
 	
+	public boolean isJSON() {
+		if (header.getContentType() == null) 
+			return false;
+		return header.getContentType().indexOf("json") > 0;
+	}
+	
 	public boolean isHTML() {
+		if (header.getContentType() == null) 
+			return false;
 		return header.getContentType().indexOf("html") > 0;
 	}
 	
 	public boolean isCSS() {
+		if (header.getContentType() == null) 
+			return false;
 		return header.getContentType().indexOf("css") > 0;
 	}
 	
 	public boolean isJavaScript() {
+		if (header.getContentType() == null) 
+			return false;
 		return header.getContentType().indexOf("javascript") > 0;
 	}
 	

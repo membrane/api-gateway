@@ -19,7 +19,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.springframework.beans.factory.xml.XmlBeanFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -49,7 +48,7 @@ public class RouterCLI {
 				return;
 			}
 			
-			Resource configResource = new ClassPathResource("router-beans.xml");
+			Resource configResource = new ClassPathResource("monitor-beans.xml");
 			String rulesFile = "";
 			if (commandLine.hasOption('c')) {
 				rulesFile = commandLine.getOptionValue('c'); 
@@ -61,13 +60,10 @@ public class RouterCLI {
 				configResource = new FileSystemResource(commandLine.getOptionValue('b'));
 			}
 			
-			Router.init(configResource);
-			
-			XmlBeanFactory beanFactory = new XmlBeanFactory(configResource);
-			
-			ConfigurationManager manager = (ConfigurationManager) (beanFactory.getBean("configurationManager"));
+			Router router = Router.init(configResource);
+				
 	    	try {
-	    		manager.loadConfiguration(rulesFile);
+	    		router.getConfigurationManager().loadConfiguration(rulesFile);
 	    	} catch (Exception ex) {
 	    	    ex.printStackTrace();
 	    	    System.exit(1);

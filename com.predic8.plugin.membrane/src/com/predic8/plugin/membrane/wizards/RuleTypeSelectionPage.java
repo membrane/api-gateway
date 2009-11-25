@@ -21,7 +21,7 @@ public class RuleTypeSelectionPage extends WizardPage {
 	
 	protected RuleTypeSelectionPage() {
 		super(PAGE_NAME);
-		setTitle("Rule Type Selection");
+		setTitle(" Add new Rule for a ");
 	}
 
 	public void createControl(Composite parent) {
@@ -36,6 +36,13 @@ public class RuleTypeSelectionPage extends WizardPage {
 		composite.setLayout(gridLayout);
 		
 		
+		btSimpleRule = new Button(composite, SWT.RADIO);
+		btSimpleRule.setText("Simple Reverse Proxy");
+		GridData btSimpleGridData = new GridData();
+		btSimpleGridData.grabExcessHorizontalSpace = true;
+		btSimpleRule.setLayoutData(btSimpleGridData);
+		
+		
 		Label labelFullDescription = new Label(composite, SWT.WRAP);
 		labelFullDescription.setText("Create rule to forward  HTTP and SOAP over HTTP requests.");
 		labelFullDescription.setBounds(120, 10, 100, 100);
@@ -44,13 +51,6 @@ public class RuleTypeSelectionPage extends WizardPage {
 		gridData4ListenDescrLabel.horizontalSpan = 2;
 		gridData4ListenDescrLabel.verticalSpan = 1;
 		labelFullDescription.setLayoutData(gridData4ListenDescrLabel);
-		
-		btSimpleRule = new Button(composite, SWT.RADIO);
-		btSimpleRule.setText("Simple Forwarding Rule");
-		GridData btSimpleGridData = new GridData();
-		btSimpleGridData.grabExcessHorizontalSpace = true;
-		btSimpleRule.setLayoutData(btSimpleGridData);
-		
 		
 		
 		Label labelGap = new Label(composite, SWT.WRAP);
@@ -64,24 +64,21 @@ public class RuleTypeSelectionPage extends WizardPage {
 		
 		
 		
+		btAdvancedRule = new Button(composite, SWT.RADIO);
+		btAdvancedRule.setText("Advanced Reverse Proxy");
+		GridData btAdvancedGridData = new GridData();
+		btAdvancedGridData.grabExcessHorizontalSpace = true;
+		btAdvancedRule.setLayoutData(btAdvancedGridData);
+		
 		
 		Label labelFullDescriptionAdvanced = new Label(composite, SWT.WRAP);
-		labelFullDescriptionAdvanced.setText("Offers all available options for rules like virtual host,\nHTTP method and request URL.");
+		labelFullDescriptionAdvanced.setText("Offers all available options for reverse proxy rules like virtual host,\nHTTP method and request URL.");
 		labelFullDescriptionAdvanced.setBounds(120, 10, 100, 100);
 		
 		GridData gridData4ListenDescrLabelAdvanced = new GridData();
 		gridData4ListenDescrLabelAdvanced.horizontalSpan = 2;
 		gridData4ListenDescrLabelAdvanced.verticalSpan = 2;
 		labelFullDescriptionAdvanced.setLayoutData(gridData4ListenDescrLabelAdvanced);
-		
-		btAdvancedRule = new Button(composite, SWT.RADIO);
-		btAdvancedRule.setText("Advanced Forwarding Rule");
-		GridData btAdvancedGridData = new GridData();
-		btAdvancedGridData.grabExcessHorizontalSpace = true;
-		btAdvancedRule.setLayoutData(btAdvancedGridData);
-		
-		
-		
 		
 		
 		Label labelGap1 = new Label(composite, SWT.WRAP);
@@ -94,22 +91,22 @@ public class RuleTypeSelectionPage extends WizardPage {
 		labelGap1.setLayoutData(gridData4LabelGap1);
 		
 		
+
+		btProxyRule = new Button(composite, SWT.RADIO);
+		btProxyRule.setText("HTTP  Proxy Rule");
+		GridData btProxyGridData = new GridData();
+		btProxyGridData.grabExcessHorizontalSpace = true;
+		btProxyRule.setLayoutData(btProxyGridData);
+
 		
 		Label labelFullDescriptionProxy = new Label(composite, SWT.WRAP);
-		labelFullDescriptionProxy.setText("Works like a regular HTTP Proxy.\nCan a proxy SOAP and HTTP requests.");
+		labelFullDescriptionProxy.setText("Works like a regular HTTP Proxy.\nCan proxy SOAP and HTTP requests.");
 		labelFullDescriptionProxy.setBounds(120, 10, 100, 100);
 		
 		GridData gridData4ListenDescrLabelProxy = new GridData();
 		gridData4ListenDescrLabelProxy.horizontalSpan = 2;
 		gridData4ListenDescrLabelProxy.verticalSpan = 2;
 		labelFullDescriptionProxy.setLayoutData(gridData4ListenDescrLabelProxy);
-		
-		btProxyRule = new Button(composite, SWT.RADIO);
-		btProxyRule.setText("HTTP  Proxy Rule");
-		GridData btProxyGridData = new GridData();
-		btProxyGridData.grabExcessHorizontalSpace = true;
-		btProxyRule.setLayoutData(btProxyGridData);
-		
 		
 		
 		setControl(composite);

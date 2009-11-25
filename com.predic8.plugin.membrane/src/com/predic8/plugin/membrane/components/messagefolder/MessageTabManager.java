@@ -17,6 +17,7 @@ import com.predic8.plugin.membrane.components.ErrorTabComposite;
 import com.predic8.plugin.membrane.components.HTMLTabComposite;
 import com.predic8.plugin.membrane.components.HeaderTabComposite;
 import com.predic8.plugin.membrane.components.ImageTabComposite;
+import com.predic8.plugin.membrane.components.JSONTabComposite;
 import com.predic8.plugin.membrane.components.JavaScriptTabComposite;
 import com.predic8.plugin.membrane.components.NullBodyTabComposite;
 import com.predic8.plugin.membrane.components.RawTabComposite;
@@ -47,6 +48,8 @@ public class MessageTabManager {
 
 	private SOAPTabComposite soapTabComposite;
 
+	private JSONTabComposite jsonTabComposite;
+	
 	private BodyTabComposite currentBodyTabComposite;
 
 	public MessageTabManager(final BaseComp baseComp) {
@@ -63,6 +66,7 @@ public class MessageTabManager {
 		javaScriptTabComposite = new JavaScriptTabComposite(folder);
 		htmlTabComposite = new HTMLTabComposite(folder);
 		soapTabComposite = new SOAPTabComposite(folder);
+		jsonTabComposite = new JSONTabComposite(folder);
 		
 		currentBodyTabComposite = new NullBodyTabComposite(folder);
 		
@@ -156,6 +160,8 @@ public class MessageTabManager {
 			currentBodyTabComposite = cssTabComposite;
 		} else if (msg.isJavaScript()) {
 			currentBodyTabComposite = javaScriptTabComposite;
+		} else if (msg.isJSON()) {
+			currentBodyTabComposite = jsonTabComposite;
 		} 
 		
 		currentBodyTabComposite.show();
@@ -175,6 +181,7 @@ public class MessageTabManager {
 	private void hideAllBodyTabs() {
 		cssTabComposite.hide();
 		soapTabComposite.hide();
+		jsonTabComposite.hide();
 		javaScriptTabComposite.hide();
 		htmlTabComposite.hide();
 		imageTabComposite.hide();

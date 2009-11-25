@@ -25,15 +25,15 @@ public class Router {
 
 	protected static Log log = LogFactory.getLog(Router.class.getName());
 
-	public static void init(String configFileName) {
+	public static Router init(String configFileName) {
 		log.debug("loading spring config: " + configFileName);
-		init(new ClassPathResource(configFileName));
+		return init(new ClassPathResource(configFileName));
 	}
 
-	public static void init(Resource resource) {
+	public static Router init(Resource resource) {
 		log.debug("loading spring config: " + resource);
 		beanFactory = new XmlBeanFactory(resource);
-		router = (Router) beanFactory.getBean("router");
+		return router = (Router) beanFactory.getBean("router");
 	}
 	
 	public static Router getInstance() {
