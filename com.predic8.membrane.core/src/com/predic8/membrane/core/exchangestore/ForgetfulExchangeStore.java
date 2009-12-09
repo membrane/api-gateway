@@ -86,4 +86,9 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 		return null;
 	}
 
+	public Object[] getLatExchanges(int count) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

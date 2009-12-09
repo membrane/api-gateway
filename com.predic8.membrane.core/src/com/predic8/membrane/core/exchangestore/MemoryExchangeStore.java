@@ -164,4 +164,18 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		return totalList.toArray();
 	}
 
+	public Object[] getLatExchanges(int count) {
+		if (totalList.size() == 0 || count <= 0) 
+			return null;
+		
+		if (count > totalList.size())
+			return  totalList.toArray();
+		
+		List<Exchange> last = totalList.subList(count, totalList.size() - 1);
+		if (last == null) 
+			return null;
+		
+		return last.toArray();
+	}
+
 }

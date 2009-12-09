@@ -3,14 +3,18 @@ package com.predic8.plugin.membrane.providers;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 
+import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ITableColorProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.plugin.membrane.MembraneUIPlugin;
+import com.predic8.plugin.membrane.resources.ImageKeys;
 
 public class ExchangesViewLabelProvider extends LabelProvider implements
 		ITableLabelProvider, ITableColorProvider {
@@ -24,7 +28,52 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 	}
 
 	public Image getColumnImage(Object element, int columnIndex) {
+		try {
+			if (element instanceof HttpExchange) {
+				HttpExchange exchange = (HttpExchange) element;
+				ImageDescriptor descriptor = null;
+				switch (exchange.getStatus()) {
+				case STARTED:
+					descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PENDING);
+					break;
+				case FAILED:
+					descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FAILED);
+					break;
+				case COMPLETED:
+					if (((Exchange) element).getResponse().isRedirect()) {
+						descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_ARROW_UNDO);
+					} else if (((Exchange) element).getResponse().getStatusCode() >= 400 && ((Exchange) element).getResponse().getStatusCode() < 500) {
+						descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_THUMB_DOWN);
+					} else if (((Exchange) element).getResponse().getStatusCode() > 500) {
+						descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_BUG);
+					} else {
+						descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_COMPLETED);
+					}
+					break;
 
+				case SENT:
+					descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PENDING);
+					break;
+
+				case RECEIVED:
+					descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PENDING);
+					break;
+
+				default:
+					throw new RuntimeException("Unknown status");
+				}
+				
+				switch (columnIndex) {
+				case 0:
+					return descriptor.createImage();
+				default:
+					break;
+				}
+				
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 		return null;
 	}
 
@@ -38,26 +87,31 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 				switch (columnIndex) {
 
 				case 0:
+					if (exchange.getResponse() == null)
+						return "";
+					return "" + exchange.getResponse().getStatusCode();
+				
+				case 1:
 					if (exchange.getTime() == null)
 						return "unknown";
 					return simpleDateFormat.format(exchange.getTime().getTime());
 
-				case 1:
+				case 2:
 					return exchange.getRule().toString();
 
-				case 2:
+				case 3:
 					return exchange.getRequest().getMethod();
 
-				case 3:
+				case 4:
 					return exchange.getRequest().getUri();
 
-				case 4:
+				case 5:
 					return (String)exchange.getProperty(Header.HOST);
 					
-				case 5:
+				case 6:
 					return exchange.getRequest().getHeader().getHost();
 
-				case 6:
+				case 7:
 					String contentType = (String) exchange.getRequest().getHeader().getContentType();
 					if (contentType == null)
 						contentType = "";
@@ -66,12 +120,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 						contentType = contentType.substring(0, index);
 					}
 					return contentType;
-
-				case 7:
-					if (exchange.getResponse() == null)
-						return "";
-					return "" + exchange.getResponse().getStatusCode();
-
+					
 				case 8:
 					return "" + exchange.getRequest().getHeader().getContentLength();
 

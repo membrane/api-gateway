@@ -1,9 +1,14 @@
 package com.predic8.plugin.membrane.views;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ActionContributionItem;
 import org.eclipse.jface.action.IContributionItem;
+import org.eclipse.jface.action.IMenuManager;
+import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -14,8 +19,6 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -24,9 +27,11 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
@@ -39,10 +44,13 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.model.IRuleTreeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
+import com.predic8.plugin.membrane.actions.ShowFiltersDialogAction;
 import com.predic8.plugin.membrane.filtering.ExchangesViewMethodFilter;
 import com.predic8.plugin.membrane.filtering.ExchangesViewStatusCodeFilter;
+import com.predic8.plugin.membrane.filtering.FilterManager;
 import com.predic8.plugin.membrane.providers.ExchangesViewContentProvider;
 import com.predic8.plugin.membrane.providers.ExchangesViewLabelProvider;
+import com.predic8.plugin.membrane.providers.ExchangesViewLazyContentProvider;
 import com.predic8.plugin.membrane.sorting.ExchangesVieweSorter;
 
 public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
@@ -56,6 +64,9 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	private Button btTrackRequests;
 
 	private Text textShowLast;
+	
+
+	private FilterManager filterManager = new FilterManager();
 	
 	public ExchangesView() {
 
@@ -73,10 +84,13 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		gridLayout.verticalSpacing = 20;
 		composite.setLayout(gridLayout);
 
-		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER| SWT.VIRTUAL);
 		createColumns(tableViewer);
 
-		tableViewer.setContentProvider(new ExchangesViewContentProvider());
+		//tableViewer.setContentProvider(new ExchangesViewContentProvider());
+		tableViewer.setContentProvider(new ExchangesViewLazyContentProvider(tableViewer));
+		tableViewer.setUseHashlookup(true);
+		
 		tableViewer.setLabelProvider(new ExchangesViewLabelProvider());
 
 		GridData tableGridData = new GridData(GridData.FILL_BOTH);
@@ -134,7 +148,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 
 		tableViewer.setSorter(new ExchangesVieweSorter());
 
-		addMenu(tableViewer);
+		//addMenu(tableViewer);
 
 		
 		Composite compControls = new Composite(composite, SWT.NONE);
@@ -161,8 +175,6 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		gridData4Pad.widthHint = 300;
 		lbPad.setLayoutData(gridData4Pad);
 		
-		
-		
 		Label lbShowLast = new Label(compControls, SWT.NONE);
 		lbShowLast.setText("Show last  ");
 		
@@ -170,18 +182,54 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		GridData gdShowLast = new GridData(GridData.FILL_BOTH);
 		gdShowLast.widthHint = 40;
 		textShowLast.setLayoutData(gdShowLast);
-
+		textShowLast.addListener (SWT.Verify, new Listener () {
+			public void handleEvent (Event e) {
+				String string = e.text;
+				char [] chars = new char [string.length ()];
+				string.getChars (0, chars.length, chars, 0);
+				for (int i=0; i<chars.length; i++) {
+					if (!('0' <= chars [i] && chars [i] <= '9')) {
+						e.doit = false;
+						return;
+					}
+				}
+				
+			}
+		});
+		
+		
+		textShowLast.addListener (SWT.DefaultSelection, new Listener () {
+			public void handleEvent (Event e) {
+				String string = textShowLast.getText();
+				if (string.length() > 0) {
+					try {
+						int max = Integer.parseInt(string);
+						((ExchangesViewContentProvider)tableViewer.getContentProvider()).setMaxExcahngeCount(max);
+						refresh();
+					} catch (NumberFormatException nfe) {
+						nfe.printStackTrace();
+					}
+				} else {
+					((ExchangesViewContentProvider)tableViewer.getContentProvider()).setMaxExcahngeCount(Integer.MAX_VALUE);
+					refresh();
+				}
+			}
+		});
+		
 		
 		Label lbExchanges = new Label(compControls, SWT.NONE);
 		lbExchanges.setText(" Exchanges");
 		
 		Router.getInstance().getExchangeStore().addTreeViewerListener(this);
-		refreshTable();
+		refreshTable(false);
+		
+		contributeToActionBars();
+	
 	}
 
 	private void createColumns(TableViewer viewer) {
-		String[] titles = { "Time", "Rule", "Method", "Path", "Client", "Server", "Content-Type", "Status-Code", "Request Content Length", "Response Content Length", "Duration" };
-		int[] bounds = { 100, 80, 90, 90, 80, 80, 80, 90, 140, 140, 70 };
+		String[] titles = { "Status-Code", "Time", "Rule", "Method", "Path", "Client", "Server", "Content-Type", "Request Content Length", "Response Content Length", "Duration" };
+		int[] bounds = {90, 100, 80, 90, 90, 80, 80, 80, 140, 140, 70 };
 
 		for (int i = 0; i < titles.length; i++) {
 			final TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
@@ -243,22 +291,22 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	}
 
 	public void refresh() {
-		refreshTable();
+		refreshTable(false);
 	}
 
 	public void removeExchange(final Exchange exchange) {
-		//refreshTable();
-		if (exchange == null || tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
-			return;
-		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
-			public void run() {
-				tableViewer.remove(exchange);
-			}
-		});
+		refreshTable(false);
+//		if (exchange == null || tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
+//			return;
+//		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
+//			public void run() {
+//				tableViewer.remove(exchange);
+//			}
+//		});
 	}
 
 	public void removeExchanges(Rule parent, Exchange[] exchanges) {
-		refreshTable();
+		refreshTable(false);
 	}
 
 	public void removeRule(Rule rule, int rulesLeft) {
@@ -270,45 +318,86 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	}
 
 	public void setExchangeFinished(final Exchange exchange) {
-		//refreshTable();
-		if (exchange == null || tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
-			return;
-		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
-			public void run() {
-				tableViewer.add(exchange);
-			}
-		});
+		refreshTable(false);
+//		if (exchange == null || tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
+//			return;
+//		
+//		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
+//			public void run() {
+//				tableViewer.add(exchange);
+//			}
+//		});
 		
 	}
 
-	private void refreshTable() {
+	private Object[] applyFilter(Object[] objects) {
+		if (objects == null || objects.length == 0)
+			return new Object[0];
+		
+		if (filterManager.isEmpty())
+			return objects;
+			
+		List<Object> filteredList = new ArrayList<Object>();
+		for (Object object : objects) {
+			if (filterManager.filter((Exchange)object)) {
+				filteredList.add(object);
+			}
+		}	
+		return filteredList.toArray();
+	}
+	
+	public void reloadAll() {
+		refreshTable(true);
+	}
+	
+	
+	private void refreshTable(final boolean clear) {
 		if (tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
 			return;
 		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
 			public void run() {
-				Object[] array = Router.getInstance().getExchangeStore().getAllExchanges();
+				if (clear) {
+					tableViewer.getTable().removeAll();
+					tableViewer.getTable().clearAll();
+				}
+				
+				Object[] array = applyFilter(Router.getInstance().getExchangeStore().getAllExchanges());
 				tableViewer.setInput(array);
-				if (array == null || array.length == 0)
-					return;
+				tableViewer.setItemCount(array.length);
 				if (Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange()) {
 					canShowBody = false;
 					tableViewer.setSelection(new StructuredSelection(array[array.length - 1]), true);
 				}	
-				
+				tableViewer.refresh();
+				tableViewer.getTable().redraw();
+				tableViewer.getTable().layout();
 			}
 		});
 	}
 
-	private void addMenu(TableViewer v) {
-		final MenuManager mgr = new MenuManager();
+	
+	private void contributeToActionBars() {
+		IActionBars bars = getViewSite().getActionBars();
+		fillLocalPullDown(bars.getMenuManager());
+		fillLocalToolBar(bars.getToolBarManager());
+	}
+	
+
+	private void fillLocalToolBar(IToolBarManager manager) {
+		manager.add(new Separator());
+		manager.add(new ShowFiltersDialogAction(this));
+	}
+	
+	private void fillLocalPullDown(IMenuManager manager) {
+		
 		Action action;
 		Action actionGet, actionPost, actionDelete, actionHead, actionPut;
 		Action action1xx, action2xx, action3xx, action4xx, action5xx;
 
-		for (int i = 0; i < v.getTable().getColumnCount(); i++) {
-			final TableColumn column = v.getTable().getColumn(i);
+		for (int i = 0; i < tableViewer.getTable().getColumnCount(); i++) {
+			final TableColumn column = tableViewer.getTable().getColumn(i);
 
-			action = new Action(v.getTable().getColumn(i).getText(), SWT.CHECK) {
+			action = new Action(tableViewer.getTable().getColumn(i).getText(), SWT.CHECK) {
 				public void runWithEvent(Event event) {
 					if (!isChecked()) {
 						ShrinkThread t = new ShrinkThread(column.getWidth(), column);
@@ -322,11 +411,11 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 			};
 
 			action.setChecked(true);
-			mgr.add(action);
+			manager.add(action);
 
 		}
 
-		mgr.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
+		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 
 		MenuManager filters = new MenuManager("Filters");
 
@@ -490,11 +579,10 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 
 		filters.add(statusCodeFilters);
 
-		mgr.add(filters);
-
-		v.getControl().setMenu(mgr.createContextMenu(v.getControl()));
+		manager.add(filters);
+		
 	}
-
+	
 	private void removeMethodFilterFromTableViewer() {
 		ViewerFilter[] filters = tableViewer.getFilters();
 		if (filters != null && filters.length > 0) {
@@ -635,6 +723,10 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 				});
 			}
 		}
+	}
+
+	public FilterManager getFilterManager() {
+		return filterManager;
 	}
 
 }

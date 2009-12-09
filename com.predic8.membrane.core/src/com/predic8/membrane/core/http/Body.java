@@ -58,10 +58,10 @@ public class Body {
 		chunked = body.chunked;
 	}
 
-	public Body(InputStream in, int length) throws IOException {
+	public Body(InputStream in, int length, boolean chunked) throws IOException {
 		this.inputStream = in;
 		this.length = length;
-		
+		this.chunked = chunked;
 	}
 
 	public Body(InputStream in, boolean chunked) {

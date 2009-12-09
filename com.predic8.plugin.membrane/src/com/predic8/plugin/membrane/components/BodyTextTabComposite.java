@@ -1,5 +1,8 @@
 package com.predic8.plugin.membrane.components;
 
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.ModifyEvent;
@@ -9,6 +12,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.TabFolder;
 
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.plugin.membrane.listeners.HighligtingLineStyleListner;
 
 public class BodyTextTabComposite extends BodyTabComposite {
@@ -50,8 +54,43 @@ public class BodyTextTabComposite extends BodyTabComposite {
 	public void update(Message msg) {
 		if (msg == null)
 			return;
+		if (msg.getBody() == null)
+			return;
+		byte[] bodyContent = msg.getBody().getContent();
+		if (bodyContent == null)
+			return;
 		
-		this.setBodyText(new String(msg.getBody().getContent()));
+		
+		try {
+			if (msg.isGzip()) {
+				InputStream stream = new GZIPInputStream(msg.getBodyAsStream());
+				displayData(ByteUtil.getByteArrayData(stream));
+			    return;
+			} else if (msg.isDeflate()) {
+				displayData(ByteUtil.getDecompressedData(bodyContent));
+			    return;
+			}
+		} catch (Exception e) {
+			setBodyText(new String(bodyContent));
+			e.printStackTrace();
+			return;
+		}
+	
+		displayData(bodyContent);
 	}
 
+	private void displayData(byte[] content) {
+		if (content == null) 
+			return;
+		if (isBeautifyBody()) {
+			beautify(content);
+		} else {
+			setBodyText(new String(content));
+		}
+	}
+	
+	protected boolean isBeautifyBody() {
+		return false;
+	}
+	
 }

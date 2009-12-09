@@ -55,4 +55,6 @@ public interface ExchangeStore {
 	
 	public Object[] getAllExchanges();
 	
+	public Object[] getLatExchanges(int count);
+	
 }

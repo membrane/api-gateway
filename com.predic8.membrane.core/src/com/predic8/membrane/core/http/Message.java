@@ -93,18 +93,18 @@ public abstract class Message {
  		log.debug("createBody");
 		if (isHTTP10()) {
 			if (header.hasContentLength()) {
-				body = new Body(in, header.getContentLength());
+				body = new Body(in, header.getContentLength(), false);
 				return;
 			} else {
-				//TODO to implement later 
-				throw new RuntimeException("HTTP 1.0 without Content-Length is not implemented yet");
+				body = new Body(in, -1, false);
+				return;
 			}
 		}
 		if (!isKeepAlive()) {			
 			if (header.hasContentLength()) {
-				body = new Body(in, header.getContentLength());
+				body = new Body(in, header.getContentLength(), false);
 			} else {
-				body = new Body(in, -1);
+				body = new Body(in, -1, header.isChunked());
 			}
 			return;
 		}
@@ -119,7 +119,7 @@ public abstract class Message {
 			log.error("Response message has no content length");
 			throw new IOException("Response message has no content length");
 		}
-		body = new Body(in, header.getContentLength());
+		body = new Body(in, header.getContentLength(), false);
 	}
 
 	abstract protected void parseStartLine(InputStream in) throws IOException, EndOfStreamException;

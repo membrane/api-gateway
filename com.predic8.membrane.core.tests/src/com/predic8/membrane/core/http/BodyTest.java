@@ -46,8 +46,8 @@ public class BodyTest extends TestCase {
 
 	protected void setUp() throws Exception {
 		Arrays.fill(msg2, (byte) 20);
-		body1 = new Body(new ByteArrayInputStream(msg1), msg1.length);
-		body2 = new Body(new ByteArrayInputStream(msg2), msg2.length);
+		body1 = new Body(new ByteArrayInputStream(msg1), msg1.length, false);
+		body2 = new Body(new ByteArrayInputStream(msg2), msg2.length, false);
 	}
 
 //	public void testWrite() throws IOException {

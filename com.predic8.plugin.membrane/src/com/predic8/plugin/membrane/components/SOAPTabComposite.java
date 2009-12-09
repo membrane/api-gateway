@@ -1,9 +1,10 @@
 package com.predic8.plugin.membrane.components;
 
+import java.io.ByteArrayInputStream;
+
 import org.eclipse.swt.widgets.TabFolder;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class SOAPTabComposite extends BodyTextTabComposite {
@@ -32,29 +33,19 @@ public class SOAPTabComposite extends BodyTextTabComposite {
 		bodyText.setText(string);
 	}
 	
-	public void beautify(Message msg) {
-		if (msg == null)
+	public void beautify(byte[] content) {
+		if (content == null)
 			return;
+		ByteArrayInputStream bis = new ByteArrayInputStream(content);
 		try {
-			bodyText.setText(TextUtil.formatXML(msg.getBodyAsStream()));
+			bodyText.setText(TextUtil.formatXML(bis));
 		} catch (Exception ex) {
-			bodyText.setText(new String(msg.getBody().getContent()));
+			bodyText.setText(new String(content));
 		}
 		bodyText.redraw();
 	}
 	
-	@Override
-	public void update(Message msg) {
-		if (msg == null)
-			return;
-		if (isBeautifyBody()) {
-			this.beautify(msg);
-		} else {
-			this.setBodyText(new String(msg.getBody().getContent()));
-		}
-	}
-	
-	private boolean isBeautifyBody() {
+	protected boolean isBeautifyBody() {
 		return Router.getInstance().getConfigurationManager().getConfiguration().getIndentMessage();
 	}
 	

@@ -214,7 +214,7 @@ public class MessageTabManager {
 	}
 
 	public void beautify(Message msg) {
-		currentBodyTabComposite.beautify(msg);
+		currentBodyTabComposite.beautify(msg.getBody().getContent());
 	}
 
 	public boolean isBodyModified() {

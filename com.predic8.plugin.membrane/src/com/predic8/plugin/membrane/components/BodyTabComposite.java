@@ -2,8 +2,6 @@ package com.predic8.plugin.membrane.components;
 
 import org.eclipse.swt.widgets.TabFolder;
 
-import com.predic8.membrane.core.http.Message;
-
 public abstract class BodyTabComposite extends AbstractTabComposite {
 
 	protected boolean bodyModified;
@@ -37,7 +35,7 @@ public abstract class BodyTabComposite extends AbstractTabComposite {
 	
 	}
 	
-	public void beautify(Message msg) {
+	public void beautify(byte[] content) {
 		
 	}
 	

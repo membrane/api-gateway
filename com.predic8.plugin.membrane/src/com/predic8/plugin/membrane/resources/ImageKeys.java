@@ -51,6 +51,8 @@ public class ImageKeys {
 	
 	public static final String IMAGE_DOOR_IN = "image door in";
 	
+	public static final String IMAGE_FILTER = "image filter";
+	
 	private ImageKeys() {
 
 	}
