@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.ActionContributionItem;
-import org.eclipse.jface.action.IContributionItem;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
@@ -17,7 +15,6 @@ import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -27,6 +24,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IActionBars;
@@ -38,13 +36,11 @@ import org.eclipse.ui.part.ViewPart;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.model.IRuleTreeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
+import com.predic8.plugin.membrane.actions.RemoveExchangeAction;
 import com.predic8.plugin.membrane.actions.ShowFiltersDialogAction;
-import com.predic8.plugin.membrane.filtering.ExchangesViewMethodFilter;
-import com.predic8.plugin.membrane.filtering.ExchangesViewStatusCodeFilter;
 import com.predic8.plugin.membrane.filtering.FilterManager;
 import com.predic8.plugin.membrane.providers.ExchangesViewLabelProvider;
 import com.predic8.plugin.membrane.providers.ExchangesViewLazyContentProvider;
@@ -61,6 +57,8 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	private Button btTrackRequests;
 
 	private FilterManager filterManager = new FilterManager();
+	
+	Action removeExchangeAction;
 	
 	public ExchangesView() {
 
@@ -142,9 +140,12 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 
 		tableViewer.setSorter(new ExchangesVieweSorter());
 
-		//addMenu(tableViewer);
-
 		
+		removeExchangeAction = new RemoveExchangeAction(tableViewer);
+		removeExchangeAction.setEnabled(false);
+		
+		addMenu();
+
 		Composite compControls = new Composite(composite, SWT.NONE);
 		
 		GridLayout gridLayoutForControls = new GridLayout();
@@ -174,6 +175,15 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		
 		contributeToActionBars();
 	
+	}
+
+	private void addMenu() {
+		MenuManager menuManager = new MenuManager();
+		menuManager.add(removeExchangeAction);
+		
+		final Menu menu = menuManager.createContextMenu(tableViewer.getControl());
+		tableViewer.getControl().setMenu(menu);
+		getSite().registerContextMenu(menuManager, tableViewer);
 	}
 
 	private void createColumns(TableViewer viewer) {
@@ -311,6 +321,11 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 				}
 				
 				Object[] array = applyFilter(Router.getInstance().getExchangeStore().getAllExchanges());
+				if (array.length > 0) {
+					removeExchangeAction.setEnabled(true);
+				} else {
+					removeExchangeAction.setEnabled(false);
+				}
 				tableViewer.setInput(array);
 				tableViewer.setItemCount(array.length);
 				if (Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange()) {
@@ -340,9 +355,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	private void fillLocalPullDown(IMenuManager manager) {
 		
 		Action action;
-		Action actionGet, actionPost, actionDelete, actionHead, actionPut;
-		Action action1xx, action2xx, action3xx, action4xx, action5xx;
-
+		
 		for (int i = 0; i < tableViewer.getTable().getColumnCount(); i++) {
 			final TableColumn column = tableViewer.getTable().getColumn(i);
 
@@ -365,260 +378,9 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		}
 
 		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
-
-		MenuManager filters = new MenuManager("Filters");
-
-		final MenuManager methodFilters = new MenuManager("Method");
-
-		actionGet = new Action("show only GET", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeMethodFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = methodFilters.getItems();
-					deselectOtherActions(items, "Method Action Show GET");
-					updateMethodFilterForTableViewer(Request.METHOD_GET);
-				}
-			}
-		};
-		actionGet.setId("Method Action Show GET");
-
-		actionGet.setChecked(false);
-		methodFilters.add(actionGet);
-
-		actionPost = new Action("show only POST", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeMethodFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = methodFilters.getItems();
-					deselectOtherActions(items, "Method Action Show POST");
-					updateMethodFilterForTableViewer(Request.METHOD_POST);
-				}
-			}
-		};
-		actionPost.setId("Method Action Show POST");
-		actionPost.setChecked(false);
-		methodFilters.add(actionPost);
-
-		actionDelete = new Action("show only DELETE", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeMethodFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = methodFilters.getItems();
-					deselectOtherActions(items, "Method Action Show DELETE");
-					updateMethodFilterForTableViewer(Request.METHOD_DELETE);
-				}
-			}
-		};
-		actionDelete.setId("Method Action Show DELETE");
-		actionDelete.setChecked(false);
-		methodFilters.add(actionDelete);
-
-		actionHead = new Action("show only HEAD", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeMethodFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = methodFilters.getItems();
-					deselectOtherActions(items, "Method Action Show HEAD");
-					updateMethodFilterForTableViewer(Request.METHOD_HEAD);
-				}
-			}
-		};
-		actionHead.setId("Method Action Show HEAD");
-		actionHead.setChecked(false);
-		methodFilters.add(actionHead);
-
-		actionPut = new Action("show only PUT", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeMethodFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = methodFilters.getItems();
-					deselectOtherActions(items, "Method Action Show PUT");
-					updateMethodFilterForTableViewer(Request.METHOD_PUT);
-				}
-			}
-		};
-		actionPut.setId("Method Action Show PUT");
-		actionPut.setChecked(false);
-		methodFilters.add(actionPut);
-
-		filters.add(methodFilters);
-
-		final MenuManager statusCodeFilters = new MenuManager("Status Code");
-
-		action1xx = new Action("1xx", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeStatusCodeFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = statusCodeFilters.getItems();
-					deselectOtherActions(items, "Method Action 1XX");
-					updateStatusCodeFilterForTableViewer(100);
-
-				}
-			}
-		};
-		action1xx.setId("Method Action 1XX");
-		action1xx.setChecked(false);
-		statusCodeFilters.add(action1xx);
-
-		action2xx = new Action("2xx", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeStatusCodeFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = statusCodeFilters.getItems();
-					deselectOtherActions(items, "Method Action 2XX");
-					updateStatusCodeFilterForTableViewer(200);
-				}
-			}
-		};
-		action2xx.setId("Method Action 2XX");
-		action2xx.setChecked(false);
-		statusCodeFilters.add(action2xx);
-
-		action3xx = new Action("3xx", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeStatusCodeFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = statusCodeFilters.getItems();
-					deselectOtherActions(items, "Method Action 3XX");
-					updateStatusCodeFilterForTableViewer(300);
-				}
-			}
-		};
-		action3xx.setId("Method Action 3XX");
-		action3xx.setChecked(false);
-		statusCodeFilters.add(action3xx);
-
-		action4xx = new Action("4xx", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeStatusCodeFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = statusCodeFilters.getItems();
-					deselectOtherActions(items, "Method Action 4XX");
-					updateStatusCodeFilterForTableViewer(400);
-				}
-			}
-		};
-		action4xx.setId("Method Action 4XX");
-		action4xx.setChecked(false);
-		statusCodeFilters.add(action4xx);
-
-		action5xx = new Action("5xx", SWT.CHECK) {
-			public void runWithEvent(Event event) {
-				if (!isChecked()) {
-					removeStatusCodeFilterFromTableViewer();
-				} else {
-					IContributionItem[] items = statusCodeFilters.getItems();
-					deselectOtherActions(items, "Method Action 5XX");
-					updateStatusCodeFilterForTableViewer(500);
-				}
-			}
-		};
-		action5xx.setId("Method Action 5XX");
-		action5xx.setChecked(false);
-		statusCodeFilters.add(action5xx);
-
-		filters.add(statusCodeFilters);
-
-		manager.add(filters);
-		
 	}
+
 	
-	private void removeMethodFilterFromTableViewer() {
-		ViewerFilter[] filters = tableViewer.getFilters();
-		if (filters != null && filters.length > 0) {
-			for (ViewerFilter viewerFilter : filters) {
-				if (viewerFilter instanceof ExchangesViewMethodFilter) {
-					tableViewer.removeFilter(viewerFilter);
-					break;
-				}
-			}
-		}
-	}
-
-	private void removeStatusCodeFilterFromTableViewer() {
-		ViewerFilter[] filters = tableViewer.getFilters();
-		if (filters != null && filters.length > 0) {
-			for (ViewerFilter viewerFilter : filters) {
-				if (viewerFilter instanceof ExchangesViewStatusCodeFilter) {
-					tableViewer.removeFilter(viewerFilter);
-					break;
-				}
-			}
-		}
-	}
-
-	private void deselectOtherActions(IContributionItem[] items, String ownId) {
-		for (IContributionItem iContributionItem : items) {
-			ActionContributionItem actionItem = (ActionContributionItem) iContributionItem;
-			if (!actionItem.getAction().getId().equals(ownId))
-				actionItem.getAction().setChecked(false);
-
-		}
-	}
-
-	private void updateMethodFilterForTableViewer(String method) {
-		ViewerFilter[] filters = tableViewer.getFilters();
-		if (filters != null && filters.length > 0) {
-			boolean found = false;
-			for (ViewerFilter viewerFilter : filters) {
-				if (viewerFilter instanceof ExchangesViewMethodFilter) {
-					ExchangesViewMethodFilter filter = (ExchangesViewMethodFilter) viewerFilter;
-					filter.setRequestMethod(method);
-					tableViewer.refresh();
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				ExchangesViewMethodFilter filter = new ExchangesViewMethodFilter();
-				filter.setRequestMethod(method);
-				tableViewer.addFilter(filter);
-				tableViewer.refresh();
-			}
-		} else {
-			ExchangesViewMethodFilter filter = new ExchangesViewMethodFilter();
-			filter.setRequestMethod(method);
-			tableViewer.addFilter(filter);
-			tableViewer.refresh();
-		}
-	}
-
-	private void updateStatusCodeFilterForTableViewer(int statusCode) {
-		ViewerFilter[] filters = tableViewer.getFilters();
-		if (filters != null && filters.length > 0) {
-			boolean found = false;
-			for (ViewerFilter viewerFilter : filters) {
-				if (viewerFilter instanceof ExchangesViewStatusCodeFilter) {
-					ExchangesViewStatusCodeFilter filter = (ExchangesViewStatusCodeFilter) viewerFilter;
-					filter.setStatusCode(statusCode);
-					tableViewer.refresh();
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				ExchangesViewStatusCodeFilter filter = new ExchangesViewStatusCodeFilter();
-				filter.setStatusCode(statusCode);
-				tableViewer.addFilter(filter);
-				tableViewer.refresh();
-			}
-		} else {
-			ExchangesViewStatusCodeFilter filter = new ExchangesViewStatusCodeFilter();
-			filter.setStatusCode(statusCode);
-			tableViewer.addFilter(filter);
-			tableViewer.refresh();
-		}
-	}
-
 	private class ShrinkThread extends Thread {
 		private int width = 0;
 		private TableColumn column;

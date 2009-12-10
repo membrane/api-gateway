@@ -11,7 +11,7 @@ import org.eclipse.swt.graphics.Image;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
-import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
@@ -123,7 +123,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 					return exchange.getRequest().getUri();
 
 				case 5:
-					return (String)exchange.getProperty(Header.HOST);
+					return (String)exchange.getProperty(HttpTransport.SOURCE_HOSTNAME);
 					
 				case 6:
 					return exchange.getRequest().getHeader().getHost();
