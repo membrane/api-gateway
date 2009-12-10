@@ -27,10 +27,8 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchActionConstants;
 import org.eclipse.ui.IWorkbenchPage;
@@ -48,7 +46,6 @@ import com.predic8.plugin.membrane.actions.ShowFiltersDialogAction;
 import com.predic8.plugin.membrane.filtering.ExchangesViewMethodFilter;
 import com.predic8.plugin.membrane.filtering.ExchangesViewStatusCodeFilter;
 import com.predic8.plugin.membrane.filtering.FilterManager;
-import com.predic8.plugin.membrane.providers.ExchangesViewContentProvider;
 import com.predic8.plugin.membrane.providers.ExchangesViewLabelProvider;
 import com.predic8.plugin.membrane.providers.ExchangesViewLazyContentProvider;
 import com.predic8.plugin.membrane.sorting.ExchangesVieweSorter;
@@ -62,9 +59,6 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	private boolean canShowBody = true;
 
 	private Button btTrackRequests;
-
-	private Text textShowLast;
-	
 
 	private FilterManager filterManager = new FilterManager();
 	
@@ -174,51 +168,6 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		GridData gridData4Pad = new GridData(GridData.FILL_BOTH);
 		gridData4Pad.widthHint = 300;
 		lbPad.setLayoutData(gridData4Pad);
-		
-		Label lbShowLast = new Label(compControls, SWT.NONE);
-		lbShowLast.setText("Show last  ");
-		
-		textShowLast = new Text(compControls, SWT.BORDER);
-		GridData gdShowLast = new GridData(GridData.FILL_BOTH);
-		gdShowLast.widthHint = 40;
-		textShowLast.setLayoutData(gdShowLast);
-		textShowLast.addListener (SWT.Verify, new Listener () {
-			public void handleEvent (Event e) {
-				String string = e.text;
-				char [] chars = new char [string.length ()];
-				string.getChars (0, chars.length, chars, 0);
-				for (int i=0; i<chars.length; i++) {
-					if (!('0' <= chars [i] && chars [i] <= '9')) {
-						e.doit = false;
-						return;
-					}
-				}
-				
-			}
-		});
-		
-		
-		textShowLast.addListener (SWT.DefaultSelection, new Listener () {
-			public void handleEvent (Event e) {
-				String string = textShowLast.getText();
-				if (string.length() > 0) {
-					try {
-						int max = Integer.parseInt(string);
-						((ExchangesViewContentProvider)tableViewer.getContentProvider()).setMaxExcahngeCount(max);
-						refresh();
-					} catch (NumberFormatException nfe) {
-						nfe.printStackTrace();
-					}
-				} else {
-					((ExchangesViewContentProvider)tableViewer.getContentProvider()).setMaxExcahngeCount(Integer.MAX_VALUE);
-					refresh();
-				}
-			}
-		});
-		
-		
-		Label lbExchanges = new Label(compControls, SWT.NONE);
-		lbExchanges.setText(" Exchanges");
 		
 		Router.getInstance().getExchangeStore().addTreeViewerListener(this);
 		refreshTable(false);
