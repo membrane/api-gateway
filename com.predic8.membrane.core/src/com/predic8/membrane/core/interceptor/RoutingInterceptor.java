@@ -68,7 +68,7 @@ public class RoutingInterceptor implements Interceptor {
 		httpExc.setProperty(HttpTransport.REQUEST_URI, httpExc.getRequest().getUri());
 		adjustHostHeader(httpExc);
 
-		if (xForwardedForEnabled)
+		if (xForwardedForEnabled && (rule instanceof ForwardingRule))
 			insertXForwardedFor(httpExc);
 
 		return Outcome.CONTINUE;

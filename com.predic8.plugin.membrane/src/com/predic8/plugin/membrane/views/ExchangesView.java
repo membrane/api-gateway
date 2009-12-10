@@ -228,8 +228,8 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	}
 
 	private void createColumns(TableViewer viewer) {
-		String[] titles = { "Status-Code", "Time", "Rule", "Method", "Path", "Client", "Server", "Content-Type", "Request Content Length", "Response Content Length", "Duration" };
-		int[] bounds = {90, 100, 80, 90, 90, 80, 80, 80, 140, 140, 70 };
+		String[] titles = { "Status-Code", "Time", "Rule", "Method", "Path", "Client", "Server", "Request Content-Type", "Request Content Length", "Response Content Length", "Duration" };
+		int[] bounds = {90, 100, 80, 90, 90, 80, 80, 130, 140, 140, 70 };
 
 		for (int i = 0; i < titles.length; i++) {
 			final TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
