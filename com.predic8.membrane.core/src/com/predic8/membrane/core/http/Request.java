@@ -40,6 +40,8 @@ public class Request extends Message {
 
 	public static final String METHOD_PUT = "PUT";
 
+	public static final Object METHOD_TRACE = "TRACE";
+
 	private static Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
 	
 	String method;

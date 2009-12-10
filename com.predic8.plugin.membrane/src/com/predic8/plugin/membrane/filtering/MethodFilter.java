@@ -12,11 +12,16 @@ public class MethodFilter implements ExchangesFilter {
 	
 	private Set<String> displayedMethods = new HashSet<String>();
 
+	public MethodFilter() {
+		showAllMethods = true;
+	}
+	
+	
 	public boolean filter(Exchange exc) {
 		if (showAllMethods)
 			return true;
 		
-		if (displayedMethods.contains(exc.getRule().getRuleKey()))
+		if (displayedMethods.contains(exc.getRequest().getMethod()))
 			return true;
 		
 		
