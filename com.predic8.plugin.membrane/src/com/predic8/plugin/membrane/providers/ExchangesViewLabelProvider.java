@@ -3,7 +3,6 @@ package com.predic8.plugin.membrane.providers;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ITableColorProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -20,43 +19,61 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 		ITableLabelProvider, ITableColorProvider {
 
 	NumberFormat nf = NumberFormat.getInstance();
-	SimpleDateFormat simpleDateFormat = new SimpleDateFormat(
-			"yyyy.MM.dd hh:mm:ss");
+	SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
 
+	
+	private Image imgPending;
+	
+	private Image imgFailed;
+	
+	private Image imgArrowUndo;
+	
+	private Image imgThumbDown;
+	
+	private Image imgBug;
+	
+	private Image imgCompleted;
+	
 	public ExchangesViewLabelProvider() {
 		nf.setMaximumFractionDigits(3);
+		imgPending = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PENDING).createImage();
+		imgFailed = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FAILED).createImage();
+		imgArrowUndo = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_ARROW_UNDO).createImage();
+		imgThumbDown = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_THUMB_DOWN).createImage();
+		imgBug = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_BUG).createImage();
+		imgCompleted =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_COMPLETED).createImage();
 	}
 
 	public Image getColumnImage(Object element, int columnIndex) {
 		try {
 			if (element instanceof HttpExchange) {
 				HttpExchange exchange = (HttpExchange) element;
-				ImageDescriptor descriptor = null;
+				Image result = null;
 				switch (exchange.getStatus()) {
 				case STARTED:
-					descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PENDING);
+					result = imgPending;
 					break;
 				case FAILED:
-					descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FAILED);
+					result = imgFailed;
 					break;
 				case COMPLETED:
 					if (((Exchange) element).getResponse().isRedirect()) {
-						descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_ARROW_UNDO);
+						result = imgArrowUndo;
 					} else if (((Exchange) element).getResponse().getStatusCode() >= 400 && ((Exchange) element).getResponse().getStatusCode() < 500) {
-						descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_THUMB_DOWN);
+						result = imgThumbDown;
 					} else if (((Exchange) element).getResponse().getStatusCode() > 500) {
-						descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_BUG);
+						result = imgBug;
 					} else {
-						descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_COMPLETED);
+						result = imgCompleted;
 					}
 					break;
 
 				case SENT:
-					descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PENDING);
+					result = imgPending;
 					break;
 
 				case RECEIVED:
-					descriptor = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PENDING);
+					result = imgPending;
 					break;
 
 				default:
@@ -65,7 +82,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 				
 				switch (columnIndex) {
 				case 0:
-					return descriptor.createImage();
+					return result;
 				default:
 					break;
 				}
