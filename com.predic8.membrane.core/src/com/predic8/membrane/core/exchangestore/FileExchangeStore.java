@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -152,6 +153,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	}
 
 	public Object[] getLatExchanges(int count) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public List<Exchange> getAllExchangesAsList() {
 		// TODO Auto-generated method stub
 		return null;
 	}

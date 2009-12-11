@@ -2,6 +2,7 @@ package com.predic8.plugin.membrane.views;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.jface.action.Action;
@@ -35,12 +36,14 @@ import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.ExchangeComparator;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.model.IRuleTreeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.actions.RemoveExchangeAction;
 import com.predic8.plugin.membrane.actions.ShowFiltersDialogAction;
+import com.predic8.plugin.membrane.actions.ShowSortersDialogAction;
 import com.predic8.plugin.membrane.filtering.FilterManager;
 import com.predic8.plugin.membrane.providers.ExchangesViewLabelProvider;
 import com.predic8.plugin.membrane.providers.ExchangesViewLazyContentProvider;
@@ -58,7 +61,9 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 
 	private FilterManager filterManager = new FilterManager();
 	
-	Action removeExchangeAction;
+	private Action removeExchangeAction;
+	
+	private ExchangeComparator comperator;
 	
 	public ExchangesView() {
 
@@ -265,7 +270,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	}
 
 	public void removeExchanges(Rule parent, Exchange[] exchanges) {
-		refreshTable(false);
+		refreshTable(true);
 	}
 
 	public void removeRule(Rule rule, int rulesLeft) {
@@ -289,21 +294,30 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		
 	}
 
-	private Object[] applyFilter(Object[] objects) {
-		if (objects == null || objects.length == 0)
-			return new Object[0];
+	private List<Exchange> applyFilter(List<Exchange> objects) {
+		if (objects == null || objects.size() == 0)
+			return new ArrayList<Exchange>();
 		
 		if (filterManager.isEmpty())
 			return objects;
 			
-		List<Object> filteredList = new ArrayList<Object>();
-		for (Object object : objects) {
-			if (filterManager.filter((Exchange)object)) {
-				filteredList.add(object);
+		List<Exchange> filteredList = new ArrayList<Exchange>();
+		for (Exchange exc : objects) {
+			if (filterManager.filter(exc)) {
+				filteredList.add(exc);
 			}
 		}	
-		return filteredList.toArray();
+		return filteredList;
 	}
+	
+	
+	private void applySorter(List<Exchange> exchanges) {
+		if (exchanges == null || exchanges.size() == 0)
+			return;
+		
+		Collections.sort(exchanges, new ExchangeComparator());
+	}
+	
 	
 	public void reloadAll() {
 		refreshTable(true);
@@ -320,17 +334,18 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 					tableViewer.getTable().clearAll();
 				}
 				
-				Object[] array = applyFilter(Router.getInstance().getExchangeStore().getAllExchanges());
-				if (array.length > 0) {
+				List<Exchange> array = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
+				applySorter(array);
+				if (array.size() > 0) {
 					removeExchangeAction.setEnabled(true);
 				} else {
 					removeExchangeAction.setEnabled(false);
 				}
-				tableViewer.setInput(array);
-				tableViewer.setItemCount(array.length);
+				tableViewer.setInput(array.toArray());
+				tableViewer.setItemCount(array.size());
 				if (Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange()) {
 					canShowBody = false;
-					tableViewer.setSelection(new StructuredSelection(array[array.length - 1]), true);
+					tableViewer.setSelection(new StructuredSelection(array.get(array.size() - 1)), true);
 				}	
 				tableViewer.refresh();
 				tableViewer.getTable().redraw();
@@ -350,6 +365,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	private void fillLocalToolBar(IToolBarManager manager) {
 		manager.add(new Separator());
 		manager.add(new ShowFiltersDialogAction(this));
+		manager.add(new ShowSortersDialogAction(this));
 	}
 	
 	private void fillLocalPullDown(IMenuManager manager) {

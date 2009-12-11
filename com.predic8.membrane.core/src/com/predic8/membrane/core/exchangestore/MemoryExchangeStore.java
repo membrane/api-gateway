@@ -164,6 +164,12 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		return totalList.toArray();
 	}
 
+	
+	public List<Exchange> getAllExchangesAsList() {
+		return totalList;
+	}
+	
+	
 	public Object[] getLatExchanges(int count) {
 		if (totalList.size() == 0 || count <= 0) 
 			return null;

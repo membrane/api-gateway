@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.exchangestore;
 
+import java.util.List;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.model.IRuleTreeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
@@ -54,6 +56,8 @@ public interface ExchangeStore {
 	
 	
 	public Object[] getAllExchanges();
+	
+	public List<Exchange> getAllExchangesAsList();
 	
 	public Object[] getLatExchanges(int count);
 	
