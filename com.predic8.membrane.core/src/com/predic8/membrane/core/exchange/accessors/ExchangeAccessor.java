@@ -6,4 +6,5 @@ public interface ExchangeAccessor {
 	
 	public String get(Exchange exc);
 
+	public String getId();
 }

@@ -31,6 +31,8 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
 
+import com.predic8.membrane.core.exchange.ExchangeComparator;
+import com.predic8.membrane.core.exchange.accessors.StatusCodeExchangeAccessor;
 import com.predic8.plugin.membrane.views.ExchangesView;
 
 public class ExchangesTableSorterDialog extends Dialog {
@@ -43,7 +45,9 @@ public class ExchangesTableSorterDialog extends Dialog {
 	
 	private Button btEnable;
 	
-	Composite childComp;
+	private Composite childComp;
+	
+	private ExchangeComparator comparator;
 	
 	public ExchangesTableSorterDialog(Shell parentShell, ExchangesView parent) {
 		super(parentShell);
@@ -72,6 +76,8 @@ public class ExchangesTableSorterDialog extends Dialog {
 		container.setLayout(layout);
 
 		
+		comparator = exchangesView.getComparator();
+		
 		btDisable = new Button(container, SWT.RADIO);
 		btDisable.setText("Disable exchange sorting");
 		btDisable.addSelectionListener(new SelectionAdapter() {
@@ -79,10 +85,12 @@ public class ExchangesTableSorterDialog extends Dialog {
 			public void widgetSelected(SelectionEvent e) {
 				if (btDisable.getSelection()) {
 					comboSorters.setEnabled(false);
+					comparator.removeAllAccessors();
 				} 
 			}
 		});
-		
+		btDisable.setSelection(!comparator.isEmpty());
+		 
 		btEnable = new Button(container, SWT.RADIO);
 		btEnable.setText("Enable exchange sorting");
 		btEnable.addSelectionListener(new SelectionAdapter() {
@@ -135,6 +143,18 @@ public class ExchangesTableSorterDialog extends Dialog {
 		comboSorters.add("Request Content-Length");
 		comboSorters.add("Response Content-Length");
 		comboSorters.add("Duration");
+		comboSorters.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				switch (comboSorters.getSelectionIndex()) {
+				case 0:
+					comparator.addAccessor(new StatusCodeExchangeAccessor());
+					default:
+						return;
+				}
+			}
+		});
+		if (!comparator.isEmpty()) 
+			comboSorters.setText(comparator.getAccessors().get(0).getId());
 		
 		return container;
 	}
@@ -153,8 +173,9 @@ public class ExchangesTableSorterDialog extends Dialog {
 
 	@Override
 	protected void okPressed() {
-		
+		exchangesView.setComperator(comparator);
 		super.okPressed();
 	}
+	
 
 }

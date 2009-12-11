@@ -43,5 +43,15 @@ public class ExchangeComparator implements Comparator<Exchange> {
 	public boolean isEmpty() {
 		return accessors.size() == 0;
 	}
+
+	public List<ExchangeAccessor> getAccessors() {
+		return accessors;
+	}
+
+	public void setAccessors(List<ExchangeAccessor> accessors) {
+		this.accessors = accessors;
+	}
+	
+	
 	
 }

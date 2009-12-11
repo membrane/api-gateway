@@ -63,7 +63,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	
 	private Action removeExchangeAction;
 	
-	private ExchangeComparator comperator = new ExchangeComparator();
+	private ExchangeComparator comparator = new ExchangeComparator();
 	
 	public ExchangesView() {
 
@@ -315,7 +315,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		if (exchanges == null || exchanges.size() == 0)
 			return;
 		
-		Collections.sort(exchanges, new ExchangeComparator());
+		Collections.sort(exchanges, comparator);
 	}
 	
 	
@@ -456,12 +456,12 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		return filterManager;
 	}
 
-	public ExchangeComparator getComperator() {
-		return comperator;
+	public ExchangeComparator getComparator() {
+		return comparator;
 	}
 
-	public void setComperator(ExchangeComparator comperator) {
-		this.comperator = comperator;
+	public void setComperator(ExchangeComparator comparator) {
+		this.comparator = comparator;
 	}
 
 	
