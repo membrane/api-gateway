@@ -63,7 +63,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	
 	private Action removeExchangeAction;
 	
-	private ExchangeComparator comperator;
+	private ExchangeComparator comperator = new ExchangeComparator();
 	
 	public ExchangesView() {
 
@@ -456,4 +456,14 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		return filterManager;
 	}
 
+	public ExchangeComparator getComperator() {
+		return comperator;
+	}
+
+	public void setComperator(ExchangeComparator comperator) {
+		this.comperator = comperator;
+	}
+
+	
+	
 }

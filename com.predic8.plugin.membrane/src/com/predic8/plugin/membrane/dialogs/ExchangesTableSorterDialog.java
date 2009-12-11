@@ -58,32 +58,6 @@ public class ExchangesTableSorterDialog extends Dialog {
 		shell.setSize(440, 560);
 	}
 
-	@Override
-	protected Control createButtonBar(Composite parent) {
-		 Composite composite = new Composite(parent, SWT.NONE);
-		 
-		 GridLayout layout = new GridLayout();
-		 composite.setLayout(layout);
- 		 
-		 Button BtRemoveSorters = new Button(composite, SWT.PUSH);
-		 BtRemoveSorters.addSelectionListener(new SelectionAdapter() {
-			 @Override
-			public void widgetSelected(SelectionEvent e) {
-				 
-			}
-		 });
-		 BtRemoveSorters.setText("Desable sorting");
-		
-		 GridData gData = new GridData(SWT.RIGHT, SWT.FILL, true, true, 1, 1);
-		 gData.grabExcessHorizontalSpace = true;
-		 BtRemoveSorters.setLayoutData(gData);
-
-		 Label label = new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL);
-		 GridData labelGridData = new GridData(410, 12);
-		 label.setLayoutData(labelGridData);
-		 
-		return super.createButtonBar(composite);
-	}
 	
 	@Override
 	protected Control createDialogArea(Composite parent) {
@@ -97,13 +71,14 @@ public class ExchangesTableSorterDialog extends Dialog {
 		layout.numColumns = 1;
 		container.setLayout(layout);
 
+		
 		btDisable = new Button(container, SWT.RADIO);
 		btDisable.setText("Disable exchange sorting");
 		btDisable.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (btDisable.getSelection()) {
-					
+					comboSorters.setEnabled(false);
 				} 
 			}
 		});
@@ -115,7 +90,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (btEnable.getSelection()) {
-					
+					comboSorters.setEnabled(true);
 				}
 			}
 		
