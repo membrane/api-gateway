@@ -10,6 +10,8 @@ public class ExchangeComparator implements Comparator<Exchange> {
 
 	private List<ExchangeAccessor> accessors = new ArrayList<ExchangeAccessor>();
 	
+	private boolean ascending = true;
+	
 	public int compare(Exchange o1, Exchange o2) {
 		if (o1.getResponse() == null)
 			return 0;
@@ -21,11 +23,15 @@ public class ExchangeComparator implements Comparator<Exchange> {
 			b2.append(accessor.get(o2));
 		}
 		
-		return b1.toString().compareTo(b2.toString()) ;
+		if (ascending) {
+			return b1.toString().compareTo(b2.toString()) ;
+		} else {
+			return b2.toString().compareTo(b1.toString()) ;
+		}
 	}
 	
 	public void addAccessor(ExchangeAccessor acc) {
-		if (acc == null)
+		if (acc == null) 
 			return;
 		accessors.add(acc);
 	}
@@ -51,7 +57,13 @@ public class ExchangeComparator implements Comparator<Exchange> {
 	public void setAccessors(List<ExchangeAccessor> accessors) {
 		this.accessors = accessors;
 	}
-	
-	
+
+	public boolean isAscending() {
+		return ascending;
+	}
+
+	public void setAscending(boolean ascending) {
+		this.ascending = ascending;
+	}
 	
 }

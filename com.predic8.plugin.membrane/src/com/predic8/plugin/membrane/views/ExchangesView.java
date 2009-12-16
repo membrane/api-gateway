@@ -462,6 +462,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 
 	public void setComperator(ExchangeComparator comparator) {
 		this.comparator = comparator;
+		refreshTable(true);
 	}
 
 	
