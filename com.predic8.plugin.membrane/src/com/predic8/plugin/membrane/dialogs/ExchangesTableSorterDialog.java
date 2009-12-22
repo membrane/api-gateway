@@ -264,7 +264,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 		});
 		
 		btAdd1 = new Button(childComp, SWT.CHECK| SWT.LEFT);
-		btAdd1.setText("more");
+		btAdd1.setText("and");
 		btAdd1.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		btAdd1.setVisible(false);
 		btAdd1.addSelectionListener(new SelectionAdapter() {
@@ -350,7 +350,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 		
 		btAdd2 = new Button(childComp, SWT.CHECK | SWT.LEFT);
 		btAdd2.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		btAdd2.setText("more");
+		btAdd2.setText("and");
 		btAdd2.setVisible(false);
 		btAdd2.addSelectionListener(new SelectionAdapter() {
 			@Override
