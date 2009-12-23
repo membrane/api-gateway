@@ -4,6 +4,10 @@ public class ImageKeys {
 
 	public static final String IMAGE_RULE = "image rule";
 
+	public static final String IMAGE_RULE_PROXY = "image rule proxy";
+	
+	public static final String IMAGE_RULE_REVERSE_PROXY = "image rule reverse proxy";
+	
 	public static final String IMAGE_PENDING = "image pending";
 
 	public static final String IMAGE_FAILED = "image failed";

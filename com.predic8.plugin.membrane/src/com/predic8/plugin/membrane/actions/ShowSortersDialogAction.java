@@ -10,11 +10,13 @@ import com.predic8.plugin.membrane.views.ExchangesView;
 
 public class ShowSortersDialogAction extends Action {
 
+	public static final String ID = "Show Table Sorters Action";
+	
 	private ExchangesView parentView;
 	
 	public ShowSortersDialogAction(ExchangesView exchangesView) {
 		setText("Sorters");
-		setId("Show Table Sorters Action");
+		setId(ID);
 		setImageDescriptor(MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_SORTER));
 		this.parentView = exchangesView;
 	}

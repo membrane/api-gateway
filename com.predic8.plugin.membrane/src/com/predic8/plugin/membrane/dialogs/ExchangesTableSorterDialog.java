@@ -198,8 +198,9 @@ public class ExchangesTableSorterDialog extends Dialog {
 		lbComboSorters.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		
 		
-		comboSorters = new Combo(childComp, SWT.DROP_DOWN);
+		comboSorters = new Combo(childComp, SWT.READ_ONLY);
 		comboSorters.setItems(sortNames);
+		comboSorters.setEnabled(false);
 		comboSorters.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				if (comboSorters.getSelectionIndex() >= 0) {
@@ -286,7 +287,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 			}
 		});
 		
-		comboSorters2 = new Combo(childComp, SWT.DROP_DOWN);
+		comboSorters2 = new Combo(childComp, SWT.READ_ONLY);
 		comboSorters2.setItems(sortNames);
 		comboSorters2.setVisible(false);
 		comboSorters2.addSelectionListener(new SelectionAdapter() {
@@ -367,7 +368,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 			}
 		});
 		
-		comboSorters3 = new Combo(childComp, SWT.DROP_DOWN);
+		comboSorters3 = new Combo(childComp, SWT.READ_ONLY);
 		comboSorters3.setItems(sortNames);
 		comboSorters3.setVisible(false);
 		comboSorters3.addSelectionListener(new SelectionAdapter() {
@@ -428,7 +429,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 		
 		
 		Composite compositeX = new Composite(container, SWT.BORDER);
-		compositeX.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+		//compositeX.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		
 		
 		
@@ -436,37 +437,37 @@ public class ExchangesTableSorterDialog extends Dialog {
 		gdCompX.grabExcessHorizontalSpace = true;
 		gdCompX.grabExcessVerticalSpace = true;
 		gdCompX.widthHint = 370;
-		gdCompX.heightHint = 24;
+		gdCompX.heightHint = 40;
 		compositeX.setLayoutData(gdCompX);
 		
-		Label lbDummy3 = new Label(compositeX, SWT.NONE);
-		lbDummy3.setText(" ");
-		lbDummy3.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+//		Label lbDummy3 = new Label(compositeX, SWT.NONE);
+//		lbDummy3.setText(" ");
+//		lbDummy3.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+//		
+//		Label lbDummy4 = new Label(compositeX, SWT.NONE);
+//		lbDummy4.setText(" ");
+//		lbDummy4.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+//		
+//		Label lbDummy5 = new Label(compositeX, SWT.NONE);
+//		lbDummy5.setText(" ");
+//		lbDummy5.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		
-		Label lbDummy4 = new Label(compositeX, SWT.NONE);
-		lbDummy4.setText(" ");
-		lbDummy4.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		
-		Label lbDummy5 = new Label(compositeX, SWT.NONE);
-		lbDummy5.setText(" ");
-		lbDummy5.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		
-		Label lbDummy6 = new Label(compositeX, SWT.NONE);
-		lbDummy6.setText(" ");
-		lbDummy6.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+//		Label lbDummy6 = new Label(compositeX, SWT.NONE);
+//		lbDummy6.setText(" ");
+//		lbDummy6.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		
 		btAsc = new Button(compositeX, SWT.RADIO);
-		btAsc.setText("Asc");
+		btAsc.setText("Ascending");
 		btAsc.setSelection(true);
-		btAsc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+//		btAsc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		btAsc.setVisible(false);
 		
 		btDesc = new Button(compositeX, SWT.RADIO);
-		btDesc.setText("Desc");
-		btDesc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+		btDesc.setText("Descending");
+//		btDesc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		btDesc.setVisible(false);
 		
-		FillLayout fillLayout = new FillLayout(SWT.HORIZONTAL);
+		FillLayout fillLayout = new FillLayout(SWT.VERTICAL);
 		compositeX.setLayout(fillLayout);
 		
 		

@@ -6,7 +6,7 @@ public class PathExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Path";
 	
-	public String get(Exchange exc) {
+	public Object get(Exchange exc) {
 		if (exc == null || exc.getRequest() == null)
 			return "";
 		return exc.getRequest().getUri();

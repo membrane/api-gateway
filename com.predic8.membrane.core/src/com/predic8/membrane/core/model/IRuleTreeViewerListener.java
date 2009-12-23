@@ -31,6 +31,8 @@ public interface IRuleTreeViewerListener{
 	
 	public void removeExchanges(Rule parent, Exchange[] exchanges);
 	
+	public void removeExchanges(Exchange[] exchanges);
+	
 	public void setExchangeFinished( Exchange exchange);
 	
 	public void refresh();

@@ -6,7 +6,7 @@ public class RuleExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Rule";
 	
-	public String get(Exchange exc) {
+	public Object get(Exchange exc) {
 		if (exc == null)
 			return "";
 		return exc.getRule().toString();

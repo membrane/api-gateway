@@ -42,7 +42,13 @@ public class RulesFilter implements ExchangesFilter {
 		
 		return false;
 	}
-	
-	
+
+	public boolean isDeactivated() {
+		if (showAllRules)
+			return true;
+		if (displayedRules.isEmpty())
+			return true;
+		return false;
+	}
 
 }

@@ -6,10 +6,10 @@ public class RequestContentLengthExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Request Content-Length";
 	
-	public String get(Exchange exc) {
+	public Object get(Exchange exc) {
 		if (exc == null || exc.getRequest() == null)
-			return "";
-		return "" + exc.getRequest().getHeader().getContentLength();
+			return 0;
+		return exc.getRequest().getHeader().getContentLength();
 	}
 
 	public String getId() {

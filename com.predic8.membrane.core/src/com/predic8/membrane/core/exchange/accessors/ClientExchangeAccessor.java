@@ -7,7 +7,7 @@ public class ClientExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Client";
 	
-	public String get(Exchange exc) {
+	public Object get(Exchange exc) {
 		if (exc == null || exc.getProperty(HttpTransport.SOURCE_HOSTNAME) == null)
 			return "";
 		return (String)exc.getProperty(HttpTransport.SOURCE_HOSTNAME);

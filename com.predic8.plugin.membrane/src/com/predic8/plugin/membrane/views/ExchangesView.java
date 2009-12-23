@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.ActionContributionItem;
+import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
@@ -24,7 +26,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -37,10 +39,13 @@ import org.eclipse.ui.part.ViewPart;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeComparator;
+import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.model.IRuleTreeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
+import com.predic8.plugin.membrane.actions.ExchangeStopAction;
+import com.predic8.plugin.membrane.actions.ExchangeVirtualListRemoveAction;
 import com.predic8.plugin.membrane.actions.RemoveExchangeAction;
 import com.predic8.plugin.membrane.actions.ShowFiltersDialogAction;
 import com.predic8.plugin.membrane.actions.ShowSortersDialogAction;
@@ -63,7 +68,18 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	
 	private Action removeExchangeAction;
 	
+	private Action stopExchangeAction;
+	
+	private Action removeAllExchangesAction;
+	
 	private ExchangeComparator comparator = new ExchangeComparator();
+	
+	
+	private Link lbFilterCountDisplayer;
+	
+	private Link lbSortByDisplayer;
+	
+	private String filterCountText = "";
 	
 	public ExchangesView() {
 
@@ -74,17 +90,17 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		Composite composite = new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 25;
+		gridLayout.marginTop = 10;
 		gridLayout.marginLeft = 2;
-		gridLayout.marginBottom = 30;
+		gridLayout.marginBottom = 10;
 		gridLayout.marginRight = 2;
-		gridLayout.verticalSpacing = 20;
+		gridLayout.verticalSpacing = 10;
 		composite.setLayout(gridLayout);
+
 
 		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER| SWT.VIRTUAL);
 		createColumns(tableViewer);
 
-		//tableViewer.setContentProvider(new ExchangesViewContentProvider());
 		tableViewer.setContentProvider(new ExchangesViewLazyContentProvider(tableViewer));
 		tableViewer.setUseHashlookup(true);
 		
@@ -108,6 +124,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 				if (selection.getFirstElement() instanceof HttpExchange) {
 					HttpExchange exc = (HttpExchange) selection.getFirstElement();
 					updateRequestResponseViews(exc);
+					enableStopMenu(exc);
 				}
 			}
 
@@ -149,13 +166,50 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		removeExchangeAction = new RemoveExchangeAction(tableViewer);
 		removeExchangeAction.setEnabled(false);
 		
+		
+		stopExchangeAction = new ExchangeStopAction(tableViewer);
+		stopExchangeAction.setEnabled(false);
+		
+		removeAllExchangesAction = new ExchangeVirtualListRemoveAction(tableViewer);
+		removeAllExchangesAction.setEnabled(false); 
+		
 		addMenu();
 
 		Composite compControls = new Composite(composite, SWT.NONE);
 		
 		GridLayout gridLayoutForControls = new GridLayout();
-		gridLayoutForControls.numColumns = 5;
+		gridLayoutForControls.numColumns = 1;
 		compControls.setLayout(gridLayoutForControls);
+		
+		lbFilterCountDisplayer = new Link(compControls, SWT.NONE);
+		lbFilterCountDisplayer.setText(filterManager.toString()  +filterCountText);
+		lbFilterCountDisplayer.addSelectionListener (new SelectionAdapter () {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				ActionContributionItem item = (ActionContributionItem)getViewSite().getActionBars().getToolBarManager().find(ShowFiltersDialogAction.ID);
+				IAction action = item.getAction();
+				action.run();
+			}
+		});
+		
+		lbSortByDisplayer = new Link(compControls, SWT.NONE);
+		lbSortByDisplayer.setText(comparator.toString());
+		lbSortByDisplayer.addSelectionListener (new SelectionAdapter () {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				ActionContributionItem item = (ActionContributionItem)getViewSite().getActionBars().getToolBarManager().find(ShowSortersDialogAction.ID);
+				IAction action = item.getAction();
+				action.run();
+			}
+		});
+
+		
+		GridData gridData4Label = new GridData(GridData.FILL_HORIZONTAL);
+		gridData4Label.grabExcessHorizontalSpace = true;
+		gridData4Label.widthHint = 500;
+		
+		lbSortByDisplayer.setLayoutData(gridData4Label);
+		lbFilterCountDisplayer.setLayoutData(gridData4Label);
 		
 		btTrackRequests = new Button(compControls, SWT.CHECK);
 		btTrackRequests.setText("Track Requests");
@@ -166,15 +220,9 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 			}
 			
 		});
+		
 		btTrackRequests.setSelection(Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange());
-		
-		
-		Label lbPad = new Label(compControls, SWT.NONE);
-		lbPad.setText("   ");
-		GridData gridData4Pad = new GridData(GridData.FILL_BOTH);
-		gridData4Pad.widthHint = 300;
-		lbPad.setLayoutData(gridData4Pad);
-		
+				
 		Router.getInstance().getExchangeStore().addTreeViewerListener(this);
 		refreshTable(false);
 		
@@ -185,6 +233,8 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	private void addMenu() {
 		MenuManager menuManager = new MenuManager();
 		menuManager.add(removeExchangeAction);
+		menuManager.add(stopExchangeAction);
+		menuManager.add(removeAllExchangesAction);
 		
 		final Menu menu = menuManager.createContextMenu(tableViewer.getControl());
 		tableViewer.getControl().setMenu(menu);
@@ -295,18 +345,23 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	}
 
 	private List<Exchange> applyFilter(List<Exchange> objects) {
-		if (objects == null || objects.size() == 0)
+		if (objects == null || objects.size() == 0) {
+			filterCountText = "exchanges list is empty.";
 			return new ArrayList<Exchange>();
-		
-		if (filterManager.isEmpty())
+		}
+		if (filterManager.isEmpty()) {
+			filterCountText = objects.size() + " of " + objects.size() + " Exchanges are displayed.";
 			return objects;
+		}
 			
 		List<Exchange> filteredList = new ArrayList<Exchange>();
 		for (Exchange exc : objects) {
 			if (filterManager.filter(exc)) {
 				filteredList.add(exc);
 			}
-		}	
+		}
+		
+		filterCountText = filteredList.size() + " of " + objects.size() + " Exchanges are displayed.";
 		return filteredList;
 	}
 	
@@ -336,10 +391,16 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 				
 				List<Exchange> array = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
 				applySorter(array);
+				
+				lbSortByDisplayer.setText(comparator.toString());
+				lbFilterCountDisplayer.setText((filterManager.toString() + filterCountText));
+				
 				if (array.size() > 0) {
 					removeExchangeAction.setEnabled(true);
+					removeAllExchangesAction.setEnabled(true);
 				} else {
 					removeExchangeAction.setEnabled(false);
+					removeAllExchangesAction.setEnabled(false);
 				}
 				tableViewer.setInput(array.toArray());
 				tableViewer.setItemCount(array.size());
@@ -465,6 +526,15 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		refreshTable(true);
 	}
 
-	
+	private void enableStopMenu(Exchange exchange) {
+		if (exchange.getStatus() == ExchangeState.STARTED)
+			stopExchangeAction.setEnabled(true);
+		else
+			stopExchangeAction.setEnabled(false);
+	}
+
+	public void removeExchanges(Exchange[] exchanges) {
+		refreshTable(true);
+	}
 	
 }

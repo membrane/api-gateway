@@ -12,22 +12,26 @@ public class ExchangeComparator implements Comparator<Exchange> {
 	
 	private boolean ascending = true;
 	
-	public int compare(Exchange o1, Exchange o2) {
-		if (o1.getResponse() == null)
+	public int compare(Exchange e1, Exchange e2) {
+		if (e1.getResponse() == null || e2.getResponse() == null)
 			return 0;
 		
-		StringBuffer b1 = new StringBuffer();
-		StringBuffer b2 = new StringBuffer();
 		for (ExchangeAccessor accessor : accessors) {
-			b1.append(accessor.get(o1));
-			b2.append(accessor.get(o2));
+			
+			Comparable comp1 = (Comparable)accessor.get(e1);
+			Comparable comp2 = (Comparable)accessor.get(e2);
+			
+			int result = comp1.compareTo(comp2);
+			if (result != 0) {
+				if (ascending) {
+					return comp1.compareTo(comp2);
+				} else {
+					return comp2.compareTo(comp1);
+				}
+			}
 		}
 		
-		if (ascending) {
-			return b1.toString().compareTo(b2.toString()) ;
-		} else {
-			return b2.toString().compareTo(b1.toString()) ;
-		}
+		return 0;
 	}
 	
 	public void addAccessor(ExchangeAccessor acc) {
@@ -66,4 +70,21 @@ public class ExchangeComparator implements Comparator<Exchange> {
 		this.ascending = ascending;
 	}
 	
+	@Override
+	public String toString() {
+		if (isEmpty())
+			return "<A>Sorted</A> by: NONE";
+		if (accessors.size() == 1)
+			return "<A>Sorted</A> by: " + accessors.get(0).getId();
+		StringBuffer buffer = new StringBuffer();
+		buffer.append("Sorted by: ");
+		
+		for (int i = 0; i < accessors.size() - 1; i++) {
+			buffer.append(accessors.get(i).getId() + " and ");
+		}
+		
+		buffer.append(accessors.get(accessors.size() - 1).getId());
+		
+		return buffer.toString();
+	}
 }

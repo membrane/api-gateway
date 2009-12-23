@@ -17,6 +17,11 @@ public class FilterManager {
 		filters.put(filter.getClass(), filter);
 	}
 	
+	public void removeFilter(Class<? extends ExchangesFilter> clazz) {
+		filters.remove(clazz);
+	}
+	
+	
 	
 	public boolean isEmpty() {
 		return filters.size() == 0;
@@ -30,5 +35,17 @@ public class FilterManager {
 			}
 		} 
 		return true;
+	}
+	
+	
+	@Override
+	public String toString() {
+		if (isEmpty())
+			return "<A>Filters</A> are deactivated:   ";
+		return "Some <A>Filters</A> are activated:   ";
+	}
+
+	public void removeAllFilters() {
+		filters.clear();
 	}
 }

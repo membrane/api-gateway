@@ -72,6 +72,20 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 			listener.removeExchange(exchange);
 		}
 	}
+	
+	private void removeWithoutNotify(Exchange exchange) {
+		if (!ruleExchangeMap.containsKey(exchange.getRule().getRuleKey())) {
+			return;
+		}
+
+		ruleExchangeMap.get(exchange.getRule().getRuleKey()).remove(exchange);
+		if (ruleExchangeMap.get(exchange.getRule().getRuleKey()).size() == 0) {
+			ruleExchangeMap.remove(exchange.getRule().getRuleKey());
+		}
+		exchange.informExchangeViewerOnRemoval();
+		totalList.remove(exchange);
+	}
+
 
 	public void removeAllExchanges(Rule rule) {
 		if (rule == null || rule.getRuleKey() == null) {
@@ -182,6 +196,15 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 			return null;
 		
 		return last.toArray();
+	}
+
+	public void removeAllExchanges(Exchange[] exchanges) {
+		for (Exchange exchange : exchanges) {
+			removeWithoutNotify(exchange);
+		}
+		for (IRuleTreeViewerListener listener : treeViewerListeners) {
+			listener.removeExchanges(exchanges);
+		}
 	}
 
 }

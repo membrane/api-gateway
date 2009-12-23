@@ -36,6 +36,10 @@ public class ExchangesViewLazyContentProvider implements ILazyContentProvider {
 
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		this.exchanges = (Object[]) newInput;
+	}
+
+	public Object[] getExchanges() {
+		return exchanges;
 	}	
 
 }

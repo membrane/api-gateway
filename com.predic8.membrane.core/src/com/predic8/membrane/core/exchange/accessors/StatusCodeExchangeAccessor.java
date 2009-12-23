@@ -6,10 +6,10 @@ public class StatusCodeExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Status-Code";
 	
-	public String get(Exchange exc) {
+	public Object get(Exchange exc) {
 		if (exc == null || exc.getResponse() == null)
-			return "";
-		return Integer.toString(exc.getResponse().getStatusCode());
+			return 0;
+		return exc.getResponse().getStatusCode();
 	}
 
 	public String getId() {

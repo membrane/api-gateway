@@ -10,11 +10,13 @@ import com.predic8.plugin.membrane.views.ExchangesView;
 
 public class ShowFiltersDialogAction extends Action {
 
+	public static final String ID = "Show Table Filters Action";
+	
 	private ExchangesView parentView;
 	
 	public ShowFiltersDialogAction(ExchangesView exchangesView) {
 		setText("Filters");
-		setId("Show Table Filters Action");
+		setId(ID);
 		setImageDescriptor(MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FILTER));
 		this.parentView = exchangesView;
 	}

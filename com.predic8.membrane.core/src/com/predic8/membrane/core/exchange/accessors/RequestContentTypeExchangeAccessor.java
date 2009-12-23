@@ -6,7 +6,7 @@ public class RequestContentTypeExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Request Content-Type";
 	
-	public String get(Exchange exc) {
+	public Object get(Exchange exc) {
 		if (exc == null || exc.getRequest() == null || exc.getRequest().getHeader().getContentType() == null)
 			return "";
 		return getContentType(exc);

@@ -44,4 +44,13 @@ public class MethodFilter implements ExchangesFilter {
 		this.displayedMethods = displayedMethods;
 	}
 
+
+	public boolean isDeactivated() {
+		if (showAllMethods)
+			return true;
+		if (displayedMethods.isEmpty())
+			return true;
+		return false;
+	}
+
 }

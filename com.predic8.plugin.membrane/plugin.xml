@@ -142,23 +142,14 @@
                toolbarPath="membraneConfigurationGroup"
                tooltip="Save Rule Configuration">
          </action>
-          <action
-               class="com.predic8.plugin.membrane.actions.ShowRuleTreeAction"
-               icon="icons/rule_tree.png"
-               id="com.predic8.plugin.membrane.actions.ShowRuleTreeAction"
-               label="Show Rule Tree"
-               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
-               style="push"
-               toolbarPath="membraneShowRuleViewsGroup">
-         </action>
          <action
                class="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"
                icon="icons/calculator.png"
                id="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"
-               label="Show Rule Statistics"
+               label="Show Rules"
                menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
                toolbarPath="membraneShowRuleViewsGroup"
-               tooltip="show rule statistics view">
+               tooltip="show rules  view">
          </action>
          <action
                class="com.predic8.plugin.membrane.actions.ShowExchangesViewAction"

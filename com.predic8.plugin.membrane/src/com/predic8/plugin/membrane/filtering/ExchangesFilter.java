@@ -6,5 +6,6 @@ public interface ExchangesFilter {
 	
 	public boolean filter(Exchange exc); 
 	
+	public boolean isDeactivated();
 	
 }

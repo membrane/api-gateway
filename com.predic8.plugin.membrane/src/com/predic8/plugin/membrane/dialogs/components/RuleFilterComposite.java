@@ -139,6 +139,5 @@ public class RuleFilterComposite extends Composite {
 		btShowAllRules.notifyListeners(SWT.Selection, null);
 	}
 
-	
-	
+
 }

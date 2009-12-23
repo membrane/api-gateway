@@ -47,6 +47,8 @@ public interface ExchangeStore {
 
 	public void removeAllExchanges(Rule rule);
 	
+	public void removeAllExchanges(Exchange[] exchanges);
+	
 	public Exchange[] getExchanges(RuleKey ruleKey);
 	
 	public int getNumberOfExchanges(RuleKey ruleKey);

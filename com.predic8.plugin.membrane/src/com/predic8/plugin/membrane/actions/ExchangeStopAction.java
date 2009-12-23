@@ -3,7 +3,7 @@ package com.predic8.plugin.membrane.actions;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.TreeViewer;
+import org.eclipse.jface.viewers.StructuredViewer;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
@@ -11,11 +11,11 @@ import com.predic8.plugin.membrane.resources.ImageKeys;
 
 public class ExchangeStopAction extends Action {
 
-	private TreeViewer treeView;
+	private StructuredViewer treeView;
 	private ImageDescriptor descriptor_enable;
 	private ImageDescriptor descriptor_disable;
 	
-	public ExchangeStopAction(TreeViewer treeView) {
+	public ExchangeStopAction(StructuredViewer treeView) {
 		this.treeView = treeView;
 		setText("Stop");
 		setId("Exchange Stop Action");

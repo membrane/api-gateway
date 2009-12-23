@@ -46,6 +46,8 @@ public class ExchangesTableFilterDialog extends Dialog {
 	
 	private RuleFilterComposite rulesFilterComposite;
 	
+	Button BtRemoveFilters;
+	
 	public ExchangesTableFilterDialog(Shell parentShell, ExchangesView parent) {
 		super(parentShell);
 		this.exchangesView = parent;
@@ -66,7 +68,7 @@ public class ExchangesTableFilterDialog extends Dialog {
 		 GridLayout layout = new GridLayout();
 		 composite.setLayout(layout);
  		 
-		 Button BtRemoveFilters = new Button(composite, SWT.PUSH);
+		 BtRemoveFilters = new Button(composite, SWT.PUSH);
 		 BtRemoveFilters.addSelectionListener(new SelectionAdapter() {
 			 @Override
 			public void widgetSelected(SelectionEvent e) {
@@ -149,8 +151,23 @@ public class ExchangesTableFilterDialog extends Dialog {
 
 	@Override
 	protected void okPressed() {
-		exchangesView.getFilterManager().addFilter(rulesFilterComposite.getRulesFilter());
-		exchangesView.getFilterManager().addFilter(methodFilterComposite.getMethodFilter());
+		if (BtRemoveFilters.getSelection()) {
+			exchangesView.getFilterManager().removeAllFilters();
+			exchangesView.reloadAll();
+			return;
+		}
+		if (rulesFilterComposite.getRulesFilter().isDeactivated()) {
+			exchangesView.getFilterManager().removeFilter(RulesFilter.class);
+		} else {
+			exchangesView.getFilterManager().addFilter(rulesFilterComposite.getRulesFilter());
+		}
+		
+		if (methodFilterComposite.getMethodFilter().isDeactivated()) {
+			exchangesView.getFilterManager().removeFilter(MethodFilter.class);
+		} else {
+			exchangesView.getFilterManager().addFilter(methodFilterComposite.getMethodFilter());
+		}
+		
 		exchangesView.reloadAll();
 		super.okPressed();
 	}

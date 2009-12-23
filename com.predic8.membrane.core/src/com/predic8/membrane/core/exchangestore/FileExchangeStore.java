@@ -162,4 +162,9 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return null;
 	}
 
+	public void removeAllExchanges(Exchange[] exchanges) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }
