@@ -89,6 +89,14 @@
             name="Response"
             restorable="true">
       </view>
+      <view
+            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
+            class="com.predic8.plugin.membrane.views.RulesView"
+            icon="icons/report_key.png"
+            id="com.predic8.plugin.membrane.views.RulesView"
+            name="Rules"
+            restorable="true">
+      </view>
    </extension>
    <extension
          point="org.eclipse.ui.actionSets">
@@ -146,10 +154,10 @@
                class="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"
                icon="icons/calculator.png"
                id="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"
-               label="Show Rules"
+               label="Show Rule Statistics"
                menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
                toolbarPath="membraneShowRuleViewsGroup"
-               tooltip="show rules  view">
+               tooltip="show rule statistics  view">
          </action>
          <action
                class="com.predic8.plugin.membrane.actions.ShowExchangesViewAction"
@@ -160,6 +168,16 @@
                style="push"
                toolbarPath="membraneExchangesSeparator"
                tooltip="show exchanges view">
+         </action>
+         <action
+               class="com.predic8.plugin.membrane.actions.ShowRulesViewAction"
+               icon="icons/report_key.png"
+               id="com.predic8.plugin.membrane.actions.ShowRulesViewAction"
+               label="Show Rules"
+               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
+               style="push"
+               toolbarPath="membraneShowRuleViewsGroup"
+               tooltip="show rules view">
          </action>
       </actionSet>
    </extension>

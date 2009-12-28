@@ -113,12 +113,17 @@ public class RuleDetailsComposite extends Composite {
 
 		ruleOptionsTargetGroup = new Group(groupComposite, SWT.NONE);
 		ruleOptionsTargetGroup.setText("Target");
-		ruleOptionsTargetGroup.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		GridData optTargetGroupGridData = new GridData(GridData.FILL_HORIZONTAL);
+		optTargetGroupGridData.verticalAlignment = GridData.VERTICAL_ALIGN_BEGINNING;
+		optTargetGroupGridData.heightHint = 68;
+		
+		ruleOptionsTargetGroup.setLayoutData(optTargetGroupGridData);
 		ruleOptionsTargetGroup.setLayout(new RowLayout(SWT.VERTICAL));
 
 		labelTargetHost = new Label(ruleOptionsTargetGroup, SWT.NONE);
 		labelTargetPort = new Label(ruleOptionsTargetGroup, SWT.NONE);
-
+		
+		
 		final Composite compositeCanvas = new Composite(this, SWT.NONE);
 		compositeCanvas.setLayoutData(new GridData(GridData.FILL_BOTH));
 
