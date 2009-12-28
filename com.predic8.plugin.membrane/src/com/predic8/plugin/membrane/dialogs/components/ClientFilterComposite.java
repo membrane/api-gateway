@@ -1,7 +1,7 @@
 package com.predic8.plugin.membrane.dialogs.components;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -16,24 +16,24 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.plugin.membrane.filtering.RulesFilter;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.plugin.membrane.filtering.ClientFilter;
 
-public class RuleFilterComposite extends Composite {
+public class ClientFilterComposite extends Composite {
 
 	private List<Button> buttons = new ArrayList<Button>();
 	
-	private RulesFilter rulesFilter;
+	private ClientFilter serverFilter;
 	
-	private Button btShowAllRules;
+	private Button btShowAllClients;
 
-	private Button btShowSelectedRulesOnly;
+	private Button btShowSelectedClientsOnly;
 
 	
-	public RuleFilterComposite(Composite parent, RulesFilter filter) {
+	public ClientFilterComposite(Composite parent, ClientFilter filter) {
 		super(parent, SWT.NONE);
-		rulesFilter = filter;
+		serverFilter = filter;
 		
 		GridLayout layout = new GridLayout();
 		layout.marginTop = 20;
@@ -43,7 +43,7 @@ public class RuleFilterComposite extends Composite {
 		setLayout(layout);
 
 		Group rulesGroup = new Group(this, SWT.NONE);
-		rulesGroup.setText("Show Rules");
+		rulesGroup.setText("Show Clients");
 		rulesGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
 		GridLayout gridLayout4RuleGroup = new GridLayout();
@@ -52,27 +52,27 @@ public class RuleFilterComposite extends Composite {
 		gridLayout4RuleGroup.marginRight = 10;
 		rulesGroup.setLayout(gridLayout4RuleGroup);
 
-		btShowAllRules = new Button(rulesGroup, SWT.RADIO);
-		btShowAllRules.setText("Display exchanges from all rules");
-		btShowAllRules.addSelectionListener(new SelectionAdapter() {
+		btShowAllClients = new Button(rulesGroup, SWT.RADIO);
+		btShowAllClients.setText("Display exchanges from all clients");
+		btShowAllClients.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 
-				if (btShowAllRules.getSelection()) {
-					btShowSelectedRulesOnly.setSelection(false);
+				if (btShowAllClients.getSelection()) {
+					btShowSelectedClientsOnly.setSelection(false);
 					for (Button button : buttons) {
 						button.setEnabled(false);
-						rulesFilter.setShowAllRules(true);
+						serverFilter.setShowAllClients(true);
 					}
 				}
 			}
 		});
 
-		btShowSelectedRulesOnly = new Button(rulesGroup, SWT.RADIO);
-		btShowSelectedRulesOnly.setText("Display exchanges from selected rules only");
-		btShowSelectedRulesOnly.addSelectionListener(new SelectionAdapter() {
+		btShowSelectedClientsOnly = new Button(rulesGroup, SWT.RADIO);
+		btShowSelectedClientsOnly.setText("Display exchanges from selected clients only");
+		btShowSelectedClientsOnly.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				if (btShowSelectedRulesOnly.getSelection()) {
-					Set<RuleKey> toDisplay = rulesFilter.getDisplayedRules();
+				if (btShowSelectedClientsOnly.getSelection()) {
+					Set<String> toDisplay = serverFilter.getDisplayedClients();
 					for (Button button : buttons) {
 						button.setEnabled(true);
 						if (toDisplay.contains(button.getData())) {
@@ -81,7 +81,7 @@ public class RuleFilterComposite extends Composite {
 							button.setSelection(false);
 						}
 					}
-					rulesFilter.setShowAllRules(false);
+					serverFilter.setShowAllClients(false);
 				}
 			}
 		});
@@ -94,13 +94,27 @@ public class RuleFilterComposite extends Composite {
 		GridLayout rulesLayout = new GridLayout();
 		rulesComposite.setLayout(rulesLayout);
 
-		Collection<Rule> rules = Router.getInstance().getRuleManager().getRules();
-		for (Rule rule : rules) {
+		Object[] excanges = Router.getInstance().getExchangeStore().getAllExchanges();
+		Set<String> clients = new HashSet<String>();
+		if (excanges != null && excanges.length > 0) {
+			for (Object object : excanges) {
+				try {
+					Exchange exc = (Exchange)object;
+					clients.add(((String)(exc.getProperty(HttpTransport.SOURCE_HOSTNAME))));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+			}
+		}
+		
+		
+		for (String client : clients) {
 			final Button bt = new Button(rulesComposite, SWT.CHECK);
 			bt.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-			bt.setText(rule.toString());
-			bt.setData(rule.getRuleKey());
-			if (rulesFilter.getDisplayedRules().contains(rule.getRuleKey())) {
+			bt.setText(client);
+			bt.setData(client);
+			if (serverFilter.getDisplayedClients().contains(client)) {
 				bt.setSelection(true);
 			}
 
@@ -108,34 +122,35 @@ public class RuleFilterComposite extends Composite {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
 					if (bt.getSelection()) {
-						rulesFilter.getDisplayedRules().add((RuleKey) bt.getData());
+						serverFilter.getDisplayedClients().add((String) bt.getData());
 					} else {
-						rulesFilter.getDisplayedRules().remove((RuleKey) bt.getData());
+						serverFilter.getDisplayedClients().remove((String) bt.getData());
 					}
 				}
 			});
 			buttons.add(bt);
 		}
+		
 
-		if (rulesFilter.isShowAllRules()) {
-			btShowAllRules.setSelection(true);
-			btShowAllRules.notifyListeners(SWT.Selection, null);
+		if (serverFilter.isShowAllClients()) {
+			btShowAllClients.setSelection(true);
+			btShowAllClients.notifyListeners(SWT.Selection, null);
 		} else {
-			btShowSelectedRulesOnly.setSelection(true);
-			btShowSelectedRulesOnly.notifyListeners(SWT.Selection, null);
+			btShowSelectedClientsOnly.setSelection(true);
+			btShowSelectedClientsOnly.notifyListeners(SWT.Selection, null);
 		}
 
 	}
 
 
-	public RulesFilter getRulesFilter() {
-		return rulesFilter;
+	public ClientFilter getClientFilter() {
+		return serverFilter;
 	}
 
 
-	public void showAllRules() {
-		btShowAllRules.setSelection(true);
-		btShowAllRules.notifyListeners(SWT.Selection, null);
+	public void showAllClients() {
+		btShowAllClients.setSelection(true);
+		btShowAllClients.notifyListeners(SWT.Selection, null);
 	}
 
 

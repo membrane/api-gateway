@@ -55,15 +55,9 @@ public class HttpServerThread extends AbstractHttpThread {
 			while (true) {
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
-				//exchange = new HttpExchange();
-				//exchange.setSrcOut(srcOut);
 				exchange.setTimeReqReceived(System.currentTimeMillis());
-				boolean alive = srcReq.isKeepAlive();
-//				if (!alive) {
-//					sourceSocket.shutdownInput();
-//				}
 				process();
-				if (!alive) {
+				if (!srcReq.isKeepAlive() || !exchange.getResponse().isKeepAlive()) {
 					break;
 				}
 				if (exchange.getResponse().isRedirect()) {
@@ -75,6 +69,7 @@ public class HttpServerThread extends AbstractHttpThread {
 			client.close();
 		} catch (SocketTimeoutException e) {
 			log.debug("Socket of thread " + counter + " timed out");
+			
 		} catch (SocketException se) {
 			log.debug("client socket closed");
 		}  catch (IOException e) {

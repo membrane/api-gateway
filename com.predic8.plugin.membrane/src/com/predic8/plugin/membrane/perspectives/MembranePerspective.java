@@ -19,9 +19,8 @@ public class MembranePerspective implements IPerspectiveFactory {
 	public void createInitialLayout(IPageLayout layout) {
 		layout.setEditorAreaVisible(false);
 		
-		IFolderLayout topLayoutFolder = layout.createFolder("top folder", IPageLayout.TOP, 0.45f, IPageLayout.ID_EDITOR_AREA);
+		IFolderLayout topLayoutFolder = layout.createFolder("top folder", IPageLayout.TOP, 0.50f, IPageLayout.ID_EDITOR_AREA);
 		topLayoutFolder.addPlaceholder(RuleDetailsView.VIEW_ID);
-		//topLayoutFolder.addView(RulesView.VIEW_ID);
 		topLayoutFolder.addView(ExchangesView.VIEW_ID);
 		topLayoutFolder.addPlaceholder(BrowserView.VIEW_ID);
 		topLayoutFolder.addPlaceholder(RuleStatisticsView.VIEW_ID);
@@ -30,7 +29,7 @@ public class MembranePerspective implements IPerspectiveFactory {
 		IFolderLayout topLeftLayoutFolder = layout.createFolder("top left folder", IPageLayout.LEFT, 0.25f, "top folder");
 		topLeftLayoutFolder.addView(RulesView.VIEW_ID);
 		
-		IFolderLayout southLayoutFolder = layout.createFolder("south folder", IPageLayout.BOTTOM, 0.55f, IPageLayout.ID_EDITOR_AREA);
+		IFolderLayout southLayoutFolder = layout.createFolder("south folder", IPageLayout.BOTTOM, 0.50f, IPageLayout.ID_EDITOR_AREA);
 		southLayoutFolder.addView(RequestView.VIEW_ID);
 		southLayoutFolder.addView(ResponseView.VIEW_ID);
 		

@@ -73,11 +73,10 @@ public class ExchangeComparator implements Comparator<Exchange> {
 	@Override
 	public String toString() {
 		if (isEmpty())
-			return "<A>Sorted</A> by: NONE";
+			return "NONE";
 		if (accessors.size() == 1)
-			return "<A>Sorted</A> by: " + accessors.get(0).getId();
+			return accessors.get(0).getId();
 		StringBuffer buffer = new StringBuffer();
-		buffer.append("Sorted by: ");
 		
 		for (int i = 0; i < accessors.size() - 1; i++) {
 			buffer.append(accessors.get(i).getId() + " and ");

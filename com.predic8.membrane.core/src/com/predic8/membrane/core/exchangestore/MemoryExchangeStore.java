@@ -32,7 +32,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 
 	private Map<RuleKey, List<Exchange>> ruleExchangeMap = new HashMap<RuleKey, List<Exchange>>();
 
-	List<Exchange> totalList = new ArrayList<Exchange>();
+	private List<Exchange> totalList = new ArrayList<Exchange>();
 	
 	private int threashold = 1000;
 
@@ -50,7 +50,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 		
 		totalList.add(exchange);
-
+		
 		for (IRuleTreeViewerListener listener : treeViewerListeners) {
 			exchange.addTreeViewerListener(listener);
 			listener.addExchange(exchange.getRule(), exchange);
@@ -68,6 +68,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 		exchange.informExchangeViewerOnRemoval();
 		totalList.remove(exchange);
+		
 		for (IRuleTreeViewerListener listener : treeViewerListeners) {
 			listener.removeExchange(exchange);
 		}
@@ -84,6 +85,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 		exchange.informExchangeViewerOnRemoval();
 		totalList.remove(exchange);
+		
 	}
 
 
@@ -92,6 +94,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 			return;
 		}
 		Exchange[] exchanges = getExchanges(rule.getRuleKey());
+		
 		ruleExchangeMap.remove(rule.getRuleKey());
 		totalList.removeAll(Arrays.asList(exchanges));
 		for (IRuleTreeViewerListener listener : treeViewerListeners) {
@@ -206,5 +209,5 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 			listener.removeExchanges(exchanges);
 		}
 	}
-
+	
 }

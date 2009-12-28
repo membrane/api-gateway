@@ -120,13 +120,13 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 					return exchange.getRequest().getMethod();
 
 				case 4:
-					return exchange.getRequest().getUri();
+					return exchange.getRequest().getUri(); //path
 
 				case 5:
-					return (String)exchange.getProperty(HttpTransport.SOURCE_HOSTNAME);
+					return (String)exchange.getProperty(HttpTransport.SOURCE_HOSTNAME); //client
 					
 				case 6:
-					return exchange.getRequest().getHeader().getHost();
+					return exchange.getRequest().getHeader().getHost(); //server
 
 				case 7:
 					String contentType = (String) exchange.getRequest().getHeader().getContentType();
@@ -144,9 +144,14 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 				case 9:
 					if (exchange.getResponse() == null)
 						return "";
-					return "" + exchange.getResponse().getHeader().getContentLength();
+					return "" + exchange.getResponse().getHeader().getContentType();
 					
 				case 10:
+					if (exchange.getResponse() == null)
+						return "";
+					return "" + exchange.getResponse().getHeader().getContentLength();
+					
+				case 11:
 					
 					return "" + (exchange.getTimeResReceived() - exchange.getTimeReqSent());
 					

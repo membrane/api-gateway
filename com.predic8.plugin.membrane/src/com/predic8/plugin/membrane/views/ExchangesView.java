@@ -26,6 +26,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
@@ -75,9 +76,13 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	private ExchangeComparator comparator = new ExchangeComparator();
 	
 	
-	private Link lbFilterCountDisplayer;
+	private Link linkFilter;
 	
-	private Link lbSortByDisplayer;
+	private Label lbFilterCount;
+	
+	private Label lbSortedBy;
+	
+	private Link linkSortBy;
 	
 	private String filterCountText = "";
 	
@@ -92,11 +97,10 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		gridLayout.numColumns = 1;
 		gridLayout.marginTop = 10;
 		gridLayout.marginLeft = 2;
-		gridLayout.marginBottom = 10;
+		gridLayout.marginBottom = 5;
 		gridLayout.marginRight = 2;
-		gridLayout.verticalSpacing = 10;
+		gridLayout.verticalSpacing = 7;
 		composite.setLayout(gridLayout);
-
 
 		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER| SWT.VIRTUAL);
 		createColumns(tableViewer);
@@ -181,9 +185,16 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		gridLayoutForControls.numColumns = 1;
 		compControls.setLayout(gridLayoutForControls);
 		
-		lbFilterCountDisplayer = new Link(compControls, SWT.NONE);
-		lbFilterCountDisplayer.setText(filterManager.toString()  +filterCountText);
-		lbFilterCountDisplayer.addSelectionListener (new SelectionAdapter () {
+		
+		Composite compositeFilters = new Composite(compControls, SWT.NONE);
+		GridLayout gridLayoutFilters = new GridLayout();
+		gridLayoutFilters.numColumns = 2;
+		compositeFilters.setLayout(gridLayoutFilters);
+		
+
+		linkFilter = new Link(compositeFilters, SWT.NONE); 
+		linkFilter.setText("<A>Filters</A>");
+		linkFilter.addSelectionListener (new SelectionAdapter () {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				ActionContributionItem item = (ActionContributionItem)getViewSite().getActionBars().getToolBarManager().find(ShowFiltersDialogAction.ID);
@@ -192,9 +203,24 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 			}
 		});
 		
-		lbSortByDisplayer = new Link(compControls, SWT.NONE);
-		lbSortByDisplayer.setText(comparator.toString());
-		lbSortByDisplayer.addSelectionListener (new SelectionAdapter () {
+		GridData gridData4Label = new GridData(GridData.FILL_HORIZONTAL);
+		gridData4Label.grabExcessHorizontalSpace = true;
+		gridData4Label.widthHint = 500;
+		
+		lbFilterCount = new Label(compositeFilters, SWT.NONE);
+		lbFilterCount.setText(filterManager.toString()  + filterCountText);
+		lbFilterCount.setLayoutData(gridData4Label);
+		
+		
+		Composite  compositeSorters = new Composite(compControls, SWT.NONE);
+		GridLayout gridLayoutSorters = new GridLayout();
+		gridLayoutSorters.numColumns = 2;
+		compositeSorters.setLayout(gridLayoutSorters);
+		
+		
+		linkSortBy = new Link(compositeSorters, SWT.NONE);
+		linkSortBy.setText("<A>Sorted By: </A>");
+		linkSortBy.addSelectionListener (new SelectionAdapter () {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				ActionContributionItem item = (ActionContributionItem)getViewSite().getActionBars().getToolBarManager().find(ShowSortersDialogAction.ID);
@@ -202,15 +228,11 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 				action.run();
 			}
 		});
-
 		
-		GridData gridData4Label = new GridData(GridData.FILL_HORIZONTAL);
-		gridData4Label.grabExcessHorizontalSpace = true;
-		gridData4Label.widthHint = 500;
-		
-		lbSortByDisplayer.setLayoutData(gridData4Label);
-		lbFilterCountDisplayer.setLayoutData(gridData4Label);
-		
+		lbSortedBy = new Label(compositeSorters, SWT.NONE);
+		lbSortedBy.setText(comparator.toString());
+		lbSortedBy.setLayoutData(gridData4Label);
+				
 		btTrackRequests = new Button(compControls, SWT.CHECK);
 		btTrackRequests.setText("Track Requests");
 		btTrackRequests.addSelectionListener(new SelectionAdapter() {
@@ -223,6 +245,11 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		
 		btTrackRequests.setSelection(Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange());
 				
+		GridData gdata = new GridData();
+		gdata.horizontalIndent = 4;
+
+		btTrackRequests.setLayoutData(gdata);
+		
 		Router.getInstance().getExchangeStore().addTreeViewerListener(this);
 		refreshTable(false);
 		
@@ -242,8 +269,8 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	}
 
 	private void createColumns(TableViewer viewer) {
-		String[] titles = { "Status-Code", "Time", "Rule", "Method", "Path", "Client", "Server", "Request Content-Type", "Request Content Length", "Response Content Length", "Duration" };
-		int[] bounds = {90, 100, 80, 90, 90, 80, 80, 130, 140, 140, 70 };
+		String[] titles = { "Status-Code", "Time", "Rule", "Method", "Path", "Client", "Server", "Request Content-Type", "Request Content Length", "Response Content Type", "Response Content Length", "Duration" };
+		int[] bounds = {90, 100, 80, 90, 90, 80, 80, 130, 140, 140, 140, 70 };
 
 		for (int i = 0; i < titles.length; i++) {
 			final TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
@@ -252,38 +279,6 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 			column.getColumn().setWidth(bounds[i]);
 			column.getColumn().setResizable(true);
 			column.getColumn().setMoveable(true);
-
-			column.getColumn().addSelectionListener(new SelectionAdapter() {
-				public void widgetSelected(SelectionEvent event) {
-					
-					if (column.getColumn().getText().equals("Time")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_TIME);
-					} else if (column.getColumn().getText().equals("Rule")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_RULE);
-					} else if (column.getColumn().getText().equals("Method")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_METHOD);
-					} else if (column.getColumn().getText().equals("Path")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_PATH);
-					} else if (column.getColumn().getText().equals("Client")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_CLIENT);
-					} else if (column.getColumn().getText().equals("Server")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_SERVER);
-					} else if (column.getColumn().getText().equals("Content-Type")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_CONTENT_TYPE);
-					} else if (column.getColumn().getText().equals("Status-Code")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_STATUS_CODE);
-					} else if (column.getColumn().getText().equals("Request Content Length")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_REQUEST_CONTENT_LENGTH);
-					} else if (column.getColumn().getText().equals("Response Content Length")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_RESPONSE_CONTENT_LENGTH);
-					} else if (column.getColumn().getText().equals("Duration")) {
-						((ExchangesVieweSorter) tableViewer.getSorter()).setSortTarget(ExchangesVieweSorter.SORT_TARGET_DURATION);
-					}
-
-					column.getViewer().refresh();
-				}
-			});
-
 		}
 
 		Table table = viewer.getTable();
@@ -392,8 +387,8 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 				List<Exchange> array = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
 				applySorter(array);
 				
-				lbSortByDisplayer.setText(comparator.toString());
-				lbFilterCountDisplayer.setText((filterManager.toString() + filterCountText));
+				lbSortedBy.setText(comparator.toString());
+				lbFilterCount.setText((filterManager.toString() + filterCountText));
 				
 				if (array.size() > 0) {
 					removeExchangeAction.setEnabled(true);
@@ -406,7 +401,8 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 				tableViewer.setItemCount(array.size());
 				if (Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange()) {
 					canShowBody = false;
-					tableViewer.setSelection(new StructuredSelection(array.get(array.size() - 1)), true);
+					if (array.size() > 0)
+						tableViewer.setSelection(new StructuredSelection(array.get(array.size() - 1)), true);
 				}	
 				tableViewer.refresh();
 				tableViewer.getTable().redraw();

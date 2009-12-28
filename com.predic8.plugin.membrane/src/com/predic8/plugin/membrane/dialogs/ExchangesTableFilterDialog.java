@@ -30,10 +30,16 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 
+import com.predic8.plugin.membrane.dialogs.components.ClientFilterComposite;
 import com.predic8.plugin.membrane.dialogs.components.MethodFilterComposite;
 import com.predic8.plugin.membrane.dialogs.components.RuleFilterComposite;
+import com.predic8.plugin.membrane.dialogs.components.ServerFilterComposite;
+import com.predic8.plugin.membrane.dialogs.components.StatusCodeFilterComposite;
+import com.predic8.plugin.membrane.filtering.ClientFilter;
 import com.predic8.plugin.membrane.filtering.MethodFilter;
 import com.predic8.plugin.membrane.filtering.RulesFilter;
+import com.predic8.plugin.membrane.filtering.ServerFilter;
+import com.predic8.plugin.membrane.filtering.StatusCodeFilter;
 import com.predic8.plugin.membrane.views.ExchangesView;
 
 public class ExchangesTableFilterDialog extends Dialog {
@@ -45,6 +51,12 @@ public class ExchangesTableFilterDialog extends Dialog {
 	private MethodFilterComposite methodFilterComposite;
 	
 	private RuleFilterComposite rulesFilterComposite;
+	
+	private ServerFilterComposite serverFilterComposite;
+	
+	private ClientFilterComposite clientFilterComposite;
+	
+	private StatusCodeFilterComposite statusCodeFilterComposite;
 	
 	Button BtRemoveFilters;
 	
@@ -74,6 +86,9 @@ public class ExchangesTableFilterDialog extends Dialog {
 			public void widgetSelected(SelectionEvent e) {
 				 rulesFilterComposite.showAllRules();
 				 methodFilterComposite.showAllMethods();
+				 serverFilterComposite.showAllServers();
+				 clientFilterComposite.showAllClients();
+				 statusCodeFilterComposite.showAllStatusCodes();
 			}
 		 });
 		 BtRemoveFilters.setText("Remove  all  filters");
@@ -116,10 +131,36 @@ public class ExchangesTableFilterDialog extends Dialog {
 			methodFilter = new MethodFilter();
 		}
 
+		ServerFilter serverFilter = null;
+		if (exchangesView.getFilterManager().getFilterForClass(MethodFilter.class) != null) {
+			serverFilter = (ServerFilter) exchangesView.getFilterManager().getFilterForClass(ServerFilter.class);
+		} else {
+			serverFilter = new ServerFilter();
+		}
+		
+		
+		ClientFilter clientFilter = null;
+		if (exchangesView.getFilterManager().getFilterForClass(MethodFilter.class) != null) {
+			clientFilter = (ClientFilter) exchangesView.getFilterManager().getFilterForClass(ClientFilter.class);
+		} else {
+			clientFilter = new ClientFilter();
+		}
+		
+		StatusCodeFilter statusCodeFilter = null;
+		if (exchangesView.getFilterManager().getFilterForClass(MethodFilter.class) != null) {
+			statusCodeFilter = (StatusCodeFilter) exchangesView.getFilterManager().getFilterForClass(StatusCodeFilter.class);
+		} else {
+			statusCodeFilter = new StatusCodeFilter();
+		}
+		
+		
 		tabFolder = new TabFolder(container, SWT.NONE);		
 		
 		methodFilterComposite = new MethodFilterComposite(tabFolder, methodFilter);
 		rulesFilterComposite = new RuleFilterComposite(tabFolder, rulesFilter);
+		serverFilterComposite = new ServerFilterComposite(tabFolder, serverFilter);
+		clientFilterComposite = new ClientFilterComposite(tabFolder, clientFilter);
+		statusCodeFilterComposite = new StatusCodeFilterComposite(tabFolder, statusCodeFilter);
 		
 		GridData gdTabs = new GridData();
 		gdTabs.grabExcessHorizontalSpace = true;
@@ -134,6 +175,18 @@ public class ExchangesTableFilterDialog extends Dialog {
 		tabItemMethod.setText("Method");
 		tabItemMethod.setControl(methodFilterComposite);
 
+		TabItem tabItemStatusCode = new TabItem(tabFolder, SWT.NONE);
+		tabItemStatusCode.setText("Status Code");
+		tabItemStatusCode.setControl(statusCodeFilterComposite);
+		
+		TabItem tabItemServer = new TabItem(tabFolder, SWT.NONE);
+		tabItemServer.setText("Server");
+		tabItemServer.setControl(serverFilterComposite);
+		
+		TabItem tabItemClient = new TabItem(tabFolder, SWT.NONE);
+		tabItemClient.setText("Client");
+		tabItemClient.setControl(clientFilterComposite);
+		
 		return container;
 	}
 
@@ -166,6 +219,24 @@ public class ExchangesTableFilterDialog extends Dialog {
 			exchangesView.getFilterManager().removeFilter(MethodFilter.class);
 		} else {
 			exchangesView.getFilterManager().addFilter(methodFilterComposite.getMethodFilter());
+		}
+		
+		if (serverFilterComposite.getServerFilter().isDeactivated()) {
+			exchangesView.getFilterManager().removeFilter(ServerFilter.class);
+		} else {
+			exchangesView.getFilterManager().addFilter(serverFilterComposite.getServerFilter());
+		}
+		
+		if (clientFilterComposite.getClientFilter().isDeactivated()) {
+			exchangesView.getFilterManager().removeFilter(ClientFilter.class);
+		} else {
+			exchangesView.getFilterManager().addFilter(clientFilterComposite.getClientFilter());
+		}
+		
+		if (statusCodeFilterComposite.getStatusCodeFilter().isDeactivated()) {
+			exchangesView.getFilterManager().removeFilter(StatusCodeFilter.class);
+		} else {
+			exchangesView.getFilterManager().addFilter(statusCodeFilterComposite.getStatusCodeFilter());
 		}
 		
 		exchangesView.reloadAll();

@@ -41,8 +41,8 @@ public class FilterManager {
 	@Override
 	public String toString() {
 		if (isEmpty())
-			return "<A>Filters</A> are deactivated:   ";
-		return "Some <A>Filters</A> are activated:   ";
+			return "are deactivated:   ";
+		return "are activated:   ";
 	}
 
 	public void removeAllFilters() {

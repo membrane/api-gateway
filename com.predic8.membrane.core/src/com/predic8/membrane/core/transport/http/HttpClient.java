@@ -120,11 +120,11 @@ public class HttpClient {
 	    		exception = ce; 
 	    		log.debug("Connection to " + host + " on port " + port + " refused.");
 	    	} catch (Exception e) {
+	    		log.debug("try # " + counter + " failed");
 	    		exc.getRequest().writeStartLine(System.out); 
 	    		exc.getRequest().getHeader().write(System.out);
 	    		e.printStackTrace();
 	    		exception = e;
-	    		log.debug(e);
 	    	}
     		counter ++;
 	    	try {
