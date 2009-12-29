@@ -5,23 +5,13 @@ import java.util.Set;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
-public class ServerFilter implements ExchangesFilter {
+public class ServerFilter extends AbstractExchangesFilter {
 
-	
-	private boolean showAllServers;
 	
 	private Set<String> displayedServers = new HashSet<String>();
 	
 	public ServerFilter() {
-		showAllServers = true;
-	}
-
-	public boolean isShowAllServers() {
-		return showAllServers;
-	}
-
-	public void setShowAllServers(boolean showAllServers) {
-		this.showAllServers = showAllServers;
+		showAll = true;
 	}
 
 	public Set<String> getDisplayedServers() {
@@ -33,7 +23,7 @@ public class ServerFilter implements ExchangesFilter {
 	}
 
 	public boolean filter(Exchange exc) {
-		if (showAllServers)
+		if (showAll)
 			return true;
 		if (displayedServers.contains(exc.getRequest().getHeader().getHost()))
 			return true;
@@ -42,7 +32,7 @@ public class ServerFilter implements ExchangesFilter {
 	}
 
 	public boolean isDeactivated() {
-		if (showAllServers)
+		if (showAll)
 			return true;
 		if (displayedServers.isEmpty())
 			return true;

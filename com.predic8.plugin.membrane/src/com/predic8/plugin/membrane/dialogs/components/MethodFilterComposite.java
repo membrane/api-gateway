@@ -58,7 +58,7 @@ public class MethodFilterComposite extends Composite {
 					btDelete.setEnabled(false);
 					btHead.setEnabled(false);
 					btTrace.setEnabled(false);
-					methodFilter.setShowAllMethods(true);
+					methodFilter.setShowAll(true);
 				}
 
 			}
@@ -113,7 +113,7 @@ public class MethodFilterComposite extends Composite {
 						btTrace.setSelection(false);
 					}
 
-					methodFilter.setShowAllMethods(false);
+					methodFilter.setShowAll(false);
 				}
 			}
 		});
@@ -216,7 +216,7 @@ public class MethodFilterComposite extends Composite {
 			}
 		});
 
-		if (methodFilter.isShowAllMethods()) {
+		if (methodFilter.isShowAll()) {
 			btShowAllMethods.setSelection(true);
 			btShowAllMethods.notifyListeners(SWT.Selection, null);
 		} else {

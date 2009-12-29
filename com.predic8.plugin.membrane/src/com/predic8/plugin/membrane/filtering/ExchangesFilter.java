@@ -8,4 +8,7 @@ public interface ExchangesFilter {
 	
 	public boolean isDeactivated();
 	
+	public boolean isShowAll();
+	
+	public void setShowAll(boolean showAll);
 }

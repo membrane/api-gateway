@@ -60,7 +60,7 @@ public class StatusCodeFilterComposite extends Composite {
 					btShowSelectedStatusCodesOnly.setSelection(false);
 					for (Button button : buttons) {
 						button.setEnabled(false);
-						statusCodeFilter.setShowAllStatusCodes(true);
+						statusCodeFilter.setShowAll(true);
 					}
 				}
 			}
@@ -80,7 +80,7 @@ public class StatusCodeFilterComposite extends Composite {
 							button.setSelection(false);
 						}
 					}
-					statusCodeFilter.setShowAllStatusCodes(false);
+					statusCodeFilter.setShowAll(false);
 				}
 			}
 		});
@@ -132,7 +132,7 @@ public class StatusCodeFilterComposite extends Composite {
 			buttons.add(bt);
 		}
 
-		if (statusCodeFilter.isShowAllStatusCodes()) {
+		if (statusCodeFilter.isShowAll()) {
 			btShowAllStatusCodes.setSelection(true);
 			btShowAllStatusCodes.notifyListeners(SWT.Selection, null);
 		} else {

@@ -5,23 +5,13 @@ import java.util.Set;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
-public class StatusCodeFilter implements ExchangesFilter {
+public class StatusCodeFilter extends AbstractExchangesFilter {
 
-	
-	private boolean showAllStatusCodes;
 	
 	private Set<Integer> displayedStatusCodes = new HashSet<Integer>();
 	
 	public StatusCodeFilter() {
-		showAllStatusCodes = true;
-	}
-
-	public boolean isShowAllStatusCodes() {
-		return showAllStatusCodes;
-	}
-
-	public void setShowAllStatusCodes(boolean showAllServers) {
-		this.showAllStatusCodes = showAllServers;
+		showAll = true;
 	}
 
 	public Set<Integer> getDisplayedStatusCodes() {
@@ -33,7 +23,7 @@ public class StatusCodeFilter implements ExchangesFilter {
 	}
 
 	public boolean filter(Exchange exc) {
-		if (showAllStatusCodes)
+		if (showAll)
 			return true;
 		
 		if (exc.getResponse() == null)
@@ -46,7 +36,7 @@ public class StatusCodeFilter implements ExchangesFilter {
 	}
 
 	public boolean isDeactivated() {
-		if (showAllStatusCodes)
+		if (showAll)
 			return true;
 		if (displayedStatusCodes.isEmpty())
 			return true;

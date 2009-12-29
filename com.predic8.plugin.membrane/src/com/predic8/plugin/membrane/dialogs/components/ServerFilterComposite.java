@@ -60,7 +60,7 @@ public class ServerFilterComposite extends Composite {
 					btShowSelectedServersOnly.setSelection(false);
 					for (Button button : buttons) {
 						button.setEnabled(false);
-						serverFilter.setShowAllServers(true);
+						serverFilter.setShowAll(true);
 					}
 				}
 			}
@@ -80,7 +80,7 @@ public class ServerFilterComposite extends Composite {
 							button.setSelection(false);
 						}
 					}
-					serverFilter.setShowAllServers(false);
+					serverFilter.setShowAll(false);
 				}
 			}
 		});
@@ -129,7 +129,7 @@ public class ServerFilterComposite extends Composite {
 			buttons.add(bt);
 		}
 
-		if (serverFilter.isShowAllServers()) {
+		if (serverFilter.isShowAll()) {
 			btShowAllServers.setSelection(true);
 			btShowAllServers.notifyListeners(SWT.Selection, null);
 		} else {

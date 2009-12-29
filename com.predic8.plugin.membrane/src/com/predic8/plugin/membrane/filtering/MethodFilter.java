@@ -5,50 +5,39 @@ import java.util.Set;
 
 import com.predic8.membrane.core.exchange.Exchange;
 
-public class MethodFilter implements ExchangesFilter {
+public class MethodFilter extends AbstractExchangesFilter {
 
-	
-	private boolean showAllMethods;
-	
-	private Set<String> displayedMethods = new HashSet<String>();
+	private Set<String> displayedItems = new HashSet<String>();
 
 	public MethodFilter() {
-		showAllMethods = true;
+		showAll = true;
 	}
 	
 	
 	public boolean filter(Exchange exc) {
-		if (showAllMethods)
+		if (showAll)
 			return true;
 		
-		if (displayedMethods.contains(exc.getRequest().getMethod()))
+		if (displayedItems.contains(exc.getRequest().getMethod()))
 			return true;
 		
 		
 		return false;
 	}
 
-	public boolean isShowAllMethods() {
-		return showAllMethods;
-	}
-
-	public void setShowAllMethods(boolean showAllMethods) {
-		this.showAllMethods = showAllMethods;
-	}
-
 	public Set<String> getDisplayedMethods() {
-		return displayedMethods;
+		return displayedItems;
 	}
 
 	public void setDisplayedMethods(Set<String> displayedMethods) {
-		this.displayedMethods = displayedMethods;
+		this.displayedItems = displayedMethods;
 	}
 
 
 	public boolean isDeactivated() {
-		if (showAllMethods)
+		if (showAll)
 			return true;
-		if (displayedMethods.isEmpty())
+		if (displayedItems.isEmpty())
 			return true;
 		return false;
 	}

@@ -24,7 +24,7 @@ public class ClientFilterComposite extends Composite {
 
 	private List<Button> buttons = new ArrayList<Button>();
 	
-	private ClientFilter serverFilter;
+	private ClientFilter clientFilter;
 	
 	private Button btShowAllClients;
 
@@ -33,7 +33,7 @@ public class ClientFilterComposite extends Composite {
 	
 	public ClientFilterComposite(Composite parent, ClientFilter filter) {
 		super(parent, SWT.NONE);
-		serverFilter = filter;
+		clientFilter = filter;
 		
 		GridLayout layout = new GridLayout();
 		layout.marginTop = 20;
@@ -61,7 +61,7 @@ public class ClientFilterComposite extends Composite {
 					btShowSelectedClientsOnly.setSelection(false);
 					for (Button button : buttons) {
 						button.setEnabled(false);
-						serverFilter.setShowAllClients(true);
+						clientFilter.setShowAll(true);
 					}
 				}
 			}
@@ -72,7 +72,7 @@ public class ClientFilterComposite extends Composite {
 		btShowSelectedClientsOnly.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				if (btShowSelectedClientsOnly.getSelection()) {
-					Set<String> toDisplay = serverFilter.getDisplayedClients();
+					Set<String> toDisplay = clientFilter.getDisplayedClients();
 					for (Button button : buttons) {
 						button.setEnabled(true);
 						if (toDisplay.contains(button.getData())) {
@@ -81,7 +81,7 @@ public class ClientFilterComposite extends Composite {
 							button.setSelection(false);
 						}
 					}
-					serverFilter.setShowAllClients(false);
+					clientFilter.setShowAll(false);
 				}
 			}
 		});
@@ -114,7 +114,7 @@ public class ClientFilterComposite extends Composite {
 			bt.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 			bt.setText(client);
 			bt.setData(client);
-			if (serverFilter.getDisplayedClients().contains(client)) {
+			if (clientFilter.getDisplayedClients().contains(client)) {
 				bt.setSelection(true);
 			}
 
@@ -122,9 +122,9 @@ public class ClientFilterComposite extends Composite {
 				@Override
 				public void widgetSelected(SelectionEvent e) {
 					if (bt.getSelection()) {
-						serverFilter.getDisplayedClients().add((String) bt.getData());
+						clientFilter.getDisplayedClients().add((String) bt.getData());
 					} else {
-						serverFilter.getDisplayedClients().remove((String) bt.getData());
+						clientFilter.getDisplayedClients().remove((String) bt.getData());
 					}
 				}
 			});
@@ -132,7 +132,7 @@ public class ClientFilterComposite extends Composite {
 		}
 		
 
-		if (serverFilter.isShowAllClients()) {
+		if (clientFilter.isShowAll()) {
 			btShowAllClients.setSelection(true);
 			btShowAllClients.notifyListeners(SWT.Selection, null);
 		} else {
@@ -144,7 +144,7 @@ public class ClientFilterComposite extends Composite {
 
 
 	public ClientFilter getClientFilter() {
-		return serverFilter;
+		return clientFilter;
 	}
 
 

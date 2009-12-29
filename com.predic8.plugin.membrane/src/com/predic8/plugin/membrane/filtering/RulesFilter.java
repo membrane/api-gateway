@@ -6,47 +6,36 @@ import java.util.Set;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.RuleKey;
 
-public class RulesFilter implements ExchangesFilter {
+public class RulesFilter extends AbstractExchangesFilter {
 
-	
-	private boolean showAllRules;
-	
-	private Set<RuleKey> displayedRules = new HashSet<RuleKey>();
+	private Set<RuleKey> displayedItems = new HashSet<RuleKey>();
 	
 	public RulesFilter() {
-		showAllRules = true;
-	}
-
-	public boolean isShowAllRules() {
-		return showAllRules;
-	}
-
-	public void setShowAllRules(boolean showAllRules) {
-		this.showAllRules = showAllRules;
+		showAll = true;
 	}
 
 	public Set<RuleKey> getDisplayedRules() {
-		return displayedRules;
+		return displayedItems;
 	}
 
 	public void setDisplayedRules(Set<RuleKey> displayedRules) {
-		this.displayedRules = displayedRules;
+		this.displayedItems = displayedRules;
 	}
 
 	public boolean filter(Exchange exc) {
-		if (showAllRules)
+		if (showAll)
 			return true;
 		
-		if (displayedRules.contains(exc.getRule().getRuleKey()))
+		if (displayedItems.contains(exc.getRule().getRuleKey()))
 			return true;
 		
 		return false;
 	}
 
 	public boolean isDeactivated() {
-		if (showAllRules)
+		if (showAll)
 			return true;
-		if (displayedRules.isEmpty())
+		if (displayedItems.isEmpty())
 			return true;
 		return false;
 	}

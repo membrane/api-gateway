@@ -61,7 +61,7 @@ public class RuleFilterComposite extends Composite {
 					btShowSelectedRulesOnly.setSelection(false);
 					for (Button button : buttons) {
 						button.setEnabled(false);
-						rulesFilter.setShowAllRules(true);
+						rulesFilter.setShowAll(true);
 					}
 				}
 			}
@@ -81,7 +81,7 @@ public class RuleFilterComposite extends Composite {
 							button.setSelection(false);
 						}
 					}
-					rulesFilter.setShowAllRules(false);
+					rulesFilter.setShowAll(false);
 				}
 			}
 		});
@@ -117,7 +117,7 @@ public class RuleFilterComposite extends Composite {
 			buttons.add(bt);
 		}
 
-		if (rulesFilter.isShowAllRules()) {
+		if (rulesFilter.isShowAll()) {
 			btShowAllRules.setSelection(true);
 			btShowAllRules.notifyListeners(SWT.Selection, null);
 		} else {

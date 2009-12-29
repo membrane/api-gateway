@@ -4,48 +4,39 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.transport.http.HttpTransport;
 
-public class ClientFilter implements ExchangesFilter {
+public class ClientFilter extends AbstractExchangesFilter {
 
 	
-	private boolean showAllClients;
-	
-	private Set<String> displayedClients = new HashSet<String>();
+	private Set<String> displayedItems = new HashSet<String>();
 	
 	public ClientFilter() {
-		showAllClients = true;
-	}
-
-	public boolean isShowAllClients() {
-		return showAllClients;
-	}
-
-	public void setShowAllClients(boolean showAllClients) {
-		this.showAllClients = showAllClients;
+		showAll = true;
 	}
 
 	public Set<String> getDisplayedClients() {
-		return displayedClients;
+		return displayedItems;
 	}
 
 	public void setDisplayedClients(Set<String> displayedClients) {
-		this.displayedClients = displayedClients;
+		this.displayedItems = displayedClients;
 	}
 
 	public boolean filter(Exchange exc) {
-		if (showAllClients)
+		if (showAll)
 			return true;
-		//TODO
-		if (displayedClients.contains(exc.getRule().getRuleKey()))
+		
+		if (displayedItems.contains((String)exc.getProperty(HttpTransport.SOURCE_HOSTNAME)))
 			return true;
 		
 		return false;
 	}
 
 	public boolean isDeactivated() {
-		if (showAllClients)
+		if (showAll)
 			return true;
-		if (displayedClients.isEmpty())
+		if (displayedItems.isEmpty())
 			return true;
 		return false;
 	}
