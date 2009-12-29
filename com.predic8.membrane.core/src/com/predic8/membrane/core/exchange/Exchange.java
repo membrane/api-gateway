@@ -51,8 +51,6 @@ public class Exchange {
 	
 	private long tResReceived;
 	
-	private Exception exception;
-	
 	public ExchangeState getStatus() {
 		return status;
 	}
@@ -226,12 +224,5 @@ public class Exchange {
 		this.tResReceived = tResReceived;
 	}
 
-	public Exception getException() {
-		return exception;
-	}
-
-	public void setException(Exception exception) {
-		this.exception = exception;
-	}
 
 }

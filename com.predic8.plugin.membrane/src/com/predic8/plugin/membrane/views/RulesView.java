@@ -111,7 +111,7 @@ public class RulesView extends AbstractRulesView {
 
 	private void createColumns(TableViewer viewer) {
 		String[] titles = { "Rule", "Exchanges" };
-		int[] bounds = { 150, 80 };
+		int[] bounds = { 158, 80 };
 
 		for (int i = 0; i < titles.length; i++) {
 			TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);

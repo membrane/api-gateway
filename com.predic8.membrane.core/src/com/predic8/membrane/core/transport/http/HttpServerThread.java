@@ -35,7 +35,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 public class HttpServerThread extends AbstractHttpThread {
 
 	public static int counter = 0;
-	
+
 	public HttpServerThread(HttpExchange exchange, Socket socket, HttpTransport transport) throws IOException {
 		this.exchange = exchange;
 		exchange.setServerThread(this);
@@ -44,14 +44,13 @@ public class HttpServerThread extends AbstractHttpThread {
 		log.debug("New ServerThread created. " + counter);
 		this.sourceSocket = socket;
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
-		srcOut =  new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
+		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
 		sourceSocket.setSoTimeout(30000);
 		this.transport = transport;
 	}
 
 	public void run() {
 		try {
-			
 			while (true) {
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
@@ -66,56 +65,64 @@ public class HttpServerThread extends AbstractHttpThread {
 				exchange = new HttpExchange();
 				exchange.setServerThread(this);
 			}
-			client.close();
 		} catch (SocketTimeoutException e) {
 			log.debug("Socket of thread " + counter + " timed out");
-			
 		} catch (SocketException se) {
 			log.debug("client socket closed");
-		}  catch (IOException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (EndOfStreamException e) {
 			log.debug("stream closed");
 		} catch (AbortException e) {
 			log.debug("exchange aborted.");
-		}  
-		
-		finally {
-			try {
-				if (!sourceSocket.isClosed()) {
-					sourceSocket.shutdownOutput();
-					sourceSocket.close();
-				}
-			} catch (Exception e2) {
-				e2.printStackTrace();
-			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 
+		finally {
+			closeConnections();
 		}
 
 	}
 
-	private void process() throws AbortException {
+	private void closeConnections() {
+		try {
+			client.close();
+		} catch (Exception e2) {
+			log.error("problem closing HTTP Client");
+			e2.printStackTrace();
+		}
+
+		try {
+			if (!sourceSocket.isClosed()) {
+				sourceSocket.shutdownOutput();
+				sourceSocket.close();
+			}
+		} catch (Exception e2) {
+			log.error("problems closing socket on remote port: " + sourceSocket.getPort() + " on remote host: " + sourceSocket.getInetAddress());
+			e2.printStackTrace();
+		}
+	}
+
+	private void process() throws Exception {
 		targetRes = null;
 		try {
-
-//			exchange.setSourceSocket(exchange.getSourceSocket());
-			exchange.setProperty(HttpTransport.SOURCE_HOSTNAME,  sourceSocket.getLocalAddress().getHostName());
+			exchange.setProperty(HttpTransport.SOURCE_HOSTNAME, sourceSocket.getLocalAddress().getHostName());
 			exchange.setProperty(HttpTransport.SOURCE_IP, sourceSocket.getLocalAddress().getHostAddress());
 
 			exchange.setRequest(srcReq);
-			//execute transport interceptors first, because exchange has not a rule yet 
-			if (Outcome.ABORT == invokeInterceptors(exchange, transport.getInInterceptors())) 
+
+			if (Outcome.ABORT == invokeInterceptors(exchange, transport.getInInterceptors()))
 				throw new AbortException();
 
-			if (Outcome.ABORT == invokeInterceptors(exchange, exchange.getRule().getInInterceptors())) 
+			if (Outcome.ABORT == invokeInterceptors(exchange, exchange.getRule().getInInterceptors()))
 				throw new AbortException();
-			
+
 			synchronized (exchange.getRequest()) {
 				if (exchange.getRule().isBlockRequest())
 					block(exchange.getRequest());
 			}
 
-			
 			try {
 				targetRes = client.call(exchange);
 			} catch (ConnectException e) {
@@ -124,34 +131,26 @@ public class HttpServerThread extends AbstractHttpThread {
 			exchange.setResponse(targetRes);
 			if (Outcome.ABORT == invokeInterceptors(exchange, exchange.getRule().getOutInterceptors()))
 				throw new AbortException();
-			
+
 			if (Outcome.ABORT == invokeInterceptors(exchange, transport.getOutInterceptors()))
 				throw new AbortException();
-			
+
 			synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {
 					block(exchange.getResponse());
 				}
 			}
 
-		} catch (AbortException e ) {
+		} catch (AbortException e) {
 			throw e;
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			exchange.setException(ex);
-			return;
 		}
-		try {
-			//exchange.setResponse(targetRes);
-			log.debug("Start writing targetRes to srcOut" );
-			targetRes.write(srcOut);
-			srcOut.flush();
-			log.debug("Done writing targetRes to srcOut" );
-			exchange.setTimeResSent(System.currentTimeMillis());
-			exchange.setCompleted();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+
+		log.debug("Start writing targetRes to srcOut");
+		targetRes.write(srcOut);
+		srcOut.flush();
+		log.debug("Done writing targetRes to srcOut");
+		exchange.setTimeResSent(System.currentTimeMillis());
+		exchange.setCompleted();
 
 	}
 
@@ -166,5 +165,5 @@ public class HttpServerThread extends AbstractHttpThread {
 			e1.printStackTrace();
 		}
 	}
-	
+
 }

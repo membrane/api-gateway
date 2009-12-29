@@ -46,9 +46,7 @@ public abstract class AbstractHttpThread extends Thread {
 	
 	
 	protected Socket sourceSocket;
-
-	protected Socket targetSocket;
-
+	
 	protected InputStream srcIn;
 	
 	protected OutputStream srcOut;
@@ -100,14 +98,6 @@ public abstract class AbstractHttpThread extends Thread {
 
 	public void setSourceSocket(Socket sourceSocket) {
 		this.sourceSocket = sourceSocket;
-	}
-
-	public Socket getTargetSocket() {
-		return targetSocket;
-	}
-
-	public void setTargetSocket(Socket targetSocket) {
-		this.targetSocket = targetSocket;
 	}
 
 	public InputStream getSrcIn() {

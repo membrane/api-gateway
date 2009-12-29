@@ -32,7 +32,7 @@ public class HttpExchange extends Exchange {
 	
 	@Override
 	public void close() {
-
+		
 	}
 
 	public AbstractHttpThread getServerThread() {

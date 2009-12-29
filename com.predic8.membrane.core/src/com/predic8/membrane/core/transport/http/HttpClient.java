@@ -48,7 +48,6 @@ public class HttpClient {
 	
 	private static final int MAX_CALL = 5;
 	
-
 	private String host;
 	
 	private int port; 
@@ -68,6 +67,7 @@ public class HttpClient {
 			if (socket != null)
 				socket.close();
 			socket = new Socket(host, port);
+			log.debug("Opened connection on localPort: " + port);
 			in = new BufferedInputStream(socket.getInputStream(), 2048);
 			out = new BufferedOutputStream(socket.getOutputStream(), 2048);
 			this.host = host;
@@ -138,7 +138,6 @@ public class HttpClient {
 	}
 
 	private Response doCall(HttpExchange exc) throws IOException, SocketException, EndOfStreamException {
-		exc.getServerThread().setTargetSocket(socket);
 		exc.setTimeReqSent(System.currentTimeMillis());
 		exc.getRequest().write(out);
 		
@@ -172,7 +171,7 @@ public class HttpClient {
 		if (socket == null) 
 			return;
 		
-		log.debug("Closing HTTP connection");
+		log.debug("Closing HTTP connection LocalPort: " + socket.getLocalPort());
 		socket.shutdownInput();
 		socket.close();
 	}
