@@ -132,7 +132,7 @@ public class ExchangesTableFilterDialog extends Dialog {
 		}
 
 		ServerFilter serverFilter = null;
-		if (exchangesView.getFilterManager().getFilterForClass(MethodFilter.class) != null) {
+		if (exchangesView.getFilterManager().getFilterForClass(ServerFilter.class) != null) {
 			serverFilter = (ServerFilter) exchangesView.getFilterManager().getFilterForClass(ServerFilter.class);
 		} else {
 			serverFilter = new ServerFilter();
@@ -140,14 +140,14 @@ public class ExchangesTableFilterDialog extends Dialog {
 		
 		
 		ClientFilter clientFilter = null;
-		if (exchangesView.getFilterManager().getFilterForClass(MethodFilter.class) != null) {
+		if (exchangesView.getFilterManager().getFilterForClass(ClientFilter.class) != null) {
 			clientFilter = (ClientFilter) exchangesView.getFilterManager().getFilterForClass(ClientFilter.class);
 		} else {
 			clientFilter = new ClientFilter();
 		}
 		
 		StatusCodeFilter statusCodeFilter = null;
-		if (exchangesView.getFilterManager().getFilterForClass(MethodFilter.class) != null) {
+		if (exchangesView.getFilterManager().getFilterForClass(StatusCodeFilter.class) != null) {
 			statusCodeFilter = (StatusCodeFilter) exchangesView.getFilterManager().getFilterForClass(StatusCodeFilter.class);
 		} else {
 			statusCodeFilter = new StatusCodeFilter();
