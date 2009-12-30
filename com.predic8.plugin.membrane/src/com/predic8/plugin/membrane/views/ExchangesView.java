@@ -53,7 +53,6 @@ import com.predic8.plugin.membrane.actions.ShowSortersDialogAction;
 import com.predic8.plugin.membrane.filtering.FilterManager;
 import com.predic8.plugin.membrane.providers.ExchangesViewLabelProvider;
 import com.predic8.plugin.membrane.providers.ExchangesViewLazyContentProvider;
-import com.predic8.plugin.membrane.sorting.ExchangesVieweSorter;
 
 public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 
@@ -164,7 +163,7 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 			}
 		});
 
-		tableViewer.setSorter(new ExchangesVieweSorter());
+		//tableViewer.setSorter(new ExchangesVieweSorter());
 
 		
 		removeExchangeAction = new RemoveExchangeAction(tableViewer);

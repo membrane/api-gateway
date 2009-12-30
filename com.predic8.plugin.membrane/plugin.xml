@@ -164,9 +164,9 @@
                icon="icons/cascade.png"
                id="com.predic8.plugin.membrane.actions.ShowExchangesViewAction"
                label="Show Exchanges"
-               menubarPath="MembraneMenu/membraneExchangesSeparator"
+               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
                style="push"
-               toolbarPath="membraneExchangesSeparator"
+               toolbarPath="membraneShowRuleViewsGroup"
                tooltip="show exchanges view">
          </action>
          <action
