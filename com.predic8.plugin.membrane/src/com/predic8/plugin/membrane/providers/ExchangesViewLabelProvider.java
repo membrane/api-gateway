@@ -142,8 +142,8 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 					return "" + exchange.getRequest().getHeader().getContentLength();
 
 				case 9:
-					if (exchange.getResponse() == null)
-						return "";
+					if (exchange.getResponse() == null || exchange.getResponse().getHeader().getContentType() == null)
+						return "N/A";
 					return "" + exchange.getResponse().getHeader().getContentType();
 					
 				case 10:

@@ -41,6 +41,7 @@ import com.predic8.membrane.core.exchange.accessors.PathExchangeAccessor;
 import com.predic8.membrane.core.exchange.accessors.RequestContentLengthExchangeAccessor;
 import com.predic8.membrane.core.exchange.accessors.RequestContentTypeExchangeAccessor;
 import com.predic8.membrane.core.exchange.accessors.ResponseContentLengthExchangeAccessor;
+import com.predic8.membrane.core.exchange.accessors.ResponseContentTypeExchangeAccessor;
 import com.predic8.membrane.core.exchange.accessors.RuleExchangeAccessor;
 import com.predic8.membrane.core.exchange.accessors.ServerExchangeAccessor;
 import com.predic8.membrane.core.exchange.accessors.StatusCodeExchangeAccessor;
@@ -88,6 +89,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 		ServerExchangeAccessor.ID,
 		RequestContentTypeExchangeAccessor.ID,
 		RequestContentLengthExchangeAccessor.ID,
+		ResponseContentTypeExchangeAccessor.ID,
 		ResponseContentLengthExchangeAccessor.ID,
 		DurationExchangeAccessor.ID
 	};
@@ -251,10 +253,14 @@ public class ExchangesTableSorterDialog extends Dialog {
 					break;
 					
 				case 9:
-					accessor1 = new ResponseContentLengthExchangeAccessor();
+					accessor1 = new ResponseContentTypeExchangeAccessor();
 					break;
 					
 				case 10:
+					accessor1 = new ResponseContentLengthExchangeAccessor();
+					break;
+					
+				case 11:
 					accessor1 = new DurationExchangeAccessor();
 					break;
 					
@@ -331,11 +337,15 @@ public class ExchangesTableSorterDialog extends Dialog {
 					break;
 					
 				case 9:
-					accessor1 = new ResponseContentLengthExchangeAccessor();
+					accessor1 = new ResponseContentTypeExchangeAccessor();
 					break;
 					
 				case 10:
-					accessor2 = new DurationExchangeAccessor();
+					accessor1 = new ResponseContentLengthExchangeAccessor();
+					break;
+					
+				case 11:
+					accessor1 = new DurationExchangeAccessor();
 					break;
 					
 					default:
@@ -413,11 +423,15 @@ public class ExchangesTableSorterDialog extends Dialog {
 					break;
 					
 				case 9:
-					accessor3 = new ResponseContentLengthExchangeAccessor();
+					accessor1 = new ResponseContentTypeExchangeAccessor();
 					break;
 					
 				case 10:
-					accessor3 = new DurationExchangeAccessor();
+					accessor1 = new ResponseContentLengthExchangeAccessor();
+					break;
+					
+				case 11:
+					accessor1 = new DurationExchangeAccessor();
 					break;
 					
 					default:
@@ -429,8 +443,6 @@ public class ExchangesTableSorterDialog extends Dialog {
 		
 		
 		Composite compositeX = new Composite(container, SWT.BORDER);
-		//compositeX.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		
 		
 		
 		GridData gdCompX = new GridData();
@@ -439,32 +451,14 @@ public class ExchangesTableSorterDialog extends Dialog {
 		gdCompX.widthHint = 370;
 		gdCompX.heightHint = 40;
 		compositeX.setLayoutData(gdCompX);
-		
-//		Label lbDummy3 = new Label(compositeX, SWT.NONE);
-//		lbDummy3.setText(" ");
-//		lbDummy3.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-//		
-//		Label lbDummy4 = new Label(compositeX, SWT.NONE);
-//		lbDummy4.setText(" ");
-//		lbDummy4.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-//		
-//		Label lbDummy5 = new Label(compositeX, SWT.NONE);
-//		lbDummy5.setText(" ");
-//		lbDummy5.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		
-//		Label lbDummy6 = new Label(compositeX, SWT.NONE);
-//		lbDummy6.setText(" ");
-//		lbDummy6.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		
+				
 		btAsc = new Button(compositeX, SWT.RADIO);
 		btAsc.setText("Ascending");
 		btAsc.setSelection(true);
-//		btAsc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		btAsc.setVisible(false);
 		
 		btDesc = new Button(compositeX, SWT.RADIO);
 		btDesc.setText("Descending");
-//		btDesc.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		btDesc.setVisible(false);
 		
 		FillLayout fillLayout = new FillLayout(SWT.VERTICAL);

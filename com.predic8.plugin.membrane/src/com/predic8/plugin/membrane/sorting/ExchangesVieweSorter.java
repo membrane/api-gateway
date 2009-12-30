@@ -25,9 +25,11 @@ public class ExchangesVieweSorter extends ViewerSorter {
 	
 	public static final int SORT_TARGET_REQUEST_CONTENT_LENGTH = 8;
 	
-	public static final int SORT_TARGET_RESPONSE_CONTENT_LENGTH = 9;
+	public static final int SORT_TARGET_RESPONSE_CONTENT_TYPE = 9;
 	
-	public static final int SORT_TARGET_DURATION = 10;
+	public static final int SORT_TARGET_RESPONSE_CONTENT_LENGTH = 10;
+	
+	public static final int SORT_TARGET_DURATION = 11;
 	
 	private int sortTarget = -1;  
 
@@ -71,6 +73,28 @@ public class ExchangesVieweSorter extends ViewerSorter {
 				
 			case SORT_TARGET_REQUEST_CONTENT_LENGTH:
 				return obj1.getRequest().getHeader().getContentLength() - obj2.getRequest().getHeader().getContentLength();
+				
+			case SORT_TARGET_RESPONSE_CONTENT_TYPE:
+				if (obj1.getResponse() == null && obj2.getResponse() == null)
+					return 0;
+				if (obj1.getResponse() != null && obj2.getResponse() == null)
+					return 1;
+				if (obj1.getResponse() == null && obj2.getResponse() != null)
+					return -1;
+				
+				if (obj1.getResponse().getHeader() == null || obj2.getResponse().getHeader() == null)
+					return 0;
+				
+				if (obj1.getResponse().getHeader().getContentType() == null || obj2.getResponse().getHeader().getContentType() == null)
+					return 0;
+				
+				if (obj1.getResponse().getHeader().getContentType() != null || obj2.getResponse().getHeader().getContentType() == null)
+					return 1;
+				
+				if (obj1.getResponse().getHeader().getContentType() == null || obj2.getResponse().getHeader().getContentType() != null)
+					return -1;
+				
+				return obj1.getResponse().getHeader().getContentType().compareTo(obj2.getResponse().getHeader().getContentType());
 				
 			case SORT_TARGET_RESPONSE_CONTENT_LENGTH:
 				if (obj1.getResponse() == null && obj2.getResponse() == null)
