@@ -25,6 +25,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
@@ -338,33 +339,38 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 		
 	}
 
-	private List<Exchange> applyFilter(List<Exchange> objects) {
-		if (objects == null || objects.size() == 0) {
+	private List<Exchange> applyFilter(List<Exchange> exchanges) {
+		if (exchanges == null || exchanges.size() == 0) {
 			filterCountText = "exchanges list is empty.";
 			return new ArrayList<Exchange>();
 		}
 		if (filterManager.isEmpty()) {
-			filterCountText = objects.size() + " of " + objects.size() + " Exchanges are displayed.";
-			return objects;
+			filterCountText = exchanges.size() + " of " + exchanges.size() + " Exchanges are displayed.";
+			return exchanges;
 		}
 			
-		List<Exchange> filteredList = new ArrayList<Exchange>();
-		for (Exchange exc : objects) {
-			if (filterManager.filter(exc)) {
-				filteredList.add(exc);
+		List<Exchange> filteredExchanges = new ArrayList<Exchange>();
+		synchronized (exchanges) {	
+			for (Exchange exc : exchanges) {
+				if (filterManager.filter(exc)) {
+					filteredExchanges.add(exc);
+				}
 			}
 		}
 		
-		filterCountText = filteredList.size() + " of " + objects.size() + " Exchanges are displayed.";
-		return filteredList;
+		filterCountText = filteredExchanges.size() + " of " + exchanges.size() + " Exchanges are displayed.";
+		return filteredExchanges;
 	}
 	
 	
 	private void applySorter(List<Exchange> exchanges) {
-		if (exchanges == null || exchanges.size() == 0)
+		if (comparator.isEmpty())
 			return;
-		
-		Collections.sort(exchanges, comparator);
+		synchronized (exchanges) {
+			if (exchanges == null || exchanges.size() == 0)
+				return;
+			Collections.sort(exchanges, comparator);
+		}
 	}
 	
 	
@@ -374,38 +380,49 @@ public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 	
 	
 	private void refreshTable(final boolean clear) {
-		if (tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
-			return;
-		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
+		
+		Display.getDefault().asyncExec(new Runnable() {
+			
 			public void run() {
-				if (clear) {
-					tableViewer.getTable().removeAll();
-					tableViewer.getTable().clearAll();
-				}
-				
-				List<Exchange> array = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
-				applySorter(array);
-				
-				lbSortedBy.setText(comparator.toString());
-				lbFilterCount.setText((filterManager.toString() + filterCountText));
-				
-				if (array.size() > 0) {
+				List<Exchange> exchanges = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
+				applySorter(exchanges);
+				if (exchanges.size() > 0) {
 					removeExchangeAction.setEnabled(true);
 					removeAllExchangesAction.setEnabled(true);
 				} else {
 					removeExchangeAction.setEnabled(false);
 					removeAllExchangesAction.setEnabled(false);
 				}
-				tableViewer.setInput(array.toArray());
-				tableViewer.setItemCount(array.size());
-				if (Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange()) {
-					canShowBody = false;
-					if (array.size() > 0)
-						tableViewer.setSelection(new StructuredSelection(array.get(array.size() - 1)), true);
-				}	
-				tableViewer.refresh();
-				tableViewer.getTable().redraw();
-				tableViewer.getTable().layout();
+				
+				if (!lbSortedBy.isDisposed()) {
+					lbSortedBy.setText(comparator.toString());
+					
+				}
+				
+				if (!lbFilterCount.isDisposed()) {
+					lbFilterCount.setText((filterManager.toString() + filterCountText));
+				}
+				
+				if (!tableViewer.getTable().isDisposed() ) {
+					if (clear) {
+						tableViewer.getTable().removeAll();
+						tableViewer.getTable().clearAll();
+					}
+					Object[] excArray = exchanges.toArray();
+					if (tableViewer.getContentProvider() != null) {
+						tableViewer.setInput(excArray);
+						tableViewer.setItemCount(excArray.length);
+					}
+					
+					if (Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange()) {
+						canShowBody = false;
+						if (excArray.length > 0)
+							tableViewer.setSelection(new StructuredSelection(excArray[excArray.length - 1]), true);
+					}	
+					tableViewer.refresh();
+					tableViewer.getTable().redraw();
+					tableViewer.getTable().layout();	
+				}
 			}
 		});
 	}

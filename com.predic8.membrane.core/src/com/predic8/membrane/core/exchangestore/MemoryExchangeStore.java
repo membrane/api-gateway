@@ -32,7 +32,8 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 
 	private Map<RuleKey, List<Exchange>> ruleExchangeMap = new HashMap<RuleKey, List<Exchange>>();
 
-	private List<Exchange> totalList = new ArrayList<Exchange>();
+	//for synchronization purposes choose Vector class
+	private List<Exchange> totalList = new ArrayList<Exchange>();  
 	
 	private int threashold = 1000;
 

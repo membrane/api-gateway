@@ -2,6 +2,7 @@ package com.predic8.plugin.membrane.views;
 
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.part.ViewPart;
 
@@ -77,7 +78,8 @@ public abstract class AbstractRulesView extends ViewPart implements IRuleTreeVie
 		} else {
 			enableActions(false);
 		}
-		tableViewer.setInput(manager);
+		if ( tableViewer.getContentProvider() != null)
+				tableViewer.setInput(manager);
 	}
 
 	public void addExchange(Rule rule, Exchange exchange) {
@@ -125,13 +127,14 @@ public abstract class AbstractRulesView extends ViewPart implements IRuleTreeVie
 	}
 	
 	private void refreshTable() {
-		if (tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
-			return;
-		tableViewer.getTable().getDisplay().asyncExec(new Runnable() {
+		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
+				if (tableViewer.getTable() == null || tableViewer.getTable().isDisposed() || tableViewer.getContentProvider() == null)
+					return;
 				tableViewer.setInput(Router.getInstance().getRuleManager());
 			}
 		});
+
 	}
 
 	public void removeExchanges(Exchange[] exchanges) {

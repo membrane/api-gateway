@@ -16,6 +16,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.PlatformUI;
 
@@ -85,6 +86,9 @@ public class RuleStatisticsView extends AbstractRulesView {
 				} 
 			}
 		});
+		
+		Label lbTimeUnit = new Label(composite, SWT.NONE);
+		lbTimeUnit.setText(" All times in ms");
 		
 		createActions();
 		addTableMenu();
