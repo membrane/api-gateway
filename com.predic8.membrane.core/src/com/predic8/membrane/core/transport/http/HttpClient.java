@@ -83,7 +83,7 @@ public class HttpClient {
 			URL url = new URL((String) exc.getProperty(HttpTransport.REQUEST_URI));
 			
 			//TODO move to ProxyInterceptor ????
-			exc.getRequest().getHeader().setHost(url.getHost() + ":" +  getTargetPort(url));
+			exc.getRequest().getHeader().setHost(url.getHost());
 			log.debug("PATH: " + url.getPath());
 			
 			String uri = url.getPath();
