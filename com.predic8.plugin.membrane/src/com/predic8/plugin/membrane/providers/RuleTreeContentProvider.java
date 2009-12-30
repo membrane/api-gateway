@@ -170,7 +170,6 @@ public class RuleTreeContentProvider implements ITreeContentProvider, IRuleTreeV
 	public void removeExchanges(final Exchange[] exchanges) {
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
-				System.err.println("number of exchanges to be removed: " + exchanges.length);
 				treeViewer.remove(exchanges);
 				treeViewer.refresh();
 				treeViewer.getTree().redraw();

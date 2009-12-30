@@ -72,6 +72,7 @@ public class HttpClient {
 			out = new BufferedOutputStream(socket.getOutputStream(), 2048);
 			this.host = host;
 			this.port = port;
+			
 		}
 		
 	}

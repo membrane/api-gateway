@@ -64,6 +64,7 @@ Export-Package: com.ctc.wstx.api,
  org.apache.commons.discovery.tools,
  org.apache.commons.logging,
  org.apache.commons.logging.impl,
+ org.apache.log4j,
  org.codehaus.stax2,
  org.codehaus.stax2.evt,
  org.codehaus.stax2.io,
@@ -105,6 +106,7 @@ Bundle-ClassPath: lib/commons-logging.jar,
  lib/stax-api-1.0.1.jar,
  lib/stax2-api-3.0.1.jar,
  lib/woodstox-core-asl-4.0.5.jar,
- lib/log4j-1.2.8.jar,
- lib/spring-beans.jar
+ lib/spring-beans.jar,
+ lib/log4j-1.2.8.jar
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0"
+Eclipse-RegisterBuddy: org.apache.log4j
