@@ -59,7 +59,7 @@ public class HttpClient {
 			if (in != null) 
 				in.close();
 			
-			if (out != null) {
+			if (out != null && !socket.isClosed()) {
 				out.flush();
 				out.close();
 			}

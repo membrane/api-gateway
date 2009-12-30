@@ -85,6 +85,7 @@ public class ConfigurationManager {
 						((HttpTransport) transport).addPort(rule.getRuleKey().getPort());
 					}
 					ruleManager.addRuleIfNew(rule);
+					System.out.println("Added rule " +  rule + " on port " + rule.getRuleKey().getPort());
 				} catch (Exception e1) {
 					throw e1;
 				}
