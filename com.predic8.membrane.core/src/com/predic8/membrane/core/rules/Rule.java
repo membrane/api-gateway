@@ -9,9 +9,9 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 
 public interface Rule {
 	
-	public List<Interceptor> getInInterceptors();
+	public List<Interceptor> getInterceptors();
 	
-	public List<Interceptor> getOutInterceptors();
+	public void setInterceptors(List<Interceptor> interceptors); 
 	
 	public boolean isBlockRequest();
 	

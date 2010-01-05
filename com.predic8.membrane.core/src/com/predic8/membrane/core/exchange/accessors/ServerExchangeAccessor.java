@@ -7,9 +7,9 @@ public class ServerExchangeAccessor implements ExchangeAccessor {
 	public static final String ID = "Server";
 	
 	public Object get(Exchange exc) {
-		if (exc == null || exc.getRequest() == null)
+		if (exc == null || exc.getRequestUri() == null)
 			return "";
-		return exc.getRequest().getHeader().getHost();
+		return exc.getRequestUri();
 	}
 
 	public String getId() {

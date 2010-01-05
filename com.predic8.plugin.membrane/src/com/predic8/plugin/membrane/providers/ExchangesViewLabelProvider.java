@@ -126,7 +126,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 					return (String)exchange.getProperty(HttpTransport.SOURCE_HOSTNAME); //client
 					
 				case 6:
-					return exchange.getRequest().getHeader().getHost(); //server
+					return exchange.getRequestUri(); //server
 
 				case 7:
 					String contentType = (String) exchange.getRequest().getHeader().getContentType();

@@ -4,6 +4,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.config.Interceptors;
+
 
 public class ProxyRule extends AbstractRule {
 
@@ -25,6 +27,10 @@ public class ProxyRule extends AbstractRule {
 		
 		out.writeAttribute("port", "" + ruleKey.getPort());
 		
+		Interceptors inters = new Interceptors();
+		inters.setInterceptors(interceptors);
+		inters.write(out);
+		
 		out.writeEndElement();
 	}
 	
@@ -44,4 +50,10 @@ public class ProxyRule extends AbstractRule {
 		
 	}
 	
+	@Override
+	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+		if (Interceptors.ELEMENT_NAME.equals(child)) {
+			this.interceptors = ((Interceptors) (new Interceptors().parse(token))).getInterceptors();
+		}
+	}
 }

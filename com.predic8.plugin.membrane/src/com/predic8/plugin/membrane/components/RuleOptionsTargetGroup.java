@@ -26,31 +26,21 @@ import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.Router;
 
-
-
 public class RuleOptionsTargetGroup {
-	
-	private Group ruleOptionsTargetGroup;
 
 	private Text ruleOptionsTargetPortTextField;
 
 	private Text ruleOptionsTargetHostTextField;
 
-	private Label ruleOptionsTargetHostLabel;
-
-	private Label ruleOptionsTargetPortTextLabel;
-
-	private GridLayout gridLayout4TargetGroup;
-
 	public RuleOptionsTargetGroup(Composite parent, int style) {
-		ruleOptionsTargetGroup = new Group(parent, style);
+		Group ruleOptionsTargetGroup = new Group(parent, style);
 		ruleOptionsTargetGroup.setText("Target");
 		ruleOptionsTargetGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-		gridLayout4TargetGroup = new GridLayout();
+		GridLayout gridLayout4TargetGroup = new GridLayout();
 		gridLayout4TargetGroup.numColumns = 4;
 		ruleOptionsTargetGroup.setLayout(gridLayout4TargetGroup);
 
-		ruleOptionsTargetHostLabel = new Label(ruleOptionsTargetGroup, SWT.NONE);
+		Label ruleOptionsTargetHostLabel = new Label(ruleOptionsTargetGroup, SWT.NONE);
 		ruleOptionsTargetHostLabel.setText("Host");
 
 		ruleOptionsTargetHostTextField = new Text(ruleOptionsTargetGroup, SWT.BORDER);
@@ -71,8 +61,7 @@ public class RuleOptionsTargetGroup {
 		ruleOptionsTargetHostLabelDummy2.setLayoutData(gridDataForLabelDummy2);
 		ruleOptionsTargetHostLabelDummy2.setText(" ");
 		
-		ruleOptionsTargetPortTextLabel = new Label(ruleOptionsTargetGroup,
-				SWT.NONE);
+		Label ruleOptionsTargetPortTextLabel = new Label(ruleOptionsTargetGroup, SWT.NONE);
 		ruleOptionsTargetPortTextLabel.setText("Port");
 
 		ruleOptionsTargetPortTextField = new Text(ruleOptionsTargetGroup,SWT.BORDER);

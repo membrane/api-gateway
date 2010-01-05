@@ -26,7 +26,6 @@ public class HttpTransport extends Transport {
 	public static final String SOURCE_HOSTNAME = "com.predic8.membrane.transport.http.source.Hostname";
 	public static final String HEADER_HOST = "com.predic8.membrane.transport.http.header.Host";
 	public static final String SOURCE_IP = "com.predic8.membrane.transport.http.source.Ip";
-	public static final String REQUEST_URI = "com.predic8.membrane.transport.http.request.Uri";
 
 	public Hashtable<Integer, HttpEndpointListener> portListenerMapping = new Hashtable<Integer, HttpEndpointListener>();
 	

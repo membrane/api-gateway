@@ -17,23 +17,20 @@ package com.predic8.membrane.core.interceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 
-public class ExchangeStoreInterceptor implements Interceptor {
+public class ExchangeStoreInterceptor extends AbstractInterceptor {
 
-	private ExchangeStore exchangeStore;
+	private ExchangeStore store;
 	
-	public Outcome invoke(Exchange exchange) throws Exception {
-		if (exchange == null)
-			return Outcome.ABORT;
-		exchangeStore.add(exchange);
+	public Outcome handleRequest(Exchange exc) throws Exception {
+		store.add(exc);
 		return Outcome.CONTINUE;
 	}
 
 	public ExchangeStore getExchangeStore() {
-		return exchangeStore;
+		return store;
 	}
 
 	public void setExchangeStore(ExchangeStore exchangeStore) {
-		this.exchangeStore = exchangeStore;
+		store = exchangeStore;
 	}
-
 }

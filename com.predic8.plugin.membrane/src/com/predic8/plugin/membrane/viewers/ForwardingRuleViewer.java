@@ -99,7 +99,7 @@ public class ForwardingRuleViewer extends AbstractRuleViewer {
 	public void resetValues(Rule selectedRule) {
 		if ((rule = selectedRule) != null && selectedRule instanceof ForwardingRule ) {
 			nameText.setText(rule.getName());
-			ruleOptionsRuleKeyGroup.setUserInput(rule.getRuleKey());
+			ruleOptionsRuleKeyGroup.setInput(rule.getRuleKey());
 			ruleOptionsTargetGroup.setTargetHost(((ForwardingRule)rule).getTargetHost());
 			ruleOptionsTargetGroup.setTargetPort(((ForwardingRule)rule).getTargetPort());
 			ruleOptionsBlockComp.setRequestBlock(rule.isBlockRequest());

@@ -77,7 +77,7 @@ public class RuleOptionsRuleKeyGroup {
 		gridData4ListenHostLabel = new GridData();
 		gridData4ListenHostLabel.horizontalSpan = 2;
 		ruleOptionsHostLabel.setLayoutData(gridData4ListenHostLabel);
-		ruleOptionsHostLabel.setText("Host:");
+		ruleOptionsHostLabel.setText("Client Host:");
 
 		ruleOptionsHostTextField = new Text(ruleOptionsRuleKeyGroup, SWT.BORDER);
 		gridData4HostTextField = new GridData(GridData.FILL_HORIZONTAL);
@@ -94,7 +94,6 @@ public class RuleOptionsRuleKeyGroup {
 		GridData gridDataForLabelDummy1 = new GridData(GridData.FILL_HORIZONTAL);
 		ruleOptionsTargetHostLabelDummy1.setLayoutData(gridDataForLabelDummy1);
 		ruleOptionsTargetHostLabelDummy1.setText(" ");
-		
 		
 		
 		ruleOptionsListenPortLabel = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
@@ -124,7 +123,7 @@ public class RuleOptionsRuleKeyGroup {
 		gridData4MethodLabel = new GridData();
 		gridData4MethodLabel.horizontalSpan = 2;
 		ruleOptionsMethodLabel.setLayoutData(gridData4MethodLabel);
-		ruleOptionsMethodLabel.setText("Method:");
+		ruleOptionsMethodLabel.setText("HTTP Method:");
 
 		ruleOptionsMethodCombo = new Combo(ruleOptionsRuleKeyGroup, SWT.READ_ONLY);
 		ruleOptionsMethodCombo.setItems(new String[] { "POST", "GET", "DELETE", "PUT", " * " });
@@ -177,7 +176,7 @@ public class RuleOptionsRuleKeyGroup {
 		return new ForwardingRuleKey(host, method, path, Integer.parseInt(port));
 	}
 
-	public void setUserInput(RuleKey ruleKey) {
+	public void setInput(RuleKey ruleKey) {
 		ruleOptionsListenPortTextField.setText(Integer.toString(ruleKey.getPort()));
 
 		String method = ruleKey.getMethod();

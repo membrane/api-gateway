@@ -20,7 +20,6 @@ import java.util.Collection;
 
 import com.predic8.membrane.core.io.ConfigurationStore;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class ConfigurationManager {
@@ -37,16 +36,14 @@ public class ConfigurationManager {
 
 	private ConfigurationStore configurationStore;
 
-	public RuleManager ruleManager;
-
-	public Transport transport;
+	private Router router;
 
 	public void init() {
 		configuration = getDefaultConfiguration();
 	}
 
 	public void saveConfiguration(String fileName) {
-		configuration.setRules(ruleManager.getRules());
+		configuration.setRules(router.getRuleManager().getRules());
 
 		try {
 			configurationStore.write(configuration, fileName);
@@ -78,13 +75,13 @@ public class ConfigurationManager {
 
 		Collection<Rule> rules = storedConfiguration.getRules();
 		if (rules != null && rules.size() > 0) {
-			ruleManager.removeAllRules();
+			router.getRuleManager().removeAllRules();
 			for (Rule rule : rules) {
 				try {
-					if (!((HttpTransport) transport).isAnyThreadListeningAt(rule.getRuleKey().getPort())) {
-						((HttpTransport) transport).addPort(rule.getRuleKey().getPort());
+					if (!((HttpTransport) router.getTransport()).isAnyThreadListeningAt(rule.getRuleKey().getPort())) {
+						((HttpTransport) router.getTransport()).addPort(rule.getRuleKey().getPort());
 					}
-					ruleManager.addRuleIfNew(rule);
+					router.getRuleManager().addRuleIfNew(rule);
 					System.out.println("Added rule " +  rule + " on port " + rule.getRuleKey().getPort());
 				} catch (Exception e1) {
 					throw e1;
@@ -108,22 +105,6 @@ public class ConfigurationManager {
 
 	public void setConfiguration(Configuration configuration) {
 		this.configuration = configuration;
-	}
-
-	public Transport getTransport() {
-		return transport;
-	}
-
-	public void setTransport(Transport transport) {
-		this.transport = transport;
-	}
-
-	public RuleManager getRuleManager() {
-		return ruleManager;
-	}
-
-	public void setRuleManager(RuleManager ruleManager) {
-		this.ruleManager = ruleManager;
 	}
 
 	public ConfigurationStore getConfigurationStore() {
@@ -169,6 +150,14 @@ public class ConfigurationManager {
 	public String getDefaultConfigurationFile() {
 		return System.getProperty("user.home")+ "/.membrane.xml"; 
 	}
+
+	public Router getRouter() {
+		return router;
+	}
+
+	public void setRouter(Router router) {
+		this.router = router;
+	}
 	
-	
+
 }

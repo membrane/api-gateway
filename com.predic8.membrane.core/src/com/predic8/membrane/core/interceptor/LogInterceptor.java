@@ -23,7 +23,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 
-public class LogInterceptor implements Interceptor {
+public class LogInterceptor extends AbstractInterceptor {
 
 	private Writer writer;
 	
@@ -31,13 +31,8 @@ public class LogInterceptor implements Interceptor {
 		writer = new BufferedWriter(new OutputStreamWriter(System.out));
 	}
 	
-	public Outcome invoke(Exchange exchange) throws Exception {
-		if (exchange == null) {
-			writer.write("!!! Exchange object is NULL !!!");
-			return Outcome.ABORT;
-		}
+	public Outcome handleRequest(Exchange exchange) throws Exception {
 		printRequest(exchange);
-		printResponse(exchange);
 		writer.write("\n");
 		writer.flush();
 		return Outcome.CONTINUE;
@@ -64,6 +59,13 @@ public class LogInterceptor implements Interceptor {
 		}
 		writer.write("================\n");
 	}
-
+	
+	@Override
+	public Outcome handleResponse(Exchange exchange) throws Exception {
+		printResponse(exchange);
+		writer.write("\n");
+		writer.flush();
+		return Outcome.CONTINUE;
+	}
 }
 

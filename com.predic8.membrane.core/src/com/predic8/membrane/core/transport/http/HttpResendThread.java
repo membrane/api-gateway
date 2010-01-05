@@ -42,8 +42,10 @@ public class HttpResendThread extends AbstractHttpThread {
 			exchange.setRequest(srcReq);
 
 			exchange.setRule(rule);
-			Router.getInstance().getExchangeStore().add(exchange);
 			
+			//TODO call interceptors
+			Router.getInstance().getExchangeStore().add(exchange);
+		
 			if (rule instanceof ForwardingRule) {
 				if (((ForwardingRule) rule).getTargetHost() != null && ((ForwardingRule) rule).getTargetHost().length() != 0) {
 					targetRes = client.call(exchange);

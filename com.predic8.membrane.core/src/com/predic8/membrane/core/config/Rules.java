@@ -11,7 +11,7 @@ import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 
-public class Rules extends XMLElement {
+public class Rules extends AbstractXMLElement {
 
 	public static final String ELEMENT_NAME = "rules";
 

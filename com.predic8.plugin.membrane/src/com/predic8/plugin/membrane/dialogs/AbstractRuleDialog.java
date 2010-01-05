@@ -18,6 +18,7 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TabFolder;
 
 import com.predic8.membrane.core.rules.Rule;
 
@@ -26,6 +27,8 @@ public abstract class AbstractRuleDialog extends Dialog {
 	protected AbstractRuleViewer ruleOptionalViewer;
 	
 	protected String dialogTitle;
+	
+	protected TabFolder tabFolder; 
 	
 	public AbstractRuleDialog(Shell parentShell, String title) {
 		super(parentShell);

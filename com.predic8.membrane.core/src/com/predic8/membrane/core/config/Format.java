@@ -9,7 +9,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Configuration;
 
-public class Format extends XMLElement {
+public class Format extends AbstractXMLElement {
 
 	public static final String ELEMENT_NAME = "format";
 

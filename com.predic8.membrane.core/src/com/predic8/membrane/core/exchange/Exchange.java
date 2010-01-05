@@ -30,6 +30,8 @@ public class Exchange {
 	private Request request;
 	private Response response;
 	
+	private String requestUri;
+	
 	private Calendar time = Calendar.getInstance();
 	private String errMessage = "";
 	private Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<IExchangeViewerListener>();
@@ -224,5 +226,12 @@ public class Exchange {
 		this.tResReceived = tResReceived;
 	}
 
+	public String getRequestUri() {
+		return requestUri;
+	}
 
+	public void setRequestUri(String requestUri) {
+		this.requestUri = requestUri;
+	}	
+	
 }

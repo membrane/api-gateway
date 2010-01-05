@@ -26,10 +26,10 @@ import javax.xml.stream.XMLStreamWriter;
 import com.predic8.membrane.core.config.Format;
 import com.predic8.membrane.core.config.GUI;
 import com.predic8.membrane.core.config.Rules;
-import com.predic8.membrane.core.config.XMLElement;
+import com.predic8.membrane.core.config.AbstractXMLElement;
 import com.predic8.membrane.core.rules.Rule;
 
-public class Configuration extends XMLElement {
+public class Configuration extends AbstractXMLElement {
 
 	public static final String ELEMENT_NAME = "configuration";
 

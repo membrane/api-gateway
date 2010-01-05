@@ -20,7 +20,7 @@ public class HttpRouter extends Router {
 		routingeInterceptor.setRuleManager(ruleManager);
 		interceptors.add(routingeInterceptor);
 		
-		transport.setInInterceptors(interceptors);
+		transport.setInterceptors(interceptors);
 	}
 	
 	@Override

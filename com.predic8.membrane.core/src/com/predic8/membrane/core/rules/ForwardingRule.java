@@ -18,6 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.config.Interceptors;
 import com.predic8.membrane.core.config.TargetHost;
 import com.predic8.membrane.core.config.TargetPort;
 
@@ -82,6 +83,8 @@ public class ForwardingRule extends AbstractRule implements Rule {
 			this.targetPort = ((TargetPort) (new TargetPort().parse(token))).getValue();
 		} else if (TargetHost.ELEMENT_NAME.equals(child)) {
 			this.targetHost = ((TargetHost) (new TargetHost().parse(token))).getValue();
+		} else if (Interceptors.ELEMENT_NAME.equals(child)) {
+			this.interceptors = ((Interceptors) (new Interceptors().parse(token))).getInterceptors();
 		}
 
 	}
@@ -112,6 +115,12 @@ public class ForwardingRule extends AbstractRule implements Rule {
 		TargetHost childTargetHost = new TargetHost();
 		childTargetHost.setValue(targetHost);
 		childTargetHost.write(out);
+		
+		
+		Interceptors inters = new Interceptors();
+		inters.setInterceptors(interceptors);
+		inters.write(out);
+		
 		
 		out.writeEndElement();
 	}

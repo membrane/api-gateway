@@ -61,16 +61,28 @@ public abstract class AbstractHttpThread extends Thread {
 		client = new HttpClient();
 	}
 
-	protected Outcome invokeInterceptors(HttpExchange exchange, List<Interceptor> interceptors) throws Exception {
+	protected Outcome invokeRequestHandlers(HttpExchange exchange, List<Interceptor> interceptors) throws Exception {
 		for (Interceptor interceptor : interceptors) {
-			log.debug("Invoking interceptor :" + interceptor + " on exchange: " + exchange);
-			if (interceptor.invoke(exchange) == Outcome.ABORT) {
+			log.debug("Invoking request handlers:" + interceptor + " on exchange: " + exchange);
+			if (interceptor.handleRequest(exchange) == Outcome.ABORT) {
 				return Outcome.ABORT;
 			}
 		}
 		return Outcome.CONTINUE;
 	}
 
+
+	protected Outcome invokeResponseHandlers(HttpExchange exchange, List<Interceptor> interceptors) throws Exception {
+		for (Interceptor interceptor : interceptors) {
+			log.debug("Invoking response handlers :" + interceptor + " on exchange: " + exchange);
+			if (interceptor.handleResponse(exchange) == Outcome.ABORT) {
+				return Outcome.ABORT;
+			}
+		}
+		return Outcome.CONTINUE;
+	}
+
+	
 	public static Response createErrorResponse(String message) {
 		Response response = new Response();
 		response.setVersion("HTTP/1.1");

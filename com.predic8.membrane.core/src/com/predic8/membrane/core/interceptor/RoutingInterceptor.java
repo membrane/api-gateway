@@ -31,7 +31,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.util.HttpUtil;
 
-public class RoutingInterceptor implements Interceptor {
+public class RoutingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(RoutingInterceptor.class.getName());
 
@@ -39,7 +39,7 @@ public class RoutingInterceptor implements Interceptor {
 
 	private RuleManager ruleManager;
 	
-	public Outcome invoke(Exchange exc) throws Exception {
+	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (!(exc instanceof HttpExchange)) 
 			throw new RuntimeException("RoutingInterceptor accepts only HttpExchange objects");
 		
@@ -65,7 +65,7 @@ public class RoutingInterceptor implements Interceptor {
 		}
 
 		httpExc.setProperty(HttpTransport.HEADER_HOST, httpExc.getRequest().getHeader().getHost());
-		httpExc.setProperty(HttpTransport.REQUEST_URI, httpExc.getRequest().getUri());
+		httpExc.setRequestUri(httpExc.getRequest().getUri());
 		adjustHostHeader(httpExc);
 
 		if (xForwardedForEnabled && (rule instanceof ForwardingRule))

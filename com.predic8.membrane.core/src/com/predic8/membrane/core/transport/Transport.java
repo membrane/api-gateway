@@ -12,10 +12,8 @@ public class Transport {
 
 	protected Set<IMenuViewerListener> menuListeners = new HashSet<IMenuViewerListener>();
 	
-	private List<Interceptor> inInterceptors = new Vector<Interceptor>();
+	private List<Interceptor> interceptors = new Vector<Interceptor>();
 
-	private List<Interceptor> outInterceptors = new Vector<Interceptor>();
-	
 	public void addMenuViewerListener(IMenuViewerListener mViewer) {
 		menuListeners.add(mViewer);
 	
@@ -26,24 +24,12 @@ public class Transport {
 	
 	}
 
-	public List<Interceptor> getInInterceptors() {
-		return inInterceptors;
+	public List<Interceptor> getInterceptors() {
+		return interceptors;
 	}
 
-	public void setInInterceptors(List<Interceptor> inInterceptors) {
-		this.inInterceptors = inInterceptors;
+	public void setInterceptors(List<Interceptor> interceptors) {
+		this.interceptors = interceptors;
 	}
-
-	public List<Interceptor> getOutInterceptors() {
-		return outInterceptors;
-	}
-
-	public void setOutInterceptors(List<Interceptor> outInterceptors) {
-		this.outInterceptors = outInterceptors;
-	}
-
-	
-
-	
 	
 }

@@ -27,18 +27,15 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
-public class WSDLInterceptor implements Interceptor {
+public class WSDLInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(WSDLInterceptor.class.getName());
 	
-	private String host = null;
+	private String host;
 	
-	public Outcome invoke(Exchange exchange) throws Exception {
-		log.debug("invoke");
+	public Outcome handleResponse(Exchange exchange) throws Exception {
+		log.debug("handleRequest");
 		if ( exchange.getRule() instanceof ProxyRule ) return  Outcome.CONTINUE;
-		
-		if (exchange.getResponse() == null) 
-			return Outcome.CONTINUE;
 		
 		if (!Request.METHOD_GET.equals(exchange.getRequest().getMethod())) 
 			return Outcome.CONTINUE;
@@ -56,8 +53,8 @@ public class WSDLInterceptor implements Interceptor {
 		new Relocator(stream, getSourceHost(exchange), exchange.getRule().getRuleKey().getPort() ).relocate(new ByteArrayInputStream(exchange.getResponse().getBody().getContent()));
 		exchange.getResponse().setBodyContent(stream.toByteArray());
 		return Outcome.CONTINUE; 
-		
 	}
+	
 
 	private String getSourceHost(Exchange exchange) {
 		if (host != null)
@@ -78,6 +75,7 @@ public class WSDLInterceptor implements Interceptor {
 	public void setHost(String host) {
 		this.host = host;
 	}
+
 	
 	
 

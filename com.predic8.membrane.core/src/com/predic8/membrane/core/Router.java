@@ -1,5 +1,9 @@
 package com.predic8.membrane.core;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.xml.XmlBeanFactory;
@@ -7,6 +11,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.Transport;
 
 public class Router {
@@ -70,6 +75,20 @@ public class Router {
 
 	public void setConfigurationManager(ConfigurationManager configurationManager) {
 		this.configurationManager = configurationManager;
+	}
+	
+	public Collection<Interceptor> getInterceptors() {
+		Map<String, Interceptor> map = beanFactory.getBeansOfType(Interceptor.class);
+		Set<String> keys = map.keySet();
+		for (String id : keys) {
+			map.get(id).setId(id);
+		}
+		return map.values();
+	}
+	
+	public Interceptor getInterceptorFor(String id) {
+		Interceptor interceptor = (Interceptor)beanFactory.getBean(id, Interceptor.class);
+		return interceptor;
 	}
 
 }

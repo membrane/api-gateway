@@ -80,7 +80,7 @@ public class HttpClient {
 	private void init(HttpExchange exc) throws UnknownHostException, IOException, MalformedURLException {
 		if (exc.getRule() instanceof ProxyRule) {
 			log.debug("PROXY: " + exc.getRequest().getUri());
-			URL url = new URL((String) exc.getProperty(HttpTransport.REQUEST_URI));
+			URL url = new URL(exc.getRequestUri());
 			
 			//TODO move to ProxyInterceptor ????
 			exc.getRequest().getHeader().setHost(url.getHost());

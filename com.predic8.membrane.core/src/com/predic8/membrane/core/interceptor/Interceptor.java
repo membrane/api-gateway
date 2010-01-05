@@ -14,10 +14,20 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import com.predic8.membrane.core.config.XMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
-public interface Interceptor {
+public interface Interceptor extends XMLElement {
 
-	public Outcome invoke(Exchange exchange) throws Exception;
+	public Outcome handleRequest(Exchange exc) throws Exception;
 	
+	public Outcome handleResponse(Exchange exc) throws Exception;
+	
+	public String getDisplayName();
+	
+	public void setDisplayName(String name);
+	
+	public String getId();
+	
+	public void setId(String id);
 }

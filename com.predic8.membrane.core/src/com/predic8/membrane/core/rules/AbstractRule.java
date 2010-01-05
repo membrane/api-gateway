@@ -1,12 +1,12 @@
 package com.predic8.membrane.core.rules;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
-import com.predic8.membrane.core.config.XMLElement;
+import com.predic8.membrane.core.config.AbstractXMLElement;
 import com.predic8.membrane.core.interceptor.Interceptor;
 
-public abstract class AbstractRule extends XMLElement implements Rule {
+public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 
 	protected String name = "";
 	
@@ -14,6 +14,8 @@ public abstract class AbstractRule extends XMLElement implements Rule {
 	
 	protected boolean blockRequest;
 	protected boolean blockResponse;
+	
+	protected List<Interceptor> interceptors = new ArrayList<Interceptor>();
 	
 	public AbstractRule() {
 		
@@ -23,14 +25,14 @@ public abstract class AbstractRule extends XMLElement implements Rule {
 		this.ruleKey = ruleKey;
 	}
 	
-	public List<Interceptor> getInInterceptors() {
-		return Collections.emptyList();
+	public List<Interceptor> getInterceptors() {
+		return interceptors;
 	}
 
-	public List<Interceptor> getOutInterceptors() {
-		return Collections.emptyList();
+	public void setInterceptors(List<Interceptor> interceptors) {
+		this.interceptors = interceptors;
 	}
-	
+
 	public String getName() {
 		return name;
 	}

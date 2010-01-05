@@ -4,7 +4,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-public class TargetPort extends XMLElement {
+public class TargetPort extends AbstractXMLElement {
 
 	public static final String ELEMENT_NAME = "targetport";
 	

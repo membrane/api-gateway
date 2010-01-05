@@ -115,8 +115,9 @@ public abstract class Message {
 		}
 		
 		if (!header.hasContentLength()) {
-			header.write(System.out);
-			log.error("Response message has no content length");
+			this.write(System.out);
+			
+			log.error("Message has no content length");
 			throw new IOException("Response message has no content length");
 		}
 		body = new Body(in, header.getContentLength(), false);
