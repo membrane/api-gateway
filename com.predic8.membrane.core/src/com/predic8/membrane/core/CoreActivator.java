@@ -47,7 +47,7 @@ public class CoreActivator extends Plugin {
 		if (new File(fileName).exists()) {
 			Router.init(new UrlResource(fileName));
 		} else {
-			Router.init("monitor-beans.xml");
+			Router.init("configuration/monitor-beans.xml");
 		}
 		
 		try {

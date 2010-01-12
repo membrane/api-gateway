@@ -15,5 +15,6 @@
 	<classpathentry exported="true" kind="lib" path="lib/stax-api-1.0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/stax2-api-3.0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/woodstox-core-asl-4.0.5.jar"/>
+	<classpathentry kind="lib" path="configuration"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
