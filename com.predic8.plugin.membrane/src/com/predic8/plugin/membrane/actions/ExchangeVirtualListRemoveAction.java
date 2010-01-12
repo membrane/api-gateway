@@ -5,7 +5,7 @@ import org.eclipse.jface.viewers.StructuredViewer;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.plugin.membrane.providers.ExchangesViewLazyContentProvider;
+import com.predic8.plugin.membrane.contentproviders.ExchangesViewLazyContentProvider;
 
 public class ExchangeVirtualListRemoveAction extends Action {
 

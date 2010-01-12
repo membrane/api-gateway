@@ -11,42 +11,35 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+package com.predic8.plugin.membrane.contentproviders;
 
-package com.predic8.plugin.membrane.providers;
-
-import org.eclipse.jface.viewers.IStructuredContentProvider;
+import org.eclipse.jface.viewers.ILazyContentProvider;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Message;
+public class ExchangesViewLazyContentProvider implements ILazyContentProvider {
 
-
-public class HeaderTableContentProvider implements IStructuredContentProvider {
-
-	public HeaderTableContentProvider(TableViewer tableViewer){
-		
+	private Object[] exchanges;
+	private TableViewer viewer;
+	
+	public ExchangesViewLazyContentProvider(TableViewer viewer) {
+		this.viewer = viewer;
 	}
-	public Object[] getElements(Object inputElement) {
-		Object[] headers;
-		if (inputElement instanceof Message) {
-			Message msg = (Message) inputElement;
-			Header header = msg.getHeader();
-			headers = header.getAllHeaderFields();	 
-		} else
-			headers= new Object[0];
-		Object[] ret = new Object[headers.length];
-		for(int i = 0; i < headers.length; i++){
-			ret[i] = headers[i];
-		}
-		return ret;
+	
+	public void updateElement(int index) {
+		viewer.replace(exchanges[index], index);
 	}
 
 	public void dispose() {
+
 	}
 
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
-		
+		this.exchanges = (Object[]) newInput;
 	}
+
+	public Object[] getExchanges() {
+		return exchanges;
+	}	
 
 }

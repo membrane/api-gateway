@@ -15,10 +15,14 @@
 package com.predic8.plugin.membrane.components;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
@@ -31,164 +35,263 @@ import com.predic8.membrane.core.rules.RuleKey;
 
 public class RuleOptionsRuleKeyGroup {
 
-	
-	private Group ruleOptionsRuleKeyGroup;
+	private Text textListenPort;
 
-	private GridLayout gridLayout4RuleKeyGroup;
-
-	private Label ruleOptionsListenPortLabel;
-
-	private GridData gridData4ListenPortLabel;
-
-	private GridData gridData4ListenHostLabel;
-	
-	private Text ruleOptionsListenPortTextField;
-
-	private Label ruleOptionsMethodLabel;
-
-	private GridData gridData4MethodLabel;
-
-	private Combo ruleOptionsMethodCombo;
-
-	private Text ruleOptionsPathTextField;
+	private Combo ruleMethodCombo;
 
 	private Text ruleOptionsHostTextField;
 	
-	private Label ruleOptionsPathLabel;
-
-	private Label ruleOptionsHostLabel;
+	private Button btAnyPath;
 	
-	private GridData gridData4PathTextField;
+	private Button btPathPattern;
 	
-	private GridData gridData4HostTextField;
-
+	private Button btSubstring, btRegularExpression;
+	
+	private Text rulePathTextField;
+	
+	private Composite compPattern;
+	
 	public RuleOptionsRuleKeyGroup(Composite parent, int style) {
 		
-		ruleOptionsRuleKeyGroup = new Group(parent, style);
-		ruleOptionsRuleKeyGroup.setText("Rule Key");
-		ruleOptionsRuleKeyGroup.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		Group ruleKeyGroup = new Group(parent, style);
+		//ruleOptionsRuleKeyGroup.setText("Rule Key");
+		ruleKeyGroup.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
-		gridLayout4RuleKeyGroup = new GridLayout();
-		gridLayout4RuleKeyGroup.numColumns = 5;
-		ruleOptionsRuleKeyGroup.setLayout(gridLayout4RuleKeyGroup);
+		GridLayout gridLayout4Group = new GridLayout();
+		gridLayout4Group.numColumns = 2;
+		ruleKeyGroup.setLayout(gridLayout4Group);
 
 		
-		ruleOptionsHostLabel = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		gridData4ListenHostLabel = new GridData();
-		gridData4ListenHostLabel.horizontalSpan = 2;
-		ruleOptionsHostLabel.setLayoutData(gridData4ListenHostLabel);
+		Label ruleOptionsHostLabel = new Label(ruleKeyGroup, SWT.NONE);
 		ruleOptionsHostLabel.setText("Client Host:");
+		
+		GridData gridData4ListenHostLabel = new GridData();
+		ruleOptionsHostLabel.setLayoutData(gridData4ListenHostLabel);
+		
 
-		ruleOptionsHostTextField = new Text(ruleOptionsRuleKeyGroup, SWT.BORDER);
-		gridData4HostTextField = new GridData(GridData.FILL_HORIZONTAL);
+		ruleOptionsHostTextField = new Text(ruleKeyGroup, SWT.BORDER);
+		GridData gridData4HostTextField = new GridData(GridData.FILL_HORIZONTAL);
 		ruleOptionsHostTextField.setLayoutData(gridData4HostTextField);
 		ruleOptionsHostTextField.setText(Router.getInstance().getRuleManager().getDefaultHost());
 		
-		
-		Label ruleOptionsTargetHostLabelDummy0 = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		GridData gridDataForLabelDummy0 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy0.setLayoutData(gridDataForLabelDummy0);
-		ruleOptionsTargetHostLabelDummy0.setText(" ");
-	
-		Label ruleOptionsTargetHostLabelDummy1 = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		GridData gridDataForLabelDummy1 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy1.setLayoutData(gridDataForLabelDummy1);
-		ruleOptionsTargetHostLabelDummy1.setText(" ");
+			
+		Label lbListenPort = new Label(ruleKeyGroup, SWT.NONE);
+		lbListenPort.setText("Listen Port:");
+		GridData gridData4ListenPortLabel = new GridData();
+		lbListenPort.setLayoutData(gridData4ListenPortLabel);
 		
 		
-		ruleOptionsListenPortLabel = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		gridData4ListenPortLabel = new GridData();
-		gridData4ListenPortLabel.horizontalSpan = 2;
-		ruleOptionsListenPortLabel.setLayoutData(gridData4ListenPortLabel);
-		ruleOptionsListenPortLabel.setText("Listen Port:");
-
+		textListenPort = new Text(ruleKeyGroup,SWT.BORDER);
+		textListenPort.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
+		textListenPort.addVerifyListener(new PortVerifyListener());
+		GridData gridData4FieldShort = new GridData();
+		gridData4FieldShort.widthHint = 100;
+		textListenPort.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		textListenPort.setLayoutData(gridData4FieldShort);
 		
-		ruleOptionsListenPortTextField = new Text(ruleOptionsRuleKeyGroup,SWT.BORDER);
-		ruleOptionsListenPortTextField.addVerifyListener(new PortVerifyListener());
-		ruleOptionsListenPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		ruleOptionsListenPortTextField.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
-		
-		
-		Label ruleOptionsTargetHostLabelDummy2 = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		GridData gridDataForLabelDummy2 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy2.setLayoutData(gridDataForLabelDummy2);
-		ruleOptionsTargetHostLabelDummy2.setText(" ");
-		
-		Label ruleOptionsTargetHostLabelDummy3 = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		GridData gridDataForLabelDummy3 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy3.setLayoutData(gridDataForLabelDummy3);
-		ruleOptionsTargetHostLabelDummy3.setText(" ");
-		
-		ruleOptionsMethodLabel = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		gridData4MethodLabel = new GridData();
-		gridData4MethodLabel.horizontalSpan = 2;
-		ruleOptionsMethodLabel.setLayoutData(gridData4MethodLabel);
+		Label ruleOptionsMethodLabel = new Label(ruleKeyGroup, SWT.NONE);
 		ruleOptionsMethodLabel.setText("HTTP Method:");
-
-		ruleOptionsMethodCombo = new Combo(ruleOptionsRuleKeyGroup, SWT.READ_ONLY);
-		ruleOptionsMethodCombo.setItems(new String[] { "POST", "GET", "DELETE", "PUT", " * " });
-		ruleOptionsMethodCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		ruleOptionsMethodCombo.select(Router.getInstance().getRuleManager().getDefaultMethod());
-		
-		Label ruleOptionsTargetHostLabelDummy4 = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		GridData gridDataForLabelDummy4 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy4.setLayoutData(gridDataForLabelDummy4);
-		ruleOptionsTargetHostLabelDummy4.setText(" ");
+		GridData gridData4MethodLabel = new GridData();
+		ruleOptionsMethodLabel.setLayoutData(gridData4MethodLabel);
 	
-		Label ruleOptionsTargetHostLabelDummy5 = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		GridData gridDataForLabelDummy5 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy5.setLayoutData(gridDataForLabelDummy5);
-		ruleOptionsTargetHostLabelDummy5.setText(" ");
-		
-		ruleOptionsPathLabel = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		ruleOptionsPathLabel.setText("Path:");
 
-		ruleOptionsPathTextField = new Text(ruleOptionsRuleKeyGroup, SWT.BORDER);
-		gridData4PathTextField = new GridData(GridData.FILL_HORIZONTAL);
-		gridData4PathTextField.horizontalSpan = 4;
-		ruleOptionsPathTextField.setLayoutData(gridData4PathTextField);
-		ruleOptionsPathTextField.setText(Router.getInstance().getRuleManager().getDefaultPath());
+		ruleMethodCombo = new Combo(ruleKeyGroup, SWT.READ_ONLY);
+		ruleMethodCombo.setItems(new String[] { "POST", "GET", "DELETE", "PUT", "<<All methods>>" });
+		ruleMethodCombo.setLayoutData(gridData4FieldShort);
+		ruleMethodCombo.select(Router.getInstance().getRuleManager().getDefaultMethod());
+
+		btAnyPath = new Button(ruleKeyGroup, SWT.RADIO);
+		btAnyPath.setText("Any path");
+		btAnyPath.setSelection(true);
+		btAnyPath.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				Display.getCurrent().asyncExec(new Runnable() {
+					public void run() {
+						rulePathTextField.setVisible(false);
+						compPattern.setVisible(false);
+					}
+				});
+			}
+		});
+		
+		Label lbDummy1 = new Label(ruleKeyGroup, SWT.NONE);
+		GridData gridDataForLbDummy1 = new GridData(GridData.FILL_HORIZONTAL);
+		gridDataForLbDummy1.grabExcessHorizontalSpace = true;
+		lbDummy1.setLayoutData(gridDataForLbDummy1);
+		lbDummy1.setText(" ");
+		
+		btPathPattern = new Button(ruleKeyGroup, SWT.RADIO);
+		btPathPattern.setText("Path pattern");
+		btPathPattern.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				Display.getCurrent().asyncExec(new Runnable() {
+					public void run() {
+						rulePathTextField.setVisible(true);
+						compPattern.setVisible(true);
+					}
+				});
+			}
+		});
+		
+		rulePathTextField = new Text(ruleKeyGroup, SWT.BORDER);
+		rulePathTextField.setLayoutData(gridData4HostTextField);
+		rulePathTextField.setText(Router.getInstance().getRuleManager().getDefaultPath());
+		rulePathTextField.setVisible(false);
+		
+		compPattern = new Composite(ruleKeyGroup, SWT.NONE);
+		GridData gdCompPattern = new GridData();
+		gdCompPattern.horizontalSpan = 2;
+		gdCompPattern.grabExcessHorizontalSpace = true;
+		compPattern.setLayoutData(gdCompPattern);
+		compPattern.setVisible(false);
+		
+		GridLayout layoutPattern = new GridLayout();
+		layoutPattern.marginLeft = 25;
+		layoutPattern.numColumns = 2;
+		compPattern.setLayout(layoutPattern);
+		
+		
+		
+		Label lbInterpret = new Label(compPattern, SWT.NONE);
+		GridData gridData4LbInterpret = new GridData(GridData.FILL_HORIZONTAL);
+		lbInterpret.setLayoutData(gridData4LbInterpret);
+		lbInterpret.setText("Interpret Pattern as");
+		
+		Label lbDummy3 = new Label(compPattern, SWT.NONE);
+		lbDummy3.setLayoutData(gridDataForLbDummy1);
+		lbDummy3.setText(" ");
+		
+		
+		btSubstring = new Button(compPattern, SWT.RADIO);
+		btSubstring.setText("Substring");
+		
+		Label lbDummy4 = new Label(compPattern, SWT.NONE);
+		lbDummy4.setLayoutData(gridDataForLbDummy1);
+		lbDummy4.setText(" ");
+		
+		Label lbSubstringExample = new Label(compPattern, SWT.NONE);
+		GridData gridData4LbExample = new GridData();
+		gridData4LbExample.horizontalIndent = 30;
+		lbSubstringExample.setLayoutData(gridData4LbExample);
+		lbSubstringExample.setText("Examples: ");
+		
+		Label lbSubstringExampleA = new Label(compPattern, SWT.NONE);
+		lbSubstringExampleA.setText("/axis2/     matches all URI containing /axis2/");
+		//lbSubstringExampleA.setLayoutData(gridDataForLbDummy1);
+		
+		
+		btRegularExpression = new Button(compPattern, SWT.RADIO);
+		btRegularExpression.setText("Regular Expression");
+		btRegularExpression.setSelection(true);
+		
+		Label lbDummy5 = new Label(compPattern, SWT.NONE);
+		lbDummy5.setLayoutData(gridDataForLbDummy1);
+		lbDummy5.setText(" ");
+		
+		Label lbRefExpressExample = new Label(compPattern, SWT.NONE);
+		lbRefExpressExample.setLayoutData(gridData4LbExample);
+		lbRefExpressExample.setText("Examples: ");
+	
+		Label lbRefExpressExampleA = new Label(compPattern, SWT.NONE);
+		lbRefExpressExampleA.setText(".*   matches any URI");
+		
+		
+		Label lbRefExpressExampleEmpty = new Label(compPattern, SWT.NONE);
+		lbRefExpressExampleEmpty.setLayoutData(gridData4LbExample);
+		lbRefExpressExampleEmpty.setText("         ");
+	
+		Label lbRefExpressExampleB = new Label(compPattern, SWT.NONE);
+		lbRefExpressExampleB.setText(".*FooService   matches any URI terminating");
+		
 	}
 
 
 	public void clear() {
-		ruleOptionsListenPortTextField.setText("");
-		ruleOptionsPathTextField.setText("");
+		textListenPort.setText("");
+		rulePathTextField.setText("");
 		ruleOptionsHostTextField.setText("");
-		ruleOptionsMethodCombo.clearSelection();
+		ruleMethodCombo.clearSelection();
 	}
 
 	public ForwardingRuleKey getUserInput() {
-		String port = ruleOptionsListenPortTextField.getText().trim();
+		String port = textListenPort.getText().trim();
         String host = ruleOptionsHostTextField.getText().trim();
-		int index = ruleOptionsMethodCombo.getSelectionIndex();
+		int index = ruleMethodCombo.getSelectionIndex();
 		String method;
-		if (index > -1)
-			method = ruleOptionsMethodCombo.getItem(index);
-		else
+		if (index < 0) {
 			method = "";
-
-		String path = ruleOptionsPathTextField.getText().trim();
-		if (port.length() == 0 || method.length() == 0 || path.length() == 0) {
+		} else {
+			if (index == 4) {
+			  method = "*";
+			} else {
+				method = ruleMethodCombo.getItem(index);
+			}
+		}
+		
+		if (port.length() == 0 || method.length() == 0) {
 			return null;
 		}
-
-		return new ForwardingRuleKey(host, method, path, Integer.parseInt(port));
+		
+		if (btAnyPath.getSelection()) {
+			ForwardingRuleKey rulekey = new ForwardingRuleKey(host, method, ".*", Integer.parseInt(port));
+			rulekey.setUsePathPattern(false);
+			return rulekey;
+		} else {
+			String path = rulePathTextField.getText().trim();
+			if (path.length() == 0) {
+				return null;
+			}
+			
+			ForwardingRuleKey rulekey = new ForwardingRuleKey(host, method, path, Integer.parseInt(port));
+			rulekey.setUsePathPattern(true);
+			if (btRegularExpression.getSelection()) {
+				rulekey.setPathRegExp(true);
+			} else {
+				rulekey.setPathRegExp(false);
+			}
+			return rulekey;
+		}
 	}
 
 	public void setInput(RuleKey ruleKey) {
-		ruleOptionsListenPortTextField.setText(Integer.toString(ruleKey.getPort()));
+		textListenPort.setText(Integer.toString(ruleKey.getPort()));
 
 		String method = ruleKey.getMethod();
-		String[] methods = ruleOptionsMethodCombo.getItems();
-		for (int i = 0; i < methods.length; i ++) {
-			if (method.trim().equals(methods[i].trim())) {
-				ruleOptionsMethodCombo.select(i);
-				break;
+		if ("*".equals(method.trim())) {
+			ruleMethodCombo.select(4);
+		} else {
+			String[] methods = ruleMethodCombo.getItems();
+			for (int i = 0; i < methods.length; i ++) {
+				if (method.trim().equals(methods[i].trim())) {
+					ruleMethodCombo.select(i);
+					break;
+				}
 			}
 		}
+	
 
-		ruleOptionsPathTextField.setText(ruleKey.getPath());
+		if (ruleKey.isUsePathPattern()) {
+			btPathPattern.setSelection(true);
+			btAnyPath.setSelection(false);
+			btPathPattern.notifyListeners(SWT.Selection, null);
+			if (ruleKey.isPathRegExp()) {
+				btRegularExpression.setSelection(true);
+				btRegularExpression.notifyListeners(SWT.Selection, null);
+				btSubstring.setSelection(false);
+			} else {
+				btSubstring.setSelection(true);
+				btSubstring.notifyListeners(SWT.Selection, null);
+				btRegularExpression.setSelection(false);
+			}
+			rulePathTextField.setText(ruleKey.getPath());
+		} else {
+			btAnyPath.setSelection(true);
+			btAnyPath.notifyListeners(SWT.Selection, null);
+			btPathPattern.setSelection(false);
+		}
+		
 		ruleOptionsHostTextField.setText(ruleKey.getHost());
 	}
 

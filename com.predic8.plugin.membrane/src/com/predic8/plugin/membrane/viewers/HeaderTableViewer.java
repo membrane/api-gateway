@@ -36,8 +36,8 @@ import org.eclipse.swt.widgets.TableColumn;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.plugin.membrane.actions.HeaderTableMenuAction;
 import com.predic8.plugin.membrane.celleditors.HeaderTableCellModifier;
-import com.predic8.plugin.membrane.providers.HeaderTableContentProvider;
-import com.predic8.plugin.membrane.providers.HeaderTableLabelProvider;
+import com.predic8.plugin.membrane.contentproviders.HeaderTableContentProvider;
+import com.predic8.plugin.membrane.labelproviders.HeaderTableLabelProvider;
 
 public class HeaderTableViewer extends TableViewer {
 

@@ -153,9 +153,17 @@ public class RuleManager {
 			if (!key.getMethod().equals(ruleKey.getMethod()) && !key.isMethodWildcard())
 				continue;
 
-			Pattern p = Pattern.compile(key.getPath());
-			if (p.matcher(ruleKey.getPath()).find())
+			if (!key.isUsePathPattern()) 
 				return rules.get(key);
+			
+			if (key.isPathRegExp()) {
+				Pattern p = Pattern.compile(key.getPath());
+				if (p.matcher(ruleKey.getPath()).find())
+					return rules.get(key);
+			} else {
+				if (ruleKey.getPath().indexOf(key.getPath()) >=0 )
+					return rules.get(key);
+			}
 		}
 		return null;
 	}

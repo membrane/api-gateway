@@ -91,7 +91,8 @@ public class Request extends Message {
 	
 	protected void createBody(InputStream in) throws IOException {
 		log.debug("createBody");
-		if (!hasBody()) {
+		
+		if (isBodyEmpty()) {
 			body = new Body();
 			return;
 		}
@@ -107,13 +108,16 @@ public class Request extends Message {
 		return METHOD_GET.equals(method);
 	}
 	
-	@Override
-	public boolean hasBody() {
-		return !isGETRequest();
-	}
-	
+
 	@Override
 	public String getName() {
 		return uri;
+	}
+	
+	@Override
+	public Boolean isBodyEmpty() {
+		if (isGETRequest() || isHEADRequest())
+			return true;
+		return super.isBodyEmpty();
 	}
 }

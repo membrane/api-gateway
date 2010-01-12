@@ -1,4 +1,4 @@
-package com.predic8.plugin.membrane.providers;
+package com.predic8.plugin.membrane.labelproviders;
 
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;

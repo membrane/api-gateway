@@ -48,7 +48,7 @@ public class RouterCLI {
 				return;
 			}
 			
-			Resource configResource = new ClassPathResource("monitor-beans.xml");
+			
 			String rulesFile = "";
 			if (commandLine.hasOption('c')) {
 				rulesFile = commandLine.getOptionValue('c'); 
@@ -56,6 +56,7 @@ public class RouterCLI {
 				rulesFile =  System.getenv("MEMROUTER_HOME") +  "/conf/rules.xml" ;
 			}
 			
+			Resource configResource = new ClassPathResource("monitor-beans.xml");
 			if (commandLine.hasOption('b')) {
 				configResource = new FileSystemResource(commandLine.getOptionValue('b'));
 			}
@@ -65,7 +66,7 @@ public class RouterCLI {
 	    	try {
 	    		router.getConfigurationManager().loadConfiguration(rulesFile);
 	    	} catch (Exception ex) {
-	    	    ex.printStackTrace();
+	    	    System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMROUTER_HOME") +  "/conf/rules.xml exists" );
 	    	    System.exit(1);
 	    	}
 	    	

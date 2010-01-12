@@ -26,6 +26,12 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
+	@Override
+	public Outcome handleResponse(Exchange exc) throws Exception {
+		dispatchingStrategy.done(exc);
+		return Outcome.CONTINUE;
+	}
+	
 	public DispatchingStrategy getDispatchingStrategy() {
 		return dispatchingStrategy;
 	}
@@ -34,9 +40,4 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		this.dispatchingStrategy = strategy;
 	}
 	
-
-	@Override
-	public String getDisplayName() {
-		return "Load Balancer";
-	}
 }

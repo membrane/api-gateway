@@ -1,4 +1,4 @@
-package com.predic8.plugin.membrane.providers;
+package com.predic8.plugin.membrane.labelproviders;
 
 import java.text.NumberFormat;
 
@@ -16,7 +16,7 @@ import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
 
-public class RulesViewLabelProvider extends LabelProvider implements ITableLabelProvider, ITableColorProvider  {
+public class RuleStatisticsLabelProvider extends LabelProvider implements ITableLabelProvider, ITableColorProvider  {
 	
 	private NumberFormat nf = NumberFormat.getInstance();
 	
@@ -24,7 +24,7 @@ public class RulesViewLabelProvider extends LabelProvider implements ITableLabel
 	
 	private Image ruleForwardingImage;
 	
-	public RulesViewLabelProvider() {
+	public RuleStatisticsLabelProvider() {
 		nf.setMaximumFractionDigits(3);
 		ruleProxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_RULE_PROXY).createImage();
 		ruleForwardingImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_RULE_REVERSE_PROXY).createImage();
@@ -43,14 +43,32 @@ public class RulesViewLabelProvider extends LabelProvider implements ITableLabel
 		Rule rule = (Rule)element;
 		
 		RuleStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getRuleKey());
+		String min = (statistics.getMin() < 0) ? "" : "" +statistics.getMin(); 
+		String max = (statistics.getMax() < 0) ? "" : "" +statistics.getMax(); 
+		String avg = (statistics.getAvg() < 0) ? "" : nf.format(statistics.getAvg()); 
+		String error = (statistics.getCountError() == 0) ? "" : "" + statistics.getCountError(); 
+		String bytesSent = (statistics.getBytesSent() == 0) ? "" : "" + statistics.getBytesSent(); 
+		String bytesReceived = (statistics.getBytesReceived() == 0) ? "" : "" + statistics.getBytesReceived(); 
 		
 		switch (columnIndex) {
 		case 0:
 			return rule.toString();
 		case 1:
 			return "" + statistics.getCountTotal();
+		case 2:
+			return min;
+		case 3:
+			return max;
+		case 4:
+			return avg;	
+		case 5:
+			return bytesSent;
+		case 6:
+			return bytesReceived;
+		case 7:
+			return error;	
 		default:
-			throw new RuntimeException("Table in rules view  must have only 2 columns");
+			throw new RuntimeException("Rule table viewer must have only 6 columns");
 		}
 	}
 

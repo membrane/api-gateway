@@ -34,7 +34,7 @@ public class RuleOptionsTargetGroup {
 
 	public RuleOptionsTargetGroup(Composite parent, int style) {
 		Group ruleOptionsTargetGroup = new Group(parent, style);
-		ruleOptionsTargetGroup.setText("Target");
+		//ruleOptionsTargetGroup.setText("Target");
 		ruleOptionsTargetGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 		GridLayout gridLayout4TargetGroup = new GridLayout();
 		gridLayout4TargetGroup.numColumns = 4;

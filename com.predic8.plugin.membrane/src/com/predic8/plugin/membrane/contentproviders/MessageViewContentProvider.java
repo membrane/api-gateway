@@ -1,4 +1,4 @@
-package com.predic8.plugin.membrane.providers;
+package com.predic8.plugin.membrane.contentproviders;
 
 import org.eclipse.swt.widgets.Display;
 

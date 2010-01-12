@@ -90,6 +90,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 		}
 
 		if (ruleKey.equals(rule.getRuleKey())) {
+			rule.setRuleKey(ruleKey); //equals considers only listen port
 			rule.setName(generalInfoComposite.getRuleName());
 			((ForwardingRule)rule).setTargetHost(targetHost);
 			((ForwardingRule)rule).setTargetPort(targetPort);

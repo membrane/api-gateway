@@ -19,6 +19,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.config.Interceptors;
+import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.TargetHost;
 import com.predic8.membrane.core.config.TargetPort;
 
@@ -68,11 +69,9 @@ public class ForwardingRule extends AbstractRule implements Rule {
 
 		int port = Integer.parseInt(token.getAttributeValue("", "port"));
 
-		String path = token.getAttributeValue("", "path");
-
 		String method = token.getAttributeValue("", "method");
 
-		ruleKey = new ForwardingRuleKey(host, method, path, port);
+		ruleKey = new ForwardingRuleKey(host, method, ".*", port);
 		
 	}
 
@@ -85,6 +84,13 @@ public class ForwardingRule extends AbstractRule implements Rule {
 			this.targetHost = ((TargetHost) (new TargetHost().parse(token))).getValue();
 		} else if (Interceptors.ELEMENT_NAME.equals(child)) {
 			this.interceptors = ((Interceptors) (new Interceptors().parse(token))).getInterceptors();
+		}  
+		
+		if (Path.ELEMENT_NAME.equals(child)) {
+			ruleKey.setUsePathPattern(true);
+			Path p = (Path)(new Path()).parse(token);
+			ruleKey.setPathRegExp(p.isRegExp());
+			ruleKey.setPath(p.getValue());
 		}
 
 	}
@@ -104,8 +110,6 @@ public class ForwardingRule extends AbstractRule implements Rule {
 		
 		out.writeAttribute("port", ""+ruleKey.getPort());
 		
-		out.writeAttribute("path", ruleKey.getPath());
-		
 		out.writeAttribute("method", ruleKey.getMethod());
 		
 		TargetPort childTargetPort = new TargetPort();
@@ -116,7 +120,13 @@ public class ForwardingRule extends AbstractRule implements Rule {
 		childTargetHost.setValue(targetHost);
 		childTargetHost.write(out);
 		
-		
+		if (ruleKey.isUsePathPattern()) {
+			Path path = new Path();
+			path.setValue(ruleKey.getPath());
+			path.setRegExp(ruleKey.isPathRegExp());
+			path.write(out);
+		}
+	
 		Interceptors inters = new Interceptors();
 		inters.setInterceptors(interceptors);
 		inters.write(out);

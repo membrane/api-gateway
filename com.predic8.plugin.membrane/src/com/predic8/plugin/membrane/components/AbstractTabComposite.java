@@ -46,14 +46,14 @@ public class AbstractTabComposite extends Composite {
 	}
 	
 	public void show() {
-		if (tabItem == null)
+		if (tabItem == null) {
 			return;
-		
+		}
 		if (tabItem.isDisposed()) {
 			tabItem = new TabItem((TabFolder)getParent(), SWT.NONE);
 			tabItem.setText(tabTitle);
 			tabItem.setControl(this);
-		}		
+		} 
 	}
 
 	public String getTabTitle() {

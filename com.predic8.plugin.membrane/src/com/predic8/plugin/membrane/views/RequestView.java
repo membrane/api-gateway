@@ -11,7 +11,7 @@ import org.eclipse.swt.widgets.ToolItem;
 
 import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
-import com.predic8.plugin.membrane.providers.RequestViewContentProvider;
+import com.predic8.plugin.membrane.contentproviders.RequestViewContentProvider;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 import com.predic8.plugin.membrane.viewcomponents.RequestComp;
 

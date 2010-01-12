@@ -155,16 +155,12 @@ public abstract class Message {
 			return;
 		}
 			
-		if (hasBody())
+		if (isBodyEmpty() == null || !isBodyEmpty())
 			body.write(out);
 		
 		out.flush();
 	}
 	
-	public boolean hasBody() {
-		return true;
-	}
-
 	public void writeStartLine(OutputStream out) throws IOException {
 		out.write(getStartLine().getBytes());
 	}
@@ -215,6 +211,18 @@ public abstract class Message {
 		return "message";
 	}
 
+	public Boolean isBodyEmpty() {
+		if (header.hasContentLength()) 
+			return header.getContentLength() == 0;
+		
+		
+		if (!getBody().read)
+			return null;
+		
+		return getBody().getLength() == 0;
+	}
+	
+	
 	public boolean isImage() {
 		if (header.getContentType() == null) 
 			return false;

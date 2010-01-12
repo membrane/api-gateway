@@ -11,7 +11,6 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.plugin.membrane.components.BodyTabComposite;
 import com.predic8.plugin.membrane.components.CSSTabComposite;
 import com.predic8.plugin.membrane.components.ErrorTabComposite;
@@ -151,7 +150,7 @@ public class MessageTabManager {
 
 		hideAllBodyTabs();
 	
-		if (canShowBody(msg)) {
+		if (msg.isBodyEmpty() != null && !msg.isBodyEmpty()) {
 			if (msg.isImage()) {
 				currentBodyTabComposite = imageTabComposite;
 			} else if (msg.isXML()) {
@@ -165,24 +164,13 @@ public class MessageTabManager {
 			} else if (msg.isJSON()) {
 				currentBodyTabComposite = jsonTabComposite;
 			} 	
-		}
+		} 
 		
 		currentBodyTabComposite.show();
 		
 		baseComp.setFormatEnabled(currentBodyTabComposite.isFormatSupported());
 	}
 
-	private boolean canShowBody(Message msg) {
-		if (msg.getHeader().getContentLength() == 0)
-			return false;
-		if (msg instanceof Response) {
-			if (((Response)msg).getStatusCode() == 204)
-				return false;
-		}
-		return true;
-	}
-	
-	
 	private void hideAllContentTabs() {
 		rawTabComposite.hide();
 		headerTabComposite.hide();

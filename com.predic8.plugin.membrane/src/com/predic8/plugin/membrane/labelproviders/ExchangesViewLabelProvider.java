@@ -1,4 +1,4 @@
-package com.predic8.plugin.membrane.providers;
+package com.predic8.plugin.membrane.labelproviders;
 
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -139,6 +139,8 @@ public class ExchangesViewLabelProvider extends LabelProvider implements
 					return contentType;
 					
 				case 8:
+					if (exchange.getRequest().getHeader().getContentLength() == -1)
+						return "unknown";
 					return "" + exchange.getRequest().getHeader().getContentLength();
 
 				case 9:

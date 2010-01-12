@@ -28,20 +28,11 @@ public class SOAPTabComposite extends BodyTextTabComposite {
 	}
 
 	public void setBodyText(String string) {
-		if (string == null)
-			return;
 		bodyText.setText(string);
 	}
 	
 	public void beautify(byte[] content) {
-		if (content == null)
-			return;
-		ByteArrayInputStream bis = new ByteArrayInputStream(content);
-		try {
-			bodyText.setText(TextUtil.formatXML(bis));
-		} catch (Exception ex) {
-			bodyText.setText(new String(content));
-		}
+		bodyText.setText(TextUtil.formatXML(new ByteArrayInputStream(content)));
 		bodyText.redraw();
 	}
 	

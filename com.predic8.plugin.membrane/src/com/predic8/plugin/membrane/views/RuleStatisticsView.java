@@ -24,9 +24,9 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
-import com.predic8.plugin.membrane.providers.RuleStatisticsContentProvider;
-import com.predic8.plugin.membrane.providers.RuleStatisticsLabelProvider;
-import com.predic8.plugin.membrane.providers.TableHeaderLabelProvider;
+import com.predic8.plugin.membrane.contentproviders.RuleStatisticsContentProvider;
+import com.predic8.plugin.membrane.labelproviders.RuleStatisticsLabelProvider;
+import com.predic8.plugin.membrane.labelproviders.TableHeaderLabelProvider;
 
 public class RuleStatisticsView extends AbstractRulesView {
 

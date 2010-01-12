@@ -15,8 +15,8 @@ import org.eclipse.ui.part.ViewPart;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.providers.RuleTableContentProvider;
-import com.predic8.plugin.membrane.providers.RuleTableLabelProvider;
+import com.predic8.plugin.membrane.contentproviders.RuleTableContentProvider;
+import com.predic8.plugin.membrane.labelproviders.RuleTableLabelProvider;
 
 public class RuleTableView extends ViewPart implements IRuleChangeListener {
 

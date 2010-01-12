@@ -1,6 +1,5 @@
 package com.predic8.plugin.membrane.components;
 
-import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
 import org.eclipse.swt.SWT;
@@ -52,28 +51,17 @@ public class BodyTextTabComposite extends BodyTabComposite {
 	
 	@Override
 	public void update(Message msg) {
-		if (msg == null)
-			return;
-		if (msg.getBody() == null)
-			return;
 		byte[] bodyContent = msg.getBody().getContent();
-		if (bodyContent == null)
-			return;
-		
-		
 		try {
 			if (msg.isGzip()) {
-				InputStream stream = new GZIPInputStream(msg.getBodyAsStream());
-				displayData(ByteUtil.getByteArrayData(stream));
+				displayData(ByteUtil.getByteArrayData(new GZIPInputStream(msg.getBodyAsStream())));
 			    return;
 			} else if (msg.isDeflate()) {
 				displayData(ByteUtil.getDecompressedData(bodyContent));
 			    return;
 			}
 		} catch (Exception e) {
-			setBodyText(new String(bodyContent));
 			e.printStackTrace();
-			return;
 		}
 	
 		displayData(bodyContent);

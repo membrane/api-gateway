@@ -22,7 +22,7 @@ import org.eclipse.ui.part.ViewPart;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
-import com.predic8.plugin.membrane.providers.MessageViewContentProvider;
+import com.predic8.plugin.membrane.contentproviders.MessageViewContentProvider;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 import com.predic8.plugin.membrane.viewcomponents.BaseComp;
 import com.predic8.plugin.membrane.viewcomponents.IBaseCompositeHost;
@@ -30,27 +30,28 @@ import com.predic8.plugin.membrane.viewcomponents.IBaseCompositeHost;
 public abstract class AbstractMessageView extends ViewPart implements IBaseCompositeHost {
 
 	protected Exchange exchange;
-	
-	private String savePath;
-	
+
+	private String latestSavePath;
+
 	protected Composite partComposite;
-	
+
 	protected ToolBar toolBar;
-	
+
 	protected ToolItem itemContinue, itemFormat, itemSave;
-	
+
 	protected BaseComp baseComp;
-	
+
 	protected MessageViewContentProvider contentProvider;
-	
+
 	@Override
 	public void createPartControl(Composite parent) {
+
 		GridLayout responseLayout = new GridLayout();
 		partComposite = new Composite(parent, SWT.NONE);
 		partComposite.setLayout(responseLayout);
 
 		toolBar = new ToolBar(partComposite, SWT.NONE);
-		
+
 		itemContinue = new ToolItem(toolBar, SWT.PUSH);
 		itemContinue.setText("Continue");
 		ImageDescriptor descriptorContinueResponse = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FLAG_GREEN);
@@ -64,8 +65,7 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 			}
 		});
 		itemContinue.setEnabled(false);
-		
-		
+
 		itemFormat = new ToolItem(toolBar, SWT.PUSH);
 		itemFormat.setText("Format");
 		ImageDescriptor descriptor2 = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FORMAT);
@@ -80,7 +80,6 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 		});
 		itemFormat.setEnabled(false);
 
-		
 		itemSave = new ToolItem(toolBar, SWT.PUSH);
 		itemSave.setText("Save");
 		ImageDescriptor descriptorSaveResponse = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_SAVE_MESSAGE);
@@ -98,93 +97,86 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 			}
 		});
 		itemSave.setEnabled(false);
-		
+
 	}
-	
+
 	protected void saveMessage(Message message) throws Exception {
-		if (message == null) 
+		String selected = getFileName(message);
+		if (selected == null || selected.equals(""))
 			return;
-		
-		String extension = "txt";
-		boolean image = false;
-		
-		if (message.hasBody()) {
-			if (message.getHeader().getContentType() != null) {
-				if (message.isCSS()) {
-					extension = "css";
-				} else if (message.isHTML()) {
-					extension = "html";
-				} else if (message.isJavaScript()) {
-					extension = "js";
-				} else if (message.isXML()) {
-					extension = "xml";
-				} else if (message.isImage()) {
-					image = true;
-					String contentType = message.getHeader().getContentType();
-					if (contentType.contains("jpeg")) {
-						extension = "jpg";
-					} else if (contentType.contains("gif")) {
-						extension = "gif";
-					} else if (contentType.contains("png")) {
-						extension = "png";
-					} else if (contentType.contains("bmp")) {
-						extension = "bmp";
-					} else {
-						extension = "bmp";
-					}
-				}  
+
+		OutputStream os = null;
+		try {
+			File file = new File(selected);
+			if (!file.exists()) {
+				file.createNewFile();
 			}
-		} 
-		
+
+			latestSavePath = file.getParent();
+
+			os = new FileOutputStream(file);
+			if (message.isBodyEmpty()) {
+				PrintWriter printer = new PrintWriter(os);
+				printer.write(message.getHeader().toString());
+				printer.flush();
+			} else {
+				os.write(message.getBody().getContent());
+				os.flush();
+			}
+		} finally {
+			if (os != null) {
+				try {
+					os.close();
+				} catch (IOException e) {
+					throw e;
+				}
+			}
+		}
+
+	}
+
+	private String getFileName(Message message) {
 		FileDialog fd = new FileDialog(partComposite.getShell(), SWT.SAVE);
 		fd.setText("Save Message");
-		if (savePath != null && !savePath.equals("")) {
-			fd.setFilterPath(savePath);
+		if (latestSavePath != null && !latestSavePath.equals("")) {
+			fd.setFilterPath(latestSavePath);
 		} else {
 			fd.setFilterPath("C:/");
 		}
-		
-        String[] filterExt = { "*." + extension};
-        fd.setFilterExtensions(filterExt);
-        String selected = fd.open();
-        if (selected != null && !selected.equals("")) {
-        	OutputStream writer = null;
-        	try {
-        		File file = new File(selected);
-            	if (!file.exists()) {
-            		file.createNewFile();
-            	}
-            	
-            	savePath = file.getParent();
-            	
-            	writer = new FileOutputStream(file);
-            	if (message.getBody() != null && message.getBody() != null && message.getBody().getContent().length > 0) {
-            		if (image) {
-            			writer.write(message.getBody().getContent());
-            			writer.flush();
-            		} else {
-            			PrintWriter printer = new PrintWriter(writer);
-            			printer.write(new String(message.getBody().getContent()));
-            			printer.flush();
-            		}
-            	} else {
-            		PrintWriter printer = new PrintWriter(writer);
-            		String headerText = new String(message.getHeader().toString());
-            		printer.write(headerText);
-            		printer.flush();
-            	}
-        	} finally {
-        		if (writer != null) {
-        			try {
-						writer.close();
-					} catch (IOException e) {
-						throw e;
-					}
-        		}
-        	}
-        }
+
+		fd.setFilterExtensions(new String[] { "*." + getExtension(message) });
+		return fd.open();
 	}
-	
+
+	private String getExtension(Message message) {
+		if (message.getHeader().getContentType() == null)
+			return "txt";
+
+		if (message.isCSS()) {
+			return "css";
+		} else if (message.isHTML()) {
+			return "html";
+		} else if (message.isJavaScript()) {
+			return "js";
+		} else if (message.isXML()) {
+			return "xml";
+		} else if (message.isImage()) {
+			String contentType = message.getHeader().getContentType();
+			if (contentType.contains("jpeg")) {
+				return "jpg";
+			} else if (contentType.contains("gif")) {
+				return "gif";
+			} else if (contentType.contains("png")) {
+				return "png";
+			} else if (contentType.contains("bmp")) {
+				return "bmp";
+			} else {
+				return "bmp";
+			}
+		}
+		return "txt";
+	}
+
 	public void setInput(Exchange newExchange) {
 		if (contentProvider == null)
 			return;
@@ -193,20 +185,20 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 		this.exchange = newExchange;
 		baseComp.setMsg(contentProvider.getMessage(exchange));
 	}
-	
+
 	public Exchange getExchange() {
 		return exchange;
 	}
-	
+
 	@Override
 	public void setFocus() {
-		
+
 	}
-	
+
 	public void setMessage(Message message) {
 		baseComp.setMsg(message);
 	}
-	
-	public abstract void updateUIStatus(boolean canShowBody);  
-	
+
+	public abstract void updateUIStatus(boolean canShowBody);
+
 }

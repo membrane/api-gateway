@@ -1,4 +1,4 @@
-package com.predic8.plugin.membrane.providers;
+package com.predic8.plugin.membrane.contentproviders;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -14,5 +14,13 @@ public interface RuleKey {
 	
 	public boolean isHostWildcard();
 	
+	public boolean isPathRegExp();
 	
+	public boolean isUsePathPattern();
+	
+	public void setUsePathPattern(boolean usePathPattern);
+	
+	public void setPathRegExp(boolean pathRegExp);
+	
+	public void setPath(String path);
 }

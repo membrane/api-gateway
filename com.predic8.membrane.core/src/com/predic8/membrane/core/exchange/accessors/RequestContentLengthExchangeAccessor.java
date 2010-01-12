@@ -8,7 +8,8 @@ public class RequestContentLengthExchangeAccessor implements ExchangeAccessor {
 	
 	public Object get(Exchange exc) {
 		if (exc == null || exc.getRequest() == null)
-			return 0;
+			return -1;
+		
 		return exc.getRequest().getHeader().getContentLength();
 	}
 

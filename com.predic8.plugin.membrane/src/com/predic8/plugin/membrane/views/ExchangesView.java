@@ -51,9 +51,9 @@ import com.predic8.plugin.membrane.actions.ExchangeVirtualListRemoveAction;
 import com.predic8.plugin.membrane.actions.RemoveExchangeAction;
 import com.predic8.plugin.membrane.actions.ShowFiltersDialogAction;
 import com.predic8.plugin.membrane.actions.ShowSortersDialogAction;
+import com.predic8.plugin.membrane.contentproviders.ExchangesViewLazyContentProvider;
 import com.predic8.plugin.membrane.filtering.FilterManager;
-import com.predic8.plugin.membrane.providers.ExchangesViewLabelProvider;
-import com.predic8.plugin.membrane.providers.ExchangesViewLazyContentProvider;
+import com.predic8.plugin.membrane.labelproviders.ExchangesViewLabelProvider;
 
 public class ExchangesView extends ViewPart implements IRuleTreeViewerListener {
 

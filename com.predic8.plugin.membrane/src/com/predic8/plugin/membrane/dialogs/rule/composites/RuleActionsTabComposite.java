@@ -28,7 +28,7 @@ public class RuleActionsTabComposite extends Composite {
 		setLayout(gridLayout);
 
 		Group ruleActionGroup = new Group(this, SWT.NONE);
-		ruleActionGroup.setText("Action");
+		//ruleActionGroup.setText("Action");
 		ruleActionGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		ruleActionGroup.setLayout(new GridLayout());
 

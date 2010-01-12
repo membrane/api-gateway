@@ -44,46 +44,46 @@ public class AddRuleWizard extends Wizard {
 	public boolean performFinish() {
 		try {
 			if (getContainer().getCurrentPage().getName().equals(TargetHostConfigurationPage.PAGE_NAME)) {
+				System.out.println("previous page: " + targetHostConfigPage.getPreviousPage().getName());
+				if (targetHostConfigPage.getPreviousPage().getName().equals(ListenPortConfigurationPage.PAGE_NAME)) {
+					int listenPort = Integer.parseInt(listenPortConfigPage.getListenPort());
+					
+					ForwardingRuleKey ruleKey = new ForwardingRuleKey("*", "*", ".*", listenPort);
+					
+					if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
+						openWarningDialog("You've entered a duplicated rule key.");
+						return false;
+					}
+					
+					
+					createForwardingRule(ruleKey);
+					((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
+					return true;
+				} else if (targetHostConfigPage.getPreviousPage().getName().equals(AdvancedRuleConfigurationPage.PAGE_NAME)) {
+					int listenPort = Integer.parseInt(advancedRuleConfigPage.getListenPort());
+					
+					String listenHost = advancedRuleConfigPage.getListenHost();
+					String method = advancedRuleConfigPage.getMethod();
+					System.out.println("method set is: " + method);
+					boolean usePattern = advancedRuleConfigPage.getUsePathPatter();
+					ForwardingRuleKey ruleKey = null;
+					if (usePattern) {
+						ruleKey = new ForwardingRuleKey(listenHost, method, advancedRuleConfigPage.getPathPattern(), listenPort);
+						ruleKey.setUsePathPattern(true);
+						ruleKey.setPathRegExp(advancedRuleConfigPage.isRegExp());
+					} else {
+						ruleKey = new ForwardingRuleKey(listenHost, method, ".*", listenPort);
+					}
 
-				int listenPort = Integer.parseInt(listenPortConfigPage.getListenPort());
-				String targetHost = targetHostConfigPage.getTargetHost();
-				String targetPort = targetHostConfigPage.getTargetPort();
-
-				ForwardingRuleKey ruleKey = new ForwardingRuleKey("*", "*", ".*", listenPort);
-				if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
-					openWarningDialog("You've entered a duplicated rule key.");
-					return false;
+					if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
+						openWarningDialog("You've entered a duplicated rule key.");
+						return false;
+					}
+					
+					createForwardingRule(ruleKey);
+					((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
+					return true;
 				}
-				
-				
-				ForwardingRule rule = new ForwardingRule();
-				rule.setTargetHost(targetHost);
-				rule.setTargetPort(targetPort);
-				rule.setRuleKey(ruleKey);
-
-				Router.getInstance().getRuleManager().addRuleIfNew(rule);
-				((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
-				return true;
-
-			} else if (getContainer().getCurrentPage().getName().equals(AdvancedRuleConfigurationPage.PAGE_NAME)) {
-				String listenHost = advancedRuleConfigPage.getListenHost().trim().equals("") ? "*" : advancedRuleConfigPage.getListenHost();
-				int listenPort = Integer.parseInt(advancedRuleConfigPage.getListenPort());
-				String path = advancedRuleConfigPage.getPath().trim().equals("") ? ".*" : advancedRuleConfigPage.getPath();
-				String method = advancedRuleConfigPage.getMethod();
-				
-				ForwardingRuleKey ruleKey = new ForwardingRuleKey(listenHost, method, path, listenPort);
-				if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
-					openWarningDialog("You've entered a duplicated rule key.");
-					return false;
-				}
-				
-				ForwardingRule rule = new ForwardingRule();
-				rule.setRuleKey(ruleKey);
-				rule.setTargetHost(advancedRuleConfigPage.getTargetHost());
-				rule.setTargetPort(advancedRuleConfigPage.getTargetHostPort());
-				Router.getInstance().getRuleManager().addRuleIfNew(rule);
-				((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
-				return true;
 			} else if (getContainer().getCurrentPage().getName().equals(ProxyRuleConfigurationPage.PAGE_NAME)) {
 				int listenPort = Integer.parseInt(proxyRuleConfigPage.getListenPort());
 				
@@ -106,6 +106,15 @@ public class AddRuleWizard extends Wizard {
 		return true;
 	}
 
+	private void createForwardingRule(ForwardingRuleKey ruleKey) {
+		ForwardingRule rule = new ForwardingRule();
+		rule.setTargetHost(targetHostConfigPage.getTargetHost());
+		rule.setTargetPort(targetHostConfigPage.getTargetPort());
+		rule.setRuleKey(ruleKey);
+
+		Router.getInstance().getRuleManager().addRuleIfNew(rule);
+	}
+
 	@Override
 	public boolean performCancel() {
 		return true;
@@ -117,6 +126,9 @@ public class AddRuleWizard extends Wizard {
 			return false;
 		
 		if (getContainer().getCurrentPage().getName().equals(ListenPortConfigurationPage.PAGE_NAME))
+			return false;
+		
+		if (getContainer().getCurrentPage().getName().equals(AdvancedRuleConfigurationPage.PAGE_NAME))
 			return false;
 		
 		return super.canFinish();

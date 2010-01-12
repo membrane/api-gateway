@@ -1,5 +1,6 @@
 package com.predic8.membrane.core;
 
+import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -30,9 +31,11 @@ public class Router {
 
 	protected static Log log = LogFactory.getLog(Router.class.getName());
 
-	public static Router init(String configFileName) {
-		log.debug("loading spring config: " + configFileName);
+	
+	public static Router init(String configFileName) throws MalformedURLException {
+		log.debug("loading spring config from classpath: " + configFileName);
 		return init(new ClassPathResource(configFileName));
+		
 	}
 
 	public static Router init(Resource resource) {

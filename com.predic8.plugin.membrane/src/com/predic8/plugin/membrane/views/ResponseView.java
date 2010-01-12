@@ -5,7 +5,7 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.exchange.ExchangeState;
-import com.predic8.plugin.membrane.providers.ResponseViewContentProvider;
+import com.predic8.plugin.membrane.contentproviders.ResponseViewContentProvider;
 import com.predic8.plugin.membrane.viewcomponents.ResponseComp;
 
 public class ResponseView extends AbstractMessageView {

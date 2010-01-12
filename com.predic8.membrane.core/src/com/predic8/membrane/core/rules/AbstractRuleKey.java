@@ -3,7 +3,13 @@ package com.predic8.membrane.core.rules;
 
 public abstract class AbstractRuleKey implements RuleKey {
 
-	int port;
+	protected int port;
+	
+	protected String path;
+	
+	protected boolean pathRegExp = true;
+	
+	protected boolean usePathPattern; 
 	
 	public AbstractRuleKey(int port) {
 		this.port = port;
@@ -14,10 +20,6 @@ public abstract class AbstractRuleKey implements RuleKey {
 	}
 
 	public String getMethod() {
-		return "";
-	}
-
-	public String getPath() {
 		return "";
 	}
 
@@ -61,5 +63,28 @@ public abstract class AbstractRuleKey implements RuleKey {
 		return true;
 	}
 
+	public boolean isPathRegExp() {
+		return pathRegExp;
+	}
+
+	public void setPathRegExp(boolean pathRegExp) {
+		this.pathRegExp = pathRegExp;
+	}
+
+	public boolean isUsePathPattern() {
+		return usePathPattern;
+	}
+
+	public void setUsePathPattern(boolean usePathPattern) {
+		this.usePathPattern = usePathPattern;
+	}
+	
+	public void setPath(String path) {
+		this.path = path;
+	}
+	
+	public String getPath() {
+		return path;
+	}
 	
 }

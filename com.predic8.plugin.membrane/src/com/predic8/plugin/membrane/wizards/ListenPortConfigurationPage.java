@@ -22,7 +22,7 @@ public class ListenPortConfigurationPage extends WizardPage {
 
 	public static final String PAGE_NAME = "Listen Port Configuration";
 	
-	private Text ruleOptionsListenPortTextField;
+	private Text listenPortTextField;
 	
 	protected ListenPortConfigurationPage() {
 		super(PAGE_NAME);
@@ -59,19 +59,19 @@ public class ListenPortConfigurationPage extends WizardPage {
 		listenPortLabel.setText("Listen Port:");
 
 		
-		ruleOptionsListenPortTextField = new Text(composite,SWT.BORDER);
-		ruleOptionsListenPortTextField.addVerifyListener(new PortVerifyListener());
-		ruleOptionsListenPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		ruleOptionsListenPortTextField.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
-		ruleOptionsListenPortTextField.addModifyListener(new ModifyListener() {
+		listenPortTextField = new Text(composite,SWT.BORDER);
+		listenPortTextField.addVerifyListener(new PortVerifyListener());
+		listenPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		listenPortTextField.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
+		listenPortTextField.addModifyListener(new ModifyListener() {
 			
 			public void modifyText(ModifyEvent e) {
-				if (ruleOptionsListenPortTextField.getText().trim().equals("")) {
+				if (listenPortTextField.getText().trim().equals("")) {
 					setPageComplete(false);
 					setErrorMessage("Listen port must be specified");
-				} else if (ruleOptionsListenPortTextField.getText().trim().length() >= 5) {
+				} else if (listenPortTextField.getText().trim().length() >= 5) {
 					try {
-						if (Integer.parseInt(ruleOptionsListenPortTextField.getText()) > 65535) {
+						if (Integer.parseInt(listenPortTextField.getText()) > 65535) {
 							setErrorMessage("Listen port number has an upper bound 65535.");
 							setPageComplete(false);
 						}
@@ -94,10 +94,10 @@ public class ListenPortConfigurationPage extends WizardPage {
 		if (!isPageComplete())
 			return false;
 		try {
-			if (((HttpTransport) Router.getInstance().getTransport()).isAnyThreadListeningAt(Integer.parseInt(ruleOptionsListenPortTextField.getText()))) {
+			if (((HttpTransport) Router.getInstance().getTransport()).isAnyThreadListeningAt(Integer.parseInt(listenPortTextField.getText()))) {
 				return true;
 			}
-			new ServerSocket(Integer.parseInt(ruleOptionsListenPortTextField.getText())).close();
+			new ServerSocket(Integer.parseInt(listenPortTextField.getText())).close();
 			return true;
 		} catch (IOException ex) {
 			setErrorMessage("Port is already in use. Please choose a different port!");
@@ -111,7 +111,7 @@ public class ListenPortConfigurationPage extends WizardPage {
 	}
 	
 	public String getListenPort() {
-		return ruleOptionsListenPortTextField.getText();
+		return listenPortTextField.getText();
 	}
 	
 }

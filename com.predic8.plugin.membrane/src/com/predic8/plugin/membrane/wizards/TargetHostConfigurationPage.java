@@ -144,4 +144,6 @@ public class TargetHostConfigurationPage extends WizardPage {
 		return ruleOptionsTargetPortTextField.getText();
 	}
 	
+	
+	
 }

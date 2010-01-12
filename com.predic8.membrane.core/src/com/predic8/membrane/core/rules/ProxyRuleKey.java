@@ -10,5 +10,5 @@ public class ProxyRuleKey extends AbstractRuleKey {
 	public String toString() {
 		return "Proxy on port " + port;
 	}
-	
+
 }

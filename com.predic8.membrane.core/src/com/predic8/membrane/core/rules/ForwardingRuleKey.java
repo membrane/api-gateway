@@ -16,7 +16,6 @@ package com.predic8.membrane.core.rules;
 
 public class ForwardingRuleKey extends AbstractRuleKey {
 
-	String path;
 	String method;
 	String host;
 
@@ -33,14 +32,6 @@ public class ForwardingRuleKey extends AbstractRuleKey {
 
 	public void setMethod(String method) {
 		this.method = method;
-	}
-
-	public String getPath() {
-		return path;
-	}
-
-	public void setPath(String path) {
-		this.path = path;
 	}
 
 	public boolean isMethodWildcard() {

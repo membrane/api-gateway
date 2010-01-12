@@ -27,9 +27,9 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
-import com.predic8.plugin.membrane.providers.RulesViewContentProvider;
-import com.predic8.plugin.membrane.providers.RulesViewLabelProvider;
-import com.predic8.plugin.membrane.providers.TableHeaderLabelProvider;
+import com.predic8.plugin.membrane.contentproviders.RulesViewContentProvider;
+import com.predic8.plugin.membrane.labelproviders.RulesViewLabelProvider;
+import com.predic8.plugin.membrane.labelproviders.TableHeaderLabelProvider;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 import com.predic8.plugin.membrane.wizards.AddRuleWizard;
 
