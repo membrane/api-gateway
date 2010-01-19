@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.model.IRuleChangeListener;
-import com.predic8.membrane.core.model.IRuleTreeViewerListener;
+import com.predic8.membrane.core.model.IExchangesViewListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 
@@ -178,12 +178,12 @@ public class RuleManager {
 
 	}
 
-	public void addTreeViewerListener(IRuleTreeViewerListener viewer) {
+	public void addTreeViewerListener(IExchangesViewListener viewer) {
 		exchangeStore.addTreeViewerListener(viewer);
 
 	}
 
-	public void removeTreeViewerListener(IRuleTreeViewerListener viewer) {
+	public void removeTreeViewerListener(IExchangesViewListener viewer) {
 		exchangeStore.removeTreeViewerListener(viewer);
 	}
 

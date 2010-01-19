@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.Rule;
 
 
-public interface IRuleTreeViewerListener{
+public interface IExchangesViewListener{
 	
 	public void addRule(Rule rule);
 	

@@ -23,7 +23,7 @@ import java.util.Set;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.model.IExchangeViewerListener;
-import com.predic8.membrane.core.model.IRuleTreeViewerListener;
+import com.predic8.membrane.core.model.IExchangesViewListener;
 import com.predic8.membrane.core.rules.Rule;
 
 public class Exchange {
@@ -35,7 +35,7 @@ public class Exchange {
 	private Calendar time = Calendar.getInstance();
 	private String errMessage = "";
 	private Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<IExchangeViewerListener>();
-	private Set<IRuleTreeViewerListener> treeViewerListeners = new HashSet<IRuleTreeViewerListener>();
+	private Set<IExchangesViewListener> treeViewerListeners = new HashSet<IExchangesViewListener>();
 	private Rule rule;
 
 	protected Map<String, Object> properties = new HashMap<String, Object>();
@@ -113,11 +113,11 @@ public class Exchange {
 
 	}
 
-	public void addTreeViewerListener(IRuleTreeViewerListener viewer) {
+	public void addTreeViewerListener(IExchangesViewListener viewer) {
 		treeViewerListeners.add(viewer);
 	}
 
-	public void removeTreeViewerListener(IRuleTreeViewerListener viewer) {
+	public void removeTreeViewerListener(IExchangesViewListener viewer) {
 		treeViewerListeners.remove(viewer);
 	}
 
@@ -127,7 +127,7 @@ public class Exchange {
 			listener.setExchangeFinished();
 		}
 
-		for (IRuleTreeViewerListener listener : treeViewerListeners) {
+		for (IExchangesViewListener listener : treeViewerListeners) {
 			listener.setExchangeFinished(this);
 		}
 	}
@@ -154,7 +154,7 @@ public class Exchange {
 				listener.setExchangeFinished();
 			}
 
-			for (IRuleTreeViewerListener listener : treeViewerListeners) {
+			for (IExchangesViewListener listener : treeViewerListeners) {
 				listener.setExchangeFinished(this);
 			}
 		}

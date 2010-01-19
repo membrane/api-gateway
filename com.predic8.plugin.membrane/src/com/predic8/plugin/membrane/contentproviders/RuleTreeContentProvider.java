@@ -23,10 +23,10 @@ import org.eclipse.swt.widgets.Display;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.model.IRuleTreeViewerListener;
+import com.predic8.membrane.core.model.IExchangesViewListener;
 import com.predic8.membrane.core.rules.Rule;
 
-public class RuleTreeContentProvider implements ITreeContentProvider, IRuleTreeViewerListener {
+public class RuleTreeContentProvider implements ITreeContentProvider, IExchangesViewListener {
 
 	private TreeViewer treeViewer;
 

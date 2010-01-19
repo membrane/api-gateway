@@ -50,14 +50,6 @@ public class RuleEditAction extends Action {
 				}
 				dialog.setInput(selectedRule);
 				dialog.open();
-
-				// EditProxyRuleDialog dialog = new
-				// EditProxyRuleDialog(structuredViewer.getControl().getShell());
-				// if(dialog.getShell()==null) {
-				// dialog.create();
-				// }
-				// dialog.resetValueForRuleOptionsViewer(selectedRule);
-				// dialog.open();
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();

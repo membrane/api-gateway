@@ -23,7 +23,7 @@ import java.util.Vector;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
-import com.predic8.membrane.core.model.IRuleTreeViewerListener;
+import com.predic8.membrane.core.model.IExchangesViewListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.statistics.RuleStatistics;
@@ -52,7 +52,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		
 		totalList.add(exchange);
 		
-		for (IRuleTreeViewerListener listener : treeViewerListeners) {
+		for (IExchangesViewListener listener : treeViewerListeners) {
 			exchange.addTreeViewerListener(listener);
 			listener.addExchange(exchange.getRule(), exchange);
 		}
@@ -70,7 +70,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		exchange.informExchangeViewerOnRemoval();
 		totalList.remove(exchange);
 		
-		for (IRuleTreeViewerListener listener : treeViewerListeners) {
+		for (IExchangesViewListener listener : treeViewerListeners) {
 			listener.removeExchange(exchange);
 		}
 	}
@@ -98,7 +98,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		
 		ruleExchangeMap.remove(rule.getRuleKey());
 		totalList.removeAll(Arrays.asList(exchanges));
-		for (IRuleTreeViewerListener listener : treeViewerListeners) {
+		for (IExchangesViewListener listener : treeViewerListeners) {
 			listener.removeExchanges(rule, exchanges);
 		}
 	}
@@ -206,7 +206,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		for (Exchange exchange : exchanges) {
 			removeWithoutNotify(exchange);
 		}
-		for (IRuleTreeViewerListener listener : treeViewerListeners) {
+		for (IExchangesViewListener listener : treeViewerListeners) {
 			listener.removeExchanges(exchanges);
 		}
 	}

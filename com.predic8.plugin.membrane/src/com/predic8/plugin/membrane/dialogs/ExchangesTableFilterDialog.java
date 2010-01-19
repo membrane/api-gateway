@@ -36,6 +36,7 @@ import com.predic8.plugin.membrane.dialogs.components.RuleFilterComposite;
 import com.predic8.plugin.membrane.dialogs.components.ServerFilterComposite;
 import com.predic8.plugin.membrane.dialogs.components.StatusCodeFilterComposite;
 import com.predic8.plugin.membrane.filtering.ClientFilter;
+import com.predic8.plugin.membrane.filtering.ExchangesFilter;
 import com.predic8.plugin.membrane.filtering.MethodFilter;
 import com.predic8.plugin.membrane.filtering.RulesFilter;
 import com.predic8.plugin.membrane.filtering.ServerFilter;
@@ -104,6 +105,19 @@ public class ExchangesTableFilterDialog extends Dialog {
 		return super.createButtonBar(composite);
 	}
 	
+	
+	private ExchangesFilter getFilterForClass(Class<? extends ExchangesFilter> clazz) {
+		if (exchangesView.getFilterManager().getFilterForClass(clazz) != null) {
+			return exchangesView.getFilterManager().getFilterForClass(clazz);
+		} else {
+			try {
+				return clazz.newInstance();
+			} catch (Exception e) {
+				throw new RuntimeException("Should never happen.");
+			} 
+		}
+	}
+	
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
@@ -116,51 +130,13 @@ public class ExchangesTableFilterDialog extends Dialog {
 		container.setLayout(layout);
 
 		
-		RulesFilter rulesFilter = null;
-		if (exchangesView.getFilterManager().getFilterForClass(RulesFilter.class) != null) {
-			rulesFilter = (RulesFilter) exchangesView.getFilterManager().getFilterForClass(RulesFilter.class);
-		} else {
-			rulesFilter = new RulesFilter();
-		}
-
-		MethodFilter methodFilter = null;
-		if (exchangesView.getFilterManager().getFilterForClass(MethodFilter.class) != null) {
-			methodFilter = (MethodFilter) exchangesView.getFilterManager().getFilterForClass(MethodFilter.class);
-		} else {
-			
-			methodFilter = new MethodFilter();
-		}
-
-		ServerFilter serverFilter = null;
-		if (exchangesView.getFilterManager().getFilterForClass(ServerFilter.class) != null) {
-			serverFilter = (ServerFilter) exchangesView.getFilterManager().getFilterForClass(ServerFilter.class);
-		} else {
-			serverFilter = new ServerFilter();
-		}
-		
-		
-		ClientFilter clientFilter = null;
-		if (exchangesView.getFilterManager().getFilterForClass(ClientFilter.class) != null) {
-			clientFilter = (ClientFilter) exchangesView.getFilterManager().getFilterForClass(ClientFilter.class);
-		} else {
-			clientFilter = new ClientFilter();
-		}
-		
-		StatusCodeFilter statusCodeFilter = null;
-		if (exchangesView.getFilterManager().getFilterForClass(StatusCodeFilter.class) != null) {
-			statusCodeFilter = (StatusCodeFilter) exchangesView.getFilterManager().getFilterForClass(StatusCodeFilter.class);
-		} else {
-			statusCodeFilter = new StatusCodeFilter();
-		}
-		
-		
 		tabFolder = new TabFolder(container, SWT.NONE);		
 		
-		methodFilterComposite = new MethodFilterComposite(tabFolder, methodFilter);
-		rulesFilterComposite = new RuleFilterComposite(tabFolder, rulesFilter);
-		serverFilterComposite = new ServerFilterComposite(tabFolder, serverFilter);
-		clientFilterComposite = new ClientFilterComposite(tabFolder, clientFilter);
-		statusCodeFilterComposite = new StatusCodeFilterComposite(tabFolder, statusCodeFilter);
+		methodFilterComposite = new MethodFilterComposite(tabFolder, (MethodFilter)getFilterForClass(MethodFilter.class));
+		rulesFilterComposite = new RuleFilterComposite(tabFolder, (RulesFilter)getFilterForClass(RulesFilter.class));
+		serverFilterComposite = new ServerFilterComposite(tabFolder, (ServerFilter)getFilterForClass(ServerFilter.class));
+		clientFilterComposite = new ClientFilterComposite(tabFolder, (ClientFilter)getFilterForClass(ClientFilter.class));
+		statusCodeFilterComposite = new StatusCodeFilterComposite(tabFolder, (StatusCodeFilter)getFilterForClass(StatusCodeFilter.class));
 		
 		GridData gdTabs = new GridData();
 		gdTabs.grabExcessHorizontalSpace = true;
@@ -197,9 +173,7 @@ public class ExchangesTableFilterDialog extends Dialog {
 		Monitor primary = shell.getMonitor();
 		Rectangle bounds = primary.getBounds();
 		Rectangle rect = shell.getBounds();
-		int x = bounds.x + (bounds.width - rect.width) / 2;
-		int y = bounds.y + (bounds.height - rect.height) / 2;
-		shell.setLocation(x, y);
+		shell.setLocation(bounds.x + (bounds.width - rect.width) / 2, bounds.y + (bounds.height - rect.height) / 2);
 	}
 
 	@Override

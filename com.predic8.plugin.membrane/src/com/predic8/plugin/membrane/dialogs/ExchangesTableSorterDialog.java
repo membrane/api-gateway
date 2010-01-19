@@ -111,15 +111,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
-
-		GridLayout layout = new GridLayout();
-		layout.marginTop = 25;
-		layout.marginLeft = 25;
-		layout.marginBottom = 25;
-		layout.marginRight = 25;
-		layout.numColumns = 1;
-		container.setLayout(layout);
-
+		container.setLayout(createTopLayout());
 		
 		comparator = exchangesView.getComparator();
 		
@@ -171,8 +163,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 		});
 		btEnable.setSelection(!comparator.isEmpty());
 		
-		Label lbDummy1 = new Label(container, SWT.NONE);
-		lbDummy1.setText("");
+		new Label(container, SWT.NONE).setText("");
 		
 		childComp = new Composite(container, SWT.BORDER);
 		childComp.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
@@ -184,15 +175,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 		gdChildComp.heightHint = 300;
 		childComp.setLayoutData(gdChildComp);
 		
-		GridLayout layoutChild = new GridLayout();
-		layoutChild.marginTop = 15;
-		layoutChild.marginLeft = 15;
-		layoutChild.marginBottom = 15;
-		layoutChild.marginRight = 15;
-		layoutChild.numColumns = 2;
-		layoutChild.verticalSpacing = 12;
-		
-		childComp.setLayout(layoutChild);
+		childComp.setLayout(createChildLayout());
 		
 		
 		Label lbComboSorters = new Label(childComp, SWT.NONE);
@@ -200,9 +183,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 		lbComboSorters.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 		
 		
-		comboSorters = new Combo(childComp, SWT.READ_ONLY);
-		comboSorters.setItems(sortNames);
-		comboSorters.setEnabled(false);
+		comboSorters = createComboSorters();
 		comboSorters.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				if (comboSorters.getSelectionIndex() >= 0) {
@@ -215,65 +196,11 @@ public class ExchangesTableSorterDialog extends Dialog {
 					btAsc.setVisible(false);
 					btDesc.setVisible(false);
 				}
-				switch (comboSorters.getSelectionIndex()) {
-				case 0:
-					accessor1 = new StatusCodeExchangeAccessor();
-					break;
-					
-				case 1:
-					accessor1 = new TimeExchangeAccessor();
-					break;
-					
-				case 2:
-					accessor1 = new RuleExchangeAccessor();
-					break;
-					
-				case 3:
-					accessor1 = new MethodExchangeAccessor();
-					break;
-					
-				case 4:
-					accessor1 = new PathExchangeAccessor();
-					break;
-					
-				case 5:
-					accessor1 = new ClientExchangeAccessor();
-					break;
-					
-				case 6:
-					accessor1 = new ServerExchangeAccessor();
-					break;
-					
-				case 7:
-					accessor1 = new RequestContentTypeExchangeAccessor();
-					break;
-					
-				case 8:
-					accessor1 = new RequestContentLengthExchangeAccessor();
-					break;
-					
-				case 9:
-					accessor1 = new ResponseContentTypeExchangeAccessor();
-					break;
-					
-				case 10:
-					accessor1 = new ResponseContentLengthExchangeAccessor();
-					break;
-					
-				case 11:
-					accessor1 = new DurationExchangeAccessor();
-					break;
-					
-					default:
-						return;
-				} 
+				accessor1 = getAccessor(comboSorters.getSelectionIndex()); 
 			}
 		});
 		
-		btAdd1 = new Button(childComp, SWT.CHECK| SWT.LEFT);
-		btAdd1.setText("and");
-		btAdd1.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		btAdd1.setVisible(false);
+		btAdd1 = createAddButton();
 		btAdd1.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -293,65 +220,10 @@ public class ExchangesTableSorterDialog extends Dialog {
 			}
 		});
 		
-		comboSorters2 = new Combo(childComp, SWT.READ_ONLY);
-		comboSorters2.setItems(sortNames);
-		comboSorters2.setVisible(false);
+		comboSorters2 = createComboSorters();
 		comboSorters2.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				
-				switch (comboSorters2.getSelectionIndex()) {
-				case 0:
-					accessor2 = new StatusCodeExchangeAccessor();
-					break;
-					
-				case 1:
-					accessor2 = new TimeExchangeAccessor();
-					break;
-					
-				case 2:
-					accessor2 = new RuleExchangeAccessor();
-					break;
-					
-				case 3:
-					accessor2 = new MethodExchangeAccessor();
-					break;
-					
-				case 4:
-					accessor2 = new PathExchangeAccessor();
-					break;
-					
-				case 5:
-					accessor2 = new ClientExchangeAccessor();
-					break;
-					
-				case 6:
-					accessor2 = new ServerExchangeAccessor();
-					break;
-					
-				case 7:
-					accessor2 = new RequestContentTypeExchangeAccessor();
-					break;
-					
-				case 8:
-					accessor2 = new RequestContentLengthExchangeAccessor();
-					break;
-					
-				case 9:
-					accessor1 = new ResponseContentTypeExchangeAccessor();
-					break;
-					
-				case 10:
-					accessor1 = new ResponseContentLengthExchangeAccessor();
-					break;
-					
-				case 11:
-					accessor1 = new DurationExchangeAccessor();
-					break;
-					
-					default:
-						return;
-				} 
-				
+				accessor2 = getAccessor(comboSorters2.getSelectionIndex());
 				if (comboSorters2.getSelectionIndex() >= 0) {
 					btAdd2.setVisible(true);
 				}
@@ -359,10 +231,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 			}
 		});
 		
-		btAdd2 = new Button(childComp, SWT.CHECK | SWT.LEFT);
-		btAdd2.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		btAdd2.setText("and");
-		btAdd2.setVisible(false);
+		btAdd2 = createAddButton();
 		btAdd2.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -378,65 +247,11 @@ public class ExchangesTableSorterDialog extends Dialog {
 			}
 		});
 		
-		comboSorters3 = new Combo(childComp, SWT.READ_ONLY);
-		comboSorters3.setItems(sortNames);
-		comboSorters3.setVisible(false);
+		comboSorters3 = createComboSorters();
 		comboSorters3.addSelectionListener(new SelectionAdapter() {
-		
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				switch (comboSorters3.getSelectionIndex()) {
-				case 0:
-					accessor3 = new StatusCodeExchangeAccessor();
-					break;
-					
-				case 1:
-					accessor3 = new TimeExchangeAccessor();
-					break;
-					
-				case 2:
-					accessor3 = new RuleExchangeAccessor();
-					break;
-					
-				case 3:
-					accessor3 = new MethodExchangeAccessor();
-					break;
-					
-				case 4:
-					accessor3 = new PathExchangeAccessor();
-					break;
-					
-				case 5:
-					accessor3 = new ClientExchangeAccessor();
-					break;
-					
-				case 6:
-					accessor3 = new ServerExchangeAccessor();
-					break;
-					
-				case 7:
-					accessor3 = new RequestContentTypeExchangeAccessor();
-					break;
-					
-				case 8:
-					accessor3 = new RequestContentLengthExchangeAccessor();
-					break;
-					
-				case 9:
-					accessor1 = new ResponseContentTypeExchangeAccessor();
-					break;
-					
-				case 10:
-					accessor1 = new ResponseContentLengthExchangeAccessor();
-					break;
-					
-				case 11:
-					accessor1 = new DurationExchangeAccessor();
-					break;
-					
-					default:
-						return;
-				} 
+				accessor3 = getAccessor(comboSorters3.getSelectionIndex());
 			}
 		});
 		
@@ -519,6 +334,42 @@ public class ExchangesTableSorterDialog extends Dialog {
 		return container;
 	}
 
+	private GridLayout createChildLayout() {
+		GridLayout layoutChild = new GridLayout();
+		layoutChild.marginTop = 15;
+		layoutChild.marginLeft = 15;
+		layoutChild.marginBottom = 15;
+		layoutChild.marginRight = 15;
+		layoutChild.numColumns = 2;
+		layoutChild.verticalSpacing = 12;
+		return layoutChild;
+	}
+
+	private GridLayout createTopLayout() {
+		GridLayout layout = new GridLayout();
+		layout.marginTop = 25;
+		layout.marginLeft = 25;
+		layout.marginBottom = 25;
+		layout.marginRight = 25;
+		layout.numColumns = 1;
+		return layout;
+	}
+
+	private Button createAddButton() {
+		Button bt = new Button(childComp, SWT.CHECK| SWT.LEFT);
+		bt.setText("and");
+		bt.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+		bt.setVisible(false);
+		return bt;
+	}
+
+	private Combo createComboSorters() {
+		Combo combo = new Combo(childComp, SWT.READ_ONLY);
+		combo.setItems(sortNames);
+		combo.setEnabled(false);
+		return combo;
+	}
+
 	@Override
 	protected void initializeBounds() {
 		super.initializeBounds();
@@ -547,6 +398,47 @@ public class ExchangesTableSorterDialog extends Dialog {
 		
 		exchangesView.setComperator(comparator);
 		super.okPressed();
+	}
+
+	private ExchangeAccessor getAccessor(int index) {
+		switch (index) {
+		case 0:
+			return new StatusCodeExchangeAccessor();
+			
+		case 1:
+			return new TimeExchangeAccessor();
+			
+		case 2:
+			return new RuleExchangeAccessor();
+			
+		case 3:
+			return new MethodExchangeAccessor();
+			
+		case 4:
+			return new PathExchangeAccessor();
+		case 5:
+			return new ClientExchangeAccessor();
+			
+		case 6:
+			return new ServerExchangeAccessor();
+			
+		case 7:
+			return new RequestContentTypeExchangeAccessor();
+			
+		case 8:
+			return new RequestContentLengthExchangeAccessor();
+			
+		case 9:
+			return new ResponseContentTypeExchangeAccessor();
+			
+		case 10:
+			return new ResponseContentLengthExchangeAccessor();
+			
+		case 11:
+			return new DurationExchangeAccessor();
+			
+		}
+		throw new RuntimeException("Invalid selection index. No accessor found.");
 	}
 	
 	

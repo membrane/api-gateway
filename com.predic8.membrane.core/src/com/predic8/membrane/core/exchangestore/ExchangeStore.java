@@ -17,7 +17,7 @@ package com.predic8.membrane.core.exchangestore;
 import java.util.List;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.model.IRuleTreeViewerListener;
+import com.predic8.membrane.core.model.IExchangesViewListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.statistics.RuleStatistics;
@@ -25,9 +25,9 @@ import com.predic8.membrane.core.statistics.RuleStatistics;
 public interface ExchangeStore {
 	
 	
-	public void addTreeViewerListener(IRuleTreeViewerListener viewer);	
+	public void addTreeViewerListener(IExchangesViewListener viewer);	
 	
-	public void removeTreeViewerListener(IRuleTreeViewerListener viewer);	
+	public void removeTreeViewerListener(IExchangesViewListener viewer);	
 	
 	public void refreshAllTreeViewers();
 	
