@@ -102,13 +102,9 @@ public class Response extends Message {
 	}
 	
 	@Override
-	public Boolean isBodyEmpty() {
+	public boolean isBodyEmpty() {
 		if (statusCode == 100 || statusCode == 204) 
 			return true;
-		if (super.isBodyEmpty() != null)
-			return super.isBodyEmpty();
-		
-		
 		return super.isBodyEmpty();
 	}
 }

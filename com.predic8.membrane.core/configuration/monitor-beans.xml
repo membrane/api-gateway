@@ -50,7 +50,6 @@
 
 	<bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager"
 		init-method="init">
-		<property name="router" ref="router" />
 		<property name="configurationStore">
 			<bean class="com.predic8.membrane.core.io.ConfigurationFileStore" />
 		</property>
@@ -74,7 +73,7 @@
 				class="com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy" />
 		</property>
 	</bean>
-	
+
 	<bean id="byThreadBalancer"
 		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
 		<property name="displayName" value="byThreadBalancer" />
@@ -89,7 +88,22 @@
 				class="com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy" />
 		</property>
 	</bean>
-	
+
+	<bean id="urlRewriter"
+		class="com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor">
+		<property name="displayName" value="Simple URL Rewriter" />
+		<property name="mapping">
+			<map>
+				<entry>
+					<key>
+						<value>/blzservice</value>
+					</key>
+					<value>/axis2/services/BLZService</value>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
 </beans>
 	
 	

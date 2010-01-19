@@ -115,7 +115,7 @@ public class Request extends Message {
 	}
 	
 	@Override
-	public Boolean isBodyEmpty() {
+	public boolean isBodyEmpty() {
 		if (isGETRequest() || isHEADRequest())
 			return true;
 		return super.isBodyEmpty();

@@ -150,7 +150,7 @@ public class MessageTabManager {
 
 		hideAllBodyTabs();
 	
-		if (msg.isBodyEmpty() != null && !msg.isBodyEmpty()) {
+		if (!msg.isBodyEmpty()) {
 			if (msg.isImage()) {
 				currentBodyTabComposite = imageTabComposite;
 			} else if (msg.isXML()) {

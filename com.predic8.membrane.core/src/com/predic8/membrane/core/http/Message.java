@@ -155,7 +155,7 @@ public abstract class Message {
 			return;
 		}
 			
-		if (isBodyEmpty() == null || !isBodyEmpty())
+		if (!isBodyEmpty())
 			body.write(out);
 		
 		out.flush();
@@ -211,15 +211,15 @@ public abstract class Message {
 		return "message";
 	}
 
-	public Boolean isBodyEmpty() {
+	public boolean isBodyEmpty() {
 		if (header.hasContentLength()) 
 			return header.getContentLength() == 0;
 		
 		
-		if (!getBody().read)
-			return null;
+		if (getBody().read)
+			return getBody().getLength() == 0;
 		
-		return getBody().getLength() == 0;
+		return false;
 	}
 	
 	

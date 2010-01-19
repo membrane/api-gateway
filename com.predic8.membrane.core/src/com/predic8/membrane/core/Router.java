@@ -41,7 +41,9 @@ public class Router {
 	public static Router init(Resource resource) {
 		log.debug("loading spring config: " + resource);
 		beanFactory = new XmlBeanFactory(resource);
-		return router = (Router) beanFactory.getBean("router");
+		router = (Router) beanFactory.getBean("router");
+		router.configurationManager.setRouter(router); 
+		return router; 
 	}
 	
 	public static Router getInstance() {
