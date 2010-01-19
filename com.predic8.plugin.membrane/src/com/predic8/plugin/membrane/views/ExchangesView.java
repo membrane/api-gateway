@@ -88,14 +88,8 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 	@Override
 	public void createPartControl(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 10;
-		gridLayout.marginLeft = 2;
-		gridLayout.marginBottom = 5;
-		gridLayout.marginRight = 2;
-		gridLayout.verticalSpacing = 7;
-		composite.setLayout(gridLayout);
+		
+		composite.setLayout(createTopLayout());
 
 		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER | SWT.VIRTUAL);
 		createColumns(tableViewer);
@@ -156,8 +150,6 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 				canShowBody = true;
 			}
 		});
-
-		// tableViewer.setSorter(new ExchangesVieweSorter());
 
 		removeExchangeAction = new RemoveExchangeAction(tableViewer);
 		removeExchangeAction.setEnabled(false);
@@ -240,6 +232,17 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 
 		contributeToActionBars();
 
+	}
+
+	private GridLayout createTopLayout() {
+		GridLayout gridLayout = new GridLayout();
+		gridLayout.numColumns = 1;
+		gridLayout.marginTop = 10;
+		gridLayout.marginLeft = 2;
+		gridLayout.marginBottom = 5;
+		gridLayout.marginRight = 2;
+		gridLayout.verticalSpacing = 7;
+		return gridLayout;
 	}
 
 	private void addMenu() {

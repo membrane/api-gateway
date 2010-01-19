@@ -18,14 +18,12 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
@@ -59,7 +57,7 @@ public class ExchangesTableFilterDialog extends Dialog {
 	
 	private StatusCodeFilterComposite statusCodeFilterComposite;
 	
-	Button BtRemoveFilters;
+	private Button btRemoveFilters;
 	
 	public ExchangesTableFilterDialog(Shell parentShell, ExchangesView parent) {
 		super(parentShell);
@@ -81,8 +79,8 @@ public class ExchangesTableFilterDialog extends Dialog {
 		 GridLayout layout = new GridLayout();
 		 composite.setLayout(layout);
  		 
-		 BtRemoveFilters = new Button(composite, SWT.PUSH);
-		 BtRemoveFilters.addSelectionListener(new SelectionAdapter() {
+		 btRemoveFilters = new Button(composite, SWT.PUSH);
+		 btRemoveFilters.addSelectionListener(new SelectionAdapter() {
 			 @Override
 			public void widgetSelected(SelectionEvent e) {
 				 rulesFilterComposite.showAllRules();
@@ -92,11 +90,11 @@ public class ExchangesTableFilterDialog extends Dialog {
 				 statusCodeFilterComposite.showAllStatusCodes();
 			}
 		 });
-		 BtRemoveFilters.setText("Remove  all  filters");
+		 btRemoveFilters.setText("Remove  all  filters");
 		
 		 GridData gData = new GridData(SWT.RIGHT, SWT.FILL, true, true, 1, 1);
 		 gData.grabExcessHorizontalSpace = true;
-		 BtRemoveFilters.setLayoutData(gData);
+		 btRemoveFilters.setLayoutData(gData);
 
 		 Label label = new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL);
 		 GridData labelGridData = new GridData(410, 12);
@@ -166,19 +164,11 @@ public class ExchangesTableFilterDialog extends Dialog {
 		return container;
 	}
 
-	@Override
-	protected void initializeBounds() {
-		super.initializeBounds();
-		Shell shell = this.getShell();
-		Monitor primary = shell.getMonitor();
-		Rectangle bounds = primary.getBounds();
-		Rectangle rect = shell.getBounds();
-		shell.setLocation(bounds.x + (bounds.width - rect.width) / 2, bounds.y + (bounds.height - rect.height) / 2);
-	}
+	
 
 	@Override
 	protected void okPressed() {
-		if (BtRemoveFilters.getSelection()) {
+		if (btRemoveFilters.getSelection()) {
 			exchangesView.getFilterManager().removeAllFilters();
 			exchangesView.reloadAll();
 			return;

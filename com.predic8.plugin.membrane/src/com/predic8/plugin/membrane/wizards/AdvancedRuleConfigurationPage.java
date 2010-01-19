@@ -276,12 +276,10 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		int index = comboRuleMethod.getSelectionIndex();		
 		if (index == 4) 
 			return "*";
-		String method;
 		if (index > -1)
-			method = comboRuleMethod.getItem(index);
+			return comboRuleMethod.getItem(index);
 		else
-			method = "";
-		return method;
+			return "";
 	}
 	
 	@Override

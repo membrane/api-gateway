@@ -19,7 +19,6 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -29,7 +28,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Monitor;
 import org.eclipse.swt.widgets.Shell;
 
 import com.predic8.membrane.core.exchange.ExchangeComparator;
@@ -368,18 +366,6 @@ public class ExchangesTableSorterDialog extends Dialog {
 		combo.setItems(sortNames);
 		combo.setEnabled(false);
 		return combo;
-	}
-
-	@Override
-	protected void initializeBounds() {
-		super.initializeBounds();
-		Shell shell = this.getShell();
-		Monitor primary = shell.getMonitor();
-		Rectangle bounds = primary.getBounds();
-		Rectangle rect = shell.getBounds();
-		int x = bounds.x + (bounds.width - rect.width) / 2;
-		int y = bounds.y + (bounds.height - rect.height) / 2;
-		shell.setLocation(x, y);
 	}
 
 	@Override

@@ -18,22 +18,18 @@ import com.predic8.plugin.membrane.filtering.MethodFilter;
 public class MethodFilterComposite extends Composite {
 
 	private Button btGet, btPost, btPut, btDelete, btHead, btTrace;
-	
+
 	private Button btShowAllMethods;
-	
+
 	private Button btShowSelectedMethodsOnly;
-	
+
 	private MethodFilter methodFilter;
-	
+
 	public MethodFilterComposite(Composite parent, MethodFilter filter) {
 		super(parent, SWT.NONE);
 		this.methodFilter = filter;
-		GridLayout layout = new GridLayout();
-		layout.marginTop = 20;
-		layout.marginLeft = 20;
-		layout.marginBottom = 20;
-		layout.marginRight = 20;
-		setLayout(layout);
+
+		setLayout(createTopLayout());
 
 		Group rulesGroup = new Group(this, SWT.NONE);
 		rulesGroup.setText("Show Methods");
@@ -50,16 +46,12 @@ public class MethodFilterComposite extends Composite {
 		btShowAllMethods.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 
-				if (btShowAllMethods.getSelection()) {
-					btShowSelectedMethodsOnly.setSelection(false);
-					btGet.setEnabled(false);
-					btPut.setEnabled(false);
-					btPost.setEnabled(false);
-					btDelete.setEnabled(false);
-					btHead.setEnabled(false);
-					btTrace.setEnabled(false);
-					methodFilter.setShowAll(true);
-				}
+				if (!btShowAllMethods.getSelection())
+					return;
+
+				btShowSelectedMethodsOnly.setSelection(false);
+				setMethodButtonStatus(false);
+				methodFilter.setShowAll(true);
 
 			}
 		});
@@ -68,153 +60,37 @@ public class MethodFilterComposite extends Composite {
 		btShowSelectedMethodsOnly.setText("Display exchanges with selected methods only");
 		btShowSelectedMethodsOnly.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				if (btShowSelectedMethodsOnly.getSelection()) {
-					btGet.setEnabled(true);
-					btPut.setEnabled(true);
-					btPost.setEnabled(true);
-					btHead.setEnabled(true);
-					btDelete.setEnabled(true);
-					btTrace.setEnabled(true);
+				
+				if (!btShowSelectedMethodsOnly.getSelection())
+					return;
+				
+				setMethodButtonStatus(true);
 
-					Set<String> toDisplay = methodFilter.getDisplayedMethods();
-					if (toDisplay.contains(btGet.getData())) {
-						btGet.setSelection(true);
-					} else {
-						btGet.setSelection(false);
-					}
+				Set<String> toDisplay = methodFilter.getDisplayedMethods();
+				btGet.setSelection(toDisplay.contains(btGet.getData()) ? true : false);
+				btPost.setSelection(toDisplay.contains(btPost.getData()) ? true : false);
+				btPut.setSelection(toDisplay.contains(btPut.getData()) ? true : false);
+				btDelete.setSelection(toDisplay.contains(btDelete.getData()) ? true : false);
+				btHead.setSelection(toDisplay.contains(btHead.getData()) ? true : false);
+				btTrace.setSelection(toDisplay.contains(btTrace.getData()) ? true : false);
 
-					if (toDisplay.contains(btPost.getData())) {
-						btPost.setSelection(true);
-					} else {
-						btPost.setSelection(false);
-					}
+				methodFilter.setShowAll(false);
 
-					if (toDisplay.contains(btPut.getData())) {
-						btPut.setSelection(true);
-					} else {
-						btPut.setSelection(false);
-					}
-
-					if (toDisplay.contains(btDelete.getData())) {
-						btDelete.setSelection(true);
-					} else {
-						btDelete.setSelection(false);
-					}
-
-					if (toDisplay.contains(btHead.getData())) {
-						btHead.setSelection(true);
-					} else {
-						btHead.setSelection(false);
-					}
-
-					if (toDisplay.contains(btTrace.getData())) {
-						btTrace.setSelection(true);
-					} else {
-						btTrace.setSelection(false);
-					}
-
-					methodFilter.setShowAll(false);
-				}
 			}
 		});
 
 		Composite methodsComposite = new Composite(rulesGroup, SWT.BORDER);
 		methodsComposite.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		GridData rulesGridData = new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL);
-		methodsComposite.setLayoutData(rulesGridData);
+		methodsComposite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
 
-		GridLayout rulesLayout = new GridLayout();
-		methodsComposite.setLayout(rulesLayout);
+		methodsComposite.setLayout(new GridLayout());
 
-		btGet = new Button(methodsComposite, SWT.CHECK);
-		btGet.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		btGet.setText("GET");
-		btGet.setData(Request.METHOD_GET);
-		btGet.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (btGet.getSelection()) {
-					methodFilter.getDisplayedMethods().add((String) btGet.getData());
-				} else {
-					methodFilter.getDisplayedMethods().remove((String) btGet.getData());
-				}
-			}
-		});
-
-		btPost = new Button(methodsComposite, SWT.CHECK);
-		btPost.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		btPost.setText("POST");
-		btPost.setData(Request.METHOD_POST);
-		btPost.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (btPost.getSelection()) {
-					methodFilter.getDisplayedMethods().add((String) btPost.getData());
-				} else {
-					methodFilter.getDisplayedMethods().remove((String) btPost.getData());
-				}
-			}
-		});
-
-		btPut = new Button(methodsComposite, SWT.CHECK);
-		btPut.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		btPut.setText("PUT");
-		btPut.setData(Request.METHOD_PUT);
-		btPut.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (btPut.getSelection()) {
-					methodFilter.getDisplayedMethods().add((String) btPut.getData());
-				} else {
-					methodFilter.getDisplayedMethods().remove((String) btPut.getData());
-				}
-			}
-		});
-
-		btDelete = new Button(methodsComposite, SWT.CHECK);
-		btDelete.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		btDelete.setText("DELETE");
-		btDelete.setData(Request.METHOD_DELETE);
-		btDelete.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (btDelete.getSelection()) {
-					methodFilter.getDisplayedMethods().add((String) btDelete.getData());
-				} else {
-					methodFilter.getDisplayedMethods().remove((String) btDelete.getData());
-				}
-			}
-		});
-
-		btHead = new Button(methodsComposite, SWT.CHECK);
-		btHead.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		btHead.setText("HEAD");
-		btHead.setData(Request.METHOD_HEAD);
-		btHead.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (btHead.getSelection()) {
-					methodFilter.getDisplayedMethods().add((String) btHead.getData());
-				} else {
-					methodFilter.getDisplayedMethods().remove((String) btHead.getData());
-				}
-			}
-		});
-
-		btTrace = new Button(methodsComposite, SWT.CHECK);
-		btTrace.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		btTrace.setText("TRACE");
-		btTrace.setData(Request.METHOD_TRACE);
-		btTrace.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (btTrace.getSelection()) {
-					methodFilter.getDisplayedMethods().add((String) btTrace.getData());
-				} else {
-					methodFilter.getDisplayedMethods().remove((String) btTrace.getData());
-				}
-			}
-		});
+		btGet = createMethodButton(methodsComposite, Request.METHOD_GET);
+		btPost = createMethodButton(methodsComposite, Request.METHOD_POST);
+		btPut = createMethodButton(methodsComposite, Request.METHOD_PUT);
+		btDelete = createMethodButton(methodsComposite, Request.METHOD_DELETE);
+		btHead = createMethodButton(methodsComposite, Request.METHOD_HEAD);
+		btTrace = createMethodButton(methodsComposite, Request.METHOD_TRACE);
 
 		if (methodFilter.isShowAll()) {
 			btShowAllMethods.setSelection(true);
@@ -225,15 +101,40 @@ public class MethodFilterComposite extends Composite {
 		}
 	}
 
+	private Button createMethodButton(Composite methodsComposite, String method) {
+		Button bt = new Button(methodsComposite, SWT.CHECK);
+		bt.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+		bt.setText(method);
+		bt.setData(method);
+		bt.addSelectionListener(new MethodSelectionAdapter(bt, methodFilter));
+		return bt;
+	}
+
+	private GridLayout createTopLayout() {
+		GridLayout layout = new GridLayout();
+		layout.marginTop = 20;
+		layout.marginLeft = 20;
+		layout.marginBottom = 20;
+		layout.marginRight = 20;
+		return layout;
+	}
+
 	public MethodFilter getMethodFilter() {
 		return methodFilter;
 	}
 
-	
 	public void showAllMethods() {
-		 btShowAllMethods.setSelection(true);
-		 btShowAllMethods.notifyListeners(SWT.Selection, null);
+		btShowAllMethods.setSelection(true);
+		btShowAllMethods.notifyListeners(SWT.Selection, null);
 	}
-	
-	
+
+	private void setMethodButtonStatus(boolean enabled) {
+		btGet.setEnabled(enabled);
+		btPut.setEnabled(enabled);
+		btPost.setEnabled(enabled);
+		btDelete.setEnabled(enabled);
+		btHead.setEnabled(enabled);
+		btTrace.setEnabled(enabled);
+	}
+
 }
