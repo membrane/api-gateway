@@ -46,8 +46,8 @@ public class RuleDetailsComposite extends Composite {
 	Label labelPath;
 	Label labelHost;
 
-	Group ruleOptionsRuleKeyGroup;
-	Group ruleOptionsTargetGroup;
+	Group ruleGroup;
+	Group ruleTargetGroup;
 
 	private String targetHost = "";
 
@@ -75,8 +75,7 @@ public class RuleDetailsComposite extends Composite {
 		gridLayoutText.numColumns = 1;
 		compositeText.setLayout(gridLayoutText);
 
-		Label labelDummy = new Label(compositeText, SWT.NONE);
-		labelDummy.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		new Label(compositeText, SWT.NONE).setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
 		labelTitle = new Label(compositeText, SWT.NONE);
 		labelTitle.setText("Rule Description");
@@ -87,8 +86,7 @@ public class RuleDetailsComposite extends Composite {
 		separatorGridData.widthHint = 150;
 		labelSeparator.setLayoutData(separatorGridData);
 
-		Label labelDummy1 = new Label(compositeText, SWT.NONE);
-		labelDummy1.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		new Label(compositeText, SWT.NONE).setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
 		
 		Composite groupComposite = new Composite(compositeText, SWT.NONE);
@@ -101,27 +99,27 @@ public class RuleDetailsComposite extends Composite {
 		groupComposite.setLayout(gridLayoutGroup);
 		
 		
-		ruleOptionsRuleKeyGroup = new Group(groupComposite, SWT.NONE);
-		ruleOptionsRuleKeyGroup.setText("Rule Key");
-		ruleOptionsRuleKeyGroup.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-		ruleOptionsRuleKeyGroup.setLayout(new RowLayout(SWT.VERTICAL));
+		ruleGroup = new Group(groupComposite, SWT.NONE);
+		ruleGroup.setText("Rule Key");
+		ruleGroup.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		ruleGroup.setLayout(new RowLayout(SWT.VERTICAL));
 
-		labelHost = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		labelListenPort = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		labelMethod = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
-		labelPath = new Label(ruleOptionsRuleKeyGroup, SWT.NONE);
+		labelHost = new Label(ruleGroup, SWT.NONE);
+		labelListenPort = new Label(ruleGroup, SWT.NONE);
+		labelMethod = new Label(ruleGroup, SWT.NONE);
+		labelPath = new Label(ruleGroup, SWT.NONE);
 
-		ruleOptionsTargetGroup = new Group(groupComposite, SWT.NONE);
-		ruleOptionsTargetGroup.setText("Target");
-		GridData optTargetGroupGridData = new GridData(GridData.FILL_HORIZONTAL);
-		optTargetGroupGridData.verticalAlignment = GridData.VERTICAL_ALIGN_BEGINNING;
-		optTargetGroupGridData.heightHint = 68;
+		ruleTargetGroup = new Group(groupComposite, SWT.NONE);
+		ruleTargetGroup.setText("Target");
+		GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
+		gridData.verticalAlignment = GridData.VERTICAL_ALIGN_BEGINNING;
+		gridData.heightHint = 68;
 		
-		ruleOptionsTargetGroup.setLayoutData(optTargetGroupGridData);
-		ruleOptionsTargetGroup.setLayout(new RowLayout(SWT.VERTICAL));
+		ruleTargetGroup.setLayoutData(gridData);
+		ruleTargetGroup.setLayout(new RowLayout(SWT.VERTICAL));
 
-		labelTargetHost = new Label(ruleOptionsTargetGroup, SWT.NONE);
-		labelTargetPort = new Label(ruleOptionsTargetGroup, SWT.NONE);
+		labelTargetHost = new Label(ruleTargetGroup, SWT.NONE);
+		labelTargetPort = new Label(ruleTargetGroup, SWT.NONE);
 		
 		
 		final Composite compositeCanvas = new Composite(this, SWT.NONE);
@@ -194,8 +192,8 @@ public class RuleDetailsComposite extends Composite {
 		}
 
 		layout();
-		ruleOptionsRuleKeyGroup.layout();
-		ruleOptionsTargetGroup.layout();
+		ruleGroup.layout();
+		ruleTargetGroup.layout();
 		this.redraw();
 	}
 
@@ -236,8 +234,8 @@ public class RuleDetailsComposite extends Composite {
 		labelPath.setText("" );
 		labelHost.setText("" );
 		layout();
-		ruleOptionsRuleKeyGroup.layout();
-		ruleOptionsTargetGroup.layout();
+		ruleGroup.layout();
+		ruleTargetGroup.layout();
 		this.redraw();
 	}
 }
