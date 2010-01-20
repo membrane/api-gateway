@@ -28,7 +28,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 		
 	}
 
-	public void addTreeViewerListener(IExchangesViewListener viewer) {
+	public void addExchangesViewListener(IExchangesViewListener viewer) {
 		
 	}
 
@@ -79,7 +79,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	
-	public void removeTreeViewerListener(IExchangesViewListener viewer) {
+	public void removeExchangesViewListener(IExchangesViewListener viewer) {
 		
 	}
 

@@ -35,6 +35,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
+import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeComparator;
@@ -75,22 +76,117 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 
 	private ExchangeComparator comparator = new ExchangeComparator();
 
-	private Link linkFilter;
-
 	private Label lbFilterCount;
 
 	private Label lbSortedBy;
-
-	private Link linkSortBy;
 
 	private String filterCountText = "";
 
 	@Override
 	public void createPartControl(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
-		
+
 		composite.setLayout(createTopLayout());
 
+		createTableViewer(composite);
+
+		removeExchangeAction = new RemoveExchangeAction(tableViewer);
+		removeExchangeAction.setEnabled(false);
+
+		stopExchangeAction = new ExchangeStopAction(tableViewer);
+		stopExchangeAction.setEnabled(false);
+
+		removeAllExchangesAction = new ExchangeVirtualListRemoveAction(tableViewer);
+		removeAllExchangesAction.setEnabled(false);
+
+		addMenu();
+
+		Composite compControls = new Composite(composite, SWT.NONE);
+
+		GridLayout layout4Controls = new GridLayout();
+		layout4Controls.numColumns = 1;
+		compControls.setLayout(layout4Controls);
+
+		Composite compositeFilters = new Composite(compControls, SWT.NONE);
+
+		GridLayout layout4Filters = new GridLayout();
+		layout4Filters.numColumns = 2;
+		compositeFilters.setLayout(layout4Filters);
+
+		createFilterLink(compositeFilters);
+
+		GridData gridData4Label = new GridData(GridData.FILL_HORIZONTAL);
+		gridData4Label.grabExcessHorizontalSpace = true;
+		gridData4Label.widthHint = 500;
+
+		lbFilterCount = new Label(compositeFilters, SWT.NONE);
+		lbFilterCount.setText(filterManager.toString() + filterCountText);
+		lbFilterCount.setLayoutData(gridData4Label);
+
+		Composite compositeSorters = new Composite(compControls, SWT.NONE);
+		GridLayout gridLayoutSorters = new GridLayout();
+		gridLayoutSorters.numColumns = 2;
+		compositeSorters.setLayout(gridLayoutSorters);
+
+		createSorterLink(compositeSorters);
+
+		lbSortedBy = new Label(compositeSorters, SWT.NONE);
+		lbSortedBy.setText(comparator.toString());
+		lbSortedBy.setLayoutData(gridData4Label);
+
+		createTrackRequestButton(compControls);
+
+		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
+		refreshTable(false);
+
+		contributeToActionBars();
+
+	}
+
+	private void createTrackRequestButton(Composite compControls) {
+		btTrackRequests = new Button(compControls, SWT.CHECK);
+		btTrackRequests.setText("Track Requests");
+		btTrackRequests.addSelectionListener(new SelectionAdapter() {
+
+			public void widgetSelected(SelectionEvent e) {
+				getConfiguration().setTrackExchange(btTrackRequests.getSelection());
+			}
+
+		});
+
+		btTrackRequests.setSelection(getConfiguration().getTrackExchange());
+
+		GridData gdata = new GridData();
+		gdata.horizontalIndent = 4;
+
+		btTrackRequests.setLayoutData(gdata);
+	}
+
+	private void createSorterLink(Composite compositeSorters) {
+		Link link = new Link(compositeSorters, SWT.NONE);
+		link.setText("<A>Sorted By: </A>");
+		link.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				ActionContributionItem item = (ActionContributionItem) getViewSite().getActionBars().getToolBarManager().find(ShowSortersDialogAction.ID);
+				IAction action = item.getAction();
+				action.run();
+			}
+		});
+	}
+
+	private void createFilterLink(Composite compositeFilters) {
+		Link link = new Link(compositeFilters, SWT.NONE);
+		link.setText("<A>Filters</A>");
+		link.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				((ActionContributionItem) getViewSite().getActionBars().getToolBarManager().find(ShowFiltersDialogAction.ID)).getAction().run();
+			}
+		});
+	}
+
+	private void createTableViewer(Composite composite) {
 		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER | SWT.VIRTUAL);
 		createColumns(tableViewer);
 
@@ -150,88 +246,6 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 				canShowBody = true;
 			}
 		});
-
-		removeExchangeAction = new RemoveExchangeAction(tableViewer);
-		removeExchangeAction.setEnabled(false);
-
-		stopExchangeAction = new ExchangeStopAction(tableViewer);
-		stopExchangeAction.setEnabled(false);
-
-		removeAllExchangesAction = new ExchangeVirtualListRemoveAction(tableViewer);
-		removeAllExchangesAction.setEnabled(false);
-
-		addMenu();
-
-		Composite compControls = new Composite(composite, SWT.NONE);
-
-		GridLayout gridLayoutForControls = new GridLayout();
-		gridLayoutForControls.numColumns = 1;
-		compControls.setLayout(gridLayoutForControls);
-
-		Composite compositeFilters = new Composite(compControls, SWT.NONE);
-		GridLayout gridLayoutFilters = new GridLayout();
-		gridLayoutFilters.numColumns = 2;
-		compositeFilters.setLayout(gridLayoutFilters);
-
-		linkFilter = new Link(compositeFilters, SWT.NONE);
-		linkFilter.setText("<A>Filters</A>");
-		linkFilter.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				((ActionContributionItem) getViewSite().getActionBars().getToolBarManager().find(ShowFiltersDialogAction.ID)).getAction().run();
-			}
-		});
-
-		GridData gridData4Label = new GridData(GridData.FILL_HORIZONTAL);
-		gridData4Label.grabExcessHorizontalSpace = true;
-		gridData4Label.widthHint = 500;
-
-		lbFilterCount = new Label(compositeFilters, SWT.NONE);
-		lbFilterCount.setText(filterManager.toString() + filterCountText);
-		lbFilterCount.setLayoutData(gridData4Label);
-
-		Composite compositeSorters = new Composite(compControls, SWT.NONE);
-		GridLayout gridLayoutSorters = new GridLayout();
-		gridLayoutSorters.numColumns = 2;
-		compositeSorters.setLayout(gridLayoutSorters);
-
-		linkSortBy = new Link(compositeSorters, SWT.NONE);
-		linkSortBy.setText("<A>Sorted By: </A>");
-		linkSortBy.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				ActionContributionItem item = (ActionContributionItem) getViewSite().getActionBars().getToolBarManager().find(ShowSortersDialogAction.ID);
-				IAction action = item.getAction();
-				action.run();
-			}
-		});
-
-		lbSortedBy = new Label(compositeSorters, SWT.NONE);
-		lbSortedBy.setText(comparator.toString());
-		lbSortedBy.setLayoutData(gridData4Label);
-
-		btTrackRequests = new Button(compControls, SWT.CHECK);
-		btTrackRequests.setText("Track Requests");
-		btTrackRequests.addSelectionListener(new SelectionAdapter() {
-
-			public void widgetSelected(SelectionEvent e) {
-				Router.getInstance().getConfigurationManager().getConfiguration().setTrackExchange(btTrackRequests.getSelection());
-			}
-
-		});
-
-		btTrackRequests.setSelection(Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange());
-
-		GridData gdata = new GridData();
-		gdata.horizontalIndent = 4;
-
-		btTrackRequests.setLayoutData(gdata);
-
-		Router.getInstance().getExchangeStore().addTreeViewerListener(this);
-		refreshTable(false);
-
-		contributeToActionBars();
-
 	}
 
 	private GridLayout createTopLayout() {
@@ -429,19 +443,26 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 
 		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 	}
-
-	private class ShrinkThread extends Thread {
-		private int width = 0;
-		private TableColumn column;
-
-		public ShrinkThread(int width, TableColumn column) {
+	
+	private abstract class MoveThread extends Thread {
+		protected int width = 0;
+		protected TableColumn column;
+		
+		public MoveThread(int width, TableColumn column) {
 			this.width = width;
 			this.column = column;
 		}
+		
+		protected abstract void process();
+	}
 
-		public void run() {
+	private class ShrinkThread extends MoveThread {
+		public ShrinkThread(int width, TableColumn column) {
+			super(width, column);
+		}
+		
+		protected void process() {
 			column.getDisplay().syncExec(new Runnable() {
-
 				public void run() {
 					column.setData("restoredWidth", new Integer(width));
 				}
@@ -450,34 +471,25 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 			for (int i = width; i >= 0; i--) {
 				final int index = i;
 				column.getDisplay().syncExec(new Runnable() {
-
 					public void run() {
 						column.setWidth(index);
 					}
-
 				});
 			}
 		}
 	};
 
-	private class ExpandThread extends Thread {
-		private int width = 0;
-		private TableColumn column;
-
+	private class ExpandThread extends MoveThread {
 		public ExpandThread(int width, TableColumn column) {
-			this.width = width;
-			this.column = column;
+			super(width, column);
 		}
-
-		public void run() {
+		protected void process() {
 			for (int i = 0; i <= width; i++) {
 				final int index = i;
 				column.getDisplay().syncExec(new Runnable() {
-
 					public void run() {
 						column.setWidth(index);
 					}
-
 				});
 			}
 		}
@@ -505,6 +517,10 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 
 	public void removeExchanges(Exchange[] exchanges) {
 		refreshTable(true);
+	}
+
+	private Configuration getConfiguration() {
+		return Router.getInstance().getConfigurationManager().getConfiguration();
 	}
 
 }

@@ -93,7 +93,7 @@ public class RuleStatisticsView extends AbstractRulesView {
 		createActions();
 		addTableMenu();
 				
-	    Router.getInstance().getExchangeStore().addTreeViewerListener(this);
+	    Router.getInstance().getExchangeStore().addExchangesViewListener(this);
 	    setInputForTable(Router.getInstance().getRuleManager());
 	}
 

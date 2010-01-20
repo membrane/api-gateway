@@ -20,7 +20,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
@@ -37,31 +36,55 @@ public class RulesView extends AbstractRulesView {
 
 	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.RulesView";
 
-	public RulesView() {
-
-	}
 
 	@Override
 	public void createPartControl(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 10;
-		gridLayout.marginLeft = 5;
-		gridLayout.marginBottom = 20;
-		gridLayout.marginRight = 5;
-		gridLayout.verticalSpacing = 20;
-		composite.setLayout(gridLayout);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 1;
+		layout.marginTop = 10;
+		layout.marginLeft = 5;
+		layout.marginBottom = 20;
+		layout.marginRight = 5;
+		layout.verticalSpacing = 20;
+		composite.setLayout(layout);
 
+		createTableViewer(composite);
+
+		createAddButton(composite);
+
+		createActions();
+		addTableMenu();
+		
+		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
+		setInputForTable(Router.getInstance().getRuleManager());
+	}
+
+	private void createAddButton(Composite composite) {
+		Button btAddRule = new Button(composite, SWT.PUSH);
+		btAddRule.setImage(MembraneUIPlugin.getDefault().getImageRegistry().get(ImageKeys.IMAGE_ADD_RULE));
+		btAddRule.setText("Add Rule");
+		btAddRule.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				WizardDialog wizardDialog = new WizardDialog(Display.getCurrent().getActiveShell(), new AddRuleWizard());
+				wizardDialog.create();
+				wizardDialog.open();
+			}
+
+		});
+	}
+
+	private void createTableViewer(Composite composite) {
 		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
 		createColumns(tableViewer);
 		tableViewer.setContentProvider(new RulesViewContentProvider());
 		tableViewer.setLabelProvider(new RulesViewLabelProvider());
 
-		GridData tableGridData = new GridData(GridData.FILL_BOTH);
-		tableGridData.grabExcessVerticalSpace = true;
-		tableGridData.grabExcessHorizontalSpace = true;
-		tableViewer.getTable().setLayoutData(tableGridData);
+		GridData gridData = new GridData(GridData.FILL_BOTH);
+		gridData.grabExcessVerticalSpace = true;
+		gridData.grabExcessHorizontalSpace = true;
+		tableViewer.getTable().setLayoutData(gridData);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "RuleStatistics");
 
 		final CellEditor[] cellEditors = new CellEditor[1];
@@ -88,25 +111,6 @@ public class RulesView extends AbstractRulesView {
 				}
 			}
 		});
-
-		Button btAddRule = new Button(composite, SWT.PUSH);
-		btAddRule.setImage(MembraneUIPlugin.getDefault().getImageRegistry().get(ImageKeys.IMAGE_ADD_RULE));
-		btAddRule.setText("Add Rule");
-		btAddRule.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				WizardDialog wizardDialog = new WizardDialog(Display.getCurrent().getActiveShell(), new AddRuleWizard());
-				wizardDialog.create();
-				wizardDialog.open();
-			}
-
-		});
-
-		createActions();
-		addTableMenu();
-		
-		Router.getInstance().getExchangeStore().addTreeViewerListener(this);
-		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
 	private void createColumns(TableViewer viewer) {
@@ -122,9 +126,8 @@ public class RulesView extends AbstractRulesView {
 			column.getColumn().setResizable(true);
 			column.getColumn().setMoveable(true);
 		}
-		Table table = viewer.getTable();
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
+		viewer.getTable().setHeaderVisible(true);
+		viewer.getTable().setLinesVisible(true);
 	}
 
 }

@@ -179,12 +179,12 @@ public class RuleManager {
 	}
 
 	public void addTreeViewerListener(IExchangesViewListener viewer) {
-		exchangeStore.addTreeViewerListener(viewer);
+		exchangeStore.addExchangesViewListener(viewer);
 
 	}
 
 	public void removeTreeViewerListener(IExchangesViewListener viewer) {
-		exchangeStore.removeTreeViewerListener(viewer);
+		exchangeStore.removeExchangesViewListener(viewer);
 	}
 
 	public synchronized void removeRule(Rule rule) {

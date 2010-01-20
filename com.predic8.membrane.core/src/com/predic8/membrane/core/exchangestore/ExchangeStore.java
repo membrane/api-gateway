@@ -25,9 +25,9 @@ import com.predic8.membrane.core.statistics.RuleStatistics;
 public interface ExchangeStore {
 	
 	
-	public void addTreeViewerListener(IExchangesViewListener viewer);	
+	public void addExchangesViewListener(IExchangesViewListener viewer);	
 	
-	public void removeTreeViewerListener(IExchangesViewListener viewer);	
+	public void removeExchangesViewListener(IExchangesViewListener viewer);	
 	
 	public void refreshAllTreeViewers();
 	

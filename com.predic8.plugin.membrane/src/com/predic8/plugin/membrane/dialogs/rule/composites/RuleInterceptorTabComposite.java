@@ -18,7 +18,6 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Table;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.rules.Rule;
@@ -43,17 +42,136 @@ public class RuleInterceptorTabComposite extends Composite {
 	
 	public RuleInterceptorTabComposite(final Composite parent) {
 		super(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 2;
-		gridLayout.marginTop = 10;
-		gridLayout.marginLeft = 5;
-		gridLayout.marginBottom = 10;
-		gridLayout.marginRight = 5;
-		setLayout(gridLayout);
+		
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		layout.marginTop = 10;
+		layout.marginLeft = 5;
+		layout.marginBottom = 10;
+		layout.marginRight = 5;
+		setLayout(layout);
 
 		Composite listComposite = new Composite(this, SWT.NONE);
 		listComposite.setLayout(new GridLayout());
 
+		createTableViewer(listComposite);
+
+		Composite controls = new Composite(this, SWT.NONE);
+		RowLayout rowLayout = new RowLayout();
+		rowLayout.type = SWT.VERTICAL;
+		rowLayout.spacing = 15;
+		rowLayout.fill = true;
+		controls.setLayout(rowLayout);
+
+		createNewButton(controls);
+		
+		createEditButton(parent, controls);
+	
+		createRemoveButton(controls);
+		
+		createUpButton(controls);
+		
+		createDownButton(controls);
+		
+		
+		new Label(controls, SWT.NONE).setText(" ");
+		new Label(controls, SWT.NONE).setText(" ");
+		new Label(controls, SWT.NONE).setText(" ");
+	}
+
+	private void createNewButton(final Composite controlsComposite) {
+		Button btNew = new Button(controlsComposite, SWT.PUSH);
+		btNew.setText("Add");
+		btNew.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				AddInterceptorDialog dialog = new AddInterceptorDialog(controlsComposite.getShell(), RuleInterceptorTabComposite.this);
+				if (dialog.getShell() == null) {
+					dialog.create();
+				}
+				dialog.open();
+			}
+		});
+	}
+
+	private void createEditButton(final Composite parent, Composite controlsComposite) {
+		btEdit = new Button(controlsComposite, SWT.PUSH);
+		btEdit.setText("Edit");
+		btEdit.setEnabled(false);
+		btEdit.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				EditInterceptorDialog dialog = new EditInterceptorDialog(parent.getShell(), RuleInterceptorTabComposite.this);
+				if (dialog.getShell() == null) {
+					dialog.create();
+				}
+				dialog.setInput(selectedInterceptor);
+				dialog.open();
+			}
+		});
+	}
+
+	private void createRemoveButton(Composite controlsComposite) {
+		btRemove = new Button(controlsComposite, SWT.PUSH);
+		btRemove.setText("Remove");
+		btRemove.setEnabled(false);
+		btRemove.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				interceptorList.remove(selectedInterceptor);
+				selectedInterceptor = null;
+				Display.getCurrent().asyncExec(new Runnable() {
+					public void run() {
+						tableViewer.setInput(interceptorList);
+					}
+				});
+			}
+		});
+	}
+
+	private void createUpButton(Composite controlsComposite) {
+		btUp = new Button(controlsComposite, SWT.PUSH);
+		btUp.setText("Up");
+		btUp.setEnabled(false);
+		btUp.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				int index = interceptorList.indexOf(selectedInterceptor);
+				if (index == 0)
+					return;
+				interceptorList.remove(index);
+				interceptorList.add(index - 1, selectedInterceptor);
+				Display.getCurrent().asyncExec(new Runnable() {
+					public void run() {
+						tableViewer.setInput(interceptorList);
+					}
+				});
+			}
+		});
+	}
+
+	private void createDownButton(Composite controlsComposite) {
+		btDown = new Button(controlsComposite, SWT.PUSH);
+		btDown.setText("Down");
+		btDown.setEnabled(false); 
+		btDown.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				int index = interceptorList.indexOf(selectedInterceptor);
+				if (index == interceptorList.size() -1)
+					return;
+				interceptorList.remove(index);
+				interceptorList.add(index + 1, selectedInterceptor);
+				Display.getCurrent().asyncExec(new Runnable() {
+					public void run() {
+						tableViewer.setInput(interceptorList);
+					}
+				});
+			}
+		});
+	}
+
+	private void createTableViewer(Composite listComposite) {
 		tableViewer = new TableViewer(listComposite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
 		createColumns(tableViewer);
 		tableViewer.setContentProvider(new InterceptorTableViewerContentProvider());
@@ -77,105 +195,6 @@ public class RuleInterceptorTabComposite extends Composite {
 		gridData4List.widthHint = 330;
 		gridData4List.heightHint = 270;
 		tableViewer.getTable().setLayoutData(gridData4List);
-
-		Composite controlsComposite = new Composite(this, SWT.NONE);
-		RowLayout rowLayout = new RowLayout();
-		rowLayout.type = SWT.VERTICAL;
-		rowLayout.spacing = 15;
-		rowLayout.fill = true;
-		controlsComposite.setLayout(rowLayout);
-
-		Button btNew = new Button(controlsComposite, SWT.PUSH);
-		btNew.setText("Add");
-		btNew.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				AddInterceptorDialog dialog = new AddInterceptorDialog(parent.getShell(), RuleInterceptorTabComposite.this);
-				if (dialog.getShell() == null) {
-					dialog.create();
-				}
-				dialog.open();
-			}
-		});
-
-		btEdit = new Button(controlsComposite, SWT.PUSH);
-		btEdit.setText("Edit");
-		btEdit.setEnabled(false);
-		btEdit.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				EditInterceptorDialog dialog = new EditInterceptorDialog(parent.getShell(), RuleInterceptorTabComposite.this);
-				if (dialog.getShell() == null) {
-					dialog.create();
-				}
-				dialog.setInput(selectedInterceptor);
-				dialog.open();
-			}
-		});
-		
-		btRemove = new Button(controlsComposite, SWT.PUSH);
-		btRemove.setText("Remove");
-		btRemove.setEnabled(false);
-		btRemove.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				interceptorList.remove(selectedInterceptor);
-				selectedInterceptor = null;
-				Display.getCurrent().asyncExec(new Runnable() {
-					public void run() {
-						tableViewer.setInput(interceptorList);
-					}
-				});
-			}
-		});
-		
-		btUp = new Button(controlsComposite, SWT.PUSH);
-		btUp.setText("Up");
-		btUp.setEnabled(false);
-		btUp.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				int index = interceptorList.indexOf(selectedInterceptor);
-				if (index == 0)
-					return;
-				interceptorList.remove(index);
-				interceptorList.add(index - 1, selectedInterceptor);
-				Display.getCurrent().asyncExec(new Runnable() {
-					public void run() {
-						tableViewer.setInput(interceptorList);
-					}
-				});
-			}
-		});
-		
-		btDown = new Button(controlsComposite, SWT.PUSH);
-		btDown.setText("Down");
-		btDown.setEnabled(false); 
-		btDown.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				int index = interceptorList.indexOf(selectedInterceptor);
-				if (index == interceptorList.size() -1)
-					return;
-				interceptorList.remove(index);
-				interceptorList.add(index + 1, selectedInterceptor);
-				Display.getCurrent().asyncExec(new Runnable() {
-					public void run() {
-						tableViewer.setInput(interceptorList);
-					}
-				});
-			}
-		});
-		
-		
-		Label lbDummy1 = new Label(controlsComposite, SWT.NONE);
-		lbDummy1.setText(" ");
-
-		Label lbDummy2 = new Label(controlsComposite, SWT.NONE);
-		lbDummy2.setText(" ");
-
-		Label lbDummy3 = new Label(controlsComposite, SWT.NONE);
-		lbDummy3.setText(" ");
 	}
 
 	private void enableButtonsOnSelection(boolean status) {
@@ -198,9 +217,8 @@ public class RuleInterceptorTabComposite extends Composite {
 			column.getColumn().setMoveable(true);
 		}
 
-		Table table = viewer.getTable();
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
+		viewer.getTable().setHeaderVisible(true);
+		viewer.getTable().setLinesVisible(true);
 	}
 
 	public void setInput(Rule rule ) {

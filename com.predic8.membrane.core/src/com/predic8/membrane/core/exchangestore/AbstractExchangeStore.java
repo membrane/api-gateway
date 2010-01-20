@@ -25,11 +25,11 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 
 	protected Set<IExchangesViewListener> treeViewerListeners = new HashSet<IExchangesViewListener>();
 	
-	public void addTreeViewerListener(IExchangesViewListener viewer) {
+	public void addExchangesViewListener(IExchangesViewListener viewer) {
 		treeViewerListeners.add(viewer);
 		
 	}
-	public void removeTreeViewerListener(IExchangesViewListener viewer) {
+	public void removeExchangesViewListener(IExchangesViewListener viewer) {
 		treeViewerListeners.remove(viewer);
 	}
 	

@@ -21,52 +21,70 @@ import com.predic8.plugin.membrane.dialogs.rule.composites.RuleTargetTabComposit
 
 public class ForwardingRuleEditDialog extends RuleEditDialog {
 
-	
 	private RuleTargetTabComposite targetComposite;
-	
+
 	private ForwardingRuleKeyTabComposite ruleKeyComposite;
-	
+
 	public ForwardingRuleEditDialog(Shell parentShell) {
 		super(parentShell);
-		
+
 	}
 
 	@Override
 	public String getTitle() {
 		return "Edit Forwarding Rule";
 	}
-	
+
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Control comp = super.createDialogArea(parent);
-		
-		generalInfoComposite = new RuleGeneralInfoTabComposite(tabFolder);
-		TabItem generalTabItem = new TabItem(tabFolder, SWT.NONE);
-		generalTabItem.setText("General");
-		generalTabItem.setControl(generalInfoComposite);
-		
-		ruleKeyComposite = new ForwardingRuleKeyTabComposite(tabFolder);
-		TabItem keyTabItem = new TabItem(tabFolder, SWT.NONE);
-		keyTabItem.setText("Rule Key");
-		keyTabItem.setControl(ruleKeyComposite);
-		
-		
-		targetComposite = new RuleTargetTabComposite(tabFolder);
-		TabItem targetTabItem = new TabItem(tabFolder, SWT.NONE);
-		targetTabItem.setText("Target");
-		targetTabItem.setControl(targetComposite);
-		
-		actionsComposite = new RuleActionsTabComposite(tabFolder);
-		TabItem actionsTabItem = new TabItem(tabFolder, SWT.NONE);
-		actionsTabItem.setText("Actions");
-		actionsTabItem.setControl(actionsComposite);
-		
+
+		createGeneralComposite();
+
+		createRuleKeyComposite();
+
+		createTargetComposite();
+
+		createActionComposite();
+
+		createInterceptorsComposite();
+
+		return comp;
+	}
+
+	private void createInterceptorsComposite() {
 		interceptorsComposite = new RuleInterceptorTabComposite(tabFolder);
 		TabItem interceptorsTabItem = new TabItem(tabFolder, SWT.NONE);
 		interceptorsTabItem.setText("Interceptors");
 		interceptorsTabItem.setControl(interceptorsComposite);
-		
-		return comp;
+	}
+
+	private void createActionComposite() {
+		actionsComposite = new RuleActionsTabComposite(tabFolder);
+		TabItem actionsTabItem = new TabItem(tabFolder, SWT.NONE);
+		actionsTabItem.setText("Actions");
+		actionsTabItem.setControl(actionsComposite);
+	}
+
+	private void createTargetComposite() {
+		targetComposite = new RuleTargetTabComposite(tabFolder);
+		TabItem targetTabItem = new TabItem(tabFolder, SWT.NONE);
+		targetTabItem.setText("Target");
+		targetTabItem.setControl(targetComposite);
+	}
+
+	private void createRuleKeyComposite() {
+		ruleKeyComposite = new ForwardingRuleKeyTabComposite(tabFolder);
+		TabItem keyTabItem = new TabItem(tabFolder, SWT.NONE);
+		keyTabItem.setText("Rule Key");
+		keyTabItem.setControl(ruleKeyComposite);
+	}
+
+	private void createGeneralComposite() {
+		generalInfoComposite = new RuleGeneralInfoTabComposite(tabFolder);
+		TabItem generalTabItem = new TabItem(tabFolder, SWT.NONE);
+		generalTabItem.setText("General");
+		generalTabItem.setControl(generalInfoComposite);
 	}
 
 	@Override
@@ -78,11 +96,6 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 
 	@Override
 	public void onOkPressed() {
-		String targetHost = targetComposite.getTargetGroup().getTargetHost();
-		String targetPort = targetComposite.getTargetGroup().getTargetPort();
-		boolean blockRequest = actionsComposite.isRequestBlocked();
-		boolean blockResponse = actionsComposite.isResponseBlocked();
-
 		ForwardingRuleKey ruleKey = ruleKeyComposite.getRuleOptionsRuleKeyGroup().getUserInput();
 		if (ruleKey == null) {
 			openErrorDialog("Illeagal input! Please check again");
@@ -90,13 +103,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 		}
 
 		if (ruleKey.equals(rule.getRuleKey())) {
-			rule.setRuleKey(ruleKey); //equals considers only listen port
-			rule.setName(generalInfoComposite.getRuleName());
-			((ForwardingRule)rule).setTargetHost(targetHost);
-			((ForwardingRule)rule).setTargetPort(targetPort);
-			rule.setBlockRequest(blockRequest);
-			rule.setBlockResponse(blockResponse);
-			rule.setInterceptors(interceptorsComposite.getInterceptorList());
+			updateRule(ruleKey, false);
 			Router.getInstance().getRuleManager().ruleChanged(rule);
 			return;
 		}
@@ -105,34 +112,45 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 			openErrorDialog("Illeagal input! Your rule key conflict with another existent rule.");
 			return;
 		}
-		if (openConfirmDialog("You've changed the rule key, so all the old history will be cleared.")) {
+		if (!openConfirmDialog("You've changed the rule key, so all the old history will be cleared."))
+			return;
 
-			if (!((HttpTransport) Router.getInstance().getTransport()).isAnyThreadListeningAt(ruleKey.getPort())) {
-				try {
-					((HttpTransport) Router.getInstance().getTransport()).addPort(ruleKey.getPort());
-				} catch (IOException e1) {
-					openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
-					return;
-				}
+		if (!getTransport().isAnyThreadListeningAt(ruleKey.getPort())) {
+			try {
+				getTransport().addPort(ruleKey.getPort());
+			} catch (IOException e1) {
+				openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
+				return;
 			}
-			Router.getInstance().getRuleManager().removeRule(rule);
-			if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getRuleKey().getPort()) && (rule.getRuleKey().getPort() != ruleKey.getPort())) {
-				try {
-					((HttpTransport) Router.getInstance().getTransport()).closePort(rule.getRuleKey().getPort());
-				} catch (IOException e2) {
-					openErrorDialog("Failed to close the obsolete port: " + rule.getRuleKey().getPort());
-				}
-			}
-			rule.setName(generalInfoComposite.getRuleName());
-			rule.setRuleKey(ruleKey);
-			Router.getInstance().getRuleManager().addRuleIfNew(rule);
-			((ForwardingRule)rule).setTargetHost(targetHost);
-			((ForwardingRule)rule).setTargetPort(targetPort);
-			rule.setBlockRequest(blockRequest);
-			rule.setBlockResponse(blockResponse);
-			rule.setInterceptors(interceptorsComposite.getInterceptorList());
-			Router.getInstance().getRuleManager().ruleChanged(rule);
 		}
+		Router.getInstance().getRuleManager().removeRule(rule);
+		if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getRuleKey().getPort()) && (rule.getRuleKey().getPort() != ruleKey.getPort())) {
+			try {
+				getTransport().closePort(rule.getRuleKey().getPort());
+			} catch (IOException e2) {
+				openErrorDialog("Failed to close the obsolete port: " + rule.getRuleKey().getPort());
+			}
+		}
+		updateRule(ruleKey, true);
+		Router.getInstance().getRuleManager().ruleChanged(rule);
+
 	}
-	
+
+	private HttpTransport getTransport() {
+		return ((HttpTransport) Router.getInstance().getTransport());
+	}
+
+	private void updateRule(ForwardingRuleKey ruleKey, boolean addToManager) {
+		rule.setName(generalInfoComposite.getRuleName());
+		rule.setRuleKey(ruleKey);
+		if (addToManager) {
+			Router.getInstance().getRuleManager().addRuleIfNew(rule);
+		}
+		((ForwardingRule) rule).setTargetHost(targetComposite.getTargetGroup().getTargetHost());
+		((ForwardingRule) rule).setTargetPort(targetComposite.getTargetGroup().getTargetPort());
+		rule.setBlockRequest(actionsComposite.isRequestBlocked());
+		rule.setBlockResponse(actionsComposite.isResponseBlocked());
+		rule.setInterceptors(interceptorsComposite.getInterceptorList());
+	}
+
 }

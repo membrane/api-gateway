@@ -40,6 +40,15 @@ public class ExchangeComparator implements Comparator<Exchange> {
 		accessors.add(acc);
 	}
 	
+	public void addAccessors(ExchangeAccessor[] excAccessors) {
+		if (excAccessors == null || excAccessors.length == 0) 
+			return;
+		for (ExchangeAccessor accessor : excAccessors) {
+			if (accessor!= null)
+				accessors.add(accessor);
+		}
+	}
+	
 	public void removeAccessor(ExchangeAccessor acc) {
 		if (acc == null)
 			return;

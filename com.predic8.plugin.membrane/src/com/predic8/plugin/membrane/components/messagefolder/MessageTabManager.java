@@ -1,5 +1,8 @@
 package com.predic8.plugin.membrane.components.messagefolder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.dialogs.MessageDialog;
@@ -34,24 +37,14 @@ public class MessageTabManager {
 	
 	private RawTabComposite rawTabComposite;
 
-	private ImageTabComposite imageTabComposite;
-
 	private HeaderTabComposite headerTabComposite;
 
 	private ErrorTabComposite errorTabComposite;
-
-	private CSSTabComposite cssTabComposite;
-
-	private JavaScriptTabComposite javaScriptTabComposite;
-
-	private HTMLTabComposite htmlTabComposite;
-
-	private SOAPTabComposite soapTabComposite;
-
-	private JSONTabComposite jsonTabComposite;
 	
-	private BodyTabComposite currentBodyTabComposite;
+	private BodyTabComposite currentBodyTab;
 
+	private List<BodyTabComposite> bodyTabs = new ArrayList<BodyTabComposite>();
+	
 	public MessageTabManager(final BaseComp baseComp) {
 		this.baseComp = baseComp;
 		folder = new TabFolder(baseComp, SWT.NONE);
@@ -60,15 +53,10 @@ public class MessageTabManager {
 		errorTabComposite = new ErrorTabComposite(folder);
 		rawTabComposite = new RawTabComposite(folder);
 		headerTabComposite = new HeaderTabComposite(folder);
-		imageTabComposite = new ImageTabComposite(folder);
-
-		cssTabComposite = new CSSTabComposite(folder);
-		javaScriptTabComposite = new JavaScriptTabComposite(folder);
-		htmlTabComposite = new HTMLTabComposite(folder);
-		soapTabComposite = new SOAPTabComposite(folder);
-		jsonTabComposite = new JSONTabComposite(folder);
 		
-		currentBodyTabComposite = new NullBodyTabComposite(folder);
+		createBodyTabs();
+		
+		currentBodyTab = new NullBodyTabComposite(folder);
 		
 		folder.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent event) {
@@ -84,9 +72,9 @@ public class MessageTabManager {
 						headerTabComposite.update(baseComp.getMsg());
 						break;
 					} else if (tabItem.equals(getCurrentTabItem())) {
-						currentBodyTabComposite.update(baseComp.getMsg());
-						baseComp.setFormatEnabled(currentBodyTabComposite.isFormatSupported());
-						baseComp.setSaveEnabled(currentBodyTabComposite.isSaveSupported());
+						currentBodyTab.update(baseComp.getMsg());
+						baseComp.setFormatEnabled(currentBodyTab.isFormatSupported());
+						baseComp.setSaveEnabled(currentBodyTab.isSaveSupported());
 					}
 				}
 			}
@@ -102,13 +90,22 @@ public class MessageTabManager {
 		doUpdate(null);
 
 	}
+
+	private void createBodyTabs() {
+		bodyTabs.add(new CSSTabComposite(folder));
+		bodyTabs.add(new JavaScriptTabComposite(folder));
+		bodyTabs.add(new HTMLTabComposite(folder));
+		bodyTabs.add(new SOAPTabComposite(folder));
+		bodyTabs.add(new JSONTabComposite(folder));
+		bodyTabs.add(new ImageTabComposite(folder));
+	}
 	
 	private TabItem getCurrentTabItem() {
-		return currentBodyTabComposite.getTabItem();
+		return currentBodyTab.getTabItem();
 	}
 
 	public void setBodyModified(boolean b) {
-		currentBodyTabComposite.setBodyModified(b);
+		currentBodyTab.setBodyModified(b);
 	}
 
 	public void doUpdate(Message msg) {
@@ -132,7 +129,7 @@ public class MessageTabManager {
 			return;
 		}
 
-		currentBodyTabComposite = new NullBodyTabComposite(folder);
+		currentBodyTab = new NullBodyTabComposite(folder);
 		
 		errorTabComposite.hide();
 
@@ -143,32 +140,30 @@ public class MessageTabManager {
 
 		folder.setSelection(headerTabComposite.getTabItem());
 		folder.notifyListeners(SWT.Selection, null);
-		if (msg.getHeader().getContentType() == null) {
-			hideAllBodyTabs();
+		hideAllBodyTabs();
+		if (msg.getHeader().getContentType() == null) {	
 			return;
 		}
-
-		hideAllBodyTabs();
 	
 		if (!msg.isBodyEmpty()) {
-			if (msg.isImage()) {
-				currentBodyTabComposite = imageTabComposite;
-			} else if (msg.isXML()) {
-				currentBodyTabComposite = soapTabComposite;
-			} else if (msg.isHTML()) {
-				currentBodyTabComposite = htmlTabComposite;
-			} else if (msg.isCSS()) {
-				currentBodyTabComposite = cssTabComposite;
+			if (msg.isCSS()) {
+				currentBodyTab = bodyTabs.get(0);
 			} else if (msg.isJavaScript()) {
-				currentBodyTabComposite = javaScriptTabComposite;
+				currentBodyTab = bodyTabs.get(1);
+			} else if (msg.isHTML()) {
+				currentBodyTab = bodyTabs.get(2);
+			} else if (msg.isXML()) {
+				currentBodyTab = bodyTabs.get(3);
 			} else if (msg.isJSON()) {
-				currentBodyTabComposite = jsonTabComposite;
+				currentBodyTab = bodyTabs.get(4);
+			} else if (msg.isImage()) {
+				currentBodyTab = bodyTabs.get(5);
 			} 	
 		} 
 		
-		currentBodyTabComposite.show();
+		currentBodyTab.show();
 		
-		baseComp.setFormatEnabled(currentBodyTabComposite.isFormatSupported());
+		baseComp.setFormatEnabled(currentBodyTab.isFormatSupported());
 	}
 
 	private void hideAllContentTabs() {
@@ -177,20 +172,17 @@ public class MessageTabManager {
 		
 		hideAllBodyTabs();
 		
-		currentBodyTabComposite = new NullBodyTabComposite(folder);
+		currentBodyTab = new NullBodyTabComposite(folder);
 	}
 
 	private void hideAllBodyTabs() {
-		cssTabComposite.hide();
-		soapTabComposite.hide();
-		jsonTabComposite.hide();
-		javaScriptTabComposite.hide();
-		htmlTabComposite.hide();
-		imageTabComposite.hide();
+		for (BodyTabComposite bodyTab : bodyTabs) {
+			bodyTab.hide();
+		}
 	}
 
 	public void setMessageEditable(boolean bool) {
-		currentBodyTabComposite.setBodyTextEditable(bool);
+		currentBodyTab.setBodyTextEditable(bool);
 
 		if (headerTabComposite != null && !headerTabComposite.isDisposed()) {
 			headerTabComposite.setWidgetEditable(bool);
@@ -198,7 +190,7 @@ public class MessageTabManager {
 	}
 
 	public String getBodyText() {
-		return currentBodyTabComposite.getBodyText();
+		return currentBodyTab.getBodyText();
 	}
 
 	public void copyBodyFromGUIToModel() {
@@ -216,17 +208,17 @@ public class MessageTabManager {
 	}
 
 	public void beautify(Message msg) {
-		currentBodyTabComposite.beautify(msg.getBody().getContent());
+		currentBodyTab.beautify(msg.getBody().getContent());
 	}
 
 	public boolean isBodyModified() {
-		return currentBodyTabComposite.isBodyModified();
+		return currentBodyTab.isBodyModified();
 	}
 	
 	
 	public void setSelectionOnBodyTabItem() {
-		if (currentBodyTabComposite != null && !currentBodyTabComposite.isDisposed() && currentBodyTabComposite.getTabItem() != null && !currentBodyTabComposite.getTabItem().isDisposed()) {
-			folder.setSelection(currentBodyTabComposite.getTabItem());
+		if (currentBodyTab != null && !currentBodyTab.isDisposed() && currentBodyTab.getTabItem() != null && !currentBodyTab.getTabItem().isDisposed()) {
+			folder.setSelection(currentBodyTab.getTabItem());
 			folder.notifyListeners(SWT.Selection, null);
 		}
 	}

@@ -28,6 +28,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 
+import com.predic8.plugin.membrane.dialogs.components.AbstractFilterComposite;
 import com.predic8.plugin.membrane.dialogs.components.ClientFilterComposite;
 import com.predic8.plugin.membrane.dialogs.components.MethodFilterComposite;
 import com.predic8.plugin.membrane.dialogs.components.RuleFilterComposite;
@@ -47,18 +48,10 @@ public class ExchangesTableFilterDialog extends Dialog {
 
 	private TabFolder tabFolder;
 
-	private MethodFilterComposite methodFilterComposite;
-	
-	private RuleFilterComposite rulesFilterComposite;
-	
-	private ServerFilterComposite serverFilterComposite;
-	
-	private ClientFilterComposite clientFilterComposite;
-	
-	private StatusCodeFilterComposite statusCodeFilterComposite;
-	
+	private AbstractFilterComposite[] filterComposites = new AbstractFilterComposite[5];
+
 	private Button btRemoveFilters;
-	
+
 	public ExchangesTableFilterDialog(Shell parentShell, ExchangesView parent) {
 		super(parentShell);
 		this.exchangesView = parent;
@@ -74,36 +67,29 @@ public class ExchangesTableFilterDialog extends Dialog {
 
 	@Override
 	protected Control createButtonBar(Composite parent) {
-		 Composite composite = new Composite(parent, SWT.NONE);
-		 
-		 GridLayout layout = new GridLayout();
-		 composite.setLayout(layout);
- 		 
-		 btRemoveFilters = new Button(composite, SWT.PUSH);
-		 btRemoveFilters.addSelectionListener(new SelectionAdapter() {
-			 @Override
-			public void widgetSelected(SelectionEvent e) {
-				 rulesFilterComposite.showAllRules();
-				 methodFilterComposite.showAllMethods();
-				 serverFilterComposite.showAllServers();
-				 clientFilterComposite.showAllClients();
-				 statusCodeFilterComposite.showAllStatusCodes();
-			}
-		 });
-		 btRemoveFilters.setText("Remove  all  filters");
-		
-		 GridData gData = new GridData(SWT.RIGHT, SWT.FILL, true, true, 1, 1);
-		 gData.grabExcessHorizontalSpace = true;
-		 btRemoveFilters.setLayoutData(gData);
+		Composite composite = new Composite(parent, SWT.NONE);
 
-		 Label label = new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL);
-		 GridData labelGridData = new GridData(410, 12);
-		 label.setLayoutData(labelGridData);
-		 
+		composite.setLayout(new GridLayout());
+
+		btRemoveFilters = new Button(composite, SWT.PUSH);
+		btRemoveFilters.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				showAllFromEveryComposite();
+			}
+		});
+		btRemoveFilters.setText("Remove  all  filters");
+
+		GridData gridData = new GridData(SWT.RIGHT, SWT.FILL, true, true, 1, 1);
+		gridData.grabExcessHorizontalSpace = true;
+		btRemoveFilters.setLayoutData(gridData);
+
+		Label label = new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL);
+		label.setLayoutData(new GridData(410, 12));
+
 		return super.createButtonBar(composite);
 	}
-	
-	
+
 	private ExchangesFilter getFilterForClass(Class<? extends ExchangesFilter> clazz) {
 		if (exchangesView.getFilterManager().getFilterForClass(clazz) != null) {
 			return exchangesView.getFilterManager().getFilterForClass(clazz);
@@ -112,10 +98,10 @@ public class ExchangesTableFilterDialog extends Dialog {
 				return clazz.newInstance();
 			} catch (Exception e) {
 				throw new RuntimeException("Should never happen.");
-			} 
+			}
 		}
 	}
-	
+
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
@@ -127,44 +113,50 @@ public class ExchangesTableFilterDialog extends Dialog {
 		layout.marginRight = 20;
 		container.setLayout(layout);
 
-		
-		tabFolder = new TabFolder(container, SWT.NONE);		
-		
-		methodFilterComposite = new MethodFilterComposite(tabFolder, (MethodFilter)getFilterForClass(MethodFilter.class));
-		rulesFilterComposite = new RuleFilterComposite(tabFolder, (RulesFilter)getFilterForClass(RulesFilter.class));
-		serverFilterComposite = new ServerFilterComposite(tabFolder, (ServerFilter)getFilterForClass(ServerFilter.class));
-		clientFilterComposite = new ClientFilterComposite(tabFolder, (ClientFilter)getFilterForClass(ClientFilter.class));
-		statusCodeFilterComposite = new StatusCodeFilterComposite(tabFolder, (StatusCodeFilter)getFilterForClass(StatusCodeFilter.class));
-		
-		GridData gdTabs = new GridData();
-		gdTabs.grabExcessHorizontalSpace = true;
-		gdTabs.widthHint = 400;
-		tabFolder.setLayoutData(gdTabs);
-		
-		TabItem tabItemRule = new TabItem(tabFolder, SWT.NONE);
-		tabItemRule.setText("Rule");
-		tabItemRule.setControl(rulesFilterComposite);
+		tabFolder = new TabFolder(container, SWT.NONE);
 
-		TabItem tabItemMethod = new TabItem(tabFolder, SWT.NONE);
-		tabItemMethod.setText("Method");
-		tabItemMethod.setControl(methodFilterComposite);
+		GridData gridData4Folder = new GridData();
+		gridData4Folder.grabExcessHorizontalSpace = true;
+		gridData4Folder.widthHint = 400;
+		tabFolder.setLayoutData(gridData4Folder);
 
-		TabItem tabItemStatusCode = new TabItem(tabFolder, SWT.NONE);
-		tabItemStatusCode.setText("Status Code");
-		tabItemStatusCode.setControl(statusCodeFilterComposite);
-		
-		TabItem tabItemServer = new TabItem(tabFolder, SWT.NONE);
-		tabItemServer.setText("Server");
-		tabItemServer.setControl(serverFilterComposite);
-		
-		TabItem tabItemClient = new TabItem(tabFolder, SWT.NONE);
-		tabItemClient.setText("Client");
-		tabItemClient.setControl(clientFilterComposite);
-		
+		createComposites();
+		createTabFolders();
+
 		return container;
 	}
 
-	
+	private void createComposites() {
+		filterComposites[0] = new MethodFilterComposite(tabFolder, getFilterForClass(MethodFilter.class));
+		filterComposites[1] = new RuleFilterComposite(tabFolder, getFilterForClass(RulesFilter.class));
+		filterComposites[2] = new ServerFilterComposite(tabFolder, getFilterForClass(ServerFilter.class));
+		filterComposites[3] = new ClientFilterComposite(tabFolder, getFilterForClass(ClientFilter.class));
+		filterComposites[4] = new StatusCodeFilterComposite(tabFolder, getFilterForClass(StatusCodeFilter.class));
+	}
+
+	private void showAllFromEveryComposite() {
+		for (AbstractFilterComposite composite : filterComposites) {
+			composite.showAll();
+		}
+	}
+
+	private void createTabFolders() {
+		for (AbstractFilterComposite composite : filterComposites) {
+			TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
+			tabItem.setText(composite.getFilterName());
+			tabItem.setControl(composite);
+		}
+	}
+
+	private void updateFilterManager() {
+		for (AbstractFilterComposite composite : filterComposites) {
+			if (composite.getFilter().isDeactivated()) {
+				exchangesView.getFilterManager().removeFilter(composite.getFilter().getClass());
+			} else {
+				exchangesView.getFilterManager().addFilter(composite.getFilter());
+			}
+		}
+	}
 
 	@Override
 	protected void okPressed() {
@@ -173,36 +165,9 @@ public class ExchangesTableFilterDialog extends Dialog {
 			exchangesView.reloadAll();
 			return;
 		}
-		if (rulesFilterComposite.getRulesFilter().isDeactivated()) {
-			exchangesView.getFilterManager().removeFilter(RulesFilter.class);
-		} else {
-			exchangesView.getFilterManager().addFilter(rulesFilterComposite.getRulesFilter());
-		}
-		
-		if (methodFilterComposite.getMethodFilter().isDeactivated()) {
-			exchangesView.getFilterManager().removeFilter(MethodFilter.class);
-		} else {
-			exchangesView.getFilterManager().addFilter(methodFilterComposite.getMethodFilter());
-		}
-		
-		if (serverFilterComposite.getServerFilter().isDeactivated()) {
-			exchangesView.getFilterManager().removeFilter(ServerFilter.class);
-		} else {
-			exchangesView.getFilterManager().addFilter(serverFilterComposite.getServerFilter());
-		}
-		
-		if (clientFilterComposite.getClientFilter().isDeactivated()) {
-			exchangesView.getFilterManager().removeFilter(ClientFilter.class);
-		} else {
-			exchangesView.getFilterManager().addFilter(clientFilterComposite.getClientFilter());
-		}
-		
-		if (statusCodeFilterComposite.getStatusCodeFilter().isDeactivated()) {
-			exchangesView.getFilterManager().removeFilter(StatusCodeFilter.class);
-		} else {
-			exchangesView.getFilterManager().addFilter(statusCodeFilterComposite.getStatusCodeFilter());
-		}
-		
+
+		updateFilterManager();
+
 		exchangesView.reloadAll();
 		super.okPressed();
 	}
