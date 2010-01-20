@@ -132,8 +132,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		lbSubstringExample.setLayoutData(gridData4LbExample);
 		lbSubstringExample.setText("Examples: ");
 		
-		Label lbSubstringExampleA = new Label(compPattern, SWT.NONE);
-		lbSubstringExampleA.setText("/axis2/     matches all URIs containing /axis2/");
+		new Label(compPattern, SWT.NONE).setText("/axis2/     matches all URIs containing /axis2/");
 		
 		
 		btRegEx = new Button(compPattern, SWT.RADIO);
@@ -148,16 +147,14 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		lbRefExpressExample.setLayoutData(gridData4LbExample);
 		lbRefExpressExample.setText("Examples: ");
 	
-		Label lbRefExpressExampleA = new Label(compPattern, SWT.NONE);
-		lbRefExpressExampleA.setText(".*   matches any URI");
+		new Label(compPattern, SWT.NONE).setText(".*   matches any URI");
 		
 		
 		Label lbRefExpressExampleEmpty = new Label(compPattern, SWT.NONE);
 		lbRefExpressExampleEmpty.setLayoutData(gridData4LbExample);
 		lbRefExpressExampleEmpty.setText("         ");
 	
-		Label lbRefExpressExampleB = new Label(compPattern, SWT.NONE);
-		lbRefExpressExampleB.setText(".*FooService   matches any URI terminating with FooService");
+		new Label(compPattern, SWT.NONE).setText(".*FooService   matches any URI terminating with FooService");
 		
 		setControl(composite);
 	}
@@ -323,7 +320,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		if (!isPageComplete())
 			return false;
 		try {
-			if (((HttpTransport) Router.getInstance().getTransport()).isAnyThreadListeningAt(Integer.parseInt(textListenPort.getText()))) {
+			if (getTransport().isAnyThreadListeningAt(Integer.parseInt(textListenPort.getText()))) {
 				return true;
 			}
 			new ServerSocket(Integer.parseInt(textListenPort.getText())).close();
@@ -334,6 +331,10 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		} 
 		
 		
+	}
+
+	private HttpTransport getTransport() {
+		return ((HttpTransport) Router.getInstance().getTransport());
 	}
 
 	public boolean getUsePathPatter() {
