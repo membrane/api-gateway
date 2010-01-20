@@ -60,8 +60,7 @@ public class TargetHostConfigurationPage extends WizardPage {
 		ruleTargetGroup.setLayout(gridLayout4TargetGroup);
 		
 		
-		Label targetHostLabel = new Label(ruleTargetGroup, SWT.NONE);
-		targetHostLabel.setText("Host:");
+		new Label(ruleTargetGroup, SWT.NONE).setText("Host:");
 
 		ruleOptionsTargetHostTextField = new Text(ruleTargetGroup, SWT.BORDER);
 		ruleOptionsTargetHostTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
