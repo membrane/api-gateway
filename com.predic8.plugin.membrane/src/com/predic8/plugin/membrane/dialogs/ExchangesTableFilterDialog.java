@@ -93,12 +93,11 @@ public class ExchangesTableFilterDialog extends Dialog {
 	private ExchangesFilter getFilterForClass(Class<? extends ExchangesFilter> clazz) {
 		if (exchangesView.getFilterManager().getFilterForClass(clazz) != null) {
 			return exchangesView.getFilterManager().getFilterForClass(clazz);
-		} else {
-			try {
-				return clazz.newInstance();
-			} catch (Exception e) {
-				throw new RuntimeException("Should never happen.");
-			}
+		}
+		try {
+			return clazz.newInstance();
+		} catch (Exception e) {
+			throw new RuntimeException("Should never happen.");
 		}
 	}
 
@@ -115,10 +114,10 @@ public class ExchangesTableFilterDialog extends Dialog {
 
 		tabFolder = new TabFolder(container, SWT.NONE);
 
-		GridData gridData4Folder = new GridData();
-		gridData4Folder.grabExcessHorizontalSpace = true;
-		gridData4Folder.widthHint = 400;
-		tabFolder.setLayoutData(gridData4Folder);
+		GridData gData = new GridData();
+		gData.grabExcessHorizontalSpace = true;
+		gData.widthHint = 400;
+		tabFolder.setLayoutData(gData);
 
 		createComposites();
 		createTabFolders();
@@ -142,9 +141,9 @@ public class ExchangesTableFilterDialog extends Dialog {
 
 	private void createTabFolders() {
 		for (AbstractFilterComposite composite : filterComposites) {
-			TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
-			tabItem.setText(composite.getFilterName());
-			tabItem.setControl(composite);
+			TabItem item = new TabItem(tabFolder, SWT.NONE);
+			item.setText(composite.getFilterName());
+			item.setControl(composite);
 		}
 	}
 

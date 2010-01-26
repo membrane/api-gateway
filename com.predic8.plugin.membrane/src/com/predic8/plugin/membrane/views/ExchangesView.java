@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.ActionContributionItem;
-import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
@@ -27,6 +26,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IActionBars;
@@ -85,7 +85,6 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 	@Override
 	public void createPartControl(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
-
 		composite.setLayout(createTopLayout());
 
 		createTableViewer(composite);
@@ -113,26 +112,26 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 		layout4Filters.numColumns = 2;
 		compositeFilters.setLayout(layout4Filters);
 
-		createFilterLink(compositeFilters);
+		createLink(compositeFilters, "<A>Filters</A>", ShowFiltersDialogAction.ID);
 
-		GridData gridData4Label = new GridData(GridData.FILL_HORIZONTAL);
-		gridData4Label.grabExcessHorizontalSpace = true;
-		gridData4Label.widthHint = 500;
+		GridData gData4Label = new GridData(GridData.FILL_HORIZONTAL);
+		gData4Label.grabExcessHorizontalSpace = true;
+		gData4Label.widthHint = 500;
 
 		lbFilterCount = new Label(compositeFilters, SWT.NONE);
 		lbFilterCount.setText(filterManager.toString() + filterCountText);
-		lbFilterCount.setLayoutData(gridData4Label);
+		lbFilterCount.setLayoutData(gData4Label);
 
 		Composite compositeSorters = new Composite(compControls, SWT.NONE);
 		GridLayout gridLayoutSorters = new GridLayout();
 		gridLayoutSorters.numColumns = 2;
 		compositeSorters.setLayout(gridLayoutSorters);
 
-		createSorterLink(compositeSorters);
+		createLink(compositeSorters, "<A>Sorted By: </A>", ShowSortersDialogAction.ID);
 
 		lbSortedBy = new Label(compositeSorters, SWT.NONE);
 		lbSortedBy.setText(comparator.toString());
-		lbSortedBy.setLayoutData(gridData4Label);
+		lbSortedBy.setLayoutData(gData4Label);
 
 		createTrackRequestButton(compControls);
 
@@ -162,30 +161,17 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 		btTrackRequests.setLayoutData(gdata);
 	}
 
-	private void createSorterLink(Composite compositeSorters) {
-		Link link = new Link(compositeSorters, SWT.NONE);
-		link.setText("<A>Sorted By: </A>");
+	private void createLink(Composite composite, String linkText, final String actionId) {
+		Link link = new Link(composite, SWT.NONE);
+		link.setText(linkText);
 		link.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				ActionContributionItem item = (ActionContributionItem) getViewSite().getActionBars().getToolBarManager().find(ShowSortersDialogAction.ID);
-				IAction action = item.getAction();
-				action.run();
+				((ActionContributionItem) getViewSite().getActionBars().getToolBarManager().find(actionId)).getAction().run();
 			}
 		});
 	}
-
-	private void createFilterLink(Composite compositeFilters) {
-		Link link = new Link(compositeFilters, SWT.NONE);
-		link.setText("<A>Filters</A>");
-		link.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				((ActionContributionItem) getViewSite().getActionBars().getToolBarManager().find(ShowFiltersDialogAction.ID)).getAction().run();
-			}
-		});
-	}
-
+	
 	private void createTableViewer(Composite composite) {
 		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER | SWT.VIRTUAL);
 		createColumns(tableViewer);
@@ -195,10 +181,10 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 
 		tableViewer.setLabelProvider(new ExchangesViewLabelProvider());
 
-		GridData tableGridData = new GridData(GridData.FILL_BOTH);
-		tableGridData.grabExcessVerticalSpace = true;
-		tableGridData.grabExcessHorizontalSpace = true;
-		tableViewer.getTable().setLayoutData(tableGridData);
+		GridData gData = new GridData(GridData.FILL_BOTH);
+		gData.grabExcessVerticalSpace = true;
+		gData.grabExcessHorizontalSpace = true;
+		tableViewer.getTable().setLayoutData(gData);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "ExchangesOverview");
 
 		tableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
@@ -217,56 +203,32 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 			}
 
 			private void updateRequestResponseViews(HttpExchange exc) {
-				IWorkbenchPage page = getViewSite().getPage();
-				RequestView requestViewPart = (RequestView) page.findView(RequestView.VIEW_ID);
-				ResponseView responseViewPart = (ResponseView) page.findView(ResponseView.VIEW_ID);
-
-				if (requestViewPart == null) {
-					try {
-						page.showView(RequestView.VIEW_ID);
-					} catch (Exception ex) {
-						ex.printStackTrace();
-					}
-				}
-
-				if (responseViewPart == null) {
-					try {
-						page.showView(ResponseView.VIEW_ID);
-					} catch (Exception ex) {
-						ex.printStackTrace();
-					}
-				}
-
-				requestViewPart.setInput(exc);
-				requestViewPart.updateUIStatus(canShowBody);
-
-				responseViewPart.setInput(exc);
-				responseViewPart.updateUIStatus(canShowBody);
-
+				setInputForMessageView(exc, RequestView.VIEW_ID);
+				setInputForMessageView(exc, ResponseView.VIEW_ID);
 				canShowBody = true;
 			}
 		});
 	}
 
-	private GridLayout createTopLayout() {
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 10;
-		gridLayout.marginLeft = 2;
-		gridLayout.marginBottom = 5;
-		gridLayout.marginRight = 2;
-		gridLayout.verticalSpacing = 7;
-		return gridLayout;
+	private Layout createTopLayout() {
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 1;
+		layout.marginTop = 10;
+		layout.marginLeft = 2;
+		layout.marginBottom = 5;
+		layout.marginRight = 2;
+		layout.verticalSpacing = 7;
+		return layout;
 	}
 
 	private void addMenu() {
-		MenuManager menuManager = new MenuManager();
-		menuManager.add(removeExchangeAction);
-		menuManager.add(stopExchangeAction);
-		menuManager.add(removeAllExchangesAction);
+		MenuManager manager = new MenuManager();
+		manager.add(removeExchangeAction);
+		manager.add(stopExchangeAction);
+		manager.add(removeAllExchangesAction);
 
-		tableViewer.getControl().setMenu(menuManager.createContextMenu(tableViewer.getControl()));
-		getSite().registerContextMenu(menuManager, tableViewer);
+		tableViewer.getControl().setMenu(manager.createContextMenu(tableViewer.getControl()));
+		getSite().registerContextMenu(manager, tableViewer);
 	}
 
 	private void createColumns(TableViewer viewer) {
@@ -358,11 +320,20 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 		refreshTable(true);
 	}
 
-	private void refreshTable(final boolean clear) {
+	public void refreshTable(final boolean clear) {
 
 		Display.getDefault().asyncExec(new Runnable() {
 
 			public void run() {
+				if (!lbSortedBy.isDisposed()) {
+					lbSortedBy.setText(comparator.toString());
+
+				}
+
+				if (!lbFilterCount.isDisposed()) {
+					lbFilterCount.setText((filterManager.toString() + filterCountText));
+				}
+				
 				List<Exchange> exchanges = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
 				applySorter(exchanges);
 				if (exchanges.size() > 0) {
@@ -371,15 +342,6 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 				} else {
 					removeExchangeAction.setEnabled(false);
 					removeAllExchangesAction.setEnabled(false);
-				}
-
-				if (!lbSortedBy.isDisposed()) {
-					lbSortedBy.setText(comparator.toString());
-
-				}
-
-				if (!lbFilterCount.isDisposed()) {
-					lbFilterCount.setText((filterManager.toString() + filterCountText));
 				}
 
 				if (tableViewer.getTable().isDisposed())
@@ -395,7 +357,7 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 					tableViewer.setItemCount(excArray.length);
 				}
 
-				if (Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange()) {
+				if (getConfiguration().getTrackExchange()) {
 					canShowBody = false;
 					if (excArray.length > 0)
 						tableViewer.setSelection(new StructuredSelection(excArray[excArray.length - 1]), true);
@@ -454,6 +416,20 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 		}
 		
 		protected abstract void process();
+		
+		@Override
+		public void run() {
+			process();
+		}
+		
+		protected void setWidthForColumn(int i) {
+			final int index = i;
+			column.getDisplay().syncExec(new Runnable() {
+				public void run() {
+					column.setWidth(index);
+				}
+			});
+		}
 	}
 
 	private class ShrinkThread extends MoveThread {
@@ -469,12 +445,7 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 			});
 
 			for (int i = width; i >= 0; i--) {
-				final int index = i;
-				column.getDisplay().syncExec(new Runnable() {
-					public void run() {
-						column.setWidth(index);
-					}
-				});
+				setWidthForColumn(i);
 			}
 		}
 	};
@@ -485,12 +456,7 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 		}
 		protected void process() {
 			for (int i = 0; i <= width; i++) {
-				final int index = i;
-				column.getDisplay().syncExec(new Runnable() {
-					public void run() {
-						column.setWidth(index);
-					}
-				});
+				setWidthForColumn(i);
 			}
 		}
 	}
@@ -509,14 +475,26 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 	}
 
 	private void enableStopMenu(Exchange exchange) {
-		if (exchange.getStatus() == ExchangeState.STARTED)
-			stopExchangeAction.setEnabled(true);
-		else
-			stopExchangeAction.setEnabled(false);
+		stopExchangeAction.setEnabled(exchange.getStatus() == ExchangeState.STARTED);
 	}
 
 	public void removeExchanges(Exchange[] exchanges) {
 		refreshTable(true);
+	}
+
+	private void setInputForMessageView(HttpExchange exc, String viewId) {
+		IWorkbenchPage page = getViewSite().getPage();
+		AbstractMessageView messageView = (AbstractMessageView) page.findView(viewId);
+		if (messageView == null) {
+			try {
+				page.showView(RequestView.VIEW_ID);
+			} catch (Exception ex) {
+				ex.printStackTrace();
+			}
+		}
+		
+		messageView.setInput(exc);
+		messageView.updateUIStatus(canShowBody);
 	}
 
 	private Configuration getConfiguration() {

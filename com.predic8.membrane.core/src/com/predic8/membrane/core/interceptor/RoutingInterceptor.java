@@ -38,16 +38,12 @@ public class RoutingInterceptor extends AbstractInterceptor {
 	private boolean xForwardedForEnabled = true;
 
 	private RuleManager ruleManager;
-	
+
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (!(exc instanceof HttpExchange)) 
+		if (!(exc instanceof HttpExchange))
 			throw new RuntimeException("RoutingInterceptor accepts only HttpExchange objects");
-		
-		
-		HttpExchange httpExc = (HttpExchange)exc;
-		if (httpExc.getResponse() != null) 
-			throw new RuntimeException("Routing interceptor should not be used in outflow.");
-		
+
+		HttpExchange httpExc = (HttpExchange) exc;
 
 		Rule rule = getRule(httpExc);
 		httpExc.setRule(rule);
@@ -58,7 +54,7 @@ public class RoutingInterceptor extends AbstractInterceptor {
 			httpExc.setResponse(res);
 			res.write(httpExc.getServerThread().getSrcOut());
 			httpExc.getServerThread().getSrcOut().flush();
-			
+
 			httpExc.setTimeResSent(System.currentTimeMillis());
 			httpExc.finishExchange(true, httpExc.getErrorMessage());
 			return Outcome.ABORT;
@@ -76,14 +72,17 @@ public class RoutingInterceptor extends AbstractInterceptor {
 
 	private Rule getRule(HttpExchange exc) {
 		ForwardingRuleKey ruleKey = new ForwardingRuleKey(getHostname(exc), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
-		Rule forwardingRule = ruleManager.getMatchingRule(ruleKey);
-		if (forwardingRule != null) {
+		Rule rule = ruleManager.getMatchingRule(ruleKey);
+		if (rule != null) {
 			log.debug("Matching Rule found for RuleKey " + ruleKey);
-			return forwardingRule;
+			return rule;
 		}
 
+		return findProxyRule(exc);
+	}
+
+	private Rule findProxyRule(HttpExchange exc) {
 		for (Rule rule : ruleManager.getRules()) {
-			log.debug(rule.getClass());
 			if (!(rule instanceof ProxyRule))
 				continue;
 
@@ -92,7 +91,6 @@ public class RoutingInterceptor extends AbstractInterceptor {
 				return rule;
 			}
 		}
-		
 		log.debug("No rule found for incomming request");
 		return new NullRule();
 	}
@@ -117,16 +115,18 @@ public class RoutingInterceptor extends AbstractInterceptor {
 	}
 
 	private void adjustHostHeader(Exchange exc) {
-		if (isAdjustHeaderField()) {
-			if (exc.getRule() instanceof ForwardingRule) {
-				exc.getRequest().getHeader().setHost(((ForwardingRule) exc.getRule()).getTargetHost() + ":" + ((ForwardingRule) exc.getRule()).getTargetPort());
-			}
+		if (!isAdjustHeaderField())
+			return;
+
+		if (exc.getRule() instanceof ForwardingRule) {
+			exc.getRequest().getHeader().setHost(((ForwardingRule) exc.getRule()).getTargetHost() + ":" + ((ForwardingRule) exc.getRule()).getTargetPort());
 		}
 	}
 
 	protected boolean isAdjustHeaderField() {
 		return true;
-		//TODO return Router.getInstance().getConfigurationManager().getConfiguration().getAdjustHostHeader();
+		// TODO return
+		// Router.getInstance().getConfigurationManager().getConfiguration().getAdjustHostHeader();
 	}
 
 	@Override

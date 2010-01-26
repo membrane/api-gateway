@@ -1,6 +1,6 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -8,49 +8,63 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 public class ByThreadStrategy implements DispatchingStrategy {
 
-	private int maxNumberOfThreadsPerEndpoint = 1;
+	private int maxNumberOfThreadsPerEndpoint = 5;
 
-	private Map<String, Integer> endpointCountMap = new HashMap<String, Integer>();
-	
+	private Map<String, Integer> endpointCount = new Hashtable<String, Integer>();
+
+	private int retryTimeOnBusy = 1000;
+
 	public void done(Exchange exc) {
 		String endPoint = exc.getRequestUri();
-		if (endpointCountMap.containsKey(endPoint)) {
-			Integer value = endpointCountMap.get(endPoint);
-			value --;
-			if (value == 0) {
-				endpointCountMap.remove(endPoint); 
+		if (endpointCount.containsKey(endPoint)) {
+			Integer counter = endpointCount.get(endPoint);
+			counter--;
+			if (counter == 0) {
+				endpointCount.remove(endPoint);
 			} else {
-				endpointCountMap.put(endPoint, value);
+				endpointCount.put(endPoint, counter);
 			}
 		}
 	}
 
 	public String dispatch(LoadBalancingInterceptor interceptor) {
 		List<String> endpoints = interceptor.getEndpoints();
-		try {
-			for(int j = 0; j < 5; j++) {
-				for (String endpoint : endpoints) {
-					if (endpointCountMap.containsKey(endpoint)) {
-						Integer value = endpointCountMap.get(endpoint);
-						if (value < maxNumberOfThreadsPerEndpoint) {
-							value ++;
-							endpointCountMap.put(endpoint, value);
-							return endpoint;
-						} else {
-							continue;
-						}
-					} else {
-						endpointCountMap.put(endpoint, 1);
-						return endpoint;
-					}
+
+		for (int j = 0; j < 5; j++) {
+			for (String endpoint : endpoints) {
+				if (!endpointCount.containsKey(endpoint)) {
+					endpointCount.put(endpoint, 1);
+					return endpoint;
 				}
-				Thread.sleep(1000);
+
+				Integer counter = endpointCount.get(endpoint);
+				if (counter < maxNumberOfThreadsPerEndpoint) {
+					counter++;
+					endpointCount.put(endpoint, counter);
+					return endpoint;
+				} else {
+					continue;
+				}
+
 			}
-			
-		} catch (Exception e) {
-			e.printStackTrace();
+			try {
+				Thread.sleep(retryTimeOnBusy);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
+
 		throw new RuntimeException("All available servers are busy.");
 	}
+
+	public void setMaxNumberOfThreadsPerEndpoint(int maxNumberOfThreadsPerEndpoint) {
+		this.maxNumberOfThreadsPerEndpoint = maxNumberOfThreadsPerEndpoint;
+	}
+
+	public void setRetryTimeOnBusy(int retryTimeOnBusy) {
+		this.retryTimeOnBusy = retryTimeOnBusy;
+	}
 	
+	
+
 }

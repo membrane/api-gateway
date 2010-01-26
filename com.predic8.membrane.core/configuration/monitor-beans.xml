@@ -84,8 +84,10 @@
 			</list>
 		</property>
 		<property name="dispatchingStrategy">
-			<bean
-				class="com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy" />
+			<bean class="com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy" >
+				<property name="maxNumberOfThreadsPerEndpoint" value="10"/>
+				<property name="retryTimeOnBusy" value="1000"/>
+			</bean>
 		</property>
 	</bean>
 

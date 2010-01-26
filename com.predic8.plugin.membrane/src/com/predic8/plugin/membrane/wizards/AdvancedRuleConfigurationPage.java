@@ -1,3 +1,17 @@
+/* Copyright 2009 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.plugin.membrane.wizards;
 
 import java.io.IOException;
@@ -71,7 +85,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 
 		GridData gridData4HostTextField = new GridData(GridData.FILL_HORIZONTAL);
 		
-		createHostText(ruleKeyGroup, gridData4HostTextField);
+		textHost = createHostText(ruleKeyGroup, gridData4HostTextField);
 			
 		Label lbListenPort = new Label(ruleKeyGroup, SWT.NONE);
 		lbListenPort.setText("Listen Port:");
@@ -81,7 +95,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		GridData gridData4FieldShort = new GridData();
 		gridData4FieldShort.widthHint = 100;
 		
-		createListenPortText(ruleKeyGroup, gridData4FieldShort);
+		textListenPort = createListenPortText(ruleKeyGroup, gridData4FieldShort);
 		
 		
 		Label labelMethod = new Label(ruleKeyGroup, SWT.NONE);
@@ -90,22 +104,22 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		labelMethod.setLayoutData(gridData4MethodLabel);
 	
 
-		createMethodCombo(ruleKeyGroup, gridData4FieldShort);
+		comboMethod = createMethodCombo(ruleKeyGroup, gridData4FieldShort);
 
-		createAnyPathButton(ruleKeyGroup);
-		
+		btAnyPath = createAnyPathButton(ruleKeyGroup);
+		btAnyPath.setSelection(true);
 		Label lbDummy1 = new Label(ruleKeyGroup, SWT.NONE);
 		GridData gridDataForLbDummy1 = new GridData(GridData.FILL_HORIZONTAL);
 		gridDataForLbDummy1.grabExcessHorizontalSpace = true;
 		lbDummy1.setLayoutData(gridDataForLbDummy1);
 		lbDummy1.setText(" ");
 		
-		createPathPatternButton(ruleKeyGroup);
+		btPathPattern = createPathPatternButton(ruleKeyGroup);
 		
-		createPathText(ruleKeyGroup, gridData4HostTextField);
+		textPath = createPathText(ruleKeyGroup, gridData4HostTextField);
 		
 		
-		createPatternComposite(ruleKeyGroup);
+		compPattern = createPatternComposite(ruleKeyGroup);
 		
 
 		Label lbInterpret = new Label(compPattern, SWT.NONE);
@@ -159,18 +173,18 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 		setControl(composite);
 	}
 
-	private void createMethodCombo(Group ruleKeyGroup, GridData gridData4FieldShort) {
-		comboMethod = new Combo(ruleKeyGroup, SWT.READ_ONLY);
-		comboMethod.setItems(new String[] { "POST", "GET", "DELETE", "PUT", "<<All methods>>" });
-		comboMethod.setLayoutData(gridData4FieldShort);
-		comboMethod.select(Router.getInstance().getRuleManager().getDefaultMethod());
+	private Combo createMethodCombo(Group ruleKeyGroup, GridData gridData4FieldShort) {
+		Combo combo = new Combo(ruleKeyGroup, SWT.READ_ONLY);
+		combo.setItems(new String[] { "POST", "GET", "DELETE", "PUT", "<<All methods>>" });
+		combo.setLayoutData(gridData4FieldShort);
+		combo.select(Router.getInstance().getRuleManager().getDefaultMethod());
+		return combo;
 	}
 
-	private void createAnyPathButton(Group ruleKeyGroup) {
-		btAnyPath = new Button(ruleKeyGroup, SWT.RADIO);
-		btAnyPath.setText("Any path");
-		btAnyPath.setSelection(true);
-		btAnyPath.addSelectionListener(new SelectionAdapter() {
+	private Button createAnyPathButton(Group ruleKeyGroup) {
+		Button bt = new Button(ruleKeyGroup, SWT.RADIO);
+		bt.setText("Any path");
+		bt.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				Display.getCurrent().asyncExec(new Runnable() {
@@ -181,12 +195,13 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 				});
 			}
 		});
+		return bt;
 	}
 
-	private void createPathPatternButton(Group ruleKeyGroup) {
-		btPathPattern = new Button(ruleKeyGroup, SWT.RADIO);
-		btPathPattern.setText("Path pattern");
-		btPathPattern.addSelectionListener(new SelectionAdapter() {
+	private Button createPathPatternButton(Group ruleKeyGroup) {
+		Button bt = new Button(ruleKeyGroup, SWT.RADIO);
+		bt.setText("Path pattern");
+		bt.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				Display.getCurrent().asyncExec(new Runnable() {
@@ -197,17 +212,18 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 				});
 			}
 		});
+		return bt;
 	}
 
-	private void createPathText(Group ruleKeyGroup, GridData gridData4HostTextField) {
-		textPath = new Text(ruleKeyGroup, SWT.BORDER);
-		textPath.setLayoutData(gridData4HostTextField);
-		textPath.setText(Router.getInstance().getRuleManager().getDefaultPath());
-		textPath.setVisible(false);
-		textPath.addModifyListener(new ModifyListener() {
+	private Text createPathText(Group ruleKeyGroup, GridData gridData4HostTextField) {
+		final Text text = new Text(ruleKeyGroup, SWT.BORDER);
+		text.setLayoutData(gridData4HostTextField);
+		text.setText(Router.getInstance().getRuleManager().getDefaultPath());
+		text.setVisible(false);
+		text.addModifyListener(new ModifyListener() {
 			
 			public void modifyText(ModifyEvent e) {
-				if (textPath.getText().trim().equals("")) {
+				if (text.getText().trim().equals("")) {
 					setPageComplete(false);
 					setErrorMessage("Path pattern must be specified");
 				} else {
@@ -216,37 +232,39 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 				}
 			}
 		});
+		return text;
 	}
 
-	private void createPatternComposite(Group ruleKeyGroup) {
-		compPattern = new Composite(ruleKeyGroup, SWT.NONE);
-		GridData gdCompPattern = new GridData();
-		gdCompPattern.horizontalSpan = 2;
-		gdCompPattern.grabExcessHorizontalSpace = true;
-		compPattern.setLayoutData(gdCompPattern);
-		compPattern.setVisible(false);
+	private Composite createPatternComposite(Group ruleKeyGroup) {
+		Composite composite = new Composite(ruleKeyGroup, SWT.NONE);
+		GridData gData = new GridData();
+		gData.horizontalSpan = 2;
+		gData.grabExcessHorizontalSpace = true;
+		composite.setLayoutData(gData);
+		composite.setVisible(false);
 		
-		GridLayout layoutPattern = new GridLayout();
-		layoutPattern.marginLeft = 25;
-		layoutPattern.numColumns = 2;
-		compPattern.setLayout(layoutPattern);
+		GridLayout layout = new GridLayout();
+		layout.marginLeft = 25;
+		layout.numColumns = 2;
+		composite.setLayout(layout);
+		return composite;
 	}
 
-	private void createListenPortText(Group ruleKeyGroup, GridData gridData4FieldShort) {
-		textListenPort = new Text(ruleKeyGroup,SWT.BORDER);
-		textListenPort.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
-		textListenPort.addVerifyListener(new PortVerifyListener());
-		textListenPort.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		textListenPort.setLayoutData(gridData4FieldShort);
-		textListenPort.addModifyListener(new ModifyListener() {
+	private Text createListenPortText(Group ruleKeyGroup, GridData gridData4FieldShort) {
+		final Text text = new Text(ruleKeyGroup,SWT.BORDER);
+		text.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
+		text.addVerifyListener(new PortVerifyListener());
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		text.setLayoutData(gridData4FieldShort);
+		text.addModifyListener(new ModifyListener() {
 			
 			public void modifyText(ModifyEvent e) {
-				if (textListenPort.getText().trim().equals("")) {
+				if (text.getText().trim().equals("")) {
 					setPageComplete(false);
 					setErrorMessage("Listen port must be specified");
-				} else if (textListenPort.getText().trim().length() >= 5) {
+				} else if (text.getText().trim().length() >= 5) {
 					try {
-						if (Integer.parseInt(textListenPort.getText()) > 65535) {
+						if (Integer.parseInt(text.getText()) > 65535) {
 							setErrorMessage("Listen port number has an upper bound 65535.");
 							setPageComplete(false);
 						}
@@ -260,16 +278,17 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 				}
 			}
 		});
+		return text;
 	}
 
-	private void createHostText(Group ruleKeyGroup, GridData gridData4HostTextField) {
-		textHost = new Text(ruleKeyGroup, SWT.BORDER);
-		textHost.setLayoutData(gridData4HostTextField);
-		textHost.setText(Router.getInstance().getRuleManager().getDefaultHost());
-		textHost.addModifyListener(new ModifyListener() {
+	private Text createHostText(Group ruleKeyGroup, GridData gridData4HostTextField) {
+		final Text text = new Text(ruleKeyGroup, SWT.BORDER);
+		text.setLayoutData(gridData4HostTextField);
+		text.setText(Router.getInstance().getRuleManager().getDefaultHost());
+		text.addModifyListener(new ModifyListener() {
 			
 			public void modifyText(ModifyEvent e) {
-				if (textHost.getText().trim().equals("")) {
+				if (text.getText().trim().equals("")) {
 					setPageComplete(false);
 					setErrorMessage("Client host must be specified");
 				} else {
@@ -278,17 +297,18 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 				}
 			}
 		});
+		return text;
 	}
 
 	private Group createRuleKeyGroup(Composite composite) {
-		Group ruleKeyGroup = new Group(composite, SWT.NONE);
-		ruleKeyGroup.setText("Rule Key");
-		ruleKeyGroup.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		Group group = new Group(composite, SWT.NONE);
+		group.setText("Rule Key");
+		group.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
 		GridLayout gridLayout4Group = new GridLayout();
 		gridLayout4Group.numColumns = 2;
-		ruleKeyGroup.setLayout(gridLayout4Group);
-		return ruleKeyGroup;
+		group.setLayout(gridLayout4Group);
+		return group;
 	}
 
 	public String getListenPort() {
@@ -306,8 +326,7 @@ public class AdvancedRuleConfigurationPage extends WizardPage {
 			return "*";
 		if (index > -1)
 			return comboMethod.getItem(index);
-		else
-			return "";
+		return "";
 	}
 	
 	@Override
