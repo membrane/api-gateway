@@ -107,4 +107,13 @@ public class Response extends Message {
 			return true;
 		return super.isBodyEmpty();
 	}
+	
+	public boolean isUserError() {
+		return statusCode >= 400 && statusCode < 500;
+	}
+
+	public boolean isServerError() {
+		return statusCode > 500;
+	}
+	
 }

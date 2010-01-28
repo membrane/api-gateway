@@ -144,8 +144,7 @@ public class RuleManager {
 		if (rules.get(ruleKey) != null)
 			return rules.get(ruleKey);
 
-		Set<RuleKey> ruleKeys = rules.keySet();
-		for (RuleKey key : ruleKeys) {
+		for (RuleKey key : rules.keySet()) {
 			if (!key.getHost().equals(ruleKey.getHost()) && !key.isHostWildcard())
 				continue;
 			if (key.getPort() != ruleKey.getPort())

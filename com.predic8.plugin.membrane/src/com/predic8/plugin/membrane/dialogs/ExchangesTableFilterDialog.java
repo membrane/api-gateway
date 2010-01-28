@@ -14,6 +14,9 @@
 
 package com.predic8.plugin.membrane.dialogs;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -48,7 +51,7 @@ public class ExchangesTableFilterDialog extends Dialog {
 
 	private TabFolder tabFolder;
 
-	private AbstractFilterComposite[] filterComposites = new AbstractFilterComposite[5];
+	private List<AbstractFilterComposite> filterComposites = new ArrayList<AbstractFilterComposite>();
 
 	private Button btRemoveFilters;
 
@@ -126,11 +129,11 @@ public class ExchangesTableFilterDialog extends Dialog {
 	}
 
 	private void createComposites() {
-		filterComposites[0] = new MethodFilterComposite(tabFolder, getFilterForClass(MethodFilter.class));
-		filterComposites[1] = new RuleFilterComposite(tabFolder, getFilterForClass(RulesFilter.class));
-		filterComposites[2] = new ServerFilterComposite(tabFolder, getFilterForClass(ServerFilter.class));
-		filterComposites[3] = new ClientFilterComposite(tabFolder, getFilterForClass(ClientFilter.class));
-		filterComposites[4] = new StatusCodeFilterComposite(tabFolder, getFilterForClass(StatusCodeFilter.class));
+		filterComposites.add(new MethodFilterComposite(tabFolder, getFilterForClass(MethodFilter.class)));
+		filterComposites.add(new RuleFilterComposite(tabFolder, getFilterForClass(RulesFilter.class)));
+		filterComposites.add(new ServerFilterComposite(tabFolder, getFilterForClass(ServerFilter.class)));
+		filterComposites.add(new ClientFilterComposite(tabFolder, getFilterForClass(ClientFilter.class)));
+		filterComposites.add(new StatusCodeFilterComposite(tabFolder, getFilterForClass(StatusCodeFilter.class)));
 	}
 
 	private void showAllFromEveryComposite() {

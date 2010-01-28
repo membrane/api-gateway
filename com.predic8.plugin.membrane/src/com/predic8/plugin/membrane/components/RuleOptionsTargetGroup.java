@@ -28,87 +28,92 @@ import com.predic8.membrane.core.Router;
 
 public class RuleOptionsTargetGroup {
 
-	private Text ruleOptionsTargetPortTextField;
+	private Text textTargetPort;
 
-	private Text ruleOptionsTargetHostTextField;
+	private Text textTargetHost;
 
 	public RuleOptionsTargetGroup(Composite parent, int style) {
-		Group ruleOptionsTargetGroup = new Group(parent, style);
-		//ruleOptionsTargetGroup.setText("Target");
-		ruleOptionsTargetGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-		GridLayout gridLayout4TargetGroup = new GridLayout();
-		gridLayout4TargetGroup.numColumns = 4;
-		ruleOptionsTargetGroup.setLayout(gridLayout4TargetGroup);
+		Group group = createGroup(parent, style);
 
-		Label ruleOptionsTargetHostLabel = new Label(ruleOptionsTargetGroup, SWT.NONE);
-		ruleOptionsTargetHostLabel.setText("Host");
+		new Label(group, SWT.NONE).setText("Host");
 
-		ruleOptionsTargetHostTextField = new Text(ruleOptionsTargetGroup, SWT.BORDER);
-		ruleOptionsTargetHostTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
-		ruleOptionsTargetHostTextField.addModifyListener(new ModifyListener(){
-			public void modifyText(ModifyEvent e) {
-				//RuleOptionsTargetGroup.this.parent.setEnableOnlyModifyAndRestoreButton(true);
-			}});
-		ruleOptionsTargetHostTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		textTargetHost = createTargetHostText(group);
 
-		Label ruleOptionsTargetHostLabelDummy1 = new Label(ruleOptionsTargetGroup, SWT.NONE);
-		GridData gridDataForLabelDummy1 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy1.setLayoutData(gridDataForLabelDummy1);
-		ruleOptionsTargetHostLabelDummy1.setText(" ");
+		createDummyLabel(group).setText(" ");
 		
-		Label ruleOptionsTargetHostLabelDummy2 = new Label(ruleOptionsTargetGroup, SWT.NONE);
-		GridData gridDataForLabelDummy2 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy2.setLayoutData(gridDataForLabelDummy2);
-		ruleOptionsTargetHostLabelDummy2.setText(" ");
+		createDummyLabel(group).setText(" ");
 		
-		Label ruleOptionsTargetPortTextLabel = new Label(ruleOptionsTargetGroup, SWT.NONE);
-		ruleOptionsTargetPortTextLabel.setText("Port");
+		new Label(group, SWT.NONE).setText("Port");
 
-		ruleOptionsTargetPortTextField = new Text(ruleOptionsTargetGroup,SWT.BORDER);
-		ruleOptionsTargetPortTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
-		ruleOptionsTargetPortTextField.addVerifyListener(new PortVerifyListener());
-		ruleOptionsTargetPortTextField.addModifyListener(new ModifyListener(){
-			public void modifyText(ModifyEvent e) {
-				//RuleOptionsTargetGroup.this.parent.setEnableOnlyModifyAndRestoreButton(true);
-			}});
-		ruleOptionsTargetPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		textTargetPort = createTargetPortText(group);
 		
-		Label ruleOptionsTargetHostLabelDummy3 = new Label(ruleOptionsTargetGroup, SWT.NONE);
-		GridData gridDataForLabelDummy3 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy3.setLayoutData(gridDataForLabelDummy3);
-		ruleOptionsTargetHostLabelDummy3.setText(" ");
-	
-		Label ruleOptionsTargetHostLabelDummy4 = new Label(ruleOptionsTargetGroup, SWT.NONE);
-		GridData gridDataForLabelDummy4 = new GridData(GridData.FILL_HORIZONTAL);
-		ruleOptionsTargetHostLabelDummy4.setLayoutData(gridDataForLabelDummy4);
-		ruleOptionsTargetHostLabelDummy4.setText(" ");
+		createDummyLabel(group).setText(" ");
+		createDummyLabel(group).setText(" ");
 		
 	}
 
+	private Text createTargetHostText(Group group) {
+		Text textTargetHost = new Text(group, SWT.BORDER);
+		textTargetHost.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
+		textTargetHost.addModifyListener(new ModifyListener(){
+			public void modifyText(ModifyEvent e) {
+				//RuleOptionsTargetGroup.this.parent.setEnableOnlyModifyAndRestoreButton(true);
+			}});
+		textTargetHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return textTargetHost;
+	}
+
+	private Text createTargetPortText(Group group) {
+		Text text = new Text(group,SWT.BORDER);
+		text.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
+		text.addVerifyListener(new PortVerifyListener());
+		text.addModifyListener(new ModifyListener(){
+			public void modifyText(ModifyEvent e) {
+				//RuleOptionsTargetGroup.this.parent.setEnableOnlyModifyAndRestoreButton(true);
+			}});
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
+	}
+
+	private Group createGroup(Composite parent, int style) {
+		Group group = new Group(parent, style);
+		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		GridLayout gridLayout4TargetGroup = new GridLayout();
+		gridLayout4TargetGroup.numColumns = 4;
+		group.setLayout(gridLayout4TargetGroup);
+		return group;
+	}
+
+	private Label createDummyLabel(Composite parent) {
+		Label lb = new Label(parent, SWT.NONE);
+		GridData gData4Dummy4 = new GridData(GridData.FILL_HORIZONTAL);
+		lb.setLayoutData(gData4Dummy4);
+		return lb;
+	}
 
 	public void clear() {
-		ruleOptionsTargetHostTextField.setText("");
-		ruleOptionsTargetPortTextField.setText("");
+		textTargetHost.setText("");
+		textTargetPort.setText("");
 	}
 
 	public String getTargetHost() {
-		return ruleOptionsTargetHostTextField.getText().trim();
+		return textTargetHost.getText().trim();
 	}
 
 	public String getTargetPort() {
-		return ruleOptionsTargetPortTextField.getText().trim();
+		return textTargetPort.getText().trim();
 	}
 
 	public void setTargetHost(String host) {
-		ruleOptionsTargetHostTextField.setText(host);
+		textTargetHost.setText(host);
 	}
 
 	public void setTargetPort(String port) {
-		ruleOptionsTargetPortTextField.setText(port);
+		textTargetPort.setText(port);
 	}
 
 	public void setTargetPort(int port) {
-		ruleOptionsTargetPortTextField.setText(Integer.toString(port));
+		textTargetPort.setText(Integer.toString(port));
 	}
 	
 }

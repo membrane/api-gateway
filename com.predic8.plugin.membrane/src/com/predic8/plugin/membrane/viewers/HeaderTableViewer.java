@@ -45,7 +45,7 @@ public class HeaderTableViewer extends TableViewer {
 
 	private String[] columnNames = new String[] { "Header Names", "Value" };
 
-	private HeaderTableMenuAction headerTableMenuAction;
+	private HeaderTableMenuAction menuAction;
 
 	private CellEditor[] editors;
 
@@ -58,14 +58,13 @@ public class HeaderTableViewer extends TableViewer {
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);
 
-		TableLayout tLayout = new TableLayout();
-		table.setLayout(tLayout);
+		table.setLayout(new TableLayout());
 
-		tLayout.addColumnData((new ColumnWeightData(1)));
+		new TableLayout().addColumnData((new ColumnWeightData(1)));
 
 		new TableColumn(table, SWT.NONE).setText("Header Name");
 
-		tLayout.addColumnData((new ColumnWeightData(2)));
+		new TableLayout().addColumnData((new ColumnWeightData(2)));
 
 		new TableColumn(table, SWT.NONE).setText("Value");
 
@@ -85,40 +84,34 @@ public class HeaderTableViewer extends TableViewer {
 			protected boolean isEditorActivationEvent(ColumnViewerEditorActivationEvent event) {
 				return event.eventType == ColumnViewerEditorActivationEvent.PROGRAMMATIC;
 			}
-		}, ColumnViewerEditor.DEFAULT);		
-		headerTableMenuAction = new HeaderTableMenuAction(this);
+		}, ColumnViewerEditor.DEFAULT);
+		menuAction = new HeaderTableMenuAction(this);
 
 		addSelectionChangedListener(new ISelectionChangedListener() {
 			public void selectionChanged(SelectionChangedEvent e) {
 
-				if (e.getSelection() instanceof IStructuredSelection) {
-					IStructuredSelection selection = (IStructuredSelection) e.getSelection();
+				if (!(e.getSelection() instanceof IStructuredSelection))
+					return;
 
-					Object selectedItem = selection.getFirstElement();
-
-					if (selectedItem instanceof HeaderField) {
-						headerTableMenuAction.setEnableRemoveAction(true);
-					} else {
-						headerTableMenuAction.setEnableRemoveAction(false);
-					}
-				}
-
+				menuAction.setEnableRemoveAction(isHeaderField(e));				
 			}
-		});		
-		
+			
+			private boolean isHeaderField(SelectionChangedEvent e) {
+				return ((IStructuredSelection) e.getSelection()).getFirstElement() instanceof HeaderField;
+			}
+		});
+
 		addDoubleClickListener(new IDoubleClickListener() {
 			public void doubleClick(DoubleClickEvent event) {
-				IStructuredSelection selection = (IStructuredSelection) event.getSelection();
-				Object selectedItem = selection.getFirstElement();
+				Object selectedItem = ((IStructuredSelection) event.getSelection()).getFirstElement();
 				if (selectedItem instanceof HeaderField) {
 					HeaderTableViewer.this.editElement(selectedItem, 1);
-				} 
+				}
 			}
 		});
 	}
 
 	public void setEditable(boolean bool) {
-		//headerTableContentProvider.setEnableDummyHeaderField(bool);
 		if (bool) {
 			setCellEditors(editors);
 		} else {

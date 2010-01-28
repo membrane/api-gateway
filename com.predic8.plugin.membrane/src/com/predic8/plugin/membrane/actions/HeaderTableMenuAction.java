@@ -26,28 +26,28 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.plugin.membrane.dialogs.AddHeaderFieldDialog;
 
 public class HeaderTableMenuAction {
-	
+
 	private TableViewer tableViewer;
 
 	private RemoveAction removeAction;
 
 	private RefreshAction refreshAction;
-	
+
 	private AddHeaderFieldAction addHeaderFieldAction;
-	
+
 	private EditHeaderFieldAction editHeaderFieldAction;
-	
+
 	private MenuManager mgr;
 
 	private AddHeaderFieldDialog addHeaderFieldDialog;
-	
+
 	public HeaderTableMenuAction(TableViewer tableView) {
 		this.tableViewer = tableView;
 		removeAction = new RemoveAction(tableViewer);
 		refreshAction = new RefreshAction(tableViewer);
 		addHeaderFieldAction = new AddHeaderFieldAction(tableViewer);
 		editHeaderFieldAction = new EditHeaderFieldAction(tableViewer);
-		
+
 		mgr = new MenuManager();
 		Menu menu = mgr.createContextMenu(tableView.getTable());
 		tableView.getTable().setMenu(menu);
@@ -62,25 +62,21 @@ public class HeaderTableMenuAction {
 	}
 
 	class RemoveAction extends Action {
-		private TableViewer parentTableView;
+		private TableViewer tableView;
 
 		public RemoveAction(TableViewer tableView) {
-			this.parentTableView = tableView;
+			this.tableView = tableView;
 
 			setText("Remove");
 		}
 
 		public void run() {
-			IStructuredSelection selection = (IStructuredSelection) parentTableView.getSelection();
-			Object selectedItem = selection.getFirstElement();
+			((Message) tableView.getInput()).getHeader().remove(getHeaderField());
+			tableView.remove(getHeaderField());
+		}
 
-			if (selectedItem instanceof HeaderField) {
-				HeaderField headerField = (HeaderField) selectedItem;
-				Message message = (Message) parentTableView.getInput();
-				message.getHeader().remove(headerField);
-				parentTableView.remove(headerField);
-			}
-
+		private HeaderField getHeaderField() {
+			return (HeaderField) ((IStructuredSelection) tableView.getSelection()).getFirstElement();
 		}
 	}
 
@@ -114,8 +110,7 @@ public class HeaderTableMenuAction {
 			addHeaderFieldDialog.open();
 		}
 	}
-	
-	
+
 	class EditHeaderFieldAction extends Action {
 		private TableViewer parentTableViewer;
 
@@ -129,8 +124,8 @@ public class HeaderTableMenuAction {
 			Object selectedItem = selection.getFirstElement();
 			if (selectedItem instanceof HeaderField) {
 				parentTableViewer.editElement(selectedItem, 1);
-			} 
+			}
 		}
 	}
-	
+
 }

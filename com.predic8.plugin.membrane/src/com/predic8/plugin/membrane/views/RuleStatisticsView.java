@@ -31,7 +31,6 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
@@ -46,35 +45,35 @@ public class RuleStatisticsView extends AbstractRulesView {
 
 	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.RuleStatisticsView";
 
-	public RuleStatisticsView() {
-		
-	}
-
 	@Override
 	public void createPartControl(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
-		
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 10;
-		gridLayout.marginLeft = 5;
-		gridLayout.marginBottom = 20;
-		gridLayout.marginRight = 5;
-		gridLayout.verticalSpacing = 20;
-		composite.setLayout(gridLayout);
+		Composite composite = createComposite(parent);
 
-		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
-		createColumns(tableViewer);
-		tableViewer.setContentProvider(new RuleStatisticsContentProvider());
-		tableViewer.setLabelProvider(new RuleStatisticsLabelProvider());
-		
-		GridData tableGridData = new GridData(GridData.FILL_BOTH);
-		tableGridData.grabExcessVerticalSpace = true;
-		tableGridData.grabExcessHorizontalSpace = true;
-		tableViewer.getTable().setLayoutData(tableGridData);
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "RuleStatistics");
+		tableViewer = createTableViewer(composite);
 	
+		addCellEditorsAndModifiersToViewer();
 		
+		tableViewer.addDoubleClickListener(new IDoubleClickListener() {
+			public void doubleClick(DoubleClickEvent event) {
+				IStructuredSelection selection = (IStructuredSelection) event.getSelection();
+				Object selectedItem = selection.getFirstElement();
+				if (selectedItem instanceof Rule) {
+					tableViewer.editElement(selectedItem, 0);
+				} 
+			}
+		});
+		
+		new Label(composite, SWT.NONE).setText(" All times in ms");
+		
+		createActions();
+		addTableMenu();
+				
+	    Router.getInstance().getExchangeStore().addExchangesViewListener(this);
+	    setInputForTable(Router.getInstance().getRuleManager());
+	}
+
+
+	private void addCellEditorsAndModifiersToViewer() {
 		final CellEditor[] cellEditors = new CellEditor[1];
 		cellEditors[0] = new TextCellEditor(tableViewer.getTable(), SWT.BORDER);
 		tableViewer.setCellEditors(cellEditors);
@@ -90,25 +89,36 @@ public class RuleStatisticsView extends AbstractRulesView {
 				return event.eventType == ColumnViewerEditorActivationEvent.PROGRAMMATIC;
 			}
 		}, ColumnViewerEditor.DEFAULT);
+	}
+
+
+	private TableViewer createTableViewer(Composite composite) {
+		TableViewer viewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+		createColumns(viewer);
+		viewer.setContentProvider(new RuleStatisticsContentProvider());
+		viewer.setLabelProvider(new RuleStatisticsLabelProvider());
 		
-		tableViewer.addDoubleClickListener(new IDoubleClickListener() {
-			public void doubleClick(DoubleClickEvent event) {
-				IStructuredSelection selection = (IStructuredSelection) event.getSelection();
-				Object selectedItem = selection.getFirstElement();
-				if (selectedItem instanceof Rule) {
-					tableViewer.editElement(selectedItem, 0);
-				} 
-			}
-		});
+		GridData gridData = new GridData(GridData.FILL_BOTH);
+		gridData.grabExcessVerticalSpace = true;
+		gridData.grabExcessHorizontalSpace = true;
+		viewer.getTable().setLayoutData(gridData);
+		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "RuleStatistics");
+		return viewer;
+	}
+
+
+	private Composite createComposite(Composite parent) {
+		Composite composite = new Composite(parent, SWT.NONE);
 		
-		Label lbTimeUnit = new Label(composite, SWT.NONE);
-		lbTimeUnit.setText(" All times in ms");
-		
-		createActions();
-		addTableMenu();
-				
-	    Router.getInstance().getExchangeStore().addExchangesViewListener(this);
-	    setInputForTable(Router.getInstance().getRuleManager());
+		GridLayout gridLayout = new GridLayout();
+		gridLayout.numColumns = 1;
+		gridLayout.marginTop = 10;
+		gridLayout.marginLeft = 5;
+		gridLayout.marginBottom = 20;
+		gridLayout.marginRight = 5;
+		gridLayout.verticalSpacing = 20;
+		composite.setLayout(gridLayout);
+		return composite;
 	}
 
 	
@@ -125,8 +135,7 @@ public class RuleStatisticsView extends AbstractRulesView {
 			column.getColumn().setResizable(true);
 			column.getColumn().setMoveable(true);
 		}
-		Table table = viewer.getTable();
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
+		viewer.getTable().setHeaderVisible(true);
+		viewer.getTable().setLinesVisible(true);
 	}
 }

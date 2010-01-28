@@ -32,13 +32,11 @@ import com.predic8.membrane.core.http.Message;
 
 public class AddHeaderFieldDialog extends Dialog {
 
-	private GridLayout gridLayout4BaseAreaComp;
-
 	private Composite baseAreaComp;
 
-	private Text headerFieldNameText;
+	private Text textName;
 	
-	private Text headerFieldValueText;
+	private Text textValue;
 	
 	private TableViewer tableViewer;
 	
@@ -48,45 +46,47 @@ public class AddHeaderFieldDialog extends Dialog {
 	}
 
 	protected Control createDialogArea(Composite parent) {
-		baseAreaComp = (Composite) super.createDialogArea(parent);
-		gridLayout4BaseAreaComp = new GridLayout();
-		gridLayout4BaseAreaComp.numColumns = 2;
-		gridLayout4BaseAreaComp.marginLeft = 20;
-		gridLayout4BaseAreaComp.marginRight = 20;
-		gridLayout4BaseAreaComp.marginTop = 20;
-		gridLayout4BaseAreaComp.marginBottom = 20;
-		baseAreaComp.setLayout(gridLayout4BaseAreaComp);
+		baseAreaComp = createBaseAreaComposite(parent);
 
+		createLabel().setText("Field Name");
+
+		textName = createText();
 		
-		Label headerNameLabel = new Label(baseAreaComp, SWT.NONE);
+		createLabel().setText("Field Value");
+
+		textValue = createText();
+		
+		return baseAreaComp;
+	}
+
+	private Text createText() {
+		Text text = new Text(baseAreaComp, SWT.NONE);
+		GridData gridData = new GridData();
+		gridData.heightHint = 20;
+		gridData.widthHint = 140;
+		text.setLayoutData(gridData);
+		return text;
+	}
+	
+	private Label createLabel() {
+		Label label = new Label(baseAreaComp, SWT.NONE);
 		GridData gridData4HeaderNameLabel = new GridData();
 		gridData4HeaderNameLabel.heightHint = 22;
 		gridData4HeaderNameLabel.widthHint = 72;
-		headerNameLabel.setLayoutData(gridData4HeaderNameLabel);
-		headerNameLabel.setText("Field Name");
+		label.setLayoutData(gridData4HeaderNameLabel);
+		return label;
+	}
 
-		headerFieldNameText = new Text(baseAreaComp, SWT.NONE);
-		GridData gridData4HeaderNameText = new GridData();
-		gridData4HeaderNameText.heightHint = 20;
-		gridData4HeaderNameText.widthHint = 140;
-		headerFieldNameText.setLayoutData(gridData4HeaderNameText);	
-		
-		
-		Label headerValueLabel = new Label(baseAreaComp, SWT.NONE);
-		GridData gridData4HeaderValueLabel = new GridData();
-		gridData4HeaderValueLabel.heightHint = 22;
-		gridData4HeaderValueLabel.widthHint = 72;
-		headerValueLabel.setLayoutData(gridData4HeaderValueLabel);
-		headerValueLabel.setText("Field Value");
-
-		headerFieldValueText = new Text(baseAreaComp, SWT.NONE);
-		GridData gridData4HeaderValueText = new GridData();
-		gridData4HeaderValueText.heightHint = 20;
-		gridData4HeaderValueText.widthHint = 140;
-		headerFieldValueText.setLayoutData(gridData4HeaderValueText);	
-		
-		
-		return baseAreaComp;
+	private Composite createBaseAreaComposite(Composite parent) {
+		Composite composite = (Composite) super.createDialogArea(parent);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		layout.marginLeft = 20;
+		layout.marginRight = 20;
+		layout.marginTop = 20;
+		layout.marginBottom = 20;
+		composite.setLayout(layout);
+		return composite;
 	}
 
 	protected void createButtonsForButtonBar(Composite parent) {
@@ -94,9 +94,9 @@ public class AddHeaderFieldDialog extends Dialog {
 		createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, true);
 	}
 
-	protected void configureShell(Shell newShell) {
-		super.configureShell(newShell);
-		newShell.setText("Add New Header Field");
+	protected void configureShell(Shell shell) {
+		super.configureShell(shell);
+		shell.setText("Add New Header Field");
 	}
 
 	public void dispose() {
@@ -105,16 +105,15 @@ public class AddHeaderFieldDialog extends Dialog {
 	
 	@Override
 	protected void okPressed() {
-		String headerFieldName = headerFieldNameText.getText();
-		String headerFieldValue = headerFieldValueText.getText();
+		String fieldName = textName.getText();
+		String fieldValue = textValue.getText();
 		
-		if ("".equals(headerFieldName) || "".equals(headerFieldValue) ) {
-			MessageDialog.openError(this.getParentShell(), "Illegal Input", "Header field name and value both must be specified.");
+		if ("".equals(fieldName)) {
+			MessageDialog.openError(this.getParentShell(), "Illegal Input", "Header field name must be specified.");
 		} else {
-			HeaderField headerField = new HeaderField(headerFieldName, headerFieldValue);
+			HeaderField headerField = new HeaderField(fieldName, fieldValue);
 			tableViewer.add(headerField);
-			Message message = (Message) tableViewer.getInput();
-			message.getHeader().add(headerField);
+			((Message) tableViewer.getInput()).getHeader().add(headerField);
 			
 			super.okPressed();
 		}

@@ -21,7 +21,6 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 
-import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -52,40 +51,34 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 	}
 
 	public Image getColumnImage(Object element, int columnIndex) {
-		try {
-			if (!(element instanceof HttpExchange))
-				return null;
 
-			switch (columnIndex) {
-			case 0:
-				return selectImage(element);
-			default:
-				return null;
-			}
-
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		switch (columnIndex) {
+		case 0:
+			return selectImage(element);
+		default:
 			return null;
 		}
 	}
 
 	private Image selectImage(Object element) {
-		HttpExchange exchange = (HttpExchange) element;
-		switch (exchange.getStatus()) {
+		HttpExchange exc = (HttpExchange) element;
+		switch (exc.getStatus()) {
 		case STARTED:
 			return imgPending;
 		case FAILED:
 			return imgFailed;
 		case COMPLETED:
-			if (((Exchange) element).getResponse().isRedirect()) {
+			if (exc.getResponse().isRedirect())
 				return imgArrowUndo;
-			} else if (((Exchange) element).getResponse().getStatusCode() >= 400 && ((Exchange) element).getResponse().getStatusCode() < 500) {
+			
+			if (exc.getResponse().isUserError())
 				return imgThumbDown;
-			} else if (((Exchange) element).getResponse().getStatusCode() > 500) {
+			
+			if (exc.getResponse().isServerError())
 				return imgBug;
-			} else {
-				return imgCompleted;
-			}
+			
+			return imgCompleted;
+			
 		case SENT:
 			return imgPending;
 
@@ -99,68 +92,56 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 
 	public String getColumnText(Object element, int columnIndex) {
 
-		try {
-			if (element instanceof HttpExchange) {
+		HttpExchange exchange = (HttpExchange) element;
 
-				HttpExchange exchange = (HttpExchange) element;
+		switch (columnIndex) {
 
-				switch (columnIndex) {
+		case 0:
+			if (exchange.getResponse() == null)
+				return "";
+			return "" + exchange.getResponse().getStatusCode();
 
-				case 0:
-					if (exchange.getResponse() == null)
-						return "";
-					return "" + exchange.getResponse().getStatusCode();
+		case 1:
+			if (exchange.getTime() == null)
+				return "unknown";
+			return DATE_FORMATTER.format(exchange.getTime().getTime());
 
-				case 1:
-					if (exchange.getTime() == null)
-						return "unknown";
-					return DATE_FORMATTER.format(exchange.getTime().getTime());
+		case 2:
+			return exchange.getRule().toString();
 
-				case 2:
-					return exchange.getRule().toString();
+		case 3:
+			return exchange.getRequest().getMethod();
 
-				case 3:
-					return exchange.getRequest().getMethod();
+		case 4:
+			return exchange.getRequest().getUri(); // path
 
-				case 4:
-					return exchange.getRequest().getUri(); // path
+		case 5:
+			return (String) exchange.getProperty(HttpTransport.SOURCE_HOSTNAME); // client
 
-				case 5:
-					return (String) exchange.getProperty(HttpTransport.SOURCE_HOSTNAME); // client
+		case 6:
+			return getServer(exchange);
+		case 7:
+			return getContentType(exchange);
 
-				case 6:
-					return getServer(exchange);
-				case 7:
-					return getContentType(exchange);
+		case 8:
+			if (exchange.getRequest().getHeader().getContentLength() == -1)
+				return "unknown";
+			return "" + exchange.getRequest().getHeader().getContentLength();
 
-				case 8:
-					if (exchange.getRequest().getHeader().getContentLength() == -1)
-						return "unknown";
-					return "" + exchange.getRequest().getHeader().getContentLength();
+		case 9:
+			if (exchange.getResponse() == null || exchange.getResponse().getHeader().getContentType() == null)
+				return "N/A";
+			return "" + exchange.getResponse().getHeader().getContentType();
 
-				case 9:
-					if (exchange.getResponse() == null || exchange.getResponse().getHeader().getContentType() == null)
-						return "N/A";
-					return "" + exchange.getResponse().getHeader().getContentType();
+		case 10:
+			if (exchange.getResponse() == null)
+				return "";
+			return "" + exchange.getResponse().getHeader().getContentLength();
 
-				case 10:
-					if (exchange.getResponse() == null)
-						return "";
-					return "" + exchange.getResponse().getHeader().getContentLength();
-
-				case 11:
-
-					return "" + (exchange.getTimeResReceived() - exchange.getTimeReqSent());
-
-				default:
-					return "";
-
-				}
-			}
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		case 11:
+			return "" + (exchange.getTimeResReceived() - exchange.getTimeReqSent());
 		}
-
+		
 		return "";
 	}
 
@@ -185,11 +166,15 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 	}
 
 	private void createImages() {
-		imgPending = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PENDING).createImage();
-		imgFailed = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FAILED).createImage();
-		imgArrowUndo = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_ARROW_UNDO).createImage();
-		imgThumbDown = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_THUMB_DOWN).createImage();
-		imgBug = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_BUG).createImage();
-		imgCompleted = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_COMPLETED).createImage();
+		imgPending = createImage(ImageKeys.IMAGE_PENDING);
+		imgFailed = createImage(ImageKeys.IMAGE_FAILED);
+		imgArrowUndo = createImage(ImageKeys.IMAGE_ARROW_UNDO);
+		imgThumbDown = createImage(ImageKeys.IMAGE_THUMB_DOWN);
+		imgBug = createImage(ImageKeys.IMAGE_BUG);
+		imgCompleted = createImage(ImageKeys.IMAGE_COMPLETED);
+	}
+
+	private Image createImage(String imageId) {
+		return MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(imageId).createImage();
 	}
 }
