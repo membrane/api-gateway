@@ -23,30 +23,23 @@ import org.eclipse.swt.widgets.Display;
 
 import com.predic8.membrane.core.http.HeaderField;
 
+public class HeaderTableLabelProvider implements ITableLabelProvider, IColorProvider {
 
-public class HeaderTableLabelProvider implements ITableLabelProvider ,IColorProvider{
-
+	private static final Color BACKGROUND_COLOR = new Color(Display.getDefault(), 238, 239, 247);
 	
 	public Image getColumnImage(Object element, int columnIndex) {
-		
+
 		return null;
 	}
 
 	public String getColumnText(Object element, int columnIndex) {
-		if (element instanceof HeaderField) {
-			HeaderField headerField = (HeaderField) element;
-			if (columnIndex == 0)
-				return headerField.getHeaderName().toString();
-			if (columnIndex == 1)
-				return headerField.getValue();
-		}
-//		if (element instanceof DummyHeaderField) {
-//			DummyHeaderField dummyHeaderField = (DummyHeaderField) element;
-//			if (columnIndex == 0)
-//				return dummyHeaderField.getDummyHeaderName();
-//			if (columnIndex == 1)
-//				return dummyHeaderField.getDummyValue();
-//		}		
+		if (!(element instanceof HeaderField))
+			return "";
+		HeaderField headerField = (HeaderField) element;
+		if (columnIndex == 0)
+			return headerField.getHeaderName().toString();
+		if (columnIndex == 1)
+			return headerField.getValue();
 		return "";
 	}
 
@@ -64,22 +57,13 @@ public class HeaderTableLabelProvider implements ITableLabelProvider ,IColorProv
 	public void removeListener(ILabelProviderListener listener) {
 	}
 
-
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.IColorProvider#getForeground(java.lang.Object)
-	 */
 	public Color getForeground(Object element) {
-//		if (element instanceof DummyHeaderField) 
-//			return new Color(Display.getDefault(),128,128,128);
 		return null;
 	}
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jface.viewers.IColorProvider#getBackground(java.lang.Object)
-	 */
 	public Color getBackground(Object element) {
-		if (element instanceof HeaderField) 
-			return new Color(Display.getDefault(),238,239,247);
+		if (element instanceof HeaderField)
+			return BACKGROUND_COLOR;
 		return null;
 	}
 

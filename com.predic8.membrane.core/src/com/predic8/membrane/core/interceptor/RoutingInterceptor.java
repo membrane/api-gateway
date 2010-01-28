@@ -86,7 +86,7 @@ public class RoutingInterceptor extends AbstractInterceptor {
 			if (!(rule instanceof ProxyRule))
 				continue;
 
-			if (rule.getRuleKey().getPort() == exc.getServerThread().getSourceSocket().getLocalPort()) {
+			if (rule.getKey().getPort() == exc.getServerThread().getSourceSocket().getLocalPort()) {
 				log.debug("proxy rule found: " + rule);
 				return rule;
 			}

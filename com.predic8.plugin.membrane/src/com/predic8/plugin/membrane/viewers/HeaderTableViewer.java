@@ -49,8 +49,6 @@ public class HeaderTableViewer extends TableViewer {
 
 	private CellEditor[] editors;
 
-	private HeaderTableContentProvider headerTableContentProvider;
-
 	public HeaderTableViewer(Composite parent, int style) {
 		super(parent, style);
 
@@ -58,19 +56,18 @@ public class HeaderTableViewer extends TableViewer {
 		table.setHeaderVisible(true);
 		table.setLinesVisible(true);
 
-		table.setLayout(new TableLayout());
+		TableLayout layout = new TableLayout();
+		table.setLayout(layout);
 
-		new TableLayout().addColumnData((new ColumnWeightData(1)));
+		layout.addColumnData((new ColumnWeightData(1)));
 
 		new TableColumn(table, SWT.NONE).setText("Header Name");
 
-		new TableLayout().addColumnData((new ColumnWeightData(2)));
+		layout.addColumnData((new ColumnWeightData(2)));
 
 		new TableColumn(table, SWT.NONE).setText("Value");
 
-		headerTableContentProvider = new HeaderTableContentProvider(this);
-
-		setContentProvider(headerTableContentProvider);
+		setContentProvider(new HeaderTableContentProvider());
 
 		setLabelProvider(new HeaderTableLabelProvider());
 

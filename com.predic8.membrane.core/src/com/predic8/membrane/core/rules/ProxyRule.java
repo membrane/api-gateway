@@ -25,7 +25,7 @@ public class ProxyRule extends AbstractRule {
 
 		out.writeAttribute("name", name);
 		
-		out.writeAttribute("port", "" + ruleKey.getPort());
+		out.writeAttribute("port", "" + key.getPort());
 		
 		Interceptors inters = new Interceptors();
 		inters.setInterceptors(interceptors);
@@ -46,7 +46,7 @@ public class ProxyRule extends AbstractRule {
 
 		int port = Integer.parseInt(token.getAttributeValue("", "port"));
 
-		ruleKey = new ProxyRuleKey(port);
+		key = new ProxyRuleKey(port);
 		
 	}
 	

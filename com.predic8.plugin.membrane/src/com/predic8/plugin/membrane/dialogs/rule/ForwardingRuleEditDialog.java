@@ -105,7 +105,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 	@Override
 	public void setInput(Rule rule) {
 		super.setInput(rule);
-		ruleKeyComposite.getRuleOptionsRuleKeyGroup().setInput(rule.getRuleKey());
+		ruleKeyComposite.getRuleOptionsRuleKeyGroup().setInput(rule.getKey());
 		targetComposite.setInput(rule);
 	}
 
@@ -117,13 +117,13 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 			return;
 		}
 
-		if (ruleKey.equals(rule.getRuleKey())) {
+		if (ruleKey.equals(rule.getKey())) {
 			updateRule(ruleKey, false);
 			Router.getInstance().getRuleManager().ruleChanged(rule);
 			return;
 		}
 
-		if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
+		if (Router.getInstance().getRuleManager().exists(ruleKey)) {
 			openErrorDialog("Illeagal input! Your rule key conflict with another existent rule.");
 			return;
 		}
@@ -139,11 +139,11 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 			}
 		}
 		Router.getInstance().getRuleManager().removeRule(rule);
-		if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getRuleKey().getPort()) && (rule.getRuleKey().getPort() != ruleKey.getPort())) {
+		if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getKey().getPort()) && (rule.getKey().getPort() != ruleKey.getPort())) {
 			try {
-				getTransport().closePort(rule.getRuleKey().getPort());
+				getTransport().closePort(rule.getKey().getPort());
 			} catch (IOException e2) {
-				openErrorDialog("Failed to close the obsolete port: " + rule.getRuleKey().getPort());
+				openErrorDialog("Failed to close the obsolete port: " + rule.getKey().getPort());
 			}
 		}
 		updateRule(ruleKey, true);
@@ -157,7 +157,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 
 	private void updateRule(ForwardingRuleKey ruleKey, boolean addToManager) {
 		rule.setName(generalInfoComposite.getRuleName());
-		rule.setRuleKey(ruleKey);
+		rule.setKey(ruleKey);
 		if (addToManager) {
 			Router.getInstance().getRuleManager().addRuleIfNew(rule);
 		}

@@ -56,7 +56,7 @@ public class RulesViewLabelProvider extends LabelProvider implements ITableLabel
 	public String getColumnText(Object element, int columnIndex) {
 		Rule rule = (Rule)element;
 		
-		RuleStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getRuleKey());
+		RuleStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getKey());
 		
 		switch (columnIndex) {
 		case 0:

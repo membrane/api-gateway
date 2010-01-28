@@ -56,7 +56,7 @@ public class RuleStatisticsLabelProvider extends LabelProvider implements ITable
 	public String getColumnText(Object element, int columnIndex) {
 		Rule rule = (Rule)element;
 		
-		RuleStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getRuleKey());
+		RuleStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getKey());
 		String min = (statistics.getMin() < 0) ? "" : "" +statistics.getMin(); 
 		String max = (statistics.getMax() < 0) ? "" : "" +statistics.getMax(); 
 		String avg = (statistics.getAvg() < 0) ? "" : nf.format(statistics.getAvg()); 

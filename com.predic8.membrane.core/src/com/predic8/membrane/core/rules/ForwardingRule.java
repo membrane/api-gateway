@@ -35,7 +35,7 @@ public class ForwardingRule extends AbstractRule implements Rule {
 	}
 
 	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, String targetPort) {
-		this.ruleKey = ruleKey;
+		this.key = ruleKey;
 		this.targetHost = targetHost;
 		this.targetPort = targetPort;
 	}
@@ -71,7 +71,7 @@ public class ForwardingRule extends AbstractRule implements Rule {
 
 		String method = token.getAttributeValue("", "method");
 
-		ruleKey = new ForwardingRuleKey(host, method, ".*", port);
+		key = new ForwardingRuleKey(host, method, ".*", port);
 		
 	}
 
@@ -87,10 +87,10 @@ public class ForwardingRule extends AbstractRule implements Rule {
 		}  
 		
 		if (Path.ELEMENT_NAME.equals(child)) {
-			ruleKey.setUsePathPattern(true);
+			key.setUsePathPattern(true);
 			Path p = (Path)(new Path()).parse(token);
-			ruleKey.setPathRegExp(p.isRegExp());
-			ruleKey.setPath(p.getValue());
+			key.setPathRegExp(p.isRegExp());
+			key.setPath(p.getValue());
 		}
 
 	}
@@ -106,11 +106,11 @@ public class ForwardingRule extends AbstractRule implements Rule {
 
 		out.writeAttribute("name", name);
 
-		out.writeAttribute("host", ruleKey.getHost());
+		out.writeAttribute("host", key.getHost());
 		
-		out.writeAttribute("port", ""+ruleKey.getPort());
+		out.writeAttribute("port", ""+key.getPort());
 		
-		out.writeAttribute("method", ruleKey.getMethod());
+		out.writeAttribute("method", key.getMethod());
 		
 		TargetPort childTargetPort = new TargetPort();
 		childTargetPort.setValue(targetPort);
@@ -120,10 +120,10 @@ public class ForwardingRule extends AbstractRule implements Rule {
 		childTargetHost.setValue(targetHost);
 		childTargetHost.write(out);
 		
-		if (ruleKey.isUsePathPattern()) {
+		if (key.isUsePathPattern()) {
 			Path path = new Path();
-			path.setValue(ruleKey.getPath());
-			path.setRegExp(ruleKey.isPathRegExp());
+			path.setValue(key.getPath());
+			path.setRegExp(key.isPathRegExp());
 			path.write(out);
 		}
 	

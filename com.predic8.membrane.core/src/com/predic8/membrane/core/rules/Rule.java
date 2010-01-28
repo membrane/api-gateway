@@ -17,9 +17,9 @@ public interface Rule {
 	
 	public boolean isBlockResponse();
 	
-	public RuleKey getRuleKey();
+	public RuleKey getKey();
 	
-	public void setRuleKey(RuleKey ruleKey);
+	public void setKey(RuleKey ruleKey);
 	
 	public void write(XMLStreamWriter out) throws XMLStreamException;
 	

@@ -60,8 +60,8 @@ public class RuleFilterComposite extends AbstractFilterComposite {
 			final Button bt = new Button(composite, SWT.CHECK);
 			bt.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 			bt.setText(rule.toString());
-			bt.setData(rule.getRuleKey());
-			if (filter.getDisplayedItems().contains(rule.getRuleKey())) {
+			bt.setData(rule.getKey());
+			if (filter.getDisplayedItems().contains(rule.getKey())) {
 				bt.setSelection(true);
 			}
 

@@ -64,7 +64,7 @@ public class AddRuleWizard extends Wizard {
 					
 					ForwardingRuleKey ruleKey = new ForwardingRuleKey("*", "*", ".*", listenPort);
 					
-					if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
+					if (Router.getInstance().getRuleManager().exists(ruleKey)) {
 						openWarningDialog("You've entered a duplicated rule key.");
 						return false;
 					}
@@ -78,39 +78,39 @@ public class AddRuleWizard extends Wizard {
 					
 					String listenHost = advancedRuleConfigPage.getListenHost();
 					String method = advancedRuleConfigPage.getMethod();
-					System.out.println("method set is: " + method);
+					
 					boolean usePattern = advancedRuleConfigPage.getUsePathPatter();
-					ForwardingRuleKey ruleKey = null;
+					ForwardingRuleKey key = null;
 					if (usePattern) {
-						ruleKey = new ForwardingRuleKey(listenHost, method, advancedRuleConfigPage.getPathPattern(), listenPort);
-						ruleKey.setUsePathPattern(true);
-						ruleKey.setPathRegExp(advancedRuleConfigPage.isRegExp());
+						key = new ForwardingRuleKey(listenHost, method, advancedRuleConfigPage.getPathPattern(), listenPort);
+						key.setUsePathPattern(true);
+						key.setPathRegExp(advancedRuleConfigPage.isRegExp());
 					} else {
-						ruleKey = new ForwardingRuleKey(listenHost, method, ".*", listenPort);
+						key = new ForwardingRuleKey(listenHost, method, ".*", listenPort);
 					}
 
-					if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
+					if (Router.getInstance().getRuleManager().exists(key)) {
 						openWarningDialog("You've entered a duplicated rule key.");
 						return false;
 					}
 					
-					createForwardingRule(ruleKey);
-					((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
+					createForwardingRule(key);
+					((HttpTransport) Router.getInstance().getTransport()).openPort(key.getPort());
 					return true;
 				}
 			} else if (getContainer().getCurrentPage().getName().equals(ProxyRuleConfigurationPage.PAGE_NAME)) {
 				int listenPort = Integer.parseInt(proxyRuleConfigPage.getListenPort());
 				
-				ProxyRuleKey ruleKey = new ProxyRuleKey(listenPort);
-				if (Router.getInstance().getRuleManager().getRule(ruleKey) != null) {
+				ProxyRuleKey key = new ProxyRuleKey(listenPort);
+				if (Router.getInstance().getRuleManager().exists(key)) {
 					openWarningDialog("You've entered a duplicated rule key.");
 					return false;
 				}
 				
-				ProxyRule rule = new ProxyRule(ruleKey);
+				ProxyRule rule = new ProxyRule(key);
 				
 				Router.getInstance().getRuleManager().addRuleIfNew(rule);
-				((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
+				((HttpTransport) Router.getInstance().getTransport()).openPort(key.getPort());
 				return true;
 			}
 		} catch (Exception ex) {
@@ -124,7 +124,7 @@ public class AddRuleWizard extends Wizard {
 		ForwardingRule rule = new ForwardingRule();
 		rule.setTargetHost(targetHostConfigPage.getTargetHost());
 		rule.setTargetPort(targetHostConfigPage.getTargetPort());
-		rule.setRuleKey(ruleKey);
+		rule.setKey(ruleKey);
 
 		Router.getInstance().getRuleManager().addRuleIfNew(rule);
 	}

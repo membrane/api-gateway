@@ -16,17 +16,16 @@ package com.predic8.membrane.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.model.IExchangesViewListener;
+import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 
@@ -36,7 +35,7 @@ public class RuleManager {
 
 	private ExchangeStore exchangeStore = new ForgetfulExchangeStore();
 	
-	private Map<RuleKey, Rule> rules = new HashMap<RuleKey, Rule>();
+	private List<Rule> rules = new Vector<Rule>();
 	private Set<IRuleChangeListener> tableViewerListeners = new HashSet<IRuleChangeListener>();
 
 	private String defaultTargetHost = "localhost";
@@ -96,23 +95,21 @@ public class RuleManager {
 	}
 
 	public boolean isAnyRuleWithPort(int port) {
-		Set<RuleKey> ruleKeys = rules.keySet();
-		for (RuleKey key : ruleKeys) {
-			if (key.getPort() == port) {
+		for (Rule rule : rules) {
+			if (rule.getKey().getPort() == port) {
 				return true;
 			}
 		}
 		return false;
 	}
-
+	
 	public synchronized void addRuleIfNew(Rule rule) {
-
-		if (rules.containsKey(rule.getRuleKey()))
+		if (exists(rule.getKey()))
 			return;
 		
 		rule.setBlockRequest(defaultBlockRequest);
 		rule.setBlockResponse(defaultBlockResponse);
-		rules.put(rule.getRuleKey(), rule);
+		rules.add(rule);
 
 		for (IRuleChangeListener listener : tableViewerListeners) {
 			listener.addRule(rule);
@@ -121,12 +118,24 @@ public class RuleManager {
 		exchangeStore.notifyListenersOnRuleAdd(rule);
 	}
 
-	public Set<RuleKey> getRuleKeys() {
-		return rules.keySet();
+	public boolean exists(RuleKey key) {
+		for (Rule r : rules) {
+			if (r.getKey().equals(key))
+				return true;
+		}
+		return false;
+	}
+	
+	private Rule getRule(RuleKey key) {
+		for (Rule r : rules) {
+			if (r.getKey().equals(key))
+				return r;
+		}
+		throw new IllegalArgumentException("There is no rule with this key");
 	}
 
-	public Collection<Rule> getRules() {
-		return rules.values();
+	public List<Rule> getRules() {
+		return rules;
 	}
 
 	public void ruleChanged(Rule rule) {
@@ -136,32 +145,28 @@ public class RuleManager {
 		exchangeStore.refreshAllTreeViewers();
 	}
 
-	public Rule getRule(RuleKey ruleKey) {
-		return rules.get(ruleKey);
-	}
-
 	public Rule getMatchingRule(RuleKey ruleKey) {
-		if (rules.get(ruleKey) != null)
-			return rules.get(ruleKey);
+		if (exists(ruleKey))
+			return getRule(ruleKey);
 
-		for (RuleKey key : rules.keySet()) {
-			if (!key.getHost().equals(ruleKey.getHost()) && !key.isHostWildcard())
+		for (Rule rule : rules) {
+			if (!rule.getKey().getHost().equals(ruleKey.getHost()) && !rule.getKey().isHostWildcard())
 				continue;
-			if (key.getPort() != ruleKey.getPort())
+			if (rule.getKey().getPort() != ruleKey.getPort())
 				continue;
-			if (!key.getMethod().equals(ruleKey.getMethod()) && !key.isMethodWildcard())
+			if (!rule.getKey().getMethod().equals(ruleKey.getMethod()) && !rule.getKey().isMethodWildcard())
 				continue;
 
-			if (!key.isUsePathPattern()) 
-				return rules.get(key);
+			if (!rule.getKey().isUsePathPattern()) 
+				return rule;
 			
-			if (key.isPathRegExp()) {
-				Pattern p = Pattern.compile(key.getPath());
+			if (rule.getKey().isPathRegExp()) {
+				Pattern p = Pattern.compile(rule.getKey().getPath());
 				if (p.matcher(ruleKey.getPath()).find())
-					return rules.get(key);
+					return rule;
 			} else {
-				if (ruleKey.getPath().indexOf(key.getPath()) >=0 )
-					return rules.get(key);
+				if (ruleKey.getPath().indexOf(rule.getKey().getPath()) >=0 )
+					return rule;
 			}
 		}
 		return null;
@@ -188,7 +193,7 @@ public class RuleManager {
 
 	public synchronized void removeRule(Rule rule) {
 		exchangeStore.removeAllExchanges(rule);
-		rules.remove(rule.getRuleKey());
+		rules.remove(rule.getKey());
 
 		for (IRuleChangeListener listener : tableViewerListeners) {
 			listener.removeRule(rule);
@@ -220,7 +225,7 @@ public class RuleManager {
 	public synchronized void removeRuleByPort(int port) {
 		Collection<Rule> rules = getRules();
 		for (Rule rule : rules) {
-			if (rule.getRuleKey().getPort() == port)
+			if (rule.getKey().getPort() == port)
 				removeRule(rule);
 		}
 	}

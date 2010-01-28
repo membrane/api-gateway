@@ -21,7 +21,7 @@ public class RulesFilter extends AbstractExchangesFilter {
 		if (showAll)
 			return true;
 		
-		return displayedItems.contains(exc.getRule().getRuleKey());
+		return displayedItems.contains(exc.getRule().getKey());
 	}
 
 }

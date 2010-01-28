@@ -10,7 +10,7 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 
 	protected String name = "";
 	
-	protected RuleKey ruleKey;
+	protected RuleKey key;
 	
 	protected boolean blockRequest;
 	protected boolean blockResponse;
@@ -22,7 +22,7 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 	}
 	
 	public AbstractRule(RuleKey ruleKey) {
-		this.ruleKey = ruleKey;
+		this.key = ruleKey;
 	}
 	
 	public List<Interceptor> getInterceptors() {
@@ -37,8 +37,8 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 		return name;
 	}
 
-	public RuleKey getRuleKey() {
-		return ruleKey;
+	public RuleKey getKey() {
+		return key;
 	}
 
 	public boolean isBlockRequest() {
@@ -56,15 +56,15 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 
 	}
 
-	public void setRuleKey(RuleKey ruleKey) {
-		this.ruleKey = ruleKey;
+	public void setKey(RuleKey ruleKey) {
+		this.key = ruleKey;
 	}
 	
 	@Override
 	public String toString() {
 		if (!"".equals(name))
 			return name;
-		return "" + getRuleKey().toString();
+		return "" + getKey().toString();
 	}
 	
 	public void setBlockRequest(boolean blockStatus) {

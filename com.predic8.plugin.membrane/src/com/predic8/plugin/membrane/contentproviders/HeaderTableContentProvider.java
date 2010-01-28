@@ -15,7 +15,6 @@
 package com.predic8.plugin.membrane.contentproviders;
 
 import org.eclipse.jface.viewers.IStructuredContentProvider;
-import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.Viewer;
 
 import com.predic8.membrane.core.http.Header;
@@ -24,9 +23,6 @@ import com.predic8.membrane.core.http.Message;
 
 public class HeaderTableContentProvider implements IStructuredContentProvider {
 
-	public HeaderTableContentProvider(TableViewer tableViewer){
-		
-	}
 	public Object[] getElements(Object inputElement) {
 		Object[] headers;
 		if (inputElement instanceof Message) {
@@ -34,7 +30,8 @@ public class HeaderTableContentProvider implements IStructuredContentProvider {
 			Header header = msg.getHeader();
 			headers = header.getAllHeaderFields();	 
 		} else
-			headers= new Object[0];
+			headers = new Object[0];
+		
 		Object[] ret = new Object[headers.length];
 		for(int i = 0; i < headers.length; i++){
 			ret[i] = headers[i];

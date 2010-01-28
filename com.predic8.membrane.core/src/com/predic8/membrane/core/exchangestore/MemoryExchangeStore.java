@@ -42,12 +42,12 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 			return;
 		}
 
-		if (ruleExchangeMap.containsKey(exchange.getRule().getRuleKey())) {
-			ruleExchangeMap.get(exchange.getRule().getRuleKey()).add(exchange);
+		if (ruleExchangeMap.containsKey(exchange.getRule().getKey())) {
+			ruleExchangeMap.get(exchange.getRule().getKey()).add(exchange);
 		} else {
 			List<Exchange> list = new Vector<Exchange>();
 			list.add(exchange);
-			ruleExchangeMap.put(exchange.getRule().getRuleKey(), list);
+			ruleExchangeMap.put(exchange.getRule().getKey(), list);
 		}
 		
 		totalList.add(exchange);
@@ -59,13 +59,13 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	public void remove(Exchange exchange) {
-		if (!ruleExchangeMap.containsKey(exchange.getRule().getRuleKey())) {
+		if (!ruleExchangeMap.containsKey(exchange.getRule().getKey())) {
 			return;
 		}
 
-		ruleExchangeMap.get(exchange.getRule().getRuleKey()).remove(exchange);
-		if (ruleExchangeMap.get(exchange.getRule().getRuleKey()).size() == 0) {
-			ruleExchangeMap.remove(exchange.getRule().getRuleKey());
+		ruleExchangeMap.get(exchange.getRule().getKey()).remove(exchange);
+		if (ruleExchangeMap.get(exchange.getRule().getKey()).size() == 0) {
+			ruleExchangeMap.remove(exchange.getRule().getKey());
 		}
 		exchange.informExchangeViewerOnRemoval();
 		totalList.remove(exchange);
@@ -76,13 +76,13 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	}
 	
 	private void removeWithoutNotify(Exchange exchange) {
-		if (!ruleExchangeMap.containsKey(exchange.getRule().getRuleKey())) {
+		if (!ruleExchangeMap.containsKey(exchange.getRule().getKey())) {
 			return;
 		}
 
-		ruleExchangeMap.get(exchange.getRule().getRuleKey()).remove(exchange);
-		if (ruleExchangeMap.get(exchange.getRule().getRuleKey()).size() == 0) {
-			ruleExchangeMap.remove(exchange.getRule().getRuleKey());
+		ruleExchangeMap.get(exchange.getRule().getKey()).remove(exchange);
+		if (ruleExchangeMap.get(exchange.getRule().getKey()).size() == 0) {
+			ruleExchangeMap.remove(exchange.getRule().getKey());
 		}
 		exchange.informExchangeViewerOnRemoval();
 		totalList.remove(exchange);
@@ -91,12 +91,12 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 
 
 	public void removeAllExchanges(Rule rule) {
-		if (rule == null || rule.getRuleKey() == null) {
+		if (rule == null || rule.getKey() == null) {
 			return;
 		}
-		Exchange[] exchanges = getExchanges(rule.getRuleKey());
+		Exchange[] exchanges = getExchanges(rule.getKey());
 		
-		ruleExchangeMap.remove(rule.getRuleKey());
+		ruleExchangeMap.remove(rule.getKey());
 		totalList.removeAll(Arrays.asList(exchanges));
 		for (IExchangesViewListener listener : treeViewerListeners) {
 			listener.removeExchanges(rule, exchanges);

@@ -34,13 +34,13 @@ public class RuleTableLabelProvider extends LabelProvider implements ITableLabel
 			ForwardingRule rule = (ForwardingRule)element;
 			switch (columnIndex) {
 			case 0:
-				return rule.getRuleKey().getHost();
+				return rule.getKey().getHost();
 			case 1:
-				return rule.getRuleKey().getPort() + "";
+				return rule.getKey().getPort() + "";
 			case 2:
-				return rule.getRuleKey().getMethod();
+				return rule.getKey().getMethod();
 			case 3:
-				return rule.getRuleKey().getPath();
+				return rule.getKey().getPath();
 			case 4:
 				return rule.getTargetHost();
 			case 5:
@@ -52,13 +52,13 @@ public class RuleTableLabelProvider extends LabelProvider implements ITableLabel
 			ProxyRule rule = (ProxyRule)element;
 			switch (columnIndex) {
 			case 0:
-				return rule.getRuleKey().getHost();
+				return rule.getKey().getHost();
 			case 1:
-				return rule.getRuleKey().getPort() + "";
+				return rule.getKey().getPort() + "";
 			case 2:
-				return rule.getRuleKey().getMethod();
+				return rule.getKey().getMethod();
 			case 3:
-				return rule.getRuleKey().getPath();
+				return rule.getKey().getPath();
 			case 4:
 				return "";
 			case 5:

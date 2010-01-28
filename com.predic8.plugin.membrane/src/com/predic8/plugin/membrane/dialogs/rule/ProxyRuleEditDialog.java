@@ -74,7 +74,7 @@ public class ProxyRuleEditDialog extends RuleEditDialog {
 	@Override
 	public void setInput(Rule rule) {
 		super.setInput(rule);
-		ruleKeyComposite.setInput(rule.getRuleKey());
+		ruleKeyComposite.setInput(rule.getKey());
 	}
 
 	@Override
@@ -82,14 +82,14 @@ public class ProxyRuleEditDialog extends RuleEditDialog {
 		try {
 			int port = Integer.parseInt(ruleKeyComposite.getListenPort());
 			ProxyRuleKey key = new ProxyRuleKey(port);
-			if (key.equals(rule.getRuleKey())) {
+			if (key.equals(rule.getKey())) {
 				rule.setName(generalInfoComposite.getRuleName());
 				rule.setInterceptors(interceptorsComposite.getInterceptors());
 				Router.getInstance().getRuleManager().ruleChanged(rule);
 				return;
 			}
 			
-			if (Router.getInstance().getRuleManager().getRule(key) != null) {
+			if (Router.getInstance().getRuleManager().exists(key)) {
 				openErrorDialog("Illeagal input! Your rule key conflict with another existent rule.");
 				return;
 			}
@@ -105,15 +105,15 @@ public class ProxyRuleEditDialog extends RuleEditDialog {
 					}
 				}
 				Router.getInstance().getRuleManager().removeRule(rule);
-				if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getRuleKey().getPort()) && (rule.getRuleKey().getPort() != key.getPort())) {
+				if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getKey().getPort()) && (rule.getKey().getPort() != key.getPort())) {
 					try {
-						((HttpTransport) Router.getInstance().getTransport()).closePort(rule.getRuleKey().getPort());
+						((HttpTransport) Router.getInstance().getTransport()).closePort(rule.getKey().getPort());
 					} catch (IOException e2) {
-						openErrorDialog("Failed to close the obsolete port: " + rule.getRuleKey().getPort());
+						openErrorDialog("Failed to close the obsolete port: " + rule.getKey().getPort());
 					}
 				}
 				rule.setName(generalInfoComposite.getRuleName());
-				rule.setRuleKey(key);
+				rule.setKey(key);
 				rule.setInterceptors(interceptorsComposite.getInterceptors());
 				Router.getInstance().getRuleManager().addRuleIfNew(rule);
 				Router.getInstance().getRuleManager().ruleChanged(rule);

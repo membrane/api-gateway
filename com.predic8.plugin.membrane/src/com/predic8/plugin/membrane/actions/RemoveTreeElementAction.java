@@ -51,9 +51,9 @@ public class RemoveTreeElementAction extends Action {
 			Router.getInstance().getRuleManager().removeRule(rule);
 			
 			treeViewer.setSelection(null);
-			if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getRuleKey().getPort())) {
+			if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getKey().getPort())) {
 				try {
-					((HttpTransport) Router.getInstance().getTransport()).closePort(rule.getRuleKey().getPort());
+					((HttpTransport) Router.getInstance().getTransport()).closePort(rule.getKey().getPort());
 				} catch (IOException e2) {
 					e2.printStackTrace();
 				}

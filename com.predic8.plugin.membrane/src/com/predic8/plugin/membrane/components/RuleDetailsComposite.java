@@ -219,10 +219,10 @@ public class RuleDetailsComposite extends Composite {
 		hostCharacters = new char[targetHost.length()];
 		
 		labelTargetPort.setText("Target Port:   " + rule.getTargetPort());
-		labelListenPort.setText("Listen Port:   " + rule.getRuleKey().getPort());
-		labelMethod.setText("Method:   " + rule.getRuleKey().getMethod());
-		labelPath.setText("Path:   " + rule.getRuleKey().getPath());
-		labelHost.setText("Host:   " + rule.getRuleKey().getHost());
+		labelListenPort.setText("Listen Port:   " + rule.getKey().getPort());
+		labelMethod.setText("Method:   " + rule.getKey().getMethod());
+		labelPath.setText("Path:   " + rule.getKey().getPath());
+		labelHost.setText("Host:   " + rule.getKey().getHost());
 	}
 
 	private void displayProxyRuleDetails(ProxyRule rule) {
@@ -230,7 +230,7 @@ public class RuleDetailsComposite extends Composite {
 		labelTargetHost.setText("");
 		targetHost = "";
 		labelTargetPort.setText("");
-		labelListenPort.setText("Listen Port:   " + rule.getRuleKey().getPort());
+		labelListenPort.setText("Listen Port:   " + rule.getKey().getPort());
 		labelMethod.setText("");
 		labelPath.setText("");
 		labelHost.setText("");

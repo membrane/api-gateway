@@ -78,11 +78,11 @@ public class ConfigurationManager {
 			router.getRuleManager().removeAllRules();
 			for (Rule rule : rules) {
 				try {
-					if (!((HttpTransport) router.getTransport()).isAnyThreadListeningAt(rule.getRuleKey().getPort())) {
-						((HttpTransport) router.getTransport()).addPort(rule.getRuleKey().getPort());
+					if (!((HttpTransport) router.getTransport()).isAnyThreadListeningAt(rule.getKey().getPort())) {
+						((HttpTransport) router.getTransport()).addPort(rule.getKey().getPort());
 					}
 					router.getRuleManager().addRuleIfNew(rule);
-					System.out.println("Added rule " +  rule + " on port " + rule.getRuleKey().getPort());
+					System.out.println("Added rule " +  rule + " on port " + rule.getKey().getPort());
 				} catch (Exception e1) {
 					throw e1;
 				}

@@ -50,7 +50,7 @@ public class WSDLInterceptor extends AbstractInterceptor {
 		log.debug("Changing endpoint address in WSDL");
 			
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		new Relocator(stream, getSourceHost(exchange), exchange.getRule().getRuleKey().getPort() ).relocate(new ByteArrayInputStream(exchange.getResponse().getBody().getContent()));
+		new Relocator(stream, getSourceHost(exchange), exchange.getRule().getKey().getPort() ).relocate(new ByteArrayInputStream(exchange.getResponse().getBody().getContent()));
 		exchange.getResponse().setBodyContent(stream.toByteArray());
 		return Outcome.CONTINUE; 
 	}
