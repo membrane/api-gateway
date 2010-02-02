@@ -28,17 +28,17 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 
 import com.predic8.membrane.core.http.Message;
-import com.predic8.plugin.membrane.components.BodyTabComposite;
-import com.predic8.plugin.membrane.components.CSSTabComposite;
-import com.predic8.plugin.membrane.components.ErrorTabComposite;
-import com.predic8.plugin.membrane.components.HTMLTabComposite;
-import com.predic8.plugin.membrane.components.HeaderTabComposite;
-import com.predic8.plugin.membrane.components.ImageTabComposite;
-import com.predic8.plugin.membrane.components.JSONTabComposite;
-import com.predic8.plugin.membrane.components.JavaScriptTabComposite;
-import com.predic8.plugin.membrane.components.NullBodyTabComposite;
-import com.predic8.plugin.membrane.components.RawTabComposite;
-import com.predic8.plugin.membrane.components.SOAPTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.BodyTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.CSSTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.ErrorTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.HTMLTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.HeaderTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.ImageTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.JSONTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.JavaScriptTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.NullBodyTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.RawTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.SOAPTabComposite;
 import com.predic8.plugin.membrane.viewcomponents.BaseComp;
 
 public class MessageTabManager {

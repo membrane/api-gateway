@@ -12,19 +12,21 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.components;
+package com.predic8.plugin.membrane.listeners;
 
-import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.events.VerifyEvent;
+import org.eclipse.swt.events.VerifyListener;
 
-public class JSONTabComposite extends BodyTextTabComposite {
 
-	public static final String TAB_TITLE = "JSON";
-	
-	public JSONTabComposite(TabFolder parent) {
-		super(parent, TAB_TITLE);
+public class PortVerifyListener implements VerifyListener {
+
+	public PortVerifyListener() {
+		super();
 	}
 
-	
-	
-	
+	public void verifyText(VerifyEvent e) {
+		boolean check=e.text.matches("[\\-0-9]*");
+		e.doit=check;
+		
+	}
 }

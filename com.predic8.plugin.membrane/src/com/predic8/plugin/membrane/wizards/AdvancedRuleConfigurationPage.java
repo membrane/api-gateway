@@ -36,7 +36,7 @@ import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.http.HttpTransport;
-import com.predic8.plugin.membrane.components.PortVerifyListener;
+import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
 public class AdvancedRuleConfigurationPage extends WizardPage {
 

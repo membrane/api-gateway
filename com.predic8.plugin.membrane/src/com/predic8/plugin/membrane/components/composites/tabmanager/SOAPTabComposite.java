@@ -12,53 +12,50 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.components;
+package com.predic8.plugin.membrane.components.composites.tabmanager;
+
+import java.io.ByteArrayInputStream;
 
 import org.eclipse.swt.widgets.TabFolder;
 
-public abstract class BodyTabComposite extends AbstractTabComposite {
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.util.TextUtil;
 
-	protected boolean bodyModified;
+public class SOAPTabComposite extends BodyTextTabComposite {
+
+	public static final String TAB_TITLE = "SOAP";
 	
-	public BodyTabComposite(TabFolder parent) {
-		super(parent);
-	}
-	
-	public BodyTabComposite(TabFolder parent, String tabTitle) {
-		super(parent, tabTitle);
-	
+	public SOAPTabComposite(TabFolder parent) {
+		super(parent, TAB_TITLE);
 	}
 
-	public boolean isBodyModified() {
-		return bodyModified;
-	}
-	
-	public void setBodyModified(boolean status) {
-		bodyModified = status;
-	}
-	
 	public String getBodyText() {
-		return "";
+		return bodyText.getText();
 	}
 
 	public void setBodyTextEditable(boolean bool) {
-		
+		bodyText.setEditable(bool);
+	}
+
+	public void setTabTitle(String tabName) {
+		tabItem.setText(tabName);
 	}
 
 	public void setBodyText(String string) {
-	
+		bodyText.setText(string);
 	}
 	
 	public void beautify(byte[] content) {
-		
+		bodyText.setText(TextUtil.formatXML(new ByteArrayInputStream(content)));
+		bodyText.redraw();
 	}
 	
+	protected boolean isBeautifyBody() {
+		return Router.getInstance().getConfigurationManager().getConfiguration().getIndentMessage();
+	}
+	
+	@Override
 	public boolean isFormatSupported() {
-		return false;
-	}
-	
-	public boolean isSaveSupported() {
 		return true;
 	}
-	
 }

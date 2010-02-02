@@ -12,16 +12,33 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.components;
+package com.predic8.plugin.membrane.components.composites.tabmanager;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.TabFolder;
 
-public class HTMLTabComposite extends BodyTextTabComposite {
+import com.predic8.membrane.core.http.Message;
 
-	public static final String TAB_TITLE = "HTML";
+public class ImageTabComposite extends BodyTabComposite {
+
+	public static final String TAB_TITLE = "Image";
 	
-	public HTMLTabComposite(TabFolder parent) {
+	protected Label imageLabel;
+	
+	public ImageTabComposite(TabFolder parent) {
 		super(parent, TAB_TITLE);
+		imageLabel = new Label(this, SWT.BORDER);
+	}
+	
+	@Override
+	public void update(Message msg) {
+		if (msg == null)
+			return;
+		Image img = new Image(Display.getCurrent(), msg.getBodyAsStream());
+		imageLabel.setImage(img);
 	}
 
 }

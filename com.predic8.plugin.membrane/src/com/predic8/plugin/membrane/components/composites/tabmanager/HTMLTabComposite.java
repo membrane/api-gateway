@@ -12,21 +12,16 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.components;
+package com.predic8.plugin.membrane.components.composites.tabmanager;
 
-import org.eclipse.swt.events.VerifyEvent;
-import org.eclipse.swt.events.VerifyListener;
+import org.eclipse.swt.widgets.TabFolder;
 
+public class HTMLTabComposite extends BodyTextTabComposite {
 
-public class PortVerifyListener implements VerifyListener {
-
-	public PortVerifyListener() {
-		super();
+	public static final String TAB_TITLE = "HTML";
+	
+	public HTMLTabComposite(TabFolder parent) {
+		super(parent, TAB_TITLE);
 	}
 
-	public void verifyText(VerifyEvent e) {
-		boolean check=e.text.matches("[\\-0-9]*");
-		e.doit=check;
-		
-	}
 }

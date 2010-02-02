@@ -12,16 +12,20 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.components;
+package com.predic8.plugin.membrane.components.composites.tabmanager;
 
 import org.eclipse.swt.widgets.TabFolder;
 
-public class JavaScriptTabComposite extends BodyTextTabComposite {
 
-	public static final String TAB_TITLE = "JavaScript";
+public class JSONTabComposite extends BodyTextTabComposite {
+
+	public static final String TAB_TITLE = "JSON";
 	
-	public JavaScriptTabComposite(TabFolder parent) {
+	public JSONTabComposite(TabFolder parent) {
 		super(parent, TAB_TITLE);
 	}
+
+	
+	
 	
 }

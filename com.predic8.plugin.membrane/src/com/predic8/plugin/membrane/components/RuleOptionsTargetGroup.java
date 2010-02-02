@@ -25,6 +25,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
 public class RuleOptionsTargetGroup {
 

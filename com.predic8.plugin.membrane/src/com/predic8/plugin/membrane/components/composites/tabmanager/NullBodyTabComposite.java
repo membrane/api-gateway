@@ -12,16 +12,18 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.components;
+package com.predic8.plugin.membrane.components.composites.tabmanager;
 
 import org.eclipse.swt.widgets.TabFolder;
 
-public class CSSTabComposite extends BodyTextTabComposite {
 
-	public static final String TAB_TITLE = "CSS";
+public class NullBodyTabComposite extends BodyTabComposite {
+
+	public static final String TAB_TITLE = "";
 	
-	public CSSTabComposite(TabFolder parent) {
-		super(parent, TAB_TITLE);
+	public NullBodyTabComposite(TabFolder parent) {
+		super(parent);
+		setTabTitle(TAB_TITLE);
 	}
-	
+
 }

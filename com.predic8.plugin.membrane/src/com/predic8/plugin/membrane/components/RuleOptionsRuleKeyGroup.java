@@ -30,6 +30,7 @@ import org.eclipse.swt.widgets.Text;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
 public class RuleOptionsRuleKeyGroup {
 
