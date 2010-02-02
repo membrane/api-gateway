@@ -139,6 +139,7 @@ public class RulesView extends AbstractRulesView {
 				removeRuleAction.setSelectedRule(selectedRule);
 				editRuleAction.setSelectedRule(selectedRule);
 				removeAllExchangesAction.setSelectedRule(selectedRule);
+				showRuleDetailsAction.setSelectedRule(selectedRule);
 				controlsComposite.setSelectedRule(selectedRule);
 			}
 

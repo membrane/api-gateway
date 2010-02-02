@@ -65,7 +65,7 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesSt
 		renameRuleAction.setEnabled(false);
 		
 		
-		showRuleDetailsAction = new ShowRuleDetailsViewAction(tableViewer);
+		showRuleDetailsAction = new ShowRuleDetailsViewAction();
 		showRuleDetailsAction.setEnabled(false);
 	}
 	

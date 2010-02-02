@@ -15,8 +15,6 @@
 package com.predic8.plugin.membrane.actions.views;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.StructuredViewer;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
@@ -25,30 +23,27 @@ import com.predic8.plugin.membrane.views.RuleDetailsView;
 
 public class ShowRuleDetailsViewAction extends Action {
 
-	private StructuredViewer structuredViewer;
+	private Rule selectedRule;
 
-	public ShowRuleDetailsViewAction(StructuredViewer viewer) {
-		this.structuredViewer = viewer;
+	public ShowRuleDetailsViewAction() {
 		setText("Show Rule Details");
 		setId("Show Rule Details Action");
 	}
 
 	public void run() {
 
-		IStructuredSelection selection = (IStructuredSelection) structuredViewer.getSelection();
-		Object selectedItem = selection.getFirstElement();
-
-		if (selectedItem instanceof Rule) {
-			try {
-				IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-				page.showView(RuleDetailsView.VIEW_ID);
-				RuleDetailsView ruleView =  (RuleDetailsView)page.findView(RuleDetailsView.VIEW_ID);
-				ruleView.setRuleToDisplay((Rule) selectedItem);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
+		try {
+			IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+			page.showView(RuleDetailsView.VIEW_ID);
+			RuleDetailsView ruleView = (RuleDetailsView) page.findView(RuleDetailsView.VIEW_ID);
+			ruleView.setRuleToDisplay(selectedRule);
+		} catch (Exception ex) {
+			ex.printStackTrace();
 		}
+	}
 
+	public void setSelectedRule(Rule selectedRule) {
+		this.selectedRule = selectedRule;
 	}
 
 }

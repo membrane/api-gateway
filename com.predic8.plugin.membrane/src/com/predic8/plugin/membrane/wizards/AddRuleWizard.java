@@ -60,9 +60,7 @@ public class AddRuleWizard extends Wizard {
 			if (getContainer().getCurrentPage().getName().equals(TargetHostConfigurationPage.PAGE_NAME)) {
 				
 				if (targetHostConfigPage.getPreviousPage().getName().equals(ListenPortConfigurationPage.PAGE_NAME)) {
-					int listenPort = Integer.parseInt(listenPortConfigPage.getListenPort());
-					
-					ForwardingRuleKey ruleKey = new ForwardingRuleKey("*", "*", ".*", listenPort);
+					ForwardingRuleKey ruleKey = new ForwardingRuleKey("*", "*", ".*", Integer.parseInt(listenPortConfigPage.getListenPort()));
 					
 					if (Router.getInstance().getRuleManager().exists(ruleKey)) {
 						openWarningDialog("You've entered a duplicated rule key.");
