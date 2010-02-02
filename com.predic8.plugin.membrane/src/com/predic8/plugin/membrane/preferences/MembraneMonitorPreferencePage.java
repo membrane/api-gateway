@@ -28,8 +28,6 @@ public class MembraneMonitorPreferencePage extends PreferencePage implements
 
 	public static final String PAGE_ID = "com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage";
 	
-	//private Text textPath;
-	
 	public MembraneMonitorPreferencePage() {
 		
 	}

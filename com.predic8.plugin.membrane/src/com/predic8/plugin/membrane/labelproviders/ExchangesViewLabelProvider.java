@@ -157,10 +157,10 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 	private String getContentType(HttpExchange exchange) {
 		String contentType = (String) exchange.getRequest().getHeader().getContentType();
 		if (contentType == null)
-			contentType = "";
+			return "";
 		int index = contentType.indexOf(";");
 		if (index > 0) {
-			contentType = contentType.substring(0, index);
+			return contentType.substring(0, index);
 		}
 		return contentType;
 	}

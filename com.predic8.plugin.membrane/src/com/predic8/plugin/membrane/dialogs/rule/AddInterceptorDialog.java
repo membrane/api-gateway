@@ -61,6 +61,26 @@ public class AddInterceptorDialog extends Dialog {
 	
 	@Override
 	protected Control createDialogArea(Composite parent) {
+		Composite container = createTopContainer(parent);
+		
+		Label label = new Label(container, SWT.NONE);
+		label.setText("List of currently available interceptors.");
+		
+		new Label(container, SWT.NONE).setText("  ");
+		
+		tableViewer = new TableViewer(container, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+		createColumns(tableViewer);
+		tableViewer.setContentProvider(new AddInterceptorTableViewerContentProvider());
+		tableViewer.setLabelProvider(new AddInterceptorTableViewerLabelProvider());
+		
+		tableViewer.getTable().setLayoutData(new GridData(GridData.FILL_BOTH));
+		
+		tableViewer.setInput(Router.getInstance().getInterceptors());
+		
+		return container;
+	}
+
+	private Composite createTopContainer(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.marginTop = 20;
@@ -68,23 +88,6 @@ public class AddInterceptorDialog extends Dialog {
 		gridLayout.marginBottom = 20;
 		gridLayout.marginRight = 20;
 		container.setLayout(gridLayout);
-		
-		Label label = new Label(container, SWT.NONE);
-		label.setText("List of currently available interceptors.");
-		
-		Label lbDummy = new Label(container, SWT.NONE);
-		lbDummy.setText("  ");
-		
-		tableViewer = new TableViewer(container, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
-		createColumns(tableViewer);
-		tableViewer.setContentProvider(new AddInterceptorTableViewerContentProvider());
-		tableViewer.setLabelProvider(new AddInterceptorTableViewerLabelProvider());
-		
-		GridData gridData4List = new GridData(GridData.FILL_BOTH);
-		tableViewer.getTable().setLayoutData(gridData4List);
-		
-		tableViewer.setInput(Router.getInstance().getInterceptors());
-		
 		return container;
 	}
 	

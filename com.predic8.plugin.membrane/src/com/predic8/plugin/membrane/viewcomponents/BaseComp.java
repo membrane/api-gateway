@@ -33,15 +33,19 @@ public abstract class BaseComp extends Composite {
 	public BaseComp(Composite parent, int style, IBaseCompositeHost host) {
 		super(parent, style);
 		this.compositeHost = host;
-		GridLayout grid = new GridLayout();
-		grid.verticalSpacing = 1;
-		grid.marginWidth = 0;
-		grid.marginHeight = 0;
-		grid.horizontalSpacing = 1;
-		grid.numColumns = 2;
-		setLayout(grid);
+		setLayout(createLayout());
 
 		tabManager = new MessageTabManager(this);
+	}
+
+	private GridLayout createLayout() {
+		GridLayout layout = new GridLayout();
+		layout.verticalSpacing = 1;
+		layout.marginWidth = 0;
+		layout.marginHeight = 0;
+		layout.horizontalSpacing = 1;
+		layout.numColumns = 2;
+		return layout;
 	}
 
 	public void continuePressed() {

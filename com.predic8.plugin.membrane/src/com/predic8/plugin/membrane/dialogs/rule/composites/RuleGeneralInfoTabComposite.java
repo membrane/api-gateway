@@ -34,8 +34,7 @@ public class RuleGeneralInfoTabComposite extends Composite {
 		gridLayout.marginRight = 20;
 		setLayout(gridLayout);
 		
-		Label nameLabel = new Label(this, SWT.NONE);
-		nameLabel.setText("Rule Name: ");
+		new Label(this, SWT.NONE).setText("Rule Name: ");
 		
 		textRuleName = new Text(this, SWT.BORDER);
 		GridData gridData4NameText = new GridData();
