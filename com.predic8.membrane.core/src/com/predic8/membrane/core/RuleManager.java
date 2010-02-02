@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.model.IExchangesViewListener;
+import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -132,13 +132,19 @@ public class RuleManager {
 		if (index <= 0 )
 			return;
 		Collections.swap(rules, index, index - 1);
+		for (IRuleChangeListener listener : listeners) {
+			listener.rulePositionsChanged();
+		}
 	}
 	
 	public void ruleDown(Rule rule) {
 		int index = rules.indexOf(rule);
-		if (index < 0 || index == rules.size() - 1 )
+		if (index < 0 || index == (rules.size() - 1) )
 			return;
 		Collections.swap(rules, index, index + 1);
+		for (IRuleChangeListener listener : listeners) {
+			listener.rulePositionsChanged();
+		}
 	}
 	
 	public void ruleChanged(Rule rule) {
@@ -175,22 +181,22 @@ public class RuleManager {
 		return null;
 	}
 
-	public void addTableViewerListener(IRuleChangeListener viewer) {
+	public void addRuleChangeListener(IRuleChangeListener viewer) {
 		listeners.add(viewer);
 
 	}
 
-	public void removeTableViewerListener(IRuleChangeListener viewer) {
+	public void removeRuleChangeListener(IRuleChangeListener viewer) {
 		listeners.remove(viewer);
 
 	}
 
-	public void addTreeViewerListener(IExchangesViewListener viewer) {
+	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
 		exchangeStore.addExchangesViewListener(viewer);
 
 	}
 
-	public void removeTreeViewerListener(IExchangesViewListener viewer) {
+	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
 		exchangeStore.removeExchangesViewListener(viewer);
 	}
 

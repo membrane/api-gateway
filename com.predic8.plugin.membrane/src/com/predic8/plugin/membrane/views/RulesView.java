@@ -26,40 +26,26 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TextCellEditor;
-import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
+import com.predic8.plugin.membrane.components.composites.RulesViewControlsComposite;
 import com.predic8.plugin.membrane.contentproviders.RulesViewContentProvider;
 import com.predic8.plugin.membrane.labelproviders.RulesViewLabelProvider;
 import com.predic8.plugin.membrane.labelproviders.TableHeaderLabelProvider;
-import com.predic8.plugin.membrane.resources.ImageKeys;
-import com.predic8.plugin.membrane.wizards.AddRuleWizard;
 
 public class RulesView extends AbstractRulesView {
 
 	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.RulesView";
 
-	private Button btEdit;
-	
-	private Button btRemove;
-	
-	private Button btUp, btDown;
-
-	private Rule selectedRule;
+	private RulesViewControlsComposite controlsComposite;
 	
 	@Override
 	public void createPartControl(Composite parent) {
@@ -75,53 +61,14 @@ public class RulesView extends AbstractRulesView {
 
 		createTableViewer(composite);	
 		
-		Composite controlsComposite = createControlsComposite(composite);
-		
-		addControlsToComposite(controlsComposite);
+		controlsComposite = new RulesViewControlsComposite(composite);
 		
 		createActions();
 		addTableMenu();
 		
 		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
+		Router.getInstance().getRuleManager().addRuleChangeListener(this);
 		setInputForTable(Router.getInstance().getRuleManager());
-	}
-
-	private void addControlsToComposite(Composite composite) {
-		createAddButton(composite);
-		btEdit = createEditButton(composite);
-		btRemove = createRemoveButton(composite);
-		btUp = createUpButton(composite);
-		btDown = createDownButton(composite);
-		new Label(composite, SWT.NONE).setText(" ");
-		new Label(composite, SWT.NONE).setText(" ");
-		new Label(composite, SWT.NONE).setText(" ");
-		new Label(composite, SWT.NONE).setText(" ");
-	}
-
-	private Composite createControlsComposite(Composite parent) {
-		Composite controls = new Composite(parent, SWT.NONE);
-		RowLayout rowLayout = new RowLayout();
-		rowLayout.type = SWT.VERTICAL;
-		rowLayout.spacing = 15;
-		rowLayout.fill = true;
-		controls.setLayout(rowLayout);
-		return controls;
-	}
-	
-	private Button createAddButton(Composite composite) {
-		Button bt = new Button(composite, SWT.PUSH);
-		bt.setImage(MembraneUIPlugin.getDefault().getImageRegistry().get(ImageKeys.IMAGE_ADD_RULE));
-		bt.setText("Add");
-		bt.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				WizardDialog wizardDialog = new WizardDialog(Display.getCurrent().getActiveShell(), new AddRuleWizard());
-				wizardDialog.create();
-				wizardDialog.open();
-			}
-
-		});
-		return bt;
 	}
 
 	private void createTableViewer(Composite composite) {
@@ -168,23 +115,24 @@ public class RulesView extends AbstractRulesView {
 			public void selectionChanged(SelectionChangedEvent event) {
 				IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
 				if (selection == null || selection.isEmpty()) {
-					enableButtonsOnSelection(false);
+					controlsComposite.enableDependentButtons(false);
 					return;
 				}
-				enableButtonsOnSelection(true);
-				selectedRule = (Rule)selection.getFirstElement();
+				controlsComposite.enableDependentButtons(true);
+				
+				setSelectedRule((Rule)selection.getFirstElement());
+			}
+
+			private void setSelectedRule(Rule selectedRule) {
+				removeRuleAction.setSelectedRule(selectedRule);
+				editRuleAction.setSelectedRule(selectedRule);
+				removeAllExchangesAction.setSelectedRule(selectedRule);
+				controlsComposite.setSelectedRule(selectedRule);
 			}
 
 		});	
 	}
 
-	private void enableButtonsOnSelection(boolean status) {
-		btEdit.setEnabled(status);
-		btRemove.setEnabled(status);
-		btUp.setEnabled(status);
-		btDown.setEnabled(status);
-	}
-	
 	private void createColumns(TableViewer viewer) {
 		String[] titles = { "Rule", "Exchanges"};
 		int[] bounds = { 158, 80 };
@@ -204,60 +152,6 @@ public class RulesView extends AbstractRulesView {
 		
 	}
 	
-	private Button createEditButton(final Composite controlsComposite) {
-		Button bt = new Button(controlsComposite, SWT.PUSH);
-		bt.setText("Edit");
-		bt.setEnabled(false);
-		bt.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				editRuleAction.run();
-			}
-		});
-		return bt;
-	}
-
-	private Button createRemoveButton(Composite controlsComposite) {
-		Button bt = new Button(controlsComposite, SWT.PUSH);
-		bt.setText("Remove");
-		bt.setEnabled(false);
-		bt.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				removeRuleAction.run();
-			}
-		});
-		return bt;
-	}
-
-	private Button createUpButton(Composite controlsComposite) {
-		Button bt = new Button(controlsComposite, SWT.PUSH);
-		bt.setText("Up");
-		bt.setEnabled(false);
-		bt.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				Router.getInstance().getRuleManager().ruleUp(selectedRule);
-				setInputForTable(Router.getInstance().getRuleManager());
-			}
-		});
-		return bt;
-	}
-
-	private Button createDownButton(Composite controlsComposite) {
-		Button btDown = new Button(controlsComposite, SWT.PUSH);
-		btDown.setText("Down");
-		btDown.setEnabled(false); 
-		btDown.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				Router.getInstance().getRuleManager().ruleDown(selectedRule);
-				setInputForTable(Router.getInstance().getRuleManager());
-			}
-		});
-		return btDown;
-	}
-
 	public void ruleRemoved(Rule rule) {
 		setInputForTable(Router.getInstance().getRuleManager());
 		

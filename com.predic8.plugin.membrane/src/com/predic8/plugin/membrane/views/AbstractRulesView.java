@@ -23,7 +23,7 @@ import org.eclipse.ui.part.ViewPart;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.model.IExchangesViewListener;
+import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.actions.exchanges.RemoveAllExchangesAction;
@@ -33,7 +33,7 @@ import com.predic8.plugin.membrane.actions.rules.RuleEditAction;
 import com.predic8.plugin.membrane.actions.views.ShowRuleDetailsViewAction;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
 
-public abstract class AbstractRulesView extends ViewPart implements IExchangesViewListener, IRuleChangeListener {
+public abstract class AbstractRulesView extends ViewPart implements IExchangesStoreListener, IRuleChangeListener {
 
 	
 	protected TableViewer tableViewer;
@@ -52,13 +52,13 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesVi
 	protected ShowRuleDetailsViewAction showRuleDetailsAction;
 	
 	protected void createActions () {
-		removeRuleAction = new RemoveRuleAction(tableViewer);
+		removeRuleAction = new RemoveRuleAction();
 		removeRuleAction.setEnabled(false);
 		
-		editRuleAction = new RuleEditAction(tableViewer);
+		editRuleAction = new RuleEditAction();
 		editRuleAction.setEnabled(false);
 		
-		removeAllExchangesAction = new RemoveAllExchangesAction(tableViewer);
+		removeAllExchangesAction = new RemoveAllExchangesAction();
 		removeAllExchangesAction.setEnabled(false);
 		
 		renameRuleAction = new RenameRuleAction(tableViewer);

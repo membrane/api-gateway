@@ -15,8 +15,7 @@
 package com.predic8.plugin.membrane.actions.rules;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.StructuredViewer;
+import org.eclipse.swt.widgets.Display;
 
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -27,26 +26,23 @@ import com.predic8.plugin.membrane.dialogs.rule.RuleEditDialog;
 
 public class RuleEditAction extends Action {
 
-	private StructuredViewer structuredViewer;
+	private Rule selectedRule;
 
-	public RuleEditAction(StructuredViewer viewer) {
+	public RuleEditAction() {
 		super();
-		this.structuredViewer = viewer;
 		setText("Edit Rule");
 		setId("Rule Edit Action");
 	}
 
 	@Override
 	public void run() {
-		IStructuredSelection selection = (IStructuredSelection) structuredViewer.getSelection();
-		Object selectedItem = selection.getFirstElement();
-
+		
 		try {
-			if (selectedItem instanceof ForwardingRule) {
-				openRuleDialog(new ForwardingRuleEditDialog(structuredViewer.getControl().getShell()), (ForwardingRule) selectedItem);
+			if (selectedRule instanceof ForwardingRule) {
+				openRuleDialog(new ForwardingRuleEditDialog(Display.getCurrent().getActiveShell()), (ForwardingRule) selectedRule);
 
-			} else if (selectedItem instanceof ProxyRule) {
-				openRuleDialog(new ProxyRuleEditDialog(structuredViewer.getControl().getShell()), (ProxyRule) selectedItem);
+			} else if (selectedRule instanceof ProxyRule) {
+				openRuleDialog(new ProxyRuleEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedRule);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -59,6 +55,10 @@ public class RuleEditAction extends Action {
 		}
 		dialog.setInput(rule);
 		dialog.open();
+	}
+
+	public void setSelectedRule(Rule selectedRule) {
+		this.selectedRule = selectedRule;
 	}
 	
 }

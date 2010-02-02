@@ -55,7 +55,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeComparator;
 import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.exchange.HttpExchange;
-import com.predic8.membrane.core.model.IExchangesViewListener;
+import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.actions.ShowFiltersDialogAction;
@@ -67,7 +67,7 @@ import com.predic8.plugin.membrane.contentproviders.ExchangesViewLazyContentProv
 import com.predic8.plugin.membrane.filtering.FilterManager;
 import com.predic8.plugin.membrane.labelproviders.ExchangesViewLabelProvider;
 
-public class ExchangesView extends ViewPart implements IExchangesViewListener {
+public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 
 	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.ExchangesView";
 

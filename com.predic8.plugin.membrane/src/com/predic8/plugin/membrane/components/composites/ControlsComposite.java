@@ -48,7 +48,7 @@ public abstract class ControlsComposite extends Composite {
 		return rowLayout;
 	}
 
-	protected void enableDependentButtons(boolean status) {
+	public void enableDependentButtons(boolean status) {
 		btEdit.setEnabled(status);
 		btRemove.setEnabled(status);
 		btUp.setEnabled(status);
@@ -62,7 +62,7 @@ public abstract class ControlsComposite extends Composite {
 		bt.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				
+				newButtonPressed();
 			}
 
 		});
@@ -76,7 +76,7 @@ public abstract class ControlsComposite extends Composite {
 		bt.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				
+				editButtonPressed();
 			}
 		});
 		return bt;
@@ -89,7 +89,7 @@ public abstract class ControlsComposite extends Composite {
 		bt.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				
+				removeButtonPressed();
 			}
 		});
 		return bt;
@@ -102,7 +102,7 @@ public abstract class ControlsComposite extends Composite {
 		bt.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				
+				upButtonPressed();
 			}
 		});
 		return bt;
@@ -115,7 +115,7 @@ public abstract class ControlsComposite extends Composite {
 		btDown.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				
+				downButtonPressed();
 			}
 		});
 		return btDown;

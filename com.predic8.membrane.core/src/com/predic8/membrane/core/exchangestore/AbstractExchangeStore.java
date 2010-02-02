@@ -18,49 +18,49 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.model.IExchangesViewListener;
+import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 
 public abstract class AbstractExchangeStore implements ExchangeStore {
 
-	protected Set<IExchangesViewListener> treeViewerListeners = new HashSet<IExchangesViewListener>();
+	protected Set<IExchangesStoreListener> treeViewerListeners = new HashSet<IExchangesStoreListener>();
 	
-	public void addExchangesViewListener(IExchangesViewListener viewer) {
+	public void addExchangesViewListener(IExchangesStoreListener viewer) {
 		treeViewerListeners.add(viewer);
 		
 	}
-	public void removeExchangesViewListener(IExchangesViewListener viewer) {
+	public void removeExchangesViewListener(IExchangesStoreListener viewer) {
 		treeViewerListeners.remove(viewer);
 	}
 	
 	public void refreshAllTreeViewers(){
-		for (IExchangesViewListener listener : treeViewerListeners) {
+		for (IExchangesStoreListener listener : treeViewerListeners) {
 			listener.refresh();
 		}
 	}
 	
 	public void notifyListenersOnExchangeAdd(Rule rule, Exchange exchange) {
-		for (IExchangesViewListener listener : treeViewerListeners) {
+		for (IExchangesStoreListener listener : treeViewerListeners) {
 			exchange.addTreeViewerListener(listener);
 			listener.addExchange(rule, exchange);
 		}
 	}
 	
 	public void notifyListenersOnExchangeRemoval(Exchange exchange) {
-		for (IExchangesViewListener listener : treeViewerListeners) {
+		for (IExchangesStoreListener listener : treeViewerListeners) {
 			exchange.removeTreeViewerListener(listener);
 			listener.removeExchange(exchange);
 		}
 	}
 	
 	public void notifyListenersOnRuleAdd(Rule rule) {
-		for (IExchangesViewListener listener : treeViewerListeners) {
+		for (IExchangesStoreListener listener : treeViewerListeners) {
 			listener.ruleAdded(rule);
 		}
 	}
 	
 	public void notifyListenersOnRuleRemoval(Rule rule, int rulesLeft) {
-		for (IExchangesViewListener listener : treeViewerListeners) {
+		for (IExchangesStoreListener listener : treeViewerListeners) {
 			listener.removeRule(rule, rulesLeft);
 		}
 	}

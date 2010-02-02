@@ -73,7 +73,7 @@ public class RuleTableView extends ViewPart implements IRuleChangeListener {
 		tableGridData.grabExcessHorizontalSpace = true;
 		tableViewer.getTable().setLayoutData(tableGridData);
 
-		Router.getInstance().getRuleManager().addTableViewerListener(this);
+		Router.getInstance().getRuleManager().addRuleChangeListener(this);
 	}
 
 	@Override
@@ -114,7 +114,6 @@ public class RuleTableView extends ViewPart implements IRuleChangeListener {
 	}
 
 	public void rulePositionsChanged() {
-		// TODO Auto-generated method stub
-		
+		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 }

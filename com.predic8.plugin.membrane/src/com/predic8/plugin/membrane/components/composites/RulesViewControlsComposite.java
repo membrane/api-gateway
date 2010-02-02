@@ -7,15 +7,22 @@ import org.eclipse.swt.widgets.Display;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.plugin.membrane.actions.rules.RemoveRuleAction;
+import com.predic8.plugin.membrane.actions.rules.RuleEditAction;
 import com.predic8.plugin.membrane.wizards.AddRuleWizard;
 
-public class RuleViewControlsComposite extends ControlsComposite {
+public class RulesViewControlsComposite extends ControlsComposite {
 
 	private Rule selectedRule; 
 	
-	public RuleViewControlsComposite(Composite parent) {
+	private RemoveRuleAction removeRuleAction;
+	
+	private RuleEditAction editRuleAction;
+	
+	public RulesViewControlsComposite(Composite parent) {
 		super(parent, SWT.NONE);
-		
+		removeRuleAction = new RemoveRuleAction();
+		editRuleAction = new RuleEditAction();
 	}
 
 	
@@ -28,18 +35,19 @@ public class RuleViewControlsComposite extends ControlsComposite {
 	
 	@Override
 	public void editButtonPressed() {
-
+		editRuleAction.setSelectedRule(selectedRule);
+		editRuleAction.run();
 	}
 
 	@Override
 	public void removeButtonPressed() {
-		
-
+		removeRuleAction.setSelectedRule(selectedRule);
+		removeRuleAction.run();
 	}
 
 	@Override
 	public void upButtonPressed() {
-		Router.getInstance().getRuleManager().ruleDown(selectedRule);
+		Router.getInstance().getRuleManager().ruleUp(selectedRule);
 	}
 	
 	@Override
@@ -51,4 +59,6 @@ public class RuleViewControlsComposite extends ControlsComposite {
 		this.selectedRule = selectedRule;
 	}
 
+	
+	
 }

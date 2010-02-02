@@ -15,29 +15,26 @@
 package com.predic8.plugin.membrane.actions.exchanges;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.StructuredViewer;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
 
 public class RemoveAllExchangesAction extends Action {
 
-	private StructuredViewer viewer;
+	private Rule selectedRule;
 	
-	public RemoveAllExchangesAction(StructuredViewer structuredViewer) {
+	public RemoveAllExchangesAction() {
 		super();
-		this.viewer = structuredViewer;
 		setText("Remove all exchanges");
 		setId("remove all exhanges action");
 	}
 	
 	public void run() {
-		IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-		Object selectedItem = selection.getFirstElement();
-		if (selectedItem instanceof Rule) {
-			Router.getInstance().getExchangeStore().removeAllExchanges((Rule) selectedItem);
-		}
+		Router.getInstance().getExchangeStore().removeAllExchanges(selectedRule);
+	}
+
+	public void setSelectedRule(Rule selectedRule) {
+		this.selectedRule = selectedRule;
 	}
 	
 }
