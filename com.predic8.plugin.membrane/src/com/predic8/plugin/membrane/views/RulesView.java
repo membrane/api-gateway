@@ -30,6 +30,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
@@ -56,12 +57,19 @@ public class RulesView extends AbstractRulesView {
 		layout.marginLeft = 5;
 		layout.marginBottom = 20;
 		layout.marginRight = 5;
-		layout.verticalSpacing = 20;
+		layout.verticalSpacing = 10;
 		composite.setLayout(layout);
 
 		createTableViewer(composite);	
 		
 		controlsComposite = new RulesViewControlsComposite(composite);
+		
+		
+		Label label = new Label(composite, SWT.NONE);
+		label.setText("Rules are evaluated in top-down direction.");
+		GridData gData = new GridData();
+		gData.horizontalSpan = 2;
+		label.setLayoutData(gData);
 		
 		createActions();
 		addTableMenu();
@@ -69,6 +77,13 @@ public class RulesView extends AbstractRulesView {
 		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
 		Router.getInstance().getRuleManager().addRuleChangeListener(this);
 		setInputForTable(Router.getInstance().getRuleManager());
+	}
+
+	private Label createCommentLabel(Composite composite) {
+		Label label = new Label(composite, SWT.MULTI);
+		GridData gData = new GridData();
+		label.setLayoutData(gData);
+		return label;
 	}
 
 	private void createTableViewer(Composite composite) {

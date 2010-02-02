@@ -59,19 +59,28 @@ public class MessageTabManager {
 
 	private List<BodyTabComposite> bodyTabs = new ArrayList<BodyTabComposite>();
 	
+	private NullBodyTabComposite nullBodyTabComposite;
+	
 	public MessageTabManager(final BaseComp baseComp) {
 		this.baseComp = baseComp;
-		folder = new TabFolder(baseComp, SWT.NONE);
-		folder.setLayoutData(new GridData(GridData.FILL_BOTH));
+		folder = createTabFolder(baseComp);
 		
 		errorTabComposite = new ErrorTabComposite(folder);
 		rawTabComposite = new RawTabComposite(folder);
 		headerTabComposite = new HeaderTabComposite(folder);
+		nullBodyTabComposite = new NullBodyTabComposite(folder);
 		
 		createBodyTabs();
 		
 		currentBodyTab = new NullBodyTabComposite(folder);
 		
+		addSelectionListenerToFolder(baseComp);
+		
+		doUpdate(null);
+
+	}
+
+	private void addSelectionListenerToFolder(final BaseComp baseComp) {
 		folder.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent event) {
 				for (TabItem tabItem : folder.getSelection()) {
@@ -100,9 +109,12 @@ public class MessageTabManager {
 			}
 			
 		});
-		
-		doUpdate(null);
+	}
 
+	private TabFolder createTabFolder(final BaseComp baseComp) {
+		final TabFolder folder = new TabFolder(baseComp, SWT.NONE);
+		folder.setLayoutData(new GridData(GridData.FILL_BOTH));
+		return folder;
 	}
 
 	private void createBodyTabs() {
@@ -143,7 +155,7 @@ public class MessageTabManager {
 			return;
 		}
 
-		currentBodyTab = new NullBodyTabComposite(folder);
+		currentBodyTab = nullBodyTabComposite;
 		
 		errorTabComposite.hide();
 
