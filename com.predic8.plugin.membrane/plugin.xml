@@ -22,14 +22,6 @@
       </category>
       <view
             category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
-            class="com.predic8.plugin.membrane.views.RuleTreeView"
-            icon="icons/rule_tree.png"
-            id="com.predic8.plugin.membrane.views.RuleTreeView"
-            name="Rule Tree"
-            restorable="true">
-      </view>
-      <view
-            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
             class="com.predic8.plugin.membrane.views.RuleDetailsView"
             icon="icons/rule_details.png"
             id="com.predic8.plugin.membrane.views.RuleDetailsView"

@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 
 public class AddInterceptorTableViewerContentProvider implements IStructuredContentProvider {
 
+	@SuppressWarnings("unchecked")
 	public Object[] getElements(Object inputElement) {
 		Collection<Interceptor> collection = (Collection<Interceptor>)inputElement;
 		return collection.toArray();

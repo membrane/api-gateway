@@ -105,6 +105,7 @@ public abstract class InterceptorDialog extends Dialog {
 		createButton(parent, IDialogConstants.CANCEL_ID, "Cancel", true);
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void okPressed() {
 		String name = textName.getText().trim();

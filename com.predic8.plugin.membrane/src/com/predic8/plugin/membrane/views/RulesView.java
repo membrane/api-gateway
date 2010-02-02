@@ -65,11 +65,7 @@ public class RulesView extends AbstractRulesView {
 		controlsComposite = new RulesViewControlsComposite(composite);
 		
 		
-		Label label = new Label(composite, SWT.NONE);
-		label.setText("Rules are evaluated in top-down direction.");
-		GridData gData = new GridData();
-		gData.horizontalSpan = 2;
-		label.setLayoutData(gData);
+		createCommentLabel(composite);
 		
 		createActions();
 		addTableMenu();
@@ -79,11 +75,12 @@ public class RulesView extends AbstractRulesView {
 		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
-	private Label createCommentLabel(Composite composite) {
-		Label label = new Label(composite, SWT.MULTI);
+	private void createCommentLabel(Composite composite) {
+		Label label = new Label(composite, SWT.NONE);
+		label.setText("Rules are evaluated in top-down direction.");
 		GridData gData = new GridData();
+		gData.horizontalSpan = 2;
 		label.setLayoutData(gData);
-		return label;
 	}
 
 	private void createTableViewer(Composite composite) {
