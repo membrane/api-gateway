@@ -121,7 +121,7 @@
             </separator>
          </menu>
          <action
-               class="com.predic8.plugin.membrane.actions.AddRuleAction"
+               class="com.predic8.plugin.membrane.actions.rules.AddRuleAction"
                icon="icons/add_rule.png"
                id="com.predic8.plugin.membrane.actions.AddRuleAction"
                label="&amp;Add Rule"
@@ -151,7 +151,7 @@
                tooltip="Save Rule Configuration">
          </action>
          <action
-               class="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"
+               class="com.predic8.plugin.membrane.actions.views.ShowRuleStatisticsAction"
                icon="icons/calculator.png"
                id="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"
                label="Show Rule Statistics"
@@ -160,7 +160,7 @@
                tooltip="show rule statistics  view">
          </action>
          <action
-               class="com.predic8.plugin.membrane.actions.ShowExchangesViewAction"
+               class="com.predic8.plugin.membrane.actions.views.ShowExchangesViewAction"
                icon="icons/cascade.png"
                id="com.predic8.plugin.membrane.actions.ShowExchangesViewAction"
                label="Show Exchanges"
@@ -170,7 +170,7 @@
                tooltip="show exchanges view">
          </action>
          <action
-               class="com.predic8.plugin.membrane.actions.ShowRulesViewAction"
+               class="com.predic8.plugin.membrane.actions.views.ShowRulesViewAction"
                icon="icons/report_key.png"
                id="com.predic8.plugin.membrane.actions.ShowRulesViewAction"
                label="Show Rules"

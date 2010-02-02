@@ -12,31 +12,35 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.actions;
+package com.predic8.plugin.membrane.actions.exchanges;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
 
-public class RenameRuleAction extends Action {
+public class RemoveExchangeAction extends Action {
 
 	private TableViewer tableViewer;
-	
-	public RenameRuleAction(TableViewer treeView) {
-		super();
-		this.tableViewer = treeView;
-		setText("Rename Rule");
-		setId("Rename Rule Action");
+
+	public RemoveExchangeAction(TableViewer tViewer) {
+		this.tableViewer = tViewer;
+		setText("Remove");
+		setId("remove exchange action");
 	}
-	
+
+	@Override
 	public void run() {
 		IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
 		Object selectedItem = selection.getFirstElement();
-		
-		if (selectedItem instanceof Rule) {
-			tableViewer.editElement(selection.getFirstElement(), 0);
+		if (selectedItem instanceof Exchange) {
+			Exchange selectedExchange = (Exchange) selectedItem;
+			selectedExchange.finishExchange(false);// Don't need to refresh.
+			Router.getInstance().getExchangeStore().remove(selectedExchange);
+			tableViewer.setSelection(null);
+			return;
 		}
 	}
 	

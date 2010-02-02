@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.actions;
+package com.predic8.plugin.membrane.actions.views;
 
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
@@ -21,13 +21,15 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.plugin.membrane.views.RuleTableView;
+import com.predic8.plugin.membrane.views.RuleStatisticsView;
 
-public class ShowRulesTableAction implements IWorkbenchWindowActionDelegate {
+public class ShowRuleStatisticsAction implements IWorkbenchWindowActionDelegate {
 
+	public static final String ACTION_ID = "com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction";
+	
 	private IWorkbenchWindow window;
 	
-	public ShowRulesTableAction() {
+	public ShowRuleStatisticsAction() {
 		
 	}
 	
@@ -42,17 +44,17 @@ public class ShowRulesTableAction implements IWorkbenchWindowActionDelegate {
 	public void run(IAction action) {
 		IWorkbenchPage page = window.getActivePage();
 		try {
-			page.showView(RuleTableView.VIEW_ID);
-			RuleTableView ruleTableView = (RuleTableView)window.getActivePage().findView(RuleTableView.VIEW_ID);
-			ruleTableView.getTableViewer().setInput(Router.getInstance().getRuleManager());
+			page.showView(RuleStatisticsView.VIEW_ID);
+			RuleStatisticsView ruleStatisticsView = (RuleStatisticsView)window.getActivePage().findView(RuleStatisticsView.VIEW_ID);
+			ruleStatisticsView.setInputForTable(Router.getInstance().getRuleManager());
+			
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 	}
 
 	public void selectionChanged(IAction action, ISelection selection) {
-		
+
 	}
 
-	
 }

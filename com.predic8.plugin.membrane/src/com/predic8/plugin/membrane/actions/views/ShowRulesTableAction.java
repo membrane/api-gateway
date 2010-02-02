@@ -12,24 +12,25 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.actions;
+package com.predic8.plugin.membrane.actions.views;
 
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.wizard.WizardDialog;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-import com.predic8.plugin.membrane.wizards.AddRuleWizard;
+import com.predic8.membrane.core.Router;
+import com.predic8.plugin.membrane.views.RuleTableView;
 
-public class AddRuleAction implements IWorkbenchWindowActionDelegate {
+public class ShowRulesTableAction implements IWorkbenchWindowActionDelegate {
 
 	private IWorkbenchWindow window;
-
-	public AddRuleAction() {
-		super();
+	
+	public ShowRulesTableAction() {
+		
 	}
-
+	
 	public void dispose() {
 
 	}
@@ -38,14 +39,20 @@ public class AddRuleAction implements IWorkbenchWindowActionDelegate {
 		this.window = window;
 	}
 
-	public void selectionChanged(IAction action, ISelection selection) {
-
-	}
-
 	public void run(IAction action) {
-		WizardDialog wizardDialog = new WizardDialog(window.getShell(), new AddRuleWizard());
-		wizardDialog.create();
-		wizardDialog.open();
+		IWorkbenchPage page = window.getActivePage();
+		try {
+			page.showView(RuleTableView.VIEW_ID);
+			RuleTableView ruleTableView = (RuleTableView)window.getActivePage().findView(RuleTableView.VIEW_ID);
+			ruleTableView.getTableViewer().setInput(Router.getInstance().getRuleManager());
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 
+	public void selectionChanged(IAction action, ISelection selection) {
+		
+	}
+
+	
 }

@@ -12,43 +12,45 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.actions;
+package com.predic8.plugin.membrane.actions.rules;
+
+import java.io.IOException;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredViewer;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.PlatformUI;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.views.RuleDetailsView;
+import com.predic8.membrane.core.transport.http.HttpTransport;
 
-public class ShowRuleDetailsViewAction extends Action {
+public class RemoveRuleAction extends Action {
 
 	private StructuredViewer structuredViewer;
 
-	public ShowRuleDetailsViewAction(StructuredViewer viewer) {
+	public RemoveRuleAction(StructuredViewer viewer) {
 		this.structuredViewer = viewer;
-		setText("Show Rule Details");
-		setId("Show Rule Details Action");
+		setText("Remove Rule");
+		setId("Remove Rule Action");
 	}
 
+	@Override
 	public void run() {
-
 		IStructuredSelection selection = (IStructuredSelection) structuredViewer.getSelection();
 		Object selectedItem = selection.getFirstElement();
-
+		
 		if (selectedItem instanceof Rule) {
-			try {
-				IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-				page.showView(RuleDetailsView.VIEW_ID);
-				RuleDetailsView ruleView =  (RuleDetailsView)page.findView(RuleDetailsView.VIEW_ID);
-				ruleView.setRuleToDisplay((Rule) selectedItem);
-			} catch (Exception ex) {
-				ex.printStackTrace();
+			Rule rule = (Rule) selectedItem;
+			Router.getInstance().getRuleManager().removeRule(rule);
+			structuredViewer.setSelection(null);
+			if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getKey().getPort())) {
+				try {
+					((HttpTransport) Router.getInstance().getTransport()).closePort(rule.getKey().getPort());
+				} catch (IOException e2) {
+					e2.printStackTrace();
+				}
 			}
-		}
-
+		} 
 	}
-
+	
 }

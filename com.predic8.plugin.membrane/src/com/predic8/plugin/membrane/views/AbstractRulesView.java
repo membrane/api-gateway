@@ -26,11 +26,11 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.model.IExchangesViewListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.actions.RemoveAllExchangesAction;
-import com.predic8.plugin.membrane.actions.RemoveRuleAction;
-import com.predic8.plugin.membrane.actions.RenameRuleAction;
-import com.predic8.plugin.membrane.actions.RuleEditAction;
-import com.predic8.plugin.membrane.actions.ShowRuleDetailsViewAction;
+import com.predic8.plugin.membrane.actions.exchanges.RemoveAllExchangesAction;
+import com.predic8.plugin.membrane.actions.rules.RemoveRuleAction;
+import com.predic8.plugin.membrane.actions.rules.RenameRuleAction;
+import com.predic8.plugin.membrane.actions.rules.RuleEditAction;
+import com.predic8.plugin.membrane.actions.views.ShowRuleDetailsViewAction;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
 
 public abstract class AbstractRulesView extends ViewPart implements IExchangesViewListener, IRuleChangeListener {
