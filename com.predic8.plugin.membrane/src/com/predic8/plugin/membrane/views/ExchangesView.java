@@ -505,7 +505,7 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 
 	
 	
-	public void addRule(Rule rule) {
+	public void ruleAdded(Rule rule) {
 		// TODO Delete this method
 		
 	}

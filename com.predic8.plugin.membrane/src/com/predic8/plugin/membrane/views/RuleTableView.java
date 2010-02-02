@@ -101,15 +101,20 @@ public class RuleTableView extends ViewPart implements IRuleChangeListener {
 		return tableViewer;
 	}
 
-	public void addRule(Rule rule) {
+	public void ruleAdded(Rule rule) {
 		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 
-	public void removeRule(Rule rule) {
+	public void ruleRemoved(Rule rule) {
 		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 
-	public void updateRule(Rule rule) {
+	public void ruleUpdated(Rule rule) {
 		tableViewer.setInput(Router.getInstance().getRuleManager());
+	}
+
+	public void rulePositionsChanged() {
+		// TODO Auto-generated method stub
+		
 	}
 }

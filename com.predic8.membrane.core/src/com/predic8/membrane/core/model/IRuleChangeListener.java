@@ -19,10 +19,12 @@ import com.predic8.membrane.core.rules.Rule;
 
 public interface IRuleChangeListener {
 	
-	public void addRule(Rule rule);
+	public void ruleAdded(Rule rule);
 
-	public void removeRule(Rule rule);
+	public void ruleRemoved(Rule rule);
 	
-	public void updateRule(Rule rule);
+	public void ruleUpdated(Rule rule);
+	
+	public void rulePositionsChanged();
 
 }

@@ -138,4 +138,24 @@ public class RuleStatisticsView extends AbstractRulesView {
 		viewer.getTable().setHeaderVisible(true);
 		viewer.getTable().setLinesVisible(true);
 	}
+
+
+	public void ruleRemoved(Rule rule) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	public void ruleUpdated(Rule rule) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	public void rulePositionsChanged() {
+		// TODO Auto-generated method stub
+		
+	}
+
+
 }

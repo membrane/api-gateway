@@ -24,6 +24,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.model.IExchangesViewListener;
+import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.actions.RemoveAllExchangesAction;
 import com.predic8.plugin.membrane.actions.RemoveRuleAction;
@@ -32,7 +33,7 @@ import com.predic8.plugin.membrane.actions.RuleEditAction;
 import com.predic8.plugin.membrane.actions.ShowRuleDetailsViewAction;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
 
-public abstract class AbstractRulesView extends ViewPart implements IExchangesViewListener {
+public abstract class AbstractRulesView extends ViewPart implements IExchangesViewListener, IRuleChangeListener {
 
 	
 	protected TableViewer tableViewer;
@@ -100,7 +101,7 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesVi
 		
 	}
 
-	public void addRule(Rule rule) {
+	public void ruleAdded(Rule rule) {
 		enableActions(true);
 		refreshTable();
 	}

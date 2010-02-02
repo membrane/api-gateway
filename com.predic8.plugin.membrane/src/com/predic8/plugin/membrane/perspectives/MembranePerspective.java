@@ -51,7 +51,7 @@ public class MembranePerspective implements IPerspectiveFactory {
 			topLayoutFolder.addPlaceholder(RuleStatisticsView.VIEW_ID);
 			
 			
-			IFolderLayout topLeftLayoutFolder = layout.createFolder("top left folder", IPageLayout.LEFT, 0.25f, "top folder");
+			IFolderLayout topLeftLayoutFolder = layout.createFolder("top left folder", IPageLayout.LEFT, 0.31f, "top folder");
 			topLeftLayoutFolder.addView(RulesView.VIEW_ID);
 			
 			IFolderLayout southLayoutFolder = layout.createFolder("south folder", IPageLayout.BOTTOM, 0.50f, IPageLayout.ID_EDITOR_AREA);

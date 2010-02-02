@@ -55,7 +55,7 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 	
 	public void notifyListenersOnRuleAdd(Rule rule) {
 		for (IExchangesViewListener listener : treeViewerListeners) {
-			listener.addRule(rule);
+			listener.ruleAdded(rule);
 		}
 	}
 	

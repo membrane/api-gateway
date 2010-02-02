@@ -21,7 +21,7 @@ import com.predic8.membrane.core.rules.Rule;
 
 public interface IExchangesViewListener{
 	
-	public void addRule(Rule rule);
+	public void ruleAdded(Rule rule);
 	
 	public void removeRule(Rule rule, int rulesLeft);
 	

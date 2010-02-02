@@ -16,6 +16,7 @@ package com.predic8.membrane.core;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -100,7 +101,7 @@ public class RuleManager {
 		rules.add(rule);
 
 		for (IRuleChangeListener listener : listeners) {
-			listener.addRule(rule);
+			listener.ruleAdded(rule);
 		}
 
 		exchangeStore.notifyListenersOnRuleAdd(rule);
@@ -126,9 +127,23 @@ public class RuleManager {
 		return rules;
 	}
 
+	public void ruleUp(Rule rule) {
+		int index = rules.indexOf(rule);
+		if (index <= 0 )
+			return;
+		Collections.swap(rules, index, index - 1);
+	}
+	
+	public void ruleDown(Rule rule) {
+		int index = rules.indexOf(rule);
+		if (index < 0 || index == rules.size() - 1 )
+			return;
+		Collections.swap(rules, index, index + 1);
+	}
+	
 	public void ruleChanged(Rule rule) {
 		for (IRuleChangeListener listener : listeners) {
-			listener.updateRule(rule);
+			listener.ruleUpdated(rule);
 		}
 		exchangeStore.refreshAllTreeViewers();
 	}
@@ -181,10 +196,10 @@ public class RuleManager {
 
 	public synchronized void removeRule(Rule rule) {
 		exchangeStore.removeAllExchanges(rule);
-		rules.remove(rule.getKey());
+		rules.remove(rule);
 
 		for (IRuleChangeListener listener : listeners) {
-			listener.removeRule(rule);
+			listener.ruleRemoved(rule);
 		}
 
 		exchangeStore.notifyListenersOnRuleRemoval(rule, rules.size());

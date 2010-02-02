@@ -64,7 +64,7 @@ public class RulesViewLabelProvider extends LabelProvider implements ITableLabel
 		case 1:
 			return "" + statistics.getCountTotal();
 		default:
-			throw new RuntimeException("Table in rules view  must have only 2 columns");
+			throw new RuntimeException("Table in rules view  must have only 3 columns");
 		}
 	}
 
