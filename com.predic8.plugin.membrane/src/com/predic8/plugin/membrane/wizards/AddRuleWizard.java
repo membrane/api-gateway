@@ -58,7 +58,7 @@ public class AddRuleWizard extends Wizard {
 	public boolean performFinish() {
 		try {
 			if (getContainer().getCurrentPage().getName().equals(TargetHostConfigurationPage.PAGE_NAME)) {
-				System.out.println("previous page: " + targetHostConfigPage.getPreviousPage().getName());
+				
 				if (targetHostConfigPage.getPreviousPage().getName().equals(ListenPortConfigurationPage.PAGE_NAME)) {
 					int listenPort = Integer.parseInt(listenPortConfigPage.getListenPort());
 					
