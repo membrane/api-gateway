@@ -37,6 +37,4 @@ public interface IExchangesViewListener{
 	
 	public void refresh();
 	
-	public void selectTo(Object obj);
-	
 }

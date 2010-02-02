@@ -124,10 +124,6 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesVi
 		refreshTable();
 	}
 
-	public void selectTo(Object obj) {
-		
-	}
-
 	public void setExchangeFinished(Exchange exchange) {
 		refreshTable();
 	}

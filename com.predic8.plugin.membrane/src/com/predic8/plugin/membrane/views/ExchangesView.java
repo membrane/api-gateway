@@ -269,10 +269,6 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 
 	}
 
-	public void addRule(Rule rule) {
-
-	}
-
 	public void refresh() {
 		refreshTable(false);
 	}
@@ -283,14 +279,6 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 
 	public void removeExchanges(Rule parent, Exchange[] exchanges) {
 		refreshTable(true);
-	}
-
-	public void removeRule(Rule rule, int rulesLeft) {
-
-	}
-
-	public void selectTo(Object obj) {
-
 	}
 
 	public void setExchangeFinished(Exchange exchange) {
@@ -513,6 +501,17 @@ public class ExchangesView extends ViewPart implements IExchangesViewListener {
 
 	private Configuration getConfiguration() {
 		return Router.getInstance().getConfigurationManager().getConfiguration();
+	}
+
+	
+	
+	public void addRule(Rule rule) {
+		// TODO Delete this method
+		
+	}
+
+	public void removeRule(Rule rule, int rulesLeft) {
+		// TODO Delete this method
 	}
 
 }

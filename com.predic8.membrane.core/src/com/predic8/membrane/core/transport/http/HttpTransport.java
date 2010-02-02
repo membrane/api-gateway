@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import com.predic8.membrane.core.model.IMenuViewerListener;
+import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.Transport;
 
 public class HttpTransport extends Transport {
@@ -39,7 +39,7 @@ public class HttpTransport extends Transport {
 		portListenerMapping.put(new Integer(port), portListenerThread);
 		portListenerThread.start();
 
-		for (IMenuViewerListener listener : menuListeners) {
+		for (IPortChangeListener listener : menuListeners) {
 			listener.addPort(port);
 		}
 	}
@@ -58,7 +58,7 @@ public class HttpTransport extends Transport {
 			plt.closePort();
 			portListenerMapping.remove(new Integer(port));
 
-			for (IMenuViewerListener listener : menuListeners) {
+			for (IPortChangeListener listener : menuListeners) {
 				listener.removePort(port);
 			}
 		}

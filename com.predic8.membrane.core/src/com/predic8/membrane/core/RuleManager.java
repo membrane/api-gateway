@@ -36,7 +36,7 @@ public class RuleManager {
 	private ExchangeStore exchangeStore = new ForgetfulExchangeStore();
 	
 	private List<Rule> rules = new Vector<Rule>();
-	private Set<IRuleChangeListener> tableViewerListeners = new HashSet<IRuleChangeListener>();
+	private Set<IRuleChangeListener> listeners = new HashSet<IRuleChangeListener>();
 
 	private String defaultTargetHost = "localhost";
 	private String defaultHost = "*";
@@ -44,9 +44,7 @@ public class RuleManager {
 	private String defaultTargetPort = "8080";
 	private String defaultPath = ".*";
 	private int defaultMethod = 0;
-	private boolean defaultBlockRequest;
-	private boolean defaultBlockResponse;
-
+	
 	public String getDefaultListenPort() {
 		return defaultListenPort;
 	}
@@ -86,14 +84,6 @@ public class RuleManager {
 			defaultTargetPort = Integer.toString(targetPort);
 	}
 
-	public void setDefaultIsRequestBlocked(boolean bool) {
-		defaultBlockRequest = bool;
-	}
-
-	public void setDefaultIsResponseBlocked(boolean bool) {
-		defaultBlockResponse = bool;
-	}
-
 	public boolean isAnyRuleWithPort(int port) {
 		for (Rule rule : rules) {
 			if (rule.getKey().getPort() == port) {
@@ -107,11 +97,9 @@ public class RuleManager {
 		if (exists(rule.getKey()))
 			return;
 		
-		rule.setBlockRequest(defaultBlockRequest);
-		rule.setBlockResponse(defaultBlockResponse);
 		rules.add(rule);
 
-		for (IRuleChangeListener listener : tableViewerListeners) {
+		for (IRuleChangeListener listener : listeners) {
 			listener.addRule(rule);
 		}
 
@@ -139,7 +127,7 @@ public class RuleManager {
 	}
 
 	public void ruleChanged(Rule rule) {
-		for (IRuleChangeListener listener : tableViewerListeners) {
+		for (IRuleChangeListener listener : listeners) {
 			listener.updateRule(rule);
 		}
 		exchangeStore.refreshAllTreeViewers();
@@ -173,12 +161,12 @@ public class RuleManager {
 	}
 
 	public void addTableViewerListener(IRuleChangeListener viewer) {
-		tableViewerListeners.add(viewer);
+		listeners.add(viewer);
 
 	}
 
 	public void removeTableViewerListener(IRuleChangeListener viewer) {
-		tableViewerListeners.remove(viewer);
+		listeners.remove(viewer);
 
 	}
 
@@ -195,7 +183,7 @@ public class RuleManager {
 		exchangeStore.removeAllExchanges(rule);
 		rules.remove(rule.getKey());
 
-		for (IRuleChangeListener listener : tableViewerListeners) {
+		for (IRuleChangeListener listener : listeners) {
 			listener.removeRule(rule);
 		}
 

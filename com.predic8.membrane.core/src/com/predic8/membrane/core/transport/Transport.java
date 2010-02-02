@@ -6,20 +6,20 @@ import java.util.Set;
 import java.util.Vector;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.model.IMenuViewerListener;
+import com.predic8.membrane.core.model.IPortChangeListener;
 
 public class Transport {
 
-	protected Set<IMenuViewerListener> menuListeners = new HashSet<IMenuViewerListener>();
+	protected Set<IPortChangeListener> menuListeners = new HashSet<IPortChangeListener>();
 	
 	private List<Interceptor> interceptors = new Vector<Interceptor>();
 
-	public void addMenuViewerListener(IMenuViewerListener mViewer) {
+	public void addMenuViewerListener(IPortChangeListener mViewer) {
 		menuListeners.add(mViewer);
 	
 	}
 
-	public void removeMenuViewerListener(IMenuViewerListener mViewer) {
+	public void removeMenuViewerListener(IPortChangeListener mViewer) {
 		menuListeners.remove(mViewer);
 	
 	}
