@@ -19,6 +19,7 @@ import java.io.IOException;
 import org.eclipse.jface.action.Action;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
@@ -33,18 +34,27 @@ public class RemoveRuleAction extends Action {
 
 	@Override
 	public void run() {
-		Router.getInstance().getRuleManager().removeRule(selectedRule);
-		if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(selectedRule.getKey().getPort())) {
-			try {
-				((HttpTransport) Router.getInstance().getTransport()).closePort(selectedRule.getKey().getPort());
-			} catch (IOException e2) {
-				e2.printStackTrace();
-			}
+		getRuleManager().removeRule(selectedRule);
+		if (getRuleManager().isAnyRuleWithPort(selectedRule.getKey().getPort()))
+			return;
+
+		try {
+			getHttpTransport().closePort(selectedRule.getKey().getPort());
+		} catch (IOException e2) {
+			e2.printStackTrace();
 		}
+	}
+
+	private RuleManager getRuleManager() {
+		return Router.getInstance().getRuleManager();
+	}
+
+	private HttpTransport getHttpTransport() {
+		return ((HttpTransport) Router.getInstance().getTransport());
 	}
 
 	public void setSelectedRule(Rule selectedRule) {
 		this.selectedRule = selectedRule;
 	}
-	
+
 }

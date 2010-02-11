@@ -15,7 +15,6 @@
 package com.predic8.plugin.membrane.wizards;
 
 import org.eclipse.jface.wizard.IWizardPage;
-import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -23,7 +22,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
-public class RuleTypeSelectionPage extends WizardPage {
+public class RuleTypeSelectionPage extends AbstractRuleWizardPage {
 
 	public static final String PAGE_NAME = "Type Selection";
 	
@@ -135,5 +134,5 @@ public class RuleTypeSelectionPage extends WizardPage {
 		}
 		return getWizard().getPage(ProxyRuleConfigurationPage.PAGE_NAME);
 	}
-	
+
 }

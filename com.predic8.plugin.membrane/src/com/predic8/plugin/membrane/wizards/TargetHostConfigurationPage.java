@@ -14,8 +14,9 @@
 
 package com.predic8.plugin.membrane.wizards;
 
+import java.io.IOException;
+
 import org.eclipse.jface.wizard.IWizardPage;
-import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -29,7 +30,7 @@ import org.eclipse.swt.widgets.Text;
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class TargetHostConfigurationPage extends WizardPage {
+public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 
 	public static final String PAGE_NAME = "Target Host Configuration";
 	
@@ -157,6 +158,25 @@ public class TargetHostConfigurationPage extends WizardPage {
 		return ruleOptionsTargetPortTextField.getText();
 	}
 	
-	
-	
+	@Override
+	public boolean canFinish() {
+		return true;
+	}
+
+	@Override
+	boolean performFinish(AddRuleWizard wizard) throws IOException {
+		if (getPreviousPage().getName().equals(ListenPortConfigurationPage.PAGE_NAME)) {
+			return wizard.listenPortConfigPage.performFinish(wizard);
+		} 
+		
+		if (getPreviousPage().getName().equals(AdvancedRuleConfigurationPage.PAGE_NAME)) {
+			
+			if(wizard.checkIfSimilarRuleExists())
+				return false;
+			
+			wizard.addRule();
+		}
+		return true;
+	}
+
 }

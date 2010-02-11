@@ -14,8 +14,9 @@
 
 package com.predic8.plugin.membrane.wizards;
 
+import java.io.IOException;
+
 import org.eclipse.jface.wizard.IWizardPage;
-import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -25,15 +26,16 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class ProxyRuleConfigurationPage extends WizardPage {
+public class ProxyRuleConfigurationPage extends AbstractRuleWizardPage {
 
 	public static final String PAGE_NAME = "Proxy Rule Configuration";
-	
+
 	private Text ruleOptionsListenPortTextField;
-	
+
 	protected ProxyRuleConfigurationPage() {
 		super(PAGE_NAME);
 		setTitle("Proxy Rule");
@@ -50,38 +52,41 @@ public class ProxyRuleConfigurationPage extends WizardPage {
 		gridLayout.marginRight = 10;
 		gridLayout.verticalSpacing = 20;
 		composite.setLayout(gridLayout);
-		
-		
-	
+
 		Label labelFullDescription = new Label(composite, SWT.WRAP);
-		labelFullDescription.setText("A rule is listenening on a TCP port for incomming connections.\n" + "The port number can be any integer between 1 and 65535.");
+		labelFullDescription
+				.setText("A rule is listenening on a TCP port for incomming connections.\n"
+						+ "The port number can be any integer between 1 and 65535.");
 		labelFullDescription.setBounds(120, 10, 100, 100);
-		
+
 		GridData gridData4ListenDescrLabel = new GridData();
 		gridData4ListenDescrLabel.horizontalSpan = 2;
 		gridData4ListenDescrLabel.verticalSpan = 2;
 		labelFullDescription.setLayoutData(gridData4ListenDescrLabel);
-		
+
 		Label listenPortLabel = new Label(composite, SWT.NONE);
 		GridData gridData4ListenPortLabel = new GridData();
 		gridData4ListenPortLabel.horizontalSpan = 1;
 		listenPortLabel.setLayoutData(gridData4ListenPortLabel);
 		listenPortLabel.setText("Listen Port:");
 
-		
-		ruleOptionsListenPortTextField = new Text(composite,SWT.BORDER);
-		ruleOptionsListenPortTextField.addVerifyListener(new PortVerifyListener());
-		ruleOptionsListenPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		ruleOptionsListenPortTextField.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
+		ruleOptionsListenPortTextField = new Text(composite, SWT.BORDER);
+		ruleOptionsListenPortTextField
+				.addVerifyListener(new PortVerifyListener());
+		ruleOptionsListenPortTextField.setLayoutData(new GridData(
+				GridData.FILL_HORIZONTAL));
+		ruleOptionsListenPortTextField.setText(getRuleManager().getDefaultListenPort());
 		ruleOptionsListenPortTextField.addModifyListener(new ModifyListener() {
-		
+
 			public void modifyText(ModifyEvent e) {
 				if (ruleOptionsListenPortTextField.getText().trim().equals("")) {
 					setPageComplete(false);
 					setErrorMessage("Listen port must be specified");
-				} else if (ruleOptionsListenPortTextField.getText().trim().length() >= 5) {
+				} else if (ruleOptionsListenPortTextField.getText().trim()
+						.length() >= 5) {
 					try {
-						if (Integer.parseInt(ruleOptionsListenPortTextField.getText()) > 65535) {
+						if (Integer.parseInt(ruleOptionsListenPortTextField
+								.getText()) > 65535) {
 							setErrorMessage("Listen port number has an upper bound 65535.");
 							setPageComplete(false);
 						}
@@ -95,17 +100,35 @@ public class ProxyRuleConfigurationPage extends WizardPage {
 				}
 			}
 		});
-		
+
 		setControl(composite);
 	}
-	
+
 	@Override
 	public IWizardPage getNextPage() {
 		return null;
 	}
-	
-	public String getListenPort() {
-		return ruleOptionsListenPortTextField.getText();
+
+	public int getListenPort() {
+		return Integer.parseInt(ruleOptionsListenPortTextField.getText());
+	}
+
+	@Override
+	public boolean canFinish() {
+		return true;
+	}
+
+	@Override
+	boolean performFinish(AddRuleWizard wizard) throws IOException {
+		ProxyRuleKey key = new ProxyRuleKey(getListenPort());
+		if (getRuleManager().exists(key)) {
+			wizard.openWarningDialog("You've entered a duplicated rule key.");
+			return false;
+		}
+
+		getRuleManager().addRuleIfNew(new ProxyRule(key));
+		getHttpTransport().openPort(key.getPort());
+		return true;
 	}
 
 }

@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 
 import org.eclipse.jface.wizard.IWizardPage;
-import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -29,10 +28,11 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class ListenPortConfigurationPage extends WizardPage {
+public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 
 	public static final String PAGE_NAME = "Listen Port Configuration";
 	
@@ -126,6 +126,20 @@ public class ListenPortConfigurationPage extends WizardPage {
 	
 	public String getListenPort() {
 		return listenPortTextField.getText();
+	}
+
+	protected boolean performFinish(AddRuleWizard wizard) throws IOException {
+		ForwardingRuleKey ruleKey = new ForwardingRuleKey("*", "*", ".*", Integer.parseInt(getListenPort()));
+		
+		if (Router.getInstance().getRuleManager().exists(ruleKey)) {
+			wizard.openWarningDialog("You've entered a duplicated rule key.");
+			return false;
+		}
+		
+		
+		wizard.createForwardingRule(ruleKey);
+		((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
+		return true;
 	}
 	
 }

@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 
 import org.eclipse.jface.wizard.IWizardPage;
-import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -38,7 +37,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class AdvancedRuleConfigurationPage extends WizardPage {
+public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 
 	public static final String PAGE_NAME = "Advanced Rule Configuration";
 	

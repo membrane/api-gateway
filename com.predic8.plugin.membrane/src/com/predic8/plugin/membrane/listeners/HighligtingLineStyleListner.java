@@ -16,7 +16,6 @@ package com.predic8.plugin.membrane.listeners;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -56,6 +55,8 @@ public class HighligtingLineStyleListner implements LineStyleListener {
 	private static final Color colorAttributeValue = new Color(Display
 			.getCurrent(), 0, 128, 0);
 
+	private StyleRangeComparator comparator = new StyleRangeComparator();
+	
 	@SuppressWarnings("unchecked")
 	public void lineGetStyle(LineStyleEvent event) {
 		List styles = new ArrayList();
@@ -78,18 +79,7 @@ public class HighligtingLineStyleListner implements LineStyleListener {
 							+ m1.start(i), m1.end(i) - m1.start(i)));
 			}
 		}
-		Collections.sort(styles, new Comparator(){
-			public int compare(Object obj1, Object obj2) {
-				int s1 = ((StyleRange) obj1).start;
-				int s2 = ((StyleRange) obj2).start;
-				if (s1 < s2)
-					return -1;
-				if (s1 == s2)
-					return 0;
-				return 1;
-
-			}
-		});
+		Collections.sort(styles, comparator);
 		event.styles = (StyleRange[]) styles.toArray(new StyleRange[0]);
 	}
 
