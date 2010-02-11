@@ -106,6 +106,11 @@
 		</property>
 	</bean>
 
+	<bean id="head2Body"
+		class="com.predic8.membrane.core.interceptor.AuthHead2BodyInterceptor">
+		<property name="displayName" value="Moves auth header elements to body" />
+	</bean>
+
 </beans>
 	
 	
