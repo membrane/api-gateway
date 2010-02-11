@@ -35,7 +35,7 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 
 	public static final String PAGE_NAME = "Listen Port Configuration";
 	
-	private Text listenPortTextField;
+	private Text listenPortText;
 	
 	protected ListenPortConfigurationPage() {
 		super(PAGE_NAME);
@@ -48,26 +48,35 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 		
 		createFullDescriptionLabel(composite, "A rule is listenening on a TCP port for incomming connections.\n" + "The port number can be any integer between 1 and 65535.");
 		
+		Label listenPortLabel = createListenPortLabel(composite);
+		listenPortLabel.setText("Listen Port:");
+
+		listenPortText = createListenPortText(composite);
+		
+		setControl(composite);
+	}
+
+	private Label createListenPortLabel(Composite composite) {
 		Label listenPortLabel = new Label(composite, SWT.NONE);
 		GridData gridData4ListenPortLabel = new GridData();
 		gridData4ListenPortLabel.horizontalSpan = 1;
 		listenPortLabel.setLayoutData(gridData4ListenPortLabel);
-		listenPortLabel.setText("Listen Port:");
+		return listenPortLabel;
+	}
 
-		
-		listenPortTextField = new Text(composite,SWT.BORDER);
-		listenPortTextField.addVerifyListener(new PortVerifyListener());
-		listenPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		listenPortTextField.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
-		listenPortTextField.addModifyListener(new ModifyListener() {
-			
+	private Text createListenPortText(Composite composite) {
+		final Text text = new Text(composite,SWT.BORDER);
+		text.addVerifyListener(new PortVerifyListener());
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		text.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
+		text.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (listenPortTextField.getText().trim().equals("")) {
+				if (text.getText().trim().equals("")) {
 					setPageComplete(false);
 					setErrorMessage("Listen port must be specified");
-				} else if (listenPortTextField.getText().trim().length() >= 5) {
+				} else if (text.getText().trim().length() >= 5) {
 					try {
-						if (Integer.parseInt(listenPortTextField.getText()) > 65535) {
+						if (Integer.parseInt(text.getText()) > 65535) {
 							setErrorMessage("Listen port number has an upper bound 65535.");
 							setPageComplete(false);
 						}
@@ -81,8 +90,7 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 				}
 			}
 		});
-		
-		setControl(composite);
+		return text;
 	}
 
 	@Override
@@ -90,10 +98,10 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 		if (!isPageComplete())
 			return false;
 		try {
-			if (((HttpTransport) Router.getInstance().getTransport()).isAnyThreadListeningAt(Integer.parseInt(listenPortTextField.getText()))) {
+			if (((HttpTransport) Router.getInstance().getTransport()).isAnyThreadListeningAt(Integer.parseInt(listenPortText.getText()))) {
 				return true;
 			}
-			new ServerSocket(Integer.parseInt(listenPortTextField.getText())).close();
+			new ServerSocket(Integer.parseInt(listenPortText.getText())).close();
 			return true;
 		} catch (IOException ex) {
 			setErrorMessage("Port is already in use. Please choose a different port!");
@@ -107,7 +115,7 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 	}
 	
 	public String getListenPort() {
-		return listenPortTextField.getText();
+		return listenPortText.getText();
 	}
 
 	protected boolean performFinish(AddRuleWizard wizard) throws IOException {
