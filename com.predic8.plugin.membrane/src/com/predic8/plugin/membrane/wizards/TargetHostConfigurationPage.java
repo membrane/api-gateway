@@ -34,7 +34,7 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 
 	public static final String PAGE_NAME = "Target Host Configuration";
 	
-	private Text ruleOptionsTargetHostTextField;
+	private Text ruleTargetHostText;
 	
 	private Text ruleTargetPortText;
 	
@@ -49,21 +49,29 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 		
 		createFullDescriptionLabel(composite, "If this rule applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
 		
-		Group ruleTargetGroup = new Group(composite, SWT.NONE);
-		ruleTargetGroup.setText("Target");
-		ruleTargetGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-		GridLayout gridLayout4TargetGroup = new GridLayout();
-		gridLayout4TargetGroup.numColumns = 4;
-		ruleTargetGroup.setLayout(gridLayout4TargetGroup);
+		Group group = createTargetGroup(composite);
 		
-		
-		new Label(ruleTargetGroup, SWT.NONE).setText("Host:");
+		new Label(group, SWT.NONE).setText("Host:");
 
-		ruleOptionsTargetHostTextField = new Text(ruleTargetGroup, SWT.BORDER);
-		ruleOptionsTargetHostTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
-		ruleOptionsTargetHostTextField.addModifyListener(new ModifyListener(){
+		ruleTargetHostText = createRuletargetHostText(group);
+
+		addLabelGap(group);
+		
+		new Label(group, SWT.NONE).setText("Port");
+
+		ruleTargetPortText = createRuletargetPortText(group);
+		
+		addLabelGap(group);
+	
+		setControl(composite);
+	}
+
+	private Text createRuletargetHostText(Group ruleTargetGroup) {
+		final Text text = new Text(ruleTargetGroup, SWT.BORDER);
+		text.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
+		text.addModifyListener(new ModifyListener(){
 			public void modifyText(ModifyEvent e) {
-				if (ruleOptionsTargetHostTextField.getText().trim().equals("")) {
+				if (text.getText().trim().equals("")) {
 					setPageComplete(false);
 					setErrorMessage("Target host must be specified");
 				} else {
@@ -71,37 +79,32 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 					setErrorMessage(null);
 				}
 			}});
-		ruleOptionsTargetHostTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
+	}
 
+	private void addLabelGap(Group ruleTargetGroup) {
+		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
 		
+		Label lb1 = new Label(ruleTargetGroup, SWT.NONE);
+		lb1.setLayoutData(gData);
+		lb1.setText(" ");
 		
-		Label labelDummy3 = new Label(ruleTargetGroup, SWT.NONE);
-		GridData gridDataForDummy3 = new GridData(GridData.FILL_HORIZONTAL);
-		labelDummy3.setLayoutData(gridDataForDummy3);
-		labelDummy3.setText(" ");
-		
-		Label labelDummy4 = new Label(ruleTargetGroup, SWT.NONE);
-		GridData gridDataForLabelDummy7 = new GridData(GridData.FILL_HORIZONTAL);
-		labelDummy4.setLayoutData(gridDataForLabelDummy7);
-		labelDummy4.setText(" ");
-		
-		Label targetPortTextLabel = new Label(ruleTargetGroup, SWT.NONE);
-		targetPortTextLabel.setText("Port");
+		Label lb2 = new Label(ruleTargetGroup, SWT.NONE);
+		lb2.setLayoutData(gData);
+		lb2.setText(" ");
+	}
 
-		ruleTargetPortText = createRuletargetPortText(ruleTargetGroup);
-		
-		Label labelDummy5 = new Label(ruleTargetGroup, SWT.NONE);
-		GridData gridDataForLabelDummy5 = new GridData(GridData.FILL_HORIZONTAL);
-		labelDummy5.setLayoutData(gridDataForLabelDummy5);
-		labelDummy5.setText(" ");
 	
-		Label labelDummy6 = new Label(ruleTargetGroup, SWT.NONE);
-		GridData gridDataForLabelDummy6 = new GridData(GridData.FILL_HORIZONTAL);
-		labelDummy6.setLayoutData(gridDataForLabelDummy6);
-		labelDummy6.setText(" ");
-		
-		
-		setControl(composite);
+	
+	private Group createTargetGroup(Composite composite) {
+		Group ruleTargetGroup = new Group(composite, SWT.NONE);
+		ruleTargetGroup.setText("Target");
+		ruleTargetGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		GridLayout gridLayout4TargetGroup = new GridLayout();
+		gridLayout4TargetGroup.numColumns = 4;
+		ruleTargetGroup.setLayout(gridLayout4TargetGroup);
+		return ruleTargetGroup;
 	}
 
 	private Text createRuletargetPortText(Group ruleTargetGroup) {
@@ -138,7 +141,7 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 	}
 	
 	public String getTargetHost() {
-		return ruleOptionsTargetHostTextField.getText();
+		return ruleTargetHostText.getText();
 	}
 
 	public String getTargetPort() {
