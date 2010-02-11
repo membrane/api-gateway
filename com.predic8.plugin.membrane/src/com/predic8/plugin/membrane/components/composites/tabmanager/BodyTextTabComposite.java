@@ -26,7 +26,6 @@ import org.eclipse.swt.widgets.TabFolder;
 
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.ByteUtil;
-import com.predic8.plugin.membrane.listeners.HighligtingLineStyleListner;
 
 public class BodyTextTabComposite extends BodyTabComposite {
 
@@ -43,7 +42,7 @@ public class BodyTextTabComposite extends BodyTabComposite {
 				bodyText.redraw();
 			}
 		});
-		bodyText.addLineStyleListener(new HighligtingLineStyleListner());
+		
 	}
 
 	@Override

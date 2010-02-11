@@ -20,6 +20,7 @@ import org.eclipse.swt.widgets.TabFolder;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.util.TextUtil;
+import com.predic8.plugin.membrane.listeners.HighligtingLineStyleListner;
 
 public class SOAPTabComposite extends BodyTextTabComposite {
 
@@ -27,6 +28,7 @@ public class SOAPTabComposite extends BodyTextTabComposite {
 	
 	public SOAPTabComposite(TabFolder parent) {
 		super(parent, TAB_TITLE);
+		bodyText.addLineStyleListener(new HighligtingLineStyleListner());
 	}
 
 	public String getBodyText() {

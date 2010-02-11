@@ -43,7 +43,7 @@ public abstract class Message {
 	
 	public Message() {
 		header = new Header();
-		body = new Body();
+		body = new EmptyBody();
 		
 	}
 

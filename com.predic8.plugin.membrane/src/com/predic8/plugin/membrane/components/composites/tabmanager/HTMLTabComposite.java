@@ -16,12 +16,15 @@ package com.predic8.plugin.membrane.components.composites.tabmanager;
 
 import org.eclipse.swt.widgets.TabFolder;
 
+import com.predic8.plugin.membrane.listeners.HighligtingLineStyleListner;
+
 public class HTMLTabComposite extends BodyTextTabComposite {
 
 	public static final String TAB_TITLE = "HTML";
 	
 	public HTMLTabComposite(TabFolder parent) {
 		super(parent, TAB_TITLE);
+		bodyText.addLineStyleListener(new HighligtingLineStyleListner());
 	}
 
 }

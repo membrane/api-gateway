@@ -42,8 +42,8 @@ public class Body {
 
 	private int length;
 
-	public Body() {
-
+	protected Body() {
+		
 	}
 
 	public Body(String body) {
@@ -86,7 +86,7 @@ public class Body {
 			read = true;
 		} catch (IOException e) {
 			log.error(e);
-			throw new 	RuntimeException("could not read body");
+			throw new 	RuntimeException("could not read body: " + e);
 		}
 	}
 

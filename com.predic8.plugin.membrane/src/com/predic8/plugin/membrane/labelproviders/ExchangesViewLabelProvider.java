@@ -14,6 +14,8 @@
 
 package com.predic8.plugin.membrane.labelproviders;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 
@@ -147,6 +149,11 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 
 	private String getServer(HttpExchange exchange) {
 		if (exchange.getRule() instanceof ProxyRule) {
+			try {
+				return new URL(exchange.getRequestUri()).getHost();
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			}
 			return exchange.getRequestUri();
 		} else if (exchange.getRule() instanceof ForwardingRule) {
 			return ((ForwardingRule) exchange.getRule()).getTargetHost();

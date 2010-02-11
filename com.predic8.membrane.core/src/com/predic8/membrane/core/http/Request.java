@@ -93,7 +93,7 @@ public class Request extends Message {
 		log.debug("createBody");
 		
 		if (isBodyEmpty()) {
-			body = new Body();
+			body = new EmptyBody();
 			return;
 		}
 
