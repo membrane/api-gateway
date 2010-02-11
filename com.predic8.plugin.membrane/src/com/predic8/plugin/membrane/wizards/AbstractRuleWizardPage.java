@@ -4,8 +4,10 @@ import java.io.IOException;
 
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
@@ -44,6 +46,17 @@ public abstract class AbstractRuleWizardPage extends WizardPage {
 		layout.verticalSpacing = 20;
 		composite.setLayout(layout);
 		return composite;
+	}
+	
+	protected void createFullDescriptionLabel(Composite composite, String description) {
+		Label label = new Label(composite, SWT.WRAP);
+		label.setText(description);
+		label.setBounds(120, 10, 100, 100);
+		
+		GridData gData = new GridData();
+		gData.horizontalSpan = 2;
+		gData.verticalSpan = 2;
+		label.setLayoutData(gData);
 	}
 	
 }

@@ -46,14 +46,7 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 2);
 		
-		Label labelFullDescription = new Label(composite, SWT.WRAP);
-		labelFullDescription.setText("A rule is listenening on a TCP port for incomming connections.\n" + "The port number can be any integer between 1 and 65535.");
-		labelFullDescription.setBounds(120, 10, 100, 100);
-		
-		GridData gridData4ListenDescrLabel = new GridData();
-		gridData4ListenDescrLabel.horizontalSpan = 2;
-		gridData4ListenDescrLabel.verticalSpan = 2;
-		labelFullDescription.setLayoutData(gridData4ListenDescrLabel);
+		createFullDescriptionLabel(composite, "A rule is listenening on a TCP port for incomming connections.\n" + "The port number can be any integer between 1 and 65535.");
 		
 		Label listenPortLabel = new Label(composite, SWT.NONE);
 		GridData gridData4ListenPortLabel = new GridData();

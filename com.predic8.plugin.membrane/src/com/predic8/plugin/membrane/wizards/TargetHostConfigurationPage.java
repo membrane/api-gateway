@@ -36,7 +36,7 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 	
 	private Text ruleOptionsTargetHostTextField;
 	
-	private Text ruleOptionsTargetPortTextField;
+	private Text ruleTargetPortText;
 	
 	protected TargetHostConfigurationPage() {
 		super(PAGE_NAME);
@@ -47,7 +47,7 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 1);
 		
-		createFullDescriptionLabel(composite);
+		createFullDescriptionLabel(composite, "If this rule applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
 		
 		Group ruleTargetGroup = new Group(composite, SWT.NONE);
 		ruleTargetGroup.setText("Target");
@@ -88,30 +88,7 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 		Label targetPortTextLabel = new Label(ruleTargetGroup, SWT.NONE);
 		targetPortTextLabel.setText("Port");
 
-		ruleOptionsTargetPortTextField = new Text(ruleTargetGroup,SWT.BORDER);
-		ruleOptionsTargetPortTextField.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
-		ruleOptionsTargetPortTextField.addVerifyListener(new PortVerifyListener());
-		ruleOptionsTargetPortTextField.addModifyListener(new ModifyListener(){
-			public void modifyText(ModifyEvent e) {
-				if (ruleOptionsTargetPortTextField.getText().trim().equals("")) {
-					setPageComplete(false);
-					setErrorMessage("Target host port must be specified");
-				} else if (ruleOptionsTargetPortTextField.getText().trim().length() >= 5) {
-					try {
-						if (Integer.parseInt(ruleOptionsTargetPortTextField.getText()) > 65535) {
-							setErrorMessage("Target host port number has an upper bound 65535.");
-							setPageComplete(false);
-						}
-					} catch (NumberFormatException nfe) {
-						setErrorMessage("Specified target host port must be in decimal number format.");
-						setPageComplete(false);
-					}
-				} else {
-					setErrorMessage(null);
-					setPageComplete(true);
-				}
-			}});
-		ruleOptionsTargetPortTextField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		ruleTargetPortText = createRuletargetPortText(ruleTargetGroup);
 		
 		Label labelDummy5 = new Label(ruleTargetGroup, SWT.NONE);
 		GridData gridDataForLabelDummy5 = new GridData(GridData.FILL_HORIZONTAL);
@@ -127,15 +104,32 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 		setControl(composite);
 	}
 
-	private void createFullDescriptionLabel(Composite composite) {
-		Label label = new Label(composite, SWT.WRAP);
-		label.setText("If this rule applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
-		label.setBounds(120, 10, 100, 100);
-		
-		GridData gData = new GridData();
-		gData.horizontalSpan = 2;
-		gData.verticalSpan = 2;
-		label.setLayoutData(gData);
+	private Text createRuletargetPortText(Group ruleTargetGroup) {
+		final Text text = new Text(ruleTargetGroup,SWT.BORDER);
+		text.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
+		text.addVerifyListener(new PortVerifyListener());
+		text.addModifyListener(new ModifyListener(){
+			public void modifyText(ModifyEvent e) {
+				if (text.getText().trim().equals("")) {
+					setPageComplete(false);
+					setErrorMessage("Target host port must be specified");
+				} else if (text.getText().trim().length() >= 5) {
+					try {
+						if (Integer.parseInt(text.getText()) > 65535) {
+							setErrorMessage("Target host port number has an upper bound 65535.");
+							setPageComplete(false);
+						}
+					} catch (NumberFormatException nfe) {
+						setErrorMessage("Specified target host port must be in decimal number format.");
+						setPageComplete(false);
+					}
+				} else {
+					setErrorMessage(null);
+					setPageComplete(true);
+				}
+			}});
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
 	}
 
 	@Override
@@ -148,7 +142,7 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 	}
 
 	public String getTargetPort() {
-		return ruleOptionsTargetPortTextField.getText();
+		return ruleTargetPortText.getText();
 	}
 	
 	@Override

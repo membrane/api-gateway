@@ -44,16 +44,7 @@ public class ProxyRuleConfigurationPage extends AbstractRuleWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 2);
 
-		Label labelFullDescription = new Label(composite, SWT.WRAP);
-		labelFullDescription
-				.setText("A rule is listenening on a TCP port for incomming connections.\n"
-						+ "The port number can be any integer between 1 and 65535.");
-		labelFullDescription.setBounds(120, 10, 100, 100);
-
-		GridData gridData4ListenDescrLabel = new GridData();
-		gridData4ListenDescrLabel.horizontalSpan = 2;
-		gridData4ListenDescrLabel.verticalSpan = 2;
-		labelFullDescription.setLayoutData(gridData4ListenDescrLabel);
+		createFullDescriptionLabel(composite, "A rule is listenening on a TCP port for incomming connections.\n" + "The port number can be any integer between 1 and 65535.");  
 
 		Label listenPortLabel = new Label(composite, SWT.NONE);
 		GridData gridData4ListenPortLabel = new GridData();
@@ -66,7 +57,8 @@ public class ProxyRuleConfigurationPage extends AbstractRuleWizardPage {
 				.addVerifyListener(new PortVerifyListener());
 		ruleOptionsListenPortTextField.setLayoutData(new GridData(
 				GridData.FILL_HORIZONTAL));
-		ruleOptionsListenPortTextField.setText(getRuleManager().getDefaultListenPort());
+		ruleOptionsListenPortTextField.setText(getRuleManager()
+				.getDefaultListenPort());
 		ruleOptionsListenPortTextField.addModifyListener(new ModifyListener() {
 
 			public void modifyText(ModifyEvent e) {

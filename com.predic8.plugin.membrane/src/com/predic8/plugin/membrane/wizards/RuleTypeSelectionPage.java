@@ -29,7 +29,7 @@ public class RuleTypeSelectionPage extends AbstractRuleWizardPage {
 	
 	private Button btAdvancedRule;
 	
-	private Button btProxyRule;
+	protected Button btProxyRule;
 	
 	protected RuleTypeSelectionPage() {
 		super(PAGE_NAME);
@@ -39,80 +39,37 @@ public class RuleTypeSelectionPage extends AbstractRuleWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 2);
 		
-		btSimpleRule = new Button(composite, SWT.RADIO);
-		btSimpleRule.setText("Simple Reverse Proxy");
+		btSimpleRule = createRuleButton(composite, "Simple Reverse Proxy");
+		createFullDescriptionLabel(composite, "Create rule to forward  HTTP and SOAP over HTTP requests.");
+		addVericalGap(composite);
+		
+		btAdvancedRule = createRuleButton(composite, "Advanced Reverse Proxy");
+		createFullDescriptionLabel(composite, "Offers all available options for reverse proxy rules like virtual host,\nHTTP method and request URL.");
+		addVericalGap(composite);
+		
+		btProxyRule = createRuleButton(composite, "HTTP  Proxy Rule");
+		createFullDescriptionLabel(composite, "Works like a regular HTTP Proxy.\nCan proxy SOAP and HTTP requests.");
+		setControl(composite);
+	}
+
+	private Button createRuleButton(Composite composite, String text) {
+		Button btSimpleRule = new Button(composite, SWT.RADIO);
+		btSimpleRule.setText(text);
 		GridData btSimpleGridData = new GridData();
 		btSimpleGridData.grabExcessHorizontalSpace = true;
 		btSimpleRule.setLayoutData(btSimpleGridData);
-		
-		
-		Label labelFullDescription = new Label(composite, SWT.WRAP);
-		labelFullDescription.setText("Create rule to forward  HTTP and SOAP over HTTP requests.");
-		labelFullDescription.setBounds(120, 10, 100, 100);
-		
-		GridData gridData4ListenDescrLabel = new GridData();
-		gridData4ListenDescrLabel.horizontalSpan = 2;
-		gridData4ListenDescrLabel.verticalSpan = 1;
-		labelFullDescription.setLayoutData(gridData4ListenDescrLabel);
-		
-		
-		Label labelGap = new Label(composite, SWT.WRAP);
-		labelGap.setText(" ");
-		labelGap.setBounds(120, 10, 100, 100);
-		
-		GridData gridData4LabelGap = new GridData();
-		gridData4LabelGap.horizontalSpan = 2;
-		gridData4LabelGap.verticalSpan = 3;
-		labelGap.setLayoutData(gridData4LabelGap);
-		
-		
-		
-		btAdvancedRule = new Button(composite, SWT.RADIO);
-		btAdvancedRule.setText("Advanced Reverse Proxy");
-		GridData btAdvancedGridData = new GridData();
-		btAdvancedGridData.grabExcessHorizontalSpace = true;
-		btAdvancedRule.setLayoutData(btAdvancedGridData);
-		
-		
-		Label labelFullDescriptionAdvanced = new Label(composite, SWT.WRAP);
-		labelFullDescriptionAdvanced.setText("Offers all available options for reverse proxy rules like virtual host,\nHTTP method and request URL.");
-		labelFullDescriptionAdvanced.setBounds(120, 10, 100, 100);
-		
-		GridData gridData4ListenDescrLabelAdvanced = new GridData();
-		gridData4ListenDescrLabelAdvanced.horizontalSpan = 2;
-		gridData4ListenDescrLabelAdvanced.verticalSpan = 2;
-		labelFullDescriptionAdvanced.setLayoutData(gridData4ListenDescrLabelAdvanced);
-		
-		
-		Label labelGap1 = new Label(composite, SWT.WRAP);
-		labelGap1.setText(" ");
-		labelGap1.setBounds(120, 10, 100, 100);
-		
-		GridData gridData4LabelGap1 = new GridData();
-		gridData4LabelGap1.horizontalSpan = 2;
-		gridData4LabelGap1.verticalSpan = 3;
-		labelGap1.setLayoutData(gridData4LabelGap1);
-		
-		
+		return btSimpleRule;
+	}
 
-		btProxyRule = new Button(composite, SWT.RADIO);
-		btProxyRule.setText("HTTP  Proxy Rule");
-		GridData btProxyGridData = new GridData();
-		btProxyGridData.grabExcessHorizontalSpace = true;
-		btProxyRule.setLayoutData(btProxyGridData);
-
+	private void addVericalGap(Composite composite) {
+		Label label = new Label(composite, SWT.WRAP);
+		label.setText(" ");
+		label.setBounds(120, 10, 100, 100);
 		
-		Label labelFullDescriptionProxy = new Label(composite, SWT.WRAP);
-		labelFullDescriptionProxy.setText("Works like a regular HTTP Proxy.\nCan proxy SOAP and HTTP requests.");
-		labelFullDescriptionProxy.setBounds(120, 10, 100, 100);
-		
-		GridData gridData4ListenDescrLabelProxy = new GridData();
-		gridData4ListenDescrLabelProxy.horizontalSpan = 2;
-		gridData4ListenDescrLabelProxy.verticalSpan = 2;
-		labelFullDescriptionProxy.setLayoutData(gridData4ListenDescrLabelProxy);
-		
-		
-		setControl(composite);
+		GridData gData = new GridData();
+		gData.horizontalSpan = 2;
+		gData.verticalSpan = 3;
+		label.setLayoutData(gData);
 	}
 
 	@Override
