@@ -45,27 +45,9 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 	}
 
 	public void createControl(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 10;
-		gridLayout.marginLeft = 2;
-		gridLayout.marginBottom = 10;
-		gridLayout.marginRight = 10;
-		gridLayout.verticalSpacing = 20;
-		composite.setLayout(gridLayout);
+		Composite composite = createComposite(parent, 1);
 		
-		
-		Label labelFullDescription = new Label(composite, SWT.WRAP);
-		labelFullDescription.setText("If this rule applies to an incomming message Membrane Monitor will" +
-				"\nforward the message to the target host on the specified port number.");
-		labelFullDescription.setBounds(120, 10, 100, 100);
-		
-		GridData gridData4ListenDescrLabel = new GridData();
-		gridData4ListenDescrLabel.horizontalSpan = 2;
-		gridData4ListenDescrLabel.verticalSpan = 2;
-		labelFullDescription.setLayoutData(gridData4ListenDescrLabel);
-		
+		createFullDescriptionLabel(composite);
 		
 		Group ruleTargetGroup = new Group(composite, SWT.NONE);
 		ruleTargetGroup.setText("Target");
@@ -144,7 +126,18 @@ public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
 		
 		setControl(composite);
 	}
-	
+
+	private void createFullDescriptionLabel(Composite composite) {
+		Label label = new Label(composite, SWT.WRAP);
+		label.setText("If this rule applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
+		label.setBounds(120, 10, 100, 100);
+		
+		GridData gData = new GridData();
+		gData.horizontalSpan = 2;
+		gData.verticalSpan = 2;
+		label.setLayoutData(gData);
+	}
+
 	@Override
 	public IWizardPage getNextPage() {
 		return null;

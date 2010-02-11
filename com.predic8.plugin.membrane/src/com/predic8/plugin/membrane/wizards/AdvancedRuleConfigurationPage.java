@@ -64,16 +64,7 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 	}
 
 	public void createControl(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 1;
-		layout.marginTop = 10;
-		layout.marginLeft = 2;
-		layout.marginBottom = 10;
-		layout.marginRight = 10;
-		layout.verticalSpacing = 20;
-		composite.setLayout(layout);
-		
+		Composite composite = createComposite(parent, 1);
 		
 		Group ruleKeyGroup = createRuleKeyGroup(composite);
 		

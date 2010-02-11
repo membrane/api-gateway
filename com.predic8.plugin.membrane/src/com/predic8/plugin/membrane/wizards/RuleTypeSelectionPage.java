@@ -17,7 +17,6 @@ package com.predic8.plugin.membrane.wizards;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -38,16 +37,7 @@ public class RuleTypeSelectionPage extends AbstractRuleWizardPage {
 	}
 
 	public void createControl(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 2;
-		gridLayout.marginTop = 10;
-		gridLayout.marginLeft = 2;
-		gridLayout.marginBottom = 10;
-		gridLayout.marginRight = 10;
-		gridLayout.verticalSpacing = 20;
-		composite.setLayout(gridLayout);
-		
+		Composite composite = createComposite(parent, 2);
 		
 		btSimpleRule = new Button(composite, SWT.RADIO);
 		btSimpleRule.setText("Simple Reverse Proxy");
