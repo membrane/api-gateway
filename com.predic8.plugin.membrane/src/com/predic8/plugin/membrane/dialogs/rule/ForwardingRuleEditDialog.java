@@ -24,6 +24,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabItem;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -69,49 +70,49 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 
 	private void createInterceptorsComposite() {
 		interceptorsComposite = new RuleInterceptorTabComposite(tabFolder);
-		TabItem interceptorsTabItem = new TabItem(tabFolder, SWT.NONE);
-		interceptorsTabItem.setText("Interceptors");
-		interceptorsTabItem.setControl(interceptorsComposite);
+		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
+		tabItem.setText("Interceptors");
+		tabItem.setControl(interceptorsComposite);
 	}
 
 	private void createActionComposite() {
 		actionsComposite = new RuleActionsTabComposite(tabFolder);
-		TabItem actionsTabItem = new TabItem(tabFolder, SWT.NONE);
-		actionsTabItem.setText("Actions");
-		actionsTabItem.setControl(actionsComposite);
+		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
+		tabItem.setText("Actions");
+		tabItem.setControl(actionsComposite);
 	}
 
 	private void createTargetComposite() {
 		targetComposite = new RuleTargetTabComposite(tabFolder);
-		TabItem targetTabItem = new TabItem(tabFolder, SWT.NONE);
-		targetTabItem.setText("Target");
-		targetTabItem.setControl(targetComposite);
+		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
+		tabItem.setText("Target");
+		tabItem.setControl(targetComposite);
 	}
 
 	private void createRuleKeyComposite() {
 		ruleKeyComposite = new ForwardingRuleKeyTabComposite(tabFolder);
-		TabItem keyTabItem = new TabItem(tabFolder, SWT.NONE);
-		keyTabItem.setText("Rule Key");
-		keyTabItem.setControl(ruleKeyComposite);
+		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
+		tabItem.setText("Rule Key");
+		tabItem.setControl(ruleKeyComposite);
 	}
 
 	private void createGeneralComposite() {
 		generalInfoComposite = new RuleGeneralInfoTabComposite(tabFolder);
-		TabItem generalTabItem = new TabItem(tabFolder, SWT.NONE);
-		generalTabItem.setText("General");
-		generalTabItem.setControl(generalInfoComposite);
+		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
+		tabItem.setText("General");
+		tabItem.setControl(generalInfoComposite);
 	}
 
 	@Override
 	public void setInput(Rule rule) {
 		super.setInput(rule);
-		ruleKeyComposite.getRuleOptionsRuleKeyGroup().setInput(rule.getKey());
+		ruleKeyComposite.getRuleKeyGroup().setInput(rule.getKey());
 		targetComposite.setInput(rule);
 	}
 
 	@Override
 	public void onOkPressed() {
-		ForwardingRuleKey ruleKey = ruleKeyComposite.getRuleOptionsRuleKeyGroup().getUserInput();
+		ForwardingRuleKey ruleKey = ruleKeyComposite.getRuleKeyGroup().getUserInput();
 		if (ruleKey == null) {
 			openErrorDialog("Illeagal input! Please check again");
 			return;
@@ -119,11 +120,11 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 
 		if (ruleKey.equals(rule.getKey())) {
 			updateRule(ruleKey, false);
-			Router.getInstance().getRuleManager().ruleChanged(rule);
+			getRuleManager().ruleChanged(rule);
 			return;
 		}
 
-		if (Router.getInstance().getRuleManager().exists(ruleKey)) {
+		if (getRuleManager().exists(ruleKey)) {
 			openErrorDialog("Illeagal input! Your rule key conflict with another existent rule.");
 			return;
 		}
@@ -138,8 +139,8 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 				return;
 			}
 		}
-		Router.getInstance().getRuleManager().removeRule(rule);
-		if (!Router.getInstance().getRuleManager().isAnyRuleWithPort(rule.getKey().getPort()) && (rule.getKey().getPort() != ruleKey.getPort())) {
+		getRuleManager().removeRule(rule);
+		if (!getRuleManager().isAnyRuleWithPort(rule.getKey().getPort()) && (rule.getKey().getPort() != ruleKey.getPort())) {
 			try {
 				getTransport().closePort(rule.getKey().getPort());
 			} catch (IOException e2) {
@@ -147,8 +148,12 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 			}
 		}
 		updateRule(ruleKey, true);
-		Router.getInstance().getRuleManager().ruleChanged(rule);
+		getRuleManager().ruleChanged(rule);
 
+	}
+
+	private RuleManager getRuleManager() {
+		return Router.getInstance().getRuleManager();
 	}
 
 	private HttpTransport getTransport() {
@@ -159,7 +164,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 		rule.setName(generalInfoComposite.getRuleName());
 		rule.setKey(ruleKey);
 		if (addToManager) {
-			Router.getInstance().getRuleManager().addRuleIfNew(rule);
+			getRuleManager().addRuleIfNew(rule);
 		}
 		((ForwardingRule) rule).setTargetHost(targetComposite.getTargetGroup().getTargetHost());
 		((ForwardingRule) rule).setTargetPort(targetComposite.getTargetGroup().getTargetPort());

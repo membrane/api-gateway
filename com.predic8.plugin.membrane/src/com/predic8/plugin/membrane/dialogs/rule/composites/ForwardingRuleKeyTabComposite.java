@@ -17,11 +17,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 
-import com.predic8.plugin.membrane.components.RuleOptionsRuleKeyGroup;
+import com.predic8.plugin.membrane.components.RuleKeyGroup;
 
 public class ForwardingRuleKeyTabComposite extends Composite {
 
-	private RuleOptionsRuleKeyGroup ruleKeyGroup;
+	private RuleKeyGroup ruleKeyGroup;
 	
 	public ForwardingRuleKeyTabComposite(Composite parent) {
 		super(parent, SWT.NONE);
@@ -33,11 +33,11 @@ public class ForwardingRuleKeyTabComposite extends Composite {
 		gridLayout.marginRight = 20;
 		setLayout(gridLayout);
 		
-		ruleKeyGroup = new RuleOptionsRuleKeyGroup(this, SWT.NONE);
+		ruleKeyGroup = new RuleKeyGroup(this, SWT.NONE);
 		
 	}
 
-	public RuleOptionsRuleKeyGroup getRuleOptionsRuleKeyGroup() {
+	public RuleKeyGroup getRuleKeyGroup() {
 		return ruleKeyGroup;
 	}
 	

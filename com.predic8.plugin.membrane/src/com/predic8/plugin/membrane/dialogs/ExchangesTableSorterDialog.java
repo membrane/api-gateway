@@ -91,19 +91,18 @@ public class ExchangesTableSorterDialog extends Dialog {
 
 		new Label(container, SWT.NONE).setText("");
 
-		createChildComposite(container);
+		childComp = createChildComposite(container);
 
 		Label lbComboSorters = new Label(childComp, SWT.NONE);
 		lbComboSorters.setText("Sort By ");
 		lbComboSorters.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 
-		
 		comboSorters.add(createComboSorter());
 		addButtons.add(createAddButton());
-		
+
 		comboSorters.add(createComboSorter());
 		addButtons.add(createAddButton());
-		
+
 		comboSorters.add(createComboSorter());
 
 		Composite compOrder = createOrderButtonComposite(container);
@@ -122,41 +121,46 @@ public class ExchangesTableSorterDialog extends Dialog {
 			btDesc.setSelection(!exchangesView.getComparator().isAscending());
 		}
 
-		for (int i = 0; i < exchangesView.getComparator().getAccessors().size(); i ++) {
-			activateComboSorter(i);
-			if (i != 0) {
-				addButtons.get(i-1).setSelection(true);
-			}
-		}
+		readAccessors();
 
 		return container;
 	}
 
-	private void createChildComposite(Composite container) {
-		childComp = new Composite(container, SWT.BORDER);
-		childComp.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+	private void readAccessors() {
+		for (int i = 0; i < exchangesView.getComparator().getAccessors().size(); i++) {
+			activateComboSorter(i);
+			if (i != 0) {
+				addButtons.get(i - 1).setSelection(true);
+			}
+		}
+	}
 
-		GridData gdChildComp = new GridData();
-		gdChildComp.grabExcessHorizontalSpace = true;
-		gdChildComp.grabExcessVerticalSpace = true;
-		gdChildComp.widthHint = 370;
-		gdChildComp.heightHint = 300;
-		childComp.setLayoutData(gdChildComp);
+	private Composite createChildComposite(Composite container) {
+		Composite comp = new Composite(container, SWT.BORDER);
+		comp.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
 
-		childComp.setLayout(createChildLayout());
+		GridData gData = new GridData();
+		gData.grabExcessHorizontalSpace = true;
+		gData.grabExcessVerticalSpace = true;
+		gData.widthHint = 370;
+		gData.heightHint = 300;
+		comp.setLayoutData(gData);
+
+		comp.setLayout(createChildLayout());
+		return comp;
 	}
 
 	private Composite createOrderButtonComposite(Composite container) {
-		Composite compOrder = new Composite(container, SWT.BORDER);
-		compOrder.setLayout(new FillLayout(SWT.VERTICAL));
+		Composite composite = new Composite(container, SWT.BORDER);
+		composite.setLayout(new FillLayout(SWT.VERTICAL));
 
-		GridData orderGridData = new GridData();
-		orderGridData.grabExcessHorizontalSpace = true;
-		orderGridData.grabExcessVerticalSpace = true;
-		orderGridData.widthHint = 370;
-		orderGridData.heightHint = 40;
-		compOrder.setLayoutData(orderGridData);
-		return compOrder;
+		GridData gData = new GridData();
+		gData.grabExcessHorizontalSpace = true;
+		gData.grabExcessVerticalSpace = true;
+		gData.widthHint = 370;
+		gData.heightHint = 40;
+		composite.setLayoutData(gData);
+		return composite;
 	}
 
 	private void activateComboSorter(int index) {
@@ -164,7 +168,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 		comboSorters.get(index).setVisible(true);
 		comboSorters.get(index).setText(exchangesView.getComparator().getAccessors().get(index).getId());
 		if (index > 0)
-			addButtons.get(index-1).setVisible(true);
+			addButtons.get(index - 1).setVisible(true);
 	}
 
 	private Combo createComboSorter() {
@@ -173,8 +177,8 @@ public class ExchangesTableSorterDialog extends Dialog {
 		combo.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				if (combo.getSelectionIndex() >= 0) {
-						addButtons.get(index).setVisible(true);
-				} 
+					addButtons.get(index).setVisible(true);
+				}
 			}
 		});
 		combo.setVisible(comboSorters.size() == 0);
@@ -189,13 +193,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (btEnable.getSelection()) {
-					for (Combo combo: comboSorters) {
-						combo.setEnabled(true);
-					}
-					
-					for (Button bt: addButtons) {
-						bt.setEnabled(true);
-					}
+					setControlsEnabled(true);
 				}
 			}
 
@@ -210,14 +208,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				if (btDisable.getSelection()) {
-					for (Combo combo: comboSorters) {
-						combo.setEnabled(false);
-					}
-					
-					for (Button bt: addButtons) {
-						bt.setEnabled(false);
-					}
-
+					setControlsEnabled(false);
 					btAsc.setSelection(true);
 					btDesc.setSelection(false);
 				}
@@ -248,7 +239,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 	}
 
 	private Button createAddButton() {
-		final int index = comboSorters.size() -1;
+		final int index = comboSorters.size() - 1;
 		Button bt = new Button(childComp, SWT.CHECK | SWT.LEFT);
 		bt.setText("and");
 		bt.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
@@ -260,14 +251,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 					comboSorters.get(index + 1).setVisible(true);
 					comboSorters.get(index + 1).setEnabled(true);
 				} else {
-					for (int i = index + 1; i <  comboSorters.size(); i ++) {
-						comboSorters.get(i).setVisible(false);
-						if (i < addButtons.size()) {
-							addButtons.get(i).setSelection(false);
-							addButtons.get(i).setVisible(false);
-							addButtons.get(i).notifyListeners(SWT.Selection, null);
-						}
-					}
+					makeControlsInvisible(index);
 				}
 			}
 		});
@@ -285,20 +269,22 @@ public class ExchangesTableSorterDialog extends Dialog {
 	@Override
 	protected void okPressed() {
 		exchangesView.getComparator().removeAllAccessors();
-		if (!btDisable.getSelection()) {
-			List<ExchangeAccessor> accessors = new ArrayList<ExchangeAccessor>();
-			for (Combo combo : comboSorters) {
-				if (!combo.isVisible() || combo.getSelectionIndex() < 0)
-					continue;
-				accessors.add(getAccessor(combo.getSelectionIndex()));
-			}
-			exchangesView.getComparator().addAccessors(accessors.toArray(new ExchangeAccessor[accessors.size()]));
-			if (accessors.size() > 0) {
-				exchangesView.getComparator().setAscending(btAsc.getSelection());
-				exchangesView.refreshTable(true);
-			}
+		if (btDisable.getSelection()) {
+			super.okPressed();
+			return;
 		}
-		super.okPressed();
+
+		List<ExchangeAccessor> accessors = new ArrayList<ExchangeAccessor>();
+		for (Combo combo : comboSorters) {
+			if (!combo.isVisible() || combo.getSelectionIndex() < 0)
+				continue;
+			accessors.add(getAccessor(combo.getSelectionIndex()));
+		}
+		exchangesView.getComparator().addAccessors(accessors.toArray(new ExchangeAccessor[accessors.size()]));
+		if (accessors.size() > 0) {
+			exchangesView.getComparator().setAscending(btAsc.getSelection());
+			exchangesView.refreshTable(true);
+		}
 	}
 
 	private ExchangeAccessor getAccessor(int index) {
@@ -340,6 +326,26 @@ public class ExchangesTableSorterDialog extends Dialog {
 
 		}
 		throw new RuntimeException("Invalid selection index. No accessor found.");
+	}
+
+	private void setControlsEnabled(boolean enabled) {
+		for (Combo combo : comboSorters) {
+			combo.setEnabled(enabled);
+		}
+		for (Button bt : addButtons) {
+			bt.setEnabled(enabled);
+		}
+	}
+
+	private void makeControlsInvisible(final int index) {
+		for (int i = index + 1; i < comboSorters.size(); i++) {
+			comboSorters.get(i).setVisible(false);
+			if (i < addButtons.size()) {
+				addButtons.get(i).setSelection(false);
+				addButtons.get(i).setVisible(false);
+				addButtons.get(i).notifyListeners(SWT.Selection, null);
+			}
+		}
 	}
 
 }

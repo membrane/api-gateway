@@ -34,6 +34,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
@@ -68,8 +69,13 @@ public class RuleStatisticsView extends AbstractRulesView {
 		createActions();
 		addTableMenu();
 				
-	    Router.getInstance().getExchangeStore().addExchangesViewListener(this);
+	    getExchangeStore().addExchangesViewListener(this);
 	    setInputForTable(Router.getInstance().getRuleManager());
+	}
+
+
+	private ExchangeStore getExchangeStore() {
+		return Router.getInstance().getExchangeStore();
 	}
 
 

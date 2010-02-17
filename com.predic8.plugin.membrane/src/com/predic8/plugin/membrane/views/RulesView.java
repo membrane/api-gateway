@@ -50,17 +50,9 @@ public class RulesView extends AbstractRulesView {
 	
 	@Override
 	public void createPartControl(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
-		layout.marginTop = 10;
-		layout.marginLeft = 5;
-		layout.marginBottom = 20;
-		layout.marginRight = 5;
-		layout.verticalSpacing = 10;
-		composite.setLayout(layout);
+		Composite composite = createComposite(parent);
 
-		createTableViewer(composite);	
+		tableViewer = createTableViewer(composite);	
 		
 		controlsComposite = new RulesViewControlsComposite(composite);
 		
@@ -75,6 +67,19 @@ public class RulesView extends AbstractRulesView {
 		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
+	private Composite createComposite(Composite parent) {
+		Composite composite = new Composite(parent, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		layout.marginTop = 10;
+		layout.marginLeft = 5;
+		layout.marginBottom = 20;
+		layout.marginRight = 5;
+		layout.verticalSpacing = 10;
+		composite.setLayout(layout);
+		return composite;
+	}
+
 	private void createCommentLabel(Composite composite) {
 		Label label = new Label(composite, SWT.NONE);
 		label.setText("Rules are evaluated in top-down direction.");
@@ -83,24 +88,22 @@ public class RulesView extends AbstractRulesView {
 		label.setLayoutData(gData);
 	}
 
-	private void createTableViewer(Composite composite) {
-		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+	private TableViewer createTableViewer(Composite composite) {
+		final TableViewer tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
 		createColumns(tableViewer);
 		tableViewer.setContentProvider(new RulesViewContentProvider());
 		
 		
 		tableViewer.setLabelProvider(new RulesViewLabelProvider());
 		
-
 		GridData gridData = new GridData(GridData.FILL_BOTH);
 		gridData.grabExcessVerticalSpace = true;
 		gridData.grabExcessHorizontalSpace = true;
 		tableViewer.getTable().setLayoutData(gridData);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "RuleStatistics");
 
-		final CellEditor[] cellEditors = new CellEditor[1];
-		cellEditors[0] = new TextCellEditor(tableViewer.getTable(), SWT.BORDER);
-		tableViewer.setCellEditors(cellEditors);
+		setCellEditorForTableViewer(tableViewer);
+		
 		tableViewer.setColumnProperties(new String[] { "name" });
 
 		cellEditorModifier = new RuleNameCellEditorModifier();
@@ -142,8 +145,15 @@ public class RulesView extends AbstractRulesView {
 				showRuleDetailsAction.setSelectedRule(selectedRule);
 				controlsComposite.setSelectedRule(selectedRule);
 			}
-
 		});	
+		
+		return tableViewer;  
+	}
+
+	private void setCellEditorForTableViewer(final TableViewer tableViewer) {
+		final CellEditor[] cellEditors = new CellEditor[1];
+		cellEditors[0] = new TextCellEditor(tableViewer.getTable(), SWT.BORDER);
+		tableViewer.setCellEditors(cellEditors);
 	}
 
 	private void createColumns(TableViewer viewer) {

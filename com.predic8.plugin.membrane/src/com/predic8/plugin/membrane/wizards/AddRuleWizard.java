@@ -32,7 +32,7 @@ public class AddRuleWizard extends Wizard {
 
 	ListenPortConfigurationPage listenPortConfigPage = new ListenPortConfigurationPage();
 
-	private TargetHostConfigurationPage targetHostConfigPage = new TargetHostConfigurationPage();
+	private TargetConfigurationPage targetHostConfigPage = new TargetConfigurationPage();
 
 	AdvancedRuleConfigurationPage advancedRuleConfigPage = new AdvancedRuleConfigurationPage();
 

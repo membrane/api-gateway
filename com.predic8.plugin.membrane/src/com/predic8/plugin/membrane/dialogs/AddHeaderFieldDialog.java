@@ -61,19 +61,19 @@ public class AddHeaderFieldDialog extends Dialog {
 
 	private Text createText() {
 		Text text = new Text(baseAreaComp, SWT.NONE);
-		GridData gridData = new GridData();
-		gridData.heightHint = 20;
-		gridData.widthHint = 140;
-		text.setLayoutData(gridData);
+		GridData gData = new GridData();
+		gData.heightHint = 20;
+		gData.widthHint = 140;
+		text.setLayoutData(gData);
 		return text;
 	}
 	
 	private Label createLabel() {
 		Label label = new Label(baseAreaComp, SWT.NONE);
-		GridData gridData4HeaderNameLabel = new GridData();
-		gridData4HeaderNameLabel.heightHint = 22;
-		gridData4HeaderNameLabel.widthHint = 72;
-		label.setLayoutData(gridData4HeaderNameLabel);
+		GridData gData = new GridData();
+		gData.heightHint = 22;
+		gData.widthHint = 72;
+		label.setLayoutData(gData);
 		return label;
 	}
 
@@ -113,10 +113,14 @@ public class AddHeaderFieldDialog extends Dialog {
 		} else {
 			HeaderField headerField = new HeaderField(fieldName, fieldValue);
 			tableViewer.add(headerField);
-			((Message) tableViewer.getInput()).getHeader().add(headerField);
+			getMessage().getHeader().add(headerField);
 			
 			super.okPressed();
 		}
+	}
+
+	private Message getMessage() {
+		return ((Message) tableViewer.getInput());
 	}
 	
 	@Override

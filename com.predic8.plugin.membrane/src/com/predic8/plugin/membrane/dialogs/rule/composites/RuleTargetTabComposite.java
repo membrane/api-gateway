@@ -19,11 +19,11 @@ import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.components.RuleOptionsTargetGroup;
+import com.predic8.plugin.membrane.components.RuleTargetGroup;
 
 public class RuleTargetTabComposite extends Composite {
 
-	private RuleOptionsTargetGroup targetGroup;
+	private RuleTargetGroup targetGroup;
 	
 	public RuleTargetTabComposite(Composite parent) {
 		super(parent, SWT.NONE);
@@ -35,11 +35,11 @@ public class RuleTargetTabComposite extends Composite {
 		gridLayout.marginRight = 20;
 		setLayout(gridLayout);
 		
-		targetGroup = new RuleOptionsTargetGroup(this, SWT.NONE);
+		targetGroup = new RuleTargetGroup(this, SWT.NONE);
 		
 	}
 
-	public RuleOptionsTargetGroup getTargetGroup() {
+	public RuleTargetGroup getTargetGroup() {
 		return targetGroup;
 	}
 

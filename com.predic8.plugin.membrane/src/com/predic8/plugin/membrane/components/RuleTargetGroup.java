@@ -15,8 +15,6 @@
 package com.predic8.plugin.membrane.components;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -27,13 +25,13 @@ import org.eclipse.swt.widgets.Text;
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class RuleOptionsTargetGroup {
+public class RuleTargetGroup {
 
 	private Text textTargetPort;
 
 	private Text textTargetHost;
 
-	public RuleOptionsTargetGroup(Composite parent, int style) {
+	public RuleTargetGroup(Composite parent, int style) {
 		Group group = createGroup(parent, style);
 
 		new Label(group, SWT.NONE).setText("Host");
@@ -54,24 +52,16 @@ public class RuleOptionsTargetGroup {
 	}
 
 	private Text createTargetHostText(Group group) {
-		Text textTargetHost = new Text(group, SWT.BORDER);
-		textTargetHost.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
-		textTargetHost.addModifyListener(new ModifyListener(){
-			public void modifyText(ModifyEvent e) {
-				//RuleOptionsTargetGroup.this.parent.setEnableOnlyModifyAndRestoreButton(true);
-			}});
-		textTargetHost.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		return textTargetHost;
+		Text text = new Text(group, SWT.BORDER);
+		text.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
+		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		return text;
 	}
 
 	private Text createTargetPortText(Group group) {
 		Text text = new Text(group,SWT.BORDER);
 		text.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
 		text.addVerifyListener(new PortVerifyListener());
-		text.addModifyListener(new ModifyListener(){
-			public void modifyText(ModifyEvent e) {
-				//RuleOptionsTargetGroup.this.parent.setEnableOnlyModifyAndRestoreButton(true);
-			}});
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return text;
 	}
@@ -79,16 +69,15 @@ public class RuleOptionsTargetGroup {
 	private Group createGroup(Composite parent, int style) {
 		Group group = new Group(parent, style);
 		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-		GridLayout gridLayout4TargetGroup = new GridLayout();
-		gridLayout4TargetGroup.numColumns = 4;
-		group.setLayout(gridLayout4TargetGroup);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 4;
+		group.setLayout(layout);
 		return group;
 	}
 
 	private Label createDummyLabel(Composite parent) {
 		Label lb = new Label(parent, SWT.NONE);
-		GridData gData4Dummy4 = new GridData(GridData.FILL_HORIZONTAL);
-		lb.setLayoutData(gData4Dummy4);
+		lb.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return lb;
 	}
 

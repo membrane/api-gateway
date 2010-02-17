@@ -17,7 +17,6 @@ package com.predic8.plugin.membrane.views;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Menu;
 import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.Router;
@@ -77,8 +76,7 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesSt
 		menuManager.add(renameRuleAction);
 		menuManager.add(showRuleDetailsAction);
 		
-		final Menu menu = menuManager.createContextMenu(tableViewer.getControl());
-		tableViewer.getControl().setMenu(menu);
+		tableViewer.getControl().setMenu(menuManager.createContextMenu(tableViewer.getControl()));
 		getSite().registerContextMenu(menuManager, tableViewer);
 	}
 	
@@ -88,13 +86,8 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesSt
 	}
 	
 	public void setInputForTable(RuleManager manager) {
-		if (manager.getTotalNumberOfRules() > 0) {
-			enableActions(true);
-		} else {
-			enableActions(false);
-		}
-		if ( tableViewer.getContentProvider() != null)
-				tableViewer.setInput(manager);
+		enableActions(manager.getTotalNumberOfRules() > 0);
+		tableViewer.setInput(manager);
 	}
 
 	public void addExchange(Rule rule, Exchange exchange) {

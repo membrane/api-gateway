@@ -23,7 +23,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Table;
 import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.Router;
@@ -38,42 +37,51 @@ public class RuleTableView extends ViewPart implements IRuleChangeListener {
 
 	private TableViewer tableViewer;
 
-	public RuleTableView() {
-		
-	}
-
 	@Override
 	public void createPartControl(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 25;
-		gridLayout.marginLeft = 15;
-		gridLayout.marginBottom = 80;
-		gridLayout.marginRight = 35;
-		gridLayout.verticalSpacing = 20;
-		composite.setLayout(gridLayout);
+		Composite composite = createComposite(parent);
 		
 		Composite dummyComposite = new Composite(composite, SWT.NONE);
 		dummyComposite.setLayout(new RowLayout(SWT.HORIZONTAL));
 		
-		Label dummyLabel = new Label(dummyComposite, SWT.NONE); 
-		dummyLabel.setText(" ");
+		new Label(dummyComposite, SWT.NONE).setText(" ");
 		
+		createTitleLabel(dummyComposite);
+		
+		tableViewer = createTableViewer(composite);
+
+		Router.getInstance().getRuleManager().addRuleChangeListener(this);
+	}
+
+	private void createTitleLabel(Composite dummyComposite) {
 		Label titleLabel = new Label(dummyComposite, SWT.NONE);
 		titleLabel.setText("List of currently available Rules");
 		titleLabel.setFont(JFaceResources.getFontRegistry().get(JFaceResources.HEADER_FONT));
-		
-		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+	}
+
+	private TableViewer createTableViewer(Composite composite) {
+		TableViewer tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
 		createColumns(tableViewer);
 		tableViewer.setLabelProvider(new RuleTableLabelProvider());
 		tableViewer.setContentProvider(new RuleTableContentProvider());
-		GridData tableGridData = new GridData(GridData.FILL_BOTH);
-		tableGridData.grabExcessVerticalSpace = true;
-		tableGridData.grabExcessHorizontalSpace = true;
-		tableViewer.getTable().setLayoutData(tableGridData);
+		GridData gData = new GridData(GridData.FILL_BOTH);
+		gData.grabExcessVerticalSpace = true;
+		gData.grabExcessHorizontalSpace = true;
+		tableViewer.getTable().setLayoutData(gData);
+		return tableViewer;
+	}
 
-		Router.getInstance().getRuleManager().addRuleChangeListener(this);
+	private Composite createComposite(Composite parent) {
+		Composite composite = new Composite(parent, SWT.NONE);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 1;
+		layout.marginTop = 25;
+		layout.marginLeft = 15;
+		layout.marginBottom = 80;
+		layout.marginRight = 35;
+		layout.verticalSpacing = 20;
+		composite.setLayout(layout);
+		return composite;
 	}
 
 	@Override
@@ -92,9 +100,8 @@ public class RuleTableView extends ViewPart implements IRuleChangeListener {
 			column.getColumn().setResizable(true);
 			column.getColumn().setMoveable(true);
 		}
-		Table table = viewer.getTable();
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
+		viewer.getTable().setHeaderVisible(true);
+		viewer.getTable().setLinesVisible(true);
 	}
 
 	public TableViewer getTableViewer() {

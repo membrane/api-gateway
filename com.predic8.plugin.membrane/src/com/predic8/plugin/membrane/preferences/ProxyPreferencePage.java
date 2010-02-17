@@ -37,11 +37,11 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 	public static final String PAGE_ID = "com.predic8.plugin.membrane.preferences.ProxyPreferencePage";
 	
-	private Text txtHost;
-	private Text txtPort;
+	protected Text txtHost;
+	protected Text txtPort;
 	private Label lblHost;
 	private Label lblPort;
-	private Button useproxy;
+	protected Button useproxy;
 	
 	public ProxyPreferencePage() {
 		
@@ -58,55 +58,72 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 	@Override
 	protected Control createContents(Composite parent) {
-		Composite comp = new Composite(parent, SWT.NONE);
-		comp.setLayout(new RowLayout(SWT.FILL));
+		Composite composite = new Composite(parent, SWT.NONE);
+		composite.setLayout(new RowLayout(SWT.FILL));
 		
 		Configuration config = Router.getInstance().getConfigurationManager().getConfiguration();
 		
-		useproxy = new Button(comp, SWT.CHECK);
-		useproxy.setText("Use Proxy Server");
-		if (config.props.get(Configuration.PROXY_USE) != null) {
-			useproxy.setSelection((Boolean) config.props.get(Configuration.PROXY_USE));
-		} 
+		useproxy = createUseProxyButton(composite, config); 
 
-		Group proxyGroup = new Group(comp, SWT.NONE);
-		proxyGroup.setText("Proxy Settings");
-		GridLayout g2 = new GridLayout();
-		g2.numColumns = 2;
-		proxyGroup.setLayout(g2);
+		Group proxyGroup = createProxyGroup(composite);
 
-	
 		lblHost = new Label(proxyGroup, SWT.NONE);
 		lblHost.setText("Host");
 		
-		txtHost = new Text(proxyGroup, SWT.BORDER);
-		GridData gdHost = new GridData(GridData.FILL_BOTH);
-		gdHost.widthHint = 200;
-		txtHost.setLayoutData(gdHost);
-		if (config.props.get(Configuration.PROXY_HOST) != null) {
-			if("".equals((String)config.props.get(Configuration.PROXY_HOST)))
-				txtHost.setText((String) config.props.get(Configuration.PROXY_HOST));
-			else
-				txtHost.setText((String) config.props.get(Configuration.PROXY_HOST));
-		} 
+		txtHost = createHostText(config, proxyGroup); 
 		
-
 		lblPort = new Label(proxyGroup, SWT.NONE);
 		lblPort.setText("Port");
 
-		txtPort = new Text(proxyGroup, SWT.BORDER);
-		GridData gdPort = new GridData(GridData.FILL_BOTH);
-		gdPort.widthHint = 70;
-		txtPort.setLayoutData(gdPort);
+		txtPort = createPortText(config, proxyGroup);
+		
+		return composite;
+	}
+
+	private Button createUseProxyButton(Composite composite, Configuration config) {
+		Button bt = new Button(composite, SWT.CHECK);
+		bt.setText("Use Proxy Server");
+		if (config.props.get(Configuration.PROXY_USE) != null) {
+			bt.setSelection((Boolean) config.props.get(Configuration.PROXY_USE));
+		}
+		return bt;
+	}
+
+	private Text createPortText(Configuration config, Group proxyGroup) {
+		Text text = new Text(proxyGroup, SWT.BORDER);
+		GridData gData = new GridData(GridData.FILL_BOTH);
+		gData.widthHint = 70;
+		text.setLayoutData(gData);
 		if (config.props.get(Configuration.PROXY_PORT) != null) {
 			if("".equals((String)config.props.get(Configuration.PROXY_PORT)))
-				txtPort.setText((String) config.props.get(Configuration.PROXY_PORT));
+				text.setText((String) config.props.get(Configuration.PROXY_PORT));
 			else
-				txtPort.setText((String) config.props.get(Configuration.PROXY_PORT));
+				text.setText((String) config.props.get(Configuration.PROXY_PORT));
 		}
-		
-		
-		return comp;
+		return text;
+	}
+
+	private Text createHostText(Configuration config, Group proxyGroup) {
+		Text text = new Text(proxyGroup, SWT.BORDER);
+		GridData gData = new GridData(GridData.FILL_BOTH);
+		gData.widthHint = 200;
+		text.setLayoutData(gData);
+		if (config.props.get(Configuration.PROXY_HOST) != null) {
+			if("".equals((String)config.props.get(Configuration.PROXY_HOST)))
+				text.setText((String) config.props.get(Configuration.PROXY_HOST));
+			else
+				text.setText((String) config.props.get(Configuration.PROXY_HOST));
+		}
+		return text;
+	}
+
+	private Group createProxyGroup(Composite composite) {
+		Group group = new Group(composite, SWT.NONE);
+		group.setText("Proxy Settings");
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		group.setLayout(layout);
+		return group;
 	}
 
 	public void init(IWorkbench workbench) {

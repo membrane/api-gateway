@@ -27,7 +27,6 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Table;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -63,12 +62,17 @@ public class AddInterceptorDialog extends Dialog {
 	protected Control createDialogArea(Composite parent) {
 		Composite container = createTopContainer(parent);
 		
-		Label label = new Label(container, SWT.NONE);
-		label.setText("List of currently available interceptors.");
+		new Label(container, SWT.NONE).setText("List of currently available interceptors.");
 		
 		new Label(container, SWT.NONE).setText("  ");
 		
-		tableViewer = new TableViewer(container, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
+		tableViewer = createTableViewer(container);
+		
+		return container;
+	}
+
+	private TableViewer createTableViewer(Composite container) {
+		TableViewer tableViewer = new TableViewer(container, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
 		createColumns(tableViewer);
 		tableViewer.setContentProvider(new AddInterceptorTableViewerContentProvider());
 		tableViewer.setLabelProvider(new AddInterceptorTableViewerLabelProvider());
@@ -76,8 +80,7 @@ public class AddInterceptorDialog extends Dialog {
 		tableViewer.getTable().setLayoutData(new GridData(GridData.FILL_BOTH));
 		
 		tableViewer.setInput(Router.getInstance().getInterceptors());
-		
-		return container;
+		return tableViewer;
 	}
 
 	private Composite createTopContainer(Composite parent) {
@@ -96,17 +99,16 @@ public class AddInterceptorDialog extends Dialog {
 		int[] bounds = { 240 };
 
 		for (int i = 0; i < titles.length; i++) {
-			final TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
-			column.getColumn().setAlignment(SWT.CENTER);
-			column.getColumn().setText(titles[i]);
-			column.getColumn().setWidth(bounds[i]);
-			column.getColumn().setResizable(true);
-			column.getColumn().setMoveable(true);
+			final TableViewerColumn col = new TableViewerColumn(viewer, SWT.NONE);
+			col.getColumn().setAlignment(SWT.CENTER);
+			col.getColumn().setText(titles[i]);
+			col.getColumn().setWidth(bounds[i]);
+			col.getColumn().setResizable(true);
+			col.getColumn().setMoveable(true);
 		}
 
-		Table table = viewer.getTable();
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
+		viewer.getTable().setHeaderVisible(true);
+		viewer.getTable().setLinesVisible(true);
 	}
 	
 	@Override
@@ -115,8 +117,7 @@ public class AddInterceptorDialog extends Dialog {
 		if (selection == null || selection.isEmpty())
 			close();
 		
-		Interceptor interceptor = (Interceptor)selection.getFirstElement();
-		interceptorComposite.addNewInterceptor(interceptor);
+		interceptorComposite.addNewInterceptor((Interceptor)selection.getFirstElement());
 		
 		super.okPressed();
 	}

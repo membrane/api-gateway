@@ -123,6 +123,10 @@ public class Exchange {
 
 	public void setCompleted() {
 		status = ExchangeState.COMPLETED;
+		notifyExchangeFinished();
+	}
+
+	private void notifyExchangeFinished() {
 		for (IExchangeViewerListener listener : exchangeViewerListeners) {
 			listener.setExchangeFinished();
 		}
@@ -150,13 +154,7 @@ public class Exchange {
 			response.release();
 
 		if (refresh) {
-			for (IExchangeViewerListener listener : exchangeViewerListeners) {
-				listener.setExchangeFinished();
-			}
-
-			for (IExchangesStoreListener listener : treeViewerListeners) {
-				listener.setExchangeFinished(this);
-			}
+			notifyExchangeFinished();
 		}
 	}
 

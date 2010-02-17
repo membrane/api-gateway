@@ -20,7 +20,6 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -46,73 +45,80 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 
 	private String latestSavePath;
 
-	protected Composite partComposite;
-
 	protected ToolBar toolBar;
 
 	protected ToolItem itemContinue, itemFormat, itemSave;
 
 	protected BaseComp baseComp;
 
+	protected Composite partComposite;
+	
 	protected MessageViewContentProvider contentProvider;
 
 	@Override
 	public void createPartControl(Composite parent) {
-
-		GridLayout responseLayout = new GridLayout();
 		partComposite = new Composite(parent, SWT.NONE);
-		partComposite.setLayout(responseLayout);
+		partComposite.setLayout(new GridLayout());
 
 		toolBar = new ToolBar(partComposite, SWT.NONE);
 
-		itemContinue = new ToolItem(toolBar, SWT.PUSH);
-		itemContinue.setText("Continue");
-		ImageDescriptor descriptorContinueResponse = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FLAG_GREEN);
+		itemContinue = createItemContinue();
 
-		Image iconContinueResponse = descriptorContinueResponse.createImage();
-		itemContinue.setImage(iconContinueResponse);
-		itemContinue.addSelectionListener(new SelectionAdapter() {
+		itemFormat = createItemFormat();
+
+		itemSave = createItemSave();
+
+	}
+
+	private ToolItem createItemContinue() {
+		ToolItem item = createToolItem("Continue", ImageKeys.IMAGE_FLAG_GREEN);
+		item.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				baseComp.continuePressed();
 			}
 		});
-		itemContinue.setEnabled(false);
+		return item;
+	}
 
-		itemFormat = new ToolItem(toolBar, SWT.PUSH);
-		itemFormat.setText("Format");
-		ImageDescriptor descriptor2 = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FORMAT);
-
-		Image icon2 = descriptor2.createImage();
-		itemFormat.setImage(icon2);
-		itemFormat.addSelectionListener(new SelectionAdapter() {
+	private ToolItem createItemFormat() {
+		ToolItem item = createToolItem("Format", ImageKeys.IMAGE_FORMAT);
+		item.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				baseComp.beautifyBody();
 			}
 		});
-		itemFormat.setEnabled(false);
+		return item;
+	}
 
-		itemSave = new ToolItem(toolBar, SWT.PUSH);
-		itemSave.setText("Save");
-		ImageDescriptor descriptorSaveResponse = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_SAVE_MESSAGE);
-
-		Image iconSaveResponse = descriptorSaveResponse.createImage();
-		itemSave.setImage(iconSaveResponse);
-		itemSave.addSelectionListener(new SelectionAdapter() {
+	private ToolItem createItemSave() {
+		ToolItem item = createToolItem("Save", ImageKeys.IMAGE_SAVE_MESSAGE);
+		item.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				try {
 					saveMessage(baseComp.getMsg());
 				} catch (Exception e1) {
-					MessageDialog.openError(partComposite.getShell(), "Save Error", e1.getMessage());
+					MessageDialog.openError(baseComp.getShell(), "Save Error", e1.getMessage());
 				}
 			}
 		});
-		itemSave.setEnabled(false);
-
+		return item;
+	}
+	
+	private ToolItem createToolItem(String itemText, String imageKey) {
+		ToolItem item = new ToolItem(toolBar, SWT.PUSH);
+		item.setText(itemText);
+		item.setImage(createImage(imageKey));
+		item.setEnabled(false);
+		return item;
 	}
 
+	private Image createImage(String key) {
+		return MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(key).createImage();
+	}
+	
 	protected void saveMessage(Message message) throws Exception {
 		String selected = getFileName(message);
 		if (selected == null || selected.equals(""))
@@ -149,7 +155,7 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 	}
 
 	private String getFileName(Message message) {
-		FileDialog fd = new FileDialog(partComposite.getShell(), SWT.SAVE);
+		FileDialog fd = new FileDialog(baseComp.getShell(), SWT.SAVE);
 		fd.setText("Save Message");
 		if (latestSavePath != null && !latestSavePath.equals("")) {
 			fd.setFilterPath(latestSavePath);

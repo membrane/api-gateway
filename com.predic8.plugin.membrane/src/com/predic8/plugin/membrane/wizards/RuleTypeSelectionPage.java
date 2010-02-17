@@ -55,9 +55,9 @@ public class RuleTypeSelectionPage extends AbstractRuleWizardPage {
 	private Button createRuleButton(Composite composite, String text) {
 		Button btSimpleRule = new Button(composite, SWT.RADIO);
 		btSimpleRule.setText(text);
-		GridData btSimpleGridData = new GridData();
-		btSimpleGridData.grabExcessHorizontalSpace = true;
-		btSimpleRule.setLayoutData(btSimpleGridData);
+		GridData gData = new GridData();
+		gData.grabExcessHorizontalSpace = true;
+		btSimpleRule.setLayoutData(gData);
 		return btSimpleRule;
 	}
 

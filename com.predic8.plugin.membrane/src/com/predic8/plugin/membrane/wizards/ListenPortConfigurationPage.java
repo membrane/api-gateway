@@ -111,7 +111,7 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 	
 	@Override
 	public IWizardPage getNextPage() {
-		return getWizard().getPage(TargetHostConfigurationPage.PAGE_NAME);
+		return getWizard().getPage(TargetConfigurationPage.PAGE_NAME);
 	}
 	
 	public String getListenPort() {

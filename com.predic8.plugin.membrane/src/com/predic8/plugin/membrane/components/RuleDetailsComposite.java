@@ -67,7 +67,7 @@ public class RuleDetailsComposite extends Composite {
 		layout.numColumns = 1;
 		setLayout(layout);
 
-		Composite compositeText = getCompositeText();
+		Composite compositeText = createCompositeText();
 
 		new Label(compositeText, SWT.NONE).setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
@@ -75,10 +75,7 @@ public class RuleDetailsComposite extends Composite {
 		labelTitle.setText("Rule Description");
 		labelTitle.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
-		Label labelSeparator = new Label(compositeText, SWT.SEPARATOR | SWT.HORIZONTAL);
-		GridData separatorGridData = new GridData(GridData.VERTICAL_ALIGN_BEGINNING);
-		separatorGridData.widthHint = 150;
-		labelSeparator.setLayoutData(separatorGridData);
+		createLabelSeparator(compositeText);
 
 		new Label(compositeText, SWT.NONE).setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
@@ -148,6 +145,13 @@ public class RuleDetailsComposite extends Composite {
 		pack();
 	}
 
+	private void createLabelSeparator(Composite compositeText) {
+		Label label = new Label(compositeText, SWT.SEPARATOR | SWT.HORIZONTAL);
+		GridData gData = new GridData(GridData.VERTICAL_ALIGN_BEGINNING);
+		gData.widthHint = 150;
+		label.setLayoutData(gData);
+	}
+
 	private Group createRuleGroup(Composite groupComposite) {
 		Group group = new Group(groupComposite, SWT.NONE);
 		group.setText("Rule Key");
@@ -159,39 +163,38 @@ public class RuleDetailsComposite extends Composite {
 	private Group createRuleTargetGroup(Composite groupComposite) {
 		Group group = new Group(groupComposite, SWT.NONE);
 		group.setText("Target");
-		GridData gridData = new GridData(GridData.FILL_HORIZONTAL);
-		gridData.verticalAlignment = GridData.VERTICAL_ALIGN_BEGINNING;
-		gridData.heightHint = 68;
+		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
+		gData.verticalAlignment = GridData.VERTICAL_ALIGN_BEGINNING;
+		gData.heightHint = 68;
 		
-		group.setLayoutData(gridData);
+		group.setLayoutData(gData);
 		group.setLayout(new RowLayout(SWT.VERTICAL));
 		return group;
 	}
 
-	private Composite createGroupComposite(Composite compositeText) {
-		Composite groupComposite = new Composite(compositeText, SWT.NONE);
-		GridData groupCompositeGridData = new GridData(GridData.FILL_HORIZONTAL);
-		groupComposite.setLayoutData(groupCompositeGridData);
+	private Composite createGroupComposite(Composite parent) {
+		Composite composite = new Composite(parent, SWT.NONE);
+		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
+		composite.setLayoutData(gData);
 		
-		
-		GridLayout gridLayoutGroup = new GridLayout();
-		gridLayoutGroup.numColumns = 2;
-		groupComposite.setLayout(gridLayoutGroup);
-		return groupComposite;
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		composite.setLayout(layout);
+		return composite;
 	}
 
 	private Image getImageFromRegistry(String imageKey) {
 		return MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(imageKey).createImage();
 	}
 	
-	private Composite getCompositeText() {
-		Composite compositeText = new Composite(this, SWT.NONE);
-		compositeText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+	private Composite createCompositeText() {
+		Composite composite = new Composite(this, SWT.NONE);
+		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 
-		GridLayout gridLayoutText = new GridLayout();
-		gridLayoutText.numColumns = 1;
-		compositeText.setLayout(gridLayoutText);
-		return compositeText;
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 1;
+		composite.setLayout(layout);
+		return composite;
 	}
 
 	public void configure(Rule rule) {

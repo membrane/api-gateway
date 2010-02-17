@@ -43,53 +43,13 @@ public abstract class AbstractFilterComposite extends Composite {
 		super(parent, SWT.NONE);
 		filter = aFilter;
 
-		GridLayout layout = new GridLayout();
-		layout.marginTop = 20;
-		layout.marginLeft = 20;
-		layout.marginBottom = 20;
-		layout.marginRight = 20;
-		setLayout(layout);
+		setBaseLayout();
 
-		Group rulesGroup = new Group(this, SWT.NONE);
-		rulesGroup.setText(getGroupText());
-		rulesGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		Group rulesGroup = createRulesGroup();
 
-		GridLayout gridLayout4RuleGroup = new GridLayout();
-		gridLayout4RuleGroup.marginTop = 10;
-		gridLayout4RuleGroup.marginLeft = 10;
-		gridLayout4RuleGroup.marginRight = 10;
-		rulesGroup.setLayout(gridLayout4RuleGroup);
+		btShowAll = createShowAllButton(rulesGroup);
 
-		btShowAll = new Button(rulesGroup, SWT.RADIO);
-		btShowAll.setText(getShowAllText());
-		btShowAll.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-
-				if (btShowAll.getSelection()) {
-					btShowSelectedOnly.setSelection(false);
-					for (Button button : buttons) {
-						button.setEnabled(false);
-						filter.setShowAll(true);
-					}
-				}
-			}
-		});
-
-		btShowSelectedOnly = new Button(rulesGroup, SWT.RADIO);
-		btShowSelectedOnly.setText(getShowSelectedOnlyText());
-		btShowSelectedOnly.addSelectionListener(new SelectionAdapter() {
-			public void widgetSelected(SelectionEvent e) {
-				if (!btShowSelectedOnly.getSelection())
-					return;
-				
-				Set<Object> toDisplay = filter.getDisplayedItems();
-				for (Button button : buttons) {
-					button.setEnabled(true);
-					button.setSelection(toDisplay.contains(button.getData()));
-				}
-				filter.setShowAll(false);
-			}
-		});
+		btShowSelectedOnly = createShowSelectedButton(rulesGroup);
 
 		Composite buttonsComposite = new Composite(rulesGroup, SWT.BORDER);
 		buttonsComposite.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
@@ -108,6 +68,65 @@ public abstract class AbstractFilterComposite extends Composite {
 			btShowSelectedOnly.notifyListeners(SWT.Selection, null);
 		}
 
+	}
+
+	private Button createShowSelectedButton(Group rulesGroup) {
+		final Button bt = new Button(rulesGroup, SWT.RADIO);
+		bt.setText(getShowSelectedOnlyText());
+		bt.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				if (!bt.getSelection())
+					return;
+				
+				Set<Object> toDisplay = filter.getDisplayedItems();
+				for (Button button : buttons) {
+					button.setEnabled(true);
+					button.setSelection(toDisplay.contains(button.getData()));
+				}
+				filter.setShowAll(false);
+			}
+		});
+		return bt;
+	}
+
+	private Button createShowAllButton(Group rulesGroup) {
+		final Button bt = new Button(rulesGroup, SWT.RADIO);
+		bt.setText(getShowAllText());
+		bt.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+
+				if (bt.getSelection()) {
+					btShowSelectedOnly.setSelection(false);
+					for (Button button : buttons) {
+						button.setEnabled(false);
+						filter.setShowAll(true);
+					}
+				}
+			}
+		});
+		return bt;
+	}
+
+	private void setBaseLayout() {
+		GridLayout layout = new GridLayout();
+		layout.marginTop = 20;
+		layout.marginLeft = 20;
+		layout.marginBottom = 20;
+		layout.marginRight = 20;
+		setLayout(layout);
+	}
+
+	private Group createRulesGroup() {
+		Group group = new Group(this, SWT.NONE);
+		group.setText(getGroupText());
+		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+
+		GridLayout layout = new GridLayout();
+		layout.marginTop = 10;
+		layout.marginLeft = 10;
+		layout.marginRight = 10;
+		group.setLayout(layout);
+		return group;
 	}
 
 	protected abstract void initializeButtons(Composite composite);

@@ -30,15 +30,15 @@ import org.eclipse.swt.widgets.Text;
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class TargetHostConfigurationPage extends AbstractRuleWizardPage {
+public class TargetConfigurationPage extends AbstractRuleWizardPage {
 
-	public static final String PAGE_NAME = "Target Host Configuration";
+	public static final String PAGE_NAME = "Target Configuration";
 	
 	private Text ruleTargetHostText;
 	
 	private Text ruleTargetPortText;
 	
-	protected TargetHostConfigurationPage() {
+	protected TargetConfigurationPage() {
 		super(PAGE_NAME);
 		setTitle("Simple Rule");
 		setDescription("Specify Target Host and Port");
