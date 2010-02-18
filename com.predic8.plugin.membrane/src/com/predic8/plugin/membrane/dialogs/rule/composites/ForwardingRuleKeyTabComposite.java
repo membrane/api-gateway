@@ -27,10 +27,10 @@ public class ForwardingRuleKeyTabComposite extends Composite {
 		super(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 2;
-		gridLayout.marginTop = 20;
-		gridLayout.marginLeft = 20;
-		gridLayout.marginBottom = 20;
-		gridLayout.marginRight = 20;
+		gridLayout.marginTop = 12;
+		gridLayout.marginLeft = 12;
+		gridLayout.marginBottom = 12;
+		gridLayout.marginRight = 12;
 		setLayout(gridLayout);
 		
 		ruleKeyGroup = new RuleKeyGroup(this, SWT.NONE);

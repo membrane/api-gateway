@@ -86,14 +86,14 @@ public class RuleKeyGroup {
 		addDummyLabel(compPattern);
 
 		GridData gridData4LbExample = new GridData();
-		gridData4LbExample.horizontalIndent = 30;
+		gridData4LbExample.horizontalIndent = 20;
 		
 		Label lbSubstringExample = new Label(compPattern, SWT.NONE);
 		lbSubstringExample.setLayoutData(gridData4LbExample);
-		lbSubstringExample.setText("Examples: ");
+		lbSubstringExample.setText("Examples:        " + "/axis2/         matches all URI containing /axis2/");
 
 		Label lbSubstringExampleA = new Label(compPattern, SWT.NONE);
-		lbSubstringExampleA.setText("/axis2/     matches all URI containing /axis2/");
+		lbSubstringExampleA.setText("");
 		
 		btRegExp = new Button(compPattern, SWT.RADIO);
 		btRegExp.setText("Regular Expression");
@@ -103,15 +103,15 @@ public class RuleKeyGroup {
 
 		Label lbRefExpressExample = new Label(compPattern, SWT.NONE);
 		lbRefExpressExample.setLayoutData(gridData4LbExample);
-		lbRefExpressExample.setText("Examples: ");
+		lbRefExpressExample.setText("Examples:             " + ".*            matches any URI");
 
-		new Label(compPattern, SWT.NONE).setText(".*   matches any URI");
+		new Label(compPattern, SWT.NONE).setText("");    //(".*   matches any URI");
 
 		Label lbRefExpressExampleEmpty = new Label(compPattern, SWT.NONE);
 		lbRefExpressExampleEmpty.setLayoutData(gridData4LbExample);
-		lbRefExpressExampleEmpty.setText("         ");
+		lbRefExpressExampleEmpty.setText(".*FooService   matches any URI terminating with FooService");
 
-		new Label(compPattern, SWT.NONE).setText(".*FooService   matches any URI terminating");
+		//new Label(compPattern, SWT.NONE).setText(".*FooService   matches any URI terminating with FooService");
 
 	}
 

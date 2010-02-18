@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
@@ -52,14 +51,14 @@ public class CoreActivator extends Plugin {
 
 		pluginLogger = CoreActivator.getDefault().getLog();
 
-		try {
-			URLClassLoader loader = new URLClassLoader(new URL[] { new URL("file:///C:/temp/membrane-monitor-win86-1.3.2/classes/") });
-			
-			Object a = loader.loadClass("a.A").newInstance();
-			pluginLogger.log(new Status(IStatus.INFO,CoreActivator.PLUGIN_ID,  a.toString()));
-		} catch (Exception e2) {
-			pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "Loading a.A failed: " + e2));
-		}
+//		try {
+//			URLClassLoader loader = new URLClassLoader(new URL[] { new URL("file:///C:/temp/membrane-monitor-win86-1.3.2/classes/") });
+//			
+//			Object a = loader.loadClass("a.A").newInstance();
+//			pluginLogger.log(new Status(IStatus.INFO,CoreActivator.PLUGIN_ID,  a.toString()));
+//		} catch (Exception e2) {
+//			pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "Loading a.A failed: " + e2));
+//		}
 		
 		pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "File name is" + getConfigFileName()));
 
