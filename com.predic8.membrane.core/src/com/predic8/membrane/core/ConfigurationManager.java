@@ -23,7 +23,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class ConfigurationManager {
-	
+
 	private Configuration configuration;
 
 	private boolean adjustContentLength;
@@ -74,21 +74,27 @@ public class ConfigurationManager {
 		configuration.setTrackExchange(storedConfiguration.getTrackExchange());
 
 		Collection<Rule> rules = storedConfiguration.getRules();
-		if (rules != null && rules.size() > 0) {
-			router.getRuleManager().removeAllRules();
-			for (Rule rule : rules) {
-				try {
-					
-					((HttpTransport) router.getTransport()).addPort(rule.getKey().getPort());
-					
-					router.getRuleManager().addRuleIfNew(rule);
-					System.out.println("Added rule " +  rule + " on port " + rule.getKey().getPort());
-				} catch (Exception e1) {
-					throw e1;
-				}
+		if (rules == null || rules.size() <= 0)
+			return;
+
+		router.getRuleManager().removeAllRules();
+		for (Rule rule : rules) {
+			try {
+
+				getHttpTransport().addPort(rule.getKey().getPort());
+
+				router.getRuleManager().addRuleIfNew(rule);
+				System.out.println("Added rule " + rule + " on port " + rule.getKey().getPort());
+			} catch (Exception e1) {
+				e1.printStackTrace();
+				throw e1;
 			}
 		}
 
+	}
+
+	private HttpTransport getHttpTransport() {
+		return ((HttpTransport) router.getTransport());
 	}
 
 	public Configuration getDefaultConfiguration() {
@@ -148,7 +154,7 @@ public class ConfigurationManager {
 	}
 
 	public String getDefaultConfigurationFile() {
-		return System.getProperty("user.home")+ "/.membrane.xml"; 
+		return System.getProperty("user.home") + "/.membrane.xml";
 	}
 
 	public Router getRouter() {
@@ -158,6 +164,5 @@ public class ConfigurationManager {
 	public void setRouter(Router router) {
 		this.router = router;
 	}
-	
 
 }

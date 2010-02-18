@@ -32,11 +32,11 @@ public class HttpTransport extends Transport {
 	public synchronized void addPort(int port) throws IOException {
 
 		if (isAnyThreadListeningAt(port)) {
-			throw new RuntimeException("Port already used: " + port);
+			return;
 		}
 
 		HttpEndpointListener portListenerThread = new HttpEndpointListener(port, this);
-		portListenerMapping.put(new Integer(port), portListenerThread);
+		portListenerMapping.put(port, portListenerThread);
 		portListenerThread.start();
 
 		for (IPortChangeListener listener : menuListeners) {
