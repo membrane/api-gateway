@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
@@ -51,30 +52,19 @@ public class CoreActivator extends Plugin {
 
 		pluginLogger = CoreActivator.getDefault().getLog();
 
-//		try {
-//			URLClassLoader loader = new URLClassLoader(new URL[] { new URL("file:///C:/temp/membrane-monitor-win86-1.3.2/classes/") });
-//			
-//			Object a = loader.loadClass("a.A").newInstance();
-//			pluginLogger.log(new Status(IStatus.INFO,CoreActivator.PLUGIN_ID,  a.toString()));
-//		} catch (Exception e2) {
-//			pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "Loading a.A failed: " + e2));
-//		}
-		
 		pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "File name is" + getConfigFileName()));
-
-		//log.debug(getConfigFileName());
 
 		try {
 			if (fileExists()) {
 				pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "Reading configuration from " + getConfigFileName()));
 
 				log.debug("Reading configuration from " + getConfigFileName());
-				Router.init(new UrlResource(getConfigFileName()));
+				Router.init(new UrlResource(getConfigFileName()), getExternalClassloader());
 			} else {
 				log.debug("Reading configuration from configuration/monitor-beans.xml");
 				pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "Reading configuration from configuration/monitor-beans.xml"));
 
-				Router.init("configuration/monitor-beans.xml");
+				Router.init("configuration/monitor-beans.xml", this.getClass().getClassLoader());
 			}
 		} catch (Exception e1) {
 			
@@ -94,6 +84,18 @@ public class CoreActivator extends Plugin {
 		});
 	}
 
+	private URLClassLoader getExternalClassloader() {
+		try {
+			System.err.println(getClassesFolderName());
+			return new URLClassLoader(new URL[] { new URL(getClassesFolderName())} , getClass().getClassLoader() );
+		} catch (Exception e) {
+			e.printStackTrace();
+			pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "Creation of external classloader failed." + e));
+			System.exit(1);
+		} 
+		return null;
+	}
+
 	private boolean fileExists() throws MalformedURLException, IOException {
 		String configFileName = getConfigFileName();
 		log.debug(configFileName);
@@ -106,6 +108,10 @@ public class CoreActivator extends Plugin {
 		return getProjectRoot() + System.getProperty("file.separator") + "configuration" + System.getProperty("file.separator") + "monitor-beans.xml";
 	}
 
+	private String getClassesFolderName() throws IOException {
+		return getProjectRoot() + System.getProperty("file.separator") + "classes" + System.getProperty("file.separator");
+	}
+	
 	private String getProjectRoot() throws IOException {
 		return new File(FileLocator.resolve(CoreActivator.getDefault().getBundle().getEntry("/")).getPath()).getParentFile().getParentFile().getPath();
 	}

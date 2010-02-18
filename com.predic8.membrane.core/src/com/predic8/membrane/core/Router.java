@@ -35,15 +35,24 @@ public class Router {
 	public static Router init(String configFileName) throws MalformedURLException {
 		log.debug("loading spring config from classpath: " + configFileName);
 		return init(new ClassPathResource(configFileName));
-		
 	}
 
-	public static Router init(Resource resource) {
+	public static Router init(String configFileName, ClassLoader loader) throws MalformedURLException {
+		log.debug("loading spring config from classpath: " + configFileName);
+		return init(new ClassPathResource(configFileName), loader);
+	}
+	
+	public static Router init(Resource resource, ClassLoader classLoader) {
 		log.debug("loading spring config: " + resource);
 		beanFactory = new XmlBeanFactory(resource);
+		beanFactory.setBeanClassLoader(classLoader);
 		router = (Router) beanFactory.getBean("router");
 		router.configurationManager.setRouter(router); 
 		return router; 
+	}
+	
+	public static Router init(Resource resource) {
+		return init(resource, Router.class.getClassLoader());
 	}
 	
 	public static Router getInstance() {

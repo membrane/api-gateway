@@ -24,6 +24,20 @@ public class HeaderField {
 		this.headerName = headerName;
 		this.value=value;
 	}
+	
+	public HeaderField(String line) {
+		headerName = new HeaderName(getName(line));
+		value = getValue(line);
+	}
+	
+	private String getValue(String line) {
+		return (line.substring(line.indexOf(":")+1)).trim();
+	}
+
+	private String getName(String line) {
+		return line.substring(0, line.indexOf(":"));
+	}
+	
 	public HeaderField(String headerName,String value) {
 		this(new HeaderName(headerName),value);
 	}

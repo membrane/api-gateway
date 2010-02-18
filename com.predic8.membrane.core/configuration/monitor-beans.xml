@@ -111,6 +111,11 @@
 		<property name="displayName" value="Moves auth header elements to body" />
 	</bean>
 
+	<bean id="a"
+		class="a.A">
+		<property name="displayName" value="AAA" />
+	</bean>
+
 </beans>
 	
 	

@@ -66,15 +66,18 @@ public class Header {
 		
 		while ((line = HttpUtil.readLine(in)) != null && line.length()>0) {
 			try {
-				if (rawMessage != null)
-					rawMessage.append(line).append(Constants.CRLF);
-				String key = line.substring(0, line.indexOf(":"));
-				String value = (line.substring(line.indexOf(":")+1)).trim();
-				add(key, value);
+				addLineToRawMessage(rawMessage, line);
+
+				add(new HeaderField(line));
 			} catch (StringIndexOutOfBoundsException sie) {
 				log.error("Header read line that caused problems: " + line);
 			}
 		}
+	}
+
+	private void addLineToRawMessage(StringBuffer rawMessage, String line) {
+		if (rawMessage != null)
+			rawMessage.append(line).append(Constants.CRLF);
 	}
 
 	public Header(Header header) {
