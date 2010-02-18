@@ -37,7 +37,7 @@ public class RawTabComposite extends AbstractTabComposite {
 	}
 
 	@Override
-	public void update(Message msg) {
+	protected void updateInternal(Message msg) {
 		rawText.setText(msg.toString());
 		layout();
 	}

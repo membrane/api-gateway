@@ -31,7 +31,7 @@ public class HeaderTabComposite extends AbstractTabComposite {
 	}
 
 	@Override
-	public void update(Message msg) {
+	public void updateInternal(Message msg) {
 		headerTableViewer.setInput(msg);
 	}
 	

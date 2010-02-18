@@ -34,9 +34,7 @@ public class ImageTabComposite extends BodyTabComposite {
 	}
 	
 	@Override
-	public void update(Message msg) {
-		if (msg == null)
-			return;
+	public void updateInternal(Message msg) {
 		Image img = new Image(Display.getCurrent(), msg.getBodyAsStream());
 		imageLabel.setImage(img);
 	}

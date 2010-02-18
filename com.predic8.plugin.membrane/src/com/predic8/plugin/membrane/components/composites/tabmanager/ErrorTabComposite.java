@@ -38,9 +38,7 @@ public class ErrorTabComposite extends AbstractTabComposite {
 	}
 
 	@Override
-	public void update(Message msg) {
-		if (msg == null)
-			return;
+	public void updateInternal(Message msg) {
 		errorText.setText(msg.getErrorMessage());
 		errorText.redraw();
 		layout();

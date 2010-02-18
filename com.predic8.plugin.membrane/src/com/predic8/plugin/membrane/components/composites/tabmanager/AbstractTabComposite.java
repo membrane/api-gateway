@@ -52,9 +52,16 @@ public class AbstractTabComposite extends Composite {
 	}
 
 	public void update(Message msg) {
-		
+		if (msg == null)
+			return;
+		updateInternal(msg);
 	}
 	
+	protected void updateInternal(Message msg) {
+		if (msg == null)
+			return;
+	}
+
 	public void hide() {
 		tabItem.dispose();
 	}

@@ -121,7 +121,6 @@ public abstract class BaseComp extends Composite {
 	public void setCompositeHost(IBaseCompositeHost compositeHost) {
 		this.compositeHost = compositeHost;
 	}
-
 	
 	
 }

@@ -63,7 +63,7 @@ public class BodyTextTabComposite extends BodyTabComposite {
 	}
 	
 	@Override
-	public void update(Message msg) {
+	public void updateInternal(Message msg) {		
 		byte[] bodyContent = msg.getBody().getContent();
 		try {
 			if (msg.isGzip()) {
