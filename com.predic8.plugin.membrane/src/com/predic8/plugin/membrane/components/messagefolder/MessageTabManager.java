@@ -181,10 +181,10 @@ public class MessageTabManager {
 
 	private BodyTabComposite getCurrentBodyTab(Message msg) {
 		if (msg instanceof Response) {
-			if (((Response)msg).isRedirect() || ((Response)msg).hasNoContent())
+			if (((Response) msg).isRedirect() || ((Response) msg).hasNoContent())
 				return nullBodyTabComposite;
 		}
-		
+
 		if (msg.isBodyEmpty())
 			return bodyTabs.get(2);
 
@@ -254,10 +254,14 @@ public class MessageTabManager {
 	}
 
 	public void setSelectionOnBodyTabItem() {
-		if (currentBodyTab != null && !currentBodyTab.isDisposed() && currentBodyTab.getTabItem() != null && !currentBodyTab.getTabItem().isDisposed()) {
-			folder.setSelection(currentBodyTab.getTabItem());
-			folder.notifyListeners(SWT.Selection, null);
-		}
+		if (!isCurrentBodyTabAvailable())
+			return;
+		folder.setSelection(currentBodyTab.getTabItem());
+		folder.notifyListeners(SWT.Selection, null);
+	}
+
+	private boolean isCurrentBodyTabAvailable() {
+		return currentBodyTab != null && !currentBodyTab.isDisposed() && currentBodyTab.getTabItem() != null && !currentBodyTab.getTabItem().isDisposed();
 	}
 
 }
