@@ -96,6 +96,10 @@ public class Response extends Message {
 		return statusCode >= 300 && statusCode < 400;
 	}
 
+	public boolean hasNoContent() {
+		return statusCode == 204;
+	}
+	
 	@Override
 	public String getName() {
 		return " " + statusCode;

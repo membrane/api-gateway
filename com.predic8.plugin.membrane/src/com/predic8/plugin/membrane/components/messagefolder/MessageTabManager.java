@@ -28,6 +28,7 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.TabItem;
 
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.plugin.membrane.components.composites.tabmanager.BodyTabComposite;
 import com.predic8.plugin.membrane.components.composites.tabmanager.CSSTabComposite;
 import com.predic8.plugin.membrane.components.composites.tabmanager.ErrorTabComposite;
@@ -48,34 +49,34 @@ public class MessageTabManager {
 	private BaseComp baseComp;
 
 	private TabFolder folder;
-	
+
 	private RawTabComposite rawTabComposite;
 
 	private HeaderTabComposite headerTabComposite;
 
 	private ErrorTabComposite errorTabComposite;
-	
+
 	private BodyTabComposite currentBodyTab;
 
 	private List<BodyTabComposite> bodyTabs = new ArrayList<BodyTabComposite>();
-	
+
 	private NullBodyTabComposite nullBodyTabComposite;
-	
+
 	public MessageTabManager(final BaseComp baseComp) {
 		this.baseComp = baseComp;
 		folder = createTabFolder(baseComp);
-		
+
 		errorTabComposite = new ErrorTabComposite(folder);
 		rawTabComposite = new RawTabComposite(folder);
 		headerTabComposite = new HeaderTabComposite(folder);
 		nullBodyTabComposite = new NullBodyTabComposite(folder);
-		
+
 		createBodyTabs();
-		
+
 		currentBodyTab = new NullBodyTabComposite(folder);
-		
+
 		addSelectionListenerToFolder(baseComp);
-		
+
 		doUpdate(null);
 
 	}
@@ -107,7 +108,7 @@ public class MessageTabManager {
 				baseComp.setFormatEnabled(false);
 				baseComp.setSaveEnabled(false);
 			}
-			
+
 		});
 	}
 
@@ -125,7 +126,7 @@ public class MessageTabManager {
 		bodyTabs.add(new JSONTabComposite(folder));
 		bodyTabs.add(new ImageTabComposite(folder));
 	}
-	
+
 	private TabItem getCurrentTabItem() {
 		return currentBodyTab.getTabItem();
 	}
@@ -156,48 +157,59 @@ public class MessageTabManager {
 		}
 
 		currentBodyTab = nullBodyTabComposite;
-		
+
 		errorTabComposite.hide();
 
 		rawTabComposite.show();
-		
+
 		headerTabComposite.show();
 		headerTabComposite.update(msg);
 
 		folder.setSelection(headerTabComposite.getTabItem());
 		folder.notifyListeners(SWT.Selection, null);
 		hideAllBodyTabs();
-		if (msg.getHeader().getContentType() == null) {	
+		if (msg.getHeader().getContentType() == null) {
 			return;
 		}
-	
-		if (!msg.isBodyEmpty()) {
-			if (msg.isCSS()) {
-				currentBodyTab = bodyTabs.get(0);
-			} else if (msg.isJavaScript()) {
-				currentBodyTab = bodyTabs.get(1);
-			} else if (msg.isHTML()) {
-				currentBodyTab = bodyTabs.get(2);
-			} else if (msg.isXML()) {
-				currentBodyTab = bodyTabs.get(3);
-			} else if (msg.isJSON()) {
-				currentBodyTab = bodyTabs.get(4);
-			} else if (msg.isImage()) {
-				currentBodyTab = bodyTabs.get(5);
-			} 	
-		} 
-		
+
+		currentBodyTab = getCurrentBodyTab(msg);
+
 		currentBodyTab.show();
-		
+
 		baseComp.setFormatEnabled(currentBodyTab.isFormatSupported());
+	}
+
+	private BodyTabComposite getCurrentBodyTab(Message msg) {
+		if (msg instanceof Response) {
+			if (((Response)msg).isRedirect() || ((Response)msg).hasNoContent())
+				return nullBodyTabComposite;
+		}
+		
+		if (msg.isBodyEmpty())
+			return bodyTabs.get(2);
+
+		if (msg.isCSS()) {
+			return bodyTabs.get(0);
+		} else if (msg.isJavaScript()) {
+			return bodyTabs.get(1);
+		} else if (msg.isHTML()) {
+			return bodyTabs.get(2);
+		} else if (msg.isXML()) {
+			return bodyTabs.get(3);
+		} else if (msg.isJSON()) {
+			return bodyTabs.get(4);
+		} else if (msg.isImage()) {
+			return bodyTabs.get(5);
+		}
+		return bodyTabs.get(2);
 	}
 
 	private void hideAllContentTabs() {
 		rawTabComposite.hide();
 		headerTabComposite.hide();
-		
+
 		hideAllBodyTabs();
-		
+
 		currentBodyTab = new NullBodyTabComposite(folder);
 	}
 
@@ -222,7 +234,7 @@ public class MessageTabManager {
 	public void copyBodyFromGUIToModel() {
 		try {
 			baseComp.getMsg().setBodyContent(getBodyText().getBytes());
-			//TODO header view must be refreshed
+			// TODO header view must be refreshed
 			log.debug("Body copied from GUI to model");
 		} catch (RuntimeException e) {
 			e.printStackTrace();
@@ -240,8 +252,7 @@ public class MessageTabManager {
 	public boolean isBodyModified() {
 		return currentBodyTab.isBodyModified();
 	}
-	
-	
+
 	public void setSelectionOnBodyTabItem() {
 		if (currentBodyTab != null && !currentBodyTab.isDisposed() && currentBodyTab.getTabItem() != null && !currentBodyTab.getTabItem().isDisposed()) {
 			folder.setSelection(currentBodyTab.getTabItem());
