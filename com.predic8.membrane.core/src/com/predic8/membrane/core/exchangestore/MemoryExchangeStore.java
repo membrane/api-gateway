@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.exchangestore;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -32,7 +33,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	private Map<RuleKey, List<Exchange>> ruleExchangeMap = new HashMap<RuleKey, List<Exchange>>();
 
 	//for synchronization purposes choose Vector class
-	private List<Exchange> totalList = new Vector<Exchange>();  
+	private List<Exchange> totalList = new ArrayList<Exchange>();  
 	
 	private int threashold = 1000;
 
