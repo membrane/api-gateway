@@ -66,8 +66,9 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		if (ruleExchangeMap.get(exchange.getRule().getKey()).size() == 0) {
 			ruleExchangeMap.remove(exchange.getRule().getKey());
 		}
-		exchange.informExchangeViewerOnRemoval();
+		
 		totalList.remove(exchange);
+		exchange.informExchangeViewerOnRemoval();
 		
 		for (IExchangesStoreListener listener : treeViewerListeners) {
 			listener.removeExchange(exchange);
@@ -83,9 +84,8 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		if (ruleExchangeMap.get(exchange.getRule().getKey()).size() == 0) {
 			ruleExchangeMap.remove(exchange.getRule().getKey());
 		}
-		exchange.informExchangeViewerOnRemoval();
 		totalList.remove(exchange);
-		
+		exchange.informExchangeViewerOnRemoval();
 	}
 
 
