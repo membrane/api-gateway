@@ -32,10 +32,7 @@ public class CoreActivator extends Plugin {
 	// The shared instance
 	private static CoreActivator plugin;
 
-	/**
-	 * The constructor
-	 */
-
+	
 	public CoreActivator() {
 
 	}
@@ -52,19 +49,13 @@ public class CoreActivator extends Plugin {
 
 		pluginLogger = CoreActivator.getDefault().getLog();
 
-		pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "File name is" + getConfigFileName()));
+		error("File name is" + getConfigFileName());
 
 		try {
 			if (fileExists()) {
-				pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "Reading configuration from " + getConfigFileName()));
-
-				log.debug("Reading configuration from " + getConfigFileName());
-				Router.init(new UrlResource(getConfigFileName()), getExternalClassloader());
+				readBeanConfigWhenStartedAsProduct();
 			} else {
-				log.debug("Reading configuration from configuration/monitor-beans.xml");
-				pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "Reading configuration from configuration/monitor-beans.xml"));
-
-				Router.init("configuration/monitor-beans.xml", this.getClass().getClassLoader());
+				readBeanConfigWhenStartedInEclipse();
 			}
 		} catch (Exception e1) {
 			
@@ -84,13 +75,30 @@ public class CoreActivator extends Plugin {
 		});
 	}
 
+	private void readBeanConfigWhenStartedAsProduct() throws IOException, MalformedURLException {
+		error("Reading configuration from " + getConfigFileName());
+		log.debug("Reading configuration from " + getConfigFileName());
+		Router.init(new UrlResource(getConfigFileName()), getExternalClassloader());
+	}
+
+	private void readBeanConfigWhenStartedInEclipse() throws MalformedURLException {
+		log.debug("Reading configuration from configuration/monitor-beans.xml");
+		error("Reading configuration from configuration/monitor-beans.xml");
+
+		Router.init("configuration/monitor-beans.xml", this.getClass().getClassLoader());
+	}
+
+	private void error(String message) {
+		pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, message));
+	}
+
 	private URLClassLoader getExternalClassloader() {
 		try {
 			System.err.println(getClassesFolderName());
 			return new URLClassLoader(new URL[] { new URL(getClassesFolderName())} , getClass().getClassLoader() );
 		} catch (Exception e) {
 			e.printStackTrace();
-			pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, "Creation of external classloader failed." + e));
+			error("Creation of external classloader failed." + e);
 			System.exit(1);
 		} 
 		return null;
