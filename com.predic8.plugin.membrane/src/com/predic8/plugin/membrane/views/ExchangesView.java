@@ -266,7 +266,7 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 	}
 
 	public void addExchange(Rule rule, final Exchange exchange) {
-
+		
 	}
 
 	public void refresh() {
@@ -278,6 +278,7 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 	}
 
 	public void removeExchanges(Rule parent, Exchange[] exchanges) {
+		System.err.println("remove exchanges notified to exchange viewer");
 		refreshTable(true);
 	}
 
@@ -332,12 +333,13 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 
 				}
 
+				List<Exchange> exchanges = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
+				applySorter(exchanges);
+				
 				if (!lbFilterCount.isDisposed()) {
 					lbFilterCount.setText((filterManager.toString() + filterCountText));
 				}
 				
-				List<Exchange> exchanges = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
-				applySorter(exchanges);
 				if (exchanges.size() > 0) {
 					removeExchangeAction.setEnabled(true);
 					removeAllExchangesAction.setEnabled(true);
