@@ -1,0 +1,8 @@
+Licenses for External Components
+=================================
+
+Jakarta Commons:
+Apache License Version 2.0, January 2004 See included file LICENSE.txt
+
+Eclipse SWT Library:
+Common Public License (CPL) See included file SWT-LICENSE.txt
