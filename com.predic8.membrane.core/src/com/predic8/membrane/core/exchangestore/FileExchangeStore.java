@@ -35,95 +35,120 @@ import com.predic8.membrane.core.statistics.RuleStatistics;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class FileExchangeStore extends AbstractExchangeStore {
-	
-	private static Log log = LogFactory.getLog(FileExchangeStore.class.getName());
+
+	private static Log log = LogFactory.getLog(FileExchangeStore.class
+			.getName());
 
 	private String dir;
-	
+
 	private boolean raw;
-	
+
 	private File directory;
-	
+
 	private static int counter = 0;
-	
-	private FileOutputStream outputSream;
-		
-	private static final DateFormat dateFormat = new SimpleDateFormat("'h'hh'm'mm's'ss'ms'ms");
-	
-	private static final String fileSeparator = System.getProperty("file.separator");
-	
-	public void add(Exchange exchange) {
-		exchange.getTime().get(Calendar.YEAR);
+
+	private static final DateFormat dateFormat = new SimpleDateFormat(
+			"'h'hh'm'mm's'ss'ms'ms");
+
+	private static final String separator = System
+			.getProperty("file.separator");
+
+	public void add(Exchange exc) {
+		exc.getTime().get(Calendar.YEAR);
 		String messageName;
 		Message message;
-		if (exchange.getResponse() == null) {
+		if (exc.getResponse() == null) {
 			messageName = "Request";
-			message = exchange.getRequest();
+			message = exc.getRequest();
 		} else {
 			messageName = "Response";
-			message = exchange.getResponse();
+			message = exc.getResponse();
 		}
-		
-		String fullDirectoryName = dir + fileSeparator + exchange.getTime().get(Calendar.YEAR) + fileSeparator + (exchange.getTime().get(Calendar.MONTH) + 1) + fileSeparator + exchange.getTime().get(Calendar.DAY_OF_MONTH );
-		
+
+		String fullDirectoryName = getFullDirectoryName(exc);
+
 		directory = new File(fullDirectoryName);
 		directory.mkdirs();
 		try {
 			if (directory.exists() && directory.isDirectory()) {
-				writeFile(exchange, messageName, message, fullDirectoryName);
+				writeFile(exc, messageName, message, fullDirectoryName);
 			} else {
-				log.error("Directory does not exists or file is not a directory: " + fullDirectoryName);
+				log
+						.error("Directory does not exists or file is not a directory: "
+								+ fullDirectoryName);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			try {
-				if (outputSream != null) {
-					outputSream.close();
-				}
-			} catch (IOException ex) {
-				log.error(ex);
-			}
 		}
-		
+
 	}
 
-	private void writeFile(Exchange exchange, String messageName, Message message, String fullDirectoryName) throws IOException, FileNotFoundException, Exception {
-		File file = new File(fullDirectoryName + fileSeparator + getFileName(exchange, messageName));
-		if (file.createNewFile()) {
-			counter ++;
-			outputSream = new FileOutputStream(file);
-			message.writeStartLine(outputSream);
-			message.getHeader().write(outputSream);
-			outputSream.write((Constants.CRLF).getBytes());
-			if (raw)
-				outputSream.write(message.getBody().getRaw());
-			else
-				outputSream.write(TextUtil.formatXML(message.getBodyAsStream()).getBytes());
-			
-		} else {
+	private String getFullDirectoryName(Exchange exc) {
+		return dir + separator + exc.getTime().get(Calendar.YEAR) + separator
+				+ (exc.getTime().get(Calendar.MONTH) + 1) + separator
+				+ exc.getTime().get(Calendar.DAY_OF_MONTH);
+	}
+
+	private void writeFile(Exchange exc, String messageName, Message msg,
+			String fullDirectoryName) throws IOException,
+			FileNotFoundException, Exception {
+		File file = new File(fullDirectoryName + separator
+				+ getFileName(exc, messageName));
+		if (!file.createNewFile()) {
 			log.error("Unable to create file: " + file.getName());
+			return;
+		}
+			
+		FileOutputStream os = new FileOutputStream(file);
+		try {
+			msg.writeStartLine(os);
+			msg.getHeader().write(os);
+			os.write((Constants.CRLF).getBytes());
+			if ( !msg.isBodyEmpty() ) {
+				if (raw)
+					os.write(msg.getBody().getRaw());
+				else {
+					os.write(TextUtil.formatXML(msg.getBodyAsStream())
+							.getBytes());
+				}
+			}
+		} catch (Exception e) {
+			throw e;
+		} finally {
+			os.close();
 		}
 	}
-	
-	private String getFileName(Exchange exc, String messageName) {
-		return dateFormat.format(exc.getTime().getTime()) + "-" + counter + "-" + messageName + ".msg";
+
+	/**
+	 * Must be synchronized.
+	 * 
+	 * @param exc
+	 * @param messageName
+	 * @return
+	 */
+	synchronized private String getFileName(Exchange exc, String messageName) {
+		return dateFormat.format(exc.getTime().getTime()) + "-" + counter++
+				+ "-" + messageName + ".msg";
 	}
 
 	public Exchange[] getExchanges(RuleKey ruleKey) {
-		throw new RuntimeException("Method getExchanges() is not supported by FileExchangeStore");
+		throw new RuntimeException(
+				"Method getExchanges() is not supported by FileExchangeStore");
 	}
 
 	public int getNumberOfExchanges(RuleKey ruleKey) {
-		throw new RuntimeException("Method getNumberOfExchanges() is not supported by FileExchangeStore");
+		throw new RuntimeException(
+				"Method getNumberOfExchanges() is not supported by FileExchangeStore");
 	}
 
 	public void remove(Exchange exchange) {
-		throw new RuntimeException("Method remove() is not supported by FileExchangeStore");
+		throw new RuntimeException(
+				"Method remove() is not supported by FileExchangeStore");
 	}
 
 	public void removeAllExchanges(Rule rule) {
-		throw new RuntimeException("Method removeAllExchanges() is not supported by FileExchangeStore");
+		throw new RuntimeException(
+				"Method removeAllExchanges() is not supported by FileExchangeStore");
 	}
 
 	public String getDir() {
@@ -143,7 +168,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	}
 
 	public RuleStatistics getStatistics(RuleKey ruleKey) {
-		
+
 		return null;
 	}
 
@@ -164,7 +189,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	public void removeAllExchanges(Exchange[] exchanges) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 }

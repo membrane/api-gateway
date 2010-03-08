@@ -14,35 +14,38 @@
 <beans>
 
 	<bean id="router" class="com.predic8.membrane.core.Router">
-		<property name="ruleManager" ref="ruleManager"/>
-		<property name="transport" ref="transport"/>
-		<property name="exchangeStore" ref="exchangeStore"/>
-		<property name="configurationManager" ref="configurationManager"/>
+		<property name="ruleManager" ref="ruleManager" />
+		<property name="transport" ref="transport" />
+		<property name="exchangeStore" ref="exchangeStore" />
+		<property name="configurationManager" ref="configurationManager" />
 	</bean>
 
 	<bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
-		<property name="inInterceptors">
+		<property name="interceptors">
 			<list>
 				<bean class="com.predic8.membrane.core.interceptor.RoutingInterceptor">
-					<property name="ruleManager" ref="ruleManager"></property>
+					<property name="ruleManager" ref="ruleManager" />
 				</bean>
-				 
-				<bean class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">
+
+				<bean
+					class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">
 					<property name="exchangeStore" ref="exchangeStore" />
 				</bean>
-			</list>
-		</property>
-		<property name="outInterceptors">
-			<list>
-				<bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor"/>
+
+				<bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor" />
+				<!-- 
+				
+				 -->
 			</list>
 		</property>
 	</bean>
+
 	<bean id="ruleManager" class="com.predic8.membrane.core.RuleManager">
-		<property name="exchangeStore" ref="exchangeStore"/>
+		<property name="exchangeStore" ref="exchangeStore" />
 	</bean>
-	
-	<bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore" />
+
+	<bean id="exchangeStore"
+		class="com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore" />
 
     <!-- 
 	  Change the value of the dir property to point a folder where messages 
@@ -50,22 +53,73 @@
 	-->
 	<!--  
 	<bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.FileExchangeStore"> 
-		<property name="dir" value="/tmp"/>	
+		<property name="dir" value="c:\temp"/>	
 	</bean>
 	-->
 
-
-	<bean id="configurationStore" class="com.predic8.membrane.core.io.ConfigurationFileStore" />
-
-
 	<bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager"
 		init-method="init">
-		<property name="transport" ref="transport" />
-		<property name="ruleManager" ref="ruleManager" />
-		<property name="configurationStore" ref="configurationStore" />
+		<property name="configurationStore">
+			<bean class="com.predic8.membrane.core.io.ConfigurationFileStore" />
+		</property>
 		<property name="adjustHostHeader" value="true" />
 		<property name="indentMessage" value="true" />
 		<property name="adjustContentLength" value="true" />
-		<property name="trackExchange" value="true" />
 	</bean>
+
+	<bean id="roundRobinBalancer"
+		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
+		<property name="displayName" value="roundRobinBalancer" />
+		<property name="endpoints">
+			<list>
+				<value>http://www.thomas-bayer.com:80/axis2/services/BLZService</value>
+				<value>http://www.thomas-bayer.com/axis2/services/BLZService</value>
+			</list>
+		</property>
+		<property name="dispatchingStrategy">
+			<bean
+				class="com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy" />
+		</property>
+	</bean>
+
+	<bean id="byThreadBalancer"
+		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
+		<property name="displayName" value="byThreadBalancer" />
+		<property name="endpoints">
+			<list>
+				<value>http://www.thomas-bayer.com:80/axis2/services/BLZService</value>
+				<value>http://www.thomas-bayer.com/axis2/services/BLZService</value>
+			</list>
+		</property>
+		<property name="dispatchingStrategy">
+			<bean class="com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy" >
+				<property name="maxNumberOfThreadsPerEndpoint" value="10"/>
+				<property name="retryTimeOnBusy" value="1000"/>
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="urlRewriter"
+		class="com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor">
+		<property name="displayName" value="Simple URL Rewriter" />
+		<property name="mapping">
+			<map>
+				<entry>
+					<key>
+						<value>/blzservice</value>
+					</key>
+					<value>/axis2/services/BLZService</value>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="head2Body"
+		class="com.predic8.membrane.core.interceptor.AuthHead2BodyInterceptor">
+		<property name="displayName" value="Moves auth header elements to body" />
+	</bean>
+
 </beans>
+	
+	
+	
