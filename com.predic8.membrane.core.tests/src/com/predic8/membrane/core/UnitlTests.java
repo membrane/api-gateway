@@ -37,6 +37,7 @@ public class UnitlTests {
 		suite.addTestSuite(RequestTest.class);
 		suite.addTestSuite(ResponseTest.class);
 		suite.addTestSuite(MagicTest.class);
+		suite.addTestSuite(CoreActivatorTest.class);
 		//$JUnit-END$
 		return suite;
 	}

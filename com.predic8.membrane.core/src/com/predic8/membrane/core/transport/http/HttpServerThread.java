@@ -112,11 +112,7 @@ public class HttpServerThread extends AbstractHttpThread {
 
 			exchange.setRequest(srcReq);
 
-			if (Outcome.ABORT == invokeRequestHandlers(exchange, transport.getInterceptors()))
-				throw new AbortException();
-
-			if (Outcome.ABORT == invokeRequestHandlers(exchange, exchange.getRule().getInterceptors()))
-				throw new AbortException();
+			invokeRequestInterceptors();
 
 			synchronized (exchange.getRequest()) {
 				if (exchange.getRule().isBlockRequest())
@@ -129,11 +125,8 @@ public class HttpServerThread extends AbstractHttpThread {
 				targetRes = HttpUtil.createErrorResponse("Target is not reachable.");
 			}
 			exchange.setResponse(targetRes);
-			if (Outcome.ABORT == invokeResponseHandlers(exchange, exchange.getRule().getInterceptors()))
-				throw new AbortException();
-
-			if (Outcome.ABORT == invokeResponseHandlers(exchange, transport.getInterceptors()))
-				throw new AbortException();
+			
+			invokeResponseInterceptors();
 
 			synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {
@@ -152,6 +145,22 @@ public class HttpServerThread extends AbstractHttpThread {
 		exchange.setTimeResSent(System.currentTimeMillis());
 		exchange.setCompleted();
 
+	}
+
+	private void invokeResponseInterceptors() throws Exception, AbortException {
+		if (Outcome.ABORT == invokeResponseHandlers(exchange, exchange.getRule().getInterceptors()))
+			throw new AbortException();
+
+		if (Outcome.ABORT == invokeResponseHandlers(exchange, transport.getInterceptors()))
+			throw new AbortException();
+	}
+
+	private void invokeRequestInterceptors() throws Exception, AbortException {
+		if (Outcome.ABORT == invokeRequestHandlers(exchange, transport.getInterceptors()))
+			throw new AbortException();
+
+		if (Outcome.ABORT == invokeRequestHandlers(exchange, exchange.getRule().getInterceptors()))
+			throw new AbortException();
 	}
 
 	private void block(Message message) throws TerminateException {

@@ -123,28 +123,36 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 		case 6:
 			return getServer(exchange);
 		case 7:
-			return getContentType(exchange);
+			return getRequestContentType(exchange);
 
 		case 8:
-			if (exchange.getRequest().getHeader().getContentLength() == -1)
+			if (getRequestContentLength(exchange) == -1)
 				return "unknown";
-			return "" + exchange.getRequest().getHeader().getContentLength();
+			return "" + getRequestContentLength(exchange);
 
 		case 9:
-			if (exchange.getResponse() == null || exchange.getResponse().getHeader().getContentType() == null)
+			if (exchange.getResponse() == null)
 				return "N/A";
-			return "" + exchange.getResponse().getHeader().getContentType();
+			return getResponseContentType(exchange);
 
 		case 10:
 			if (exchange.getResponse() == null)
 				return "";
-			return "" + exchange.getResponse().getHeader().getContentLength();
+			return "" + getResponseContentLength(exchange);
 
 		case 11:
 			return "" + (exchange.getTimeResReceived() - exchange.getTimeReqSent());
 		}
 		
 		return "";
+	}
+
+	private int getResponseContentLength(HttpExchange exchange) {
+		return exchange.getResponse().getHeader().getContentLength();
+	}
+
+	private int getRequestContentLength(HttpExchange exchange) {
+		return exchange.getRequest().getHeader().getContentLength();
 	}
 
 	private String getServer(HttpExchange exchange) {
@@ -161,8 +169,15 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 		return "";
 	}
 
-	private String getContentType(HttpExchange exchange) {
-		String contentType = (String) exchange.getRequest().getHeader().getContentType();
+	private String getRequestContentType(HttpExchange exchange) {
+		return extractContentTypeValue((String) exchange.getRequest().getHeader().getContentType());
+	}
+
+	private String getResponseContentType(HttpExchange exchange) {
+		return extractContentTypeValue((String) exchange.getResponse().getHeader().getContentType());
+	}
+
+	private String extractContentTypeValue(String contentType) {
 		if (contentType == null)
 			return "";
 		int index = contentType.indexOf(";");
@@ -171,7 +186,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 		}
 		return contentType;
 	}
-
+	
 	private void createImages() {
 		imgPending = createImage(ImageKeys.IMAGE_PENDING);
 		imgFailed = createImage(ImageKeys.IMAGE_FAILED);

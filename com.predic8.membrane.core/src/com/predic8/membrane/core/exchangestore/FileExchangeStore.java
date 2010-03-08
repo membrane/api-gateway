@@ -36,8 +36,7 @@ import com.predic8.membrane.core.util.TextUtil;
 
 public class FileExchangeStore extends AbstractExchangeStore {
 
-	private static Log log = LogFactory.getLog(FileExchangeStore.class
-			.getName());
+	private static Log log = LogFactory.getLog(FileExchangeStore.class.getName());
 
 	private String dir;
 
@@ -47,23 +46,14 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static int counter = 0;
 
-	private static final DateFormat dateFormat = new SimpleDateFormat(
-			"'h'hh'm'mm's'ss'ms'ms");
+	private static final DateFormat dateFormat = new SimpleDateFormat("'h'hh'm'mm's'ss'ms'ms");
 
-	private static final String separator = System
-			.getProperty("file.separator");
+	private static final String separator = System.getProperty("file.separator");
 
 	public void add(Exchange exc) {
 		exc.getTime().get(Calendar.YEAR);
-		String messageName;
-		Message message;
-		if (exc.getResponse() == null) {
-			messageName = "Request";
-			message = exc.getRequest();
-		} else {
-			messageName = "Response";
-			message = exc.getResponse();
-		}
+		String messageName = exc.getResponse() == null ? "Request" : "Response";
+		Message message = exc.getResponse() == null ? exc.getRequest() : exc.getResponse();
 
 		String fullDirectoryName = getFullDirectoryName(exc);
 
@@ -73,9 +63,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			if (directory.exists() && directory.isDirectory()) {
 				writeFile(exc, messageName, message, fullDirectoryName);
 			} else {
-				log
-						.error("Directory does not exists or file is not a directory: "
-								+ fullDirectoryName);
+				log.error("Directory does not exists or file is not a directory: " + fullDirectoryName);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -84,32 +72,26 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	}
 
 	private String getFullDirectoryName(Exchange exc) {
-		return dir + separator + exc.getTime().get(Calendar.YEAR) + separator
-				+ (exc.getTime().get(Calendar.MONTH) + 1) + separator
-				+ exc.getTime().get(Calendar.DAY_OF_MONTH);
+		return dir + separator + exc.getTime().get(Calendar.YEAR) + separator + (exc.getTime().get(Calendar.MONTH) + 1) + separator + exc.getTime().get(Calendar.DAY_OF_MONTH);
 	}
 
-	private void writeFile(Exchange exc, String messageName, Message msg,
-			String fullDirectoryName) throws IOException,
-			FileNotFoundException, Exception {
-		File file = new File(fullDirectoryName + separator
-				+ getFileName(exc, messageName));
+	private void writeFile(Exchange exc, String messageName, Message msg, String fullDirectoryName) throws IOException, FileNotFoundException, Exception {
+		File file = new File(fullDirectoryName + separator + getFileName(exc, messageName));
 		if (!file.createNewFile()) {
 			log.error("Unable to create file: " + file.getName());
 			return;
 		}
-			
+
 		FileOutputStream os = new FileOutputStream(file);
 		try {
 			msg.writeStartLine(os);
 			msg.getHeader().write(os);
 			os.write((Constants.CRLF).getBytes());
-			if ( !msg.isBodyEmpty() ) {
+			if (!msg.isBodyEmpty()) {
 				if (raw)
 					os.write(msg.getBody().getRaw());
 				else {
-					os.write(TextUtil.formatXML(msg.getBodyAsStream())
-							.getBytes());
+					os.write(TextUtil.formatXML(msg.getBodyAsStream()).getBytes());
 				}
 			}
 		} catch (Exception e) {
@@ -127,28 +109,23 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	 * @return
 	 */
 	synchronized private String getFileName(Exchange exc, String messageName) {
-		return dateFormat.format(exc.getTime().getTime()) + "-" + counter++
-				+ "-" + messageName + ".msg";
+		return dateFormat.format(exc.getTime().getTime()) + "-" + counter++ + "-" + messageName + ".msg";
 	}
 
 	public Exchange[] getExchanges(RuleKey ruleKey) {
-		throw new RuntimeException(
-				"Method getExchanges() is not supported by FileExchangeStore");
+		throw new RuntimeException("Method getExchanges() is not supported by FileExchangeStore");
 	}
 
 	public int getNumberOfExchanges(RuleKey ruleKey) {
-		throw new RuntimeException(
-				"Method getNumberOfExchanges() is not supported by FileExchangeStore");
+		throw new RuntimeException("Method getNumberOfExchanges() is not supported by FileExchangeStore");
 	}
 
 	public void remove(Exchange exchange) {
-		throw new RuntimeException(
-				"Method remove() is not supported by FileExchangeStore");
+		throw new RuntimeException("Method remove() is not supported by FileExchangeStore");
 	}
 
 	public void removeAllExchanges(Rule rule) {
-		throw new RuntimeException(
-				"Method removeAllExchanges() is not supported by FileExchangeStore");
+		throw new RuntimeException("Method removeAllExchanges() is not supported by FileExchangeStore");
 	}
 
 	public String getDir() {

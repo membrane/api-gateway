@@ -100,12 +100,12 @@ public class HttpClient {
 	}
 	
 	private int getTargetPort(URL url) throws MalformedURLException {
-		if (url.getProtocol().equalsIgnoreCase("http")) {
-			if (url.getPort() == -1)
-				return 80;
-			return url.getPort();
-		}
-		throw new RuntimeException("Does not support protocol for URI: " + url.getPath()); 
+		if (!url.getProtocol().equalsIgnoreCase("http")) 
+			throw new RuntimeException("Does not support protocol for URI: " + url.getPath()); 
+		
+		if (url.getPort() == -1)
+			return 80;
+		return url.getPort();
 	}
 
 	public Response call(HttpExchange exc) throws Exception {
@@ -143,29 +143,37 @@ public class HttpClient {
 		exc.getRequest().write(out);
 		
 		if(exc.getRequest().isHTTP10()){
-			exc.getServerThread().sourceSocket.shutdownInput();
-			if (!socket.isOutputShutdown()) {
-				log.info("Shutting down socket outputstream");
-				socket.shutdownOutput();
-			}
-			//TODO close ?
+			shutDownSourceSocket(exc);
 		}
 		
 		Response response = new Response();
 		response.read(in, !exc.getRequest().isHEADRequest());
 		
 		if (response.getStatusCode() == 100) {
-			if (exc.getServerThread() instanceof HttpServerThread) {
-				response.write(exc.getServerThread().srcOut);
-			}
-			exc.getRequest().readBody();
-			exc.getRequest().getBody().write(out);
-			response.read(in, !exc.getRequest().isHEADRequest());
+			do100ExpectedHandling(exc, response);
 		}
 			
 		exc.setReceived();
 		exc.setTimeResReceived(System.currentTimeMillis());
 		return response;
+	}
+
+	private void do100ExpectedHandling(HttpExchange exc, Response response) throws IOException, EndOfStreamException {
+		if (exc.getServerThread() instanceof HttpServerThread) {
+			response.write(exc.getServerThread().srcOut);
+		}
+		exc.getRequest().readBody();
+		exc.getRequest().getBody().write(out);
+		response.read(in, !exc.getRequest().isHEADRequest());
+	}
+
+	private void shutDownSourceSocket(HttpExchange exc) throws IOException {
+		exc.getServerThread().sourceSocket.shutdownInput();
+		if (!socket.isOutputShutdown()) {
+			log.info("Shutting down socket outputstream");
+			socket.shutdownOutput();
+		}
+		//TODO close ?
 	}
 	
 	public void close() throws IOException {

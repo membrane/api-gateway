@@ -66,6 +66,8 @@ import com.predic8.plugin.membrane.actions.exchanges.RemoveExchangeAction;
 import com.predic8.plugin.membrane.contentproviders.ExchangesViewLazyContentProvider;
 import com.predic8.plugin.membrane.filtering.FilterManager;
 import com.predic8.plugin.membrane.labelproviders.ExchangesViewLabelProvider;
+import com.predic8.plugin.membrane.views.util.ExpandThread;
+import com.predic8.plugin.membrane.views.util.ShrinkThread;
 
 public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 
@@ -103,6 +105,48 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 
 		createTableViewer(composite);
 
+		createActions();
+
+		addMenu();
+
+		Composite compositeControls = createInnerComposite(composite, 1);
+
+		Composite compositeFilters = createInnerComposite(composite, 2);
+
+		createLink(compositeFilters, "<A>Filters</A>", ShowFiltersDialogAction.ID);
+
+		GridData gData = createLabelGridData();
+
+		createLabelFilterCount(compositeFilters, gData);
+
+		Composite compositeSorters = createInnerComposite(composite, 2);
+
+		createLink(compositeSorters, "<A>Sorted By: </A>", ShowSortersDialogAction.ID);
+
+		createLabelSortedBy(gData, compositeSorters);
+
+		createTrackRequestButton(compositeControls);
+
+		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
+		refreshTable(false);
+
+		contributeToActionBars();
+
+	}
+
+	private void createLabelSortedBy(GridData gData, Composite composite) {
+		lbSortedBy = new Label(composite, SWT.NONE);
+		lbSortedBy.setText(comparator.toString());
+		lbSortedBy.setLayoutData(gData);
+	}
+
+	private void createLabelFilterCount(Composite composite, GridData gData) {
+		lbFilterCount = new Label(composite, SWT.NONE);
+		lbFilterCount.setText(filterManager.toString() + filterCountText);
+		lbFilterCount.setLayoutData(gData);
+	}
+
+	private void createActions() {
 		removeExchangeAction = new RemoveExchangeAction(tableViewer);
 		removeExchangeAction.setEnabled(false);
 
@@ -111,49 +155,22 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 
 		removeAllExchangesAction = new ExchangeVirtualListRemoveAction(tableViewer);
 		removeAllExchangesAction.setEnabled(false);
+	}
 
-		addMenu();
-
-		Composite compControls = new Composite(composite, SWT.NONE);
-
-		GridLayout layout4Controls = new GridLayout();
-		layout4Controls.numColumns = 1;
-		compControls.setLayout(layout4Controls);
-
-		Composite compositeFilters = new Composite(compControls, SWT.NONE);
-
-		GridLayout layout4Filters = new GridLayout();
-		layout4Filters.numColumns = 2;
-		compositeFilters.setLayout(layout4Filters);
-
-		createLink(compositeFilters, "<A>Filters</A>", ShowFiltersDialogAction.ID);
-
+	private GridData createLabelGridData() {
 		GridData gData4Label = new GridData(GridData.FILL_HORIZONTAL);
 		gData4Label.grabExcessHorizontalSpace = true;
 		gData4Label.widthHint = 500;
+		return gData4Label;
+	}
 
-		lbFilterCount = new Label(compositeFilters, SWT.NONE);
-		lbFilterCount.setText(filterManager.toString() + filterCountText);
-		lbFilterCount.setLayoutData(gData4Label);
+	private Composite createInnerComposite(Composite parent, int columns) {
+		Composite composite = new Composite(parent, SWT.NONE);
 
-		Composite compositeSorters = new Composite(compControls, SWT.NONE);
-		GridLayout gridLayoutSorters = new GridLayout();
-		gridLayoutSorters.numColumns = 2;
-		compositeSorters.setLayout(gridLayoutSorters);
-
-		createLink(compositeSorters, "<A>Sorted By: </A>", ShowSortersDialogAction.ID);
-
-		lbSortedBy = new Label(compositeSorters, SWT.NONE);
-		lbSortedBy.setText(comparator.toString());
-		lbSortedBy.setLayoutData(gData4Label);
-
-		createTrackRequestButton(compControls);
-
-		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
-		refreshTable(false);
-
-		contributeToActionBars();
-
+		GridLayout layout = new GridLayout();
+		layout.numColumns = columns;
+		composite.setLayout(layout);
+		return composite;
 	}
 
 	private void createTrackRequestButton(Composite compControls) {
@@ -410,61 +427,6 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 		manager.add(new Separator(IWorkbenchActionConstants.MB_ADDITIONS));
 	}
 	
-	private abstract class MoveThread extends Thread {
-		protected int width = 0;
-		protected TableColumn column;
-		
-		public MoveThread(int width, TableColumn column) {
-			this.width = width;
-			this.column = column;
-		}
-		
-		protected abstract void process();
-		
-		@Override
-		public void run() {
-			process();
-		}
-		
-		protected void setWidthForColumn(int i) {
-			final int index = i;
-			column.getDisplay().syncExec(new Runnable() {
-				public void run() {
-					column.setWidth(index);
-				}
-			});
-		}
-	}
-
-	private class ShrinkThread extends MoveThread {
-		public ShrinkThread(int width, TableColumn column) {
-			super(width, column);
-		}
-		
-		protected void process() {
-			column.getDisplay().syncExec(new Runnable() {
-				public void run() {
-					column.setData("restoredWidth", new Integer(width));
-				}
-			});
-
-			for (int i = width; i >= 0; i--) {
-				setWidthForColumn(i);
-			}
-		}
-	};
-
-	private class ExpandThread extends MoveThread {
-		public ExpandThread(int width, TableColumn column) {
-			super(width, column);
-		}
-		protected void process() {
-			for (int i = 0; i <= width; i++) {
-				setWidthForColumn(i);
-			}
-		}
-	}
-
 	public FilterManager getFilterManager() {
 		return filterManager;
 	}

@@ -71,10 +71,10 @@ public class RoutingInterceptor extends AbstractInterceptor {
 	}
 
 	private Rule getRule(HttpExchange exc) {
-		ForwardingRuleKey ruleKey = new ForwardingRuleKey(getHostname(exc), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
-		Rule rule = ruleManager.getMatchingRule(ruleKey);
+		ForwardingRuleKey key = new ForwardingRuleKey(getHostname(exc), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
+		Rule rule = ruleManager.getMatchingRule(key);
 		if (rule != null) {
-			log.debug("Matching Rule found for RuleKey " + ruleKey);
+			log.debug("Matching Rule found for RuleKey " + key);
 			return rule;
 		}
 
@@ -96,13 +96,16 @@ public class RoutingInterceptor extends AbstractInterceptor {
 	}
 
 	private void insertXForwardedFor(Exchange exc) {
-		if (exc.getRequest().getHeader().getXForwardedFor() != null) {
-			String value = exc.getRequest().getHeader().getXForwardedFor();
-			value += ", " + (String) exc.getProperty(HttpTransport.SOURCE_IP);
-			exc.getRequest().getHeader().setXForwardedFor(value);
-		} else {
-			exc.getRequest().getHeader().setXForwardedFor((String) exc.getProperty(HttpTransport.SOURCE_IP));
-		}
+		String value = getXForwardedFor(exc) != null ? getXForwardedFor(exc) + ", " + getSourceIp(exc): getSourceIp(exc);
+		exc.getRequest().getHeader().setXForwardedFor(value);
+	}
+
+	private String getSourceIp(Exchange exc) {
+		return (String) exc.getProperty(HttpTransport.SOURCE_IP);
+	}
+
+	private String getXForwardedFor(Exchange exc) {
+		return exc.getRequest().getHeader().getXForwardedFor();
 	}
 
 	private String getHostname(Exchange exc) {
