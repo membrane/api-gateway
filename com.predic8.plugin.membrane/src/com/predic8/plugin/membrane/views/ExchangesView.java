@@ -103,29 +103,28 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 		Composite composite = new Composite(parent, SWT.NONE);
 		composite.setLayout(createTopLayout());
 
-		createTableViewer(composite);
+		tableViewer = createTableViewer(composite);
 
 		createActions();
 
 		addMenu();
 
-		Composite compositeControls = createInnerComposite(composite, 1);
+		Composite filters = createInnerComposite(composite, 2);
 
-		Composite compositeFilters = createInnerComposite(composite, 2);
-
-		createLink(compositeFilters, "<A>Filters</A>", ShowFiltersDialogAction.ID);
+		createLink(filters, "<A>Filters</A>", ShowFiltersDialogAction.ID);
 
 		GridData gData = createLabelGridData();
 
-		createLabelFilterCount(compositeFilters, gData);
+		createLabelFilterCount(filters, gData);
 
-		Composite compositeSorters = createInnerComposite(composite, 2);
+		Composite sorters = createInnerComposite(composite, 2);
 
-		createLink(compositeSorters, "<A>Sorted By: </A>", ShowSortersDialogAction.ID);
+		createLink(sorters, "<A>Sorted By: </A>", ShowSortersDialogAction.ID);
 
-		createLabelSortedBy(gData, compositeSorters);
+		createLabelSortedBy(gData, sorters);
 
-		createTrackRequestButton(compositeControls);
+		Composite controls = createInnerComposite(composite, 1);
+		createTrackRequestButton(controls);
 
 		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
 		refreshTable(false);
@@ -158,10 +157,10 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 	}
 
 	private GridData createLabelGridData() {
-		GridData gData4Label = new GridData(GridData.FILL_HORIZONTAL);
-		gData4Label.grabExcessHorizontalSpace = true;
-		gData4Label.widthHint = 500;
-		return gData4Label;
+		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
+		gData.grabExcessHorizontalSpace = true;
+		gData.widthHint = 500;
+		return gData;
 	}
 
 	private Composite createInnerComposite(Composite parent, int columns) {
@@ -203,25 +202,25 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 		});
 	}
 	
-	private void createTableViewer(Composite composite) {
-		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER | SWT.VIRTUAL);
-		createColumns(tableViewer);
+	private TableViewer createTableViewer(Composite composite) {
+		final TableViewer viewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER | SWT.VIRTUAL);
+		createColumns(viewer);
 
-		tableViewer.setContentProvider(new ExchangesViewLazyContentProvider(tableViewer));
-		tableViewer.setUseHashlookup(true);
+		viewer.setContentProvider(new ExchangesViewLazyContentProvider(viewer));
+		viewer.setUseHashlookup(true);
 
-		tableViewer.setLabelProvider(new ExchangesViewLabelProvider());
+		viewer.setLabelProvider(new ExchangesViewLabelProvider());
 
 		GridData gData = new GridData(GridData.FILL_BOTH);
 		gData.grabExcessVerticalSpace = true;
 		gData.grabExcessHorizontalSpace = true;
-		tableViewer.getTable().setLayoutData(gData);
+		viewer.getTable().setLayoutData(gData);
 		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "ExchangesOverview");
 
-		tableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			public void selectionChanged(SelectionChangedEvent event) {
 
-				IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
+				IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
 				if (selection.isEmpty()) {
 					updateRequestResponseViews(null);
 				}
@@ -239,6 +238,7 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 				canShowBody = true;
 			}
 		});
+		return viewer;
 	}
 
 	private Layout createTopLayout() {
@@ -263,7 +263,6 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 	}
 
 	private void createColumns(TableViewer viewer) {
-
 		for (int i = 0; i < TITLES.length; i++) {
 			TableViewerColumn col = new TableViewerColumn(viewer, SWT.NONE);
 			col.getColumn().setAlignment(SWT.LEFT);
