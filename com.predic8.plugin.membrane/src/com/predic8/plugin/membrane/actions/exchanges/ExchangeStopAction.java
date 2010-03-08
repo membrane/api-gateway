@@ -33,8 +33,12 @@ public class ExchangeStopAction extends Action {
 		this.treeView = treeView;
 		setText("Stop");
 		setId("Exchange Stop Action");
-		descriptor_enable = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_STOP_ENABLED);
-		descriptor_disable = MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_STOP_DISABLED);
+		descriptor_enable = getDescriptor(ImageKeys.IMAGE_STOP_ENABLED);
+		descriptor_disable = getDescriptor(ImageKeys.IMAGE_STOP_DISABLED);
+	}
+
+	private ImageDescriptor getDescriptor(String imageKey) {
+		return MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(imageKey);
 	}
 	
 	@Override
