@@ -29,6 +29,7 @@
    <splash
       location="com.predic8.rcp.membrane" />
    <launcher name="membrane-monitor">
+      <linux icon="/com.predic8.rcp.membrane/icons/alt_launcher.xpm"/>
       <solaris/>
       <win useIco="true">
          <ico path="/com.predic8.rcp.membrane/icons/alt_launcher.ico"/>
