@@ -106,7 +106,7 @@ public class Response extends Message {
 	}
 	
 	@Override
-	public boolean isBodyEmpty() {
+	public boolean isBodyEmpty() throws IOException {
 		if (statusCode == 100 || statusCode == 204) 
 			return true;
 		return super.isBodyEmpty();

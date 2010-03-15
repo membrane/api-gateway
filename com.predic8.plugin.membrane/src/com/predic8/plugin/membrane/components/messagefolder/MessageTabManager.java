@@ -14,6 +14,7 @@
 
 package com.predic8.plugin.membrane.components.messagefolder;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -185,8 +186,13 @@ public class MessageTabManager {
 				return nullBodyTabComposite;
 		}
 
-		if (msg.isBodyEmpty())
+		try {
+			if (msg.isBodyEmpty())
+				return bodyTabs.get(2);
+		} catch (IOException e) {
+			e.printStackTrace();
 			return bodyTabs.get(2);
+		}
 
 		if (msg.isCSS()) {
 			return bodyTabs.get(0);
@@ -245,7 +251,7 @@ public class MessageTabManager {
 		return MessageDialog.openQuestion(baseComp.getShell(), "Question", msg);
 	}
 
-	public void beautify(Message msg) {
+	public void beautify(Message msg) throws IOException {
 		currentBodyTab.beautify(msg.getBody().getContent());
 	}
 

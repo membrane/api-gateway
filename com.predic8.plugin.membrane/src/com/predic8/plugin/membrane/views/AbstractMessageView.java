@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.plugin.membrane.views;
 
+import java.io.IOException;
+
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -80,7 +82,11 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 		item.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				baseComp.beautifyBody();
+				try {
+					baseComp.beautifyBody();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
 			}
 		});
 		return item;

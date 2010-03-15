@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.exchangestore;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -159,8 +160,12 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 				max = diff;
 			}
 			
-			bytesSent += exchangesList.get(i).getRequest().getBody().getLength();
-			bytesReceived += exchangesList.get(i).getResponse().getBody().getLength();
+			try {
+				bytesSent += exchangesList.get(i).getRequest().getBody().getLength();			
+				bytesReceived += exchangesList.get(i).getResponse().getBody().getLength();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 		if (count == 0)

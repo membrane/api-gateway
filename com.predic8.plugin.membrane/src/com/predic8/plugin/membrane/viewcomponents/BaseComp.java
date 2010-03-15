@@ -14,6 +14,8 @@
 
 package com.predic8.plugin.membrane.viewcomponents;
 
+import java.io.IOException;
+
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 
@@ -104,7 +106,7 @@ public abstract class BaseComp extends Composite {
 		return tabManager.isBodyModified();
 	}
 
-	public void beautifyBody() {
+	public void beautifyBody() throws IOException {
 		tabManager.beautify(msg);
 	}
 

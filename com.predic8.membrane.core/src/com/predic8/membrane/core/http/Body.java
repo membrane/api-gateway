@@ -43,12 +43,12 @@ public class Body {
 	private int length;
 
 	protected Body() {
-		
+
 	}
 
 	public Body(String body) {
 		chunks.add(new Chunk(body));
-		read = true; //because we do not have something to read
+		read = true; // because we do not have something to read
 		length = body.length();
 	}
 
@@ -70,34 +70,31 @@ public class Body {
 		this.inputStream = in;
 	}
 
-	public void read() {
+	public void read() throws IOException {
 		log.debug("read called, chunked = " + chunked);
 		if (read)
 			return;
-		
+
 		chunks.clear();
-		try {
-			if (!chunked) {
-				chunks.add(new Chunk(ByteUtil.readByteArray(inputStream, length)));
-				read = true;
-				return;
-			}
-			readChunks(inputStream);
+
+		if (!chunked) {
+			chunks.add(new Chunk(ByteUtil.readByteArray(inputStream, length)));
 			read = true;
-		} catch (IOException e) {
-			log.error(e);
-			throw new 	RuntimeException("could not read body: " + e);
+			return;
 		}
+		readChunks(inputStream);
+		read = true;
+
 	}
 
 	private void readChunks(InputStream in) throws IOException {
 		int chunkSize = HttpUtil.readChunkSize(in);
 		while (chunkSize > 0) {
-			
+
 			byte[] chunk = ByteUtil.readByteArray(in, chunkSize);
-			
+
 			chunks.add(new Chunk(chunk));
-			
+
 			in.read(); // CR
 			in.read(); // LF
 			chunkSize = HttpUtil.readChunkSize(in);
@@ -106,15 +103,15 @@ public class Body {
 		in.read(); // LF
 	}
 
-	public byte[] getContent() {
+	public byte[] getContent() throws IOException {
 		if (!read) {
 			read();
 		}
-		byte[] content = new byte[getLength()]; 
+		byte[] content = new byte[getLength()];
 		int destPos = 0;
-		for (Chunk chunk: chunks) {
+		for (Chunk chunk : chunks) {
 			destPos = chunk.copyChunk(content, destPos);
-		} 
+		}
 		return content;
 	}
 
@@ -122,11 +119,10 @@ public class Body {
 		return new ByteArrayInputStream(getContent());
 	}
 
-	
 	/**
 	 * the caller of this method is responsible to adjust the header accordingly
-	 * e.g. the fields Transfer-Encoding and Content-Length
-	 * Therefore this method has access modifier default   
+	 * e.g. the fields Transfer-Encoding and Content-Length Therefore this
+	 * method has access modifier default
 	 * 
 	 * @param bytes
 	 */
@@ -136,7 +132,6 @@ public class Body {
 		chunked = false;
 	}
 
-	
 	public void write(OutputStream out) throws IOException {
 		if (!read) {
 			writeNotRead(out);
@@ -175,7 +170,7 @@ public class Body {
 
 	private void writeNotReadUnchunked(OutputStream out) throws IOException {
 		byte[] buffer = new byte[8192];
-		
+
 		int totalLength = 0;
 		int length = 0;
 		chunks.clear();
@@ -195,7 +190,7 @@ public class Body {
 		while (chunkSize > 0) {
 			String size = Integer.toHexString(chunkSize);
 			out.write(size.getBytes());
-			
+
 			out.write(Constants.CRLF_BYTES);
 			byte[] chunk = ByteUtil.readByteArray(inputStream, chunkSize);
 			out.write(chunk);
@@ -214,32 +209,31 @@ public class Body {
 		out.flush();
 	}
 
-	
-	public int getLength() {
+	public int getLength() throws IOException {
 		if (!read)
 			read();
-		
+
 		int length = 0;
 		for (Chunk chunk : chunks) {
-			length += chunk.getLength(); 
+			length += chunk.getLength();
 		}
 		return length;
 	}
-	
-	private int getRawLength() {
+
+	private int getRawLength() throws IOException {
 		if (chunks.size() == 0)
 			return 0;
 		int length = getLength();
 		for (Chunk chunk : chunks) {
 			length += Long.toHexString(chunk.getLength()).getBytes().length;
-			length += 2*Constants.CRLF_BYTES.length;
+			length += 2 * Constants.CRLF_BYTES.length;
 		}
 		length += "0".getBytes().length;
-		length += 2*Constants.CRLF_BYTES.length;
+		length += 2 * Constants.CRLF_BYTES.length;
 		return length;
 	}
-	
-	public byte[] getRaw() {
+
+	public byte[] getRaw() throws IOException {
 		if (!read) {
 			read();
 		}
@@ -247,28 +241,28 @@ public class Body {
 			byte[] raw = new byte[getRawLength()];
 			int destPos = 0;
 			for (Chunk chunk : chunks) {
-				
-				destPos = chunk.copyChunkLength(raw, destPos, this); 
-				
-				destPos = copyCRLF(raw, destPos); 
-				
+
+				destPos = chunk.copyChunkLength(raw, destPos, this);
+
+				destPos = copyCRLF(raw, destPos);
+
 				destPos = chunk.copyChunk(raw, destPos);
-				
-				destPos = copyCRLF(raw, destPos); 
-				
+
+				destPos = copyCRLF(raw, destPos);
+
 			}
-			
+
 			destPos = copyLastChunk(raw, destPos);
-			
-			destPos = copyCRLF(raw, destPos); 
+
+			destPos = copyCRLF(raw, destPos);
 			return raw;
-		} 
+		}
 		if (chunks.size() == 0) {
 			log.debug("size of chunks list: " + chunks.size() + "  " + hashCode());
-			log.debug("chunks size is: " + chunks.size() + " at time: "+ System.currentTimeMillis());
+			log.debug("chunks size is: " + chunks.size() + " at time: " + System.currentTimeMillis());
 			return new byte[0];
 		}
-		
+
 		byte[] raw = new byte[getLength()];
 		int destPos = 0;
 		for (Chunk chunk : chunks) {
@@ -280,7 +274,7 @@ public class Body {
 	private int copyLastChunk(byte[] raw, int destPos) {
 		System.arraycopy("0".getBytes(), 0, raw, destPos, "0".getBytes().length);
 		destPos += "0".getBytes().length;
-		destPos = copyCRLF(raw, destPos); 
+		destPos = copyCRLF(raw, destPos);
 		return destPos;
 	}
 
@@ -288,13 +282,18 @@ public class Body {
 		System.arraycopy(Constants.CRLF_BYTES, 0, raw, destPos, 2);
 		return destPos += 2;
 	}
-	
+
 	@Override
 	public String toString() {
 		if (chunks.size() == 0) {
 			return "";
 		}
-		return new String(getRaw());
+		try {
+			return new String(getRaw());
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "Error in body: " + e;
+		}
 	}
-	
+
 }

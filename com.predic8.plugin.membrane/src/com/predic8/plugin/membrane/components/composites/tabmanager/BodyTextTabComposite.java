@@ -14,6 +14,7 @@
 
 package com.predic8.plugin.membrane.components.composites.tabmanager;
 
+import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
 import org.eclipse.swt.SWT;
@@ -64,7 +65,15 @@ public class BodyTextTabComposite extends BodyTabComposite {
 	
 	@Override
 	public void updateInternal(Message msg) {		
-		byte[] bodyContent = msg.getBody().getContent();
+		
+		byte[] bodyContent;
+		try {
+			bodyContent = msg.getBody().getContent();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+			bodyContent = ("Could not get body content: " + e1.getMessage()).getBytes(); 
+		}
+		
 		try {
 			if (msg.isGzip()) {
 				displayData(ByteUtil.getByteArrayData(new GZIPInputStream(msg.getBodyAsStream())));

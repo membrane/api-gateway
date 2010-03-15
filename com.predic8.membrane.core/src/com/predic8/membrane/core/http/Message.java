@@ -211,7 +211,7 @@ public abstract class Message {
 		return "message";
 	}
 
-	public boolean isBodyEmpty() {
+	public boolean isBodyEmpty() throws IOException {
 		if (header.hasContentLength()) 
 			return header.getContentLength() == 0;
 		
