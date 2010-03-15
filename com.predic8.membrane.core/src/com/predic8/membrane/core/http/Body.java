@@ -130,6 +130,7 @@ public class Body {
 		chunks.clear();
 		chunks.add(new Chunk(bytes));
 		chunked = false;
+		read = true;
 	}
 
 	public void write(OutputStream out) throws IOException {

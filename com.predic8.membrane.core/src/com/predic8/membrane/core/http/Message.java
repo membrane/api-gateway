@@ -84,6 +84,7 @@ public abstract class Message {
 	}
 
 	public void setBodyContent(byte[] content) {
+		body = new Body();
 		body.setContent(content);
 		header.removeFields(Header.TRANSFER_ENCODING);
 		header.setContentLength(content.length);

@@ -135,7 +135,8 @@ public class HttpServerThread extends AbstractHttpThread {
 			}
 
 		} catch (AbortException e) {
-			throw e;
+			log.debug("Aborted");
+			targetRes = exchange.getResponse();
 		}
 
 		log.debug("Start writing targetRes to srcOut");
@@ -144,7 +145,7 @@ public class HttpServerThread extends AbstractHttpThread {
 		log.debug("Done writing targetRes to srcOut");
 		exchange.setTimeResSent(System.currentTimeMillis());
 		exchange.setCompleted();
-
+		log.debug("exchange set completed");
 	}
 
 	private void invokeResponseInterceptors() throws Exception, AbortException {

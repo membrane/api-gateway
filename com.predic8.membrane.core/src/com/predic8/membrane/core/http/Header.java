@@ -185,6 +185,11 @@ public class Header {
 	public String getConnection() {
 		return getFirstValue(CONNECTION);
 	}
+	
+	public void setConnection(String connection) {
+		add(CONNECTION, connection);
+	}
+	
 	public void setContentType(String value) {
 		add(CONTENT_TYPE, value);
 	}
@@ -221,5 +226,6 @@ public class Header {
 	public String getContentEncoding() {
 		return getFirstValue(CONTENT_ENCODING);
 	}
+	
 	
 }
