@@ -68,11 +68,10 @@ public abstract class AbstractFilterComposite extends Composite {
 	}
 
 	private Composite createControlsComposite(Group rulesGroup) {
-		Composite buttonsComposite = new Composite(rulesGroup, SWT.BORDER);
-		buttonsComposite.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		GridData rulesGridData = new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL);
-		buttonsComposite.setLayoutData(rulesGridData);
-		return buttonsComposite;
+		Composite composite = new Composite(rulesGroup, SWT.BORDER);
+		composite.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
+		return composite;
 	}
 
 	private Button createShowSelectedButton(Group rulesGroup) {
