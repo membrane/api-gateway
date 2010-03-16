@@ -110,12 +110,12 @@
 		class="com.predic8.membrane.core.interceptor.AuthHead2BodyInterceptor">
 		<property name="displayName" value="Moves auth header elements to body" />
 	</bean>
-	
+	<!--  
 	<bean id="cacheInterceptor"
 		class="com.predic8.membrane.core.interceptor.SoapCacheInterceptor">
 		<property name="displayName" value="MessageCache" />
 	</bean>
-
+	-->
 </beans>
 	
 	
