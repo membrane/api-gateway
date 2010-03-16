@@ -27,8 +27,11 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
@@ -50,6 +53,8 @@ public class RuleStatisticsView extends AbstractRulesView {
 	public void createPartControl(Composite parent) {
 		Composite composite = createComposite(parent);
 
+		createRefreshButton(composite);
+		
 		tableViewer = createTableViewer(composite);
 	
 		addCellEditorsAndModifiersToViewer();
@@ -66,11 +71,23 @@ public class RuleStatisticsView extends AbstractRulesView {
 		
 		new Label(composite, SWT.NONE).setText(" All times in ms");
 		
+		
 		createActions();
 		addTableMenu();
 				
 	    getExchangeStore().addExchangesViewListener(this);
 	    setInputForTable(Router.getInstance().getRuleManager());
+	}
+
+
+	private void createRefreshButton(Composite composite) {
+		Button btRefresh = new Button(composite, SWT.PUSH);
+		btRefresh.setText("Refresh Table");
+		btRefresh.addSelectionListener(new SelectionAdapter() {
+			public void widgetSelected(SelectionEvent e) {
+				 setInputForTable(Router.getInstance().getRuleManager());
+			}
+		});
 	}
 
 
@@ -147,20 +164,17 @@ public class RuleStatisticsView extends AbstractRulesView {
 
 
 	public void ruleRemoved(Rule rule) {
-		// TODO Auto-generated method stub
-		
+		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
 
 	public void ruleUpdated(Rule rule) {
-		// TODO Auto-generated method stub
-		
+		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
 
 	public void rulePositionsChanged() {
-		// TODO Auto-generated method stub
-		
+		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
 
