@@ -66,10 +66,9 @@ public abstract class BaseComp extends Composite {
 	}
 
 	public boolean isContinueEnabled() {
-		if (msg == null || msg.hasMsgReleased()) {
+		if (msg == null || msg.hasMsgReleased()) 
 			return false;
-		}
-
+		
 		msg.getBodyAsStream();
 		return true;
 	}
