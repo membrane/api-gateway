@@ -114,7 +114,7 @@
 	<bean id="cacheInterceptor"
 		class="com.predic8.membrane.core.interceptor.SoapCacheInterceptor">
 		<property name="displayName" value="MessageCache" />
-		<property name="directoryName" value="c:/temp/cache" />
+		<property name="directory" value="c:/temp/cache" />
 	</bean>
 	-->
 </beans>
