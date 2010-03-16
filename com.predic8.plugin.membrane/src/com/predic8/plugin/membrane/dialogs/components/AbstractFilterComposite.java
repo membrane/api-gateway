@@ -51,14 +51,11 @@ public abstract class AbstractFilterComposite extends Composite {
 
 		btShowSelectedOnly = createShowSelectedButton(rulesGroup);
 
-		Composite buttonsComposite = new Composite(rulesGroup, SWT.BORDER);
-		buttonsComposite.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-		GridData rulesGridData = new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL);
-		buttonsComposite.setLayoutData(rulesGridData);
+		Composite controls = createControlsComposite(rulesGroup);
 
-		buttonsComposite.setLayout(new GridLayout());
+		controls.setLayout(new GridLayout());
 
-		initializeButtons(buttonsComposite);
+		initializeButtons(controls);
 
 		if (filter.isShowAll()) {
 			btShowAll.setSelection(true);
@@ -68,6 +65,14 @@ public abstract class AbstractFilterComposite extends Composite {
 			btShowSelectedOnly.notifyListeners(SWT.Selection, null);
 		}
 
+	}
+
+	private Composite createControlsComposite(Group rulesGroup) {
+		Composite buttonsComposite = new Composite(rulesGroup, SWT.BORDER);
+		buttonsComposite.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+		GridData rulesGridData = new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL);
+		buttonsComposite.setLayoutData(rulesGridData);
+		return buttonsComposite;
 	}
 
 	private Button createShowSelectedButton(Group rulesGroup) {
