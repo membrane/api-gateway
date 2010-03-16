@@ -24,8 +24,7 @@ public class AddInterceptorTableViewerContentProvider implements IStructuredCont
 
 	@SuppressWarnings("unchecked")
 	public Object[] getElements(Object inputElement) {
-		Collection<Interceptor> collection = (Collection<Interceptor>)inputElement;
-		return collection.toArray();
+		return ((Collection<Interceptor>)inputElement).toArray();
 	}
 
 	public void dispose() {

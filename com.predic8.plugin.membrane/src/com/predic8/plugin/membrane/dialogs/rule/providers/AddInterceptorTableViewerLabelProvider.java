@@ -22,10 +22,9 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 public class AddInterceptorTableViewerLabelProvider implements ITableLabelProvider {
 
 	public String getColumnText(Object element, int columnIndex) {
-		Interceptor interceptor = (Interceptor) element;
 		switch (columnIndex) {
 		case 0:
-			return interceptor.getDisplayName();
+			return ((Interceptor) element).getDisplayName();
 		default:
 			throw new RuntimeException("Interceptor table must have only single column");
 		}
