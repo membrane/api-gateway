@@ -33,10 +33,10 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
-public class RuleDetailsComposite extends Composite {
+public class RuleDetailsComposite extends GridPanel {
 
 	Label labelTitle;
-	
+
 	Label labelTargetHost;
 	Label labelTargetPort;
 
@@ -54,22 +54,17 @@ public class RuleDetailsComposite extends Composite {
 	private int membraneImageWidth, membraneImageHeight;
 	private int serviceImageWidth, serviceImageHeight;
 	private int internetImageWidth, internetImageHeight;
-	
-	private int totalImageWidth; 
-	
+
+	private int totalImageWidth;
+
 	private char[] hostCharacters = new char[0];
-	
+
 	private int hostCharactersLength;
-	
+
 	public RuleDetailsComposite(Composite parent) {
-		super(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 1;
-		setLayout(layout);
+		super(parent, 10, 1);
 
 		Composite compositeText = createCompositeText();
-
-		new Label(compositeText, SWT.NONE).setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
 		labelTitle = new Label(compositeText, SWT.NONE);
 		labelTitle.setText("Rule Description");
@@ -79,10 +74,8 @@ public class RuleDetailsComposite extends Composite {
 
 		new Label(compositeText, SWT.NONE).setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
-		
 		Composite groupComposite = createGroupComposite(compositeText);
-		
-		
+
 		ruleGroup = createRuleGroup(groupComposite);
 
 		labelHost = new Label(ruleGroup, SWT.NONE);
@@ -94,8 +87,7 @@ public class RuleDetailsComposite extends Composite {
 
 		labelTargetHost = new Label(ruleTargetGroup, SWT.NONE);
 		labelTargetPort = new Label(ruleTargetGroup, SWT.NONE);
-		
-		
+
 		final Composite compositeCanvas = new Composite(this, SWT.NONE);
 		compositeCanvas.setLayoutData(new GridData(GridData.FILL_BOTH));
 
@@ -116,9 +108,9 @@ public class RuleDetailsComposite extends Composite {
 		serviceImageHeight = imgService.getImageData().height;
 		internetImageWidth = imgNet1.getImageData().width;
 		internetImageHeight = imgNet1.getImageData().height;
-		
+
 		totalImageWidth = consumerImageWidth + membraneImageWidth + 2 * internetImageWidth + serviceImageWidth + 16;
-		
+
 		Canvas canvas = new Canvas(compositeCanvas, SWT.DOUBLE_BUFFERED);
 		canvas.addPaintListener(new PaintListener() {
 			public void paintControl(final PaintEvent event) {
@@ -126,18 +118,17 @@ public class RuleDetailsComposite extends Composite {
 				event.gc.drawImage(imgConsumer, 0, 0, consumerImageWidth, consumerImageHeight, startX, compositeCanvas.getSize().y / 4 - 50, consumerImageWidth, consumerImageHeight);
 				event.gc.drawImage(imgNet1, 0, 0, internetImageWidth, internetImageHeight, startX + 100, compositeCanvas.getSize().y / 4, internetImageWidth, internetImageHeight);
 				event.gc.drawImage(imgLogo, 0, 0, membraneImageWidth, membraneImageHeight, startX + 158, compositeCanvas.getSize().y / 4 - 50, membraneImageWidth, membraneImageHeight);
-				event.gc.drawString(labelListenPort.getText(), startX + 167, compositeCanvas.getSize().y / 4 + imgLogo.getImageData().height / 2 , true);
-				event.gc.drawString(labelMethod.getText(), startX + 167, compositeCanvas.getSize().y / 4 + imgLogo.getImageData().height /2 + 15 , true);
+				event.gc.drawString(labelListenPort.getText(), startX + 167, compositeCanvas.getSize().y / 4 + imgLogo.getImageData().height / 2, true);
+				event.gc.drawString(labelMethod.getText(), startX + 167, compositeCanvas.getSize().y / 4 + imgLogo.getImageData().height / 2 + 15, true);
 				event.gc.drawImage(imgNet2, 0, 0, internetImageWidth, internetImageHeight, startX + 264, compositeCanvas.getSize().y / 4, internetImageWidth, internetImageHeight);
 				event.gc.drawImage(imgService, 0, 0, serviceImageWidth, serviceImageHeight, startX + 326, compositeCanvas.getSize().y / 4 - 50, serviceImageWidth, serviceImageHeight);
-				
-				
+
 				hostCharactersLength = 0;
 				for (char c : hostCharacters) {
-					hostCharactersLength += event.gc.getCharWidth(c); 
+					hostCharactersLength += event.gc.getCharWidth(c);
 				}
-				event.gc.drawString(targetHost, startX + 372 - hostCharactersLength/2, compositeCanvas.getSize().y / 4 + 10, true);
-				event.gc.drawString(labelTargetPort.getText(), startX + 336,compositeCanvas.getSize().y / 4 + 105, true);
+				event.gc.drawString(targetHost, startX + 372 - hostCharactersLength / 2, compositeCanvas.getSize().y / 4 + 10, true);
+				event.gc.drawString(labelTargetPort.getText(), startX + 336, compositeCanvas.getSize().y / 4 + 105, true);
 			}
 		});
 
@@ -155,7 +146,7 @@ public class RuleDetailsComposite extends Composite {
 	private Group createRuleGroup(Composite groupComposite) {
 		Group group = new Group(groupComposite, SWT.NONE);
 		group.setText("Rule Key");
-		group.setLayoutData(new GridData( GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 		group.setLayout(new RowLayout(SWT.VERTICAL));
 		return group;
 	}
@@ -166,7 +157,7 @@ public class RuleDetailsComposite extends Composite {
 		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
 		gData.verticalAlignment = GridData.VERTICAL_ALIGN_BEGINNING;
 		gData.heightHint = 68;
-		
+
 		group.setLayoutData(gData);
 		group.setLayout(new RowLayout(SWT.VERTICAL));
 		return group;
@@ -176,7 +167,7 @@ public class RuleDetailsComposite extends Composite {
 		Composite composite = new Composite(parent, SWT.NONE);
 		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
 		composite.setLayoutData(gData);
-		
+
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 2;
 		composite.setLayout(layout);
@@ -186,7 +177,7 @@ public class RuleDetailsComposite extends Composite {
 	private Image getImageFromRegistry(String imageKey) {
 		return MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(imageKey).createImage();
 	}
-	
+
 	private Composite createCompositeText() {
 		Composite composite = new Composite(this, SWT.NONE);
 		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -218,9 +209,9 @@ public class RuleDetailsComposite extends Composite {
 		labelTitle.setText("Forwarding Rule Description");
 		labelTargetHost.setText("Target Host:   " + rule.getTargetHost());
 		targetHost = rule.getTargetHost();
-		
+
 		hostCharacters = new char[targetHost.length()];
-		
+
 		labelTargetPort.setText("Target Port:   " + rule.getTargetPort());
 		labelListenPort.setText("Listen Port:   " + rule.getKey().getPort());
 		labelMethod.setText("Method:   " + rule.getKey().getMethod());
@@ -242,14 +233,14 @@ public class RuleDetailsComposite extends Composite {
 	private void reset() {
 		labelTargetHost.setText("");
 		targetHost = "";
-		
+
 		hostCharacters = new char[targetHost.length()];
-		
+
 		labelTargetPort.setText("");
 		labelListenPort.setText("");
-		labelMethod.setText("" );
-		labelPath.setText("" );
-		labelHost.setText("" );
+		labelMethod.setText("");
+		labelPath.setText("");
+		labelHost.setText("");
 		layout();
 		ruleGroup.layout();
 		ruleTargetGroup.layout();

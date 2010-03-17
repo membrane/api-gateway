@@ -6,9 +6,10 @@ import org.eclipse.swt.widgets.Composite;
 
 public class GridPanel extends Composite {
 
-	public GridPanel(Composite parent, int margin) {
+	public GridPanel(Composite parent, int margin, int columns) {
 		super(parent, SWT.NONE);
 		GridLayout layout = new GridLayout();
+		layout.numColumns = columns;
 		layout.marginTop = margin;
 		layout.marginLeft = margin;
 		layout.marginBottom = margin;

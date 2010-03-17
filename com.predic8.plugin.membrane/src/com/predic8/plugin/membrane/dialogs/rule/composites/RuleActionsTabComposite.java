@@ -23,25 +23,18 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.plugin.membrane.components.GridPanel;
 
-public class RuleActionsTabComposite extends Composite {
+public class RuleActionsTabComposite extends GridPanel {
 
 	private Button btBlockRequest;
 
 	private Button btBlockResponse;
 
 	public RuleActionsTabComposite(Composite parent) {
-		super(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 20;
-		gridLayout.marginLeft = 20;
-		gridLayout.marginBottom = 20;
-		gridLayout.marginRight = 20;
-		setLayout(gridLayout);
-
+		super(parent, 20, 1);
+		
 		Group ruleActionGroup = new Group(this, SWT.NONE);
-		//ruleActionGroup.setText("Action");
 		ruleActionGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		ruleActionGroup.setLayout(new GridLayout());
 

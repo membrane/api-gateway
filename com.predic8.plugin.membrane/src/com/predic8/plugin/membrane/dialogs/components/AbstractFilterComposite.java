@@ -27,9 +27,10 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 
+import com.predic8.plugin.membrane.components.GridPanel;
 import com.predic8.plugin.membrane.filtering.ExchangesFilter;
 
-public abstract class AbstractFilterComposite extends Composite {
+public abstract class AbstractFilterComposite extends GridPanel {
 
 	protected List<Button> buttons = new ArrayList<Button>();
 
@@ -40,10 +41,8 @@ public abstract class AbstractFilterComposite extends Composite {
 	private Button btShowSelectedOnly;
 
 	public AbstractFilterComposite(Composite parent, ExchangesFilter aFilter) {
-		super(parent, SWT.NONE);
+		super(parent, 20, 1);
 		filter = aFilter;
-
-		setBaseLayout();
 
 		Group rulesGroup = createRulesGroup();
 
@@ -109,15 +108,6 @@ public abstract class AbstractFilterComposite extends Composite {
 			}
 		});
 		return bt;
-	}
-
-	private void setBaseLayout() {
-		GridLayout layout = new GridLayout();
-		layout.marginTop = 20;
-		layout.marginLeft = 20;
-		layout.marginBottom = 20;
-		layout.marginRight = 20;
-		setLayout(layout);
 	}
 
 	private Group createRulesGroup() {
