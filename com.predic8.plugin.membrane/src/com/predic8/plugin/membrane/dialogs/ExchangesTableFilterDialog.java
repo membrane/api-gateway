@@ -174,6 +174,7 @@ public class ExchangesTableFilterDialog extends Dialog {
 		if (btRemoveFilters.getSelection()) {
 			exchangesView.getFilterManager().removeAllFilters();
 			exchangesView.reloadAll();
+			super.okPressed();
 			return;
 		}
 
