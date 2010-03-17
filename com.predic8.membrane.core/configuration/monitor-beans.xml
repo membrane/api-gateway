@@ -84,9 +84,10 @@
 			</list>
 		</property>
 		<property name="dispatchingStrategy">
-			<bean class="com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy" >
-				<property name="maxNumberOfThreadsPerEndpoint" value="10"/>
-				<property name="retryTimeOnBusy" value="1000"/>
+			<bean
+				class="com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy">
+				<property name="maxNumberOfThreadsPerEndpoint" value="10" />
+				<property name="retryTimeOnBusy" value="1000" />
 			</bean>
 		</property>
 	</bean>
@@ -110,13 +111,7 @@
 		class="com.predic8.membrane.core.interceptor.AuthHead2BodyInterceptor">
 		<property name="displayName" value="Moves auth header elements to body" />
 	</bean>
-	<!--  
-	<bean id="cacheInterceptor"
-		class="com.predic8.membrane.core.interceptor.SoapCacheInterceptor">
-		<property name="displayName" value="MessageCache" />
-		<property name="directory" value="c:/temp/cache" />
-	</bean>
-	-->
+
 </beans>
 	
 	

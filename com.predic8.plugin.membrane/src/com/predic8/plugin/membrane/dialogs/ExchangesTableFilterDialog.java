@@ -106,6 +106,26 @@ public class ExchangesTableFilterDialog extends Dialog {
 
 	@Override
 	protected Control createDialogArea(Composite parent) {
+		Composite container = createContainer(parent);
+
+		createTabFolder(container);
+
+		createComposites();
+		createTabFolders();
+
+		return container;
+	}
+
+	private void createTabFolder(Composite container) {
+		tabFolder = new TabFolder(container, SWT.NONE);
+
+		GridData gData = new GridData();
+		gData.grabExcessHorizontalSpace = true;
+		gData.widthHint = 400;
+		tabFolder.setLayoutData(gData);
+	}
+
+	private Composite createContainer(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
 
 		GridLayout layout = new GridLayout();
@@ -114,17 +134,6 @@ public class ExchangesTableFilterDialog extends Dialog {
 		layout.marginBottom = 20;
 		layout.marginRight = 20;
 		container.setLayout(layout);
-
-		tabFolder = new TabFolder(container, SWT.NONE);
-
-		GridData gData = new GridData();
-		gData.grabExcessHorizontalSpace = true;
-		gData.widthHint = 400;
-		tabFolder.setLayoutData(gData);
-
-		createComposites();
-		createTabFolders();
-
 		return container;
 	}
 

@@ -16,7 +16,6 @@ package com.predic8.membrane.core;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.springframework.core.io.ClassPathResource;
@@ -27,57 +26,58 @@ public class RouterCLI {
 
 	public static final String MEMROUTER_HOME = "MEMROUTER_HOME";
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ParseException {
 
-		Options routerOptions = new Options();
-		routerOptions.addOption("h", "help", false, "Help content for router.");
-		routerOptions.addOption("c", "config", true, "configuration file name.");
-		routerOptions.addOption("b", "beans", true, "spring configuration file name.");
-
-		CommandLineParser clParser = new BasicParser();
-
-		CommandLine commandLine = null;
-		try {
-			commandLine = clParser.parse(routerOptions, args);
-			if (commandLine.hasOption('h') ) {
-				System.out.println("-h Help content for router.");
-				System.out.println("--help 'Help content for router.");
-				System.out.println("-c 'configurationFileName'");
-				System.out.println("--config 'configurationFileName'");
-				System.out.println("-b 'springConfigurationFileName'.");
-				return;
-			}
-			
-			
-			String rulesFile = "";
-			if (commandLine.hasOption('c')) {
-				rulesFile = commandLine.getOptionValue('c'); 
-			} else {
-				rulesFile =  System.getenv("MEMROUTER_HOME") +  "/conf/rules.xml" ;
-			}
-			
-			Resource configResource = new ClassPathResource("monitor-beans.xml");
-			if (commandLine.hasOption('b')) {
-				configResource = new FileSystemResource(commandLine.getOptionValue('b'));
-			}
-			
-			Router router = Router.init(configResource);
-				
-	    	try {
-	    		router.getConfigurationManager().loadConfiguration(rulesFile);
-	    	} catch (Exception ex) {
-	    	    System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMROUTER_HOME") +  "/conf/rules.xml exists" );
-	    	    System.exit(1);
-	    	}
-	    	
-	    	while(true) {
-	    		
-			}
-	    	
-		} catch (ParseException pvException) {
-			System.out.println(pvException.getMessage());
+		CommandLine commandLine = new BasicParser().parse(getOptions(), args);
+		if (commandLine.hasOption('h')) {
+			System.out.println("-h Help content for router.");
+			System.out.println("--help 'Help content for router.");
+			System.out.println("-c 'configurationFileName'");
+			System.out.println("--config 'configurationFileName'");
+			System.out.println("-b 'springConfigurationFileName'.");
+			return;
 		}
 
+		try {
+			
+			Router.init(getConfig(commandLine), ClassloaderUtil.getExternalClassloader("file:" + System.getenv("MEMROUTER_HOME"))).getConfigurationManager().loadConfiguration(getRulesFile(commandLine));
+		} catch (ClassNotFoundException e) {
+		
+			e.printStackTrace();
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMROUTER_HOME") + "/conf/rules.xml exists");
+			System.exit(1);
+		}
+
+		while (true) {
+
+		}
+
+	}
+
+	private static String getRulesFile(CommandLine line) {
+		if (line.hasOption('c')) {
+			return line.getOptionValue('c');
+		} else {
+			return System.getenv("MEMROUTER_HOME") + "/conf/rules.xml";
+		}
+	}
+
+	private static Resource getConfig(CommandLine line) {
+		if (line.hasOption('b')) {
+			return new FileSystemResource(line.getOptionValue('b'));
+		}
+		return new ClassPathResource("monitor-beans.xml");
+	}
+
+	private static Options getOptions() {
+		Options options = new Options();
+		options.addOption("h", "help", false, "Help content for router.");
+		options.addOption("c", "config", true, "configuration file name.");
+		options.addOption("b", "beans", true, "spring configuration file name.");
+		return options;
 	}
 
 }

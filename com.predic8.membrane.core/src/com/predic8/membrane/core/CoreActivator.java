@@ -1,13 +1,9 @@
 package com.predic8.membrane.core;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
@@ -40,12 +36,6 @@ public class CoreActivator extends Plugin {
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.eclipse.core.runtime.Plugins#start(org.osgi.framework.BundleContext)
-	 */
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		plugin = this;
@@ -55,7 +45,7 @@ public class CoreActivator extends Plugin {
 		error("File name is" + getConfigFileName());
 		
 		try {
-			if (fileExists()) {
+			if (ClassloaderUtil.fileExists(getConfigFileName())) {
 				readBeanConfigWhenStartedAsProduct();
 			} else {
 				readBeanConfigWhenStartedInEclipse();
@@ -83,7 +73,7 @@ public class CoreActivator extends Plugin {
 		error("Reading configuration from " + getConfigFileName());
 		log.debug("Reading configuration from " + getConfigFileName());
 		
-		URLClassLoader extLoader = getExternalClassloader();
+		URLClassLoader extLoader = ClassloaderUtil.getExternalClassloader(getProjectRoot());
 		try {
 			Class clazz = extLoader.loadClass("c.NewServiceLocator");
 			error("Clazz object loaded with class loader: " + clazz.getClassLoader());
@@ -106,88 +96,22 @@ public class CoreActivator extends Plugin {
 		pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, message));
 	}
 
-	private URLClassLoader getExternalClassloader() {
-		try {
-			
-			List<URL> urls = getJarUrls(getFullQualifiedFolderName("lib"));
-			urls.add(new URL(getFullQualifiedFolderName("classes")));
-			
-			return new URLClassLoader( urls.toArray(new URL[urls.size()]) , getClass().getClassLoader() );
-		
-		} catch (Exception e) {
-			e.printStackTrace();
-			error("Creation of external classloader failed." + e);
-			System.exit(1);
-		} 
-		return null;
-	}
-
-	private boolean fileExists() throws MalformedURLException, IOException {
-		String configFileName = getConfigFileName();
-		log.debug(configFileName);
-		if (configFileName.startsWith("file:"))
-			return new File(new URL(configFileName).getPath()).exists();
-		return new File(configFileName).exists();
-	}
-
 	private String getConfigFileName() throws IOException {
 		return getProjectRoot() + System.getProperty("file.separator") + "configuration" + System.getProperty("file.separator") + "monitor-beans.xml";
 	}
 
-	private String getFullQualifiedFolderName(String folder) throws IOException {
-		return getProjectRoot() + System.getProperty("file.separator") + folder + System.getProperty("file.separator");
-	}
-	
 	private String getProjectRoot() throws IOException {
 		return new File(FileLocator.resolve(CoreActivator.getDefault().getBundle().getEntry("/")).getPath()).getParentFile().getParentFile().getPath();
 	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.eclipse.core.runtime.Plugin#stop(org.osgi.framework.BundleContext)
-	 */
+	
 	public void stop(BundleContext context) throws Exception {
 		plugin = null;
 		super.stop(context);
 	}
 
-	/**
-	 * Returns the shared instance
-	 * 
-	 * @return the shared instance
-	 */
+	
 	public static CoreActivator getDefault() {
 		return plugin;
-	}
-	
-	public List<URL> getJarUrls(String folder) {
-		
-		if (folder.startsWith("file:"))
-			folder = folder.substring(6);
-		
-		File file = new File(folder);
-		if (!file.isDirectory()) 
-			return new ArrayList<URL>();
-		
-		String[] jars = file.list(new FilenameFilter() {
-			public boolean accept(File dir, String name) {
-				return name.endsWith(".jar");
-			}
-		});
-		
-		List<URL> urlList = new ArrayList<URL>();
-		for (int i = 0; i < jars.length; i ++) {
-			try {
-				urlList.add(new URL("file:" + folder + jars[i]));
-			} catch (MalformedURLException e) {
-				error(e.getMessage());
-			}
-		}
-		
-		return urlList;
-		
 	}
 
 }

@@ -26,8 +26,12 @@ public class ExchangesViewLazyContentProvider implements ILazyContentProvider {
 		this.viewer = viewer;
 	}
 	
-	public void updateElement(int index) {
-		viewer.replace(exchanges[index], index);
+	public void updateElement(final int index) {
+		try {
+			viewer.replace(exchanges[index], index);
+		} catch (Exception e) {
+			//to catch reentrant calls to viewer. Nothing to be done
+		}	
 	}
 
 	public void dispose() {

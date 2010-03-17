@@ -17,7 +17,6 @@ set CLASSPATH=%CLASSPATH%;%MEMROUTER_HOME%/lib/commons-logging.jar
 set CLASSPATH=%CLASSPATH%;%MEMROUTER_HOME%/lib/log4j-1.2.8.jar
 set CLASSPATH=%CLASSPATH%;%MEMROUTER_HOME%/lib/spring-beans.jar
 set CLASSPATH=%CLASSPATH%;%MEMROUTER_HOME%/lib/spring-core.jar
-set CLASSPATH=%CLASSPATH%;%MEMROUTER_HOME%/lib/soa-model-1.4.jar
 set CLASSPATH=%CLASSPATH%;%MEMROUTER_HOME%/lib/xmlbeautifier-1.1.jar
 set CLASSPATH=%CLASSPATH%;%MEMROUTER_HOME%/lib/activation-1.1.jar
 set CLASSPATH=%CLASSPATH%;%MEMROUTER_HOME%/lib/commons-cli-1.1.jar

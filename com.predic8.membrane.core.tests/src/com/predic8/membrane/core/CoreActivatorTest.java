@@ -17,7 +17,7 @@ public class CoreActivatorTest extends TestCase {
 	
 	public void testGetJarUrls() throws Exception {
 		
-		List<URL> urls = activator.getJarUrls("lib");
+		List<URL> urls = ClassloaderUtil.getJarUrls("lib");
 		for (URL url : urls) {
 			System.out.println(url);
 		}
