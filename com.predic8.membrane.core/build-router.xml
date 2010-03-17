@@ -53,8 +53,10 @@
 				<fileset dir="router"/>
 		</copy>
 		
-		<jar destfile="dist/membrane-router-${version}/membrane-router.jar" basedir="build/classes" includes="**" excludes=""/>
+		<jar destfile="dist/membrane-router-${version}/lib/membrane-router.jar" basedir="build/classes" includes="**" excludes="**/Starter.class, **/ClassloaderUtil*.class" />
 
+		<jar destfile="dist/membrane-router-${version}/starter.jar" basedir="build/classes" includes="**/Starter.class, **/ClassloaderUtil*.class" />
+		
         <zip destfile="dist/membrane-router-${version}.zip" basedir="dist/membrane-router-${version}"/>
 		<tar destfile="dist/membrane-router-${version}.tgz" basedir="dist/membrane-router-${version}" compression="gzip"/>
 	</target>

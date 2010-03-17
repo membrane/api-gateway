@@ -39,8 +39,7 @@ public class RouterCLI {
 		}
 
 		try {
-			
-			Router.init(getConfig(commandLine), ClassloaderUtil.getExternalClassloader("file:" + System.getenv("MEMROUTER_HOME"))).getConfigurationManager().loadConfiguration(getRulesFile(commandLine));
+			Router.init(getConfig(commandLine), RouterCLI.class.getClassLoader()).getConfigurationManager().loadConfiguration(getRulesFile(commandLine));
 		} catch (ClassNotFoundException e) {
 		
 			e.printStackTrace();
