@@ -24,6 +24,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 
@@ -50,11 +51,6 @@ public class RuleDetailsComposite extends GridPanel {
 
 	private String targetHost = "";
 
-	private int consumerImageWidth, consumerImageHeight;
-	private int membraneImageWidth, membraneImageHeight;
-	private int serviceImageWidth, serviceImageHeight;
-	private int internetImageWidth, internetImageHeight;
-
 	private int totalImageWidth;
 
 	private char[] hostCharacters = new char[0];
@@ -62,52 +58,50 @@ public class RuleDetailsComposite extends GridPanel {
 	private int hostCharactersLength;
 
 	public RuleDetailsComposite(Composite parent) {
-		super(parent, 10, 1);
+		super(parent, 10, 2);
 
 		Composite compositeText = createCompositeText();
 
 		labelTitle = new Label(compositeText, SWT.NONE);
 		labelTitle.setText("Rule Description");
-		labelTitle.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		labelTitle.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
 
 		createLabelSeparator(compositeText);
 
 		new Label(compositeText, SWT.NONE).setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
 
-		Composite groupComposite = createGroupComposite(compositeText);
-
-		ruleGroup = createRuleGroup(groupComposite);
+		ruleGroup = createRuleGroup(compositeText);
 
 		labelHost = new Label(ruleGroup, SWT.NONE);
 		labelListenPort = new Label(ruleGroup, SWT.NONE);
 		labelMethod = new Label(ruleGroup, SWT.NONE);
 		labelPath = new Label(ruleGroup, SWT.NONE);
 
-		ruleTargetGroup = createRuleTargetGroup(groupComposite);
+		ruleTargetGroup = createRuleTargetGroup(compositeText);
 
 		labelTargetHost = new Label(ruleTargetGroup, SWT.NONE);
 		labelTargetPort = new Label(ruleTargetGroup, SWT.NONE);
 
+		
+		
+		
 		final Composite compositeCanvas = new Composite(this, SWT.NONE);
 		compositeCanvas.setLayoutData(new GridData(GridData.FILL_BOTH));
+		compositeCanvas.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_BLUE));
 
 		final FillLayout fillLayout = new FillLayout(SWT.VERTICAL);
 		compositeCanvas.setLayout(fillLayout);
 
 		final Image imgNet1 = getImageFromRegistry(ImageKeys.IMAGE_INTERNET);
-		final Image imgNet2 = getImageFromRegistry(ImageKeys.IMAGE_INTERNET);
 		final Image imgLogo = getImageFromRegistry(ImageKeys.IMAGE_MEMBRANE);
 		final Image imgService = getImageFromRegistry(ImageKeys.IMAGE_SERVICE);
 		final Image imgConsumer = getImageFromRegistry(ImageKeys.IMAGE_CONSUMER);
 
-		consumerImageWidth = imgConsumer.getImageData().width;
-		consumerImageHeight = imgConsumer.getImageData().height;
-		membraneImageWidth = imgLogo.getImageData().width;
-		membraneImageHeight = imgLogo.getImageData().height;
-		serviceImageWidth = imgService.getImageData().width;
-		serviceImageHeight = imgService.getImageData().height;
-		internetImageWidth = imgNet1.getImageData().width;
-		internetImageHeight = imgNet1.getImageData().height;
+		final int consumerImageWidth = imgConsumer.getImageData().width;
+		final int membraneImageWidth = imgLogo.getImageData().width;
+		final int serviceImageWidth = imgService.getImageData().width;
+		final int internetImageWidth = imgNet1.getImageData().width;
+		final int internetImageHeight = imgNet1.getImageData().height;
 
 		totalImageWidth = consumerImageWidth + membraneImageWidth + 2 * internetImageWidth + serviceImageWidth + 16;
 
@@ -115,13 +109,13 @@ public class RuleDetailsComposite extends GridPanel {
 		canvas.addPaintListener(new PaintListener() {
 			public void paintControl(final PaintEvent event) {
 				int startX = compositeCanvas.getSize().x / 2 - totalImageWidth / 2;
-				event.gc.drawImage(imgConsumer, 0, 0, consumerImageWidth, consumerImageHeight, startX, compositeCanvas.getSize().y / 4 - 50, consumerImageWidth, consumerImageHeight);
+				event.gc.drawImage(imgConsumer, 0, 0, consumerImageWidth, imgConsumer.getImageData().height, startX, compositeCanvas.getSize().y / 4 - 50, consumerImageWidth, imgConsumer.getImageData().height);
 				event.gc.drawImage(imgNet1, 0, 0, internetImageWidth, internetImageHeight, startX + 100, compositeCanvas.getSize().y / 4, internetImageWidth, internetImageHeight);
-				event.gc.drawImage(imgLogo, 0, 0, membraneImageWidth, membraneImageHeight, startX + 158, compositeCanvas.getSize().y / 4 - 50, membraneImageWidth, membraneImageHeight);
+				event.gc.drawImage(imgLogo, 0, 0, membraneImageWidth, imgLogo.getImageData().height, startX + 158, compositeCanvas.getSize().y / 4 - 50, membraneImageWidth, imgLogo.getImageData().height);
 				event.gc.drawString(labelListenPort.getText(), startX + 167, compositeCanvas.getSize().y / 4 + imgLogo.getImageData().height / 2, true);
 				event.gc.drawString(labelMethod.getText(), startX + 167, compositeCanvas.getSize().y / 4 + imgLogo.getImageData().height / 2 + 15, true);
-				event.gc.drawImage(imgNet2, 0, 0, internetImageWidth, internetImageHeight, startX + 264, compositeCanvas.getSize().y / 4, internetImageWidth, internetImageHeight);
-				event.gc.drawImage(imgService, 0, 0, serviceImageWidth, serviceImageHeight, startX + 326, compositeCanvas.getSize().y / 4 - 50, serviceImageWidth, serviceImageHeight);
+				event.gc.drawImage(getImageFromRegistry(ImageKeys.IMAGE_INTERNET), 0, 0, internetImageWidth, internetImageHeight, startX + 264, compositeCanvas.getSize().y / 4, internetImageWidth, internetImageHeight);
+				event.gc.drawImage(imgService, 0, 0, serviceImageWidth, imgService.getImageData().height, startX + 326, compositeCanvas.getSize().y / 4 - 50, serviceImageWidth, imgService.getImageData().height);
 
 				hostCharactersLength = 0;
 				for (char c : hostCharacters) {
@@ -146,7 +140,7 @@ public class RuleDetailsComposite extends GridPanel {
 	private Group createRuleGroup(Composite groupComposite) {
 		Group group = new Group(groupComposite, SWT.NONE);
 		group.setText("Rule Key");
-		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		group.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
 		group.setLayout(new RowLayout(SWT.VERTICAL));
 		return group;
 	}
@@ -154,7 +148,7 @@ public class RuleDetailsComposite extends GridPanel {
 	private Group createRuleTargetGroup(Composite groupComposite) {
 		Group group = new Group(groupComposite, SWT.NONE);
 		group.setText("Target");
-		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
+		GridData gData = new GridData();
 		gData.verticalAlignment = GridData.VERTICAL_ALIGN_BEGINNING;
 		gData.heightHint = 68;
 
@@ -163,24 +157,13 @@ public class RuleDetailsComposite extends GridPanel {
 		return group;
 	}
 
-	private Composite createGroupComposite(Composite parent) {
-		Composite composite = new Composite(parent, SWT.NONE);
-		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
-		composite.setLayoutData(gData);
-
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
-		composite.setLayout(layout);
-		return composite;
-	}
-
 	private Image getImageFromRegistry(String imageKey) {
 		return MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(imageKey).createImage();
 	}
 
 	private Composite createCompositeText() {
 		Composite composite = new Composite(this, SWT.NONE);
-		composite.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
+		composite.setLayoutData(new GridData());
 
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 1;
