@@ -285,6 +285,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 			exchangesView.getComparator().setAscending(btAsc.getSelection());
 			exchangesView.refreshTable(true);
 		}
+		super.okPressed();
 	}
 
 	private ExchangeAccessor getAccessor(int index) {
