@@ -27,10 +27,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.Body;
 
 
 public class HttpUtil {

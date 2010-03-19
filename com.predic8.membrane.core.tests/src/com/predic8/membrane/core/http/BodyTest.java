@@ -19,7 +19,7 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.AbstractBody;
 
 @SuppressWarnings("unused")
 public class BodyTest extends TestCase {
@@ -41,13 +41,13 @@ public class BodyTest extends TestCase {
 	private static String chunk2 = "2\r\naa\r\n3\r\nbbb\r\n0\r\n";
 	private static String chunk2Body = "aabbb";
 
-	private static Body body1;
-	private static Body body2;
+	private static AbstractBody body1;
+	private static AbstractBody body2;
 
 	protected void setUp() throws Exception {
 		Arrays.fill(msg2, (byte) 20);
-		body1 = new Body(new ByteArrayInputStream(msg1), msg1.length, false);
-		body2 = new Body(new ByteArrayInputStream(msg2), msg2.length, false);
+		body1 = new Body(new ByteArrayInputStream(msg1), msg1.length);
+		body2 = new Body(new ByteArrayInputStream(msg2), msg2.length);
 	}
 
 //	public void testWrite() throws IOException {
@@ -75,14 +75,14 @@ public class BodyTest extends TestCase {
 
 	public void testCreateBodyFromChunk() throws Exception {
 		InputStream stream = new ByteArrayInputStream(chunk.getBytes());
-		Body body = new Body(stream, true);
+		AbstractBody body = new ChunkedBody(stream);
 
 		stream = new ByteArrayInputStream(chunk1.getBytes());
-		body = new Body(stream, true);
+		body = new ChunkedBody(stream);
 		assertTrue(Arrays.equals(body.getContent(), chunk1Body.getBytes()));
 
 		stream = new ByteArrayInputStream(chunk2.getBytes());
-		body = new Body(stream, true);
+		body = new ChunkedBody(stream);
 		
 		StringBuffer buf = new StringBuffer();
 		for (int i = 0; i < body.getContent().length; i ++) {
@@ -99,7 +99,7 @@ public class BodyTest extends TestCase {
 	}
 	
 	public void testStringConstructor() throws Exception {
-		Body body = new Body("mmebrane Monitor is Cool");
+		AbstractBody body = new Body("mmebrane Monitor is Cool");
 		assertEquals(24, body.getContent().length);
 		assertEquals(24, body.getLength());
 	}

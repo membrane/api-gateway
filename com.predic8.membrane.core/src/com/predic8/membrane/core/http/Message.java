@@ -31,7 +31,7 @@ public abstract class Message {
 	
 	protected Header header;
 	
-	protected Body body;
+	protected AbstractBody body;
 	
 	protected String version = "1.1";
 
@@ -59,7 +59,7 @@ public abstract class Message {
 		body.read();
 	}
 	
-	public Body getBody() {
+	public AbstractBody getBody() {
 		return body;
 	}
 	
@@ -73,13 +73,12 @@ public abstract class Message {
 		}
 	}
 
-	public void setBody(Body b) {
+	public void setBody(AbstractBody b) {
 		body = b;
 	}
 
 	public void setBodyContent(byte[] content) {
-		body = new Body();
-		body.setContent(content);
+		body = new Body(content);
 		header.removeFields(Header.TRANSFER_ENCODING);
 		header.setContentLength(content.length);
 	}
@@ -87,16 +86,16 @@ public abstract class Message {
 	protected void createBody(InputStream in) throws IOException {
  		log.debug("createBody");
 		if (isHTTP10()) {
-			body = new Body(in, header.getContentLength(), false); 
+			body = new Body(in, header.getContentLength()); 
 			return;
 		}
 		if (!isKeepAlive()) {			
-			body = new Body(in, header.getContentLength(), false);
+			body = new Body(in, header.getContentLength());
 			return;
 		}
 		
 		if (header.isChunked()) {
-			body = new Body(in, header.isChunked());
+			body = new ChunkedBody(in);
 			return;
 		}
 		
@@ -106,7 +105,7 @@ public abstract class Message {
 			log.error("Message has no content length");
 			throw new IOException("Response message has no content length");
 		}
-		body = new Body(in, header.getContentLength(), false);
+		body = new Body(in, header.getContentLength());
 	}
 
 	abstract protected void parseStartLine(InputStream in) throws IOException, EndOfStreamException;

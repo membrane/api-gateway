@@ -70,7 +70,7 @@ public class Chunk {
 		return destPos += getLength();
 	}
 
-	public int copyChunkLength(byte[] raw, int destPos, Body body) {
+	public int copyChunkLength(byte[] raw, int destPos, AbstractBody body) {
 		System.arraycopy(getLengthBytes(), 0, raw, destPos, getLengthBytes().length);
 		return destPos += getLengthBytes().length;
 	}
