@@ -47,16 +47,6 @@ public class Request extends Message {
 	String method;
 	String uri;
 
-	public Request() {
-		
-	}
-
-	public Request(Request request) {
-		super(request);
-		method = request.method;
-		uri = request.uri;
-	}
-
 	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
 		String line = HttpUtil.readLine(in);
 		Matcher matcher = pattern.matcher(line);

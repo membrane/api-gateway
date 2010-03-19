@@ -30,81 +30,71 @@ import com.predic8.membrane.core.statistics.RuleStatistics;
 
 public class MemoryExchangeStore extends AbstractExchangeStore {
 
-	private Map<RuleKey, List<Exchange>> ruleExchangeMap = new HashMap<RuleKey, List<Exchange>>();
+	private Map<RuleKey, List<Exchange>> exchangesMap = new HashMap<RuleKey, List<Exchange>>();
 
 	//for synchronization purposes choose Vector class
-	private List<Exchange> totalList = new Vector<Exchange>();  
+	private List<Exchange> totals = new Vector<Exchange>();  
 	
-	private int threashold = 1000;
-
-	public void add(Exchange exchange) {
-		if (exchange.getResponse() != null) {
-			return;
-		}
-
-		if (ruleExchangeMap.containsKey(exchange.getRule().getKey())) {
-			ruleExchangeMap.get(exchange.getRule().getKey()).add(exchange);
+	public void add(Exchange exc) {
+		
+		if (isKeyInStore(exc)) {
+			getKeyList(exc).add(exc);
 		} else {
 			List<Exchange> list = new Vector<Exchange>();
-			list.add(exchange);
-			ruleExchangeMap.put(exchange.getRule().getKey(), list);
+			list.add(exc);
+			exchangesMap.put(exc.getRule().getKey(), list);
 		}
 		
-		totalList.add(exchange);
+		totals.add(exc);
 		
-		for (IExchangesStoreListener listener : treeViewerListeners) {
-			exchange.addTreeViewerListener(listener);
-			listener.addExchange(exchange.getRule(), exchange);
+		for (IExchangesStoreListener listener : exchangesStoreListeners) {
+			exc.addExchangeStoreListener(listener);
+			listener.addExchange(exc.getRule(), exc);
 		}
 	}
 
-	public void remove(Exchange exchange) {
-		if (!ruleExchangeMap.containsKey(exchange.getRule().getKey())) {
-			return;
-		}
+	private List<Exchange> getKeyList(Exchange exc) {
+		return exchangesMap.get(exc.getRule().getKey());
+	}
 
-		ruleExchangeMap.get(exchange.getRule().getKey()).remove(exchange);
-		if (ruleExchangeMap.get(exchange.getRule().getKey()).size() == 0) {
-			ruleExchangeMap.remove(exchange.getRule().getKey());
-		}
+	private boolean isKeyInStore(Exchange exc) {
+		return exchangesMap.containsKey(exc.getRule().getKey());
+	}
+
+	public void remove(Exchange exc) {
+		removeWithoutNotify(exc);
 		
-		totalList.remove(exchange);
-		exchange.informExchangeViewerOnRemoval();
-		
-		for (IExchangesStoreListener listener : treeViewerListeners) {
-			listener.removeExchange(exchange);
+		for (IExchangesStoreListener listener : exchangesStoreListeners) {
+			listener.removeExchange(exc);
 		}
 	}
 	
-	private void removeWithoutNotify(Exchange exchange) {
-		if (!ruleExchangeMap.containsKey(exchange.getRule().getKey())) {
+	private void removeWithoutNotify(Exchange exc) {
+		if (!isKeyInStore(exc)) {
 			return;
 		}
 
-		ruleExchangeMap.get(exchange.getRule().getKey()).remove(exchange);
-		if (ruleExchangeMap.get(exchange.getRule().getKey()).size() == 0) {
-			ruleExchangeMap.remove(exchange.getRule().getKey());
+		getKeyList(exc).remove(exc);
+		if (getKeyList(exc).isEmpty()) {
+			exchangesMap.remove(exc.getRule().getKey());
 		}
-		totalList.remove(exchange);
-		exchange.informExchangeViewerOnRemoval();
+		totals.remove(exc);
+		exc.informExchangeViewerOnRemoval();
 	}
 
 
 	public void removeAllExchanges(Rule rule) {
-		if (rule == null || rule.getKey() == null) {
-			return;
-		}
 		Exchange[] exchanges = getExchanges(rule.getKey());
 		
-		ruleExchangeMap.remove(rule.getKey());
-		totalList.removeAll(Arrays.asList(exchanges));
-		for (IExchangesStoreListener listener : treeViewerListeners) {
+		exchangesMap.remove(rule.getKey());
+		totals.removeAll(Arrays.asList(exchanges));
+		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			listener.removeExchanges(rule, exchanges);
 		}
 	}
 
 	public Exchange[] getExchanges(RuleKey ruleKey) {
-		List<Exchange> exchangesList = ruleExchangeMap.get(ruleKey);
+		List<Exchange> exchangesList = exchangesMap.get(ruleKey);
 		if (exchangesList == null) {
 			return new Exchange[0];
 		}
@@ -112,26 +102,18 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	public int getNumberOfExchanges(RuleKey ruleKey) {
-		if (ruleKey == null || !ruleExchangeMap.containsKey(ruleKey)) {
+		if (!exchangesMap.containsKey(ruleKey)) {
 			return 0;
 		}
 
-		return ruleExchangeMap.get(ruleKey).size();
-	}
-
-	public int getThreashold() {
-		return threashold;
-	}
-
-	public void setThreashold(int threashold) {
-		this.threashold = threashold;
+		return exchangesMap.get(ruleKey).size();
 	}
 
 	public RuleStatistics getStatistics(RuleKey key) {
 		RuleStatistics statistics = new RuleStatistics();
 		statistics.setCountTotal(getNumberOfExchanges(key));
-		List<Exchange> exchangesList = ruleExchangeMap.get(key);
-		if (exchangesList == null || exchangesList.size() == 0)
+		List<Exchange> exchangesList = exchangesMap.get(key);
+		if (exchangesList == null || exchangesList.isEmpty())
 			return statistics;
 
 		int min = -1;
@@ -180,37 +162,23 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	public Object[] getAllExchanges() {
-		if (totalList.size() == 0) 
+		if (totals.isEmpty()) 
 			return null;
 		
-		return totalList.toArray();
+		return totals.toArray();
 	}
 
 	
 	public List<Exchange> getAllExchangesAsList() {
-		return totalList;
+		return totals;
 	}
 	
 	
-	public Object[] getLatExchanges(int count) {
-		if (totalList.size() == 0 || count <= 0) 
-			return null;
-		
-		if (count > totalList.size())
-			return  totalList.toArray();
-		
-		List<Exchange> last = totalList.subList(count, totalList.size() - 1);
-		if (last == null) 
-			return null;
-		
-		return last.toArray();
-	}
-
 	public void removeAllExchanges(Exchange[] exchanges) {
-		for (Exchange exchange : exchanges) {
-			removeWithoutNotify(exchange);
+		for (Exchange exc : exchanges) {
+			removeWithoutNotify(exc);
 		}
-		for (IExchangesStoreListener listener : treeViewerListeners) {
+		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			listener.removeExchanges(exchanges);
 		}
 	}

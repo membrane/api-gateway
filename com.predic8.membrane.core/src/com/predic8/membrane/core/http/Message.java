@@ -47,12 +47,6 @@ public abstract class Message {
 		
 	}
 
-	public Message(Message msg) {
-		version = msg.version;
-		header = new Header(msg.header);
-		body = new Body(msg.body);
-	}
-
 	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
 		parseStartLine(in);
 		header = new Header(in, new StringBuffer());
@@ -93,20 +87,11 @@ public abstract class Message {
 	protected void createBody(InputStream in) throws IOException {
  		log.debug("createBody");
 		if (isHTTP10()) {
-			if (header.hasContentLength()) {
-				body = new Body(in, header.getContentLength(), false);
-				return;
-			} else {
-				body = new Body(in, -1, false);
-				return;
-			}
+			body = new Body(in, header.getContentLength(), false); 
+			return;
 		}
 		if (!isKeepAlive()) {			
-			if (header.hasContentLength()) {
-				body = new Body(in, header.getContentLength(), false);
-			} else {
-				body = new Body(in, -1, header.isChunked());
-			}
+			body = new Body(in, header.getContentLength(), false);
 			return;
 		}
 		

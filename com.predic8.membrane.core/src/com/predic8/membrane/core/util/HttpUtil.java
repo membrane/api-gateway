@@ -17,7 +17,9 @@ package com.predic8.membrane.core.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -26,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 
@@ -115,6 +118,19 @@ public class HttpUtil {
 
 		response.setBody(new Body("<html>" + message + "</html>"));
 		return response;
+	}
+
+	public static List<Chunk> readChunks(InputStream in) throws IOException {
+		List<Chunk> chunks = new ArrayList<Chunk>();
+		int chunkSize;
+		while ((chunkSize = readChunkSize(in)) > 0) {
+			chunks.add(new Chunk(ByteUtil.readByteArray(in, chunkSize)));
+			in.read(); // CR
+			in.read(); // LF
+		}
+		in.read(); // CR
+		in.read(); // LF
+		return chunks;
 	}
 
 

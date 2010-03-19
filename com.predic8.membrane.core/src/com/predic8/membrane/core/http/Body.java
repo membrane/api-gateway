@@ -52,12 +52,6 @@ public class Body {
 		length = body.length();
 	}
 
-	public Body(Body body) {
-		chunks = new ArrayList<Chunk>(body.chunks);
-		read = body.read;
-		chunked = body.chunked;
-	}
-
 	public Body(InputStream in, int length, boolean chunked) throws IOException {
 		this.inputStream = in;
 		this.length = length;
@@ -71,7 +65,6 @@ public class Body {
 	}
 
 	public void read() throws IOException {
-		log.debug("read called, chunked = " + chunked);
 		if (read)
 			return;
 
@@ -82,31 +75,13 @@ public class Body {
 			read = true;
 			return;
 		}
-		readChunks(inputStream);
+		chunks.addAll(HttpUtil.readChunks(inputStream));
 		read = true;
 
 	}
 
-	private void readChunks(InputStream in) throws IOException {
-		int chunkSize = HttpUtil.readChunkSize(in);
-		while (chunkSize > 0) {
-
-			byte[] chunk = ByteUtil.readByteArray(in, chunkSize);
-
-			chunks.add(new Chunk(chunk));
-
-			in.read(); // CR
-			in.read(); // LF
-			chunkSize = HttpUtil.readChunkSize(in);
-		}
-		in.read(); // CR
-		in.read(); // LF
-	}
-
 	public byte[] getContent() throws IOException {
-		if (!read) {
-			read();
-		}
+		read();
 		byte[] content = new byte[getLength()];
 		int destPos = 0;
 		for (Chunk chunk : chunks) {
@@ -143,21 +118,21 @@ public class Body {
 	}
 
 	private void writeAlreadyRead(OutputStream out) throws IOException {
-		if (getLength() == 0) {
+		if (getLength() == 0)
+			return;
+
+		if (!chunked) {
+			out.write(getContent(), 0, getLength());
+			out.flush();
 			return;
 		}
 
-		if (chunked) {
-			for (Chunk chunk : chunks) {
-				chunk.write(out);
-			}
-			out.write("0".getBytes());
-			out.write(Constants.CRLF.getBytes());
-			out.write(Constants.CRLF.getBytes());
-			return;
+		for (Chunk chunk : chunks) {
+			chunk.write(out);
 		}
-		out.write(getContent(), 0, getLength());
-		out.flush();
+		out.write("0".getBytes());
+		out.write(Constants.CRLF.getBytes());
+		out.write(Constants.CRLF.getBytes());
 	}
 
 	private void writeNotRead(OutputStream out) throws IOException {
@@ -187,32 +162,36 @@ public class Body {
 
 	private void writeNotReadChunked(OutputStream out) throws IOException {
 		log.debug("writeNotReadChunked");
-		int chunkSize = HttpUtil.readChunkSize(inputStream);
-		while (chunkSize > 0) {
-			String size = Integer.toHexString(chunkSize);
-			out.write(size.getBytes());
-
-			out.write(Constants.CRLF_BYTES);
+		int chunkSize;
+		while ((chunkSize = HttpUtil.readChunkSize(inputStream)) > 0) {
+			writeChunkSize(out, chunkSize);
 			byte[] chunk = ByteUtil.readByteArray(inputStream, chunkSize);
 			out.write(chunk);
 			chunks.add(new Chunk(chunk));
 			out.write(Constants.CRLF_BYTES);
 			inputStream.read(); // CR
 			inputStream.read(); // LF
-			chunkSize = HttpUtil.readChunkSize(inputStream);
 			out.flush();
 		}
 		inputStream.read(); // CR
 		inputStream.read(); // LF-
-		out.write("0".getBytes());
-		out.write(Constants.CRLF_BYTES);
-		out.write(Constants.CRLF_BYTES);
+		writeLastChunk(out);
 		out.flush();
 	}
 
+	private void writeLastChunk(OutputStream out) throws IOException {
+		out.write("0".getBytes());
+		out.write(Constants.CRLF_BYTES);
+		out.write(Constants.CRLF_BYTES);
+	}
+
+	private void writeChunkSize(OutputStream out, int chunkSize) throws IOException {
+		out.write(Integer.toHexString(chunkSize).getBytes());
+		out.write(Constants.CRLF_BYTES);
+	}
+
 	public int getLength() throws IOException {
-		if (!read)
-			read();
+		read();
 
 		int length = 0;
 		for (Chunk chunk : chunks) {
@@ -235,9 +214,8 @@ public class Body {
 	}
 
 	public byte[] getRaw() throws IOException {
-		if (!read) {
-			read();
-		}
+		read();
+		
 		if (chunked) {
 			byte[] raw = new byte[getRawLength()];
 			int destPos = 0;
@@ -258,18 +236,13 @@ public class Body {
 			destPos = copyCRLF(raw, destPos);
 			return raw;
 		}
-		if (chunks.size() == 0) {
+		if (chunks.isEmpty()) {
 			log.debug("size of chunks list: " + chunks.size() + "  " + hashCode());
 			log.debug("chunks size is: " + chunks.size() + " at time: " + System.currentTimeMillis());
 			return new byte[0];
 		}
 
-		byte[] raw = new byte[getLength()];
-		int destPos = 0;
-		for (Chunk chunk : chunks) {
-			destPos = chunk.copyChunk(raw, destPos);
-		}
-		return raw;
+		return getContent();
 	}
 
 	private int copyLastChunk(byte[] raw, int destPos) {
@@ -286,7 +259,7 @@ public class Body {
 
 	@Override
 	public String toString() {
-		if (chunks.size() == 0) {
+		if (chunks.isEmpty()) {
 			return "";
 		}
 		try {

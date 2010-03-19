@@ -27,12 +27,6 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		store.add(exc);
-		return Outcome.CONTINUE;
-	}
-	
 	public ExchangeStore getExchangeStore() {
 		return store;
 	}

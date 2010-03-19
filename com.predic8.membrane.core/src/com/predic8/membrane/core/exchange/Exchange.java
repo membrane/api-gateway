@@ -35,7 +35,7 @@ public class Exchange {
 	private Calendar time = Calendar.getInstance();
 	private String errMessage = "";
 	private Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<IExchangeViewerListener>();
-	private Set<IExchangesStoreListener> treeViewerListeners = new HashSet<IExchangesStoreListener>();
+	private Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<IExchangesStoreListener>();
 	private Rule rule;
 
 	protected Map<String, Object> properties = new HashMap<String, Object>();
@@ -113,12 +113,12 @@ public class Exchange {
 
 	}
 
-	public void addTreeViewerListener(IExchangesStoreListener viewer) {
-		treeViewerListeners.add(viewer);
+	public void addExchangeStoreListener(IExchangesStoreListener viewer) {
+		exchangesStoreListeners.add(viewer);
 	}
 
-	public void removeTreeViewerListener(IExchangesStoreListener viewer) {
-		treeViewerListeners.remove(viewer);
+	public void removeExchangeStoreListener(IExchangesStoreListener viewer) {
+		exchangesStoreListeners.remove(viewer);
 	}
 
 	public void setCompleted() {
@@ -131,7 +131,7 @@ public class Exchange {
 			listener.setExchangeFinished();
 		}
 
-		for (IExchangesStoreListener listener : treeViewerListeners) {
+		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			listener.setExchangeFinished(this);
 		}
 	}

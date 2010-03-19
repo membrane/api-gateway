@@ -61,6 +61,5 @@ public interface ExchangeStore {
 	
 	public List<Exchange> getAllExchangesAsList();
 	
-	public Object[] getLatExchanges(int count);
 	
 }
