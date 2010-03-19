@@ -77,4 +77,8 @@
 		<delete dir="dist" />
 	</target>
 
+	<target name="javadoc" depends="clean">
+			<javadoc classpathref="classpath" excludepackagenames="javax.*" access="public" sourcepath="src" destdir="build/doc/api" author="true" version="true" use="true" windowtitle="com.predic8.membrane.core"/>
+	</target>
+	
 </project>

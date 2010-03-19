@@ -1,2 +1,0 @@
-ResendThread: call interceptors, remove Router.getInstance() 
-spring plugin for eclipse
