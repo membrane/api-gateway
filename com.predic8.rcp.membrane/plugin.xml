@@ -40,7 +40,7 @@
          point="org.eclipse.core.runtime.products">
       <product
             application="com.predic8.rcp.membrane.application"
-            name="%productName">
+            name="membrane-monitor-linux">
          <property
                name="windowImages"
                value="icons/logo32.png">
@@ -55,7 +55,7 @@
          </property>
          <property
                name="appName"
-               value="%productName">
+               value="membrane-monitor-linux">
          </property>
          <property
                name="preferenceCustomization"
