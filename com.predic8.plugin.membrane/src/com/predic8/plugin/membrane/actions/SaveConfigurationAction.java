@@ -15,8 +15,10 @@
 package com.predic8.plugin.membrane.actions;
 
 import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
@@ -47,7 +49,12 @@ public class SaveConfigurationAction implements IWorkbenchWindowActionDelegate {
         fd.setFilterExtensions(filterExt);
         String selected = fd.open();
         if (selected != null && !selected.equals("")) {
-        	Router.getInstance().getConfigurationManager().saveConfiguration(selected);
+        	try {
+				Router.getInstance().getConfigurationManager().saveConfiguration(selected);
+			} catch (Exception e) {
+				e.printStackTrace();
+				MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error", "Unable to save configuration: " + e.getMessage());
+			}
         }
 	}
 

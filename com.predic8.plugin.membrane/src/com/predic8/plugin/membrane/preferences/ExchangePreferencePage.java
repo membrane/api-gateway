@@ -14,6 +14,7 @@
 
 package com.predic8.plugin.membrane.preferences;
 
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
@@ -21,6 +22,7 @@ import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
@@ -63,13 +65,23 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 	@Override
 	protected void performApply() {
 		Router.getInstance().getConfigurationManager().getConfiguration().setTrackExchange(autotrack.getSelection());
-		Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
+		try {
+			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
+		} catch (Exception e) {
+			e.printStackTrace();
+			MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error", "Unable to save configuration: " + e.getMessage());
+		}
 	}
 
 	@Override
 	public boolean performOk() {
 		Router.getInstance().getConfigurationManager().getConfiguration().setTrackExchange(autotrack.getSelection());
-		Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
+		try {
+			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
+		} catch (Exception e) {
+			e.printStackTrace();
+			MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error", "Unable to save configuration: " + e.getMessage());
+		}
 		return true;
 	}
 

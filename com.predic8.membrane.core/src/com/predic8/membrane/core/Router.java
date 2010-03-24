@@ -116,6 +116,7 @@ public class Router {
 	
 	public Interceptor getInterceptorFor(String id) {
 		Interceptor interceptor = (Interceptor)beanFactory.getBean(id, Interceptor.class);
+		interceptor.setId(id); //very important, returned bean does not have id set
 		return interceptor;
 	}
 

@@ -140,4 +140,11 @@ public class Configuration extends AbstractXMLElement {
 		out.writeEndDocument();
 	}
 
+	
+	public void copyFields(Configuration config) {
+		setAdjustHostHeader(config.getAdjustHostHeader());
+		setIndentMessage(config.getIndentMessage());
+		setTrackExchange(config.getTrackExchange());
+	}
+	
 }

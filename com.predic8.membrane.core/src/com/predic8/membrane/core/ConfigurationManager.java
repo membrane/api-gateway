@@ -18,6 +18,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.io.ConfigurationStore;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.HttpTransport;
@@ -38,21 +41,18 @@ public class ConfigurationManager {
 
 	private Router router;
 
+	protected static Log log = LogFactory.getLog(ConfigurationManager.class.getName());
+	
 	public void init() {
 		configuration = getDefaultConfiguration();
 	}
 
-	public void saveConfiguration(String fileName) {
+	public void saveConfiguration(String fileName) throws Exception {
 		configuration.setRules(router.getRuleManager().getRules());
-
-		try {
-			configurationStore.write(configuration, fileName);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		configurationStore.write(configuration, fileName);
 	}
 
-	private void checkFile(String fileName) throws IOException {
+	private void checkFileExists(String fileName) throws IOException {
 		if (fileName == null || "".equals(fileName))
 			throw new IOException("File " + fileName + " does not exists");
 
@@ -65,30 +65,21 @@ public class ConfigurationManager {
 
 	public void loadConfiguration(String fileName) throws Exception {
 
-		checkFile(fileName);
+		checkFileExists(fileName);
 
 		Configuration storedConfiguration = configurationStore.read(fileName);
 
-		configuration.setAdjustHostHeader(storedConfiguration.getAdjustHostHeader());
-		configuration.setIndentMessage(storedConfiguration.getIndentMessage());
-		configuration.setTrackExchange(storedConfiguration.getTrackExchange());
+		configuration.copyFields(storedConfiguration);
 
 		Collection<Rule> rules = storedConfiguration.getRules();
-		if (rules == null || rules.size() <= 0)
+		if (rules == null || rules.isEmpty())
 			return;
 
 		router.getRuleManager().removeAllRules();
 		for (Rule rule : rules) {
-			try {
-
-				getHttpTransport().addPort(rule.getKey().getPort());
-
-				router.getRuleManager().addRuleIfNew(rule);
-				System.out.println("Added rule " + rule + " on port " + rule.getKey().getPort());
-			} catch (Exception e1) {
-				e1.printStackTrace();
-				throw e1;
-			}
+			getHttpTransport().addPort(rule.getKey().getPort());
+			router.getRuleManager().addRuleIfNew(rule);
+			log.debug("Added rule " + rule + " on port " + rule.getKey().getPort());
 		}
 
 	}
@@ -154,7 +145,7 @@ public class ConfigurationManager {
 	}
 
 	public String getDefaultConfigurationFile() {
-		return System.getProperty("user.home") + "/.membrane.xml";
+		return System.getProperty("user.home") + System.getProperty("file.separator" )+ ".membrane.xml";
 	}
 
 	public Router getRouter() {

@@ -32,8 +32,6 @@ import com.predic8.membrane.core.rules.RuleKey;
 
 public class RuleManager {
 
-	public static final int EXCHANGE_STORE_NUMBER = 1000;
-
 	private ExchangeStore exchangeStore = new ForgetfulExchangeStore();
 	
 	private List<Rule> rules = new Vector<Rule>();
@@ -215,7 +213,7 @@ public class RuleManager {
 	public synchronized void removeAllRules() {
 		try {
 			Collection<Rule> rules = getRules();
-			if (rules == null || rules.size() == 0) 
+			if (rules == null || rules.isEmpty()) 
 				return;
 			
 			List<Rule> rulesCopy = new ArrayList<Rule>(rules);
@@ -229,18 +227,6 @@ public class RuleManager {
 
 	public synchronized int getTotalNumberOfRules() {
 		return rules.size();
-	}
-
-	public synchronized void removeRuleByPort(int port) {
-		Collection<Rule> rules = getRules();
-		for (Rule rule : rules) {
-			if (rule.getKey().getPort() == port)
-				removeRule(rule);
-		}
-	}
-
-	public ExchangeStore getExchangeStore() {
-		return exchangeStore;
 	}
 
 	public void setExchangeStore(ExchangeStore exchangeStore) {
