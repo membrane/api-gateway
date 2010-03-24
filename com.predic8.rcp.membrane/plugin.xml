@@ -35,5 +35,33 @@
          </property>
       </product>
    </extension>
+   <extension
+         id="linux_product"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="com.predic8.rcp.membrane.application"
+            name="%productName">
+         <property
+               name="windowImages"
+               value="icons/logo32.png">
+         </property>
+         <property
+               name="aboutText"
+               value="Membrane SOAP Monitor Version 1.3.5&#x0A;  Copyright @  2004-2009 by predic8 GmbH&#x0A;  Moltkestr. 40  53173 Bonn Germany &#x0A;  www.predic8.com &#x0A;  Phone: +49 (0)228/555 25 76-0&#x0A;  info@predic8.de">
+         </property>
+         <property
+               name="aboutImage"
+               value="icons/logo32.png">
+         </property>
+         <property
+               name="appName"
+               value="%productName">
+         </property>
+         <property
+               name="preferenceCustomization"
+               value="plugin_customization.ini">
+         </property>
+      </product>
+   </extension>
 
 </plugin>
