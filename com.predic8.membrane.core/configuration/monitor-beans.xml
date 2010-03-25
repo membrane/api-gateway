@@ -56,7 +56,7 @@
 		<property name="adjustHostHeader" value="true" />
 		<property name="indentMessage" value="true" />
 		<property name="adjustContentLength" value="true" />
-		<property name="trackExchange" value="true" />
+		<property name="trackExchange" value="false" />
 	</bean>
 
 	<bean id="roundRobinBalancer"

@@ -97,7 +97,7 @@ public class Configuration extends AbstractXMLElement {
 	}
 
 	public boolean getTrackExchange() {
-		if (props.containsKey(TRACK_EXCHANGE)) {
+		if (props.containsKey(TRACK_EXCHANGE)) {			
 			return (Boolean) props.get(TRACK_EXCHANGE);
 		}
 		return false;

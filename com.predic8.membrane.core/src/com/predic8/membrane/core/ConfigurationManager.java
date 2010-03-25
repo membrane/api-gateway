@@ -145,7 +145,7 @@ public class ConfigurationManager {
 	}
 
 	public String getDefaultConfigurationFile() {
-		return System.getProperty("user.home") + System.getProperty("file.separator" )+ ".membrane.xml";
+		return System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml";
 	}
 
 	public Router getRouter() {
