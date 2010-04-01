@@ -59,6 +59,7 @@ public class MethodFilterComposite extends AbstractFilterComposite {
 		buttons.add(createMethodButton(composite, Request.METHOD_DELETE));
 		buttons.add(createMethodButton(composite, Request.METHOD_HEAD));
 		buttons.add(createMethodButton(composite, Request.METHOD_TRACE));
+		buttons.add(createMethodButton(composite, Request.METHOD_CONNECT));
 	}
 
 	@Override
