@@ -32,6 +32,9 @@ import com.predic8.plugin.membrane.resources.ImageKeys;
 
 public class ExchangesViewLabelProvider extends LabelProvider implements ITableLabelProvider {
 
+	private static final String UNKNOWN = "unknown";
+	private static final String N_A = "N/A";
+	
 	private static final NumberFormat FORMATTER = NumberFormat.getInstance();
 	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
 
@@ -105,7 +108,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 
 		case 1:
 			if (exchange.getTime() == null)
-				return "unknown";
+				return UNKNOWN;
 			return DATE_FORMATTER.format(exchange.getTime().getTime());
 
 		case 2:
@@ -127,17 +130,17 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 
 		case 8:
 			if (getRequestContentLength(exchange) == -1)
-				return "unknown";
+				return UNKNOWN;
 			return "" + getRequestContentLength(exchange);
 
 		case 9:
 			if (exchange.getResponse() == null)
-				return "N/A";
+				return N_A;
 			return getResponseContentType(exchange);
 
 		case 10:
 			if (exchange.getResponse() == null)
-				return "";
+				return N_A;
 			return "" + getResponseContentLength(exchange);
 
 		case 11:
