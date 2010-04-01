@@ -30,6 +30,7 @@ import java.net.UnknownHostException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
@@ -84,7 +85,7 @@ public class HttpClient {
 			
 			if (exc.getRequest().isCONNECTRequest()) {
 				String[] uriParts = HttpUtil.splitConnectUri(exc.getRequest().getUri());
-				exc.getRequest().getHeader().setHost(uriParts[0]);
+				exc.getRequest().setUri(Constants.N_A);
 				init(uriParts[0], Integer.parseInt(uriParts[1]));
 				return;
 			}

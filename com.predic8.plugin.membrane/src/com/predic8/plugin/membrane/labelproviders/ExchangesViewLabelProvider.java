@@ -23,6 +23,7 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -32,9 +33,6 @@ import com.predic8.plugin.membrane.resources.ImageKeys;
 
 public class ExchangesViewLabelProvider extends LabelProvider implements ITableLabelProvider {
 
-	private static final String UNKNOWN = "unknown";
-	private static final String N_A = "N/A";
-	
 	private static final NumberFormat FORMATTER = NumberFormat.getInstance();
 	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
 
@@ -108,7 +106,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 
 		case 1:
 			if (exchange.getTime() == null)
-				return UNKNOWN;
+				return Constants.UNKNOWN;
 			return DATE_FORMATTER.format(exchange.getTime().getTime());
 
 		case 2:
@@ -130,17 +128,17 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 
 		case 8:
 			if (getRequestContentLength(exchange) == -1)
-				return UNKNOWN;
+				return Constants.UNKNOWN;
 			return "" + getRequestContentLength(exchange);
 
 		case 9:
 			if (exchange.getResponse() == null)
-				return N_A;
+				return Constants.N_A;
 			return getResponseContentType(exchange);
 
 		case 10:
 			if (exchange.getResponse() == null)
-				return N_A;
+				return Constants.N_A;
 			return "" + getResponseContentLength(exchange);
 
 		case 11:
