@@ -294,7 +294,6 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 	}
 
 	public void removeExchanges(Rule parent, Exchange[] exchanges) {
-		System.err.println("remove exchanges notified to exchange viewer");
 		refreshTable(true);
 	}
 
