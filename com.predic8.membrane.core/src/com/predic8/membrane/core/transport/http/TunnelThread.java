@@ -17,12 +17,18 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketTimeoutException;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class TunnelThread extends Thread {
 
 	private InputStream in;
 	
 	private OutputStream out;
+	
+	private Log log = LogFactory.getLog(TunnelThread.class.getName());
 	
 	public TunnelThread(InputStream inStr, OutputStream outStr, String name) {
 		setName(name);
@@ -33,18 +39,17 @@ public class TunnelThread extends Thread {
 	
 	@Override
 	public void run() {
-		
 		byte[] buffer = new byte[8192];
-		
 		int length = 0;
 		try {
 			while ((length = in.read(buffer)) > 0) {
-				System.out.println(length);
 				out.write(buffer, 0, length);
 				out.flush();
 			}
+		} catch (SocketTimeoutException e) {
+			// do nothing
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("Reading from or writing to stream failed: " + e);
 		}
 	}
 }
