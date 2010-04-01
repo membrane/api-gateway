@@ -85,19 +85,16 @@ public class MessagePreferencePage extends PreferencePage implements IWorkbenchP
 	}
 
 	protected void performApply() {
-		Router.getInstance().getConfigurationManager().getConfiguration().setIndentMessage(indentmsg.getSelection());
-		Router.getInstance().getConfigurationManager().getConfiguration().setAdjustHostHeader(adjhosthead.getSelection());
-		
-		try {
-			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
-		} catch (Exception e) {
-			e.printStackTrace();
-			MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error", "Unable to save configuration: " + e.getMessage());
-		}
+		setAndSaveConfig();
 	}
-	
+
 	@Override
 	public boolean performOk() {
+		setAndSaveConfig();
+		return true;
+	}
+
+	private void setAndSaveConfig() {
 		Router.getInstance().getConfigurationManager().getConfiguration().setIndentMessage(indentmsg.getSelection());
 		Router.getInstance().getConfigurationManager().getConfiguration().setAdjustHostHeader(adjhosthead.getSelection());
 		
@@ -107,7 +104,6 @@ public class MessagePreferencePage extends PreferencePage implements IWorkbenchP
 			e.printStackTrace();
 			MessageDialog.openError(Display.getCurrent().getActiveShell(), "Error", "Unable to save configuration: " + e.getMessage());
 		}
-		return true;
 	}
 	
 }

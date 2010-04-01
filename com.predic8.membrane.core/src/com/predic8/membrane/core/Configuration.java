@@ -23,10 +23,11 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.config.AbstractXMLElement;
 import com.predic8.membrane.core.config.Format;
 import com.predic8.membrane.core.config.GUI;
+import com.predic8.membrane.core.config.Proxy;
 import com.predic8.membrane.core.config.Rules;
-import com.predic8.membrane.core.config.AbstractXMLElement;
 import com.predic8.membrane.core.rules.Rule;
 
 public class Configuration extends AbstractXMLElement {
@@ -103,6 +104,41 @@ public class Configuration extends AbstractXMLElement {
 		return false;
 	}
 
+	public boolean getUseProxy() {
+		if (props.containsKey(PROXY_USE)) {			
+			return (Boolean) props.get(PROXY_USE);
+		}
+		return false;
+	}
+	
+	public void setUseProxy(boolean status) {
+		props.put(PROXY_USE, status);
+	}
+	
+	public String getProxyHost() {
+		if (props.containsKey(PROXY_HOST))
+			return (String)props.get(PROXY_HOST);
+	
+		return null;
+	}
+	
+	public String getProxyPort() {
+		if (props.containsKey(PROXY_PORT))
+			return (String)props.get(PROXY_PORT);
+	
+		return null;
+	}
+	
+	public void setProxyHost(String host) {
+		if (host == null)
+			return;
+		props.put(PROXY_HOST, host);
+	}
+	
+	public void setProxyPort(String port) {
+		props.put(PROXY_PORT, port);
+	}
+	
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (Rules.ELEMENT_NAME.equals(child)) {
@@ -111,6 +147,8 @@ public class Configuration extends AbstractXMLElement {
 			props.putAll(((Format) new Format().parse(token)).getValues());
 		} else if (GUI.ELEMENT_NAME.equals(child)) {
 			props.putAll(((GUI) new GUI().parse(token)).getValues());
+		} else if (Proxy.ELEMENT_NAME.equals(child)) {
+			props.putAll(((Proxy) new Proxy().parse(token)).getValues());
 		}
 	}
 
@@ -136,6 +174,10 @@ public class Configuration extends AbstractXMLElement {
 		childGui.setValues(props);
 		childGui.write(out);
 		
+		Proxy childProxy = new Proxy();
+		childProxy.setValues(props);
+		childProxy.write(out);
+		
 		out.writeEndElement();
 		out.writeEndDocument();
 	}
@@ -145,6 +187,9 @@ public class Configuration extends AbstractXMLElement {
 		setAdjustHostHeader(config.getAdjustHostHeader());
 		setIndentMessage(config.getIndentMessage());
 		setTrackExchange(config.getTrackExchange());
+		setUseProxy(config.getUseProxy());
+		setProxyHost(config.getProxyHost());
+		setProxyPort(config.getProxyPort());
 	}
 	
 }
