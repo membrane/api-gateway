@@ -8,6 +8,7 @@ Bundle-Vendor: predic8 GmbH
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ActivationPolicy: lazy
 Export-Package: 
+ com.predic8.beautifier,
  com.predic8.membrane.core,
  com.predic8.membrane.core.config,
  com.predic8.membrane.core.exchange,
@@ -16,6 +17,7 @@ Export-Package:
  com.predic8.membrane.core.http,
  com.predic8.membrane.core.interceptor,
  com.predic8.membrane.core.interceptor.balancer,
+ com.predic8.membrane.core.interceptor.rewrite,
  com.predic8.membrane.core.io,
  com.predic8.membrane.core.model,
  com.predic8.membrane.core.rules,
