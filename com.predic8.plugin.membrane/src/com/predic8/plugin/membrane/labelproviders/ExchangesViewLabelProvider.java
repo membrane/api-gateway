@@ -158,6 +158,10 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 	private String getServer(HttpExchange exchange) {
 		if (exchange.getRule() instanceof ProxyRule) {
 			try {
+				if (exchange.getRequest().isCONNECTRequest()) {
+					return exchange.getRequest().getHeader().getHost();
+				}
+				
 				return new URL(exchange.getRequestUri()).getHost();
 			} catch (MalformedURLException e) {
 				e.printStackTrace();

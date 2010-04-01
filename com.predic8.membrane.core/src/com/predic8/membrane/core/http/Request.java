@@ -42,6 +42,8 @@ public class Request extends Message {
 
 	public static final String METHOD_TRACE = "TRACE";
 
+	public static final String METHOD_CONNECT = "CONNECT";
+	
 	private static Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
 	
 	String method;
@@ -98,6 +100,9 @@ public class Request extends Message {
 		return METHOD_GET.equals(method);
 	}
 	
+	public boolean isCONNECTRequest() {
+		return METHOD_CONNECT.equals(method);
+	}
 
 	@Override
 	public String getName() {
@@ -106,8 +111,9 @@ public class Request extends Message {
 	
 	@Override
 	public boolean isBodyEmpty() throws IOException {
-		if (isGETRequest() || isHEADRequest())
+		if (isGETRequest() || isHEADRequest() || isCONNECTRequest())
 			return true;
 		return super.isBodyEmpty();
 	}
+	
 }

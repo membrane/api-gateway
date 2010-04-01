@@ -133,5 +133,9 @@ public class HttpUtil {
 		return chunks;
 	}
 
+	
+	public static String[] splitConnectUri(String uri) {
+		return uri.split(":");
+	}
 
 }

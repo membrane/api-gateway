@@ -35,6 +35,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.HttpUtil;
 
 public class HttpClient {
 
@@ -79,7 +80,16 @@ public class HttpClient {
 	
 	private void init(HttpExchange exc) throws UnknownHostException, IOException, MalformedURLException {
 		if (exc.getRule() instanceof ProxyRule) {
-			log.debug("PROXY: " + exc.getRequest().getUri());
+			log.debug("PROXY: " + exc.getRequestUri());
+			
+			if (exc.getRequest().isCONNECTRequest()) {
+				String[] uriParts = HttpUtil.splitConnectUri(exc.getRequest().getUri());
+				exc.getRequest().getHeader().setHost(uriParts[0]);
+				init(uriParts[0], Integer.parseInt(uriParts[1]));
+				return;
+			}
+			
+			
 			URL url = new URL(exc.getRequestUri());
 			
 			//TODO move to ProxyInterceptor ????
@@ -140,6 +150,13 @@ public class HttpClient {
 
 	private Response doCall(HttpExchange exc) throws IOException, SocketException, EndOfStreamException {
 		exc.setTimeReqSent(System.currentTimeMillis());
+		
+		if (exc.getRequest().isCONNECTRequest()) {
+			new TunnelThread(in, exc.getServerThread().getSrcOut(), "Onward Thread").start();
+			new TunnelThread(exc.getServerThread().getSrcIn(), out, "Backward Thread").start();
+			return Response.createOKResponse();
+		}
+		
 		exc.getRequest().write(out);
 		
 		if(exc.getRequest().isHTTP10()){

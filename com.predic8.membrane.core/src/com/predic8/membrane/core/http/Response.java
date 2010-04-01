@@ -119,5 +119,13 @@ public class Response extends Message {
 	public boolean isServerError() {
 		return statusCode > 500;
 	}
+
+	public static Response createOKResponse() {
+		Response response = new Response();
+		response.setStatusCode(200);
+		response.setStatusMessage("OK");
+		response.setVersion("1.1");
+		return response;
+	}
 	
 }
