@@ -90,7 +90,6 @@ public class HttpClient {
 				return;
 			}
 			
-			
 			URL url = new URL(exc.getRequestUri());
 			
 			//TODO move to ProxyInterceptor ????
