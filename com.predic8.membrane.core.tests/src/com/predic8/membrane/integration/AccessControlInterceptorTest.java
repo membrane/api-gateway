@@ -29,12 +29,13 @@ public class AccessControlInterceptorTest extends TestCase {
 	
 	@Override
 	protected void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", "80");
+		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", "80");
 		router = new HttpRouter();
 		router.getConfigurationManager().setConfiguration(new Configuration());
 		router.getRuleManager().addRuleIfNew(rule);
 		
-		router.getTransport().openPort(3000);
+		router.getTransport().closeAll();
+		router.getTransport().openPort(8000);
 	}
 	
 	@Override
@@ -78,7 +79,7 @@ public class AccessControlInterceptorTest extends TestCase {
 	
 	
 	private PostMethod getPostMethod() {
-		PostMethod post = new PostMethod("http://localhost:3000/axis2/services/BLZService");
+		PostMethod post = new PostMethod("http://localhost:8000/axis2/services/BLZService");
 		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
 		
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);

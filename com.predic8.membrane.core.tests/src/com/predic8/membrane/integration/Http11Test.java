@@ -19,16 +19,22 @@ import com.predic8.membrane.core.rules.Rule;
 
 public class Http11Test extends TestCase {
 
+	private HttpRouter router;
+	
 	@Before
 	public void setUp() throws Exception {
 		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", "80");
-		HttpRouter router = new HttpRouter();
+		router = new HttpRouter();
 		router.getConfigurationManager().setConfiguration(new Configuration());
 		router.getRuleManager().addRuleIfNew(rule);
 		
 		router.getTransport().openPort(4000);
 	}
 	
+	@Override
+	protected void tearDown() throws Exception {
+		router.getTransport().closeAll();
+	}
 	
 	@Test
 	public void testPost() throws Exception {

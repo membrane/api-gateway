@@ -14,11 +14,18 @@ import com.predic8.membrane.core.rules.ProxyRuleKey;
 
 public class ProxyRuleTest extends TestCase {
 
+	private HttpRouter router;
+	
 	@Before
 	public void setUp() throws Exception {
-		HttpRouter router = new HttpRouter();
+		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 		router.getTransport().openPort(3128);
+	}
+	
+	@Override
+	protected void tearDown() throws Exception {
+		router.getTransport().closeAll();
 	}
 	
 	@Test

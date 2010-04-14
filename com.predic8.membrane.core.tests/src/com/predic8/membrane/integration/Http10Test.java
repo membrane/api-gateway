@@ -25,8 +25,6 @@ public class Http10Test extends TestCase {
 	
 	@Before
 	public void setUp() throws Exception {
-		if (router != null)
-			return;
 		
 		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", "80");
 		
@@ -35,6 +33,11 @@ public class Http10Test extends TestCase {
 		router.getRuleManager().addRuleIfNew(rule);
 		
 		router.getTransport().openPort(3000);
+	}
+	
+	@Override
+	protected void tearDown() throws Exception {
+		router.getTransport().closeAll();
 	}
 	
 	@Test
