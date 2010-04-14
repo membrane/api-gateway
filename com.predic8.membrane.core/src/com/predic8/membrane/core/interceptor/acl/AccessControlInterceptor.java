@@ -1,4 +1,19 @@
+/* Copyright 2009 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
+
+import java.io.IOException;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
@@ -15,28 +30,29 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		Service service = getAccessControl().getServiceFor(((HttpExchange) exc).getRequestUri()) ;
-		if (service == null) {
-			exc.getRequest().getBody().read();
-			exc.setResponse(getResponse("No matching service found for request URI."));
+		Service service;
+		try {
+			service = getAccessControl().getServiceFor(((HttpExchange) exc).getRequestUri());
+		} catch (Exception e) {
+			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
 
-		if (!serviceEnabled(service, (HttpExchange) exc) ) {
-			exc.getRequest().getBody().read();
-			exc.setResponse(getResponse("Access denied: you are not authorized to access this service."));
+		if (!serviceEnabled(service, (HttpExchange) exc)) {
+			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
-		
+
 		return Outcome.CONTINUE;
 	}
-	
-	private boolean serviceEnabled(Service service, HttpExchange exc) {
-		return service.checkAccess(exc.getServerThread().getSourceSocket().getInetAddress());
+
+	private void setResponseToAccessDenied(Exchange exc) throws IOException {
+		exc.getRequest().getBody().read();
+		exc.setResponse(getResponse("Access denied: you are not authorized to access this service."));
 	}
 
-	public String getAclFilename() {
-		return aclFilename;
+	private boolean serviceEnabled(Service service, HttpExchange exc) {
+		return service.checkAccess(exc.getServerThread().getSourceSocket().getInetAddress());
 	}
 
 	public void setAclFilename(String aclFilename) {
@@ -57,20 +73,18 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		accessControl = new AccessControlParser().read(aclFilename);
 	}
 
-	
 	public Response getResponse(String content) {
 		Response response = new Response();
 		response.setStatusCode(403);
 		response.setStatusMessage("Forbidden");
 		response.setVersion("1.1");
-		
+
 		Header header = new Header();
 		header.add("Content-Type", "text;charset=UTF-8");
 		response.setHeader(header);
-		
+
 		response.setBodyContent(content.getBytes());
 		return response;
 	}
-	
-	
+
 }

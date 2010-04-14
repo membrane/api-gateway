@@ -119,6 +119,11 @@
 		<property name="targetPort" value="5984" />
 	</bean>
 
+	<!-- 
+		This interceptor controls service access. Only authorized clients can have an access to services.
+		Mapping of public available services and clients is specified in file with XML format.
+		Value of aclFilename property denotes local full qualified path to mapping file.    
+	 -->
 	<bean id="aclAccessControl"
 		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
 		<property name="displayName" value="control interceptor" />

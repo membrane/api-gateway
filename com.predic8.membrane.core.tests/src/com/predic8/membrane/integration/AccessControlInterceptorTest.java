@@ -1,3 +1,16 @@
+/* Copyright 2009 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.integration;
 
 import java.io.InputStream;
@@ -5,10 +18,8 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.http.params.HttpProtocolParams;
 
 import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.HttpRouter;
@@ -47,7 +58,6 @@ public class AccessControlInterceptorTest extends TestCase {
 		setInterceptor(FILE_WITH_VALID_SERVICE_PARAMS);
 		
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION  , HttpVersion.HTTP_1_0);
 		
 		PostMethod post = getPostMethod();
 		assertEquals(200, client.executeMethod(post));	
@@ -56,7 +66,6 @@ public class AccessControlInterceptorTest extends TestCase {
 	public void testPathMismatchFile() throws Exception {
 		setInterceptor(FILE_WITH_PATH_MISMATCH);
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION  , HttpVersion.HTTP_1_0);
 		
 		PostMethod post = getPostMethod();
 		assertEquals(403, client.executeMethod(post));
@@ -65,7 +74,6 @@ public class AccessControlInterceptorTest extends TestCase {
 	public void testClientsMismatchFile() throws Exception {
 		setInterceptor(FILE_WITH_CLIENT_MISMATCH);
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION  , HttpVersion.HTTP_1_0);
 		
 		PostMethod post = getPostMethod();
 		assertEquals(403, client.executeMethod(post));
