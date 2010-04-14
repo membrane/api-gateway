@@ -56,7 +56,6 @@ public class Service extends AbstractXMLElement {
 		return hostNames;
 	}
 	public boolean checkAccess(InetAddress inetAddress) {
-		System.err.println("IP: " + inetAddress.getHostAddress());
 		if (accessEnabledForHostAddress(inetAddress.getHostAddress()))
 			return true;
 		

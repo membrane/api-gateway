@@ -36,7 +36,6 @@ public class AccessControl extends AbstractXMLElement {
 			return null;
 		
 		for (Service service : services) {
-			System.err.println(service.getPath());
 			if (Pattern.compile(service.getPath()).matcher(path).matches())
 				return service;
 		}

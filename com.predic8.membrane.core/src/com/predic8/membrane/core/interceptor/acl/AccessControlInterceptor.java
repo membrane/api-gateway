@@ -15,9 +15,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		String path = ((HttpExchange) exc).getRequestUri();
-		System.err.println("Path: " + path);
-		Service service = getAccessControl().getServiceFor(path) ;
+		Service service = getAccessControl().getServiceFor(((HttpExchange) exc).getRequestUri()) ;
 		if (service == null) {
 			exc.getRequest().getBody().read();
 			exc.setResponse(getResponse("No matching service found for request URI."));
@@ -55,7 +53,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	private void init() throws Exception {
 		if (aclFilename == null)
-			throw new IllegalStateException("acl file name is not set");
+			throw new IllegalStateException("file name is not set");
 		accessControl = new AccessControlParser().read(aclFilename);
 	}
 
