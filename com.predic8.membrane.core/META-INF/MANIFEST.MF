@@ -16,6 +16,7 @@ Export-Package:
  com.predic8.membrane.core.exchangestore,
  com.predic8.membrane.core.http,
  com.predic8.membrane.core.interceptor,
+ com.predic8.membrane.core.interceptor.acl,
  com.predic8.membrane.core.interceptor.balancer,
  com.predic8.membrane.core.interceptor.rewrite,
  com.predic8.membrane.core.io,

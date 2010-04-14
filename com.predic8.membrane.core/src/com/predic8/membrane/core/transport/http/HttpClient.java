@@ -70,7 +70,7 @@ public class HttpClient {
 			if (getProxyHost().equals(socket.getInetAddress().getHostName()) && getProxyPort() == socket.getPort())
 				return true;
 		}
-		System.err.println("Is same socket return false");
+		
 		return false;
 	}
 

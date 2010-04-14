@@ -119,6 +119,12 @@
 		<property name="targetPort" value="5984" />
 	</bean>
 
+	<bean id="aclAccessControl"
+		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
+		<property name="displayName" value="control interceptor" />
+		<property name="aclFilename" value="C:\temp\acl.xml" />
+	</bean>
+
 </beans>
 	
 	
