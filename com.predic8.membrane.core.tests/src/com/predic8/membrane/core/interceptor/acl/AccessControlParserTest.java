@@ -4,7 +4,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-public class AccessControlReaderTest extends TestCase {
+public class AccessControlParserTest extends TestCase {
 
 	
 	private AccessControlParser reader = new AccessControlParser();
