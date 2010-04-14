@@ -112,24 +112,15 @@ public class RoutingInterceptor extends AbstractInterceptor {
 		String host = exc.getRequest().getHeader().getHost();
 		StringTokenizer tokenizer = new StringTokenizer(host, ":");
 		if (tokenizer.countTokens() >= 1) {
-			host = tokenizer.nextToken();
+			return tokenizer.nextToken();
 		}
 		return host;
 	}
 
 	private void adjustHostHeader(Exchange exc) {
-		if (!isAdjustHeaderField())
-			return;
-
 		if (exc.getRule() instanceof ForwardingRule) {
 			exc.getRequest().getHeader().setHost(((ForwardingRule) exc.getRule()).getTargetHost() + ":" + ((ForwardingRule) exc.getRule()).getTargetPort());
 		}
-	}
-
-	protected boolean isAdjustHeaderField() {
-		return true;
-		// TODO return
-		// Router.getInstance().getConfigurationManager().getConfiguration().getAdjustHostHeader();
 	}
 
 	@Override

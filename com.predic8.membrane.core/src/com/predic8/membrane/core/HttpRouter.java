@@ -28,6 +28,7 @@ public class HttpRouter extends Router {
 		ruleManager = new RuleManager();
 		exchangeStore = new ForgetfulExchangeStore();
 		transport = new HttpTransport();
+		transport.setRouter(this);
 		configurationManager = new ConfigurationManager();
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
 		RoutingInterceptor routingeInterceptor = new RoutingInterceptor();
@@ -35,6 +36,7 @@ public class HttpRouter extends Router {
 		interceptors.add(routingeInterceptor);
 		
 		transport.setInterceptors(interceptors);
+		//router = this;
 	}
 	
 	@Override

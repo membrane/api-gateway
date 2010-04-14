@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry exported="true" kind="lib" path="lib/couchdb4j-0.1.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="configuration/"/>
 	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.8.jar"/>

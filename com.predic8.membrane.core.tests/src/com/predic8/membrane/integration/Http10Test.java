@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.http;
+package com.predic8.membrane.integration;
 
 import java.io.InputStream;
 
@@ -12,6 +12,7 @@ import org.apache.http.params.HttpProtocolParams;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
@@ -30,6 +31,7 @@ public class Http10Test extends TestCase {
 		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", "80");
 		
 		router = new HttpRouter();
+		router.getConfigurationManager().setConfiguration(new Configuration());
 		router.getRuleManager().addRuleIfNew(rule);
 		
 		router.getTransport().openPort(3000);

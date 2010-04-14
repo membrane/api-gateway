@@ -14,8 +14,6 @@
 
 package com.predic8.plugin.membrane.labelproviders;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 
@@ -25,8 +23,6 @@ import org.eclipse.swt.graphics.Image;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.HttpExchange;
-import com.predic8.membrane.core.rules.ForwardingRule;
-import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
@@ -122,24 +118,24 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 			return (String) exchange.getProperty(HttpTransport.SOURCE_HOSTNAME); // client
 
 		case 6:
-			return getServer(exchange);
+			return exchange.getServer();
 		case 7:
-			return getRequestContentType(exchange);
+			return exchange.getRequestContentType();
 
 		case 8:
-			if (getRequestContentLength(exchange) == -1)
+			if (exchange.getRequestContentLength() == -1)
 				return Constants.UNKNOWN;
-			return "" + getRequestContentLength(exchange);
+			return "" + exchange.getRequestContentLength();
 
 		case 9:
 			if (exchange.getResponse() == null)
 				return Constants.N_A;
-			return getResponseContentType(exchange);
+			return exchange.getResponseContentType();
 
 		case 10:
 			if (exchange.getResponse() == null)
 				return Constants.N_A;
-			return "" + getResponseContentLength(exchange);
+			return "" + exchange.getResponseContentLength();
 
 		case 11:
 			return "" + (exchange.getTimeResReceived() - exchange.getTimeReqSent());
@@ -148,50 +144,6 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 		return "";
 	}
 
-	private int getResponseContentLength(HttpExchange exchange) {
-		return exchange.getResponse().getHeader().getContentLength();
-	}
-
-	private int getRequestContentLength(HttpExchange exchange) {
-		return exchange.getRequest().getHeader().getContentLength();
-	}
-
-	private String getServer(HttpExchange exchange) {
-		if (exchange.getRule() instanceof ProxyRule) {
-			try {
-				if (exchange.getRequest().isCONNECTRequest()) {
-					return exchange.getRequest().getHeader().getHost();
-				}
-				
-				return new URL(exchange.getRequestUri()).getHost();
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			}
-			return exchange.getRequestUri();
-		} else if (exchange.getRule() instanceof ForwardingRule) {
-			return ((ForwardingRule) exchange.getRule()).getTargetHost();
-		}
-		return "";
-	}
-
-	private String getRequestContentType(HttpExchange exchange) {
-		return extractContentTypeValue((String) exchange.getRequest().getHeader().getContentType());
-	}
-
-	private String getResponseContentType(HttpExchange exchange) {
-		return extractContentTypeValue((String) exchange.getResponse().getHeader().getContentType());
-	}
-
-	private String extractContentTypeValue(String contentType) {
-		if (contentType == null)
-			return "";
-		int index = contentType.indexOf(";");
-		if (index > 0) {
-			return contentType.substring(0, index);
-		}
-		return contentType;
-	}
-	
 	private void createImages() {
 		imgPending = createImage(ImageKeys.IMAGE_PENDING);
 		imgFailed = createImage(ImageKeys.IMAGE_FAILED);

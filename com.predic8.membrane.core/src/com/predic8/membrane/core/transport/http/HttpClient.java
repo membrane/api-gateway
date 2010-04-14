@@ -12,7 +12,6 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-
 package com.predic8.membrane.core.transport.http;
 
 import java.io.BufferedInputStream;
@@ -30,89 +29,143 @@ import java.net.UnknownHostException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
-import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
 public class HttpClient {
 
 	private static Log log = LogFactory.getLog(HttpClient.class.getName());
-	
+
 	private Socket socket;
-	
+
 	private InputStream in;
-	
+
 	private OutputStream out;
-	
+
 	private static final int MAX_CALL = 5;
+
+	private Router router;
 	
-	private String host;
+	private Configuration configuration = new Configuration();
 	
-	private int port; 
-	
-	public void init(String host, int port) throws UnknownHostException, IOException {
-		
-		while (socket == null || socket.isClosed() || !host.equals(this.host) || this.port != port) {
-			log.debug("opening a new socket for host: " + host + " on port: " + port);
-			if (in != null) 
+	private boolean isSameSocket(String host, int port) {
+		if (!useProxy()) {
+			if ((host.equals(socket.getInetAddress().getHostName()) || host.equals(socket.getInetAddress().getHostAddress())) && port == socket.getPort()) {
+				return true;
+			} else {
+				System.out.println("*****************************");
+				System.out.println("host: " + host);
+				System.out.println("port: " + port);
+				System.out.println("innetaddress: " + socket.getInetAddress().getHostAddress());
+				System.out.println("socket port: " + socket.getPort());
+				System.out.println("*****************************");
+			}
+		} else {
+			if (getProxyHost().equals(socket.getInetAddress().getHostName()) && getProxyPort() == socket.getPort())
+				return true;
+		}
+		System.err.println("Is same socket return false");
+		return false;
+	}
+
+	private void openSocketIfNeeded(String host, int port) throws UnknownHostException, IOException {
+
+		while (socket == null || socket.isClosed() || !isSameSocket(host, port)) {
+
+			if (in != null)
 				in.close();
-			
+
 			if (out != null && !socket.isClosed()) {
 				out.flush();
 				out.close();
 			}
-			
+
 			if (socket != null)
 				socket.close();
-			socket = new Socket(host, port);
+
+			if (useProxy()) {
+				log.debug("opening a new socket for host: " + getProxyHost() + " on port: " + getProxyPort());
+				socket = new Socket(getProxyHost(), getProxyPort());
+			} else {
+				log.debug("opening a new socket for host: " + host + " on port: " + port);
+				socket = new Socket(host, port);
+			}
+
 			log.debug("Opened connection on localPort: " + port);
 			in = new BufferedInputStream(socket.getInputStream(), 2048);
 			out = new BufferedOutputStream(socket.getOutputStream(), 2048);
-			this.host = host;
-			this.port = port;
-			
 		}
-		
+
 	}
-	
+
+	private boolean useProxy() {
+		return getConfiguration().getUseProxy();
+	}
+
+	private Configuration getConfiguration() {
+		if (router == null)
+			return configuration;
+		return router.getConfigurationManager().getConfiguration();
+	}
+
+	private int getProxyPort() {
+		return Integer.parseInt(getConfiguration().getProxyPort());
+	}
+
+	private String getProxyHost() {
+		return getConfiguration().getProxyHost();
+	}
+
 	private void init(HttpExchange exc) throws UnknownHostException, IOException, MalformedURLException {
-		if (exc.getRule() instanceof ProxyRule) {
-			log.debug("PROXY: " + exc.getRequestUri());
+		if (exc.getRule() instanceof ForwardingRule) {
 			
-			if (exc.getRequest().isCONNECTRequest()) {
-				String[] uriParts = HttpUtil.splitConnectUri(exc.getRequest().getUri());
-				exc.getRequest().setUri(Constants.N_A);
-				init(uriParts[0], Integer.parseInt(uriParts[1]));
-				return;
+			if (useProxy()) {
+				exc.getRequest().setUri("http://" + ((ForwardingRule) exc.getRule()).getTargetHost() + ":" + ((ForwardingRule) exc.getRule()).getTargetPort() + exc.getRequest().getUri());
 			}
 			
-			URL url = new URL(exc.getRequestUri());
-			
-			//TODO move to ProxyInterceptor ????
-			exc.getRequest().getHeader().setHost(url.getHost());
-			log.debug("PATH: " + url.getPath());
-			
-			String uri = url.getPath();
-			if (url.getQuery() != null) {
-				uri = uri + "?" + url.getQuery();
-			}
-			
-			exc.getRequest().setUri(uri);
-			
-			init(url.getHost(), getTargetPort(url)); 
-		} else if (exc.getRule() instanceof ForwardingRule){
-			init(((ForwardingRule) exc.getRule()).getTargetHost(), ((ForwardingRule) exc.getRule()).getTargetPort());
+			openSocketIfNeeded(((ForwardingRule) exc.getRule()).getTargetHost(), ((ForwardingRule) exc.getRule()).getTargetPort());
+			return;
 		}
+
+		log.debug("PROXY: " + exc.getRequestUri());
+
+		if (exc.getRequest().isCONNECTRequest()) {
+			String[] uriParts = HttpUtil.splitConnectUri(exc.getRequest().getUri());
+			openSocketIfNeeded(uriParts[0], Integer.parseInt(uriParts[1]));
+			return;
+		}
+
+		URL url = new URL(exc.getRequestUri());
+
+		// TODO move to ProxyInterceptor ????
+		exc.getRequest().getHeader().setHost(url.getHost());
+		log.debug("PATH: " + url.getPath());
+
+		if (!useProxy())
+			exc.getRequest().setUri(getPathAndQueryString(url));
+
+		openSocketIfNeeded(url.getHost(), getTargetPort(url));
+
 	}
-	
+
+	private String getPathAndQueryString(URL url) {
+		String uri = url.getPath();
+		if (url.getQuery() != null) {
+			uri = uri + "?" + url.getQuery();
+		}
+		return uri;
+	}
+
 	private int getTargetPort(URL url) throws MalformedURLException {
-		if (!url.getProtocol().equalsIgnoreCase("http")) 
-			throw new RuntimeException("Does not support protocol for URI: " + url.getPath()); 
-		
+		if (!url.getProtocol().equalsIgnoreCase("http"))
+			throw new RuntimeException("Does not support protocol for URI: " + url.getPath());
+
 		if (url.getPort() == -1)
 			return 80;
 		return url.getPort();
@@ -121,55 +174,62 @@ public class HttpClient {
 	public Response call(HttpExchange exc) throws Exception {
 		log.debug("calling using rule: " + exc.getRule() + " : " + exc.getRequest().getUri());
 		int counter = 0;
-	    Exception exception = null;
+		Exception exception = null;
 		while (counter < MAX_CALL) {
-	    	try {
-	    		log.debug("try # " + counter);
-	    		init(exc);
-	    		return doCall(exc);
-	    	} catch (ConnectException ce) {
-	    		exception = ce; 
-	    		log.debug("Connection to " + host + " on port " + port + " refused.");
-	    	} catch (Exception e) {
-	    		log.debug("try # " + counter + " failed");
-	    		exc.getRequest().writeStartLine(System.out); 
-	    		exc.getRequest().getHeader().write(System.out);
-	    		e.printStackTrace();
-	    		exception = e;
-	    	}
-    		counter ++;
-	    	try {
-	    		close();
+			try {
+				log.debug("try # " + counter);
+				init(exc);
+				return doCall(exc);
+			} catch (ConnectException ce) {
+				exception = ce;
+				log.debug("Connection to " + socket.getInetAddress().getHostName() + " on port " + socket.getPort() + " refused.");
+			} catch (Exception e) {
+				log.debug("try # " + counter + " failed");
+				exc.getRequest().writeStartLine(System.out);
+				exc.getRequest().getHeader().write(System.out);
+				e.printStackTrace();
+				exception = e;
+			}
+			counter++;
+			try {
+				close();
 				Thread.sleep(250);
-			} catch (Exception e) { 
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
-	    }
-	    throw exception;
+		}
+		throw exception;
 	}
 
 	private Response doCall(HttpExchange exc) throws IOException, SocketException, EndOfStreamException {
 		exc.setTimeReqSent(System.currentTimeMillis());
-		
+
 		if (exc.getRequest().isCONNECTRequest()) {
+			if (useProxy()) {
+				exc.getRequest().write(out);
+				Response response = new Response();
+				response.read(in, false);
+				log.debug("Status code response on CONNECT request: " + response.getStatusCode());
+			}
+			exc.getRequest().setUri(Constants.N_A);
 			new TunnelThread(in, exc.getServerThread().getSrcOut(), "Onward Thread").start();
 			new TunnelThread(exc.getServerThread().getSrcIn(), out, "Backward Thread").start();
 			return Response.createOKResponse();
 		}
-		
+
 		exc.getRequest().write(out);
-		
-		if(exc.getRequest().isHTTP10()){
+
+		if (exc.getRequest().isHTTP10()) {
 			shutDownSourceSocket(exc);
 		}
-		
+
 		Response response = new Response();
 		response.read(in, !exc.getRequest().isHEADRequest());
-		
+
 		if (response.getStatusCode() == 100) {
 			do100ExpectedHandling(exc, response);
 		}
-			
+
 		exc.setReceived();
 		exc.setTimeResReceived(System.currentTimeMillis());
 		return response;
@@ -190,16 +250,19 @@ public class HttpClient {
 			log.info("Shutting down socket outputstream");
 			socket.shutdownOutput();
 		}
-		//TODO close ?
+		// TODO close ?
 	}
-	
+
 	public void close() throws IOException {
-		if (socket == null) 
+		if (socket == null)
 			return;
-		
+
 		log.debug("Closing HTTP connection LocalPort: " + socket.getLocalPort());
 		socket.shutdownInput();
 		socket.close();
 	}
-	
+
+	public void setRouter(Router router) {
+		this.router = router;
+	}
 }

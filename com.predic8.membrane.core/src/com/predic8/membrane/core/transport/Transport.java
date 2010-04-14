@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.model.IPortChangeListener;
 
@@ -14,6 +15,8 @@ public class Transport {
 	
 	private List<Interceptor> interceptors = new Vector<Interceptor>();
 
+	private Router router;
+	
 	public void addMenuViewerListener(IPortChangeListener mViewer) {
 		menuListeners.add(mViewer);
 	
@@ -30,6 +33,14 @@ public class Transport {
 
 	public void setInterceptors(List<Interceptor> interceptors) {
 		this.interceptors = interceptors;
+	}
+
+	public void setRouter(Router router) {
+		this.router = router;
+	}
+	
+	public Router getRouter() {
+		return router;
 	}
 	
 }

@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.exchange;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +26,8 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.model.IExchangeViewerListener;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
+import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 
 public class Exchange {
@@ -232,4 +236,48 @@ public class Exchange {
 		this.requestUri = requestUri;
 	}	
 	
+	public String getServer() {
+		if (getRule() instanceof ProxyRule) {
+			try {
+				if (getRequest().isCONNECTRequest()) {
+					return getRequest().getHeader().getHost();
+				}
+				
+				return new URL(getRequestUri()).getHost();
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			}
+			return getRequestUri();
+		}
+		if (getRule() instanceof ForwardingRule) {
+			return ((ForwardingRule) getRule()).getTargetHost();
+		}
+		return "";
+	}
+	
+	public int getResponseContentLength() {
+		return getResponse().getHeader().getContentLength();
+	}
+
+	public int getRequestContentLength() {
+		return getRequest().getHeader().getContentLength();
+	}
+
+	public String getRequestContentType() {
+		return extractContentTypeValue((String)getRequest().getHeader().getContentType());
+	}
+
+	public String getResponseContentType() {
+		return extractContentTypeValue((String) getResponse().getHeader().getContentType());
+	}
+
+	private String extractContentTypeValue(String contentType) {
+		if (contentType == null)
+			return "";
+		int index = contentType.indexOf(";");
+		if (index > 0) {
+			return contentType.substring(0, index);
+		}
+		return contentType;
+	}
 }

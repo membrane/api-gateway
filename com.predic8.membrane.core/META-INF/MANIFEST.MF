@@ -45,6 +45,7 @@ Bundle-ClassPath: lib/commons-logging.jar,
  lib/spring-beans.jar,
  lib/log4j-1.2.8.jar,
  configuration/,
- lib/xmlbeautifier-1.1.jar
+ lib/xmlbeautifier-1.1.jar,
+ lib/couchdb4j-0.1.2.jar
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0"
 Eclipse-RegisterBuddy: org.apache.log4j

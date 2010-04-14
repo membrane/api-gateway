@@ -95,6 +95,7 @@ public class Router {
 
 	public void setTransport(Transport transport) {
 		this.transport = transport;
+		transport.setRouter(this);
 	}
 
 	public ConfigurationManager getConfigurationManager() {

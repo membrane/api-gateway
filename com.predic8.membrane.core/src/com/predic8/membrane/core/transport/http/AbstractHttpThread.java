@@ -132,10 +132,4 @@ public abstract class AbstractHttpThread extends Thread {
 		return transport;
 	}
 
-	public void setTransport(HttpTransport transport) {
-		this.transport = transport;
-	}
-	
-	
-	
 }

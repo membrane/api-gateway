@@ -32,6 +32,9 @@ public class ByteUtil {
 	private static Log log = LogFactory.getLog(ByteUtil.class.getName());
 
 	public static byte[] readByteArray(InputStream in, int length) throws IOException {
+		if (length < 0)
+			return getByteArrayData(in);
+		
 		byte[] content = new byte[length];
 		int offset = 0;
 		int count = 0;
@@ -41,7 +44,7 @@ public class ByteUtil {
 		return content;
 	}
 
-	public static byte[] getByteArrayData(InputStream stream) throws Exception {
+	public static byte[] getByteArrayData(InputStream stream) throws IOException {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 

@@ -3,8 +3,9 @@ package com.predic8.membrane.core;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import com.predic8.membrane.core.http.Http10Test;
-import com.predic8.membrane.core.http.Http11Test;
+import com.predic8.membrane.integration.Http10Test;
+import com.predic8.membrane.integration.Http11Test;
+import com.predic8.membrane.integration.ProxyRuleTest;
 
 public class IntegrationTests {
 
@@ -14,6 +15,7 @@ public class IntegrationTests {
 		//$JUnit-BEGIN$
 		suite.addTestSuite(Http10Test.class);
 		suite.addTestSuite(Http11Test.class);
+		suite.addTestSuite(ProxyRuleTest.class);
 		//$JUnit-END$
 		return suite;
 	}
