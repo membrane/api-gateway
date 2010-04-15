@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -49,7 +48,7 @@ public class AccessControl extends AbstractXMLElement {
 			throw new IllegalArgumentException("Path can not be null.");
 		
 		for (Service service : services) {
-			if (Pattern.compile(service.getPath()).matcher(path).matches())
+			if (service.matches(path))
 				return service;
 		}
 		throw new IllegalArgumentException("Service not found for given path");

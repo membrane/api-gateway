@@ -62,21 +62,21 @@ public class AccessControlInterceptorTest extends TestCase {
 		
 	}
 	
-//	public void testPathMismatchFile() throws Exception {
-//		setInterceptor(FILE_WITH_PATH_MISMATCH);
-//		HttpClient client = new HttpClient();
-//		
-//		PostMethod post = getBLZRequestMethod();
-//		assertEquals(403, client.executeMethod(post));
-//	}
-//	
-//	public void testClientsMismatchFile() throws Exception {
-//		setInterceptor(FILE_WITH_CLIENT_MISMATCH);
-//		HttpClient client = new HttpClient();
-//		
-//		PostMethod post = getBLZRequestMethod();
-//		assertEquals(403, client.executeMethod(post));
-//	}
+	public void testPathMismatchFile() throws Exception {
+		setInterceptor(FILE_WITH_PATH_MISMATCH);
+		HttpClient client = new HttpClient();
+		
+		PostMethod post = getBLZRequestMethod();
+		assertEquals(403, client.executeMethod(post));
+	}
+	
+	public void testClientsMismatchFile() throws Exception {
+		setInterceptor(FILE_WITH_CLIENT_MISMATCH);
+		HttpClient client = new HttpClient();
+		
+		PostMethod post = getBLZRequestMethod();
+		assertEquals(403, client.executeMethod(post));
+	}
 
 	private void setInterceptor(String fileName) {
 		AccessControlInterceptor interceptor = new AccessControlInterceptor();

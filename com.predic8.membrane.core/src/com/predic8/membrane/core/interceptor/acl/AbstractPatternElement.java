@@ -15,9 +15,6 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.util.regex.Pattern;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-
 import com.predic8.membrane.core.config.AbstractXMLElement;
 
 public abstract class AbstractPatternElement extends AbstractXMLElement {
@@ -26,10 +23,5 @@ public abstract class AbstractPatternElement extends AbstractXMLElement {
 	
 	public boolean matches(String str) {
 		return pattern.matcher(str).matches();
-	}
-	
-	@Override
-	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
-		pattern = Pattern.compile(token.getText());
 	}
 }

@@ -44,7 +44,7 @@ public class AccessControlParserTest extends TestCase {
 	public void testService1() throws Exception {
 		List<Service> services = accessControl.getServices();
 		Service service = services.get(0);
-		assertEquals(PATH_SERVICE_1, service.getPath());
+		assertTrue(service.matches(PATH_SERVICE_1));
 		
 		assertEquals(1, service.getIpAddresses().size());
 		assertEquals(1, service.getHostNames().size());
@@ -56,7 +56,7 @@ public class AccessControlParserTest extends TestCase {
 	public void testService2() throws Exception {
 		List<Service> services = accessControl.getServices();
 		Service service = services.get(1);
-		assertEquals(PATH_SERVICE_2, service.getPath());
+		assertTrue(service.matches(PATH_SERVICE_2));
 		
 		assertEquals(2, service.getIpAddresses().size());
 		assertEquals(3, service.getHostNames().size());
