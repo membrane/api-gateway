@@ -13,13 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import java.util.regex.Pattern;
 
-public class Hostname extends AbstractPatternElement {
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 
-	public static final String ELEMENT_NAME = "hostname";
+import com.predic8.membrane.core.config.AbstractXMLElement;
+
+public abstract class AbstractPatternElement extends AbstractXMLElement {
+
+	protected Pattern pattern;
+	
+	public boolean matches(String str) {
+		return pattern.matcher(str).matches();
+	}
 	
 	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
+	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
+		pattern = Pattern.compile(token.getText());
 	}
 }

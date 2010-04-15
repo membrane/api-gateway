@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.acl;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -29,9 +28,9 @@ public class Service extends AbstractXMLElement {
 	
 	private String path;
 	
-	private List<String> ipAddresses = new ArrayList<String>();
+	private List<Ip> ipAddresses = new ArrayList<Ip>();
 	
-	private List<String> hostNames = new ArrayList<String>();
+	private List<Hostname> hostNames = new ArrayList<Hostname>();
 	
 
 	@Override
@@ -42,9 +41,9 @@ public class Service extends AbstractXMLElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (Ip.ELEMENT_NAME.equals(child)) {
-			ipAddresses.add(((Ip) (new Ip()).parse(token)).getValue());
+			ipAddresses.add(((Ip) (new Ip()).parse(token)));
 		} else if (Hostname.ELEMENT_NAME.equals(child)) {
-			hostNames.add(((Hostname) (new Hostname()).parse(token)).getValue());
+			hostNames.add(((Hostname) (new Hostname()).parse(token)));
 		}
 	}
 	
@@ -61,11 +60,11 @@ public class Service extends AbstractXMLElement {
 		this.path = path;
 	}
 
-	public List<String> getIpAddresses() {
+	public List<Ip> getIpAddresses() {
 		return ipAddresses;
 	}
 
-	public List<String> getHostNames() {
+	public List<Hostname> getHostNames() {
 		return hostNames;
 	}
 	public boolean checkAccess(InetAddress inetAddress) {
@@ -80,8 +79,8 @@ public class Service extends AbstractXMLElement {
 	
 
 	private boolean accessEnabledForHostName(String name) {
-		for (String host : hostNames) {
-			if (Pattern.compile(host).matcher(name).matches())
+		for (Hostname host : hostNames) {
+			if (host.matches(name))
 				return true;
 		}
 		
@@ -89,8 +88,8 @@ public class Service extends AbstractXMLElement {
 	}
 	
 	private boolean accessEnabledForHostAddress(String address) {
-		for (String ipAddress : ipAddresses) {
-			if (Pattern.compile(ipAddress).matcher(address).matches())
+		for (Ip ipAddress : ipAddresses) {
+			if (ipAddress.matches(address))
 				return true;
 		}
 		return false;
