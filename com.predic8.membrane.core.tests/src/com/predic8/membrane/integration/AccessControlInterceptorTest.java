@@ -21,7 +21,6 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 
-import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
 import com.predic8.membrane.core.rules.ForwardingRule;
@@ -42,7 +41,6 @@ public class AccessControlInterceptorTest extends TestCase {
 	protected void setUp() throws Exception {
 		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", "80");
 		router = new HttpRouter();
-		router.getConfigurationManager().setConfiguration(new Configuration());
 		router.getRuleManager().addRuleIfNew(rule);
 		
 		router.getTransport().closeAll();
@@ -59,7 +57,7 @@ public class AccessControlInterceptorTest extends TestCase {
 		
 		HttpClient client = new HttpClient();
 		
-		PostMethod post = getPostMethod();
+		PostMethod post = getBLZRequestMethod();
 		assertEquals(200, client.executeMethod(post));	
 	}
 	
@@ -67,7 +65,7 @@ public class AccessControlInterceptorTest extends TestCase {
 		setInterceptor(FILE_WITH_PATH_MISMATCH);
 		HttpClient client = new HttpClient();
 		
-		PostMethod post = getPostMethod();
+		PostMethod post = getBLZRequestMethod();
 		assertEquals(403, client.executeMethod(post));
 	}
 	
@@ -75,7 +73,7 @@ public class AccessControlInterceptorTest extends TestCase {
 		setInterceptor(FILE_WITH_CLIENT_MISMATCH);
 		HttpClient client = new HttpClient();
 		
-		PostMethod post = getPostMethod();
+		PostMethod post = getBLZRequestMethod();
 		assertEquals(403, client.executeMethod(post));
 	}
 
@@ -86,7 +84,7 @@ public class AccessControlInterceptorTest extends TestCase {
 	}
 	
 	
-	private PostMethod getPostMethod() {
+	private PostMethod getBLZRequestMethod() {
 		PostMethod post = new PostMethod("http://localhost:8000/axis2/services/BLZService");
 		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
 		

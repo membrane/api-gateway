@@ -86,6 +86,10 @@ public class Configuration extends AbstractXMLElement {
 		props.put(ADJ_HOST_HEADER, status);
 	}
 
+	public void setAdjustContentLength(boolean status) {
+		props.put(ADJ_CONT_LENGTH, status);
+	}
+	
 	public boolean getAdjustHostHeader() {
 		if (props.containsKey(ADJ_HOST_HEADER)) {
 			return (Boolean) props.get(ADJ_HOST_HEADER);
@@ -93,6 +97,13 @@ public class Configuration extends AbstractXMLElement {
 		return false;
 	}
 
+	public boolean getAdjustContentLength() {
+		if (props.containsKey(ADJ_CONT_LENGTH)) {
+			return (Boolean) props.get(ADJ_CONT_LENGTH);
+		}
+		return false;
+	}
+	
 	public void setTrackExchange(boolean status) {
 		props.put(TRACK_EXCHANGE, status);
 	}

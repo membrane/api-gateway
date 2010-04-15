@@ -27,15 +27,7 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class ConfigurationManager {
 
-	private Configuration configuration;
-
-	private boolean adjustContentLength;
-
-	private boolean adjustHostHeader;
-
-	private boolean indentMessage;
-
-	private boolean trackExchange;
+	private Configuration configuration = new Configuration();
 
 	private ConfigurationStore configurationStore;
 
@@ -43,10 +35,6 @@ public class ConfigurationManager {
 
 	protected static Log log = LogFactory.getLog(ConfigurationManager.class.getName());
 	
-	public void init() {
-		configuration = getDefaultConfiguration();
-	}
-
 	public void saveConfiguration(String fileName) throws Exception {
 		configuration.setRules(router.getRuleManager().getRules());
 		configurationStore.write(configuration, fileName);
@@ -88,14 +76,6 @@ public class ConfigurationManager {
 		return ((HttpTransport) router.getTransport());
 	}
 
-	public Configuration getDefaultConfiguration() {
-		Configuration config = new Configuration();
-		config.setAdjustHostHeader(adjustHostHeader);
-		config.setTrackExchange(trackExchange);
-		config.setIndentMessage(indentMessage);
-		return config;
-	}
-
 	public Configuration getConfiguration() {
 		return configuration;
 	}
@@ -111,39 +91,7 @@ public class ConfigurationManager {
 	public void setConfigurationStore(ConfigurationStore configurationStore) {
 		this.configurationStore = configurationStore;
 	}
-
-	public boolean isAdjustContentLength() {
-		return adjustContentLength;
-	}
-
-	public void setAdjustContentLength(boolean adjustContentLength) {
-		this.adjustContentLength = adjustContentLength;
-	}
-
-	public boolean isAdjustHostHeader() {
-		return adjustHostHeader;
-	}
-
-	public void setAdjustHostHeader(boolean adjustHostHeader) {
-		this.adjustHostHeader = adjustHostHeader;
-	}
-
-	public boolean isIndentMessage() {
-		return indentMessage;
-	}
-
-	public void setIndentMessage(boolean indentMessage) {
-		this.indentMessage = indentMessage;
-	}
-
-	public boolean isTrackExchange() {
-		return trackExchange;
-	}
-
-	public void setTrackExchange(boolean trackExchange) {
-		this.trackExchange = trackExchange;
-	}
-
+	
 	public String getDefaultConfigurationFile() {
 		return System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml";
 	}

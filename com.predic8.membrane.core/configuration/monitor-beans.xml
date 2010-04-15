@@ -48,15 +48,19 @@
 		class="com.predic8.membrane.core.exchangestore.MemoryExchangeStore" />
 
 
-	<bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager"
-		init-method="init">
+	<bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager">
 		<property name="configurationStore">
 			<bean class="com.predic8.membrane.core.io.ConfigurationFileStore" />
 		</property>
-		<property name="adjustHostHeader" value="true" />
-		<property name="indentMessage" value="true" />
-		<property name="adjustContentLength" value="true" />
-		<property name="trackExchange" value="false" />
+		
+		<property name="configuration">
+			<bean class="com.predic8.membrane.core.Configuration" >
+				<property name="adjustHostHeader" value="true" />
+				<property name="indentMessage" value="true" />
+				<property name="adjustContentLength" value="true" />
+				<property name="trackExchange" value="false" />
+			</bean>
+		</property>
 	</bean>
 
 	<bean id="roundRobinBalancer"

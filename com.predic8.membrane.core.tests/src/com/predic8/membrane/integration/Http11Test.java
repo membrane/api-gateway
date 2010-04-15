@@ -23,7 +23,6 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
@@ -38,7 +37,6 @@ public class Http11Test extends TestCase {
 	public void setUp() throws Exception {
 		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", "80");
 		router = new HttpRouter();
-		router.getConfigurationManager().setConfiguration(new Configuration());
 		router.getRuleManager().addRuleIfNew(rule);
 		
 		router.getTransport().openPort(4000);

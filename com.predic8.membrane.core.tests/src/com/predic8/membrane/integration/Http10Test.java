@@ -42,7 +42,6 @@ public class Http10Test extends TestCase {
 		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", "80");
 		
 		router = new HttpRouter();
-		router.getConfigurationManager().setConfiguration(new Configuration());
 		router.getRuleManager().addRuleIfNew(rule);
 		
 		router.getTransport().openPort(3000);

@@ -36,7 +36,6 @@ public class ViaProxyTest extends TestCase {
 	@Before
 	public void setUp() throws Exception {
 		HttpRouter proxy = new HttpRouter();
-		proxy.getConfigurationManager().setConfiguration(new Configuration());
 		
 		proxy.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 		proxy.getTransport().openPort(3128);
