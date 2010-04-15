@@ -120,13 +120,13 @@
 	</bean>
 
 	<!-- 
-		This interceptor controls service access. Only authorized clients can have an access to services.
-		Mapping of public available services and clients is specified in file with XML format.
-		Value of aclFilename property denotes local full qualified path to mapping file.    
+		Interceptor for access control. Only authorized clients can access services.
+		Mapping of public available services and clients is specified in XML file.
+		Value of aclFilename property is path to mapping file.    
 	 -->
-	<bean id="aclAccessControl"
+	<bean id="accessControlInterceptor"
 		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
-		<property name="displayName" value="control interceptor" />
+		<property name="displayName" value="Access Control List Interceptor" />
 		<property name="aclFilename" value="C:\temp\acl.xml" />
 	</bean>
 
