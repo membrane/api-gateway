@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.acl;
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
@@ -38,7 +39,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 
-		if (!serviceEnabled(service, (HttpExchange) exc)) {
+		if (!service.checkAccess(getInetAddress((HttpExchange) exc))) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
@@ -51,8 +52,8 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		exc.setResponse(getResponse("Access denied: you are not authorized to access this service."));
 	}
 
-	private boolean serviceEnabled(Service service, HttpExchange exc) {
-		return service.checkAccess(exc.getServerThread().getSourceSocket().getInetAddress());
+	private InetAddress getInetAddress(HttpExchange exc) {
+		return exc.getServerThread().getSourceSocket().getInetAddress();
 	}
 
 	public void setAclFilename(String aclFilename) {
