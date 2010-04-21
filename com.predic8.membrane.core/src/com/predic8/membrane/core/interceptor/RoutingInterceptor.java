@@ -19,7 +19,6 @@ import java.util.StringTokenizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Response;
@@ -36,8 +35,6 @@ public class RoutingInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(RoutingInterceptor.class.getName());
 
 	private boolean xForwardedForEnabled = true;
-
-	private RuleManager ruleManager;
 
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (!(exc instanceof HttpExchange))
@@ -72,7 +69,7 @@ public class RoutingInterceptor extends AbstractInterceptor {
 
 	private Rule getRule(HttpExchange exc) {
 		ForwardingRuleKey key = new ForwardingRuleKey(getHostname(exc), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
-		Rule rule = ruleManager.getMatchingRule(key);
+		Rule rule = router.getRuleManager().getMatchingRule(key);
 		if (rule != null) {
 			log.debug("Matching Rule found for RuleKey " + key);
 			return rule;
@@ -82,7 +79,7 @@ public class RoutingInterceptor extends AbstractInterceptor {
 	}
 
 	private Rule findProxyRule(HttpExchange exc) {
-		for (Rule rule : ruleManager.getRules()) {
+		for (Rule rule : router.getRuleManager().getRules()) {
 			if (!(rule instanceof ProxyRule))
 				continue;
 
@@ -134,14 +131,6 @@ public class RoutingInterceptor extends AbstractInterceptor {
 
 	public void setxForwardedForEnabled(boolean xForwardedForEnabled) {
 		this.xForwardedForEnabled = xForwardedForEnabled;
-	}
-
-	public RuleManager getRuleManager() {
-		return ruleManager;
-	}
-
-	public void setRuleManager(RuleManager ruleManager) {
-		this.ruleManager = ruleManager;
 	}
 
 }

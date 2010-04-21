@@ -29,7 +29,7 @@ public interface ExchangeStore {
 	
 	public void removeExchangesViewListener(IExchangesStoreListener viewer);	
 	
-	public void refreshAllTreeViewers();
+	public void refreshExchangeStoreViewers();
 	
 	public void notifyListenersOnExchangeAdd(Rule rule, Exchange exchange);
 	

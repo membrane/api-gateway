@@ -119,7 +119,11 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 		}
 
 		if (ruleKey.equals(rule.getKey())) {
-			updateRule(ruleKey, false);
+			try {
+				updateRule(ruleKey, false);
+			} catch (IOException e) {
+				openErrorDialog("Can not open port. Please check again");
+			}
 			getRuleManager().ruleChanged(rule);
 			return;
 		}
@@ -147,7 +151,11 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 				openErrorDialog("Failed to close the obsolete port: " + rule.getKey().getPort());
 			}
 		}
-		updateRule(ruleKey, true);
+		try {
+			updateRule(ruleKey, true);
+		} catch (IOException e) {
+			openErrorDialog("Can not open port. Please check again");
+		}
 		getRuleManager().ruleChanged(rule);
 
 	}
@@ -160,7 +168,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 		return ((HttpTransport) Router.getInstance().getTransport());
 	}
 
-	private void updateRule(ForwardingRuleKey ruleKey, boolean addToManager) {
+	private void updateRule(ForwardingRuleKey ruleKey, boolean addToManager) throws IOException {
 		rule.setName(generalInfoComposite.getRuleName());
 		rule.setKey(ruleKey);
 		if (addToManager) {

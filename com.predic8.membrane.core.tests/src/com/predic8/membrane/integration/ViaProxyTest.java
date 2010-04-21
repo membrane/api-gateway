@@ -38,7 +38,6 @@ public class ViaProxyTest extends TestCase {
 		HttpRouter proxy = new HttpRouter();
 		
 		proxy.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
-		proxy.getTransport().openPort(3128);
 		
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", "80"));
@@ -49,7 +48,6 @@ public class ViaProxyTest extends TestCase {
 		config.setProxyPort("3128");
 		
 		router.getConfigurationManager().setConfiguration(config);
-		router.getTransport().openPort(4000);
 	}
 	
 	@Test

@@ -18,9 +18,6 @@ import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 
 public class RouterCLI {
 
@@ -60,15 +57,15 @@ public class RouterCLI {
 		if (line.hasOption('c')) {
 			return line.getOptionValue('c');
 		} else {
-			return System.getenv("MEMROUTER_HOME") + "/conf/rules.xml";
+			return System.getenv("MEMROUTER_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "rules.xml";
 		}
 	}
 
-	private static Resource getConfig(CommandLine line) {
+	private static String getConfig(CommandLine line) {
 		if (line.hasOption('b')) {
-			return new FileSystemResource(line.getOptionValue('b'));
+			return "file:" + line.getOptionValue('b');
 		}
-		return new ClassPathResource("monitor-beans.xml");
+		return "conf"  + System.getProperty("file.separator") + "monitor-beans.xml";
 	}
 
 	private static Options getOptions() {

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -24,16 +25,16 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class RuleManager {
 
-	private ExchangeStore exchangeStore = new ForgetfulExchangeStore();
-	
+	private Router router;
+
 	private List<Rule> rules = new Vector<Rule>();
 	private Set<IRuleChangeListener> listeners = new HashSet<IRuleChangeListener>();
 
@@ -92,17 +93,18 @@ public class RuleManager {
 		return false;
 	}
 	
-	public synchronized void addRuleIfNew(Rule rule) {
+	public synchronized void addRuleIfNew(Rule rule) throws IOException {
 		if (exists(rule.getKey()))
 			return;
 		
 		rules.add(rule);
 
+		((HttpTransport)router.getTransport()).openPort(rule.getKey().getPort());
+		
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleAdded(rule);
 		}
-
-		exchangeStore.notifyListenersOnRuleAdd(rule);
+		getExchangeStore().notifyListenersOnRuleAdd(rule);
 	}
 
 	public boolean exists(RuleKey key) {
@@ -149,7 +151,7 @@ public class RuleManager {
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleUpdated(rule);
 		}
-		exchangeStore.refreshAllTreeViewers();
+		getExchangeStore().refreshExchangeStoreViewers();
 	}
 
 	public Rule getMatchingRule(RuleKey ruleKey) {
@@ -190,23 +192,23 @@ public class RuleManager {
 	}
 
 	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
-		exchangeStore.addExchangesViewListener(viewer);
+		getExchangeStore().addExchangesViewListener(viewer);
 
 	}
 
 	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
-		exchangeStore.removeExchangesViewListener(viewer);
+		getExchangeStore().removeExchangesViewListener(viewer);
 	}
 
 	public synchronized void removeRule(Rule rule) {
-		exchangeStore.removeAllExchanges(rule);
+		getExchangeStore().removeAllExchanges(rule);
 		rules.remove(rule);
 
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleRemoved(rule);
 		}
 
-		exchangeStore.notifyListenersOnRuleRemoval(rule, rules.size());
+		getExchangeStore().notifyListenersOnRuleRemoval(rule, rules.size());
 
 	}
 
@@ -229,9 +231,12 @@ public class RuleManager {
 		return rules.size();
 	}
 
-	public void setExchangeStore(ExchangeStore exchangeStore) {
-		this.exchangeStore = exchangeStore;
+	public void setRouter(Router router) {
+		this.router = router;
 	}
 
+	private ExchangeStore getExchangeStore() {
+		return router.getExchangeStore();
+	}
 	
 }

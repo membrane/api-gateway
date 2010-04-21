@@ -110,7 +110,6 @@ public class ProxyRuleConfigurationPage extends AbstractRuleWizardPage {
 		}
 
 		getRuleManager().addRuleIfNew(new ProxyRule(key));
-		getHttpTransport().openPort(key.getPort());
 		return true;
 	}
 

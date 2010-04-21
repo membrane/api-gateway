@@ -4,6 +4,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
@@ -11,9 +12,11 @@ public class AbstractInterceptor extends AbstractXMLElement implements Intercept
 
 	public static final String ELEMENT_NAME = "interceptor";
 	
-	private String name = this.getClass().getName();
+	protected String name = this.getClass().getName();
 	
-	private String id;
+	protected String id;
+	
+	protected Router router;
 	
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return Outcome.CONTINUE;
@@ -61,4 +64,9 @@ public class AbstractInterceptor extends AbstractXMLElement implements Intercept
 		this.id = id;
 	}
 
+	public void setRouter(Router router) {
+		this.router = router;
+	}
+
+	
 }

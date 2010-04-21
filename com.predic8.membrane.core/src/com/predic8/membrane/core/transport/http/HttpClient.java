@@ -58,13 +58,6 @@ public class HttpClient {
 		if (!useProxy()) {
 			if ((host.equals(socket.getInetAddress().getHostName()) || host.equals(socket.getInetAddress().getHostAddress())) && port == socket.getPort()) {
 				return true;
-			} else {
-				System.out.println("*****************************");
-				System.out.println("host: " + host);
-				System.out.println("port: " + port);
-				System.out.println("innetaddress: " + socket.getInetAddress().getHostAddress());
-				System.out.println("socket port: " + socket.getPort());
-				System.out.println("*****************************");
 			}
 		} else {
 			if (getProxyHost().equals(socket.getInetAddress().getHostName()) && getProxyPort() == socket.getPort())
@@ -264,5 +257,9 @@ public class HttpClient {
 
 	public void setRouter(Router router) {
 		this.router = router;
+	}
+	
+	public Socket getSocket() {
+		return socket;
 	}
 }

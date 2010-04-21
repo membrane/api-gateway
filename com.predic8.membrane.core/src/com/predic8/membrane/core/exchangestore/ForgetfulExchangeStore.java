@@ -65,7 +65,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	
-	public void refreshAllTreeViewers() {
+	public void refreshExchangeStoreViewers() {
 		
 	}
 

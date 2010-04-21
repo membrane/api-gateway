@@ -87,7 +87,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 		
 		Session session = new Session(targetHost, targetPort);
-		session.getDatabase("memnbrane");
+		session.getDatabase("membrane");
 		
 		
 		//doCall(buffer.toString());
@@ -102,7 +102,6 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 		try {
 			Response resp = client.call(exchange);
-			System.err.println("Status code of DB response: " + resp.getStatusCode());
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}

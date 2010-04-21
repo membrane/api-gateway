@@ -130,7 +130,7 @@ public class HttpServerThread extends AbstractHttpThread {
 			try {
 				targetRes = client.call(exchange);
 			} catch (ConnectException e) {
-				targetRes = HttpUtil.createErrorResponse("Target is not reachable.");
+				targetRes = HttpUtil.createErrorResponse("Target " + client.getSocket().getInetAddress().getHostName() +  " on port " + client.getSocket().getPort() +  " is not reachable.");
 			}
 			exchange.setResponse(targetRes);
 			

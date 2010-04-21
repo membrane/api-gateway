@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
 	<!--
 		Copyright 2009 predic8 GmbH, www.predic8.com Licensed under the Apache
 		License, Version 2.0 (the "License"); you may not use this file except
@@ -11,10 +10,14 @@
 		the specific language governing permissions and limitations under the
 		License.
 	-->
-<beans>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+	
+	<context:annotation-config />
 
 	<bean id="router" class="com.predic8.membrane.core.Router">
-		<property name="ruleManager" ref="ruleManager" />
+		<property name="ruleManager">
+			<bean class="com.predic8.membrane.core.RuleManager" />
+		</property>
 		<property name="transport" ref="transport" />
 		<property name="exchangeStore" ref="exchangeStore" />
 		<property name="configurationManager" ref="configurationManager" />
@@ -23,9 +26,7 @@
 	<bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
 		<property name="interceptors">
 			<list>
-				<bean class="com.predic8.membrane.core.interceptor.RoutingInterceptor">
-					<property name="ruleManager" ref="ruleManager" />
-				</bean>
+				<bean class="com.predic8.membrane.core.interceptor.RoutingInterceptor" />
 
 				<bean
 					class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">
@@ -40,10 +41,6 @@
 		</property>
 	</bean>
 
-	<bean id="ruleManager" class="com.predic8.membrane.core.RuleManager">
-		<property name="exchangeStore" ref="exchangeStore" />
-	</bean>
-
 	<bean id="exchangeStore"
 		class="com.predic8.membrane.core.exchangestore.MemoryExchangeStore" />
 
@@ -52,9 +49,9 @@
 		<property name="configurationStore">
 			<bean class="com.predic8.membrane.core.io.ConfigurationFileStore" />
 		</property>
-		
+
 		<property name="configuration">
-			<bean class="com.predic8.membrane.core.Configuration" >
+			<bean class="com.predic8.membrane.core.Configuration">
 				<property name="adjustHostHeader" value="true" />
 				<property name="indentMessage" value="true" />
 				<property name="adjustContentLength" value="true" />
@@ -123,11 +120,12 @@
 		<property name="targetPort" value="5984" />
 	</bean>
 
-	<!-- 
-		Interceptor for access control. Only authorized clients can access services.
-		Mapping of public available services and clients is specified in XML file.
-		Value of aclFilename property is path to mapping file.    
-	 -->
+	<!--
+		Interceptor for access control. Only authorized clients can access
+		services. Mapping of public available services and clients is
+		specified in XML file. Value of aclFilename property is path to
+		mapping file.
+	-->
 	<bean id="accessControlInterceptor"
 		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
 		<property name="displayName" value="Access Control List Interceptor" />

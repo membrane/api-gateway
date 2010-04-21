@@ -128,7 +128,6 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 		
 		
 		wizard.createForwardingRule(ruleKey);
-		((HttpTransport) Router.getInstance().getTransport()).openPort(ruleKey.getPort());
 		return true;
 	}
 	

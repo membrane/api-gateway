@@ -21,11 +21,10 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.xml.XmlBeanFactory;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.Transport;
 
@@ -33,7 +32,7 @@ public class Router {
 
 	protected RuleManager ruleManager;
 
-	protected ExchangeStore exchangeStore;
+	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
 
 	protected Transport transport;
 
@@ -41,34 +40,31 @@ public class Router {
 
 	protected static Router router;
 
-	protected static XmlBeanFactory beanFactory;
+	protected static FileSystemXmlApplicationContext beanFactory;
 
 	protected static Log log = LogFactory.getLog(Router.class.getName());
 
 	
 	public static Router init(String configFileName) throws MalformedURLException {
 		log.debug("loading spring config from classpath: " + configFileName);
-		return init(new ClassPathResource(configFileName));
-	}
-
-	public static Router init(String configFileName, ClassLoader loader) throws MalformedURLException {
-		log.debug("loading spring config from classpath: " + configFileName);
-		return init(new ClassPathResource(configFileName), loader);
+		return init(configFileName, Router.class.getClassLoader());
 	}
 	
-	public static Router init(Resource resource, ClassLoader classLoader) {
+	public static Router init(String resource, ClassLoader classLoader) {
 		log.debug("loading spring config: " + resource);
-		beanFactory = new XmlBeanFactory(resource);
-		beanFactory.setBeanClassLoader(classLoader);
+		try {
+			beanFactory = new FileSystemXmlApplicationContext(   new String[] { resource }, false );
+		} catch (Error e) {
+			e.printStackTrace();
+		}
+		beanFactory.setClassLoader(classLoader);
+		beanFactory.refresh();
+		
 		router = (Router) beanFactory.getBean("router");
 		router.configurationManager.setRouter(router); 
 		return router; 
 	}
-	
-	public static Router init(Resource resource) {
-		return init(resource, Router.class.getClassLoader());
-	}
-	
+		
 	public static Router getInstance() {
 		return router;
 	}
@@ -79,6 +75,7 @@ public class Router {
 
 	public void setRuleManager(RuleManager ruleManager) {
 		this.ruleManager = ruleManager;
+		ruleManager.setRouter(this);
 	}
 
 	public ExchangeStore getExchangeStore() {

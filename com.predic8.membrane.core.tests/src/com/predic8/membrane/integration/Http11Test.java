@@ -38,8 +38,6 @@ public class Http11Test extends TestCase {
 		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", "80");
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
-		
-		router.getTransport().openPort(4000);
 	}
 	
 	@Override

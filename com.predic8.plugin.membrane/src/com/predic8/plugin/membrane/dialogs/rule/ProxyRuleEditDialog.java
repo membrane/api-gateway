@@ -123,7 +123,12 @@ public class ProxyRuleEditDialog extends RuleEditDialog {
 		rule.setName(generalInfoComposite.getRuleName());
 		rule.setKey(key);
 		rule.setInterceptors(interceptorsComposite.getInterceptors());
-		getRuleManager().addRuleIfNew(rule);
+		try {
+			getRuleManager().addRuleIfNew(rule);
+		} catch (IOException e) {
+			openErrorDialog("Can not open port. Please check again");
+			return;
+		}
 		getRuleManager().ruleChanged(rule);
 
 	}

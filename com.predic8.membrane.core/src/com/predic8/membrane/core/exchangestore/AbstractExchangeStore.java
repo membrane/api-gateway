@@ -33,7 +33,7 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		exchangesStoreListeners.remove(viewer);
 	}
 	
-	public void refreshAllTreeViewers(){
+	public void refreshExchangeStoreViewers(){
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			listener.refresh();
 		}

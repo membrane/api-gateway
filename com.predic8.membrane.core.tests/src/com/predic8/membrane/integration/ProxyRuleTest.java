@@ -33,7 +33,6 @@ public class ProxyRuleTest extends TestCase {
 	public void setUp() throws Exception {
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
-		router.getTransport().openPort(3128);
 	}
 	
 	@Override

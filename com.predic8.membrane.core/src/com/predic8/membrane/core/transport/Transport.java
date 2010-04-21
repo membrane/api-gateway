@@ -17,6 +17,12 @@ public class Transport {
 
 	private Router router;
 	
+	private void setRouterForInterceptors() {
+		for (Interceptor interceptor : interceptors) {
+			interceptor.setRouter(router);
+		}
+	}
+	
 	public void addMenuViewerListener(IPortChangeListener mViewer) {
 		menuListeners.add(mViewer);
 	
@@ -37,6 +43,7 @@ public class Transport {
 
 	public void setRouter(Router router) {
 		this.router = router;
+		setRouterForInterceptors();
 	}
 	
 	public Router getRouter() {

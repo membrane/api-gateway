@@ -61,7 +61,7 @@ public class AddRuleWizard extends Wizard {
 		}
 	}
 
-	void createForwardingRule(ForwardingRuleKey ruleKey) {
+	void createForwardingRule(ForwardingRuleKey ruleKey) throws IOException {
 		ForwardingRule rule = new ForwardingRule();
 		rule.setTargetHost(targetHostConfigPage.getTargetHost());
 		rule.setTargetPort(targetHostConfigPage.getTargetPort());
@@ -128,7 +128,6 @@ public class AddRuleWizard extends Wizard {
 	
 	void addRule() throws IOException {
 		createForwardingRule(getRuleKey());
-		getHttpTransport().openPort(getRuleKey().getPort());
 	}
 
 }

@@ -42,9 +42,6 @@ public class AccessControlInterceptorTest extends TestCase {
 		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", "80");
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
-		
-		router.getTransport().closeAll();
-		router.getTransport().openPort(8000);
 	}
 	
 	@Override

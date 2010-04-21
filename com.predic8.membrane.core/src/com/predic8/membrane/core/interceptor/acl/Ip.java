@@ -13,10 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import java.util.regex.Pattern;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 
 
 public class Ip extends AbstractPatternElement {
@@ -28,8 +24,4 @@ public class Ip extends AbstractPatternElement {
 		return ELEMENT_NAME;
 	}
 	
-	@Override
-	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
-		pattern = Pattern.compile(token.getText());
-	}
 }

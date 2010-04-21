@@ -26,13 +26,15 @@ public class HttpRouter extends Router {
 
 	public HttpRouter() {
 		ruleManager = new RuleManager();
+		ruleManager.setRouter(this);
 		exchangeStore = new ForgetfulExchangeStore();
 		transport = new HttpTransport();
 		transport.setRouter(this);
 		configurationManager = new ConfigurationManager();
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
 		RoutingInterceptor routingeInterceptor = new RoutingInterceptor();
-		routingeInterceptor.setRuleManager(ruleManager);
+		routingeInterceptor.setRouter(this);
+		//routingeInterceptor.setRuleManager(ruleManager);
 		interceptors.add(routingeInterceptor);
 		
 		transport.setInterceptors(interceptors);

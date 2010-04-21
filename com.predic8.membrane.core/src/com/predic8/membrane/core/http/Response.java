@@ -117,7 +117,7 @@ public class Response extends Message {
 	}
 
 	public boolean isServerError() {
-		return statusCode > 500;
+		return statusCode >= 500;
 	}
 
 	public static Response createOKResponse() {

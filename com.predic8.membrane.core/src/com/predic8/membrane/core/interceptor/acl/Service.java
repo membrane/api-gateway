@@ -48,6 +48,16 @@ public class Service extends AbstractPatternElement {
 		pattern = Pattern.compile(token.getAttributeValue("", "path"));
 	}
 	
+	/*
+	 * Must be overriden because implementation of super class will reset pattern field
+	 * (non-Javadoc)
+	 * @see com.predic8.membrane.core.interceptor.acl.AbstractPatternElement#parseCharacters(javax.xml.stream.XMLStreamReader)
+	 */
+	@Override
+	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
+		
+	} 
+	
 	public List<Ip> getIpAddresses() {
 		return ipAddresses;
 	}

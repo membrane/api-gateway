@@ -25,7 +25,6 @@ import org.apache.http.params.HttpProtocolParams;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
@@ -43,8 +42,6 @@ public class Http10Test extends TestCase {
 		
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
-		
-		router.getTransport().openPort(3000);
 	}
 	
 	@Override
