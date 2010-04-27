@@ -56,6 +56,7 @@ public class HttpServerThread extends AbstractHttpThread {
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
 				exchange.setTimeReqReceived(System.currentTimeMillis());
+				
 				process();
 				if (srcReq.isCONNECTRequest()) {
 					log.debug("stopping HTTP Server Thread after establishing an HTTP connect");

@@ -69,7 +69,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 		appendToBuffer(buffer, METHOD, exc.getRequest().getMethod());
 		
-		appendToBuffer(buffer, PATH, exc.getRequestUri());
+		appendToBuffer(buffer, PATH, exc.getOriginalRequestUri());
 		
 		appendToBuffer(buffer, CLIENT, (String) exc.getProperty(HttpTransport.SOURCE_HOSTNAME));
 		
@@ -97,7 +97,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		exchange.setRequest(createRequest(buffer));
 		
 		exchange.setProperty(HttpTransport.HEADER_HOST, exchange.getRequest().getHeader().getHost());
-		exchange.setRequestUri(exchange.getRequest().getUri());
+		exchange.setOriginalRequestUri(exchange.getRequest().getUri());
 		exchange.getRequest().getHeader().setHost(((ForwardingRule) exchange.getRule()).getTargetHost() + ":" + ((ForwardingRule) exchange.getRule()).getTargetPort());
 		
 		try {

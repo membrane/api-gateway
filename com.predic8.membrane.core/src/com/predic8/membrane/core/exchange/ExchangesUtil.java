@@ -15,11 +15,11 @@ public class ExchangesUtil {
 					return exc.getRequest().getHeader().getHost();
 				}
 				
-				return new URL(exc.getRequestUri()).getHost();
+				return new URL(exc.getOriginalRequestUri()).getHost();
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			}
-			return exc.getRequestUri();
+			return exc.getOriginalRequestUri();
 		}
 		if (exc.getRule() instanceof ForwardingRule) {
 			return ((ForwardingRule) exc.getRule()).getTargetHost();

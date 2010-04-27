@@ -16,11 +16,14 @@ package com.predic8.membrane.core.exchange;
 
 import java.util.HashMap;
 
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.AbstractHttpThread;
 
 public class HttpExchange extends Exchange {
 	
 	private AbstractHttpThread serverThread;
+	
+	private String originalHostHeader = "";
 	
 	public HttpExchange() {
 		
@@ -41,6 +44,26 @@ public class HttpExchange extends Exchange {
 
 	public void setServerThread(AbstractHttpThread serverThread) {
 		this.serverThread = serverThread;
+	}
+	
+	public String getOriginalHostHeaderHost() {
+		return originalHostHeader.replaceFirst(":.*", "");
+	}
+	
+	public String getOriginalHostHeaderPort() {
+		return originalHostHeader.replaceFirst(".*:", "");
+	}
+	
+	public void setOriginalHostHeader(String hostHeader) {
+		originalHostHeader = hostHeader;
+	}
+	
+	@Override
+	public void setRequest(Request req) {
+		// TODO Auto-generated method stub
+		super.setRequest(req);
+		setOriginalHostHeader(req.getHeader().getHost());
+		setOriginalRequestUri(req.getUri());
 	}
 	
 }

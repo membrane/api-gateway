@@ -15,7 +15,7 @@ public class ByThreadStrategy implements DispatchingStrategy {
 	private int retryTimeOnBusy = 1000;
 
 	public void done(Exchange exc) {
-		String endPoint = exc.getRequestUri();
+		String endPoint = exc.getOriginalRequestUri();
 		if (endpointCount.containsKey(endPoint)) {
 			Integer counter = endpointCount.get(endPoint);
 			counter--;

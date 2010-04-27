@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.util.StringTokenizer;
+import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,39 +36,42 @@ public class RoutingInterceptor extends AbstractInterceptor {
 
 	private boolean xForwardedForEnabled = true;
 
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (!(exc instanceof HttpExchange))
+	public Outcome handleRequest(Exchange aExc) throws Exception {
+		if (!(aExc instanceof HttpExchange))
 			throw new RuntimeException("RoutingInterceptor accepts only HttpExchange objects");
 
-		HttpExchange httpExc = (HttpExchange) exc;
+		HttpExchange exc = (HttpExchange) aExc;
 
-		Rule rule = getRule(httpExc);
-		httpExc.setRule(rule);
+		Rule rule = getRule(exc);
+		exc.setRule(rule);
+		
 		if (rule instanceof NullRule) {
-			httpExc.getRequest().readBody();
-			httpExc.getServerThread().getSourceSocket().shutdownInput();
-			Response res = HttpUtil.createErrorResponse("This request was not accepted by Membrane Monitor. Please correct the request and try again.");
-			httpExc.setResponse(res);
-			res.write(httpExc.getServerThread().getSrcOut());
-			httpExc.getServerThread().getSrcOut().flush();
-
-			httpExc.setTimeResSent(System.currentTimeMillis());
-			httpExc.finishExchange(true, httpExc.getErrorMessage());
+			handleNoRuleFound(exc);
 			return Outcome.ABORT;
 		}
-
-		httpExc.setProperty(HttpTransport.HEADER_HOST, httpExc.getRequest().getHeader().getHost());
-		httpExc.setRequestUri(httpExc.getRequest().getUri());
-		adjustHostHeader(httpExc);
+		
+		adjustHostHeader(exc);
 
 		if (xForwardedForEnabled && (rule instanceof ForwardingRule))
-			insertXForwardedFor(httpExc);
+			insertXForwardedFor(exc);
 
 		return Outcome.CONTINUE;
 	}
 
+	private void handleNoRuleFound(HttpExchange exc) throws IOException {
+		exc.getRequest().readBody();
+		exc.getServerThread().getSourceSocket().shutdownInput();
+		Response res = HttpUtil.createErrorResponse("This request was not accepted by Membrane Monitor. Please correct the request and try again.");
+		exc.setResponse(res);
+		res.write(exc.getServerThread().getSrcOut());
+		exc.getServerThread().getSrcOut().flush();
+
+		exc.setTimeResSent(System.currentTimeMillis());
+		exc.finishExchange(true, exc.getErrorMessage());
+	}
+
 	private Rule getRule(HttpExchange exc) {
-		ForwardingRuleKey key = new ForwardingRuleKey(getHostname(exc), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
+		ForwardingRuleKey key = new ForwardingRuleKey(exc.getOriginalHostHeaderHost(), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
 		Rule rule = router.getRuleManager().getMatchingRule(key);
 		if (rule != null) {
 			log.debug("Matching Rule found for RuleKey " + key);
@@ -103,15 +106,6 @@ public class RoutingInterceptor extends AbstractInterceptor {
 
 	private String getXForwardedFor(Exchange exc) {
 		return exc.getRequest().getHeader().getXForwardedFor();
-	}
-
-	private String getHostname(Exchange exc) {
-		String host = exc.getRequest().getHeader().getHost();
-		StringTokenizer tokenizer = new StringTokenizer(host, ":");
-		if (tokenizer.countTokens() >= 1) {
-			return tokenizer.nextToken();
-		}
-		return host;
 	}
 
 	private void adjustHostHeader(Exchange exc) {

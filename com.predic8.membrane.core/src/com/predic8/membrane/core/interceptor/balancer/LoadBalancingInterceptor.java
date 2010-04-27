@@ -22,7 +22,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		exc.setRequestUri(dispatchingStrategy.dispatch(this));
+		exc.setOriginalRequestUri(dispatchingStrategy.dispatch(this));
 		return Outcome.CONTINUE;
 	}
 

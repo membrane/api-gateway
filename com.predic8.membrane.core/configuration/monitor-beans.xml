@@ -33,7 +33,11 @@
 					<property name="exchangeStore" ref="exchangeStore" />
 				</bean>
 
-				<bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor" />
+				<bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor">
+					<property name="host" value="abc"/>
+					<property name="protocol" value="https"/>
+					<property name="port" value="" />
+				</bean>
 				<!-- 
 				
 				 -->

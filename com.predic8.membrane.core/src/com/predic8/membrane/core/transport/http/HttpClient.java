@@ -126,7 +126,7 @@ public class HttpClient {
 			return;
 		}
 
-		log.debug("PROXY: " + exc.getRequestUri());
+		log.debug("PROXY: " + exc.getOriginalRequestUri());
 
 		if (exc.getRequest().isCONNECTRequest()) {
 			String[] uriParts = HttpUtil.splitConnectUri(exc.getRequest().getUri());
@@ -134,7 +134,7 @@ public class HttpClient {
 			return;
 		}
 
-		URL url = new URL(exc.getRequestUri());
+		URL url = new URL(exc.getOriginalRequestUri());
 
 		// TODO move to ProxyInterceptor ????
 		exc.getRequest().getHeader().setHost(url.getHost());
@@ -175,7 +175,9 @@ public class HttpClient {
 				return doCall(exc);
 			} catch (ConnectException ce) {
 				exception = ce;
-				log.debug("Connection to " + socket.getInetAddress().getHostName() + " on port " + socket.getPort() + " refused.");
+				log.debug(ce);
+				if (socket != null)
+					log.debug("Connection to " + socket.getInetAddress().getHostName() + " on port " + socket.getPort() + " refused.");
 			} catch (Exception e) {
 				log.debug("try # " + counter + " failed");
 				exc.getRequest().writeStartLine(System.out);

@@ -21,9 +21,9 @@ public class ServerExchangeAccessor implements ExchangeAccessor {
 	public static final String ID = "Server";
 	
 	public Object get(Exchange exc) {
-		if (exc == null || exc.getRequestUri() == null)
+		if (exc == null || exc.getOriginalRequestUri() == null)
 			return "";
-		return exc.getRequestUri();
+		return exc.getOriginalRequestUri();
 	}
 
 	public String getId() {

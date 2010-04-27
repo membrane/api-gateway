@@ -53,7 +53,7 @@ public class CouchDBTest extends TestCase {
 		exchange.setRequest(createRequest("http://" + targetHost + ":" + targetPort + "/tblmembrane/", null));
 		
 		exchange.setProperty(HttpTransport.HEADER_HOST, exchange.getRequest().getHeader().getHost());
-		exchange.setRequestUri(exchange.getRequest().getUri());
+		exchange.setOriginalRequestUri(exchange.getRequest().getUri());
 		exchange.getRequest().getHeader().setHost(((ForwardingRule) exchange.getRule()).getTargetHost() + ":" + ((ForwardingRule) exchange.getRule()).getTargetPort());
 		
 		try {
@@ -73,7 +73,7 @@ public class CouchDBTest extends TestCase {
 		exchange.setRequest(createRequest("http://" + targetHost + ":" + targetPort + "/tblmembrane/" + currentId, "{\"alpha\":\"thomas\"}"));
 		
 		exchange.setProperty(HttpTransport.HEADER_HOST, exchange.getRequest().getHeader().getHost());
-		exchange.setRequestUri(exchange.getRequest().getUri());
+		exchange.setOriginalRequestUri(exchange.getRequest().getUri());
 		exchange.getRequest().getHeader().setHost(((ForwardingRule) exchange.getRule()).getTargetHost() + ":" + ((ForwardingRule) exchange.getRule()).getTargetPort());
 		
 		try {

@@ -26,4 +26,14 @@ public class Constants {
 	
 	public static final String N_A = "N/A";
 	
+	public static final String HTTP_VERSION_11 = "1.1";
+	
+	public static final String HTTP_VERSION_10 = "1.0";
+	
+	public static final String WSDL_SOAP11_NS = "http://schemas.xmlsoap.org/wsdl/soap/";
+	public static final String WSDL_SOAP12_NS = "http://schemas.xmlsoap.org/wsdl/soap12/";
+	public static final String WSDL_HTTP_NS = "http://schemas.xmlsoap.org/wsdl/http/";
+	
+	public static final String XSD_NS = "http://www.w3.org/2001/XMLSchema";
+	
 }

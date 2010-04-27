@@ -29,6 +29,8 @@ Export-Package:
  com.predic8.membrane.core.ws.magic,
  com.predic8.membrane.core.ws.relocator,
  javax.activation,
+ javax.xml.stream,
+ javax.xml.stream.events,
  org.apache.commons.cli,
  org.apache.commons.logging,
  org.apache.log4j

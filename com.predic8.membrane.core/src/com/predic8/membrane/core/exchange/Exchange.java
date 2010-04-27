@@ -34,7 +34,7 @@ public class Exchange {
 	private Request request;
 	private Response response;
 	
-	private String requestUri;
+	private String originalRequestUri;
 	
 	private Calendar time = Calendar.getInstance();
 	private String errMessage = "";
@@ -228,12 +228,12 @@ public class Exchange {
 		this.tResReceived = tResReceived;
 	}
 
-	public String getRequestUri() {
-		return requestUri;
+	public String getOriginalRequestUri() {
+		return originalRequestUri;
 	}
 
-	public void setRequestUri(String requestUri) {
-		this.requestUri = requestUri;
+	public void setOriginalRequestUri(String requestUri) {
+		this.originalRequestUri = requestUri;
 	}	
 	
 	public String getServer() {
@@ -243,11 +243,11 @@ public class Exchange {
 					return getRequest().getHeader().getHost();
 				}
 				
-				return new URL(getRequestUri()).getHost();
+				return new URL(getOriginalRequestUri()).getHost();
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
 			}
-			return getRequestUri();
+			return getOriginalRequestUri();
 		}
 		if (getRule() instanceof ForwardingRule) {
 			return ((ForwardingRule) getRule()).getTargetHost();

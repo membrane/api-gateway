@@ -33,7 +33,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Service service;
 		try {
-			service = getAccessControl().getServiceFor(((HttpExchange) exc).getRequestUri());
+			service = getAccessControl().getServiceFor(((HttpExchange) exc).getOriginalRequestUri());
 		} catch (Exception e) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;

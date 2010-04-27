@@ -17,14 +17,15 @@ package com.predic8.membrane.core.interceptor;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
 public class WSDLInterceptor extends AbstractInterceptor {
@@ -33,39 +34,83 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	
 	private String host;
 	
-	public Outcome handleResponse(Exchange exchange) throws Exception {
-		log.debug("handleRequest");
-		if ( exchange.getRule() instanceof ProxyRule ) return  Outcome.CONTINUE;
+	private String protocol;
+	
+	private String port;
+	
+	public Outcome handleResponse(Exchange aExc) throws Exception {
+		log.debug("handleResponse");
 		
-		if (!Request.METHOD_GET.equals(exchange.getRequest().getMethod())) 
+		HttpExchange exc = (HttpExchange)aExc;
+		
+		if ( exc.getRule() instanceof ProxyRule ) return  Outcome.CONTINUE;
+		
+		if (!wasGetRequest(exc)) 
 			return Outcome.CONTINUE;
 		
-		if (exchange.getResponse().getHeader().getContentType() == null) 
+		if (!hasContent(exc)) 
 			return Outcome.CONTINUE;
 		
 		
-		if (!exchange.getResponse().isXML())
+		if (!exc.getResponse().isXML())
 			return Outcome.CONTINUE;
 		
 		log.debug("Changing endpoint address in WSDL");
 			
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		new Relocator(stream, getSourceHost(exchange), exchange.getRule().getKey().getPort() ).relocate(new ByteArrayInputStream(exchange.getResponse().getBody().getContent()));
-		exchange.getResponse().setBodyContent(stream.toByteArray());
+		rewriteWsdl(exc);
 		return Outcome.CONTINUE; 
+	}
+
+
+	private void rewriteWsdl(HttpExchange exc) throws Exception, IOException {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		new Relocator(stream, getLocationProtocol(), getLocationHost(exc), getLocationPort(exc) ).relocate(new ByteArrayInputStream(exc.getResponse().getBody().getContent()));
+		exc.getResponse().setBodyContent(stream.toByteArray());
+	}
+
+
+	private boolean hasContent(Exchange exc) {
+		return exc.getResponse().getHeader().getContentType() != null;
+	}
+
+
+	private boolean wasGetRequest(Exchange exc) {
+		return Request.METHOD_GET.equals(exc.getRequest().getMethod());
+	}
+
+
+	private int getLocationPort(Exchange exc) {
+		if ("".equals(port)) {
+			return -1;
+		}
+		
+		if (port != null)
+			return Integer.parseInt(port);
+		
+		return exc.getRule().getKey().getPort();
 	}
 	
 
-	private String getSourceHost(Exchange exchange) {
+	private String getLocationHost(HttpExchange exc) {
 		if (host != null)
 			return host;
-		log.debug("Host header: "+exchange.getRequest().getHeader().getHost());
-	    String sourcehost = ((String)exchange.getProperty(HttpTransport.HEADER_HOST)).replaceFirst(":.*", "");
-	    log.debug("host " + sourcehost );
-		if (sourcehost == null) {
+		
+	    String locHost =  exc.getOriginalHostHeaderHost();
+	    
+	    log.debug("host " + locHost);
+		
+	    if (locHost == null) {
 			return "localhost";
 		}
-		return sourcehost;
+	    
+		return locHost;
+	}
+	
+	private String getLocationProtocol() {
+		if (protocol != null)
+			return protocol;
+		
+		return "http";
 	}
 
 	public String getHost() {
@@ -73,10 +118,27 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	}
 
 	public void setHost(String host) {
+		log.debug("host property set for WSDL Interceptor: " + host);
 		this.host = host;
 	}
 
+	public String getProtocol() {
+		return protocol;
+	}
 	
-	
+	public void setProtocol(String protocol) {
+		log.debug("protocol property set for WSDL Interceptor: " + protocol);
+		this.protocol = protocol;
+	}
 
+	public String getPort() {
+		return port;
+	}
+
+	public void setPort(String port) {
+		this.port = port;
+	}
+	
+	
+	
 }
