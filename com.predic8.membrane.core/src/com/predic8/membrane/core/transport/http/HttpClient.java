@@ -200,15 +200,7 @@ public class HttpClient {
 		exc.setTimeReqSent(System.currentTimeMillis());
 
 		if (exc.getRequest().isCONNECTRequest()) {
-			if (useProxy()) {
-				exc.getRequest().write(out);
-				Response response = new Response();
-				response.read(in, false);
-				log.debug("Status code response on CONNECT request: " + response.getStatusCode());
-			}
-			exc.getRequest().setUri(Constants.N_A);
-			new TunnelThread(in, exc.getServerThread().getSrcOut(), "Onward Thread").start();
-			new TunnelThread(exc.getServerThread().getSrcIn(), out, "Backward Thread").start();
+			handleConnectRequest(exc);
 			return Response.createOKResponse();
 		}
 
@@ -228,6 +220,18 @@ public class HttpClient {
 		exc.setReceived();
 		exc.setTimeResReceived(System.currentTimeMillis());
 		return response;
+	}
+
+	private void handleConnectRequest(HttpExchange exc) throws IOException, EndOfStreamException {
+		if (useProxy()) {
+			exc.getRequest().write(out);
+			Response response = new Response();
+			response.read(in, false);
+			log.debug("Status code response on CONNECT request: " + response.getStatusCode());
+		}
+		exc.getRequest().setUri(Constants.N_A);
+		new TunnelThread(in, exc.getServerThread().getSrcOut(), "Onward Thread").start();
+		new TunnelThread(exc.getServerThread().getSrcIn(), out, "Backward Thread").start();
 	}
 
 	private void do100ExpectedHandling(HttpExchange exc, Response response) throws IOException, EndOfStreamException {
