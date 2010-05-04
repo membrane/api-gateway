@@ -115,7 +115,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 			return exchange.getRequest().getUri(); // path
 
 		case 5:
-			return (String) exchange.getProperty(HttpTransport.SOURCE_HOSTNAME); // client
+			return exchange.getSourceHostname(); // client
 
 		case 6:
 			return exchange.getServer();

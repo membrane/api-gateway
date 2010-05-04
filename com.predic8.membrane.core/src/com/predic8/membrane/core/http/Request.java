@@ -50,8 +50,7 @@ public class Request extends Message {
 	String uri;
 
 	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
-		String line = HttpUtil.readLine(in);
-		Matcher matcher = pattern.matcher(line);
+		Matcher matcher = pattern.matcher(HttpUtil.readLine(in));
 		matcher.find();
 		method = matcher.group(1);
 		uri = matcher.group(2);

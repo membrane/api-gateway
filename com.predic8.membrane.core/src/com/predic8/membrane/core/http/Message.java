@@ -89,23 +89,21 @@ public abstract class Message {
 			body = new Body(in, header.getContentLength()); 
 			return;
 		}
-		if (!isKeepAlive()) {			
-			body = new Body(in, header.getContentLength());
-			return;
-		}
 		
 		if (header.isChunked()) {
 			body = new ChunkedBody(in);
 			return;
 		}
 		
-		if (!header.hasContentLength()) {
-			this.write(System.out);
-			
-			log.error("Message has no content length");
-			throw new IOException("Response message has no content length");
+		if (!isKeepAlive()  || header.hasContentLength()) {			
+			body = new Body(in, header.getContentLength());
+			return;
 		}
-		body = new Body(in, header.getContentLength());
+		
+		this.write(System.out);
+		log.error("Message has no content length");
+		throw new IOException("Response message has no content length");
+		
 	}
 
 	abstract protected void parseStartLine(InputStream in) throws IOException, EndOfStreamException;

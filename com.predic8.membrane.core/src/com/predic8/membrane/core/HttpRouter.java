@@ -18,8 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.RoutingInterceptor;
+import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class HttpRouter extends Router {
@@ -32,13 +33,14 @@ public class HttpRouter extends Router {
 		transport.setRouter(this);
 		configurationManager = new ConfigurationManager();
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
-		RoutingInterceptor routingeInterceptor = new RoutingInterceptor();
-		routingeInterceptor.setRouter(this);
-		//routingeInterceptor.setRuleManager(ruleManager);
-		interceptors.add(routingeInterceptor);
+		RuleMatchingInterceptor ruleMatcher = new RuleMatchingInterceptor();
+		ruleMatcher.setRouter(this);
+		
+		interceptors.add(ruleMatcher);
+		
+		interceptors.add(new DispatchingInterceptor());
 		
 		transport.setInterceptors(interceptors);
-		//router = this;
 	}
 	
 	@Override

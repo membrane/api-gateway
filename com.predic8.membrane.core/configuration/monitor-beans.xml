@@ -26,7 +26,9 @@
 	<bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
 		<property name="interceptors">
 			<list>
-				<bean class="com.predic8.membrane.core.interceptor.RoutingInterceptor" />
+				<bean class="com.predic8.membrane.core.interceptor.RuleMatchingInterceptor" />
+
+				<bean class="com.predic8.membrane.core.interceptor.DispatchingInterceptor" />
 
 				<bean
 					class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">

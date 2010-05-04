@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core.exchange;
 
-import java.util.HashMap;
-
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.AbstractHttpThread;
 
@@ -30,7 +28,8 @@ public class HttpExchange extends Exchange {
 	}
 	
 	public HttpExchange(HttpExchange original) {
-		this.properties = new HashMap<String, Object>(original.properties);
+		super(original);
+		originalHostHeader = original.originalHostHeader;
 	}
 	
 	@Override
@@ -60,10 +59,8 @@ public class HttpExchange extends Exchange {
 	
 	@Override
 	public void setRequest(Request req) {
-		// TODO Auto-generated method stub
 		super.setRequest(req);
 		setOriginalHostHeader(req.getHeader().getHost());
-		setOriginalRequestUri(req.getUri());
 	}
 	
 }

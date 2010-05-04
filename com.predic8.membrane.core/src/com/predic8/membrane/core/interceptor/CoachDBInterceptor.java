@@ -2,7 +2,6 @@ package com.predic8.membrane.core.interceptor;
 
 import java.text.SimpleDateFormat;
 
-import com.fourspaces.couchdb.Session;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
@@ -71,7 +70,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 		appendToBuffer(buffer, PATH, exc.getOriginalRequestUri());
 		
-		appendToBuffer(buffer, CLIENT, (String) exc.getProperty(HttpTransport.SOURCE_HOSTNAME));
+		appendToBuffer(buffer, CLIENT, (String) exc.getSourceHostname());
 		
 		appendToBuffer(buffer, SERVER, exc.getServer());
 		
@@ -85,9 +84,9 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 		buffer.append("}");
 		
-		
-		Session session = new Session(targetHost, targetPort);
-		session.getDatabase("membrane");
+//		
+//		Session session = new Session(targetHost, targetPort);
+//		session.getDatabase("membrane");
 		
 		
 		//doCall(buffer.toString());
@@ -102,6 +101,10 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 		try {
 			Response resp = client.call(exchange);
+			if (resp != null) {
+				
+			}
+				
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}

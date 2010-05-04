@@ -14,7 +14,6 @@
 package com.predic8.plugin.membrane.filtering;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class ClientFilter extends AbstractExchangesFilter {
 
@@ -22,7 +21,7 @@ public class ClientFilter extends AbstractExchangesFilter {
 		if (showAll)
 			return true;
 		
-		return displayedItems.contains((String)exc.getProperty(HttpTransport.SOURCE_HOSTNAME));
+		return displayedItems.contains(exc.getSourceHostname());
 	}
 
 }

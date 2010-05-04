@@ -34,9 +34,8 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
+import static com.predic8.membrane.core.util.HttpUtil.*;
 
 public class HttpClient {
 
@@ -115,42 +114,31 @@ public class HttpClient {
 		return getConfiguration().getProxyHost();
 	}
 
-	private void init(HttpExchange exc) throws UnknownHostException, IOException, MalformedURLException {
-		if (exc.getRule() instanceof ForwardingRule) {
-			
-			if (useProxy()) {
-				exc.getRequest().setUri("http://" + ((ForwardingRule) exc.getRule()).getTargetHost() + ":" + ((ForwardingRule) exc.getRule()).getTargetPort() + exc.getRequest().getUri());
-			}
-			
-			openSocketIfNeeded(((ForwardingRule) exc.getRule()).getTargetHost(), ((ForwardingRule) exc.getRule()).getTargetPort());
-			return;
-		}
-
-		log.debug("PROXY: " + exc.getOriginalRequestUri());
-
+	private void init(HttpExchange exc, int destIndex) throws UnknownHostException, IOException, MalformedURLException {
+		String dest = exc.getDestinations().get(destIndex);
+		
+		exc.getRequest().setUri(dest);
+		
 		if (exc.getRequest().isCONNECTRequest()) {
-			String[] uriParts = HttpUtil.splitConnectUri(exc.getRequest().getUri());
-			openSocketIfNeeded(uriParts[0], Integer.parseInt(uriParts[1]));
+			openSocketIfNeeded(getHost(dest), getPort(dest));
 			return;
 		}
 
-		URL url = new URL(exc.getOriginalRequestUri());
-
-		// TODO move to ProxyInterceptor ????
-		exc.getRequest().getHeader().setHost(url.getHost());
-		log.debug("PATH: " + url.getPath());
-
+		
 		if (!useProxy())
-			exc.getRequest().setUri(getPathAndQueryString(url));
+			exc.getRequest().setUri(getPathAndQueryString(dest));
 
-		openSocketIfNeeded(url.getHost(), getTargetPort(url));
+		URL destination = new URL(dest);
+		openSocketIfNeeded(destination.getHost(), getTargetPort(destination));
 
 	}
 
-	private String getPathAndQueryString(URL url) {
+	private String getPathAndQueryString(String dest) throws MalformedURLException {
+		URL url = new URL(dest);
+		
 		String uri = url.getPath();
 		if (url.getQuery() != null) {
-			uri = uri + "?" + url.getQuery();
+			return uri + "?" + url.getQuery();
 		}
 		return uri;
 	}
@@ -170,8 +158,8 @@ public class HttpClient {
 		Exception exception = null;
 		while (counter < MAX_CALL) {
 			try {
-				log.debug("try # " + counter);
-				init(exc);
+				log.debug("try # " + counter + " to " + exc.getDestinations().get(counter % exc.getDestinations().size()));
+				init(exc, counter % exc.getDestinations().size());
 				return doCall(exc);
 			} catch (ConnectException ce) {
 				exception = ce;

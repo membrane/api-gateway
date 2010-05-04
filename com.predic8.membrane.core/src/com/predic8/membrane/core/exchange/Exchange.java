@@ -16,9 +16,11 @@ package com.predic8.membrane.core.exchange;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -57,6 +59,23 @@ public class Exchange {
 	
 	private long tResReceived;
 	
+	private List<String> destinations = new ArrayList<String>();
+	
+
+	private String sourceHostname;
+	
+	private String sourceIp;
+	
+	
+	public Exchange() {
+		
+	}
+	
+	public Exchange(Exchange original) {
+		properties = new HashMap<String, Object>(original.properties);
+		originalRequestUri = original.originalRequestUri;
+	}
+
 	public ExchangeState getStatus() {
 		return status;
 	}
@@ -280,4 +299,26 @@ public class Exchange {
 		}
 		return contentType;
 	}
+	
+	public List<String> getDestinations() {
+		return destinations;
+	}
+
+	public String getSourceHostname() {
+		return sourceHostname;
+	}
+
+	public void setSourceHostname(String sourceHostname) {
+		this.sourceHostname = sourceHostname;
+	}
+
+	public String getSourceIp() {
+		return sourceIp;
+	}
+
+	public void setSourceIp(String sourceIp) {
+		this.sourceIp = sourceIp;
+	}
+	
+	
 }

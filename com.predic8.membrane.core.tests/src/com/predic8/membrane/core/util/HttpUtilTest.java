@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
+import static com.predic8.membrane.core.util.HttpUtil.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,8 +23,6 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
 
 /**
  * @author course
@@ -39,12 +39,21 @@ public class HttpUtilTest extends TestCase {
 		is1 = new ByteArrayInputStream(s1.getBytes());
 	}
 	public void testReadLine() throws IOException, EndOfStreamException {
-		String line = HttpUtil.readLine(is1);
+		String line = readLine(is1);
 		assertEquals("foo", line);
-		line = HttpUtil.readLine(is1);
+		line = readLine(is1);
 		assertEquals("bar", line);
-		line = HttpUtil.readLine(is1);
+		line = readLine(is1);
 		assertEquals("", line);
 	}
 
+	public void testGetHost() throws Exception {
+		assertEquals("predic8.com", getHost("predic8.com:80"));
+	}
+	
+	public void testGetPort() throws Exception {	
+		assertEquals(80, getPort("predic8.com:80"));
+		
+	}
+	
 }

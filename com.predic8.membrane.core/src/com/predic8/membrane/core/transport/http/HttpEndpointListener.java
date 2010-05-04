@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -37,9 +38,11 @@ public class HttpEndpointListener extends Thread {
 
 	public void run() {
 
-		while (serverSocket != null && !serverSocket.isClosed()) {
+		while (serverSocket != null && !serverSocket.isClosed() && transport != null) {
 			try {
 				executorService.execute(new HttpServerThread(new HttpExchange(), serverSocket.accept(), transport));
+			} catch (SocketException e) {
+				executorService.shutdown();
 			} catch (IOException e) {
 				executorService.shutdown();
 				e.printStackTrace();

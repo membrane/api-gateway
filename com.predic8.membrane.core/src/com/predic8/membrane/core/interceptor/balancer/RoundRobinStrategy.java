@@ -5,7 +5,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 public class RoundRobinStrategy implements DispatchingStrategy {
 
-	private int last;
+	private int last = -1;
 	
 	public void done(Exchange exc) {
 		

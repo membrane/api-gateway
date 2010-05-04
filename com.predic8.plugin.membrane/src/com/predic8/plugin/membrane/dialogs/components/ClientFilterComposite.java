@@ -44,7 +44,7 @@ public class ClientFilterComposite extends AbstractFilterComposite {
 			for (Object object : excanges) {
 				try {
 					Exchange exc = (Exchange) object;
-					clients.add(((String) (exc.getProperty(HttpTransport.SOURCE_HOSTNAME))));
+					clients.add(exc.getSourceHostname());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

@@ -133,9 +133,13 @@ public class HttpUtil {
 		return chunks;
 	}
 
-	
-	public static String[] splitConnectUri(String uri) {
-		return uri.split(":");
-	}
 
+	public static String getHost(String hostAndPort) {
+		return hostAndPort.split(":")[0];
+	}
+	
+	public static int getPort(String hostAndPort) {
+		return Integer.parseInt(hostAndPort.split(":")[1]);
+	}
+	
 }

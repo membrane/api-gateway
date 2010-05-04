@@ -35,7 +35,7 @@ public class WSDLInterceptorTest extends TestCase {
 		bodyContent = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/blz-service.wsdl"));
 		
 		exc = new HttpExchange();
-		exc.setRequest(TestUtil.getGetRequest());
+		exc.setRequest(TestUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
 		exc.setResponse(TestUtil.getOKResponse(bodyContent, "text/xml"));
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
 		exc.setRule(getRule());

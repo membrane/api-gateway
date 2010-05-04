@@ -21,14 +21,9 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.predic8.membrane.core.Constants;
 
 public abstract class AbstractBody {
-
-	private Log log = LogFactory.getLog(AbstractBody.class.getName());
 
 	boolean read;
 	

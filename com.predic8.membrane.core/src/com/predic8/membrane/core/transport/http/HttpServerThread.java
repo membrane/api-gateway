@@ -116,11 +116,13 @@ public class HttpServerThread extends AbstractHttpThread {
 	private void process() throws Exception {
 		targetRes = null;
 		try {
-			exchange.setProperty(HttpTransport.SOURCE_HOSTNAME, sourceSocket.getLocalAddress().getHostName());
-			exchange.setProperty(HttpTransport.SOURCE_IP, sourceSocket.getLocalAddress().getHostAddress());
-
+			
+			exchange.setSourceHostname(sourceSocket.getLocalAddress().getHostName());
+			exchange.setSourceIp(sourceSocket.getLocalAddress().getHostAddress());
+			
 			exchange.setRequest(srcReq);
-
+			exchange.setOriginalRequestUri(srcReq.getUri());
+			
 			invokeRequestInterceptors();
 
 			synchronized (exchange.getRequest()) {
@@ -131,7 +133,7 @@ public class HttpServerThread extends AbstractHttpThread {
 			try {
 				targetRes = client.call(exchange);
 			} catch (ConnectException e) {
-				targetRes = HttpUtil.createErrorResponse("Target " + client.getSocket().getInetAddress().getHostName() +  " on port " + client.getSocket().getPort() +  " is not reachable.");
+				targetRes = HttpUtil.createErrorResponse("Target " + exchange.getDestinations().get(0) + " is not reachable.");
 			}
 			exchange.setResponse(targetRes);
 			

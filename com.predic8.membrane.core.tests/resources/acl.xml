@@ -2,7 +2,7 @@
 	<service path="/axis2/*">
 		<clients>
 			<ip>192.168.23.131</ip>
-			<hostname>*.predic8.de</hostname>
+			<hostname>predic8.de</hostname>
 		</clients>
 	</service>
 	<service path="/crm/*">
