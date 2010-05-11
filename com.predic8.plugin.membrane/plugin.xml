@@ -179,7 +179,7 @@
             category="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
             class="com.predic8.plugin.membrane.preferences.MessagePreferencePage"
             id="com.predic8.plugin.membrane.preferences.MessagePreferencePage"
-            name="Message Preferences">
+            name="Message">
       </page>
       <page
             class="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
@@ -190,13 +190,19 @@
             category="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
             class="com.predic8.plugin.membrane.preferences.ProxyPreferencePage"
             id="com.predic8.plugin.membrane.preferences.ProxyPreferencePage"
-            name="Proxy Preferences">
+            name="Proxy">
       </page>
       <page
             category="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
             class="com.predic8.plugin.membrane.preferences.ExchangePreferencePage"
             id="com.predic8.plugin.membrane.preferences.ExchangePreferencePage"
-            name="Exchange Preferences">
+            name="Exchange">
+      </page>
+      <page
+            category="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
+            class="com.predic8.plugin.membrane.preferences.SecurityPreferencePage"
+            id="com.predic8.plugin.membrane.preferences.SecurityPreferencesPage"
+            name="Security">
       </page>
    </extension>
    <extension

@@ -20,6 +20,8 @@ import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.net.ssl.SSLServerSocketFactory;
+
 import com.predic8.membrane.core.exchange.HttpExchange;
 
 
@@ -30,8 +32,22 @@ public class HttpEndpointListener extends Thread {
 	
 	private HttpTransport transport;
 	
-	public HttpEndpointListener(int port, HttpTransport transport) throws IOException {
-		serverSocket = new ServerSocket(port);
+	public HttpEndpointListener(int port, HttpTransport transport, boolean tsl) throws IOException {
+		if (tsl) {
+			System.err.println("TSL socket created on port " + port);
+			System.setProperty("javax.net.ssl.keyStore", "C:/work/membrane-monitor/com.predic8.membrane.core/configuration/client.jks");
+			System.setProperty("javax.net.ssl.keyStorePassword", "secret");
+			
+			System.setProperty("javax.net.ssl.trustStore", "C:/work/membrane-monitor/com.predic8.membrane.core/configuration/client.jks");
+			System.setProperty("javax.net.ssl.trustStorePassword", "secret");
+			
+			serverSocket = ((SSLServerSocketFactory)SSLServerSocketFactory.getDefault()).createServerSocket(port);
+		} 
+		
+		else {
+			serverSocket = new ServerSocket(port);
+		}
+		
 		executorService = Executors.newCachedThreadPool();
 		this.transport = transport;
 	}

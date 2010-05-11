@@ -65,7 +65,7 @@ public class ConfigurationManager {
 
 		router.getRuleManager().removeAllRules();
 		for (Rule rule : rules) {
-			getHttpTransport().addPort(rule.getKey().getPort());
+			getHttpTransport().addPort(rule.getKey().getPort(), rule.isInboundTSL());
 			router.getRuleManager().addRuleIfNew(rule);
 			log.debug("Added rule " + rule + " on port " + rule.getKey().getPort());
 		}

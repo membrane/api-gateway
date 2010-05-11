@@ -28,6 +28,7 @@ import com.predic8.membrane.core.config.Format;
 import com.predic8.membrane.core.config.GUI;
 import com.predic8.membrane.core.config.Proxy;
 import com.predic8.membrane.core.config.Rules;
+import com.predic8.membrane.core.config.security.Security;
 import com.predic8.membrane.core.rules.Rule;
 
 public class Configuration extends AbstractXMLElement {
@@ -47,6 +48,15 @@ public class Configuration extends AbstractXMLElement {
 
 	public static final String TRACK_EXCHANGE = "autotrack_new_exchanges";
 
+	public static final String KEY_STORE_LOCATION = "keystore location";
+	
+	public static final String KEY_STORE_PASSWORD = "keystore password";
+	
+	public static final String TRUST_STORE_LOCATION = "truststore location";
+	
+	public static final String TRUST_STORE_PASSWORD = "truststore password";
+	
+	
 	private Collection<Rule> rules = new ArrayList<Rule>();
 
 	public Map<String, Object> props = new HashMap<String, Object>();
@@ -133,6 +143,59 @@ public class Configuration extends AbstractXMLElement {
 		return null;
 	}
 	
+	public String getKeyStoreLocation() {
+		if (props.containsKey(KEY_STORE_LOCATION))
+			return (String)props.get(KEY_STORE_LOCATION);
+	
+		return null;
+	}
+	
+	
+	public String getTrustStoreLocation() {
+		if (props.containsKey(TRUST_STORE_LOCATION))
+			return (String)props.get(TRUST_STORE_LOCATION);
+	
+		return null;
+	}
+	
+	public void setKeyStoreLocation(String location) {
+		if (location == null)
+			return;
+		props.put(KEY_STORE_LOCATION, location);
+	}
+	
+	public void setTrustStoreLocation(String location) {
+		if (location == null)
+			return;
+		props.put(TRUST_STORE_LOCATION, location);
+	}
+	
+	public String getKeyStorePassword() {
+		if (props.containsKey(KEY_STORE_PASSWORD))
+			return (String)props.get(KEY_STORE_PASSWORD);
+	
+		return null;
+	}
+	
+	public String getTrustStorePassword() {
+		if (props.containsKey(TRUST_STORE_PASSWORD))
+			return (String)props.get(TRUST_STORE_PASSWORD);
+	
+		return null;
+	}
+	
+	public void setKeyStorePassword(String password) {
+		if (password == null)
+			return;
+		props.put(KEY_STORE_PASSWORD, password);
+	}
+	
+	public void setTrustStorePassword(String password) {
+		if (password == null)
+			return;
+		props.put(TRUST_STORE_PASSWORD, password);
+	}
+	
 	public String getProxyPort() {
 		if (props.containsKey(PROXY_PORT))
 			return (String)props.get(PROXY_PORT);
@@ -160,8 +223,15 @@ public class Configuration extends AbstractXMLElement {
 			props.putAll(((GUI) new GUI().parse(token)).getValues());
 		} else if (Proxy.ELEMENT_NAME.equals(child)) {
 			props.putAll(((Proxy) new Proxy().parse(token)).getValues());
-		}
-	}
+		} else if (Security.ELEMENT_NAME.equals(child)) {
+			Security security = ((Security) new Security().parse(token));
+			props.put(KEY_STORE_LOCATION, security.getKeyStoreLocation());
+			props.put(TRUST_STORE_LOCATION, security.getTrustStoreLocation());
+			
+			props.put(KEY_STORE_PASSWORD, security.getKeyStorePassword());
+			props.put(TRUST_STORE_PASSWORD, security.getTrustStorePassword());
+		} 
+ 	}
 
 	@Override
 	protected String getElementName() {
@@ -189,6 +259,11 @@ public class Configuration extends AbstractXMLElement {
 		childProxy.setValues(props);
 		childProxy.write(out);
 		
+		
+		Security security = new Security();
+		security.setValues(props);
+		security.write(out);
+		
 		out.writeEndElement();
 		out.writeEndDocument();
 	}
@@ -201,6 +276,12 @@ public class Configuration extends AbstractXMLElement {
 		setUseProxy(config.getUseProxy());
 		setProxyHost(config.getProxyHost());
 		setProxyPort(config.getProxyPort());
+		
+		setKeyStoreLocation(config.getKeyStoreLocation());
+		setKeyStorePassword(config.getKeyStorePassword());
+		
+		setTrustStoreLocation(config.getTrustStoreLocation());
+		setTrustStorePassword(config.getTrustStorePassword());
 	}
 	
 }

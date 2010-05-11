@@ -30,4 +30,13 @@ public interface Rule {
 	public void setBlockRequest(boolean blockStatus);
 	
 	public void setBlockResponse(boolean blockStatus);
+	
+	public boolean isOutboundTSL();
+	
+	public boolean isInboundTSL();
+	
+	public void setInboundTSL(boolean status);
+	
+	public void setOutboundTSL(boolean status);
+	
 }

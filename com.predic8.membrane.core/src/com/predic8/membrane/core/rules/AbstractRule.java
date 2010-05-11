@@ -15,6 +15,10 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 	protected boolean blockRequest;
 	protected boolean blockResponse;
 	
+	protected boolean inboundTSL;
+	
+	protected boolean outboundTSL;
+	
 	protected List<Interceptor> interceptors = new ArrayList<Interceptor>();
 	
 	public AbstractRule() {
@@ -75,4 +79,19 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 		
 	}
 
+	public boolean isInboundTSL() {
+		return inboundTSL;
+	}
+	
+	public boolean isOutboundTSL() {
+		return outboundTSL;
+	}
+	
+	public void setInboundTSL(boolean status) {
+		inboundTSL = status;	
+	}
+	
+	public void setOutboundTSL(boolean status) {
+		this.outboundTSL = status;
+	}
 }

@@ -22,6 +22,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
+import javax.net.ssl.SSLSocket;
+
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.TerminateException;
@@ -104,7 +106,8 @@ public class HttpServerThread extends AbstractHttpThread {
 
 		try {
 			if (!sourceSocket.isClosed()) {
-				sourceSocket.shutdownOutput();
+				if (!(sourceSocket instanceof SSLSocket))
+					sourceSocket.shutdownOutput();
 				sourceSocket.close();
 			}
 		} catch (Exception e2) {

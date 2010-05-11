@@ -31,15 +31,22 @@ public class ForwardingRule extends AbstractRule implements Rule {
 	private String targetPort;
 
 	public ForwardingRule() {
-
+		
 	}
 
 	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, String targetPort) {
+		this(ruleKey, targetHost, targetPort, true, false);
+	}
+
+	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, String targetPort, boolean inboundTLS, boolean outboundTLS) {
+		System.err.println("forwarding rule created " + inboundTLS);
 		this.key = ruleKey;
 		this.targetHost = targetHost;
 		this.targetPort = targetPort;
+		this.inboundTSL = inboundTLS;
+		this.outboundTSL = outboundTLS;
 	}
-
+	
 	public String getTargetHost() {
 		return targetHost;
 	}
@@ -72,6 +79,10 @@ public class ForwardingRule extends AbstractRule implements Rule {
 		String method = token.getAttributeValue("", "method");
 
 		key = new ForwardingRuleKey(host, method, ".*", port);
+		
+		inboundTSL = "true".equals(token.getAttributeValue("", "inboundTLS")) ? true: false;
+		
+		outboundTSL = "true".equals(token.getAttributeValue("", "outboundTLS")) ? true: false;
 		
 	}
 
@@ -111,6 +122,10 @@ public class ForwardingRule extends AbstractRule implements Rule {
 		out.writeAttribute("port", ""+key.getPort());
 		
 		out.writeAttribute("method", key.getMethod());
+
+		out.writeAttribute("inboundTLS", Boolean.toString(inboundTSL));
+		
+		out.writeAttribute("outboundTLS", Boolean.toString(outboundTSL));
 		
 		TargetPort childTargetPort = new TargetPort();
 		childTargetPort.setValue(targetPort);
