@@ -47,6 +47,8 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 		
 		createSecureConnectionButton(composite);
 		
+		
+		
 		ruleKeyGroup = new RuleKeyGroup(composite, SWT.NONE);
 		
 		setControl(composite);
@@ -62,6 +64,7 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 					ruleKeyGroup.getTextListenPort().setText("443");
 			}
 		});
+		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isSecurityConfigurationAvailable());
 	}
 
 	public String getListenPort() {
@@ -101,10 +104,8 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 			setErrorMessage("Port is already in use. Please choose a different port!");
 			return false;
 		} 
-		
-		
 	}
-
+	
 	private HttpTransport getTransport() {
 		return ((HttpTransport) Router.getInstance().getTransport());
 	}

@@ -18,6 +18,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.components.RuleTargetGroup;
@@ -30,6 +31,21 @@ public class RuleTargetTabComposite extends Composite {
 	
 	public RuleTargetTabComposite(Composite parent) {
 		super(parent, SWT.NONE);
+		setGridLayout();
+		
+		createSecureConnectionButton();
+		
+		targetGroup = new RuleTargetGroup(this, SWT.NONE);
+		
+	}
+
+	private void createSecureConnectionButton() {
+		btSecureConnection = new Button(this, SWT.CHECK);
+		btSecureConnection.setText("Secure Connection (SSL/STL)");
+		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isSecurityConfigurationAvailable());
+	}
+
+	private void setGridLayout() {
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 1;
 		gridLayout.marginTop = 20;
@@ -37,12 +53,6 @@ public class RuleTargetTabComposite extends Composite {
 		gridLayout.marginBottom = 20;
 		gridLayout.marginRight = 20;
 		setLayout(gridLayout);
-		
-		btSecureConnection = new Button(this, SWT.CHECK);
-		btSecureConnection.setText("Secure Connection (SSL/STL)");
-		
-		targetGroup = new RuleTargetGroup(this, SWT.NONE);
-		
 	}
 
 	public RuleTargetGroup getTargetGroup() {

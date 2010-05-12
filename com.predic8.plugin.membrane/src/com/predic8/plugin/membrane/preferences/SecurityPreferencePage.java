@@ -35,6 +35,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
+import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
@@ -145,19 +146,23 @@ public class SecurityPreferencePage extends PreferencePage implements
 	}
 
 	private String getSavedKeystoreLocation() {
-		return Router.getInstance().getConfigurationManager().getConfiguration().getKeyStoreLocation() == null ? "" : Router.getInstance().getConfigurationManager().getConfiguration().getKeyStoreLocation();  
+		return getConfiguration().getKeyStoreLocation() == null ? "" : getConfiguration().getKeyStoreLocation();  
+	}
+
+	private Configuration getConfiguration() {
+		return Router.getInstance().getConfigurationManager().getConfiguration();
 	}
 	
 	private String getSavedKeystorePassword() {
-		return Router.getInstance().getConfigurationManager().getConfiguration().getKeyStorePassword() == null ? "" : Router.getInstance().getConfigurationManager().getConfiguration().getKeyStorePassword();  
+		return getConfiguration().getKeyStorePassword() == null ? "" : getConfiguration().getKeyStorePassword();  
 	}
 	
 	private String getSavedTruststoreLocation() {
-		return Router.getInstance().getConfigurationManager().getConfiguration().getTrustStoreLocation() == null ? "" : Router.getInstance().getConfigurationManager().getConfiguration().getTrustStoreLocation();  
+		return getConfiguration().getTrustStoreLocation() == null ? "" : getConfiguration().getTrustStoreLocation();  
 	}
 	
 	private String getSavedTruststorePassword() {
-		return Router.getInstance().getConfigurationManager().getConfiguration().getTrustStorePassword() == null ? "" : Router.getInstance().getConfigurationManager().getConfiguration().getTrustStorePassword();  
+		return getConfiguration().getTrustStorePassword() == null ? "" : getConfiguration().getTrustStorePassword();  
 	}
 	
 	
@@ -212,10 +217,10 @@ public class SecurityPreferencePage extends PreferencePage implements
 			ErrorDialog.openError(Display.getCurrent().getActiveShell(), "Invalid Input", "Both store location and password data are mandatory for security settings", status);
 		}
 		
-		Router.getInstance().getConfigurationManager().getConfiguration().setKeyStoreLocation(textKeyLocation.getText());
-		Router.getInstance().getConfigurationManager().getConfiguration().setKeyStorePassword(textKeyPassword.getText());
-		Router.getInstance().getConfigurationManager().getConfiguration().setTrustStoreLocation(textTrustLocation.getText());
-		Router.getInstance().getConfigurationManager().getConfiguration().setTrustStorePassword(textTrustPassword.getText());
+		getConfiguration().setKeyStoreLocation(textKeyLocation.getText());
+		getConfiguration().setKeyStorePassword(textKeyPassword.getText());
+		getConfiguration().setTrustStoreLocation(textTrustLocation.getText());
+		getConfiguration().setTrustStorePassword(textTrustPassword.getText());
 	
 		try {
 			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());

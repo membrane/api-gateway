@@ -284,4 +284,8 @@ public class Configuration extends AbstractXMLElement {
 		setTrustStorePassword(config.getTrustStorePassword());
 	}
 	
+	public boolean isSecurityConfigurationAvailable() {
+		return getKeyStoreLocation() != null && getKeyStorePassword() != null && getTrustStoreLocation() != null && getTrustStorePassword() != null;
+	}
+	
 }

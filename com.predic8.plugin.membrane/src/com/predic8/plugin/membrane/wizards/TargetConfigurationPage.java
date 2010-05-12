@@ -74,6 +74,7 @@ public class TargetConfigurationPage extends AbstractRuleWizardPage {
 	private void createSecureConnectionButton(Composite composite) {
 		btSecureConnection = new Button(composite, SWT.CHECK);
 		btSecureConnection.setText("SecureConnection (SSL/STL)");
+		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isSecurityConfigurationAvailable());
 	}
 
 	private Text createRuletargetHostText(Group ruleTargetGroup) {
