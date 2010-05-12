@@ -14,13 +14,35 @@
 
 package com.predic8.membrane.core.config;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-public class ProxyPort extends CharactersElement {
+public abstract class CharactersElement extends AbstractXMLElement {
 
-	public static final String ELEMENT_NAME = "proxy-port";
+	protected String value;
 	
 	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
+	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
+		value = token.getText();
 	}
+	
+	public String getValue() {
+		return value;
+		 
+	}
+
+	public void setValue(String value) {
+		this.value = value;
+	}
+	
+	@Override
+	public void write(XMLStreamWriter out) throws XMLStreamException {
+		out.writeStartElement(getElementName());
+		if (value != null)
+			out.writeCharacters(value);
+		out.writeEndElement();
+	}
+	
+
 }

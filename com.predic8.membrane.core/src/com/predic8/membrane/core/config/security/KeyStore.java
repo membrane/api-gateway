@@ -12,15 +12,17 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.config;
+package com.predic8.membrane.core.config.security;
 
 
-public class ProxyPort extends CharactersElement {
 
-	public static final String ELEMENT_NAME = "proxy-port";
-	
+public class KeyStore extends Store {
+
+	public static final String ELEMENT_NAME = "keystore";
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
+	
 }

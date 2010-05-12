@@ -34,7 +34,6 @@ public class HttpEndpointListener extends Thread {
 	
 	public HttpEndpointListener(int port, HttpTransport transport, boolean tsl) throws IOException {
 		if (tsl) {
-			System.err.println("TSL socket created on port " + port);
 			System.setProperty("javax.net.ssl.keyStore", "C:/work/membrane-monitor/com.predic8.membrane.core/configuration/client.jks");
 			System.setProperty("javax.net.ssl.keyStorePassword", "secret");
 			

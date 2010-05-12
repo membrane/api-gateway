@@ -27,6 +27,10 @@ public class ProxyRule extends AbstractRule {
 		
 		out.writeAttribute("port", "" + key.getPort());
 		
+		out.writeAttribute("inboundTLS", Boolean.toString(inboundTSL));
+		
+		out.writeAttribute("outboundTLS", Boolean.toString(outboundTSL));
+		
 		Interceptors inters = new Interceptors();
 		inters.setInterceptors(interceptors);
 		inters.write(out);
@@ -48,6 +52,9 @@ public class ProxyRule extends AbstractRule {
 
 		key = new ProxyRuleKey(port);
 		
+		inboundTSL = "true".equals(token.getAttributeValue("", "inboundTLS")) ? true: false;
+		
+		outboundTSL = "true".equals(token.getAttributeValue("", "outboundTLS")) ? true: false;
 	}
 	
 	@Override

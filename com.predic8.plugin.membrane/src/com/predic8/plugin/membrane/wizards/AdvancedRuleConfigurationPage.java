@@ -19,6 +19,9 @@ import java.net.ServerSocket;
 
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.Router;
@@ -30,7 +33,9 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 	public static final String PAGE_NAME = "Advanced Rule Configuration";
 	
 	RuleKeyGroup ruleKeyGroup;
-			
+	
+	private Button btSecureConnection;
+	
 	protected AdvancedRuleConfigurationPage() {
 		super(PAGE_NAME);
 		setTitle("Advanced Rule");
@@ -40,9 +45,23 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 1);
 		
+		createSecureConnectionButton(composite);
+		
 		ruleKeyGroup = new RuleKeyGroup(composite, SWT.NONE);
 		
 		setControl(composite);
+	}
+
+	private void createSecureConnectionButton(Composite composite) {
+		btSecureConnection = new Button(composite, SWT.CHECK);
+		btSecureConnection.setText("SecureConnection (SSL/STL)");
+		btSecureConnection.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (btSecureConnection.getSelection())
+					ruleKeyGroup.getTextListenPort().setText("443");
+			}
+		});
 	}
 
 	public String getListenPort() {
@@ -100,5 +119,9 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 	
 	public String getPathPattern() {
 		return ruleKeyGroup.getTextRulePath().getText();
+	}
+	
+	public boolean getSecureConnection() {
+		return btSecureConnection.getSelection();
 	}
 }

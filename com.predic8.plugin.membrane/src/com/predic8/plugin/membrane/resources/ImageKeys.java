@@ -72,6 +72,8 @@ public class ImageKeys {
 	public static final String IMAGE_FILTER = "image filter";
 	
 	public static final String IMAGE_SORTER = "image sorter";
+
+	public static final String IMAGE_FOLDER = "image folder";
 	
 	private ImageKeys() {
 

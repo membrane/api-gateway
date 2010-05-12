@@ -15,6 +15,7 @@ package com.predic8.plugin.membrane.dialogs.rule.composites;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.rules.ForwardingRule;
@@ -24,6 +25,8 @@ import com.predic8.plugin.membrane.components.RuleTargetGroup;
 public class RuleTargetTabComposite extends Composite {
 
 	private RuleTargetGroup targetGroup;
+	
+	private Button btSecureConnection;
 	
 	public RuleTargetTabComposite(Composite parent) {
 		super(parent, SWT.NONE);
@@ -35,6 +38,9 @@ public class RuleTargetTabComposite extends Composite {
 		gridLayout.marginRight = 20;
 		setLayout(gridLayout);
 		
+		btSecureConnection = new Button(this, SWT.CHECK);
+		btSecureConnection.setText("Secure Connection (SSL/STL)");
+		
 		targetGroup = new RuleTargetGroup(this, SWT.NONE);
 		
 	}
@@ -43,12 +49,17 @@ public class RuleTargetTabComposite extends Composite {
 		return targetGroup;
 	}
 
+	public boolean getSecureConnection() {
+		return btSecureConnection.getSelection();
+	}
+	
 	public void setInput(Rule rule) {
 		if (!(rule instanceof ForwardingRule))
 			return;
 		ForwardingRule fRule = (ForwardingRule)rule;
 		targetGroup.setTargetHost(fRule.getTargetHost());
 		targetGroup.setTargetPort(fRule.getTargetPort());
+		btSecureConnection.setSelection(rule.isOutboundTSL());
 	}
 	
 }

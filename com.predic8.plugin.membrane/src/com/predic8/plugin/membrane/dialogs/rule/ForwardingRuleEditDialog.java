@@ -107,6 +107,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 	public void setInput(Rule rule) {
 		super.setInput(rule);
 		ruleKeyComposite.getRuleKeyGroup().setInput(rule.getKey());
+		ruleKeyComposite.setSecureConnection(rule.isInboundTSL());
 		targetComposite.setInput(rule);
 	}
 
@@ -176,6 +177,8 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 		}
 		((ForwardingRule) rule).setTargetHost(targetComposite.getTargetGroup().getTargetHost());
 		((ForwardingRule) rule).setTargetPort(targetComposite.getTargetGroup().getTargetPort());
+		rule.setOutboundTSL(targetComposite.getSecureConnection());
+		rule.setInboundTSL(ruleKeyComposite.getSecureConnection());
 		rule.setBlockRequest(actionsComposite.isRequestBlocked());
 		rule.setBlockResponse(actionsComposite.isResponseBlocked());
 		rule.setInterceptors(interceptorsComposite.getInterceptors());

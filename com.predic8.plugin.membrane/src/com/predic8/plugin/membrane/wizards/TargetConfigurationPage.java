@@ -22,6 +22,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
@@ -38,6 +39,8 @@ public class TargetConfigurationPage extends AbstractRuleWizardPage {
 	
 	private Text ruleTargetPortText;
 	
+	private Button btSecureConnection;
+	
 	protected TargetConfigurationPage() {
 		super(PAGE_NAME);
 		setTitle("Simple Rule");
@@ -48,6 +51,8 @@ public class TargetConfigurationPage extends AbstractRuleWizardPage {
 		Composite composite = createComposite(parent, 1);
 		
 		createFullDescriptionLabel(composite, "If this rule applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
+		
+		createSecureConnectionButton(composite);
 		
 		Group group = createTargetGroup(composite);
 		
@@ -64,6 +69,11 @@ public class TargetConfigurationPage extends AbstractRuleWizardPage {
 		addLabelGap(group);
 	
 		setControl(composite);
+	}
+	
+	private void createSecureConnectionButton(Composite composite) {
+		btSecureConnection = new Button(composite, SWT.CHECK);
+		btSecureConnection.setText("SecureConnection (SSL/STL)");
 	}
 
 	private Text createRuletargetHostText(Group ruleTargetGroup) {
@@ -144,6 +154,10 @@ public class TargetConfigurationPage extends AbstractRuleWizardPage {
 		return ruleTargetHostText.getText();
 	}
 
+	public boolean getSecureConnection() {
+		return btSecureConnection.getSelection();
+	}
+	
 	public String getTargetPort() {
 		return ruleTargetPortText.getText();
 	}

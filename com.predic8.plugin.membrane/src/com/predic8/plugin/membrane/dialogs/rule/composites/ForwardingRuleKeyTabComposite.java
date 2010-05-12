@@ -15,6 +15,7 @@ package com.predic8.plugin.membrane.dialogs.rule.composites;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.plugin.membrane.components.RuleKeyGroup;
@@ -23,20 +24,33 @@ public class ForwardingRuleKeyTabComposite extends Composite {
 
 	private RuleKeyGroup ruleKeyGroup;
 	
+	private Button btSecureConnection;
+	
 	public ForwardingRuleKeyTabComposite(Composite parent) {
 		super(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 2;
+		gridLayout.numColumns = 1;
 		gridLayout.marginTop = 12;
 		gridLayout.marginLeft = 12;
 		gridLayout.marginBottom = 12;
 		gridLayout.marginRight = 12;
 		setLayout(gridLayout);
+	
+		btSecureConnection = new Button(this, SWT.CHECK);
+		btSecureConnection.setText("Secure Connection (SSL/STL)");
 		
 		ruleKeyGroup = new RuleKeyGroup(this, SWT.NONE);
 		
 	}
 
+	public boolean getSecureConnection() {
+		return btSecureConnection.getSelection();
+	}
+	
+	public void setSecureConnection(boolean selected) {
+		btSecureConnection.setSelection(selected);
+	}
+	
 	public RuleKeyGroup getRuleKeyGroup() {
 		return ruleKeyGroup;
 	}

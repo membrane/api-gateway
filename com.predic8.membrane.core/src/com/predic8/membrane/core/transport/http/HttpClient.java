@@ -55,11 +55,11 @@ public class HttpClient {
 	
 	private boolean isSameSocket(String host, int port) {
 		if (!useProxy()) {
-			if ((host.equals(socket.getInetAddress().getHostName()) || host.equals(socket.getInetAddress().getHostAddress())) && port == socket.getPort()) {
+			if ((host.equalsIgnoreCase(socket.getInetAddress().getHostName()) || host.equals(socket.getInetAddress().getHostAddress())) && port == socket.getPort()) {
 				return true;
 			}
 		} else {
-			if (getProxyHost().equals(socket.getInetAddress().getHostName()) && getProxyPort() == socket.getPort())
+			if (getProxyHost().equalsIgnoreCase(socket.getInetAddress().getHostName()) && getProxyPort() == socket.getPort())
 				return true;
 		}
 		

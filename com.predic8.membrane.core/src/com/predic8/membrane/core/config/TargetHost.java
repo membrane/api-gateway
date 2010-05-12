@@ -14,25 +14,14 @@
 
 package com.predic8.membrane.core.config;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
 public class TargetHost extends CharactersElement {
 
 	public static final String ELEMENT_NAME = "targethost";
-	
-	
 	
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
 
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(ELEMENT_NAME);
-		out.writeCharacters(value);
-		out.writeEndElement();
-	}
-	
 }

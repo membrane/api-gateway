@@ -84,6 +84,7 @@ public class MessagePreferencePage extends PreferencePage implements IWorkbenchP
 		setPreferenceStore(MembraneUIPlugin.getDefault().getPreferenceStore());
 	}
 
+	@Override
 	protected void performApply() {
 		setAndSaveConfig();
 	}

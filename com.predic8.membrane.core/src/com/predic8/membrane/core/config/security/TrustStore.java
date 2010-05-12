@@ -11,16 +11,18 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
+package com.predic8.membrane.core.config.security;
 
-package com.predic8.membrane.core.config;
 
 
-public class ProxyPort extends CharactersElement {
+public class TrustStore extends Store {
 
-	public static final String ELEMENT_NAME = "proxy-port";
-	
+	public static final String ELEMENT_NAME = "truststore";
+
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
+	
 }

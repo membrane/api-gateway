@@ -35,11 +35,10 @@ public class ForwardingRule extends AbstractRule implements Rule {
 	}
 
 	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, String targetPort) {
-		this(ruleKey, targetHost, targetPort, true, false);
+		this(ruleKey, targetHost, targetPort, false, false);
 	}
 
 	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, String targetPort, boolean inboundTLS, boolean outboundTLS) {
-		System.err.println("forwarding rule created " + inboundTLS);
 		this.key = ruleKey;
 		this.targetHost = targetHost;
 		this.targetPort = targetPort;

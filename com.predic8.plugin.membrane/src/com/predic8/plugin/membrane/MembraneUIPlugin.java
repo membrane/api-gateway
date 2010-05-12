@@ -96,6 +96,8 @@ public class MembraneUIPlugin extends AbstractUIPlugin {
 		reg.put(ImageKeys.IMAGE_DOOR_IN, imageDescriptorFromPlugin(PLUGIN_ID, "icons/door_in.png"));
 		reg.put(ImageKeys.IMAGE_FILTER, imageDescriptorFromPlugin(PLUGIN_ID, "icons/filter.gif"));
 		reg.put(ImageKeys.IMAGE_SORTER, imageDescriptorFromPlugin(PLUGIN_ID, "icons/sort.gif"));
+		
+		reg.put(ImageKeys.IMAGE_FOLDER, imageDescriptorFromPlugin(PLUGIN_ID, "icons/folder.png"));
 	}
 	
 }
