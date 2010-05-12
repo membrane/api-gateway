@@ -239,16 +239,12 @@ public class SecurityPreferencePage extends PreferencePage implements
 
 	private boolean isEmptyInput() {
 		return textKeyLocation.getText().trim().equals("") &&
-				textKeyPassword.getText().trim().equals("") &&
-				textTrustLocation.getText().trim().equals("") && 
-				textTrustPassword.getText().trim().equals("");
+				textTrustLocation.getText().trim().equals("");
 	}
 	
 	private boolean isValidInput() {
 		return !textKeyLocation.getText().trim().equals("") &&
-		!textKeyPassword.getText().trim().equals("") &&
-		!textTrustLocation.getText().trim().equals("") && 
-		!textTrustPassword.getText().trim().equals("");
+		!textTrustLocation.getText().trim().equals("");
 	}
 	
 }
