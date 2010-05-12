@@ -15,13 +15,11 @@
 package com.predic8.plugin.membrane.actions;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.jface.preference.IPreferenceNode;
-import org.eclipse.jface.preference.IPreferencePage;
 import org.eclipse.jface.preference.PreferenceDialog;
 import org.eclipse.jface.preference.PreferenceManager;
-import org.eclipse.jface.preference.PreferenceNode;
 import org.eclipse.swt.widgets.Display;
 
+import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.preferences.SecurityPreferencePage;
 
 public class ShowSecurityPreferencesAction extends Action {
@@ -37,19 +35,19 @@ public class ShowSecurityPreferencesAction extends Action {
 	@Override
 	public void run() {
 		
-		IPreferencePage page = new SecurityPreferencePage() ;
-		PreferenceManager mgr = new PreferenceManager();
-		IPreferenceNode node = new PreferenceNode(SecurityPreferencePage.PAGE_ID, page);
-		mgr.addToRoot(node);
-		PreferenceDialog dialog = new PreferenceDialog(Display.getCurrent().getActiveShell(), mgr);
-		dialog.create();
-		dialog.setMessage(page.getTitle());
-		dialog.open();
+//		IPreferencePage page = new SecurityPreferencePage() ;
+//		PreferenceManager mgr = new PreferenceManager();
+//		IPreferenceNode node = new PreferenceNode(SecurityPreferencePage.PAGE_ID, page);
+//		mgr.addToRoot(node);
+//		PreferenceDialog dialog = new PreferenceDialog(Display.getCurrent().getActiveShell(), mgr);
+//		dialog.create();
+//		dialog.setMessage(page.getTitle());
+//		dialog.open();
 		
-//		PreferenceManager manager = MembraneUIPlugin.getDefault().getWorkbench().getPreferenceManager();
-//		PreferenceDialog dlg = new PreferenceDialog(Display.getCurrent().getActiveShell(), manager);
-//		dlg.setSelectedNode(SecurityPreferencePage.PAGE_ID);	
-//		dlg.open();
+		PreferenceManager manager = MembraneUIPlugin.getDefault().getWorkbench().getPreferenceManager();
+		PreferenceDialog dlg = new PreferenceDialog(Display.getCurrent().getActiveShell(), manager);
+		dlg.setSelectedNode(SecurityPreferencePage.PAGE_ID);	
+		dlg.open();
 	}
 	
 }
