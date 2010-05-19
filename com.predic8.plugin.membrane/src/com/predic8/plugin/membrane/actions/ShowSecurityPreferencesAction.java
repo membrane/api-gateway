@@ -16,10 +16,9 @@ package com.predic8.plugin.membrane.actions;
 
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.preference.PreferenceDialog;
-import org.eclipse.jface.preference.PreferenceManager;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.dialogs.PreferencesUtil;
 
-import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.preferences.SecurityPreferencePage;
 
 public class ShowSecurityPreferencesAction extends Action {
@@ -33,20 +32,8 @@ public class ShowSecurityPreferencesAction extends Action {
 	}
 	
 	@Override
-	public void run() {
-		
-//		IPreferencePage page = new SecurityPreferencePage() ;
-//		PreferenceManager mgr = new PreferenceManager();
-//		IPreferenceNode node = new PreferenceNode(SecurityPreferencePage.PAGE_ID, page);
-//		mgr.addToRoot(node);
-//		PreferenceDialog dialog = new PreferenceDialog(Display.getCurrent().getActiveShell(), mgr);
-//		dialog.create();
-//		dialog.setMessage(page.getTitle());
-//		dialog.open();
-		
-		PreferenceManager manager = MembraneUIPlugin.getDefault().getWorkbench().getPreferenceManager();
-		PreferenceDialog dlg = new PreferenceDialog(Display.getCurrent().getActiveShell(), manager);
-		dlg.setSelectedNode(SecurityPreferencePage.PAGE_ID);	
+	public void run() {		
+		PreferenceDialog dlg = PreferencesUtil.createPreferenceDialogOn(Display.getCurrent().getActiveShell(), SecurityPreferencePage.PAGE_ID, null, null);
 		dlg.open();
 	}
 	

@@ -48,7 +48,7 @@
 	</bean>
 
 	<bean id="exchangeStore"
-		class="com.predic8.membrane.core.exchangestore.MemoryExchangeStore" />
+		class="com.predic8.membrane.core.exchangestore.ForegetfulExchangeStore" />
 
 
 	<bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager">

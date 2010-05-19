@@ -201,7 +201,7 @@
       <page
             category="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
             class="com.predic8.plugin.membrane.preferences.SecurityPreferencePage"
-            id="com.predic8.plugin.membrane.preferences.SecurityPreferencesPage"
+            id="com.predic8.plugin.membrane.preferences.SecurityPreferencePage"
             name="Security SSL/TSL">
       </page>
    </extension>

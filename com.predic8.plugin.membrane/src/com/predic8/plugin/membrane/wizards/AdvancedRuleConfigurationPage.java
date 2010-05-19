@@ -21,20 +21,17 @@ import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.components.RuleKeyGroup;
 
-public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
+public class AdvancedRuleConfigurationPage extends SecurityWizardPage {
 
 	public static final String PAGE_NAME = "Advanced Rule Configuration";
 	
 	RuleKeyGroup ruleKeyGroup;
-	
-	private Button btSecureConnection;
 	
 	protected AdvancedRuleConfigurationPage() {
 		super(PAGE_NAME);
@@ -45,18 +42,15 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 1);
 		
-		createSecureConnectionButton(composite);
-		
-		
+		createSecurityComposite(composite);
 		
 		ruleKeyGroup = new RuleKeyGroup(composite, SWT.NONE);
 		
 		setControl(composite);
 	}
-
-	private void createSecureConnectionButton(Composite composite) {
-		btSecureConnection = new Button(composite, SWT.CHECK);
-		btSecureConnection.setText("SecureConnection (SSL/STL)");
+	
+	@Override
+	protected void addListenersToSecureConnectionButton() {
 		btSecureConnection.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
@@ -64,14 +58,12 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 					ruleKeyGroup.getTextListenPort().setText("443");
 			}
 		});
-		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isSecurityConfigurationAvailable());
 	}
 
 	public String getListenPort() {
 		return ruleKeyGroup.getTextListenPort().getText();
 	}
 	
-
 	public String getListenHost() {
 		return ruleKeyGroup.getTextRuleHost().getText();
 	}
@@ -120,9 +112,5 @@ public class AdvancedRuleConfigurationPage extends AbstractRuleWizardPage {
 	
 	public String getPathPattern() {
 		return ruleKeyGroup.getTextRulePath().getText();
-	}
-	
-	public boolean getSecureConnection() {
-		return btSecureConnection.getSelection();
 	}
 }

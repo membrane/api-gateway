@@ -22,7 +22,6 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
@@ -31,15 +30,13 @@ import org.eclipse.swt.widgets.Text;
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class TargetConfigurationPage extends AbstractRuleWizardPage {
+public class TargetConfigurationPage extends SecurityWizardPage {
 
 	public static final String PAGE_NAME = "Target Configuration";
 	
 	private Text ruleTargetHostText;
 	
 	private Text ruleTargetPortText;
-	
-	private Button btSecureConnection;
 	
 	protected TargetConfigurationPage() {
 		super(PAGE_NAME);
@@ -52,7 +49,7 @@ public class TargetConfigurationPage extends AbstractRuleWizardPage {
 		
 		createFullDescriptionLabel(composite, "If this rule applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
 		
-		createSecureConnectionButton(composite);
+		createSecurityComposite(composite);
 		
 		Group group = createTargetGroup(composite);
 		
@@ -71,12 +68,6 @@ public class TargetConfigurationPage extends AbstractRuleWizardPage {
 		setControl(composite);
 	}
 	
-	private void createSecureConnectionButton(Composite composite) {
-		btSecureConnection = new Button(composite, SWT.CHECK);
-		btSecureConnection.setText("SecureConnection (SSL/STL)");
-		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isSecurityConfigurationAvailable());
-	}
-
 	private Text createRuletargetHostText(Group ruleTargetGroup) {
 		final Text text = new Text(ruleTargetGroup, SWT.BORDER);
 		text.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
@@ -154,10 +145,6 @@ public class TargetConfigurationPage extends AbstractRuleWizardPage {
 	public String getTargetHost() {
 		return ruleTargetHostText.getText();
 	}
-
-	public boolean getSecureConnection() {
-		return btSecureConnection.getSelection();
-	}
 	
 	public String getTargetPort() {
 		return ruleTargetPortText.getText();
@@ -182,6 +169,11 @@ public class TargetConfigurationPage extends AbstractRuleWizardPage {
 			wizard.addRule();
 		}
 		return true;
+	}
+
+	@Override
+	protected void addListenersToSecureConnectionButton() {
+		//do nothing
 	}
 
 }

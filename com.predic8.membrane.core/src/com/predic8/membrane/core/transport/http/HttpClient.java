@@ -26,6 +26,8 @@ import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
+import javax.net.ssl.SSLSocketFactory;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -66,27 +68,18 @@ public class HttpClient {
 		return false;
 	}
 
-	private void openSocketIfNeeded(String host, int port) throws UnknownHostException, IOException {
+	private void openSocketIfNeeded(String host, int port, boolean stl) throws UnknownHostException, IOException {
 
 		while (socket == null || socket.isClosed() || !isSameSocket(host, port)) {
 
-			if (in != null)
-				in.close();
-
-			if (out != null && !socket.isClosed()) {
-				out.flush();
-				out.close();
-			}
-
-			if (socket != null)
-				socket.close();
+			closeSocketAndStreams();
 
 			if (useProxy()) {
 				log.debug("opening a new socket for host: " + getProxyHost() + " on port: " + getProxyPort());
-				socket = new Socket(getProxyHost(), getProxyPort());
+				createSocket(getProxyHost(), getProxyPort(), stl);
 			} else {
 				log.debug("opening a new socket for host: " + host + " on port: " + port);
-				socket = new Socket(host, port);
+				createSocket(host, port, stl);
 			}
 
 			log.debug("Opened connection on localPort: " + port);
@@ -96,6 +89,38 @@ public class HttpClient {
 
 	}
 
+	private void closeSocketAndStreams() throws IOException {
+		if (in != null)
+			in.close();
+
+		if (out != null && !socket.isClosed()) {
+			out.flush();
+			out.close();
+		}
+
+		if (socket != null)
+			socket.close();
+	}
+
+	private void createSocket(String host, int port, boolean stl) throws UnknownHostException, IOException {
+		if (stl) {
+			setSecuritySystemProperties();
+			socket = SSLSocketFactory.getDefault().createSocket(host, port);
+		} else {
+			socket = new Socket(host, port);
+		}
+	}
+
+	private void setSecuritySystemProperties() {
+		System.setProperty("javax.net.ssl.keyStore", getConfiguration().getKeyStoreLocation());
+		System.setProperty("javax.net.ssl.keyStorePassword", getConfiguration().getKeyStorePassword());
+		
+		//System.setProperty("javax.net.ssl.trustStore", "C:/work/membrane-monitor/com.predic8.membrane.core/configuration/client.jks");
+		
+		System.setProperty("javax.net.ssl.trustStore", getConfiguration().getTrustStoreLocation());
+		System.setProperty("javax.net.ssl.trustStorePassword", getConfiguration().getTrustStorePassword());
+	}
+	
 	private boolean useProxy() {
 		return getConfiguration().getUseProxy();
 	}
@@ -120,7 +145,7 @@ public class HttpClient {
 		exc.getRequest().setUri(dest);
 		
 		if (exc.getRequest().isCONNECTRequest()) {
-			openSocketIfNeeded(getHost(dest), getPort(dest));
+			openSocketIfNeeded(getHost(dest), getPort(dest), exc.getRule().isOutboundTSL());
 			return;
 		}
 
@@ -129,7 +154,7 @@ public class HttpClient {
 			exc.getRequest().setUri(getPathAndQueryString(dest));
 
 		URL destination = new URL(dest);
-		openSocketIfNeeded(destination.getHost(), getTargetPort(destination));
+		openSocketIfNeeded(destination.getHost(), getTargetPort(destination), exc.getRule().isOutboundTSL());
 
 	}
 
