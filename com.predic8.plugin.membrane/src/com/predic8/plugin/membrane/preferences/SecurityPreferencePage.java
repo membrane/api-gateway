@@ -207,9 +207,6 @@ public class SecurityPreferencePage extends PreferencePage implements
 	}
 	
 	private void setAndSaveSacurityInformations() {
-		if (isEmptyInput())
-			return;
-		
 		getConfiguration().setKeyStoreLocation(textKeyLocation.getText());
 		getConfiguration().setKeyStorePassword(textKeyPassword.getText());
 		getConfiguration().setTrustStoreLocation(textTrustLocation.getText());
@@ -236,10 +233,4 @@ public class SecurityPreferencePage extends PreferencePage implements
 		setAndSaveSacurityInformations();
 		return true;
 	}
-
-	private boolean isEmptyInput() {
-		return textKeyLocation.getText().trim().equals("") &&
-				textTrustLocation.getText().trim().equals("");
-	}
-	
 }

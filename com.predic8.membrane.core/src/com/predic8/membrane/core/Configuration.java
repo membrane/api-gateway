@@ -286,7 +286,7 @@ public class Configuration extends AbstractXMLElement {
 	
 
 	public boolean isKeyStoreAvailable() {
-		return getKeyStoreLocation() != null && getKeyStorePassword() != null;
+		return getKeyStoreLocation() != null && !"".equals(getKeyStoreLocation().trim()) && getKeyStorePassword() != null;
 	}
 	
 	
