@@ -30,10 +30,10 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 	private Pattern patternAdminCss;
 	
 	public AdministratorInterceptor() {
-		patternMain = Pattern.compile(".*/administration/main");
-		patternRules = Pattern.compile(".*/administration/rules");
-		patternAddRule = Pattern.compile(".*/administration/add_forwarding_rule");
-		patternAdminCss = Pattern.compile(".*/administration/admin.css");
+		patternMain = Pattern.compile(".*/admin");
+		patternRules = Pattern.compile(".*/admin/rules");
+		patternAddRule = Pattern.compile(".*/admin/add_forwarding_rule");
+		patternAdminCss = Pattern.compile(".*/admin/admin.css");
 	}
 	
 	@Override
@@ -58,6 +58,7 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 		
+		System.err.println("other pattern found: " + exc.getOriginalRequestUri());
 		return Outcome.CONTINUE;
 	}
 	

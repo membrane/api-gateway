@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.plugin.membrane.preferences;
 
-import org.eclipse.core.runtime.Status;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -203,7 +201,7 @@ public class SecurityPreferencePage extends PreferencePage implements
 	private String openFileDialog() {
 		FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
 		dialog.setText("Open");
-		dialog.setFilterExtensions(new String[] { "*.txt", "*.doc", ".rtf", "*.jks*" });
+		dialog.setFilterExtensions(new String[] { "*.*", "*.txt", "*.doc", ".rtf", "*.jks*" });
 		String selected = dialog.open();
 		return selected;
 	}
@@ -212,16 +210,13 @@ public class SecurityPreferencePage extends PreferencePage implements
 		if (isEmptyInput())
 			return;
 		
-		if (!isValidInput()) {
-			Status status = new Status(Status.ERROR, MembraneUIPlugin.PLUGIN_ID, "Security Preferences");
-			ErrorDialog.openError(Display.getCurrent().getActiveShell(), "Invalid Input", "Both store location and password data are mandatory for security settings", status);
-		}
-		
 		getConfiguration().setKeyStoreLocation(textKeyLocation.getText());
 		getConfiguration().setKeyStorePassword(textKeyPassword.getText());
 		getConfiguration().setTrustStoreLocation(textTrustLocation.getText());
 		getConfiguration().setTrustStorePassword(textTrustPassword.getText());
 	
+		Router.getInstance().getConfigurationManager().setSecuritySystemProperties();
+		
 		try {
 			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 		} catch (Exception e) {
@@ -245,11 +240,6 @@ public class SecurityPreferencePage extends PreferencePage implements
 	private boolean isEmptyInput() {
 		return textKeyLocation.getText().trim().equals("") &&
 				textTrustLocation.getText().trim().equals("");
-	}
-	
-	private boolean isValidInput() {
-		return !textKeyLocation.getText().trim().equals("") &&
-		!textTrustLocation.getText().trim().equals("");
 	}
 	
 }

@@ -104,23 +104,12 @@ public class HttpClient {
 
 	private void createSocket(String host, int port, boolean stl) throws UnknownHostException, IOException {
 		if (stl) {
-			setSecuritySystemProperties();
 			socket = SSLSocketFactory.getDefault().createSocket(host, port);
 		} else {
 			socket = new Socket(host, port);
 		}
 	}
 
-	private void setSecuritySystemProperties() {
-		System.setProperty("javax.net.ssl.keyStore", getConfiguration().getKeyStoreLocation());
-		System.setProperty("javax.net.ssl.keyStorePassword", getConfiguration().getKeyStorePassword());
-		
-		//System.setProperty("javax.net.ssl.trustStore", "C:/work/membrane-monitor/com.predic8.membrane.core/configuration/client.jks");
-		
-		System.setProperty("javax.net.ssl.trustStore", getConfiguration().getTrustStoreLocation());
-		System.setProperty("javax.net.ssl.trustStorePassword", getConfiguration().getTrustStorePassword());
-	}
-	
 	private boolean useProxy() {
 		return getConfiguration().getUseProxy();
 	}

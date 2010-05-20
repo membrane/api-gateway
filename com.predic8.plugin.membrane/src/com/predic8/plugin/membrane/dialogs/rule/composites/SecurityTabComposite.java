@@ -38,7 +38,7 @@ public abstract class SecurityTabComposite extends Composite {
 	protected void createSecureConnectionButton(Composite parent) {
 		btSecureConnection = new Button(parent, SWT.CHECK);
 		btSecureConnection.setText("Secure Connection (SSL/STL)");
-		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isSecurityConfigurationAvailable());
+		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isKeyStoreAvailable());
 	}
 	
 	protected void createLink(Composite composite, String linkText) {

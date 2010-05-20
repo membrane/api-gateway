@@ -22,8 +22,6 @@ import java.util.concurrent.Executors;
 
 import javax.net.ssl.SSLServerSocketFactory;
 
-import com.predic8.membrane.core.Configuration;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.HttpExchange;
 
 
@@ -36,7 +34,6 @@ public class HttpEndpointListener extends Thread {
 	
 	public HttpEndpointListener(int port, HttpTransport transport, boolean tsl) throws IOException {
 		if (tsl) {
-			setSecuritySystemProperties();
 			serverSocket = ((SSLServerSocketFactory)SSLServerSocketFactory.getDefault()).createServerSocket(port);
 		} 
 		
@@ -48,16 +45,6 @@ public class HttpEndpointListener extends Thread {
 		this.transport = transport;
 	}
 
-	private void setSecuritySystemProperties() {
-		System.setProperty("javax.net.ssl.keyStore", getConfiguration().getKeyStoreLocation());
-		System.setProperty("javax.net.ssl.keyStorePassword", getConfiguration().getKeyStorePassword());
-		
-		//System.setProperty("javax.net.ssl.trustStore", "C:/work/membrane-monitor/com.predic8.membrane.core/configuration/client.jks");
-		
-		System.setProperty("javax.net.ssl.trustStore", getConfiguration().getTrustStoreLocation());
-		System.setProperty("javax.net.ssl.trustStorePassword", getConfiguration().getTrustStorePassword());
-	}
-	
 	public void run() {
 		while (serverSocket != null && !serverSocket.isClosed() && transport != null) {
 			try {
@@ -69,10 +56,6 @@ public class HttpEndpointListener extends Thread {
 				e.printStackTrace();
 			}
 		}
-	}
-
-	private Configuration getConfiguration() {
-		return Router.getInstance().getConfigurationManager().getConfiguration(); 
 	}
 	
 	public void closePort() throws IOException {

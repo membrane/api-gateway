@@ -59,6 +59,7 @@ public class ConfigurationManager {
 
 		configuration.copyFields(storedConfiguration);
 
+		setSecuritySystemProperties();
 		Collection<Rule> rules = storedConfiguration.getRules();
 		if (rules == null || rules.isEmpty())
 			return;
@@ -72,6 +73,20 @@ public class ConfigurationManager {
 
 	}
 
+	public void setSecuritySystemProperties() {
+		if (getConfiguration().getKeyStoreLocation() != null)
+			System.setProperty("javax.net.ssl.keyStore", getConfiguration().getKeyStoreLocation());
+		
+		if (getConfiguration().getKeyStorePassword() != null)
+			System.setProperty("javax.net.ssl.keyStorePassword", getConfiguration().getKeyStorePassword());
+		
+		if (getConfiguration().getTrustStoreLocation() != null)
+			System.setProperty("javax.net.ssl.trustStore", getConfiguration().getTrustStoreLocation());
+		
+		if (getConfiguration().getTrustStorePassword() != null)
+			System.setProperty("javax.net.ssl.trustStorePassword", getConfiguration().getTrustStorePassword());
+	}
+	
 	private HttpTransport getHttpTransport() {
 		return ((HttpTransport) router.getTransport());
 	}
