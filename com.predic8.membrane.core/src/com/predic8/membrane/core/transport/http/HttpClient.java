@@ -134,7 +134,7 @@ public class HttpClient {
 		exc.getRequest().setUri(dest);
 		
 		if (exc.getRequest().isCONNECTRequest()) {
-			openSocketIfNeeded(getHost(dest), getPort(dest), exc.getRule().isOutboundTSL());
+			openSocketIfNeeded(getHost(dest), getPort(dest), getOutboundTLS(exc));
 			return;
 		}
 
@@ -143,8 +143,14 @@ public class HttpClient {
 			exc.getRequest().setUri(getPathAndQueryString(dest));
 
 		URL destination = new URL(dest);
-		openSocketIfNeeded(destination.getHost(), getTargetPort(destination), exc.getRule().isOutboundTSL());
+		openSocketIfNeeded(destination.getHost(), getTargetPort(destination), getOutboundTLS(exc));
 
+	}
+
+	private boolean getOutboundTLS(HttpExchange exc) {
+		if (exc.getRule() == null)
+			return false;
+		return exc.getRule().isOutboundTLS();
 	}
 
 	private String getPathAndQueryString(String dest) throws MalformedURLException {
@@ -168,6 +174,9 @@ public class HttpClient {
 
 	public Response call(HttpExchange exc) throws Exception {
 		log.debug("calling using rule: " + exc.getRule() + " : " + exc.getRequest().getUri());
+		if (exc.getDestinations().size() == 0)
+			throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
+		
 		int counter = 0;
 		Exception exception = null;
 		while (counter < MAX_CALL) {

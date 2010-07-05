@@ -32,6 +32,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.plugin.membrane.components.composites.tabmanager.BodyTabComposite;
 import com.predic8.plugin.membrane.components.composites.tabmanager.CSSTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.ContentTabComposite;
 import com.predic8.plugin.membrane.components.composites.tabmanager.ErrorTabComposite;
 import com.predic8.plugin.membrane.components.composites.tabmanager.HTMLTabComposite;
 import com.predic8.plugin.membrane.components.composites.tabmanager.HeaderTabComposite;
@@ -126,6 +127,7 @@ public class MessageTabManager {
 		bodyTabs.add(new SOAPTabComposite(folder));
 		bodyTabs.add(new JSONTabComposite(folder));
 		bodyTabs.add(new ImageTabComposite(folder));
+		bodyTabs.add(new ContentTabComposite(folder));
 	}
 
 	private TabItem getCurrentTabItem() {
@@ -207,7 +209,7 @@ public class MessageTabManager {
 		} else if (msg.isImage()) {
 			return bodyTabs.get(5);
 		}
-		return bodyTabs.get(2);
+		return bodyTabs.get(6);
 	}
 
 	private void hideAllContentTabs() {

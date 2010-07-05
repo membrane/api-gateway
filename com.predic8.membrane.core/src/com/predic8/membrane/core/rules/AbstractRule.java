@@ -83,7 +83,7 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 		return inboundTSL;
 	}
 	
-	public boolean isOutboundTSL() {
+	public boolean isOutboundTLS() {
 		return outboundTSL;
 	}
 	

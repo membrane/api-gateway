@@ -54,7 +54,7 @@ public class RuleTargetTabComposite extends SecurityTabComposite {
 		ForwardingRule fRule = (ForwardingRule)rule;
 		targetGroup.setTargetHost(fRule.getTargetHost());
 		targetGroup.setTargetPort(fRule.getTargetPort());
-		btSecureConnection.setSelection(rule.isOutboundTSL());
+		btSecureConnection.setSelection(rule.isOutboundTLS());
 	}
 	
 }

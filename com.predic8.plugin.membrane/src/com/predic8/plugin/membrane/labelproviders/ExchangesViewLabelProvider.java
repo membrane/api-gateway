@@ -23,7 +23,6 @@ import org.eclipse.swt.graphics.Image;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.HttpExchange;
-import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 

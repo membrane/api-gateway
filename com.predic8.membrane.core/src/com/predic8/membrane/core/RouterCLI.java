@@ -47,12 +47,19 @@ public class RouterCLI {
 			System.exit(1);
 		}
 
-		while (true) {
-
-		}
-
+		
+		new RouterCLI().waitForever();
+		
 	}
 
+	private synchronized void waitForever() {
+		try {
+			wait();
+		} catch (InterruptedException e) {
+			
+		}
+	}
+	
 	private static String getRulesFile(CommandLine line) {
 		if (line.hasOption('c')) {
 			return line.getOptionValue('c');

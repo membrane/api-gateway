@@ -31,7 +31,7 @@ public interface Rule {
 	
 	public void setBlockResponse(boolean blockStatus);
 	
-	public boolean isOutboundTSL();
+	public boolean isOutboundTLS();
 	
 	public boolean isInboundTSL();
 	
