@@ -35,14 +35,23 @@
 					<property name="exchangeStore" ref="exchangeStore" />
 				</bean>
 
+				<!-- Rewriting of URLs in WSDL documents
+					 ===================================
+					 	
+					 The WSDLInterceptor changes the endpoint location and URLs of schema includes and imports. 
+					 For the rewritten URLs the protocol, hostname and port are extracted from the request header.
+					 The hostname and port is taken from the Host header field. 
+				-->
 				<bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor">
-					<property name="host" value="abc"/>
+					<!-- To set static values for the rewritten URLs instead of values from the WSDL requested
+					 	 uncomment the following elements.
+					 -->
+					<!--  <property name="host" value="abc"/> 
 					<property name="protocol" value="https"/>
 					<property name="port" value="" />
+					-->
 				</bean>
-				<!-- 
 				
-				 -->
 			</list>
 		</property>
 	</bean>
