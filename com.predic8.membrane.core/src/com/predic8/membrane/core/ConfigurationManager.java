@@ -17,6 +17,8 @@ package com.predic8.membrane.core;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
+import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,6 +35,8 @@ public class ConfigurationManager {
 
 	private Router router;
 
+	private List<SecurityConfigurationChangeListener> securityChangeListeners = new Vector<SecurityConfigurationChangeListener>();
+	
 	protected static Log log = LogFactory.getLog(ConfigurationManager.class.getName());
 	
 	public void saveConfiguration(String fileName) throws Exception {
@@ -85,8 +89,20 @@ public class ConfigurationManager {
 		
 		if (getConfiguration().getTrustStorePassword() != null)
 			System.setProperty("javax.net.ssl.trustStorePassword", getConfiguration().getTrustStorePassword());
+	
+		notifySecurityChangeListeners();
 	}
 	
+	private void notifySecurityChangeListeners() {
+		for (SecurityConfigurationChangeListener listener : securityChangeListeners) {
+			try {
+				listener.securityConfigurationChanged();
+			} catch (Exception e) {
+				securityChangeListeners.remove(listener);
+			}
+		}
+	}
+
 	private HttpTransport getHttpTransport() {
 		return ((HttpTransport) router.getTransport());
 	}
@@ -118,5 +134,17 @@ public class ConfigurationManager {
 	public void setRouter(Router router) {
 		this.router = router;
 	}
+	
+	public void addSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {
+		if (listener == null)
+			return;
+		securityChangeListeners.add(listener);
+	}
 
+	public void removeSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {
+		if (listener == null)
+			return;
+		securityChangeListeners.remove(listener);
+	}
+	
 }

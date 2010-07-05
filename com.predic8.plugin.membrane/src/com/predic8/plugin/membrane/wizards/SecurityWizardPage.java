@@ -6,13 +6,15 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Link;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.SecurityConfigurationChangeListener;
 import com.predic8.plugin.membrane.actions.ShowSecurityPreferencesAction;
 
-public abstract class SecurityWizardPage extends AbstractRuleWizardPage {
+public abstract class SecurityWizardPage extends AbstractRuleWizardPage implements SecurityConfigurationChangeListener {
 
 	protected Button btSecureConnection;
 	
@@ -33,6 +35,8 @@ public abstract class SecurityWizardPage extends AbstractRuleWizardPage {
 		label.setText("To enable secure connection you must provide keystore and truststore data.");
 	
 		createLink(composite, "<A>Security Preferences Page</A>");
+		
+		Router.getInstance().getConfigurationManager().addSecurityConfigurationChangeListener(this);
 	}
 	
 	protected abstract void addListenersToSecureConnectionButton();
@@ -57,5 +61,23 @@ public abstract class SecurityWizardPage extends AbstractRuleWizardPage {
 
 	public boolean getSecureConnection() {
 		return btSecureConnection.getSelection();
+	}
+	
+	protected void enableSecureConnectionButton() {
+		Display.getDefault().asyncExec(new Runnable() {
+			public void run() {
+				btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isKeyStoreAvailable());
+			}
+		});
+	}
+	
+	public void securityConfigurationChanged() {
+		enableSecureConnectionButton();
+	}
+	
+	@Override
+	public void dispose() {
+		Router.getInstance().getConfigurationManager().removeSecurityConfigurationChangeListener(this);
+		super.dispose();
 	}
 }
