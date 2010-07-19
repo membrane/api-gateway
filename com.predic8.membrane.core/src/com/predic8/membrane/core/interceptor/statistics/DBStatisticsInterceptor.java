@@ -68,7 +68,7 @@ public class DBStatisticsInterceptor extends AbstractInterceptor {
 
 	private boolean tableExists(Connection con) throws SQLException {
 		DatabaseMetaData meta = con.getMetaData();
-		ResultSet rs = meta.getTables("", JDBCUtil.getDatabaseName(meta.getURL()), DBTableConstants.TABLE_NAME, null);
+		ResultSet rs = meta.getTables("", null, DBTableConstants.TABLE_NAME, null);
 		return rs.next();
 	}
 
