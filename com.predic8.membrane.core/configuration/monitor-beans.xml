@@ -57,6 +57,12 @@
 					-->
 				</bean>
 
+				<bean id="databaseInterceptor"
+					class="com.predic8.membrane.core.interceptor.statistics.DBStatisticsInterceptor">
+					<property name="displayName" value="Database Statistics Interceptor" />
+					<property name="dataSource" ref="dataSource" />
+				</bean>
+
 			</list>
 		</property>
 	</bean>
@@ -163,12 +169,6 @@
 		class="com.predic8.membrane.core.interceptor.statistics.CSVStatisticsInterceptor">
 		<property name="displayName" value="CSV Statistics Interceptor" />
 		<property name="fileName" value="C:\temp\exc-statistics.csv" />
-	</bean>
-
-	<bean id="databaseInterceptor"
-		class="com.predic8.membrane.core.interceptor.statistics.DBStatisticsInterceptor">
-		<property name="displayName" value="Database Statistics Interceptor" />
-		<property name="dataSource" ref="dataSource" />
 	</bean>
 
 	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
