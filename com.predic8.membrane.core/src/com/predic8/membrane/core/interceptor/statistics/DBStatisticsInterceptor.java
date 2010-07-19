@@ -48,8 +48,6 @@ public class DBStatisticsInterceptor extends AbstractInterceptor {
 		prepSt.executeUpdate();	
 	}
 
-	
-
 	private void closeConnection(Connection con) {
 		try {
 			con.close();
