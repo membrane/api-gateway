@@ -168,12 +168,15 @@
 	<bean id="databaseInterceptor"
 		class="com.predic8.membrane.core.interceptor.statistics.DBStatisticsInterceptor">
 		<property name="displayName" value="Database Statistics Interceptor" />
-		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
-		<property name="url" value="jdbc:mysql://localhost:3306/membrane" />
-		<property name="userName" value="root" />
-		<property name="password" value="root" />
+		<property name="dataSource" ref="dataSource" />
 	</bean>
 
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
+		<property name="url" value="jdbc:mysql://localhost:3306/membrane" />
+		<property name="username" value="root" />
+		<property name="password" value="root" />
+	</bean>
 
 </beans>
 	

@@ -9,8 +9,6 @@ import java.sql.Statement;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.dbcp.BasicDataSource;
-
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -19,16 +17,6 @@ import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 
 public class DBStatisticsInterceptor extends AbstractInterceptor {
 
-	private String url;
-
-	private String userName = "";
-
-	private String password = "";
-
-	private String driverClassName;
-	
-	private boolean driverLoaded;
-
 	private DataSource dataSource;
 	
 	private PreparedStatement prepSt;
@@ -36,15 +24,9 @@ public class DBStatisticsInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		if (!driverLoaded) {
-			return Outcome.CONTINUE;
-		}
 
-		if (dataSource == null)
-			dataSource = getDataSource();
-		
 		Connection con = dataSource.getConnection();
-
+		
 		try {
 			createTableIfNecessary(con);
 
@@ -86,51 +68,16 @@ public class DBStatisticsInterceptor extends AbstractInterceptor {
 
 	private boolean tableExists(Connection con) throws SQLException {
 		DatabaseMetaData meta = con.getMetaData();
-		ResultSet rs = meta.getTables("", JDBCUtil.getDatabaseName(url), DBTableConstants.TABLE_NAME, null);
+		ResultSet rs = meta.getTables("", JDBCUtil.getDatabaseName(meta.getURL()), DBTableConstants.TABLE_NAME, null);
 		return rs.next();
 	}
 
-	public void setDriverClassName(String driverClassName) {
-		try {
-			Class.forName(driverClassName);
-			driverLoaded = true;
-			this.driverClassName = driverClassName;
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
+	public DataSource getDataSource() {
+		return dataSource;
 	}
-
-	public void setUrl(String url) {
-		this.url = url;
+	
+	public void setDataSource(DataSource dataSource) {
+		this.dataSource = dataSource;
 	}
-
-	public String getUrl() {
-		return url;
-	}
-
-	public String getUserName() {
-		return userName;
-	}
-
-	public void setUserName(String userName) {
-		this.userName = userName;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public String getPassword() {
-		return password;
-	}
-
-	private DataSource getDataSource() {
-		BasicDataSource ds = new BasicDataSource();
-		ds.setDriverClassName(driverClassName);
-		ds.setUsername(userName);
-		ds.setPassword(password);
-		ds.setUrl(url);
-		return ds;
-	}
-
+	
 }
