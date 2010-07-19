@@ -15,7 +15,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.DBTableConstants;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 
-public class DBStatisticsInterceptor extends AbstractInterceptor {
+public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 
 	private DataSource dataSource;
 	
