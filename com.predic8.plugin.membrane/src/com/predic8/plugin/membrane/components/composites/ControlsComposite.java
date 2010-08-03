@@ -50,7 +50,8 @@ public abstract class ControlsComposite extends Composite {
 	}
 
 	public void enableDependentButtons(boolean status) {
-		btEdit.setEnabled(status);
+		if (isEditSupported())
+			btEdit.setEnabled(status);
 		btRemove.setEnabled(status);
 		btUp.setEnabled(status);
 		btDown.setEnabled(status);
