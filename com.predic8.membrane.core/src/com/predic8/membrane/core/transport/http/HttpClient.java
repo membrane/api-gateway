@@ -138,7 +138,6 @@ public class HttpClient {
 			return;
 		}
 
-		
 		if (!useProxy())
 			exc.getRequest().setUri(getPathAndQueryString(dest));
 
@@ -173,7 +172,6 @@ public class HttpClient {
 	}
 
 	public Response call(HttpExchange exc) throws Exception {
-		log.debug("calling using rule: " + exc.getRule() + " : " + exc.getRequest().getUri());
 		if (exc.getDestinations().size() == 0)
 			throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
 		

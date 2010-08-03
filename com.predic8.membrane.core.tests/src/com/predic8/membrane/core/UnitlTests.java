@@ -26,7 +26,7 @@ import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.util.ByteUtilTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
-import com.predic8.membrane.integration.LoadBalancingInterceptorTest;
+import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 
 public class UnitlTests {

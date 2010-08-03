@@ -38,8 +38,8 @@ public class HttpServerThread extends AbstractHttpThread {
 
 	public static int counter = 0;
 
-	public HttpServerThread(HttpExchange exchange, Socket socket, HttpTransport transport) throws IOException {
-		this.exchange = exchange;
+	public HttpServerThread(Socket socket, HttpTransport transport) throws IOException {
+		this.exchange = new HttpExchange();
 		exchange.setServerThread(this);
 		log = LogFactory.getLog(HttpServerThread.class.getName());
 		counter++;

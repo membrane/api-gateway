@@ -98,9 +98,8 @@
 		<property name="displayName" value="roundRobinBalancer" />
 		<property name="endpoints">
 			<list>
-				<value>http://www.thomas-bayer.com:80/axis2/services/BLZService
-				</value>
-				<value>http://www.thomas-bayer.com/axis2/services/BLZService</value>
+				<value>www.thomas-bayer.com:80</value>
+				<value>www.thomas-bayer.com</value>
 			</list>
 		</property>
 		<property name="dispatchingStrategy">
