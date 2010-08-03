@@ -1,0 +1,44 @@
+Building a monitor distribution
+=====================================
+
+1. com.predic8.membrane.core
+
+    1.1. Update version number constant in com.predic8.membrane.core.Contsants class.
+	1.2  MANIFEST-INF/MANIFEST.MF 
+		 1.2.1. overview tab change version number.
+	
+2. com.predic8.membrane.core.tests
+	2.1  MANIFEST-INF/MANIFEST.MF 
+		 2.1.1. overview tab change version number.
+		 2.1.2. dependences tab: in the list of Required Plug-ins replace dependency to core Plug-in with new one.
+	
+3. com.predic8.membrane.plugin.membrane
+	3.1  MANIFEST-INF/MANIFEST.MF 
+		 3.1.1. overview tab change version number.
+		 3.1.2. dependences tab: in the list of Required Plug-ins replace dependency to core Plug-in with new one.
+	
+4. com.predic8.membrane.rcp.membrane
+	4.1  MANIFEST-INF/MANIFEST.MF 
+		 4.1.1. overview tab change version number.
+		 4.1.2. dependences tab: in the list of Required Plug-ins replace dependency to membrane plug-in with new one.
+	4.2  membrane_monitor_XXX.product		
+	     4.2.1.  overview tab: change version number.
+	     4.2.2.  branding tab: change version number in about dialog.
+	     4.2.3.  overview tab: click on testing window 'synchronize' link.
+	     4.2.4.  overview tab: click on testing window 'Launch an eclipse application' link to make final check of application.
+	     4.2.5.  overview tab: click on exporting window 'Eclipse product export wizard' link.
+	     		4.2.5.1 in root directory text field update root directory name so   		
+	     
+
+5. membrane-monitor-static
+	5.1 copy changes in configuration/monitor-beans.xml from core project to monitor-beans.xml 
+  
+  
+
+Building a router distribution
+=====================================
+
+1. build-router.xml update property version.
+2. Copy changes from configuration/monitor-beans to router/conf/monitor-beans.xml
+
+
