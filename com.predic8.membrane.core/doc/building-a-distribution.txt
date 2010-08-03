@@ -39,6 +39,6 @@ Building a router distribution
 =====================================
 
 1. build-router.xml update property version.
-2. Copy changes from configuration/monitor-beans to router/conf/monitor-beans.xml
+2. Copy router relevant changes from configuration/monitor-beans to router/conf/monitor-beans.xml
 
 
