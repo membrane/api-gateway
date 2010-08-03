@@ -30,7 +30,8 @@ public abstract class ControlsComposite extends Composite {
 
 	private void addPuttonsToComposite() {
 		btAdd = createAddButton(this);
-		btEdit = createEditButton(this);
+		if (isEditSupported())
+			btEdit = createEditButton(this);
 		btRemove = createRemoveButton(this);
 		btUp = createUpButton(this);
 		btDown = createDownButton(this);
@@ -132,6 +133,8 @@ public abstract class ControlsComposite extends Composite {
 	
 	public abstract void downButtonPressed();
 	
-	
+	protected boolean isEditSupported() {
+		return true;
+	}
 	
 }

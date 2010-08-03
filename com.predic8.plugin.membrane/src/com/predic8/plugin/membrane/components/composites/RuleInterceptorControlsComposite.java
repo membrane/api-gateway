@@ -35,4 +35,9 @@ public class RuleInterceptorControlsComposite extends ControlsComposite {
 	public void upButtonPressed() {
 		((RuleInterceptorTabComposite)getParent()).moveUpSelectedInterceptor();
 	}
+	
+	@Override
+	protected boolean isEditSupported() {
+		return false;
+	}
 }
