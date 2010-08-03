@@ -27,7 +27,7 @@ Building a monitor distribution
 	     4.2.3.  overview tab: click on testing window 'synchronize' link.
 	     4.2.4.  overview tab: click on testing window 'Launch an eclipse application' link to make final check of application.
 	     4.2.5.  overview tab: click on exporting window 'Eclipse product export wizard' link.
-	     		4.2.5.1 in root directory text field update root directory name so   		
+	     		4.2.5.1 in text field for root directory update name to reflect version changes.   		
 	     
 
 5. membrane-monitor-static
