@@ -70,7 +70,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private Rule getRule(HttpExchange exc) {
-		ForwardingRuleKey key = new ForwardingRuleKey(exc.getSourceHostname(), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
+		ForwardingRuleKey key = new ForwardingRuleKey(exc.getRequest().getHeader().getHost(), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
 		Rule rule = router.getRuleManager().getMatchingRule(key);
 		if (rule != null) {
 			log.debug("Matching Rule found for RuleKey " + key);

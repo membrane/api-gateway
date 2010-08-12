@@ -24,6 +24,9 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
@@ -33,6 +36,8 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class RuleManager {
 
+	private static Log log = LogFactory.getLog(RuleManager.class.getName());
+	
 	private Router router;
 
 	private List<Rule> rules = new Vector<Rule>();
@@ -159,8 +164,19 @@ public class RuleManager {
 			return getRule(ruleKey);
 
 		for (Rule rule : rules) {
-			if (!rule.getKey().getHost().equals(ruleKey.getHost()) && !rule.getKey().isHostWildcard())
-				continue;
+			
+			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + ruleKey.getHost());
+			
+			if (!rule.getKey().isHostWildcard()) {
+				String ruleHost = rule.getKey().getHost().split(":")[0];
+				String requestHost = ruleKey.getHost().split(":")[0];
+				
+				log.debug("Rule host: " + ruleHost + ";  Request host: " + requestHost);
+				
+				if (!ruleHost.equalsIgnoreCase(requestHost))
+					continue;
+			}
+			
 			if (rule.getKey().getPort() != ruleKey.getPort())
 				continue;
 			if (!rule.getKey().getMethod().equals(ruleKey.getMethod()) && !rule.getKey().isMethodWildcard())

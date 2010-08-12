@@ -50,9 +50,10 @@ public class HttpEndpointListener extends Thread {
 			try {
 				executorService.execute(new HttpServerThread(serverSocket.accept(), transport));
 			} catch (SocketException e) {
-				executorService.shutdown();
-			} catch (IOException e) {
-				executorService.shutdown();
+				e.printStackTrace();
+				//executorService.shutdown();
+			} catch (Exception e) {
+				//executorService.shutdown();
 				e.printStackTrace();
 			}
 		}
