@@ -30,6 +30,7 @@ import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -150,14 +151,14 @@ public class HttpServerThread extends AbstractHttpThread {
 
 		} catch (AbortException e) {
 			log.debug("Aborted");
-			targetRes = exchange.getResponse();
+			exchange.finishExchange(true, exchange.getErrorMessage());
+			writeResponse(exchange.getResponse());
+			
+			log.debug("exchange set aborted");
+			return;
 		}
-
-		log.debug("Start writing targetRes to srcOut");
-		targetRes.write(srcOut);
-		srcOut.flush();
-		log.debug("Done writing targetRes to srcOut");
-		exchange.setTimeResSent(System.currentTimeMillis());
+		
+		writeResponse(targetRes);
 		exchange.setCompleted();
 		log.debug("exchange set completed");
 	}
@@ -176,6 +177,12 @@ public class HttpServerThread extends AbstractHttpThread {
 
 		if (Outcome.ABORT == invokeRequestHandlers(exchange, exchange.getRule().getInterceptors()))
 			throw new AbortException();
+	}
+	
+	private void writeResponse(Response res) throws Exception{
+		res.write(srcOut);
+		srcOut.flush();
+		exchange.setTimeResSent(System.currentTimeMillis());
 	}
 
 	private void block(Message message) throws TerminateException {

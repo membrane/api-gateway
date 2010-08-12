@@ -62,11 +62,6 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		exc.getServerThread().getSourceSocket().shutdownInput();
 		Response res = HttpUtil.createErrorResponse("This request was not accepted by Membrane Monitor. Please correct the request and try again.");
 		exc.setResponse(res);
-		res.write(exc.getServerThread().getSrcOut());
-		exc.getServerThread().getSrcOut().flush();
-
-		exc.setTimeResSent(System.currentTimeMillis());
-		exc.finishExchange(true, exc.getErrorMessage());
 	}
 
 	private Rule getRule(HttpExchange exc) {
