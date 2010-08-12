@@ -176,9 +176,6 @@
 		<property name="fileName" value="C:\temp\exc-statistics.csv" />
 	</bean>
 
-	<bean id="t1" class="com.mysql.jdbc.Driver"></bean>
-
-
 	<!--
 		Configuration of DataSource 
 		============================
@@ -187,11 +184,13 @@
 		Please provide all necessary information for correct initialization of data source.
 		Note: you have to put third party libraries in lib directory before using JDBC interceptor.   
 	-->
+	
+	<!--  
 	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
 		<property name="driverClassName" value="com.mysql.jdbc.Driver" />
 		<property name="url" value="jdbc:mysql://localhost:3306/membrane" />
 		<property name="username" value="root" />
 		<property name="password" value="root" />
 	</bean>
-
+	-->
 </beans>
