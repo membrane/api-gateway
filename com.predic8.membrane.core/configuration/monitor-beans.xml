@@ -71,15 +71,16 @@
 				-->
 				
 				<!--
-					Storing exchange statistics in CSV file
+					Logging Router access to CSV
 					=======================================
 					You can store exchange metadata in CSV files to disc. The data will be appended to 
 					the given file, and can be imported into Excel later on.
 				-->
+				<!--
 				<bean class="com.predic8.membrane.core.interceptor.statistics.CSVStatisticsInterceptor">
-					<property name="displayName" value="CSV Statistics Interceptor" />
 					<property name="fileName" value="C:\temp\exc-statistics.csv" />
 				</bean>
+				-->
 			</list>
 		</property>
 	</bean>
@@ -150,18 +151,6 @@
 				</entry>
 			</map>
 		</property>
-	</bean>
-
-	<bean id="head2Body"
-		class="com.predic8.membrane.core.interceptor.AuthHead2BodyInterceptor">
-		<property name="displayName" value="Moves auth header elements to body" />
-	</bean>
-
-	<bean id="coachDB"
-		class="com.predic8.membrane.core.interceptor.CoachDBInterceptor">
-		<property name="displayName" value="Message Persister" />
-		<property name="targetHost" value="192.168.2.131" />
-		<property name="targetPort" value="5984" />
 	</bean>
 
 	<!--

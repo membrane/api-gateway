@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.statistics;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
@@ -25,24 +24,17 @@ import com.predic8.membrane.core.interceptor.Outcome;
 
 public class CSVStatisticsInterceptor extends AbstractInterceptor {
 
-	private String fileName = "";
-
-	private File file;
-
-	private boolean canWrite;
+	private FileOutputStream out;
 
 	private StringBuffer buf = new StringBuffer();
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		buf.delete(0, buf.length());
-		writeExchangeToBuffer(exc);
-		writeBufferContentToOutput();
-		buf.delete(0, buf.length());
+		writeExchange(exc);
 		return Outcome.CONTINUE;
 	}
 
-	private void writeExchangeToBuffer(Exchange exc) {
+	private void writeExchange(Exchange exc) throws Exception {
 		buf.append(ExchangesUtil.getStatusCode(exc));
 		buf.append(";");
 		buf.append(ExchangesUtil.getTime(exc));
@@ -68,50 +60,27 @@ public class CSVStatisticsInterceptor extends AbstractInterceptor {
 		buf.append(ExchangesUtil.getTimeDifference(exc));
 		buf.append(";");
 		buf.append(System.getProperty("line.separator"));
+		flushBuffer();
 	}
 
-	private void writeBufferContentToOutput() throws Exception, IOException {
-		if (!canWrite) 
-			return;
-		
-		OutputStream out = null;
-		try {
-			out = new FileOutputStream(file, true);
-			out.write(buf.toString().getBytes());
-		} catch (Exception e) {
-			throw e;
-		} finally {
-			buf.delete(0, buf.length());
-			if (out != null)
-				out.close();
-		}
+	private void flushBuffer() throws Exception {
+		out.write(buf.toString().getBytes());
+		out.flush();
+		buf.setLength(0);
 	}
 
-	public void setFileName(String fileName) {
-		this.fileName = fileName;
-		createFile();
-		writeHeadersToBuffer();
-		try {
-			writeBufferContentToOutput();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	public void setFileName(String fileName) throws Exception {
+		File file = new File(fileName);
+		if (!file.exists())
+			file.createNewFile();
+		if (!file.canWrite())
+			throw new IOException("File " + fileName + " is not writable.");
+		out = new FileOutputStream(file, true);
+		if (file.length() == 0)
+			writeHeaders();
 	}
 
-	private void createFile() {
-		file = new File(fileName);
-		if (!file.exists()) {
-			try {
-				canWrite = file.createNewFile();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		} else {
-			canWrite = true;
-		}
-	}
-
-	private void writeHeadersToBuffer() {
+	private void writeHeaders() throws Exception {
 		buf.append("Status Code");
 		buf.append(";");
 		buf.append("Time");
@@ -137,5 +106,6 @@ public class CSVStatisticsInterceptor extends AbstractInterceptor {
 		buf.append("Duration");
 		buf.append(";");
 		buf.append(System.getProperty("line.separator"));
+		flushBuffer();
 	}
 }
