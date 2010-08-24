@@ -47,8 +47,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 	}
 
 	protected void makeActions(IWorkbenchWindow window) {
-		exitAction = ActionFactory.QUIT.create(window);
-		register(exitAction);
+//		exitAction = ActionFactory.QUIT.create(window);
+//		register(exitAction);
 
 		preferencesAction = ActionFactory.PREFERENCES.create(window);
 		register(preferencesAction);
@@ -83,8 +83,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
 		menuBar.add(new GroupMarker(IWorkbenchActionConstants.MB_ADDITIONS));
 		menuBar.add(helpMenu);
 
-		fileMenu.add(new Separator());
-		fileMenu.add(exitAction);
+		//fileMenu.add(new Separator());
+		//fileMenu.add(exitAction);
 
 //		MenuManager showViewMenu = new MenuManager("Show View");
 //		showViewMenu.add(viewList);

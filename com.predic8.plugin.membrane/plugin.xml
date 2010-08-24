@@ -91,89 +91,6 @@
       </view>
    </extension>
    <extension
-         point="org.eclipse.ui.actionSets">
-      <actionSet
-            id="com.predic8.plugin.membrane.actionSet"
-            label="Membrane Action Set"
-            visible="true">
-         <menu
-               id="MembraneMenu"
-               label="&amp;Membrane">
-            <separator
-                  name="membraneRulesGroup">
-            </separator>
-            <separator
-                  name="membraneShowRuleViewsGroup">
-            </separator>
-            <separator
-                  name="membraneConfigurationGroup">
-            </separator>
-            <separator
-                  name="membraneExchangesSeparator">
-            </separator>
-         </menu>
-         <action
-               class="com.predic8.plugin.membrane.actions.rules.AddRuleAction"
-               icon="icons/add_rule.png"
-               id="com.predic8.plugin.membrane.actions.AddRuleAction"
-               label="&amp;Add Rule"
-               menubarPath="MembraneMenu/membraneRulesGroup"
-               toolbarPath="membraneRulesGroup"
-               tooltip="Add a new Rule">
-         </action>
-         <action
-               class="com.predic8.plugin.membrane.actions.LoadConfigurationAction"
-               icon="icons/folder_add.png"
-               id="com.predic8.plugin.membrane.actions.LoadConfigurationAction"
-               label="Load Configuration"
-               menubarPath="MembraneMenu/membraneConfigurationGroup"
-               style="push"
-               toolbarPath="membraneConfigurationGroup"
-               tooltip="Load Rule Configuration">
-         </action>
-         <action
-               class="com.predic8.plugin.membrane.actions.SaveConfigurationAction"
-               icon="icons/disk.png"
-               id="com.predic8.plugin.membrane.actions.SaveConfigurationAction"
-               label="Save Configuration"
-               menubarPath="MembraneMenu/membraneConfigurationGroup"
-               state="false"
-               style="push"
-               toolbarPath="membraneConfigurationGroup"
-               tooltip="Save Rule Configuration">
-         </action>
-         <action
-               class="com.predic8.plugin.membrane.actions.views.ShowRuleStatisticsAction"
-               icon="icons/calculator.png"
-               id="com.predic8.plugin.membrane.actions.ShowRuleStatisticsAction"
-               label="Show Rule Statistics"
-               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
-               toolbarPath="membraneShowRuleViewsGroup"
-               tooltip="show rule statistics  view">
-         </action>
-         <action
-               class="com.predic8.plugin.membrane.actions.views.ShowExchangesViewAction"
-               icon="icons/cascade.png"
-               id="com.predic8.plugin.membrane.actions.ShowExchangesViewAction"
-               label="Show Exchanges"
-               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
-               style="push"
-               toolbarPath="membraneShowRuleViewsGroup"
-               tooltip="show exchanges view">
-         </action>
-         <action
-               class="com.predic8.plugin.membrane.actions.views.ShowRulesViewAction"
-               icon="icons/report_key.png"
-               id="com.predic8.plugin.membrane.actions.ShowRulesViewAction"
-               label="Show Rules"
-               menubarPath="MembraneMenu/membraneShowRuleViewsGroup"
-               style="push"
-               toolbarPath="membraneShowRuleViewsGroup"
-               tooltip="show rules view">
-         </action>
-      </actionSet>
-   </extension>
-   <extension
          point="org.eclipse.ui.preferencePages">
       <page
             category="com.predic8.plugin.membrane.preferences.MembraneMonitorPreferencePage"
@@ -227,6 +144,154 @@
             file="testToc.xml"
             primary="true">
       </toc>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="menu:org.eclipse.ui.main.menu">
+         <menu
+               id="file"
+               label="File">
+            <command
+                  commandId="loadConfiguration"
+                  icon="icons/folder_add.png"
+                  label="Load Configuration"
+                  style="push">
+            </command>
+            <command
+                  commandId="saveConfiguration"
+                  icon="icons/disk.png"
+                  label="Save Configuration"
+                  style="push">
+            </command>
+            <separator
+                  name="com.predic8.plugin.membrane.separator2"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="exit"
+                  label="Exit"
+                  style="push">
+            </command>
+         </menu>
+         <menu
+               label="Rules">
+            <command
+                  commandId="addRule"
+                  icon="icons/add_rule.png"
+                  label="&amp;Add Rule"
+                  style="push">
+            </command>
+         </menu>
+         <menu
+               id="window"
+               label="Window">
+            <separator
+                  name="com.predic8.plugin.membrane.separator1"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="showRuleStatistics"
+                  icon="icons/calculator.png"
+                  label="Show Rule Statistics"
+                  style="push">
+            </command>
+            <command
+                  commandId="showExchanges"
+                  icon="icons/cascade.png"
+                  label="Show Exchanges"
+                  style="push">
+            </command>
+            <command
+                  commandId="showRules"
+                  icon="icons/report_key.png"
+                  label="Show Rules"
+                  style="push">
+            </command>
+         </menu>
+      </menuContribution>
+      <menuContribution
+            locationURI="toolbar:org.eclipse.ui.main.toolbar">
+         <toolbar
+               id="com.predic8.plugin.membrane.toolbar">
+            <command
+                  commandId="addRule"
+                  icon="icons/add_rule.png"
+                  style="push">
+            </command>
+            <separator
+                  name="com.predic8.plugin.membrane.separator3"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="saveConfiguration"
+                  icon="icons/disk.png"
+                  style="push">
+            </command>
+            <command
+                  commandId="loadConfiguration"
+                  icon="icons/folder_add.png"
+                  style="push">
+            </command>
+            <separator
+                  name="com.predic8.plugin.membrane.separator4"
+                  visible="true">
+            </separator>
+            <command
+                  commandId="showRules"
+                  icon="icons/report_key.png"
+                  style="push">
+            </command>
+            <command
+                  commandId="showRuleStatistics"
+                  icon="icons/calculator.png"
+                  style="push">
+            </command>
+            <command
+                  commandId="showExchanges"
+                  icon="icons/cascade.png"
+                  style="push">
+            </command>
+         </toolbar>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.commands">
+      <command
+            defaultHandler="com.predic8.plugin.membrane.commands.LoadConfigurationCommand"
+            id="loadConfiguration"
+            name="Load Configuration">
+      </command>
+      <command
+            defaultHandler="com.predic8.plugin.membrane.commands.SaveConfigurationCommand"
+            id="saveConfiguration"
+            name="Save Configuration">
+      </command>
+      <command
+            defaultHandler="com.predic8.plugin.membrane.commands.AddRuleCommand"
+            id="addRule"
+            name="&amp;Add Rule">
+      </command>
+      <command
+            defaultHandler="com.predic8.plugin.membrane.commands.ShowRuleStatisticsCommand"
+            id="showRuleStatistics"
+            name="Show Rule Statistics">
+      </command>
+      <command
+            defaultHandler="com.predic8.plugin.membrane.commands.ShowExchangesCommand"
+            id="showExchanges"
+            name="Show Exchanges">
+      </command>
+      <command
+            defaultHandler="com.predic8.plugin.membrane.commands.ShowRulesCommand"
+            id="showRules"
+            name="Show Rules">
+      </command>
+      <command
+            defaultHandler="com.predic8.plugin.membrane.commands.ExitCommand"
+            id="exit"
+            name="Exit">
+      </command>
    </extension>
 
 </plugin>
