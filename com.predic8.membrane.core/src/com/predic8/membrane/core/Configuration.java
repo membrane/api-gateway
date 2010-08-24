@@ -104,7 +104,7 @@ public class Configuration extends AbstractXMLElement {
 		if (props.containsKey(ADJ_HOST_HEADER)) {
 			return (Boolean) props.get(ADJ_HOST_HEADER);
 		}
-		return false;
+		return true;
 	}
 
 	public boolean getAdjustContentLength() {
