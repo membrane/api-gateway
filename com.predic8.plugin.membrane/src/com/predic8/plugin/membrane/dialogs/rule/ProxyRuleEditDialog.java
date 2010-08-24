@@ -106,7 +106,7 @@ public class ProxyRuleEditDialog extends RuleEditDialog {
 
 		if (!(getTransport()).isAnyThreadListeningAt(key.getPort())) {
 			try {
-				(getTransport()).addPort(key.getPort(), rule.isInboundTSL());
+				(getTransport()).openPort(key.getPort(), rule.isInboundTSL());
 			} catch (IOException e1) {
 				openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
 				return;

@@ -121,11 +121,11 @@ public class Response extends Message {
 	}
 
 	public static Response createOKResponse() {
-		Response response = new Response();
-		response.setStatusCode(200);
-		response.setStatusMessage("OK");
-		response.setVersion("1.1");
-		return response;
+		Response res = new Response();
+		res.setStatusCode(200);
+		res.setStatusMessage("OK");
+		res.setVersion("1.1");
+		return res;
 	}
 	
 }

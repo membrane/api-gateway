@@ -29,20 +29,6 @@ public class HttpTransport extends Transport {
 
 	public Hashtable<Integer, HttpEndpointListener> portListenerMapping = new Hashtable<Integer, HttpEndpointListener>();
 	
-	public synchronized void addPort(int port, boolean tsl) throws IOException {
-
-		if (isAnyThreadListeningAt(port)) {
-			return;
-		}
-
-		HttpEndpointListener portListenerThread = new HttpEndpointListener(port, this, tsl);
-		portListenerMapping.put(port, portListenerThread);
-		portListenerThread.start();
-
-		for (IPortChangeListener listener : menuListeners) {
-			listener.addPort(port);
-		}
-	}
 	
 	public boolean isAnyThreadListeningAt(int port) {
 		return portListenerMapping.get(port) != null;
@@ -77,11 +63,19 @@ public class HttpTransport extends Transport {
 	 * @param port
 	 * @throws IOException
 	 */
-	public void openPort(int port, boolean tsl) throws IOException {
-		if (isAnyThreadListeningAt(port))
+	public synchronized void openPort(int port, boolean tsl) throws IOException {
+		if (isAnyThreadListeningAt(port)) {
 			return;
-		addPort(port, tsl);
+		}
 
+		HttpEndpointListener portListenerThread = new HttpEndpointListener(port, this, tsl);
+		portListenerMapping.put(port, portListenerThread);
+		portListenerThread.start();
+
+		for (IPortChangeListener listener : menuListeners) {
+			listener.addPort(port);
+		}
 	}
+	
 
 }

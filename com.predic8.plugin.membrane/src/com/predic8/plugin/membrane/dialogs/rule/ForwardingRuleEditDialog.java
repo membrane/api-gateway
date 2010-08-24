@@ -138,7 +138,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 
 		if (!getTransport().isAnyThreadListeningAt(ruleKey.getPort())) {
 			try {
-				getTransport().addPort(ruleKey.getPort(), rule.isInboundTSL());
+				getTransport().openPort(ruleKey.getPort(), rule.isInboundTSL());
 			} catch (IOException e1) {
 				openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
 				return;

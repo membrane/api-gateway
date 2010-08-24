@@ -22,16 +22,6 @@ public class Transport {
 			interceptor.setRouter(router);
 		}
 	}
-	
-	public void addMenuViewerListener(IPortChangeListener mViewer) {
-		menuListeners.add(mViewer);
-	
-	}
-
-	public void removeMenuViewerListener(IPortChangeListener mViewer) {
-		menuListeners.remove(mViewer);
-	
-	}
 
 	public List<Interceptor> getInterceptors() {
 		return interceptors;

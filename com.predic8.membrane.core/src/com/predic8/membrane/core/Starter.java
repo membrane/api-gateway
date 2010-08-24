@@ -28,13 +28,16 @@ import java.net.URLClassLoader;
 public class Starter {
 
 	public static void main(String[] args) throws Exception {
+		getMainMethod().invoke(null, new Object[] { args });
+	}
 
-		Class<?> clazz = getLoader().loadClass("com.predic8.membrane.core.RouterCLI");
+	private static Method getMainMethod() throws NoSuchMethodException,
+			ClassNotFoundException {
+		return getRouterCLIClass().getDeclaredMethod("main", new Class[] { String[].class });
+	}
 
-		Method mainMethod = clazz.getDeclaredMethod("main", new Class[] { String[].class });
-
-		mainMethod.invoke(null, new Object[] { args });
-
+	private static Class<?> getRouterCLIClass() throws ClassNotFoundException {
+		return getLoader().loadClass("com.predic8.membrane.core.RouterCLI");
 	}
 
 	private static URLClassLoader getLoader() {
