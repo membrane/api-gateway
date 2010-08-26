@@ -7,7 +7,8 @@ import org.eclipse.core.commands.ExecutionException;
 public class ExitCommand extends AbstractHandler {
 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		// TODO Auto-generated method stub
+		// TODO shutdown gracefully
+		System.exit(0);
 		return null;
 	}
 

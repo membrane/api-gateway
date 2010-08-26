@@ -53,7 +53,7 @@ public class HttpClient {
 
 	private Router router;
 	
-	private Configuration configuration = new Configuration();
+	private Configuration config = new Configuration();
 	
 	private boolean isSameSocket(String host, int port) {
 		if (!useProxy()) {
@@ -116,7 +116,7 @@ public class HttpClient {
 
 	private Configuration getConfiguration() {
 		if (router == null)
-			return configuration;
+			return config;
 		return router.getConfigurationManager().getConfiguration();
 	}
 
@@ -219,16 +219,21 @@ public class HttpClient {
 			shutDownSourceSocket(exc);
 		}
 
-		Response response = new Response();
-		response.read(in, !exc.getRequest().isHEADRequest());
+		Response res = new Response();
+		try{
+			res.read(in, !exc.getRequest().isHEADRequest());
+		}catch(SocketException e){
+			log.error("Connection aborted");
+			exc.getRequest().write(System.err);
+		}
 
-		if (response.getStatusCode() == 100) {
-			do100ExpectedHandling(exc, response);
+		if (res.getStatusCode() == 100) {
+			do100ExpectedHandling(exc, res);
 		}
 
 		exc.setReceived();
 		exc.setTimeResReceived(System.currentTimeMillis());
-		return response;
+		return res;
 	}
 
 	private void handleConnectRequest(HttpExchange exc) throws IOException, EndOfStreamException {
