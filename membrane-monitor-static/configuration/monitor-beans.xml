@@ -61,14 +61,25 @@
 					Storing exchange statistics in database
 					======================================= You can store exchange
 					statistical data on permanent storage. Please uncomment the
-					following bean definition and configure bean with id="dataSource"
-					below. Do not forget to provide jdbc connector jar file in lib
+					following bean definition and configure the bean below. Do not 
+					forget to provide jdbc connector jar file in lib
 					directory.
 				-->
 				<!--
-					<bean id="statisticsJDBCInterceptor"
-					class="com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor">
+					<bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor">
 					<property name="dataSource" ref="dataSource" /> </bean>
+				-->
+				
+				<!--
+					Logging Router access to CSV
+					=======================================
+					You can store exchange metadata in CSV files to disc. The data will be appended to 
+					the given file, and can be imported into Excel later on.
+				-->
+				<!--
+				<bean class="com.predic8.membrane.core.interceptor.statistics.CSVStatisticsInterceptor">
+					<property name="fileName" value="C:\temp\exc-statistics.csv" />
+				</bean>
 				-->
 			</list>
 		</property>
@@ -98,9 +109,8 @@
 		<property name="displayName" value="roundRobinBalancer" />
 		<property name="endpoints">
 			<list>
-				<value>http://www.thomas-bayer.com:80/axis2/services/BLZService
-				</value>
-				<value>http://www.thomas-bayer.com/axis2/services/BLZService</value>
+				<value>www.thomas-bayer.com:80</value>
+				<value>www.thomas-bayer.com</value>
 			</list>
 		</property>
 		<property name="dispatchingStrategy">
@@ -143,18 +153,6 @@
 		</property>
 	</bean>
 
-	<bean id="head2Body"
-		class="com.predic8.membrane.core.interceptor.AuthHead2BodyInterceptor">
-		<property name="displayName" value="Moves auth header elements to body" />
-	</bean>
-
-	<bean id="coachDB"
-		class="com.predic8.membrane.core.interceptor.CoachDBInterceptor">
-		<property name="displayName" value="Message Persister" />
-		<property name="targetHost" value="192.168.2.131" />
-		<property name="targetPort" value="5984" />
-	</bean>
-
 	<!--
 		Interceptor for access control. Only authorized clients can access
 		services. Mapping of public available services and clients is
@@ -195,3 +193,4 @@
 	</bean>
 	-->
 </beans>
+
