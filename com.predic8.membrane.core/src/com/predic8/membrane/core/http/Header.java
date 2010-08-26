@@ -210,7 +210,7 @@ public class Header {
 	public String toString() {
 		StringBuffer res = new StringBuffer();
 		for (HeaderField field : fields) {
-			res.append(field.headerName.name + ": " + field.value + "\n");
+			res.append(field.toString());
 		}
 		return res.toString();
 	}

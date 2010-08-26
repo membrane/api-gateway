@@ -58,4 +58,8 @@ public class HeaderField {
 	public void setHeaderName(HeaderName headerName) {
 		this.headerName = headerName;
 	}
+	
+	public String toString(){
+		return headerName.name + ": " + value + "\n";
+	}
 }

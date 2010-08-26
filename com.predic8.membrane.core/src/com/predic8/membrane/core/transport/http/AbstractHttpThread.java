@@ -84,20 +84,20 @@ public abstract class AbstractHttpThread extends Thread {
 
 	
 	public static Response createErrorResponse(String message) {
-		Response response = new Response();
-		response.setVersion("HTTP/1.1");
-		response.setStatusCode(500);
-		response.setStatusMessage("Internal Server Error");
+		Response res = new Response();
+		res.setVersion("HTTP/1.1");
+		res.setStatusCode(500);
+		res.setStatusMessage("Internal Server Error");
 		Header header = new Header();
 		header.setContentType("text/xml;charset=utf-8");
 		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
 		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
 		header.add("Connection", "close");
 
-		response.setHeader(header);
+		res.setHeader(header);
 		
-		response.setBody(new Body("<message>" + message + "</message>"));
-		return response;
+		res.setBody(new Body("<message>" + message + "</message>"));
+		return res;
 	}
 	
 	public void stopThread() {

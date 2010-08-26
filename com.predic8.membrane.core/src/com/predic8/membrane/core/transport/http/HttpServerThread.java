@@ -121,8 +121,8 @@ public class HttpServerThread extends AbstractHttpThread {
 		targetRes = null;
 		try {
 			
-			exchange.setSourceHostname(sourceSocket.getLocalAddress().getHostName());
-			exchange.setSourceIp(sourceSocket.getLocalAddress().getHostAddress());
+			exchange.setSourceHostname(sourceSocket.getInetAddress().getHostName());
+			exchange.setSourceIp(sourceSocket.getInetAddress().getHostAddress());
 			
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
