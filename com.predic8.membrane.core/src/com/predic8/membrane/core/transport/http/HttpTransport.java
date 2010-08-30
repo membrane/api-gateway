@@ -17,6 +17,10 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.Transport;
@@ -28,8 +32,11 @@ public class HttpTransport extends Transport {
 	public static final String SOURCE_IP = "com.predic8.membrane.transport.http.source.Ip";
 
 	public Hashtable<Integer, HttpEndpointListener> portListenerMapping = new Hashtable<Integer, HttpEndpointListener>();
-	
-	
+
+	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(0,
+			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+			new SynchronousQueue<Runnable>());
+
 	public boolean isAnyThreadListeningAt(int port) {
 		return portListenerMapping.get(port) != null;
 	}
@@ -77,5 +84,12 @@ public class HttpTransport extends Transport {
 		}
 	}
 	
+	public void setMaxThreads(int value){
+		executorService.setMaximumPoolSize(value);
+	}
+	
+	public ExecutorService getExecutorService(){
+		return executorService;
+	}
 
 }

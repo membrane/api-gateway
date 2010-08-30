@@ -32,6 +32,12 @@ Building a monitor distribution
 
 5. membrane-monitor-static
 	5.1 copy changes in configuration/monitor-beans.xml from core project to monitor-beans.xml 
+
+6. tagging
+	As soon as a version is released, tag the svn tree with the current version number
+
+7. Release notes
+	Update.
   
   
 

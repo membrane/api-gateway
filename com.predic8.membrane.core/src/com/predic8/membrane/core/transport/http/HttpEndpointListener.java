@@ -28,7 +28,6 @@ import com.predic8.membrane.core.exchange.HttpExchange;
 public class HttpEndpointListener extends Thread {
 
 	private ServerSocket serverSocket;
-	private ExecutorService executorService;
 	
 	private HttpTransport transport;
 	
@@ -41,19 +40,16 @@ public class HttpEndpointListener extends Thread {
 			serverSocket = new ServerSocket(port);
 		}
 		
-		executorService = Executors.newCachedThreadPool();
 		this.transport = transport;
 	}
 
 	public void run() {
 		while (serverSocket != null && !serverSocket.isClosed() && transport != null) {
 			try {
-				executorService.execute(new HttpServerThread(serverSocket.accept(), transport));
+				transport.getExecutorService().execute(new HttpServerThread(serverSocket.accept(), transport));
 			} catch (SocketException e) {
 				e.printStackTrace();
-				//executorService.shutdown();
 			} catch (Exception e) {
-				//executorService.shutdown();
 				e.printStackTrace();
 			}
 		}

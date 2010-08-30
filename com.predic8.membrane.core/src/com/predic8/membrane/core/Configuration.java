@@ -40,6 +40,7 @@ public class Configuration extends AbstractXMLElement {
 	// Control names
 	public static final String ADJ_CONT_LENGTH = "auto_adjust_content_length";
 	public static final String INDENT_MSG = "indent_message";
+	public static final String INDENT_CONFIG = "indent_config";
 	public static final String ADJ_HOST_HEADER = "adjust_host_header_field";
 
 	public static final String PROXY_HOST = "proxy_host";
@@ -88,6 +89,17 @@ public class Configuration extends AbstractXMLElement {
 	public boolean getIndentMessage() {
 		if (props.containsKey(INDENT_MSG)) {
 			return (Boolean) props.get(INDENT_MSG);
+		}
+		return false;
+	}
+	
+	public void setIndentConfig(boolean status) {
+		props.put(INDENT_CONFIG, status);
+	}
+
+	public boolean getIndentConfig() {
+		if (props.containsKey(INDENT_CONFIG)) {
+			return (Boolean) props.get(INDENT_CONFIG);
 		}
 		return false;
 	}
