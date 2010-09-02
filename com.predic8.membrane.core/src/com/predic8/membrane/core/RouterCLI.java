@@ -21,8 +21,6 @@ import org.apache.commons.cli.ParseException;
 
 public class RouterCLI {
 
-	public static final String MEMROUTER_HOME = "MEMROUTER_HOME";
-
 	public static void main(String[] args) throws ParseException {
 
 		CommandLine commandLine = new BasicParser().parse(getOptions(), args);
@@ -36,14 +34,14 @@ public class RouterCLI {
 		}
 
 		try {
-			Router.init(getConfig(commandLine), RouterCLI.class.getClassLoader()).getConfigurationManager().loadConfiguration(getRulesFile(commandLine));
+			Router.init(getConfigFile(commandLine), RouterCLI.class.getClassLoader()).getConfigurationManager().loadConfiguration(getRulesFile(commandLine));
 		} catch (ClassNotFoundException e) {
 		
 			e.printStackTrace();
 			
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMROUTER_HOME") + "/conf/rules.xml exists");
+			System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMBRANE_HOME") + "/conf/rules.xml exists");
 			System.exit(1);
 		}
 
@@ -64,15 +62,15 @@ public class RouterCLI {
 		if (line.hasOption('c')) {
 			return line.getOptionValue('c');
 		} else {
-			return System.getenv("MEMROUTER_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "rules.xml";
+			return System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "rules.xml";
 		}
 	}
 
-	private static String getConfig(CommandLine line) {
+	private static String getConfigFile(CommandLine line) {
 		if (line.hasOption('b')) {
 			return "file:" + line.getOptionValue('b');
 		}
-		return "conf"  + System.getProperty("file.separator") + "monitor-beans.xml";
+		return System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf"  + System.getProperty("file.separator") + "monitor-beans.xml";
 	}
 
 	private static Options getOptions() {

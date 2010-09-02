@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.expression-3.0.2.RELEASE.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.asm-3.0.2.RELEASE.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.context-3.0.2.RELEASE.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.beans-3.0.2.RELEASE.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.core-3.0.2.RELEASE.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/com.springsource.javax.annotation-1.0.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="configuration/"/>
 	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.8.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>

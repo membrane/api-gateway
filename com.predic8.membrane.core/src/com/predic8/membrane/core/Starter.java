@@ -41,7 +41,7 @@ public class Starter {
 	}
 
 	private static URLClassLoader getLoader() {
-		return ClassloaderUtil.getExternalClassloader("file:" + System.getenv("MEMROUTER_HOME"));
+		return ClassloaderUtil.getExternalClassloader("file:" + System.getenv("MEMBRANE_HOME"));
 	}
 
 }
