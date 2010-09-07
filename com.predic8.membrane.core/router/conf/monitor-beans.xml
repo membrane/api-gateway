@@ -148,13 +148,6 @@
 		<property name="displayName" value="Moves auth header elements to body" />
 	</bean>
 
-	<bean id="coachDB"
-		class="com.predic8.membrane.core.interceptor.CoachDBInterceptor">
-		<property name="displayName" value="Message Persister" />
-		<property name="targetHost" value="192.168.2.131" />
-		<property name="targetPort" value="5984" />
-	</bean>
-
 	<!--
 		Interceptor for access control. Only authorized clients can access
 		services. Mapping of public available services and clients is
