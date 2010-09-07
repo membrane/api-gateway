@@ -54,7 +54,7 @@ public class RuleKeyGroup {
 
 		Group keyGroup = createKeyGroupe(parent);
 
-		createWidgetLabel(keyGroup, "Client Host:");
+		createWidgetLabel(keyGroup, "Host:");
 		textRuleHost = createRuleHostText(keyGroup);
 
 		createWidgetLabel(keyGroup, "Listen Port:");
