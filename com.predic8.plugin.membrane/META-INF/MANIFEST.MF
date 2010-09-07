@@ -11,6 +11,7 @@ Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ActivationPolicy: lazy
 Export-Package: com.predic8.plugin.membrane;uses:="org.eclipse.jface.resource,org.eclipse.ui.plugin,org.osgi.framework",
  com.predic8.plugin.membrane.actions,
+ com.predic8.plugin.membrane.commands,
  com.predic8.plugin.membrane.perspectives,
  com.predic8.plugin.membrane.resources,
  com.predic8.plugin.membrane.views
