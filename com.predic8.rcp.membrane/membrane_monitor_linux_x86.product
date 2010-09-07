@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="membrane-monitor" id="com.predic8.rcp.membrane.linux_product" application="com.predic8.rcp.membrane.application" version="1.5.2" useFeatures="false" includeLaunchers="true">
+<product name="membrane-monitor" id="com.predic8.rcp.membrane.linux_product" application="com.predic8.rcp.membrane.application" version="1.6.0" useFeatures="false" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/com.predic8.rcp.membrane/icons/logo32.png"/>
@@ -36,7 +36,6 @@
          <bmp/>
       </win>
    </launcher>
-
 
    <vm>
    </vm>
