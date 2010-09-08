@@ -54,8 +54,9 @@
 						the WSDL requested uncomment the following elements.
 					-->
 					<!--
-						<property name="host" value="abc"/> <property name="protocol"
-						value="https"/> <property name="port" value="" />
+						<property name="host" value="abc" />
+						<property name="protocol" value="https" />
+						<property name="port" value="" />
 					-->
 				</bean>
 
