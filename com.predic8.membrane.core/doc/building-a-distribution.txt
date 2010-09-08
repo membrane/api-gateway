@@ -1,50 +1,114 @@
+Howto: Build Monitor/Router distributions
+Important: As soon as a distribution is released, tag the source with the current version number! 
+
+
 Building a monitor distribution
 =====================================
 
-1. com.predic8.membrane.core
-
-    1.1. Update version number constant in com.predic8.membrane.core.Contsants class.
-	1.2  MANIFEST-INF/MANIFEST.MF 
-		 1.2.1. overview tab change version number.
+1. com.predic8.membrane.core:
+	1.1 com.predic8.membrane.core.Constants
+		Update constant "VERSION".
+	1.2 META-INF/MANIFEST.MF
+		Overview:
+			Update version number.
 	
-2. com.predic8.membrane.core.tests
-	2.1  MANIFEST-INF/MANIFEST.MF 
-		 2.1.1. overview tab change version number.
-		 2.1.2. dependences tab: in the list of Required Plug-ins replace dependency to core Plug-in with new one.
+2. com.predic8.membrane.core.tests:
+	2.1 META-INF/MANIFEST.MF 
+		Overview:
+			Update version number.
+		Dependencies:
+			Replace dependency to com.predic8.membrane.core with the current version.
+	2.2 Run UnitlTests and IntegrationTests with JUnit
+		Should any test fail, abort building and resolve the problem.
 	
-3. com.predic8.membrane.plugin.membrane
-	3.1  MANIFEST-INF/MANIFEST.MF 
-		 3.1.1. overview tab change version number.
-		 3.1.2. dependences tab: in the list of Required Plug-ins replace dependency to core Plug-in with new one.
+3. com.predic8.membrane.plugin.membrane:
+	3.1 META-INF/MANIFEST.MF
+		Overview:
+			Update version number.
+		Dependencies:
+			Replace dependency to com.predic8.membrane.core with the current version.
 	
 4. com.predic8.membrane.rcp.membrane
-	4.1  MANIFEST-INF/MANIFEST.MF 
-		 4.1.1. overview tab change version number.
-		 4.1.2. dependences tab: in the list of Required Plug-ins replace dependency to membrane plug-in with new one.
-	4.2  membrane_monitor_XXX.product		
-	     4.2.1.  overview tab: change version number.
-	     4.2.2.  branding tab: change version number in about dialog.
-	     4.2.3.  overview tab: click on testing window 'synchronize' link.
-	     4.2.4.  overview tab: click on testing window 'Launch an eclipse application' link to make final check of application.
-	     4.2.5.  overview tab: click on exporting window 'Eclipse product export wizard' link.
-	     		4.2.5.1 in text field for root directory update name to reflect version changes.   		
-	     
+	4.1 META-INF/MANIFEST.MF
+		Overview:
+			Update version number
+		Dependencies:
+			Replace dependency to com.predic8.plugin.membrane with the current version.
+	4.2 membrane_monitor_XXX.product
+		Overview:
+			Update version number.
+		Branding:
+			Update About Dialog:
+				Update version number.
+				Update copyright note.
+	4.3 membrane_monitor_XXX.product
+		Overview:
+			Click on "Synchronize" and "Launch an Eclipse application" links.
+			See if everything looks good. Do the menus work? Is anything visibly broken?
+			Should anything fail, abort building and resolve the problem.
+	4.4 membrane_monitor_XXX.product
+		Overview:
+			Launch the "Eclipse product export wizard".
+			Change "Root directory" to match target system and current version number.
+			Export product to a directory, e.g. C:\temp\membrane-monitor-${version}\
+			
+5. membrane-monitor-static:
+	5.1 configuration/monitor-beans.xml
+		Copy Monitor relevant changes from com.predic8.membrane.core/configuration/monitor-beans.xml.
+	5.2 Export project to a directory, e.g. C:\temp\membrane-monitor-static\
+		Right-click on project, click "Export".
+		Make sure not to include .project or .svn files.
+	5.3 Copy exported files into the directory from step 4.4
 
-5. membrane-monitor-static
-	5.1 copy changes in configuration/monitor-beans.xml from core project to monitor-beans.xml 
+6. Packing
+	6.1 Compress the directory from step 4.4 with your system's packer.
+		For Windows, use zip.
+		For Linux/Unix, use tar and gz.
+		For Mac, use stuffIt. (?)
+	6.2 Rename the file to match target system and current version number. 
 
-6. tagging
-	As soon as a version is released, tag the svn tree with the current version number
+6. Tagging
+	Before releasing, tag the source code in subversion with the current version number.
 
-7. Release notes
-	Update.
+7. mirror.predic8.com:
+	7.1 Upload the packed file via ftp.
+	
+8. membrane-soa.org:
+	8.1 /src/content/soap-monitor/release-notes.xml
+		Add paragraph describing the changes in the current release.
+	8.2 /src/content/soap-monitor/download.xml
+		Add row to the target system's table.
+	8.3	Run build.bat
+		Check that the build succeeds.
+		Make sure the download link works.
+		Deploy to France.
   
   
 
 Building a router distribution
 =====================================
 
-1. build-router.xml update property version.
-2. Copy router relevant changes from configuration/monitor-beans to router/conf/monitor-beans.xml
+1. com.predic8.membrane.core:
+	1.1 router/conf/monitor-beans.xml
+		Copy Router relevant changes from configuration/monitor-beans.xml.
+		Make sure the Router uses ForgetfulExchangeStore.
+	1.2 build-router.xml
+		Update property "version".
+		Run target "dist-router"
 
+2. Tagging
+	Before releasing, tag the source code in subversion with the current version number.
+
+3. mirror.predic8.com:
+	3.1 Upload the packed file fromcom.predic8.membrane.core/dist/ via ftp.
+	
+4. membrane-soa.org:
+	4.1 /src/content/soap-monitor/release-notes.xml
+		Add paragraph describing the changes in the current release.
+	4.2 /src/content/soap-monitor/download.xml
+		Add row to the target system's table.
+	4.3	Run build.bat
+		Check that the build succeeds.
+		Make sure the download link works.
+		Deploy to France.
 
