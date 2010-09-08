@@ -447,18 +447,21 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 	}
 
 	private void setInputForMessageView(HttpExchange exc, String viewId) {
-		IWorkbenchPage page = getViewSite().getPage();
-		AbstractMessageView messageView = (AbstractMessageView) page.findView(viewId);
-		if (messageView == null) {
+		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+		AbstractMessageView part = (AbstractMessageView) page.findView(viewId);
+		if (part == null)
+			return;
+		
+		if (!page.isPartVisible(part)) {
 			try {
-				page.showView(RequestView.VIEW_ID);
+				page.showView(viewId);
 			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		}
 		
-		messageView.setInput(exc);
-		messageView.updateUIStatus(canShowBody);
+		part.setInput(exc);
+		part.updateUIStatus(canShowBody);
 	}
 
 	private Configuration getConfiguration() {
