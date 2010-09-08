@@ -1,6 +1,6 @@
 Howto: Build Monitor/Router distributions
-Important: As soon as a distribution is released, tag the source with the current version number! 
 
+Important: As soon as a distribution is released, tag the source with the current version number! 
 
 Building a monitor distribution
 =====================================
@@ -71,7 +71,7 @@ Building a monitor distribution
 	Before releasing, tag the source code in subversion with the current version number.
 
 7. mirror.predic8.com:
-	7.1 Upload the packed file via ftp.
+	7.1 Upload the packed file from step 6.2 via ftp.
 	
 8. membrane-soa.org:
 	8.1 /src/content/soap-monitor/release-notes.xml
@@ -100,15 +100,17 @@ Building a router distribution
 	Before releasing, tag the source code in subversion with the current version number.
 
 3. mirror.predic8.com:
-	3.1 Upload the packed file fromcom.predic8.membrane.core/dist/ via ftp.
+	3.1 Upload com.predic8.membrane.core/dist/membrane-router-${version}.zip via ftp.
 	
 4. membrane-soa.org:
 	4.1 /src/content/soap-monitor/release-notes.xml
 		Add paragraph describing the changes in the current release.
 	4.2 /src/content/soap-monitor/download.xml
 		Add row to the target system's table.
-	4.3	Run build.bat
+	4.3 /src/static/monitor/documentation/api/
+		Replace directory content with com.predic8.membrane.core/dist/membrane-router-${version}-api
+	4.4	Run build.bat
 		Check that the build succeeds.
 		Make sure the download link works.
-		Deploy to France.
+	4.5 Deploy to France.
 
