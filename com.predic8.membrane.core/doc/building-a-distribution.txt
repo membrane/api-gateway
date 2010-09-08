@@ -64,7 +64,7 @@ Building a monitor distribution
 	6.1 Compress the directory from step 4.4 with your system's packer.
 		For Windows, use zip.
 		For Linux/Unix, use tar and gz.
-		For Mac, use stuffIt. (?)
+		For Mac OS, use stuffIt. (?)
 	6.2 Rename the file to match target system and current version number. 
 
 6. Tagging
