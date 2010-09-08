@@ -51,7 +51,7 @@ public abstract class RuleEditDialog extends Dialog {
 	protected void configureShell(Shell shell) {
 		super.configureShell(shell);
 		shell.setText(getTitle());
-		shell.setSize(480, 500);
+		shell.setSize(520, 500);
 	}
 	
 	@Override
