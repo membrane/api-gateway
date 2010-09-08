@@ -14,7 +14,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<project name="Membrane-Router" default="all" basedir=".">
+<project name="Membrane-Router" default="compile-core" basedir=".">
 
 	<property name="version" value="1.6.1" />
 
@@ -38,7 +38,7 @@
 		<mkdir dir="build/classes" />
 	</target>
 
-	<target name="dist-router" depends="all">
+	<target name="dist-router" depends="clean, compile-core, javadoc">
 		<mkdir dir="dist" />
 		<mkdir dir="dist/membrane-router-${version}" />
 		<mkdir dir="dist/membrane-router-${version}/classes" />
@@ -60,25 +60,25 @@
 		
         <zip destfile="dist/membrane-router-${version}.zip" basedir="dist/membrane-router-${version}"/>
 		<tar destfile="dist/membrane-router-${version}.tgz" basedir="dist/membrane-router-${version}" compression="gzip"/>
+		
+		<copy todir="dist/membrane-router-${version}-api">
+			<fileset dir="build/doc/api" />
+		</copy>
 	</target>
 
 	<target name="copyResources">
 		<copy todir="build/classes">
 			<fileset dir="src/main/resources">
-
 			</fileset>
 		</copy>
 	</target>
-
-
-	<target name="all" depends="compile-core" />
 
 	<target name="clean" description="clean up">
 		<delete dir="build" />
 		<delete dir="dist" />
 	</target>
 
-	<target name="javadoc" depends="clean">
+	<target name="javadoc">
 			<javadoc classpathref="classpath" excludepackagenames="javax.*" access="public" sourcepath="src" destdir="build/doc/api" author="true" version="true" use="true" windowtitle="com.predic8.membrane.core"/>
 	</target>
 	
