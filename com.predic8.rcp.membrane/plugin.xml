@@ -27,7 +27,7 @@
          </property>
          <property
                name="aboutText"
-               value="Membrane SOAP Monitor Version 1.6.0&#x0A;  Copyright @  2004-2010 by predic8 GmbH&#x0A;  Moltkestr. 40  53173 Bonn Germany &#x0A;  www.predic8.com &#x0A;  Phone: +49 (0)228/555 25 76-0&#x0A;  info@predic8.de">
+               value="Membrane SOAP Monitor Version 1.6.1&#x0A;  Copyright @  2004-2010 by predic8 GmbH&#x0A;  Moltkestr. 40  53173 Bonn Germany &#x0A;  www.predic8.com &#x0A;  Phone: +49 (0)228/555 25 76-0&#x0A;  info@predic8.de">
          </property>
          <property
                name="windowImages"
@@ -47,7 +47,7 @@
          </property>
          <property
                name="aboutText"
-               value="Membrane SOAP Monitor Version 1.6.0&#x0A;  Copyright @  2004-2010 by predic8 GmbH&#x0A;  Moltkestr. 40  53173 Bonn Germany &#x0A;  www.predic8.com &#x0A;  Phone: +49 (0)228/555 25 76-0&#x0A;  info@predic8.de">
+               value="Membrane SOAP Monitor Version 1.6.1&#x0A;  Copyright @  2004-2010 by predic8 GmbH&#x0A;  Moltkestr. 40  53173 Bonn Germany &#x0A;  www.predic8.com &#x0A;  Phone: +49 (0)228/555 25 76-0&#x0A;  info@predic8.de">
          </property>
          <property
                name="aboutImage"
@@ -75,7 +75,7 @@
          </property>
          <property
                name="aboutText"
-               value="Membrane SOAP Monitor Version 1.6.0&#x0A;  Copyright @  2004-2009 by predic8 GmbH&#x0A;  Moltkestr. 40  53173 Bonn Germany &#x0A;  www.predic8.com &#x0A;  Phone: +49 (0)228/555 25 76-0&#x0A;  info@predic8.de">
+               value="Membrane SOAP Monitor Version 1.6.1&#x0A;  Copyright @  2004-2009 by predic8 GmbH&#x0A;  Moltkestr. 40  53173 Bonn Germany &#x0A;  www.predic8.com &#x0A;  Phone: +49 (0)228/555 25 76-0&#x0A;  info@predic8.de">
          </property>
          <property
                name="aboutImage"
@@ -115,7 +115,7 @@
          </property>
          <property
                name="aboutText"
-               value="Membrane SOAP Monitor Version 1.6.0&#x0D;&#x0A;  Copyright @  2004-2010 by predic8 GmbH&#x0D;&#x0A;  Moltkestr. 40  53173 Bonn Germany &#x0D;&#x0A;  www.predic8.com &#x0D;&#x0A;  Phone: +49 (0)228/555 25 76-0&#x0D;&#x0A;  info@predic8.de">
+               value="Membrane SOAP Monitor Version 1.6.1&#x0A;  Copyright @  2004-2010 by predic8 GmbH&#x0A;  Moltkestr. 40  53173 Bonn Germany &#x0A;  www.predic8.com &#x0A;  Phone: +49 (0)228/555 25 76-0&#x0A;  info@predic8.de">
          </property>
          <property
                name="aboutImage"

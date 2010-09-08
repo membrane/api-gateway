@@ -26,10 +26,6 @@ public class RuleDetailsView extends ViewPart {
 	
 	private RuleDetailsComposite ruleDetailsComposite;
 	
-	public RuleDetailsView() {
-		
-	}
-
 	@Override
 	public void createPartControl(Composite parent) {
 		ruleDetailsComposite = new RuleDetailsComposite(parent);
@@ -42,6 +38,9 @@ public class RuleDetailsView extends ViewPart {
 
 	public void setRuleToDisplay(Rule rule) {
 		ruleDetailsComposite.configure(rule);
+		
+		ruleDetailsComposite.layout();
+		//ruleDetailsComposite.redraw();
 	}
 	
 }

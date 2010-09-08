@@ -22,6 +22,7 @@ import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TableViewerEditor;
@@ -30,7 +31,11 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.ui.IViewPart;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
@@ -136,6 +141,7 @@ public class RulesView extends AbstractRulesView {
 				controlsComposite.enableDependentButtons(true);
 				
 				setSelectedRule((Rule)selection.getFirstElement());
+				
 			}
 
 			private void setSelectedRule(Rule selectedRule) {
@@ -144,12 +150,26 @@ public class RulesView extends AbstractRulesView {
 				removeAllExchangesAction.setSelectedRule(selectedRule);
 				showRuleDetailsAction.setSelectedRule(selectedRule);
 				controlsComposite.setSelectedRule(selectedRule);
+			
+				updatedetailsViewIfVisible(selectedRule);
 			}
+
 		});	
 		
 		return tableViewer;  
 	}
 
+	private void updatedetailsViewIfVisible(Rule selectedRule) {
+		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+		IViewPart part = page.findView(RuleDetailsView.VIEW_ID);
+		if (part == null || !page.isPartVisible(part)) 
+			return;
+		
+		RuleDetailsView ruleView = (RuleDetailsView)part;
+		ruleView.setRuleToDisplay(selectedRule);
+		
+	}
+	
 	private void setCellEditorForTableViewer(final TableViewer tableViewer) {
 		final CellEditor[] cellEditors = new CellEditor[1];
 		cellEditors[0] = new TextCellEditor(tableViewer.getTable(), SWT.BORDER);
@@ -177,7 +197,7 @@ public class RulesView extends AbstractRulesView {
 	
 	public void ruleRemoved(Rule rule) {
 		setInputForTable(Router.getInstance().getRuleManager());
-		
+		changeSelectionAfterRemoval();
 	}
 
 	public void ruleUpdated(Rule rule) {
@@ -188,4 +208,23 @@ public class RulesView extends AbstractRulesView {
 		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
+	
+	private void changeSelectionAfterRemoval() {
+		if (tableViewer.getTable().getItemCount() == 0) {
+			updatedetailsViewIfVisible(null);
+			return;
+		}
+		TableItem item = tableViewer.getTable().getItem(0);
+		tableViewer.setSelection(new StructuredSelection(item.getData()));
+		notifytableSelectionListeners(item); 
+	}
+
+	private void notifytableSelectionListeners(TableItem item) {
+		Event e = new Event();
+		e.item = item;
+		e.widget = tableViewer.getTable();
+		e.type = SWT.Selection;
+		tableViewer.getTable().notifyListeners(SWT.Selection, e);
+	}
+	
 }

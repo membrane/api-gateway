@@ -21,7 +21,6 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -59,31 +58,42 @@ public class RuleDetailsComposite extends GridPanel {
 
 	public RuleDetailsComposite(Composite parent) {
 		super(parent, 10, 2);
-
+		
 		Composite compositeText = createCompositeText();
 
+		GridData wgd = new GridData(GridData.VERTICAL_ALIGN_BEGINNING | GridData.FILL_HORIZONTAL);
+		wgd.grabExcessHorizontalSpace = true;
+		
+		
 		labelTitle = new Label(compositeText, SWT.NONE);
 		labelTitle.setText("Rule Description");
-		labelTitle.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
+		labelTitle.setLayoutData(wgd);
 
-		createLabelSeparator(compositeText);
+		createLabelSeparator(compositeText, wgd);
 
-		new Label(compositeText, SWT.NONE).setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
+		new Label(compositeText, SWT.NONE).setLayoutData(wgd);
 
 		ruleGroup = createRuleGroup(compositeText);
 
 		labelHost = new Label(ruleGroup, SWT.NONE);
+		labelHost.setLayoutData(wgd);
+		
 		labelListenPort = new Label(ruleGroup, SWT.NONE);
+		labelListenPort.setLayoutData(wgd);
+		
 		labelMethod = new Label(ruleGroup, SWT.NONE);
+		labelMethod.setLayoutData(wgd);
+		
 		labelPath = new Label(ruleGroup, SWT.NONE);
-
+		labelPath.setLayoutData(wgd);
+		
 		ruleTargetGroup = createRuleTargetGroup(compositeText);
 
 		labelTargetHost = new Label(ruleTargetGroup, SWT.NONE);
+		labelTargetHost.setLayoutData(wgd);
+		
 		labelTargetPort = new Label(ruleTargetGroup, SWT.NONE);
-
-		
-		
+		labelTargetPort.setLayoutData(wgd);
 		
 		final Composite compositeCanvas = new Composite(this, SWT.NONE);
 		compositeCanvas.setLayoutData(new GridData(GridData.FILL_BOTH));
@@ -108,6 +118,7 @@ public class RuleDetailsComposite extends GridPanel {
 		Canvas canvas = new Canvas(compositeCanvas, SWT.DOUBLE_BUFFERED);
 		canvas.addPaintListener(new PaintListener() {
 			public void paintControl(final PaintEvent event) {
+				
 				int startX = compositeCanvas.getSize().x / 2 - totalImageWidth / 2;
 				event.gc.drawImage(imgConsumer, 0, 0, consumerImageWidth, imgConsumer.getImageData().height, startX, compositeCanvas.getSize().y / 4 - 50, consumerImageWidth, imgConsumer.getImageData().height);
 				event.gc.drawImage(imgNet1, 0, 0, internetImageWidth, internetImageHeight, startX + 100, compositeCanvas.getSize().y / 4, internetImageWidth, internetImageHeight);
@@ -123,37 +134,46 @@ public class RuleDetailsComposite extends GridPanel {
 				}
 				event.gc.drawString(targetHost, startX + 372 - hostCharactersLength / 2, compositeCanvas.getSize().y / 4 + 10, true);
 				event.gc.drawString(labelTargetPort.getText(), startX + 336, compositeCanvas.getSize().y / 4 + 105, true);
+				
 			}
 		});
 
-		redraw();
-		pack();
+		layout();
 	}
 
-	private void createLabelSeparator(Composite compositeText) {
+	private void createLabelSeparator(Composite compositeText, GridData gd) {
 		Label label = new Label(compositeText, SWT.SEPARATOR | SWT.HORIZONTAL);
-		GridData gData = new GridData(GridData.VERTICAL_ALIGN_BEGINNING);
-		gData.widthHint = 150;
-		label.setLayoutData(gData);
+		label.setLayoutData(gd);
 	}
 
 	private Group createRuleGroup(Composite groupComposite) {
 		Group group = new Group(groupComposite, SWT.NONE);
 		group.setText("Rule Key");
-		group.setLayoutData(new GridData(GridData.VERTICAL_ALIGN_BEGINNING));
-		group.setLayout(new RowLayout(SWT.VERTICAL));
+		
+		GridData gData = new GridData(GridData.VERTICAL_ALIGN_BEGINNING | GridData.FILL_HORIZONTAL);
+		gData.grabExcessHorizontalSpace = true;
+		group.setLayoutData(gData);
+		
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 1;
+		
+		group.setLayout(layout);
 		return group;
 	}
 
 	private Group createRuleTargetGroup(Composite groupComposite) {
 		Group group = new Group(groupComposite, SWT.NONE);
 		group.setText("Target");
-		GridData gData = new GridData();
-		gData.verticalAlignment = GridData.VERTICAL_ALIGN_BEGINNING;
+		GridData gData = new GridData(GridData.VERTICAL_ALIGN_BEGINNING | GridData.FILL_HORIZONTAL);
+		gData.grabExcessHorizontalSpace = true;
 		gData.heightHint = 68;
 
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 1;
+		
 		group.setLayoutData(gData);
-		group.setLayout(new RowLayout(SWT.VERTICAL));
+		group.setLayout(layout);
+		
 		return group;
 	}
 
@@ -163,7 +183,10 @@ public class RuleDetailsComposite extends GridPanel {
 
 	private Composite createCompositeText() {
 		Composite composite = new Composite(this, SWT.NONE);
-		composite.setLayoutData(new GridData());
+		
+		GridData layoutData = new GridData(GridData.FILL_VERTICAL);
+		layoutData.widthHint = 220;
+		composite.setLayoutData(layoutData);
 
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 1;
@@ -181,52 +204,52 @@ public class RuleDetailsComposite extends GridPanel {
 		} else if (rule instanceof ProxyRule) {
 			displayProxyRuleDetails((ProxyRule) rule);
 		}
-
-		layout();
-		ruleGroup.layout();
-		ruleTargetGroup.layout();
-		this.redraw();
+		update();
 	}
 
-	private void displayForwardingRuleDetails(ForwardingRule rule) {
-		labelTitle.setText("Forwarding Rule Description");
-		labelTargetHost.setText("Target Host:   " + rule.getTargetHost());
-		targetHost = rule.getTargetHost();
-
-		hostCharacters = new char[targetHost.length()];
-
-		labelTargetPort.setText("Target Port:   " + rule.getTargetPort());
-		labelListenPort.setText("Listen Port:   " + rule.getKey().getPort());
-		labelMethod.setText("Method:   " + rule.getKey().getMethod());
-		labelPath.setText("Path:   " + rule.getKey().getPath());
-		labelHost.setText("Host:   " + rule.getKey().getHost());
+	private void displayForwardingRuleDetails(final ForwardingRule rule) {
+		Display.getCurrent().asyncExec(new Runnable() {
+			public void run() {
+				labelTitle.setText("Forwarding Rule Description");				
+				labelTargetHost.setText("Target Host:   " + rule.getTargetHost());
+				targetHost = rule.getTargetHost();
+				hostCharacters = new char[targetHost.length()];
+				labelTargetPort.setText("Target Port:   " + rule.getTargetPort());
+				labelListenPort.setText("Listen Port:   " + rule.getKey().getPort());
+				labelMethod.setText("Method:   " + rule.getKey().getMethod());
+				labelPath.setText("Path:   " + rule.getKey().getPath());				
+				labelHost.setText("Host:   " + rule.getKey().getHost());
+			}
+		});
 	}
 
-	private void displayProxyRuleDetails(ProxyRule rule) {
-		labelTitle.setText("Proxy Rule Description");
-		labelTargetHost.setText("");
-		targetHost = "";
-		labelTargetPort.setText("");
-		labelListenPort.setText("Listen Port:   " + rule.getKey().getPort());
-		labelMethod.setText("");
-		labelPath.setText("");
-		labelHost.setText("");
+	private void displayProxyRuleDetails(final ProxyRule rule) {
+		Display.getCurrent().asyncExec(new Runnable() {
+			public void run() {
+				labelTitle.setText("Proxy Rule Description");
+				labelTargetHost.setText("");
+				targetHost = "";
+				labelTargetPort.setText("");
+				labelListenPort.setText("Listen Port:   " + rule.getKey().getPort());
+				labelMethod.setText("");
+				labelPath.setText("");
+				labelHost.setText("");
+			}
+		});
 	}
 
 	private void reset() {
-		labelTargetHost.setText("");
-		targetHost = "";
-
-		hostCharacters = new char[targetHost.length()];
-
-		labelTargetPort.setText("");
-		labelListenPort.setText("");
-		labelMethod.setText("");
-		labelPath.setText("");
-		labelHost.setText("");
-		layout();
-		ruleGroup.layout();
-		ruleTargetGroup.layout();
-		this.redraw();
+		Display.getCurrent().asyncExec(new Runnable() {
+			public void run() {
+				labelTargetHost.setText("");
+				targetHost = "";
+				hostCharacters = new char[targetHost.length()];
+				labelTargetPort.setText("");
+				labelListenPort.setText("");
+				labelMethod.setText("");
+				labelPath.setText("");
+				labelHost.setText("");
+			}
+		});
 	}
 }
