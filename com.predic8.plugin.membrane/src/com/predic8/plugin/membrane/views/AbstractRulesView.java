@@ -99,6 +99,12 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesSt
 		refreshTable();
 	}
 
+	public void batchUpdate(int size) {
+		if (size > 0)
+			enableActions(true);
+		refreshTable();
+	}
+	
 	public void refresh() {
 		refreshTable();
 	}

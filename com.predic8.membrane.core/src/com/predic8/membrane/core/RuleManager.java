@@ -199,7 +199,7 @@ public class RuleManager {
 
 	public void addRuleChangeListener(IRuleChangeListener viewer) {
 		listeners.add(viewer);
-
+		viewer.batchUpdate(rules.size());
 	}
 
 	public void removeRuleChangeListener(IRuleChangeListener viewer) {

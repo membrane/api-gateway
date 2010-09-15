@@ -27,4 +27,6 @@ public interface IRuleChangeListener {
 	
 	public void rulePositionsChanged();
 
+	public void batchUpdate(int size);
+	
 }

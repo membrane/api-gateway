@@ -123,4 +123,8 @@ public class RuleTableView extends ViewPart implements IRuleChangeListener {
 	public void rulePositionsChanged() {
 		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
+
+	public void batchUpdate(int size) {
+		tableViewer.setInput(Router.getInstance().getRuleManager());
+	}
 }
