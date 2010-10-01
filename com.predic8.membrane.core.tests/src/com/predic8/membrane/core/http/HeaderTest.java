@@ -42,10 +42,5 @@ public class HeaderTest extends TestCase {
 	public void testGetMimeType() throws Exception {
 		assertTrue(new MimeType(header.getContentType()).match("text/xml"));
 	}
-	
-	public void testConstructor() throws Exception {
-		Header h1 = new Header(header);
-		assertEquals("127.0.0.1:2000", h1.getHost());
-	}
 
 }

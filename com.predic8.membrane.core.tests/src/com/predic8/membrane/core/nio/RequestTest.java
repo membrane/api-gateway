@@ -18,6 +18,9 @@ import java.nio.channels.SocketChannel;
 
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,25 +38,25 @@ import junit.framework.TestCase;
 public class RequestTest extends TestCase {
 
 	public static final int PORT = 2000;
-	
+
 	private NioHttpTransport transport;
 
 	@Before
 	public void setUp() throws Exception {
 		transport = new NioHttpTransport();
 		transport.openReceiving(new NioAcceptor() {
-			
+
 			public int getListenPort() {
 				return PORT;
 			}
-			
+
 			public NioConnectionHandler accept(SocketChannel connection) {
-				return new NioDummyRequestDecoder();
+				return new NioHttpConnection(transport);
 			}
 		});
 	}
 
-	@Override
+	@After
 	protected void tearDown() throws Exception {
 		transport.closeAll();
 	}
@@ -61,13 +64,26 @@ public class RequestTest extends TestCase {
 	@Test
 	public void testGet() throws Exception {
 		HttpClient client = new HttpClient();
-		GetMethod get = new GetMethod("http://localhost:" + PORT + "/foo/bar");
-		
-		int statuscode = client.executeMethod(get);
-		System.out.println("Status Code: " + statuscode);
+		GetMethod get = new GetMethod("http://localhost:" + PORT + "/axis2/services/BLZService?wsdl");
+		get.setRequestHeader("Connection", "close");
+
+		int status = client.executeMethod(get);
+		assertEquals(200, status);
 		System.out.println(get.getStatusLine());
-		for(Header h: get.getResponseHeaders()){
-			System.out.print(h);
-		}
+		System.out.println(get.getResponseBodyAsString(1024));
+	}
+
+	@Test
+	public void testPost() throws Exception {
+		HttpClient client = new HttpClient();
+		PostMethod post = new PostMethod("http://localhost:" + PORT + "/axis2/services/BLZService");
+		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml"))); 
+		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
+		post.setRequestHeader("Connection", "close");
+		
+		int status = client.executeMethod(post);
+		assertEquals(200, status);
+		System.out.println(post.getStatusLine());
+		System.out.println(post.getResponseBodyAsString(1024));
 	}
 }

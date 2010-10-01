@@ -26,18 +26,20 @@ import com.predic8.membrane.core.Constants;
 
 /**
  * @author course
- *
- * TODO To change the template for this generated type comment go to
- * Window - Preferences - Java - Code Style - Code Templates
+ * 
+ *         TODO To change the template for this generated type comment go to
+ *         Window - Preferences - Java - Code Style - Code Templates
  */
 public class HttpUtilTest extends TestCase {
 
-	private static String s1 = "foo"+ Constants.CRLF + "bar"+ Constants.CRLF + Constants.CRLF;
+	private static String s1 = "foo" + Constants.CRLF + "bar" + Constants.CRLF
+			+ Constants.CRLF;
 	private static InputStream is1;
-	
+
 	protected void setUp() throws Exception {
 		is1 = new ByteArrayInputStream(s1.getBytes());
 	}
+
 	public void testReadLine() throws IOException, EndOfStreamException {
 		String line = readLine(is1);
 		assertEquals("foo", line);
@@ -50,10 +52,10 @@ public class HttpUtilTest extends TestCase {
 	public void testGetHost() throws Exception {
 		assertEquals("predic8.com", getHost("predic8.com:80"));
 	}
-	
-	public void testGetPort() throws Exception {	
+
+	public void testGetPort() throws Exception {
 		assertEquals(80, getPort("predic8.com:80"));
-		
+
 	}
-	
+
 }

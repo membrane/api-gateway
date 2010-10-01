@@ -46,12 +46,12 @@ public class ByteUtilTest extends TestCase {
 	}
 	
 	public void testReadByteArray1() throws IOException {
-		byte[] readBytes = ByteUtil.readByteArray(in1, 22);
+		byte[] readBytes = ByteUtil.readByteArray(in1, message1.length());
 		assertTrue(Arrays.equals(readBytes, message1.getBytes()));
 	}
 	
 	public void testReadByteArray2() throws IOException {
-		byte[] readBytes = ByteUtil.readByteArray(in2, 59);
+		byte[] readBytes = ByteUtil.readByteArray(in2, message2.length());
 		assertTrue(Arrays.equals(readBytes, message2.getBytes()));
 	}
 
