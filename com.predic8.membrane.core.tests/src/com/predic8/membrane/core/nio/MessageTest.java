@@ -29,7 +29,7 @@ public class MessageTest extends NioTestBase {
 	@Test
 	public void testRequestSingleBuffer() throws Exception {
 		loadData("/get-request.msg");
-		Message msg = new Message();
+		Message msg = new Request();
 		ByteBuffer data = read(getDataLength());
 		msg.receive(data);
 		assertEquals(getDataLength(), msg.length());
@@ -44,17 +44,19 @@ public class MessageTest extends NioTestBase {
 	@Test
 	public void testRequestMultipleBuffers() throws Exception {
 		loadData("/post-request-large.msg");
-		Message msg = new Message();
+		Message msg = new Request();
 		ByteBuffer[] data = readMultiple(50, 200, 1024, 300, 2048);
-		for (ByteBuffer b : data)
-			msg.receive(b);
-		assertEquals(getDataLength(), msg.length());
+		for (int i = 0; i < data.length - 1; i++)
+			msg.receive(data[i]);
 		assertTrue(msg.isHeaderRead());
 		assertNotNull(msg.getHeader());
 		Header header = msg.getHeader();
 		assertEquals("www.example.com", header.getHost());
 		assertEquals(4674, header.getContentLength());
 		assertEquals("application/xml", header.getContentType());
+		assertFalse(msg.isBodyComplete());
+		msg.receive(data[data.length - 1]);
+		assertEquals(getDataLength(), msg.length());
 		assertTrue(msg.isBodyComplete());
 	}
 
