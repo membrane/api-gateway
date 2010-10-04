@@ -163,9 +163,6 @@ public class HttpClient {
 	}
 
 	private int getTargetPort(URL url) throws MalformedURLException {
-		if (!url.getProtocol().equalsIgnoreCase("http"))
-			throw new RuntimeException("Does not support protocol for URI: " + url.getPath());
-
 		if (url.getPort() == -1)
 			return 80;
 		return url.getPort();
