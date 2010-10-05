@@ -16,9 +16,11 @@ package com.predic8.membrane.core.nio;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 
 import org.junit.Test;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Header;
 
 /**
@@ -27,37 +29,121 @@ import com.predic8.membrane.core.http.Header;
 public class MessageTest extends NioTestBase {
 
 	@Test
-	public void testRequestSingleBuffer() throws Exception {
+	public void testGetRequestSingleBuffer() throws Exception {
 		loadData("/get-request.msg");
-		Message msg = new Request();
+		Request req = new Request();
 		ByteBuffer data = read(getDataLength());
-		msg.receive(data);
-		assertEquals(getDataLength(), msg.length());
-		assertTrue(msg.isHeaderRead());
-		assertNotNull(msg.getHeader());
-		Header header = msg.getHeader();
+		req.receive(data);
+		assertEquals(getDataLength(), req.length());
+		assertTrue(req.isHeaderRead());
+		assertNotNull(req.getHeader());
+		Header header = req.getHeader();
 		assertEquals("www.example.com", header.getHost());
 		assertEquals(-1, header.getContentLength());
-		assertTrue(msg.isBodyComplete());
+		assertTrue(req.isBodyComplete());
 	}
 
 	@Test
-	public void testRequestMultipleBuffers() throws Exception {
+	public void testPostRequestMultipleBuffers() throws Exception {
 		loadData("/post-request-large.msg");
-		Message msg = new Request();
+		Request req = new Request();
 		ByteBuffer[] data = readMultiple(50, 200, 1024, 300, 2048);
 		for (int i = 0; i < data.length - 1; i++)
-			msg.receive(data[i]);
-		assertTrue(msg.isHeaderRead());
-		assertNotNull(msg.getHeader());
-		Header header = msg.getHeader();
+			req.receive(data[i]);
+		assertTrue(req.isHeaderRead());
+		assertNotNull(req.getHeader());
+		Header header = req.getHeader();
 		assertEquals("www.example.com", header.getHost());
 		assertEquals(4674, header.getContentLength());
 		assertEquals("application/xml", header.getContentType());
-		assertFalse(msg.isBodyComplete());
-		msg.receive(data[data.length - 1]);
-		assertEquals(getDataLength(), msg.length());
-		assertTrue(msg.isBodyComplete());
+		assertFalse(req.isBodyComplete());
+		req.receive(data[data.length - 1]);
+		assertEquals(getDataLength(), req.length());
+		assertTrue(req.isBodyComplete());
 	}
 
+	@Test
+	public void testPostRequestHttp10() throws Exception {
+		loadData("/post-request-http10.msg");
+		Request req = new Request();
+		ByteBuffer[] data = readMultiple(50, 200, 1024, 300, 2048);
+		for (int i = 0; i < data.length - 1; i++)
+			req.receive(data[i]);
+		assertTrue(req.isHeaderRead());
+		assertTrue(req.isHttp10());
+		Header header = req.getHeader();
+		assertEquals("www.example.com", header.getHost());
+		assertEquals(-1, header.getContentLength());
+		assertFalse(req.isBodyComplete());
+		req.endOfStream();
+		assertTrue(req.isBodyComplete());
+	}
+
+	@Test
+	public void testPostRequestChunked() throws Exception {
+		loadData("/post-request-chunked.msg");
+		Request req = new Request();
+		ByteBuffer[] data = readMultiple(422, 200, 1024, 300, 2048);
+		req.receive(data[0]);
+		assertTrue(req.isHeaderRead());
+		Header header = req.getHeader();
+		assertEquals("www.example.com", header.getHost());
+		assertTrue(header.isChunked());
+		assertEquals(-1, header.getContentLength());
+		assertFalse(req.isBodyComplete());
+		for (int i = 1; i < data.length; i++) {
+			req.receive(newChunk(data[i]));
+		}
+		req.receive(newChunk(ByteBuffer.allocate(0)));
+		assertTrue(req.isBodyComplete());
+	}
+
+	@Test
+	public void testEmptyBodyDecoder() throws Exception {
+		loadData("/get-request.msg");
+		Request req = new Request();
+		req.receive(readAllData());
+		assertTrue(req.newDecoder() instanceof EmptyBodyDecoder);
+	}
+
+	@Test
+	public void testContentLengthDecoder() throws Exception {
+		loadData("/post-request-large.msg");
+		Request req = new Request();
+		req.receive(readAllData());
+		assertTrue(req.newDecoder() instanceof ContentLengthDecoder);
+	}
+
+	@Test
+	public void testEosDecoder() throws Exception {
+		loadData("/post-request-http10.msg");
+		Request req = new Request();
+		req.receive(readAllData());
+		assertTrue(req.newDecoder() instanceof EosDecoder);
+	}
+
+	@Test
+	public void testChunkingDecoder() throws Exception {
+		loadData("/post-request-chunked.msg");
+		Request req = new Request();
+		ByteBuffer[] data = readMultiple(422, 200, 1024, 300, 2048);
+		req.receive(data[0]);
+		for(int i = 1; i < data.length; i++) {
+			req.receive(newChunk(data[i]));
+		}
+		req.receive(newChunk(ByteBuffer.allocate(0)));
+		assertTrue(req.newDecoder() instanceof ChunkingDecoder);
+	}
+
+	private ByteBuffer newChunk(ByteBuffer data) {
+		ByteBuffer chunk = ByteBuffer.allocate(10 + data.remaining());
+		System.out.println("sending chunk header: "
+				+ Integer.toHexString(data.remaining()) + "\\r\\n");
+		chunk.put(Integer.toHexString(data.remaining()).getBytes());
+		chunk.put(Constants.CRLF_BYTES);
+		chunk.put(data);
+		chunk.put(Constants.CRLF_BYTES);
+		chunk.flip();
+		return chunk;
+	}
 }

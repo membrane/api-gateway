@@ -63,7 +63,14 @@ public class NioTestBase extends TestCase {
 					.position()));
 		else
 			ret[ret.length - 1] = ByteBuffer.allocate(0);
+		int size = 0;
+		for(ByteBuffer b: ret) size += b.remaining();
+		assertEquals(size, requestData.size());
 		return ret;
+	}
+
+	public ByteBuffer readAllData() throws IOException {
+		return read(getDataLength());
 	}
 
 }
