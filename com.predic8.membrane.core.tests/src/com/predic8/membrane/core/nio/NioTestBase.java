@@ -17,6 +17,7 @@ package com.predic8.membrane.core.nio;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Random;
 
 import junit.framework.TestCase;
 
@@ -26,14 +27,20 @@ import junit.framework.TestCase;
 public class NioTestBase extends TestCase {
 
 	FileChannel requestData;
+	Random random;
 
 	public void loadData(String path) throws IOException {
 		requestData = new FileInputStream(this.getClass().getResource(path)
 				.getFile()).getChannel();
 	}
+	
+	public void setUp() throws Exception{
+		random = new Random();
+	}
 
 	public void tearDown() throws Exception {
-		requestData.close();
+		if (requestData != null)
+			requestData.close();
 	}
 
 	public int getDataLength() throws IOException {
@@ -64,7 +71,8 @@ public class NioTestBase extends TestCase {
 		else
 			ret[ret.length - 1] = ByteBuffer.allocate(0);
 		int size = 0;
-		for(ByteBuffer b: ret) size += b.remaining();
+		for (ByteBuffer b : ret)
+			size += b.remaining();
 		assertEquals(size, requestData.size());
 		return ret;
 	}
