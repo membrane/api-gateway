@@ -83,7 +83,7 @@ public class MessageTest extends NioTestBase {
 	public void testPostRequestChunked() throws Exception {
 		loadData("/post-request-chunked.msg");
 		Request req = new Request();
-		ByteBuffer[] data = readMultiple(422, 200, 1024, 300, 2048);
+		ByteBuffer[] data = readMultiple(422, 206, 1031, 307, 2055);
 		req.receive(data[0]);
 		assertTrue(req.isHeaderRead());
 		Header header = req.getHeader();
@@ -92,7 +92,7 @@ public class MessageTest extends NioTestBase {
 		assertEquals(-1, header.getContentLength());
 		assertFalse(req.isBodyComplete());
 		for (int i = 1; i < data.length; i++) {
-			req.receive(newChunk(data[i]));
+			req.receive(data[i]);
 		}
 		req.receive(newChunk(ByteBuffer.allocate(0)));
 		assertTrue(req.isBodyComplete());
@@ -126,10 +126,8 @@ public class MessageTest extends NioTestBase {
 	public void testChunkingDecoder() throws Exception {
 		loadData("/post-request-chunked.msg");
 		Request req = new Request();
-		ByteBuffer[] data = readMultiple(422, 200, 1024, 300, 2048);
-		req.receive(data[0]);
-		for(int i = 1; i < data.length; i++) {
-			req.receive(newChunk(data[i]));
+		for(ByteBuffer data : readMultiple(422, 206, 1031, 307, 2055)){
+			req.receive(data);
 		}
 		req.receive(newChunk(ByteBuffer.allocate(0)));
 		assertTrue(req.newDecoder() instanceof ChunkingDecoder);

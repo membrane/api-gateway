@@ -11,8 +11,11 @@ Cache-Control: max-age=0
 Content-Type: application/xml
 Transfer-Encoding: chunked
 
+c8
 <?xml version="1.0" encoding="UTF-8"?>
-<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" xmlns:tns="http://thomas-bayer.com/blz/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://thomas-bayer.com/blz/">
+<wsdl:definitions xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" 
+400
+xmlns:tns="http://thomas-bayer.com/blz/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" targetNamespace="http://thomas-bayer.com/blz/">
     <wsdl:documentation>BLZService</wsdl:documentation>
     <wsdl:types>
         <xsd:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://thomas-bayer.com/blz/">
@@ -25,13 +28,17 @@ Transfer-Encoding: chunked
             </xsd:complexType>
             <xsd:complexType name="getBankResponseType">
                 <xsd:sequence>
-                    <xsd:element name="details" type="tns:detailsType"/>
+                    <
+12c
+xsd:element name="details" type="tns:detailsType"/>
                 </xsd:sequence>
             </xsd:complexType>
             <xsd:complexType name="detailsType">
                 <xsd:sequence>
                     <xsd:element minOccurs="0" name="bezeichnung" type="xsd:string"/>
-                    <xsd:element minOccurs="0" name="bic" type="xsd:string"/>
+             
+800
+       <xsd:element minOccurs="0" name="bic" type="xsd:string"/>
                     <xsd:element minOccurs="0" name="ort" type="xsd:string"/>
                     <xsd:element minOccurs="0" name="plz" type="xsd:string"/>
                 </xsd:sequence>
@@ -75,7 +82,9 @@ Transfer-Encoding: chunked
         </wsdl:operation>
     </wsdl:binding>
     <wsdl:binding name="BLZServiceHttpBinding" type="tns:BLZServicePortType">
-        <http:binding verb="POST"/>
+        <http:binding verb=
+44e
+"POST"/>
         <wsdl:operation name="getBank">
             <http:operation location="BLZService/getBank"/>
             <wsdl:input>
@@ -98,3 +107,7 @@ Transfer-Encoding: chunked
         </wsdl:port>
     </wsdl:service>
 </wsdl:definitions>
+
+0
+
+
