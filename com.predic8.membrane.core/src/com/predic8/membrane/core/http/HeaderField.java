@@ -15,6 +15,8 @@
 
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.Constants;
+
 public class HeaderField {
 
 	HeaderName headerName;
@@ -60,6 +62,6 @@ public class HeaderField {
 	}
 	
 	public String toString(){
-		return headerName.name + ": " + value + "\n";
+		return headerName.name + ": " + value + Constants.CRLF;
 	}
 }
