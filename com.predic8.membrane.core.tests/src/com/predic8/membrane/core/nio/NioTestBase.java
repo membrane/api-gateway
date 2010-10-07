@@ -15,16 +15,19 @@
 package com.predic8.membrane.core.nio;
 
 import java.io.*;
+import static org.junit.Assert.*;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Random;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
 
 /**
  * 
  */
-public class NioTestBase extends TestCase {
+public class NioTestBase {
 
 	FileChannel requestData;
 	Random random;
@@ -33,14 +36,18 @@ public class NioTestBase extends TestCase {
 		requestData = new FileInputStream(this.getClass().getResource(path)
 				.getFile()).getChannel();
 	}
-	
-	public void setUp() throws Exception{
+
+	@Before
+	public void setUp() throws Exception {
 		random = new Random();
 	}
 
+	@After
 	public void tearDown() throws Exception {
-		if (requestData != null)
+		if (requestData != null) {
 			requestData.close();
+			requestData = null;
+		}
 	}
 
 	public int getDataLength() throws IOException {

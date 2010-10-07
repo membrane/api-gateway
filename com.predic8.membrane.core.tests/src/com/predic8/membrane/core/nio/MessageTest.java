@@ -14,7 +14,10 @@
 
 package com.predic8.membrane.core.nio;
 
+import static org.junit.Assert.*;
+
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 
 import org.junit.Test;
 
@@ -25,6 +28,20 @@ import com.predic8.membrane.core.http.Header;
  * 
  */
 public class MessageTest extends NioTestBase {
+	
+	@Test
+	public void testRequestGetStatusline() throws Exception {
+		loadData("/get-request.msg");
+		Request req = new Request();
+		req.receive(readAllData());
+		assertEquals("GET /foo?bar=baz HTTP/1.1\r\n", req.getStatusline());
+	}
+	
+	@Test
+	public void testResponseGetStatusline() throws Exception {
+		Response resp = Response.getServerErrorResponse("");
+		assertEquals("HTTP/1.1 500 Internal Server Error\r\n", resp.getStatusline());
+	}
 
 	@Test
 	public void testEmptyRequest() throws Exception {
@@ -200,22 +217,63 @@ public class MessageTest extends NioTestBase {
 		loadData("/post-request-large.msg");
 		Request req = new Request();
 		req.receive(readAllData());
-		
+
 		int bytesRead = 0;
 		ByteBuffer headers = ByteBuffer.allocate(req.tell());
 		req.pickup(headers);
 		headers.flip();
 		bytesRead += headers.remaining();
-		assertEquals(req.getStatusline().length() + req.getHeader().toString().length() + 2, headers.remaining());
+		assertEquals(req.getStatusline().length()
+				+ req.getHeader().toString().length() + 2, headers.remaining());
 		ByteBuffer payload = ByteBuffer.allocate(300);
-		while(true){
+		while (true) {
 			payload.clear();
 			req.pickup(payload);
 			payload.flip();
 			bytesRead += payload.remaining();
-			if(payload.remaining() == 0) break;
+			if (payload.remaining() == 0)
+				break;
 		}
 		assertEquals(req.length(), bytesRead);
+	}
+
+	@Test
+	public void testClearBody() throws Exception {
+		loadData("/post-request-http10.msg");
+		Request req = new Request();
+		req.receive(readAllData());
+		req.endOfStream();
+
+		assertTrue(req.isBodyComplete());
+		assertEquals(100, req.get(100).remaining());
+		assertEquals(5023, req.length());
+
+		req.clearBody();
+
+		assertFalse(req.isBodyComplete());
+		assertEquals(0, req.get(100).remaining());
+		assertEquals(349, req.length());
+	}
+
+	@Test
+	public void testGetServerErrorResponse() throws Exception {
+		Response err = Response.getServerErrorResponse("Something aweful happened. Don't ask me, what!");
+		assertEquals(500, err.getStatusCode());
+		assertEquals("Internal Server Error", err.getStatusMessage());
+		assertEquals("HTTP/1.1 500 Internal Server Error"+Constants.CRLF, err.getStatusline());
+		Header header = err.getHeader();
+		assertEquals("text/html;charset=utf-8", header.getContentType());
+		assertEquals("Membrane-Monitor " + Constants.VERSION, header.getFirstValue("Server"));
+		assertEquals("close", header.getFirstValue("Connection"));
+		//assertEquals(123, err.length());
+		
+		ByteBuffer errData = ByteBuffer.allocate(err.length());
+		//two calls: first one only retrieves the headers
+		err.pickup(errData);
+		err.pickup(errData);
+		errData.flip();
+		assertEquals(err.length(), errData.remaining());
+		Channels.newChannel(System.out).write(errData);
 	}
 
 	@SuppressWarnings("unused")

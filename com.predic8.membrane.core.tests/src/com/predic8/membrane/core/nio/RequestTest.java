@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.nio;
 
+import static org.junit.Assert.*;
+
 import java.nio.channels.SocketChannel;
 
 import org.apache.commons.httpclient.*;
@@ -23,19 +25,13 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.rules.ForwardingRule;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
-import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.nio.*;
 
-import junit.framework.TestCase;
 
 /**
  * 
  */
-public class RequestTest extends TestCase {
+public class RequestTest{
 
 	public static final int PORT = 2000;
 
@@ -44,27 +40,28 @@ public class RequestTest extends TestCase {
 	@Before
 	public void setUp() throws Exception {
 		transport = new NioHttpTransport();
-		transport.openReceiving(new NioAcceptor() {
+		transport.startAccepting(new NioAcceptor() {
 
 			public int getListenPort() {
 				return PORT;
 			}
 
 			public NioConnectionHandler accept(SocketChannel connection) {
-				return new NioHttpConnection(transport);
+				return null; //new NioHttpConnection(transport);
 			}
 		});
 	}
 
 	@After
-	protected void tearDown() throws Exception {
-		transport.closeAll();
+	public void tearDown() throws Exception {
+		transport.shutdown();
 	}
 
-	@Test
+	@Test(timeout = 30000)
 	public void testGet() throws Exception {
 		HttpClient client = new HttpClient();
-		GetMethod get = new GetMethod("http://localhost:" + PORT + "/axis2/services/BLZService?wsdl");
+		GetMethod get = new GetMethod("http://localhost:" + PORT
+				+ "/axis2/services/BLZService?wsdl");
 		get.setRequestHeader("Connection", "close");
 
 		int status = client.executeMethod(get);
@@ -73,14 +70,16 @@ public class RequestTest extends TestCase {
 		System.out.println(get.getResponseBodyAsString(1024));
 	}
 
-	@Test
+	@Test(timeout = 30000)
 	public void testPost() throws Exception {
 		HttpClient client = new HttpClient();
-		PostMethod post = new PostMethod("http://localhost:" + PORT + "/axis2/services/BLZService");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml"))); 
+		PostMethod post = new PostMethod("http://localhost:" + PORT
+				+ "/axis2/services/BLZService");
+		post.setRequestEntity(new InputStreamRequestEntity(this.getClass()
+				.getResourceAsStream("/getBank.xml")));
 		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
 		post.setRequestHeader("Connection", "close");
-		
+
 		int status = client.executeMethod(post);
 		assertEquals(200, status);
 		System.out.println(post.getStatusLine());
