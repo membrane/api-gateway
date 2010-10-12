@@ -16,6 +16,8 @@ package com.predic8.membrane.core.nio;
 
 import static org.junit.Assert.*;
 
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,13 +42,16 @@ public class ExchangeTest extends NioTestBase {
 		transport.shutdown();
 	}
 
-	@Test(timeout = 30100)
+	@Test(timeout = 30000)
 	public void testDurchstich() throws Exception {
 		Exchange exc = new Exchange();
 		exc.transport = transport;
 		transport.startAccepting(exc);
-		Thread.sleep(30000);
-		if(exc.backendSide.getWriteState() != ChannelState.CLOSED)
+		GetMethod get = new GetMethod("http://localhost:7331/");
+		HttpClient client = new HttpClient();
+		int status = client.executeMethod(get);
+		assertEquals(200, status);
+		if (exc.backendSide.getWriteState() != ChannelState.CLOSED)
 			fail();
 	}
 
