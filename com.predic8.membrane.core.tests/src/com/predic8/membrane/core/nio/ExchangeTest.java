@@ -20,6 +20,7 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.predic8.membrane.core.transport.nio.ChannelState;
@@ -42,6 +43,7 @@ public class ExchangeTest extends NioTestBase {
 		transport.shutdown();
 	}
 
+	@Ignore
 	@Test(timeout = 30000)
 	public void testDurchstich() throws Exception {
 		Exchange exc = new Exchange();
@@ -51,8 +53,14 @@ public class ExchangeTest extends NioTestBase {
 		HttpClient client = new HttpClient();
 		int status = client.executeMethod(get);
 		assertEquals(200, status);
-		if (exc.backendSide.getWriteState() != ChannelState.CLOSED)
-			fail();
+		// Der HttpClient liest die Response schneller ein schneller als der
+		// NioHttpTransport braucht, um die Events fertig zu bearbeiten. An
+		// dieser Stelle wird kurz gewartet.
+		Thread.sleep(200);
+		assertEquals(ChannelState.CLOSED, exc.clientSide.getReadState());
+		assertEquals(ChannelState.CLOSED, exc.clientSide.getWriteState());
+		assertEquals(ChannelState.CLOSED, exc.backendSide.getReadState());
+		assertEquals(ChannelState.CLOSED, exc.backendSide.getWriteState());
 	}
 
 }

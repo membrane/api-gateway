@@ -15,12 +15,16 @@
 package com.predic8.membrane.core.nio;
 
 import java.io.*;
+
 import static org.junit.Assert.*;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.util.Random;
 
+import org.apache.commons.logging.Log;
+import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 
@@ -28,6 +32,8 @@ import org.junit.Before;
  * 
  */
 public class NioTestBase {
+
+	private static Logger log = Logger.getLogger(NioTestBase.class);
 
 	FileChannel requestData;
 	Random random;
@@ -86,6 +92,24 @@ public class NioTestBase {
 
 	public ByteBuffer readAllData() throws IOException {
 		return read(getDataLength());
+	}
+
+	public int send(Message msg, int numBytes) throws IOException {
+		ByteBuffer data = read(numBytes);
+		InputStream in = new ByteArrayInputStream(data.array(), 0, data.limit());
+		while (in.available() > 0)
+			msg.handleRead(Channels.newChannel(in));
+		log.debug(data.limit() + " bytes sent.");
+		return data.limit();
+	}
+
+	public void sendAllData(Message msg) throws IOException {
+		while (requestData.position() < requestData.size()) {
+			long oldPos = requestData.position();
+			msg.handleRead(requestData);
+			long newPos = requestData.position();
+			log.debug((newPos - oldPos) + " bytes sent.");
+		}
 	}
 
 }
