@@ -16,6 +16,7 @@ package com.predic8.membrane.core;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorIntegrationTest;
 import com.predic8.membrane.integration.AccessControlInterceptorIntegrationTest;
 import com.predic8.membrane.integration.Http10Test;
 import com.predic8.membrane.integration.Http11Test;
@@ -33,7 +34,7 @@ public class IntegrationTests {
 		suite.addTestSuite(ProxyRuleTest.class);
 		suite.addTestSuite(AccessControlInterceptorIntegrationTest.class);
 		suite.addTestSuite(LoadBalancingInterceptorTest.class);
-		
+		suite.addTestSuite(SimpleURLRewriteInterceptorIntegrationTest.class);
 		//$JUnit-END$
 		return suite;
 	}
