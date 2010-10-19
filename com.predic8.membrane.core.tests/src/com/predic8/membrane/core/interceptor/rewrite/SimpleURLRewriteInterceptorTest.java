@@ -18,6 +18,7 @@ public class SimpleURLRewriteInterceptorTest extends TestCase {
 	protected void setUp() throws Exception {
 		
 		exc = new HttpExchange();
+		//exc.getDestinations().add();
 		exc.setRequest(TestUtil.getGetRequest("/service?wsdl"));
 	}
 
