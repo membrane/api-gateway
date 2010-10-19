@@ -16,6 +16,10 @@ package com.predic8.membrane.core.http;
 
 public class MimeType {
 	
+	public static final String SOAP = "application/soap+xml";
+
+	public static final String XML = "text/xml";
+	
 	public String type;
 	
 	public String subType;
