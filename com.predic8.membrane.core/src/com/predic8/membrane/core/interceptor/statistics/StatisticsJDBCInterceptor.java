@@ -23,6 +23,8 @@ import java.sql.Statement;
 import javax.sql.DataSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.DBTableConstants;
@@ -34,6 +36,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	private PreparedStatement prepSt;
 	
+	private boolean postMethodOnly = false;
+	private boolean soapOnly = false;
 	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
@@ -56,11 +60,23 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	}
 
 	private void saveExchange(Connection con, Exchange exc) throws Exception {
+		if ( ignoreGetMethodIfSet(exc) ) return;
+		if ( ignoreNotSoapIfSet(exc) ) return;
 		prepSt = con.prepareStatement(JDBCUtil.getPreparedInsert());
 		JDBCUtil.readData(exc, prepSt);
 		prepSt.executeUpdate();	
 	}
 
+	private boolean ignoreNotSoapIfSet(Exchange exc) {
+		return soapOnly && 
+			 !MimeType.SOAP.equals(exc.getRequestContentType()) &&
+			 !MimeType.XML.equals(exc.getRequestContentType());
+	}
+
+	private boolean ignoreGetMethodIfSet(Exchange exc) {
+		return postMethodOnly && !Request.METHOD_POST.equals(exc.getRequest().getMethod());
+	}
+	
 	private void closeConnection(Connection con) {
 		try {
 			con.close();
@@ -79,7 +95,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 
 	private boolean tableExists(Connection con) throws SQLException {
 		DatabaseMetaData meta = con.getMetaData();
-		ResultSet rs = meta.getTables("", null, DBTableConstants.TABLE_NAME, null);
+		ResultSet rs = meta.getTables("", null, DBTableConstants.TABLE_NAME.toUpperCase(), null);
 		return rs.next();
 	}
 
@@ -90,5 +106,21 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
+
+	public boolean isPostMethodOnly() {
+		return postMethodOnly;
+	}
+
+	public void setPostMethodOnly(boolean postMethodOnly) {
+		this.postMethodOnly = postMethodOnly;
+	}
 	
+	public boolean isSoapOnly() {
+		return soapOnly;
+	}
+
+	public void setSoapOnly(boolean soapOnly) {
+		this.soapOnly = soapOnly;
+	}
+
 }
