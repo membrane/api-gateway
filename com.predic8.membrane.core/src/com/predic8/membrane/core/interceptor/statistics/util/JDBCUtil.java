@@ -22,7 +22,7 @@ import static com.predic8.membrane.core.interceptor.statistics.util.DBTableConst
 
 public class JDBCUtil {
 
-	public static final String CREATE_TABLE_QUERY = "CREATE TABLE " + DBTableConstants.TABLE_NAME + " (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, " +
+	public static final String CREATE_TABLE_QUERY = "CREATE TABLE " + DBTableConstants.TABLE_NAME + " ( id INT GENERATED ALWAYS AS IDENTITY, " +
 
 	STATUS_CODE + " INT, " +
 
@@ -46,9 +46,10 @@ public class JDBCUtil {
 
 	RESPONSE_CONTENT_LENGTH + " INT, " +
 
-	DURATION + " LONG " +
+	DURATION + " INT " +
 
 	")";
+
 
 	public static String getPreparedInsert() {
 		return "INSERT INTO " + TABLE_NAME + " (" +

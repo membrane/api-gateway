@@ -15,9 +15,9 @@ package com.predic8.membrane.core.interceptor.statistics.util;
 
 public class DBTableConstants {
 	
-	public static final String TABLE_NAME = "statistics";
+	public static final String TABLE_NAME = "statistic";
 
-	public static final String STATUS_CODE = "statuscode";
+	public static final String STATUS_CODE = "status_code";
 	
 	public static final String TIME = "time";
 	
@@ -31,13 +31,13 @@ public class DBTableConstants {
 	
 	public static final String SERVER = "server";
 	
-	public static final String REQUEST_CONTENT_TYPE = "reqcontenttype";
+	public static final String REQUEST_CONTENT_TYPE = "req_content_type";
 	
-	public static final String REQUEST_CONTENT_LENGTH = "reqcontentlength";
+	public static final String REQUEST_CONTENT_LENGTH = "req_content_length";
 	
-	public static final String RESPONSE_CONTENT_TYPE = "respcontenttype";
+	public static final String RESPONSE_CONTENT_TYPE = "resp_content_type";
 	
-	public static final String RESPONSE_CONTENT_LENGTH = "respcontentlength";
+	public static final String RESPONSE_CONTENT_LENGTH = "resp_content_length";
 	
 	public static final String DURATION = "duration";
 	
