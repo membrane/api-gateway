@@ -5,7 +5,6 @@ import java.net.URL;
 import java.util.List;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
@@ -13,11 +12,11 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	private List<String> endpoints;
 
-	private DispatchingStrategy dispatchingStrategy;
+	private DispatchingStrategy strategy;
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		String destination = getDestinationURL(dispatchingStrategy.dispatch(this), exc);
+		String destination = getDestinationURL(strategy.dispatch(this), exc);
 		exc.setOriginalRequestUri(destination);
 		exc.getDestinations().clear();
 		exc.getDestinations().add(destination);
@@ -32,22 +31,27 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		dispatchingStrategy.done(exc);
+		strategy.done(exc);
 		return Outcome.CONTINUE;
 	}
 	
 	public String getDestinationURL(String hostAndPort, Exchange exc) throws MalformedURLException{
-		String requestUri = exc.getOriginalRequestUri();
-		if(requestUri.toLowerCase().startsWith("http://")) requestUri = new URL(requestUri).getFile();
-		return "http://" + hostAndPort + requestUri;
+		return "http://" + hostAndPort + getRequestURI(exc);
+	}
+
+	private String getRequestURI(Exchange exc) throws MalformedURLException {
+		if(exc.getOriginalRequestUri().toLowerCase().startsWith("http://")) 
+			return new URL(exc.getOriginalRequestUri()).getFile();
+		
+		return exc.getOriginalRequestUri();
 	}
 
 	public DispatchingStrategy getDispatchingStrategy() {
-		return dispatchingStrategy;
+		return strategy;
 	}
 
 	public void setDispatchingStrategy(DispatchingStrategy strategy) {
-		this.dispatchingStrategy = strategy;
+		this.strategy = strategy;
 	}
 
 	public List<String> getEndpoints() {
