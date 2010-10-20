@@ -38,6 +38,10 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	
 	private String port;
 	
+	public WSDLInterceptor() {
+		priority = 400;
+	}
+	
 	public Outcome handleResponse(Exchange aExc) throws Exception {
 		log.debug("handleResponse");
 		

@@ -35,6 +35,10 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private boolean xForwardedForEnabled = true;
 
+	public RuleMatchingInterceptor() {
+		priority = 50;
+	}
+	
 	public Outcome handleRequest(Exchange aExc) throws Exception {
 		if (!(aExc instanceof HttpExchange))
 			throw new RuntimeException("RuleMatchingInterceptor accepts only HttpExchange objects");
@@ -69,7 +73,10 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private Rule getRule(HttpExchange exc) {
-		ForwardingRuleKey key = new ForwardingRuleKey(exc.getRequest().getHeader().getHost(), exc.getRequest().getMethod(), exc.getRequest().getUri(), ((HttpExchange) exc).getServerThread().getSourceSocket().getLocalPort());
+		ForwardingRuleKey key = exc.getForwardingRuleKey();
+		if (router == null)
+			System.out.println("router is null.");
+		
 		Rule rule = router.getRuleManager().getMatchingRule(key);
 		if (rule != null) {
 			log.debug("Matching Rule found for RuleKey " + key);

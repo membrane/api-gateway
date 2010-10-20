@@ -17,6 +17,8 @@ package com.predic8.membrane.core.transport.http;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -61,7 +63,7 @@ public abstract class AbstractHttpThread extends Thread {
 		client = new HttpClient();
 	}
 
-	protected Outcome invokeRequestHandlers(HttpExchange exchange, List<Interceptor> interceptors) throws Exception {
+	protected Outcome invokeRequestHandlers(List<Interceptor> interceptors) throws Exception {
 		for (Interceptor interceptor : interceptors) {
 			log.debug("Invoking request handlers:" + interceptor + " on exchange: " + exchange);
 			if (interceptor.handleRequest(exchange) == Outcome.ABORT) {
@@ -132,4 +134,18 @@ public abstract class AbstractHttpThread extends Thread {
 		return transport;
 	}
 
+	protected List<Interceptor> getInterceptors() {
+		List<Interceptor> list = new ArrayList<Interceptor>();
+		list.addAll(transport.getInterceptors());
+		list.addAll(exchange.getRule().getInterceptors());
+		Collections.sort(list);
+		return list;
+	}
+	
+	protected List<Interceptor> getInterceptorsReverse() {
+		List<Interceptor> list = getInterceptors();
+		Collections.reverse(list);
+		return list;
+	}
+	
 }

@@ -50,10 +50,10 @@ public class HttpUtil {
 		int b;
 
 		do {
-			b = in.read();
+			b = in.read(); //log.debug(b);
 			if (b == -1) {
 				// return line.toString();
-				throw new EndOfStreamException("read byte -1");
+				throw new EndOfStreamException("read byte -1: " + line);
 			}
 
 			if (b == 13) {

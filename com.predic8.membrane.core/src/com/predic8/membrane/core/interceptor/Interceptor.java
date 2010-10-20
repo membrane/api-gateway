@@ -18,7 +18,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.XMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
-public interface Interceptor extends XMLElement {
+public interface Interceptor extends XMLElement, Comparable<Interceptor> {
 
 	public Outcome handleRequest(Exchange exc) throws Exception;
 	
@@ -33,4 +33,9 @@ public interface Interceptor extends XMLElement {
 	public void setId(String id);
 	
 	public void setRouter(Router router);
+	
+	public int getPriority();
+	
+	public void setPriority(int priority);
+	
 }

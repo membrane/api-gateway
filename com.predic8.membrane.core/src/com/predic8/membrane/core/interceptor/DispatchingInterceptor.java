@@ -24,6 +24,10 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(DispatchingInterceptor.class.getName());
 	
+	public DispatchingInterceptor() {
+		priority = 200;
+	}
+	
 	@Override
 	public Outcome handleRequest(Exchange aExc) throws Exception {
 

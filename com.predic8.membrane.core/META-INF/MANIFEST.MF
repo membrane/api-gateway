@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Membrane Core
 Bundle-SymbolicName: com.predic8.membrane.core
-Bundle-Version: 1.6.1
+Bundle-Version: 1.6.2
 Bundle-Activator: com.predic8.membrane.core.CoreActivator
 Bundle-Vendor: predic8 GmbH
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
@@ -78,6 +78,9 @@ Export-Package:
  org.apache.log4j;uses:="org.apache.log4j.helpers,org.apache.log4j.or,org.apache.log4j.spi"
 Bundle-ClassPath: lib/commons-logging.jar,
  .,
+ lib/derbyclient.jar,
+ lib/commons-dbcp-1.3.jar,
+ lib/commons-pool-1.5.5.jar,
  lib/activation-1.1.jar,
  lib/commons-cli-1.1.jar,
  lib/commons-codec-1.3.jar,

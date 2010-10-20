@@ -166,7 +166,7 @@
 	</bean>
 
 	<bean id="csvInterceptor"
-		class="com.predic8.membrane.core.interceptor.statistics.CSVStatisticsInterceptor">
+		class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor">
 		<property name="displayName" value="CSV Statistics Interceptor" />
 		<property name="fileName" value="C:\temp\exc-statistics.csv" />
 	</bean>

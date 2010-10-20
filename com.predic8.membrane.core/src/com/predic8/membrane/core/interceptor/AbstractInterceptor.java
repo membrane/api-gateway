@@ -32,6 +32,8 @@ public class AbstractInterceptor extends AbstractXMLElement implements Intercept
 	
 	protected Router router;
 	
+	protected int priority = 10000;
+	
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return Outcome.CONTINUE;
 	}
@@ -82,5 +84,16 @@ public class AbstractInterceptor extends AbstractXMLElement implements Intercept
 		this.router = router;
 	}
 
+	public int getPriority() {
+		return priority;
+	}
+
+	public void setPriority(int priority) {
+		this.priority = priority;
+	}
 	
+	public int compareTo(Interceptor o) {
+		return this.getPriority() - o.getPriority();
+	}
+
 }

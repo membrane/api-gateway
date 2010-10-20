@@ -33,7 +33,7 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 
 public class Exchange {
-	private Request request;
+	protected Request request;
 	private Response response;
 	
 	private String originalRequestUri;

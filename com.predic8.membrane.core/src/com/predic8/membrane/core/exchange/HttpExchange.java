@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.exchange;
 
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.transport.http.AbstractHttpThread;
 
 public class HttpExchange extends Exchange {
@@ -61,6 +62,10 @@ public class HttpExchange extends Exchange {
 	public void setRequest(Request req) {
 		super.setRequest(req);
 		setOriginalHostHeader(req.getHeader().getHost());
+	}
+	
+	public ForwardingRuleKey getForwardingRuleKey() {
+		return new ForwardingRuleKey(request.getHeader().getHost(), request.getMethod(), request.getUri(), serverThread.getSourceSocket().getLocalPort());
 	}
 	
 }

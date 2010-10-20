@@ -22,12 +22,16 @@ import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-public class CSVStatisticsInterceptor extends AbstractInterceptor {
+public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	private FileOutputStream out;
 
 	private StringBuffer buf = new StringBuffer();
 
+	public StatisticsCSVInterceptor() {
+		priority = 510;
+	}
+	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		writeExchange(exc);

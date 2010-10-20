@@ -21,6 +21,10 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 
 	private ExchangeStore store;
 	
+	public ExchangeStoreInterceptor() {
+		priority = 300;
+	}
+	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		store.add(exc);

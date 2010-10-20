@@ -39,6 +39,10 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	private boolean postMethodOnly = false;
 	private boolean soapOnly = false;
 	
+	public StatisticsJDBCInterceptor() {
+		priority = 500;
+	}
+	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 

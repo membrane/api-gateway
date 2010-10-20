@@ -21,6 +21,7 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.List;
 
 import javax.net.ssl.SSLSocket;
 
@@ -31,6 +32,7 @@ import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -127,7 +129,8 @@ public class HttpServerThread extends AbstractHttpThread {
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
 			
-			invokeRequestInterceptors();
+			invokeRequestInterceptors(transport.getBackboneInterceptors());
+			invokeRequestInterceptors(getInterceptors());
 
 			synchronized (exchange.getRequest()) {
 				if (exchange.getRule().isBlockRequest())
@@ -164,18 +167,12 @@ public class HttpServerThread extends AbstractHttpThread {
 	}
 
 	private void invokeResponseInterceptors() throws Exception, AbortException {
-		if (Outcome.ABORT == invokeResponseHandlers(exchange, exchange.getRule().getInterceptors()))
-			throw new AbortException();
-
-		if (Outcome.ABORT == invokeResponseHandlers(exchange, transport.getInterceptors()))
+		if (Outcome.ABORT == invokeResponseHandlers(exchange, getInterceptorsReverse()))
 			throw new AbortException();
 	}
 
-	private void invokeRequestInterceptors() throws Exception, AbortException {
-		if (Outcome.ABORT == invokeRequestHandlers(exchange, transport.getInterceptors()))
-			throw new AbortException();
-
-		if (Outcome.ABORT == invokeRequestHandlers(exchange, exchange.getRule().getInterceptors()))
+	private void invokeRequestInterceptors(List<Interceptor> interceptors) throws Exception, AbortException {
+		if (Outcome.ABORT == invokeRequestHandlers(interceptors))
 			throw new AbortException();
 	}
 	
