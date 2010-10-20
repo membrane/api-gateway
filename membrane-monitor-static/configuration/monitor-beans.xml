@@ -125,9 +125,15 @@
 			<map>
 				<entry>
 					<key>
-						<value>/blzservice</value>
+						<value>/blz-service</value>
 					</key>
 					<value>/axis2/services/BLZService</value>
+				</entry>
+				<entry>
+					<key>
+						<value>/blz-service?wsdl</value>
+					</key>
+					<value>/axis2/services/BLZService?wsdl</value>
 				</entry>
 			</map>
 		</property>
