@@ -82,9 +82,11 @@ public class CoreActivator extends Plugin {
 	}
 
 	private void readBeanConfigWhenStartedAsProduct() throws Exception {
-		info("Reading product configuration from " + getConfigFileName());
+		info("Reading router configuration from " + getConfigFileName());
 		log.debug("Reading configuration from " + getConfigFileName());
+		info("Project root: " + getProjectRoot());
 		Router.init(getConfigFileName(), ClassloaderUtil.getExternalClassloader(getProjectRoot()) );
+		info("Router instance: " + Router.getInstance());
 	}
 
 	private void readBeanConfigWhenStartedInEclipse() throws MalformedURLException {
