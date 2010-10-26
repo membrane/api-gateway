@@ -26,44 +26,49 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
+
+import com.predic8.membrane.core.Constants;
+
 import static com.predic8.membrane.core.Constants.*;
 
 public class Relocator {
 	XMLEventWriter writer;
-	
+
 	public static final QName ADDRESS_SOAP11 = new QName(WSDL_SOAP11_NS, "address");
 	public static final QName ADDRESS_SOAP12 = new QName(WSDL_SOAP12_NS, "address");
 	public static final QName ADDRESS_HTTP = new QName(WSDL_HTTP_NS, "address");
-	
+
 	public static final QName IMPORT = new QName(XSD_NS, "import");
 	public static final QName INCLUDE = new QName(XSD_NS, "include");
-	
+
 	private String host;
 	private int port;
 	private String protocol;
-	
-	
+
+	private boolean wsdlFound;
+
 	private class ReplaceIterator implements Iterator<Attribute> {
 
 		Iterator<Attribute> attrs;
 		String replace;
-		
+
 		public ReplaceIterator(String replace, Iterator<Attribute> attrs) {
 			this.replace = replace;
 			this.attrs = attrs;
 		}
-		
+
 		public boolean hasNext() {
 			return attrs.hasNext();
 		}
 
 		public Attribute next() {
 			Attribute atr = attrs.next();
-			if ( atr.getName().equals(new QName(replace)) && atr.getValue().startsWith("http") ) {
-				return XMLEventFactory.newInstance().createAttribute(replace,getNewLocation(atr));
+			if (atr.getName().equals(new QName(replace)) && atr.getValue().startsWith("http")) {
+				return XMLEventFactory.newInstance().createAttribute(replace, getNewLocation(atr));
 			}
 			return atr;
 		}
@@ -73,7 +78,7 @@ public class Relocator {
 				URL oldURL = new URL(atr.getValue());
 				if (port == -1) {
 					return new URL(protocol, host, oldURL.getFile()).toString();
-				} 
+				}
 				return new URL(protocol, host, port, oldURL.getFile()).toString();
 			} catch (MalformedURLException e) {
 				e.printStackTrace();
@@ -84,42 +89,47 @@ public class Relocator {
 		public void remove() {
 			attrs.remove();
 		}
-		
+
 	}
-	
-	public Relocator( OutputStream ostream, String protocol, String host, int port ) throws Exception {
+
+	public Relocator(OutputStream ostream, String protocol, String host, int port) throws Exception {
 		XMLOutputFactory output = XMLOutputFactory.newInstance();
 		this.writer = output.createXMLEventWriter(ostream);
 		this.host = host;
 		this.port = port;
 		this.protocol = protocol;
 	}
-	
 
-	public void relocate( InputStream istream ) throws Exception {
+	public void relocate(InputStream istream) throws Exception {
 		XMLInputFactory factory = XMLInputFactory.newInstance();
 		XMLEventReader parser = factory.createXMLEventReader(istream);
-		
+
 		while (parser.hasNext()) {
-			XMLEvent event = parser.nextEvent();
-			if ( event.isStartElement() ) {
-				if ( isInNamespace(event)) {
-					event = replace(event, "location");
-				} else if ( getElementName(event).equals(INCLUDE)) {
-					event = replace(event, "schemaLocation");
-				} else if ( getElementName(event).equals(IMPORT)) {
-					event = replace(event, "schemaLocation");
-				}
-			}
-			writer.add(event);
+			writer.add(getEvent(parser));
 		}
 	}
 
+	private XMLEvent getEvent(XMLEventReader parser) throws XMLStreamException {
+		XMLEvent event = parser.nextEvent();
+		if (!event.isStartElement())
+			return event;
+		
+		if (isInNamespace(event)) {
+			return replace(event, "location");
+		} else if (getElementName(event).equals(INCLUDE)) {
+			return replace(event, "schemaLocation");
+		} else if (getElementName(event).equals(IMPORT)) {
+			return replace(event, "schemaLocation");
+		} else if (getElementName(event).getNamespaceURI().equals(Constants.WSDL_SOAP11_NS) || getElementName(event).getNamespaceURI().equals(Constants.WSDL_SOAP12_NS)) {
+			wsdlFound = true;
+		}
+
+		return event;
+	}
 
 	private boolean isInNamespace(XMLEvent event) {
 		return getElementName(event).equals(ADDRESS_SOAP11) || getElementName(event).equals(ADDRESS_SOAP12) || getElementName(event).equals(ADDRESS_HTTP);
 	}
-
 
 	private QName getElementName(XMLEvent event) {
 		return event.asStartElement().getName();
@@ -129,8 +139,10 @@ public class Relocator {
 	private XMLEvent replace(XMLEvent event, String attribute) {
 		XMLEventFactory fac = XMLEventFactory.newInstance();
 		StartElement startElement = event.asStartElement();
-		return fac.createStartElement(startElement.getName(), 
-				new ReplaceIterator(attribute, startElement.getAttributes()), 
-				startElement.getNamespaces());
+		return fac.createStartElement(startElement.getName(), new ReplaceIterator(attribute, startElement.getAttributes()), startElement.getNamespaces());
+	}
+
+	public boolean isWsdlFound() {
+		return wsdlFound;
 	}
 }

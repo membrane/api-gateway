@@ -18,6 +18,8 @@ package com.predic8.membrane.core.interceptor;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,6 +39,8 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	private String protocol;
 	
 	private String port;
+	
+	private String registryWSDLRegisterURL;
 	
 	public WSDLInterceptor() {
 		priority = 400;
@@ -68,10 +72,49 @@ public class WSDLInterceptor extends AbstractInterceptor {
 
 	private void rewriteWsdl(HttpExchange exc) throws Exception, IOException {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		new Relocator(stream, getLocationProtocol(), getLocationHost(exc), getLocationPort(exc) ).relocate(new ByteArrayInputStream(exc.getResponse().getBody().getContent()));
+		Relocator relocator = new Relocator(stream, getLocationProtocol(), getLocationHost(exc), getLocationPort(exc) );
+		relocator.relocate(new ByteArrayInputStream(exc.getResponse().getBody().getContent()));
+		if (relocator.isWsdlFound()) {
+			registerWSDL(exc);
+		}
 		exc.getResponse().setBodyContent(stream.toByteArray());
 	}
 
+
+	private void registerWSDL(HttpExchange exc) {
+		if (registryWSDLRegisterURL == null)
+			return;
+		
+		StringBuffer buf = new StringBuffer();
+		buf.append(registryWSDLRegisterURL);
+		buf.append("?wsdl=");
+		
+		try {
+			buf.append(URLDecoder.decode(getWSDLURL(exc), "US-ASCII"));
+		} catch (UnsupportedEncodingException e) {
+			//ignored
+		}
+		
+		System.out.println(buf.toString());
+	}
+
+	private String getWSDLURL(HttpExchange exc) {
+		StringBuffer buf = new StringBuffer();
+		buf.append(getLocationProtocol());
+		buf.append("://");
+		buf.append(getLocationHost(exc));
+		if (getLocationPort(exc) != 80) {
+			buf.append(":");
+			buf.append(getLocationPort(exc));
+		}
+		buf.append("/");
+		buf.append(exc.getRequest().getUri());
+		return buf.toString();
+	}
+
+	public void setRegistryWSDLRegisterURL(String registryWSDLRegisterURL) {
+		this.registryWSDLRegisterURL = registryWSDLRegisterURL;
+	}
 
 	private boolean hasContent(Exchange exc) {
 		return exc.getResponse().getHeader().getContentType() != null;
@@ -142,7 +185,5 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	public void setPort(String port) {
 		this.port = port;
 	}
-	
-	
 	
 }
