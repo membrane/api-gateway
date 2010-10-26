@@ -16,6 +16,7 @@ package com.predic8.membrane.core.nio;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 
@@ -218,6 +219,19 @@ public class MessageTest extends NioTestBase {
 		} catch (IllegalArgumentException e) {
 			assertEquals("cannot skip past end-of-data.", e.getMessage());
 		}
+	}
+	
+	@Test
+	public void testWriteMessage() throws Exception {
+		loadData("/post-request-large.msg");
+		Request req = new Request();
+		sendAllData(req);
+		
+		int numWrit = 0;
+		ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
+		req.handleWrite(Channels.newChannel(out));
+		byte[] data = out.toByteArray();
+		log.debug(new String(data));
 	}
 
 	@Ignore
