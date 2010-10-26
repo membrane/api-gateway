@@ -36,32 +36,54 @@
 					<property name="exchangeStore" ref="exchangeStore" />
 				</bean>
 
-				<!-- Rewriting of URLs in WSDL documents =================================== 
+				<!-- 
+					Rewriting of URLs in WSDL documents 
+					=================================== 
 					The WSDLInterceptor changes the endpoint location and URLs of schema includes 
 					and imports. For the rewritten URLs the protocol, hostname and port are extracted 
 					from the request header. The hostname and port is taken from the Host header 
-					field. -->
+					field. 
+				-->
 				<bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor">
-					<!-- To set static values for the rewritten URLs instead of values from 
-						the WSDL requested uncomment the following elements. -->
-					<!-- <property name="host" value="abc" /> <property name="protocol" 
-						value="https" /> <property name="port" value="" /> -->
+					<!-- 
+						To set static values for the rewritten URLs instead of values from 
+						the WSDL requested uncomment the following elements. 
+					-->
+					<property name="registryWSDLRegisterURL" value="http://192.168.2.102:8010/register/wsdl" /> 
+					<!-- 
+						<property name="host" value="abc" /> 
+						<property name="protocol" value="https" /> 
+						<property name="port" value="" />
+					-->
 				</bean>
 
-				<!-- Storing exchange statistics in database ======================================= 
+				<!-- 
+					Storing exchange statistics in database 
+					======================================= 
 					You can store exchange statistical data on permanent storage. Please uncomment 
 					the following bean definition and configure the bean below. Do not forget 
-					to provide jdbc connector jar file in lib directory. -->
-				<!-- <bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor"> 
-					<property name="dataSource" ref="dataSource" /> <property name="postMethodOnly" 
-					value="true" /> <property name="soapOnly" value="true" /> </bean> -->
+					to provide jdbc connector jar file in lib directory. 
+				-->
+				<!-- 
+					<bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor"> 
+						<property name="dataSource" ref="dataSource" /> 
+						<property name="postMethodOnly" value="true" /> 
+						<property name="soapOnly" value="true" /> 
+					</bean> 
+				-->
 
 
-				<!-- Logging Router access to CSV ======================================= 
+				<!-- 
+					Logging Router access to CSV 
+					======================================= 
 					You can store exchange metadata in CSV files to disc. The data will be appended 
-					to the given file, and can be imported into Excel later on. -->
-				<!-- <bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor"> 
-					<property name="fileName" value="C:\temp\exc-statistics.csv" /> </bean> -->
+					to the given file, and can be imported into Excel later on. 
+				-->
+				<!-- 
+					<bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor"> 
+						<property name="fileName" value="C:\temp\exc-statistics.csv" /> 
+					</bean> 
+				-->
 			</list>
 		</property>
 	</bean>
@@ -159,19 +181,29 @@
 		<property name="fileName" value="C:\temp\exc-statistics.csv" />
 	</bean>
 
-	<!-- Configuration of DataSource ============================ If you have 
-		activated bean "statisticsJDBCInterceptor", you need to adjust this bean 
-		definition. StatisticsJDBCInterceptor uses instance of javax.sql.DataSource 
-		to manage connection pooling. Please provide all necessary information for 
-		correct initialization of data source. Note: you have to put third party 
-		libraries in lib directory before using JDBC interceptor. -->
-	<!-- <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
-		<property name="driverClassName" value="com.mysql.jdbc.Driver" /> <property 
-		name="url" value="jdbc:mysql://localhost:3306/membrane" /> <property name="username" 
-		value="root" /> <property name="password" value="root" /> </bean> -->
-	<!-- <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
-		<property name="driverClassName" value="org.apache.derby.jdbc.ClientDriver" 
-		/> <property name="url" value="jdbc:derby://localhost:1527/membranedb-test;create=true" 
-		/> <property name="username" value="APP" /> <property name="password" value=" 
-		" /> </bean> -->
+	<!-- 
+		Configuration of DataSource 
+		============================ 
+		If you have activated bean "statisticsJDBCInterceptor", you need to adjust one of the 
+		bean definitions below. StatisticsJDBCInterceptor uses instance of javax.sql.DataSource 
+		to manage connection pooling. Please provide all necessary information for correct 
+		initialization of data source. Note: you have to put third party libraries in lib 
+		directory before using JDBC interceptor.
+	-->
+	<!-- 
+		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
+			<property name="driverClassName" value="com.mysql.jdbc.Driver" /> 
+			<property name="url" value="jdbc:mysql://localhost:3306/membrane" /> 
+			<property name="username" value="root" /> 
+			<property name="password" value="root" /> 
+		</bean> 
+	-->
+	<!-- 
+		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
+			<property name="driverClassName" value="org.apache.derby.jdbc.ClientDriver"/> 
+			<property name="url" value="jdbc:derby://localhost:1527/membranedb-test;create=true"/>
+			<property name="username" value="APP" /> 
+			<property name="password" value=" " /> 
+		</bean>
+	-->
 </beans>
