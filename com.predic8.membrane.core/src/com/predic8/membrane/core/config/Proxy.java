@@ -36,7 +36,8 @@ public class Proxy extends AbstractXMLElement {
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		values.put(Configuration.PROXY_USE, "true".equals(token.getAttributeValue("", "active")) ? true: false);
+		values.put(Configuration.USE_PROXY, "true".equals(token.getAttributeValue("", "active")) ? true: false);
+		values.put(Configuration.USE_PROXY_AUTH, "true".equals(token.getAttributeValue("", "authentification")) ? true: false);
 		super.parseAttributes(token);
 	}
 	
@@ -48,6 +49,12 @@ public class Proxy extends AbstractXMLElement {
 		} else if (ProxyPort.ELEMENT_NAME.equals(child)) {
 			String value = ((ProxyPort)(new ProxyPort().parse(token))).getValue();
 			values.put(Configuration.PROXY_PORT, value);
+		} else if (ProxyUsername.ELEMENT_NAME.equals(child)) {
+			String value = ((ProxyUsername)(new ProxyUsername().parse(token))).getValue();
+			values.put(Configuration.PROXY_AUTH_USERNAME, value);
+		} else if (ProxyPassword.ELEMENT_NAME.equals(child)) {
+			String value = ((ProxyPassword)(new ProxyPassword().parse(token))).getValue();
+			values.put(Configuration.PROXY_AUTH_PASSWORD, value);
 		}
 	}
 
@@ -64,16 +71,31 @@ public class Proxy extends AbstractXMLElement {
 			values.put(Configuration.PROXY_PORT, newValues.get(Configuration.PROXY_PORT));
 		}
 		
-		if (newValues.containsKey(Configuration.PROXY_USE)) {
-			values.put(Configuration.PROXY_USE, newValues.get(Configuration.PROXY_USE));	
+		if (newValues.containsKey(Configuration.USE_PROXY)) {
+			values.put(Configuration.USE_PROXY, newValues.get(Configuration.USE_PROXY));	
 		}
+		
+		if (newValues.containsKey(Configuration.USE_PROXY_AUTH)) {
+			values.put(Configuration.USE_PROXY_AUTH, newValues.get(Configuration.USE_PROXY_AUTH));	
+		}
+		
+		if (newValues.containsKey(Configuration.PROXY_AUTH_USERNAME)) {
+			values.put(Configuration.PROXY_AUTH_USERNAME, newValues.get(Configuration.PROXY_AUTH_USERNAME));	
+		}
+		
+		if (newValues.containsKey(Configuration.PROXY_AUTH_PASSWORD)) {
+			values.put(Configuration.PROXY_AUTH_PASSWORD, newValues.get(Configuration.PROXY_AUTH_PASSWORD));	
+		}
+		
 	}
 
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 				
-		out.writeAttribute("active", ((Boolean) (values.get(Configuration.PROXY_USE) == null ? false : (Boolean)values.get(Configuration.PROXY_USE))).toString());
+		out.writeAttribute("active", ((Boolean) (values.get(Configuration.USE_PROXY) == null ? false : (Boolean)values.get(Configuration.USE_PROXY))).toString());
+		
+		out.writeAttribute("authentification", ((Boolean) (values.get(Configuration.USE_PROXY_AUTH) == null ? false : (Boolean)values.get(Configuration.USE_PROXY_AUTH))).toString());
 		
 		ProxyHost proxyHost = new ProxyHost();
 		if (values.containsKey(Configuration.PROXY_HOST)) {
@@ -91,6 +113,27 @@ public class Proxy extends AbstractXMLElement {
 		}
 		
 		proxyPort.write(out);
+		
+		
+		ProxyUsername proxyUser = new ProxyUsername();
+		if (values.containsKey(Configuration.PROXY_AUTH_USERNAME)) {
+			proxyUser.setValue((String)values.get(Configuration.PROXY_AUTH_USERNAME));
+		} else {
+			proxyUser.setValue("");
+		}
+		
+		proxyUser.write(out);
+		
+		
+		ProxyPassword proxyPassword = new ProxyPassword();
+		if (values.containsKey(Configuration.PROXY_AUTH_PASSWORD)) {
+			proxyPassword.setValue((String)values.get(Configuration.PROXY_AUTH_PASSWORD));
+		} else {
+			proxyPassword.setValue("");
+		}
+		
+		proxyPassword.write(out);
+		
 		
 		out.writeEndElement();
 	}

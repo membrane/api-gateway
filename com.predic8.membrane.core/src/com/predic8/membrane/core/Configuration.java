@@ -45,7 +45,7 @@ public class Configuration extends AbstractXMLElement {
 
 	public static final String PROXY_HOST = "proxy_host";
 	public static final String PROXY_PORT = "proxy_port";
-	public static final String PROXY_USE = "proxy_use";
+	public static final String USE_PROXY = "proxy_use";
 
 	public static final String TRACK_EXCHANGE = "autotrack_new_exchanges";
 
@@ -144,8 +144,8 @@ public class Configuration extends AbstractXMLElement {
 	}
 
 	public boolean getUseProxy() {
-		if (props.containsKey(PROXY_USE)) {			
-			return (Boolean) props.get(PROXY_USE);
+		if (props.containsKey(USE_PROXY)) {			
+			return (Boolean) props.get(USE_PROXY);
 		}
 		return false;
 	}
@@ -158,7 +158,7 @@ public class Configuration extends AbstractXMLElement {
 	}
 	
 	public void setUseProxy(boolean status) {
-		props.put(PROXY_USE, status);
+		props.put(USE_PROXY, status);
 	}
 	
 	public void setUseProxyAuthentification(boolean status) {

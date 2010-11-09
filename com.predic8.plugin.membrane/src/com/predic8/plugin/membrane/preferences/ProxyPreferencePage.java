@@ -86,12 +86,19 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 		txtPort = createPortText(config, proxyGroup);
 		
-		new Label(composite, SWT.NONE).setText(" ");
+		new Label(proxyGroup, SWT.NONE).setText(" ");
+		new Label(proxyGroup, SWT.NONE).setText(" ");
 		
-		btUseAuthentification = new Button(composite, SWT.CHECK);
+		
+		btUseAuthentification = new Button(proxyGroup, SWT.CHECK);
 		btUseAuthentification.setText("Use Proxy Authentification");
+		GridData gdauth = new GridData();
+		gdauth.horizontalSpan = 2;
+		btUseAuthentification.setLayoutData(gdauth);
 		
-		Group groupAuth = createProxyAuthentificationGroup(composite);
+		
+		Group groupAuth = createProxyAuthentificationGroup(proxyGroup);
+		groupAuth.setLayoutData(gdauth);
 		
 		Label lbUsername = new Label(groupAuth, SWT.NONE);
 		lbUsername.setText("Username: ");
