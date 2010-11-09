@@ -337,6 +337,10 @@ public class Configuration extends AbstractXMLElement {
 		
 		setTrustStoreLocation(config.getTrustStoreLocation());
 		setTrustStorePassword(config.getTrustStorePassword());
+		
+		setUseProxyAuthentification(config.getUseProxyAuthentification());
+		setProxyAuthentificationUsername(config.getProxyAuthentificationUsername());
+		setProxyAuthentificationPassword(config.getProxyAuthentificationPassword());
 	}
 	
 
