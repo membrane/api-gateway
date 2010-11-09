@@ -208,6 +208,16 @@
                   label="Show Rules"
                   style="push">
             </command>
+            <command
+                  commandId="showRequestView"
+                  label="Show Request View"
+                  style="push">
+            </command>
+            <command
+                  commandId="showResponseView"
+                  label="Show Response View"
+                  style="push">
+            </command>
          </menu>
       </menuContribution>
       <menuContribution
@@ -291,6 +301,16 @@
             defaultHandler="com.predic8.plugin.membrane.commands.ExitCommand"
             id="exit"
             name="Exit">
+      </command>
+      <command
+            defaultHandler="com.predic8.plugin.membrane.commands.ShowRequestViewCommand"
+            id="showRequestView"
+            name="Show Request View">
+      </command>
+      <command
+            defaultHandler="com.predic8.plugin.membrane.commands.ShowResponseViewCommand"
+            id="showResponseView"
+            name="Show Response View">
       </command>
    </extension>
 
