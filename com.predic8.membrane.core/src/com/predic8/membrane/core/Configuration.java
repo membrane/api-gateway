@@ -58,6 +58,12 @@ public class Configuration extends AbstractXMLElement {
 	public static final String TRUST_STORE_PASSWORD = "truststore password";
 	
 	
+	public static final String USE_PROXY_AUTH = "use proxy authentification";
+	
+	public static final String PROXY_AUTH_PASSWORD = "proxy authentification password";
+	
+	public static final String PROXY_AUTH_USERNAME = "proxy authentification username";
+	
 	private Collection<Rule> rules = new ArrayList<Rule>();
 
 	public Map<String, Object> props = new HashMap<String, Object>();
@@ -144,8 +150,19 @@ public class Configuration extends AbstractXMLElement {
 		return false;
 	}
 	
+	public boolean getUseProxyAuthentification() {
+		if (props.containsKey(USE_PROXY_AUTH)) {			
+			return (Boolean) props.get(USE_PROXY_AUTH);
+		}
+		return false;
+	}
+	
 	public void setUseProxy(boolean status) {
 		props.put(PROXY_USE, status);
+	}
+	
+	public void setUseProxyAuthentification(boolean status) {
+		props.put(USE_PROXY_AUTH, status);
 	}
 	
 	public String getProxyHost() {
@@ -206,6 +223,32 @@ public class Configuration extends AbstractXMLElement {
 		if (password == null)
 			return;
 		props.put(TRUST_STORE_PASSWORD, password);
+	}
+	
+	public void setProxyAuthentificationPassword(String password) {
+		if (password == null)
+			return;
+		props.put(PROXY_AUTH_PASSWORD, password);
+	}
+	
+	public String getProxyAuthentificationPassword() {
+		if (props.containsKey(PROXY_AUTH_PASSWORD))
+			return (String)props.get(PROXY_AUTH_PASSWORD);
+	
+		return null;
+	}
+	
+	public void setProxyAuthentificationUsername(String user) {
+		if (user == null)
+			return;
+		props.put(PROXY_AUTH_USERNAME, user);
+	}
+	
+	public String getProxyAuthentificationUsername() {
+		if (props.containsKey(PROXY_AUTH_USERNAME))
+			return (String)props.get(PROXY_AUTH_USERNAME);
+	
+		return null;
 	}
 	
 	public String getProxyPort() {

@@ -46,6 +46,12 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 	private Label lblPort;
 	protected Button btUseProxy;
 	
+	protected Text txtUsername;
+	
+	protected Text txtPassword;
+	
+	protected Button btUseAuthentification; 
+	
 	public ProxyPreferencePage() {
 		
 	}
@@ -80,9 +86,36 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 		txtPort = createPortText(config, proxyGroup);
 		
+		new Label(composite, SWT.NONE).setText(" ");
+		
+		btUseAuthentification = new Button(composite, SWT.CHECK);
+		btUseAuthentification.setText("Use Proxy Authentification");
+		
+		Group groupAuth = createProxyAuthentificationGroup(composite);
+		
+		Label lbUsername = new Label(groupAuth, SWT.NONE);
+		lbUsername.setText("Username: ");
+		
+		txtUsername = createText(groupAuth, SWT.NONE, 200, 1); 
+		
+		Label lbPassword = new Label(groupAuth, SWT.NONE);
+		lbPassword.setText("Password: ");
+		
+		txtPassword = createText(groupAuth, SWT.PASSWORD, 200, 1); 
+		
 		return composite;
 	}
 
+	private Text createText(Composite parent, int type, int width, int span) {
+		Text text = new Text(parent, type | SWT.BORDER);
+		GridData gData = new GridData(GridData.FILL_BOTH);
+		gData.widthHint = width;
+		gData.horizontalSpan = span;
+		text.setLayoutData(gData);
+		
+		return text;
+	}
+	
 	private Button createUseProxyButton(Composite composite, Configuration config) {
 		Button bt = new Button(composite, SWT.CHECK);
 		bt.setText("Use Proxy Server");
@@ -128,6 +161,15 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		return group;
 	}
 
+	private Group createProxyAuthentificationGroup(Composite composite) {
+		Group group = new Group(composite, SWT.NONE);
+		group.setText("");
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 2;
+		group.setLayout(layout);
+		return group;
+	}
+	
 	@Override
 	protected void performApply() {
 		setAndSaveConfig();
@@ -163,6 +205,10 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		Router.getInstance().getConfigurationManager().getConfiguration().setUseProxy(selected);
 		Router.getInstance().getConfigurationManager().getConfiguration().setProxyHost(txtHost.getText());
 		Router.getInstance().getConfigurationManager().getConfiguration().setProxyPort(txtPort.getText());
+		
+		Router.getInstance().getConfigurationManager().getConfiguration().setUseProxyAuthentification(btUseAuthentification.getSelection());
+		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationUsername(txtUsername.getText());
+		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationPassword(txtPassword.getText());
 	}
 	
 	private boolean isValidProxyParams() {
