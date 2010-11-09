@@ -53,16 +53,10 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 		
-		if(isAdjustHostHeader()) adjustHostHeader(exc);
-
 		if (xForwardedForEnabled && (rule instanceof ForwardingRule))
 			insertXForwardedFor(exc);
 
 		return Outcome.CONTINUE;
-	}
-
-	private boolean isAdjustHostHeader() {
-		return router.getConfigurationManager().getConfiguration().getAdjustHostHeader();
 	}
 
 	private void handleNoRuleFound(HttpExchange exc) throws IOException {
@@ -107,12 +101,6 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private String getXForwardedFor(Exchange exc) {
 		return exc.getRequest().getHeader().getXForwardedFor();
-	}
-
-	private void adjustHostHeader(Exchange exc) {
-		if (exc.getRule() instanceof ForwardingRule) {
-			exc.getRequest().getHeader().setHost(((ForwardingRule) exc.getRule()).getTargetHost() + ":" + ((ForwardingRule) exc.getRule()).getTargetPort());
-		}
 	}
 
 	@Override

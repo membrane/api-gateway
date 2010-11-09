@@ -64,12 +64,12 @@ public class LoadBalancingInterceptorTest extends TestCase {
 		service1 = new HttpRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		service1.getTransport().getInterceptors().add(mockInterceptor1);
-		service1.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("thomas-bayer.com", "POST", ".*", 2000), "thomas-bayer.com", "80"));
+		service1.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 2000), "thomas-bayer.com", "80"));
 
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		service2.getTransport().getInterceptors().add(mockInterceptor2);
-		service2.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("thomas-bayer.com", "POST", ".*", 3000), "thomas-bayer.com", "80"));
+		service2.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", "80"));
 
 		balancingInterceptor = new LoadBalancingInterceptor();
 		List<String> endpoints = new ArrayList<String>();
@@ -120,7 +120,11 @@ public class LoadBalancingInterceptorTest extends TestCase {
 		HttpClient client = new HttpClient();
 		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 
-		assertEquals(200, client.executeMethod(getPostMethod()));
+		PostMethod vari = getPostMethod();
+		int status = client.executeMethod(vari);
+		System.out.println(new String(vari.getResponseBody()));
+		
+		assertEquals(200, status);
 		assertEquals(1, mockInterceptor1.counter);
 		assertEquals(0, mockInterceptor2.counter);
 

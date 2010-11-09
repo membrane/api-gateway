@@ -15,10 +15,10 @@
 package com.predic8.rcp.membrane.actions;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 
 import com.predic8.plugin.membrane.MembraneUIPlugin;
+import com.predic8.plugin.membrane.PluginUtil;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 import com.predic8.plugin.membrane.views.BrowserView;
 
@@ -36,12 +36,7 @@ public class WebPredic8Action extends Action {
 	
 	@Override
 	public void run() {
-		IWorkbenchPage page = window.getActivePage();
-		try {
-			page.showView(BrowserView.VIEW_ID);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		PluginUtil.showView(BrowserView.VIEW_ID);
 	}
 	
 }

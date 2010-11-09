@@ -15,10 +15,9 @@
 package com.predic8.plugin.membrane.actions.views;
 
 import org.eclipse.jface.action.Action;
-import org.eclipse.ui.IWorkbenchPage;
-import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.plugin.membrane.PluginUtil;
 import com.predic8.plugin.membrane.views.RuleDetailsView;
 
 public class ShowRuleDetailsViewAction extends Action {
@@ -31,15 +30,8 @@ public class ShowRuleDetailsViewAction extends Action {
 	}
 
 	public void run() {
-
-		try {
-			IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-			page.showView(RuleDetailsView.VIEW_ID);
-			RuleDetailsView ruleView = (RuleDetailsView) page.findView(RuleDetailsView.VIEW_ID);
-			ruleView.setRuleToDisplay(selectedRule);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
+		RuleDetailsView ruleView = (RuleDetailsView)PluginUtil.showView(RuleDetailsView.VIEW_ID);
+		ruleView.setRuleToDisplay(selectedRule);
 	}
 
 	public void setSelectedRule(Rule selectedRule) {

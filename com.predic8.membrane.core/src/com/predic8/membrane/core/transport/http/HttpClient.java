@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import static com.predic8.membrane.core.util.HttpUtil.getHost;
+import static com.predic8.membrane.core.util.HttpUtil.getPort;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -36,8 +39,8 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.util.EndOfStreamException;
-import static com.predic8.membrane.core.util.HttpUtil.*;
 
 public class HttpClient {
 
@@ -142,10 +145,17 @@ public class HttpClient {
 			exc.getRequest().setUri(getPathAndQueryString(dest));
 
 		URL destination = new URL(dest);
-		openSocketIfNeeded(destination.getHost(), getTargetPort(destination), getOutboundTLS(exc));
-
+		int targetPort = getTargetPort(destination);
+		openSocketIfNeeded(destination.getHost(), targetPort, getOutboundTLS(exc));
+		
+		if (isAdjustHostHeader() && exc.getRule() instanceof ForwardingRule)
+			exc.getRequest().getHeader().setHost(destination.getHost() + ":" + targetPort);
 	}
 
+	private boolean isAdjustHostHeader() {
+		return router.getConfigurationManager().getConfiguration().getAdjustHostHeader();
+	}
+	
 	private boolean getOutboundTLS(HttpExchange exc) {
 		if (exc.getRule() == null)
 			return false;

@@ -45,7 +45,6 @@ import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchActionConstants;
-import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
@@ -58,6 +57,7 @@ import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
+import com.predic8.plugin.membrane.PluginUtil;
 import com.predic8.plugin.membrane.actions.ShowFiltersDialogAction;
 import com.predic8.plugin.membrane.actions.ShowSortersDialogAction;
 import com.predic8.plugin.membrane.actions.exchanges.ExchangeStopAction;
@@ -447,19 +447,7 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 	}
 
 	private void setInputForMessageView(HttpExchange exc, String viewId) {
-		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-		AbstractMessageView part = (AbstractMessageView) page.findView(viewId);
-		if (part == null)
-			return;
-		
-		if (!page.isPartVisible(part)) {
-			try {
-				page.showView(viewId);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
-		}
-		
+		AbstractMessageView part = (AbstractMessageView) PluginUtil.showView(viewId);
 		part.setInput(exc);
 		part.updateUIStatus(canShowBody);
 	}
