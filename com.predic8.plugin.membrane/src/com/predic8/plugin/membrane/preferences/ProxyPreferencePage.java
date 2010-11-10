@@ -102,7 +102,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		gd.grabExcessVerticalSpace = true;
 		
 		Label label = new Label(composite, SWT.NONE);
-		label.setText("test");
+		label.setText(" ");
 		label.setLayoutData(gd);
 		
 		return composite;
@@ -118,8 +118,8 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 	private void setWidgets() {
 		Configuration config = Router.getInstance().getConfigurationManager().getConfiguration();
-		btUseProxy.setSelection(config.getUseProxy());
-		btUseAuthentification.setSelection(config.getUseProxyAuthentification());
+		btUseProxy.setSelection(config.isUseProxy());
+		btUseAuthentification.setSelection(config.isUseProxyAuthentification());
 
 		if (config.getProxyHost() != null) {
 			txtHost.setText("" + config.getProxyHost());
@@ -159,7 +159,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 	private Text createPortText(Group proxyGroup) {
 		Text text = new Text(proxyGroup, SWT.BORDER);
 		text.addVerifyListener(new PortVerifyListener());
-		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
+		GridData gData = new GridData();
 		gData.widthHint = 70;
 		text.setLayoutData(gData);
 		return text;
