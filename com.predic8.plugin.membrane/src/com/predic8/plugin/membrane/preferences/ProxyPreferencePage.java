@@ -41,15 +41,15 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 	public static final String PAGE_ID = "com.predic8.plugin.membrane.preferences.ProxyPreferencePage";
 
-	protected Text txtHost;
-	protected Text txtPort;
+	protected Text textHost;
+	protected Text textPort;
 	protected Button btUseProxy;
 
-	protected Text txtUsername;
+	protected Text textUser;
 
-	protected Text txtPassword;
+	protected Text textPassword;
 
-	protected Button btUseAuth;
+	protected Button btUseAuthent;
 
 	public ProxyPreferencePage() {
 
@@ -76,13 +76,13 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 		new Label(proxyGroup, SWT.NONE).setText("Host");
 
-		txtHost = createHostText(proxyGroup);
-		txtHost.setEnabled(false);
+		textHost = createHostText(proxyGroup);
+		textHost.setEnabled(false);
 		
 		new Label(proxyGroup, SWT.NONE).setText("Port");
 
-		txtPort = createPortText(proxyGroup);
-		txtPort.setEnabled(false);
+		textPort = createPortText(proxyGroup);
+		textPort.setEnabled(false);
 		
 		new Label(proxyGroup, SWT.NONE).setText(" ");
 		
@@ -94,12 +94,12 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		groupAuth.setLayoutData(gdA);
 
 		new Label(groupAuth, SWT.NONE).setText("Username: ");
-		txtUsername = createText(groupAuth, SWT.NONE, 200, 1);
-		txtUsername.setEnabled(false);
+		textUser = createText(groupAuth, SWT.NONE, 200, 1);
+		textUser.setEnabled(false);
 		
 		new Label(groupAuth, SWT.NONE).setText("Password: ");
-		txtPassword = createText(groupAuth, SWT.PASSWORD, 200, 1);
-		txtPassword.setEnabled(false);
+		textPassword = createText(groupAuth, SWT.PASSWORD, 200, 1);
+		textPassword.setEnabled(false);
 		
 		setWidgets();
 
@@ -115,46 +115,46 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 	}
 
 	private void createAuthButton(Group proxyGroup) {
-		btUseAuth = new Button(proxyGroup, SWT.CHECK);
-		btUseAuth.setText("Use Proxy Authentification");
-		btUseAuth.addSelectionListener(new SelectionAdapter() {
+		btUseAuthent = new Button(proxyGroup, SWT.CHECK);
+		btUseAuthent.setText("Use Proxy Authentification");
+		btUseAuthent.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-				enableAuthentificationWidgets(btUseAuth.getSelection());
+				enableAuthentificationWidgets(btUseAuthent.getSelection());
 			};
 		});
 		GridData gd = new GridData();
 		gd.horizontalSpan = 2;
-		btUseAuth.setLayoutData(gd);
+		btUseAuthent.setLayoutData(gd);
 	}
 
 	private void enableAuthentificationWidgets(boolean enabled) {
-		txtPassword.setEnabled(enabled);
-		txtUsername.setEnabled(enabled);
+		textPassword.setEnabled(enabled);
+		textUser.setEnabled(enabled);
 	}
 	
 	private void setWidgets() {
 		Configuration config = Router.getInstance().getConfigurationManager().getConfiguration();
 		
 		if (config.getProxyHost() != null) {
-			txtHost.setText("" + config.getProxyHost());
+			textHost.setText("" + config.getProxyHost());
 		}
 
 		try {
 			if (config.getProxyPort() != null) {
-				txtPort.setText("" + config.getProxyPort());
+				textPort.setText("" + config.getProxyPort());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		if (config.getProxyAuthentificationUsername() != null)
-			txtUsername.setText(config.getProxyAuthentificationUsername());
+			textUser.setText(config.getProxyAuthentificationUsername());
 
 		if (config.getProxyAuthentificationPassword() != null)
-			txtPassword.setText(config.getProxyAuthentificationPassword());
+			textPassword.setText(config.getProxyAuthentificationPassword());
 
-		btUseAuth.setSelection(config.isUseProxyAuthentification());
-		btUseAuth.notifyListeners(SWT.Selection, null);
+		btUseAuthent.setSelection(config.isUseProxyAuthentification());
+		btUseAuthent.notifyListeners(SWT.Selection, null);
 		btUseProxy.setSelection(config.isUseProxy());
 		btUseProxy.notifyListeners(SWT.Selection, null);
 	}
@@ -182,9 +182,9 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 	}
 
 	private void enableWidgets(boolean enabled) {
-		btUseAuth.setEnabled(enabled);
-		txtHost.setEnabled(enabled);
-		txtPort.setEnabled(enabled);
+		btUseAuthent.setEnabled(enabled);
+		textHost.setEnabled(enabled);
+		textPort.setEnabled(enabled);
 	}
 	
 	private Text createPortText(Group proxyGroup) {
@@ -252,16 +252,16 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 	private void saveWidgetValues(boolean selected) {
 		Router.getInstance().getConfigurationManager().getConfiguration().setUseProxy(selected);
-		Router.getInstance().getConfigurationManager().getConfiguration().setProxyHost(txtHost.getText());
-		Router.getInstance().getConfigurationManager().getConfiguration().setProxyPort(txtPort.getText());
+		Router.getInstance().getConfigurationManager().getConfiguration().setProxyHost(textHost.getText());
+		Router.getInstance().getConfigurationManager().getConfiguration().setProxyPort(textPort.getText());
 
-		Router.getInstance().getConfigurationManager().getConfiguration().setUseProxyAuthentification(btUseAuth.getSelection());
-		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationUsername(txtUsername.getText());
-		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationPassword(txtPassword.getText());
+		Router.getInstance().getConfigurationManager().getConfiguration().setUseProxyAuthentification(btUseAuthent.getSelection());
+		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationUsername(textUser.getText());
+		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationPassword(textPassword.getText());
 	}
 
 	private boolean isValidProxyParams() {
-		return txtHost.getText().trim().length() != 0 && txtPort.getText().trim().length() != 0;
+		return textHost.getText().trim().length() != 0 && textPort.getText().trim().length() != 0;
 	}
 
 	public void init(IWorkbench workbench) {
