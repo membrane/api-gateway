@@ -169,7 +169,9 @@ public class Header {
 		setValue(CONTENT_LENGTH, "" + length);
 	}
 	
-	
+	public void setProxyAutorization(String value) {
+		setValue(PROXY_AUTHORIZATION, value); 
+	}
 	
 	public boolean isChunked() {
 		return CHUNKED.equals(getFirstValue(TRANSFER_ENCODING));

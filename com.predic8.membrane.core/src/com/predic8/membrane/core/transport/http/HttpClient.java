@@ -36,7 +36,6 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.HttpExchange;
-import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -137,7 +136,7 @@ public class HttpClient {
 			exc.getRequest().setUri(getPathAndQueryString(dest));
 		} else {
 			if (useProxyAuth) {
-				exc.getRequest().getHeader().add(Header.PROXY_AUTHORIZATION, HttpUtil.getCredentials(proxyUser, proxyPassword));
+				exc.getRequest().getHeader().setProxyAutorization(HttpUtil.getCredentials(proxyUser, proxyPassword));
 			}
 		}
 			
