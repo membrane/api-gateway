@@ -52,7 +52,7 @@ public class HttpServerThread extends AbstractHttpThread {
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
 		sourceSocket.setSoTimeout(30000);
 		this.transport = transport;
-		client.setRouter(transport.getRouter());
+		setProxySettingsForClient();
 	}
 
 	public void run() {

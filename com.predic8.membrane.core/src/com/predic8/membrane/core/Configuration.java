@@ -143,14 +143,14 @@ public class Configuration extends AbstractXMLElement {
 		return false;
 	}
 
-	public boolean getUseProxy() {
+	public boolean isUseProxy() {
 		if (props.containsKey(USE_PROXY)) {			
 			return (Boolean) props.get(USE_PROXY);
 		}
 		return false;
 	}
 	
-	public boolean getUseProxyAuthentification() {
+	public boolean isUseProxyAuthentification() {
 		if (props.containsKey(USE_PROXY_AUTH)) {			
 			return (Boolean) props.get(USE_PROXY_AUTH);
 		}
@@ -328,7 +328,7 @@ public class Configuration extends AbstractXMLElement {
 		setAdjustHostHeader(config.getAdjustHostHeader());
 		setIndentMessage(config.getIndentMessage());
 		setTrackExchange(config.getTrackExchange());
-		setUseProxy(config.getUseProxy());
+		setUseProxy(config.isUseProxy());
 		setProxyHost(config.getProxyHost());
 		setProxyPort(config.getProxyPort());
 		
@@ -338,7 +338,7 @@ public class Configuration extends AbstractXMLElement {
 		setTrustStoreLocation(config.getTrustStoreLocation());
 		setTrustStorePassword(config.getTrustStorePassword());
 		
-		setUseProxyAuthentification(config.getUseProxyAuthentification());
+		setUseProxyAuthentification(config.isUseProxyAuthentification());
 		setProxyAuthentificationUsername(config.getProxyAuthentificationUsername());
 		setProxyAuthentificationPassword(config.getProxyAuthentificationPassword());
 	}

@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 
+import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Header;
@@ -148,4 +149,21 @@ public abstract class AbstractHttpThread extends Thread {
 		return list;
 	}
 	
+	protected void setProxySettingsForClient() {
+		if (transport == null)
+			return;
+		
+		Configuration configuration = transport.getRouter().getConfigurationManager().getConfiguration();
+		client.setUseProxy(configuration.isUseProxy());
+		client.setUseProxyAuth(configuration.isUseProxyAuthentification());
+		client.setProxyHost(configuration.getProxyHost());
+		try {
+			client.setProxyPort(Integer.parseInt(configuration.getProxyPort()));
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		}
+		client.setAdjustHostHeader(configuration.getAdjustHostHeader());
+		client.setProxyUser(configuration.getProxyAuthentificationUsername());
+		client.setProxyPassword(configuration.getProxyAuthentificationPassword());
+	}
 }

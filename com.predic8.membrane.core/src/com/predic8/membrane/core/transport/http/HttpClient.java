@@ -34,9 +34,7 @@ import javax.net.ssl.SSLSocketFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
@@ -56,17 +54,27 @@ public class HttpClient {
 
 	private static final int MAX_CALL = 5;
 
-	private Router router;
+	private boolean useProxy;
 	
-	private Configuration config = new Configuration();
+	private boolean useProxyAuth;
+	
+	private String proxyHost;
+	
+	private int proxyPort;
+	
+	private String proxyUser;
+	
+	private String proxyPassword;
+	
+	private boolean adjustHostHeader;
 	
 	private boolean isSameSocket(String host, int port) {
-		if (!useProxy()) {
+		if (!useProxy) {
 			if ((host.equalsIgnoreCase(socket.getInetAddress().getHostName()) || host.equals(socket.getInetAddress().getHostAddress())) && port == socket.getPort()) {
 				return true;
 			}
 		} else {
-			if (getProxyHost().equalsIgnoreCase(socket.getInetAddress().getHostName()) && getProxyPort() == socket.getPort())
+			if (socket.getInetAddress().getHostName().equalsIgnoreCase(proxyHost) && proxyPort == socket.getPort())
 				return true;
 		}
 		
@@ -79,9 +87,9 @@ public class HttpClient {
 
 			closeSocketAndStreams();
 
-			if (useProxy()) {
-				log.debug("opening a new socket for host: " + getProxyHost() + " on port: " + getProxyPort());
-				createSocket(getProxyHost(), getProxyPort(), stl);
+			if (useProxy) {
+				log.debug("opening a new socket for host: " + proxyHost + " on port: " + proxyPort);
+				createSocket(proxyHost, proxyPort, stl);
 			} else {
 				log.debug("opening a new socket for host: " + host + " on port: " + port);
 				createSocket(host, port, stl);
@@ -115,36 +123,6 @@ public class HttpClient {
 		}
 	}
 
-	private boolean useProxy() {
-		return getConfiguration().getUseProxy();
-	}
-
-	private boolean useProxyAuthentification() {
-		return getConfiguration().getUseProxyAuthentification();
-	}
-	
-	private Configuration getConfiguration() {
-		if (router == null)
-			return config;
-		return router.getConfigurationManager().getConfiguration();
-	}
-
-	private int getProxyPort() {
-		return Integer.parseInt(getConfiguration().getProxyPort());
-	}
-
-	private String getProxyPassword() {
-		return getConfiguration().getProxyAuthentificationPassword();
-	}
-	
-	private String getProxyUsername() {
-		return getConfiguration().getProxyAuthentificationUsername();
-	}
-	
-	private String getProxyHost() {
-		return getConfiguration().getProxyHost();
-	}
-
 	private void init(HttpExchange exc, int destIndex) throws UnknownHostException, IOException, MalformedURLException {
 		String dest = exc.getDestinations().get(destIndex);
 		
@@ -155,11 +133,11 @@ public class HttpClient {
 			return;
 		}
 
-		if (!useProxy()) {
+		if (!useProxy) {
 			exc.getRequest().setUri(getPathAndQueryString(dest));
 		} else {
-			if (useProxyAuthentification()) {
-				exc.getRequest().getHeader().add(Header.PROXY_AUTHORIZATION, HttpUtil.getCredentials(getProxyUsername(), getProxyPassword()));
+			if (useProxyAuth) {
+				exc.getRequest().getHeader().add(Header.PROXY_AUTHORIZATION, HttpUtil.getCredentials(proxyUser, proxyPassword));
 			}
 		}
 			
@@ -168,14 +146,10 @@ public class HttpClient {
 		int targetPort = getTargetPort(destination);
 		openSocketIfNeeded(destination.getHost(), targetPort, getOutboundTLS(exc));
 		
-		if (isAdjustHostHeader() && exc.getRule() instanceof ForwardingRule)
+		if (adjustHostHeader && exc.getRule() instanceof ForwardingRule)
 			exc.getRequest().getHeader().setHost(destination.getHost() + ":" + targetPort);
 	}
 
-	private boolean isAdjustHostHeader() {
-		return router.getConfigurationManager().getConfiguration().getAdjustHostHeader();
-	}
-	
 	private boolean getOutboundTLS(HttpExchange exc) {
 		if (exc.getRule() == null)
 			return false;
@@ -264,7 +238,7 @@ public class HttpClient {
 	}
 
 	private void handleConnectRequest(HttpExchange exc) throws IOException, EndOfStreamException {
-		if (useProxy()) {
+		if (useProxy) {
 			exc.getRequest().write(out);
 			Response response = new Response();
 			response.read(in, false);
@@ -301,12 +275,69 @@ public class HttpClient {
 		socket.shutdownInput();
 		socket.close();
 	}
-
-	public void setRouter(Router router) {
-		this.router = router;
-	}
 	
 	public Socket getSocket() {
 		return socket;
 	}
+
+	public boolean isUseProxy() {
+		return useProxy;
+	}
+
+	public void setUseProxy(boolean useProxy) {
+		this.useProxy = useProxy;
+	}
+
+	public boolean isUseProxyAuth() {
+		return useProxyAuth;
+	}
+
+	public void setUseProxyAuth(boolean useProxyAuth) {
+		this.useProxyAuth = useProxyAuth;
+	}
+
+	public String getProxyHost() {
+		return proxyHost;
+	}
+
+	public void setProxyHost(String proxyHost) {
+		this.proxyHost = proxyHost;
+	}
+
+	public int getProxyPort() {
+		return proxyPort;
+	}
+
+	public void setProxyPort(int proxyPort) {
+		this.proxyPort = proxyPort;
+	}
+
+	public String getProxyUser() {
+		return proxyUser;
+	}
+
+	public void setProxyUser(String proxyUser) {
+		this.proxyUser = proxyUser;
+	}
+
+	public String getProxyPassword() {
+		return proxyPassword;
+	}
+
+	public void setProxyPassword(String proxyPassword) {
+		this.proxyPassword = proxyPassword;
+	}
+
+	public boolean isAdjustHostHeader() {
+		return adjustHostHeader;
+	}
+
+	public void setAdjustHostHeader(boolean adjustHostHeader) {
+		this.adjustHostHeader = adjustHostHeader;
+	}
+
+	public void setSocket(Socket socket) {
+		this.socket = socket;
+	}
+		
 }
