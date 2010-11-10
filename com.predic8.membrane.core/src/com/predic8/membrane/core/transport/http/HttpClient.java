@@ -38,9 +38,11 @@ import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.HttpUtil;
 
 public class HttpClient {
 
@@ -117,6 +119,10 @@ public class HttpClient {
 		return getConfiguration().getUseProxy();
 	}
 
+	private boolean useProxyAuthentification() {
+		return getConfiguration().getUseProxyAuthentification();
+	}
+	
 	private Configuration getConfiguration() {
 		if (router == null)
 			return config;
@@ -127,6 +133,14 @@ public class HttpClient {
 		return Integer.parseInt(getConfiguration().getProxyPort());
 	}
 
+	private String getProxyPassword() {
+		return getConfiguration().getProxyAuthentificationPassword();
+	}
+	
+	private String getProxyUsername() {
+		return getConfiguration().getProxyAuthentificationUsername();
+	}
+	
 	private String getProxyHost() {
 		return getConfiguration().getProxyHost();
 	}
@@ -141,9 +155,15 @@ public class HttpClient {
 			return;
 		}
 
-		if (!useProxy())
+		if (!useProxy()) {
 			exc.getRequest().setUri(getPathAndQueryString(dest));
-
+		} else {
+			if (useProxyAuthentification()) {
+				exc.getRequest().getHeader().add(Header.PROXY_AUTHORIZATION, HttpUtil.getCredentials(getProxyUsername(), getProxyPassword()));
+			}
+		}
+			
+		
 		URL destination = new URL(dest);
 		int targetPort = getTargetPort(destination);
 		openSocketIfNeeded(destination.getHost(), targetPort, getOutboundTLS(exc));

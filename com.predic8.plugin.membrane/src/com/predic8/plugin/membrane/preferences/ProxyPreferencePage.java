@@ -20,7 +20,6 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
@@ -39,21 +38,19 @@ import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
 
 	public static final String PAGE_ID = "com.predic8.plugin.membrane.preferences.ProxyPreferencePage";
-	
+
 	protected Text txtHost;
 	protected Text txtPort;
-	private Label lblHost;
-	private Label lblPort;
 	protected Button btUseProxy;
-	
+
 	protected Text txtUsername;
-	
+
 	protected Text txtPassword;
-	
-	protected Button btUseAuthentification; 
-	
+
+	protected Button btUseAuthentification;
+
 	public ProxyPreferencePage() {
-		
+
 	}
 
 	public ProxyPreferencePage(String title) {
@@ -67,121 +64,135 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 	@Override
 	protected Control createContents(Composite parent) {
+		
 		Composite composite = new Composite(parent, SWT.NONE);
-		composite.setLayout(new RowLayout(SWT.FILL));
-		
-		Configuration config = Router.getInstance().getConfigurationManager().getConfiguration();
-		
-		btUseProxy = createUseProxyButton(composite, config); 
+		composite.setLayout(new GridLayout());
 
-		Group proxyGroup = createProxyGroup(composite);
+		btUseProxy = createUseProxyButton(composite);
 
-		lblHost = new Label(proxyGroup, SWT.NONE);
-		lblHost.setText("Host");
-		
-		txtHost = createHostText(config, proxyGroup); 
-		
-		lblPort = new Label(proxyGroup, SWT.NONE);
-		lblPort.setText("Port");
+		Group proxyGroup = createGroup(composite, "Proxy Settings");
 
-		txtPort = createPortText(config, proxyGroup);
-		
-		new Label(proxyGroup, SWT.NONE).setText(" ");
+		new Label(proxyGroup, SWT.NONE).setText("Host");
+
+		txtHost = createHostText(proxyGroup);
+
+		new Label(proxyGroup, SWT.NONE).setText("Port");
+
+		txtPort = createPortText(proxyGroup);
+
 		new Label(proxyGroup, SWT.NONE).setText(" ");
 		
+		createAuthButton(proxyGroup);
+
+		Group groupAuth = createGroup(proxyGroup, "Credentials");
+		GridData gdA = new GridData();
+		gdA.horizontalSpan = 2;
+		groupAuth.setLayoutData(gdA);
+
+		new Label(groupAuth, SWT.NONE).setText("Username: ");
+		txtUsername = createText(groupAuth, SWT.NONE, 200, 1);
 		
-		btUseAuthentification = new Button(proxyGroup, SWT.CHECK);
-		btUseAuthentification.setText("Use Proxy Authentification");
-		GridData gdauth = new GridData();
-		gdauth.horizontalSpan = 2;
-		btUseAuthentification.setLayoutData(gdauth);
+		new Label(groupAuth, SWT.NONE).setText("Password: ");
+		txtPassword = createText(groupAuth, SWT.PASSWORD, 200, 1);
+
+		setWidgets();
+
+		GridData gd = new GridData();
+		gd.verticalAlignment = GridData.FILL;
+		gd.grabExcessVerticalSpace = true;
 		
-		
-		Group groupAuth = createProxyAuthentificationGroup(proxyGroup);
-		groupAuth.setLayoutData(gdauth);
-		
-		Label lbUsername = new Label(groupAuth, SWT.NONE);
-		lbUsername.setText("Username: ");
-		
-		txtUsername = createText(groupAuth, SWT.NONE, 200, 1); 
-		
-		Label lbPassword = new Label(groupAuth, SWT.NONE);
-		lbPassword.setText("Password: ");
-		
-		txtPassword = createText(groupAuth, SWT.PASSWORD, 200, 1); 
+		Label label = new Label(composite, SWT.NONE);
+		label.setText("test");
+		label.setLayoutData(gd);
 		
 		return composite;
 	}
 
-	private Text createText(Composite parent, int type, int width, int span) {
-		Text text = new Text(parent, type | SWT.BORDER);
-		GridData gData = new GridData(GridData.FILL_BOTH);
-		gData.widthHint = width;
-		gData.horizontalSpan = span;
-		text.setLayoutData(gData);
-		
-		return text;
-	}
-	
-	private Button createUseProxyButton(Composite composite, Configuration config) {
-		Button bt = new Button(composite, SWT.CHECK);
-		bt.setText("Use Proxy Server");
-		if (config.getUseProxy()) {
-			bt.setSelection(true);
-		}
-		return bt;
+	private void createAuthButton(Group proxyGroup) {
+		btUseAuthentification = new Button(proxyGroup, SWT.CHECK);
+		btUseAuthentification.setText("Use Proxy Authentification");
+		GridData gd = new GridData();
+		gd.horizontalSpan = 2;
+		btUseAuthentification.setLayoutData(gd);
 	}
 
-	private Text createPortText(Configuration config, Group proxyGroup) {
-		Text text = new Text(proxyGroup, SWT.BORDER);
-		text.addVerifyListener(new PortVerifyListener());
-		GridData gData = new GridData(GridData.FILL_BOTH);
-		gData.widthHint = 70;
-		text.setLayoutData(gData);
+	private void setWidgets() {
+		Configuration config = Router.getInstance().getConfigurationManager().getConfiguration();
+		btUseProxy.setSelection(config.getUseProxy());
+		btUseAuthentification.setSelection(config.getUseProxyAuthentification());
+
+		if (config.getProxyHost() != null) {
+			txtHost.setText("" + config.getProxyHost());
+		}
+
 		try {
 			if (config.getProxyPort() != null) {
-				text.setText("" + config.getProxyPort());
+				txtPort.setText("" + config.getProxyPort());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
+		if (config.getProxyAuthentificationUsername() != null)
+			txtUsername.setText(config.getProxyAuthentificationUsername());
+
+		if (config.getProxyAuthentificationPassword() != null)
+			txtPassword.setText(config.getProxyAuthentificationPassword());
+
+	}
+
+	private Text createText(Composite parent, int type, int width, int span) {
+		Text text = new Text(parent, type | SWT.BORDER);
+		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
+		gData.widthHint = width;
+		gData.horizontalSpan = span;
+		text.setLayoutData(gData);
 		return text;
 	}
 
-	private Text createHostText(Configuration config, Group proxyGroup) {
+	private Button createUseProxyButton(Composite composite) {
+		Button bt = new Button(composite, SWT.CHECK);
+		bt.setText("Use Proxy Server");
+		return bt;
+	}
+
+	private Text createPortText(Group proxyGroup) {
 		Text text = new Text(proxyGroup, SWT.BORDER);
-		GridData gData = new GridData(GridData.FILL_BOTH);
+		text.addVerifyListener(new PortVerifyListener());
+		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
+		gData.widthHint = 70;
+		text.setLayoutData(gData);
+		return text;
+	}
+
+	private Text createHostText(Group proxyGroup) {
+		Text text = new Text(proxyGroup, SWT.BORDER);
+		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
 		gData.widthHint = 200;
 		text.setLayoutData(gData);
-		if (config.getProxyHost() != null) {
-			text.setText("" + config.getProxyHost());
-		}
 		return text;
 	}
 
-	private Group createProxyGroup(Composite composite) {
+	private Group createGroup(Composite composite, String title) {
 		Group group = new Group(composite, SWT.NONE);
-		group.setText("Proxy Settings");
+		group.setText(title);
 		GridLayout layout = new GridLayout();
+		layout.marginTop = 5;
+		layout.marginLeft = 5;
+		layout.marginBottom = 5;
+		layout.marginRight = 5;
+		
 		layout.numColumns = 2;
+		layout.verticalSpacing = 5;
 		group.setLayout(layout);
 		return group;
 	}
 
-	private Group createProxyAuthentificationGroup(Composite composite) {
-		Group group = new Group(composite, SWT.NONE);
-		group.setText("");
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
-		group.setLayout(layout);
-		return group;
-	}
-	
 	@Override
 	protected void performApply() {
 		setAndSaveConfig();
 	}
-	
+
 	@Override
 	public boolean performOk() {
 		setAndSaveConfig();
@@ -194,12 +205,12 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 				saveWidgetValues(true);
 			} else {
 				MessageDialog.openWarning(Display.getCurrent().getActiveShell(), "Warning", "Invaled configuration: please check proxy host and proxy port values");
-				return; 
+				return;
 			}
 		} else {
 			saveWidgetValues(false);
 		}
-		
+
 		try {
 			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 		} catch (Exception e) {
@@ -212,16 +223,16 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		Router.getInstance().getConfigurationManager().getConfiguration().setUseProxy(selected);
 		Router.getInstance().getConfigurationManager().getConfiguration().setProxyHost(txtHost.getText());
 		Router.getInstance().getConfigurationManager().getConfiguration().setProxyPort(txtPort.getText());
-		
+
 		Router.getInstance().getConfigurationManager().getConfiguration().setUseProxyAuthentification(btUseAuthentification.getSelection());
 		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationUsername(txtUsername.getText());
 		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationPassword(txtPassword.getText());
 	}
-	
+
 	private boolean isValidProxyParams() {
 		return txtHost.getText().trim().length() != 0 && txtPort.getText().trim().length() != 0;
 	}
-	
+
 	public void init(IWorkbench workbench) {
 		setPreferenceStore(MembraneUIPlugin.getDefault().getPreferenceStore());
 	}

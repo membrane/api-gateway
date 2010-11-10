@@ -58,4 +58,9 @@ public class HttpUtilTest extends TestCase {
 
 	}
 
+	public void testGetCredentials() throws Exception {
+		String credentials = HttpUtil.getCredentials("predic8", "predic8");
+		System.out.println(credentials);
+	}
+	
 }

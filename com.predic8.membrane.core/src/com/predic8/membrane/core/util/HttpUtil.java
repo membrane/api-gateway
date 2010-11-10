@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -32,13 +33,11 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Body;
 
-
 public class HttpUtil {
 
 	private static Log log = LogFactory.getLog(HttpUtil.class.getName());
-	
-	public static final SimpleDateFormat GMT_DATE_FORMAT = new SimpleDateFormat(
-			"EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+
+	public static final SimpleDateFormat GMT_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 
 	static {
 		GMT_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -50,7 +49,7 @@ public class HttpUtil {
 		int b;
 
 		do {
-			b = in.read(); //log.debug(b);
+			b = in.read(); // log.debug(b);
 			if (b == -1) {
 				// return line.toString();
 				throw new EndOfStreamException("read byte -1: " + line);
@@ -71,20 +70,20 @@ public class HttpUtil {
 		} while (b >= 0);
 		throw new IOException("File ends before line is complete");
 	}
-	
+
 	public static int readChunkSize(InputStream in) throws IOException {
-		StringBuffer buffer = new StringBuffer();	
-		
+		StringBuffer buffer = new StringBuffer();
+
 		int c = 0;
-		while ((c = in.read() ) != -1) {
+		while ((c = in.read()) != -1) {
 			if (c == 0xd) {
-				c = in.read(); 
+				c = in.read();
 				if (c != 10) {
 					throw new IllegalStateException("input stream contains invalid data");
 				}
 				break;
 			} else {
-				if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >='a' && c <= 'f')) {
+				if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
 					buffer.append((char) c);
 				}
 			}
@@ -100,10 +99,10 @@ public class HttpUtil {
 				nfe.printStackTrace();
 			}
 		}
-		
+
 		return size;
 	}
-	
+
 	public static Response createErrorResponse(String message) {
 		Response response = new Response();
 		response.setStatusCode(500);
@@ -133,13 +132,20 @@ public class HttpUtil {
 		return chunks;
 	}
 
-
 	public static String getHost(String hostAndPort) {
 		return hostAndPort.split(":")[0];
 	}
-	
+
 	public static int getPort(String hostAndPort) {
 		return Integer.parseInt(hostAndPort.split(":")[1]);
 	}
-	
+
+	public static String getCredentials(String user, String password) {
+		StringBuffer buffer = new StringBuffer();
+		buffer.append("Basic ");
+		byte[] base64UserPass = Base64.encodeBase64((user + ":" + password).getBytes());
+		buffer.append(new String(base64UserPass));
+		return buffer.toString();
+	}
+
 }

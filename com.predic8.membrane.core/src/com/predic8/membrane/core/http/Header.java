@@ -48,6 +48,8 @@ public class Header {
 	
 	public static final String X_FORWARDED_FOR = "X-Forwarded-For";
 	
+	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
+	
 	// Header field values
 	
 	public static final String CHUNKED = "chunked";
