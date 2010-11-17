@@ -3,15 +3,17 @@ package com.predic8.membrane.core.io;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.OutputStream;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class ConfigurationFileStore implements ConfigurationStore {
@@ -20,7 +22,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 
 		XMLInputFactory factory = XMLInputFactory.newInstance();
 		FileInputStream fis = new FileInputStream(fileName);
-		XMLStreamReader reader = factory.createXMLStreamReader(fis);
+		XMLStreamReader reader = factory.createXMLStreamReader(fis, Constants.ENCODING_UTF_8);
 
 		return (Configuration) new Configuration().parse(reader);
 	}
@@ -34,17 +36,23 @@ public class ConfigurationFileStore implements ConfigurationStore {
 			throw new IllegalArgumentException(
 					"File path for saving configuration can not be null.");
 
+		
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		Writer writer = new OutputStreamWriter(buffer);
-
-		config.write(XMLOutputFactory.newInstance().createXMLStreamWriter(
-				writer));
+		
+		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(buffer, Constants.ENCODING_UTF_8);
+		config.write(writer);
 		writer.flush();
 		writer.close();
 
+		
+		byte[] bArray = buffer.toByteArray();
+		OutputStream fos = new FileOutputStream(path);
+		buffer.writeTo(fos);
+		fos.flush();
+		fos.close();
+		
 		FileWriter out = new FileWriter(path);
-		out.write(TextUtil.formatXML(new ByteArrayInputStream(buffer
-				.toByteArray())));
+		out.write(TextUtil.formatXML(new ByteArrayInputStream(bArray)));
 		out.flush();
 		out.close();
 

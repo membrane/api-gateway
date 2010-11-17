@@ -21,19 +21,13 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.List;
 
 import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.exchange.HttpExchange;
-import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
@@ -164,34 +158,6 @@ public class HttpServerThread extends AbstractHttpThread {
 		writeResponse(targetRes);
 		exchange.setCompleted();
 		log.debug("exchange set completed");
-	}
-
-	private void invokeResponseInterceptors() throws Exception, AbortException {
-		if (Outcome.ABORT == invokeResponseHandlers(exchange, getInterceptorsReverse()))
-			throw new AbortException();
-	}
-
-	private void invokeRequestInterceptors(List<Interceptor> interceptors) throws Exception, AbortException {
-		if (Outcome.ABORT == invokeRequestHandlers(interceptors))
-			throw new AbortException();
-	}
-	
-	private void writeResponse(Response res) throws Exception{
-		res.write(srcOut);
-		srcOut.flush();
-		exchange.setTimeResSent(System.currentTimeMillis());
-	}
-
-	private void block(Message message) throws TerminateException {
-		try {
-			log.debug("message thread waits");
-			message.wait();
-			log.debug("message thread received notify");
-			if (exchange.isForceToStop())
-				throw new TerminateException("Force the exchange to stop.");
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
 	}
 
 }

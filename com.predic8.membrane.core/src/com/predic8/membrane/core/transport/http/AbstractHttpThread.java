@@ -26,8 +26,10 @@ import org.apache.commons.logging.Log;
 
 import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Body;
@@ -166,4 +168,34 @@ public abstract class AbstractHttpThread extends Thread {
 		client.setProxyUser(configuration.getProxyAuthentificationUsername());
 		client.setProxyPassword(configuration.getProxyAuthentificationPassword());
 	}
+	
+	protected void invokeResponseInterceptors() throws Exception, AbortException {
+		if (Outcome.ABORT == invokeResponseHandlers(exchange, getInterceptorsReverse()))
+			throw new AbortException();
+	}
+
+	protected void invokeRequestInterceptors(List<Interceptor> interceptors) throws Exception, AbortException {
+		if (Outcome.ABORT == invokeRequestHandlers(interceptors))
+			throw new AbortException();
+	}
+	
+	protected void block(Message message) throws TerminateException {
+		try {
+			log.debug("message thread waits");
+			message.wait();
+			log.debug("message thread received notify");
+			if (exchange.isForceToStop())
+				throw new TerminateException("Force the exchange to stop.");
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
+	}
+	
+	protected void writeResponse(Response res) throws Exception{
+		res.write(srcOut);
+		srcOut.flush();
+		exchange.setTimeResSent(System.currentTimeMillis());
+	}
+
+
 }

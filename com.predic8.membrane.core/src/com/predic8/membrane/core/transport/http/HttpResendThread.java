@@ -16,7 +16,6 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -44,23 +43,31 @@ public class HttpResendThread extends AbstractHttpThread {
 
 			exchange.setRule(rule);
 			
-			//TODO call interceptors
-			Router.getInstance().getExchangeStore().add(exchange);
-		
+			invokeRequestInterceptors(getInterceptors());
+			
+			synchronized (exchange.getRequest()) {
+				if (exchange.getRule().isBlockRequest())
+					block(exchange.getRequest());
+			}
+			
 			if (rule instanceof ForwardingRule) {
 				if (((ForwardingRule) rule).getTargetHost() != null && ((ForwardingRule) rule).getTargetHost().length() != 0) {
-					targetRes = client.call(exchange);
-					targetRes.readBody();
-					client.close();
+					makeClientCall();
 				}
 			} else if (rule instanceof ProxyRule) {
-				targetRes = client.call(exchange);
-				targetRes.readBody();
-				client.close();
+				makeClientCall();
 			}
 			
 			exchange.setResponse(targetRes);
 
+			invokeResponseInterceptors();
+
+			synchronized (exchange.getResponse()) {
+				if (exchange.getRule().isBlockResponse()) {
+					block(exchange.getResponse());
+				}
+			}
+			
 			exchange.setCompleted();
 
 			return;
@@ -72,6 +79,12 @@ public class HttpResendThread extends AbstractHttpThread {
 			ex.printStackTrace();
 		}
 
+	}
+
+	private void makeClientCall() throws Exception, IOException {
+		targetRes = client.call(exchange);
+		targetRes.readBody();
+		client.close();
 	}
 
 }

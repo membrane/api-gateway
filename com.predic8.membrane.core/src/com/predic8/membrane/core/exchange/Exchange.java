@@ -74,6 +74,11 @@ public class Exchange {
 	public Exchange(Exchange original) {
 		properties = new HashMap<String, Object>(original.properties);
 		originalRequestUri = original.originalRequestUri;
+		
+		List<String> origDests = original.getDestinations();
+		for (String dest : origDests) {
+			destinations.add(dest);
+		}
 	}
 
 	public ExchangeState getStatus() {
