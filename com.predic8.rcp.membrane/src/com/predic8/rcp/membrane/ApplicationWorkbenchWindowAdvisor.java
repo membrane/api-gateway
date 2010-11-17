@@ -14,7 +14,9 @@
 
 package com.predic8.rcp.membrane;
 
+import org.eclipse.jface.preference.PreferenceManager;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
 import org.eclipse.ui.application.IWorkbenchWindowConfigurer;
@@ -37,5 +39,12 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor {
         configurer.setShowMenuBar(true);
         configurer.setShowStatusLine(false);
         configurer.setTitle("Membrane SOAP Monitor");
+    }
+    
+    @Override
+    public void postWindowCreate() {
+    	super.postWindowCreate();
+    	PreferenceManager preferenceManager = PlatformUI.getWorkbench().getPreferenceManager();
+    	preferenceManager.remove("org.eclipse.help.ui.browsersPreferencePage");
     }
 }
