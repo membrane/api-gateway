@@ -160,7 +160,9 @@ public abstract class AbstractHttpThread extends Thread {
 		client.setUseProxyAuth(configuration.isUseProxyAuthentification());
 		client.setProxyHost(configuration.getProxyHost());
 		try {
-			client.setProxyPort(Integer.parseInt(configuration.getProxyPort()));
+			String proxyPort = configuration.getProxyPort();
+			if (proxyPort != null && !proxyPort.equals(""))
+				client.setProxyPort(Integer.parseInt(proxyPort));
 		} catch (NumberFormatException e) {
 			e.printStackTrace();
 		}
