@@ -183,6 +183,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 	private void enableWidgets(boolean enabled) {
 		btUseAuthent.setEnabled(enabled);
+		enableAuthentificationWidgets(enabled && btUseAuthent.getSelection());
 		textHost.setEnabled(enabled);
 		textPort.setEnabled(enabled);
 	}
