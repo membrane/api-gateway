@@ -82,6 +82,7 @@
 				 -->
 				<!-- 
 					<bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor"> 
+						<property name="displayName" value="CSV Statistics Interceptor" />
 						<property name="fileName" value="C:\temp\exc-statistics.csv" /> 
 					</bean> 
 				-->
@@ -176,12 +177,6 @@
 	<bean id="administratorInterceptor"
 		class="com.predic8.membrane.core.interceptor.administration.AdministratorInterceptor">
 		<property name="displayName" value="Admistrator Interceptor" />
-	</bean>
-
-	<bean id="csvInterceptor"
-		class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor">
-		<property name="displayName" value="CSV Statistics Interceptor" />
-		<property name="fileName" value="C:\temp\exc-statistics.csv" />
 	</bean>
 
 	<!-- 

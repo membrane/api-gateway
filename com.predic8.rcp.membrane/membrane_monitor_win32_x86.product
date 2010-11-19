@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Membrane Monitor" id="com.predic8.rcp.membrane.product" application="com.predic8.rcp.membrane.application" version="1.6.3" useFeatures="false" includeLaunchers="true">
+<product name="Membrane Monitor" id="com.predic8.rcp.membrane.product" application="com.predic8.rcp.membrane.application" version="1.6.4" useFeatures="false" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/com.predic8.rcp.membrane/icons/logo128.png"/>
       <text>
-         Membrane SOAP Monitor Version 1.6.3
+         Membrane SOAP Monitor Version 1.6.4
   Copyright @  2004-2010 by predic8 GmbH
   Moltkestr. 40  53173 Bonn Germany 
   www.predic8.com 
