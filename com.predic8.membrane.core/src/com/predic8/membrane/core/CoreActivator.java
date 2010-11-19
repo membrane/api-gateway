@@ -64,7 +64,8 @@ public class CoreActivator extends Plugin {
 				readBeanConfigWhenStartedInEclipse();
 			}
 		} catch (Exception e1) {
-			
+			error("Unable to read bean configuration file: " + e1.getMessage());
+			error("Unable to read bean configuration file: " + e1.getStackTrace());
 			e1.printStackTrace();
 		}
 
