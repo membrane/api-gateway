@@ -76,7 +76,7 @@
       <view
             category="com.predic8.plugin.membrane.views.MembraneExchangesViewCategory"
             class="com.predic8.plugin.membrane.views.ResponseView"
-            icon="icons/message.png"
+            icon="icons/message_in.png"
             id="com.predic8.plugin.membrane.views.ResponseView"
             name="Response"
             restorable="true">
@@ -210,11 +210,13 @@
             </command>
             <command
                   commandId="showRequestView"
+                  icon="icons/message_out.png"
                   label="Show Request View"
                   style="push">
             </command>
             <command
                   commandId="showResponseView"
+                  icon="icons/message_in.png"
                   label="Show Response View"
                   style="push">
             </command>
