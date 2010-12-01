@@ -37,6 +37,9 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	
 	public void add(Exchange exc) {
 		
+		if (exc.getResponse() != null)
+			return;
+		
 		if (isKeyInStore(exc)) {
 			getKeyList(exc).add(exc);
 		} else {

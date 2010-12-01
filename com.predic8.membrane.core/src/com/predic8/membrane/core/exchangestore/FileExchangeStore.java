@@ -87,13 +87,20 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			msg.writeStartLine(os);
 			msg.getHeader().write(os);
 			os.write((Constants.CRLF).getBytes());
-			if (!msg.isBodyEmpty()) {
-				if (raw)
-					os.write(msg.getBody().getRaw());
-				else {
+			
+			if (msg.isBodyEmpty())
+				return;
+			
+			if (raw)
+				os.write(msg.getBody().getRaw());
+			else {
+				
+				if (msg.isXML())
 					os.write(TextUtil.formatXML(msg.getBodyAsStream()).getBytes());
-				}
+				else
+					os.write(msg.getBody().getContent());
 			}
+
 		} catch (Exception e) {
 			throw e;
 		} finally {

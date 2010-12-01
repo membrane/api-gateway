@@ -36,6 +36,25 @@
 					<property name="exchangeStore" ref="exchangeStore" />
 				</bean>
 
+				<!--  
+					Saving messages into files
+					============================
+					The FileExchangeStore saves all captured messages to disk. 
+					Uncomment the following bean and set value of the property dir 
+					to the folder where you want to save messages. 
+				-->			
+				
+				<!--  
+				<bean
+					class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">
+					<property name="exchangeStore">
+						<bean class="com.predic8.membrane.core.exchangestore.FileExchangeStore">
+							<property name="dir" value="C:\temp" />
+						</bean>
+					</property>
+				</bean>
+				-->
+
 				<!--
 					Rewriting of URLs in WSDL documents 
 					=================================== 
