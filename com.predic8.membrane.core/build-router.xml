@@ -40,28 +40,29 @@
 
 	<target name="dist-router" depends="clean, compile-core, javadoc">
 		<mkdir dir="dist" />
-		<mkdir dir="dist/membrane-router-${version}" />
-		<mkdir dir="dist/membrane-router-${version}/classes" />
-		<mkdir dir="dist/membrane-router-${version}/lib" />
-		<copy todir="dist/membrane-router-${version}/lib">
+		<mkdir dir="dist/router" />
+		<mkdir dir="dist/router/membrane-router-${version}" />
+		<mkdir dir="dist/router/membrane-router-${version}/classes" />
+		<mkdir dir="dist/router/membrane-router-${version}/lib" />
+		<copy todir="dist/router/membrane-router-${version}/lib">
 			<fileset dir="lib">
 				<exclude name="**/rcp/**" />
 				<exclude name="**/ext/**" />
 			</fileset>
 		</copy>
 
-		<copy todir="dist/membrane-router-${version}">
+		<copy todir="dist/router/membrane-router-${version}">
 				<fileset dir="router"/>
 		</copy>
 		
-		<jar destfile="dist/membrane-router-${version}/lib/membrane-router.jar" basedir="build/classes" includes="**" excludes="**/Starter.class, **/ClassloaderUtil*.class" />
+		<jar destfile="dist/router/membrane-router-${version}/lib/membrane-router.jar" basedir="build/classes" includes="**" excludes="**/Starter.class, **/ClassloaderUtil*.class" />
 
-		<jar destfile="dist/membrane-router-${version}/starter.jar" basedir="build/classes" includes="**/Starter.class, **/ClassloaderUtil*.class" />
+		<jar destfile="dist/router/membrane-router-${version}/starter.jar" basedir="build/classes" includes="**/Starter.class, **/ClassloaderUtil*.class" />
 		
-        <zip destfile="dist/membrane-router-${version}.zip" basedir="dist/membrane-router-${version}"/>
-		<tar destfile="dist/membrane-router-${version}.tgz" basedir="dist/membrane-router-${version}" compression="gzip"/>
+        <zip destfile="dist/membrane-router-${version}.zip" basedir="dist/router/"/>
+		<tar destfile="dist/membrane-router-${version}.tgz" basedir="dist/router" compression="gzip"/>
 		
-		<copy todir="dist/membrane-router-${version}-api">
+		<copy todir="dist/router/membrane-router-${version}-api">
 			<fileset dir="build/doc/api" />
 		</copy>
 	</target>
