@@ -13,6 +13,12 @@
    limitations under the License. */
 package com.predic8.plugin.membrane.preferences;
 
+import java.io.FileNotFoundException;
+import java.security.KeyStore;
+
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -207,6 +213,12 @@ public class SecurityPreferencePage extends PreferencePage implements
 	}
 	
 	private void setAndSaveSacurityInformations() {
+		if (!checkKeyStore())
+			return;
+		
+		if (!checkTrustStore())
+			return;
+		
 		getConfiguration().setKeyStoreLocation(textKeyLocation.getText());
 		getConfiguration().setKeyStorePassword(textKeyPassword.getText());
 		getConfiguration().setTrustStoreLocation(textTrustLocation.getText());
@@ -222,6 +234,36 @@ public class SecurityPreferencePage extends PreferencePage implements
 		}
 			
 	}
+
+	private boolean checkTrustStore() {
+		try {
+			checkStore(textTrustLocation.getText(), textTrustPassword.getText());
+			return true;
+		} catch (FileNotFoundException fe) {
+			openError("Trust Store validation failed!", "Unable to read trust store file. The path you have specified may be invalid.");
+			return false;
+		} catch (Exception e) {
+			openError("Key Store validation failed!", e.getMessage());
+			return false;
+		}
+	}
+
+	private boolean checkKeyStore() {
+		try {
+			checkStore(textKeyLocation.getText(), textKeyPassword.getText());
+			return true;
+		} catch (FileNotFoundException fe) {
+			openError("Key Store validation failed!", "Unable to read key store file. The path you have specified may be invalid.");
+			return false;
+		} catch (Exception e) {
+			openError("Key Store validation failed!", e.getMessage());
+			return false;
+		}
+	}
+	
+	private void openError(String title, String message) {
+		ErrorDialog.openError(this.getShell(), "Validation Error", title, new Status(IStatus.ERROR, MembraneUIPlugin.PLUGIN_ID, message));
+	}
 	
 	@Override
 	protected void performApply() {
@@ -233,4 +275,21 @@ public class SecurityPreferencePage extends PreferencePage implements
 		setAndSaveSacurityInformations();
 		return true;
 	}
+	
+	private void checkStore(String file, String password) throws FileNotFoundException, Exception {
+		if ("".equals(file.trim()))
+			return;
+		
+		KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+	    java.io.FileInputStream fis = null;
+	    try {
+	        fis = new java.io.FileInputStream(file);
+	        ks.load(fis, password.toCharArray());
+	    } finally {
+	        if (fis != null) {
+	            fis.close();
+	        }
+	    }
+	}
+	
 }

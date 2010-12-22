@@ -17,12 +17,8 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.SocketException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import javax.net.ssl.SSLServerSocketFactory;
-
-import com.predic8.membrane.core.exchange.HttpExchange;
 
 
 public class HttpEndpointListener extends Thread {

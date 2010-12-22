@@ -17,11 +17,15 @@ package com.predic8.plugin.membrane.dialogs.rule;
 
 import java.io.IOException;
 
+import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabItem;
+import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
@@ -65,6 +69,25 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 
 		createInterceptorsComposite();
 
+		targetComposite.getTargetGroup().getTextTargetHost().addModifyListener(new ModifyListener() {
+			public void modifyText(ModifyEvent e) {
+
+				Text t = (Text) e.getSource();
+
+				if ("".equals(t.getText().trim())) {
+					getButton(IDialogConstants.OK_ID).setEnabled(false);
+					return;
+				}
+
+				if (!targetComposite.getTargetGroup().isValidHostNameInput()) {
+					getButton(IDialogConstants.OK_ID).setEnabled(false);
+					return;
+				}
+				
+				getButton(IDialogConstants.OK_ID).setEnabled(true);
+			}
+		});
+		
 		return comp;
 	}
 

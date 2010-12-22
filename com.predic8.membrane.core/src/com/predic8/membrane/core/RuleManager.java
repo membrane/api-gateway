@@ -102,9 +102,9 @@ public class RuleManager {
 		if (exists(rule.getKey()))
 			return;
 		
-		rules.add(rule);
-
 		((HttpTransport)router.getTransport()).openPort(rule.getKey().getPort(), rule.isInboundTSL());
+		
+		rules.add(rule);
 		
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleAdded(rule);

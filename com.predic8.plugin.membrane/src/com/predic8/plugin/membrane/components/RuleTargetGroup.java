@@ -14,6 +14,8 @@
 
 package com.predic8.plugin.membrane.components;
 
+import java.util.regex.Pattern;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -31,6 +33,10 @@ public class RuleTargetGroup {
 
 	private Text textTargetHost;
 
+	Pattern pHost = Pattern.compile("^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$");
+
+	Pattern pIp = Pattern.compile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9])$");
+	
 	public RuleTargetGroup(Composite parent, int style) {
 		Group group = createGroup(parent, style);
 
@@ -106,4 +112,22 @@ public class RuleTargetGroup {
 		textTargetPort.setText(Integer.toString(port));
 	}
 	
+	public Text getTextTargetHost() {
+		return textTargetHost;
+	}
+	
+	public Text getTextTargetPort() {
+		return textTargetPort;
+	}
+	
+	public boolean isValidHostNameInput() {
+		String txt = textTargetHost.getText();
+		if ("".equals(txt))
+			return false;
+
+		if ("localhost".equals(txt))
+			return true;
+
+		return pHost.matcher(txt).matches() || pIp.matcher(txt).matches();
+	}
 }

@@ -29,6 +29,7 @@ import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
+import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.logging.Log;
@@ -271,7 +272,10 @@ public class HttpClient {
 			return;
 
 		log.debug("Closing HTTP connection LocalPort: " + socket.getLocalPort());
-		socket.shutdownInput();
+		
+		if (!(socket instanceof SSLSocket))
+			socket.shutdownInput();
+		
 		socket.close();
 	}
 	

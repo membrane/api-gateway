@@ -20,101 +20,65 @@ import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.plugin.membrane.listeners.PortVerifyListener;
+import com.predic8.plugin.membrane.components.RuleTargetGroup;
 
 public class TargetConfigurationPage extends SecurityWizardPage {
 
 	public static final String PAGE_NAME = "Target Configuration";
-	
-	private Text ruleTargetHostText;
-	
-	private Text ruleTargetPortText;
+
+	private boolean canFinish = true;
+
+	RuleTargetGroup ruleTargetGroup;
 	
 	protected TargetConfigurationPage() {
 		super(PAGE_NAME);
 		setTitle("Simple Rule");
 		setDescription("Specify Target Host and Port");
 	}
-
+	
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 1);
 		
 		createFullDescriptionLabel(composite, "If this rule applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
-		
+
 		createSecurityComposite(composite);
-		
-		Group group = createTargetGroup(composite);
-		
-		new Label(group, SWT.NONE).setText("Host:");
 
-		ruleTargetHostText = createRuletargetHostText(group);
-
-		addLabelGap(group);
+		ruleTargetGroup = new RuleTargetGroup(composite, SWT.NONE);
 		
-		new Label(group, SWT.NONE).setText("Port");
-
-		ruleTargetPortText = createRuletargetPortText(group);
-		
-		addLabelGap(group);
-	
-		setControl(composite);
-	}
-	
-	private Text createRuletargetHostText(Group ruleTargetGroup) {
-		final Text text = new Text(ruleTargetGroup, SWT.BORDER);
-		text.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
-		text.addModifyListener(new ModifyListener(){
+		ruleTargetGroup.getTextTargetHost().addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-				if (text.getText().trim().equals("")) {
+
+				Text t = (Text) e.getSource();
+
+				if ("".equals(t.getText().trim())) {
+					canFinish = false;
 					setPageComplete(false);
 					setErrorMessage("Target host must be specified");
-				} else {
+					return;
+				}
+
+				if (ruleTargetGroup.isValidHostNameInput()) {
+					canFinish = true;
 					setPageComplete(true);
 					setErrorMessage(null);
+					return;
 				}
-			}});
-		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		return text;
-	}
 
-	private void addLabelGap(Group ruleTargetGroup) {
-		GridData gData = new GridData(GridData.FILL_HORIZONTAL);
+				canFinish = false;
+				setPageComplete(false);
+				setErrorMessage("Target host name is invalid");
+
+			}
+		});
 		
-		Label lb1 = new Label(ruleTargetGroup, SWT.NONE);
-		lb1.setLayoutData(gData);
-		lb1.setText(" ");
-		
-		Label lb2 = new Label(ruleTargetGroup, SWT.NONE);
-		lb2.setLayoutData(gData);
-		lb2.setText(" ");
-	}
-
-	
-	
-	private Group createTargetGroup(Composite composite) {
-		Group ruleTargetGroup = new Group(composite, SWT.NONE);
-		ruleTargetGroup.setText("Target");
-		ruleTargetGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-		GridLayout gridLayout4TargetGroup = new GridLayout();
-		gridLayout4TargetGroup.numColumns = 4;
-		ruleTargetGroup.setLayout(gridLayout4TargetGroup);
-		return ruleTargetGroup;
-	}
-
-	private Text createRuletargetPortText(Group ruleTargetGroup) {
-		final Text text = new Text(ruleTargetGroup,SWT.BORDER);
-		text.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
-		text.addVerifyListener(new PortVerifyListener());
-		text.addModifyListener(new ModifyListener(){
+		ruleTargetGroup.getTextTargetPort().addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
+				
+				Text text = (Text)e.getSource();
+				
 				if (text.getText().trim().equals("")) {
 					setPageComplete(false);
 					setErrorMessage("Target host port must be specified");
@@ -132,40 +96,41 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 					setErrorMessage(null);
 					setPageComplete(true);
 				}
-			}});
-		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		return text;
+			}
+		});
+		
+		setControl(composite);
 	}
 
 	@Override
 	public IWizardPage getNextPage() {
 		return null;
 	}
-	
+
 	public String getTargetHost() {
-		return ruleTargetHostText.getText();
+		return ruleTargetGroup.getTargetHost();
 	}
-	
+
 	public String getTargetPort() {
-		return ruleTargetPortText.getText();
+		return ruleTargetGroup.getTargetPort();
 	}
-	
+
 	@Override
 	public boolean canFinish() {
-		return true;
+		return canFinish;
 	}
 
 	@Override
 	boolean performFinish(AddRuleWizard wizard) throws IOException {
 		if (getPreviousPage().getName().equals(ListenPortConfigurationPage.PAGE_NAME)) {
 			return wizard.listenPortConfigPage.performFinish(wizard);
-		} 
-		
+		}
+
 		if (getPreviousPage().getName().equals(AdvancedRuleConfigurationPage.PAGE_NAME)) {
-			
-			if(wizard.checkIfSimilarRuleExists())
+
+			if (wizard.checkIfSimilarRuleExists())
 				return false;
-			
+
 			wizard.addRule();
 		}
 		return true;
@@ -173,7 +138,7 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 
 	@Override
 	protected void addListenersToSecureConnectionButton() {
-		//do nothing
+		// do nothing
 	}
 
 }

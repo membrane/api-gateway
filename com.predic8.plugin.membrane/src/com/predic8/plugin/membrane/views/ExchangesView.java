@@ -233,8 +233,8 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 			}
 
 			private void updateRequestResponseViews(HttpExchange exc) {
-				setInputForMessageView(exc, RequestView.VIEW_ID);
 				setInputForMessageView(exc, ResponseView.VIEW_ID);
+				setInputForMessageView(exc, RequestView.VIEW_ID);
 				canShowBody = true;
 			}
 		});
