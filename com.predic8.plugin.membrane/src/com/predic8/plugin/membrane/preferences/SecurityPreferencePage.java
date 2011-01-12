@@ -61,6 +61,8 @@ public class SecurityPreferencePage extends PreferencePage implements
 	
 	private Text textTrustPassword;
 	
+	private Button btShowContent;
+	
 	public SecurityPreferencePage() {
 		
 	}
@@ -91,7 +93,6 @@ public class SecurityPreferencePage extends PreferencePage implements
 		textKeyLocation = createText(groupKey, SWT.NONE, LOCATION_WIDTH_HINT, 2);
 		textKeyLocation.setText(getSavedKeystoreLocation());
 		
-		
 		Button bt1 = createFileBrowserButton(groupKey);
 		bt1.addSelectionListener(new SelectionAdapter() {
 			@Override
@@ -106,17 +107,30 @@ public class SecurityPreferencePage extends PreferencePage implements
 		textKeyPassword = createText(groupKey, SWT.PASSWORD, PASSWORD_WIDTH_HINT, 1);
 		textKeyPassword.setText(getSavedKeystorePassword());
 		
-		Label lbKeyDummy = new Label(groupKey, SWT.NONE);
-		lbKeyDummy.setText(" ");
-		lbKeyDummy.setLayoutData(lbGridData);
+		addDummyLabels(groupKey, 7);
 		
-		Label lbKeyDummy2 = new Label(groupKey, SWT.NONE);
-		lbKeyDummy2.setText(" ");
-		lbKeyDummy2.setLayoutData(lbGridData);
+		btShowContent = new Button(groupKey, SWT.PUSH);
+		btShowContent.setText("Show Content");
+		btShowContent.addSelectionListener(new SelectionAdapter() {
+			
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				try {
+					KeyStore store = getStore(textKeyLocation.getText(), textKeyPassword.getText());
+					KeyStoreContentDialog dialog = new KeyStoreContentDialog(getShell(), store, textKeyPassword.getText());
+					dialog.open();
+				} catch (Exception ex) {
+					openError("Error", ex.getMessage());
+				}
+			}
+			
+		});
+		
+		addDummyLabels(groupKey, 2);
 		
 		new Label(composite, SWT.NONE).setText(" ");
 		
-
+		
 		Group groupTrust = createStoreGroup(composite, "Truststore");
 		
 		new Label(groupTrust, SWT.NONE).setText("Location:");
@@ -138,17 +152,26 @@ public class SecurityPreferencePage extends PreferencePage implements
 		textTrustPassword = createText(groupTrust, SWT.PASSWORD, PASSWORD_WIDTH_HINT, 1);
 		textTrustPassword.setText(getSavedTruststorePassword());
 		
-		Label lbTrusDummy = new Label(groupTrust, SWT.NONE);
-		lbTrusDummy.setText(" ");
-		lbTrusDummy.setLayoutData(lbGridData);
-		
-		Label lbTrusDummy2 = new Label(groupTrust, SWT.NONE);
-		lbTrusDummy2.setText(" ");
-		lbTrusDummy2.setLayoutData(lbGridData);
+		addDummyLabels(groupTrust, 2);
 		
 		return composite;
 	}
 
+	private void addDummyLabels(Composite parent, int c) {
+		for(int i = 0; i < c; i ++) {
+			addDummyLabel(parent);
+		}
+	}
+	
+	private void addDummyLabel(Composite parent) {
+		GridData lbGridData = new GridData(GridData.FILL_HORIZONTAL);
+		lbGridData.grabExcessHorizontalSpace = true;
+		
+		Label lbKeyDummy8 = new Label(parent, SWT.NONE);
+		lbKeyDummy8.setText(" ");
+		lbKeyDummy8.setLayoutData(lbGridData);
+	}
+	
 	private String getSavedKeystoreLocation() {
 		return getConfiguration().getKeyStoreLocation() == null ? "" : getConfiguration().getKeyStoreLocation();  
 	}
@@ -285,6 +308,23 @@ public class SecurityPreferencePage extends PreferencePage implements
 	    try {
 	        fis = new java.io.FileInputStream(file);
 	        ks.load(fis, password.toCharArray());
+	    } finally {
+	        if (fis != null) {
+	            fis.close();
+	        }
+	    }
+	}
+	
+	private KeyStore getStore(String file, String password) throws FileNotFoundException, Exception {
+		if ("".equals(file.trim()))
+			return null;
+		
+		KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+	    java.io.FileInputStream fis = null;
+	    try {
+	        fis = new java.io.FileInputStream(file);
+	        ks.load(fis, password.toCharArray());
+	        return ks;
 	    } finally {
 	        if (fis != null) {
 	            fis.close();
