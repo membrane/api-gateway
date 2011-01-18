@@ -84,7 +84,7 @@
 					to provide jdbc connector jar file in lib directory. 
 				-->
 				<!-- 
-					<bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor"> 
+					<bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor" init-method="init" > 
 						<property name="dataSource" ref="dataSource" /> 
 						<property name="postMethodOnly" value="true" /> 
 						<property name="soapOnly" value="true" /> 
@@ -224,4 +224,14 @@
 			<property name="password" value=" " /> 
 		</bean>
 	-->
+	
+	<!-- 
+		<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
+			<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/> 
+			<property name="url" value="jdbc:oracle:thin:@127.0.0.1:1521:your-database"/>
+			<property name="username" value="your-username" /> 
+			<property name="password" value="your-password" /> 
+		</bean>
+	-->
+	
 </beans>

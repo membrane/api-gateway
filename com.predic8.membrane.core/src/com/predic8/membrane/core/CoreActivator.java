@@ -17,6 +17,7 @@ package com.predic8.membrane.core;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URLClassLoader;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
@@ -86,13 +87,19 @@ public class CoreActivator extends Plugin {
 		info("Reading router configuration from " + getConfigFileName());
 		log.debug("Reading configuration from " + getConfigFileName());
 		info("Project root: " + getProjectRoot());
-		Router.init(getConfigFileName(), ClassloaderUtil.getExternalClassloader(getProjectRoot()) );
+		
+		URLClassLoader externalClassloader = ClassloaderUtil.getExternalClassloader(getProjectRoot());
+		//DataSource was unable to load oracle JDBC driver class with external class loader
+		//issue at Spring forum:  http://forum.springframework.org/showthread.php?t=11141
+		Thread.currentThread().setContextClassLoader(externalClassloader);
+		
+		Router.init(getConfigFileName(), externalClassloader );
 		info("Router instance: " + Router.getInstance());
 	}
 
 	private void readBeanConfigWhenStartedInEclipse() throws MalformedURLException {
 		log.debug("Reading configuration from configuration/monitor-beans.xml");
-		error("Reading configuration from configuration/monitor-beans.xml");
+		info("Reading configuration from configuration/monitor-beans.xml");
 
 		String membraneHome = System.getenv("MEMBRANE_HOME");
 		if (membraneHome == null)
