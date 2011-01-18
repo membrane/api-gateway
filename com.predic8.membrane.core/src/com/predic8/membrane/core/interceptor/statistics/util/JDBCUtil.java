@@ -56,13 +56,6 @@ public class JDBCUtil {
 	
 	public static final String DURATION = "duration";
 	
-	
-	public static final String DATABASE_ORACLE = "Oracle";
-	
-	public static final String DATABASE_MYSQL = "MySQL";
-	
-	public static final String DATABASE_DERBY = "Derby";
-	
 	public static String getCreateTableStatementForOracle() {
 		return getCreateTableStatement("id INT PRIMARY KEY");
 	}
@@ -76,7 +69,7 @@ public class JDBCUtil {
 	}
 	
 	public static String getCreateTableStatementForOther() {
-		return getCreateTableStatement("id INT NOT NULL PRIMARY KEY");
+		return getCreateTableStatement("id BIGINT NOT NULL PRIMARY KEY");
 	}
 	
 	public static String getCreateTableStatement(String idPart) {
@@ -169,7 +162,7 @@ public class JDBCUtil {
 		int startIndex = 0;
 		if (!idGenerated) {
 			UUID id = UUID.randomUUID();
-			prepSt.setInt(++ startIndex, (int)id.getLeastSignificantBits());
+			prepSt.setLong(++ startIndex, id.getLeastSignificantBits());
 		}
 		prepSt.setInt(++ startIndex, exc.getResponse().getStatusCode());
 		prepSt.setString(++ startIndex, ExchangesUtil.getTime(exc));
@@ -186,15 +179,15 @@ public class JDBCUtil {
 	}
 	
 	public static boolean isOracleDatabase(DatabaseMetaData metaData) throws SQLException {
-		return metaData.getDatabaseProductName().startsWith(DATABASE_ORACLE);
+		return metaData.getDatabaseProductName().startsWith("Oracle");
 	}
 	
 	public static boolean isMySQLDatabase(DatabaseMetaData metaData) throws SQLException {
-		return metaData.getDatabaseProductName().startsWith(DATABASE_MYSQL);
+		return metaData.getDatabaseProductName().startsWith("MySQL");
 	}
 	
 	public static boolean isDerbyDatabase(DatabaseMetaData metaData) throws SQLException {
-		return metaData.getDatabaseProductName().startsWith(DATABASE_DERBY);
+		return metaData.getDatabaseProductName().startsWith("Derby");
 	}
 	
 	public static boolean tableExists(Connection con, String table) throws SQLException {

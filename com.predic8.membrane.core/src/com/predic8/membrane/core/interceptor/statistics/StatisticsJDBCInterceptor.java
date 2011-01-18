@@ -33,6 +33,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	private PreparedStatement stat;
 	
 	private boolean postMethodOnly = false;
+	
 	private boolean soapOnly = false;
 	
 	private boolean idGenerated;
@@ -62,7 +63,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 
 		Connection con = dataSource.getConnection();
 		try {
-			createPreparedStatement(con, statString);
+			createPreparedStatement(con);
 			saveExchange(con, exc);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -116,8 +117,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		}
 	}
 
-	private void createPreparedStatement(Connection con, String sql) throws Exception {
-		stat = con.prepareStatement(sql);
+	private void createPreparedStatement(Connection con) throws Exception {
+		stat = con.prepareStatement(statString);
 	}
 	
 	public DataSource getDataSource() {
