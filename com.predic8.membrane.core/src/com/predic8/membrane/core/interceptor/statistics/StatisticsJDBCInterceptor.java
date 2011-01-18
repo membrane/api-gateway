@@ -40,6 +40,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	private String statString;
 	
+	private Connection con; 
+	
 	public StatisticsJDBCInterceptor() {
 		priority = 500;
 	}
@@ -61,14 +63,15 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 
-		Connection con = dataSource.getConnection();
+		if (con == null || con.isClosed())
+			con = dataSource.getConnection();
+		
 		try {
 			createPreparedStatement(con);
 			saveExchange(con, exc);
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			closeConnection(con);
+			con.close();
 		}
 		return Outcome.CONTINUE;
 	}
@@ -118,7 +121,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	}
 
 	private void createPreparedStatement(Connection con) throws Exception {
-		stat = con.prepareStatement(statString);
+		if (stat == null || stat.getConnection().isClosed() )
+			stat = con.prepareStatement(statString);
 	}
 	
 	public DataSource getDataSource() {
