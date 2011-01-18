@@ -18,7 +18,7 @@ Building a monitor distribution
 			Update version number.
 		Dependencies:
 			Replace dependency to com.predic8.membrane.core with the current version.
-	2.2 Run UnitlTests and IntegrationTests with JUnit
+	2.2 Run UnitTests and IntegrationTests with JUnit
 		Should any test fail, abort building and resolve the problem.
 	
 3. com.predic8.membrane.plugin.membrane:
@@ -62,7 +62,7 @@ Building a monitor distribution
 
 6. Packing
 	6.1 Compress the directory from step 4.4 with your system's packer.
-		For Windows, use zip.
+		For Windows, use 7zip.
 		For Linux/Unix, use tar and gz.
 		For Mac OS, use stuffIt. (?)
 	6.2 Rename the file to match target system and current version number. 
