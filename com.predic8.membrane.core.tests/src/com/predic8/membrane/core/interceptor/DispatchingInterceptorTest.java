@@ -9,7 +9,7 @@ import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
-import com.predic8.membrane.core.util.TestUtil;
+import com.predic8.membrane.core.util.MessageUtil;
 
 public class DispatchingInterceptorTest extends TestCase {
 
@@ -27,7 +27,7 @@ public class DispatchingInterceptorTest extends TestCase {
 	}
 	
 	public void testForwardingRule() throws Exception {
-		exc.setRequest(TestUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
+		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
 		exc.setRule(getForwardingRule());
 		
 		assertEquals(Outcome.CONTINUE, dispatcher.handleRequest(exc));
@@ -39,7 +39,7 @@ public class DispatchingInterceptorTest extends TestCase {
 	}
 	
 	public void testProxyRuleHttp() throws Exception {
-		exc.setRequest(TestUtil.getGetRequest("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl"));
+		exc.setRequest(MessageUtil.getGetRequest("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl"));
 		exc.setRule(getProxyrRule());
 		
 		assertEquals(Outcome.CONTINUE, dispatcher.handleRequest(exc));

@@ -4,7 +4,7 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 
-public class TestUtil {
+public class MessageUtil {
 
 	public static Request getGetRequest(String uri) {
 		Request req = getStandartRequest(Request.METHOD_GET);

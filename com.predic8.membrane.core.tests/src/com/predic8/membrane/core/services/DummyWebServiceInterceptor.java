@@ -16,7 +16,7 @@ package com.predic8.membrane.core.services;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.TestUtil;
+import com.predic8.membrane.core.util.MessageUtil;
 
 public class DummyWebServiceInterceptor extends AbstractInterceptor {
 
@@ -25,7 +25,7 @@ public class DummyWebServiceInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		exc.getRequest().readBody();
-		exc.setResponse(TestUtil.getOKResponse("<aaa></aaa>".getBytes(), "text/xml"));
+		exc.setResponse(MessageUtil.getOKResponse("<aaa></aaa>".getBytes(), "text/xml"));
 		counter ++;
 		return Outcome.ABORT;
 	}

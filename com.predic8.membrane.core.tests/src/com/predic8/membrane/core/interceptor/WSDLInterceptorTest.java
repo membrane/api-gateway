@@ -18,7 +18,7 @@ import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.ByteUtil;
-import com.predic8.membrane.core.util.TestUtil;
+import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
 
@@ -35,8 +35,8 @@ public class WSDLInterceptorTest extends TestCase {
 		bodyContent = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/blz-service.wsdl"));
 		
 		exc = new HttpExchange();
-		exc.setRequest(TestUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
-		exc.setResponse(TestUtil.getOKResponse(bodyContent, "text/xml"));
+		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
+		exc.setResponse(MessageUtil.getOKResponse(bodyContent, "text/xml"));
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
 		exc.setRule(getRule());
 		

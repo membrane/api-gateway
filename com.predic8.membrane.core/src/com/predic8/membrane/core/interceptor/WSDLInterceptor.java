@@ -19,6 +19,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLDecoder;
 
 import org.apache.commons.logging.Log;
@@ -27,7 +29,10 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
 public class WSDLInterceptor extends AbstractInterceptor {
@@ -95,9 +100,39 @@ public class WSDLInterceptor extends AbstractInterceptor {
 			//ignored
 		}
 		
+		callRegistry(buf.toString());
+		
 		System.out.println(buf.toString());
 	}
 
+	private void callRegistry(String uri) {
+		try {
+			HttpClient client = new HttpClient();
+			Response res = client.call(createExchange(uri));
+			if (res.getStatusCode() != 200)
+				log.warn(res);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private HttpExchange createExchange(String uri) throws MalformedURLException {
+		URL url = new URL(uri);
+		Request req = MessageUtil.getGetRequest(getCompletePath(url));
+		req.getHeader().setHost(url.getHost());
+		HttpExchange exc = new HttpExchange();
+		exc.setRequest(req);
+		exc.getDestinations().add(uri);
+		return exc;
+	}
+
+	private String getCompletePath(URL url) {
+		if (url.getQuery() == null)
+			return url.getPath();
+		
+		return url.getPath() + "?" + url.getQuery();
+	}
+	
 	private String getWSDLURL(HttpExchange exc) {
 		StringBuffer buf = new StringBuffer();
 		buf.append(getLocationProtocol());

@@ -5,7 +5,7 @@ import java.util.Map;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
-import com.predic8.membrane.core.util.TestUtil;
+import com.predic8.membrane.core.util.MessageUtil;
 
 import junit.framework.TestCase;
 
@@ -19,7 +19,7 @@ public class SimpleURLRewriteInterceptorTest extends TestCase {
 		
 		exc = new HttpExchange();
 		//exc.getDestinations().add();
-		exc.setRequest(TestUtil.getGetRequest("/service?wsdl"));
+		exc.setRequest(MessageUtil.getGetRequest("/service?wsdl"));
 	}
 
 	public void testRewrite() throws Exception {

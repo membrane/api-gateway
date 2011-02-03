@@ -18,7 +18,7 @@ import org.junit.Test;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.TestUtil;
+import com.predic8.membrane.core.util.MessageUtil;
 
 import junit.framework.TestCase;
 
@@ -32,7 +32,7 @@ public class AccessControlInterceptorTest extends TestCase {
 	protected void setUp() throws Exception {
 		
 		exc = new HttpExchange();
-		exc.setRequest(TestUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
+		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
 		
 		
 		interceptor = new AccessControlInterceptor();
