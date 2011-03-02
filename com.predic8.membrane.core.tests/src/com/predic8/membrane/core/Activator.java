@@ -16,6 +16,7 @@ package com.predic8.membrane.core;
 import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;
 
+
 /**
  * The activator class controls the plug-in life cycle
  */
