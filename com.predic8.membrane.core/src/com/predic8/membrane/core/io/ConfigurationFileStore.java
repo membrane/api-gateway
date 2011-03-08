@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 
 import javax.xml.stream.XMLInputFactory;
@@ -52,7 +53,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 		fos.close();
 		
 		FileWriter out = new FileWriter(path);
-		out.write(TextUtil.formatXML(new ByteArrayInputStream(bArray)));
+		out.write(TextUtil.formatXML(new InputStreamReader(new ByteArrayInputStream(bArray), Constants.ENCODING_UTF_8)));
 		out.flush();
 		out.close();
 

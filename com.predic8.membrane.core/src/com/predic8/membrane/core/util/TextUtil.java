@@ -17,7 +17,7 @@ package com.predic8.membrane.core.util;
 
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
 
 import com.predic8.beautifier.PlainBeautifierFormatter;
@@ -27,20 +27,20 @@ import com.predic8.beautifier.XMLBeautifierFormatter;
 
 public class TextUtil {
 
-	public static String formatXML(InputStream src) {
+	public static String formatXML(InputStreamReader reader) {
 		StringWriter out = new StringWriter();
 		
 		try {      
 			XMLBeautifierFormatter formatter = new PlainBeautifierFormatter(out, 0);
 			XMLBeautifier beautifier = new XMLBeautifier(formatter);
-			beautifier.parse(src);
+			beautifier.parse(reader);
 		}
 		catch (Exception e){
 			e.printStackTrace();
 		} finally {
 			try {
 				out.close();
-				src.close();
+				reader.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -119,9 +120,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			if (raw)
 				os.write(msg.getBody().getRaw());
 			else {
-				
 				if (msg.isXML())
-					os.write(TextUtil.formatXML(msg.getBodyAsStream()).getBytes());
+					os.write(TextUtil.formatXML(new InputStreamReader(msg.getBodyAsStream(), msg.getHeader().getContentEncoding())).getBytes());
 				else
 					os.write(msg.getBody().getContent());
 			}

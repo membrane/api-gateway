@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.2.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.2.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.expression-3.0.2.RELEASE.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.asm-3.0.2.RELEASE.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.context-3.0.2.RELEASE.jar"/>

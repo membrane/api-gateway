@@ -95,6 +95,6 @@ Bundle-ClassPath: lib/commons-logging.jar,
  lib/org.springframework.context-3.0.2.RELEASE.jar,
  lib/org.springframework.asm-3.0.2.RELEASE.jar,
  lib/org.springframework.expression-3.0.2.RELEASE.jar,
- lib/xmlbeautifier-1.2.jar
+ lib/xmlbeautifier-1.2.1.jar
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0"
 Eclipse-RegisterBuddy: org.apache.log4j
