@@ -15,9 +15,12 @@
 package com.predic8.plugin.membrane.components.composites.tabmanager;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 import org.eclipse.swt.widgets.TabFolder;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.plugin.membrane.listeners.HighligtingLineStyleListner;
@@ -47,8 +50,8 @@ public class SOAPTabComposite extends BodyTextTabComposite {
 		bodyText.setText(string);
 	}
 	
-	public void beautify(byte[] content) {
-		bodyText.setText(TextUtil.formatXML(new ByteArrayInputStream(content)));
+	public void beautify(byte[] content, String encoding) throws IOException {
+		bodyText.setText(TextUtil.formatXML( new InputStreamReader(new ByteArrayInputStream(content), Constants.ENCODING_UTF_8)));
 		bodyText.redraw();
 	}
 	

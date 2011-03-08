@@ -254,7 +254,7 @@ public class MessageTabManager {
 	}
 
 	public void beautify(Message msg) throws IOException {
-		currentBodyTab.beautify(msg.getBody().getContent());
+		currentBodyTab.beautify(msg.getBody().getContent(), msg.getHeader().getContentEncoding());
 	}
 
 	public boolean isBodyModified() {

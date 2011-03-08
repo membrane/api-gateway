@@ -14,6 +14,8 @@
 
 package com.predic8.plugin.membrane.components.composites.tabmanager;
 
+import java.io.IOException;
+
 import org.eclipse.swt.widgets.TabFolder;
 
 
@@ -50,7 +52,7 @@ public abstract class BodyTabComposite extends AbstractTabComposite {
 	
 	}
 	
-	public void beautify(byte[] content) {
+	public void beautify(byte[] content, String encoding) throws IOException {
 		
 	}
 	
