@@ -102,7 +102,7 @@ public abstract class Message {
 		
 		this.write(System.out);
 		log.error("Message has no content length");
-		throw new IOException("Response message has no content length");
+		throw new IOException("Message message has no content length");
 		
 	}
 
