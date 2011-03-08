@@ -52,6 +52,7 @@
           <property name="exchangeStore">
             <bean class="com.predic8.membrane.core.exchangestore.FileExchangeStore">
               <property name="dir" value="C:\temp" />
+              <property name="saveBodyOnly" value="false" />
             </bean>
           </property>
         </bean>

@@ -26,4 +26,6 @@ public interface IExchangeViewerListener {
 	public void removeExchange();
 
 	public void setExchangeFinished();
+	
+	public void setExchangeStopped();
 }

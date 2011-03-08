@@ -1,6 +1,7 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.http.EmptyBody;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 
@@ -14,6 +15,12 @@ public class MessageUtil {
 	
 	public static Request getPostRequest(String uri) {
 		Request req = getStandartRequest(Request.METHOD_POST);
+		req.setUri(uri);
+		return req;
+	}
+	
+	public static Request getDeleteRequest(String uri) {
+		Request req = getStandartRequest(Request.METHOD_DELETE);
 		req.setUri(uri);
 		return req;
 	}
@@ -37,4 +44,11 @@ public class MessageUtil {
 		return res;
 	}
 
+	public static Response getEmptyResponse(int statusCode, String statusMessage) {
+		Response res = new Response();
+		res.setStatusCode(statusCode);
+		res.setStatusMessage(statusMessage);
+		return res;
+	}
+	
 }

@@ -46,8 +46,10 @@ public class HttpResendThread extends AbstractHttpThread {
 			invokeRequestInterceptors(getInterceptors());
 			
 			synchronized (exchange.getRequest()) {
-				if (exchange.getRule().isBlockRequest())
+				if (exchange.getRule().isBlockRequest()) {
+					exchange.setStopped();
 					block(exchange.getRequest());
+				}
 			}
 			
 			if (rule instanceof ForwardingRule) {
@@ -64,6 +66,7 @@ public class HttpResendThread extends AbstractHttpThread {
 
 			synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {
+					exchange.setStopped();
 					block(exchange.getResponse());
 				}
 			}

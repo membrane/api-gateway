@@ -33,7 +33,9 @@ public interface IExchangesStoreListener{
 	
 	public void removeExchanges(Exchange[] exchanges);
 	
-	public void setExchangeFinished( Exchange exchange);
+	public void setExchangeFinished(Exchange exchange);
+	
+	public void setExchangeStopped(Exchange exchange);
 	
 	public void refresh();
 	

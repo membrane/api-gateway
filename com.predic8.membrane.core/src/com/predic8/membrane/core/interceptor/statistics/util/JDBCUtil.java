@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
+import com.predic8.membrane.core.exchangestore.FileExchangeStore;
 
 public class JDBCUtil {
 
@@ -55,6 +56,8 @@ public class JDBCUtil {
 	public static final String RESPONSE_CONTENT_LENGTH = "resp_content_length";
 	
 	public static final String DURATION = "duration";
+	
+	public static final String MSG_FILE_PATH = "msgfilepath";
 	
 	public static String getCreateTableStatementForOracle() {
 		return getCreateTableStatement("id INT PRIMARY KEY");
@@ -97,8 +100,10 @@ public class JDBCUtil {
 
 		RESPONSE_CONTENT_LENGTH + " INT, " +
 
-		DURATION + " INT " +
+		DURATION + " INT, " +
 
+		MSG_FILE_PATH + " VARCHAR(255) " +
+		
 		")";
 	}
 	
@@ -132,8 +137,10 @@ public class JDBCUtil {
 
 		RESPONSE_CONTENT_LENGTH + "," +
 
-		DURATION +
+		DURATION + "," +
 
+		MSG_FILE_PATH +
+		
 		") " +  getPreparedInsertProlog(idGenerated);
 	}
 
@@ -147,7 +154,7 @@ public class JDBCUtil {
 	
 	private static String getPreparedInsertProlog(boolean idGenerated) {
 		String head = "VALUES(";
-		String tail = "?,?,?,?,?,?,?,?,?,?,?,?)";
+		String tail = "?,?,?,?,?,?,?,?,?,?,?,?,?)";
 		if (idGenerated)
 			return head + tail;
 		
@@ -176,8 +183,17 @@ public class JDBCUtil {
 		prepSt.setString(++ startIndex, exc.getResponseContentType());
 		prepSt.setInt(++ startIndex, exc.getResponseContentLength());
 		prepSt.setLong(++ startIndex, (exc.getTimeResReceived() - exc.getTimeReqSent()));
+		
+		prepSt.setString(++ startIndex, getFilePath(exc));
 	}
 	
+	private static String getFilePath(Exchange exc) {
+		if (exc.getProperty(FileExchangeStore.MESSAGE_FILE_PATH) != null)
+			return (String)exc.getProperty(FileExchangeStore.MESSAGE_FILE_PATH);
+		
+		return "";
+	}
+
 	public static boolean isOracleDatabase(DatabaseMetaData metaData) throws SQLException {
 		return metaData.getDatabaseProductName().startsWith("Oracle");
 	}

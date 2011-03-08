@@ -72,11 +72,11 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 	}
 	
 	public void setBlockRequest(boolean blockStatus) {
-		
+		this.blockRequest = blockStatus;
 	}
 	
 	public void setBlockResponse(boolean blockStatus) {
-		
+		this.blockResponse = blockStatus;
 	}
 
 	public boolean isInboundTSL() {

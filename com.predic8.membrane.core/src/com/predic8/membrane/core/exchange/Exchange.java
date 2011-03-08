@@ -154,6 +154,11 @@ public class Exchange {
 		notifyExchangeFinished();
 	}
 
+	public void setStopped() {
+		status = ExchangeState.SENT;
+		notifyExchangeStopped();
+	}
+	
 	private void notifyExchangeFinished() {
 		for (IExchangeViewerListener listener : exchangeViewerListeners) {
 			listener.setExchangeFinished();
@@ -164,6 +169,16 @@ public class Exchange {
 		}
 	}
 
+	private void notifyExchangeStopped() {
+		for (IExchangeViewerListener listener : exchangeViewerListeners) {
+			listener.setExchangeStopped();
+		}
+
+		for (IExchangesStoreListener listener : exchangesStoreListeners) {
+			listener.setExchangeStopped(this);
+		}
+	}
+	
 	public void finishExchange(boolean refresh) {
 		finishExchange(refresh, "");
 	}

@@ -50,33 +50,56 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static final String separator = System.getProperty("file.separator");
 
+	public static final String MESSAGE_FILE_PATH = "message.file.path";
+	
+	private boolean saveBodyOnly = false;
+	
 	public void add(Exchange exc) {
 		exc.getTime().get(Calendar.YEAR);
-		String messageName = exc.getResponse() == null ? "Request" : "Response";
+		
+		if (exc.getResponse() == null)
+			counter ++;
+		
 		Message message = exc.getResponse() == null ? exc.getRequest() : exc.getResponse();
 
-		String fullDirectoryName = getFullDirectoryName(exc);
+		StringBuffer buf = getFileNameBuffer(exc);
 
-		directory = new File(fullDirectoryName);
+		directory = new File(buf.toString());
 		directory.mkdirs();
 		try {
 			if (directory.exists() && directory.isDirectory()) {
-				writeFile(exc, messageName, message, fullDirectoryName);
+				buf.append(separator);
+				buf.append(dateFormat.format(exc.getTime().getTime()));
+				buf.append("-");
+				buf.append(counter);
+				exc.setProperty(MESSAGE_FILE_PATH, buf.toString());
+				buf.append("-");
+				buf.append(exc.getResponse() == null ? "Request" : "Response");
+				buf.append(".msg");
+				writeFile(message, buf.toString());
 			} else {
-				log.error("Directory does not exists or file is not a directory: " + fullDirectoryName);
+				log.error("Directory does not exists or file is not a directory: " + buf.toString());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+		
 	}
 
-	private String getFullDirectoryName(Exchange exc) {
-		return dir + separator + exc.getTime().get(Calendar.YEAR) + separator + (exc.getTime().get(Calendar.MONTH) + 1) + separator + exc.getTime().get(Calendar.DAY_OF_MONTH);
+	private synchronized StringBuffer getFileNameBuffer(Exchange exc) {
+		StringBuffer buf = new StringBuffer();
+		buf.append(dir);
+		buf.append(separator);
+		buf.append(exc.getTime().get(Calendar.YEAR));
+		buf.append(separator);
+		buf.append((exc.getTime().get(Calendar.MONTH) + 1));
+		buf.append(separator);
+		buf.append(exc.getTime().get(Calendar.DAY_OF_MONTH));
+		return buf;
 	}
-
-	private void writeFile(Exchange exc, String messageName, Message msg, String fullDirectoryName) throws IOException, FileNotFoundException, Exception {
-		File file = new File(fullDirectoryName + separator + getFileName(exc, messageName));
+	
+	private void writeFile(Message msg, String path) throws IOException, FileNotFoundException, Exception {
+		File file = new File(path);
 		if (!file.createNewFile()) {
 			log.error("Unable to create file: " + file.getName());
 			return;
@@ -84,9 +107,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 		FileOutputStream os = new FileOutputStream(file);
 		try {
-			msg.writeStartLine(os);
-			msg.getHeader().write(os);
-			os.write((Constants.CRLF).getBytes());
+			if (raw || !saveBodyOnly) {
+				msg.writeStartLine(os);
+				msg.getHeader().write(os);
+				os.write((Constants.CRLF).getBytes());
+			}
 			
 			if (msg.isBodyEmpty())
 				return;
@@ -106,17 +131,6 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		} finally {
 			os.close();
 		}
-	}
-
-	/**
-	 * Must be synchronized.
-	 * 
-	 * @param exc
-	 * @param messageName
-	 * @return
-	 */
-	synchronized private String getFileName(Exchange exc, String messageName) {
-		return dateFormat.format(exc.getTime().getTime()) + "-" + counter++ + "-" + messageName + ".msg";
 	}
 
 	public Exchange[] getExchanges(RuleKey ruleKey) {
@@ -175,5 +189,14 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		// TODO Auto-generated method stub
 
 	}
+
+	public boolean isSaveBodyOnly() {
+		return saveBodyOnly;
+	}
+
+	public void setSaveBodyOnly(boolean saveBodyOnly) {
+		this.saveBodyOnly = saveBodyOnly;
+	}
+
 
 }

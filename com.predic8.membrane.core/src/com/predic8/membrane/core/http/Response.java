@@ -89,6 +89,13 @@ public class Response extends Message {
 	protected void createBody(InputStream in) throws IOException {
 		if (isRedirect())
 			return;
+		
+		if (isBodyEmpty()) {
+			log.debug("empty body created");
+			body = new EmptyBody();
+			return;
+		}
+		
 		super.createBody(in);
 	}
 
@@ -107,7 +114,7 @@ public class Response extends Message {
 	
 	@Override
 	public boolean isBodyEmpty() throws IOException {
-		if (statusCode == 100 || statusCode == 204) 
+		if (statusCode == 100 || statusCode == 204 || statusCode == 205) 
 			return true;
 		return super.isBodyEmpty();
 	}

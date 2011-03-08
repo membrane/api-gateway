@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.core.runtime.jobs.ISchedulingRule;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -29,7 +30,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 public class Request extends Message {
 
 	protected static Log log = LogFactory.getLog(Request.class.getName());
-	
+
 	public static final String METHOD_GET = "GET";
 
 	public static final String METHOD_POST = "POST";
@@ -43,9 +44,9 @@ public class Request extends Message {
 	public static final String METHOD_TRACE = "TRACE";
 
 	public static final String METHOD_CONNECT = "CONNECT";
-	
+
 	private static Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
-	
+
 	String method;
 	String uri;
 
@@ -57,8 +58,6 @@ public class Request extends Message {
 		version = matcher.group(3);
 	}
 
-	
-	
 	public String getMethod() {
 		return method;
 	}
@@ -79,11 +78,12 @@ public class Request extends Message {
 	public String getStartLine() {
 		return method + " " + uri + " HTTP/" + version + Constants.CRLF;
 	}
-	
+
 	protected void createBody(InputStream in) throws IOException {
 		log.debug("createBody");
-		
+
 		if (isBodyEmpty()) {
+			log.debug("empty body created");
 			body = new EmptyBody();
 			return;
 		}
@@ -94,11 +94,15 @@ public class Request extends Message {
 	public boolean isHEADRequest() {
 		return METHOD_HEAD.equals(method);
 	}
-	
+
 	public boolean isGETRequest() {
 		return METHOD_GET.equals(method);
 	}
-	
+
+	public boolean isDELETERequest() {
+		return METHOD_DELETE.equals(method);
+	}
+
 	public boolean isCONNECTRequest() {
 		return METHOD_CONNECT.equals(method);
 	}
@@ -107,12 +111,24 @@ public class Request extends Message {
 	public String getName() {
 		return uri;
 	}
-	
+
 	@Override
 	public boolean isBodyEmpty() throws IOException {
+
 		if (isGETRequest() || isHEADRequest() || isCONNECTRequest())
 			return true;
+
+		if (isDELETERequest()) {
+			if (header.hasContentLength())
+				return header.getContentLength() == 0;
+
+			if (getBody() instanceof ChunkedBody) {
+				return false;
+			}
+			return true;
+		}
+
 		return super.isBodyEmpty();
 	}
-	
+
 }

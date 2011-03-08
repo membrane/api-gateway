@@ -23,7 +23,7 @@ import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.TargetHost;
 import com.predic8.membrane.core.config.TargetPort;
 
-public class ForwardingRule extends AbstractRule implements Rule {
+public class ForwardingRule extends AbstractRule {
 
 	public static final String ELEMENT_NAME = "forwarding-rule";
 

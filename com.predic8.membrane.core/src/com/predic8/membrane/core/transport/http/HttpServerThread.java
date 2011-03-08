@@ -127,8 +127,10 @@ public class HttpServerThread extends AbstractHttpThread {
 			invokeRequestInterceptors(getInterceptors());
 
 			synchronized (exchange.getRequest()) {
-				if (exchange.getRule().isBlockRequest())
+				if (exchange.getRule().isBlockRequest()) {
+					exchange.setStopped();
 					block(exchange.getRequest());
+				}
 			}
 
 			try {
@@ -142,6 +144,7 @@ public class HttpServerThread extends AbstractHttpThread {
 
 			synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {
+					exchange.setStopped();
 					block(exchange.getResponse());
 				}
 			}

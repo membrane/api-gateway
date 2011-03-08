@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.transport;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,4 +56,7 @@ public class Transport {
 		return router;
 	}
 	
+	public synchronized void closeAll() throws IOException {
+		
+	}
 }
