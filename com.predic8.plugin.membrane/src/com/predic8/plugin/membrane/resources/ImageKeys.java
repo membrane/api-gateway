@@ -75,6 +75,8 @@ public class ImageKeys {
 
 	public static final String IMAGE_FOLDER = "image folder";
 	
+	public static final String IMAGE_DELETE_EXCHANGE = "image delete exchange";
+	
 	private ImageKeys() {
 
 	}

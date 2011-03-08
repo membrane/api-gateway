@@ -19,7 +19,9 @@ import org.eclipse.jface.viewers.StructuredViewer;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.contentproviders.ExchangesViewLazyContentProvider;
+import com.predic8.plugin.membrane.resources.ImageKeys;
 
 public class ExchangeVirtualListRemoveAction extends Action {
 
@@ -30,8 +32,9 @@ public class ExchangeVirtualListRemoveAction extends Action {
 	public ExchangeVirtualListRemoveAction(StructuredViewer structuredViewer) {
 		super();
 		this.structuredViewer = structuredViewer;
-		setText("Remove all visible exchanges");
+		setText("Remove all visible Exchanges");
 		setId("remove all visible exhanges action");
+		setImageDescriptor(MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_DELETE_EXCHANGE));
 	}
 	
 	public void run() {
@@ -48,7 +51,6 @@ public class ExchangeVirtualListRemoveAction extends Action {
 			}
 			
 			Router.getInstance().getExchangeStore().removeAllExchanges(array);
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

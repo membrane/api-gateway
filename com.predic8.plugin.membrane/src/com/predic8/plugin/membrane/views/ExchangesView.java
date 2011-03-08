@@ -397,6 +397,7 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 
 	private void fillLocalToolBar(IToolBarManager manager) {
 		manager.add(new Separator());
+		manager.add(removeAllExchangesAction);
 		manager.add(new ShowFiltersDialogAction(this));
 		manager.add(new ShowSortersDialogAction(this));
 	}
@@ -465,6 +466,15 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 
 	public void removeRule(Rule rule, int rulesLeft) {
 		// TODO Delete this method
+	}
+
+	public void setExchangeStopped(Exchange exchange) {
+		if (exchange == null)
+			return;
+		
+		if (exchange.getRule().isBlockRequest() || exchange.getRule().isBlockResponse()) {
+			refreshTable(false);
+		}
 	}
 
 }

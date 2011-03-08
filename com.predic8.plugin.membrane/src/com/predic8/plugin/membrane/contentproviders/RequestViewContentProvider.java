@@ -36,14 +36,15 @@ public class RequestViewContentProvider extends MessageViewContentProvider {
 	}
 
 	public void addRequest(final Request request) {
-		if (request != null) {
-			Display.getDefault().asyncExec(new Runnable() {
-				public void run() {
-					messageView.setMessage(request);
-					messageView.updateUIStatus(false);
-				}
-			});
-		}
+		if (request == null) 
+			return;
+	
+		Display.getDefault().asyncExec(new Runnable() {
+			public void run() {
+				messageView.setMessage(request);
+				messageView.updateUIStatus(false);
+			}
+		});
 	}
 
 	public void addResponse(Response response) {

@@ -39,6 +39,7 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
@@ -225,6 +226,11 @@ public class RulesView extends AbstractRulesView {
 		e.widget = tableViewer.getTable();
 		e.type = SWT.Selection;
 		tableViewer.getTable().notifyListeners(SWT.Selection, e);
+	}
+
+	public void setExchangeStopped(Exchange exchange) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }

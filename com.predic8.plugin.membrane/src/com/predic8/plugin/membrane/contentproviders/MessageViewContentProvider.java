@@ -51,4 +51,12 @@ public abstract class MessageViewContentProvider implements IExchangeViewerListe
 	public void removeExchange() {
 		messageView.setMessage(null);
 	}
+	
+	public void setExchangeStopped() {
+		Display.getDefault().asyncExec(new Runnable() {
+			public void run() {
+				messageView.updateUIStatus(false);
+			}
+		});
+	}
 }

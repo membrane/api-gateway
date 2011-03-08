@@ -98,6 +98,8 @@ public class MembraneUIPlugin extends AbstractUIPlugin {
 		reg.put(ImageKeys.IMAGE_SORTER, imageDescriptorFromPlugin(PLUGIN_ID, "icons/sort.gif"));
 		
 		reg.put(ImageKeys.IMAGE_FOLDER, imageDescriptorFromPlugin(PLUGIN_ID, "icons/folder.png"));
+		
+		reg.put(ImageKeys.IMAGE_DELETE_EXCHANGE, imageDescriptorFromPlugin(PLUGIN_ID, "icons/delete_exchange.png"));
 	}
 	
 }

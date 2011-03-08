@@ -26,8 +26,11 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.part.ViewPart;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.model.IExchangesStoreListener;
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.contentproviders.MessageViewContentProvider;
 import com.predic8.plugin.membrane.resources.ImageKeys;
@@ -35,7 +38,7 @@ import com.predic8.plugin.membrane.viewcomponents.BaseComp;
 import com.predic8.plugin.membrane.viewcomponents.IBaseCompositeHost;
 import com.predic8.plugin.membrane.views.util.MessageSaver;
 
-public abstract class AbstractMessageView extends ViewPart implements IBaseCompositeHost {
+public abstract class AbstractMessageView extends ViewPart implements IBaseCompositeHost, IExchangesStoreListener {
 
 	protected Exchange exchange;
 
@@ -64,6 +67,7 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 
 		itemSave = createItemSave();
 
+		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
 	}
 
 	private ToolItem createItemContinue() {
@@ -143,4 +147,50 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 
 	public abstract void updateUIStatus(boolean canShowBody);
 
+	public void addExchange(Rule rule, Exchange exchange) {
+		
+	}
+	
+	public void refresh() {
+		
+	}
+	
+	public void removeExchange(Exchange exchange) {
+		if (this.exchange == null)
+			return;
+		
+		if (this.exchange.equals(exchange))
+			setInput(null);
+	}
+	
+	public void removeExchanges(Rule parent, Exchange[] exchanges) {
+		for (Exchange exchange : exchanges) {
+			removeExchange(exchange);
+		}
+	}
+	
+	public void removeRule(Rule rule, int rulesLeft) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void removeExchanges(Exchange[] exchanges) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void setExchangeFinished(Exchange exchange) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void setExchangeStopped(Exchange exchange) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void ruleAdded(Rule rule) {
+		// TODO Auto-generated method stub
+		
+	}
 }
