@@ -1,0 +1,6 @@
+<contexts>
+   <context id="RuleStatistics">
+      <description>This is the sample context-sensitive help. There is a link to the help content below.</description>
+      <topic href="html/rule_statistics.html" label="Rule Statistics" />
+   </context>
+</contexts>

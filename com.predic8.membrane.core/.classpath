@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.2.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.springframework.expression-3.0.2.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.springframework.asm-3.0.2.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.springframework.context-3.0.2.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.springframework.beans-3.0.2.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/org.springframework.core-3.0.2.RELEASE.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/com.springsource.javax.annotation-1.0.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="configuration/"/>
+	<classpathentry exported="true" kind="lib" path="lib/log4j-1.2.8.jar"/>
+	<classpathentry kind="lib" path="lib/commons-dbcp-1.3.jar"/>
+	<classpathentry kind="lib" path="lib/commons-pool-1.5.5.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>
+	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-logging.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/activation-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-cli-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-codec-1.3.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-discovery.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/stax-api-1.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/stax2-api-3.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/woodstox-core-asl-4.0.5.jar"/>
+	<classpathentry kind="lib" path="classes"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

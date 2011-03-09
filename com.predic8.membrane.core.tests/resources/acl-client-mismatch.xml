@@ -1,0 +1,17 @@
+<accessControl>
+	<service path="/axis2/.*">
+		<clients>
+			<ip>192.168.3.12</ip>
+			<hostname>predic8.de</hostname>
+		</clients>
+	</service>
+	<service path="/crm/.*">
+		<clients>
+			<ip>192.168.23</ip>
+			<hostname>pc1.predic8.de</hostname>
+			<ip>192.168.11</ip>
+			<hostname>pc1.predic8.com</hostname>
+			<hostname>pc1.xy.com</hostname>
+		</clients>
+	</service>
+</accessControl>
