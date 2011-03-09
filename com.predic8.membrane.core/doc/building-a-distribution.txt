@@ -59,6 +59,7 @@ Building a monitor distribution
 		Right-click on project, click "Export".
 		Make sure not to include .project or .svn files.
 	5.3 Copy exported files into the directory from step 4.4
+	    Take care of 'configuration' directory !!! Copy only the content, DO NOT override everything, keep config.ini file in target directory.
 
 6. Packing
 	6.1 Compress the directory from step 4.4 with your system's packer.
