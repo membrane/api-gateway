@@ -167,8 +167,10 @@ public class HttpClient {
 	}
 
 	private int getTargetPort(URL url) throws MalformedURLException {
-		if (url.getPort() == -1)
+		if (url.getPort() == -1) {
+			log.debug("URL Port is not set. Default target port 80 will be used.");
 			return 80;
+		}
 		return url.getPort();
 	}
 
@@ -268,7 +270,7 @@ public class HttpClient {
 	}
 
 	public void close() throws IOException {
-		if (socket == null)
+		if (socket == null || socket.isClosed())
 			return;
 
 		log.debug("Closing HTTP connection LocalPort: " + socket.getLocalPort());

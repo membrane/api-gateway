@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.core.runtime.jobs.ISchedulingRule;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.EndOfStreamException;

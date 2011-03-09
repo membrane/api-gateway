@@ -16,7 +16,7 @@ public class MethodTest extends TestCase {
 	
 	@Override
 	protected void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 4000), "predic8.de", "80");
+		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 4000), "membrane-soa.org", "80");
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 	}
@@ -24,12 +24,10 @@ public class MethodTest extends TestCase {
 	public void testDELETE() throws Exception {
 		HttpClient client = new HttpClient();
 		
-		DeleteMethod delete = new DeleteMethod("http://localhost:4000/aaaa");
-		delete.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
-		delete.setRequestHeader("SOAPAction", "");
+		DeleteMethod delete = new DeleteMethod("http://localhost:4000/method-test/");
 		
 		int status = client.executeMethod(delete);
-		System.out.println(status);
+		assertEquals(204, status);
 	}
 		
 	@Override
