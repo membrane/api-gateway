@@ -50,7 +50,7 @@ Building a monitor distribution
 		Overview:
 			Launch the "Eclipse product export wizard".
 			Change "Root directory" to match target system and current version number.
-			Export product to a directory, e.g. C:\temp\membrane-monitor-${version}\
+			Export product to a directory, e.g. C:\temp\membrane-monitor-${target system}-${version}\
 			
 5. membrane-monitor-static:
 	5.1 configuration/monitor-beans.xml
