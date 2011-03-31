@@ -110,10 +110,28 @@
           <property name="fileName" value="C:\temp\exc-statistics.csv" /> 
         </bean> 
         -->
-        
+
+        <!--
+        XSLT Transformation 
+        =======================================
+        Interceptor that can apply XSLT Transformations to the request and/or the response.
+
+	    The value of the property "requestXSLT" will by used as the destination of the stylesheet that will by applied to the request. 
+     	If you choose a relative path it will by relative to MEMBRANE_HOME. If you leave the value blank or remove the property no transformation will by applied to the request.
+
+     	The value of the property "responseXSLT" will by used as the destination of the stylesheet that will by applied to the response. 
+       	If you choose a relative path it will by relative to MEMBRANE_HOME. If you leave the value blank or remove the property no transformation will by applied to the response.
+        -->
+        <!-- 		         
+        <bean class="com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor">
+          <property name="requestXSLT" value="C:/temp/request.xslt" /> 
+          <property name="responseXSLT" value="C:/temp/response.xslt" /> 
+        </bean> 
+        -->                
       </list>
     </property>
   </bean>
+  
 
   <bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.MemoryExchangeStore" />
 

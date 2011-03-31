@@ -20,8 +20,15 @@ import java.net.SocketException;
 
 import javax.net.ssl.SSLServerSocketFactory;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.predic8.membrane.core.Router;
+
 
 public class HttpEndpointListener extends Thread {
+
+	private static Log log = LogFactory.getLog(HttpEndpointListener.class.getName());
 
 	private ServerSocket serverSocket;
 	
@@ -44,7 +51,8 @@ public class HttpEndpointListener extends Thread {
 			try {
 				transport.getExecutorService().execute(new HttpServerThread(serverSocket.accept(), transport));
 			} catch (SocketException e) {
-				e.printStackTrace();
+				if ( "socket closed".endsWith(e.getMessage()) )
+					log.debug("socket closed");
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
