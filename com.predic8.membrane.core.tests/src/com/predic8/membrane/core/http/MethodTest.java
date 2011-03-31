@@ -16,7 +16,7 @@ public class MethodTest extends TestCase {
 	
 	@Override
 	protected void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 4000), "membrane-soa.org", "80");
+		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 4000), "oio.de", "80");
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 	}
@@ -27,7 +27,7 @@ public class MethodTest extends TestCase {
 		DeleteMethod delete = new DeleteMethod("http://localhost:4000/method-test/");
 		
 		int status = client.executeMethod(delete);
-		assertEquals(204, status);
+		assertTrue(status < 400);
 	}
 		
 	@Override
