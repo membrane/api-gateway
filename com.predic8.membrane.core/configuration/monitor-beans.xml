@@ -105,7 +105,7 @@
         You can store exchange metadata in CSV files to disc. The data will be appended 
         to the given file, and can be imported into Excel later on. 
         -->
-        <!-- 
+        <!--  
         <bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor">
           <property name="fileName" value="C:\temp\exc-statistics.csv" /> 
         </bean> 
