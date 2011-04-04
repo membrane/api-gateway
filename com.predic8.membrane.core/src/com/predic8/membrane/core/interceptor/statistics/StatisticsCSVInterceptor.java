@@ -64,14 +64,6 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 		w.close();
 	}
 
-	private void writeCSV(String value, FileWriter w) throws IOException {
-		w.append(value+";");
-	}
-	
-	private void writeNewLine(FileWriter w) throws IOException {
-		w.append(System.getProperty("line.separator"));
-	}
-	
 	public void setFileName(String fileName) throws Exception {
 		csvFile = new File(fileName);
 		
@@ -84,6 +76,14 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 			writeHeaders();
 	}
 
+	private void writeCSV(String value, FileWriter w) throws IOException {
+		w.append(value+";");
+	}
+	
+	private void writeNewLine(FileWriter w) throws IOException {
+		w.append(System.getProperty("line.separator"));
+	}
+	
 	private void writeHeaders() throws Exception {
 		FileWriter w = new FileWriter(csvFile);
 		
