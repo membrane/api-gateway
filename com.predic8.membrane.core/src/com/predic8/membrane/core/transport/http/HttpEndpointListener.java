@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
+import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.SocketException;
 
@@ -23,13 +24,13 @@ import javax.net.ssl.SSLServerSocketFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.transport.PortOccupiedException;
 
 
 public class HttpEndpointListener extends Thread {
 
-	private static Log log = LogFactory.getLog(HttpEndpointListener.class.getName());
-
+	protected static Log log = LogFactory.getLog(HttpEndpointListener.class.getName());
+	
 	private ServerSocket serverSocket;
 	
 	private HttpTransport transport;
@@ -40,7 +41,11 @@ public class HttpEndpointListener extends Thread {
 		} 
 		
 		else {
-			serverSocket = new ServerSocket(port);
+			try {
+				serverSocket = new ServerSocket(port);
+			} catch (BindException e) {
+				throw new PortOccupiedException(port);
+			}
 		}
 		
 		this.transport = transport;
@@ -53,6 +58,8 @@ public class HttpEndpointListener extends Thread {
 			} catch (SocketException e) {
 				if ( "socket closed".endsWith(e.getMessage()) )
 					log.debug("socket closed");
+				else
+					e.printStackTrace();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
