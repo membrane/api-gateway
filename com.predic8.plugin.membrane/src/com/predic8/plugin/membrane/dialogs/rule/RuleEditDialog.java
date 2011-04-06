@@ -89,7 +89,7 @@ public abstract class RuleEditDialog extends Dialog {
 		if (rule == null)
 			return;
 		this.rule = rule;
-		generalInfoComposite.setRuleName(rule.getName());
+		generalInfoComposite.setRule(rule);
 		actionsComposite.setInput(rule);
 		interceptorsComposite.setInput(rule);
 	}

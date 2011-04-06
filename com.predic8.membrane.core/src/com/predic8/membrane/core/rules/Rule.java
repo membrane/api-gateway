@@ -33,10 +33,14 @@ public interface Rule {
 	
 	public boolean isOutboundTLS();
 	
-	public boolean isInboundTSL();
+	public boolean isInboundTLS();
 	
-	public void setInboundTSL(boolean status);
+	public void setInboundTLS(boolean status);
 	
-	public void setOutboundTSL(boolean status);
+	public void setOutboundTLS(boolean status);
+	
+	public String getLocalHost();
+	
+	public void setLocalHost(String localHost);
 	
 }

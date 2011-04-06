@@ -130,7 +130,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 	public void setInput(Rule rule) {
 		super.setInput(rule);
 		ruleKeyComposite.getRuleKeyGroup().setInput(rule.getKey());
-		ruleKeyComposite.setSecureConnection(rule.isInboundTSL());
+		ruleKeyComposite.setSecureConnection(rule.isInboundTLS());
 		targetComposite.setInput(rule);
 	}
 
@@ -161,7 +161,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 
 		if (!getTransport().isAnyThreadListeningAt(ruleKey.getPort())) {
 			try {
-				getTransport().openPort(ruleKey.getPort(), rule.isInboundTSL());
+				getTransport().openPort(ruleKey.getPort(), rule.isInboundTLS());
 			} catch (IOException e1) {
 				openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
 				return;
@@ -194,14 +194,15 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 
 	private void updateRule(ForwardingRuleKey ruleKey, boolean addToManager) throws IOException {
 		rule.setName(generalInfoComposite.getRuleName());
+		rule.setLocalHost(generalInfoComposite.getLocalHost());
 		rule.setKey(ruleKey);
 		if (addToManager) {
 			getRuleManager().addRuleIfNew(rule);
 		}
 		((ForwardingRule) rule).setTargetHost(targetComposite.getTargetGroup().getTargetHost());
 		((ForwardingRule) rule).setTargetPort(targetComposite.getTargetGroup().getTargetPort());
-		rule.setOutboundTSL(targetComposite.getSecureConnection());
-		rule.setInboundTSL(ruleKeyComposite.getSecureConnection());
+		rule.setOutboundTLS(targetComposite.getSecureConnection());
+		rule.setInboundTLS(ruleKeyComposite.getSecureConnection());
 		rule.setBlockRequest(actionsComposite.isRequestBlocked());
 		rule.setBlockResponse(actionsComposite.isResponseBlocked());
 		rule.setInterceptors(interceptorsComposite.getInterceptors());

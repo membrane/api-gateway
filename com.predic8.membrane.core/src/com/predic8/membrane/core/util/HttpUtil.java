@@ -107,18 +107,61 @@ public class HttpUtil {
 		Response response = new Response();
 		response.setStatusCode(500);
 		response.setStatusMessage(message);
-		Header header = new Header();
-		header.setContentType("text/html;charset=utf-8");
-		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
-		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
-		header.add("Connection", "close");
-
-		response.setHeader(header);
+		
+		response.setHeader(createHeader("text/html;charset=utf-8"));
 
 		response.setBody(new Body("<html>" + message + "</html>"));
 		return response;
 	}
 
+	public static Response createSOAPFaultResponse(String message) {
+		Response response = new Response();
+		response.setStatusCode(500);
+		
+		response.setHeader(createHeader("text/xml;charset=utf-8"));
+		
+		Body body = new Body(getFaultSOAPBody(message));
+		
+		response.setBody(body);
+		return response;
+	}
+	
+	private static String getFaultSOAPBody(String text) {
+		StringBuffer buf = new StringBuffer();
+		
+		buf.append("<soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'>");
+		buf.append(Constants.CRLF);
+		buf.append("<soapenv:Body>");
+		buf.append(Constants.CRLF);
+		buf.append("<soapenv:Fault>");
+		
+		buf.append(Constants.CRLF);
+		
+		buf.append("<faultcode>soapenv:Server</faultcode>");
+		buf.append(Constants.CRLF);
+		buf.append("<faultstring>" + "Message validation failed!" + "</faultstring>");
+		buf.append(Constants.CRLF);
+		
+		buf.append("<detail>" + text + "</detail>");
+		
+		buf.append(Constants.CRLF);
+		buf.append("</soapenv:Fault>");
+		buf.append(Constants.CRLF);
+		buf.append("</soapenv:Body>");
+		buf.append(Constants.CRLF);
+		buf.append("</soapenv:Envelope>");
+		return buf.toString();
+	}
+	
+	private static Header createHeader(String contentType) {
+		Header header = new Header();
+		header.setContentType(contentType);
+		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
+		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
+		header.add("Connection", "close");
+		return header;
+	}
+	
 	public static List<Chunk> readChunks(InputStream in) throws IOException {
 		List<Chunk> chunks = new ArrayList<Chunk>();
 		int chunkSize;

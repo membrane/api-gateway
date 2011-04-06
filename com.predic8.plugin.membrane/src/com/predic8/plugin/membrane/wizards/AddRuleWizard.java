@@ -66,8 +66,8 @@ public class AddRuleWizard extends Wizard {
 		rule.setTargetHost(targetHostConfigPage.getTargetHost());
 		rule.setTargetPort(targetHostConfigPage.getTargetPort());
 		rule.setKey(ruleKey);
-		rule.setInboundTSL(advancedRuleConfigPage.getSecureConnection());
-		rule.setOutboundTSL(targetHostConfigPage.getSecureConnection());
+		rule.setInboundTLS(advancedRuleConfigPage.getSecureConnection());
+		rule.setOutboundTLS(targetHostConfigPage.getSecureConnection());
 		
 		getRuleManager().addRuleIfNew(rule);
 	}

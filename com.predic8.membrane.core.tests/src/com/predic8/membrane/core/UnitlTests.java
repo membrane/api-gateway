@@ -18,7 +18,6 @@ import junit.framework.TestSuite;
 
 import com.predic8.membrane.core.http.BodyTest;
 import com.predic8.membrane.core.http.HeaderTest;
-import com.predic8.membrane.core.http.MethodTest;
 import com.predic8.membrane.core.http.RequestTest;
 import com.predic8.membrane.core.http.ResponseTest;
 import com.predic8.membrane.core.interceptor.AbstractInterceptorTest;
@@ -36,7 +35,6 @@ public class UnitlTests {
 	public static Test suite() {
 		TestSuite suite = new TestSuite("Unit tests for com.predic8.membrane.core");
 		//$JUnit-BEGIN$
-		suite.addTestSuite(MethodTest.class);
 		suite.addTestSuite(HeaderTest.class);
 		suite.addTestSuite(BodyTest.class);
 		suite.addTestSuite(ByteUtilTest.class);

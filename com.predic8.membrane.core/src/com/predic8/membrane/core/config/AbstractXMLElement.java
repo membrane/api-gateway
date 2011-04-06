@@ -18,11 +18,15 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
+
 public class AbstractXMLElement implements XMLElement {
 
-	 /* (non-Javadoc)
-	 * @see com.predic8.membrane.core.config.XMLElement#parse(javax.xml.stream.XMLStreamReader)
+	/**
+	 * Needed to resolve interceptor IDs into interceptor beans
 	 */
+	protected Router router;
+	 
 	public XMLElement parse(XMLStreamReader token) throws XMLStreamException {
 	    parseAttributes(token);
 	    while(token.hasNext()) {
@@ -61,7 +65,10 @@ public class AbstractXMLElement implements XMLElement {
 	 */
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		  
-	  }
+	 }
 	
+	public void setRouter(Router router) {
+		this.router = router;
+	}
 	
 }

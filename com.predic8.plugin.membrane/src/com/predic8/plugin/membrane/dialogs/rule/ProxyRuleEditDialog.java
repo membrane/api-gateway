@@ -91,6 +91,7 @@ public class ProxyRuleEditDialog extends RuleEditDialog {
 		ProxyRuleKey key = new ProxyRuleKey(port);
 		if (key.equals(rule.getKey())) {
 			rule.setName(generalInfoComposite.getRuleName());
+			rule.setLocalHost(generalInfoComposite.getLocalHost());
 			rule.setInterceptors(interceptorsComposite.getInterceptors());
 			getRuleManager().ruleChanged(rule);
 			return;
@@ -106,7 +107,7 @@ public class ProxyRuleEditDialog extends RuleEditDialog {
 
 		if (!(getTransport()).isAnyThreadListeningAt(key.getPort())) {
 			try {
-				(getTransport()).openPort(key.getPort(), rule.isInboundTSL());
+				(getTransport()).openPort(key.getPort(), rule.isInboundTLS());
 			} catch (IOException e1) {
 				openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
 				return;

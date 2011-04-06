@@ -9,4 +9,4 @@ CLASSPATH=$CLASSPATH:$MEMBRANE_HOME/starter.jar
 export CLASSPATH
 cd $MEMBRANE_HOME
 echo Membrane Router running...
-java  -classpath $CLASSPATH com.predic8.membrane.core.Starter $1 $2 $3 $4 $5 $6 $7 $8 $9 $10
+java  -classpath $CLASSPATH com.predic8.membrane.core.Starter $1 $2 $3 $4 $5 $6 $7 $8 $9

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.SocketException;
@@ -81,7 +82,7 @@ public class HttpClient {
 		return false;
 	}
 
-	private void openSocketIfNeeded(String host, int port, boolean stl) throws UnknownHostException, IOException {
+	private void openSocketIfNeeded(String host, int port, String localHost, boolean stl) throws UnknownHostException, IOException {
 
 		while (socket == null || socket.isClosed() || !isSameSocket(host, port)) {
 
@@ -89,10 +90,10 @@ public class HttpClient {
 
 			if (useProxy) {
 				log.debug("opening a new socket for host: " + proxyHost + " on port: " + proxyPort);
-				createSocket(proxyHost, proxyPort, stl);
+				createSocket(proxyHost, proxyPort, localHost, stl);
 			} else {
 				log.debug("opening a new socket for host: " + host + " on port: " + port);
-				createSocket(host, port, stl);
+				createSocket(host, port, localHost, stl);
 			}
 
 			log.debug("Opened connection on localPort: " + port);
@@ -115,11 +116,17 @@ public class HttpClient {
 			socket.close();
 	}
 
-	private void createSocket(String host, int port, boolean stl) throws UnknownHostException, IOException {
-		if (stl) {
-			socket = SSLSocketFactory.getDefault().createSocket(host, port);
+	private void createSocket(String host, int port, String localHost, boolean tls) throws UnknownHostException, IOException {
+		if (tls) {
+			if (localHost == null || localHost.equals(""))
+				socket = SSLSocketFactory.getDefault().createSocket(host, port);
+			else
+				socket = SSLSocketFactory.getDefault().createSocket(host, port, InetAddress.getByName(localHost), 0);
 		} else {
-			socket = new Socket(host, port);
+			if (localHost == null || localHost.equals(""))
+				socket = new Socket(host, port);
+			else
+				socket = new Socket(host, port, InetAddress.getByName(localHost), 0);
 		}
 	}
 
@@ -129,7 +136,7 @@ public class HttpClient {
 		exc.getRequest().setUri(dest);
 		
 		if (exc.getRequest().isCONNECTRequest()) {
-			openSocketIfNeeded(getHost(dest), getPort(dest), getOutboundTLS(exc));
+			openSocketIfNeeded(getHost(dest), getPort(dest), exc.getRule().getLocalHost(), getOutboundTLS(exc));
 			return;
 		}
 
@@ -144,7 +151,7 @@ public class HttpClient {
 		
 		URL destination = new URL(dest);
 		int targetPort = getTargetPort(destination);
-		openSocketIfNeeded(destination.getHost(), targetPort, getOutboundTLS(exc));
+		openSocketIfNeeded(destination.getHost(), targetPort, exc.getRule().getLocalHost(), getOutboundTLS(exc));
 		
 		if (adjustHostHeader && exc.getRule() instanceof ForwardingRule)
 			exc.getRequest().getHeader().setHost(destination.getHost() + ":" + targetPort);

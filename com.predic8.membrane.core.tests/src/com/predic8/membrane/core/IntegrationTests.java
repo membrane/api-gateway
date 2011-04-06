@@ -16,7 +16,9 @@ package com.predic8.membrane.core;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
+import com.predic8.membrane.core.http.MethodTest;
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
+import com.predic8.membrane.core.interceptor.ValidateSOAPMsgInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorIntegrationTest;
 import com.predic8.membrane.integration.AccessControlInterceptorIntegrationTest;
 import com.predic8.membrane.integration.Http10Test;
@@ -30,6 +32,7 @@ public class IntegrationTests {
 	public static Test suite() {
 		TestSuite suite = new TestSuite("Integration tests for com.predic8.membrane.core");
 		//$JUnit-BEGIN$
+		suite.addTestSuite(MethodTest.class);
 		suite.addTestSuite(RegExReplaceInterceptorTest.class);
 		suite.addTestSuite(Http10Test.class);
 		suite.addTestSuite(Http11Test.class);
@@ -37,6 +40,7 @@ public class IntegrationTests {
 		suite.addTestSuite(AccessControlInterceptorIntegrationTest.class);
 		suite.addTestSuite(LoadBalancingInterceptorTest.class);
 		suite.addTestSuite(SimpleURLRewriteInterceptorIntegrationTest.class);
+		suite.addTestSuite(ValidateSOAPMsgInterceptorTest.class);
 		//$JUnit-END$
 		return suite;
 	}

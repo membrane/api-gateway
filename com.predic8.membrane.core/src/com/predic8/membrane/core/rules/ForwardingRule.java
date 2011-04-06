@@ -18,7 +18,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.config.Interceptors;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.TargetHost;
 import com.predic8.membrane.core.config.TargetPort;
@@ -42,8 +41,8 @@ public class ForwardingRule extends AbstractRule {
 		this.key = ruleKey;
 		this.targetHost = targetHost;
 		this.targetPort = targetPort;
-		this.inboundTSL = inboundTLS;
-		this.outboundTSL = outboundTLS;
+		this.inboundTLS = inboundTLS;
+		this.outboundTLS = outboundTLS;
 	}
 	
 	public String getTargetHost() {
@@ -67,34 +66,22 @@ public class ForwardingRule extends AbstractRule {
 	}
 
 	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-
-		name = token.getAttributeValue("", "name");
-		
+	protected void parseKeyAttributes(XMLStreamReader token) {
 		String host = token.getAttributeValue("", "host");
-
 		int port = Integer.parseInt(token.getAttributeValue("", "port"));
-
 		String method = token.getAttributeValue("", "method");
-
 		key = new ForwardingRuleKey(host, method, ".*", port);
-		
-		inboundTSL = "true".equals(token.getAttributeValue("", "inboundTLS")) ? true: false;
-		
-		outboundTSL = "true".equals(token.getAttributeValue("", "outboundTLS")) ? true: false;
-		
 	}
-
+	
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
-
+		super.parseChildren(token, child);
+		
 		if (TargetPort.ELEMENT_NAME.equals(child)) {
 			this.targetPort = ((TargetPort) (new TargetPort().parse(token))).getValue();
 		} else if (TargetHost.ELEMENT_NAME.equals(child)) {
 			this.targetHost = ((TargetHost) (new TargetHost().parse(token))).getValue();
-		} else if (Interceptors.ELEMENT_NAME.equals(child)) {
-			this.interceptors = ((Interceptors) (new Interceptors().parse(token))).getInterceptors();
-		}  
+		} 
 		
 		if (Path.ELEMENT_NAME.equals(child)) {
 			key.setUsePathPattern(true);
@@ -102,7 +89,6 @@ public class ForwardingRule extends AbstractRule {
 			key.setPathRegExp(p.isRegExp());
 			key.setPath(p.getValue());
 		}
-
 	}
 
 	@Override
@@ -111,21 +97,10 @@ public class ForwardingRule extends AbstractRule {
 	}
 
 	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(ELEMENT_NAME);
-
-		out.writeAttribute("name", name);
-
+	protected void writeExtension(XMLStreamWriter out) throws XMLStreamException {
 		out.writeAttribute("host", key.getHost());
-		
-		out.writeAttribute("port", ""+key.getPort());
-		
 		out.writeAttribute("method", key.getMethod());
 
-		out.writeAttribute("inboundTLS", Boolean.toString(inboundTSL));
-		
-		out.writeAttribute("outboundTLS", Boolean.toString(outboundTSL));
-		
 		TargetPort childTargetPort = new TargetPort();
 		childTargetPort.setValue(targetPort);
 		childTargetPort.write(out);
@@ -140,13 +115,6 @@ public class ForwardingRule extends AbstractRule {
 			path.setRegExp(key.isPathRegExp());
 			path.write(out);
 		}
-	
-		Interceptors inters = new Interceptors();
-		inters.setInterceptors(interceptors);
-		inters.write(out);
-		
-		
-		out.writeEndElement();
 	}
-
+	
 }

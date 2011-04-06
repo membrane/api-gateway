@@ -19,6 +19,8 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import com.predic8.membrane.core.transport.PortOccupiedException;
+
 public class RouterCLI {
 
 	public static void main(String[] args) throws ParseException {
@@ -39,6 +41,9 @@ public class RouterCLI {
 		
 			e.printStackTrace();
 			
+		} catch (PortOccupiedException e) { 
+			System.err.println(e.getMessage());
+			System.exit(1);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMBRANE_HOME") + "/conf/rules.xml exists");

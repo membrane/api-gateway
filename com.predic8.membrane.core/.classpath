@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
+	<classpathentry exported="true" kind="lib" path="lib/stax-api-1.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/soa-model-2.0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/commons-httpclient-3.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/groovy-all-1.7.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.2.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.expression-3.0.2.RELEASE.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/org.springframework.asm-3.0.2.RELEASE.jar"/>
@@ -19,9 +23,8 @@
 	<classpathentry exported="true" kind="lib" path="lib/commons-cli-1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/commons-codec-1.3.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/commons-discovery.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/stax-api-1.0.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/stax2-api-3.0.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/woodstox-core-asl-4.0.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/stax2-api-3.0.1.jar" sourcepath="/SchemaValidationTest/lib/stax2-api-src-3.1.1.zip"/>
+	<classpathentry exported="true" kind="lib" path="lib/woodstox-core-asl-4.0.5.jar" sourcepath="/SchemaValidationTest/lib/woodstox-core-src-4.1.1.zip"/>
 	<classpathentry kind="lib" path="classes"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

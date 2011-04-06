@@ -16,7 +16,7 @@ public class ReadRulesConfigurationTest {
 
 	@Before
 	public void setUp() throws Exception {
-		router = Router.init("resources/monitor-beans.xml");
+		router = new HttpRouter();
 	}
 
 	@Test
