@@ -105,12 +105,12 @@
         You can store exchange metadata in CSV files to disc. The data will be appended 
         to the given file, and can be imported into Excel later on. 
         -->
-        <!--  
+        <!-- 
         <bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor">
           <property name="fileName" value="C:\temp\exc-statistics.csv" /> 
         </bean> 
         -->
-
+        
         <!--
         XSLT Transformation 
         =======================================
@@ -127,11 +127,16 @@
           <property name="requestXSLT" value="C:/temp/request.xslt" /> 
           <property name="responseXSLT" value="C:/temp/response.xslt" /> 
         </bean> 
-        -->                
+        -->     
+        
+        <!--
+        <bean class="com.predic8.membrane.core.interceptor.schemavalidation.ValidateSOAPMsgInterceptor" init-method="init">
+          <property name="wsdl" value="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl" />
+        </bean>
+        -->
       </list>
     </property>
   </bean>
-  
 
   <bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.MemoryExchangeStore" />
 
