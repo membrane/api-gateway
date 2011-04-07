@@ -57,9 +57,8 @@ public class HighligtingLineStyleListner implements LineStyleListener {
 
 	private StyleRangeComparator comparator = new StyleRangeComparator();
 	
-	@SuppressWarnings("unchecked")
 	public void lineGetStyle(LineStyleEvent event) {
-		List styles = new ArrayList();
+		List<StyleRange> styles = new ArrayList<StyleRange>();
 		Matcher m = patternElement.matcher(event.lineText);
 
 		while (m.find()) {
@@ -80,7 +79,7 @@ public class HighligtingLineStyleListner implements LineStyleListener {
 			}
 		}
 		Collections.sort(styles, comparator);
-		event.styles = (StyleRange[]) styles.toArray(new StyleRange[0]);
+		event.styles = styles.toArray(new StyleRange[0]);
 	}
 
 	private static StyleRange getAttributeValueStyle(int start, int length) {

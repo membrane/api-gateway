@@ -129,11 +129,10 @@
         </bean> 
         -->     
         
-        <!--
         <bean class="com.predic8.membrane.core.interceptor.schemavalidation.ValidateSOAPMsgInterceptor" init-method="init">
-          <property name="wsdl" value="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl" />
+          <property name="wsdl" value="http://www.predic8.com:8080/material/ArticleService?wsdl" />
         </bean>
-        -->
+       
       </list>
     </property>
   </bean>

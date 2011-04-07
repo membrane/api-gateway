@@ -21,6 +21,8 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
 import org.eclipse.swt.widgets.TabFolder;
 
+import com.predic8.plugin.membrane.listeners.JSONHighlitingStylelistener;
+
 
 public class JSONTabComposite extends BodyTextTabComposite {
 
@@ -28,6 +30,7 @@ public class JSONTabComposite extends BodyTextTabComposite {
 	
 	public JSONTabComposite(TabFolder parent) {
 		super(parent, TAB_TITLE);
+		bodyText.addLineStyleListener(new JSONHighlitingStylelistener());
 	}
 
 	@Override
@@ -39,5 +42,8 @@ public class JSONTabComposite extends BodyTextTabComposite {
 	    bodyText.redraw();
 	}
 	
-	
+	@Override
+	protected boolean isBeautifyBody() {
+		return true;
+	}
 }
