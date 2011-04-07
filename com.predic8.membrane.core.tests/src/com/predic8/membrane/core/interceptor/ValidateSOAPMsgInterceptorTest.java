@@ -59,7 +59,7 @@ public class ValidateSOAPMsgInterceptorTest extends TestCase {
 		return TextUtil.formatXML(new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
 	}
 	
-	private ValidateSOAPMsgInterceptor createValidatorInterceptor(String wsdl) {
+	private ValidateSOAPMsgInterceptor createValidatorInterceptor(String wsdl) throws Exception {
 		ValidateSOAPMsgInterceptor interceptor = new ValidateSOAPMsgInterceptor();
 		interceptor.setWsdl(wsdl);
 		interceptor.init();
