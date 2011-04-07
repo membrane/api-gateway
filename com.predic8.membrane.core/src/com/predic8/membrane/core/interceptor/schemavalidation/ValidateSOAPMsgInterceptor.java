@@ -2,6 +2,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.transform.Source;
@@ -15,13 +16,11 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.schema.Schema;
 import com.predic8.wsdl.Definitions;
-import com.predic8.wsdl.Types;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 
@@ -31,25 +30,19 @@ public class ValidateSOAPMsgInterceptor extends AbstractInterceptor {
 
 	private TestErrorHandler handler;
 
-	private List<Schema> schemas;
+	private List<Validator> validators;
 	
-	public void init() {
+	private SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
+	
+	public void init() throws Exception {
 		handler = new TestErrorHandler();
-		schemas = getSchemas();
+		validators = getValidators();
 	}
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 			
-		for (Schema predicschema : schemas) {
-			
-			SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
-			
-			javax.xml.validation.Schema schema = sf.newSchema(new StreamSource(new ByteArrayInputStream(predicschema.getAsString().getBytes())));
-
-			Validator validator = schema.newValidator();
-
-			validator.setErrorHandler(handler);
+		for (Validator validator: validators) {
 			
 			Source xmlSource = getSAXSource(exc.getRequest().getBodyAsStream()); 
 			
@@ -61,19 +54,25 @@ public class ValidateSOAPMsgInterceptor extends AbstractInterceptor {
 			handler.reset();
 		}
 		
-		Response resp = HttpUtil.createSOAPFaultResponse("Validation failed.");
-		exc.setResponse(resp);
+		exc.setResponse(HttpUtil.createSOAPFaultResponse("Validation failed."));
 		
 		return Outcome.ABORT;
 	}
 
-	public List<Schema> getSchemas() {
+	public List<Validator> getValidators() throws Exception {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(wsdl);
 		Definitions defs = new WSDLParser().parse(ctx);
 
-		Types tps = defs.getTypes();
-		return tps.getAllSchemas();
+		List<Validator> validators = new ArrayList<Validator>();
+		List<Schema> pSchemas = defs.getTypes().getAllSchemas();
+		for (Schema pSchema : pSchemas) {
+			javax.xml.validation.Schema schema = sf.newSchema(new StreamSource(new ByteArrayInputStream(pSchema.getAsString().getBytes())));
+			Validator validator = schema.newValidator();
+			validator.setErrorHandler(handler);
+			validators.add(validator);
+		}
+		return validators;
 	}
 
 	public String getWsdl() {
