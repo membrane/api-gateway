@@ -79,7 +79,10 @@ public class AdvancedRuleConfigurationPage extends SecurityWizardPage {
 	
 	@Override
 	public IWizardPage getNextPage() {
-		return getWizard().getPage(TargetConfigurationPage.PAGE_NAME);
+		IWizardPage page = getWizard().getPage(TargetConfigurationPage.PAGE_NAME);
+		//page is used in simple and advanced configuration, therefore title must be adjusted
+		page.setTitle("Advanced Rule");
+		return page;
 	}
 	
 	@Override
