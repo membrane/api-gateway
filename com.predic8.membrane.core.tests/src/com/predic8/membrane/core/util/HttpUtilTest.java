@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.util;
 
-import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.HttpUtil.readLine;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -47,15 +47,6 @@ public class HttpUtilTest extends TestCase {
 		assertEquals("bar", line);
 		line = readLine(is1);
 		assertEquals("", line);
-	}
-
-	public void testGetHost() throws Exception {
-		assertEquals("predic8.com", getHost("predic8.com:80"));
-	}
-
-	public void testGetPort() throws Exception {
-		assertEquals(80, getPort("predic8.com:80"));
-
 	}
 
 	public void testGetCredentials() throws Exception {

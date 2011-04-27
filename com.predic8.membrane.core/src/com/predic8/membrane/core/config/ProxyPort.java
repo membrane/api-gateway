@@ -19,6 +19,14 @@ public class ProxyPort extends CharactersElement {
 
 	public static final String ELEMENT_NAME = "proxy-port";
 	
+	public ProxyPort() {
+		
+	}
+	
+	public ProxyPort(String value) {
+		super(value);
+	}
+	
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;

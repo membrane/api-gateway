@@ -21,21 +21,29 @@ import javax.xml.stream.XMLStreamWriter;
 public abstract class CharactersElement extends AbstractXMLElement {
 
 	protected String value;
-	
+
+	public CharactersElement() {
+
+	}
+
+	public CharactersElement(String value) {
+		this.value = value;
+	}
+
 	@Override
 	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
 		value = token.getText();
 	}
-	
+
 	public String getValue() {
 		return value;
-		 
+
 	}
 
 	public void setValue(String value) {
 		this.value = value;
 	}
-	
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(getElementName());
@@ -43,6 +51,5 @@ public abstract class CharactersElement extends AbstractXMLElement {
 			out.writeCharacters(value);
 		out.writeEndElement();
 	}
-	
 
 }

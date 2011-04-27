@@ -151,24 +151,15 @@ public abstract class AbstractHttpThread extends Thread {
 		return list;
 	}
 	
-	protected void setProxySettingsForClient() {
+	protected void setClientSettings() {
 		if (transport == null)
 			return;
 		
-		Configuration configuration = transport.getRouter().getConfigurationManager().getConfiguration();
-		client.setUseProxy(configuration.isUseProxy());
-		client.setUseProxyAuth(configuration.isUseProxyAuthentification());
-		client.setProxyHost(configuration.getProxyHost());
-		try {
-			String proxyPort = configuration.getProxyPort();
-			if (proxyPort != null && !proxyPort.equals(""))
-				client.setProxyPort(Integer.parseInt(proxyPort));
-		} catch (NumberFormatException e) {
-			e.printStackTrace();
-		}
-		client.setAdjustHostHeader(configuration.getAdjustHostHeader());
-		client.setProxyUser(configuration.getProxyAuthentificationUsername());
-		client.setProxyPassword(configuration.getProxyAuthentificationPassword());
+		Configuration cfg = transport.getRouter().getConfigurationManager().getConfiguration();
+		
+		client.setAdjustHostHeader(cfg.getAdjustHostHeader());
+		
+		client.setProxy(cfg.getProxy());
 	}
 	
 	protected void invokeResponseInterceptors() throws Exception, AbortException {

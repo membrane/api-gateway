@@ -49,13 +49,8 @@ public abstract class Store extends AbstractXMLElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(getElementName());
 		
-		Location loc = new Location();
-		loc.setValue(this.location);
-		loc.write(out);
-		
-		Password pass = new Password();
-		pass.setValue(this.password);
-		pass.write(out);
+		new Location(location).write(out);
+		new Password(password).write(out);
 		
 		out.writeEndElement();
 	}

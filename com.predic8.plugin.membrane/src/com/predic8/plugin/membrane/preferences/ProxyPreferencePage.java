@@ -34,6 +34,7 @@ import org.eclipse.ui.IWorkbenchPreferencePage;
 
 import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.Proxy;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
@@ -135,27 +136,27 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 	private void setWidgets() {
 		Configuration config = Router.getInstance().getConfigurationManager().getConfiguration();
 		
-		if (config.getProxyHost() != null) {
-			textHost.setText("" + config.getProxyHost());
+		Proxy proxy = config.getProxy();
+		
+		if (proxy == null)
+			return;
+		
+		if (proxy.getProxyHost() != null) {
+			textHost.setText("" + proxy.getProxyHost());
 		}
 
-		try {
-			if (config.getProxyPort() != null) {
-				textPort.setText("" + config.getProxyPort());
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		textPort.setText("" + proxy.getProxyPort());
+		
 
-		if (config.getProxyAuthentificationUsername() != null)
-			textUser.setText(config.getProxyAuthentificationUsername());
+		if (proxy.getProxyUsername() != null)
+			textUser.setText(proxy.getProxyUsername());
 
-		if (config.getProxyAuthentificationPassword() != null)
-			textPassword.setText(config.getProxyAuthentificationPassword());
+		if (proxy.getProxyPassword() != null)
+			textPassword.setText(proxy.getProxyPassword());
 
-		btUseAuthent.setSelection(config.isUseProxyAuthentification());
+		btUseAuthent.setSelection(proxy.isUseAuthentication());
 		btUseAuthent.notifyListeners(SWT.Selection, null);
-		btUseProxy.setSelection(config.isUseProxy());
+		btUseProxy.setSelection(proxy.isUseProxy());
 		btUseProxy.notifyListeners(SWT.Selection, null);
 	}
 
@@ -251,14 +252,24 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		}
 	}
 
-	private void saveWidgetValues(boolean selected) {
-		Router.getInstance().getConfigurationManager().getConfiguration().setUseProxy(selected);
-		Router.getInstance().getConfigurationManager().getConfiguration().setProxyHost(textHost.getText());
-		Router.getInstance().getConfigurationManager().getConfiguration().setProxyPort(textPort.getText());
-
-		Router.getInstance().getConfigurationManager().getConfiguration().setUseProxyAuthentification(btUseAuthent.getSelection());
-		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationUsername(textUser.getText());
-		Router.getInstance().getConfigurationManager().getConfiguration().setProxyAuthentificationPassword(textPassword.getText());
+	private void saveWidgetValues(boolean useProxy) {
+		Proxy proxy = new Proxy();
+		proxy.setUseProxy(useProxy);
+		proxy.setProxyHost(textHost.getText());
+		
+		
+		try {
+			proxy.setProxyPort(Integer.parseInt(textPort.getText()));
+		} catch (NumberFormatException e) {
+			proxy.setProxyPort(0);
+		}
+		
+		proxy.setUseAuthentication(btUseAuthent.getSelection());
+		proxy.setProxyUsername(textUser.getText());
+		proxy.setProxyPassword(textPassword.getText());
+		
+		Router.getInstance().getConfigurationManager().getConfiguration().setProxy(proxy);
+		
 	}
 
 	private boolean isValidProxyParams() {

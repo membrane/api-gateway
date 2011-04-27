@@ -19,6 +19,14 @@ public class Password extends CharactersElement {
 
 	public static final String ELEMENT_NAME = "password";
 	
+	public Password() {
+		
+	}
+	
+	public Password(String value) {
+		super(value);
+	}
+	
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;

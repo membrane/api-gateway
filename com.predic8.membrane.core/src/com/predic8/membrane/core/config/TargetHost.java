@@ -19,6 +19,14 @@ public class TargetHost extends CharactersElement {
 
 	public static final String ELEMENT_NAME = "targethost";
 	
+	public TargetHost() {
+		
+	}
+	
+	public TargetHost(String value) {
+		super(value);
+	}
+	
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;

@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.WSDLInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
+import com.predic8.membrane.core.transport.http.HostColonPortTest;
 import com.predic8.membrane.core.util.ByteUtilTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
 
@@ -48,6 +49,7 @@ public class UnitlTests {
 		suite.addTestSuite(DispatchingInterceptorTest.class);
 		suite.addTestSuite(SimpleURLRewriteInterceptorTest.class);
 		suite.addTestSuite(AbstractInterceptorTest.class);
+		suite.addTestSuite(HostColonPortTest.class);
 		//$JUnit-END$
 		return suite;
 	}

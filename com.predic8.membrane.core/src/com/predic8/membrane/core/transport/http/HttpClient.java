@@ -14,29 +14,18 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import static com.predic8.membrane.core.util.HttpUtil.getHost;
-import static com.predic8.membrane.core.util.HttpUtil.getPort;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
-
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.config.Proxy;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
@@ -47,138 +36,58 @@ public class HttpClient {
 
 	private static Log log = LogFactory.getLog(HttpClient.class.getName());
 
-	private Socket socket;
+	private ConnectionManager conManager = new ConnectionManager();
+	
+	private static final int MAX_TRIES = 5;
 
-	private InputStream in;
-
-	private OutputStream out;
-
-	private static final int MAX_CALL = 5;
-
-	private boolean useProxy;
-	
-	private boolean useProxyAuth;
-	
-	private String proxyHost;
-	
-	private int proxyPort;
-	
-	private String proxyUser;
-	
-	private String proxyPassword;
-	
 	private boolean adjustHostHeader;
 	
-	private boolean isSameSocket(String host, int port) {
-		if (!useProxy) {
-			if ((host.equalsIgnoreCase(socket.getInetAddress().getHostName()) || host.equals(socket.getInetAddress().getHostAddress())) && port == socket.getPort()) {
-				return true;
-			}
-		} else {
-			if (socket.getInetAddress().getHostName().equalsIgnoreCase(proxyHost) && proxyPort == socket.getPort())
-				return true;
-		}
-		
-		return false;
+	private Proxy proxy;
+	
+	private String host;
+	
+	private int port;
+	
+	private boolean tls;
+	
+	private String localHost;
+	
+	private boolean isUseProxy() {
+		if (proxy == null)
+			return false;
+		return proxy.isUseProxy();
 	}
-
-	private void openSocketIfNeeded(String host, int port, String localHost, boolean stl) throws UnknownHostException, IOException {
-
-		while (socket == null || socket.isClosed() || !isSameSocket(host, port)) {
-
-			closeSocketAndStreams();
-
-			if (useProxy) {
-				log.debug("opening a new socket for host: " + proxyHost + " on port: " + proxyPort);
-				createSocket(proxyHost, proxyPort, localHost, stl);
-			} else {
-				log.debug("opening a new socket for host: " + host + " on port: " + port);
-				createSocket(host, port, localHost, stl);
-			}
-
-			log.debug("Opened connection on localPort: " + port);
-			in = new BufferedInputStream(socket.getInputStream(), 2048);
-			out = new BufferedOutputStream(socket.getOutputStream(), 2048);
-		}
-
-	}
-
-	private void closeSocketAndStreams() throws IOException {
-		if (in != null)
-			in.close();
-
-		if (out != null && !socket.isClosed()) {
-			out.flush();
-			out.close();
-		}
-
-		if (socket != null)
-			socket.close();
-	}
-
-	private void createSocket(String host, int port, String localHost, boolean tls) throws UnknownHostException, IOException {
-		if (tls) {
-			if (localHost == null || localHost.equals(""))
-				socket = SSLSocketFactory.getDefault().createSocket(host, port);
-			else
-				socket = SSLSocketFactory.getDefault().createSocket(host, port, InetAddress.getByName(localHost), 0);
-		} else {
-			if (localHost == null || localHost.equals(""))
-				socket = new Socket(host, port);
-			else
-				socket = new Socket(host, port, InetAddress.getByName(localHost), 0);
-		}
-	}
-
+	
 	private void init(HttpExchange exc, int destIndex) throws UnknownHostException, IOException, MalformedURLException {
 		String dest = exc.getDestinations().get(destIndex);
 		
-		exc.getRequest().setUri(dest);
-		
-		if (exc.getRequest().isCONNECTRequest()) {
-			openSocketIfNeeded(getHost(dest), getPort(dest), exc.getRule().getLocalHost(), getOutboundTLS(exc));
-			return;
-		}
-
-		if (!useProxy) {
-			exc.getRequest().setUri(getPathAndQueryString(dest));
-		} else {
-			if (useProxyAuth) {
-				exc.getRequest().getHeader().setProxyAutorization(HttpUtil.getCredentials(proxyUser, proxyPassword));
+		if (isUseProxy()) {
+			exc.getRequest().setUri(dest);
+			if (proxy.isUseAuthentication()) {
+				exc.getRequest().getHeader().setProxyAutorization(HttpUtil.getCredentials(proxy.getProxyUsername(), proxy.getProxyPassword()));
 			}
-		}
 			
+			port = proxy.getProxyPort();
+			host = proxy.getProxyHost();
+			
+		} else {
+			URL destination = new URL(dest); //duplicate
+			exc.getRequest().setUri(HttpUtil.getPathAndQueryString(dest));
+			port = HttpUtil.getPort(destination);
+			host = destination.getHost();
+		}
 		
-		URL destination = new URL(dest);
-		int targetPort = getTargetPort(destination);
-		openSocketIfNeeded(destination.getHost(), targetPort, exc.getRule().getLocalHost(), getOutboundTLS(exc));
+		tls = getOutboundTLS(exc);
+		localHost = exc.getRule().getLocalHost();
 		
-		if (adjustHostHeader && exc.getRule() instanceof ForwardingRule)
-			exc.getRequest().getHeader().setHost(destination.getHost() + ":" + targetPort);
+		if (adjustHostHeader && exc.getRule() instanceof ForwardingRule) {
+			URL destination = new URL(dest); //duplicate
+			exc.getRequest().getHeader().setHost(destination.getHost() + ":" + port);
+		}
 	}
 
 	private boolean getOutboundTLS(HttpExchange exc) {
-		if (exc.getRule() == null)
-			return false;
 		return exc.getRule().isOutboundTLS();
-	}
-
-	private String getPathAndQueryString(String dest) throws MalformedURLException {
-		URL url = new URL(dest);
-		
-		String uri = url.getPath();
-		if (url.getQuery() != null) {
-			return uri + "?" + url.getQuery();
-		}
-		return uri;
-	}
-
-	private int getTargetPort(URL url) throws MalformedURLException {
-		if (url.getPort() == -1) {
-			log.debug("URL Port is not set. Default target port 80 will be used.");
-			return 80;
-		}
-		return url.getPort();
 	}
 
 	public Response call(HttpExchange exc) throws Exception {
@@ -187,58 +96,72 @@ public class HttpClient {
 		
 		int counter = 0;
 		Exception exception = null;
-		while (counter < MAX_CALL) {
+		while (counter < MAX_TRIES) {
+			Connection con = null;
 			try {
 				log.debug("try # " + counter + " to " + exc.getDestinations().get(counter % exc.getDestinations().size()));
 				init(exc, counter % exc.getDestinations().size());
-				return doCall(exc);
+				con = conManager.getConnection(host, port, localHost, tls);
+				return doCall(exc, con);
 			} catch (ConnectException ce) {
 				exception = ce;
 				log.debug(ce);
-				if (socket != null)
-					log.debug("Connection to " + socket.getInetAddress().getHostName() + " on port " + socket.getPort() + " refused.");
+				if (con != null && con.socket != null)
+					log.debug("Connection to " + con.socket.getInetAddress().getHostName() + " on port " + con.socket.getPort() + " refused.");
+			} catch (UnknownHostException e) {
+				logException(exc, counter, e);
+				closeConnection(50);
+				throw e;
 			} catch (Exception e) {
-				log.debug("try # " + counter + " failed");
-				exc.getRequest().writeStartLine(System.out);
-				exc.getRequest().getHeader().write(System.out);
-				e.printStackTrace();
+				logException(exc, counter, e);
 				exception = e;
 			}
 			counter++;
-			try {
-				close();
-				Thread.sleep(250);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			closeConnection(250);
 		}
 		throw exception;
 	}
 
-	private Response doCall(HttpExchange exc) throws IOException, SocketException, EndOfStreamException {
-		exc.setTimeReqSent(System.currentTimeMillis());
+	private void closeConnection(int mls) {
+		try {
+			close();
+			Thread.sleep(mls);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void logException(HttpExchange exc, int counter, Exception e) throws IOException {
+		log.debug("try # " + counter + " failed");
+		exc.getRequest().writeStartLine(System.out);
+		exc.getRequest().getHeader().write(System.out);
+		e.printStackTrace();
+	}
 
+	private Response doCall(HttpExchange exc, Connection con) throws IOException, SocketException, EndOfStreamException {
+		exc.setTimeReqSent(System.currentTimeMillis());
+		
 		if (exc.getRequest().isCONNECTRequest()) {
-			handleConnectRequest(exc);
+			handleConnectRequest(exc, con);
 			return Response.createOKResponse();
 		}
 
-		exc.getRequest().write(out);
+		exc.getRequest().write(con.out);
 
 		if (exc.getRequest().isHTTP10()) {
-			shutDownSourceSocket(exc);
+			shutDownSourceSocket(exc, con);
 		}
 
 		Response res = new Response();
 		try{
-			res.read(in, !exc.getRequest().isHEADRequest());
+			res.read(con.in, !exc.getRequest().isHEADRequest());
 		}catch(SocketException e){
 			log.error("Connection aborted");
 			exc.getRequest().write(System.err);
 		}
 
 		if (res.getStatusCode() == 100) {
-			do100ExpectedHandling(exc, res);
+			do100ExpectedHandling(exc, res, con);
 		}
 
 		exc.setReceived();
@@ -246,110 +169,52 @@ public class HttpClient {
 		return res;
 	}
 
-	private void handleConnectRequest(HttpExchange exc) throws IOException, EndOfStreamException {
-		if (useProxy) {
-			exc.getRequest().write(out);
+	private void handleConnectRequest(HttpExchange exc, Connection con) throws IOException, EndOfStreamException {
+		if (isUseProxy()) {
+			
+			log.debug("host: " + host);
+			log.debug("port: " + port);
+			
+			
+			exc.getRequest().write(con.out);
 			Response response = new Response();
-			response.read(in, false);
+			response.read(con.in, false);
 			log.debug("Status code response on CONNECT request: " + response.getStatusCode());
 		}
 		exc.getRequest().setUri(Constants.N_A);
-		new TunnelThread(in, exc.getServerThread().getSrcOut(), "Onward Thread").start();
-		new TunnelThread(exc.getServerThread().getSrcIn(), out, "Backward Thread").start();
+		new TunnelThread(con.in, exc.getServerThread().getSrcOut(), "Onward Thread").start();
+		new TunnelThread(exc.getServerThread().getSrcIn(), con.out, "Backward Thread").start();
 	}
 
-	private void do100ExpectedHandling(HttpExchange exc, Response response) throws IOException, EndOfStreamException {
+	private void do100ExpectedHandling(HttpExchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
 		if (exc.getServerThread() instanceof HttpServerThread) {
 			response.write(exc.getServerThread().srcOut);
 		}
 		exc.getRequest().readBody();
-		exc.getRequest().getBody().write(out);
-		response.read(in, !exc.getRequest().isHEADRequest());
+		exc.getRequest().getBody().write(con.out);
+		response.read(con.in, !exc.getRequest().isHEADRequest());
 	}
 
-	private void shutDownSourceSocket(HttpExchange exc) throws IOException {
+	private void shutDownSourceSocket(HttpExchange exc, Connection con) throws IOException {
 		exc.getServerThread().sourceSocket.shutdownInput();
-		if (!socket.isOutputShutdown()) {
+		if (!con.socket.isOutputShutdown()) {
 			log.info("Shutting down socket outputstream");
-			socket.shutdownOutput();
+			con.socket.shutdownOutput();
 		}
 		// TODO close ?
 	}
 
 	public void close() throws IOException {
-		if (socket == null || socket.isClosed())
-			return;
-
-		log.debug("Closing HTTP connection LocalPort: " + socket.getLocalPort());
-		
-		if (!(socket instanceof SSLSocket))
-			socket.shutdownInput();
-		
-		socket.close();
+		// TODO
+		//con.close();
 	}
 	
-	public Socket getSocket() {
-		return socket;
-	}
-
-	public boolean isUseProxy() {
-		return useProxy;
-	}
-
-	public void setUseProxy(boolean useProxy) {
-		this.useProxy = useProxy;
-	}
-
-	public boolean isUseProxyAuth() {
-		return useProxyAuth;
-	}
-
-	public void setUseProxyAuth(boolean useProxyAuth) {
-		this.useProxyAuth = useProxyAuth;
-	}
-
-	public String getProxyHost() {
-		return proxyHost;
-	}
-
-	public void setProxyHost(String proxyHost) {
-		this.proxyHost = proxyHost;
-	}
-
-	public int getProxyPort() {
-		return proxyPort;
-	}
-
-	public void setProxyPort(int proxyPort) {
-		this.proxyPort = proxyPort;
-	}
-
-	public String getProxyUser() {
-		return proxyUser;
-	}
-
-	public void setProxyUser(String proxyUser) {
-		this.proxyUser = proxyUser;
-	}
-
-	public String getProxyPassword() {
-		return proxyPassword;
-	}
-
-	public void setProxyPassword(String proxyPassword) {
-		this.proxyPassword = proxyPassword;
-	}
-
-	public boolean isAdjustHostHeader() {
-		return adjustHostHeader;
-	}
-
 	public void setAdjustHostHeader(boolean adjustHostHeader) {
 		this.adjustHostHeader = adjustHostHeader;
 	}
-
-	public void setSocket(Socket socket) {
-		this.socket = socket;
+	
+	public void setProxy(Proxy proxy) {
+		this.proxy = proxy;
 	}
-		
+	
 }

@@ -19,6 +19,14 @@ public class ProxyPassword extends CharactersElement {
 
 	public static final String ELEMENT_NAME = "proxy-password";
 	
+	public ProxyPassword() {
+		
+	}
+	
+	public ProxyPassword(String value) {
+		super(value);
+	}
+	
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;

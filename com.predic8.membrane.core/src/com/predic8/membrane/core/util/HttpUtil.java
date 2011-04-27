@@ -16,6 +16,8 @@ package com.predic8.membrane.core.util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -175,12 +177,30 @@ public class HttpUtil {
 		return chunks;
 	}
 
-	public static String getHost(String hostAndPort) {
-		return hostAndPort.split(":")[0];
+	public static String getHostName(String destination) throws MalformedURLException {
+		return new URL(destination).getHost();
 	}
 
+	public static String getPathAndQueryString(String dest) throws MalformedURLException {
+		URL url = new URL(dest);
+		
+		String uri = url.getPath();
+		if (url.getQuery() != null) {
+			return uri + "?" + url.getQuery();
+		}
+		return uri;
+	}
+	
 	public static int getPort(String hostAndPort) {
 		return Integer.parseInt(hostAndPort.split(":")[1]);
+	}
+	
+	public static int getPort(URL url) throws MalformedURLException {
+		if (url.getPort() == -1) {
+			log.debug("URL Port is not set. Default target port 80 will be used.");
+			return 80;
+		}
+		return url.getPort();
 	}
 
 	public static String getCredentials(String user, String password) {

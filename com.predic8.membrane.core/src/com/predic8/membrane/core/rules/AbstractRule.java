@@ -118,9 +118,7 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 		if (localHost == null)
 			return;
 		
-		LocalHost localHostElement = new LocalHost();
-		localHostElement.setValue(localHost);
-		localHostElement.write(out);
+		new LocalHost(localHost).write(out);
 	}
 	
 	@Override
@@ -162,13 +160,13 @@ public abstract class AbstractRule extends AbstractXMLElement implements Rule {
 	}
 	
 	protected void parseTLS(XMLStreamReader token) {
-		inboundTLS = "true".equals(token.getAttributeValue("", "inboundTLS")) ? true: false;
-		outboundTLS = "true".equals(token.getAttributeValue("", "outboundTLS")) ? true: false;
+		inboundTLS = getBoolean(token, "inboundTLS");
+		outboundTLS = getBoolean(token, "outboundTLS");
 	}
 	
 	protected void parseBlocking(XMLStreamReader token) {
-		blockRequest = "true".equals(token.getAttributeValue("", "blockRequest")) ? true: false;
-		blockResponse = "true".equals(token.getAttributeValue("", "blockResponse")) ? true: false;
+		blockRequest = getBoolean(token, "blockRequest");
+		blockResponse = getBoolean(token, "blockResponse");
 	}
 	
 	@Override

@@ -14,20 +14,32 @@
 
 package com.predic8.membrane.core.config;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
-
-import com.predic8.membrane.core.Configuration;
 
 public class Proxy extends AbstractXMLElement {
 
 	public static final String ELEMENT_NAME = "proxy";
 
-	public Map<String, Object> values = new HashMap<String, Object>();
+	public static final String ATTRIBUTE_ACTIVE = "active";
+	
+	public static final String ATTRIBUTE_AUTHENTICATION = "authentication";
+	
+	private boolean useProxy;
+	
+	private String proxyHost;
+
+	private int proxyPort;
+
+
+	private boolean useAuthentication;
+	
+	private String proxyUsername;
+	
+	private String proxyPassword;
+
+
 
 	@Override
 	protected String getElementName() {
@@ -36,106 +48,89 @@ public class Proxy extends AbstractXMLElement {
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		values.put(Configuration.USE_PROXY, "true".equals(token.getAttributeValue("", "active")) ? true: false);
-		values.put(Configuration.USE_PROXY_AUTH, "true".equals(token.getAttributeValue("", "authentification")) ? true: false);
+		useProxy = getBoolean(token, ATTRIBUTE_ACTIVE);
+		useAuthentication = getBoolean(token, ATTRIBUTE_AUTHENTICATION);
 		super.parseAttributes(token);
 	}
-	
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (ProxyHost.ELEMENT_NAME.equals(child)) {
-			String value = ((ProxyHost)(new ProxyHost().parse(token))).getValue();
-			values.put(Configuration.PROXY_HOST, value);
+			proxyHost = ((ProxyHost) (new ProxyHost().parse(token))).value;
 		} else if (ProxyPort.ELEMENT_NAME.equals(child)) {
-			String value = ((ProxyPort)(new ProxyPort().parse(token))).getValue();
-			values.put(Configuration.PROXY_PORT, value);
+			proxyPort = Integer.parseInt(((ProxyPort) (new ProxyPort().parse(token))).getValue());
 		} else if (ProxyUsername.ELEMENT_NAME.equals(child)) {
-			String value = ((ProxyUsername)(new ProxyUsername().parse(token))).getValue();
-			values.put(Configuration.PROXY_AUTH_USERNAME, value);
+			proxyUsername = ((ProxyUsername) (new ProxyUsername().parse(token))).getValue();
 		} else if (ProxyPassword.ELEMENT_NAME.equals(child)) {
-			String value = ((ProxyPassword)(new ProxyPassword().parse(token))).getValue();
-			values.put(Configuration.PROXY_AUTH_PASSWORD, value);
+			proxyPassword = ((ProxyPassword) (new ProxyPassword().parse(token))).getValue();
 		}
-	}
-
-	public Map<String, Object> getValues() {
-		return values;
-	}
-
-	public void setValues(Map<String, Object> newValues) {
-		if (newValues.containsKey(Configuration.PROXY_HOST)) {
-			values.put(Configuration.PROXY_HOST, newValues.get(Configuration.PROXY_HOST));
-		} 
-		
-		if (newValues.containsKey(Configuration.PROXY_PORT)) {
-			values.put(Configuration.PROXY_PORT, newValues.get(Configuration.PROXY_PORT));
-		}
-		
-		if (newValues.containsKey(Configuration.USE_PROXY)) {
-			values.put(Configuration.USE_PROXY, newValues.get(Configuration.USE_PROXY));	
-		}
-		
-		if (newValues.containsKey(Configuration.USE_PROXY_AUTH)) {
-			values.put(Configuration.USE_PROXY_AUTH, newValues.get(Configuration.USE_PROXY_AUTH));	
-		}
-		
-		if (newValues.containsKey(Configuration.PROXY_AUTH_USERNAME)) {
-			values.put(Configuration.PROXY_AUTH_USERNAME, newValues.get(Configuration.PROXY_AUTH_USERNAME));	
-		}
-		
-		if (newValues.containsKey(Configuration.PROXY_AUTH_PASSWORD)) {
-			values.put(Configuration.PROXY_AUTH_PASSWORD, newValues.get(Configuration.PROXY_AUTH_PASSWORD));	
-		}
-		
 	}
 
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
-				
-		out.writeAttribute("active", ((Boolean) (values.get(Configuration.USE_PROXY) == null ? false : (Boolean)values.get(Configuration.USE_PROXY))).toString());
-		
-		out.writeAttribute("authentification", ((Boolean) (values.get(Configuration.USE_PROXY_AUTH) == null ? false : (Boolean)values.get(Configuration.USE_PROXY_AUTH))).toString());
-		
-		ProxyHost proxyHost = new ProxyHost();
-		if (values.containsKey(Configuration.PROXY_HOST)) {
-			proxyHost.setValue((String)values.get(Configuration.PROXY_HOST));
-		} else {
-			proxyHost.setValue("");
-		}
-		proxyHost.write(out);
-		
-		ProxyPort proxyPort = new ProxyPort();
-		if (values.containsKey(Configuration.PROXY_PORT)) {
-			proxyPort.setValue((String)values.get(Configuration.PROXY_PORT));
-		} else {
-			proxyPort.setValue("");
-		}
-		
-		proxyPort.write(out);
-		
-		
-		ProxyUsername proxyUser = new ProxyUsername();
-		if (values.containsKey(Configuration.PROXY_AUTH_USERNAME)) {
-			proxyUser.setValue((String)values.get(Configuration.PROXY_AUTH_USERNAME));
-		} else {
-			proxyUser.setValue("");
-		}
-		
-		proxyUser.write(out);
-		
-		
-		ProxyPassword proxyPassword = new ProxyPassword();
-		if (values.containsKey(Configuration.PROXY_AUTH_PASSWORD)) {
-			proxyPassword.setValue((String)values.get(Configuration.PROXY_AUTH_PASSWORD));
-		} else {
-			proxyPassword.setValue("");
-		}
-		
-		proxyPassword.write(out);
-		
-		
+
+		out.writeAttribute(ATTRIBUTE_ACTIVE, Boolean.toString(useProxy));
+
+		out.writeAttribute(ATTRIBUTE_AUTHENTICATION, Boolean.toString(useAuthentication));
+
+		new ProxyHost(proxyHost).write(out);
+
+		new ProxyPort(Integer.toString(proxyPort)).write(out);
+
+		new ProxyUsername(proxyUsername).write(out);
+
+		new ProxyPassword(proxyPassword).write(out);
+
 		out.writeEndElement();
 	}
-	
+
+	public String getProxyHost() {
+		return proxyHost;
+	}
+
+	public void setProxyHost(String proxyHost) {
+		this.proxyHost = proxyHost;
+	}
+
+	public int getProxyPort() {
+		return proxyPort;
+	}
+
+	public void setProxyPort(int proxyPort) {
+		this.proxyPort = proxyPort;
+	}
+
+	public String getProxyPassword() {
+		return proxyPassword;
+	}
+
+	public void setProxyPassword(String proxyPassword) {
+		this.proxyPassword = proxyPassword;
+	}
+
+	public boolean isUseProxy() {
+		return useProxy;
+	}
+
+	public void setUseProxy(boolean useProxy) {
+		this.useProxy = useProxy;
+	}
+
+	public String getProxyUsername() {
+		return proxyUsername;
+	}
+
+	public void setProxyUsername(String proxyUsername) {
+		this.proxyUsername = proxyUsername;
+	}
+
+	public boolean isUseAuthentication() {
+		return useAuthentication;
+	}
+
+	public void setUseAuthentication(boolean useAuthentication) {
+		this.useAuthentication = useAuthentication;
+	}
+
 }

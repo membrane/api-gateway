@@ -22,11 +22,16 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.Transport;
 
 public class HttpTransport extends Transport {
 
+	private static Log log = LogFactory.getLog(HttpTransport.class.getName());
+	
 	public static final String SOURCE_HOSTNAME = "com.predic8.membrane.transport.http.source.Hostname";
 	public static final String HEADER_HOST = "com.predic8.membrane.transport.http.header.Host";
 	public static final String SOURCE_IP = "com.predic8.membrane.transport.http.source.Ip";
@@ -46,6 +51,7 @@ public class HttpTransport extends Transport {
 	}
 
 	public synchronized void closePort(int port) throws IOException {
+		log.debug("Closing server port: " + port);
 		HttpEndpointListener plt = portListenerMapping.get(new Integer(port));
 		if (plt != null) {
 			plt.closePort();
@@ -61,8 +67,7 @@ public class HttpTransport extends Transport {
 
 		Enumeration<Integer> enumeration = getAllPorts();
 		while (enumeration.hasMoreElements()) {
-			Integer p = enumeration.nextElement();
-			closePort(p.intValue());
+			closePort(enumeration.nextElement());
 		}
 	}
 

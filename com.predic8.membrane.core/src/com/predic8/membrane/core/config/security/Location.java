@@ -19,6 +19,14 @@ public class Location extends CharactersElement {
 
 	public static final String ELEMENT_NAME = "location";
 
+	public Location() {
+		
+	}
+	
+	public Location(String value) {
+		super(value);
+	}
+	
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;

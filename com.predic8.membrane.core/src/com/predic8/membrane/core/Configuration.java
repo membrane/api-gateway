@@ -43,6 +43,7 @@ public class Configuration extends AbstractXMLElement {
 	public static final String INDENT_CONFIG = "indent_config";
 	public static final String ADJ_HOST_HEADER = "adjust_host_header_field";
 
+	
 	public static final String PROXY_HOST = "proxy_host";
 	public static final String PROXY_PORT = "proxy_port";
 	public static final String USE_PROXY = "proxy_use";
@@ -58,6 +59,7 @@ public class Configuration extends AbstractXMLElement {
 	public static final String TRUST_STORE_PASSWORD = "truststore password";
 	
 	
+	
 	public static final String USE_PROXY_AUTH = "use proxy authentification";
 	
 	public static final String PROXY_AUTH_PASSWORD = "proxy authentification password";
@@ -68,10 +70,8 @@ public class Configuration extends AbstractXMLElement {
 
 	public Map<String, Object> props = new HashMap<String, Object>();
 
-	public Configuration() {
-
-	}
-
+	private Proxy proxy; 
+	
 	public Map<String, Object> getProps() {
 		return props;
 	}
@@ -143,35 +143,6 @@ public class Configuration extends AbstractXMLElement {
 		return false;
 	}
 
-	public boolean isUseProxy() {
-		if (props.containsKey(USE_PROXY)) {			
-			return (Boolean) props.get(USE_PROXY);
-		}
-		return false;
-	}
-	
-	public boolean isUseProxyAuthentification() {
-		if (props.containsKey(USE_PROXY_AUTH)) {			
-			return (Boolean) props.get(USE_PROXY_AUTH);
-		}
-		return false;
-	}
-	
-	public void setUseProxy(boolean status) {
-		props.put(USE_PROXY, status);
-	}
-	
-	public void setUseProxyAuthentification(boolean status) {
-		props.put(USE_PROXY_AUTH, status);
-	}
-	
-	public String getProxyHost() {
-		if (props.containsKey(PROXY_HOST))
-			return (String)props.get(PROXY_HOST);
-	
-		return null;
-	}
-	
 	public String getKeyStoreLocation() {
 		if (props.containsKey(KEY_STORE_LOCATION))
 			return (String)props.get(KEY_STORE_LOCATION);
@@ -225,47 +196,12 @@ public class Configuration extends AbstractXMLElement {
 		props.put(TRUST_STORE_PASSWORD, password);
 	}
 	
-	public void setProxyAuthentificationPassword(String password) {
-		if (password == null)
-			return;
-		props.put(PROXY_AUTH_PASSWORD, password);
+	public void setProxy(Proxy proxy) {
+		this.proxy = proxy;
 	}
 	
-	public String getProxyAuthentificationPassword() {
-		if (props.containsKey(PROXY_AUTH_PASSWORD))
-			return (String)props.get(PROXY_AUTH_PASSWORD);
-	
-		return null;
-	}
-	
-	public void setProxyAuthentificationUsername(String user) {
-		if (user == null)
-			return;
-		props.put(PROXY_AUTH_USERNAME, user);
-	}
-	
-	public String getProxyAuthentificationUsername() {
-		if (props.containsKey(PROXY_AUTH_USERNAME))
-			return (String)props.get(PROXY_AUTH_USERNAME);
-	
-		return null;
-	}
-	
-	public String getProxyPort() {
-		if (props.containsKey(PROXY_PORT))
-			return (String)props.get(PROXY_PORT);
-	
-		return null;
-	}
-	
-	public void setProxyHost(String host) {
-		if (host == null)
-			return;
-		props.put(PROXY_HOST, host);
-	}
-	
-	public void setProxyPort(String port) {
-		props.put(PROXY_PORT, port);
+	public Proxy getProxy() {
+		return proxy;
 	}
 	
 	@Override
@@ -277,7 +213,7 @@ public class Configuration extends AbstractXMLElement {
 		} else if (GUI.ELEMENT_NAME.equals(child)) {
 			props.putAll(((GUI) new GUI().parse(token)).getValues());
 		} else if (Proxy.ELEMENT_NAME.equals(child)) {
-			props.putAll(((Proxy) new Proxy().parse(token)).getValues());
+			proxy = (Proxy) new Proxy().parse(token);
 		} else if (Security.ELEMENT_NAME.equals(child)) {
 			Security security = ((Security) new Security().parse(token));
 			props.put(KEY_STORE_LOCATION, security.getKeyStoreLocation());
@@ -310,10 +246,8 @@ public class Configuration extends AbstractXMLElement {
 		childGui.setValues(props);
 		childGui.write(out);
 		
-		Proxy childProxy = new Proxy();
-		childProxy.setValues(props);
-		childProxy.write(out);
-		
+		if (proxy !=  null)
+			proxy.write(out);
 		
 		Security security = new Security();
 		security.setValues(props);
@@ -328,19 +262,14 @@ public class Configuration extends AbstractXMLElement {
 		setAdjustHostHeader(config.getAdjustHostHeader());
 		setIndentMessage(config.getIndentMessage());
 		setTrackExchange(config.getTrackExchange());
-		setUseProxy(config.isUseProxy());
-		setProxyHost(config.getProxyHost());
-		setProxyPort(config.getProxyPort());
+		setProxy(config.getProxy());
+		
 		
 		setKeyStoreLocation(config.getKeyStoreLocation());
 		setKeyStorePassword(config.getKeyStorePassword());
 		
 		setTrustStoreLocation(config.getTrustStoreLocation());
 		setTrustStorePassword(config.getTrustStorePassword());
-		
-		setUseProxyAuthentification(config.isUseProxyAuthentification());
-		setProxyAuthentificationUsername(config.getProxyAuthentificationUsername());
-		setProxyAuthentificationPassword(config.getProxyAuthentificationPassword());
 	}
 	
 

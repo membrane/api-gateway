@@ -61,7 +61,9 @@ public class SecurityPreferencePage extends PreferencePage implements
 	
 	private Text textTrustPassword;
 	
-	private Button btShowContent;
+	private Button btShowKeyStoreContent;
+	
+	private Button btShowTrustStoreContent;
 	
 	public SecurityPreferencePage() {
 		
@@ -109,21 +111,13 @@ public class SecurityPreferencePage extends PreferencePage implements
 		
 		addDummyLabels(groupKey, 7);
 		
-		btShowContent = new Button(groupKey, SWT.PUSH);
-		btShowContent.setText("Show Content");
-		btShowContent.addSelectionListener(new SelectionAdapter() {
-			
+		btShowKeyStoreContent = new Button(groupKey, SWT.PUSH);
+		btShowKeyStoreContent.setText("Show Content");
+		btShowKeyStoreContent.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				try {
-					KeyStore store = getStore(textKeyLocation.getText(), textKeyPassword.getText());
-					KeyStoreContentDialog dialog = new KeyStoreContentDialog(getShell(), store, textKeyPassword.getText());
-					dialog.open();
-				} catch (Exception ex) {
-					openError("Error", ex.getMessage());
-				}
+				showStoreContent(textKeyLocation.getText(), textKeyPassword.getText());
 			}
-			
 		});
 		
 		addDummyLabels(groupKey, 2);
@@ -152,11 +146,30 @@ public class SecurityPreferencePage extends PreferencePage implements
 		textTrustPassword = createText(groupTrust, SWT.PASSWORD, PASSWORD_WIDTH_HINT, 1);
 		textTrustPassword.setText(getSavedTruststorePassword());
 		
-		addDummyLabels(groupTrust, 2);
+		addDummyLabels(groupTrust, 7);
+		
+		btShowTrustStoreContent = new Button(groupTrust, SWT.PUSH);
+		btShowTrustStoreContent.setText("Show Content");
+		btShowTrustStoreContent.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				showStoreContent(textTrustLocation.getText(), textTrustPassword.getText());
+			}
+		});
 		
 		return composite;
 	}
 
+	private void showStoreContent(String location, String password) {
+		try {
+			KeyStore store = getStore(location, password);
+			KeyStoreContentDialog dialog = new KeyStoreContentDialog(getShell(), store, password);
+			dialog.open();
+		} catch (Exception ex) {
+			openError("Error", ex.getMessage());
+		} 
+	}
+	
 	private void addDummyLabels(Composite parent, int c) {
 		for(int i = 0; i < c; i ++) {
 			addDummyLabel(parent);
@@ -330,6 +343,7 @@ public class SecurityPreferencePage extends PreferencePage implements
 	            fis.close();
 	        }
 	    }
+	    
 	}
 	
 }

@@ -48,6 +48,9 @@ public abstract class SecurityTabComposite extends Composite implements Security
 	protected void enableSecureConnectionButton() {
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
+				if (btSecureConnection == null || btSecureConnection.isDisposed())
+					return;
+				
 				btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isKeyStoreAvailable());
 			}
 		});

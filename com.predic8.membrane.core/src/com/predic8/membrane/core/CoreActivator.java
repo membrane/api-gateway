@@ -75,6 +75,7 @@ public class CoreActivator extends Plugin {
 				try {
 					Router.getInstance().getConfigurationManager().loadConfiguration(System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml");
 				} catch (Exception e) {
+					e.printStackTrace();
 					// we ignore this exception because the monitor can start up
 					// without loading a rules configuration
 					// we need to throw an exception because the router must display an error message

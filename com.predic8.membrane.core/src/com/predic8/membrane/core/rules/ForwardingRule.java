@@ -101,13 +101,8 @@ public class ForwardingRule extends AbstractRule {
 		out.writeAttribute("host", key.getHost());
 		out.writeAttribute("method", key.getMethod());
 
-		TargetPort childTargetPort = new TargetPort();
-		childTargetPort.setValue(targetPort);
-		childTargetPort.write(out);
-		
-		TargetHost childTargetHost = new TargetHost();
-		childTargetHost.setValue(targetHost);
-		childTargetHost.write(out);
+		new TargetPort(targetPort).write(out);
+		new TargetHost(targetHost).write(out);
 		
 		if (key.isUsePathPattern()) {
 			Path path = new Path();

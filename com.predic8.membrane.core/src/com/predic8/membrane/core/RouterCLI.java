@@ -30,7 +30,6 @@ public class RouterCLI {
 			System.out.println("-h Help content for router.");
 			System.out.println("--help 'Help content for router.");
 			System.out.println("-c 'configurationFileName'");
-			System.out.println("--config 'configurationFileName'");
 			System.out.println("-b 'springConfigurationFileName'.");
 			return;
 		}

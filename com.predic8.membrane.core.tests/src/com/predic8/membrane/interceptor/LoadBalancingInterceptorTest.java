@@ -166,7 +166,11 @@ public class LoadBalancingInterceptorTest extends TestCase {
 
 		service1.getTransport().closeAll();
 
+		// TODO may be close connection 
+		Thread.sleep(32000);
+		
 		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(1, mockInterceptor1.counter);
 		assertEquals(2, mockInterceptor2.counter);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));

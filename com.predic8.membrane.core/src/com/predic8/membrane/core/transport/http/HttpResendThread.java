@@ -34,7 +34,7 @@ public class HttpResendThread extends AbstractHttpThread {
 		
 		srcReq = exc.getRequest();
 		this.rule = exc.getRule();
-		setProxySettingsForClient();
+		setClientSettings();
 	}
 
 	public void run() {

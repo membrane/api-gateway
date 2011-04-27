@@ -21,6 +21,7 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 
 import javax.net.ssl.SSLSocket;
 
@@ -46,7 +47,7 @@ public class HttpServerThread extends AbstractHttpThread {
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
 		sourceSocket.setSoTimeout(30000);
 		this.transport = transport;
-		setProxySettingsForClient();
+		setClientSettings();
 	}
 
 	public void run() {
@@ -133,10 +134,13 @@ public class HttpServerThread extends AbstractHttpThread {
 				}
 			}
 
+			String dest = exchange.getDestinations().get(0);
 			try {
 				targetRes = client.call(exchange);
 			} catch (ConnectException e) {
-				targetRes = HttpUtil.createErrorResponse("Target " + exchange.getDestinations().get(0) + " is not reachable.");
+				targetRes = HttpUtil.createErrorResponse("Target " + dest + " is not reachable.");
+			} catch (UnknownHostException e) {
+				targetRes = HttpUtil.createErrorResponse("Target host " + HttpUtil.getHostName(dest) + " is unknown. DNS was unable to resolve host name.");
 			}
 			exchange.setResponse(targetRes);
 			

@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.config.Proxy;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -35,17 +36,21 @@ public class ViaProxyTest extends TestCase {
 
 	@Before
 	public void setUp() throws Exception {
-		HttpRouter proxy = new HttpRouter();
+		HttpRouter proxyRouter = new HttpRouter();
 		
-		proxy.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
+		proxyRouter.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 		
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", "80"));
 		
 		Configuration config = new Configuration();
-		config.setUseProxy(true);
-		config.setProxyHost("localhost");
-		config.setProxyPort("3128");
+		
+		Proxy proxy = new Proxy();
+		proxy.setUseProxy(true);
+		proxy.setProxyHost("localhost");
+		proxy.setProxyPort(3128);
+		
+		config.setProxy(proxy);
 		
 		router.getConfigurationManager().setConfiguration(config);
 	}

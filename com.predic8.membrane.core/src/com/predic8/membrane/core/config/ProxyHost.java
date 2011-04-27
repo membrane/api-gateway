@@ -17,6 +17,14 @@ package com.predic8.membrane.core.config;
 
 public class ProxyHost extends CharactersElement {
 
+	public ProxyHost() {
+		
+	}
+	
+	public ProxyHost(String value) {
+		super(value);
+	}
+
 	public static final String ELEMENT_NAME = "proxy-host";
 	
 	@Override

@@ -70,7 +70,6 @@ public class Http10Test extends TestCase {
 		assertTrue(response.length() > 0);
 	}
 	
-	
 
 	@Test
 	public void testMultiplePost() throws Exception {
@@ -88,6 +87,7 @@ public class Http10Test extends TestCase {
 		post.setRequestHeader("SOAPAction", "\"\"");
 		
 		for (int i = 0; i < 100; i ++) {
+			System.out.println("Iteration: " + i);
 			int status = client.executeMethod(post);
 			assertEquals(200, status);
 			String response = post.getResponseBodyAsString();

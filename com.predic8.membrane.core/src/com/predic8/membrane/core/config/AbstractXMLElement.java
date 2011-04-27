@@ -70,5 +70,9 @@ public class AbstractXMLElement implements XMLElement {
 	public void setRouter(Router router) {
 		this.router = router;
 	}
+
+	protected boolean getBoolean(XMLStreamReader token, String attr) {
+		return "true".equals(token.getAttributeValue("", attr)) ? true : false;
+	}
 	
 }

@@ -35,12 +35,9 @@ public class RegExReplaceInterceptorTest extends TestCase {
 		method.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
 		method.setRequestHeader("SOAPAction", "");
 		
-		int status = client.executeMethod(method);
-		assertTrue(200 == status);
+		assertEquals(200, client.executeMethod(method));
 		
-		byte[] bs = method.getResponseBody();
-		String content = new String(bs);
-		assertTrue(content.contains(""));
+		assertTrue(new String(method.getResponseBody()).contains("Membrane RegEx Replacement Is Cool"));
 	}
 	
 }
