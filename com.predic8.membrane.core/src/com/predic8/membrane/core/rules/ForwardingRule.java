@@ -27,17 +27,17 @@ public class ForwardingRule extends AbstractRule {
 	public static final String ELEMENT_NAME = "forwarding-rule";
 
 	private String targetHost;
-	private String targetPort;
+	private int targetPort;
 
 	public ForwardingRule() {
 		
 	}
 
-	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, String targetPort) {
+	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, int targetPort) {
 		this(ruleKey, targetHost, targetPort, false, false);
 	}
 
-	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, String targetPort, boolean inboundTLS, boolean outboundTLS) {
+	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, int targetPort, boolean inboundTLS, boolean outboundTLS) {
 		this.key = ruleKey;
 		this.targetHost = targetHost;
 		this.targetPort = targetPort;
@@ -54,15 +54,11 @@ public class ForwardingRule extends AbstractRule {
 	}
 
 	public int getTargetPort() {
-		return Integer.parseInt(targetPort);
-	}
-
-	public void setTargetPort(String targetPort) {
-		this.targetPort = targetPort;
+		return targetPort;
 	}
 
 	public void setTargetPort(int targetPort) {
-		this.targetPort = Integer.toString(targetPort);
+		this.targetPort = targetPort;
 	}
 
 	@Override
@@ -78,7 +74,7 @@ public class ForwardingRule extends AbstractRule {
 		super.parseChildren(token, child);
 		
 		if (TargetPort.ELEMENT_NAME.equals(child)) {
-			this.targetPort = ((TargetPort) (new TargetPort().parse(token))).getValue();
+			this.targetPort = Integer.parseInt(((TargetPort) (new TargetPort().parse(token))).getValue());
 		} else if (TargetHost.ELEMENT_NAME.equals(child)) {
 			this.targetHost = ((TargetHost) (new TargetHost().parse(token))).getValue();
 		} 
@@ -101,7 +97,7 @@ public class ForwardingRule extends AbstractRule {
 		out.writeAttribute("host", key.getHost());
 		out.writeAttribute("method", key.getMethod());
 
-		new TargetPort(targetPort).write(out);
+		new TargetPort("" + targetPort).write(out);
 		new TargetHost(targetHost).write(out);
 		
 		if (key.isUsePathPattern()) {

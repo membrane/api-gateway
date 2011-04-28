@@ -13,6 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -23,10 +28,9 @@ import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -38,8 +42,7 @@ import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 
-
-public class ProxyRuleTest extends TestCase {
+public class ProxyRuleTest {
 
 	private Router router;
 	
@@ -53,8 +56,8 @@ public class ProxyRuleTest extends TestCase {
 		router.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 	}
 	
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		router.getTransport().closeAll();
 	}
 	
@@ -65,6 +68,7 @@ public class ProxyRuleTest extends TestCase {
 		assertEquals(200, client.executeMethod(get));
 	}
 	
+	@Test
 	public void testWriteRuleToByteBuffer() throws Exception {
 		rule1 = new ProxyRule(new ProxyRuleKey(8888));
 		rule1.setName("Rule 1");
@@ -79,6 +83,7 @@ public class ProxyRuleTest extends TestCase {
 		buffer = os.toByteArray();
 	}
 	
+	@Test
 	public void testReadRuleFromByteBuffer() throws Exception {
 		ProxyRule rule2 = new ProxyRule();
 		rule2.setRouter(router);

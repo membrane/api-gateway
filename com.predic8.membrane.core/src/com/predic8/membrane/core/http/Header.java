@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import org.apache.commons.logging.Log;
@@ -27,46 +28,43 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
-
 public class Header {
 
 	// Header field names
-	
-	public static final String TRANSFER_ENCODING = "Transfer-Encoding";
-	
-	public static final String CONTENT_ENCODING = "Content-Encoding";
-	
-	public static final String CONTENT_LENGTH = "Content-Length";
-	
-	public static final String CONTENT_TYPE = "Content-Type";
-	
-	public static final String CONNECTION = "Connection";
-	
-	public static final String HOST = "Host";
-	
-	public static final String EXPECT = "Expect";
-	
-	public static final String X_FORWARDED_FOR = "X-Forwarded-For";
-	
-	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
-	
-	// Header field values
-	
-	public static final String CHUNKED = "chunked";
-	
-	
-	private Log log = LogFactory.getLog(Header.class.getName());
-	
-	private Vector<HeaderField> fields = new Vector<HeaderField>();
 
+	public static final String TRANSFER_ENCODING = "Transfer-Encoding";
+
+	public static final String CONTENT_ENCODING = "Content-Encoding";
+
+	public static final String CONTENT_LENGTH = "Content-Length";
+
+	public static final String CONTENT_TYPE = "Content-Type";
+
+	public static final String CONNECTION = "Connection";
+
+	public static final String HOST = "Host";
+
+	public static final String EXPECT = "Expect";
+
+	public static final String X_FORWARDED_FOR = "X-Forwarded-For";
+
+	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
+
+	// Header field values
+
+	public static final String CHUNKED = "chunked";
+
+	private Log log = LogFactory.getLog(Header.class.getName());
+
+	private Vector<HeaderField> fields = new Vector<HeaderField>();
 
 	public Header() {
 	}
 
 	public Header(InputStream in, StringBuffer rawMessage) throws IOException, EndOfStreamException {
 		String line;
-		
-		while ((line = HttpUtil.readLine(in)) != null && line.length()>0) {
+
+		while ((line = HttpUtil.readLine(in)).length() > 0) {
 			try {
 				addLineToRawMessage(rawMessage, line);
 
@@ -89,52 +87,46 @@ public class Header {
 	}
 
 	public void add(String key, String val) {
-		fields.add(new HeaderField(key,val));
+		fields.add(new HeaderField(key, val));
 	}
 
 	public void add(HeaderField field) {
 		fields.add(field);
 	}
-	
+
 	public void remove(HeaderField field) {
 		fields.remove(field);
 	}
-	
+
 	public void removeFields(String name) {
-		ArrayList<HeaderField> deleteValues = new ArrayList<HeaderField>();
-		for (HeaderField field: fields) {
-			if(field.getHeaderName().equals(new HeaderName(name)))
+		List<HeaderField> deleteValues = new ArrayList<HeaderField>();
+		for (HeaderField field : fields) {
+			if (field.getHeaderName().equals(new HeaderName(name)))
 				deleteValues.add(field);
 		}
 		fields.removeAll(deleteValues);
 	}
-	
-	public Vector<HeaderField> getValues(HeaderName headerName)
-	{
-		Vector<HeaderField> res = new Vector<HeaderField>();
+
+	public List<HeaderField> getValues(HeaderName headerName) {
+		List<HeaderField> res = new ArrayList<HeaderField>();
 		for (HeaderField headerField : fields) {
-			if(headerField.getHeaderName().equals(headerName))
+			if (headerField.getHeaderName().equals(headerName))
 				res.add(headerField);
 		}
 		return res;
 	}
-	public String getFirstValue(String name){
-		return getFirstValue(new HeaderName(name));
-	}
-	
-	
-	public String getFirstValue(HeaderName name)
-	{
+
+	public String getFirstValue(String name) {
+		HeaderName nameToFind = new HeaderName(name); 
 		for (HeaderField field : fields) {
-			if(field.getHeaderName().equals(name))
+			if (field.getHeaderName().equals(nameToFind))
 				return field.getValue();
 		}
 		return null;
 	}
 
-	public Object[] getAllHeaderFields()
-	{
-		return  fields.toArray();
+	public Object[] getAllHeaderFields() {
+		return fields.toArray();
 	}
 
 	public void write(OutputStream out) throws IOException {
@@ -147,69 +139,70 @@ public class Header {
 		out.write(buffer.toString().getBytes());
 	}
 
-	//Only change the header by once.
+	// Only change the header by once.
 	public HeaderField setValue(String name, String value) {
 		HeaderName headerName = new HeaderName(name);
 		for (HeaderField field : fields) {
-			if(field.getHeaderName().equals(headerName)){
+			if (field.getHeaderName().equals(headerName)) {
 				field.setValue(value);
 				return field;
 			}
 		}
-		HeaderField newField = new HeaderField(headerName,value);
+		HeaderField newField = new HeaderField(headerName, value);
 		fields.add(newField);
 		return newField;
 	}
 
 	public void setHost(String value) {
-		setValue(HOST, value); 
+		setValue(HOST, value);
 	}
-	
+
 	public void setContentLength(int length) {
 		setValue(CONTENT_LENGTH, "" + length);
 	}
-	
+
 	public void setProxyAutorization(String value) {
-		setValue(PROXY_AUTHORIZATION, value); 
+		setValue(PROXY_AUTHORIZATION, value);
 	}
-	
+
 	public boolean isChunked() {
 		return CHUNKED.equals(getFirstValue(TRANSFER_ENCODING));
 	}
-	
+
 	public int getContentLength() {
 		if (!hasContentLength())
 			return -1;
 		return Integer.parseInt(getFirstValue(CONTENT_LENGTH));
 	}
-	
+
 	public String getContentType() {
 		return getFirstValue(CONTENT_TYPE);
 	}
+
 	public String getConnection() {
 		return getFirstValue(CONNECTION);
 	}
-	
+
 	public void setConnection(String connection) {
 		add(CONNECTION, connection);
 	}
-	
+
 	public void setContentType(String value) {
 		add(CONTENT_TYPE, value);
 	}
-	
+
 	public boolean hasContentLength() {
-		return getFirstValue(CONTENT_LENGTH)!= null;
+		return getFirstValue(CONTENT_LENGTH) != null;
 	}
-	
+
 	public String getHost() {
 		return getFirstValue(HOST);
 	}
-		
+
 	public boolean is100ContinueExpected() {
 		return "100-continue".equalsIgnoreCase(getFirstValue(EXPECT));
 	}
-	
+
 	@Override
 	public String toString() {
 		StringBuffer res = new StringBuffer();
@@ -222,7 +215,7 @@ public class Header {
 	public void setXForwardedFor(String value) {
 		add(X_FORWARDED_FOR, value);
 	}
-	
+
 	public String getXForwardedFor() {
 		return getFirstValue(X_FORWARDED_FOR);
 	}
@@ -230,6 +223,5 @@ public class Header {
 	public String getContentEncoding() {
 		return getFirstValue(CONTENT_ENCODING);
 	}
-	
-	
+
 }

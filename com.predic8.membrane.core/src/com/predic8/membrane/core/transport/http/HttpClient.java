@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.Proxy;
 import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -34,9 +35,11 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class HttpClient {
 
+	private static final int TIME_BETWEEN_TRIES = 250;
+
 	private static Log log = LogFactory.getLog(HttpClient.class.getName());
 
-	private ConnectionManager conManager = new ConnectionManager();
+	private ConnectionManager conMgr = new ConnectionManager();
 	
 	private static final int MAX_TRIES = 5;
 
@@ -58,24 +61,42 @@ public class HttpClient {
 		return proxy.isUseProxy();
 	}
 	
+	private void setRequestURI(Request req, String dest) throws MalformedURLException {
+		if (isUseProxy() || req.isCONNECTRequest())
+			req.setUri(dest);
+		else
+			req.setUri(HttpUtil.getPathAndQueryString(dest));
+	}
+	
+	private void setHostAndPort(boolean connect, String dest) throws MalformedURLException {
+		if (isUseProxy()) {
+			port = proxy.getProxyPort();
+			host = proxy.getProxyHost();
+			return;
+		}
+		
+		if (connect) {
+			HostColonPort hcp = new HostColonPort(dest);
+			port = hcp.port;
+			host = hcp.host;
+			return;
+		} 
+		
+		URL destination = new URL(dest);
+		port = HttpUtil.getPort(destination);
+		host = destination.getHost();
+		
+	}
+	
 	private void init(HttpExchange exc, int destIndex) throws UnknownHostException, IOException, MalformedURLException {
 		String dest = exc.getDestinations().get(destIndex);
 		
-		if (isUseProxy()) {
-			exc.getRequest().setUri(dest);
-			if (proxy.isUseAuthentication()) {
-				exc.getRequest().getHeader().setProxyAutorization(HttpUtil.getCredentials(proxy.getProxyUsername(), proxy.getProxyPassword()));
-			}
-			
-			port = proxy.getProxyPort();
-			host = proxy.getProxyHost();
-			
-		} else {
-			URL destination = new URL(dest); //duplicate
-			exc.getRequest().setUri(HttpUtil.getPathAndQueryString(dest));
-			port = HttpUtil.getPort(destination);
-			host = destination.getHost();
-		}
+		setRequestURI(exc.getRequest(), dest);
+		setHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
+		
+		if (isUseProxy() && proxy.isUseAuthentication()) {
+			exc.getRequest().getHeader().setProxyAutorization(HttpUtil.getCredentials(proxy.getProxyUsername(), proxy.getProxyPassword()));
+		} 
 		
 		tls = getOutboundTLS(exc);
 		localHost = exc.getRule().getLocalHost();
@@ -101,31 +122,29 @@ public class HttpClient {
 			try {
 				log.debug("try # " + counter + " to " + exc.getDestinations().get(counter % exc.getDestinations().size()));
 				init(exc, counter % exc.getDestinations().size());
-				con = conManager.getConnection(host, port, localHost, tls);
+				con = conMgr.getConnection(host, port, localHost, tls);
 				return doCall(exc, con);
-			} catch (ConnectException ce) {
-				exception = ce;
-				log.debug(ce);
+			} catch (ConnectException e) {
+				exception = e;
+				log.debug(e);
 				if (con != null && con.socket != null)
 					log.debug("Connection to " + con.socket.getInetAddress().getHostName() + " on port " + con.socket.getPort() + " refused.");
 			} catch (UnknownHostException e) {
-				logException(exc, counter, e);
-				closeConnection(50);
-				throw e;
+				exception = e;
 			} catch (Exception e) {
 				logException(exc, counter, e);
 				exception = e;
 			}
 			counter++;
-			closeConnection(250);
+			closeConnection(con);
+			Thread.sleep(TIME_BETWEEN_TRIES);
 		}
 		throw exception;
 	}
 
-	private void closeConnection(int mls) {
+	private void closeConnection(Connection con) {
 		try {
-			close();
-			Thread.sleep(mls);
+			close(con);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -204,9 +223,11 @@ public class HttpClient {
 		// TODO close ?
 	}
 
-	public void close() throws IOException {
-		// TODO
-		//con.close();
+	public void close(Connection con) throws IOException {
+		if (con == null)
+			return;
+		
+		con.close();
 	}
 	
 	public void setAdjustHostHeader(boolean adjustHostHeader) {

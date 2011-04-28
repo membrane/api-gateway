@@ -49,4 +49,8 @@ public class EmptyBody extends AbstractBody {
 		return null;
 	}
 	
+	@Override
+	public void write(OutputStream out) throws IOException {
+		
+	}
 }

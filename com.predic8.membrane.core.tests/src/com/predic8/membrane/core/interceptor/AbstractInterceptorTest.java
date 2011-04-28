@@ -1,16 +1,18 @@
 package com.predic8.membrane.core.interceptor;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor;
 
-import junit.framework.TestCase;
-
-
-public class AbstractInterceptorTest extends TestCase{
+public class AbstractInterceptorTest {
 
 	
 	private Interceptor i100;
@@ -21,8 +23,8 @@ public class AbstractInterceptorTest extends TestCase{
 	
 	private Interceptor i400;
 	
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		i100 = new SimpleURLRewriteInterceptor();
 		i100.setPriority(100);
 		
@@ -36,6 +38,7 @@ public class AbstractInterceptorTest extends TestCase{
 		i400.setPriority(400);
 	}
 
+	@Test
 	public void testSorting() throws Exception {
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
 		interceptors.add(i400);

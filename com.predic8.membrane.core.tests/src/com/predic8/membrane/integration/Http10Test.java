@@ -13,15 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import java.io.InputStream;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
 
-import junit.framework.TestCase;
+import java.io.InputStream;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,22 +33,19 @@ import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 
-
-public class Http10Test extends TestCase {
+public class Http10Test {
 
 	private static HttpRouter router;
 	
 	@Before
 	public void setUp() throws Exception {
-		
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", "80");
-		
+		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 	}
 	
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		router.getTransport().closeAll();
 	}
 	

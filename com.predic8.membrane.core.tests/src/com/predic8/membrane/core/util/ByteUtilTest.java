@@ -15,17 +15,20 @@
 
 package com.predic8.membrane.core.util;
 
+import static junit.framework.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.util.ByteUtil;
 
-public class ByteUtilTest extends TestCase {
+public class ByteUtilTest {
 
 	private static final String message1 = "This is a test message";
 	
@@ -33,23 +36,25 @@ public class ByteUtilTest extends TestCase {
 		
 	private InputStream in1, in2;
 	
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		in1 = new ByteArrayInputStream(message1.getBytes());
 		in2 = new ByteArrayInputStream(message2.getBytes());
 	}
 	
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		in1.close();
 		in2.close();
 	}
 	
+	@Test
 	public void testReadByteArray1() throws IOException {
 		byte[] readBytes = ByteUtil.readByteArray(in1, message1.length());
 		assertTrue(Arrays.equals(readBytes, message1.getBytes()));
 	}
 	
+	@Test
 	public void testReadByteArray2() throws IOException {
 		byte[] readBytes = ByteUtil.readByteArray(in2, message2.length());
 		assertTrue(Arrays.equals(readBytes, message2.getBytes()));

@@ -39,7 +39,7 @@ public class AccessControlInterceptorTest extends TestCase {
 	
 	@Override
 	protected void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", "80");
+		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 	}

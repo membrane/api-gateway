@@ -34,6 +34,7 @@ import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.transport.http.ErrorReadingStartLineException;
 
 public class HttpUtil {
 
@@ -50,66 +51,48 @@ public class HttpUtil {
 		StringBuffer line = new StringBuffer();
 		int b;
 
-		do {
-			b = in.read(); // log.debug(b);
-			if (b == -1) {
-				// return line.toString();
-				throw new EndOfStreamException("read byte -1: " + line);
-			}
+		while ((b = in.read()) != -1) {
 
 			if (b == 13) {
-				b = in.read();
-				if (b == 10) {
-					return line.toString();
-				}
+				in.read();
 				return line.toString();
 			}
 
-			if (b == 10) {
-				return line.toString();
-			}
 			line.append((char) b);
-		} while (b >= 0);
-		throw new IOException("File ends before line is complete");
+		}
+		ErrorReadingStartLineException exc = new ErrorReadingStartLineException();
+		exc.setStartLine(line.toString());
+		throw exc;
 	}
 
+	
 	public static int readChunkSize(InputStream in) throws IOException {
 		StringBuffer buffer = new StringBuffer();
 
 		int c = 0;
 		while ((c = in.read()) != -1) {
-			if (c == 0xd) {
+			if (c == 13) {
 				c = in.read();
-				if (c != 10) {
-					throw new IllegalStateException("input stream contains invalid data");
-				}
 				break;
-			} else {
-				if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
-					buffer.append((char) c);
-				}
 			}
-		}
-		String str = buffer.toString();
-		str.trim();
-		int size = 0;
-		if (str.length() > 0) {
-			try {
-				size = Integer.parseInt(str, 16);
-			} catch (NumberFormatException nfe) {
-				log.debug("failed to parse: " + str);
-				nfe.printStackTrace();
-			}
-		}
 
-		return size;
+			// ignore chunk extensions
+			if (c == ';') {
+				while ((c = in.read()) != 10)
+					;
+			}
+
+			buffer.append((char) c);
+		}
+		
+		return Integer.parseInt(buffer.toString().trim(), 16);
 	}
 
 	public static Response createErrorResponse(String message) {
 		Response response = new Response();
 		response.setStatusCode(500);
 		response.setStatusMessage(message);
-		
+
 		response.setHeader(createHeader("text/html;charset=utf-8"));
 
 		response.setBody(new Body("<html>" + message + "</html>"));
@@ -119,33 +102,33 @@ public class HttpUtil {
 	public static Response createSOAPFaultResponse(String message) {
 		Response response = new Response();
 		response.setStatusCode(500);
-		
+
 		response.setHeader(createHeader("text/xml;charset=utf-8"));
-		
+
 		Body body = new Body(getFaultSOAPBody(message));
-		
+
 		response.setBody(body);
 		return response;
 	}
-	
+
 	private static String getFaultSOAPBody(String text) {
 		StringBuffer buf = new StringBuffer();
-		
+
 		buf.append("<soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'>");
 		buf.append(Constants.CRLF);
 		buf.append("<soapenv:Body>");
 		buf.append(Constants.CRLF);
 		buf.append("<soapenv:Fault>");
-		
+
 		buf.append(Constants.CRLF);
-		
+
 		buf.append("<faultcode>soapenv:Server</faultcode>");
 		buf.append(Constants.CRLF);
 		buf.append("<faultstring>" + "Message validation failed!" + "</faultstring>");
 		buf.append(Constants.CRLF);
-		
+
 		buf.append("<detail>" + text + "</detail>");
-		
+
 		buf.append(Constants.CRLF);
 		buf.append("</soapenv:Fault>");
 		buf.append(Constants.CRLF);
@@ -154,7 +137,7 @@ public class HttpUtil {
 		buf.append("</soapenv:Envelope>");
 		return buf.toString();
 	}
-	
+
 	private static Header createHeader(String contentType) {
 		Header header = new Header();
 		header.setContentType(contentType);
@@ -163,7 +146,7 @@ public class HttpUtil {
 		header.add("Connection", "close");
 		return header;
 	}
-	
+
 	public static List<Chunk> readChunks(InputStream in) throws IOException {
 		List<Chunk> chunks = new ArrayList<Chunk>();
 		int chunkSize;
@@ -183,18 +166,18 @@ public class HttpUtil {
 
 	public static String getPathAndQueryString(String dest) throws MalformedURLException {
 		URL url = new URL(dest);
-		
+
 		String uri = url.getPath();
 		if (url.getQuery() != null) {
 			return uri + "?" + url.getQuery();
 		}
 		return uri;
 	}
-	
+
 	public static int getPort(String hostAndPort) {
 		return Integer.parseInt(hostAndPort.split(":")[1]);
 	}
-	
+
 	public static int getPort(URL url) throws MalformedURLException {
 		if (url.getPort() == -1) {
 			log.debug("URL Port is not set. Default target port 80 will be used.");

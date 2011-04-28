@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.interceptor.rewrite;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,24 +10,23 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-
-import junit.framework.TestCase;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
-
-public class SimpleURLRewriteInterceptorIntegrationTest extends TestCase {
+public class SimpleURLRewriteInterceptorIntegrationTest {
 
 	private static HttpRouter router;
 
 	private SimpleURLRewriteInterceptor  interceptor; 
 	
-	@Override
-	protected void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", "80");
+	@Before
+	public void setUp() throws Exception {
+		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 		
@@ -37,8 +38,8 @@ public class SimpleURLRewriteInterceptorIntegrationTest extends TestCase {
 		router.getTransport().getInterceptors().add(0, interceptor);
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		router.getTransport().closeAll();
 	}
 

@@ -87,7 +87,6 @@ public class HttpResendThread extends AbstractHttpThread {
 	private void makeClientCall() throws Exception, IOException {
 		targetRes = client.call(exchange);
 		targetRes.readBody();
-		client.close();
 	}
 
 }

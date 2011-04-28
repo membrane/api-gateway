@@ -13,24 +13,23 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import static org.junit.Assert.assertFalse;
+
 import java.net.URL;
 import java.util.List;
 
-import junit.framework.TestCase;
-
-public class CoreActivatorTest extends TestCase {
+import org.junit.Test;
+public class CoreActivatorTest {
 
 	CoreActivator activator = new CoreActivator();
 	
-	@Override
-	protected void setUp() throws Exception {
-		
-		super.setUp();
-	}
-	
+	@Test
 	public void testGetJarUrls() throws Exception {
-		
 		List<URL> urls = ClassloaderUtil.getJarUrls("lib");
+		
+		assertFalse(urls == null);
+		assertFalse(urls.isEmpty());
+		
 		for (URL url : urls) {
 			System.out.println(url);
 		}

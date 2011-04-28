@@ -200,7 +200,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 			getRuleManager().addRuleIfNew(rule);
 		}
 		((ForwardingRule) rule).setTargetHost(targetComposite.getTargetGroup().getTargetHost());
-		((ForwardingRule) rule).setTargetPort(targetComposite.getTargetGroup().getTargetPort());
+		((ForwardingRule) rule).setTargetPort(Integer.parseInt(targetComposite.getTargetGroup().getTargetPort()));
 		rule.setOutboundTLS(targetComposite.getSecureConnection());
 		rule.setInboundTLS(ruleKeyComposite.getSecureConnection());
 		rule.setBlockRequest(actionsComposite.isRequestBlocked());

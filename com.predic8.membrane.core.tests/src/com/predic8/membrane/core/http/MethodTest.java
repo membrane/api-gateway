@@ -1,26 +1,30 @@
 package com.predic8.membrane.core.http;
 
-import junit.framework.TestCase;
+import static junit.framework.Assert.assertTrue;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.DeleteMethod;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 
-public class MethodTest extends TestCase {
+public class MethodTest {
 
 	private HttpRouter router;
 	
-	@Override
-	protected void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 4000), "oio.de", "80");
+	@Before
+	public void setUp() throws Exception {
+		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 4000), "oio.de", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 	}
 	
+	@Test
 	public void testDELETE() throws Exception {
 		HttpClient client = new HttpClient();
 		
@@ -30,8 +34,8 @@ public class MethodTest extends TestCase {
 		assertTrue(status < 400);
 	}
 		
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		router.getTransport().closeAll();
 	}
 

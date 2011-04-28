@@ -1,5 +1,9 @@
 package com.predic8.membrane.core.interceptor;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+
 import java.util.regex.Pattern;
 
 import javax.xml.namespace.QName;
@@ -9,8 +13,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-import junit.framework.TestCase;
-
+import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.HttpExchange;
@@ -20,9 +23,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
-
-
-public class WSDLInterceptorTest extends TestCase {
+public class WSDLInterceptorTest {
 	
 	private HttpExchange exc;
 	
@@ -30,8 +31,8 @@ public class WSDLInterceptorTest extends TestCase {
 	
 	private byte[] bodyContent;
 	
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		bodyContent = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/blz-service.wsdl"));
 		
 		exc = new HttpExchange();
@@ -108,7 +109,7 @@ public class WSDLInterceptorTest extends TestCase {
 	}
 	
 	private Rule getRule() {		
-		return new ForwardingRule(new ForwardingRuleKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", "80");
+		return new ForwardingRule(new ForwardingRuleKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
 	}
 
 

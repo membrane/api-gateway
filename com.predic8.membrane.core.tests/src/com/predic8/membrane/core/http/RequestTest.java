@@ -14,22 +14,24 @@
 
 package com.predic8.membrane.core.http;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import junit.framework.TestCase;
-
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
-
-public class RequestTest extends TestCase {
+public class RequestTest {
 
 	private static String httpHeader = "POST /axis/services/version HTTP/1.1" + Constants.CRLF
 			+ "Content-Type: text/plain;charset=utf-8" + Constants.CRLF
@@ -57,16 +59,15 @@ public class RequestTest extends TestCase {
 	
 	private InputStream tempIn;
 	
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		in1 = new ByteArrayInputStream(requestLine.getBytes());
 		in2 = getClass().getClassLoader().getResourceAsStream("request-post.msg");
 		inChunkedSoap = getClass().getClassLoader().getResourceAsStream("request-chunked-soap.msg");
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		if (in1 != null)
 			in1.close();
 		

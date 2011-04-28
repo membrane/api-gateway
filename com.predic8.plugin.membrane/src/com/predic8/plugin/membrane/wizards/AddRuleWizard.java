@@ -64,7 +64,7 @@ public class AddRuleWizard extends Wizard {
 	void createForwardingRule(ForwardingRuleKey ruleKey) throws IOException {
 		ForwardingRule rule = new ForwardingRule();
 		rule.setTargetHost(targetHostConfigPage.getTargetHost());
-		rule.setTargetPort(targetHostConfigPage.getTargetPort());
+		rule.setTargetPort(Integer.parseInt(targetHostConfigPage.getTargetPort()));
 		rule.setKey(ruleKey);
 		rule.setInboundTLS(advancedRuleConfigPage.getSecureConnection());
 		rule.setOutboundTLS(targetHostConfigPage.getSecureConnection());

@@ -38,8 +38,15 @@ public class Response extends Message {
 
 	@Override
 	public String getStartLine() {
-		return "HTTP/" + version + " " + statusCode + " " + statusMessage
-				+ Constants.CRLF;
+		StringBuffer buf = new StringBuffer();
+		buf.append("HTTP/");
+		buf.append(version);
+		buf.append(" ");
+		buf.append(statusCode);
+		buf.append(" ");
+		buf.append(statusMessage);
+		buf.append(Constants.CRLF);
+		return buf.toString();
 	}
 
 	public int getStatusCode() {

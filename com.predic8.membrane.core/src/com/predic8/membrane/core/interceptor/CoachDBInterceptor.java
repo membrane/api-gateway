@@ -157,7 +157,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 	private Rule getRule() {
 		if (rule == null) {
-			rule = new ForwardingRule(new ForwardingRuleKey("localhost", Request.METHOD_POST, ".*", 4100), targetHost, "" + targetPort);
+			rule = new ForwardingRule(new ForwardingRuleKey("localhost", Request.METHOD_POST, ".*", 4100), targetHost, targetPort);
 		}
 		return rule;
 	}

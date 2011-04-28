@@ -25,8 +25,8 @@ package com.predic8.membrane.core.http;
  * 
  */
 public class HeaderName{
-	String name;
 	
+	String name;
 	
 	public HeaderName(String name) {
 		this.name = name;
@@ -36,20 +36,20 @@ public class HeaderName{
 	 * @param headerName
 	 */
 	public HeaderName(HeaderName headerName) {
-		
 		name=headerName.name;
 	}
 
 	public boolean equals(Object obj) {
 		if(!(obj instanceof HeaderName))
 			return false;
-		return name.equalsIgnoreCase(((HeaderName)obj).toString());
 		
+		return name.equalsIgnoreCase(obj.toString());
 	}
+	
 	public int hashCode() {
-		
 		return name.toLowerCase().hashCode();
 	}
+	
 	public String toString() {
 		return name;
 	}

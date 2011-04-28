@@ -13,17 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
@@ -37,7 +39,7 @@ import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 
-public class LoadBalancingInterceptorTest extends TestCase {
+public class LoadBalancingInterceptorTest {
 
 	private DummyWebServiceInterceptor mockInterceptor1;
 
@@ -58,18 +60,18 @@ public class LoadBalancingInterceptorTest extends TestCase {
 
 	private HttpRouter balancer;
 
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 
 		service1 = new HttpRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		service1.getTransport().getInterceptors().add(mockInterceptor1);
-		service1.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 2000), "thomas-bayer.com", "80"));
+		service1.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 2000), "thomas-bayer.com", 80));
 
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		service2.getTransport().getInterceptors().add(mockInterceptor2);
-		service2.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", "80"));
+		service2.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", 80));
 
 		balancingInterceptor = new LoadBalancingInterceptor();
 		List<String> endpoints = new ArrayList<String>();
@@ -78,28 +80,23 @@ public class LoadBalancingInterceptorTest extends TestCase {
 		balancingInterceptor.setEndpoints(endpoints);
 
 		balancer = new HttpRouter();
-		balancer.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 7000), "thomas-bayer.com", "80"));
+		balancer.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 7000), "thomas-bayer.com", 80));
 		balancer.getTransport().getInterceptors().add(balancingInterceptor);
 
 		roundRobinStrategy = new RoundRobinStrategy();
 		byThreadStrategy = new ByThreadStrategy();
-
-		super.setUp();
-
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		service1.getTransport().closeAll();
 		service2.getTransport().closeAll();
 		balancer.getTransport().closeAll();
-		super.tearDown();
 	}
 
 	@Test
 	public void testGetDestinationURLWithHostname() throws MalformedURLException {
 		doTestGetDestinationURL("http://localhost/axis2/services/BLZService?wsdl", "http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
-
 	}
 
 	@Test
@@ -150,6 +147,7 @@ public class LoadBalancingInterceptorTest extends TestCase {
 		return post;
 	}
 
+	@Test
 	public void testFailOver() throws Exception {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 

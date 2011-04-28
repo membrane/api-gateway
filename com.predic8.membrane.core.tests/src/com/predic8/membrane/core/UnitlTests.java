@@ -13,8 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
 import com.predic8.membrane.core.http.BodyTest;
 import com.predic8.membrane.core.http.HeaderTest;
@@ -30,27 +31,24 @@ import com.predic8.membrane.core.transport.http.HostColonPortTest;
 import com.predic8.membrane.core.util.ByteUtilTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
 
+@RunWith(Suite.class)
+@SuiteClasses( { 
+	HeaderTest.class,
+	BodyTest.class,
+	ByteUtilTest.class,
+	HttpUtilTest.class,
+	RequestTest.class,
+	ResponseTest.class,
+	MagicTest.class,
+	CoreActivatorTest.class,
+	WSDLInterceptorTest.class,
+	AccessControlInterceptorTest.class,
+	DispatchingInterceptorTest.class,
+	SimpleURLRewriteInterceptorTest.class,
+	AbstractInterceptorTest.class,
+	HostColonPortTest.class
 
+})
 public class UnitlTests {
 
-	public static Test suite() {
-		TestSuite suite = new TestSuite("Unit tests for com.predic8.membrane.core");
-		//$JUnit-BEGIN$
-		suite.addTestSuite(HeaderTest.class);
-		suite.addTestSuite(BodyTest.class);
-		suite.addTestSuite(ByteUtilTest.class);
-		suite.addTestSuite(HttpUtilTest.class);
-		suite.addTestSuite(RequestTest.class);
-		suite.addTestSuite(ResponseTest.class);
-		suite.addTestSuite(MagicTest.class);
-		suite.addTestSuite(CoreActivatorTest.class);
-		suite.addTestSuite(WSDLInterceptorTest.class);
-		suite.addTestSuite(AccessControlInterceptorTest.class);
-		suite.addTestSuite(DispatchingInterceptorTest.class);
-		suite.addTestSuite(SimpleURLRewriteInterceptorTest.class);
-		suite.addTestSuite(AbstractInterceptorTest.class);
-		suite.addTestSuite(HostColonPortTest.class);
-		//$JUnit-END$
-		return suite;
-	}
 }

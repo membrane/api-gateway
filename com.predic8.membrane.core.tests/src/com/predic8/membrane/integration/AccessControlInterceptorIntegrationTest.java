@@ -13,13 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import java.io.InputStream;
+import static junit.framework.Assert.assertEquals;
 
-import junit.framework.TestCase;
+import java.io.InputStream;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
@@ -27,7 +30,7 @@ import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 
-public class AccessControlInterceptorIntegrationTest extends TestCase {
+public class AccessControlInterceptorIntegrationTest {
 
 	public static final String FILE_WITH_VALID_SERVICE_PARAMS = "resources/acl-valid-service.xml";
 	
@@ -37,18 +40,19 @@ public class AccessControlInterceptorIntegrationTest extends TestCase {
 	
 	private static HttpRouter router;
 	
-	@Override
-	protected void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", "80");
+	@Before
+	public void setUp() throws Exception {
+		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 	}
 	
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		router.getTransport().closeAll();
 	}
 	
+	@Test
 	public void testValidServiceFile() throws Exception {
 		setInterceptor(FILE_WITH_VALID_SERVICE_PARAMS);
 		
@@ -59,6 +63,7 @@ public class AccessControlInterceptorIntegrationTest extends TestCase {
 		
 	}
 	
+	@Test
 	public void testPathMismatchFile() throws Exception {
 		setInterceptor(FILE_WITH_PATH_MISMATCH);
 		HttpClient client = new HttpClient();
@@ -67,6 +72,7 @@ public class AccessControlInterceptorIntegrationTest extends TestCase {
 		assertEquals(403, client.executeMethod(post));
 	}
 	
+	@Test
 	public void testClientsMismatchFile() throws Exception {
 		setInterceptor(FILE_WITH_CLIENT_MISMATCH);
 		HttpClient client = new HttpClient();
@@ -80,7 +86,6 @@ public class AccessControlInterceptorIntegrationTest extends TestCase {
 		interceptor.setAclFilename(fileName);
 		router.getTransport().getInterceptors().add(interceptor);
 	}
-	
 	
 	private PostMethod getBLZRequestMethod() {
 		PostMethod post = new PostMethod("http://localhost:8000/axis2/services/BLZService");

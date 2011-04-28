@@ -15,20 +15,23 @@
 
 package com.predic8.membrane.core.http;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import junit.framework.TestCase;
-
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
-public class ResponseTest extends TestCase {
+public class ResponseTest {
 
 	private Response res1;
 	
@@ -46,8 +49,8 @@ public class ResponseTest extends TestCase {
 	
 	private InputStream tempIn;
 	
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		in1 = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-unchunked-html.msg");
 		in2 = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-unchunked-image.msg");
 		in3 = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-chunked-html.msg");
@@ -57,8 +60,8 @@ public class ResponseTest extends TestCase {
 		res3 = new Response();
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		if (in1 != null) {
 			in1.close();
 		}
@@ -78,18 +81,21 @@ public class ResponseTest extends TestCase {
 			tempIn.close();
 	}
 	
+	@Test
 	public void testParseStartLine1() throws IOException, EndOfStreamException {
 		res1.parseStartLine(in1);
 		assertEquals(200, res1.getStatusCode());
 		assertEquals("1.1", res1.getVersion());
 	}
 	
+	@Test
 	public void testParseStartLine2() throws IOException, EndOfStreamException {
 		res2.parseStartLine(in2);
 		assertEquals(200, res2.getStatusCode());
 		assertEquals("1.1", res2.getVersion());
 	}
 	
+	@Test
 	public void testParseStartLine3() throws IOException, EndOfStreamException {
 		res3.parseStartLine(in3);
 		assertEquals(200, res3.getStatusCode());

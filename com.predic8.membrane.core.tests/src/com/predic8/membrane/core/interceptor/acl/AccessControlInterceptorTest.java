@@ -13,27 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
+
+import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.MessageUtil;
-
-import junit.framework.TestCase;
-
-public class AccessControlInterceptorTest extends TestCase {
+public class AccessControlInterceptorTest {
 
 	private AccessControlInterceptor interceptor;
 	
 	private Exchange exc;
 	
-	@Override
-	protected void setUp() throws Exception {
-		
+	@Before
+	public void setUp() throws Exception {
 		exc = new HttpExchange();
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
-		
 		
 		interceptor = new AccessControlInterceptor();
 		interceptor.setAclFilename("resources/acl.xml");

@@ -1,8 +1,11 @@
 package com.predic8.membrane.core.interceptor;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.io.InputStreamReader;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Request;
@@ -10,7 +13,7 @@ import com.predic8.membrane.core.interceptor.schemavalidation.ValidateSOAPMsgInt
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.TextUtil;
 
-public class ValidateSOAPMsgInterceptorTest extends TestCase {
+public class ValidateSOAPMsgInterceptorTest {
 
 	private ValidateSOAPMsgInterceptor interceptorForBlz;
 
@@ -24,8 +27,8 @@ public class ValidateSOAPMsgInterceptorTest extends TestCase {
 	
 	public static final String BLZ_SERVICE_WSDL = "http://www.thomas-bayer.com/axis2/services/BLZService?wsdl";
 	
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		request = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		exc = new HttpExchange();
 		
@@ -33,18 +36,22 @@ public class ValidateSOAPMsgInterceptorTest extends TestCase {
 		interceptorForArticle = createValidatorInterceptor(ARTICLE_SERVICE_WSDL);
 	}
 
+	@Test
 	public void testHandleRequestValidBLZMessage() throws Exception {
 		assertEquals(Outcome.CONTINUE, getOutcome(interceptorForBlz, "/getBank.xml"));
 	}
 
+	@Test
 	public void testHandleRequestInvalidBLZMessage() throws Exception {
 		assertEquals(Outcome.ABORT, getOutcome(interceptorForBlz, "/getBankInvalid.xml"));		
 	}
 	
+	@Test
 	public void testHandleRequestValidArticleMessage() throws Exception {
 		assertEquals(Outcome.CONTINUE, getOutcome(interceptorForArticle, "/articleRequest.xml"));
 	}
 	
+	@Test
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
 		assertEquals(Outcome.ABORT, getOutcome(interceptorForArticle, "/articleRequestInvalid.xml"));
 	}

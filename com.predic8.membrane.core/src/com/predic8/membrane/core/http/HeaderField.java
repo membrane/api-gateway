@@ -62,6 +62,11 @@ public class HeaderField {
 	}
 	
 	public String toString(){
-		return headerName.name + ": " + value + Constants.CRLF;
+		StringBuffer buf = new StringBuffer();
+		buf.append(headerName.name);
+		buf.append(": ");
+		buf.append(value);
+		buf.append(Constants.CRLF);
+		return buf.toString();
 	}
 }

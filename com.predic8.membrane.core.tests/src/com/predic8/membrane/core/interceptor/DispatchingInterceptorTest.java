@@ -1,8 +1,11 @@
 package com.predic8.membrane.core.interceptor;
 
+import static junit.framework.Assert.assertEquals;
+
 import java.net.URL;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.rules.ForwardingRule;
@@ -10,22 +13,19 @@ import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.util.MessageUtil;
-
-public class DispatchingInterceptorTest extends TestCase {
+public class DispatchingInterceptorTest {
 
 	private DispatchingInterceptor dispatcher;
 	
 	private HttpExchange exc;
 	
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		dispatcher = new DispatchingInterceptor();
-		
 		exc = new HttpExchange();
-		
-		super.setUp();
 	}
 	
+	@Test
 	public void testForwardingRule() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
 		exc.setRule(getForwardingRule());
@@ -38,6 +38,7 @@ public class DispatchingInterceptorTest extends TestCase {
 		assertEquals("/axis2/services/BLZService?wsdl", url.getFile());
 	}
 	
+	@Test
 	public void testProxyRuleHttp() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl"));
 		exc.setRule(getProxyrRule());
@@ -51,12 +52,13 @@ public class DispatchingInterceptorTest extends TestCase {
 		assertEquals("/axis2/services/BLZService?wsdl", url.getFile());
 	}
 	
+	@Test
 	public void testProxyRuleHttps() throws Exception {
 		
 	}
 	
 	private ForwardingRule getForwardingRule() {		
-		return new ForwardingRule(new ForwardingRuleKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", "80");
+		return new ForwardingRule(new ForwardingRuleKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
 	}
 	
 	private ProxyRule getProxyrRule() {

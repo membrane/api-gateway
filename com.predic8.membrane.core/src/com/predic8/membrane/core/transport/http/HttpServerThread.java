@@ -81,6 +81,8 @@ public class HttpServerThread extends AbstractHttpThread {
 			log.debug("stream closed");
 		} catch (AbortException e) {
 			log.debug("exchange aborted.");
+		} catch (ErrorReadingStartLineException e) {
+			log.warn("Client connection terminated before start line was read. Start line so far: (" + e.getStartLine() + ")");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -95,13 +97,7 @@ public class HttpServerThread extends AbstractHttpThread {
 	}
 
 	private void closeConnections() {
-		try {
-			client.close();
-		} catch (Exception e2) {
-			log.error("problem closing HTTP Client");
-			e2.printStackTrace();
-		}
-
+		
 		try {
 			if (!sourceSocket.isClosed()) {
 				if (!(sourceSocket instanceof SSLSocket))

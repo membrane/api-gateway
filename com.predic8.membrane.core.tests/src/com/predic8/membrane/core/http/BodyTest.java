@@ -13,20 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import junit.framework.TestCase;
-
-import com.predic8.membrane.core.http.AbstractBody;
-
+import org.junit.Before;
+import org.junit.Test;
 @SuppressWarnings("unused")
-public class BodyTest extends TestCase {
+public class BodyTest {
 
-	/*
-	 * @see TestCase#setUp()
-	 */	
 	private static byte[] msg0 = new byte[] { 'd', 'd', 13, 10, 13, 10 };
 	private static byte[] msg1 = new byte[] { 'd', 'd', 13, 10, 13, 10, 'f',
 			'r' };
@@ -44,7 +42,8 @@ public class BodyTest extends TestCase {
 	private static AbstractBody body1;
 	private static AbstractBody body2;
 
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() throws Exception {
 		Arrays.fill(msg2, (byte) 20);
 		body1 = new Body(new ByteArrayInputStream(msg1), msg1.length);
 		body2 = new Body(new ByteArrayInputStream(msg2), msg2.length);
@@ -73,6 +72,7 @@ public class BodyTest extends TestCase {
 //		assertEquals(10000, body2.getLength());
 //	}
 
+	@Test
 	public void testCreateBodyFromChunk() throws Exception {
 		InputStream stream = new ByteArrayInputStream(chunk.getBytes());
 		AbstractBody body = new ChunkedBody(stream);
@@ -98,12 +98,14 @@ public class BodyTest extends TestCase {
 	
 	}
 	
+	@Test
 	public void testStringConstructor() throws Exception {
 		AbstractBody body = new Body("mmebrane Monitor is Cool");
 		assertEquals(24, body.getContent().length);
 		assertEquals(24, body.getLength());
 	}
 
+//	@Test
 //	public void testReadChunkSize() throws Exception {
 //		InputStream stream = new ByteArrayInputStream(chunk.getBytes());
 //		Body body = new Body();

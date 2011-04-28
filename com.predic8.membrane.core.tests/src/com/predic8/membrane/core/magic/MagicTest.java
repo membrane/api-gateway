@@ -13,16 +13,17 @@
 	   limitations under the License. */
 package com.predic8.membrane.core.magic;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
 import com.predic8.membrane.core.ws.magic.Magic;
 
-public class MagicTest extends TestCase {
+public class MagicTest {
 
 	Magic magic = new Magic();
 
+	@Test
 	public void testRelocator() throws Exception {
-//		
+		
 //		List<Technology> res = magic.scan(this.getClass().getClassLoader().getResourceAsStream("namesservice.wsdl"));
 //		for (Technology tech : res) {
 //			System.out.println(tech.name);

@@ -1,11 +1,11 @@
 package com.predic8.membrane.core.transport.http;
 
-import junit.framework.TestCase;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.fail;
 
 import org.junit.Test;
 
-
-public class HostColonPortTest extends TestCase {
+public class HostColonPortTest {
 
 	@Test
 	public void testIllegalInput() throws Exception {
