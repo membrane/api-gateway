@@ -16,8 +16,11 @@ package com.predic8.membrane.integration;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertFalse;
+import static com.predic8.membrane.core.util.TextUtil.*;
 
 import java.io.InputStream;
+
+import javax.swing.plaf.TextUI;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
@@ -61,7 +64,7 @@ public class Http11Test {
 		int status = client.executeMethod(post);
 		assertEquals(200, status);
 		assertNotNull(post.getResponseBodyAsString());
-		assertFalse(post.getResponseBodyAsString().isEmpty());
+		assertFalse(isNullOrEmpty(post.getResponseBodyAsString()));
 		System.out.println(post.getResponseBodyAsString());
 	}
 	
