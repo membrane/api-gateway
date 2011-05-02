@@ -18,7 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-public class Proxy extends AbstractXMLElement {
+public class Proxy extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "proxy";
 

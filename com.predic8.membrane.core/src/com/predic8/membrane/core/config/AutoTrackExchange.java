@@ -18,7 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-public class AutoTrackExchange extends AbstractXMLElement {
+public class AutoTrackExchange extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "autotrackexchange";
 

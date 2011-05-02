@@ -17,9 +17,9 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.config.AbstractXMLElement;
+import com.predic8.membrane.core.config.AbstractConfigElement;
 
-public abstract class Store extends AbstractXMLElement {
+public abstract class Store extends AbstractConfigElement {
 
 	protected String location;
 	

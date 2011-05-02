@@ -19,7 +19,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 
-public class Path extends AbstractXMLElement {
+public class Path extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "path";
 	

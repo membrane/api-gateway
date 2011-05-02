@@ -7,12 +7,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.config.AbstractXMLElement;
+import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.Interceptors;
 import com.predic8.membrane.core.config.LocalHost;
 import com.predic8.membrane.core.interceptor.Interceptor;
 
-public abstract class AbstractRule extends AbstractXMLElement implements Rule {
+public abstract class AbstractRule extends AbstractConfigElement implements Rule {
 
 	protected String name = "";
 	

@@ -23,7 +23,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Configuration;
 
-public class GUI extends AbstractXMLElement {
+public class GUI extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "gui";
 	

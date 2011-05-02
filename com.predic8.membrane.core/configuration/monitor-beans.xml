@@ -163,8 +163,11 @@
     <property name="displayName" value="roundRobinBalancer" />
     <property name="endpoints">
       <list>
+      <!-- 
         <value>www.thomas-bayer.com:80</value>
-        <value>www.thomas-bayer.com</value>
+        <value>www.thomas-bayer.com</value>-->
+        <value>localhost:2010</value>
+        <value>localhost:2011</value>
       </list>
     </property>
     <property name="dispatchingStrategy">
@@ -187,7 +190,12 @@
       </bean>
     </property>
   </bean>
-
+  <bean id="statisticsCSVInterceptor"
+							class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor">
+							<property name="fileName" value="C:\temp\exc-statistics.csv" />
+							<property name="displayName" value="Statistics CSV Logger" />
+  </bean>
+						
   <bean id="urlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor">
     <property name="displayName" value="Simple URL Rewriter" />
     <property name="mapping">

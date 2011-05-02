@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import com.predic8.membrane.core.config.AbstractXMLElement;
+import com.predic8.membrane.core.config.AbstractConfigElement;
 
-public class Clients extends AbstractXMLElement {
+public class Clients extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "clients";
 	

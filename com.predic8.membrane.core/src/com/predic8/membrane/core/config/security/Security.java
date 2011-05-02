@@ -20,9 +20,9 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Configuration;
-import com.predic8.membrane.core.config.AbstractXMLElement;
+import com.predic8.membrane.core.config.AbstractConfigElement;
 
-public class Security extends AbstractXMLElement {
+public class Security extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "security";
 

@@ -44,20 +44,8 @@ public class ConfigurationManager {
 		configurationStore.write(configuration, fileName);
 	}
 
-	private void checkFileExists(String fileName) throws IOException {
-		if (fileName == null || "".equals(fileName))
-			throw new IOException("File " + fileName + " does not exists");
-
-		File file = new File(fileName);
-
-		if (!file.exists() || !file.isFile())
-			throw new IOException("File " + fileName + " does not exists");
-
-	}
 
 	public void loadConfiguration(String fileName) throws Exception {
-
-		checkFileExists(fileName);
 
 		Configuration storedConfiguration = configurationStore.read(fileName);
 

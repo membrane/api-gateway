@@ -23,7 +23,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.config.AbstractXMLElement;
+import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.Format;
 import com.predic8.membrane.core.config.GUI;
 import com.predic8.membrane.core.config.Proxy;
@@ -31,7 +31,7 @@ import com.predic8.membrane.core.config.Rules;
 import com.predic8.membrane.core.config.security.Security;
 import com.predic8.membrane.core.rules.Rule;
 
-public class Configuration extends AbstractXMLElement {
+public class Configuration extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "configuration";
 

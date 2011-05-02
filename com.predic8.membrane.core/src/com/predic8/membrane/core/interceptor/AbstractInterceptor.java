@@ -18,10 +18,10 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.config.AbstractXMLElement;
+import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
-public class AbstractInterceptor extends AbstractXMLElement implements Interceptor {
+public class AbstractInterceptor extends AbstractConfigElement implements Interceptor {
 
 	public static final String ELEMENT_NAME = "interceptor";
 	

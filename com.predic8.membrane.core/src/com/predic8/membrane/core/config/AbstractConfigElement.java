@@ -11,25 +11,21 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.acl;
 
-import java.util.regex.Pattern;
+package com.predic8.membrane.core.config;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 
-import com.predic8.membrane.core.config.AbstractConfigElement;
+import com.predic8.membrane.core.Router;
 
-public abstract class AbstractPatternElement extends AbstractConfigElement {
+public class AbstractConfigElement extends AbstractXmlElement {
 
-	protected Pattern pattern;
-	
-	public boolean matches(String str) {
-		return pattern.matcher(str).matches();
+	/**
+	 * Needed to resolve interceptor IDs into interceptor beans
+	 */
+	protected Router router;
+	 
+	public void setRouter(Router router) {
+		this.router = router;
 	}
 	
-	@Override
-	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
-		pattern = Pattern.compile(token.getText());
-	}
 }

@@ -24,7 +24,7 @@ import javax.xml.stream.XMLStreamWriter;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 
-public class Interceptors extends AbstractXMLElement {
+public class Interceptors extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "interceptors";
 

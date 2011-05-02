@@ -18,7 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-public class IndentMessage extends AbstractXMLElement {
+public class IndentMessage extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "indentMessage";
 	
