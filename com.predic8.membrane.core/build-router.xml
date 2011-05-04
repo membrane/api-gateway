@@ -67,6 +67,34 @@
 		</copy>
 	</target>
 
+	<target name="compile-mbean">
+		<mkdir dir="build/mbean/classes" />
+		<javac debug="true" target="1.5" classpathref="classpath" srcdir="src" destdir="build/mbean/classes">
+			<include name="**/RouterService*"/>
+		</javac>
+	</target>
+	
+	<target name="router-sar" depends="dist-router, compile-mbean">
+		<mkdir dir="build/sar"/>
+		<copy todir="build/sar">
+			<fileset dir="build/mbean/classes">
+				<include name="**/*"/>
+			</fileset>
+		</copy>
+		<copy todir="build/sar">
+			<fileset dir="configuration/sar">
+				<include name="**/*"/>
+			</fileset>
+		</copy>		
+		<copy todir="build/sar">
+			<fileset dir="lib">
+				<include name="**/*"/>
+			</fileset>
+		</copy>		
+		<copy file="dist/router/membrane-router-${version}/lib/membrane-router.jar" todir="build/sar" />
+		<jar destfile="build/router-service.sar" basedir="build/sar" />
+	</target>
+
 	<target name="copyResources">
 		<copy todir="build/classes">
 			<fileset dir="src/main/resources">
