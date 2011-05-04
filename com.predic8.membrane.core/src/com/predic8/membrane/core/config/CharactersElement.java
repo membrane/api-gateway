@@ -18,7 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-public abstract class CharactersElement extends AbstractConfigElement {
+public abstract class CharactersElement extends AbstractXmlElement {
 
 	protected String value;
 

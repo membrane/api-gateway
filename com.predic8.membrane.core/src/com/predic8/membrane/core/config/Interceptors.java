@@ -21,6 +21,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 
@@ -29,6 +30,10 @@ public class Interceptors extends AbstractConfigElement {
 	public static final String ELEMENT_NAME = "interceptors";
 
 	private List<Interceptor> interceptors = new ArrayList<Interceptor>();
+
+	public Interceptors(Router router) {
+		super(router);
+	}
 
 	@Override
 	protected String getElementName() {
@@ -44,7 +49,7 @@ public class Interceptors extends AbstractConfigElement {
 
 	private AbstractInterceptor readInterceptor(XMLStreamReader token)
 			throws XMLStreamException {
-		return (AbstractInterceptor) (new AbstractInterceptor()).parse(token);
+		return (AbstractInterceptor) (new AbstractInterceptor(router)).parse(token);
 	}
 
 	private Interceptor getInterceptorBId(String id) {

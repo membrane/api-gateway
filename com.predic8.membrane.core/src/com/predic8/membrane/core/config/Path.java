@@ -18,8 +18,14 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
+
 
 public class Path extends AbstractConfigElement {
+
+	public Path(Router router) {
+		super(router);
+	}
 
 	public static final String ELEMENT_NAME = "path";
 	

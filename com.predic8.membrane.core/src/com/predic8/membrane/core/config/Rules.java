@@ -21,6 +21,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
@@ -31,6 +32,10 @@ public class Rules extends AbstractConfigElement {
 
 	private Collection<Rule> rules = new ArrayList<Rule>();
 
+	public Rules(Router router) {
+		super(router);
+	}
+	
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
@@ -39,7 +44,7 @@ public class Rules extends AbstractConfigElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (ForwardingRule.ELEMENT_NAME.equals(child)) {
-			rules.add((ForwardingRule) new ForwardingRule().parse(token));
+			rules.add((ForwardingRule) new ForwardingRule(router).parse(token));
 		} else if (ProxyRule.ELEMENT_NAME.equals(child)) {
 			rules.add((ProxyRule) new ProxyRule().parse(token));
 		}

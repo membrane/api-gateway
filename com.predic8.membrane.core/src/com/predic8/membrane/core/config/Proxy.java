@@ -18,6 +18,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
+
 public class Proxy extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "proxy";
@@ -39,7 +41,9 @@ public class Proxy extends AbstractConfigElement {
 	
 	private String proxyPassword;
 
-
+	public Proxy(Router router) {
+		super(router);
+	}
 
 	@Override
 	protected String getElementName() {

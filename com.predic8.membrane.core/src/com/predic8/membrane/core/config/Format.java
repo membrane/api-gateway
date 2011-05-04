@@ -22,8 +22,13 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Router;
 
 public class Format extends AbstractConfigElement {
+
+	public Format(Router router) {
+		super(router);
+	}
 
 	public static final String ELEMENT_NAME = "format";
 
@@ -37,10 +42,10 @@ public class Format extends AbstractConfigElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (IndentMessage.ELEMENT_NAME.equals(child)) {
-			boolean value = ((IndentMessage)(new IndentMessage().parse(token))).getValue();
+			boolean value = ((IndentMessage)(new IndentMessage(router).parse(token))).getValue();
 			values.put(Configuration.INDENT_MSG, value);
 		} else if (AdjustHostHeader.ELEMENT_NAME.equals(child)) {
-			boolean value = ((AdjustHostHeader)(new AdjustHostHeader().parse(token))).getValue();
+			boolean value = ((AdjustHostHeader)(new AdjustHostHeader(router).parse(token))).getValue();
 			values.put(Configuration.ADJ_HOST_HEADER, value);
 		}
 	}
@@ -67,13 +72,13 @@ public class Format extends AbstractConfigElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 		
-		IndentMessage indentMessage = new IndentMessage();
+		IndentMessage indentMessage = new IndentMessage(router);
 		if (values.containsKey(Configuration.INDENT_MSG)) {
 			indentMessage.setValue((Boolean)values.get(Configuration.INDENT_MSG));
 		}
 		indentMessage.write(out);
 		
-		AdjustHostHeader adjustHostHeader = new AdjustHostHeader();
+		AdjustHostHeader adjustHostHeader = new AdjustHostHeader(router);
 		if (values.containsKey(Configuration.ADJ_HOST_HEADER)) {
 			adjustHostHeader.setValue((Boolean)values.get(Configuration.ADJ_HOST_HEADER));
 		}

@@ -13,12 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
+import com.predic8.membrane.core.Router;
+
 
 
 public class TrustStore extends Store {
 
 	public static final String ELEMENT_NAME = "truststore";
 
+	public TrustStore(Router router) {
+		super(router);
+	}
 
 	@Override
 	protected String getElementName() {

@@ -20,6 +20,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
 public class Security extends AbstractConfigElement {
@@ -29,7 +30,11 @@ public class Security extends AbstractConfigElement {
 	private KeyStore keyStore;
 	
 	private TrustStore trustStore;
-	
+
+	public Security(Router router) {
+		super(router);
+	}
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
@@ -60,12 +65,12 @@ public class Security extends AbstractConfigElement {
 	}
 
 	public void setValues(Map<String, Object> props) {
-		keyStore = new KeyStore();
+		keyStore = new KeyStore(router);
 		setKeyStoreLocation(props.get(Configuration.KEY_STORE_LOCATION));
 		setKeyStorePassword(props.get(Configuration.KEY_STORE_PASSWORD));
 		
 		
-		trustStore = new TrustStore();
+		trustStore = new TrustStore(router);
 		setTrustStoreLocation(props.get(Configuration.TRUST_STORE_LOCATION));
 		setTrustStorePassword(props.get(Configuration.TRUST_STORE_PASSWORD));
 		
@@ -98,11 +103,11 @@ public class Security extends AbstractConfigElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (KeyStore.ELEMENT_NAME.equals(child)) {
-			keyStore = ((KeyStore) new KeyStore().parse(token));
+			keyStore = ((KeyStore) new KeyStore(router).parse(token));
 		} 
 		
 		if (TrustStore.ELEMENT_NAME.equals(child)) {
-			trustStore = ((TrustStore) new TrustStore().parse(token));
+			trustStore = ((TrustStore) new TrustStore(router).parse(token));
 		} 
 	}
 	

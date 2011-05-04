@@ -17,6 +17,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
 public abstract class Store extends AbstractConfigElement {
@@ -25,6 +26,9 @@ public abstract class Store extends AbstractConfigElement {
 	
 	protected String password;
 	
+	public Store(Router router) {
+		super(router);
+	}
 	
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {

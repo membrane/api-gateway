@@ -21,9 +21,13 @@ public class AbstractConfigElement extends AbstractXmlElement {
 
 	/**
 	 * Needed to resolve interceptor IDs into interceptor beans
-	 */
+	 */	
 	protected Router router;
 	 
+	public AbstractConfigElement(Router router) {
+		this.router = router;
+	}
+	
 	public void setRouter(Router router) {
 		this.router = router;
 	}

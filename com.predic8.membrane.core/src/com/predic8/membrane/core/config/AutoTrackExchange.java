@@ -18,7 +18,13 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
+
 public class AutoTrackExchange extends AbstractConfigElement {
+
+	public AutoTrackExchange(Router router) {
+		super(router);
+	}
 
 	public static final String ELEMENT_NAME = "autotrackexchange";
 

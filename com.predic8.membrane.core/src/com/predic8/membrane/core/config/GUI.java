@@ -22,8 +22,14 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Router;
 
 public class GUI extends AbstractConfigElement {
+
+	public GUI(Router router) {
+		super(router);
+	}
+
 
 	public static final String ELEMENT_NAME = "gui";
 	
@@ -37,7 +43,7 @@ public class GUI extends AbstractConfigElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (AutoTrackExchange.ELEMENT_NAME.equals(child)) {
-			boolean value = ((AutoTrackExchange)new AutoTrackExchange().parse(token)).getValue();
+			boolean value = ((AutoTrackExchange) new AutoTrackExchange(router).parse(token)).getValue();
 			values.put(Configuration.TRACK_EXCHANGE, value);
 		}
 	}
@@ -56,7 +62,7 @@ public class GUI extends AbstractConfigElement {
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
-		AutoTrackExchange trackExchange = new AutoTrackExchange();
+		AutoTrackExchange trackExchange = new AutoTrackExchange(router);
 		if (values.containsKey(Configuration.TRACK_EXCHANGE)) {
 			trackExchange.setValue((Boolean)values.get(Configuration.TRACK_EXCHANGE));
 		}
