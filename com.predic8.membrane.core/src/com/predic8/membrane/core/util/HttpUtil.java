@@ -180,7 +180,6 @@ public class HttpUtil {
 
 	public static int getPort(URL url) throws MalformedURLException {
 		if (url.getPort() == -1) {
-			log.debug("URL Port is not set. Default target port 80 will be used.");
 			return 80;
 		}
 		return url.getPort();

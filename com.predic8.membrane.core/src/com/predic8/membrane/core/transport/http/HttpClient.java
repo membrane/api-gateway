@@ -119,17 +119,26 @@ public class HttpClient {
 		Exception exception = null;
 		while (counter < MAX_TRIES) {
 			Connection con = null;
+			int destIndex = counter % exc.getDestinations().size();
+			String dest = exc.getDestinations().get(destIndex);
 			try {
-				log.debug("try # " + counter + " to " + exc.getDestinations().get(counter % exc.getDestinations().size()));
-				init(exc, counter % exc.getDestinations().size());
+				log.debug("try # " + counter + " to " + dest);
+				init(exc, destIndex);
 				con = conMgr.getConnection(host, port, localHost, tls);
 				return doCall(exc, con);
 			} catch (ConnectException e) {
 				exception = e;
 				log.debug(e);
 				if (con != null && con.socket != null)
-					log.debug("Connection to " + con.socket.getInetAddress().getHostName() + " on port " + con.socket.getPort() + " refused.");
+					log.debug("Connection to " + dest + " on port " + con.socket.getPort() + " refused.");
 			} catch (UnknownHostException e) {
+				log.warn("Unknown host: " + host);
+				exception = e;
+				if (exc.getDestinations().size() < 2) {
+					break; 
+				}
+			} catch (ErrorReadingStartLineException e) {
+				log.warn("Server connection to " + dest + " terminated before start line was read. Start line so far: " + e.getStartLine());
 				exception = e;
 			} catch (Exception e) {
 				logException(exc, counter, e);
