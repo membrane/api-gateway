@@ -33,10 +33,11 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	protected String localHost;
 	
 	public AbstractRule() {
-		
+		super(null);
 	}
 	
 	public AbstractRule(RuleKey ruleKey) {
+		super(null);
 		this.key = ruleKey;
 	}
 	
@@ -126,8 +127,7 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 		if (LocalHost.ELEMENT_NAME.equals(child)) {
 			this.localHost = ((LocalHost) (new LocalHost().parse(token))).getValue();
 		} else if (Interceptors.ELEMENT_NAME.equals(child)) {
-			Interceptors interceptorsElement = new Interceptors();
-			interceptorsElement.setRouter(router);
+			Interceptors interceptorsElement = new Interceptors(router);
 			this.interceptors = ((Interceptors) (interceptorsElement.parse(token))).getInterceptors();
 		}  
 	}
@@ -148,8 +148,7 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	}
 	
 	protected void writeInterceptors(XMLStreamWriter out) throws XMLStreamException {
-		Interceptors inters = new Interceptors();
-		inters.setRouter(router);
+		Interceptors inters = new Interceptors(router);
 		inters.setInterceptors(interceptors);
 		inters.write(out);
 	}

@@ -18,11 +18,17 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
 public abstract class AbstractPatternElement extends AbstractConfigElement {
 
+
 	protected Pattern pattern;
+	
+	public AbstractPatternElement(Router router) {
+		super(router);
+	}
 	
 	public boolean matches(String str) {
 		return pattern.matcher(str).matches();

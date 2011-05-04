@@ -20,7 +20,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
 	private String requestXSLT;
 	private String responseXSLT;
-	private TransformerFactory fac = TransformerFactory.newInstance();
+	private XSLTTransformer xsltTransformer = new XSLTTransformer();
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
@@ -35,31 +35,9 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	}
 
 	private void transformMsg(Message msg, String ss) throws Exception {
-		if (!hasStylesheet(ss)) return;
-		
-		msg.setBodyContent(applyStylesheet(msg.getBodyAsStream(), getFile(ss)).getBytes("UTF-8"));
+		msg.setBodyContent(xsltTransformer.transform(ss, new StreamSource(msg.getBodyAsStream())).getBytes("UTF-8"));
 	}
 
-	private boolean hasStylesheet(String ss) {
-		return ss!=null && !"".equals(ss);
-	}
-
-	private String applyStylesheet(InputStream input, File ss)
-			throws Exception {
-		Transformer t = fac.newTransformer(new StreamSource(ss));
-		StringWriter sw = new StringWriter();
-		t.transform(new StreamSource(input),
-					new StreamResult(sw));
-		return sw.toString();
-	}
-	
-	private File getFile(String path) {
-		if ( new File(path).isAbsolute() )
-			return new File(path);
-		
-		return new File(System.getenv("MEMBRANE_HOME"), path);
-	}
-	
 	public String getRequestXSLT() {
 		return requestXSLT;
 	}

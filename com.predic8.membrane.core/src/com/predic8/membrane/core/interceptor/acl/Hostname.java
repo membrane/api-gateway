@@ -13,12 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import com.predic8.membrane.core.Router;
+
 
 
 public class Hostname extends AbstractPatternElement {
 
 	public static final String ELEMENT_NAME = "hostname";
 	
+	public Hostname(Router router) {
+		super(router);
+	}
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;

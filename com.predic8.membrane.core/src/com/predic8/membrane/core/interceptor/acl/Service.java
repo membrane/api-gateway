@@ -21,6 +21,8 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.core.Router;
+
 public class Service extends AbstractPatternElement {
 
 	public static final String ELEMENT_NAME = "service";
@@ -28,6 +30,10 @@ public class Service extends AbstractPatternElement {
 	private List<Ip> ipAddresses = new ArrayList<Ip>();
 	
 	private List<Hostname> hostNames = new ArrayList<Hostname>();
+	
+	public Service(Router router) {
+		super(router);
+	}
 	
 	@Override
 	protected String getElementName() {
@@ -37,9 +43,9 @@ public class Service extends AbstractPatternElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (Ip.ELEMENT_NAME.equals(child)) {
-			ipAddresses.add(((Ip) (new Ip()).parse(token)));
+			ipAddresses.add(((Ip) (new Ip(router)).parse(token)));
 		} else if (Hostname.ELEMENT_NAME.equals(child)) {
-			hostNames.add(((Hostname) (new Hostname()).parse(token)));
+			hostNames.add(((Hostname) (new Hostname(router)).parse(token)));
 		}
 	}
 	

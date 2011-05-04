@@ -14,9 +14,6 @@
 
 package com.predic8.membrane.core;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 
@@ -29,7 +26,7 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class ConfigurationManager {
 
-	private Configuration configuration = new Configuration();
+	private Configuration configuration;
 
 	private ConfigurationStore configurationStore;
 
@@ -47,20 +44,15 @@ public class ConfigurationManager {
 
 	public void loadConfiguration(String fileName) throws Exception {
 
-		Configuration storedConfiguration = configurationStore.read(fileName);
-
-		configuration.copyFields(storedConfiguration);
+		configuration = configurationStore.read(fileName);
 
 		setSecuritySystemProperties();
-		Collection<Rule> rules = storedConfiguration.getRules();
-		if (rules == null || rules.isEmpty())
-			return;
-
+		
 		router.getRuleManager().removeAllRules();
-		for (Rule rule : rules) {
+		
+		for (Rule rule : configuration.getRules()) {
 			getHttpTransport().openPort(rule.getKey().getPort(), rule.isInboundTLS());
 			router.getRuleManager().addRuleIfNew(rule);
-			log.debug("Added rule " + rule + " on port " + rule.getKey().getPort());
 		}
 
 	}
@@ -96,11 +88,12 @@ public class ConfigurationManager {
 	}
 
 	public Configuration getConfiguration() {
-		return configuration;
+		return configuration==null?new Configuration(router):configuration;
 	}
 
 	public void setConfiguration(Configuration configuration) {
 		this.configuration = configuration;
+		configuration.setRouter(router);
 	}
 
 	public ConfigurationStore getConfigurationStore() {
@@ -109,6 +102,7 @@ public class ConfigurationManager {
 
 	public void setConfigurationStore(ConfigurationStore configurationStore) {
 		this.configurationStore = configurationStore;
+		configurationStore.setRouter(router);
 	}
 	
 	public String getDefaultConfigurationFile() {
@@ -121,6 +115,11 @@ public class ConfigurationManager {
 
 	public void setRouter(Router router) {
 		this.router = router;
+		
+		//Fix because configurationStore can by injected befor router
+		if (configurationStore != null) {
+			configurationStore.setRouter(router);
+		}
 	}
 	
 	public void addSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {

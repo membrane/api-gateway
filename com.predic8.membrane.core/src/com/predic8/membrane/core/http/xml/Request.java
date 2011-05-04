@@ -19,6 +19,11 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.config.ProxyHost;
+import com.predic8.membrane.core.config.ProxyPassword;
+import com.predic8.membrane.core.config.ProxyPort;
+import com.predic8.membrane.core.config.ProxyUsername;
+import com.predic8.membrane.core.config.XMLElement;
 
 public class Request extends AbstractXmlElement {
 
@@ -27,6 +32,8 @@ public class Request extends AbstractXmlElement {
 	private String method;	
 	private String httpVersion;
 
+	private XMLElement uri;
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
 		method = token.getAttributeValue("", "method");
@@ -34,12 +41,21 @@ public class Request extends AbstractXmlElement {
 	}
 
 	@Override
+	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+		if (URI.ELEMENT_NAME.equals(child)) {
+			uri = new URI().parse(token);
+		} 
+	}
+	
+	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 
 		out.writeAttribute("method", method);
 		out.writeAttribute("http-version", httpVersion);
-
+		
+		uri.write(out);
+		
 		out.writeEndElement();		
 	}
 
@@ -57,6 +73,14 @@ public class Request extends AbstractXmlElement {
 
 	public void setHttpVersion(String httpVersion) {
 		this.httpVersion = httpVersion;
+	}
+
+	public XMLElement getUri() {
+		return uri;
+	}
+
+	public void setUri(XMLElement uri) {
+		this.uri = uri;
 	}
 
 	@Override

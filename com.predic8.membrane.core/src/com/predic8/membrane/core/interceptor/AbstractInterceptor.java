@@ -18,10 +18,19 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
 public class AbstractInterceptor extends AbstractConfigElement implements Interceptor {
+
+	public AbstractInterceptor() {
+		super(null);
+	}
+	
+	public AbstractInterceptor(Router router) {
+		super(router);
+	}
 
 	public static final String ELEMENT_NAME = "interceptor";
 	

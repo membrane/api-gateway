@@ -71,6 +71,14 @@ public class Configuration extends AbstractConfigElement {
 	public Map<String, Object> props = new HashMap<String, Object>();
 
 	private Proxy proxy; 
+
+	public Configuration() {
+		super(null);
+	}
+
+	public Configuration(Router router) {
+		super(router);
+	}
 	
 	public Map<String, Object> getProps() {
 		return props;
@@ -205,17 +213,17 @@ public class Configuration extends AbstractConfigElement {
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {	
 		if (Rules.ELEMENT_NAME.equals(child)) {
-			rules = ((Rules) new Rules().parse(token)).getValues();
+			rules = ((Rules) new Rules(router).parse(token)).getValues();
 		} else if (Format.ELEMENT_NAME.equals(child)) {
-			props.putAll(((Format) new Format().parse(token)).getValues());
+			props.putAll(((Format) new Format(router).parse(token)).getValues());
 		} else if (GUI.ELEMENT_NAME.equals(child)) {
-			props.putAll(((GUI) new GUI().parse(token)).getValues());
+			props.putAll(((GUI) new GUI(router).parse(token)).getValues());
 		} else if (Proxy.ELEMENT_NAME.equals(child)) {
-			proxy = (Proxy) new Proxy().parse(token);
+			proxy = (Proxy) new Proxy(router).parse(token);
 		} else if (Security.ELEMENT_NAME.equals(child)) {
-			Security security = ((Security) new Security().parse(token));
+			Security security = ((Security) new Security(router).parse(token));
 			props.put(KEY_STORE_LOCATION, security.getKeyStoreLocation());
 			props.put(TRUST_STORE_LOCATION, security.getTrustStoreLocation());
 			
@@ -234,22 +242,22 @@ public class Configuration extends AbstractConfigElement {
 		out.writeStartDocument(Constants.ENCODING_UTF_8, Constants.XML_VERSION);
 		out.writeStartElement(ELEMENT_NAME);
 		
-		Rules childRules = new Rules();
+		Rules childRules = new Rules(router);
 		childRules.setValues(rules);
 		childRules.write(out);
 		
-		Format childFormat = new Format();
+		Format childFormat = new Format(router);
 		childFormat.setValues(props);
 		childFormat.write(out);
 		
-		GUI childGui = new GUI();
+		GUI childGui = new GUI(router);
 		childGui.setValues(props);
 		childGui.write(out);
 		
 		if (proxy !=  null)
 			proxy.write(out);
 		
-		Security security = new Security();
+		Security security = new Security(router);
 		security.setValues(props);
 		security.write(out);
 		
@@ -257,7 +265,7 @@ public class Configuration extends AbstractConfigElement {
 		out.writeEndDocument();
 	}
 
-	
+	/* TODO del
 	public void copyFields(Configuration config) {
 		setAdjustHostHeader(config.getAdjustHostHeader());
 		setIndentMessage(config.getIndentMessage());
@@ -271,6 +279,7 @@ public class Configuration extends AbstractConfigElement {
 		setTrustStoreLocation(config.getTrustStoreLocation());
 		setTrustStorePassword(config.getTrustStorePassword());
 	}
+	*/
 	
 
 	public boolean isKeyStoreAvailable() {

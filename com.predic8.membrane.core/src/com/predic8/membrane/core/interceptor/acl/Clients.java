@@ -13,11 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
 public class Clients extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "clients";
+
+	public Clients(Router router) {
+		super(router);
+	}
 	
 	@Override
 	protected String getElementName() {

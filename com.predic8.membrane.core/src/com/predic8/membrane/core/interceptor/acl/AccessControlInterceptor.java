@@ -13,8 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
+
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamReader;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.HttpExchange;
@@ -71,9 +75,17 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	private void init() throws Exception {
 		if (aclFilename == null)
 			throw new IllegalStateException("file name is not set");
-		accessControl = new AccessControlParser().read(aclFilename);
+		accessControl = parse(aclFilename);
 	}
 
+	protected AccessControl parse(String fileName) throws Exception {
+		
+		XMLInputFactory factory = XMLInputFactory.newInstance();
+	    XMLStreamReader reader = factory.createXMLStreamReader(new FileInputStream(fileName));
+	    
+	    return (AccessControl) new AccessControl(router).parse(reader);
+	}
+	
 	public Response getResponse(String content) {
 		Response response = new Response();
 		response.setStatusCode(403);

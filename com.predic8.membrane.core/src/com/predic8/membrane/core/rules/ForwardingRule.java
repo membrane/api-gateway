@@ -18,6 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.TargetHost;
 import com.predic8.membrane.core.config.TargetPort;
@@ -31,6 +32,10 @@ public class ForwardingRule extends AbstractRule {
 
 	public ForwardingRule() {
 		
+	}
+
+	public ForwardingRule(Router router) {
+		setRouter(router);
 	}
 
 	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, int targetPort) {
@@ -81,7 +86,7 @@ public class ForwardingRule extends AbstractRule {
 		
 		if (Path.ELEMENT_NAME.equals(child)) {
 			key.setUsePathPattern(true);
-			Path p = (Path)(new Path()).parse(token);
+			Path p = (Path)(new Path(router)).parse(token);
 			key.setPathRegExp(p.isRegExp());
 			key.setPath(p.getValue());
 		}
@@ -101,7 +106,7 @@ public class ForwardingRule extends AbstractRule {
 		new TargetHost(targetHost).write(out);
 		
 		if (key.isUsePathPattern()) {
-			Path path = new Path();
+			Path path = new Path(router);
 			path.setValue(key.getPath());
 			path.setRegExp(key.isPathRegExp());
 			path.write(out);
