@@ -43,9 +43,9 @@ public class ViaProxyTest extends TestCase {
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
 		
-		Configuration config = new Configuration();
+		Configuration config = new Configuration(proxyRouter);
 		
-		Proxy proxy = new Proxy();
+		Proxy proxy = new Proxy(proxyRouter);
 		proxy.setUseProxy(true);
 		proxy.setProxyHost("localhost");
 		proxy.setProxyPort(3128);

@@ -1,0 +1,16 @@
+<?xml version='1.1' encoding='UTF-8'?>
+<configuration>
+	<rules>
+		<forwarding-rule name="localhost" host="*" port="2000" path=".*"
+			method="*">
+			<targetport>8080</targetport>
+			<targethost>localhost</targethost>
+			<interceptors>
+				<interceptor id="roundRobinBalancer" name="roundRobinBalancer" />
+			</interceptors>			
+		</forwarding-rule>
+	</rules>
+	<format>
+		<adjustHostHeader>true</adjustHostHeader>
+	</format>
+</configuration>

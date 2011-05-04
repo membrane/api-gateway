@@ -20,8 +20,6 @@ import junit.framework.TestCase;
 public class AccessControlParserTest extends TestCase {
 
 	
-	private AccessControlParser reader = new AccessControlParser();
-	
 	public static final String FILE_NAME = "resources/acl.xml";
 	
 	public static final String PATH_SERVICE_1 = "/axis2/*";
@@ -47,7 +45,7 @@ public class AccessControlParserTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		accessControl = reader.read(FILE_NAME);
+		accessControl = new AccessControlInterceptor().parse(FILE_NAME);
 	}
 	
 	public void testServiceCount() throws Exception {

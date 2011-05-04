@@ -4,6 +4,7 @@ import java.util.List;
 
 import junit.framework.Assert;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,6 +37,11 @@ public class ReadRulesConfigurationTest {
 		Rule localRule = rules.get(2);
 	 	Assert.assertEquals(8080, ((ForwardingRule)localRule).getTargetPort());
 	 	
+	}
+
+	@After
+	public void tearDown() throws Exception {
+		router.getTransport().closeAll();
 	}
 
 }

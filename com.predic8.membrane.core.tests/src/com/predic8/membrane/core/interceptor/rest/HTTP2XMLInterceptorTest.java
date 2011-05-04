@@ -27,31 +27,32 @@ import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
 
-public class REST2XMLInterceptorTest extends TestCase {
+public class HTTP2XMLInterceptorTest extends TestCase {
 	
 	private HttpExchange exc;
 	
 	private HTTP2XMLInterceptor interceptor = new HTTP2XMLInterceptor(); 
 	
-	private byte[] bodyContent;
 	XPath xpath = XPathFactory.newInstance().newXPath();
 	
 	@Override
 	protected void setUp() throws Exception {
-		bodyContent = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/blz-service.wsdl"));
-		
 		exc = new HttpExchange();
 		exc.setRequest(MessageUtil.getGetRequest("http://localhost/axis2/services/BLZService?wsdl"));
-		exc.setResponse(MessageUtil.getOKResponse(bodyContent, "text/xml"));
+		exc.setResponse(MessageUtil.getOKResponse(ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/blz-service.wsdl")), "text/xml"));
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
 		
 	}
 	
 	@Test
-	public void testMethode() throws Exception {
+	public void testXml() throws Exception {
 		interceptor.handleRequest(exc);
 		
-		//assertXPath("/request/metadata/method", "GET");
+		assertXPath("/request/@method", "GET");
+		assertXPath("/request/uri/host", "localhost");
+		assertXPath("/request/uri/path/component[1]", "axis2");
+		assertXPath("/request/uri/path/component[2]", "services");
+		assertXPath("/request/uri/path/component[3]", "BLZService");
 	}
 
 	private void assertXPath(String xpathExpr, String expected) throws XPathExpressionException {
