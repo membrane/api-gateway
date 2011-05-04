@@ -53,6 +53,7 @@ Export-Package:
  com.predic8.membrane.core.interceptor.rest,
  com.predic8.membrane.core.interceptor.rewrite;uses:="com.predic8.membrane.core.exchange,com.predic8.membrane.core.interceptor",
  com.predic8.membrane.core.interceptor.schemavalidation,
+ com.predic8.membrane.core.interceptor.xslt,
  com.predic8.membrane.core.io;uses:="com.predic8.membrane.core",
  com.predic8.membrane.core.model;uses:="com.predic8.membrane.core.http,com.predic8.membrane.core.exchange,com.predic8.membrane.core.rules",
  com.predic8.membrane.core.rules;uses:="javax.xml.stream,com.predic8.membrane.core.config",
