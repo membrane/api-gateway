@@ -105,12 +105,12 @@
         You can store exchange metadata in CSV files to disc. The data will be appended 
         to the given file, and can be imported into Excel later on. 
         -->
-        <!-- 
+        <!--  
         <bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor">
           <property name="fileName" value="C:\temp\exc-statistics.csv" /> 
         </bean> 
         -->
-        
+
         <!--
         XSLT Transformation 
         =======================================
@@ -127,16 +127,11 @@
           <property name="requestXSLT" value="C:/temp/request.xslt" /> 
           <property name="responseXSLT" value="C:/temp/response.xslt" /> 
         </bean> 
-        -->     
-        
-         <!-- 
-        <bean class="com.predic8.membrane.core.interceptor.schemavalidation.ValidateSOAPMsgInterceptor" init-method="init">
-          <property name="wsdl" value="http://www.predic8.com:8080/material/ArticleService?wsdl" />
-        </bean>
-      	 -->     
+        -->                
       </list>
     </property>
   </bean>
+  
 
   <bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.MemoryExchangeStore" />
 
@@ -195,42 +190,6 @@
 							<property name="fileName" value="C:\temp\exc-statistics.csv" />
 							<property name="displayName" value="Statistics CSV Logger" />
   </bean>
-
-  <bean id="regExUrlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor">
-    <property name="displayName" value="RegEx URL Rewriter" />
-    <property name="mapping">
-      <map>
-        <entry>
-          <key>
-            <value>/bank/.*</value>
-          </key>
-          <value>/axis2/services/BLZService</value>
-        </entry>
-      </map>
-	</property>
-  </bean>
-
-<bean id="rest2SoapInterceptor" class="com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor">
-    <property name="displayName" value="REST 2 SOAP Interceptor" />
-    <property name="mappings">
-      <map>
-        <entry key="/bank/.*">
-        	<map>
-        		<entry key="SOAPURL" value="/axis2/services/BLZService"/>
-        		<entry key="SOAPAction" value=""/>
-        		<entry key="requestXSLT" value="../com.predic8.membrane.core.tests/resources/blz-httpget2soap-request.xsl"/>
-        		<entry key="responseXSLT" value="../com.predic8.membrane.core.tests/resources/strip-soap-envelope.xsl"/>
-        	</map>          
-        </entry>
-      </map>
-	</property>
-  </bean>
-  
-  <bean id="xsltTransformer" class="com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor">
-    <property name="displayName" value="XSLT Transformer" />
-    <property name="requestXSLT" value="C:/work/membrane/monitor/eclipse/com.predic8.membrane.core.tests/resources/blz-httpget2soap-request.xsl" /> 
-    <property name="responseXSLT" value="C:/work/membrane/monitor/eclipse/com.predic8.membrane.core.tests/resources/strip-soap-envelope.xsl" /> 
-  </bean> 
 						
   <bean id="urlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor">
     <property name="displayName" value="Simple URL Rewriter" />
