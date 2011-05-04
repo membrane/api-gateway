@@ -6,5 +6,5 @@ Bundle-Version: 2.0.0
 Bundle-Activator: com.predic8.rcp.membrane.MembraneActivator
 Bundle-Vendor: predic8 GmbH
 Require-Bundle: com.predic8.plugin.membrane;bundle-version="2.0.0"
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.6
