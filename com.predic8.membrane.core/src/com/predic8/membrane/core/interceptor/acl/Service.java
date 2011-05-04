@@ -51,7 +51,7 @@ public class Service extends AbstractPatternElement {
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		pattern = Pattern.compile(token.getAttributeValue("", "path"));
+		pattern = Pattern.compile(token.getAttributeValue(null, "path"));
 	}
 	
 	/*

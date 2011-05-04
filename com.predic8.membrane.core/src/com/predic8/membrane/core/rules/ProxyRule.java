@@ -2,6 +2,8 @@ package com.predic8.membrane.core.rules;
 
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.core.Constants;
+
 
 public class ProxyRule extends AbstractRule {
 
@@ -22,6 +24,6 @@ public class ProxyRule extends AbstractRule {
 	
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
-		key = new ProxyRuleKey(Integer.parseInt(token.getAttributeValue("", "port")));
+		key = new ProxyRuleKey(Integer.parseInt(token.getAttributeValue(Constants.NS_UNDEFINED, "port")));
 	}
 }

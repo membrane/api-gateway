@@ -4,7 +4,6 @@ import java.util.List;
 
 import junit.framework.Assert;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.rules.ForwardingRule;
@@ -16,8 +15,7 @@ public class ReadRulesInterceptorRefTest {
 	@Test
 	public void testReadRules() throws Exception {
 		
-		Router router;
-		router = Router.init("classpath:/monitor-beans.xml");
+		Router router = Router.init("classpath:/monitor-beans.xml");
 		router.getConfigurationManager().loadConfiguration("classpath:/rules-interceptor-ref.xml");
 		
 	 	List<Rule> rules = router.getRuleManager().getRules();

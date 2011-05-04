@@ -18,6 +18,8 @@ package com.predic8.membrane.core.interceptor;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -77,8 +79,10 @@ public class WSDLInterceptor extends AbstractInterceptor {
 
 	private void rewriteWsdl(HttpExchange exc) throws Exception, IOException {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		Relocator relocator = new Relocator(stream, getLocationProtocol(), getLocationHost(exc), getLocationPort(exc) );
-		relocator.relocate(new ByteArrayInputStream(exc.getResponse().getBody().getContent()));
+		
+		//TODO what if there is no charset ?
+		Relocator relocator = new Relocator(new OutputStreamWriter(stream, exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc), getLocationPort(exc) );
+		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(exc.getResponse().getBody().getContent()), exc.getResponse().getCharset() ));
 		if (relocator.isWsdlFound()) {
 			registerWSDL(exc);
 		}

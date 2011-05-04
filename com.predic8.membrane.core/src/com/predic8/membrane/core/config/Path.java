@@ -18,6 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 
 
@@ -45,7 +46,7 @@ public class Path extends AbstractConfigElement {
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		regExp = Boolean.parseBoolean(token.getAttributeValue("", "isRegExp"));
+		regExp = Boolean.parseBoolean(token.getAttributeValue(Constants.NS_UNDEFINED, "isRegExp"));
 	}
 
 	

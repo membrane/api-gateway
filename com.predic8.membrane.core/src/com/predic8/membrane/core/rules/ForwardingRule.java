@@ -18,6 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.TargetHost;
@@ -68,9 +69,9 @@ public class ForwardingRule extends AbstractRule {
 
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
-		String host = token.getAttributeValue("", "host");
-		int port = Integer.parseInt(token.getAttributeValue("", "port"));
-		String method = token.getAttributeValue("", "method");
+		String host = token.getAttributeValue(Constants.NS_UNDEFINED, "host");
+		int port = Integer.parseInt(token.getAttributeValue(Constants.NS_UNDEFINED, "port"));
+		String method = token.getAttributeValue(Constants.NS_UNDEFINED, "method");
 		key = new ForwardingRuleKey(host, method, ".*", port);
 	}
 	

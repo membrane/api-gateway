@@ -14,8 +14,13 @@
 
 package com.predic8.membrane.core.ws.relocator;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import static com.predic8.membrane.core.Constants.WSDL_HTTP_NS;
+import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
+import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
+import static com.predic8.membrane.core.Constants.XSD_NS;
+
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
@@ -32,8 +37,6 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 import com.predic8.membrane.core.Constants;
-
-import static com.predic8.membrane.core.Constants.*;
 
 public class Relocator {
 	XMLEventWriter writer;
@@ -92,21 +95,20 @@ public class Relocator {
 
 	}
 
-	public Relocator(OutputStream ostream, String protocol, String host, int port) throws Exception {
-		XMLOutputFactory output = XMLOutputFactory.newInstance();
-		this.writer = output.createXMLEventWriter(ostream);
+	public Relocator(OutputStreamWriter osw, String protocol, String host, int port) throws Exception {
+		this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
 		this.host = host;
 		this.port = port;
 		this.protocol = protocol;
 	}
 
-	public void relocate(InputStream istream) throws Exception {
-		XMLInputFactory factory = XMLInputFactory.newInstance();
-		XMLEventReader parser = factory.createXMLEventReader(istream);
+	public void relocate(InputStreamReader isr) throws Exception {
+		XMLEventReader parser = XMLInputFactory.newInstance().createXMLEventReader(isr);
 
 		while (parser.hasNext()) {
 			writer.add(getEvent(parser));
 		}
+		writer.flush();
 	}
 
 	private XMLEvent getEvent(XMLEventReader parser) throws XMLStreamException {

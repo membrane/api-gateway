@@ -4,6 +4,8 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
 import javax.xml.namespace.QName;
@@ -16,7 +18,9 @@ import javax.xml.stream.events.XMLEvent;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -29,15 +33,14 @@ public class WSDLInterceptorTest {
 	
 	private WSDLInterceptor interceptor; 
 	
-	private byte[] bodyContent;
-	
 	@Before
 	public void setUp() throws Exception {
-		bodyContent = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/blz-service.wsdl"));
-		
 		exc = new HttpExchange();
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
-		exc.setResponse(MessageUtil.getOKResponse(bodyContent, "text/xml"));
+		InputStream resourceAsStream = this.getClass().getResourceAsStream("/blz-service.wsdl");
+		Response okResponse = MessageUtil.getOKResponse(ByteUtil.getByteArrayData(resourceAsStream), "text/xml; charset=utf-8");
+		exc.setResponse(okResponse);
+		
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
 		exc.setRule(getRule());
 		
@@ -49,7 +52,14 @@ public class WSDLInterceptorTest {
 		interceptor.setProtocol("https");
 		assertEquals(interceptor.handleResponse(exc), Outcome.CONTINUE);
 		
-		assertTrue(getLocationAttributeFor(getElement(getParser(), Relocator.ADDRESS_SOAP11)).startsWith("https://"));
+		XMLEventReader parser = getParser();
+		
+		System.out.println("parser is: " + parser);
+		
+		StartElement element = getElement(parser, Relocator.ADDRESS_SOAP11);
+		String locationAttr = getLocationAttributeFor(element);
+		System.out.println("location attribute is: " + locationAttr);
+		assertTrue(locationAttr.startsWith("https://"));
 		assertTrue(getLocationAttributeFor(getElement(getParser(), Relocator.ADDRESS_SOAP12)).startsWith("https://"));
 		assertTrue(getLocationAttributeFor(getElement(getParser(), Relocator.ADDRESS_HTTP)).startsWith("https://"));
 	}
@@ -112,13 +122,12 @@ public class WSDLInterceptorTest {
 		return new ForwardingRule(new ForwardingRuleKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
 	}
 
-
 	private XMLEventReader getParser() throws Exception {
-		return XMLInputFactory.newInstance().createXMLEventReader(exc.getResponse().getBodyAsStream());
+		return XMLInputFactory.newInstance().createXMLEventReader(new InputStreamReader(exc.getResponse().getBodyAsStream(), exc.getResponse().getCharset()));
 	}
 	
 	private String getLocationAttributeFor(StartElement element) {
-		return element.getAttributeByName(new QName("" , "location")).getValue();
+		return element.getAttributeByName(new QName(Constants.NS_UNDEFINED , "location")).getValue();
 	}
 	
 	private boolean matchSoap12(String pattern) throws XMLStreamException, Exception {
@@ -140,6 +149,7 @@ public class WSDLInterceptorTest {
 	private StartElement getElement(XMLEventReader parser, QName qName) throws XMLStreamException {
 		while (parser.hasNext()) {
 			XMLEvent event = parser.nextEvent();
+			
 			if ( event.isStartElement() ) {
 				if ( event.asStartElement().getName().equals(qName)) {
 					return event.asStartElement();

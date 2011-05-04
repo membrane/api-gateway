@@ -6,6 +6,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class URI extends AbstractXmlElement {
@@ -19,7 +20,7 @@ public class URI extends AbstractXmlElement {
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		value = token.getAttributeValue("", "value");
+		value = token.getAttributeValue(Constants.NS_UNDEFINED, "value");
 	}
 
 	@Override

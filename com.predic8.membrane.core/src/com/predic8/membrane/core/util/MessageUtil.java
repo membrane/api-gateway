@@ -1,7 +1,6 @@
 package com.predic8.membrane.core.util;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.EmptyBody;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 

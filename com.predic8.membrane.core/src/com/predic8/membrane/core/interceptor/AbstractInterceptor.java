@@ -18,6 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -63,8 +64,8 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		name = token.getAttributeValue("", "name");	
-		id = token.getAttributeValue("", "id");	
+		name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");	
+		id = token.getAttributeValue(Constants.NS_UNDEFINED, "id");	
 	}
 	
 	@Override

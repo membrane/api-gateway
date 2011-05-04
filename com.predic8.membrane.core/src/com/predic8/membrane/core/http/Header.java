@@ -223,5 +223,20 @@ public class Header {
 	public String getContentEncoding() {
 		return getFirstValue(CONTENT_ENCODING);
 	}
+	
+	//TODO header value is a complex unit
+	public String getCharset() {
+		String type = getContentType();
+		
+		if (type == null)
+			return null;
+		
+		int idx = type.indexOf("charset=");
+		if (idx < 0)
+			return null;
+		
+		return type.substring(idx + 8);
+	}
+	
 
 }

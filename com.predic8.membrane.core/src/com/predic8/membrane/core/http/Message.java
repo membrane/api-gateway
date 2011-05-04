@@ -240,13 +240,18 @@ public abstract class Message {
 			return false;
 		return header.getContentType().indexOf("javascript") > 0;
 	}
-	
+	//TODO ignore case ?
 	public boolean isGzip() {
 		return "gzip".equals(header.getContentEncoding());
 	}
 	
+	//TODO ignore case ?
 	public boolean isDeflate() {
 		return "deflate".equals(header.getContentEncoding());
+	}
+	
+	public String getCharset() {
+		return header.getCharset();
 	}
 	
 }

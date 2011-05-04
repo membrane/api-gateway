@@ -7,6 +7,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.Interceptors;
 import com.predic8.membrane.core.config.LocalHost;
@@ -179,7 +180,7 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		name = token.getAttributeValue("", "name");
+		name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");
 		parseKeyAttributes(token);
 		parseTLS(token);
 		parseBlocking(token);

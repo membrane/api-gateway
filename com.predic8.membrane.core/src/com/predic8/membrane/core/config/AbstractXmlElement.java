@@ -16,13 +16,12 @@ package com.predic8.membrane.core.config;
 
 import java.io.StringWriter;
 
-import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.Constants;
 
 public class AbstractXmlElement implements XMLElement {
 
@@ -39,10 +38,13 @@ public class AbstractXmlElement implements XMLElement {
 	      if (token.isCharacters()) {
 	    	  parseCharacters(token);
 	      }
-	      if(token.isEndElement() && token.getName().getLocalPart() == getElementName())
-	    	  break;
-	      if(token.hasNext()) 
+	      if(token.isEndElement()) {
+	    	 if(getElementName().equals(token.getName().getLocalPart() ))
+		    	  break;
+	      }
+	      if(token.hasNext()) {
 	    	  token.next();
+	      }
 	    }
 	    return this;
 	  }
@@ -79,7 +81,7 @@ public class AbstractXmlElement implements XMLElement {
 	}
 	
 	protected boolean getBoolean(XMLStreamReader token, String attr) {
-		return "true".equals(token.getAttributeValue("", attr)) ? true : false;
+		return "true".equals(token.getAttributeValue(Constants.NS_UNDEFINED, attr)) ? true : false;
 	}
 	
 	

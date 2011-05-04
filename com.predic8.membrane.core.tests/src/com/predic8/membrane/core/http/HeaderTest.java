@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.http;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 
 import javax.activation.MimeType;
@@ -44,4 +45,21 @@ public class HeaderTest {
 		assertTrue(new MimeType(header.getContentType()).match("text/xml"));
 	}
 
+	@Test
+	public void testGetCharsetNull() throws Exception {
+		Header header = new Header();
+		header.add("Content-Type", "text/xml");
+		assertNull(header.getCharset());
+	}
+	
+	@Test
+	public void testGetCharsetCTNull() throws Exception {
+		assertNull(new Header().getCharset());
+	}
+	
+	@Test
+	public void testGetCharset() throws Exception {
+		assertEquals("utf-8", header.getCharset());
+	}
+	
 }
