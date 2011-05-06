@@ -19,8 +19,8 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
@@ -39,12 +39,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		priority = 50;
 	}
 	
-	public Outcome handleRequest(Exchange aExc) throws Exception {
-		if (!(aExc instanceof HttpExchange))
-			throw new RuntimeException("RuleMatchingInterceptor accepts only HttpExchange objects");
-
-		HttpExchange exc = (HttpExchange) aExc;
-
+	public Outcome handleRequest(Exchange exc) throws Exception {
 		Rule rule = getRule(exc);
 		exc.setRule(rule);
 		
@@ -59,14 +54,14 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private void handleNoRuleFound(HttpExchange exc) throws IOException {
+	private void handleNoRuleFound(Exchange exc) throws IOException {
 		exc.getRequest().readBody();
 		exc.getServerThread().getSourceSocket().shutdownInput();
 		Response res = HttpUtil.createErrorResponse("This request was not accepted by Membrane Monitor. Please correct the request and try again.");
 		exc.setResponse(res);
 	}
 
-	private Rule getRule(HttpExchange exc) {
+	private Rule getRule(Exchange exc) {
 		ForwardingRuleKey key = exc.getForwardingRuleKey();
 		if (router == null)
 			System.out.println("router is null.");
@@ -80,7 +75,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return findProxyRule(exc);
 	}
 
-	private Rule findProxyRule(HttpExchange exc) {
+	private Rule findProxyRule(Exchange exc) {
 		for (Rule rule : router.getRuleManager().getRules()) {
 			if (!(rule instanceof ProxyRule))
 				continue;
@@ -94,12 +89,12 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return new NullRule();
 	}
 
-	private void insertXForwardedFor(Exchange exc) {
+	private void insertXForwardedFor(AbstractExchange exc) {
 		String value = getXForwardedFor(exc) != null ? getXForwardedFor(exc) + ", " + exc.getSourceIp(): exc.getSourceIp();
 		exc.getRequest().getHeader().setXForwardedFor(value);
 	}
 
-	private String getXForwardedFor(Exchange exc) {
+	private String getXForwardedFor(AbstractExchange exc) {
 		return exc.getRequest().getHeader().getXForwardedFor();
 	}
 

@@ -16,7 +16,7 @@ package com.predic8.plugin.membrane.contentproviders;
 
 import org.eclipse.swt.widgets.Display;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.model.IExchangeViewerListener;
 import com.predic8.plugin.membrane.views.AbstractMessageView;
@@ -31,14 +31,14 @@ public abstract class MessageViewContentProvider implements IExchangeViewerListe
 	}
 	
 	
-	public void inputChanged(Exchange oldInput, Exchange newInput) {
+	public void inputChanged(AbstractExchange oldInput, AbstractExchange newInput) {
 		if (newInput != null)
 			newInput.addExchangeViewerListener(this);
 		if (oldInput != null)
 			oldInput.removeExchangeViewerListener(this);
 	}
 
-	public abstract Message getMessage(Exchange exchange);
+	public abstract Message getMessage(AbstractExchange exchange);
 
 	public void setExchangeFinished() {
 		Display.getDefault().asyncExec(new Runnable() {

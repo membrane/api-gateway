@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.ToolItem;
 import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
@@ -147,7 +148,7 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 
 	public abstract void updateUIStatus(boolean canShowBody);
 
-	public void addExchange(Rule rule, Exchange exchange) {
+	public void addExchange(Rule rule, AbstractExchange exchange) {
 		
 	}
 	
@@ -155,7 +156,7 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 		
 	}
 	
-	public void removeExchange(Exchange exchange) {
+	public void removeExchange(AbstractExchange exchange) {
 		if (this.exchange == null)
 			return;
 		
@@ -163,8 +164,8 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 			setInput(null);
 	}
 	
-	public void removeExchanges(Rule parent, Exchange[] exchanges) {
-		for (Exchange exchange : exchanges) {
+	public void removeExchanges(Rule parent, AbstractExchange[] exchanges) {
+		for (AbstractExchange exchange : exchanges) {
 			removeExchange(exchange);
 		}
 	}
@@ -174,17 +175,17 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 		
 	}
 	
-	public void removeExchanges(Exchange[] exchanges) {
+	public void removeExchanges(AbstractExchange[] exchanges) {
 		// TODO Auto-generated method stub
 		
 	}
 	
-	public void setExchangeFinished(Exchange exchange) {
+	public void setExchangeFinished(AbstractExchange exchange) {
 		// TODO Auto-generated method stub
 		
 	}
 	
-	public void setExchangeStopped(Exchange exchange) {
+	public void setExchangeStopped(AbstractExchange exchange) {
 		// TODO Auto-generated method stub
 		
 	}

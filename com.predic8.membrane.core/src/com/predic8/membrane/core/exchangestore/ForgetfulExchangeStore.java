@@ -16,7 +16,7 @@ package com.predic8.membrane.core.exchangestore;
 
 import java.util.List;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -24,7 +24,7 @@ import com.predic8.membrane.core.statistics.RuleStatistics;
 
 public class ForgetfulExchangeStore implements ExchangeStore {
 
-	public void add(Exchange exchange) {
+	public void add(AbstractExchange exchange) {
 		
 	}
 
@@ -32,7 +32,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 		
 	}
 
-	public Exchange[] getExchanges(RuleKey ruleKey) {
+	public AbstractExchange[] getExchanges(RuleKey ruleKey) {
 		return null;
 	}
 
@@ -45,12 +45,12 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	
-	public void notifyListenersOnExchangeAdd(Rule rule, Exchange exchange) {
+	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange) {
 		
 	}
 
 	
-	public void notifyListenersOnExchangeRemoval(Exchange exchange) {
+	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange) {
 		
 	}
 
@@ -70,7 +70,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	
-	public void remove(Exchange exchange) {
+	public void remove(AbstractExchange exchange) {
 		
 	}
 	
@@ -93,12 +93,12 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 		return null;
 	}
 
-	public List<Exchange> getAllExchangesAsList() {
+	public List<AbstractExchange> getAllExchangesAsList() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public void removeAllExchanges(Exchange[] exchanges) {
+	public void removeAllExchanges(AbstractExchange[] exchanges) {
 		// TODO Auto-generated method stub
 		
 	}

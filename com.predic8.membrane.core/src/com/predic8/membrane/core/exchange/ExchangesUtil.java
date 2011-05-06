@@ -14,7 +14,7 @@ public class ExchangesUtil {
 	public static final NumberFormat FORMATTER = NumberFormat.getInstance();
 	public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
 	
-	public static String getServer(Exchange exc) {
+	public static String getServer(AbstractExchange exc) {
 		if (exc.getRule() instanceof ProxyRule) {
 			try {
 				if (exc.getRequest().isCONNECTRequest()) {
@@ -43,38 +43,38 @@ public class ExchangesUtil {
 		return contentType;
 	}
 	
-	public static String getStatusCode(Exchange exc) {
+	public static String getStatusCode(AbstractExchange exc) {
 		if (exc.getResponse() == null)
 			return "";
 		return "" + exc.getResponse().getStatusCode();
 	}
 
-	public static String getTime(Exchange exc) {
+	public static String getTime(AbstractExchange exc) {
 		if (exc.getTime() == null)
 			return Constants.UNKNOWN;
 		return DATE_FORMATTER.format(exc.getTime().getTime());
 	}
 	
-	public static String getRequestContentLength(Exchange exc) {
+	public static String getRequestContentLength(AbstractExchange exc) {
 		if (exc.getRequestContentLength() == -1)
 			return Constants.UNKNOWN;
 		return "" + exc.getRequestContentLength();
 	}
 	
-	public static String getResponseContentLength(Exchange exc) {
+	public static String getResponseContentLength(AbstractExchange exc) {
 		if (exc.getResponseContentLength() == -1)
 			return Constants.UNKNOWN;
 		return "" + exc.getResponseContentLength();
 	}
 	
-	public static String getResponseContentType(Exchange exc) {
+	public static String getResponseContentType(AbstractExchange exc) {
 		if (exc.getResponse() == null)
 			return Constants.N_A;
 		return exc.getResponseContentType();
 	}
 	
 	
-	public static String getTimeDifference(Exchange exc) {
+	public static String getTimeDifference(AbstractExchange exc) {
 		return "" + (exc.getTimeResReceived() - exc.getTimeReqSent());
 	}
 }

@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.plugin.membrane.filtering;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class RulesFilter extends AbstractExchangesFilter {
 
-	public boolean filter(Exchange exc) {
+	public boolean filter(AbstractExchange exc) {
 		if (showAll)
 			return true;
 		

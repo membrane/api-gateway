@@ -15,11 +15,11 @@ package com.predic8.plugin.membrane.filtering;
 
 import java.util.Set;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public interface ExchangesFilter {
 	
-	public boolean filter(Exchange exc); 
+	public boolean filter(AbstractExchange exc); 
 	
 	public boolean isDeactivated();
 	

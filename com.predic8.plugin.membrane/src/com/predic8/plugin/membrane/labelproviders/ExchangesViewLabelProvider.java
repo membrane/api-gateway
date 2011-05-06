@@ -22,7 +22,7 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
@@ -59,7 +59,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 	}
 
 	private Image selectImage(Object element) {
-		HttpExchange exc = (HttpExchange) element;
+		Exchange exc = (Exchange) element;
 		switch (exc.getStatus()) {
 		case STARTED:
 			return imgPending;
@@ -90,7 +90,7 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 
 	public String getColumnText(Object element, int columnIndex) {
 
-		HttpExchange exchange = (HttpExchange) element;
+		Exchange exchange = (Exchange) element;
 
 		switch (columnIndex) {
 

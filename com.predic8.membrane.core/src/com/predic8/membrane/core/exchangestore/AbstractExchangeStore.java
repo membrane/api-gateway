@@ -17,7 +17,7 @@ package com.predic8.membrane.core.exchangestore;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 
@@ -39,14 +39,14 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		}
 	}
 	
-	public void notifyListenersOnExchangeAdd(Rule rule, Exchange exchange) {
+	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange) {
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			exchange.addExchangeStoreListener(listener);
 			listener.addExchange(rule, exchange);
 		}
 	}
 	
-	public void notifyListenersOnExchangeRemoval(Exchange exchange) {
+	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange) {
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			exchange.removeExchangeStoreListener(listener);
 			listener.removeExchange(exchange);

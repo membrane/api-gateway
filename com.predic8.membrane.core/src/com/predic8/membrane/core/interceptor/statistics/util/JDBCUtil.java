@@ -20,7 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.FileExchangeStore;
 
@@ -165,7 +165,7 @@ public class JDBCUtil {
 		return isDerbyDatabase(metaData) || isMySQLDatabase(metaData) ||isOracleDatabase(metaData); 
 	}
 		
-	public static void setData(Exchange exc, PreparedStatement prepSt, boolean idGenerated) throws SQLException {
+	public static void setData(AbstractExchange exc, PreparedStatement prepSt, boolean idGenerated) throws SQLException {
 		int startIndex = 0;
 		if (!idGenerated) {
 			UUID id = UUID.randomUUID();
@@ -187,7 +187,7 @@ public class JDBCUtil {
 		prepSt.setString(++ startIndex, getFilePath(exc));
 	}
 	
-	private static String getFilePath(Exchange exc) {
+	private static String getFilePath(AbstractExchange exc) {
 		if (exc.getProperty(FileExchangeStore.MESSAGE_FILE_PATH) != null)
 			return (String)exc.getProperty(FileExchangeStore.MESSAGE_FILE_PATH);
 		

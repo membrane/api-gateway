@@ -16,7 +16,7 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
@@ -27,9 +27,9 @@ public class HttpResendThread extends AbstractHttpThread {
 
 	private Rule rule;
 
-	public HttpResendThread(HttpExchange exc, HttpTransport transport) {
+	public HttpResendThread(Exchange exc, HttpTransport transport) {
 		this.transport = transport;
-		exchange = new HttpExchange(exc);
+		exchange = new Exchange(exc);
 		exchange.setServerThread(this);
 		
 		srcReq = exc.getRequest();

@@ -4,7 +4,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class ByThreadStrategy implements DispatchingStrategy {
 
@@ -14,7 +14,7 @@ public class ByThreadStrategy implements DispatchingStrategy {
 
 	private int retryTimeOnBusy = 1000;
 
-	public void done(Exchange exc) {
+	public void done(AbstractExchange exc) {
 		String endPoint = exc.getOriginalRequestUri();
 		if (endpointCount.containsKey(endPoint)) {
 			Integer counter = endpointCount.get(endPoint);

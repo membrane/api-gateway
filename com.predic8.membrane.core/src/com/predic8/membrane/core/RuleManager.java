@@ -46,12 +46,12 @@ public class RuleManager {
 
 	private String defaultTargetHost = "localhost";
 	private String defaultHost = "*";
-	private String defaultListenPort = "2000";
-	private String defaultTargetPort = "8080";
+	private int defaultListenPort = 2000;
+	private int defaultTargetPort = 8080;
 	private String defaultPath = ".*";
 	private int defaultMethod = 0;
 	
-	public String getDefaultListenPort() {
+	public int getDefaultListenPort() {
 		return defaultListenPort;
 	}
 
@@ -79,15 +79,8 @@ public class RuleManager {
 		this.defaultTargetHost = defaultTargetHost;
 	}
 
-	public String getDefaultTargetPort() {
+	public int getDefaultTargetPort() {
 		return defaultTargetPort;
-	}
-
-	public void setDefaultTargetPort(int targetPort) {
-		if (targetPort < 1 || targetPort > 65535)
-			defaultTargetPort = "";
-		else
-			defaultTargetPort = Integer.toString(targetPort);
 	}
 
 	public boolean isAnyRuleWithPort(int port) {
@@ -161,17 +154,17 @@ public class RuleManager {
 		getExchangeStore().refreshExchangeStoreViewers();
 	}
 
-	public Rule getMatchingRule(RuleKey ruleKey) {
-		if (exists(ruleKey))
-			return getRule(ruleKey);
+	public Rule getMatchingRule(RuleKey keyFromReq) {
+		if (exists(keyFromReq))
+			return getRule(keyFromReq);
 
 		for (Rule rule : rules) {
 			
-			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + ruleKey.getHost());
+			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + keyFromReq.getHost());
 			
 			if (!rule.getKey().isHostWildcard()) {
 				String ruleHost = rule.getKey().getHost().split(":")[0];
-				String requestHost = ruleKey.getHost().split(":")[0];
+				String requestHost = keyFromReq.getHost().split(":")[0];
 				
 				log.debug("Rule host: " + ruleHost + ";  Request host: " + requestHost);
 				
@@ -179,24 +172,27 @@ public class RuleManager {
 					continue;
 			}
 			
-			if (rule.getKey().getPort() != ruleKey.getPort())
+			if (rule.getKey().getPort() != keyFromReq.getPort())
 				continue;
-			if (!rule.getKey().getMethod().equals(ruleKey.getMethod()) && !rule.getKey().isMethodWildcard())
+			if (!rule.getKey().getMethod().equals(keyFromReq.getMethod()) && !rule.getKey().isMethodWildcard())
 				continue;
 
 			if (!rule.getKey().isUsePathPattern()) 
 				return rule;
 			
 			if (rule.getKey().isPathRegExp()) {
-				Pattern p = Pattern.compile(rule.getKey().getPath());
-				if (p.matcher(ruleKey.getPath()).find())
+				if (matchesPathPattern(keyFromReq, rule.getKey()))
 					return rule;
 			} else {
-				if (ruleKey.getPath().indexOf(rule.getKey().getPath()) >=0 )
+				if (keyFromReq.getPath().indexOf(rule.getKey().getPath()) >=0 )
 					return rule;
 			}
 		}
 		return null;
+	}
+
+	private boolean matchesPathPattern(RuleKey keyFromReq, RuleKey rule) {
+		return rule.getPathPattern().matcher(keyFromReq.getPath()).find();
 	}
 
 	public void addRuleChangeListener(IRuleChangeListener viewer) {

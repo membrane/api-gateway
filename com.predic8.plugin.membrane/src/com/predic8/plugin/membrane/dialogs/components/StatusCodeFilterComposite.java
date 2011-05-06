@@ -24,7 +24,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.plugin.membrane.filtering.ExchangesFilter;
 
 public class StatusCodeFilterComposite extends AbstractFilterComposite {
@@ -60,7 +60,7 @@ public class StatusCodeFilterComposite extends AbstractFilterComposite {
 		if (excanges != null && excanges.length > 0) {
 			for (Object object : excanges) {
 				try {
-					Exchange exc = (Exchange)object;
+					AbstractExchange exc = (AbstractExchange)object;
 					if (exc.getResponse() == null)
 						continue;
 					statusCodes.add(exc.getResponse().getStatusCode());

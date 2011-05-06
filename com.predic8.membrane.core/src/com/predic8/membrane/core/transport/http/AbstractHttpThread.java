@@ -27,7 +27,7 @@ import org.apache.commons.logging.Log;
 import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.TerminateException;
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
@@ -45,7 +45,7 @@ public abstract class AbstractHttpThread extends Thread {
 
 	protected Response targetRes;
 
-	protected HttpExchange exchange;
+	protected Exchange exchange;
 	
 	protected Request srcReq;
 	
@@ -77,7 +77,7 @@ public abstract class AbstractHttpThread extends Thread {
 	}
 
 
-	protected Outcome invokeResponseHandlers(HttpExchange exchange, List<Interceptor> interceptors) throws Exception {
+	protected Outcome invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) throws Exception {
 		for (Interceptor interceptor : interceptors) {
 			log.debug("Invoking response handlers :" + interceptor + " on exchange: " + exchange);
 			if (interceptor.handleResponse(exchange) == Outcome.ABORT) {

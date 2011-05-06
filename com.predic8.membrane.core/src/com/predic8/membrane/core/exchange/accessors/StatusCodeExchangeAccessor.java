@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.exchange.accessors;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class StatusCodeExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Status-Code";
 	
-	public Object get(Exchange exc) {
+	public Object get(AbstractExchange exc) {
 		if (exc == null || exc.getResponse() == null)
 			return 0;
 		return exc.getResponse().getStatusCode();

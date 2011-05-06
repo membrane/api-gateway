@@ -18,7 +18,7 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.xml.sax.InputSource;
 
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -29,7 +29,7 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
 
 public class HTTP2XMLInterceptorTest extends TestCase {
 	
-	private HttpExchange exc;
+	private Exchange exc;
 	
 	private HTTP2XMLInterceptor interceptor = new HTTP2XMLInterceptor(); 
 	
@@ -37,7 +37,7 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 	
 	@Override
 	protected void setUp() throws Exception {
-		exc = new HttpExchange();
+		exc = new Exchange();
 		exc.setRequest(MessageUtil.getGetRequest("http://localhost/axis2/services/BLZService?wsdl"));
 		exc.setResponse(MessageUtil.getOKResponse(ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/blz-service.wsdl")), "text/xml"));
 		exc.setOriginalHostHeader("thomas-bayer.com:80");

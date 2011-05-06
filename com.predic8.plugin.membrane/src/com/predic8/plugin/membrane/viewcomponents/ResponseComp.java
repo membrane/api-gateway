@@ -16,7 +16,7 @@ package com.predic8.plugin.membrane.viewcomponents;
 
 import org.eclipse.swt.widgets.Composite;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.rules.Rule;
 
@@ -26,7 +26,7 @@ public class ResponseComp extends BaseComp {
 		super(parent, style, host);
 	}
 
-	public void updateUIStatus(Exchange exchange, boolean canShowBody) {
+	public void updateUIStatus(AbstractExchange exchange, boolean canShowBody) {
 		if (exchange == null) {
 			setMessageEditable(false);
 		} else if (exchange.getErrorMessage() != null && !exchange.getErrorMessage().equals("")) {

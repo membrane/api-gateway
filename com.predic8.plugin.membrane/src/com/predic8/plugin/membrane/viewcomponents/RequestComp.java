@@ -17,8 +17,7 @@ package com.predic8.plugin.membrane.viewcomponents;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.transport.http.HttpResendThread;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
@@ -29,7 +28,7 @@ public class RequestComp extends BaseComp {
 		super(parent, style, host);
 	}
 
-	public void updateUIStatus(Exchange exchange, boolean canShowBody) {
+	public void updateUIStatus(AbstractExchange exchange, boolean canShowBody) {
 		if (exchange == null) {
 			setMessageEditable(false);
 		} else {
@@ -45,7 +44,7 @@ public class RequestComp extends BaseComp {
 				tabManager.setBodyModified(false);
 				copyBodyFromGUIToModel();
 			}
-			(new HttpResendThread((HttpExchange)getCompositeHost().getExchange(), (HttpTransport)Router.getInstance().getTransport())).start();
+			(new HttpResendThread(getCompositeHost().getExchange(), (HttpTransport)Router.getInstance().getTransport())).start();
 		}
 	}
 

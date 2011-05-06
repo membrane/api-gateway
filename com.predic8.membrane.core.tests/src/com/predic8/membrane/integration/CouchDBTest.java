@@ -18,7 +18,7 @@ import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -48,7 +48,7 @@ public class CouchDBTest extends TestCase {
 	@Test
 	public void testCreateTable() throws Exception {
 		
-		HttpExchange exchange = new HttpExchange();
+		Exchange exchange = new Exchange();
 		exchange.setRule(getRule());
 		exchange.setRequest(createRequest("http://" + targetHost + ":" + targetPort + "/tblmembrane/", null));
 		
@@ -68,7 +68,7 @@ public class CouchDBTest extends TestCase {
 	@Test
 	public void testPutDocument() throws Exception {
 		
-		HttpExchange exchange = new HttpExchange();
+		Exchange exchange = new Exchange();
 		exchange.setRule(getRule());
 		exchange.setRequest(createRequest("http://" + targetHost + ":" + targetPort + "/tblmembrane/" + currentId, "{\"alpha\":\"thomas\"}"));
 		

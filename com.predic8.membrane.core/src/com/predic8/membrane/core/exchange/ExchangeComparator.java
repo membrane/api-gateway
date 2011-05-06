@@ -20,13 +20,13 @@ import java.util.List;
 
 import com.predic8.membrane.core.exchange.accessors.ExchangeAccessor;
 
-public class ExchangeComparator implements Comparator<Exchange> {
+public class ExchangeComparator implements Comparator<AbstractExchange> {
 
 	private List<ExchangeAccessor> accessors = new ArrayList<ExchangeAccessor>();
 	
 	private boolean ascending = true;
 	
-	public int compare(Exchange e1, Exchange e2) {
+	public int compare(AbstractExchange e1, AbstractExchange e2) {
 		if (e1.getResponse() == null || e2.getResponse() == null)
 			return 0;
 		

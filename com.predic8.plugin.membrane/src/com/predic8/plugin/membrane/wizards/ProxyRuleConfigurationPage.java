@@ -57,8 +57,7 @@ public class ProxyRuleConfigurationPage extends AbstractRuleWizardPage {
 				.addVerifyListener(new PortVerifyListener());
 		ruleOptionsListenPortTextField.setLayoutData(new GridData(
 				GridData.FILL_HORIZONTAL));
-		ruleOptionsListenPortTextField.setText(getRuleManager()
-				.getDefaultListenPort());
+		ruleOptionsListenPortTextField.setText("" + getRuleManager().getDefaultListenPort());
 		ruleOptionsListenPortTextField.addModifyListener(new ModifyListener() {
 
 			public void modifyText(ModifyEvent e) {

@@ -28,7 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -55,7 +55,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	
 	private boolean saveBodyOnly = false;
 	
-	public void add(Exchange exc) {
+	public void add(AbstractExchange exc) {
 		exc.getTime().get(Calendar.YEAR);
 		
 		if (exc.getResponse() == null)
@@ -87,7 +87,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		
 	}
 
-	private synchronized StringBuffer getFileNameBuffer(Exchange exc) {
+	private synchronized StringBuffer getFileNameBuffer(AbstractExchange exc) {
 		StringBuffer buf = new StringBuffer();
 		buf.append(dir);
 		buf.append(separator);
@@ -133,7 +133,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
-	public Exchange[] getExchanges(RuleKey ruleKey) {
+	public AbstractExchange[] getExchanges(RuleKey ruleKey) {
 		throw new RuntimeException("Method getExchanges() is not supported by FileExchangeStore");
 	}
 
@@ -141,7 +141,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		throw new RuntimeException("Method getNumberOfExchanges() is not supported by FileExchangeStore");
 	}
 
-	public void remove(Exchange exchange) {
+	public void remove(AbstractExchange exchange) {
 		throw new RuntimeException("Method remove() is not supported by FileExchangeStore");
 	}
 
@@ -180,12 +180,12 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return null;
 	}
 
-	public List<Exchange> getAllExchangesAsList() {
+	public List<AbstractExchange> getAllExchangesAsList() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public void removeAllExchanges(Exchange[] exchanges) {
+	public void removeAllExchanges(AbstractExchange[] exchanges) {
 		// TODO Auto-generated method stub
 
 	}

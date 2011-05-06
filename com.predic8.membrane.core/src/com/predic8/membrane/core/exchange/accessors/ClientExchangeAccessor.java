@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.exchange.accessors;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class ClientExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Client";
 	
-	public Object get(Exchange exc) {
+	public Object get(AbstractExchange exc) {
 		if (exc == null || exc.getSourceHostname() == null)
 			return "";
 		return exc.getSourceHostname();

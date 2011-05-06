@@ -37,7 +37,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
@@ -179,7 +179,7 @@ public class RuleStatisticsView extends AbstractRulesView {
 	}
 
 
-	public void setExchangeStopped(Exchange exchange) {
+	public void setExchangeStopped(AbstractExchange exchange) {
 		// TODO Auto-generated method stub
 		
 	}

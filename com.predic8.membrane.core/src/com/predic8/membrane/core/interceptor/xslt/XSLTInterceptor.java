@@ -1,17 +1,8 @@
 package com.predic8.membrane.core.interceptor.xslt;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.StringWriter;
-
-import javax.swing.text.html.HTMLDocument.RunElement;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;

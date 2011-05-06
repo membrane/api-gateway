@@ -66,7 +66,7 @@ public class RuleTargetGroup {
 
 	private Text createTargetPortText(Group group) {
 		Text text = new Text(group,SWT.BORDER);
-		text.setText(Router.getInstance().getRuleManager().getDefaultTargetPort());
+		text.setText("" + Router.getInstance().getRuleManager().getDefaultTargetPort());
 		text.addVerifyListener(new PortVerifyListener());
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return text;

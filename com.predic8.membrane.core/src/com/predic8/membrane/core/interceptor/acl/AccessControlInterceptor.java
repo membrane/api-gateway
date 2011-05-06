@@ -21,7 +21,6 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -37,13 +36,13 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Service service;
 		try {
-			service = getAccessControl().getServiceFor(((HttpExchange) exc).getOriginalRequestUri());
+			service = getAccessControl().getServiceFor(exc.getOriginalRequestUri());
 		} catch (Exception e) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
 
-		if (!service.checkAccess(getInetAddress((HttpExchange) exc))) {
+		if (!service.checkAccess(getInetAddress(exc))) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
@@ -56,7 +55,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		exc.setResponse(getResponse("Access denied: you are not authorized to access this service."));
 	}
 
-	private InetAddress getInetAddress(HttpExchange exc) {
+	private InetAddress getInetAddress(Exchange exc) {
 		return exc.getServerThread().getSourceSocket().getInetAddress();
 	}
 

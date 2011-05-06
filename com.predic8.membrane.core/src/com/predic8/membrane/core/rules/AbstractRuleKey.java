@@ -1,11 +1,15 @@
 package com.predic8.membrane.core.rules;
 
+import java.util.regex.Pattern;
+
 
 public abstract class AbstractRuleKey implements RuleKey {
 
 	protected int port;
 	
-	protected String path;
+	private String path;
+	
+	protected Pattern pathPattern;
 	
 	protected boolean pathRegExp = true;
 	
@@ -33,7 +37,6 @@ public abstract class AbstractRuleKey implements RuleKey {
 	}
 
 	public boolean isMethodWildcard() {
-		
 		return false;
 	}
 	
@@ -85,6 +88,13 @@ public abstract class AbstractRuleKey implements RuleKey {
 	
 	public String getPath() {
 		return path;
+	}
+	
+	public Pattern getPathPattern() {
+		if (pathPattern == null)
+			pathPattern = Pattern.compile(path);
+		
+		return pathPattern;
 	}
 	
 }

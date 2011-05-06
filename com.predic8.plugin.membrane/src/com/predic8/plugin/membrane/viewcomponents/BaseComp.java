@@ -19,7 +19,7 @@ import java.io.IOException;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.plugin.membrane.components.messagefolder.MessageTabManager;
 
@@ -113,7 +113,7 @@ public abstract class BaseComp extends Composite {
 		tabManager.doUpdate(msg);
 	}
 	
-	public abstract void updateUIStatus(Exchange exchange, boolean canShowBody);
+	public abstract void updateUIStatus(AbstractExchange exchange, boolean canShowBody);
 
 	public IBaseCompositeHost getCompositeHost() {
 		return compositeHost;

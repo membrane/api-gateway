@@ -19,7 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
@@ -29,13 +29,13 @@ import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 public class WSDLInterceptorTest {
 	
-	private HttpExchange exc;
+	private Exchange exc;
 	
 	private WSDLInterceptor interceptor; 
 	
 	@Before
 	public void setUp() throws Exception {
-		exc = new HttpExchange();
+		exc = new Exchange();
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
 		InputStream resourceAsStream = this.getClass().getResourceAsStream("/blz-service.wsdl");
 		Response okResponse = MessageUtil.getOKResponse(ByteUtil.getByteArrayData(resourceAsStream), "text/xml; charset=utf-8");

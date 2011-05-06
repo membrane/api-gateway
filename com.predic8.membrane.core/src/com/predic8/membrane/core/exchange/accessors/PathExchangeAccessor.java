@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.exchange.accessors;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class PathExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Path";
 	
-	public Object get(Exchange exc) {
+	public Object get(AbstractExchange exc) {
 		if (exc == null || exc.getRequest() == null)
 			return "";
 		return exc.getRequest().getUri();

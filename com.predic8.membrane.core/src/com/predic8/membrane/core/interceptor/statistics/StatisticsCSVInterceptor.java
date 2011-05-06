@@ -14,14 +14,12 @@
 package com.predic8.membrane.core.interceptor.statistics;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;

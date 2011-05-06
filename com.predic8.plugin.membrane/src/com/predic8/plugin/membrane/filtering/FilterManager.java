@@ -16,7 +16,7 @@ package com.predic8.plugin.membrane.filtering;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class FilterManager {
 
@@ -41,7 +41,7 @@ public class FilterManager {
 	}
 	
 	
-	public boolean filter(Exchange exc) {
+	public boolean filter(AbstractExchange exc) {
 		for (ExchangesFilter filter : filters.values()) {
 			if (!filter.filter(exc)) {
 				return false;

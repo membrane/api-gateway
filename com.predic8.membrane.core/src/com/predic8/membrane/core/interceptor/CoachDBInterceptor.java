@@ -18,7 +18,6 @@ import java.text.SimpleDateFormat;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -105,7 +104,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 		//doCall(buffer.toString());
 		
-		HttpExchange exchange = new HttpExchange();
+		Exchange exchange = new Exchange();
 		exchange.setRule(getRule());
 		exchange.setRequest(createRequest(buffer));
 		

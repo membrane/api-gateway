@@ -170,7 +170,7 @@ public class RuleKeyGroup {
 
 	private Text createListenPortText(Group keyGroup) {
 		Text text = new Text(keyGroup, SWT.BORDER);
-		text.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
+		text.setText(""+ Router.getInstance().getRuleManager().getDefaultListenPort());
 		text.addVerifyListener(new PortVerifyListener());
 		GridData gData = new GridData();
 		gData.widthHint = 100;

@@ -29,7 +29,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -53,10 +52,8 @@ public class WSDLInterceptor extends AbstractInterceptor {
 		priority = 400;
 	}
 	
-	public Outcome handleResponse(Exchange aExc) throws Exception {
+	public Outcome handleResponse(Exchange exc) throws Exception {
 		log.debug("handleResponse");
-		
-		HttpExchange exc = (HttpExchange)aExc;
 		
 		if ( exc.getRule() instanceof ProxyRule ) return  Outcome.CONTINUE;
 		
@@ -77,7 +74,7 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	}
 
 
-	private void rewriteWsdl(HttpExchange exc) throws Exception, IOException {
+	private void rewriteWsdl(Exchange exc) throws Exception, IOException {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		
 		//TODO what if there is no charset ?
@@ -90,7 +87,7 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	}
 
 
-	private void registerWSDL(HttpExchange exc) {
+	private void registerWSDL(Exchange exc) {
 		if (registryWSDLRegisterURL == null)
 			return;
 		
@@ -120,11 +117,11 @@ public class WSDLInterceptor extends AbstractInterceptor {
 		}
 	}
 	
-	private HttpExchange createExchange(String uri) throws MalformedURLException {
+	private Exchange createExchange(String uri) throws MalformedURLException {
 		URL url = new URL(uri);
 		Request req = MessageUtil.getGetRequest(getCompletePath(url));
 		req.getHeader().setHost(url.getHost());
-		HttpExchange exc = new HttpExchange();
+		Exchange exc = new Exchange();
 		exc.setRequest(req);
 		exc.getDestinations().add(uri);
 		return exc;
@@ -137,7 +134,7 @@ public class WSDLInterceptor extends AbstractInterceptor {
 		return url.getPath() + "?" + url.getQuery();
 	}
 	
-	private String getWSDLURL(HttpExchange exc) {
+	private String getWSDLURL(Exchange exc) {
 		StringBuffer buf = new StringBuffer();
 		buf.append(getLocationProtocol());
 		buf.append("://");
@@ -177,7 +174,7 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	}
 	
 
-	private String getLocationHost(HttpExchange exc) {
+	private String getLocationHost(Exchange exc) {
 		if (host != null)
 			return host;
 		

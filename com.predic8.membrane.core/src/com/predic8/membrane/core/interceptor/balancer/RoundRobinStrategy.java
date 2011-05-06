@@ -1,13 +1,13 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 
 public class RoundRobinStrategy implements DispatchingStrategy {
 
 	private int last = -1;
 	
-	public void done(Exchange exc) {
+	public void done(AbstractExchange exc) {
 		
 	}
 

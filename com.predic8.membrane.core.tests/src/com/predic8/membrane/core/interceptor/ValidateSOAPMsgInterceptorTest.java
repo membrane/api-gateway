@@ -7,7 +7,7 @@ import java.io.InputStreamReader;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidateSOAPMsgInterceptor;
 import com.predic8.membrane.core.util.MessageUtil;
@@ -21,7 +21,7 @@ public class ValidateSOAPMsgInterceptorTest {
 	
 	private Request request;
 	
-	private HttpExchange exc;
+	private Exchange exc;
 	
 	public static final String ARTICLE_SERVICE_WSDL = "http://www.predic8.com:8080/material/ArticleService?wsdl";
 	
@@ -30,7 +30,7 @@ public class ValidateSOAPMsgInterceptorTest {
 	@Before
 	public void setUp() throws Exception {
 		request = MessageUtil.getPostRequest("http://thomas-bayer.com");
-		exc = new HttpExchange();
+		exc = new Exchange();
 		
 		interceptorForBlz = createValidatorInterceptor(BLZ_SERVICE_WSDL);
 		interceptorForArticle = createValidatorInterceptor(ARTICLE_SERVICE_WSDL);

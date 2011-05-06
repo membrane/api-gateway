@@ -30,7 +30,6 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
 import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
 import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
@@ -105,7 +104,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	private void doTestGetDestinationURL(String requestUri, String expectedUri) throws MalformedURLException {
-		Exchange exc = new HttpExchange();
+		Exchange exc = new Exchange();
 		exc.setOriginalRequestUri(requestUri);
 		assertEquals(expectedUri, balancingInterceptor.getDestinationURL("thomas-bayer.com:80", exc));
 	}

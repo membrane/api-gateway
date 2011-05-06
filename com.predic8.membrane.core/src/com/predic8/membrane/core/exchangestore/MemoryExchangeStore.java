@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
@@ -30,12 +30,12 @@ import com.predic8.membrane.core.statistics.RuleStatistics;
 
 public class MemoryExchangeStore extends AbstractExchangeStore {
 
-	private Map<RuleKey, List<Exchange>> exchangesMap = new HashMap<RuleKey, List<Exchange>>();
+	private Map<RuleKey, List<AbstractExchange>> exchangesMap = new HashMap<RuleKey, List<AbstractExchange>>();
 
 	//for synchronization purposes choose Vector class
-	private List<Exchange> totals = new Vector<Exchange>();  
+	private List<AbstractExchange> totals = new Vector<AbstractExchange>();  
 	
-	public void add(Exchange exc) {
+	public void add(AbstractExchange exc) {
 		
 		if (exc.getResponse() != null)
 			return;
@@ -43,7 +43,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		if (isKeyInStore(exc)) {
 			getKeyList(exc).add(exc);
 		} else {
-			List<Exchange> list = new Vector<Exchange>();
+			List<AbstractExchange> list = new Vector<AbstractExchange>();
 			list.add(exc);
 			exchangesMap.put(exc.getRule().getKey(), list);
 		}
@@ -56,15 +56,15 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
-	private List<Exchange> getKeyList(Exchange exc) {
+	private List<AbstractExchange> getKeyList(AbstractExchange exc) {
 		return exchangesMap.get(exc.getRule().getKey());
 	}
 
-	private boolean isKeyInStore(Exchange exc) {
+	private boolean isKeyInStore(AbstractExchange exc) {
 		return exchangesMap.containsKey(exc.getRule().getKey());
 	}
 
-	public void remove(Exchange exc) {
+	public void remove(AbstractExchange exc) {
 		removeWithoutNotify(exc);
 		
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
@@ -72,7 +72,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 	
-	private void removeWithoutNotify(Exchange exc) {
+	private void removeWithoutNotify(AbstractExchange exc) {
 		if (!isKeyInStore(exc)) {
 			return;
 		}
@@ -87,7 +87,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 
 
 	public void removeAllExchanges(Rule rule) {
-		Exchange[] exchanges = getExchanges(rule.getKey());
+		AbstractExchange[] exchanges = getExchanges(rule.getKey());
 		
 		exchangesMap.remove(rule.getKey());
 		totals.removeAll(Arrays.asList(exchanges));
@@ -96,12 +96,12 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
-	public Exchange[] getExchanges(RuleKey ruleKey) {
-		List<Exchange> exchangesList = exchangesMap.get(ruleKey);
+	public AbstractExchange[] getExchanges(RuleKey ruleKey) {
+		List<AbstractExchange> exchangesList = exchangesMap.get(ruleKey);
 		if (exchangesList == null) {
-			return new Exchange[0];
+			return new AbstractExchange[0];
 		}
-		return exchangesList.toArray(new Exchange[exchangesList.size()]);
+		return exchangesList.toArray(new AbstractExchange[exchangesList.size()]);
 	}
 
 	public int getNumberOfExchanges(RuleKey ruleKey) {
@@ -115,7 +115,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	public RuleStatistics getStatistics(RuleKey key) {
 		RuleStatistics statistics = new RuleStatistics();
 		statistics.setCountTotal(getNumberOfExchanges(key));
-		List<Exchange> exchangesList = exchangesMap.get(key);
+		List<AbstractExchange> exchangesList = exchangesMap.get(key);
 		if (exchangesList == null || exchangesList.isEmpty())
 			return statistics;
 
@@ -172,13 +172,13 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	
-	public List<Exchange> getAllExchangesAsList() {
+	public List<AbstractExchange> getAllExchangesAsList() {
 		return totals;
 	}
 	
 	
-	public void removeAllExchanges(Exchange[] exchanges) {
-		for (Exchange exc : exchanges) {
+	public void removeAllExchanges(AbstractExchange[] exchanges) {
+		for (AbstractExchange exc : exchanges) {
 			removeWithoutNotify(exc);
 		}
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {

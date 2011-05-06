@@ -10,6 +10,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.xml.Request;
@@ -58,7 +59,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		return (String) exc.getProperty("restURL");
 	}
 
-	private void replaceRequestBody(Exchange exc, String regex)
+	private void replaceRequestBody(AbstractExchange exc, String regex)
 			throws Exception {
 		Request req = new Request();
 
@@ -83,7 +84,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		return null;
 	}
 
-	private void updateRequest(Exchange exc, String regex) {
+	private void updateRequest(AbstractExchange exc, String regex) {
 
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().getHeader().add("SOAPAction", getSOAPAction(regex));
@@ -91,7 +92,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		replaceURI(exc, regex);
 	}
 
-	private void replaceURI(Exchange exc, String regex) {
+	private void replaceURI(AbstractExchange exc, String regex) {
 		exc.getRequest().setUri(
 				getURI(exc).replaceAll(regex, getSOAPURL(regex)));
 	}
@@ -100,7 +101,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		msg.setBodyContent(xsltTransformer.transform(ss, src).getBytes("UTF-8"));
 	}
 
-	private String getURI(Exchange exc) {
+	private String getURI(AbstractExchange exc) {
 		return exc.getRequest().getUri();
 	}
 

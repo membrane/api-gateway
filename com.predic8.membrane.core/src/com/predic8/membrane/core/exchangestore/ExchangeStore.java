@@ -16,7 +16,7 @@ package com.predic8.membrane.core.exchangestore;
 
 import java.util.List;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -31,9 +31,9 @@ public interface ExchangeStore {
 	
 	public void refreshExchangeStoreViewers();
 	
-	public void notifyListenersOnExchangeAdd(Rule rule, Exchange exchange);
+	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange);
 	
-	public void notifyListenersOnExchangeRemoval(Exchange exchange);
+	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange);
 	
 	public void notifyListenersOnRuleAdd(Rule rule);
 	
@@ -41,15 +41,15 @@ public interface ExchangeStore {
 	
 	
 	
-	public void add(Exchange exchange);
+	public void add(AbstractExchange exchange);
 	
-	public void remove(Exchange exchange);
+	public void remove(AbstractExchange exchange);
 
 	public void removeAllExchanges(Rule rule);
 	
-	public void removeAllExchanges(Exchange[] exchanges);
+	public void removeAllExchanges(AbstractExchange[] exchanges);
 	
-	public Exchange[] getExchanges(RuleKey ruleKey);
+	public AbstractExchange[] getExchanges(RuleKey ruleKey);
 	
 	public int getNumberOfExchanges(RuleKey ruleKey);
 	
@@ -59,7 +59,7 @@ public interface ExchangeStore {
 	
 	public Object[] getAllExchanges();
 	
-	public List<Exchange> getAllExchangesAsList();
+	public List<AbstractExchange> getAllExchangesAsList();
 	
 	
 }

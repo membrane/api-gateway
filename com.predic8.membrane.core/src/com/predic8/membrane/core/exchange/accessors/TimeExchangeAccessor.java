@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.exchange.accessors;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class TimeExchangeAccessor implements ExchangeAccessor {
 
@@ -22,7 +22,7 @@ public class TimeExchangeAccessor implements ExchangeAccessor {
 	
 //	private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
 	
-	public Object get(Exchange exc) {
+	public Object get(AbstractExchange exc) {
 		if (exc == null)
 			return 0;
 		return exc.getTime().getTimeInMillis();

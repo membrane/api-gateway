@@ -9,7 +9,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.util.MessageUtil;
 public class RegExURLRewriteInterceptorTest {
 
@@ -17,7 +16,7 @@ public class RegExURLRewriteInterceptorTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		exc = new HttpExchange();
+		exc = new Exchange();
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
 	}
 

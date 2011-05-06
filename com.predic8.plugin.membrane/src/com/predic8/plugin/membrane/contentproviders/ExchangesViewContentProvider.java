@@ -20,7 +20,7 @@ import java.util.List;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class ExchangesViewContentProvider implements IStructuredContentProvider {
 
@@ -44,14 +44,14 @@ public class ExchangesViewContentProvider implements IStructuredContentProvider 
 		List<Object> filtered = new ArrayList<Object>();
 		
 		for (Object object : original) {
-			if (object instanceof Exchange) {
-				if (statusCodeFilter.contains( ((Exchange)object) .getResponse().getStatusCode())) {
+			if (object instanceof AbstractExchange) {
+				if (statusCodeFilter.contains( ((AbstractExchange)object) .getResponse().getStatusCode())) {
 					filtered.add(object);
 				}
 			}
 		}
 		
-		Exchange[] array = filtered.toArray(new Exchange[filtered.size()]);
+		AbstractExchange[] array = filtered.toArray(new AbstractExchange[filtered.size()]);
 		if (array.length <= maximumExchangeCount) {
 			return array;
 		}

@@ -17,7 +17,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.exchange.HttpExchange;
 import com.predic8.membrane.core.rules.ForwardingRule;
 
 public class DispatchingInterceptor extends AbstractInterceptor {
@@ -29,13 +28,8 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
-	public Outcome handleRequest(Exchange aExc) throws Exception {
-
-		if (!(aExc instanceof HttpExchange))
-			return Outcome.CONTINUE;
-		
-		HttpExchange exc = (HttpExchange)aExc;
-		
+	public Outcome handleRequest(Exchange exc) throws Exception {
+	
 		if (exc.getRule() instanceof ForwardingRule) {
 			exc.getDestinations().add(getForwardingDestination(exc));	
 			return Outcome.CONTINUE;
@@ -46,7 +40,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private String getForwardingDestination(HttpExchange exc) {
+	private String getForwardingDestination(Exchange exc) {
 		StringBuffer buf = new StringBuffer();
 		buf.append("http://");
 		buf.append(((ForwardingRule)exc.getRule()).getTargetHost());

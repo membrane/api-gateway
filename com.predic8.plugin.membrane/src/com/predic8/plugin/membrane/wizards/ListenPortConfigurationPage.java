@@ -68,7 +68,7 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 		final Text text = new Text(composite,SWT.BORDER);
 		text.addVerifyListener(new PortVerifyListener());
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
-		text.setText(Router.getInstance().getRuleManager().getDefaultListenPort());
+		text.setText("" + Router.getInstance().getRuleManager().getDefaultListenPort());
 		text.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				if (text.getText().trim().equals("")) {

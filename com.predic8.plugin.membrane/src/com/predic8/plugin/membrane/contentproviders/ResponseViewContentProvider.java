@@ -16,7 +16,7 @@ package com.predic8.plugin.membrane.contentproviders;
 
 import org.eclipse.swt.widgets.Display;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -29,7 +29,7 @@ public class ResponseViewContentProvider extends MessageViewContentProvider {
 	}
 
 	@Override
-	public Message getMessage(Exchange exchange) {
+	public Message getMessage(AbstractExchange exchange) {
 		if (exchange == null)
 			return null;
 		return exchange.getResponse();

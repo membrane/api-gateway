@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -31,14 +32,14 @@ public class LogInterceptor extends AbstractInterceptor {
 		writer = new BufferedWriter(new OutputStreamWriter(System.out));
 	}
 	
-	public Outcome handleRequest(Exchange exchange) throws Exception {
+	public Outcome handleRequest(AbstractExchange exchange) throws Exception {
 		printRequest(exchange);
 		writer.write("\n");
 		writer.flush();
 		return Outcome.CONTINUE;
 	}
 
-	private void printRequest(Exchange exchange) throws IOException {
+	private void printRequest(AbstractExchange exchange) throws IOException {
 		Request request = exchange.getRequest();
 		writer.write("==== Request ===\n");
 		if (request == null) {
@@ -49,7 +50,7 @@ public class LogInterceptor extends AbstractInterceptor {
 		writer.write("================\n");
 	}
 	
-	private void printResponse(Exchange exchange) throws IOException {
+	private void printResponse(AbstractExchange exchange) throws IOException {
 		Response response = exchange.getResponse();
 		writer.write("==== Response ===\n");
 		if (response == null) {

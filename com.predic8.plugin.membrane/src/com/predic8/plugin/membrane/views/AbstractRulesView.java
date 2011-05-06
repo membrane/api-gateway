@@ -21,7 +21,7 @@ import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
@@ -90,7 +90,7 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesSt
 		tableViewer.setInput(manager);
 	}
 
-	public void addExchange(Rule rule, Exchange exchange) {
+	public void addExchange(Rule rule, AbstractExchange exchange) {
 		
 	}
 
@@ -109,11 +109,11 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesSt
 		refreshTable();
 	}
 
-	public void removeExchange(Exchange exchange) {
+	public void removeExchange(AbstractExchange exchange) {
 		refreshTable();
 	}
 
-	public void removeExchanges(Rule parent, Exchange[] exchanges) {
+	public void removeExchanges(Rule parent, AbstractExchange[] exchanges) {
 		refreshTable();
 	}
 
@@ -124,7 +124,7 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesSt
 		refreshTable();
 	}
 
-	public void setExchangeFinished(Exchange exchange) {
+	public void setExchangeFinished(AbstractExchange exchange) {
 		refreshTable();
 	}
 	
@@ -147,7 +147,7 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesSt
 
 	}
 
-	public void removeExchanges(Exchange[] exchanges) {
+	public void removeExchanges(AbstractExchange[] exchanges) {
 		refreshTable();
 	}
 	

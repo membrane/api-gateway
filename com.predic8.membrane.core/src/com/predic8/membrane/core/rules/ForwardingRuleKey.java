@@ -22,7 +22,7 @@ public class ForwardingRuleKey extends AbstractRuleKey {
 	public ForwardingRuleKey(String host, String method, String path, int port) {
 		super(port);
 		this.host = host;
-		this.path = path;
+		setPath(path);
 		this.method = method;
 	}
 
@@ -43,7 +43,7 @@ public class ForwardingRuleKey extends AbstractRuleKey {
 	}
 
 	public String toString() {
-		return host + " " + method + " " + path + ":" + port;
+		return host + " " + method + " " + getPath() + ":" + port;
 	}
 
 	
@@ -54,7 +54,7 @@ public class ForwardingRuleKey extends AbstractRuleKey {
 		int result = super.hashCode();
 		result = prime * result + ((host == null) ? 0 : host.hashCode());
 		result = prime * result + ((method == null) ? 0 : method.hashCode());
-		result = prime * result + ((path == null) ? 0 : path.hashCode());
+		result = prime * result + ((getPath() == null) ? 0 : getPath().hashCode());
 		return result;
 	}
 
@@ -77,20 +77,16 @@ public class ForwardingRuleKey extends AbstractRuleKey {
 				return false;
 		} else if (!method.equals(other.method))
 			return false;
-		if (path == null) {
-			if (other.path != null)
+		if (getPath() == null) {
+			if (other.getPath() != null)
 				return false;
-		} else if (!path.equals(other.path))
+		} else if (!getPath().equals(other.getPath()))
 			return false;
 		return true;
 	}
 
 	public String getHost() {
 		return host;
-	}
-
-	public void setHost(String host) {
-		this.host = host;
 	}
 
 }

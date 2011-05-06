@@ -6,6 +6,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -21,16 +24,15 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class AdministratorInterceptor extends AbstractInterceptor {
 
+	private static Log log = LogFactory.getLog(AdministratorInterceptor.class.getName());
+	
 	private Pattern patternMain;
 
 	private Pattern patternAddRule;
 
-	//private Pattern patternAdminCss;
-
 	public AdministratorInterceptor() {
 		patternMain = Pattern.compile(".*/");
 		patternAddRule = Pattern.compile(".*/add_forwarding_rule");
-		//patternAdminCss = Pattern.compile(".*/admin.css");
 	}
 
 	@Override
@@ -44,13 +46,8 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 			exc.setResponse(createResponse(getAddForwardingRule()));
 			return Outcome.ABORT;
 		}
-
-//		else if (patternAdminCss.matcher(exc.getOriginalRequestUri()).matches()) {
-//			exc.setResponse(createResponse(getCss()));
-//			return Outcome.ABORT;
-//		}
-
-		System.err.println("other pattern found: " + exc.getOriginalRequestUri());
+		
+		log.debug("other pattern found: " + exc.getOriginalRequestUri());
 		return Outcome.CONTINUE;
 	}
 
@@ -69,8 +66,7 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 		buf.append("<html>");
 		buf.append("<head>");
 		buf.append("<title>Membrane Administrator</title>");
-		//buf.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"admin.css\" />");
-		//buf.append(getCssContent());
+		
 		buf.append("</head>");
 
 		buf.append("<body>");
@@ -171,7 +167,7 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 		return buf.toString();
 	}
 
-	private String getCss() {
+	protected String getCss() {
 
 		InputStream in = getClass().getResourceAsStream("/configuration/admin.css");
 		if (in == null)
@@ -199,7 +195,7 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 		return header;
 	}
 
-	private String getCssContent() {
+	protected String getCssContent() {
 		StringBuffer buf = new StringBuffer();
 		buf.append("<style type='text/css'");
 	

@@ -29,7 +29,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Body;
 
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {
@@ -37,7 +37,7 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String NOR_NS  = "http://cooreo.com.br/normandes-EnviaSMS";
 	static final String XSI_NS  = "http://www.w3.org/2001/XMLSchema-instance";
 	
-	public Outcome handleRequest(Exchange exchange) throws Exception {
+	public Outcome handleRequest(AbstractExchange exchange) throws Exception {
 		Document doc = getDocument(exchange.getRequest().getBodyAsStream());
 		Element header = getAuthorisationHeader(doc);
 		if (header == null) return Outcome.CONTINUE;

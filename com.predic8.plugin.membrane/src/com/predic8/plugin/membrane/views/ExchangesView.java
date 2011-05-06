@@ -50,10 +50,10 @@ import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangeComparator;
 import com.predic8.membrane.core.exchange.ExchangeState;
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
@@ -225,14 +225,14 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 					updateRequestResponseViews(null);
 				}
 
-				if (selection.getFirstElement() instanceof HttpExchange) {
-					HttpExchange exc = (HttpExchange) selection.getFirstElement();
+				if (selection.getFirstElement() instanceof Exchange) {
+					Exchange exc = (Exchange) selection.getFirstElement();
 					updateRequestResponseViews(exc);
 					enableStopMenu(exc);
 				}
 			}
 
-			private void updateRequestResponseViews(HttpExchange exc) {
+			private void updateRequestResponseViews(Exchange exc) {
 				setInputForMessageView(exc, ResponseView.VIEW_ID);
 				setInputForMessageView(exc, RequestView.VIEW_ID);
 				canShowBody = true;
@@ -281,7 +281,7 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 		tableViewer.getTable().setFocus();
 	}
 
-	public void addExchange(Rule rule, final Exchange exchange) {
+	public void addExchange(Rule rule, final AbstractExchange exchange) {
 		
 	}
 
@@ -289,31 +289,31 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 		refreshTable(false);
 	}
 
-	public void removeExchange(Exchange exchange) {
+	public void removeExchange(AbstractExchange exchange) {
 		refreshTable(false);
 	}
 
-	public void removeExchanges(Rule parent, Exchange[] exchanges) {
+	public void removeExchanges(Rule parent, AbstractExchange[] exchanges) {
 		refreshTable(true);
 	}
 
-	public void setExchangeFinished(Exchange exchange) {
+	public void setExchangeFinished(AbstractExchange exchange) {
 		refreshTable(false);
 	}
 
-	private List<Exchange> applyFilter(List<Exchange> exchanges) {
+	private List<AbstractExchange> applyFilter(List<AbstractExchange> exchanges) {
 		if (exchanges == null || exchanges.size() == 0) {
 			filterCountText = "exchanges list is empty.";
-			return new ArrayList<Exchange>();
+			return new ArrayList<AbstractExchange>();
 		}
 		if (filterManager.isEmpty()) {
 			filterCountText = exchanges.size() + " of " + exchanges.size() + " Exchanges are displayed.";
 			return exchanges;
 		}
 
-		List<Exchange> filteredExchanges = new ArrayList<Exchange>();
+		List<AbstractExchange> filteredExchanges = new ArrayList<AbstractExchange>();
 		synchronized (exchanges) {
-			for (Exchange exc : exchanges) {
+			for (AbstractExchange exc : exchanges) {
 				if (filterManager.filter(exc)) {
 					filteredExchanges.add(exc);
 				}
@@ -324,7 +324,7 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 		return filteredExchanges;
 	}
 
-	private void applySorter(List<Exchange> exchanges) {
+	private void applySorter(List<AbstractExchange> exchanges) {
 		if (comparator.isEmpty())
 			return;
 		synchronized (exchanges) {
@@ -348,7 +348,7 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 
 				}
 
-				List<Exchange> exchanges = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
+				List<AbstractExchange> exchanges = applyFilter(Router.getInstance().getExchangeStore().getAllExchangesAsList());
 				applySorter(exchanges);
 				
 				if (!lbFilterCount.isDisposed()) {
@@ -439,15 +439,15 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 		refreshTable(true);
 	}
 
-	private void enableStopMenu(Exchange exchange) {
+	private void enableStopMenu(AbstractExchange exchange) {
 		stopExchangeAction.setEnabled(exchange.getStatus() == ExchangeState.STARTED);
 	}
 
-	public void removeExchanges(Exchange[] exchanges) {
+	public void removeExchanges(AbstractExchange[] exchanges) {
 		refreshTable(true);
 	}
 
-	private void setInputForMessageView(HttpExchange exc, String viewId) {
+	private void setInputForMessageView(Exchange exc, String viewId) {
 		AbstractMessageView part = (AbstractMessageView) PluginUtil.showView(viewId);
 		part.setInput(exc);
 		part.updateUIStatus(canShowBody);
@@ -468,7 +468,7 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 		// TODO Delete this method
 	}
 
-	public void setExchangeStopped(Exchange exchange) {
+	public void setExchangeStopped(AbstractExchange exchange) {
 		if (exchange == null)
 			return;
 		

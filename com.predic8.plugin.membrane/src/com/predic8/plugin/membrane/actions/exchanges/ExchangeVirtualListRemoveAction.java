@@ -18,7 +18,7 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.viewers.StructuredViewer;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.contentproviders.ExchangesViewLazyContentProvider;
 import com.predic8.plugin.membrane.resources.ImageKeys;
@@ -45,9 +45,9 @@ public class ExchangeVirtualListRemoveAction extends Action {
 			if (objects == null || objects.length == 0)
 				return;
 			
-			Exchange[] array = new Exchange[objects.length];
+			AbstractExchange[] array = new AbstractExchange[objects.length];
 			for(int i = 0; i < array.length; i ++ ) {
-				array[i] = (Exchange)objects[i];
+				array[i] = (AbstractExchange)objects[i];
 			}
 			
 			Router.getInstance().getExchangeStore().removeAllExchanges(array);

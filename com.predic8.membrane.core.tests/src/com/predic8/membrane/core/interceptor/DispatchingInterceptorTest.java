@@ -7,7 +7,7 @@ import java.net.URL;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -17,12 +17,12 @@ public class DispatchingInterceptorTest {
 
 	private DispatchingInterceptor dispatcher;
 	
-	private HttpExchange exc;
+	private Exchange exc;
 	
 	@Before
 	public void setUp() throws Exception {
 		dispatcher = new DispatchingInterceptor();
-		exc = new HttpExchange();
+		exc = new Exchange();
 	}
 	
 	@Test

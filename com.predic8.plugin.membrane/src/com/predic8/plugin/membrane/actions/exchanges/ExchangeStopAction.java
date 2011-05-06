@@ -19,7 +19,7 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredViewer;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
@@ -53,8 +53,8 @@ public class ExchangeStopAction extends Action {
 		IStructuredSelection selection = (IStructuredSelection) treeView.getSelection();
 		Object selectedItem = selection.getFirstElement();
 
-		if (selectedItem instanceof Exchange) {
-			((Exchange)selectedItem).finishExchange(true);
+		if (selectedItem instanceof AbstractExchange) {
+			((AbstractExchange)selectedItem).finishExchange(true);
 			treeView.setSelection(selection);
 		}
 	}

@@ -26,7 +26,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.Proxy;
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
@@ -88,7 +88,7 @@ public class HttpClient {
 		
 	}
 	
-	private void init(HttpExchange exc, int destIndex) throws UnknownHostException, IOException, MalformedURLException {
+	private void init(Exchange exc, int destIndex) throws UnknownHostException, IOException, MalformedURLException {
 		String dest = exc.getDestinations().get(destIndex);
 		
 		setRequestURI(exc.getRequest(), dest);
@@ -107,11 +107,11 @@ public class HttpClient {
 		}
 	}
 
-	private boolean getOutboundTLS(HttpExchange exc) {
+	private boolean getOutboundTLS(Exchange exc) {
 		return exc.getRule().isOutboundTLS();
 	}
 
-	public Response call(HttpExchange exc) throws Exception {
+	public Response call(Exchange exc) throws Exception {
 		if (exc.getDestinations().size() == 0)
 			throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
 		
@@ -159,14 +159,14 @@ public class HttpClient {
 		}
 	}
 	
-	private void logException(HttpExchange exc, int counter, Exception e) throws IOException {
+	private void logException(Exchange exc, int counter, Exception e) throws IOException {
 		log.debug("try # " + counter + " failed");
 		exc.getRequest().writeStartLine(System.out);
 		exc.getRequest().getHeader().write(System.out);
 		e.printStackTrace();
 	}
 
-	private Response doCall(HttpExchange exc, Connection con) throws IOException, SocketException, EndOfStreamException {
+	private Response doCall(Exchange exc, Connection con) throws IOException, SocketException, EndOfStreamException {
 		exc.setTimeReqSent(System.currentTimeMillis());
 		
 		if (exc.getRequest().isCONNECTRequest()) {
@@ -197,7 +197,7 @@ public class HttpClient {
 		return res;
 	}
 
-	private void handleConnectRequest(HttpExchange exc, Connection con) throws IOException, EndOfStreamException {
+	private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
 		if (isUseProxy()) {
 			
 			log.debug("host: " + host);
@@ -214,7 +214,7 @@ public class HttpClient {
 		new TunnelThread(exc.getServerThread().getSrcIn(), con.out, "Backward Thread").start();
 	}
 
-	private void do100ExpectedHandling(HttpExchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
+	private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
 		if (exc.getServerThread() instanceof HttpServerThread) {
 			response.write(exc.getServerThread().srcOut);
 		}
@@ -223,7 +223,7 @@ public class HttpClient {
 		response.read(con.in, !exc.getRequest().isHEADRequest());
 	}
 
-	private void shutDownSourceSocket(HttpExchange exc, Connection con) throws IOException {
+	private void shutDownSourceSocket(Exchange exc, Connection con) throws IOException {
 		exc.getServerThread().sourceSocket.shutdownInput();
 		if (!con.socket.isOutputShutdown()) {
 			log.info("Shutting down socket outputstream");

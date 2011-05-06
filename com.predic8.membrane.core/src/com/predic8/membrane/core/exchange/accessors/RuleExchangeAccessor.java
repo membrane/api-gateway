@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.exchange.accessors;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class RuleExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Rule";
 	
-	public Object get(Exchange exc) {
+	public Object get(AbstractExchange exc) {
 		if (exc == null)
 			return "";
 		return exc.getRule().toString();

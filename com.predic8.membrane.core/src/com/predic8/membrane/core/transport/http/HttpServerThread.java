@@ -27,7 +27,7 @@ import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -37,7 +37,7 @@ public class HttpServerThread extends AbstractHttpThread {
 	public static int counter = 0;
 
 	public HttpServerThread(Socket socket, HttpTransport transport) throws IOException {
-		this.exchange = new HttpExchange();
+		this.exchange = new Exchange();
 		exchange.setServerThread(this);
 		log = LogFactory.getLog(HttpServerThread.class.getName());
 		counter++;
@@ -68,7 +68,7 @@ public class HttpServerThread extends AbstractHttpThread {
 				if (exchange.getResponse().isRedirect()) {
 					break;
 				}
-				exchange = new HttpExchange();
+				exchange = new Exchange();
 				exchange.setServerThread(this);
 			}
 		} catch (SocketTimeoutException e) {
