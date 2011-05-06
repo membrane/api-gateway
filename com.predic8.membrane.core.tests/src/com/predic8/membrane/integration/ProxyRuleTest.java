@@ -77,7 +77,7 @@ public class ProxyRuleTest {
 		rule1.setInterceptors(getInterceptors());
 		
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(os, Constants.ENCODING_UTF_8);
+		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(os, Constants.UTF_8);
 		rule1.write(writer);
 		writer.flush();
 		buffer = os.toByteArray();
@@ -89,7 +89,7 @@ public class ProxyRuleTest {
 		rule2.setRouter(router);
 		
 		XMLInputFactory factory = XMLInputFactory.newInstance();
-		XMLStreamReader reader = factory.createXMLStreamReader((new ByteArrayInputStream(buffer)), Constants.ENCODING_UTF_8);
+		XMLStreamReader reader = factory.createXMLStreamReader((new ByteArrayInputStream(buffer)), Constants.UTF_8);
 		
 		while(reader.next() != XMLStreamReader.START_ELEMENT);
 		

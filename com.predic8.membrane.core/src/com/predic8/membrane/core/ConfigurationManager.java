@@ -22,10 +22,11 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.io.ConfigurationStore;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class ConfigurationManager {
 
+	protected static Log log = LogFactory.getLog(ConfigurationManager.class.getName());
+	
 	private Configuration configuration;
 
 	private ConfigurationStore configurationStore;
@@ -33,8 +34,6 @@ public class ConfigurationManager {
 	private Router router;
 
 	private List<SecurityConfigurationChangeListener> securityChangeListeners = new Vector<SecurityConfigurationChangeListener>();
-	
-	protected static Log log = LogFactory.getLog(ConfigurationManager.class.getName());
 	
 	public void saveConfiguration(String fileName) throws Exception {
 		configuration.setRules(router.getRuleManager().getRules());
@@ -51,7 +50,6 @@ public class ConfigurationManager {
 		router.getRuleManager().removeAllRules();
 		
 		for (Rule rule : configuration.getRules()) {
-			getHttpTransport().openPort(rule.getKey().getPort(), rule.isInboundTLS());
 			router.getRuleManager().addRuleIfNew(rule);
 		}
 
@@ -81,10 +79,6 @@ public class ConfigurationManager {
 				securityChangeListeners.remove(listener);
 			}
 		}
-	}
-
-	private HttpTransport getHttpTransport() {
-		return ((HttpTransport) router.getTransport());
 	}
 
 	public Configuration getConfiguration() {
@@ -123,14 +117,10 @@ public class ConfigurationManager {
 	}
 	
 	public void addSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {
-		if (listener == null)
-			return;
 		securityChangeListeners.add(listener);
 	}
 
 	public void removeSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {
-		if (listener == null)
-			return;
 		securityChangeListeners.remove(listener);
 	}
 	

@@ -17,20 +17,20 @@ public class RelocatorTest extends TestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		relocator = new Relocator(new OutputStreamWriter(System.out, Constants.ENCODING_UTF_8), "http", "localhost", 3000);
+		relocator = new Relocator(new OutputStreamWriter(System.out, Constants.UTF_8), "http", "localhost", 3000);
 		super.setUp();
 	}
 
 	public void testWSDLRelocate() throws Exception {
 		byte[] contentWSDL = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/blz-service.wsdl"));
-		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(contentWSDL), Constants.ENCODING_UTF_8));
+		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(contentWSDL), Constants.UTF_8));
 		assertTrue(relocator.isWsdlFound());
 	}
 
 	@Test
 	public void testXMLRelocate() throws Exception {
 		byte[] contentXML = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/acl.xml"));
-		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(contentXML), Constants.ENCODING_UTF_8));
+		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(contentXML), Constants.UTF_8));
 		assertFalse(relocator.isWsdlFound());
 	}
 }

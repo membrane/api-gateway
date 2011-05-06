@@ -54,6 +54,7 @@ public class HttpEndpointListener extends Thread {
 	public void run() {
 		while (serverSocket != null && !serverSocket.isClosed() && transport != null) {
 			try {
+				log.debug("executeService call: " + serverSocket);
 				transport.getExecutorService().execute(new HttpServerThread(serverSocket.accept(), transport));
 			} catch (SocketException e) {
 				if ( "socket closed".endsWith(e.getMessage()) )

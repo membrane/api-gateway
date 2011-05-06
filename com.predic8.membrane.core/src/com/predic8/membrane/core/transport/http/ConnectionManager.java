@@ -29,18 +29,18 @@ public class ConnectionManager {
 		
 		log.debug("Number of connections in pool: " + connections.size());
 		
-		List<Connection> list = new ArrayList<Connection>();
+		List<Connection> closed = new ArrayList<Connection>();
 		
 		for (Connection cc : connections) {
 			if (cc.isClosed()) {
-				list.add(cc);
+				closed.add(cc);
 				continue;
 			}
 			if (cc.isSame(host, port))
 				return cc;
 		}
 		
-		connections.removeAll(list);
+		connections.removeAll(closed);
 		return createSocket(host, port, localHost, tls);
 	}
 	

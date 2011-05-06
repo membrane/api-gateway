@@ -24,7 +24,7 @@ public class Constants {
 	
 	public static final String XML_VERSION = "1.0";
 	
-	public static final String ENCODING_UTF_8 = "UTF-8";
+	public static final String UTF_8 = "UTF-8";
 	
 	public static final String UNKNOWN = "unknown";
 	

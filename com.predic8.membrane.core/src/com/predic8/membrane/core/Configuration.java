@@ -239,7 +239,7 @@ public class Configuration extends AbstractConfigElement {
 	
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartDocument(Constants.ENCODING_UTF_8, Constants.XML_VERSION);
+		out.writeStartDocument(Constants.UTF_8, Constants.XML_VERSION);
 		out.writeStartElement(ELEMENT_NAME);
 		
 		Rules childRules = new Rules(router);

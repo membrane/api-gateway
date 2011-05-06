@@ -49,7 +49,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
 		XMLStreamWriter writer = XMLOutputFactory.newInstance()
-				.createXMLStreamWriter(buffer, Constants.ENCODING_UTF_8);
+				.createXMLStreamWriter(buffer, Constants.UTF_8);
 		config.write(writer);
 		writer.flush();
 		writer.close();
@@ -62,7 +62,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 
 		FileWriter out = new FileWriter(path);
 		out.write(TextUtil.formatXML(new InputStreamReader(
-				new ByteArrayInputStream(bArray), Constants.ENCODING_UTF_8)));
+				new ByteArrayInputStream(bArray), Constants.UTF_8)));
 		out.flush();
 		out.close();
 
@@ -70,7 +70,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 
 	private Configuration read(InputStream is) throws XMLStreamException {
 		XMLStreamReader reader = XMLInputFactory.newInstance()
-				.createXMLStreamReader(is, Constants.ENCODING_UTF_8);
+				.createXMLStreamReader(is, Constants.UTF_8);
 		
 		return (Configuration) new Configuration(router).parse(reader);
 	}
