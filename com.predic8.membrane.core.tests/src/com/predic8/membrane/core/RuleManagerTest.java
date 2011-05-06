@@ -76,6 +76,7 @@ public class RuleManagerTest {
 		assertTrue(manager.getRules().isEmpty());
 	}
 	
+	@Test
 	public void testIsAnyRuleWithPort() throws Exception {
 		assertFalse(manager.isAnyRuleWithPort(1234));
 		assertTrue(manager.isAnyRuleWithPort(5000));
@@ -83,9 +84,16 @@ public class RuleManagerTest {
 		assertTrue(manager.isAnyRuleWithPort(5002));
 	}
 	
+	@Test
 	public void testRuleUp() throws Exception {
 		manager.ruleUp(forwardBlz);
 		assertEquals(forwardBlz, manager.getRules().get(0));
+	}
+	
+	@Test
+	public void testRuleDown() throws Exception {
+		manager.ruleDown(forwardBlz);
+		assertEquals(forwardBlz, manager.getRules().get(2));
 	}
 	
 }
