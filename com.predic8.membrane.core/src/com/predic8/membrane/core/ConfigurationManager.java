@@ -37,7 +37,7 @@ public class ConfigurationManager {
 	
 	public void saveConfiguration(String fileName) throws Exception {
 		configuration.setRules(router.getRuleManager().getRules());
-		configurationStore.write(configuration, fileName);
+		configuration.write(fileName);
 	}
 
 

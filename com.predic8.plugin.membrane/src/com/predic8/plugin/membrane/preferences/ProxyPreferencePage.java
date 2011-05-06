@@ -156,7 +156,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 		btUseAuthent.setSelection(proxy.isUseAuthentication());
 		btUseAuthent.notifyListeners(SWT.Selection, null);
-		btUseProxy.setSelection(proxy.isUseProxy());
+		btUseProxy.setSelection(proxy.useProxy());
 		btUseProxy.notifyListeners(SWT.Selection, null);
 	}
 

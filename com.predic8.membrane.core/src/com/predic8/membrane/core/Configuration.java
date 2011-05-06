@@ -14,11 +14,17 @@
 
 package com.predic8.membrane.core;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -30,6 +36,7 @@ import com.predic8.membrane.core.config.Proxy;
 import com.predic8.membrane.core.config.Rules;
 import com.predic8.membrane.core.config.security.Security;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.util.TextUtil;
 
 public class Configuration extends AbstractConfigElement {
 
@@ -284,6 +291,25 @@ public class Configuration extends AbstractConfigElement {
 
 	public boolean isKeyStoreAvailable() {
 		return getKeyStoreLocation() != null && !"".equals(getKeyStoreLocation().trim()) && getKeyStorePassword() != null;
+	}
+
+	public byte[] toBytes() throws XMLStreamException, FactoryConfigurationError {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	
+		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(baos, Constants.UTF_8);
+		write(writer);
+		writer.flush();
+		writer.close();
+	
+		return baos.toByteArray();
+	}
+
+	public void write(String path) throws Exception {
+		FileWriter out = new FileWriter(path);
+		out.write(TextUtil.formatXML(new InputStreamReader(new ByteArrayInputStream(toBytes()), Constants.UTF_8)));
+		out.flush();
+		out.close();
+	
 	}
 	
 	

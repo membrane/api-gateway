@@ -20,8 +20,6 @@ import com.predic8.membrane.core.Router;
 
 public interface ConfigurationStore {
 
-	public void write(Configuration config, String path) throws Exception;
-	
 	public Configuration read(String path) throws Exception;
 
 	public void setRouter(Router router);

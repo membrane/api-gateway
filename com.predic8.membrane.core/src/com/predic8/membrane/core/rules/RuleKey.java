@@ -1,6 +1,5 @@
 package com.predic8.membrane.core.rules;
 
-import java.util.regex.Pattern;
 
 public interface RuleKey {
 
@@ -26,5 +25,5 @@ public interface RuleKey {
 	
 	public void setPath(String path);
 	
-	public Pattern getPathPattern();
+	public boolean matchesPath(String path); 
 }

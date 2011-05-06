@@ -18,6 +18,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.codec.binary.Base64;
+
 import com.predic8.membrane.core.Router;
 
 public class Proxy extends AbstractConfigElement {
@@ -113,7 +115,7 @@ public class Proxy extends AbstractConfigElement {
 		this.proxyPassword = proxyPassword;
 	}
 
-	public boolean isUseProxy() {
+	public boolean useProxy() {
 		return useProxy;
 	}
 
@@ -135,6 +137,14 @@ public class Proxy extends AbstractConfigElement {
 
 	public void setUseAuthentication(boolean useAuthentication) {
 		this.useAuthentication = useAuthentication;
+	}
+	
+	public String getCredentials() {
+		StringBuffer buffer = new StringBuffer();
+		buffer.append("Basic ");
+		byte[] base64UserPass = Base64.encodeBase64((proxyUsername + ":" + proxyPassword).getBytes());
+		buffer.append(new String(base64UserPass));
+		return buffer.toString();
 	}
 
 }

@@ -90,11 +90,21 @@ public abstract class AbstractRuleKey implements RuleKey {
 		return path;
 	}
 	
-	public Pattern getPathPattern() {
+	public boolean matchesPath(String path) {
+		if (isPathRegExp())
+			return matchesPathPattern(path);
+		
+		return path.indexOf(getPath()) >=0;
+	}
+	
+	private boolean matchesPathPattern(String path) {
+		return getPathPattern().matcher(path).matches();
+	}
+	
+	private Pattern getPathPattern() {
 		if (pathPattern == null)
 			pathPattern = Pattern.compile(path);
 		
 		return pathPattern;
 	}
-	
 }

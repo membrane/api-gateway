@@ -63,9 +63,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private Rule getRule(Exchange exc) {
 		ForwardingRuleKey key = exc.getForwardingRuleKey();
-		if (router == null)
-			System.out.println("router is null.");
-		
+
 		Rule rule = router.getRuleManager().getMatchingRule(key);
 		if (rule != null) {
 			log.debug("Matching Rule found for RuleKey " + key);
@@ -90,8 +88,14 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private void insertXForwardedFor(AbstractExchange exc) {
-		String value = getXForwardedFor(exc) != null ? getXForwardedFor(exc) + ", " + exc.getSourceIp(): exc.getSourceIp();
-		exc.getRequest().getHeader().setXForwardedFor(value);
+		exc.getRequest().getHeader().setXForwardedFor(getXForwardedForHeaderValue(exc));
+	}
+
+	private String getXForwardedForHeaderValue(AbstractExchange exc) {
+		if (getXForwardedFor(exc) != null )
+			return getXForwardedFor(exc) + ", " + exc.getSourceIp();
+		
+		return exc.getSourceIp();
 	}
 
 	private String getXForwardedFor(AbstractExchange exc) {

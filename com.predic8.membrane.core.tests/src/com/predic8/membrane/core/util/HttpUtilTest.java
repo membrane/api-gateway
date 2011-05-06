@@ -72,10 +72,4 @@ public class HttpUtilTest {
 		assertEquals(15663, HttpUtil.readChunkSize(new ByteArrayInputStream(s.getBytes())));
 	}
 	
-	@Test
-	public void testGetCredentials() throws Exception {
-		String credentials = HttpUtil.getCredentials("predic8", "predic8");
-		System.out.println(credentials);
-	}
-	
 }

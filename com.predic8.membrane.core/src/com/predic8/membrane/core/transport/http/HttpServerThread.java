@@ -120,8 +120,8 @@ public class HttpServerThread extends AbstractHttpThread {
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
 			
-			invokeRequestInterceptors(transport.getBackboneInterceptors());
-			invokeRequestInterceptors(getInterceptors());
+			invokeRequestHandlers(transport.getBackboneInterceptors());
+			invokeRequestHandlers(getInterceptors());
 
 			synchronized (exchange.getRequest()) {
 				if (exchange.getRule().isBlockRequest()) {
@@ -140,7 +140,8 @@ public class HttpServerThread extends AbstractHttpThread {
 			}
 			exchange.setResponse(targetRes);
 			
-			invokeResponseInterceptors();
+			invokeResponseHandlers(exchange, getInterceptorsReverse(getInterceptors()));
+			invokeResponseHandlers(exchange, getInterceptorsReverse(transport.getBackboneInterceptors()));
 
 			synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {

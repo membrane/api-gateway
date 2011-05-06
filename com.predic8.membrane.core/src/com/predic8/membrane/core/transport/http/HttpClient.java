@@ -35,14 +35,14 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class HttpClient {
 
+	private static Log log = LogFactory.getLog(HttpClient.class.getName());
+	
 	private static final int TIME_BETWEEN_TRIES = 250;
 
-	private static Log log = LogFactory.getLog(HttpClient.class.getName());
-
+	private static final int MAX_TRIES = 5;
+	
 	private ConnectionManager conMgr = new ConnectionManager();
 	
-	private static final int MAX_TRIES = 5;
-
 	private boolean adjustHostHeader;
 	
 	private Proxy proxy;
@@ -55,21 +55,21 @@ public class HttpClient {
 	
 	private String localHost;
 	
-	private boolean isUseProxy() {
+	private boolean useProxy() {
 		if (proxy == null)
 			return false;
-		return proxy.isUseProxy();
+		return proxy.useProxy();
 	}
 	
 	private void setRequestURI(Request req, String dest) throws MalformedURLException {
-		if (isUseProxy() || req.isCONNECTRequest())
+		if (useProxy() || req.isCONNECTRequest())
 			req.setUri(dest);
 		else
 			req.setUri(HttpUtil.getPathAndQueryString(dest));
 	}
 	
 	private void setHostAndPort(boolean connect, String dest) throws MalformedURLException {
-		if (isUseProxy()) {
+		if (useProxy()) {
 			port = proxy.getProxyPort();
 			host = proxy.getProxyHost();
 			return;
@@ -88,14 +88,12 @@ public class HttpClient {
 		
 	}
 	
-	private void init(Exchange exc, int destIndex) throws UnknownHostException, IOException, MalformedURLException {
-		String dest = exc.getDestinations().get(destIndex);
-		
+	private void init(Exchange exc, String dest) throws UnknownHostException, IOException, MalformedURLException {
 		setRequestURI(exc.getRequest(), dest);
 		setHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
 		
-		if (isUseProxy() && proxy.isUseAuthentication()) {
-			exc.getRequest().getHeader().setProxyAutorization(HttpUtil.getCredentials(proxy.getProxyUsername(), proxy.getProxyPassword()));
+		if (useProxy() && proxy.isUseAuthentication()) {
+			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
 		} 
 		
 		tls = getOutboundTLS(exc);
@@ -119,18 +117,15 @@ public class HttpClient {
 		Exception exception = null;
 		while (counter < MAX_TRIES) {
 			Connection con = null;
-			int destIndex = counter % exc.getDestinations().size();
-			String dest = exc.getDestinations().get(destIndex);
+			String dest = getDestination(exc, counter);
 			try {
 				log.debug("try # " + counter + " to " + dest);
-				init(exc, destIndex);
+				init(exc, dest);
 				con = conMgr.getConnection(host, port, localHost, tls);
 				return doCall(exc, con);
 			} catch (ConnectException e) {
 				exception = e;
-				log.debug(e);
-				if (con != null && con.socket != null)
-					log.debug("Connection to " + dest + " on port " + con.socket.getPort() + " refused.");
+				log.warn("Connection to " + dest + " on port " + con.socket.getPort() + " refused.");
 			} catch (UnknownHostException e) {
 				log.warn("Unknown host: " + host);
 				exception = e;
@@ -151,6 +146,10 @@ public class HttpClient {
 		throw exception;
 	}
 
+	private String getDestination(Exchange exc, int counter) {
+		return exc.getDestinations().get(counter % exc.getDestinations().size());
+	}
+
 	private void closeConnection(Connection con) {
 		try {
 			close(con);
@@ -167,15 +166,14 @@ public class HttpClient {
 	}
 
 	private Response doCall(Exchange exc, Connection con) throws IOException, SocketException, EndOfStreamException {
-		exc.setTimeReqSent(System.currentTimeMillis());
-		
 		if (exc.getRequest().isCONNECTRequest()) {
 			handleConnectRequest(exc, con);
 			return Response.createOKResponse();
 		}
 
 		exc.getRequest().write(con.out);
-
+		exc.setTimeReqSent(System.currentTimeMillis());
+		
 		if (exc.getRequest().isHTTP10()) {
 			shutDownSourceSocket(exc, con);
 		}
@@ -198,11 +196,9 @@ public class HttpClient {
 	}
 
 	private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
-		if (isUseProxy()) {
-			
+		if (useProxy()) {
 			log.debug("host: " + host);
 			log.debug("port: " + port);
-			
 			
 			exc.getRequest().write(con.out);
 			Response response = new Response();
@@ -215,9 +211,7 @@ public class HttpClient {
 	}
 
 	private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
-		if (exc.getServerThread() instanceof HttpServerThread) {
-			response.write(exc.getServerThread().srcOut);
-		}
+		response.write(exc.getServerThread().srcOut);
 		exc.getRequest().readBody();
 		exc.getRequest().getBody().write(con.out);
 		response.read(con.in, !exc.getRequest().isHEADRequest());

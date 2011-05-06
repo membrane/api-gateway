@@ -25,20 +25,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.transport.http.ErrorReadingStartLineException;
 
 public class HttpUtil {
-
-	private static Log log = LogFactory.getLog(HttpUtil.class.getName());
 
 	public static final SimpleDateFormat GMT_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 
@@ -91,7 +85,7 @@ public class HttpUtil {
 	public static Response createErrorResponse(String message) {
 		Response response = new Response();
 		response.setStatusCode(500);
-		response.setStatusMessage(message);
+		response.setStatusMessage("Internal Server Error");
 
 		response.setHeader(createHeader("text/html;charset=utf-8"));
 
@@ -183,14 +177,6 @@ public class HttpUtil {
 			return 80;
 		}
 		return url.getPort();
-	}
-
-	public static String getCredentials(String user, String password) {
-		StringBuffer buffer = new StringBuffer();
-		buffer.append("Basic ");
-		byte[] base64UserPass = Base64.encodeBase64((user + ":" + password).getBytes());
-		buffer.append(new String(base64UserPass));
-		return buffer.toString();
 	}
 
 }

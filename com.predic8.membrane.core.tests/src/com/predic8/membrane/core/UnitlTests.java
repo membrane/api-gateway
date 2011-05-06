@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.http.BodyTest;
 import com.predic8.membrane.core.http.HeaderTest;
 import com.predic8.membrane.core.http.RequestTest;
@@ -28,6 +29,7 @@ import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
+import com.predic8.membrane.core.rules.ForwardingRuleKeyTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
 import com.predic8.membrane.core.util.ByteUtilTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
@@ -50,7 +52,10 @@ import com.predic8.membrane.core.util.HttpUtilTest;
 	HostColonPortTest.class,
 	HTTP2XMLInterceptorTest.class,	
 	ReadRulesConfigurationTest.class,
-	ReadRulesInterceptorRefTest.class
+	ReadRulesInterceptorRefTest.class,
+	RuleManagerTest.class,
+	ProxyTest.class,
+	ForwardingRuleKeyTest.class
 })
 public class UnitlTests {
 

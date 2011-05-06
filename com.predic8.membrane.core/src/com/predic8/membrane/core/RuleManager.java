@@ -16,7 +16,6 @@ package com.predic8.membrane.core;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +36,7 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 public class RuleManager {
 
 	private static Log log = LogFactory.getLog(RuleManager.class.getName());
-	
+
 	private Router router;
 
 	private List<Rule> rules = new Vector<Rule>();
@@ -49,7 +48,7 @@ public class RuleManager {
 	private int defaultTargetPort = 8080;
 	private String defaultPath = ".*";
 	private int defaultMethod = 0;
-	
+
 	public int getDefaultListenPort() {
 		return defaultListenPort;
 	}
@@ -90,16 +89,16 @@ public class RuleManager {
 		}
 		return false;
 	}
-	
+
 	public synchronized void addRuleIfNew(Rule rule) throws IOException {
 		if (exists(rule.getKey()))
 			return;
-		
-		((HttpTransport)router.getTransport()).openPort(rule.getKey().getPort(), rule.isInboundTLS());
-		
-		((AbstractRule)rule).setRouter(router);
+
+		((HttpTransport) router.getTransport()).openPort(rule.getKey().getPort(), rule.isInboundTLS());
+
+		((AbstractRule) rule).setRouter(router);
 		rules.add(rule);
-		
+
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleAdded(rule);
 		}
@@ -113,7 +112,7 @@ public class RuleManager {
 		}
 		return false;
 	}
-	
+
 	private Rule getRule(RuleKey key) {
 		for (Rule r : rules) {
 			if (r.getKey().equals(key))
@@ -128,24 +127,24 @@ public class RuleManager {
 
 	public void ruleUp(Rule rule) {
 		int index = rules.indexOf(rule);
-		if (index <= 0 )
+		if (index <= 0)
 			return;
 		Collections.swap(rules, index, index - 1);
 		for (IRuleChangeListener listener : listeners) {
 			listener.rulePositionsChanged();
 		}
 	}
-	
+
 	public void ruleDown(Rule rule) {
 		int index = rules.indexOf(rule);
-		if (index < 0 || index == (rules.size() - 1) )
+		if (index < 0 || index == (rules.size() - 1))
 			return;
 		Collections.swap(rules, index, index + 1);
 		for (IRuleChangeListener listener : listeners) {
 			listener.rulePositionsChanged();
 		}
 	}
-	
+
 	public void ruleChanged(Rule rule) {
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleUpdated(rule);
@@ -158,40 +157,32 @@ public class RuleManager {
 			return getRule(keyFromReq);
 
 		for (Rule rule : rules) {
-			
+
 			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + keyFromReq.getHost());
-			
+
 			if (!rule.getKey().isHostWildcard()) {
 				String ruleHost = rule.getKey().getHost().split(":")[0];
 				String requestHost = keyFromReq.getHost().split(":")[0];
-				
+
 				log.debug("Rule host: " + ruleHost + ";  Request host: " + requestHost);
-				
+
 				if (!ruleHost.equalsIgnoreCase(requestHost))
 					continue;
 			}
-			
+
 			if (rule.getKey().getPort() != keyFromReq.getPort())
 				continue;
 			if (!rule.getKey().getMethod().equals(keyFromReq.getMethod()) && !rule.getKey().isMethodWildcard())
 				continue;
 
-			if (!rule.getKey().isUsePathPattern()) 
+			if (!rule.getKey().isUsePathPattern())
 				return rule;
-			
-			if (rule.getKey().isPathRegExp()) {
-				if (matchesPathPattern(keyFromReq, rule.getKey()))
-					return rule;
-			} else {
-				if (keyFromReq.getPath().indexOf(rule.getKey().getPath()) >=0 )
-					return rule;
-			}
+
+			if (rule.getKey().matchesPath(keyFromReq.getPath()))
+				return rule;
+
 		}
 		return null;
-	}
-
-	private boolean matchesPathPattern(RuleKey keyFromReq, RuleKey rule) {
-		return rule.getPathPattern().matcher(keyFromReq.getPath()).find();
 	}
 
 	public void addRuleChangeListener(IRuleChangeListener viewer) {
@@ -226,17 +217,13 @@ public class RuleManager {
 	}
 
 	public synchronized void removeAllRules() {
-		try {
-			Collection<Rule> rules = getRules();
-			if (rules == null || rules.isEmpty()) 
-				return;
-			
-			List<Rule> rulesCopy = new ArrayList<Rule>(rules);
-			for (Rule rule : rulesCopy) {
-				removeRule(rule);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		if (rules.isEmpty())
+			return;
+
+		// Local variable is needed. Strange but true
+		List<Rule> rulesCopy = new ArrayList<Rule>(rules);
+		for (Rule rule : rulesCopy) {
+			removeRule(rule);
 		}
 	}
 
@@ -251,5 +238,5 @@ public class RuleManager {
 	private ExchangeStore getExchangeStore() {
 		return router.getExchangeStore();
 	}
-	
+
 }

@@ -17,15 +17,10 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.ForwardingRule;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 
 public class HttpResendThread extends AbstractHttpThread {
-
-	private Rule rule;
 
 	public HttpResendThread(Exchange exc, HttpTransport transport) {
 		this.transport = transport;
@@ -33,17 +28,14 @@ public class HttpResendThread extends AbstractHttpThread {
 		exchange.setServerThread(this);
 		
 		srcReq = exc.getRequest();
-		this.rule = exc.getRule();
 		setClientSettings();
 	}
 
 	public void run() {
 		try {
 			exchange.setRequest(srcReq);
-
-			exchange.setRule(rule);
-			
-			invokeRequestInterceptors(getInterceptors());
+	
+			invokeRequestHandlers(getInterceptors());
 			
 			synchronized (exchange.getRequest()) {
 				if (exchange.getRule().isBlockRequest()) {
@@ -52,17 +44,11 @@ public class HttpResendThread extends AbstractHttpThread {
 				}
 			}
 			
-			if (rule instanceof ForwardingRule) {
-				if (((ForwardingRule) rule).getTargetHost() != null && ((ForwardingRule) rule).getTargetHost().length() != 0) {
-					makeClientCall();
-				}
-			} else if (rule instanceof ProxyRule) {
-				makeClientCall();
-			}
+			makeClientCall();
 			
 			exchange.setResponse(targetRes);
 
-			invokeResponseInterceptors();
+			invokeResponseHandlers(exchange, getInterceptorsReverse(getInterceptors()));
 
 			synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {
