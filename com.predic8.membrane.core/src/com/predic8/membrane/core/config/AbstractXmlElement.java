@@ -61,7 +61,7 @@ public class AbstractXmlElement implements XMLElement {
 		  
 	  }
 
-	  protected String getElementName(){
+	  protected String getElementName() { // TODO Sollte m.E abstrakt sein um Fehler zur Kompilierzeit zu entdecken.
 		  return null;
 	  }
 	  
@@ -83,6 +83,11 @@ public class AbstractXmlElement implements XMLElement {
 	protected boolean getBoolean(XMLStreamReader token, String attr) {
 		return "true".equals(token.getAttributeValue(Constants.NS_UNDEFINED, attr)) ? true : false;
 	}
+
+	protected void writeIfNotNull(AbstractXmlElement e, XMLStreamWriter out)
+			throws XMLStreamException {
+				if (e != null ) e.write(out);
+			}
 	
 	
 	
