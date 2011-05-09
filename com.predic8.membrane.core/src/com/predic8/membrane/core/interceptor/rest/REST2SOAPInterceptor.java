@@ -13,6 +13,7 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.xml.Headers;
 import com.predic8.membrane.core.http.xml.Request;
 import com.predic8.membrane.core.http.xml.URI;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -40,7 +41,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE;
 
 		replaceRequestBody(exc, regex);
-		updateRequest(exc, regex);
+		modifyRequest(exc, regex);
 
 		return Outcome.CONTINUE;
 	}
@@ -61,15 +62,8 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 	private void replaceRequestBody(AbstractExchange exc, String regex)
 			throws Exception {
-		Request req = new Request();
-
-		req.setMethod(exc.getRequest().getMethod());
-		req.setHttpVersion(exc.getRequest().getVersion());
-
-		URI uri = new URI();
-		uri.setValue(getURI(exc));
-		req.setUri(uri);
-
+		Request req = new Request(exc.getRequest());
+		
 		String res = req.toXml();
 		log.debug("http-xml: " + res);
 		transform(exc.getRequest(), getRequestXSLT(regex), 
@@ -84,7 +78,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		return null;
 	}
 
-	private void updateRequest(AbstractExchange exc, String regex) {
+	private void modifyRequest(AbstractExchange exc, String regex) {
 
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().getHeader().add("SOAPAction", getSOAPAction(regex));
