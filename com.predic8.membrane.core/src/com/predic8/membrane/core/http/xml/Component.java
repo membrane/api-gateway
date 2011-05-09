@@ -20,7 +20,7 @@ public class Component extends AbstractXmlElement {
 
 
 	@Override
-	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
+	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
 		value = token.getText();
 	}
 
@@ -31,4 +31,17 @@ public class Component extends AbstractXmlElement {
 		out.writeEndElement();		
 	}
 
+	public String getValue() {
+		return value;
+	}
+
+	public void setValue(String value) {
+		this.value = value;
+	}
+
+	@Override
+	protected String getElementName() {
+		return ELEMENT_NAME;
+	}
+	
 }

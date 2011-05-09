@@ -6,6 +6,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.codehaus.jackson.map.Module.SetupContext;
+
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
@@ -17,6 +19,13 @@ public class URI extends AbstractXmlElement {
 	Port port;
 	Host host;
 	Path path;
+	Query query;
+	
+	public URI() {}
+	
+	public URI(String uri) throws URISyntaxException {
+		setValue(uri);
+	}
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
@@ -31,6 +40,8 @@ public class URI extends AbstractXmlElement {
 			host = (Host) new Host().parse(token);
 		} else if (Path.ELEMENT_NAME.equals(child)) {
 			path = (Path) new Path().parse(token);
+		} else if (Query.ELEMENT_NAME.equals(child)) {
+			query = (Query) new Query().parse(token);
 		}
 	}
 	
@@ -41,13 +52,45 @@ public class URI extends AbstractXmlElement {
 		writeIfNotNull(host, out);
 		writeIfNotNull(port, out);
 		writeIfNotNull(path, out);
+		writeIfNotNull(query, out);
 		out.writeEndElement();		
 	}
 
-	private void writeIfNotNull(AbstractXmlElement e, XMLStreamWriter out) throws XMLStreamException {
-		if (e != null ) e.write(out);
+	public void setValue(String value) throws URISyntaxException {
+		this.value = value;
+
+		java.net.URI jUri = new java.net.URI(value); 
+		
+		if (jUri.getHost()!=null)
+			setHost(jUri.getHost());
+		
+		if (jUri.getPort()!=-1)
+			setPort(jUri.getPort());
+		
+		parsePathFromURI(jUri);
+		parseQueryFromURI(jUri);
 	}
-	
+
+	private void parseQueryFromURI(java.net.URI jUri) {
+		if (jUri.getQuery() == null) return;
+
+		Query q = new Query();
+		for (String p : jUri.getQuery().split("&")) {
+			q.getParams().add(new Param(p.split("=")[0],p.split("=")[1]));
+		}
+		setQuery(q);		
+	}
+
+	private void parsePathFromURI(java.net.URI jUri) {
+		if (jUri.getPath() == null) return;
+		
+		Path p = new Path();
+		for (String c : jUri.getPath().substring(1).split("/")) {
+			p.getComponents().add(new Component(c));
+		}
+		setPath(p);
+	}
+
 	public int getPort() {
 		return port.getValue();
 	}
@@ -76,23 +119,18 @@ public class URI extends AbstractXmlElement {
 		return value;
 	}
 
-	public void setValue(String value) throws URISyntaxException {
-		this.value = value;
-
-		java.net.URI jUri = new java.net.URI(value); 
-		
-		if (jUri.getHost()!=null)
-			setHost(jUri.getHost());
-		
-		if (jUri.getPort()!=-1)
-			setPort(jUri.getPort());
-		
-		if (jUri.getPath() == null) return;
-		Path p = new Path();
-		for (String c : jUri.getPath().substring(1).split("/")) {
-			p.getComponents().add(new Component(c));
-		}
-		setPath(p);
+	public Query getQuery() {
+		return query;
 	}
 
+	public void setQuery(Query query) {
+		this.query = query;
+	}
+
+	@Override
+	protected String getElementName() {
+		return ELEMENT_NAME;
+	}
+
+	
 }

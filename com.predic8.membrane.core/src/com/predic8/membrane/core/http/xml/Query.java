@@ -9,15 +9,15 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
-public class Path extends AbstractXmlElement {
-	public static final String ELEMENT_NAME = "path";
+public class Query extends AbstractXmlElement {
+	public static final String ELEMENT_NAME = "query";
 
-	List<Component> components = new ArrayList<Component>();
+	private List<Param> params = new ArrayList<Param>();
 	
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
-		if (Component.ELEMENT_NAME.equals(child)) {
-			components.add((Component)new Component().parse(token));
+		if (Param.ELEMENT_NAME.equals(child)) {
+			params.add((Param)new Param().parse(token));
 		} 
 	}
 	
@@ -25,24 +25,25 @@ public class Path extends AbstractXmlElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 
-		for (Component c : components) {
+		for (Param c : params) {
 			c.write(out);
 		}
 		
 		out.writeEndElement();		
 	}
 
-	public List<Component> getComponents() {
-		return components;
+	public List<Param> getParams() {
+		return params;
 	}
 
-	public void setComponents(List<Component> components) {
-		this.components = components;
+	public void setParams(List<Param> params) {
+		this.params = params;
 	}
 
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
+	
 	
 }

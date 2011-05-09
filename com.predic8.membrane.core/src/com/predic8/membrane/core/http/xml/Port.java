@@ -20,7 +20,7 @@ public class Port extends AbstractXmlElement {
 	}
 
 	@Override
-	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
+	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
 		value = Integer.valueOf(token.getText());
 	}
 
@@ -39,4 +39,9 @@ public class Port extends AbstractXmlElement {
 		this.value = value;
 	}
 
+	@Override
+	protected String getElementName() {
+		return ELEMENT_NAME;
+	}
+	
 }

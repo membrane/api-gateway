@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.http.xml;
 
+import java.net.URISyntaxException;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -33,7 +35,19 @@ public class Request extends AbstractXmlElement {
 	private String method;	
 	private String httpVersion;
 
-	private XMLElement uri;
+	private URI uri;
+	private Headers headers;
+	
+	public Request(com.predic8.membrane.core.http.Request req) throws URISyntaxException {
+		setMethod(req.getMethod());
+		setHttpVersion(req.getVersion());
+
+		setUri(new URI(req.getUri()));
+
+		setHeaders(new Headers(req.getHeader()));
+	}
+
+	public Request() {}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
@@ -44,8 +58,11 @@ public class Request extends AbstractXmlElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (URI.ELEMENT_NAME.equals(child)) {
-			uri = new URI().parse(token);
+			uri = (URI) new URI().parse(token);
+		} else if (URI.ELEMENT_NAME.equals(child)) {
+			headers = (Headers) new Headers().parse(token);
 		} 
+ 
 	}
 	
 	@Override
@@ -56,6 +73,7 @@ public class Request extends AbstractXmlElement {
 		out.writeAttribute("http-version", httpVersion);
 		
 		uri.write(out);
+		writeIfNotNull(headers, out);
 		
 		out.writeEndElement();		
 	}
@@ -76,12 +94,20 @@ public class Request extends AbstractXmlElement {
 		this.httpVersion = httpVersion;
 	}
 
-	public XMLElement getUri() {
+	public URI getUri() {
 		return uri;
 	}
 
-	public void setUri(XMLElement uri) {
+	public void setUri(URI uri) {
 		this.uri = uri;
+	}
+
+	public Headers getHeaders() {
+		return headers;
+	}
+
+	public void setHeaders(Headers headers) {
+		this.headers = headers;
 	}
 
 	@Override

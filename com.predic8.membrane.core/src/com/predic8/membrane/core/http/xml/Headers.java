@@ -8,16 +8,26 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.http.HeaderField;
 
-public class Path extends AbstractXmlElement {
-	public static final String ELEMENT_NAME = "path";
+public class Headers extends AbstractXmlElement {
+	public static final String ELEMENT_NAME = "headers";
 
-	List<Component> components = new ArrayList<Component>();
+	List<Header> headers = new ArrayList<Header>();
 	
+	public Headers() {}
+	
+	public Headers( com.predic8.membrane.core.http.Header header) {
+		for (Object o : header.getAllHeaderFields()) {
+			HeaderField h = (HeaderField)o;
+			headers.add(new Header(""+h.getHeaderName(), h.getValue()));
+		}
+	}
+		
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
-		if (Component.ELEMENT_NAME.equals(child)) {
-			components.add((Component)new Component().parse(token));
+		if (Param.ELEMENT_NAME.equals(child)) {
+			headers.add((Header)new Header().parse(token));
 		} 
 	}
 	
@@ -25,19 +35,11 @@ public class Path extends AbstractXmlElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 
-		for (Component c : components) {
+		for (Header c : headers) {
 			c.write(out);
 		}
 		
 		out.writeEndElement();		
-	}
-
-	public List<Component> getComponents() {
-		return components;
-	}
-
-	public void setComponents(List<Component> components) {
-		this.components = components;
 	}
 
 	@Override

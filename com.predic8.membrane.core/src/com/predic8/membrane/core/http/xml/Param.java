@@ -6,17 +6,23 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
-public class Host extends AbstractXmlElement {
-	public static final String ELEMENT_NAME = "host";
+public class Param extends AbstractXmlElement {
+	
+	public static final String ELEMENT_NAME = "param";
 
 	private String value;
+	private String name;
 	
-	public Host(String host) {
-		value = host;
+	public Param() {}
+	
+	public Param(String name, String value) {
+		this.name = name;
+		this.value = value;
 	}
 
-	public Host() {
-		// TODO Auto-generated constructor stub
+	@Override
+	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
+		name = token.getAttributeValue("", "name");
 	}
 
 	@Override
@@ -27,10 +33,11 @@ public class Host extends AbstractXmlElement {
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
+		out.writeAttribute("name", name);
 		out.writeCharacters(value);
 		out.writeEndElement();		
 	}
-	
+
 	public String getValue() {
 		return value;
 	}
@@ -38,7 +45,15 @@ public class Host extends AbstractXmlElement {
 	public void setValue(String value) {
 		this.value = value;
 	}
-	
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
