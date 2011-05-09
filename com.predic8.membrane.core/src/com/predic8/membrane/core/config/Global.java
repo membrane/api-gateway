@@ -24,13 +24,13 @@ import javax.xml.stream.XMLStreamWriter;
 import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Router;
 
-public class Format extends AbstractConfigElement {
+public class Global extends AbstractConfigElement {
 
-	public Format(Router router) {
+	public Global(Router router) {
 		super(router);
 	}
 
-	public static final String ELEMENT_NAME = "format";
+	public static final String ELEMENT_NAME = "global";
 
 	public Map<String, Object> values = new HashMap<String, Object>();
 
@@ -41,10 +41,7 @@ public class Format extends AbstractConfigElement {
 
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
-		if (IndentMessage.ELEMENT_NAME.equals(child)) {
-			boolean value = ((IndentMessage)(new IndentMessage(router).parse(token))).getValue();
-			values.put(Configuration.INDENT_MSG, value);
-		} else if (AdjustHostHeader.ELEMENT_NAME.equals(child)) {
+		if (AdjustHostHeader.ELEMENT_NAME.equals(child)) {
 			boolean value = ((AdjustHostHeader)(new AdjustHostHeader(router).parse(token))).getValue();
 			values.put(Configuration.ADJ_HOST_HEADER, value);
 		}
@@ -59,10 +56,6 @@ public class Format extends AbstractConfigElement {
 			values.put(Configuration.ADJ_CONT_LENGTH, newValues.get(Configuration.ADJ_CONT_LENGTH));
 		} 
 		
-		if (newValues.containsKey(Configuration.INDENT_MSG)) {
-			values.put(Configuration.INDENT_MSG, newValues.get(Configuration.INDENT_MSG));
-		}  
-		
 		if (newValues.containsKey(Configuration.ADJ_HOST_HEADER)) {
 			values.put(Configuration.ADJ_HOST_HEADER, newValues.get(Configuration.ADJ_HOST_HEADER));
 		} 
@@ -71,12 +64,6 @@ public class Format extends AbstractConfigElement {
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
-		
-		IndentMessage indentMessage = new IndentMessage(router);
-		if (values.containsKey(Configuration.INDENT_MSG)) {
-			indentMessage.setValue((Boolean)values.get(Configuration.INDENT_MSG));
-		}
-		indentMessage.write(out);
 		
 		AdjustHostHeader adjustHostHeader = new AdjustHostHeader(router);
 		if (values.containsKey(Configuration.ADJ_HOST_HEADER)) {

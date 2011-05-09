@@ -20,7 +20,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 
-public class HttpResendThread extends AbstractHttpThread {
+public class HttpResendThread extends AbstractHttpRunnable {
 
 	public HttpResendThread(Exchange exc, HttpTransport transport) {
 		this.transport = transport;

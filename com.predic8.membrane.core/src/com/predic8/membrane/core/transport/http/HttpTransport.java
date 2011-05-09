@@ -40,7 +40,7 @@ public class HttpTransport extends Transport {
 
 	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(0,
 			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-			new SynchronousQueue<Runnable>());
+			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory() );
 
 	public boolean isAnyThreadListeningAt(int port) {
 		return portListenerMapping.get(port) != null;

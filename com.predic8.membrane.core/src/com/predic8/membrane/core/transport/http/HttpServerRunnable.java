@@ -32,14 +32,14 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
-public class HttpServerThread extends AbstractHttpThread {
+public class HttpServerRunnable extends AbstractHttpRunnable {
 
 	public static int counter = 0;
 
-	public HttpServerThread(Socket socket, HttpTransport transport) throws IOException {
+	public HttpServerRunnable(Socket socket, HttpTransport transport) throws IOException {
 		this.exchange = new Exchange();
 		exchange.setServerThread(this);
-		log = LogFactory.getLog(HttpServerThread.class.getName());
+		log = LogFactory.getLog(HttpServerRunnable.class.getName());
 		counter++;
 		log.debug("New ServerThread created. " + counter);
 		this.sourceSocket = socket;

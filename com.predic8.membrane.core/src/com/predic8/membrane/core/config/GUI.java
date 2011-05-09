@@ -45,17 +45,24 @@ public class GUI extends AbstractConfigElement {
 		if (AutoTrackExchange.ELEMENT_NAME.equals(child)) {
 			boolean value = ((AutoTrackExchange) new AutoTrackExchange(router).parse(token)).getValue();
 			values.put(Configuration.TRACK_EXCHANGE, value);
-		}
+		} else if (IndentMessage.ELEMENT_NAME.equals(child)) {
+			boolean value = ((IndentMessage)(new IndentMessage(router).parse(token))).getValue();
+			values.put(Configuration.INDENT_MSG, value);
+		} 
 	}
 
 	public Map<String, Object> getValues() {
 		return values;
 	}
 
-	public void setValues(Map<String, Object> values) {
-		if (values.containsKey(Configuration.TRACK_EXCHANGE)) {
-			this.values.put(Configuration.TRACK_EXCHANGE, values.get(Configuration.TRACK_EXCHANGE));
-		}
+	public void setValues(Map<String, Object> newValues) {
+		if (newValues.containsKey(Configuration.TRACK_EXCHANGE)) {
+			this.values.put(Configuration.TRACK_EXCHANGE, newValues.get(Configuration.TRACK_EXCHANGE));
+		} 
+		
+		if (newValues.containsKey(Configuration.INDENT_MSG)) {
+			this.values.put(Configuration.INDENT_MSG, newValues.get(Configuration.INDENT_MSG));
+		} 
 	}
 	
 	
@@ -67,6 +74,13 @@ public class GUI extends AbstractConfigElement {
 			trackExchange.setValue((Boolean)values.get(Configuration.TRACK_EXCHANGE));
 		}
 		trackExchange.write(out);
+		
+		IndentMessage indentMessage = new IndentMessage(router);
+		if (values.containsKey(Configuration.INDENT_MSG)) {
+			indentMessage.setValue((Boolean)values.get(Configuration.INDENT_MSG));
+		}
+		indentMessage.write(out);
+		
 		out.writeEndElement();
 	}
 	

@@ -30,7 +30,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.config.AbstractConfigElement;
-import com.predic8.membrane.core.config.Format;
+import com.predic8.membrane.core.config.Global;
 import com.predic8.membrane.core.config.GUI;
 import com.predic8.membrane.core.config.Proxy;
 import com.predic8.membrane.core.config.Rules;
@@ -223,8 +223,8 @@ public class Configuration extends AbstractConfigElement {
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {	
 		if (Rules.ELEMENT_NAME.equals(child)) {
 			rules = ((Rules) new Rules(router).parse(token)).getValues();
-		} else if (Format.ELEMENT_NAME.equals(child)) {
-			props.putAll(((Format) new Format(router).parse(token)).getValues());
+		} else if (Global.ELEMENT_NAME.equals(child)) {
+			props.putAll(((Global) new Global(router).parse(token)).getValues());
 		} else if (GUI.ELEMENT_NAME.equals(child)) {
 			props.putAll(((GUI) new GUI(router).parse(token)).getValues());
 		} else if (Proxy.ELEMENT_NAME.equals(child)) {
@@ -253,7 +253,7 @@ public class Configuration extends AbstractConfigElement {
 		childRules.setValues(rules);
 		childRules.write(out);
 		
-		Format childFormat = new Format(router);
+		Global childFormat = new Global(router);
 		childFormat.setValues(props);
 		childFormat.write(out);
 		

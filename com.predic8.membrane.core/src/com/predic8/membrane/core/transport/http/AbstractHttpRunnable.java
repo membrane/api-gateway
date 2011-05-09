@@ -32,7 +32,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-public abstract class AbstractHttpThread extends Thread {
+public abstract class AbstractHttpRunnable implements Runnable {
 
 	protected static Log log;
 	

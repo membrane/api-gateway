@@ -16,11 +16,11 @@ package com.predic8.membrane.core.exchange;
 
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
-import com.predic8.membrane.core.transport.http.AbstractHttpThread;
+import com.predic8.membrane.core.transport.http.AbstractHttpRunnable;
 
 public class Exchange extends AbstractExchange {
 	
-	private AbstractHttpThread serverThread;
+	private AbstractHttpRunnable serverThread;
 	
 	private String originalHostHeader = "";
 	
@@ -38,11 +38,11 @@ public class Exchange extends AbstractExchange {
 		
 	}
 
-	public AbstractHttpThread getServerThread() {
+	public AbstractHttpRunnable getServerThread() {
 		return serverThread;
 	}
 
-	public void setServerThread(AbstractHttpThread serverThread) {
+	public void setServerThread(AbstractHttpRunnable serverThread) {
 		this.serverThread = serverThread;
 	}
 	
