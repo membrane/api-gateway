@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.plugin.membrane.preferences;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.security.KeyStore;
 
@@ -23,6 +24,8 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
@@ -85,25 +88,21 @@ public class SecurityPreferencePage extends PreferencePage implements
 		
 		new Label(composite, SWT.NONE).setText(" ");
 		
-
 		GridData lbGridData = new GridData(GridData.FILL_HORIZONTAL);
 		lbGridData.grabExcessHorizontalSpace = true;
 		
 		Group groupKey = createStoreGroup(composite, "Keystore");
 		
 		new Label(groupKey, SWT.NONE).setText("Location:");
-		textKeyLocation = createText(groupKey, SWT.NONE, LOCATION_WIDTH_HINT, 2);
-		textKeyLocation.setText(getSavedKeystoreLocation());
-		
-		Button bt1 = createFileBrowserButton(groupKey);
-		bt1.addSelectionListener(new SelectionAdapter() {
+		textKeyLocation = createLocationTextWidget(groupKey, getSavedKeystoreLocation());
+		textKeyLocation.addModifyListener(new ModifyListener() {
 			@Override
-			public void widgetSelected(SelectionEvent e) {
-				String selected = openFileDialog();
-				if (selected != null)
-					textKeyLocation.setText(selected);
+			public void modifyText(ModifyEvent e) {
+				btShowKeyStoreContent.setEnabled(!textKeyLocation.getText().equals(""));
 			}
 		});
+		
+		createFileBrowserButton(groupKey, textKeyLocation);
 		
 		new Label(groupKey, SWT.NONE).setText("Password:");
 		textKeyPassword = createText(groupKey, SWT.PASSWORD, PASSWORD_WIDTH_HINT, 1);
@@ -111,15 +110,8 @@ public class SecurityPreferencePage extends PreferencePage implements
 		
 		addDummyLabels(groupKey, 7);
 		
-		btShowKeyStoreContent = new Button(groupKey, SWT.PUSH);
-		btShowKeyStoreContent.setText("Show Content");
-		btShowKeyStoreContent.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				showStoreContent(textKeyLocation.getText(), textKeyPassword.getText());
-			}
-		});
-		
+		btShowKeyStoreContent = createShowContentButton(groupKey, textKeyLocation, textKeyPassword);
+	
 		addDummyLabels(groupKey, 2);
 		
 		new Label(composite, SWT.NONE).setText(" ");
@@ -129,18 +121,15 @@ public class SecurityPreferencePage extends PreferencePage implements
 		
 		new Label(groupTrust, SWT.NONE).setText("Location:");
 		
-		textTrustLocation = createText(groupTrust, SWT.NONE, LOCATION_WIDTH_HINT, 2);
-		textTrustLocation.setText(getSavedTruststoreLocation());
-		
-		Button bt2 = createFileBrowserButton(groupTrust);
-		bt2.addSelectionListener(new SelectionAdapter() {
+		textTrustLocation = createLocationTextWidget(groupTrust, getSavedTruststoreLocation());
+		textTrustLocation.addModifyListener(new ModifyListener() {
 			@Override
-			public void widgetSelected(SelectionEvent e) {
-				String selected = openFileDialog();
-				if (selected != null)
-					textTrustLocation.setText(selected);
+			public void modifyText(ModifyEvent e) {
+				btShowTrustStoreContent.setEnabled(!textTrustLocation.getText().equals(""));
 			}
 		});
+		
+		createFileBrowserButton(groupTrust, textTrustLocation);
 		
 		new Label(groupTrust, SWT.NONE).setText("Password:");
 		textTrustPassword = createText(groupTrust, SWT.PASSWORD, PASSWORD_WIDTH_HINT, 1);
@@ -148,18 +137,29 @@ public class SecurityPreferencePage extends PreferencePage implements
 		
 		addDummyLabels(groupTrust, 7);
 		
-		btShowTrustStoreContent = new Button(groupTrust, SWT.PUSH);
-		btShowTrustStoreContent.setText("Show Content");
-		btShowTrustStoreContent.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				showStoreContent(textTrustLocation.getText(), textTrustPassword.getText());
-			}
-		});
-		
+		btShowTrustStoreContent = createShowContentButton(groupTrust, textTrustLocation, textTrustPassword);
 		return composite;
 	}
 
+	private Text createLocationTextWidget(Composite parent, String initValue) {
+		final Text text = createText(parent, SWT.NONE, LOCATION_WIDTH_HINT, 2);
+		text.setText(initValue);
+		return text;
+	}
+	
+	private Button createShowContentButton(Composite parent, final Text location, final Text password) {
+		Button bt = new Button(parent, SWT.PUSH);
+		bt.setText("Show Content");
+		bt.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				showStoreContent(location.getText(), password.getText());
+			}
+		});
+		bt.setEnabled(false);
+		return bt;
+	}
+	
 	private void showStoreContent(String location, String password) {
 		try {
 			KeyStore store = getStore(location, password);
@@ -206,15 +206,22 @@ public class SecurityPreferencePage extends PreferencePage implements
 	}
 	
 	
-	private Button createFileBrowserButton(Composite parent) {
+	private void createFileBrowserButton(Composite parent, final Text linkedText) {
 		Button bt = new Button(parent, SWT.PUSH); 
 		bt.setImage(MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_FOLDER).createImage());
 		GridData g = new GridData();
 		g.heightHint = 20;
 		g.widthHint = 20;
-		
 		bt.setLayoutData(g);
-		return bt;
+		
+		bt.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				String selected = openFileDialog();
+				if (selected != null)
+					linkedText.setText(selected);
+			}
+		});
 	}
 	
 	private Group createStoreGroup(Composite composite, String text) {
@@ -244,15 +251,14 @@ public class SecurityPreferencePage extends PreferencePage implements
 		FileDialog dialog = new FileDialog(Display.getCurrent().getActiveShell(), SWT.OPEN);
 		dialog.setText("Open");
 		dialog.setFilterExtensions(new String[] { "*.*", "*.txt", "*.doc", ".rtf", "*.jks*" });
-		String selected = dialog.open();
-		return selected;
+		return dialog.open();
 	}
 	
 	private void setAndSaveSacurityInformations() {
-		if (!checkKeyStore())
+		if (!checkStore(textKeyLocation.getText(), textKeyPassword.getText(), "Key Store"))
 			return;
 		
-		if (!checkTrustStore())
+		if (!checkStore(textTrustLocation.getText(), textTrustPassword.getText(), "Trust Store"))
 			return;
 		
 		getConfiguration().setKeyStoreLocation(textKeyLocation.getText());
@@ -271,28 +277,15 @@ public class SecurityPreferencePage extends PreferencePage implements
 			
 	}
 
-	private boolean checkTrustStore() {
+	private boolean checkStore(String location, String password, String storeName) {
 		try {
-			checkStore(textTrustLocation.getText(), textTrustPassword.getText());
+			getStore(location, password);
 			return true;
 		} catch (FileNotFoundException fe) {
-			openError("Trust Store validation failed!", "Unable to read trust store file. The path you have specified may be invalid.");
+			openError( storeName + " validation failed!", "Unable to read" +  storeName  + " file. The path you have specified may be invalid.");
 			return false;
 		} catch (Exception e) {
-			openError("Key Store validation failed!", e.getMessage());
-			return false;
-		}
-	}
-
-	private boolean checkKeyStore() {
-		try {
-			checkStore(textKeyLocation.getText(), textKeyPassword.getText());
-			return true;
-		} catch (FileNotFoundException fe) {
-			openError("Key Store validation failed!", "Unable to read key store file. The path you have specified may be invalid.");
-			return false;
-		} catch (Exception e) {
-			openError("Key Store validation failed!", e.getMessage());
+			openError(storeName + " validation failed!", e.getMessage());
 			return false;
 		}
 	}
@@ -312,38 +305,21 @@ public class SecurityPreferencePage extends PreferencePage implements
 		return true;
 	}
 	
-	private void checkStore(String file, String password) throws FileNotFoundException, Exception {
-		if ("".equals(file.trim()))
-			return;
-		
-		KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-	    java.io.FileInputStream fis = null;
-	    try {
-	        fis = new java.io.FileInputStream(file);
-	        ks.load(fis, password.toCharArray());
-	    } finally {
-	        if (fis != null) {
-	            fis.close();
-	        }
-	    }
-	}
-	
 	private KeyStore getStore(String file, String password) throws FileNotFoundException, Exception {
 		if ("".equals(file.trim()))
 			return null;
 		
 		KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-	    java.io.FileInputStream fis = null;
+	    FileInputStream fis = null;
 	    try {
 	        fis = new java.io.FileInputStream(file);
 	        ks.load(fis, password.toCharArray());
-	        return ks;
 	    } finally {
 	        if (fis != null) {
 	            fis.close();
 	        }
 	    }
-	    
+	    return ks;
 	}
 	
 }
