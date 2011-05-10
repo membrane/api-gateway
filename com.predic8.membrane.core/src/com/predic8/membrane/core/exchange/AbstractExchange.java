@@ -79,6 +79,7 @@ public abstract class AbstractExchange {
 		for (String dest : origDests) {
 			destinations.add(dest);
 		}
+		rule = original.getRule();
 	}
 
 	public ExchangeState getStatus() {
