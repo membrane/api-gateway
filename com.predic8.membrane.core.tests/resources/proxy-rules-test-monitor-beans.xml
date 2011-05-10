@@ -22,8 +22,22 @@
 	</bean>
 
 	<bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
-		<!-- maximum number of executing threads -->
-		<property name="maxThreads" value="50" />
+		
+		<!-- 
+   		Thread Pool Configuration
+   		============================
+   		To serve client requests a thread pool is consulted. See
+   		
+   		http://download.oracle.com/javase/6/docs/api/java/util/concurrent/ThreadPoolExecutor.html	
+   		
+   		for details about the thread pool. 
+   		The default for maxThreadPoolSize is unlimited. To limit the pool size 
+   		uncomment the property maxThreadPoolSize.
+    	-->
+		
+		 <!-- <property name="maxThreadPoolSize" value="500" />  -->
+    	<property name="coreThreadPoolSize" value="20" />
+		
 		<property name="interceptors">
 			<list>
 				<bean
