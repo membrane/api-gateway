@@ -19,17 +19,13 @@ import org.eclipse.swt.widgets.Composite;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.transport.http.HttpResendThread;
-import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 
 public class RequestComp extends BaseComp {
 
-	HttpServerThreadFactory factory;
-	
 	public RequestComp(Composite parent, int style, IBaseCompositeHost host) {
 		super(parent, style, host);
-		factory = new HttpServerThreadFactory();
 	}
 
 	public void updateUIStatus(AbstractExchange exchange, boolean canShowBody) {
@@ -48,7 +44,7 @@ public class RequestComp extends BaseComp {
 				tabManager.setBodyModified(false);
 				copyBodyFromGUIToModel();
 			}
-			factory.newThread(new Thread(new HttpResendThread(getCompositeHost().getExchange(), getTransport()))).start();
+			new Thread(new HttpResendThread(getCompositeHost().getExchange(), getTransport())).start();
 		}
 	}
 
