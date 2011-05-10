@@ -89,7 +89,11 @@ public class HttpTransport extends Transport {
 		}
 	}
 
-	public void setMaxThreads(int value) {
+	public void setCoreThreadPoolSize(int corePoolSize) {
+		executorService.setCorePoolSize(corePoolSize);
+	}
+	
+	public void setMaxThreadPoolSize(int value) {
 		executorService.setMaximumPoolSize(value);
 	}
 

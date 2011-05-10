@@ -17,7 +17,6 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketException;
 
 import javax.net.ssl.SSLServerSocketFactory;

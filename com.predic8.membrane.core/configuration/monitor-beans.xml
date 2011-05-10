@@ -12,11 +12,9 @@
 -->
 <beans  xmlns="http://www.springframework.org/schema/beans"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-        xmlns:context="http://www.springframework.org/schema/context"
-        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-  <context:annotation-config />
-
+  
   <bean id="router" class="com.predic8.membrane.core.Router">
     <property name="ruleManager">
       <bean class="com.predic8.membrane.core.RuleManager" />
@@ -28,9 +26,23 @@
 
   <bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
   
-    <!-- maximum number of executing threads -->
-    <property name="maxThreads" value="50" />
+    <!-- 
+   	Thread Pool Configuration
+   	============================
+   	To serve client requests a thread pool is consulted. See
+   	
+   	http://download.oracle.com/javase/6/docs/api/java/util/concurrent/ThreadPoolExecutor.html	
+   	
+   	for details about the thread pool. 
+   	The default for maxThreadPoolSize is unlimited. To limit the pool size 
+   	uncomment the property maxThreadPoolSize.
+    -->
+    <!-- <property name="maxThreadPoolSize" value="500" />  -->
+    <property name="coreThreadPoolSize" value="20" />
     
+    <!-- 
+    The interceptors listed here are invoked with every message exchange
+    -->
     <property name="interceptors">
       <list>
         <bean class="com.predic8.membrane.core.interceptor.RuleMatchingInterceptor" />
@@ -40,28 +52,10 @@
           <property name="exchangeStore" ref="exchangeStore" />
         </bean>
 
-        <!--  
-        Saving messages into files
-        ============================
-        The FileExchangeStore saves all captured messages to disk. 
-        Uncomment the following bean and set value of the property dir 
-        to the folder where you want to save messages. 
-        -->
-        <!--  
-        <bean class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">
-          <property name="exchangeStore">
-            <bean class="com.predic8.membrane.core.exchangestore.FileExchangeStore">
-              <property name="dir" value="C:\temp" />
-              <property name="saveBodyOnly" value="false" />
-            </bean>
-          </property>
-        </bean>
-        -->	
-
         <!--
         Rewriting of URLs in WSDL documents 
         =================================== 
-        The WSDLInterceptor changes the endpoint location and URLs of schema includes 
+        The WSDLInterceptor modifies the endpoint location and URLs of schema includes 
         and imports. For the rewritten URLs the protocol, hostname and port are extracted 
         from the request header. The hostname and port is taken from the Host header 
         field. 
@@ -77,19 +71,37 @@
           the WSDL requested uncomment the following elements.
           -->
           <!--
-          <property name="host" value="abc" /> 
+          <property name="host" value="myhost" /> 
           <property name="protocol" value="https" /> 
-          <property name="port" value="" />
+          <property name="port" value="80" />
           -->
           
         </bean>
 
+		<!--  
+	    Saving messages into files
+	    ============================
+	    The FileExchangeStore saves all captured messages to disk. 
+	    Uncomment the following bean and set the value of the property dir 
+	    to the folder where you want to save messages. 
+  		-->
+  		<!--  
+	    <bean class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">
+	      <property name="exchangeStore">
+	        <bean class="com.predic8.membrane.core.exchangestore.FileExchangeStore">
+	          <property name="dir" value="C:/temp" />
+	          <property name="saveBodyOnly" value="false" />
+	        </bean>
+	      </property>
+	    </bean>
+  		-->	
+
         <!-- 
-        Storing exchange statistics in database 
-        ======================================= 
-        You can store exchange statistical data on permanent storage. Please uncomment 
+        Storing Exchange Statistics in a Database 
+        ========================================= 
+        You can store exchange statistical data on permanent storage. Uncomment 
         the following bean definition and configure the bean below. Do not forget 
-        to provide jdbc connector jar file in the lib directory. 
+        to provide a JDBC connector jar file in the lib directory. 
         -->
         <!--
         <bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor" init-method="init" > 
@@ -102,8 +114,8 @@
         <!--
         Logging Router access to CSV 
         ======================================= 
-        You can store exchange metadata in CSV files to disc. The data will be appended 
-        to the given file, and can be imported into Excel later on. 
+        You can store exchange metadata in an CSV file. The data will be appended 
+        to the given file, and can be imported into Excel. 
         -->
         <!-- 
         <bean class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor">
@@ -116,7 +128,7 @@
         =======================================
         Interceptor that can apply XSLT Transformations to the request and/or the response.
 
-	    The value of the property "requestXSLT" will by used as the destination of the stylesheet that will by applied to the request. 
+	    The value of the property "requestXSLT" will by used as the location of the stylesheet that will by applied to the request. 
      	If you choose a relative path it will by relative to MEMBRANE_HOME. If you leave the value blank or remove the property no transformation will by applied to the request.
 
      	The value of the property "responseXSLT" will by used as the destination of the stylesheet that will by applied to the response. 
@@ -138,12 +150,23 @@
     </property>
   </bean>
 
+  <!-- 
+  An exchange store saves a request/response message pair. 
+  There are different implementations for the exchange store.
+  
+  - MemoryExchangeStore
+    Exchanges are stored in memory. The monitor GUI needs this store to populate the exchanges table.
+        
+  - ForgetfulExchangeStore 
+    Exchanges are not stored. This is a default store of the router.
+       
+  -->	
   <bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.MemoryExchangeStore" />
 
   <!--
   <bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore" />
   -->
-
+  
   <bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager">
     <property name="configurationStore">
       <bean class="com.predic8.membrane.core.io.ConfigurationFileStore" />
@@ -163,11 +186,8 @@
     <property name="displayName" value="roundRobinBalancer" />
     <property name="endpoints">
       <list>
-      <!-- 
         <value>www.thomas-bayer.com:80</value>
-        <value>www.thomas-bayer.com</value>-->
-        <value>localhost:2010</value>
-        <value>localhost:2011</value>
+        <value>www.thomas-bayer.com</value>
       </list>
     </property>
     <property name="dispatchingStrategy">
@@ -190,12 +210,16 @@
       </bean>
     </property>
   </bean>
+  
+  <!--
   <bean id="statisticsCSVInterceptor"
-							class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor">
-							<property name="fileName" value="C:\temp\exc-statistics.csv" />
-							<property name="displayName" value="Statistics CSV Logger" />
+		class="com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor">
+	<property name="fileName" value="C:\temp\exc-statistics.csv" />
+	<property name="displayName" value="Statistics CSV Logger" />
   </bean>
-
+  -->
+  
+  <!--
   <bean id="regExUrlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor">
     <property name="displayName" value="RegEx URL Rewriter" />
     <property name="mapping">
@@ -209,8 +233,10 @@
       </map>
 	</property>
   </bean>
-
-<bean id="rest2SoapInterceptor" class="com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor">
+  -->
+ 
+  <!--
+  <bean id="rest2SoapInterceptor" class="com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor">
     <property name="displayName" value="REST 2 SOAP Interceptor" />
     <property name="mappings">
       <map>
@@ -225,13 +251,16 @@
       </map>
 	</property>
   </bean>
+  -->
   
+  <!--
   <bean id="xsltTransformer" class="com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor">
     <property name="displayName" value="XSLT Transformer" />
     <property name="requestXSLT" value="C:/work/membrane/monitor/eclipse/com.predic8.membrane.core.tests/resources/blz-httpget2soap-request.xsl" /> 
     <property name="responseXSLT" value="C:/work/membrane/monitor/eclipse/com.predic8.membrane.core.tests/resources/strip-soap-envelope.xsl" /> 
   </bean> 
-						
+  -->						
+  
   <bean id="urlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor">
     <property name="displayName" value="Simple URL Rewriter" />
     <property name="mapping">
