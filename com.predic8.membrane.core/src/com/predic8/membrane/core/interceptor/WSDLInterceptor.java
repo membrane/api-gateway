@@ -28,6 +28,7 @@ import java.net.URLDecoder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -77,13 +78,23 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	private void rewriteWsdl(Exchange exc) throws Exception, IOException {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		
-		//TODO what if there is no charset ?
-		Relocator relocator = new Relocator(new OutputStreamWriter(stream, exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc), getLocationPort(exc) );
-		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(exc.getResponse().getBody().getContent()), exc.getResponse().getCharset() ));
+		Relocator relocator = new Relocator(new OutputStreamWriter(stream, getCharset(exc)), getLocationProtocol(), getLocationHost(exc), getLocationPort(exc) );
+		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(exc.getResponse().getBody().getContent()), getCharset(exc) ));
 		if (relocator.isWsdlFound()) {
 			registerWSDL(exc);
 		}
 		exc.getResponse().setBodyContent(stream.toByteArray());
+	}
+
+	/**
+	 * if no charset is specified use standard XML charset UTF-8
+	 */
+	private String getCharset(Exchange exc) {
+		String charset = exc.getResponse().getCharset();
+		if (charset == null)
+			return Constants.UTF_8;
+		
+		return charset;
 	}
 
 
@@ -103,7 +114,7 @@ public class WSDLInterceptor extends AbstractInterceptor {
 		
 		callRegistry(buf.toString());
 		
-		System.out.println(buf.toString());
+		log.debug(buf.toString());
 	}
 
 	private void callRegistry(String uri) {

@@ -68,9 +68,9 @@
         -->
         <bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor">
           
-         
+          <!--  
           <property name="registryWSDLRegisterURL" value="http://service-repository.com/register/wsdl" /> 
-          
+          -->
           
           <!--
           To set static values for the rewritten URLs instead of values from 
