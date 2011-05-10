@@ -36,6 +36,7 @@ Export-Package:
    com.predic8.membrane.core.model,
    com.predic8.membrane.core.rules",
  com.predic8.membrane.core.http;uses:="org.apache.commons.logging",
+ com.predic8.membrane.core.http.xml,
  com.predic8.membrane.core.interceptor;
   uses:="javax.xml.stream,
    com.predic8.membrane.core,
