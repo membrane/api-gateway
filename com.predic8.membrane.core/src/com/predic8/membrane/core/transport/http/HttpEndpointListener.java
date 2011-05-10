@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
 
 import javax.net.ssl.SSLServerSocketFactory;
@@ -26,20 +27,19 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.transport.PortOccupiedException;
 
-
 public class HttpEndpointListener extends Thread {
 
 	protected static Log log = LogFactory.getLog(HttpEndpointListener.class.getName());
-	
+
 	private ServerSocket serverSocket;
-	
+
 	private HttpTransport transport;
-	
+
 	public HttpEndpointListener(int port, HttpTransport transport, boolean tsl) throws IOException {
 		if (tsl) {
-			serverSocket = ((SSLServerSocketFactory)SSLServerSocketFactory.getDefault()).createServerSocket(port);
-		} 
-		
+			serverSocket = ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault()).createServerSocket(port);
+		}
+
 		else {
 			try {
 				serverSocket = new ServerSocket(port);
@@ -47,26 +47,29 @@ public class HttpEndpointListener extends Thread {
 				throw new PortOccupiedException(port);
 			}
 		}
-		
+
 		this.transport = transport;
 	}
 
 	public void run() {
 		while (serverSocket != null && !serverSocket.isClosed()) {
 			try {
-				log.debug("executeService call: " + serverSocket);
 				transport.getExecutorService().execute(new HttpServerRunnable(serverSocket.accept(), transport));
-			} catch (SocketException e) {
-				if ( "socket closed".endsWith(e.getMessage()) )
-					log.debug("socket closed");
-				else
+			}
+			catch (SocketException e) {
+				if ("socket closed".endsWith(e.getMessage())) {
+					log.debug("socket closed.");
+					break;
+				} else
 					e.printStackTrace();
+			} catch (NullPointerException e) {
+				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 	}
-	
+
 	public void closePort() throws IOException {
 		ServerSocket temp = serverSocket;
 		serverSocket = null;

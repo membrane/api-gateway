@@ -31,16 +31,14 @@ import com.predic8.membrane.core.transport.Transport;
 public class HttpTransport extends Transport {
 
 	private static Log log = LogFactory.getLog(HttpTransport.class.getName());
-	
+
 	public static final String SOURCE_HOSTNAME = "com.predic8.membrane.transport.http.source.Hostname";
 	public static final String HEADER_HOST = "com.predic8.membrane.transport.http.header.Host";
 	public static final String SOURCE_IP = "com.predic8.membrane.transport.http.source.Ip";
 
 	public Hashtable<Integer, HttpEndpointListener> portListenerMapping = new Hashtable<Integer, HttpEndpointListener>();
 
-	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(0,
-			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory() );
+	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new HttpServerThreadFactory());
 
 	public boolean isAnyThreadListeningAt(int port) {
 		return portListenerMapping.get(port) != null;
@@ -52,15 +50,17 @@ public class HttpTransport extends Transport {
 
 	public synchronized void closePort(int port) throws IOException {
 		log.debug("Closing server port: " + port);
-		HttpEndpointListener plt = portListenerMapping.get(new Integer(port));
-		if (plt != null) {
-			plt.closePort();
-			portListenerMapping.remove(new Integer(port));
+		HttpEndpointListener plt = portListenerMapping.get(port);
+		if (plt == null)
+			return;
 
-			for (IPortChangeListener listener : menuListeners) {
-				listener.removePort(port);
-			}
+		plt.closePort();
+		portListenerMapping.remove(port);
+
+		for (IPortChangeListener listener : menuListeners) {
+			listener.removePort(port);
 		}
+
 	}
 
 	public synchronized void closeAll() throws IOException {
@@ -88,12 +88,12 @@ public class HttpTransport extends Transport {
 			listener.addPort(port);
 		}
 	}
-	
-	public void setMaxThreads(int value){
+
+	public void setMaxThreads(int value) {
 		executorService.setMaximumPoolSize(value);
 	}
-	
-	public ExecutorService getExecutorService(){
+
+	public ExecutorService getExecutorService() {
 		return executorService;
 	}
 
