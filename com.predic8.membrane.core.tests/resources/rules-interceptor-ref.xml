@@ -10,7 +10,7 @@
 			</interceptors>			
 		</forwarding-rule>
 	</rules>
-	<format>
+	<global>
 		<adjustHostHeader>true</adjustHostHeader>
-	</format>
+	</global>
 </configuration>
