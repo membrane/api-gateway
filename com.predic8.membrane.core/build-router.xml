@@ -27,7 +27,7 @@
 	</path>
 
 	<target name="compile-core" depends="init">
-		<javac debug="true" target="1.5" classpathref="classpath" srcdir="src" destdir="build/classes">
+		<javac debug="true" classpathref="classpath" srcdir="src" destdir="build/classes">
 			<exclude name="**/CoreActivator*"/>
 			<exclude name="**/MembraneStarter*"/>
 		</javac>
@@ -44,6 +44,12 @@
 		<mkdir dir="dist/router/membrane-router-${version}" />
 		<mkdir dir="dist/router/membrane-router-${version}/classes" />
 		<mkdir dir="dist/router/membrane-router-${version}/lib" />
+		<mkdir dir="dist/router/membrane-router-${version}/examples" />
+		<copy todir="dist/router/membrane-router-${version}/examples"> 
+			<fileset dir="examples">
+				<include name="**/*" />
+			</fileset>
+		</copy>
 		<copy todir="dist/router/membrane-router-${version}/lib">
 			<fileset dir="lib">
 				<exclude name="**/rcp/**" />
