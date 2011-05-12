@@ -7,17 +7,12 @@ import java.util.regex.Pattern;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.xml.Headers;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.xml.Request;
-import com.predic8.membrane.core.http.xml.URI;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 
 public class REST2SOAPInterceptor extends AbstractInterceptor {
@@ -40,7 +35,9 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		if (regex == null)
 			return Outcome.CONTINUE;
 
-		replaceRequestBody(exc, regex);
+		transformAndReplaceBody(exc.getRequest(), 
+								getRequestXSLT(regex), 
+								getRequestXMLSource(exc));
 		modifyRequest(exc, regex);
 
 		return Outcome.CONTINUE;
@@ -49,25 +46,32 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		log.debug("restURL: " + getRESTURL(exc));
+		if (getRESTURL(exc)==null) return Outcome.CONTINUE;
 
-		transform(exc.getResponse(),
-				getResponseXSLT(getRESTURL(exc)),
-				new StreamSource(exc.getResponse().getBodyAsStream()));
+		log.debug("response: " + xsltTransformer.transform(null, getBodySource(exc)));		
+		
+		transformAndReplaceBody(exc.getResponse(),
+				                getResponseXSLT(getRESTURL(exc)),
+				                getBodySource(exc));
+		setContentType(exc.getResponse().getHeader());
 		return Outcome.CONTINUE;
+	}
+
+	private StreamSource getRequestXMLSource(Exchange exc) throws Exception {
+		Request req = new Request(exc.getRequest());
+		
+		String res = req.toXml();
+		log.debug("http-xml: " + res);		
+		
+		return new StreamSource(new StringReader(res));
+	}
+
+	private StreamSource getBodySource(Exchange exc) {
+		return new StreamSource(exc.getResponse().getBodyAsStream());
 	}
 
 	private String getRESTURL(Exchange exc) {
 		return (String) exc.getProperty("restURL");
-	}
-
-	private void replaceRequestBody(AbstractExchange exc, String regex)
-			throws Exception {
-		Request req = new Request(exc.getRequest());
-		
-		String res = req.toXml();
-		log.debug("http-xml: " + res);
-		transform(exc.getRequest(), getRequestXSLT(regex), 
-				  new StreamSource(new StringReader(res)));
 	}
 
 	private String findFirstMatchingRegEx(String uri) {
@@ -82,17 +86,26 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().getHeader().add("SOAPAction", getSOAPAction(regex));
+		setContentType(exc.getRequest().getHeader());
+		
 		exc.setProperty("restURL", regex);
-		replaceURI(exc, regex);
+		setServiceEndpoint(exc, regex);
 	}
 
-	private void replaceURI(AbstractExchange exc, String regex) {
+	private void setContentType(Header header) {
+		header.removeFields("Content-Type");
+		header.add("Content-Type","text/xml;charset=UTF-8");
+	}
+
+	private void setServiceEndpoint(AbstractExchange exc, String regex) {
 		exc.getRequest().setUri(
-				getURI(exc).replaceAll(regex, getSOAPURL(regex)));
+				getURI(exc).replaceAll(regex, getSOAPURI(regex)));
 	}
 
-	private void transform(Message msg, String ss, Source src) throws Exception {
-		msg.setBodyContent(xsltTransformer.transform(ss, src).getBytes("UTF-8"));
+	private void transformAndReplaceBody(Message msg, String ss, Source src) throws Exception {
+		String soapEnv = xsltTransformer.transform(ss, src);
+		log.debug("soap-env: " + soapEnv);
+		msg.setBodyContent(soapEnv.getBytes("UTF-8"));
 	}
 
 	private String getURI(AbstractExchange exc) {
@@ -111,8 +124,8 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		return mappings.get(regex).get("SOAPAction");
 	}
 
-	private String getSOAPURL(String regex) {
-		return mappings.get(regex).get("SOAPURL");
+	private String getSOAPURI(String regex) {
+		return mappings.get(regex).get("SOAPURI");
 	}
 
 	public Map<String, Map<String, String>> getMappings() {
