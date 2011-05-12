@@ -236,24 +236,6 @@
   -->
  
   <!--
-  <bean id="rest2SoapInterceptor" class="com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor">
-    <property name="displayName" value="REST 2 SOAP Interceptor" />
-    <property name="mappings">
-      <map>
-        <entry key="/bank/.*">
-        	<map>
-        		<entry key="SOAPURL" value="/axis2/services/BLZService"/>
-        		<entry key="SOAPAction" value=""/>
-        		<entry key="requestXSLT" value="../com.predic8.membrane.core.tests/resources/blz-httpget2soap-request.xsl"/>
-        		<entry key="responseXSLT" value="../com.predic8.membrane.core.tests/resources/strip-soap-envelope.xsl"/>
-        	</map>          
-        </entry>
-      </map>
-	</property>
-  </bean>
-  -->
-  
-  <!--
   <bean id="xsltTransformer" class="com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor">
     <property name="displayName" value="XSLT Transformer" />
     <property name="requestXSLT" value="C:/work/membrane/monitor/eclipse/com.predic8.membrane.core.tests/resources/blz-httpget2soap-request.xsl" /> 
@@ -328,5 +310,41 @@
     <property name="password" value="your-password" /> 
   </bean>
   -->
+  
+	 <!--
+	   REST 2 SOAP Interceptor 
+	   =======================================
+	   This interceptor can be used to map HTTP requests to SOAP operation calls.
+	   
+	   The interceptor is configured by the property mappings. It contains a map. Each key is a regular expression that is matched against the URI of the request. 
+	   The data mapped by the key that first matches the URI is taken to transform the HTTP request and to call the SOAP operation. 
+	   The transformation is done by a XSLT stylesheet that is applied to a XML document that is constructed from the HTTP request by the interceptor.  
+	   The data for the transformation is given by a map that contains the keys SOAPAction, SOAPURL, requestXSLT and responseXSLT.
+
+	   The value of the property "SOAPAction" is taken for the SOAPAction header field of the HTTP request.
+
+	   The value of the property "SOAPURL" is used as the endpoint address of the service.
+	     	
+       The value of the property "requestXSLT" will by used as the location of the stylesheet that will by applied to the request. The stylesheet is used to create the SOAP envelope required by the service.	
+       
+       The value of the property "responseXSLT" will by used as the location of the stylesheet that will by applied to the response. The stylesheet can be used to extract the content of the SOAP response.
+	   
+	   If you choose a relative path for requestXSLT or requestXSLT, it will by relative to MEMBRANE_HOME. You also can use the prefix classpath: to reference a stylesheet from the classpath.
+	 -->
+	 <bean id="rest2SoapInterceptor" class="com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor">
+      <property name="displayName" value="REST 2 SOAP Interceptor" />
+	  <property name="mappings">
+	  	<map>
+	  		<entry key="/bank/.*">
+	  			<map>
+	  				<entry key="SOAPAction" value=""/>
+	  				<entry key="SOAPURI" value="/axis2/services/BLZService" />
+	  				<entry key="requestXSLT" value="examples/rest2soap/blz-httpget2soap-request.xsl" />
+	  				<entry key="responseXSLT" value="examples/rest2soap/strip-soap-envelope.xsl" />          				
+	  			</map>
+	  		</entry>
+	  	</map>
+	  </property> 
+	</bean> 
   
 </beans>
