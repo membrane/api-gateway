@@ -24,7 +24,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 8000), "www.thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 				
@@ -59,7 +59,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 	private Map<String, String> getBLZMapping() {
 		Map<String,String> mapping = new HashMap<String, String>();
 		mapping.put("SOAPAction", "");
-		mapping.put("SOAPURL", "/axis2/services/BLZService");
+		mapping.put("SOAPURI", "/axis2/services/BLZService");
 		mapping.put("requestXSLT", "classpath:/blz-httpget2soap-request.xsl");
 		mapping.put("responseXSLT", "classpath:/strip-soap-envelope.xsl");
 		return mapping;
