@@ -38,4 +38,9 @@ public abstract class AbstractPatternElement extends AbstractConfigElement {
 	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
 		pattern = Pattern.compile(token.getText());
 	}
+	
+	@Override
+	public String toString() {
+		return pattern.pattern();
+	}
 }
