@@ -42,6 +42,8 @@ public class AccessControlInterceptorIntegrationTest {
 	
 	public static final String FILE_CLIENTS_FROM_PREDIC8 = "resources/acl/clients-from-predic8.de.xml";
 	
+	public static final String FILE_CLIENTS_FROM_127_0_0_1 = "resources/acl/clients-from-127.0.0.1.xml";
+	
 	private static HttpRouter router;
 	
 	@Before
@@ -69,7 +71,7 @@ public class AccessControlInterceptorIntegrationTest {
 	}
 	
 	@Test
-	public void testPathMismatchFile() throws Exception {
+	public void testUriMismatchFile() throws Exception {
 		setInterceptor(FILE_WITH_URI_MISMATCH);
 		HttpClient client = new HttpClient();
 		
@@ -86,6 +88,38 @@ public class AccessControlInterceptorIntegrationTest {
 		assertEquals(403, client.executeMethod(post));
 	}
 
+	@Test
+	public void testGlobPattern() throws Exception {
+		setInterceptor(FILE_CLIENTS_FROM_PREDIC8);
+		
+		HttpClient client = new HttpClient();
+		HostConfiguration config = new HostConfiguration();
+		InetAddress address = InetAddress.getByAddress(new byte[]{ (byte)192, (byte)168, (byte)2,  (byte)155 });
+		
+		config.setLocalAddress(address);
+		client.setHostConfiguration(config);
+		
+		PostMethod post = getBLZRequestMethod();
+		
+		assertEquals(200, client.executeMethod(post));
+	}
+	
+	@Test
+	public void test127_0_0_1() throws Exception {
+		setInterceptor(FILE_CLIENTS_FROM_127_0_0_1);
+		
+		HttpClient client = new HttpClient();
+		HostConfiguration config = new HostConfiguration();
+		InetAddress address = InetAddress.getByAddress(new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 });
+		config.setLocalAddress(address);
+		client.setHostConfiguration(config);
+		
+		PostMethod post = getBLZRequestMethod();
+		
+		assertEquals(200, client.executeMethod(post));
+	}
+	
+	
 	private void setInterceptor(String fileName) {
 		AccessControlInterceptor interceptor = new AccessControlInterceptor();
 		interceptor.setAclFilename(fileName);
@@ -103,20 +137,5 @@ public class AccessControlInterceptorIntegrationTest {
 		return post;
 	}
 	
-	@Test
-	public void testGlobPattern() throws Exception {
-		setInterceptor(FILE_CLIENTS_FROM_PREDIC8);
-		
-		HttpClient client = new HttpClient();
-		HostConfiguration config = new HostConfiguration();
-		InetAddress address = InetAddress.getByAddress(new byte[]{ (byte)192, (byte)168, (byte)2,  (byte)155 });
-		
-		config.setLocalAddress(address);
-		client.setHostConfiguration(config);
-		
-		PostMethod post = getBLZRequestMethod();
-		
-		assertEquals(200, client.executeMethod(post));
-	}
-	
 }
+
