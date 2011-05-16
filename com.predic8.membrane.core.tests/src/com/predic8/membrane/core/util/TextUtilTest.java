@@ -30,5 +30,7 @@ public class TextUtilTest {
 		assertTrue(pattern.matcher("www.predic8.de").matches());
 		assertTrue(pattern.matcher("www.oio.de").matches());
 		assertFalse(pattern.matcher("www.predic8.com").matches());
+		assertFalse(pattern.matcher("www.predic8.co.uk").matches());
+		assertFalse(pattern.matcher("services.predic8.de").matches());
 	}
 }
