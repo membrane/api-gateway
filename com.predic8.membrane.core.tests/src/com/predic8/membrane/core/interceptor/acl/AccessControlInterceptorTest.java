@@ -69,6 +69,7 @@ public class AccessControlInterceptorTest {
 	@After
 	public void tearDown() throws Exception {
 		router.getTransport().closeAll();
+		Thread.sleep(200);
 	}
 	
 	private int callService(String uri) throws Exception {

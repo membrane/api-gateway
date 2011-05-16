@@ -36,7 +36,7 @@ public class AccessControlInterceptorIntegrationTest {
 
 	public static final String FILE_WITH_VALID_RESOURCE_PARAMS = "resources/acl/valid-resource.xml";
 	
-	public static final String FILE_WITH_PATH_MISMATCH = "resources/acl/path-mismatch.xml";
+	public static final String FILE_WITH_URI_MISMATCH = "resources/acl/uri-mismatch.xml";
 	
 	public static final String FILE_WITH_CLIENT_MISMATCH = "resources/acl/client-mismatch.xml";
 	
@@ -70,7 +70,7 @@ public class AccessControlInterceptorIntegrationTest {
 	
 	@Test
 	public void testPathMismatchFile() throws Exception {
-		setInterceptor(FILE_WITH_PATH_MISMATCH);
+		setInterceptor(FILE_WITH_URI_MISMATCH);
 		HttpClient client = new HttpClient();
 		
 		PostMethod post = getBLZRequestMethod();
