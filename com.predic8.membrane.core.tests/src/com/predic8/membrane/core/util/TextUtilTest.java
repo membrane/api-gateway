@@ -9,17 +9,26 @@ import org.junit.Test;
 public class TextUtilTest {
 
 	@Test
-	public void testGlob() {
-		assertTrue(TextUtil.glob("*.predic8.de", "pc55.predic8.de"));
-		assertFalse(TextUtil.glob("*.predic8.com", "pc55.predic8.de"));
-	}
-
-	@Test
-	public void testGlobToExp() throws Exception {
+	public void testGlobToExpStarPrefix() throws Exception {
 		Pattern pattern = Pattern.compile(TextUtil.globToRegExp("*.predic8.de"));
 		assertTrue(pattern.matcher("hgsjagdjhsa.predic8.de").matches());
 		assertTrue(pattern.matcher("jhkj.predic8.de").matches());
 		assertFalse(pattern.matcher("jhkj.predic8.com").matches());
-		assertFalse(pattern.matcher("jhkj.predic8.comhh").matches());
+	}
+	
+	@Test
+	public void testGlobToExpStarSuffix() throws Exception {
+		Pattern pattern = Pattern.compile(TextUtil.globToRegExp("predic8.*"));
+		assertTrue(pattern.matcher("predic8.de").matches());
+		assertTrue(pattern.matcher("predic8.com").matches());
+		assertFalse(pattern.matcher("jhkj.predic8.de").matches());
+	}
+	
+	@Test
+	public void testGlobToExpStarInfix() throws Exception {
+		Pattern pattern = Pattern.compile(TextUtil.globToRegExp("www.*.de"));
+		assertTrue(pattern.matcher("www.predic8.de").matches());
+		assertTrue(pattern.matcher("www.oio.de").matches());
+		assertFalse(pattern.matcher("www.predic8.com").matches());
 	}
 }

@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptorTest;
 import com.predic8.membrane.core.interceptor.DispatchingInterceptorTest;
 import com.predic8.membrane.core.interceptor.WSDLInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
+import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
@@ -46,6 +47,7 @@ import com.predic8.membrane.core.util.TextUtilTest;
 	MagicTest.class,
 	CoreActivatorTest.class,	
 	WSDLInterceptorTest.class,
+	AccessControlParserTest.class,
 	AccessControlInterceptorTest.class,
 	DispatchingInterceptorTest.class,
 	SimpleURLRewriteInterceptorTest.class,

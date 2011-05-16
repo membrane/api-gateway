@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 
-import org.springframework.util.AntPathMatcher;
-
 import com.predic8.beautifier.PlainBeautifierFormatter;
 import com.predic8.beautifier.XMLBeautifier;
 import com.predic8.beautifier.XMLBeautifierFormatter;
@@ -61,11 +59,6 @@ public class TextUtil {
 
 	public static boolean isNullOrEmpty(String str) {
 		return str == null || str.length() == 0;
-	}
-	
-	public static boolean glob(String pattern, String candidate) {
-		AntPathMatcher matcher = new AntPathMatcher();
-		return matcher.match(pattern, candidate);
 	}
 	
 	public static String globToRegExp(String glob) {

@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.util.TextUtil;
 
 public class Resource extends AbstractPatternElement {
 
@@ -56,7 +57,7 @@ public class Resource extends AbstractPatternElement {
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		pattern = Pattern.compile(token.getAttributeValue(null, "uri"));
+		pattern = Pattern.compile(TextUtil.globToRegExp(token.getAttributeValue(null, "uri")));
 	}
 	
 	/*

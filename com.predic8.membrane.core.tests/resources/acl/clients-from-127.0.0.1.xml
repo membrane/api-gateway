@@ -1,5 +1,5 @@
 <accessControl>
-	<resource uri="/axis2/.*">
+	<resource uri="/axis2/*">
 		<clients>
 			<ip>127.0.0.1</ip>
 		</clients>

@@ -1,5 +1,5 @@
 <accessControl>
-	<resource uri="/axis2/.*">
+	<resource uri="/axis2/*">
 		<clients>
 			<ip>192.168.23.131</ip>
 			<hostname>predic8.de</hostname>
@@ -7,9 +7,9 @@
 			<ip>127.0.0.1</ip>
 		</clients>
 	</resource>
-	<resource uri="/crm/.*">
+	<resource uri="/crm/*">
 		<clients>
-			<ip>192.168.23</ip>
+			<ip>192.168.23.*</ip>
 			<hostname>pc1.predic8.de</hostname>
 			<ip>192.168.11.2</ip>
 			<hostname>pc1.predic8.com</hostname>

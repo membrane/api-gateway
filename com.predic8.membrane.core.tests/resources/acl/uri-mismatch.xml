@@ -1,11 +1,11 @@
 <accessControl>
-	<resource uri="/netbeans.com/.*">
+	<resource uri="/appX/*">
 		<clients>
 			<ip>192.168.3.12</ip>
 			<hostname>predic8.de</hostname>
 		</clients>
 	</resource>
-	<resource uri="/crm/.*">
+	<resource uri="/crm/*">
 		<clients>
 			<ip>192.168.23</ip>
 			<hostname>pc1.predic8.de</hostname>

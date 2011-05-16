@@ -19,26 +19,11 @@ import junit.framework.TestCase;
 
 public class AccessControlParserTest extends TestCase {
 
+	public static final String FILE_NAME = "resources/acl/acl.xml";
 	
-	public static final String FILE_NAME = "resources/acl.xml";
+	public static final String RESOURCE_URI_1 = "/axis2/services";
 	
-	public static final String PATH_SERVICE_1 = "/axis2/services";
-	
-	public static final String PATH_SERVICE_2 = "/crm/kundenservice";
-	
-	public static final String SERVICE_1_IP_1 = "192.168.23.131";
-	
-	public static final String SERVICE_1_HOSTNAME_1 = "*.predic8.de";
-	
-	public static final String SERVICE_2_IP_1 = "192.168.23.*";
-	
-	public static final String SERVICE_2_IP_2 = "192.168.11.*";
-	
-	public static final String SERVICE_2_HOSTNAME_1 = "pc1.predic8.de";
-	
-	public static final String SERVICE_2_HOSTNAME_2 = "pc1.predic8.com";
-	
-	public static final String SERVICE_2_HOSTNAME_3 = "pc1.xy.com";
+	public static final String RESOURCE_URI_2 = "/crm/kundenservice";
 	
 	private AccessControl accessControl;
 	
@@ -48,41 +33,35 @@ public class AccessControlParserTest extends TestCase {
 		accessControl = new AccessControlInterceptor().parse(FILE_NAME);
 	}
 	
-	public void testServiceCount() throws Exception {
+	public void testResourceCount() throws Exception {
 		assertEquals(2, accessControl.getResources().size());
 	}
 	
-	public void testService1() throws Exception {
-		List<Resource> services = accessControl.getResources();
-		Resource service = services.get(0);		
-		assertTrue(service.matches(PATH_SERVICE_1));
+	public void testResource1() throws Exception {
+		List<Resource> resources = accessControl.getResources();
+		Resource resource = resources.get(0);		
+		assertTrue(resource.matches(RESOURCE_URI_1));
 		
-		assertEquals(1, service.getIpAddresses().size());
-		assertEquals(1, service.getHostnames().size());
+		assertEquals(2, resource.getIpAddresses().size());
+		assertEquals(2, resource.getHostnames().size());
 		
-		assertEquals(SERVICE_1_IP_1, service.getIpAddresses().get(0).toString());
-		//TODO 
-		//assertEquals(SERVICE_1_HOSTNAME_1, service.getHostNames().get(0).toString());
+		assertTrue(resource.getIpAddresses().get(0).matches("192.168.23.131"));
+		assertTrue(resource.getHostnames().get(0).matches("predic8.de"));
 	}
 	
-	public void testService2() throws Exception {
-		List<Resource> services = accessControl.getResources();
-		Resource service = services.get(1);
-		assertTrue(service.matches(PATH_SERVICE_2));
+	public void testResource2() throws Exception {
+		List<Resource> resources = accessControl.getResources();
+		Resource resource = resources.get(1);
+		assertTrue(resource.matches(RESOURCE_URI_2));
 		
-		assertEquals(2, service.getIpAddresses().size());
-		assertEquals(3, service.getHostnames().size());
+		assertEquals(2, resource.getIpAddresses().size());
+		assertEquals(3, resource.getHostnames().size());
 		
-		//TODO
-		//assertEquals(SERVICE_2_IP_1, service.getIpAddresses().get(0));
-		//assertEquals(SERVICE_2_HOSTNAME_1, service.getHostNames().get(0));
-		
-		//assertEquals(SERVICE_2_IP_2, service.getIpAddresses().get(1));
-		//assertEquals(SERVICE_2_HOSTNAME_2, service.getHostNames().get(1));
-		
-		//assertEquals(SERVICE_2_HOSTNAME_3, service.getHostNames().get(2));
-		
-		
+		assertTrue(resource.getIpAddresses().get(0).matches("192.168.23.12"));
+		assertTrue(resource.getIpAddresses().get(1).matches("192.168.11.2"));
+		assertTrue(resource.getHostnames().get(0).matches("pc1.predic8.de"));
+		assertTrue(resource.getHostnames().get(1).matches("pc1.predic8.com"));
+		assertTrue(resource.getHostnames().get(2).matches("pc1.xy.com"));
 	}
 	
 }
