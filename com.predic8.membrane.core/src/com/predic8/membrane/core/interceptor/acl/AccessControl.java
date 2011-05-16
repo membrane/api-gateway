@@ -26,7 +26,7 @@ public class AccessControl extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "accessControl";
 		
-	private List<Service> services = new ArrayList<Service>();
+	private List<Resource> resources = new ArrayList<Resource>();
 	
 	public AccessControl(Router router) {
 		super(router);
@@ -39,24 +39,24 @@ public class AccessControl extends AbstractConfigElement {
 	
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
-		if (Service.ELEMENT_NAME.equals(child)) {
-			services.add((Service) (new Service(router)).parse(token));
+		if (Resource.ELEMENT_NAME.equals(child)) {
+			resources.add((Resource) (new Resource(router)).parse(token));
 		} 
 	}
 
-	public List<Service> getServices() {
-		return services;
+	public List<Resource> getResources() {
+		return resources;
 	}
 	
-	public Service getServiceFor(String path) throws Exception {
-		if (path == null)
-			throw new IllegalArgumentException("Path can not be null.");
+	public Resource getResourceFor(String uri) throws Exception {
+		if (uri == null)
+			throw new IllegalArgumentException("Resource URI can not be null.");
 		
-		for (Service service : services) {
-			if (service.matches(path))
-				return service;
+		for (Resource res : resources) {
+			if (res.matches(uri))
+				return res;
 		}
-		throw new IllegalArgumentException("Service not found for given path");
+		throw new IllegalArgumentException("Resource not found for given path");
 	}
 	
 }

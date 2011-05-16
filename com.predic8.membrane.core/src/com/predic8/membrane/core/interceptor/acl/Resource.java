@@ -21,17 +21,22 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.Router;
 
-public class Service extends AbstractPatternElement {
+public class Resource extends AbstractPatternElement {
 
-	public static final String ELEMENT_NAME = "service";
+	private static Log log = LogFactory.getLog(Resource.class.getName());
+	
+	public static final String ELEMENT_NAME = "resource";
 	
 	private List<Ip> ipAddresses = new ArrayList<Ip>();
 	
 	private List<Hostname> hostNames = new ArrayList<Hostname>();
 	
-	public Service(Router router) {
+	public Resource(Router router) {
 		super(router);
 	}
 	
@@ -51,7 +56,7 @@ public class Service extends AbstractPatternElement {
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		pattern = Pattern.compile(token.getAttributeValue(null, "path"));
+		pattern = Pattern.compile(token.getAttributeValue(null, "uri"));
 	}
 	
 	/*
@@ -68,14 +73,19 @@ public class Service extends AbstractPatternElement {
 		return ipAddresses;
 	}
 
-	public List<Hostname> getHostNames() {
+	public List<Hostname> getHostnames() {
 		return hostNames;
 	}
 	public boolean checkAccess(InetAddress inetAddress) {
-		return checkHostAddress(inetAddress.getHostAddress()) || checkHostName(inetAddress.getHostName());
+		log.debug("Hostname: " + inetAddress.getHostName());
+		log.debug("Canonical Hostname: " + inetAddress.getCanonicalHostName());
+		log.debug("Hostaddress: " + inetAddress.getHostAddress());
+		
+		return checkHostAddress(inetAddress.getHostAddress()) || checkHostName(inetAddress.getCanonicalHostName());
 	}
 	
 	private boolean checkHostName(String name) {
+		log.debug("Check host name: " + name);
 		for (Hostname host : hostNames) {
 			if (host.matches(name))
 				return true;

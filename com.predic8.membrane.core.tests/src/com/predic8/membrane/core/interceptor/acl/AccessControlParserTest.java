@@ -49,16 +49,16 @@ public class AccessControlParserTest extends TestCase {
 	}
 	
 	public void testServiceCount() throws Exception {
-		assertEquals(2, accessControl.getServices().size());
+		assertEquals(2, accessControl.getResources().size());
 	}
 	
 	public void testService1() throws Exception {
-		List<Service> services = accessControl.getServices();
-		Service service = services.get(0);		
+		List<Resource> services = accessControl.getResources();
+		Resource service = services.get(0);		
 		assertTrue(service.matches(PATH_SERVICE_1));
 		
 		assertEquals(1, service.getIpAddresses().size());
-		assertEquals(1, service.getHostNames().size());
+		assertEquals(1, service.getHostnames().size());
 		
 		assertEquals(SERVICE_1_IP_1, service.getIpAddresses().get(0).toString());
 		//TODO 
@@ -66,12 +66,12 @@ public class AccessControlParserTest extends TestCase {
 	}
 	
 	public void testService2() throws Exception {
-		List<Service> services = accessControl.getServices();
-		Service service = services.get(1);
+		List<Resource> services = accessControl.getResources();
+		Resource service = services.get(1);
 		assertTrue(service.matches(PATH_SERVICE_2));
 		
 		assertEquals(2, service.getIpAddresses().size());
-		assertEquals(3, service.getHostNames().size());
+		assertEquals(3, service.getHostnames().size());
 		
 		//TODO
 		//assertEquals(SERVICE_2_IP_1, service.getIpAddresses().get(0));

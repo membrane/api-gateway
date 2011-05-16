@@ -20,6 +20,7 @@ import javax.xml.stream.XMLStreamReader;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
+import com.predic8.membrane.core.util.TextUtil;
 
 public abstract class AbstractPatternElement extends AbstractConfigElement {
 
@@ -36,7 +37,7 @@ public abstract class AbstractPatternElement extends AbstractConfigElement {
 	
 	@Override
 	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
-		pattern = Pattern.compile(token.getText());
+		pattern = Pattern.compile(TextUtil.globToRegExp(token.getText()));
 	}
 	
 	@Override

@@ -17,21 +17,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import com.predic8.membrane.core.http.BodyTest;
-import com.predic8.membrane.core.http.HeaderTest;
-import com.predic8.membrane.core.http.RequestTest;
-import com.predic8.membrane.core.http.ResponseTest;
-import com.predic8.membrane.core.interceptor.AbstractInterceptorTest;
-import com.predic8.membrane.core.interceptor.DispatchingInterceptorTest;
-import com.predic8.membrane.core.interceptor.WSDLInterceptorTest;
-import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
-import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
-import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
-import com.predic8.membrane.core.magic.MagicTest;
-import com.predic8.membrane.core.transport.http.HostColonPortTest;
-import com.predic8.membrane.core.util.ByteUtilTest;
-import com.predic8.membrane.core.util.HttpUtilTest;
-
 @RunWith(Suite.class)
 @SuiteClasses( {
 	UnitlTests.class,

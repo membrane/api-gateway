@@ -13,28 +13,37 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
 
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpVersion;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.http.params.HttpProtocolParams;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.Rule;
 public class AccessControlInterceptorTest {
 
 	private AccessControlInterceptor interceptor;
 	
-	private Exchange exc;
+	private HttpRouter router;
 	
 	@Before
 	public void setUp() throws Exception {
-		exc = new Exchange();
-		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
-		
 		interceptor = new AccessControlInterceptor();
-		interceptor.setAclFilename("resources/acl.xml");
+		interceptor.setAclFilename("resources/acl/acl.xml");
+		
+		
+		Rule rule4000 = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 4000), "oio.de", 80);
+		router = new HttpRouter();
+		router.getRuleManager().addRuleIfNew(rule4000);
+		router.getTransport().getInterceptors().add(interceptor);
 	}
 	
 	@Test
@@ -43,8 +52,30 @@ public class AccessControlInterceptorTest {
 	}
 	
 	@Test
-	public void testDefaultAccess() throws Exception {
-		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+	public void testAuthorizedAccess() throws Exception {
+		assertEquals(200, callService("/axis2/services/BLZService?wsdl"));
+	}
+	
+	@Test
+	public void testUnauthorizedRequestUri() throws Exception {
+		assertEquals(403, callService("/predic8/services/BLZService?wsdl")); 
+	}
+	
+	@Test
+	public void testUnauthorizedClient() throws Exception {
+		assertEquals(403, callService("/crm/services/BLZService?wsdl")); 
+	}
+	
+	@After
+	public void tearDown() throws Exception {
+		router.getTransport().closeAll();
+	}
+	
+	private int callService(String uri) throws Exception {
+		HttpClient client = new HttpClient();
+		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		GetMethod get = new GetMethod("http://localhost:4000" + uri);
+		return client.executeMethod(get);
 	}
 	
 }

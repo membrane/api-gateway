@@ -33,6 +33,7 @@ import com.predic8.membrane.core.rules.ForwardingRuleKeyTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
 import com.predic8.membrane.core.util.ByteUtilTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
+import com.predic8.membrane.core.util.TextUtilTest;
 
 @RunWith(Suite.class)
 @SuiteClasses( { 
@@ -55,7 +56,8 @@ import com.predic8.membrane.core.util.HttpUtilTest;
 	ReadRulesInterceptorRefTest.class,
 	RuleManagerTest.class,
 	ProxyTest.class,
-	ForwardingRuleKeyTest.class
+	ForwardingRuleKeyTest.class,
+	TextUtilTest.class
 })
 public class UnitlTests {
 

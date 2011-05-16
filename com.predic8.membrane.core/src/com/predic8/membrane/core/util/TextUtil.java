@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 
+import org.springframework.util.AntPathMatcher;
+
 import com.predic8.beautifier.PlainBeautifierFormatter;
 import com.predic8.beautifier.XMLBeautifier;
 import com.predic8.beautifier.XMLBeautifierFormatter;
@@ -27,6 +29,14 @@ import com.predic8.beautifier.XMLBeautifierFormatter;
 
 public class TextUtil {
 
+	private static final char[] source;
+	private static final String[] replace;
+	
+	static { 
+		source = new char[] {    '*',    '?',  '.',    '\\',      '(' ,    ')',    '+',      '|',    '^',     '$',    '%',       '@'    };
+		replace = new String[] { ".*",   ".",  "\\.",  "\\\\",   "\\(",   "\\)",   "\\+",   "\\|",  "\\^",   "\\$",    "\\%",   "\\@"   };
+	}
+	
 	public static String formatXML(InputStreamReader reader) {
 		StringWriter out = new StringWriter();
 		
@@ -53,4 +63,28 @@ public class TextUtil {
 		return str == null || str.length() == 0;
 	}
 	
+	public static boolean glob(String pattern, String candidate) {
+		AntPathMatcher matcher = new AntPathMatcher();
+		return matcher.match(pattern, candidate);
+	}
+	
+	public static String globToRegExp(String glob) {
+		StringBuffer buf = new StringBuffer();
+		buf.append("^");
+		for(int i = 0; i < glob.length(); i ++) {
+			appendReplacement(glob.charAt(i), buf);
+		}
+		buf.append("$");
+		return buf.toString();
+	}
+	
+	private static void appendReplacement(char c, StringBuffer buf) {
+		for (int j = 0; j < source.length; j++) {
+			if (c == source[j]) {
+				buf.append(replace[j]);
+				return;
+			} 
+		}
+		buf.append(c);
+	}
 }

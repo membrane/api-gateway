@@ -1,0 +1,7 @@
+<accessControl>
+	<resource uri="/axis2/.*">
+		<clients>
+			<hostname>*.predic8.de</hostname>
+		</clients>
+	</resource>
+</accessControl>

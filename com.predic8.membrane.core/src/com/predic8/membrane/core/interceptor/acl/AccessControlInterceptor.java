@@ -34,15 +34,15 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		Service service;
+		Resource resource;
 		try {
-			service = getAccessControl().getServiceFor(exc.getOriginalRequestUri());
+			resource = getAccessControl().getResourceFor(exc.getOriginalRequestUri());
 		} catch (Exception e) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
 
-		if (!service.checkAccess(getInetAddress(exc))) {
+		if (!resource.checkAccess(getInetAddress(exc))) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}

@@ -16,7 +16,9 @@ package com.predic8.membrane.integration;
 import static junit.framework.Assert.assertEquals;
 
 import java.io.InputStream;
+import java.net.InetAddress;
 
+import org.apache.commons.httpclient.HostConfiguration;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -32,11 +34,13 @@ import com.predic8.membrane.core.rules.Rule;
 
 public class AccessControlInterceptorIntegrationTest {
 
-	public static final String FILE_WITH_VALID_SERVICE_PARAMS = "resources/acl-valid-service.xml";
+	public static final String FILE_WITH_VALID_SERVICE_PARAMS = "resources/acl/valid-resource.xml";
 	
-	public static final String FILE_WITH_PATH_MISMATCH = "resources/acl-path-mismatch.xml";
+	public static final String FILE_WITH_PATH_MISMATCH = "resources/acl/path-mismatch.xml";
 	
-	public static final String FILE_WITH_CLIENT_MISMATCH = "resources/acl-client-mismatch.xml";
+	public static final String FILE_WITH_CLIENT_MISMATCH = "resources/acl/client-mismatch.xml";
+	
+	public static final String FILE_CLIENTS_FROM_PREDIC8 = "resources/acl/clients-from-predic8.de.xml";
 	
 	private static HttpRouter router;
 	
@@ -50,6 +54,7 @@ public class AccessControlInterceptorIntegrationTest {
 	@After
 	public void tearDown() throws Exception {
 		router.getTransport().closeAll();
+		Thread.sleep(200);
 	}
 	
 	@Test
@@ -96,6 +101,22 @@ public class AccessControlInterceptorIntegrationTest {
 		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
 		post.setRequestHeader("SOAPAction", "\"\"");
 		return post;
+	}
+	
+	@Test
+	public void testGlobPattern() throws Exception {
+		setInterceptor(FILE_CLIENTS_FROM_PREDIC8);
+		
+		HttpClient client = new HttpClient();
+		HostConfiguration config = new HostConfiguration();
+		InetAddress address = InetAddress.getByAddress(new byte[]{ (byte)192, (byte)168, (byte)2,  (byte)155 });
+		
+		config.setLocalAddress(address);
+		client.setHostConfiguration(config);
+		
+		PostMethod post = getBLZRequestMethod();
+		
+		assertEquals(200, client.executeMethod(post));
 	}
 	
 }
