@@ -34,7 +34,7 @@ import com.predic8.membrane.core.rules.Rule;
 
 public class AccessControlInterceptorIntegrationTest {
 
-	public static final String FILE_WITH_VALID_SERVICE_PARAMS = "resources/acl/valid-resource.xml";
+	public static final String FILE_WITH_VALID_RESOURCE_PARAMS = "resources/acl/valid-resource.xml";
 	
 	public static final String FILE_WITH_PATH_MISMATCH = "resources/acl/path-mismatch.xml";
 	
@@ -59,7 +59,7 @@ public class AccessControlInterceptorIntegrationTest {
 	
 	@Test
 	public void testValidServiceFile() throws Exception {
-		setInterceptor(FILE_WITH_VALID_SERVICE_PARAMS);
+		setInterceptor(FILE_WITH_VALID_RESOURCE_PARAMS);
 		
 		HttpClient client = new HttpClient();
 		
