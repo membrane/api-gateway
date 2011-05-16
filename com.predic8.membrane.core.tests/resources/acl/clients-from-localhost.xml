@@ -1,7 +1,7 @@
 <accessControl>
 	<resource uri="/axis2/.*">
 		<clients>
-			<hostname>*.predic?.*</hostname>
+			<hostname>localhost</hostname>
 		</clients>
 	</resource>
 </accessControl>

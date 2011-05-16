@@ -34,6 +34,10 @@ import com.predic8.membrane.core.rules.Rule;
 
 public class AccessControlInterceptorIntegrationTest {
 
+	private static final byte[] LOCALHOST_IP = new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 };
+
+	private static final byte[] FIXED_IP = new byte[]{ (byte)192, (byte)168, (byte)2,  (byte)155 };
+
 	public static final String FILE_WITH_VALID_RESOURCE_PARAMS = "resources/acl/valid-resource.xml";
 	
 	public static final String FILE_WITH_URI_MISMATCH = "resources/acl/uri-mismatch.xml";
@@ -43,6 +47,8 @@ public class AccessControlInterceptorIntegrationTest {
 	public static final String FILE_CLIENTS_FROM_PREDIC8 = "resources/acl/clients-from-predic8.de.xml";
 	
 	public static final String FILE_CLIENTS_FROM_127_0_0_1 = "resources/acl/clients-from-127.0.0.1.xml";
+	
+	public static final String FILE_CLIENTS_FROM_LOCALHOST = "resources/acl/clients-from-localhost.xml";
 	
 	private static HttpRouter router;
 	
@@ -74,18 +80,14 @@ public class AccessControlInterceptorIntegrationTest {
 	public void testUriMismatchFile() throws Exception {
 		setInterceptor(FILE_WITH_URI_MISMATCH);
 		HttpClient client = new HttpClient();
-		
-		PostMethod post = getBLZRequestMethod();
-		assertEquals(403, client.executeMethod(post));
+		assertEquals(403, client.executeMethod(getBLZRequestMethod()));
 	}
 	
 	@Test
 	public void testClientsMismatchFile() throws Exception {
 		setInterceptor(FILE_WITH_CLIENT_MISMATCH);
 		HttpClient client = new HttpClient();
-		
-		PostMethod post = getBLZRequestMethod();
-		assertEquals(403, client.executeMethod(post));
+		assertEquals(403, client.executeMethod(getBLZRequestMethod()));
 	}
 
 	@Test
@@ -94,14 +96,10 @@ public class AccessControlInterceptorIntegrationTest {
 		
 		HttpClient client = new HttpClient();
 		HostConfiguration config = new HostConfiguration();
-		InetAddress address = InetAddress.getByAddress(new byte[]{ (byte)192, (byte)168, (byte)2,  (byte)155 });
-		
-		config.setLocalAddress(address);
+		config.setLocalAddress(InetAddress.getByAddress(FIXED_IP));
 		client.setHostConfiguration(config);
 		
-		PostMethod post = getBLZRequestMethod();
-		
-		assertEquals(200, client.executeMethod(post));
+		assertEquals(200, client.executeMethod(getBLZRequestMethod()));
 	}
 	
 	@Test
@@ -110,15 +108,23 @@ public class AccessControlInterceptorIntegrationTest {
 		
 		HttpClient client = new HttpClient();
 		HostConfiguration config = new HostConfiguration();
-		InetAddress address = InetAddress.getByAddress(new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 });
-		config.setLocalAddress(address);
+		config.setLocalAddress(InetAddress.getByAddress(LOCALHOST_IP));
 		client.setHostConfiguration(config);
 		
-		PostMethod post = getBLZRequestMethod();
-		
-		assertEquals(200, client.executeMethod(post));
+		assertEquals(200, client.executeMethod(getBLZRequestMethod()));
 	}
 	
+	@Test
+	public void testLocalhost() throws Exception {
+		setInterceptor(FILE_CLIENTS_FROM_LOCALHOST);
+		
+		HttpClient client = new HttpClient();
+		HostConfiguration config = new HostConfiguration();
+		config.setLocalAddress(InetAddress.getByName("localhost"));
+		client.setHostConfiguration(config);
+		
+		assertEquals(200, client.executeMethod(getBLZRequestMethod()));
+	}
 	
 	private void setInterceptor(String fileName) {
 		AccessControlInterceptor interceptor = new AccessControlInterceptor();
