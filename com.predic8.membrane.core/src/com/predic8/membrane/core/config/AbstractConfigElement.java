@@ -32,4 +32,7 @@ public class AbstractConfigElement extends AbstractXmlElement {
 		this.router = router;
 	}
 	
+	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.		
+		return router;
+	}		
 }
