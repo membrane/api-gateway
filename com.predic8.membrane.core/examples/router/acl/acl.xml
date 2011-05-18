@@ -1,5 +1,5 @@
 <accessControl>
-	<resource uri="/axis2/services/*">
+	<resource uri="/training/*">
 		<clients>
 			<hostname>localhost</hostname>
 		</clients>

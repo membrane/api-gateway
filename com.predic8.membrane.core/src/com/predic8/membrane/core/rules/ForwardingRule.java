@@ -69,10 +69,17 @@ public class ForwardingRule extends AbstractRule {
 
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
-		String host = token.getAttributeValue(Constants.NS_UNDEFINED, "host");
+		String host = defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "host"), "*");
 		int port = Integer.parseInt(token.getAttributeValue(Constants.NS_UNDEFINED, "port"));
-		String method = token.getAttributeValue(Constants.NS_UNDEFINED, "method");
+		String method = defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "method"), "*");
 		key = new ForwardingRuleKey(host, method, ".*", port);
+	}
+	
+	private String defaultTo(String value, String default_) {
+		if (value == null)
+			return default_;
+		
+		return value;
 	}
 	
 	@Override

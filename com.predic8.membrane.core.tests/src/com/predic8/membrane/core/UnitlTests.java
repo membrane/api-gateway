@@ -55,6 +55,7 @@ import com.predic8.membrane.core.util.TextUtilTest;
 	HostColonPortTest.class,
 	HTTP2XMLInterceptorTest.class,	
 	ReadRulesConfigurationTest.class,
+	ReadRulesWithInterceptorsConfigurationTest.class,
 	RuleManagerTest.class,
 	ProxyTest.class,
 	ForwardingRuleKeyTest.class,

@@ -272,23 +272,6 @@ public class Configuration extends AbstractConfigElement {
 		out.writeEndDocument();
 	}
 
-	/* TODO del
-	public void copyFields(Configuration config) {
-		setAdjustHostHeader(config.getAdjustHostHeader());
-		setIndentMessage(config.getIndentMessage());
-		setTrackExchange(config.getTrackExchange());
-		setProxy(config.getProxy());
-		
-		
-		setKeyStoreLocation(config.getKeyStoreLocation());
-		setKeyStorePassword(config.getKeyStorePassword());
-		
-		setTrustStoreLocation(config.getTrustStoreLocation());
-		setTrustStorePassword(config.getTrustStorePassword());
-	}
-	*/
-	
-
 	public boolean isKeyStoreAvailable() {
 		return getKeyStoreLocation() != null && !"".equals(getKeyStoreLocation().trim()) && getKeyStorePassword() != null;
 	}

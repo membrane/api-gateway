@@ -20,54 +20,115 @@ import java.util.List;
 import junit.framework.Assert;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.Rule;
 
 public class ReadRulesConfigurationTest {
 
-	@Test
-	public void testReadRules() throws Exception {
-		Router router = new HttpRouter();
-		router.getConfigurationManager().loadConfiguration("resources/rules.xml");
-		
-	 	List<Rule> rules = router.getRuleManager().getRules();
-	 	Assert.assertEquals(3, rules.size());
+	private Router router;
 	
-	 	Rule proxyRule = rules.get(0);
-	 	Assert.assertEquals(9000, proxyRule.getKey().getPort());
-	 	
-	 	Rule externalRule = rules.get(1);
-	 	Assert.assertEquals("thomas-bayer.com", ((ForwardingRule)externalRule).getTargetHost());
-	 	
-		Rule localRule = rules.get(2);
-	 	assertEquals(8080, ((ForwardingRule)localRule).getTargetPort());
-	 	router.getTransport().closeAll();
+	private List<Rule> rules;
+	
+	@Before
+	public void setUp() throws Exception {
+		router = new HttpRouter();
+		router.getConfigurationManager().loadConfiguration("resources/rules.xml");
+		rules = router.getRuleManager().getRules();
+	}
+	
+	@Test
+	public void testRulesSize() throws Exception {
+	 	Assert.assertEquals(3, rules.size());
 	}
 
 	@Test
-	public void testReadRulesWithInterceptor() throws Exception {
-		
-		Router router = Router.init("classpath:/monitor-beans.xml");
-		router.getConfigurationManager().loadConfiguration("classpath:/rules-interceptor-ref.xml");
-		
-	 	List<Rule> rules = router.getRuleManager().getRules();
-	 	Assert.assertEquals(1, rules.size());
+	public void testProxyRuleListenPort() throws Exception {
+		Assert.assertEquals(9000, rules.get(0).getKey().getPort());
+	}
 	
-	 	ForwardingRule fRule = (ForwardingRule) rules.get(0);
-	 	Interceptor i = fRule.getInterceptors().get(0);
-	 	assertEquals("roundRobinBalancer", i.getDisplayName());
-	 	org.junit.Assert.assertNotNull(i.getRouter());
-	 	router.getTransport().closeAll();
+	@Test
+	public void testProxyRuleBlockRequest() throws Exception {
+		Assert.assertEquals(true, rules.get(0).isBlockRequest());
+	}
+	
+	@Test
+	public void testProxyRuleBlockResponse() throws Exception {
+		Assert.assertEquals(false, rules.get(0).isBlockResponse());
+	}
+	
+	@Test
+	public void testForwardingRuleListenPort() throws Exception {
+		Assert.assertEquals(3000, ((ForwardingRule)rules.get(1)).getKey().getPort());
+	}
+	
+	@Test
+	public void testForwardingRuleTargetPort() throws Exception {
+		Assert.assertEquals(80, ((ForwardingRule)rules.get(1)).getTargetPort());
+	}
+	
+	@Test
+	public void testForwardingRuleTargetHost() throws Exception {
+		Assert.assertEquals("thomas-bayer.com", ((ForwardingRule)rules.get(1)).getTargetHost());
+	}
+	
+	@Test
+	public void testForwardingRuleDefaultMethod() throws Exception {
+		Assert.assertEquals("*", ((ForwardingRule)rules.get(1)).getKey().getMethod());
+	}
+	
+	@Test
+	public void testForwardingRuleDefaultHost() throws Exception {
+		Assert.assertEquals("*", ((ForwardingRule)rules.get(1)).getKey().getHost());
+	}
+	
+	@Test
+	public void testForwardingRuleBlockRequest() throws Exception {
+		Assert.assertEquals(false, ((ForwardingRule)rules.get(1)).isBlockRequest());
+	}
+	
+	@Test
+	public void testForwardingRuleBlockResponse() throws Exception {
+		Assert.assertEquals(true, ((ForwardingRule)rules.get(1)).isBlockResponse());
+	}
+	
+	@Test
+	public void testLocalForwardingRuleListenPort() throws Exception {
+		Assert.assertEquals(2000, ((ForwardingRule)rules.get(2)).getKey().getPort());
+	}
+	
+	@Test
+	public void testLocalForwardingRuleTargetPort() throws Exception {
+		assertEquals(8080, ((ForwardingRule)rules.get(2)).getTargetPort());
+	}
+	
+	@Test
+	public void testForwardingRuleMethodSet() throws Exception {
+		assertEquals("GET", ((ForwardingRule)rules.get(2)).getKey().getMethod());
+	}
+	
+	@Test
+	public void testForwardingRuleHostSet() throws Exception {
+		assertEquals("/abc/*", ((ForwardingRule)rules.get(2)).getKey().getHost());
+	}
+	
+	@Test
+	public void testLocalForwardingRuleInboundSSL() throws Exception {
+		assertEquals(false, ((ForwardingRule)rules.get(2)).isInboundTLS());
+	}
+	
+	@Test
+	public void testLocalForwardingRuleOutboundSSL() throws Exception {
+		assertEquals(false, ((ForwardingRule)rules.get(2)).isOutboundTLS());
 	}
 	
 	@After
 	public void tearDown() throws Exception {
-		
+		router.getTransport().closeAll();
 	}
 
 }

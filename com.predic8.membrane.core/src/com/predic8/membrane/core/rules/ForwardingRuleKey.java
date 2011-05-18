@@ -16,8 +16,8 @@ package com.predic8.membrane.core.rules;
 
 public class ForwardingRuleKey extends AbstractRuleKey {
 
-	String method;
-	String host;
+	String method = "*";
+	String host = "*";
 
 	public ForwardingRuleKey(String host, String method, String path, int port) {
 		super(port);

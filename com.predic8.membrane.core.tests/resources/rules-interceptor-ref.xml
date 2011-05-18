@@ -6,7 +6,8 @@
 			<targetport>8080</targetport>
 			<targethost>localhost</targethost>
 			<interceptors>
-				<interceptor id="roundRobinBalancer" name="roundRobinBalancer" />
+				<interceptor id="roundRobinBalancer" name="Round Robin Balancer" />
+				<interceptor id="urlRewriter" name="Simple URL Rewriter" />
 			</interceptors>			
 		</forwarding-rule>
 	</rules>
