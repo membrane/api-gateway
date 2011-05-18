@@ -27,17 +27,12 @@ First take a look at the examples/acl/rules.xml file.
     <forwarding-rule name="predic8.de (localhost only)" port="2000">
       <targetport>80</targetport>
       <targethost>predic8.de</targethost>
-      <interceptors>
-        <interceptor id="accessControlInterceptor" />
-      </interceptors>
     </forwarding-rule>
   </rules>
 </configuration>
 
 
-The rule directs calls to the port 2000 to predic8.de:80. Additionally the AccessControlInterceptor is set for the rule. 
-The interceptor will be called during the processing of each request.
-
+The rule directs calls to the port 2000 to predic8.de:80. 
 
 Now take a look at the bean configuration of the interceptor in the examples/acl/acl-beans.xml file.
 
