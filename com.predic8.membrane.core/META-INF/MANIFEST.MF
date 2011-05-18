@@ -49,6 +49,7 @@ Export-Package:
    com.predic8.membrane.core.config,
    com.predic8.membrane.core.exchange,
    com.predic8.membrane.core.interceptor",
+ com.predic8.membrane.core.interceptor.authentication,
  com.predic8.membrane.core.interceptor.balancer;uses:="com.predic8.membrane.core.exchange,com.predic8.membrane.core.interceptor",
  com.predic8.membrane.core.interceptor.rest,
  com.predic8.membrane.core.interceptor.rewrite;uses:="com.predic8.membrane.core.exchange,com.predic8.membrane.core.interceptor",
