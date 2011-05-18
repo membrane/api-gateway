@@ -22,11 +22,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.config.ProxyHost;
-import com.predic8.membrane.core.config.ProxyPassword;
-import com.predic8.membrane.core.config.ProxyPort;
-import com.predic8.membrane.core.config.ProxyUsername;
-import com.predic8.membrane.core.config.XMLElement;
 
 public class Request extends AbstractXmlElement {
 

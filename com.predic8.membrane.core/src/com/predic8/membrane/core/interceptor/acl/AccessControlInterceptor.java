@@ -1,4 +1,4 @@
-/* Copyright 2009 predic8 GmbH, www.predic8.com
+/* Copyright 20010 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,11 +14,15 @@
 package com.predic8.membrane.core.interceptor.acl;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -28,6 +32,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 
 public class AccessControlInterceptor extends AbstractInterceptor {
 
+	protected static Log log = LogFactory.getLog(AccessControlInterceptor.class.getName());
+	
 	private String aclFilename;
 
 	private AccessControl accessControl;
@@ -37,6 +43,10 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		Resource resource;
 		try {
 			resource = getAccessControl().getResourceFor(exc.getOriginalRequestUri());
+		} catch (FileNotFoundException e) {
+			log.warn("Could not find access control file: " + aclFilename );
+			setResponseToAccessDenied(exc);
+			return Outcome.ABORT;
 		} catch (Exception e) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
