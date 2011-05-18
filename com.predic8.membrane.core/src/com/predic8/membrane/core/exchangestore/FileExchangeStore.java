@@ -37,7 +37,8 @@ import com.predic8.membrane.core.util.TextUtil;
 
 public class FileExchangeStore extends AbstractExchangeStore {
 
-	private static Log log = LogFactory.getLog(FileExchangeStore.class.getName());
+	private static Log log = LogFactory.getLog(FileExchangeStore.class
+			.getName());
 
 	private String dir;
 
@@ -47,44 +48,46 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static int counter = 0;
 
-	private static final DateFormat dateFormat = new SimpleDateFormat("'h'hh'm'mm's'ss'ms'ms");
+	private static final DateFormat dateFormat = new SimpleDateFormat(
+			"'h'hh'm'mm's'ss'ms'ms");
 
-	private static final String separator = System.getProperty("file.separator");
+	private static final String separator = System
+			.getProperty("file.separator");
 
 	public static final String MESSAGE_FILE_PATH = "message.file.path";
-	
+
 	private boolean saveBodyOnly = false;
-	
+
 	public void add(AbstractExchange exc) {
-		exc.getTime().get(Calendar.YEAR);
-		
 		if (exc.getResponse() == null)
-			counter ++;
-		
-		Message message = exc.getResponse() == null ? exc.getRequest() : exc.getResponse();
+			counter++;
+
+		Message msg = exc.getResponse() == null ? exc.getRequest() : exc
+				.getResponse();
 
 		StringBuffer buf = getFileNameBuffer(exc);
 
 		directory = new File(buf.toString());
 		directory.mkdirs();
-		try {
-			if (directory.exists() && directory.isDirectory()) {
-				buf.append(separator);
-				buf.append(dateFormat.format(exc.getTime().getTime()));
-				buf.append("-");
-				buf.append(counter);
-				exc.setProperty(MESSAGE_FILE_PATH, buf.toString());
-				buf.append("-");
-				buf.append(exc.getResponse() == null ? "Request" : "Response");
-				buf.append(".msg");
-				writeFile(message, buf.toString());
-			} else {
-				log.error("Directory does not exists or file is not a directory: " + buf.toString());
+		if (directory.exists() && directory.isDirectory()) {
+			buf.append(separator);
+			buf.append(dateFormat.format(exc.getTime().getTime()));
+			buf.append("-");
+			buf.append(counter);
+			exc.setProperty(MESSAGE_FILE_PATH, buf.toString());
+			buf.append("-");
+			buf.append(exc.getResponse() == null ? "Request" : "Response");
+			buf.append(".msg");
+			try {
+				writeFile(msg, buf.toString());
+			} catch (Exception e) {
+				log.error(e, e);
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
+		} else {
+			log.error("Directory does not exists or file is not a directory: "
+					+ buf.toString());
 		}
-		
+
 	}
 
 	private synchronized StringBuffer getFileNameBuffer(AbstractExchange exc) {
@@ -98,13 +101,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		buf.append(exc.getTime().get(Calendar.DAY_OF_MONTH));
 		return buf;
 	}
-	
-	private void writeFile(Message msg, String path) throws IOException, FileNotFoundException, Exception {
+
+	private void writeFile(Message msg, String path) throws Exception {
 		File file = new File(path);
-		if (!file.createNewFile()) {
-			log.error("Unable to create file: " + file.getName());
-			return;
-		}
+		file.createNewFile();
 
 		FileOutputStream os = new FileOutputStream(file);
 		try {
@@ -113,40 +113,44 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				msg.getHeader().write(os);
 				os.write((Constants.CRLF).getBytes());
 			}
-			
+
 			if (msg.isBodyEmpty())
 				return;
-			
+
 			if (raw)
 				os.write(msg.getBody().getRaw());
 			else {
 				if (msg.isXML())
-					os.write(TextUtil.formatXML(new InputStreamReader(msg.getBodyAsStream(), msg.getHeader().getContentEncoding())).getBytes());
+					os.write(TextUtil.formatXML(
+							new InputStreamReader(msg.getBodyAsStream(), msg
+									.getHeader().getContentEncoding()))
+							.getBytes());
 				else
 					os.write(msg.getBody().getContent());
 			}
-
-		} catch (Exception e) {
-			throw e;
 		} finally {
 			os.close();
 		}
 	}
 
 	public AbstractExchange[] getExchanges(RuleKey ruleKey) {
-		throw new RuntimeException("Method getExchanges() is not supported by FileExchangeStore");
+		throw new RuntimeException(
+				"Method getExchanges() is not supported by FileExchangeStore");
 	}
 
 	public int getNumberOfExchanges(RuleKey ruleKey) {
-		throw new RuntimeException("Method getNumberOfExchanges() is not supported by FileExchangeStore");
+		throw new RuntimeException(
+				"Method getNumberOfExchanges() is not supported by FileExchangeStore");
 	}
 
 	public void remove(AbstractExchange exchange) {
-		throw new RuntimeException("Method remove() is not supported by FileExchangeStore");
+		throw new RuntimeException(
+				"Method remove() is not supported by FileExchangeStore");
 	}
 
 	public void removeAllExchanges(Rule rule) {
-		throw new RuntimeException("Method removeAllExchanges() is not supported by FileExchangeStore");
+		throw new RuntimeException(
+				"Method removeAllExchanges() is not supported by FileExchangeStore");
 	}
 
 	public String getDir() {
@@ -197,6 +201,5 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	public void setSaveBodyOnly(boolean saveBodyOnly) {
 		this.saveBodyOnly = saveBodyOnly;
 	}
-
 
 }
