@@ -78,7 +78,7 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	}
 	
 	@Override
-	public String toString() {
+	public String toString() { //TODO toString, getName, setName und name="" Initialisierung vereinheitlichen. 
 		if (!"".equals(name))
 			return name;
 		return "" + getKey().toString();
