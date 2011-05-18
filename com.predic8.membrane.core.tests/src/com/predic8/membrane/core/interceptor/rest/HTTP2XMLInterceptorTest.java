@@ -108,10 +108,6 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 		assertEquals("manager", path.getComponents().get(0).getValue());
 		assertEquals("person", path.getComponents().get(1).getValue());
 	}
-
-	private void assertXPath(String xml, String xpathExpr, String expected) throws XPathExpressionException {
-		assertEquals(expected, xpath.evaluate(xpathExpr, new InputSource(new StringReader(xml))));
-	}
 	
 	private void assertXPath(String xpathExpr, String expected) throws XPathExpressionException {
 		assertEquals(expected, xpath.evaluate(xpathExpr, new InputSource(exc.getRequest().getBodyAsStream())));

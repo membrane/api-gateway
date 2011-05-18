@@ -17,7 +17,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import com.predic8.membrane.core.config.ProxyTest;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.http.BodyTest;
 import com.predic8.membrane.core.http.HeaderTest;
 import com.predic8.membrane.core.http.RequestTest;
@@ -55,7 +55,6 @@ import com.predic8.membrane.core.util.TextUtilTest;
 	HostColonPortTest.class,
 	HTTP2XMLInterceptorTest.class,	
 	ReadRulesConfigurationTest.class,
-	ReadRulesInterceptorRefTest.class,
 	RuleManagerTest.class,
 	ProxyTest.class,
 	ForwardingRuleKeyTest.class,
