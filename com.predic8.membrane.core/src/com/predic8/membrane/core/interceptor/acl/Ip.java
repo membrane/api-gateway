@@ -13,11 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import java.net.InetAddress;
+
 import com.predic8.membrane.core.Router;
 
 
 
-public class Ip extends AbstractPatternElement {
+public class Ip extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "ip";
 	
@@ -28,6 +30,11 @@ public class Ip extends AbstractPatternElement {
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
+	}
+	
+	@Override
+	public boolean matches(InetAddress ia) {
+		return pattern.matcher(ia.getHostAddress()).matches();
 	}
 	
 }

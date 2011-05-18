@@ -25,17 +25,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.util.TextUtil;
 
-public class Resource extends AbstractPatternElement {
+public class Resource extends AbstractConfigElement {
 
 	private static Log log = LogFactory.getLog(Resource.class.getName());
 	
 	public static final String ELEMENT_NAME = "resource";
 	
-	private List<Ip> ipAddresses = new ArrayList<Ip>();
+	private List<AbstractClientAddress> clientAddresses = new ArrayList<AbstractClientAddress>();
 	
-	private List<Hostname> hostNames = new ArrayList<Hostname>();
+	protected Pattern pattern;
 	
 	public Resource(Router router) {
 		super(router);
@@ -49,9 +50,11 @@ public class Resource extends AbstractPatternElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (Ip.ELEMENT_NAME.equals(child)) {
-			ipAddresses.add(((Ip) (new Ip(router)).parse(token)));
+			clientAddresses.add(((Ip) (new Ip(router)).parse(token)));
 		} else if (Hostname.ELEMENT_NAME.equals(child)) {
-			hostNames.add(((Hostname) (new Hostname(router)).parse(token)));
+			clientAddresses.add(((Hostname) (new Hostname(router)).parse(token)));
+		} else if (Any.ELEMENT_NAME.equals(child)) {
+			clientAddresses.add(((Any) (new Any(router)).parse(token)));
 		}
 	}
 	
@@ -60,47 +63,29 @@ public class Resource extends AbstractPatternElement {
 		pattern = Pattern.compile(TextUtil.globToRegExp(token.getAttributeValue(null, "uri")));
 	}
 	
-	/*
-	 * Must be overriden because implementation of super class will reset pattern field
-	 * (non-Javadoc)
-	 * @see com.predic8.membrane.core.interceptor.acl.AbstractPatternElement#parseCharacters(javax.xml.stream.XMLStreamReader)
-	 */
-	@Override
-	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
-		
-	} 
-	
-	public List<Ip> getIpAddresses() {
-		return ipAddresses;
-	}
-
-	public List<Hostname> getHostnames() {
-		return hostNames;
-	}
 	public boolean checkAccess(InetAddress inetAddress) {
 		log.debug("Hostname: " + inetAddress.getHostName());
 		log.debug("Canonical Hostname: " + inetAddress.getCanonicalHostName());
 		log.debug("Hostaddress: " + inetAddress.getHostAddress());
 		
-		return checkHostAddress(inetAddress.getHostAddress()) || checkHostName(inetAddress.getCanonicalHostName());
-	}
-	
-	private boolean checkHostName(String name) {
-		log.debug("Check host name: " + name);
-		for (Hostname host : hostNames) {
-			if (host.matches(name))
+		for (AbstractClientAddress cAdd : clientAddresses) {
+			if (cAdd.matches(inetAddress))
 				return true;
 		}
 		
 		return false;
 	}
 	
-	private boolean checkHostAddress(String address) {
-		for (Ip ipAddress : ipAddresses) {
-			if (ipAddress.matches(address))
-				return true;
-		}
-		return false;
+	public List<AbstractClientAddress> getClientAddresses() {
+		return clientAddresses;
+	}
+
+	public boolean matches(String str) {
+		return pattern.matcher(str).matches();
+	}
+	
+	public String getPattern() {
+		return pattern.pattern();
 	}
 	
 }

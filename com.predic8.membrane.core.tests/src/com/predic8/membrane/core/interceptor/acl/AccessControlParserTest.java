@@ -15,6 +15,8 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.util.List;
 
+import org.junit.Test;
+
 import junit.framework.TestCase;
 
 public class AccessControlParserTest extends TestCase {
@@ -25,43 +27,69 @@ public class AccessControlParserTest extends TestCase {
 	
 	public static final String RESOURCE_URI_2 = "/crm/kundenservice";
 	
-	private AccessControl accessControl;
+	private List<Resource> resources;
 	
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		accessControl = new AccessControlInterceptor().parse(FILE_NAME);
+		resources = new AccessControlInterceptor().parse(FILE_NAME).getResources();
 	}
 	
+	@Test
 	public void testResourceCount() throws Exception {
-		assertEquals(2, accessControl.getResources().size());
+		assertEquals(3, resources.size());
 	}
 	
-	public void testResource1() throws Exception {
-		List<Resource> resources = accessControl.getResources();
-		Resource resource = resources.get(0);		
-		assertTrue(resource.matches(RESOURCE_URI_1));
-		
-		assertEquals(2, resource.getIpAddresses().size());
-		assertEquals(2, resource.getHostnames().size());
-		
-		assertTrue(resource.getIpAddresses().get(0).matches("192.168.23.131"));
-		assertTrue(resource.getHostnames().get(0).matches("predic8.de"));
+	@Test
+	public void testAxis2ResourceClientsSize() throws Exception {
+		assertEquals(4, resources.get(0).getClientAddresses().size());
 	}
 	
-	public void testResource2() throws Exception {
-		List<Resource> resources = accessControl.getResources();
-		Resource resource = resources.get(1);
-		assertTrue(resource.matches(RESOURCE_URI_2));
-		
-		assertEquals(2, resource.getIpAddresses().size());
-		assertEquals(3, resource.getHostnames().size());
-		
-		assertTrue(resource.getIpAddresses().get(0).matches("192.168.23.12"));
-		assertTrue(resource.getIpAddresses().get(1).matches("192.168.11.2"));
-		assertTrue(resource.getHostnames().get(0).matches("pc1.predic8.de"));
-		assertTrue(resource.getHostnames().get(1).matches("pc1.predic8.com"));
-		assertTrue(resource.getHostnames().get(2).matches("pc1.xy.com"));
+	@Test
+	public void testAxis2ResourcePattern() throws Exception {
+		assertEquals("^/axis2/.*$", resources.get(0).getPattern());
 	}
 	
+	@Test
+	public void testAxis2ResourceClientList() throws Exception {
+		assertEquals("^192\\.168\\.23\\.131$", resources.get(0).getClientAddresses().get(0).toString());
+		assertEquals("^predic8\\.de$", resources.get(0).getClientAddresses().get(1).toString());
+		assertEquals("^sami$", resources.get(0).getClientAddresses().get(2).toString());
+		assertEquals("^127\\.0\\.0\\.1$", resources.get(0).getClientAddresses().get(3).toString());
+	}
+	
+	@Test
+	public void testCrmResourceClientsSize() throws Exception {
+		assertEquals(5, resources.get(1).getClientAddresses().size());
+	}
+	
+	@Test
+	public void testCrmResourcePattern() throws Exception {
+		assertEquals("^/crm/.*$", resources.get(1).getPattern());
+	}
+	
+	@Test
+	public void testCrmResourceClientList() throws Exception {
+		assertEquals("^192\\.168\\.23\\..*$", resources.get(1).getClientAddresses().get(0).toString());
+		assertEquals("^pc1\\.predic8\\.de$", resources.get(1).getClientAddresses().get(1).toString());
+		assertEquals("^192\\.168\\.11\\.2$", resources.get(1).getClientAddresses().get(2).toString());
+		assertEquals("^pc1\\.predic8\\.com$", resources.get(1).getClientAddresses().get(3).toString());
+		assertEquals("^pc1\\.xy\\.com$", resources.get(1).getClientAddresses().get(4).toString());
+	}
+	
+	@Test
+	public void testAbcResourceClientsSize() throws Exception {
+		assertEquals(1, resources.get(2).getClientAddresses().size());
+	}
+	
+	@Test
+	public void testAbcResourcePattern() throws Exception {
+		assertEquals("^/abc/.*$", resources.get(2).getPattern());
+	}
+	
+	@Test
+	public void testAbcResourceClientList() throws Exception {
+		assertEquals("^.*$", resources.get(2).getClientAddresses().get(0).toString());
+	}
+
 }

@@ -13,11 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import java.net.InetAddress;
+
 import com.predic8.membrane.core.Router;
 
 
 
-public class Hostname extends AbstractPatternElement {
+public class Hostname extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "hostname";
 	
@@ -30,4 +32,9 @@ public class Hostname extends AbstractPatternElement {
 		return ELEMENT_NAME;
 	}
 
+	@Override
+	public boolean matches(InetAddress ia) {
+		return pattern.matcher(ia.getCanonicalHostName()).matches();
+	}
+	
 }

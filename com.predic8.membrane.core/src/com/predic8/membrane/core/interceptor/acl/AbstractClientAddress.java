@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import java.net.InetAddress;
 import java.util.regex.Pattern;
 
 import javax.xml.stream.XMLStreamException;
@@ -22,18 +23,15 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.util.TextUtil;
 
-public abstract class AbstractPatternElement extends AbstractConfigElement {
-
+public abstract class AbstractClientAddress extends AbstractConfigElement {
 
 	protected Pattern pattern;
 	
-	public AbstractPatternElement(Router router) {
+	public AbstractClientAddress(Router router) {
 		super(router);
 	}
 	
-	public boolean matches(String str) {
-		return pattern.matcher(str).matches();
-	}
+	public abstract boolean matches(InetAddress str);
 	
 	@Override
 	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {

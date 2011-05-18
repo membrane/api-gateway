@@ -16,4 +16,9 @@
 			<hostname>pc1.xy.com</hostname>
 		</clients>
 	</resource>
+	<resource uri="/abc/*">
+		<clients>
+			<any/>
+		</clients>
+	</resource>
 </accessControl>
