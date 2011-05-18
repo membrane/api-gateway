@@ -19,6 +19,10 @@ public class ForwardingRuleKey extends AbstractRuleKey {
 	String method = "*";
 	String host = "*";
 
+	public ForwardingRuleKey(int port) {
+		super(port);
+	}
+	
 	public ForwardingRuleKey(String host, String method, String path, int port) {
 		super(port);
 		this.host = host;

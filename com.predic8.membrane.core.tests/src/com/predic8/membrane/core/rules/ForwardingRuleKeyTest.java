@@ -13,7 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
@@ -30,6 +32,19 @@ public class ForwardingRuleKeyTest {
 			
 	}
 	
+	@Test
+	public void testSimpleConstructor() throws Exception {
+		ForwardingRuleKey key = new ForwardingRuleKey(3000);
+		assertEquals(3000, key.getPort());
+		assertEquals("*", key.getMethod());
+		assertEquals("*", key.getHost());
+		assertNull(key.getPath());
+		assertTrue(key.isPathRegExp());
+		assertTrue(key.isHostWildcard());
+		assertFalse(key.isUsePathPattern());
+	}
+	
+	@Test
 	public void testNoRegExpMatchesPath() throws Exception {
 		ForwardingRuleKey key = new ForwardingRuleKey("localhost", Request.METHOD_POST, "/axis2/services", 3000);
 		key.setPathRegExp(false);
