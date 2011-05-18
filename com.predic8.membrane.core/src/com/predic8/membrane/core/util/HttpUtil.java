@@ -93,6 +93,17 @@ public class HttpUtil {
 		return response;
 	}
 
+	public static Response createNotFoundResponse() {
+		Response response = new Response();
+		response.setStatusCode(404);
+		response.setStatusMessage("Not Found");
+
+		response.setHeader(createHeader("text/html;charset=utf-8"));
+
+		response.setBody(new Body("<html><head><title>Page Not Found</title></head><body>" + "The requested page could't be found!" + "</body></html>"));
+		return response;
+	}
+
 	public static Response createSOAPFaultResponse(String message) {
 		Response response = new Response();
 		response.setStatusCode(500);
