@@ -44,6 +44,12 @@
 		<mkdir dir="dist/router/membrane-router-${version}" />
 		<mkdir dir="dist/router/membrane-router-${version}/classes" />
 		<mkdir dir="dist/router/membrane-router-${version}/lib" />
+		<mkdir dir="dist/router/membrane-router-${version}/examples" />
+		<copy todir="dist/router/membrane-router-${version}/examples"> 
+			<fileset dir="examples/router">
+				<include name="**/*" />
+			</fileset>
+		</copy>
 		<copy todir="dist/router/membrane-router-${version}/lib">
 			<fileset dir="lib">
 				<exclude name="**/rcp/**" />
