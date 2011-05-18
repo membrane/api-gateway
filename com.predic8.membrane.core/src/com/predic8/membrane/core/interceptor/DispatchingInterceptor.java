@@ -23,7 +23,8 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(DispatchingInterceptor.class.getName());
 	
-	public DispatchingInterceptor() {
+	public DispatchingInterceptor() {		
+		name = "Dispatching Interceptor";		
 		priority = 200;
 	}
 	

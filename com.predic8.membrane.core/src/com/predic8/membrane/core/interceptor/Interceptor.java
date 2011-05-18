@@ -34,6 +34,8 @@ public interface Interceptor extends XMLElement, Comparable<Interceptor> {
 	
 	public void setRouter(Router router);
 	
+	public Router getRouter();
+
 	public int getPriority();
 	
 	public void setPriority(int priority);

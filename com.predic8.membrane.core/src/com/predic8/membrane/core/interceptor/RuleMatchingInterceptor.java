@@ -36,6 +36,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private boolean xForwardedForEnabled = true;
 
 	public RuleMatchingInterceptor() {
+		name = "Rule Matching Interceptor";		
 		priority = 50;
 	}
 	

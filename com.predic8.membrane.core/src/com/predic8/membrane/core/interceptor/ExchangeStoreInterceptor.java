@@ -22,6 +22,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	private ExchangeStore store;
 	
 	public ExchangeStoreInterceptor() {
+		name = "Exchange Store Interceptor";
 		priority = 300;
 	}
 	

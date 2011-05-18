@@ -50,6 +50,7 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	private String registryWSDLRegisterURL;
 	
 	public WSDLInterceptor() {
+		name = "WSDL Rewriting Interceptor";		
 		priority = 400;
 	}
 	
