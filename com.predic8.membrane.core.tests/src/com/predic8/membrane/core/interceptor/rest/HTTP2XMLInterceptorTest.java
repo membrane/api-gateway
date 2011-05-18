@@ -1,19 +1,23 @@
+/* Copyright 2011 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import static junit.framework.Assert.assertEquals;
-
 import java.io.StringReader;
-import java.util.regex.Pattern;
 
-import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.events.StartElement;
-import javax.xml.stream.events.XMLEvent;
 import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
@@ -28,12 +32,7 @@ import com.predic8.membrane.core.http.xml.Path;
 import com.predic8.membrane.core.http.xml.Query;
 import com.predic8.membrane.core.http.xml.Request;
 import com.predic8.membrane.core.http.xml.URI;
-import com.predic8.membrane.core.rules.ForwardingRule;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.MessageUtil;
-import com.predic8.membrane.core.ws.relocator.Relocator;
 
 
 public class HTTP2XMLInterceptorTest extends TestCase {
