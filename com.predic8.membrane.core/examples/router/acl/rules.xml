@@ -1,0 +1,23 @@
+<?xml version = "1.0" ?>
+<configuration>
+  <rules>
+    <forwarding-rule name=""
+                      port="2000"
+                      blockRequest="false"
+                      blockResponse="false"
+                      inboundTLS="false"
+                      outboundTLS="false"
+                      host="*"
+                      method="*">
+      <targetport>80</targetport>
+      <targethost>www.thomas-bayer.com</targethost>
+      <interceptors>
+        <interceptor id="accessControlInterceptor"
+                      name="Access Control Interceptor" />
+      </interceptors>
+    </forwarding-rule>
+  </rules>
+  <global>
+    <adjustHostHeader>true</adjustHostHeader>
+  </global>
+</configuration>
