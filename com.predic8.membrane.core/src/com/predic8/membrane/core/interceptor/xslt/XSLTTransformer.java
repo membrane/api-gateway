@@ -1,24 +1,24 @@
 package com.predic8.membrane.core.interceptor.xslt;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.StringWriter;
+import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
 
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-import static com.predic8.membrane.core.util.TextUtil.*;
+import java.io.*;
+
+import javax.xml.transform.*;
+import javax.xml.transform.stream.*;
+
+import org.apache.commons.logging.*;
 
 public class XSLTTransformer {
+	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());
+	
 	private TransformerFactory fac = TransformerFactory.newInstance();
 	
-	public String transform(String ss, Source xml) throws Exception {
+	public String transform(String ss, Source xml) throws Exception {		
+		log.debug("applying transformation: "+ss);		
 		StringWriter sw = new StringWriter();
 		getTransformer(ss).transform(xml, new StreamResult(sw));
-		return sw.toString();
+		return sw.toString();		
 	}
 
 	private Transformer getTransformer(String ss)

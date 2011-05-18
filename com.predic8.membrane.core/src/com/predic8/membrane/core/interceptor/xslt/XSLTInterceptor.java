@@ -1,14 +1,19 @@
 package com.predic8.membrane.core.interceptor.xslt;
 
+import java.io.InputStream;
+
 import javax.xml.transform.stream.StreamSource;
+
+import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
 
-public class XSLTInterceptor extends AbstractInterceptor {
-
+public class XSLTInterceptor extends AbstractInterceptor {	
+	
 	private String requestXSLT;
 	private String responseXSLT;
 	private XSLTTransformer xsltTransformer = new XSLTTransformer();
@@ -26,6 +31,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	}
 
 	private void transformMsg(Message msg, String ss) throws Exception {
+		if ( msg.isBodyEmpty() ) return;
 		msg.setBodyContent(xsltTransformer.transform(ss, new StreamSource(msg.getBodyAsStream())).getBytes("UTF-8"));
 	}
 
