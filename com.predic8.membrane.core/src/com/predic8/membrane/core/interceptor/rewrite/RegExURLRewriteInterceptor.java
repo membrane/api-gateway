@@ -3,12 +3,17 @@ package com.predic8.membrane.core.interceptor.rewrite;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.commons.logging.*;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptor;
 
 public class RegExURLRewriteInterceptor extends AbstractInterceptor {
 
+	private static Log log = LogFactory.getLog(RegExURLRewriteInterceptor.class.getName());
+	
 	private Map<String, String> mapping;
 
 	public RegExURLRewriteInterceptor() {
@@ -19,15 +24,24 @@ public class RegExURLRewriteInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		String uri = exc.getRequest().getUri();
 		
+		log.debug("uri: "+uri);
+
 		String regex = findFirstMatchingRegEx(uri);
 		if (regex == null ) return Outcome.CONTINUE;
-				
+		
+		log.debug("match found: "+regex);
+		log.debug("replacing with: "+mapping.get(regex));		
+		
 		exc.getRequest().setUri(replace(uri, regex));
 		return Outcome.CONTINUE;
 	}
 	
-	private String replace(String uri, String regex) {
-		return uri.replaceAll(regex, mapping.get(regex));
+	private String replace(String uri, String regex) {		
+		String replaced = uri.replaceAll(regex, mapping.get(regex));
+		
+		log.debug("replaced URI: "+replaced);
+		
+		return replaced;
 	}
 
 	private String findFirstMatchingRegEx(String uri) {
