@@ -22,6 +22,8 @@ import javax.xml.transform.stream.*;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.util.FileUtil;
+
 public class XSLTTransformer {
 	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());
 	
@@ -46,9 +48,6 @@ public class XSLTTransformer {
 		if (name.startsWith("classpath:"))
 			return new StreamSource(getClass().getResourceAsStream(name.substring(10)));
 		
-		if ( new File(name).isAbsolute() )
-			return new StreamSource(new File(name));
-		
-		return new StreamSource(new File(System.getenv("MEMBRANE_HOME"), name));
+		return new StreamSource(FileUtil.getAbsolute(new File(name)));
 	}
 }
