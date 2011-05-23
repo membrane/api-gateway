@@ -13,58 +13,69 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.regex.Pattern;
+import java.io.StringWriter;
+import java.net.*;
+import java.util.*;
+import java.util.regex.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ForwardingRule;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.HttpUtil;
 
 public class AdministratorInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(AdministratorInterceptor.class.getName());
 	
-	private Pattern patternMain;
-
-	private Pattern patternAddRule;
-
-	public AdministratorInterceptor() {
-		patternMain = Pattern.compile(".*/");
-		patternAddRule = Pattern.compile(".*/add_forwarding_rule");
-	}
+	private Pattern pattern = Pattern.compile("/([^/]*)(/[^/\\?]*)?(\\?.*)?");
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (patternMain.matcher(exc.getOriginalRequestUri()).matches()) {
-			exc.setResponse(createResponse(getMainPage()));
+	
+		log.debug("request: "+ exc.getOriginalRequestUri());
+		
+		if (matches(exc,"",null))  {
+			exc.setResponse(createHTMLResponse(getMainPage()));
 			return Outcome.ABORT;
 		}
 
-		else if (patternAddRule.matcher(exc.getOriginalRequestUri()).matches()) {
-			exc.setResponse(createResponse(getAddForwardingRule()));
+		if (matches(exc,"fwd-rule","create")) {
+			exc.setResponse(createHTMLResponse(getAddForwardingRule()));
 			return Outcome.ABORT;
-		}
+		} 
+		if (matches(exc,"fwd-rule","details")) {
+			exc.setResponse(createHTMLResponse(getForwardingRuleDetails(getParams(exc))));
+			return Outcome.ABORT;
+		} 
 		
-		log.debug("other pattern found: " + exc.getOriginalRequestUri());
-		return Outcome.CONTINUE;
+		log.debug("no controller or action found: ");
+		exc.setResponse(HttpUtil.createNotFoundResponse());
+		return Outcome.ABORT;		
 	}
 
-	private Response createResponse(String body) {
+	private boolean matches(Exchange exc, String ctrl, String action) {
+		Matcher m = pattern.matcher(exc.getOriginalRequestUri());
+		if (!m.matches() || !ctrl.equals(m.group(1))) return false;
+  	    return ( action == null || ("/"+action).equals(m.group(2)));			   		
+	}
+	
+	private Map<String, String> getParams(Exchange exc) throws Exception {
+		Map<String, String> params = new HashMap<String, String>();
+		
+		URI jUri = new URI(exc.getOriginalRequestUri());
+		if (jUri.getQuery() == null) return params;
+
+		for (String p : jUri.getQuery().split("&")) {
+			params.put(p.split("=")[0], URLDecoder.decode(p.split("=")[1],"UTF-8"));
+		}
+		return params;		
+	}
+	
+	private Response createHTMLResponse(String body) {
 		Response response = new Response();
 		response.setStatusCode(200);
 		response.setStatusMessage("OK");
@@ -74,131 +85,96 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 		return response;
 	}
 
-	private String getMainPage() {
-		StringBuffer buf = new StringBuffer();
-		buf.append("<html>");
-		buf.append("<head>");
-		buf.append("<title>Membrane Administrator</title>");
-		
-		buf.append("</head>");
+	private String getForwardingRuleDetails(final Map<String, String> map) {
+		StringWriter writer = new StringWriter(); 
+		new HtmlBuilder(writer,router) {{
+			html();
+			  createHead("Membrane Administrator - Forwarding Rule Details");
+			  body();
+			  	h1().text("Forwarding Rule Details").end();
+				table();
+					ForwardingRule rule = (ForwardingRule) findRuleByName(map.get("name"));
+					createTr("Name",rule.toString());
+					createTr("Listen Port",""+rule.getKey().getPort());
+					createTr("Client Host",rule.getKey().getHost());
+					createTr("Method",rule.getKey().getMethod());
+					createTr("Path",rule.getKey().getPath());
+					createTr("Target Host",rule.getTargetHost());
+					createTr("Target Port",""+rule.getTargetPort());
+				end();
+				h2().text("Interceptors").end();
+				createInterceptorTable(rule.getInterceptors());
+			  end();
+    		  createSkript();			  	
+		    endAll();
+			done();
+		}};
 
-		buf.append("<body>");
+	    return writer.getBuffer().toString();
+	}
 
-		buf.append("<H2>Membrane Administration</H2>");
-
-		long total = Runtime.getRuntime().totalMemory();
-		long free = Runtime.getRuntime().freeMemory();
-
-		buf.append("<p>Availabe system memory: " + total + "</p>");
-		buf.append("<p>Free system memory: " + free + "</p>");
-
-		buf.append("<H3>Rules</H3>");
-
-		buf.append("<H4>Forwarding Rules: </H4>");
-
-		buf.append("<table border='1'");
-
-		buf.append("<tr>");
-		buf.append("<th>Rule Name</th>");
-		buf.append("<th>Listen Port</th>");
-		buf.append("<th>Client Host</th>");
-		buf.append("<th>Method</th>");
-		buf.append("<th>Path</th>");
-		buf.append("<th>Target Host</th>");
-		buf.append("<th>Target Port</th>");
-		buf.append("</tr>");
-
-		List<Rule> rules = Router.getInstance().getRuleManager().getRules();
-		for (Rule rule : rules) {
-			if (!(rule instanceof ForwardingRule))
-				continue;
-
-			buf.append("<tr>");
-			buf.append("<td>" + rule.toString() + "</td>");
-			buf.append("<td>" + rule.getKey().getPort() + "</td>");
-			buf.append("<td>" + rule.getKey().getHost() + "</td>");
-			buf.append("<td>" + rule.getKey().getMethod() + "</td>");
-			buf.append("<td>" + rule.getKey().getPath() + "</td>");
-			buf.append("<td>" + ((ForwardingRule) rule).getTargetHost() + "</td>");
-			buf.append("<td>" + ((ForwardingRule) rule).getTargetPort() + "</td>");
-			buf.append("</tr>");
-		}
-
-		buf.append("<tr>");
-		buf.append("<td>" + "<a href='add_forwarding_rule'>add new</a>" + "</td>");
-		buf.append("<td>" + " " + "</td>");
-		buf.append("<td>" + " " + "</td>");
-		buf.append("<td>" + " " + "</td>");
-		buf.append("<td>" + " " + "</td>");
-		buf.append("<td>" + " " + "</td>");
-		buf.append("<td>" + " " + "</td>");
-		buf.append("</tr>");
-
-		buf.append("</table>");
-
-		buf.append("<H4>Proxy Rules: </H4>");
-
-		buf.append("<table border='1'>");
-		buf.append("<tr>");
-		buf.append("<th>Rule Name</th>");
-		buf.append("<th>Listen Port</th>");
-		buf.append("</tr>");
-
-		for (Rule rule : rules) {
-			if (!(rule instanceof ProxyRule))
-				continue;
-
-			buf.append("<tr>");
-			buf.append("<td>" + rule.toString() + "</td>");
-			buf.append("<td>" + rule.getKey().getPort() + "</td>");
-			buf.append("</tr>");
-		}
-
-		buf.append("</table>");
-
-		buf.append("</body>");
-
-		buf.append("</html>");
-		return buf.toString();
+	private String getMainPage() throws Exception {
+		StringWriter writer = new StringWriter();
+		new HtmlBuilder(writer,router) {{
+			html();
+			  createHead("Membrane Administrator");
+			  body();
+			  	div().id("tabs");
+				  	ul();
+				  		li();
+				  			a().href("#tabs-1").text("Rules").end();
+				  		end();
+				  		li();
+				  			a().href("#tabs-2").text("Transport").end();
+				  		end();
+				  		li();
+			  				a().href("#tabs-3").text("System").end();
+			  			end();
+				  	end();
+				  	createRulesTab();
+					createTransportTab();				  	
+				  	createSystemTab();
+			  	end();
+			  	createSkript();
+			endAll();
+			done();
+		}};
+	    return writer.getBuffer().toString();
 	}
 
 	private String getAddForwardingRule() {
-		StringBuffer buf = new StringBuffer();
-		buf.append("<html>");
-		buf.append("<head>");
-		buf.append("<title>Membrane Administrator: Add new rule</title>");
-		buf.append("<link rel=\"stylesheet\" type=\"text/css\" href=\"admin.css\" />");
-		buf.append("</head>");
-
-		buf.append("<body>");
-
-		buf.append("<H2>Membrane Administration: Add new rule</H2>");
-
-		buf.append("</body>");
-
-		buf.append("</html>");
-		return buf.toString();
+		StringWriter writer = new StringWriter(); 
+		new HtmlBuilder(writer,router) {{
+			html();
+			  createHead("Membrane Administrator - Add new rule");
+			  body();
+			  	h1().text("Add New Rule");
+			  	form().action("/");
+			  		table();
+			  			tr().td().text("Name").end().td().input().type("text").name("name").end(3);
+			  			tr().td().text("Port").end().td().input().type("text").name("port").end(3);
+			  			tr().td().text("Target Host").end().td().input().type("text").name("targetHost").end(3);
+			  			tr().td().text("Target Port").end().td().input().type("text").name("targetPort").end(3);
+			  		end();
+			  		input().value("Add").type("submit").classAttr("mb-button").end();
+			  	end();
+			  	createSkript();
+			endAll();
+			done();
+		}};
+		
+		return writer.toString();
 	}
 
-	protected String getCss() {
-
-		InputStream in = getClass().getResourceAsStream("/configuration/admin.css");
-		if (in == null)
-			return "";
-
-		StringBuffer buf = new StringBuffer();
-		int c;
-		try {
-			while ((c = in.read()) >= 0) {
-				buf.append((char) c);
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+	private Rule findRuleByName(String name) {
+		List<Rule> rules = router.getRuleManager().getRules();
+		for (Rule rule : rules) {
+			if ( name.equals(rule.toString())) return rule;
 		}
-
-		return buf.toString();
+		return null;
 	}
-
+		
+	
 	private Header createHeader() {
 		Header header = new Header();
 		header.setContentType("text/html;charset=utf-8");
@@ -206,36 +182,6 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
 		header.add("Connection", "close");
 		return header;
-	}
-
-	protected String getCssContent() {
-		StringBuffer buf = new StringBuffer();
-		buf.append("<style type='text/css'");
-	
-		buf.append("body { background-color: ##E8E8E8; }");
-		
-		buf.append("\n");
-		
-		buf.append("H2 { color: #0033CC; margin-top: 30px; 	margin-left: 20px; 	}");
-		
-		buf.append("\n");
-		
-		buf.append("H3 { color: #0033CC; margin-top: 30px; 	margin-left: 20px; 	}");
-		
-		buf.append("\n");
-		
-		buf.append("H4 { color: #660000; margin-left: 40px;  }");
-		
-		buf.append("\n");
-		
-		buf.append("table { margin-left: 80px; }");
-		
-		buf.append("\n");
-		
-		buf.append("p { margin-left: 80px; }");
-		
-		buf.append("</style");	
-		return buf.toString();
 	}
 	
 }
