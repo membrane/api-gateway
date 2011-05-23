@@ -1,7 +1,6 @@
 package com.predic8.membrane.core;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 
 public class RouterService implements RouterServiceMBean {
 
@@ -13,7 +12,8 @@ public class RouterService implements RouterServiceMBean {
 	private String rulesXml="classpath:rules.xml";
 	
     public void start() throws Exception {
-    	startRouter();
+    	router = Router.init(monitorBeansXml);
+		router.getConfigurationManager().loadConfiguration(rulesXml);
         log.info("Router started");
     }
 
@@ -21,11 +21,6 @@ public class RouterService implements RouterServiceMBean {
         router.getTransport().closeAll();
         log.info("Router stopped");
     }
-
-	private void startRouter() throws Exception {
-		router = Router.init(monitorBeansXml);
-		router.getConfigurationManager().loadConfiguration(rulesXml);
-	}
 
 	public String getMonitorBeansXml() {
 		return monitorBeansXml;
