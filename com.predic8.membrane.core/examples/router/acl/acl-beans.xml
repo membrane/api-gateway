@@ -36,7 +36,6 @@
         </bean>
         
         <bean class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
-    	  <property name="displayName" value="Access Control List Interceptor" />
     	  <property name="aclFilename" value="acl.xml" />
     	</bean>
         

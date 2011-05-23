@@ -25,14 +25,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 public class AbstractInterceptor extends AbstractConfigElement implements Interceptor {
 
-	public AbstractInterceptor() {
-		super(null);
-	}
-	
-	public AbstractInterceptor(Router router) {
-		super(router);
-	}
-
 	public static final String ELEMENT_NAME = "interceptor";
 	
 	protected String name = this.getClass().getName();
@@ -40,6 +32,14 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	protected String id;
 	
 	protected int priority = 10000;
+
+	public AbstractInterceptor() {
+		super(null);
+	}
+	
+	public AbstractInterceptor(Router router) {
+		super(router);
+	}
 	
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return Outcome.CONTINUE;

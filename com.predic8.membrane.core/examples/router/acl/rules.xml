@@ -1,7 +1,7 @@
 <?xml version = "1.0" ?>
 <configuration>
   <rules>
-    <forwarding-rule name="predic8.de (localhost only)" port="2000">
+    <forwarding-rule name="predic8.com" port="2000">
       <targetport>80</targetport>
       <targethost>predic8.com</targethost>
     </forwarding-rule>

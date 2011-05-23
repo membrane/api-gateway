@@ -38,6 +38,10 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	private AccessControl accessControl;
 
+	public AccessControlInterceptor() {
+		setDisplayName("Access Control");
+	}
+	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Resource resource;
