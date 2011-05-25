@@ -125,7 +125,7 @@ public class HttpClient {
 				return doCall(exc, con);
 			} catch (ConnectException e) {
 				exception = e;
-				log.warn("Connection to " + dest + " on port " + con.socket.getPort() + " refused.");
+				log.warn("Connection to " + dest + " on port " + port + " refused.");
 			} catch (UnknownHostException e) {
 				log.warn("Unknown host: " + host);
 				exception = e;
