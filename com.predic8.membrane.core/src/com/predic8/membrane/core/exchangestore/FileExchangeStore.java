@@ -121,7 +121,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				if (msg.isXML())
 					os.write(TextUtil.formatXML(
 							new InputStreamReader(msg.getBodyAsStream(), msg
-									.getHeader().getContentEncoding()))
+									.getHeader().getCharset()))
 							.getBytes());
 				else
 					os.write(msg.getBody().getContent());
