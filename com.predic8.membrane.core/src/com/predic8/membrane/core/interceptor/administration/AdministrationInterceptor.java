@@ -27,37 +27,39 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.HttpUtil;
 
-public class AdministratorInterceptor extends AbstractInterceptor {
+public class AdministrationInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(AdministratorInterceptor.class.getName());
+	private static Log log = LogFactory.getLog(AdministrationInterceptor.class.getName());
 	
 	private Pattern pattern = Pattern.compile("/admin/?([^/]*)(/[^/\\?]*)?(\\?.*)?");
 
+	public AdministrationInterceptor() {
+		name = "Administrator";
+	}
+	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 	
 		log.debug("request: "+ exc.getOriginalRequestUri());
 		
-		if (matches(exc,"",null))  {
-			return respond(exc, getMainPage(getParams(exc)));
+		if (matches(exc,"",null)||
+			matches(exc,"rule","details"))  {
+			return respond(exc);
 		}
 		
-		if (matches(exc,"rule","details")) {
-			return respond(exc,getMainPage(getParams(exc)));
-		} 
 		if (matches(exc,"rule","delete")) {
 			deleteForwardingRule(getParams(exc));
-			return respond(exc, getMainPage(getParams(exc)));
+			return respond(exc);
 		} 
 
 		if (matches(exc,"fwd-rule","save")) {
 			addForwardingRule(getParams(exc));
-			return respond(exc, getMainPage(getParams(exc)));
+			return respond(exc);
 		} 
 
 		if (matches(exc,"proxy-rule","save")) {
 			addProxyRule(getParams(exc));
-			return respond(exc, getMainPage(getParams(exc)));
+			return respond(exc);
 		} 
 		
 		return Outcome.CONTINUE;		
@@ -158,13 +160,13 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 			 exc.getRequest().isBodyEmpty();
 	}
 
-	private Outcome respond(Exchange exc, String body) {
+	private Outcome respond(Exchange exc) throws Exception {
 		Response res = new Response();
 		res.setStatusCode(200);
 		res.setStatusMessage("OK");
 		res.setHeader(createHeader());
 
-		res.setBody(new Body(body));
+		res.setBody(new Body(getMainPage(getParams(exc))));
 		exc.setResponse(res);
 		return Outcome.ABORT;
 	}
@@ -186,83 +188,5 @@ public class AdministratorInterceptor extends AbstractInterceptor {
 		log.debug("path: "+params.get("path"));
 		log.debug("target host: "+params.get("targetHost"));
 		log.debug("target port: "+params.get("targetPort"));
-	}
-
-
-	
-//	private String getAddForwardingRulePage() {
-//		StringWriter writer = new StringWriter(); 
-//		new HtmlBuilder(writer,router) {{
-//			html();
-//			  createHead("Membrane Administrator - Add New ForwardingRule");
-//			  body();
-//			  	h1().text("Add New ForwardingRule");
-//			  	form().action("/fwd-rule/save").method("POST").id("formular");
-//			  		table();
-//			  			createParam("Name", "name", "validate[required]");
-//			  			createParam("Port", "port", "validate[required,custom[integer]]");
-//			  			createParam("Target Host", "targetHost", "validate[required]");
-//			  			createParam("Target Port", "targetPort", "validate[required,custom[integer]]");
-//			  		end();			  		
-//			  		input().value("Add").type("submit").classAttr("mb-button").end();
-//			  	end();
-//			  	createSkript();
-//			endAll();
-//			done();
-//		}
-//
-//		};
-//		
-//		return writer.toString();
-//	}
-//
-//	private String getAddProxyRulePage() {
-//		StringWriter writer = new StringWriter(); 
-//		new HtmlBuilder(writer,router) {{
-//			html();
-//			  createHead("Membrane Administrator - Add New ProxyRule");
-//			  body();
-//			  	h1().text("Add New ProxyRule");
-//			  	form().action("/proxy-rule/save").method("POST");
-//			  		table();
-//			  			createParam("Name", "name", "validate[required]");
-//			  			createParam("Port", "port", "validate[required,custom[integer]]");
-//			  		end();
-//			  		input().value("Add").type("submit").classAttr("mb-button").end();
-//			  	end();
-//			  	createSkript();
-//			endAll();
-//			done();
-//		}};
-//		
-//		return writer.toString();
-//	}	
-//	private String getForwardingRuleDetailsPage(final Map<String, String> map) throws Exception {
-//		StringWriter writer = new StringWriter(); 
-//		new HtmlBuilder(writer,router) {{
-//			html();
-//			  createHead("Membrane Administrator - Forwarding Rule Details");
-//			  body();
-//			  	h1().text("Forwarding Rule Details").end();
-//				table();
-//					ForwardingRule rule = (ForwardingRule) findRuleByIdentifier(map.get("name"));
-//					createTr("Name",rule.toString());
-//					createTr("Listen Port",""+rule.getKey().getPort());
-//					createTr("Client Host",rule.getKey().getHost());
-//					createTr("Method",rule.getKey().getMethod());
-//					createTr("Path",rule.getKey().getPath());
-//					createTr("Target Host",rule.getTargetHost());
-//					createTr("Target Port",""+rule.getTargetPort());
-//				end();
-//				h2().text("Interceptors").end();
-//				createInterceptorTable(rule.getInterceptors());
-//			  end();
-//    		  createSkript();			  	
-//		    endAll();
-//			done();
-//		}};
-//
-//	    return writer.getBuffer().toString();
-//	}
-	
+	}	
 }

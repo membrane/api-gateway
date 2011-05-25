@@ -36,6 +36,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	private XSLTTransformer xsltTransformer = new XSLTTransformer();
 
 	public REST2SOAPInterceptor() {
+		name = "REST 2 SOAP Gateway";
 		priority = 140;
 	}
 

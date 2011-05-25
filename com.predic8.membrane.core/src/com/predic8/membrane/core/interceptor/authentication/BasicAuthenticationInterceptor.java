@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.authentication;
 import java.util.*;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -27,12 +26,10 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(BasicAuthenticationInterceptor.class.getName());
-
 	private Map<String, String> users = new HashMap<String, String>();
 	
 	public BasicAuthenticationInterceptor() {
-		name = "Basic Authentication Interceptor";		
+		name = "Basic Authenticator";		
 		priority = 40;
 	}
 	
@@ -79,6 +76,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
 		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
 		header.add("WWW-Authenticate", "Basic realm=\"Membrane Authentication\"");
+		header.add("Connection", "close");		
 		return header;
 	}
 

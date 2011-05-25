@@ -26,6 +26,10 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	private String responseXSLT;
 	private XSLTTransformer xsltTransformer = new XSLTTransformer();
 	
+	public XSLTInterceptor() {
+		name = "XSLT Transformer";
+	}
+	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		transformMsg(exc.getRequest(), requestXSLT);
