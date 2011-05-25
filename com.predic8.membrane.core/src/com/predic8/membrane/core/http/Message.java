@@ -95,7 +95,7 @@ public abstract class Message {
 			return;
 		}
 		
-		if (!isKeepAlive()  || header.hasContentLength()) {			
+		if (!isKeepAlive()  || header.hasContentLength() || header.isProxyConnectionClose()) {			
 			body = new Body(in, header.getContentLength());
 			return;
 		}
@@ -176,8 +176,12 @@ public abstract class Message {
 			return false;
 		if (header.getConnection() == null)
 			return true;
-		if (header.getConnection().equalsIgnoreCase("close")) 
+		if (header.isConnectionClose()) 
 			return false;
+		
+		if (header.isProxyConnectionClose())
+			return false;
+		
 		return true;
 	}
 
