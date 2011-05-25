@@ -14,7 +14,6 @@
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
         xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-  
   <bean id="router" class="com.predic8.membrane.core.Router">
     <property name="ruleManager">
       <bean class="com.predic8.membrane.core.RuleManager" />
@@ -25,7 +24,6 @@
   </bean>
 
   <bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
-  
     <property name="interceptors">
       <list>
         <bean class="com.predic8.membrane.core.interceptor.RuleMatchingInterceptor" />
@@ -38,7 +36,6 @@
         <bean class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
     	  <property name="aclFilename" value="acl.xml" />
     	</bean>
-        
       </list>
     </property>
   </bean>

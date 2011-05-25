@@ -4,6 +4,7 @@ With the AccessControlInterceptor you can restrict access to services and resour
 
 An ACL file allows a fine grained configuration of permissions. Access can be restricted based on the ip address,  hostname and the URI of the requested resource.
 
+
 RUNNING THE EXAMPLE
 
 In this example we will make an HTTP GET request call to secured resources. 
@@ -17,14 +18,14 @@ To run the example execute the following steps:
 3. Open the URL http://localhost:2000/ in your browser. 
    The predic8.de web site will be displayed in your browser.
 
-4. Open the URL http://localhost:2000/contact/.
+4. Open the URL http://localhost:2000/contact/
    The predic8 constacts site will be displayed. 
     
-5. Open the URL http://localhost:2000/open-source. 
+5. Open the URL http://localhost:2000/open-source/ 
    The warning message 'Access denied: you are not authorized to access this service.' will be displayed in your browser.    
 
-6. If you access the service from other computer all URIs will be available except URIs starting with 'contact' or  
-   'open-source'. 	
+6. If you access the service from other computers all URIs will be available except URIs starting with /contact/ or  
+   /open-source/. 	
 
 
 HOW IT IS DONE
@@ -59,22 +60,22 @@ Next take a look at acl.xml file located under the examples/acl directory:
 
 <accessControl>
 	
-	<resource uri="/open-source/*">
+  <resource uri="/open-source/*">
     <clients>
-	    <ip>192.168.2.*</ip>
-	  </clients>
+	  <ip>192.168.2.*</ip>
+    </clients>
   </resource>
     
   <resource uri="/contact/*">
     <clients>
-	    <hostname>localhost</hostname>
-	  </clients>
+	  <hostname>localhost</hostname>
+	</clients>
   </resource>
     
   <resource uri="*">
-	  <clients>
+	<clients>
 	    <any/>
-	  </clients>
+	</clients>
   </resource>
     
 </accessControl>   
