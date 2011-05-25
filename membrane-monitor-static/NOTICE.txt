@@ -1,8 +1,21 @@
 Licenses for External Components
 =================================
 
-Jakarta Commons:
-Apache License Version 2.0, January 2004 See included file LICENSE.txt
+Apache License Version 2.0, January 2004 (See included file LICENSE.txt)
+Jakarta Commons,
+Java Anti-Template Language (JATL)
 
-Eclipse SWT Library:
-Common Public License (CPL) See included file SWT-LICENSE.txt
+Common Public License (CPL) 
+Eclipse SWT Library (See included file SWT-LICENSE.txt)
+
+Modified BSD License:
+DataTables (See DATATABLES-LICENSE.txt)
+
+MIT License:
+jQuery (See JQUERY-LICENSE.txt),
+jQuery UI (See JQUERYUI-LICENSE.txt),
+jQuery.validationEngine v2.0
+
+
+
+
