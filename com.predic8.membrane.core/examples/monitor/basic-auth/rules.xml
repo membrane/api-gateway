@@ -1,10 +1,11 @@
 <configuration>
   <rules>
-    <forwarding-rule name="SQLREST Customer" port="2000">
+    <forwarding-rule name="Basic Authentication" port="2000">
       <targetport>80</targetport>
       <targethost>www.thomas-bayer.com</targethost>
       <interceptors>
-        <interceptor id="xsltTransformer" />
+        <interceptor id="basicAuthenticationInterceptor"
+                      name="Basic Authentication Interceptor" />
       </interceptors>
     </forwarding-rule>
   </rules>

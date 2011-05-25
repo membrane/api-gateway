@@ -17,10 +17,13 @@ In this example we will transform that representation with the XSLTInterceptor.
 
 Execute the following steps:
 
-1. Start Membrane Monitor.
-2. Click on "File/Load Configuration" and open the file examples/xslt/rules.xml.
-3. Open the URL http://www.thomas-bayer.com/sqlrest/CUSTOMER/2/ in your browser.
-4. Compare it with the response of http://localhost:2000/sqlrest/CUSTOMER/2/
+1. Go to the examples/xslt directory.
+
+2. Execute router.bat
+
+2. Open the URL http://www.thomas-bayer.com/sqlrest/CUSTOMER/2/ in your browser.
+
+3. Compare it with the response of http://localhost:2000/sqlrest/CUSTOMER/2/
 
 
 
@@ -47,7 +50,7 @@ First take a look at the rules.xml file.
 
 You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the XSLTInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
 
-Now take a look at the bean configuration of the interceptor in the configuration/monitor-beans.xml file.
+Now take a look at the bean configuration of the interceptor in the xslt-beans.xml file.
 
 
 <bean id="xsltTransformer" class="com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor">
@@ -88,7 +91,7 @@ We will use the stylesheet to transform the REST resource into another represent
 
 
 <CUSTOMER>
-    <ID>2</ID>
+    <ID>-20</ID>
     <FIRSTNAME>Rick</FIRSTNAME>
     <LASTNAME>Cortés Ribotta</LASTNAME>
     <STREET>Calle Pública "B" 5240 Casa 121</STREET>

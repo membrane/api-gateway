@@ -12,9 +12,11 @@ http://www.thomas-bayer.com/axis2/services/BLZService?wsdl
 
 We want to hide that this service is hosted by axis2. To do this we have to replace the part axis2 from the context path. We can achieve this by using the RegExURLRewriteInterceptor as follows: 
 
-1. Start the Membrane Monitor.
-2. Click on "File/Load Configuration" and open the file examples/regex-url-rewriter/rules.xml.
-3. Open the URL http://localhost:2000/bank/services/BLZService?wsdl in your browser.
+1. Go to the examples/regex-url-rewriter directory.
+
+2. Execute router.bat
+
+2. Open the URL http://localhost:2000/bank/services/BLZService?wsdl in your browser.
 
 
 
@@ -40,7 +42,7 @@ First take a look at the rules.xml file.
 
 You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the RegExURLRewriteInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
 
-Now take a look at the bean configuration of the interceptor in the configuration/monitor-beans.xml file.
+Now take a look at the bean configuration of the interceptor in the regex-url-rewriter-beans.xml file.
 
 <bean id="regExUrlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor">
     <property name="displayName" value="RegEx URL Rewriter" />

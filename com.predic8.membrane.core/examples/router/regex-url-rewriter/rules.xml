@@ -1,10 +1,12 @@
 <configuration>
   <rules>
-    <forwarding-rule name="SQLREST Customer" port="2000">
+    <forwarding-rule name="BLZ without AXIS2"
+                      port="2000">
       <targetport>80</targetport>
       <targethost>www.thomas-bayer.com</targethost>
       <interceptors>
-        <interceptor id="xsltTransformer" />
+        <interceptor id="regExUrlRewriter"
+                      name="RegEx URL Rewriter" />
       </interceptors>
     </forwarding-rule>
   </rules>
