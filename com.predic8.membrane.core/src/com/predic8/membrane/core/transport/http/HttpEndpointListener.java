@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.ServerSocket;
 import java.net.SocketException;
+import java.util.concurrent.RejectedExecutionException;
 
 import javax.net.ssl.SSLServerSocketFactory;
 
@@ -63,6 +64,8 @@ public class HttpEndpointListener extends Thread {
 					e.printStackTrace();
 			} catch (NullPointerException e) {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
+			} catch (RejectedExecutionException e) {
+				log.error("Max Thread pool size is exceeded. Please increase the property maxThreadPoolSize in monitor-beans.xml!");				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
