@@ -23,7 +23,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 
 		XMLInputFactory factory = XMLInputFactory.newInstance();
 		FileInputStream fis = new FileInputStream(fileName);
-		XMLStreamReader reader = factory.createXMLStreamReader(fis, Constants.ENCODING_UTF_8);
+		XMLStreamReader reader = factory.createXMLStreamReader(fis, Constants.UTF_8);
 
 		return (Configuration) new Configuration().parse(reader);
 	}
@@ -40,7 +40,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 		
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		
-		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(buffer, Constants.ENCODING_UTF_8);
+		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(buffer, Constants.UTF_8);
 		config.write(writer);
 		writer.flush();
 		writer.close();
@@ -53,7 +53,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 		fos.close();
 		
 		FileWriter out = new FileWriter(path);
-		out.write(TextUtil.formatXML(new InputStreamReader(new ByteArrayInputStream(bArray), Constants.ENCODING_UTF_8)));
+		out.write(TextUtil.formatXML(new InputStreamReader(new ByteArrayInputStream(bArray), Constants.UTF_8)));
 		out.flush();
 		out.close();
 

@@ -95,7 +95,7 @@ public abstract class Message {
 			return;
 		}
 		
-		if (!isKeepAlive()  || header.hasContentLength()) {			
+		if (!isKeepAlive()  || header.hasContentLength() || header.isProxyConnectionClose()) {			
 			body = new Body(in, header.getContentLength());
 			return;
 		}
@@ -128,7 +128,7 @@ public abstract class Message {
 		header = srcHeader;
 	}
 
-	public void write(OutputStream out) throws IOException {
+	public final void write(OutputStream out) throws IOException {
 		writeStartLine(out);
 		header.write(out);
 		out.write(Constants.CRLF_BYTES);
@@ -138,8 +138,7 @@ public abstract class Message {
 			return;
 		}
 			
-		if (!isBodyEmpty())
-			body.write(out);
+		body.write(out);
 		
 		out.flush();
 	}
@@ -179,6 +178,10 @@ public abstract class Message {
 			return true;
 		if (header.getConnection().equalsIgnoreCase("close")) 
 			return false;
+		
+		if (header.isProxyConnectionClose())
+			return false;
+		
 		return true;
 	}
 
@@ -241,13 +244,18 @@ public abstract class Message {
 			return false;
 		return header.getContentType().indexOf("javascript") > 0;
 	}
-	
+	//TODO ignore case ?
 	public boolean isGzip() {
 		return "gzip".equals(header.getContentEncoding());
 	}
 	
+	//TODO ignore case ?
 	public boolean isDeflate() {
 		return "deflate".equals(header.getContentEncoding());
+	}
+	
+	public String getCharset() {
+		return header.getCharset();
 	}
 	
 }

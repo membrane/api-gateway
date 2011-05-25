@@ -75,7 +75,14 @@ public class Request extends Message {
 
 	@Override
 	public String getStartLine() {
-		return method + " " + uri + " HTTP/" + version + Constants.CRLF;
+		StringBuffer buf = new StringBuffer();
+		buf.append(method);
+		buf.append(" ");
+		buf.append(uri);
+		buf.append(" HTTP/");
+		buf.append(version);
+		buf.append(Constants.CRLF);
+		return buf.toString();
 	}
 
 	protected void createBody(InputStream in) throws IOException {

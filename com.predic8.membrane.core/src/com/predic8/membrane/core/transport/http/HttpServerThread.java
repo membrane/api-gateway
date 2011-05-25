@@ -27,6 +27,7 @@ import javax.net.ssl.SSLSocket;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.HttpExchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -55,6 +56,11 @@ public class HttpServerThread extends AbstractHttpThread {
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
 				exchange.setTimeReqReceived(System.currentTimeMillis());
+				
+				if (srcReq.getHeader().getProxyConnection() != null) {
+					srcReq.getHeader().add(Header.CONNECTION, srcReq.getHeader().getProxyConnection());
+					srcReq.getHeader().removeFields(Header.PROXY_CONNECTION);
+				}
 				
 				process();
 				if (srcReq.isCONNECTRequest()) {

@@ -2,13 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CoreTests
 Bundle-SymbolicName: com.predic8.membrane.core.tests
-Bundle-Version: 1.7.1
+Bundle-Version: 1.7.2
 Bundle-Activator: com.predic8.membrane.core.Activator
 Bundle-Vendor: predic8
 Require-Bundle: org.eclipse.core.runtime,
  org.junit4,
  org.apache.commons.httpclient;bundle-version="3.1.0",
- com.predic8.membrane.core;bundle-version="1.7.1"
+ com.predic8.membrane.core;bundle-version="1.7.2"
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .,

@@ -20,11 +20,13 @@ public class Constants {
 	
 	public static final byte[] CRLF_BYTES = { 13, 10 };
 	
-	public static final String VERSION = "1.7.1";
+	public static final String VERSION = "1.7.2";
 	
-	public static final String XML_VERSION = "1.1";
+	public static final String XML_VERSION = "1.0";
 	
-	public static final String ENCODING_UTF_8 = "UTF-8";
+	public static final String UTF_8 = "UTF-8";
+	
+	public static final String ISO_8859_1 = "ISO-8859-1";
 	
 	public static final String UNKNOWN = "unknown";
 	
@@ -39,5 +41,15 @@ public class Constants {
 	public static final String WSDL_HTTP_NS = "http://schemas.xmlsoap.org/wsdl/http/";
 	
 	public static final String XSD_NS = "http://www.w3.org/2001/XMLSchema";
+	
+	/**
+	 * See: http://jira.codehaus.org/browse/WSTX-36
+	 * 
+	 * for woodstox set NS_UNDEFINED to empty string ""
+	 * for RI set NS_UNDEFINED to null
+	 */
+	public static final String NS_UNDEFINED = null;
+	
+	
 	
 }

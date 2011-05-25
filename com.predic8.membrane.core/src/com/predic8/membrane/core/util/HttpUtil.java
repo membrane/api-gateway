@@ -28,10 +28,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.http.Body;
 
 public class HttpUtil {
 
@@ -48,26 +48,15 @@ public class HttpUtil {
 		StringBuffer line = new StringBuffer();
 		int b;
 
-		do {
-			b = in.read(); // log.debug(b);
-			if (b == -1) {
-				// return line.toString();
-				throw new EndOfStreamException("read byte -1: " + line);
-			}
+		while ((b = in.read()) != -1) {
 
 			if (b == 13) {
-				b = in.read();
-				if (b == 10) {
-					return line.toString();
-				}
+				in.read();
 				return line.toString();
 			}
 
-			if (b == 10) {
-				return line.toString();
-			}
 			line.append((char) b);
-		} while (b >= 0);
+		}
 		throw new IOException("File ends before line is complete");
 	}
 
@@ -76,31 +65,21 @@ public class HttpUtil {
 
 		int c = 0;
 		while ((c = in.read()) != -1) {
-			if (c == 0xd) {
+			if (c == 13) {
 				c = in.read();
-				if (c != 10) {
-					throw new IllegalStateException("input stream contains invalid data");
-				}
 				break;
-			} else {
-				if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f')) {
-					buffer.append((char) c);
-				}
 			}
-		}
-		String str = buffer.toString();
-		str.trim();
-		int size = 0;
-		if (str.length() > 0) {
-			try {
-				size = Integer.parseInt(str, 16);
-			} catch (NumberFormatException nfe) {
-				log.debug("failed to parse: " + str);
-				nfe.printStackTrace();
-			}
-		}
 
-		return size;
+			// ignore chunk extensions
+			if (c == ';') {
+				while ((c = in.read()) != 10)
+					;
+			}
+
+			buffer.append((char) c);
+		}
+		
+		return Integer.parseInt(buffer.toString().trim(), 16);
 	}
 
 	public static Response createErrorResponse(String message) {

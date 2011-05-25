@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Membrane RCP
 Bundle-SymbolicName: com.predic8.rcp.membrane; singleton:=true
-Bundle-Version: 1.7.1
+Bundle-Version: 1.7.2
 Bundle-Activator: com.predic8.rcp.membrane.MembraneActivator
 Bundle-Vendor: predic8 GmbH
-Require-Bundle: com.predic8.plugin.membrane;bundle-version="1.7.1"
+Require-Bundle: com.predic8.plugin.membrane;bundle-version="1.7.2"
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ActivationPolicy: lazy

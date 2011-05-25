@@ -51,7 +51,7 @@ public class SOAPTabComposite extends BodyTextTabComposite {
 	}
 	
 	public void beautify(byte[] content, String encoding) throws IOException {
-		bodyText.setText(TextUtil.formatXML( new InputStreamReader(new ByteArrayInputStream(content), Constants.ENCODING_UTF_8)));
+		bodyText.setText(TextUtil.formatXML( new InputStreamReader(new ByteArrayInputStream(content), Constants.UTF_8)));
 		bodyText.redraw();
 	}
 	
