@@ -28,6 +28,7 @@ import javax.net.ssl.SSLSocket;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -56,6 +57,11 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
 				exchange.setTimeReqReceived(System.currentTimeMillis());
+				
+				if (srcReq.getHeader().getProxyConnection() != null) {
+					srcReq.getHeader().add(Header.CONNECTION, srcReq.getHeader().getProxyConnection());
+					srcReq.getHeader().removeFields(Header.PROXY_CONNECTION);
+				}
 				
 				process();
 				if (srcReq.isCONNECTRequest()) {
@@ -135,6 +141,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 				targetRes = client.call(exchange);
 			} catch (ConnectException e) {
 				targetRes = HttpUtil.createErrorResponse("Target " + dest + " is not reachable.");
+				log.warn("Target " + dest + " is not reachable. " + e);
 			} catch (UnknownHostException e) {
 				targetRes = HttpUtil.createErrorResponse("Target host " + HttpUtil.getHostName(dest) + " is unknown. DNS was unable to resolve host name.");
 			}
