@@ -32,6 +32,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	
 	String docBase = "";
 	
+	public WebServerInterceptor() {
+		name = "Web Server";
+		priority = 3000;
+	}
+	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		String uri = exc.getOriginalRequestUri();

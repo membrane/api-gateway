@@ -35,6 +35,7 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 
 	public AdministrationInterceptor() {
 		name = "Administrator";
+		priority = 1000;
 	}
 	
 	@Override
