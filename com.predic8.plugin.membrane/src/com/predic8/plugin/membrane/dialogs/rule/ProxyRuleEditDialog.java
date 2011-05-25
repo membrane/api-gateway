@@ -14,23 +14,18 @@
 
 package com.predic8.plugin.membrane.dialogs.rule;
 
-import java.io.IOException;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabItem;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyRuleKeyTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleActionsTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleGeneralInfoTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyRuleKeyTabComposite;
 
 public class ProxyRuleEditDialog extends RuleEditDialog {
 
@@ -88,58 +83,9 @@ public class ProxyRuleEditDialog extends RuleEditDialog {
 			return;
 		}
 
-		ProxyRuleKey key = new ProxyRuleKey(port);
-		if (key.equals(rule.getKey())) {
-			rule.setName(generalInfoComposite.getRuleName());
-			rule.setLocalHost(generalInfoComposite.getLocalHost());
-			rule.setInterceptors(interceptorsComposite.getInterceptors());
-			getRuleManager().ruleChanged(rule);
-			return;
-		}
-
-		if (getRuleManager().exists(key)) {
-			openErrorDialog("Illeagal input! Your rule key conflict with another existent rule.");
-			return;
-		}
-
-		if (!openConfirmDialog("You've changed the rule key, so all the old history will be cleared."))
-			return;
-
-		if (!(getTransport()).isAnyThreadListeningAt(key.getPort())) {
-			try {
-				(getTransport()).openPort(key.getPort(), rule.isInboundTLS());
-			} catch (IOException e1) {
-				openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
-				return;
-			}
-		}
-		getRuleManager().removeRule(rule);
-		if (!getRuleManager().isAnyRuleWithPort(rule.getKey().getPort()) && (rule.getKey().getPort() != key.getPort())) {
-			try {
-				(getTransport()).closePort(rule.getKey().getPort());
-			} catch (IOException e2) {
-				openErrorDialog("Failed to close the obsolete port: " + rule.getKey().getPort());
-			}
-		}
-		rule.setName(generalInfoComposite.getRuleName());
-		rule.setKey(key);
-		rule.setInterceptors(interceptorsComposite.getInterceptors());
-		try {
-			getRuleManager().addRuleIfNew(rule);
-		} catch (IOException e) {
-			openErrorDialog("Can not open port. Please check again");
-			return;
-		}
-		getRuleManager().ruleChanged(rule);
-
-	}
-
-	private RuleManager getRuleManager() {
-		return Router.getInstance().getRuleManager();
-	}
-
-	private HttpTransport getTransport() {
-		return (HttpTransport) Router.getInstance().getTransport();
-	}
+		ProxyRuleKey ruleKey = new ProxyRuleKey(port);
+		doRuleUpdateRule(ruleKey);
+		
+	}	
 
 }

@@ -27,12 +27,10 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.plugin.membrane.dialogs.rule.composites.ForwardingRuleKeyTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleActionsTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleGeneralInfoTabComposite;
@@ -142,70 +140,16 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 			return;
 		}
 
-		if (ruleKey.equals(rule.getKey())) {
-			try {
-				updateRule(ruleKey, false);
-			} catch (IOException e) {
-				openErrorDialog("Can not open port. Please check again");
-			}
-			getRuleManager().ruleChanged(rule);
-			return;
-		}
-
-		if (getRuleManager().exists(ruleKey)) {
-			openErrorDialog("Illeagal input! Your rule key conflict with another existent rule.");
-			return;
-		}
-		if (!openConfirmDialog("You've changed the rule key, so all the old history will be cleared."))
-			return;
-
-		if (!getTransport().isAnyThreadListeningAt(ruleKey.getPort())) {
-			try {
-				getTransport().openPort(ruleKey.getPort(), rule.isInboundTLS());
-			} catch (IOException e1) {
-				openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
-				return;
-			}
-		}
-		getRuleManager().removeRule(rule);
-		if (!getRuleManager().isAnyRuleWithPort(rule.getKey().getPort()) && (rule.getKey().getPort() != ruleKey.getPort())) {
-			try {
-				getTransport().closePort(rule.getKey().getPort());
-			} catch (IOException e2) {
-				openErrorDialog("Failed to close the obsolete port: " + rule.getKey().getPort());
-			}
-		}
-		try {
-			updateRule(ruleKey, true);
-		} catch (IOException e) {
-			openErrorDialog("Can not open port. Please check again");
-		}
-		getRuleManager().ruleChanged(rule);
-
+		doRuleUpdateRule(ruleKey);
 	}
 
-	private RuleManager getRuleManager() {
-		return Router.getInstance().getRuleManager();
-	}
-
-	private HttpTransport getTransport() {
-		return ((HttpTransport) Router.getInstance().getTransport());
-	}
-
-	private void updateRule(ForwardingRuleKey ruleKey, boolean addToManager) throws IOException {
-		rule.setName(generalInfoComposite.getRuleName());
-		rule.setLocalHost(generalInfoComposite.getLocalHost());
-		rule.setKey(ruleKey);
-		if (addToManager) {
-			getRuleManager().addRuleIfNew(rule);
-		}
+	@Override
+	protected void updateRule(RuleKey ruleKey, boolean addToManager) throws IOException {
 		((ForwardingRule) rule).setTargetHost(targetComposite.getTargetGroup().getTargetHost());
 		((ForwardingRule) rule).setTargetPort(Integer.parseInt(targetComposite.getTargetGroup().getTargetPort()));
 		rule.setOutboundTLS(targetComposite.getSecureConnection());
 		rule.setInboundTLS(ruleKeyComposite.getSecureConnection());
-		rule.setBlockRequest(actionsComposite.isRequestBlocked());
-		rule.setBlockResponse(actionsComposite.isResponseBlocked());
-		rule.setInterceptors(interceptorsComposite.getInterceptors());
+		super.updateRule(ruleKey, addToManager);
 	}
 
 }
