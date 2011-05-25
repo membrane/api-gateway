@@ -107,7 +107,9 @@ public class Router {
 		Map<String, Interceptor> map = beanFactory.getBeansOfType(Interceptor.class);
 		Set<String> keys = map.keySet();
 		for (String id : keys) {
-			map.get(id).setId(id);
+			Interceptor i = map.get(id);
+			i.setId(id);
+			i.setRouter(this);
 		}
 		return map.values();
 	}
