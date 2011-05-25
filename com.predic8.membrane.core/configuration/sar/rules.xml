@@ -1,17 +1,9 @@
 <?xml version = "1.0" encoding = "UTF8" ?>
 <configuration>
   <rules>
-    <forwarding-rule name=""
-                      port="2000"
-                      blockRequest="false"
-                      blockResponse="false"
-                      inboundTLS="false"
-                      outboundTLS="false"
-                      host="localhost"
-                      method="*">
+    <forwarding-rule name="" port="2000" >
       <targetport>80</targetport>
       <targethost>thomas-bayer.com</targethost>
-      <!--<localHost>192.168.2.154</localHost>-->
       <interceptors />
     </forwarding-rule>
   </rules>
