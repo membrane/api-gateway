@@ -42,6 +42,8 @@ public class Header {
 
 	public static final String CONNECTION = "Connection";
 
+	public static final String PROXY_CONNECTION = "Proxy-Connection";
+	
 	public static final String HOST = "Host";
 
 	public static final String EXPECT = "Expect";
@@ -187,6 +189,29 @@ public class Header {
 		add(CONNECTION, connection);
 	}
 
+
+	public String getProxyConnection() {
+		return getFirstValue(PROXY_CONNECTION);
+	}
+
+	public void setProxyConnection(String connection) {
+		add(PROXY_CONNECTION, connection);
+	}
+
+	public boolean isProxyConnectionClose() {
+		if (getProxyConnection() == null)
+			return false;
+		
+		return "close".equalsIgnoreCase(getProxyConnection());
+	}
+	
+	public boolean isConnectionClose() {
+		if (getConnection() == null)
+			return false;
+		
+		return "close".equalsIgnoreCase(getConnection());
+	}
+	
 	public void setContentType(String value) {
 		add(CONTENT_TYPE, value);
 	}
@@ -229,11 +254,11 @@ public class Header {
 		String type = getContentType();
 		
 		if (type == null)
-			return null;
+			return Constants.ISO_8859_1;
 		
 		int idx = type.indexOf("charset=");
 		if (idx < 0)
-			return null;
+			return Constants.ISO_8859_1;
 		
 		return type.substring(idx + 8);
 	}
