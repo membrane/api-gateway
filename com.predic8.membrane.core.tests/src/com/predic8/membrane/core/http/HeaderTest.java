@@ -22,6 +22,8 @@ import javax.activation.MimeType;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.predic8.membrane.core.Constants;
 public class HeaderTest {
 
 	private static Header header = new Header();
@@ -49,12 +51,12 @@ public class HeaderTest {
 	public void testGetCharsetNull() throws Exception {
 		Header header = new Header();
 		header.add("Content-Type", "text/xml");
-		assertNull(header.getCharset());
+		assertEquals(Constants.ISO_8859_1, header.getCharset());
 	}
 	
 	@Test
 	public void testGetCharsetCTNull() throws Exception {
-		assertNull(new Header().getCharset());
+		assertEquals(Constants.ISO_8859_1, new Header().getCharset());
 	}
 	
 	@Test

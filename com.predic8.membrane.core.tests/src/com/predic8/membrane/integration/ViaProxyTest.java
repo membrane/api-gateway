@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import java.io.InputStream;
+import static org.junit.Assert.assertEquals;
 
-import junit.framework.TestCase;
+import java.io.InputStream;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
@@ -32,7 +32,7 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 
 
-public class ViaProxyTest extends TestCase {
+public class ViaProxyTest {
 
 	@Before
 	public void setUp() throws Exception {
@@ -67,8 +67,7 @@ public class ViaProxyTest extends TestCase {
 		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
 		post.setRequestHeader("SOAPAction", "");
 		
-		int status = client.executeMethod(post);
-		System.out.println("Status Code: " + status);
+		assertEquals(200, client.executeMethod(post));
 	}
 	
 	
