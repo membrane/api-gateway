@@ -8,7 +8,9 @@ RUNNING THE EXAMPLE
 
 At the following URL you will get a REST representation of a customer resource.
 
+
 http://www.thomas-bayer.com/sqlrest/CUSTOMER/2/ 
+
 
 In this example we will secure this resource with HTTP Basic Authentication.
 
@@ -16,9 +18,12 @@ To run the example execute the following steps:
 
 Execute the following steps:
 
-1. Start Membrane Monitor.
-2. Click on "File/Load Configuration" and open the file examples/basic-auth/rules.xml.
+1. Go to the examples/basic-auth directory.
+
+2. Execute router.bat
+
 3. Open the URL http://localhost:2000/sqlrest/CUSTOMER/2/ in your browser.
+
 4. Login with the username membrane and the password membrane.
 
 
@@ -45,7 +50,7 @@ First take a look at the rules.xml file.
 
 You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the BasicAuthentictionInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
 
-Now take a look at the bean configuration of the interceptor in the configuration/monitor-beans.xml file.
+Now take a look at the bean configuration of the interceptor in the basic-auth-beans.xml file.
 
 
   <bean id="basicAuthenticationInterceptor" class="com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor">    
@@ -65,7 +70,7 @@ When you open the URL http://localhost:2000/sqlrest/CUSTOMER/2/ in your browser 
 TTP/1.1 401 Unauthorized
 Content-Type: text/html;charset=utf-8
 Date: Tue, 24 May 2011 10:00:02 GMT
-Server: Membrane-Monitor 2.1.0
+Server: Membrane-Monitor 2.0.0
 WWW-Authenticate: Basic realm="Membrane Authentication"
 Connection: close
 

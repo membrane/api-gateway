@@ -4,7 +4,7 @@
       <targetport>80</targetport>
       <targethost>www.thomas-bayer.com</targethost>
       <interceptors>
-        <interceptor id="basicAuthenticationInterceptor" />
+        <interceptor id="basicAuthenticationInterceptor"/>
       </interceptors>
     </forwarding-rule>
   </rules>
