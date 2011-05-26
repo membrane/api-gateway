@@ -47,6 +47,13 @@ public abstract class Message {
 		
 	}
 
+	/**
+	 * If the message is HTTP 1.1 but the header has no information about the
+	 * content length, then an assumption is made that after the body the server
+	 * will send an EOF. So the body is read till end of the stream.
+	 * 
+	 * See http://www.ietf.org/rfc/rfc2145.txt
+	 */
 	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
 		parseStartLine(in);
 		header = new Header(in, new StringBuffer());
@@ -100,9 +107,10 @@ public abstract class Message {
 			return;
 		}
 		
-		this.write(System.out);
-		log.error("Message has no content length");
-		throw new IOException("Message message has no content length");
+		// Message is HTTP 1.1 but the header has no information about the content length.
+		// An assumption is made that after the body the server will send EOF. So the body is read till end of the stream
+		// See http://www.ietf.org/rfc/rfc2145.txt
+		body = new Body(in, -1); 
 		
 	}
 
