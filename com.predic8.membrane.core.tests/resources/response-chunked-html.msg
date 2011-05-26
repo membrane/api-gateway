@@ -374,7 +374,7 @@ b8a
                     <td width="50%">
                       
                           
-    	Dies ist die Web Service Beschreibung der Mareon Handwerkersoftware Schnittstelle Version 2.1.0...
+    	Dies ist die Web Service Beschreibung der Mareon Handwerkersoftware Schnittstelle Version 2.0.1...
                       
                     </td>
                     <td width="120">

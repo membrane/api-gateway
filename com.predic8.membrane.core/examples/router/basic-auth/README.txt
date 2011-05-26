@@ -70,7 +70,7 @@ When you open the URL http://localhost:2000/sqlrest/CUSTOMER/2/ in your browser 
 TTP/1.1 401 Unauthorized
 Content-Type: text/html;charset=utf-8
 Date: Tue, 24 May 2011 10:00:02 GMT
-Server: Membrane-Monitor 2.0.0
+Server: Membrane-Monitor 2.0.1
 WWW-Authenticate: Basic realm="Membrane Authentication"
 Connection: close
 
