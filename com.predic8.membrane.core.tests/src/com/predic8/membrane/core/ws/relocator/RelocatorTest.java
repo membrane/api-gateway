@@ -42,7 +42,7 @@ public class RelocatorTest extends TestCase {
 
 	@Test
 	public void testXMLRelocate() throws Exception {
-		byte[] contentXML = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/acl.xml"));
+		byte[] contentXML = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream("/acl/acl.xml"));
 		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(contentXML), Constants.UTF_8));
 		assertFalse(relocator.isWsdlFound());
 	}

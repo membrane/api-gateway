@@ -88,11 +88,15 @@ public class AccessControlInterceptorIntegrationTest {
 		assertEquals(403, new HttpClient().executeMethod(getBLZRequestMethod()));
 	}
 
-	@Test
+	
+	/* 	 
+	 * This test can only by run on a specific machine.	  
+	 */
+	/*@Test
 	public void testGlobPattern() throws Exception {
 		setInterceptor(FILE_CLIENTS_FROM_PREDIC8);
 		assertEquals(200, getClient(FIXED_IP).executeMethod(getBLZRequestMethod()));
-	}
+	}*/
 	
 	@Test
 	public void test127_0_0_1() throws Exception {
@@ -100,7 +104,10 @@ public class AccessControlInterceptorIntegrationTest {
 		assertEquals(200, getClient(LOCALHOST_IP).executeMethod(getBLZRequestMethod()));
 	}
 	
-	@Test
+	/* 	 
+	 * This test can only by run on a specific machine.	  
+	 */	
+	/*@Test
 	public void testLocalhost() throws Exception {
 		setInterceptor(FILE_CLIENTS_FROM_LOCALHOST);
 		
@@ -110,13 +117,16 @@ public class AccessControlInterceptorIntegrationTest {
 		client.setHostConfiguration(config);
 		
 		assertEquals(200, client.executeMethod(getBLZRequestMethod()));
-	}
+	}*/
 	
-	@Test
+	/* 	 
+	 * This test can only by run on a specific machine.	  
+	 */	
+	/*@Test
 	public void test192_168_2_Star() throws Exception {
 		setInterceptor(FILE_CLIENTS_FROM_192_168_2_STAR);
 		assertEquals(200, getClient(FIXED_IP).executeMethod(getBLZRequestMethod()));
-	}
+	}*/
 	
 	private void setInterceptor(String fileName) {
 		AccessControlInterceptor interceptor = new AccessControlInterceptor();

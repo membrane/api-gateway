@@ -40,15 +40,14 @@ public class XSLTInterceptorTest extends TestCase {
 		exc.setResponse(res);
 
 		XSLTInterceptor i = new XSLTInterceptor();
-		i.setResponseXSLT("classpath:/xml2html.xsl");
+		i.setResponseXSLT("classpath:/customer2person.xsl");
 		i.handleResponse(exc);
 				
 		printBodyContent();
-		assertXPath("//tr[2]/td[1]","-20");
-		assertXPath("//tr[2]/td[2]","Rick");
-		assertXPath("//tr[2]/td[3]","Cortés Ribotta");
-		assertXPath("//tr[2]/td[4]","Calle Pública \"B\" 5240 Casa 121");
-		assertXPath("//tr[2]/td[5]","Omaha");
+		assertXPath("/person/name/first","Rick");
+		assertXPath("/person/name/last","Cortés Ribotta");
+		assertXPath("/person/address/street","Calle Pública \"B\" 5240 Casa 121");
+		assertXPath("/person/address/city","Omaha");
 	}
 	
 	private void printBodyContent() throws Exception {

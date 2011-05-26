@@ -214,7 +214,7 @@
 	</bean>
 
 	<bean id="administratorInterceptor"
-		class="com.predic8.membrane.core.interceptor.administration.AdministratorInterceptor">
+		class="com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor">
 		<property name="displayName" value="Admistrator Interceptor" />
 	</bean>
 

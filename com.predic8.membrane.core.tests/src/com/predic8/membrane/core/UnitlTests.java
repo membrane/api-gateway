@@ -35,6 +35,8 @@ import com.predic8.membrane.core.transport.http.HostColonPortTest;
 import com.predic8.membrane.core.util.ByteUtilTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
 import com.predic8.membrane.core.util.TextUtilTest;
+import com.predic8.membrane.core.ws.relocator.RelocatorTest;
+import com.predic8.membrane.core.xslt.XSLTInterceptorTest;
 
 @RunWith(Suite.class)
 @SuiteClasses( { 
@@ -59,7 +61,9 @@ import com.predic8.membrane.core.util.TextUtilTest;
 	RuleManagerTest.class,
 	ProxyTest.class,
 	ForwardingRuleKeyTest.class,
-	TextUtilTest.class
+	TextUtilTest.class,
+	RelocatorTest.class,
+	XSLTInterceptorTest.class
 })
 public class UnitlTests {
 
