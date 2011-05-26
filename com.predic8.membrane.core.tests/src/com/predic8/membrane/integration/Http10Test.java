@@ -65,6 +65,8 @@ public class Http10Test {
 		post.setRequestHeader("SOAPAction", "\"\"");
 		int status = client.executeMethod(post);
 		assertEquals(200, status);
+		assertEquals("HTTP/1.1", post.getStatusLine().getHttpVersion());
+		
 		String response = post.getResponseBodyAsString();
 		assertNotNull(response);
 		assertTrue(response.length() > 0);

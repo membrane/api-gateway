@@ -192,5 +192,10 @@ public class ResponseTest {
 		assertTrue(Arrays.equals(res3.getBody().getContent(), resTemp.getBody().getContent()));
 	}
 	
-	
+	@Test
+	public void testWithNoContentLength() throws Exception {
+		InputStream in = ResponseTest.this.getClass().getClassLoader().getResourceAsStream("response-no-content-length.txt");
+		res3.read(in, true);
+		assertEquals(185, res3.getBody().getLength());
+	}
 }
