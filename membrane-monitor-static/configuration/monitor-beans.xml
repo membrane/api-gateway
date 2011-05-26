@@ -123,24 +123,6 @@
         </bean> 
         -->
         
-        <!--
-        XSLT Transformation 
-        =======================================
-        Interceptor that can apply XSLT Transformations to the request and/or the response.
-
-	    The value of the property "requestXSLT" will by used as the location of the stylesheet that will by applied to the request. 
-     	If you choose a relative path it will by relative to MEMBRANE_HOME. If you leave the value blank or remove the property no transformation will by applied to the request.
-
-     	The value of the property "responseXSLT" will by used as the destination of the stylesheet that will by applied to the response. 
-       	If you choose a relative path it will by relative to MEMBRANE_HOME. If you leave the value blank or remove the property no transformation will by applied to the response.
-        -->
-        <!-- 		         
-        <bean class="com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor">
-          <property name="requestXSLT" value="C:/temp/request.xslt" /> 
-          <property name="responseXSLT" value="C:/temp/response.xslt" /> 
-        </bean> 
-        -->     
-        
          <!-- 
         <bean class="com.predic8.membrane.core.interceptor.schemavalidation.ValidateSOAPMsgInterceptor" init-method="init">
           <property name="wsdl" value="http://www.predic8.com:8080/material/ArticleService?wsdl" />
@@ -219,47 +201,40 @@
   </bean>
   -->
   
-  <!--
+   <!--
+   RegEx URL Rewriter Interceptor 
+   =======================================
+   An interceptor that can rewrite URLs that are matched by an regular expression. One can use groups in the replacing URL to reference parts of the matched URL. 
+
+   Ihe interceptor is configured by the property mapping that contains a map. The key entries are taken as the regular expression to perform the match against the request URL. If one match can be found the mapped value will be used to replace the URL. 
+   -->  
   <bean id="regExUrlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor">
     <property name="displayName" value="RegEx URL Rewriter" />
     <property name="mapping">
       <map>
-        <entry>
-          <key>
-            <value>/bank/.*</value>
-          </key>
-          <value>/axis2/services/BLZService</value>
-        </entry>
+        <entry key="/bank/(.*)" value="/axis2/$1"/>
+        <entry key="/static/(.*)" value="/$1"/>
       </map>
 	</property>
   </bean>
-  -->
- 
-  <!--
-  <bean id="rest2SoapInterceptor" class="com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor">
-    <property name="displayName" value="REST 2 SOAP Interceptor" />
-    <property name="mappings">
-      <map>
-        <entry key="/bank/.*">
-        	<map>
-        		<entry key="SOAPURL" value="/axis2/services/BLZService"/>
-        		<entry key="SOAPAction" value=""/>
-        		<entry key="requestXSLT" value="../com.predic8.membrane.core.tests/resources/blz-httpget2soap-request.xsl"/>
-        		<entry key="responseXSLT" value="../com.predic8.membrane.core.tests/resources/strip-soap-envelope.xsl"/>
-        	</map>          
-        </entry>
-      </map>
-	</property>
-  </bean>
-  -->
   
-  <!--
+ 
+   <!--
+   XSLT Transformation 
+   =======================================
+   An interceptor that can apply XSLT Transformations to the request and/or the response.
+
+   The value of the property "requestXSLT" will by used as the location of the stylesheet that will by applied to the request. 
+   If you choose a relative path it will by relative to MEMBRANE_HOME. If you leave the value blank or remove the property no transformation will by applied to the request.
+
+   The value of the property "responseXSLT" will by used as the destination of the stylesheet that will by applied to the response. 
+   If you choose a relative path it will by relative to MEMBRANE_HOME. If you leave the value blank or remove the property no transformation will by applied to the response.
+   -->  
   <bean id="xsltTransformer" class="com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor">
-    <property name="displayName" value="XSLT Transformer" />
-    <property name="requestXSLT" value="C:/work/membrane/monitor/eclipse/com.predic8.membrane.core.tests/resources/blz-httpget2soap-request.xsl" /> 
-    <property name="responseXSLT" value="C:/work/membrane/monitor/eclipse/com.predic8.membrane.core.tests/resources/strip-soap-envelope.xsl" /> 
+    <property name="requestXSLT" value="" /> 
+    <property name="responseXSLT" value="examples/xslt/customer2person.xsl" /> 
   </bean> 
-  -->						
+  						
   
   <bean id="urlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor">
     <property name="displayName" value="Simple URL Rewriter" />
@@ -291,10 +266,15 @@
     <property name="aclFilename" value="C:\temp\acl.xml" />
   </bean>
 
-  <bean id="administratorInterceptor" class="com.predic8.membrane.core.interceptor.administration.AdministratorInterceptor">
-    <property name="displayName" value="Admistrator Interceptor" />
-  </bean>
+  <bean id="administrationInterceptor" class="com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor" />
 
+  <bean id="basicAuthenticationInterceptor" class="com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor">
+    <property name="users">
+    	<map>
+    		<entry key="membrane" value="membrane"/>
+    	</map>
+    </property>
+  </bean>
   <!--
   Configuration of DataSource 
   ============================ 
@@ -328,5 +308,46 @@
     <property name="password" value="your-password" /> 
   </bean>
   -->
+  
+	 <!--
+	   REST 2 SOAP Interceptor 
+	   =======================================
+	   This interceptor can be used to map HTTP requests to SOAP operation calls.
+	   
+	   The interceptor is configured by the property mappings. It contains a map. Each key is a regular expression that is matched against the URI of the request. 
+	   The data mapped by the key that first matches the URI is taken to transform the HTTP request and to call the SOAP operation. 
+	   The transformation is done by a XSLT stylesheet that is applied to a XML document that is constructed from the HTTP request by the interceptor.  
+	   The data for the transformation is given by a map that contains the keys SOAPAction, SOAPURL, requestXSLT and responseXSLT.
+
+	   The value of the property "SOAPAction" is taken for the SOAPAction header field of the HTTP request.
+
+	   The value of the property "SOAPURL" is used as the endpoint address of the service.
+	     	
+       The value of the property "requestXSLT" will by used as the location of the stylesheet that will by applied to the request. The stylesheet is used to create the SOAP envelope required by the service.	
+       
+       The value of the property "responseXSLT" will by used as the location of the stylesheet that will by applied to the response. The stylesheet can be used to extract the content of the SOAP response.
+	   
+	   If you choose a relative path for requestXSLT or requestXSLT, it will by relative to MEMBRANE_HOME. You also can use the prefix classpath: to reference a stylesheet from the classpath.
+	 -->
+	 <bean id="rest2SoapInterceptor" class="com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor">
+      <property name="displayName" value="REST 2 SOAP Interceptor" />
+	  <property name="mappings">
+	  	<map>
+	  		<entry key="/bank/.*">
+	  			<map>
+	  				<entry key="SOAPAction" value=""/>
+	  				<entry key="SOAPURI" value="/axis2/services/BLZService" />
+	  				<entry key="requestXSLT" value="examples/rest2soap/blz-httpget2soap-request.xsl" />
+	  				<entry key="responseXSLT" value="examples/rest2soap/strip-soap-envelope.xsl" />          				
+	  			</map>
+	  		</entry>
+	  	</map>
+	  </property> 
+	</bean> 
+
+  <bean id="webServerInterceptor" class="com.predic8.membrane.core.interceptor.server.WebServerInterceptor">
+    <property name="displayName" value="Web Server" />
+    <property name="docBase" value="docBase" />
+  </bean>
   
 </beans>
