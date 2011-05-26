@@ -13,12 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
+import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,8 +38,33 @@ public class Connection {
 	public InputStream in;
 	public OutputStream out;
 
-	public boolean isSame(String host, int port) {
-		return (host.equalsIgnoreCase(socket.getInetAddress().getHostName()) || host.equals(socket.getInetAddress().getHostAddress())) && port == socket.getPort();
+	
+	public static Connection open(InetAddress host, int port, String localHost, boolean tls) throws UnknownHostException, IOException {
+		
+		Connection con = new Connection();
+		
+		if (tls) {
+			if (isNullOrEmpty(localHost))
+				con.socket = SSLSocketFactory.getDefault().createSocket(host, port);
+			else
+				con.socket = SSLSocketFactory.getDefault().createSocket(host, port, InetAddress.getByName(localHost), 0);
+		} else {
+			if (isNullOrEmpty(localHost))
+				con.socket = new Socket(host, port);
+			else
+				con.socket = new Socket(host, port, InetAddress.getByName(localHost), 0);
+		}
+		
+		log.debug("Opened connection on localPort: " + port);
+		con.in = new BufferedInputStream(con.socket.getInputStream(), 2048);
+		con.out = new BufferedOutputStream(con.socket.getOutputStream(), 2048);
+		
+		return con;
+	}
+	
+	
+	public boolean isSame(InetAddress host, int port) {
+		return host.equals(socket.getInetAddress()) && port == socket.getPort();
 	}
 
 	public void close() throws IOException {
@@ -59,4 +91,6 @@ public class Connection {
 	public boolean isClosed() {
 		return socket == null || socket.isClosed();
 	}
+	
+	
 }

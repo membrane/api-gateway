@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
@@ -47,7 +48,7 @@ public class HttpClient {
 	
 	private Proxy proxy;
 	
-	private String host;
+	private InetAddress host;
 	
 	private int port;
 	
@@ -68,23 +69,23 @@ public class HttpClient {
 			req.setUri(HttpUtil.getPathAndQueryString(dest));
 	}
 	
-	private void setHostAndPort(boolean connect, String dest) throws MalformedURLException {
+	private void setHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
 		if (useProxy()) {
 			port = proxy.getProxyPort();
-			host = proxy.getProxyHost();
+			setHost(proxy.getProxyHost());
 			return;
 		}
 		
 		if (connect) {
 			HostColonPort hcp = new HostColonPort(dest);
 			port = hcp.port;
-			host = hcp.host;
+			setHost(hcp.host);
 			return;
 		} 
 		
 		URL destination = new URL(dest);
 		port = HttpUtil.getPort(destination);
-		host = destination.getHost();
+		setHost(destination.getHost());
 		
 	}
 	
@@ -239,6 +240,10 @@ public class HttpClient {
 	
 	public void setProxy(Proxy proxy) {
 		this.proxy = proxy;
+	}
+	
+	public void setHost(String hostname) throws UnknownHostException {
+		host = InetAddress.getByName(hostname);
 	}
 	
 }

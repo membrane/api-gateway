@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.ValidateSOAPMsgInterceptorTest;
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorIntegrationTest;
+import com.predic8.membrane.core.transport.http.ConnectionTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
 import com.predic8.membrane.integration.AccessControlInterceptorIntegrationTest;
 import com.predic8.membrane.integration.Http10Test;
@@ -46,7 +47,8 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 		REST2SOAPInterceptorIntegrationTest.class,
 		InterceptorInvocationTest.class,
 		BasicAuthenticationInterceptorIntegrationTest.class,
-		ViaProxyTest.class
+		ViaProxyTest.class,
+		ConnectionTest.class
 })
 public class IntegrationTests {
 

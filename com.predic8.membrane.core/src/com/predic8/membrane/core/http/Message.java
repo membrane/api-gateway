@@ -47,11 +47,12 @@ public abstract class Message {
 		
 	}
 
-	/** If the message is HTTP 1.1 but the header has no information about the content length, then
-	    an assumption is made that after the body the server will send an EOF. 
-	    So the body is read till end of the stream. 
-	    
-	    See http://www.ietf.org/rfc/rfc2145.txt 
+	/**
+	 * If the message is HTTP 1.1 but the header has no information about the
+	 * content length, then an assumption is made that after the body the server
+	 * will send an EOF. So the body is read till end of the stream.
+	 * 
+	 * See http://www.ietf.org/rfc/rfc2145.txt
 	 */
 	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
 		parseStartLine(in);
