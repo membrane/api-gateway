@@ -292,9 +292,8 @@
     <property name="aclFilename" value="C:\temp\acl.xml" />
   </bean>
 
-  <bean id="administratorInterceptor" class="com.predic8.membrane.core.interceptor.administration.AdministratorInterceptor">
-    <property name="displayName" value="Admistrator Interceptor" />
-  </bean>
+  <bean id="administrationInterceptor" class="com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor" />
+  
 
   <!--
   Configuration of DataSource 
