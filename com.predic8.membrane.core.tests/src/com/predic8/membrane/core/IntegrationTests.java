@@ -22,6 +22,7 @@ import com.predic8.membrane.integration.AccessControlInterceptorIntegrationTest;
 import com.predic8.membrane.integration.Http10Test;
 import com.predic8.membrane.integration.Http11Test;
 import com.predic8.membrane.integration.ProxyRuleTest;
+import com.predic8.membrane.integration.ViaProxyTest;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 public class IntegrationTests {
@@ -37,6 +38,7 @@ public class IntegrationTests {
 		suite.addTestSuite(AccessControlInterceptorIntegrationTest.class);
 		suite.addTestSuite(LoadBalancingInterceptorTest.class);
 		suite.addTestSuite(SimpleURLRewriteInterceptorIntegrationTest.class);
+		suite.addTestSuite(ViaProxyTest.class);
 		//$JUnit-END$
 		return suite;
 	}
