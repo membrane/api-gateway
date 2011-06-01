@@ -13,47 +13,84 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.List;
+import java.net.*;
+import java.util.*;
+
+import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.transport.http.HostColonPort;
 
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
-	private List<String> endpoints;
+	private static Log log = LogFactory.getLog(LoadBalancingInterceptor.class.getName());
+	
+	private List<Node> endpoints;
 
-	private DispatchingStrategy strategy;
+	private DispatchingStrategy strategy = new RoundRobinStrategy();
 
+	public Map<String, Node> sessions = new HashMap<String, Node>();
+	
+	private XMLElementSessionIdExtractor sesssionIdExtractor;
+	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		String destination = getDestinationURL(strategy.dispatch(this), exc);
-		exc.setOriginalRequestUri(destination);
-		exc.getDestinations().clear();
-		exc.getDestinations().add(destination);
 
-		for (String dest : endpoints) {
-			if (!dest.equals(destination))
-				exc.getDestinations().add(getDestinationURL(dest, exc));
+		Node dispatchedNode = getDispatchedNode(exc.getRequest());
+		dispatchedNode.incCounter();
+		
+		exc.setProperty("dispatchedNode", dispatchedNode);
+		
+		exc.setOriginalRequestUri(getDestinationURL(dispatchedNode, exc));
+		
+		exc.getDestinations().clear();
+		exc.getDestinations().add(getDestinationURL(dispatchedNode, exc));
+
+		for (Node ep : getEndpoints()) {
+			if (!ep.equals(dispatchedNode))
+				exc.getDestinations().add(getDestinationURL(ep, exc));
 		}
 
 		return Outcome.CONTINUE;
 	}
-
+	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		strategy.done(exc);
+
+		if (sesssionIdExtractor != null && exc.getResponse().isXML() ) {
+			String sessionId = getSessionId(exc.getResponse());
+			
+			if ( sessionId != null && !sessions.containsKey(sessionId) ) {
+				sessions.put( sessionId, (Node)exc.getProperty("dispatchedNode"));
+			}
+		}		
 		return Outcome.CONTINUE;
 	}
-	
-	public String getDestinationURL(String hostAndPort, Exchange exc) throws MalformedURLException{
-		return "http://" + hostAndPort + getRequestURI(exc);
+
+	private Node getDispatchedNode(Message msg) throws Exception {
+		String sessionId;
+		if ( sesssionIdExtractor == null || !msg.isXML() || (sessionId = getSessionId(msg)) == null ) {
+			return strategy.dispatch(this);
+		}
+		
+		if ( !sessions.containsKey(sessionId) || !sessions.get(sessionId).isUp()) {
+			sessions.put(sessionId, strategy.dispatch(this));
+		}			
+		return sessions.get(sessionId);
+	}
+
+	public String getDestinationURL(Node ep, Exchange exc) throws MalformedURLException{
+		return "http://" + ep.getHost() + ":" + ep.getPort() + getRequestURI(exc);
+	}
+
+	private String getSessionId(Message msg) throws Exception {
+		return sesssionIdExtractor.getSessionId(msg);
 	}
 
 	private String getRequestURI(Exchange exc) throws MalformedURLException {
-		if(exc.getOriginalRequestUri().toLowerCase().startsWith("http://")) 
+		if(exc.getOriginalRequestUri().toLowerCase().startsWith("http://")) // TODO what about HTTPS?
 			return new URL(exc.getOriginalRequestUri()).getFile();
 		
 		return exc.getOriginalRequestUri();
@@ -67,11 +104,30 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		this.strategy = strategy;
 	}
 
-	public List<String> getEndpoints() {
+	public List<Node> getEndpoints() {
+		if (router.getClusterManager() != null) {
+			log.info("using endpoints from cluster manager");
+			return router.getClusterManager().getAvailableNodes("Default");
+		}
 		return endpoints;
 	}
 
 	public void setEndpoints(List<String> endpoints) {
-		this.endpoints = endpoints;
+		this.endpoints = new LinkedList<Node>();
+		for (String s : endpoints ) {
+			this.endpoints.add(new Node( new HostColonPort(s).host,
+										     new HostColonPort(s).port ));
+		}		
 	}
+
+	public XMLElementSessionIdExtractor getSesssionIdExtractor() {
+		return sesssionIdExtractor;
+	}
+
+	public void setSesssionIdExtractor(
+			XMLElementSessionIdExtractor sesssionIdExtractor) {
+		this.sesssionIdExtractor = sesssionIdExtractor;
+	}
+	
+	
 }
