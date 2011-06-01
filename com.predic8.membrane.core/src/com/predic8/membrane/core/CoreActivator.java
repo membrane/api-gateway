@@ -20,14 +20,14 @@ import java.net.MalformedURLException;
 import java.net.URLClassLoader;
 import java.util.concurrent.Executors;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.core.runtime.FileLocator;
-import org.eclipse.core.runtime.ILog;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Plugin;
-import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.*;
+import org.eclipse.osgi.service.environment.EnvironmentInfo;
 import org.osgi.framework.BundleContext;
+
+import com.predic8.membrane.core.util.FileUtil;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -57,36 +57,61 @@ public class CoreActivator extends Plugin {
 
 		//String path = new File(FileLocator.resolve(CoreActivator.getDefault().getBundle().getEntry("/")).getPath()).getAbsolutePath();
 		
-		try {
-			if (ClassloaderUtil.fileExists(getConfigFileName())) {
-				info("Eclipse framework found config file: " + getConfigFileName());
-				readBeanConfigWhenStartedAsProduct();
-			} else {
-				readBeanConfigWhenStartedInEclipse();
+		final MembraneCommandLine cl = new MembraneCommandLine();
+		cl.parse(fixArguments(Platform.getCommandLineArgs()));
+		
+		if (cl.hasMonitorBeans()) {
+			log.info("loading monitor beans from command line argument: "+cl.getMonitorBeans());
+			Router.init(FileUtil.prefixMembraneHomeIfNeeded(new File(cl.getMonitorBeans())).getAbsolutePath(), 
+						this.getClass().getClassLoader());
+		} else {		
+			try {
+				if (ClassloaderUtil.fileExists(getMonitorBeansFileName())) {
+					info("Eclipse framework found config file: " + getMonitorBeansFileName());
+					readBeanConfigWhenStartedAsProduct();
+				} else {
+					readBeanConfigWhenStartedInEclipse();
+				}
+			} catch (Exception e1) {
+				error("Unable to read bean configuration file: " + e1.getMessage());
+				error("Unable to read bean configuration file: " + e1.getStackTrace());
+				e1.printStackTrace();
 			}
-		} catch (Exception e1) {
-			error("Unable to read bean configuration file: " + e1.getMessage());
-			error("Unable to read bean configuration file: " + e1.getStackTrace());
-			e1.printStackTrace();
 		}
 
 		Executors.newSingleThreadExecutor().execute(new Runnable() {
 			public void run() {
 				try {
-					Router.getInstance().getConfigurationManager().loadConfiguration(System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml");
+					Router.getInstance().getConfigurationManager().loadConfiguration(getConfigurationFileName(cl));
 				} catch (Exception e) {
-					e.printStackTrace();
+					log.warn("no configuration loaded", e);
 					// we ignore this exception because the monitor can start up
 					// without loading a rules configuration
 					// we need to throw an exception because the router must display an error message
 				}
 			}
+
+			private String getConfigurationFileName(MembraneCommandLine cl) {
+				if (cl.hasConfiguration()) {
+					log.info("loading configuration from command line argument: "+cl.getConfiguration());
+					return FileUtil.prefixMembraneHomeIfNeeded(new File(cl.getConfiguration())).getAbsolutePath();
+				}
+				return System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml";
+			}
 		});
 	}
 
+	/*
+	 * Removes the string "-product" and the next string so that MembraneCommandLine don't get a parsing error. 
+	 */
+	private String[] fixArguments(String[] args) {
+		int i = ArrayUtils.indexOf(args, "-product");
+		return (String[])ArrayUtils.remove( (String[])ArrayUtils.remove(args, i),i);
+	}
+
 	private void readBeanConfigWhenStartedAsProduct() throws Exception {
-		info("Reading router configuration from " + getConfigFileName());
-		log.debug("Reading configuration from " + getConfigFileName());
+		info("Reading router configuration from " + getMonitorBeansFileName());
+		log.debug("Reading configuration from " + getMonitorBeansFileName());
 		info("Project root: " + getProjectRoot());
 		
 		URLClassLoader externalClassloader = ClassloaderUtil.getExternalClassloader(getProjectRoot());
@@ -94,7 +119,7 @@ public class CoreActivator extends Plugin {
 		//issue at Spring forum:  http://forum.springframework.org/showthread.php?t=11141
 		Thread.currentThread().setContextClassLoader(externalClassloader);
 		
-		Router.init(getConfigFileName(), externalClassloader );
+		Router.init(getMonitorBeansFileName(), externalClassloader );
 		info("Router instance: " + Router.getInstance());
 	}
 
@@ -117,7 +142,7 @@ public class CoreActivator extends Plugin {
 		pluginLogger.log(new Status(IStatus.INFO, CoreActivator.PLUGIN_ID, message));
 	}
 	
-	private String getConfigFileName() throws IOException {
+	private String getMonitorBeansFileName() throws IOException {
 		return getProjectRoot() + System.getProperty("file.separator") + "configuration" + System.getProperty("file.separator") + "monitor-beans.xml";
 	}
 

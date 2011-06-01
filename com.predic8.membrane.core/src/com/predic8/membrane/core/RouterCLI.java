@@ -14,9 +14,6 @@
 
 package com.predic8.membrane.core;
 
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 import com.predic8.membrane.core.transport.PortOccupiedException;
@@ -25,17 +22,15 @@ public class RouterCLI {
 
 	public static void main(String[] args) throws ParseException {
 
-		CommandLine commandLine = new BasicParser().parse(getOptions(), args);
-		if (commandLine.hasOption('h')) {
-			System.out.println("-h Help content for router.");
-			System.out.println("--help 'Help content for router.");
-			System.out.println("-c 'configurationFileName'");
-			System.out.println("-b 'springConfigurationFileName'.");
+		MembraneCommandLine cl = new MembraneCommandLine();
+		cl.parse(args);
+		if (cl.needHelp()) {
+			cl.printUsage();
 			return;
 		}
 
 		try {
-			Router.init(getConfigFile(commandLine), RouterCLI.class.getClassLoader()).getConfigurationManager().loadConfiguration(getRulesFile(commandLine));
+			Router.init(getConfigFile(cl), RouterCLI.class.getClassLoader()).getConfigurationManager().loadConfiguration(getRulesFile(cl));
 		} catch (ClassNotFoundException e) {
 		
 			e.printStackTrace();
@@ -62,27 +57,19 @@ public class RouterCLI {
 		}
 	}
 	
-	private static String getRulesFile(CommandLine line) {
-		if (line.hasOption('c')) {
-			return line.getOptionValue('c');
+	private static String getRulesFile(MembraneCommandLine line) {
+		if (line.hasConfiguration()) {
+			return line.getConfiguration();
 		} else {
 			return System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "rules.xml";
 		}
 	}
 
-	private static String getConfigFile(CommandLine line) {
-		if (line.hasOption('b')) {
-			return "file:" + line.getOptionValue('b');
+	private static String getConfigFile(MembraneCommandLine line) {
+		if (line.hasMonitorBeans()) {
+			return "file:" + line.getMonitorBeans();
 		}
 		return System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf"  + System.getProperty("file.separator") + "monitor-beans.xml";
-	}
-
-	private static Options getOptions() {
-		Options options = new Options();
-		options.addOption("h", "help", false, "Help content for router.");
-		options.addOption("c", "config", true, "configuration file name.");
-		options.addOption("b", "beans", true, "spring configuration file name.");
-		return options;
 	}
 
 }
