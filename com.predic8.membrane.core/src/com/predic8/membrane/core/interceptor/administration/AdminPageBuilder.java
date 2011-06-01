@@ -7,20 +7,47 @@ import java.util.*;
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.rules.*;
+import static com.predic8.membrane.core.util.URLUtil.*;
+import static org.apache.commons.lang.time.DurationFormatUtils.*;
 
 public class AdminPageBuilder extends Html {
 	
 	Router router;
 	Map<String, String> params;
-	
-	public AdminPageBuilder(Writer writer, Router router, Map<String, String> params) {
+	private StringWriter writer;
+
+	public AdminPageBuilder(StringWriter writer, Router router, Map<String, String> params) {
 		super(writer);
 		this.router = router;
 		this.params = params;
+		this.writer = writer;
 	}
 
+	public String createPage() throws Exception {
+		html();
+		  createHead("Membrane Administrator");
+		  body();
+		  	div().id("tabs").classAttr("ui-tabs ui-widget ui-widget-content ui-corner-all");
+			  	createTabs(getSelectedTab());
+			  	div().classAttr("ui-tabs-panel ui-widget-content ui-corner-bottom");
+			  		createTabContent();
+			  	end();
+		  	end();
+		endAll(); 
+		done();	
+		return writer.getBuffer().toString();
+	}
 	
+	protected int getSelectedTab() {
+		return 0;
+	}
+	
+	protected void createTabContent() throws Exception {
+	}
+
+
 	protected void createHead(String title) {
 		head();
 		    title().text(title).end();
@@ -33,39 +60,11 @@ public class AdminPageBuilder extends Html {
 			script().src("/jquery-ui/js/jquery-ui-1.8.13.custom.min.js").end();
 			script().src("/formValidator/jquery.validationEngine-en.js").end();
 			script().src("/formValidator/jquery.validationEngine.js").end();
+			script().src("/js/membrane.js").end();
 		  end();
 	}
 
-	protected void createSkript() {
-		script().text(							  	
-			"$(function() {" +
-			"		$('table.display').dataTable({" +
-			"		  'bJQueryUI': true,"+
-			"		  'sPaginationType': 'full_numbers'"+
-			"		});"+
-			"	    $('#tabs').tabs();"+
-			"       $('.mb-button').button();"+
-			"       $('form').validationEngine('attach', {promptPosition : 'bottomRight', scroll: false});"+
-			"       $('form').submit(function() {"+
-	        "                          return this.validationEngine('validate');"+
-	    	"                       });"+			
-			"});");
-		end();
-	}
-	
-	protected void createTransportTab() throws UnsupportedEncodingException {
-		div().id("tabs-2");
-			h2().text("Transport").end();
-
-			h3().text("Backbone Interceptors").end();
-			createInterceptorTable(router.getTransport().getBackboneInterceptors());
-
-			h3().text("Transport Interceptors").end();
-			createInterceptorTable(router.getTransport().getInterceptors());
-		end();
-	}
-
-	private void createInterceptorTable(List<Interceptor> interceptors) {
+	protected void createInterceptorTable(List<Interceptor> interceptors) {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
@@ -82,8 +81,8 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	private void createAddFwdRuleForm() {
-		form().id("addFwdRuleForm").action("/admin/fwd-rule/save").method("POST");
+	protected void createAddFwdRuleForm() {
+		form().id("addFwdRuleForm").action("/admin/frule/save").method("POST");
 			div()
 				.span().text("Name").end()
 				.span().input().type("text").id("name").name("name").classAttr("validate[required]").end(2)
@@ -110,8 +109,8 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	private void createAddProxyRuleForm() {
-		form().id("addProxyRuleForm").action("/admin/proxy-rule/save").method("POST");
+	protected void createAddProxyRuleForm() {
+		form().id("addProxyRuleForm").action("/admin/prule/save").method("POST");
 			div()
 				.span().text("Name").end()
 				.span().input().type("text").id("p-name").name("name").classAttr("validate[required]").end(2) //id != name so that validation error reports on the page show of at the right places.
@@ -122,7 +121,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 	
-	private void createFwdRulesTable() throws UnsupportedEncodingException {
+	protected void createFwdRulesTable() throws UnsupportedEncodingException {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
@@ -132,7 +131,9 @@ public class AdminPageBuilder extends Html {
 			tbody();
 				for (ForwardingRule rule : getForwardingRules()) {
 					tr();
-						td().a().href("/admin/rule/details?fwd-rule-name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).text(rule.toString()).end().end();
+						td();
+							createLink(rule.toString(), "frule", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
+						end();
 						createTds(""+rule.getKey().getPort(),
 						             rule.getKey().getHost(),
 						             rule.getKey().getMethod(),
@@ -146,7 +147,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	private void createProxyRulesTable() throws UnsupportedEncodingException {
+	protected void createProxyRulesTable() throws UnsupportedEncodingException {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
@@ -156,7 +157,9 @@ public class AdminPageBuilder extends Html {
 			tbody();
 				for (ProxyRule rule : getProxyRules()) {
 					tr();
-						td().a().href("/admin/rule/details?proxy-rule-name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).text(rule.toString()).end().end();
+						td();
+							createLink(rule.toString(), "prule", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
+						end();
 						createTds(""+rule.getKey().getPort());
 						td().a().href("/admin/rule/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
 					end();
@@ -165,73 +168,113 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createRulesTab() throws Exception {
-		div().id("tabs-1");
-			h2().text("Rules").end();
-
-			h3().text("Forwarding Rules").end();
-			createFwdRulesTable();
-		  	createAddFwdRuleForm();			
-			h3().text("Proxy Rules").end();
-			createProxyRulesTable();
-		  	createAddProxyRuleForm();			
-		end();
-	}
-
-	protected void createFwdRuleDetailsDialogIfNeeded() throws Exception {
-		if (!params.containsKey("fwd-rule-name")) return;
-		
-		div().id("dialog");
-		  	h1().text("Forwarding Rule Details").end();
-			table();
-				ForwardingRule rule = (ForwardingRule) RuleUtil.findRuleByIdentifier(router,params.get("fwd-rule-name"));
-				createTr("Name",rule.toString());
-				createTr("Listen Port",""+rule.getKey().getPort());
-				createTr("Client Host",rule.getKey().getHost());
-				createTr("Method",rule.getKey().getMethod());
-				createTr("Path",rule.getKey().getPath());
-				createTr("Target Host",rule.getTargetHost());
-				createTr("Target Port",""+rule.getTargetPort());
+	protected void createTabs(int selected) throws Exception {
+		ul().classAttr("ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all");
+			li().classAttr(getSelectedTabStyle(0, selected));
+				a().href("/admin").text("Rules").end();
 			end();
-			h2().text("Interceptors").end();
-			createInterceptorTable(rule.getInterceptors());
+			li().classAttr(getSelectedTabStyle(1, selected));
+				createLink("Transport", "transport", null, null);
+			end();
+			li().classAttr(getSelectedTabStyle(2, selected));
+				createLink("System", "system", null, null);
+			end();
+			li().classAttr(getSelectedTabStyle(3, selected));
+				createLink("Cluster", "clusters", null, null);
+			end();
 		end();
-		script().text(							  	
-				"$(function() {" +
-				"       $('#dialog').dialog({" +
-				"						title:'Forwarding Rule Details',"+
-				"						width:800," +
-				"						height:550," +
-				"						modal:true" +
-				"					 });"+
-				"});");
-		end();			  				
+	}
+	
+	protected void createAddClusterForm() {
+		form().id("addClusterForm").action("/admin/clusters/save").method("POST");
+			div()
+				.span().text("Name").end()
+				.span().input().type("text").id("name").name("name").classAttr("validate[required]").end(2) 
+				.span().input().value("Add").type("submit").classAttr("mb-button").end(2);
+			end();		  		
+		end();
 	}
 
-	protected void createProxyRuleDetailsDialogIfNeeded() throws Exception {
-		if (!params.containsKey("proxy-rule-name")) return;
-		
-		div().id("dialog");
-		  	h1().text("Proxy Rule Details").end();
-			table();
-				ProxyRule rule = (ProxyRule) RuleUtil.findRuleByIdentifier(router,params.get("proxy-rule-name"));
-				createTr("Name",rule.toString());
-				createTr("Listen Port",""+rule.getKey().getPort());
+	protected void createClustersTable()
+			throws UnsupportedEncodingException {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+			thead();
+				tr();
+					createThs("Name", "#Nodes", "Health");
+			    end();
 			end();
-			h2().text("Interceptors").end();
-			createInterceptorTable(rule.getInterceptors());
+			tbody();
+				for (Cluster c : router.getClusterManager().getClusters()) {
+					tr();
+						td();
+						createLink(c.getName(), "clusters", "show", createQueryString("cluster", c.getName()));
+						end();
+						
+						createTds(String.valueOf(router.getClusterManager().getAllNodes(c.getName()).size()), 
+								  getFormatedHealth(c.getName()));
+					end();
+				}
+			end();
 		end();
-		script().text(							  	
-				"$(function() {" +
-				"       $('#dialog').dialog({" +
-				"						title:'Proxy Rule Details',"+
-				"						width:800," +
-				"						height:400," +
-				"						modal:true" +
-				"					 });"+
-				"});");
-		end();			  							
 	}
+
+	protected void createAddNodeForm() {
+		form().id("addNodeForm").action("/admin/node/save").method("POST");
+			input().type("hidden").name("cluster").value(params.get("cluster")).end();
+			div()
+				.span().text("Host").end()
+				.span().input().type("text").id("host").name("host").classAttr("validate[required]").end(2) 
+				.span().text("Port").end()
+				.span().input().type("text").id("port").name("port").size("5").classAttr("validate[required,custom[integer]]").end(2)
+				.span().input().value("Add").type("submit").classAttr("mb-button").end(2);
+			end();		  		
+		end();
+	}
+
+	protected void createNodesTable() throws Exception {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+			thead();
+				tr();
+					createThs("Host", "Health", "Count", "Timestamp", "Current Threads", "Action");
+			    end();
+			end();
+			tbody();
+				for (Node n : router.getClusterManager().getAllNodes(params.get("cluster"))) {
+					tr();
+						createTds(""+n.getHost()+":"+n.getPort(),
+						             n.isUp()?"Up":"Down",
+						             ""+n.getCounter(), 
+						             formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),"N/A");
+						td();
+							createIcon("ui-icon-trash", "node", "delete", createQuery4Node(n));
+							createIcon("ui-icon-circle-arrow-n", "node", "up", createQuery4Node(n));
+							createIcon("ui-icon-circle-arrow-s", "node", "down", createQuery4Node(n));
+						end();
+					end();
+				}
+			end();
+		end();
+	}
+
+	private String createQuery4Node(Node n) throws UnsupportedEncodingException {
+		return createQueryString("cluster", params.get("cluster"),"host", n.getHost(), "port", ""+n.getPort());
+	}
+
+	private void createIcon(String icon, String ctrl, String action,
+			String query) {
+		a().href(createHRef(ctrl, action, query)).span().classAttr("ui-icon "+icon).style("float:left;").end(2);
+	}
+
+	private String getFormatedHealth(String name) {
+		return String.format("%d up/ %d down", router.getClusterManager().getAvailableNodes(name).size(),
+											   router.getClusterManager().getAllNodes(name).size() - router.getClusterManager().getAvailableNodes(name).size());
+	}
+
+	private String getSelectedTabStyle(int ownPos, int selected) {
+		return ownPos == selected 
+				? "ui-state-default ui-corner-top ui-tabs-selected ui-state-active"
+				: "ui-state-default ui-corner-top";
+	}				
 	
 	private List<ProxyRule> getProxyRules() {
 		List<ProxyRule> rules = new LinkedList<ProxyRule>();
@@ -250,34 +293,33 @@ public class AdminPageBuilder extends Html {
 		}			
 		return rules;
 	}
-	
-	private void createThs(String... data) {			
+
+	protected void createLink(String label, String ctrl, String action, String query) throws UnsupportedEncodingException {								
+		a().href(createHRef(ctrl, action, query)).text(label).end();
+	}
+
+	private String createHRef(String ctrl, String action, String query) {
+		return "/admin/"+ctrl+(action!=null?"/"+action:"")+(query!=null?"?"+query:"");
+	}
+
+
+	protected void createThs(String... data) {			
 		for (String d : data) {
 			th().text(d).end();
 		}
 	}
 	
-	private void createTds(String... data) {			
+	protected void createTds(String... data) {			
 		for (String d : data) {
 			td().text(d).end();
 		}
 	}
 
-	private void createTr(String... data) {
+	protected void createTr(String... data) {
 		tr();
 		for (String d : data)
 			td().text(d).end();
 		end();
 	}	
 	
-	protected void createSystemTab() {
-		div().id("tabs-3");
-			h2().text("System").end();
-
-			long total = Runtime.getRuntime().totalMemory();
-			long free = Runtime.getRuntime().freeMemory();
-			p().text("Availabe system memory: " + total).end();
-			p().text("Free system memory: " + free).end();
-		end();
-	}	
 }
