@@ -14,11 +14,7 @@
 
 package com.predic8.membrane.core.http.xml;
 
-import java.net.URISyntaxException;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
@@ -33,7 +29,7 @@ public class Request extends AbstractXmlElement {
 	private URI uri;
 	private Headers headers;
 	
-	public Request(com.predic8.membrane.core.http.Request req) throws URISyntaxException {
+	public Request(com.predic8.membrane.core.http.Request req) throws Exception {
 		setMethod(req.getMethod());
 		setHttpVersion(req.getVersion());
 
@@ -59,7 +55,7 @@ public class Request extends AbstractXmlElement {
 		} 
  
 	}
-	
+	 
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
