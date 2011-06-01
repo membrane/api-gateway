@@ -13,17 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.xml;
 
+import static com.predic8.membrane.core.util.URLUtil.parseQueryString;
+
 import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
 import java.util.Map;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
-import static com.predic8.membrane.core.util.URLUtil.*;
 
 public class URI extends AbstractXmlElement {
 	
