@@ -22,10 +22,7 @@ public class HostColonPort {
 	public HostColonPort(String hostAndPort) {
 		String[] strs = hostAndPort.split(":");
 		
-		if (strs.length < 2)
-			throw new IllegalArgumentException("Illegal format");
-		
 		host = strs[0];
-		port = Integer.parseInt(strs[1]);
+		port = strs.length > 1 ? Integer.parseInt(strs[1]) : 80;
 	}
 }
