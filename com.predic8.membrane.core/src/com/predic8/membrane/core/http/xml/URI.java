@@ -13,7 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.xml;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -21,6 +23,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
+import static com.predic8.membrane.core.util.URLUtil.*;
 
 public class URI extends AbstractXmlElement {
 	
@@ -34,7 +37,7 @@ public class URI extends AbstractXmlElement {
 	
 	public URI() {}
 	
-	public URI(String uri) throws URISyntaxException {
+	public URI(String uri) throws Exception {
 		setValue(uri);
 	}
 	
@@ -67,7 +70,7 @@ public class URI extends AbstractXmlElement {
 		out.writeEndElement();		
 	}
 
-	public void setValue(String value) throws URISyntaxException {
+	public void setValue(String value) throws Exception {
 		this.value = value;
 
 		java.net.URI jUri = new java.net.URI(value); 
@@ -82,12 +85,12 @@ public class URI extends AbstractXmlElement {
 		parseQueryFromURI(jUri);
 	}
 
-	private void parseQueryFromURI(java.net.URI jUri) {
+	private void parseQueryFromURI(java.net.URI jUri) throws UnsupportedEncodingException {
 		if (jUri.getQuery() == null) return;
 
 		Query q = new Query();
-		for (String p : jUri.getQuery().split("&")) {
-			q.getParams().add(new Param(p.split("=")[0],p.split("=")[1]));
+		for (Map.Entry<String, String> e : parseQueryString(jUri.getQuery()).entrySet()) {
+			q.getParams().add(new Param(e.getKey(),e.getValue()));
 		}
 		setQuery(q);		
 	}
