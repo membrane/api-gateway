@@ -3,7 +3,7 @@ package com.predic8.membrane.core.util;
 import java.io.File;
 
 public class FileUtil {
-	public static File getAbsolute(File f) {
+	public static File prefixMembraneHomeIfNeeded(File f) {
 		if ( f.isAbsolute() )
 			return f;
 		
