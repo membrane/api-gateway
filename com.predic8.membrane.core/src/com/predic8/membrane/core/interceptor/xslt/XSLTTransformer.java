@@ -48,6 +48,6 @@ public class XSLTTransformer {
 		if (name.startsWith("classpath:"))
 			return new StreamSource(getClass().getResourceAsStream(name.substring(10)));
 		
-		return new StreamSource(FileUtil.getAbsolute(new File(name)));
+		return new StreamSource(FileUtil.prefixMembraneHomeIfNeeded(new File(name)));
 	}
 }
