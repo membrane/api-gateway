@@ -26,6 +26,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.balancer.ClusterManager;
 import com.predic8.membrane.core.transport.Transport;
 
 public class Router {
@@ -38,6 +39,8 @@ public class Router {
 
 	protected ConfigurationManager configurationManager;
 
+	protected ClusterManager clusterManager;
+	
 	protected static Router router;
 
 	protected static FileSystemXmlApplicationContext beanFactory;
@@ -103,6 +106,14 @@ public class Router {
 		this.configurationManager = configurationManager;
 	}
 	
+	public ClusterManager getClusterManager() {
+		return clusterManager;
+	}
+
+	public void setClusterManager(ClusterManager clusterManager) {
+		this.clusterManager = clusterManager;
+	}
+
 	public Collection<Interceptor> getInterceptors() {
 		Map<String, Interceptor> map = beanFactory.getBeansOfType(Interceptor.class);
 		Set<String> keys = map.keySet();

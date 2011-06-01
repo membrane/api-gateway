@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
+import com.predic8.membrane.core.interceptor.balancer.ClusterManager;
 import com.predic8.membrane.core.io.ConfigurationFileStore;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
