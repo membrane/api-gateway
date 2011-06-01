@@ -17,9 +17,7 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.*;
 
 public class XMLElementSessionIdExtractor {
 

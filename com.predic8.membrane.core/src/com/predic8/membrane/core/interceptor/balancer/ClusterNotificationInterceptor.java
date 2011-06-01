@@ -21,9 +21,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory
 			.getLog(ClusterNotificationInterceptor.class.getName());
 
-	private Pattern pattern = Pattern
-			//.compile("/clustermanager/([^/\\?]*)/?\\??(.*)");
-			.compile("/clustermanager/(up|down)/?\\??(.*)");
+	private Pattern pattern = Pattern.compile("/clustermanager/(up|down)/?\\??(.*)");
 
 	private boolean validateSignature = false;
 	private int timeout = 0;
@@ -104,11 +102,6 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 			return new HashMap<String, String>();
 		return parseQueryString(exc.getOriginalRequestUri().substring(
 				qStart + 1));
-	}
-
-	private boolean matches(Exchange exc, String cmd) {
-		Matcher m = pattern.matcher(exc.getOriginalRequestUri());
-		return m.matches() && cmd.equals(m.group(1));
 	}
 
 	private Outcome respond(Exchange exc, int code, String msg) throws Exception {

@@ -14,16 +14,14 @@
 package com.predic8.membrane.core.interceptor.server;
 
 import java.io.*;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.Date;
 
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.*;
 
 public class WebServerInterceptor extends AbstractInterceptor {

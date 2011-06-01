@@ -13,9 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
