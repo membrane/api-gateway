@@ -27,14 +27,13 @@ import com.predic8.membrane.core.interceptor.DispatchingInterceptorTest;
 import com.predic8.membrane.core.interceptor.WSDLInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
+import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.rules.ForwardingRuleKeyTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
-import com.predic8.membrane.core.util.ByteUtilTest;
-import com.predic8.membrane.core.util.HttpUtilTest;
-import com.predic8.membrane.core.util.TextUtilTest;
+import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 import com.predic8.membrane.core.xslt.XSLTInterceptorTest;
 
@@ -63,7 +62,15 @@ import com.predic8.membrane.core.xslt.XSLTInterceptorTest;
 	ForwardingRuleKeyTest.class,
 	TextUtilTest.class,
 	RelocatorTest.class,
-	XSLTInterceptorTest.class
+	XSLTInterceptorTest.class,
+	URLUtilTest.class,
+	ClusterManagerTest.class,
+	ClusterNotificationInterceptorTest.class,	
+	XMLSessionIdExtractorInterceptorTest.class,
+	ClusterBalancerTest.class,
+	LoadBalancingWithClusterManagerAndNoSessionTest.class,
+	LoadBalancingWithClusterManagerTest.class
+
 })
 public class UnitlTests {
 

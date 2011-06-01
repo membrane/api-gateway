@@ -19,13 +19,14 @@ import javax.xml.xpath.*;
 
 import junit.framework.TestCase;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.junit.Test;
 import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
-
+import static com.predic8.membrane.core.util.ByteUtil.*;
 
 public class XSLTInterceptorTest extends TestCase {
 		
@@ -36,7 +37,7 @@ public class XSLTInterceptorTest extends TestCase {
 	public void testRequest() throws Exception {
 		exc = new Exchange();
 		Response res = new Response();		
-		res.setBodyContent(getBodyContent());
+		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream("/customer.xml")));
 		exc.setResponse(res);
 
 		XSLTInterceptor i = new XSLTInterceptor();
@@ -59,12 +60,6 @@ public class XSLTInterceptorTest extends TestCase {
 		}
 	}
 	
-	private byte[] getBodyContent() throws IOException {
-		byte[] buf = new byte[195];
-		getClass().getResourceAsStream("/customer.xml").read(buf);
-		return buf;
-	}
-
 	private void assertXPath(String xpathExpr, String expected) throws XPathExpressionException {
 		assertEquals(expected, xpath.evaluate(xpathExpr, new InputSource(exc.getResponse().getBodyAsStream())));
 	}

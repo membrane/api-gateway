@@ -21,13 +21,10 @@ import org.junit.Test;
 public class HostColonPortTest {
 
 	@Test
-	public void testIllegalInput() throws Exception {
-		try {
-			new HostColonPort("predic8.com80");
-			fail("Illegal argument exception expected but thrown none.");
-		} catch (IllegalArgumentException e) {
-			// Test OK
-		}
+	public void testDefaultPort() throws Exception {
+		HostColonPort hcp = new HostColonPort("predic8.com");
+		assertEquals("predic8.com", hcp.host);
+		assertEquals(80, hcp.port);
 	}
 	
 	@Test

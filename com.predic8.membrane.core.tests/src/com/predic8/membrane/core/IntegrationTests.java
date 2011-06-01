@@ -16,15 +16,15 @@ package com.predic8.membrane.core;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+import org.junit.runners.Suite.SuiteClasses; 
 
 import com.predic8.membrane.core.http.MethodTest;
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
 import com.predic8.membrane.core.interceptor.ValidateSOAPMsgInterceptorTest;
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptorIntegrationTest;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingWithClusterManagerAndNoSessionTest;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorIntegrationTest;
-import com.predic8.membrane.core.transport.http.ConnectionTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
 import com.predic8.membrane.integration.AccessControlInterceptorIntegrationTest;
 import com.predic8.membrane.integration.Http10Test;
@@ -47,8 +47,7 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 		REST2SOAPInterceptorIntegrationTest.class,
 		InterceptorInvocationTest.class,
 		BasicAuthenticationInterceptorIntegrationTest.class,
-		ViaProxyTest.class,
-		ConnectionTest.class
+		ViaProxyTest.class		
 })
 public class IntegrationTests {
 

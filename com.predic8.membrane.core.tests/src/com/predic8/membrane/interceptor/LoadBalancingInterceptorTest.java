@@ -30,10 +30,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
-import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
-import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
-import com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy;
+import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
@@ -44,7 +41,7 @@ public class LoadBalancingInterceptorTest {
 
 	private DummyWebServiceInterceptor mockInterceptor2;
 
-	private LoadBalancingInterceptor balancingInterceptor;
+	protected LoadBalancingInterceptor balancingInterceptor;
 
 	private DispatchingStrategy roundRobinStrategy;
 
@@ -57,7 +54,7 @@ public class LoadBalancingInterceptorTest {
 	private HttpRouter service1;
 	private HttpRouter service2;
 
-	private HttpRouter balancer;
+	protected HttpRouter balancer;
 
 	@Before
 	public void setUp() throws Exception {
@@ -81,6 +78,7 @@ public class LoadBalancingInterceptorTest {
 		balancer = new HttpRouter();
 		balancer.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 7000), "thomas-bayer.com", 80));
 		balancer.getTransport().getInterceptors().add(balancingInterceptor);
+		balancingInterceptor.setRouter(balancer);
 
 		roundRobinStrategy = new RoundRobinStrategy();
 		byThreadStrategy = new ByThreadStrategy();
@@ -106,7 +104,7 @@ public class LoadBalancingInterceptorTest {
 	private void doTestGetDestinationURL(String requestUri, String expectedUri) throws MalformedURLException {
 		Exchange exc = new Exchange();
 		exc.setOriginalRequestUri(requestUri);
-		assertEquals(expectedUri, balancingInterceptor.getDestinationURL("thomas-bayer.com:80", exc));
+		assertEquals(expectedUri, balancingInterceptor.getDestinationURL(new Node("thomas-bayer.com",80), exc));
 	}
 
 	@Test
