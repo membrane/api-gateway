@@ -34,7 +34,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	
 	public WebServerInterceptor() {
 		name = "Web Server";
-		priority = 3000;
+		priority = 5000;
 	}
 	
 	@Override
@@ -59,7 +59,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	}
 
 	private File getFile(String uri) {
-		return FileUtil.getAbsolute(new File(docBase, uri));
+		return FileUtil.prefixMembraneHomeIfNeeded(new File(docBase, uri));
 	}
 
 	private Response createResponse(File file) throws Exception {
