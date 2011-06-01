@@ -40,21 +40,19 @@ public class ByThreadStrategy implements DispatchingStrategy {
 		}
 	}
 
-	public String dispatch(LoadBalancingInterceptor interceptor) {
-		List<String> endpoints = interceptor.getEndpoints();
-
+	public Node dispatch(LoadBalancingInterceptor interceptor) {
 		for (int j = 0; j < 5; j++) {
-			for (String endpoint : endpoints) {
-				if (!endpointCount.containsKey(endpoint)) {
-					endpointCount.put(endpoint, 1);
-					return endpoint;
+			for (Node ep : interceptor.getEndpoints()) {
+				if (!endpointCount.containsKey(getHostColonPort(ep))) {
+					endpointCount.put(getHostColonPort(ep), 1);
+					return ep;
 				}
 
-				Integer counter = endpointCount.get(endpoint);
+				Integer counter = endpointCount.get(ep);
 				if (counter < maxNumberOfThreadsPerEndpoint) {
 					counter++;
-					endpointCount.put(endpoint, counter);
-					return endpoint;
+					endpointCount.put(getHostColonPort(ep), counter);
+					return ep;
 				} else {
 					continue;
 				}
@@ -78,6 +76,9 @@ public class ByThreadStrategy implements DispatchingStrategy {
 		this.retryTimeOnBusy = retryTimeOnBusy;
 	}
 	
+	private String getHostColonPort(Node ep) {
+		return ep.getHost()+":"+ep.getPort();
+	}
 	
 
 }
