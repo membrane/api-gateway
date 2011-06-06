@@ -17,9 +17,8 @@ package com.predic8.membrane.core.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
+import java.util.regex.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -56,6 +55,9 @@ public class Header {
 
 	public static final String CHUNKED = "chunked";
 
+	Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
+	Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
+	
 	private Log log = LogFactory.getLog(Header.class.getName());
 
 	private Vector<HeaderField> fields = new Vector<HeaderField>();
@@ -245,17 +247,38 @@ public class Header {
 	
 	//TODO header value is a complex unit
 	public String getCharset() {
-		String type = getContentType();
-		
-		if (type == null)
+		if (getContentType() == null)
 			return Constants.ISO_8859_1;
 		
-		int idx = type.indexOf("charset=");
+		String charset = getMediaTypeParameters(getContentType()).get("charset");
+		if ( charset == null ) return Constants.ISO_8859_1;
+		return charset;
+		
+		/*int idx = type.indexOf("charset=");
 		if (idx < 0)
 			return Constants.ISO_8859_1;
 		
-		return type.substring(idx + 8);
+		return type.substring(idx + 8);*/
 	}
 	
+	private Map<String, String> getMediaTypeParameters(String value) {
+		Matcher m = mediaTypePattern.matcher(value);
+		m.matches();
+		log.debug("type: " + m.group(1));
+		log.debug("subtype: " + m.group(2));
+		log.debug("parameters: " + m.group(3));
+		
+		Map<String, String> map = new HashMap<String, String>();
+		if ( m.group(3) == null ) return map;
+					
+		for (String param : m.group(3).substring(1).split("\\s*;\\s*")) {
+			log.debug("parsing parameter: "+param);
+			Matcher paramMat = parameterPattern.matcher(param);		
+			paramMat.matches();
+			log.debug("parameter: "+paramMat.group(1)+ "=" + paramMat.group(2));
+			map.put(paramMat.group(1).trim(), paramMat.group(2));
+		}
+		return map;
+	}
 
 }
