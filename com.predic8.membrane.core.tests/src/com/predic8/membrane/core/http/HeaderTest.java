@@ -13,15 +13,11 @@
    limitations under the License. */
 
 package com.predic8.membrane.core.http;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.assertTrue;
+import static junit.framework.Assert.*;
 
 import javax.activation.MimeType;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import com.predic8.membrane.core.Constants;
 public class HeaderTest {
@@ -53,6 +49,13 @@ public class HeaderTest {
 		header.add("Content-Type", "text/xml");
 		assertEquals(Constants.ISO_8859_1, header.getCharset());
 	}
+
+	@Test
+	public void testStringCharset() throws Exception {
+		Header header = new Header();
+		header.add("Content-Type", "text/xml ;charset=\"UTF-8\"");
+		assertEquals("UTF-8", header.getCharset());
+	}		
 	
 	@Test
 	public void testGetCharsetCTNull() throws Exception {
@@ -61,6 +64,7 @@ public class HeaderTest {
 	
 	@Test
 	public void testGetCharset() throws Exception {
+		header.add("Content-Type","text/xml; charset=utf-8");
 		assertEquals("utf-8", header.getCharset());
 	}
 	
