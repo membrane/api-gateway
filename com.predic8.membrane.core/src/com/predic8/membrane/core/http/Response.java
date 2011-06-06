@@ -87,7 +87,7 @@ public class Response extends Message {
 			return;
 		}
 
-		header = new Header(in, new StringBuffer());
+		header = new Header(in);
 		
 		if (createBody)
 			createBody(in);

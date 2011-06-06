@@ -56,11 +56,12 @@ public abstract class Message {
 	 */
 	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
 		parseStartLine(in);
-		header = new Header(in, new StringBuffer());
+		log.error("Input stream class: "+in.getClass().getName());
+		header = new Header(in);
 				
 		if (createBody) 
 		  createBody(in);
-	}
+	} 
 
 	public void readBody() throws IOException {
 		body.read();

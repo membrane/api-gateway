@@ -63,23 +63,17 @@ public class Header {
 	public Header() {
 	}
 
-	public Header(InputStream in, StringBuffer rawMessage) throws IOException, EndOfStreamException {
+	public Header(InputStream in) throws IOException, EndOfStreamException {
 		String line;
 
 		while ((line = HttpUtil.readLine(in)).length() > 0) {
 			try {
-				addLineToRawMessage(rawMessage, line);
 
 				add(new HeaderField(line));
 			} catch (StringIndexOutOfBoundsException sie) {
 				log.error("Header read line that caused problems: " + line);
 			}
 		}
-	}
-
-	private void addLineToRawMessage(StringBuffer rawMessage, String line) {
-		if (rawMessage != null)
-			rawMessage.append(line).append(Constants.CRLF);
 	}
 
 	public Header(Header header) {
