@@ -250,7 +250,7 @@ public class Header {
 		if (getContentType() == null)
 			return Constants.ISO_8859_1;
 		
-		String charset = getMediaTypeParameters(getContentType()).get("charset");
+		String charset = getMediaTypeParameters().get("charset");
 		if ( charset == null ) return Constants.ISO_8859_1;
 		return charset;
 		
@@ -261,8 +261,8 @@ public class Header {
 		return type.substring(idx + 8);*/
 	}
 	
-	private Map<String, String> getMediaTypeParameters(String value) {
-		Matcher m = mediaTypePattern.matcher(value);
+	private Map<String, String> getMediaTypeParameters() {
+		Matcher m = mediaTypePattern.matcher(getContentType());
 		m.matches();
 		log.debug("type: " + m.group(1));
 		log.debug("subtype: " + m.group(2));
