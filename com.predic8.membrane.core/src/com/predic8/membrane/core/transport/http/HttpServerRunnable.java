@@ -22,6 +22,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
+import java.sql.Time;
 
 import javax.net.ssl.SSLSocket;
 
@@ -30,8 +31,7 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.*;
 
 public class HttpServerRunnable extends AbstractHttpRunnable {
 
@@ -54,8 +54,13 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 	public void run() {
 		try {
 			while (true) {
+				Timer timer = new Timer();
+				
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
+				
+				timer.log("after read");
+				
 				exchange.setTimeReqReceived(System.currentTimeMillis());
 				
 				if (srcReq.getHeader().getProxyConnection() != null) {
@@ -63,7 +68,12 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 					srcReq.getHeader().removeFields(Header.PROXY_CONNECTION);
 				}
 				
+				timer.log("after proxy handled");
+				
 				process();
+				
+				timer.log("after process");
+				
 				if (srcReq.isCONNECTRequest()) {
 					log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
 					return;
