@@ -1,0 +1,12 @@
+<?xml version = "1.0" ?>
+<configuration>
+  <rules>
+    <forwarding-rule name="predic8.com" port="2000">
+      <targetport>8080</targetport>
+      <targethost>predic8.com</targethost>
+      <interceptors>
+        <interceptor id="soapValidator"/>
+      </interceptors>
+    </forwarding-rule>
+  </rules>
+</configuration>
