@@ -63,12 +63,10 @@ public class ChunkedBody extends AbstractBody {
 			out.write(Constants.CRLF_BYTES);
 			inputStream.read(); // CR
 			inputStream.read(); // LF
-			out.flush();
 		}
 		inputStream.read(); // CR
 		inputStream.read(); // LF-
 		writeLastChunk(out);
-		out.flush();
 		read = true;
 	}
 	
