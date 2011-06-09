@@ -123,6 +123,7 @@ public class HttpClient {
 				log.debug("try # " + counter + " to " + dest);
 				init(exc, dest);
 				con = conMgr.getConnection(host, port, localHost, tls);
+				exc.setTargetConnection(con);
 				return doCall(exc, con);
 			} catch (ConnectException e) {
 				exception = e;
@@ -183,7 +184,7 @@ public class HttpClient {
 		try{
 			res.read(con.in, !exc.getRequest().isHEADRequest());
 		}catch(SocketException e){
-			log.error("Connection aborted");
+			log.error("Connection aborted: " + e);	
 			exc.getRequest().write(System.err);
 		}
 
