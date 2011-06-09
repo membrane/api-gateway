@@ -244,7 +244,7 @@ public class AdminPageBuilder extends Html {
 						createTds(""+n.getHost()+":"+n.getPort(),
 						             n.isUp()?"Up":"Down",
 						             ""+n.getCounter(), 
-						             formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),"N/A");
+						             formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),""+n.getThreads());
 						td();
 							createIcon("ui-icon-trash", "node", "delete", createQuery4Node(n));
 							createIcon("ui-icon-circle-arrow-n", "node", "up", createQuery4Node(n));
