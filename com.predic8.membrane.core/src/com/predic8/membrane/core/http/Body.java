@@ -59,7 +59,6 @@ public class Body extends AbstractBody {
 			return;
 		
 		out.write(getContent(), 0, getLength());
-		out.flush();
 	}
 	
 	protected void writeNotRead(OutputStream out) throws IOException {
@@ -71,7 +70,6 @@ public class Body extends AbstractBody {
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
 			out.write(buffer, 0, length);
-			out.flush();
 			byte[] chunk = new byte[length];
 			System.arraycopy(buffer, 0, chunk, 0, length);
 			chunks.add(new Chunk(chunk));
