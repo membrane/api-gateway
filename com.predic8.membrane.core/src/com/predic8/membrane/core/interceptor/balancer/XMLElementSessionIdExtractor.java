@@ -45,7 +45,7 @@ public class XMLElementSessionIdExtractor {
 				
 		}
 			
-		log.warn("no sessionid element found");
+		log.debug("no sessionid element found");
 		return null;
 	}
 
