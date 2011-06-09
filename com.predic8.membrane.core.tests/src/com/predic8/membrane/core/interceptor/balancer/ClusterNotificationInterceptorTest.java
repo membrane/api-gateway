@@ -91,6 +91,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 
 	@Test
 	public void testSignature() throws Exception {
+		interceptor.setKeyStore(new File( new File("."), "resources/membrane.jks").getAbsolutePath());
 		interceptor.setValidateSignature(true);
 		
 		assertEquals(403, new HttpClient().executeMethod(getWrongSignatureTestMethod()));
