@@ -40,6 +40,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 		Node dispatchedNode = getDispatchedNode(exc.getRequest());
 		dispatchedNode.incCounter();
+		dispatchedNode.addThread();
 		
 		exc.setProperty("dispatchedNode", dispatchedNode);
 		
@@ -66,6 +67,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 				sessions.put( sessionId, (Node)exc.getProperty("dispatchedNode"));
 			}
 		}		
+		
+		((Node)exc.getProperty("dispatchedNode")).removeThread();
+		
 		return Outcome.CONTINUE;
 	}
 

@@ -7,6 +7,7 @@ public class Node {
 	private int port;
 	private boolean isUp = false;
 	private int counter;
+	private int threads;
 	
 	public Node(String host, int port) {
 		this.host = host;
@@ -63,6 +64,18 @@ public class Node {
 
 	public void incCounter() {
 		counter++;		
+	}
+
+	public void addThread() {
+		threads++;		
+	}
+
+	public void removeThread() {
+		threads--;	
+	}
+
+	public int getThreads() {
+		return threads;
 	}
 
 }
