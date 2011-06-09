@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.http;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -55,8 +56,7 @@ public abstract class Message {
 	 * See http://www.ietf.org/rfc/rfc2145.txt
 	 */
 	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
-		parseStartLine(in);
-		log.error("Input stream class: "+in.getClass().getName());
+		parseStartLine(in);		
 		header = new Header(in);
 				
 		if (createBody) 
