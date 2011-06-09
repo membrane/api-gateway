@@ -46,7 +46,8 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		this.sourceSocket = socket;
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
-		sourceSocket.setSoTimeout(30000);
+		sourceSocket.setSoTimeout(30000); // TODO global config
+		sourceSocket.setTcpNoDelay(true); // TODO global config
 		this.transport = transport;
 		setClientSettings();
 	}
@@ -54,12 +55,9 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 	public void run() {
 		try {
 			while (true) {
-				Timer timer = new Timer();
-				
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
 				
-				timer.log("after read");
 				
 				exchange.setTimeReqReceived(System.currentTimeMillis());
 				
@@ -68,17 +66,19 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 					srcReq.getHeader().removeFields(Header.PROXY_CONNECTION);
 				}
 				
-				timer.log("after proxy handled");
 				
 				process();
 				
-				timer.log("after process");
 				
 				if (srcReq.isCONNECTRequest()) {
 					log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
 					return;
 				}
 				if (!srcReq.isKeepAlive() || !exchange.getResponse().isKeepAlive()) {
+					if ( exchange.getTargetConnection() != null ) {
+						exchange.getTargetConnection().close();
+						exchange.setTargetConnection(null);
+					}
 					break;
 				}
 				if (exchange.getResponse().isRedirect()) {
@@ -86,6 +86,8 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 				}
 				exchange = new Exchange();
 				exchange.setServerThread(this);
+				
+				Timer.log("end while block");
 			}
 		} catch (SocketTimeoutException e) {
 			log.debug("Socket of thread " + counter + " timed out");
@@ -130,8 +132,9 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		targetRes = null;
 		try {
 			
-			exchange.setSourceHostname(sourceSocket.getInetAddress().getHostName());
-			exchange.setSourceIp(sourceSocket.getInetAddress().getHostAddress());
+			//TODO
+			//exchange.setSourceHostname(sourceSocket.getInetAddress().getHostName());
+			//exchange.setSourceIp(sourceSocket.getInetAddress().getHostAddress());
 			
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
