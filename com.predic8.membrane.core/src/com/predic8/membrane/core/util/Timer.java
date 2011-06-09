@@ -5,13 +5,13 @@ import org.apache.commons.logging.*;
 public class Timer {
 	private static Log log = LogFactory.getLog(Timer.class.getName());
 	
-	private long time;
+	static private long time;
 	
-	public Timer() {
+	static public void reset() {
 		time = System.currentTimeMillis();
 	}
 	
-	public void log(String txt) {
+	static public void log(String txt) {
 		long now = System.currentTimeMillis();
 		log.debug(txt+ ":" + (now-time));
 		time = System.currentTimeMillis();
