@@ -56,8 +56,9 @@ public class Connection {
 		}
 		
 		log.debug("Opened connection on localPort: " + port);
-		con.in = new BufferedInputStream(con.socket.getInputStream(), 2048);
+		//Creating output stream before input stream is suggested. 
 		con.out = new BufferedOutputStream(con.socket.getOutputStream(), 2048);
+		con.in = new BufferedInputStream(con.socket.getInputStream(), 2048);
 		
 		return con;
 	}
