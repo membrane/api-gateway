@@ -129,7 +129,7 @@ public class CoreActivator extends Plugin {
 
 		String membraneHome = System.getenv("MEMBRANE_HOME");
 		if (membraneHome == null)
-			throw new IllegalStateException("membarne_home not set"); 		
+			throw new IllegalStateException("MEMBRANE_HOME not set"); 		
 		
 		Router.init("file:" + membraneHome + System.getProperty("file.separator") + "configuration" + System.getProperty("file.separator") + "monitor-beans.xml", this.getClass().getClassLoader());
 	}
