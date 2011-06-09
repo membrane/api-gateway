@@ -43,10 +43,9 @@ public class HttpUtil {
 	public static String readLine(InputStream in) throws IOException, EndOfStreamException {
 
 		StringBuffer line = new StringBuffer();
+
 		int b;
-
 		while ((b = in.read()) != -1) {
-
 			if (b == 13) {
 				in.read();
 				return line.toString();
@@ -54,6 +53,7 @@ public class HttpUtil {
 
 			line.append((char) b);
 		}
+		
 		ErrorReadingStartLineException exc = new ErrorReadingStartLineException();
 		exc.setStartLine(line.toString());
 		throw exc;
