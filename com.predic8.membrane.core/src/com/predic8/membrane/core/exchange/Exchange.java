@@ -17,12 +17,15 @@ package com.predic8.membrane.core.exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.transport.http.AbstractHttpRunnable;
+import com.predic8.membrane.core.transport.http.Connection;
 
 public class Exchange extends AbstractExchange {
 	
 	private AbstractHttpRunnable serverThread;
 	
 	private String originalHostHeader = "";
+
+	private Connection targetConnection;
 	
 	public Exchange() {
 		
@@ -66,6 +69,14 @@ public class Exchange extends AbstractExchange {
 	
 	public ForwardingRuleKey getForwardingRuleKey() {
 		return new ForwardingRuleKey(request.getHeader().getHost(), request.getMethod(), request.getUri(), serverThread.getSourceSocket().getLocalPort());
+	}
+
+	public Connection getTargetConnection() {
+		return targetConnection;
+	}
+
+	public void setTargetConnection(Connection con) {
+		targetConnection = con;		
 	}
 	
 }
