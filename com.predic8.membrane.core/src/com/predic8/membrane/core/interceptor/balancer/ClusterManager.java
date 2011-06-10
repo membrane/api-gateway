@@ -56,6 +56,10 @@ public class ClusterManager {
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
 	}
+
+	public Node getNode(String cluster, String host, int port) {
+		return getCluster(cluster).getNode(new Node(host,port));		
+	}
 	
 	
 }

@@ -1,5 +1,8 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Node {
 
 	private long lastUpTime;
@@ -8,6 +11,8 @@ public class Node {
 	private boolean isUp = false;
 	private int counter;
 	private int threads;
+	
+	private Map<Integer, Integer> statusCodes = new HashMap<Integer, Integer>();  
 	
 	public Node(String host, int port) {
 		this.host = host;
@@ -21,6 +26,14 @@ public class Node {
 			   port == ((Node)obj).getPort();
 	}
 	
+	public int getLost() {
+		int received = 0;
+		for ( int i : statusCodes.values() ) {
+			received += i;
+		}
+		return counter - received;
+	}
+
 	public long getLastUpTime() {
 		return lastUpTime;
 	}
@@ -66,6 +79,13 @@ public class Node {
 		counter++;		
 	}
 
+	public void addStatusCode(int code) {
+		if ( !statusCodes.containsKey(code) ) {
+			statusCodes.put(code, 0);
+		}
+		statusCodes.put(code, statusCodes.get(code) + 1 );
+	}
+	
 	public void addThread() {
 		threads++;		
 	}
@@ -78,4 +98,7 @@ public class Node {
 		return threads;
 	}
 
+	public Map<Integer, Integer> getStatusCodes() {
+		return statusCodes;
+	}
 }
