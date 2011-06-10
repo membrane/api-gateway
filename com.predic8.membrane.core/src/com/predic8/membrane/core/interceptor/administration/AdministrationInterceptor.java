@@ -27,6 +27,7 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.HttpUtil;
 
@@ -201,6 +202,31 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 		return getClustersPage(params);
 	}
 
+	public String handleNodeShowRequest(final Map<String, String> params)
+	  throws Exception {
+		StringWriter writer = new StringWriter();
+		return new AdminPageBuilder(writer, router, params) {
+			@Override
+			protected int getSelectedTab() {
+				return 3;
+			}
+		
+			@Override
+			protected void createTabContent() throws Exception {
+				h2().text("Node " + params.get("host")+":"+params.get("port")).end();
+				h3().text("Status Codes").end();
+				Node n = router.getClusterManager().getNode(params.get("cluster"),
+						params.get("host"),
+						Integer.parseInt(params.get("port")));
+				createStatusNodes(n);
+				p().text("Total Requests: " + n.getCounter()).end();
+				p().text("Requests without Responses: " + n.getLost()).end();
+
+			}
+		}.createPage();
+	}
+
+	
 	public String handleNodeSaveRequest(Map<String, String> params) throws Exception {
 		log.debug("adding node");
 		log.debug("cluster: " + params.get("cluster"));

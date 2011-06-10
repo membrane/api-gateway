@@ -231,20 +231,40 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
+	protected void createStatusNodes(Node n) throws Exception {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+			thead();
+				tr();
+					createThs("Status Code", "Count");
+			    end();
+			end();
+			tbody();
+				for (Map.Entry<Integer, Integer> codes : n.getStatusCodes().entrySet() ) {
+					tr();
+						createTds(""+codes.getKey(), ""+codes.getValue());
+					end();				
+				}
+			end();
+		end();
+	}
+
 	protected void createNodesTable() throws Exception {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
-					createThs("Host", "Health", "Count", "Timestamp", "Current Threads", "Action");
+					createThs("Node", "Health", "Count", "Time since last up", "Current Threads", "Action");
 			    end();
 			end();
 			tbody();
 				for (Node n : router.getClusterManager().getAllNodes(params.get("cluster"))) {
 					tr();
-						createTds(""+n.getHost()+":"+n.getPort(),
-						             n.isUp()?"Up":"Down",
-						             ""+n.getCounter(), 
-						             formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),""+n.getThreads());
+						td();
+						createLink(""+n.getHost()+":"+n.getPort(), "node", "show", 
+								   createQueryString("cluster", params.get("cluster"), "host", n.getHost(),"port", ""+n.getPort() ));
+						end();
+						createTds( n.isUp()?"Up":"Down",
+						           ""+n.getCounter(), 
+						           formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),""+n.getThreads());
 						td();
 							createIcon("ui-icon-trash", "node", "delete", createQuery4Node(n));
 							createIcon("ui-icon-circle-arrow-n", "node", "up", createQuery4Node(n));
