@@ -87,7 +87,7 @@ public class HttpUtil {
 		response.setStatusCode(500);
 		response.setStatusMessage("Internal Server Error");
 
-		response.setHeader(createHeader("text/html;charset=utf-8"));
+		response.setHeader(createHeaders("text/html;charset=utf-8"));
 
 		response.setBody(new Body("<html>" + message + "</html>"));
 		return response;
@@ -98,7 +98,7 @@ public class HttpUtil {
 		response.setStatusCode(404);
 		response.setStatusMessage("Not Found");
 
-		response.setHeader(createHeader("text/html;charset=utf-8"));
+		response.setHeader(createHeaders("text/html;charset=utf-8"));
 
 		response.setBody(new Body("<html><head><title>Page Not Found</title></head><body>" + "The requested page could't be found!" + "</body></html>"));
 		return response;
@@ -108,7 +108,7 @@ public class HttpUtil {
 		Response response = new Response();
 		response.setStatusCode(500);
 
-		response.setHeader(createHeader("text/xml;charset=utf-8"));
+		response.setHeader(createHeaders("text/xml;charset=utf-8"));
 
 		Body body = new Body(getFaultSOAPBody(message));
 
@@ -143,14 +143,37 @@ public class HttpUtil {
 		return buf.toString();
 	}
 
-	private static Header createHeader(String contentType) {
+	public static Response createResponse(int code, String msg, String body, String contentType, String... headers) {
+		Response res = new Response();
+		res.setStatusCode(code);
+		res.setStatusMessage(msg);
+		res.setHeader(createHeaders(contentType, headers));
+
+		if (body != null) res.setBody(new Body(body));
+		return res;		
+	}
+	
+	private static Header createHeaders(String contentType, String... headers) {
+		Header header = new Header();
+		if (contentType != null ) header.setContentType(contentType);
+		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
+		header.add("Server", "Membrane" + Constants.VERSION);
+		header.add("Connection", "close");
+		for (int i = 0; i<headers.length; i+=2) {
+			header.add(headers[i],headers[i+1]);
+		}
+		return header;
+	}
+
+	
+	/*private static Header createHeader(String contentType) {
 		Header header = new Header();
 		header.setContentType(contentType);
 		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
 		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
 		header.add("Connection", "close");
 		return header;
-	}
+	}*/
 
 	public static List<Chunk> readChunks(InputStream in) throws IOException {
 		List<Chunk> chunks = new ArrayList<Chunk>();
