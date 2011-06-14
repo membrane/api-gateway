@@ -18,7 +18,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public interface DispatchingStrategy {
 
-	public Node dispatch(LoadBalancingInterceptor interceptor);
+	public Node dispatch(LoadBalancingInterceptor interceptor) throws EmptyNodeListException;
 
 	public void done(AbstractExchange exc);
 	
