@@ -12,11 +12,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.HttpUtil;
 
 public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory
@@ -98,25 +95,6 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 			return new HashMap<String, String>();
 		return parseQueryString(exc.getOriginalRequestUri().substring(
 				qStart + 1));
-	}
-
-	private Outcome respond(Exchange exc, int code, String msg) throws Exception {
-		Response res = new Response();
-		res.setStatusCode(code);
-		res.setStatusMessage(msg);
-		res.setHeader(createHeader());
-
-		exc.setResponse(res);
-		return Outcome.ABORT;
-	}
-
-	private Header createHeader() {
-		Header header = new Header();
-		header.setContentType("text/html;charset=utf-8");
-		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
-		header.add("Server", "Membrane" + Constants.VERSION);
-		header.add("Connection", "close");
-		return header;
 	}
 
 	public boolean isValidateSignature() {
