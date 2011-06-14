@@ -36,6 +36,10 @@ public class HttpTransport extends Transport {
 	public static final String HEADER_HOST = "com.predic8.membrane.transport.http.header.Host";
 	public static final String SOURCE_IP = "com.predic8.membrane.transport.http.source.Ip";
 
+	private int soTimeout = 30000;
+	private boolean tcpNoDelay = true;
+	private int httpClientRetries = 5;
+	
 	public Hashtable<Integer, HttpEndpointListener> portListenerMapping = new Hashtable<Integer, HttpEndpointListener>();
 
 	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new HttpServerThreadFactory());
@@ -99,6 +103,30 @@ public class HttpTransport extends Transport {
 
 	public ExecutorService getExecutorService() {
 		return executorService;
+	}
+
+	public int getSoTimeout() {
+		return soTimeout;
+	}
+
+	public void setSoTimeout(int soTimeout) {
+		this.soTimeout = soTimeout;
+	}
+
+	public boolean isTcpNoDelay() {
+		return tcpNoDelay;
+	}
+
+	public void setTcpNoDelay(boolean tcpNoDelay) {
+		this.tcpNoDelay = tcpNoDelay;
+	}
+
+	public int getHttpClientRetries() {
+		return httpClientRetries;
+	}
+
+	public void setHttpClientRetries(int httpClientRetries) {
+		this.httpClientRetries = httpClientRetries;
 	}
 
 }
