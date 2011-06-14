@@ -49,8 +49,7 @@ public abstract class AbstractHttpRunnable implements Runnable {
 	protected InputStream srcIn;
 	
 	protected OutputStream srcOut;
-	
-	
+		
 	protected HttpTransport transport;
 	
 	protected boolean stop = false;
@@ -123,6 +122,7 @@ public abstract class AbstractHttpRunnable implements Runnable {
 		Configuration cfg = transport.getRouter().getConfigurationManager().getConfiguration();
 		client.setAdjustHostHeader(cfg.getAdjustHostHeader());
 		client.setProxy(cfg.getProxy());
+		client.setMaxRetries(transport.getHttpClientRetries());
 	}
 	
 	protected void block(Message msg) throws TerminateException {
