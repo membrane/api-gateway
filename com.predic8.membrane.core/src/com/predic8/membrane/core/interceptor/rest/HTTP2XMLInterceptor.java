@@ -39,8 +39,8 @@ public class HTTP2XMLInterceptor extends AbstractInterceptor {
 		exc.getRequest().setBodyContent(res.getBytes("UTF-8"));
 
 		// TODO
-		exc.getRequest().setMethod(com.predic8.membrane.core.http.Request.METHOD_POST);
-		exc.getRequest().getHeader().add("SOAPAction", "");
+		exc.getRequest().setMethod("POST");
+		exc.getRequest().getHeader().setSOAPAction("");
 
 		return Outcome.CONTINUE;
 	}
