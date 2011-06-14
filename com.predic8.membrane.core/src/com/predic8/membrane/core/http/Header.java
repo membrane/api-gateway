@@ -51,6 +51,8 @@ public class Header {
 
 	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
 
+	public static final String SOAP_ACTION = "SOAPAction";
+	
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
@@ -212,6 +214,10 @@ public class Header {
 		add(CONTENT_TYPE, value);
 	}
 
+	public void setSOAPAction(String value) {
+		add(SOAP_ACTION, value);
+	}
+	
 	public boolean hasContentLength() {
 		return getFirstValue(CONTENT_LENGTH) != null;
 	}
