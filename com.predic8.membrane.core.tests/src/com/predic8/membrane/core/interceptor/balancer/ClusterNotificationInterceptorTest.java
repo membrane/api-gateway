@@ -15,9 +15,12 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import static com.predic8.membrane.core.util.URLUtil.createQueryString;
 
-import java.io.*;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.*;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
 
@@ -90,16 +93,14 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	}	
 
 	@Test
-	public void testSignature() throws Exception {
-		interceptor.setKeyStore(new File( new File("."), "resources/membrane.jks").getAbsolutePath());
+	public void testSecurity() throws Exception {
 		interceptor.setValidateSignature(true);
+		interceptor.setKeyBase64("b0iKZCt0D7cMUlCYeihNwA==");
 		
-		assertEquals(403, new HttpClient().executeMethod(getWrongSignatureTestMethod()));
-		
-		assertEquals(204, new HttpClient().executeMethod(getSignatureTestMethod(5004)));
+		assertEquals(204, new HttpClient().executeMethod(getSecurityTestMethod(5004)));
 		
 		interceptor.setTimeout(5000);
-		GetMethod get = getSignatureTestMethod(System.currentTimeMillis());
+		GetMethod get = getSecurityTestMethod(System.currentTimeMillis());
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(204, new HttpClient().executeMethod(get));
 
@@ -108,34 +109,16 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 		
 	}
 
-	private GetMethod getWrongSignatureTestMethod()
-			throws UnsupportedEncodingException {
-		return new GetMethod("http://localhost:8000/clustermanager/up?"+
-									   createQueryString("host", "node1.clustera",
-									   			 		 "port", "5000",
-									   			 		 "cluster", "c1",
-									   			 		 "time", "3433",
-									   			 		 "signature", "MCwCFHNPunXJyY45ltGckunFxPDth9i0AhQFAbsgB7yPJdyYIL3zE3QXmP+F8A=="));
+	private GetMethod getSecurityTestMethod(long time) throws Exception {	
+		String qParams = "cluster=c3&host=node1.clustera&port=5000&time=" + time + "&nonce=" + new SecureRandom().nextLong();
+		return new GetMethod("http://localhost:8000/clustermanager/up?data=" + 
+				   URLEncoder.encode(getEncryptedQueryString(qParams),"UTF-8"));
+	}
+
+	private String getEncryptedQueryString(String qParams) throws Exception {
+		Cipher cipher = Cipher.getInstance("AES");
+		
+		cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Base64.decodeBase64("b0iKZCt0D7cMUlCYeihNwA==".getBytes("UTF-8")), "AES"));
+		return new String(Base64.encodeBase64(cipher.doFinal(qParams.getBytes("UTF-8"))),"UTF-8");
 	}	
-
-	private GetMethod getSignatureTestMethod(long time) throws Exception {		
-		return new GetMethod("http://localhost:8000/clustermanager/up?cluster=c3&host=node1.clustera&port=5000&time=" + time +
-			   "&signature=" + URLEncoder.encode(getSigBase64(time+"c3node1.clustera5000"),"UTF-8"));
-	}
-
-	private String getSigBase64(String data) throws Exception {
-		Signature sig = Signature.getInstance("SHA1withDSA");
-		sig.initSign(getPrivateKey());
-		sig.update(data.getBytes("UTF-8"));		
-		return new String(Base64.encodeBase64(sig.sign()));
-	}
-
-	private PrivateKey getPrivateKey() throws Exception {
-		
-		KeyStore ks = KeyStore.getInstance("JKS");
-		ks.load(getClass().getResourceAsStream("/membrane.jks"), "secret".toCharArray());
-		
-		return ((KeyStore.PrivateKeyEntry) ks.getEntry("membrane", new KeyStore.PasswordProtection("secret".toCharArray()))).getPrivateKey();
-	}
-	
 }
