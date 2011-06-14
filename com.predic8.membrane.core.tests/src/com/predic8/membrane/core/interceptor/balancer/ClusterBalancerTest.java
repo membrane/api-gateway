@@ -34,8 +34,6 @@ public class ClusterBalancerTest extends TestCase {
 
 	@Before
 	public void setUp() throws Exception {
-
-
 		
 		extracor = new XMLElementSessionIdExtractor();
 		extracor.setLocalName("session");
@@ -87,6 +85,17 @@ public class ClusterBalancerTest extends TestCase {
 
 		assertEquals(stickyNode, lb.sessions.get("444444"));
 
+	}
+	
+	@Test
+	public void testNoNodeFound() throws Exception {
+		Exchange exc = getExchangeWithOutSession();
+
+		cm.down("Default", "localhost", 2000);
+		cm.down("Default", "localhost", 3000);
+
+		lb.handleRequest(exc);	
+		assertEquals(500, exc.getResponse().getStatusCode());
 	}
 
 	private Response getResponse() throws IOException {
