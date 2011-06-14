@@ -28,6 +28,7 @@ import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.util.ByteUtilTest;
+import com.predic8.membrane.core.util.DNSCacheTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
 
 
@@ -50,6 +51,7 @@ public class UnitlTests {
 		suite.addTestSuite(DispatchingInterceptorTest.class);
 		suite.addTestSuite(SimpleURLRewriteInterceptorTest.class);
 		suite.addTestSuite(AbstractInterceptorTest.class);
+		suite.addTestSuite(DNSCacheTest.class);
 		//$JUnit-END$
 		return suite;
 	}

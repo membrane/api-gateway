@@ -46,6 +46,7 @@ public class HttpServerThread extends AbstractHttpThread {
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
 		sourceSocket.setSoTimeout(30000);
+		sourceSocket.setTcpNoDelay(true);
 		this.transport = transport;
 		setProxySettingsForClient();
 	}
@@ -68,6 +69,10 @@ public class HttpServerThread extends AbstractHttpThread {
 					return;
 				}
 				if (!srcReq.isKeepAlive() || !exchange.getResponse().isKeepAlive()) {
+					if ( exchange.getTargetSocket() != null ) {
+						exchange.getTargetSocket().close();
+						exchange.setTargetSocket(null);
+					}
 					break;
 				}
 				if (exchange.getResponse().isRedirect()) {
@@ -123,8 +128,8 @@ public class HttpServerThread extends AbstractHttpThread {
 		targetRes = null;
 		try {
 			
-			exchange.setSourceHostname(sourceSocket.getInetAddress().getHostName());
-			exchange.setSourceIp(sourceSocket.getInetAddress().getHostAddress());
+			exchange.setSourceHostname(transport.getRouter().getDnsCache().getHostName(sourceSocket.getInetAddress()));
+			exchange.setSourceIp(transport.getRouter().getDnsCache().getHostAddress(sourceSocket.getInetAddress()));
 			
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());

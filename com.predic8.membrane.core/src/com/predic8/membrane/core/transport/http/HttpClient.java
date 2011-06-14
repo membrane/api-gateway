@@ -184,6 +184,7 @@ public class HttpClient {
 			try {
 				log.debug("try # " + counter + " to " + exc.getDestinations().get(counter % exc.getDestinations().size()));
 				init(exc, counter % exc.getDestinations().size());
+				exc.setTargetSocket(socket);
 				return doCall(exc);
 			} catch (ConnectException ce) {
 				exception = ce;
