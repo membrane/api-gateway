@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;

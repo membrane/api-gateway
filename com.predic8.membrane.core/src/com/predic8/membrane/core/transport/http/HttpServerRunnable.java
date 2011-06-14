@@ -22,7 +22,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
-import java.sql.Time;
 
 import javax.net.ssl.SSLSocket;
 
