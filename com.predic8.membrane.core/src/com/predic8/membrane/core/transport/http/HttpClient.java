@@ -38,9 +38,9 @@ public class HttpClient {
 
 	private static Log log = LogFactory.getLog(HttpClient.class.getName());
 	
-	private static final int TIME_BETWEEN_TRIES = 250;
+	private int timeBetweenTries = 250;
 
-	private static final int MAX_TRIES = 5;
+	private int maxRetries = 5;
 	
 	private ConnectionManager conMgr = new ConnectionManager();
 	
@@ -116,7 +116,7 @@ public class HttpClient {
 		
 		int counter = 0;
 		Exception exception = null;
-		while (counter < MAX_TRIES) {
+		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
 			try {
@@ -143,7 +143,7 @@ public class HttpClient {
 			}
 			counter++;
 			closeConnection(con);
-			Thread.sleep(TIME_BETWEEN_TRIES);
+			Thread.sleep(timeBetweenTries);
 		}
 		throw exception;
 	}
@@ -246,5 +246,20 @@ public class HttpClient {
 	public void setHost(String hostname) throws UnknownHostException {
 		host = InetAddress.getByName(hostname);
 	}
-	
+
+	public int getTimeBetweenTries() {
+		return timeBetweenTries;
+	}
+
+	public void setTimeBetweenTries(int timeBetweenTries) {
+		this.timeBetweenTries = timeBetweenTries;
+	}
+
+	public int getMaxTries() {
+		return maxRetries;
+	}
+
+	public void setMaxRetries(int maxRetries) {
+		this.maxRetries = maxRetries;
+	}		
 }
