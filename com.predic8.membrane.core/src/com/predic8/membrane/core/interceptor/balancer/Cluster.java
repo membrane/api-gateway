@@ -23,7 +23,8 @@ public class Cluster {
 
 	public void nodeDown(Node ep) {
 		log.info("endpoint: " + ep +" down");
-		getNodeCreateIfNeeded(ep).setUp(false);		
+		Node n = getNodeCreateIfNeeded(ep);
+		n.setUp(false);
 	}
 	
 	public boolean removeNode(Node node) {		
@@ -39,10 +40,11 @@ public class Cluster {
 	}
 	
 	public List<Node> getAllNodes(long timeout) {	
-		if (timeout > 0) {
-			for (Node n : nodes) {
-				if ( System.currentTimeMillis()-n.getLastUpTime() > timeout ) n.setUp(false);
-			}
+		if (timeout <= 0) {
+			return nodes;
+		}
+		for (Node n : nodes) {
+			if ( System.currentTimeMillis()-n.getLastUpTime() > timeout ) n.setUp(false);
 		}
 		return nodes;
 	}
@@ -52,11 +54,12 @@ public class Cluster {
 	}
 
 	private Node getNodeCreateIfNeeded(Node ep) {
-		if ( !nodes.contains(ep) ) {
-			log.info("creating endpoint: "+ep);
-			nodes.add(new Node(ep.getHost(), ep.getPort()));
+		if ( nodes.contains(ep) ) {
+			return getNode(ep);			
 		}
-		return getNode(ep);		
+		log.info("creating endpoint: "+ep);
+		nodes.add(new Node(ep.getHost(), ep.getPort()));
+		return getNode(ep);			
 	}
 
 
