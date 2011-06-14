@@ -24,7 +24,9 @@ public class RoundRobinStrategy implements DispatchingStrategy {
 		
 	}
 
-	public synchronized Node dispatch(LoadBalancingInterceptor interceptor) { //TODO should be synchronized
+	public synchronized Node dispatch(LoadBalancingInterceptor interceptor) throws EmptyNodeListException { //TODO should be synchronized
+		if (interceptor.getEndpoints().size() == 0 ) throw new EmptyNodeListException();
+		
 		last ++;
 		if (last >= interceptor.getEndpoints().size())
 			last = 0;
