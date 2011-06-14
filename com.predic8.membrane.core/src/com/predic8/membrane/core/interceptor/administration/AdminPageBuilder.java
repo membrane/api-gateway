@@ -18,6 +18,10 @@ public class AdminPageBuilder extends Html {
 	Map<String, String> params;
 	private StringWriter writer;
 
+	static public String createHRef(String ctrl, String action, String query) {
+		return "/admin/"+ctrl+(action!=null?"/"+action:"")+(query!=null?"?"+query:"");
+	}
+	
 	public AdminPageBuilder(StringWriter writer, Router router, Map<String, String> params) {
 		super(writer);
 		this.router = router;
@@ -27,7 +31,7 @@ public class AdminPageBuilder extends Html {
 
 	public String createPage() throws Exception {
 		html();
-		  createHead("Membrane Administrator");
+		  createHead("Membrane Administration");
 		  body();
 		  	div().id("tabs").classAttr("ui-tabs ui-widget ui-widget-content ui-corner-all");
 			  	createTabs(getSelectedTab());
@@ -61,7 +65,16 @@ public class AdminPageBuilder extends Html {
 			script().src("/formValidator/jquery.validationEngine-en.js").end();
 			script().src("/formValidator/jquery.validationEngine.js").end();
 			script().src("/js/membrane.js").end();
+			createMetaElements();
 		  end();
+	}
+
+	protected void createMetaElements() {}
+
+	protected void createMeta(String... meta) {
+		for (int i = 0; i< meta.length; i+=2) {
+			meta().httpEquiv(meta[i]).content(meta[i+1]).end();
+		}
 	}
 
 	protected void createInterceptorTable(List<Interceptor> interceptors) {
@@ -180,7 +193,7 @@ public class AdminPageBuilder extends Html {
 				createLink("System", "system", null, null);
 			end();
 			li().classAttr(getSelectedTabStyle(3, selected));
-				createLink("Cluster", "clusters", null, null);
+				createLink("Loadbalancer", "clusters", null, null);
 			end();
 		end();
 	}
@@ -252,7 +265,7 @@ public class AdminPageBuilder extends Html {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
-					createThs("Node", "Health", "Count", "Time since last up", "Current Threads", "Action");
+					createThs("Node", "Health", "Count", "Errors", "Time since last up", "Current Threads", "Action");
 			    end();
 			end();
 			tbody();
@@ -262,9 +275,9 @@ public class AdminPageBuilder extends Html {
 						createLink(""+n.getHost()+":"+n.getPort(), "node", "show", 
 								   createQueryString("cluster", params.get("cluster"), "host", n.getHost(),"port", ""+n.getPort() ));
 						end();
-						createTds( n.isUp()?"Up":"Down",
-						           ""+n.getCounter(), 
-						           formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),""+n.getThreads());
+						createTds( n.isUp()?"Up":"Down", ""+n.getCounter(), 
+								   String.format("%1$.2f%%", getErrors(n)*100)
+						           ,formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),""+n.getThreads());
 						td();
 							createIcon("ui-icon-trash", "node", "delete", createQuery4Node(n));
 							createIcon("ui-icon-circle-arrow-n", "node", "up", createQuery4Node(n));
@@ -274,6 +287,18 @@ public class AdminPageBuilder extends Html {
 				}
 			end();
 		end();
+	}
+
+	private double getErrors(Node n) {
+		if (n.getCounter() == 0) return 0;
+		
+		int successes = 0;
+		for (Map.Entry<Integer, Integer> e: n.getStatusCodes().entrySet() ) {
+			if ( e.getKey() < 500 && e.getKey() > 0) {
+				successes++;
+			}
+		}
+		return 1-(double)successes/n.getCounter();
 	}
 
 	private String createQuery4Node(Node n) throws UnsupportedEncodingException {
@@ -317,11 +342,6 @@ public class AdminPageBuilder extends Html {
 	protected void createLink(String label, String ctrl, String action, String query) throws UnsupportedEncodingException {								
 		a().href(createHRef(ctrl, action, query)).text(label).end();
 	}
-
-	private String createHRef(String ctrl, String action, String query) {
-		return "/admin/"+ctrl+(action!=null?"/"+action:"")+(query!=null?"?"+query:"");
-	}
-
 
 	protected void createThs(String... data) {			
 		for (String d : data) {
