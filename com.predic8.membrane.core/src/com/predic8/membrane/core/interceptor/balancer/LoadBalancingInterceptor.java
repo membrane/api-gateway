@@ -22,6 +22,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.transport.http.HostColonPort;
+import com.predic8.membrane.core.util.HttpUtil;
 
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
@@ -34,11 +35,21 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public Map<String, Node> sessions = new HashMap<String, Node>();
 	
 	private XMLElementSessionIdExtractor sesssionIdExtractor;
+
+	private boolean failOver = true;
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 
-		Node dispatchedNode = getDispatchedNode(exc.getRequest());
+		Node dispatchedNode;
+		try {
+			dispatchedNode = getDispatchedNode(exc.getRequest());
+		} catch (EmptyNodeListException e) {
+			log.error("No Node found.");
+			exc.setResponse(HttpUtil.createResponse(500, "Internal Server Error", null, "text/html;charset=utf-8"));
+			return Outcome.ABORT;
+		}
+		
 		dispatchedNode.incCounter();
 		dispatchedNode.addThread();
 		
@@ -49,14 +60,11 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		exc.getDestinations().clear();
 		exc.getDestinations().add(getDestinationURL(dispatchedNode, exc));
 
-		for (Node ep : getEndpoints()) {
-			if (!ep.equals(dispatchedNode))
-				exc.getDestinations().add(getDestinationURL(ep, exc));
-		}
+		setFailOverNodes(exc, dispatchedNode);
 
 		return Outcome.CONTINUE;
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 
@@ -71,6 +79,16 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		updateDispatchedNode(exc);
 		
 		return Outcome.CONTINUE;
+	}
+
+	private void setFailOverNodes(Exchange exc, Node dispatchedNode)
+	  throws MalformedURLException {
+		if ( !failOver ) return;
+
+		for (Node ep : getEndpoints()) {
+			if (!ep.equals(dispatchedNode))
+				exc.getDestinations().add(getDestinationURL(ep, exc));
+		}
 	}
 
 	private void updateDispatchedNode(Exchange exc) {
@@ -126,7 +144,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		this.endpoints = new LinkedList<Node>();
 		for (String s : endpoints ) {
 			this.endpoints.add(new Node( new HostColonPort(s).host,
-										     new HostColonPort(s).port ));
+										 new HostColonPort(s).port ));
 		}		
 	}
 
@@ -137,6 +155,14 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public void setSesssionIdExtractor(
 			XMLElementSessionIdExtractor sesssionIdExtractor) {
 		this.sesssionIdExtractor = sesssionIdExtractor;
+	}
+
+	public boolean isFailOver() {
+		return failOver;
+	}
+
+	public void setFailOver(boolean failOver) {
+		this.failOver = failOver;
 	}
 	
 	
