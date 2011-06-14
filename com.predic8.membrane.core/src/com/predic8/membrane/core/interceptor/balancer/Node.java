@@ -63,6 +63,7 @@ public class Node {
 	}
 
 	public void setUp(boolean isUp) {
+		if (!isUp) threads = 0;
 		this.isUp = isUp;
 	}
 	
@@ -79,6 +80,11 @@ public class Node {
 		counter++;		
 	}
 
+	public void clearCounter() {
+		counter = 0;	
+		statusCodes.clear();
+	}
+
 	public void addStatusCode(int code) {
 		if ( !statusCodes.containsKey(code) ) {
 			statusCodes.put(code, 0);
@@ -87,10 +93,12 @@ public class Node {
 	}
 	
 	public void addThread() {
+		if (!isUp) return;
 		threads++;		
 	}
 
 	public void removeThread() {
+		if (!isUp) return;
 		threads--;	
 	}
 
@@ -101,4 +109,5 @@ public class Node {
 	public Map<Integer, Integer> getStatusCodes() {
 		return statusCodes;
 	}
+
 }
