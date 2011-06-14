@@ -45,8 +45,8 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		this.sourceSocket = socket;
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
-		sourceSocket.setSoTimeout(30000); // TODO global config
-		sourceSocket.setTcpNoDelay(true); // TODO global config
+		sourceSocket.setSoTimeout(transport.getSoTimeout());
+		sourceSocket.setTcpNoDelay(transport.isTcpNoDelay());
 		this.transport = transport;
 		setClientSettings();
 	}
@@ -86,7 +86,6 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 				exchange = new Exchange();
 				exchange.setServerThread(this);
 				
-				Timer.log("end while block");
 			}
 		} catch (SocketTimeoutException e) {
 			log.debug("Socket of thread " + counter + " timed out");
