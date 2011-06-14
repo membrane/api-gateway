@@ -13,7 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
-import static com.predic8.membrane.core.util.URLUtil.parseQueryString;
+import static com.predic8.membrane.core.util.HttpUtil.createResponse;
+import static com.predic8.membrane.core.util.URLUtil.*;
 
 import java.io.*;
 import java.net.URI;
@@ -23,24 +24,22 @@ import java.util.regex.*;
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.util.HttpUtil;
 
 public class AdministrationInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(AdministrationInterceptor.class
 			.getName());
 
-	private Pattern pattern = Pattern
+	private Pattern urlPattern = Pattern
 			.compile("/admin/?([^/]*)(/[^/\\?]*)?(\\?.*)?");
 
 	public AdministrationInterceptor() {
-		name = "Administrator";
+		name = "Administration";
 		priority = 1000;
 	}
 
@@ -53,14 +52,14 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 		
 	}
 
-	public String handleRequest(Map<String, String> params) throws Exception {
-		return getRulesPage(params);
+	public Response handleRequest(Map<String, String> params) throws Exception {
+		return respond(getRulesPage(params));
 	}
 
-	public String handleFruleShowRequest(final Map<String, String> params)
+	public Response handleFruleShowRequest(final Map<String, String> params)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 0;
@@ -84,13 +83,13 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 				h2().text("Interceptors").end();
 				createInterceptorTable(rule.getInterceptors());
 			}
-		}.createPage();
+		}.createPage());
 	}
 
-	public String handlePruleShowRequest(final Map<String, String> params)
+	public Response handlePruleShowRequest(final Map<String, String> params)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 0;
@@ -108,10 +107,10 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 				createInterceptorTable(rule.getInterceptors());
 			}
 		
-		}.createPage();
+		}.createPage());
 	}
 
-	public String handleFruleSaveRequest(Map<String, String> params) throws Exception {
+	public Response handleFruleSaveRequest(Map<String, String> params) throws Exception {
 		logAddFwdRuleParams(params);
 		
 		Rule r = new ForwardingRule(new ForwardingRuleKey("*",
@@ -120,10 +119,10 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 		r.setName(params.get("name"));
 		router.getRuleManager().addRuleIfNew(r);
 		
-		return getRulesPage(params);
+		return respond(getRulesPage(params));
 	}
 	
-	public String handlePruleSaveRequest(Map<String, String> params) throws Exception {
+	public Response handlePruleSaveRequest(Map<String, String> params) throws Exception {
 		log.debug("adding proxy rule");
 		log.debug("name: " + params.get("name"));
 		log.debug("port: " + params.get("port"));
@@ -131,20 +130,20 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 		Rule r = new ProxyRule(new ProxyRuleKey(Integer.parseInt(params.get("port"))));
 		r.setName(params.get("name"));
 		router.getRuleManager().addRuleIfNew(r);
-		return getRulesPage(params);
+		return respond(getRulesPage(params));
 	}
 
-	public String handleRuleDeleteRequest(Map<String, String> params)
+	public Response handleRuleDeleteRequest(Map<String, String> params)
 	  throws Exception {
 			router.getRuleManager().removeRule(
 					RuleUtil.findRuleByIdentifier(router, params.get("name")));
-			return getRulesPage(params);
+			return respond(getRulesPage(params));
 	}
 	
-	public String handleTransportRequest(Map<String, String> params)
+	public Response handleTransportRequest(Map<String, String> params)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 1;
@@ -161,13 +160,13 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 				createInterceptorTable(router.getTransport().getInterceptors());
 			}
 		
-		}.createPage();
+		}.createPage());
 	}
 
-	public String handleSystemRequest(final Map<String, String> params)
+	public Response handleSystemRequest(final Map<String, String> params)
    	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 2;
@@ -182,30 +181,30 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 				p().text("Availabe system memory: " + total).end();
 				p().text("Free system memory: " + free).end();
 			}
-		}.createPage();
+		}.createPage());
 	}
 
-	public String handleClustersRequest(Map<String, String> params) throws Exception {
-		return getClustersPage(params);
+	public Response handleClustersRequest(Map<String, String> params) throws Exception {
+		return respond(getClustersPage(params));
 	}
 
-	public String handleClustersShowRequest(Map<String, String> params) throws Exception {
-		return getClusterPage(params);
+	public Response handleClustersShowRequest(Map<String, String> params) throws Exception {
+		return respond(getClusterPage(params));
 	}
 
-	public String handleClustersSaveRequest(Map<String, String> params) throws Exception {
+	public Response handleClustersSaveRequest(Map<String, String> params) throws Exception {
 		log.debug("adding cluster");
 		log.debug("name: " + params.get("name"));
 		
 		router.getClusterManager().addCluster(params.get("name"));
 		
-		return getClustersPage(params);
+		return respond(getClustersPage(params));
 	}
 
-	public String handleNodeShowRequest(final Map<String, String> params)
+	public Response handleNodeShowRequest(final Map<String, String> params)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 3;
@@ -221,13 +220,16 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 				createStatusNodes(n);
 				p().text("Total Requests: " + n.getCounter()).end();
 				p().text("Requests without Responses: " + n.getLost()).end();
+				span().classAttr("mb-button");
+				createLink("Reset Counter", "node", "reset", createQueryString("cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
+				end();
 
 			}
-		}.createPage();
+		}.createPage());
 	}
 
 	
-	public String handleNodeSaveRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeSaveRequest(Map<String, String> params) throws Exception {
 		log.debug("adding node");
 		log.debug("cluster: " + params.get("cluster"));
 		log.debug("host: " + params.get("host"));
@@ -236,25 +238,33 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 		router.getClusterManager().up(params.get("cluster"),
 				                      params.get("host"), 
 				                      Integer.parseInt(params.get("port")));
-		return getClusterPage(params);
+		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
 	}
 
-	public String handleNodeUpRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeUpRequest(Map<String, String> params) throws Exception {
 		router.getClusterManager().up(params.get("cluster"), params.get("host"),
 				                      Integer.parseInt(params.get("port")));
-		return getClusterPage(params);
+		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
 	}
 
-	public String handleNodeDownRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeDownRequest(Map<String, String> params) throws Exception {
 		router.getClusterManager().down(params.get("cluster"), params.get("host"),
 				                        Integer.parseInt(params.get("port")));
-		return getClusterPage(params);
+		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
 	}
 
-	public String handleNodeDeleteRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeDeleteRequest(Map<String, String> params) throws Exception {
 		router.getClusterManager().delete(params.get("cluster"), params.get("host"),
 				                          Integer.parseInt(params.get("port")));
-		return getClusterPage(params);
+		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
+	}	
+
+	public Response handleNodeResetRequest(Map<String, String> params) throws Exception {
+		router.getClusterManager().getNode(params.get("cluster"), params.get("host"),
+				                          Integer.parseInt(params.get("port"))).clearCounter();
+		return redirect("node","show",createQueryString("cluster",params.get("cluster"),
+														"host",params.get("host"),
+														"port",params.get("port")));
 	}	
 
 	private String getRulesPage(Map<String, String> params)
@@ -285,7 +295,10 @@ public class AdministrationInterceptor extends AbstractInterceptor {
   	  throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, params) {
-		
+			protected void createMetaElements() {
+				createMeta("refresh", "5");				
+			};
+			
 			@Override
 			protected int getSelectedTab() {
 				return 3;
@@ -320,25 +333,17 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 		
 		}.createPage();
 	}
-	
+	 
 	private Outcome dipatchRequest(Exchange exc) throws Exception {
-		Matcher m = pattern.matcher(exc.getOriginalRequestUri());
+		Matcher m = urlPattern.matcher(exc.getOriginalRequestUri());
 		if (!m.matches()) return Outcome.CONTINUE;
 		
 		String action = m.group(2);
 		String mName = "handle"+WordUtils.capitalize(m.group(1))+
 						(action == null?"":WordUtils.capitalize(action.substring(1)))+"Request";
 		
-		return respond(exc, (String)getClass().getMethod(mName, Map.class).invoke(this, new Object[] {getParams(exc)}));
-	}
-
-	private Header createHeader() {
-		Header header = new Header();
-		header.setContentType("text/html;charset=utf-8");
-		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
-		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
-		header.add("Connection", "close");
-		return header;
+		exc.setResponse((Response)getClass().getMethod(mName, Map.class).invoke(this, new Object[] {getParams(exc)}));
+		return Outcome.ABORT;
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {
@@ -362,15 +367,13 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 				|| exc.getRequest().isBodyEmpty();
 	}
 
-	private Outcome respond(Exchange exc, String page) throws Exception {
-		Response res = new Response();
-		res.setStatusCode(200);
-		res.setStatusMessage("OK");
-		res.setHeader(createHeader());
+	private Response respond(String page) throws Exception {
+		return createResponse(200, "OK", page, "text/html;charset=utf-8");
+	}
 
-		res.setBody(new Body(page));
-		exc.setResponse(res);
-		return Outcome.ABORT;
+	private Response redirect(String ctrl, String action, String query) throws Exception {
+		return createResponse(302, "Found", null, "text/html;charset=utf-8",
+				"Location",AdminPageBuilder.createHRef(ctrl, action, query));
 	}
 
 	private int getPortParam(Map<String, String> params) {
