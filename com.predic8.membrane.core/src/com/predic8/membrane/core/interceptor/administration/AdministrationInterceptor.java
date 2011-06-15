@@ -27,6 +27,7 @@ import org.apache.commons.logging.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.Cluster;
 import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.rules.*;
 
@@ -221,13 +222,34 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 				p().text("Total Requests: " + n.getCounter()).end();
 				p().text("Requests without Responses: " + n.getLost()).end();
 				span().classAttr("mb-button");
-				createLink("Reset Counter", "node", "reset", createQueryString("cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
+					createLink("Reset Counter", "node", "reset", createQueryString("cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
 				end();
-
+				span().classAttr("mb-button");
+					createLink("Show Sessions", "node", "sessions", createQueryString("cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
+				end();
 			}
 		}.createPage());
 	}
 
+	public Response handleNodeSessionsRequest(final Map<String, String> params)
+	  throws Exception {
+		StringWriter writer = new StringWriter();
+		return respond(new AdminPageBuilder(writer, router, params) {
+			@Override
+			protected int getSelectedTab() {
+				return 3;
+			}
+		
+			@Override
+			protected void createTabContent() throws Exception {
+				h2().text("Node " + params.get("host")+":"+params.get("port")).end();
+				h3().text("Sessions").end();
+				createSessionsTable( router.getClusterManager().getSessionsByNode( params.get("cluster"),
+									 new Node(params.get("host"), Integer.parseInt(params.get("port")))));
+			}
+
+		}.createPage());
+	}
 	
 	public Response handleNodeSaveRequest(Map<String, String> params) throws Exception {
 		log.debug("adding node");
