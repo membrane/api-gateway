@@ -44,6 +44,7 @@ public class ByteUtil {
 		return content;
 	}
 
+	//TODO use buffer
 	public static byte[] getByteArrayData(InputStream stream) throws IOException {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
