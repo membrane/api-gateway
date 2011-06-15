@@ -95,7 +95,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		Node n = (Node)exc.getProperty("dispatchedNode");
 		n.removeThread();
 		n.addStatusCode(exc.getResponse().getStatusCode());
-	}
+	} 
 
 	private Node getDispatchedNode(Message msg) throws Exception {
 		String sessionId;
