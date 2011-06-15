@@ -32,8 +32,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	private DispatchingStrategy strategy = new RoundRobinStrategy();
 
-	public Map<String, Node> sessions = new HashMap<String, Node>();
-	
 	private XMLElementSessionIdExtractor sesssionIdExtractor;
 
 	private boolean failOver = true;
