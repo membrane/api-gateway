@@ -62,15 +62,15 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 		return Outcome.CONTINUE;
 	}
-
+	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 
 		if (sesssionIdExtractor != null && exc.getResponse().isXML() ) {
 			String sessionId = getSessionId(exc.getResponse());
 			
-			if ( sessionId != null && !sessions.containsKey(sessionId) ) {
-				sessions.put( sessionId, (Node)exc.getProperty("dispatchedNode"));
+			if ( sessionId != null ) {
+				router.getClusterManager().addSession2Cluster(sessionId, "Default", (Node)exc.getProperty("dispatchedNode"));
 			}
 		}		
 		
@@ -101,10 +101,12 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			return strategy.dispatch(this);
 		}
 		
-		if ( !sessions.containsKey(sessionId) || !sessions.get(sessionId).isUp()) {
-			sessions.put(sessionId, strategy.dispatch(this));
+		if ( !router.getClusterManager().containsSession("Default", sessionId) ) {
+			router.getClusterManager().addSession2Cluster(sessionId, "Default", strategy.dispatch(this));
 		}			
-		return sessions.get(sessionId);
+		Session s = router.getClusterManager().getSessions("Default").get(sessionId);
+		s.used();
+		return s.getNode();
 	}
 
 	public String getDestinationURL(Node ep, Exchange exc) throws MalformedURLException{
@@ -133,7 +135,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public List<Node> getEndpoints() {
 		if (router.getClusterManager() != null) {
 			log.info("using endpoints from cluster manager");
-			return router.getClusterManager().getAvailableNodes("Default");
+			return router.getClusterManager().getAvailableNodesByCluster("Default");
 		}
 		return endpoints;
 	}
@@ -142,7 +144,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		this.endpoints = new LinkedList<Node>();
 		for (String s : endpoints ) {
 			this.endpoints.add(new Node( new HostColonPort(s).host,
-										 new HostColonPort(s).port ));
+										     new HostColonPort(s).port ));
 		}		
 	}
 
