@@ -223,7 +223,7 @@ public class AdminPageBuilder extends Html {
 						createLink(c.getName(), "clusters", "show", createQueryString("cluster", c.getName()));
 						end();
 						
-						createTds(String.valueOf(router.getClusterManager().getAllNodes(c.getName()).size()), 
+						createTds(String.valueOf(router.getClusterManager().getAllNodesByCluster(c.getName()).size()), 
 								  getFormatedHealth(c.getName()));
 					end();
 				}
@@ -241,6 +241,23 @@ public class AdminPageBuilder extends Html {
 				.span().input().type("text").id("port").name("port").size("5").classAttr("validate[required,custom[integer]]").end(2)
 				.span().input().value("Add").type("submit").classAttr("mb-button").end(2);
 			end();		  		
+		end();
+	}
+
+	protected void createSessionsTable(List<Session> sessions) {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+			thead();
+				tr();
+					createThs("Id", "Last Used");
+			    end();
+			end();
+			tbody();
+				for (Session s : sessions ) {
+					tr();
+						createTds(s.getId(), formatDurationHMS(System.currentTimeMillis()-s.getLastUsed()));
+					end();				
+				}
+			end();
 		end();
 	}
 
@@ -269,7 +286,7 @@ public class AdminPageBuilder extends Html {
 			    end();
 			end();
 			tbody();
-				for (Node n : router.getClusterManager().getAllNodes(params.get("cluster"))) {
+				for (Node n : router.getClusterManager().getAllNodesByCluster(params.get("cluster"))) {
 					tr();
 						td();
 						createLink(""+n.getHost()+":"+n.getPort(), "node", "show", 
@@ -311,8 +328,8 @@ public class AdminPageBuilder extends Html {
 	}
 
 	private String getFormatedHealth(String name) {
-		return String.format("%d up/ %d down", router.getClusterManager().getAvailableNodes(name).size(),
-											   router.getClusterManager().getAllNodes(name).size() - router.getClusterManager().getAvailableNodes(name).size());
+		return String.format("%d up/ %d down", router.getClusterManager().getAvailableNodesByCluster(name).size(),
+											   router.getClusterManager().getAllNodesByCluster(name).size() - router.getClusterManager().getAvailableNodesByCluster(name).size());
 	}
 
 	private String getSelectedTabStyle(int ownPos, int selected) {
