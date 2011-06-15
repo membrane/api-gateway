@@ -9,7 +9,8 @@ public class Cluster {
 	private static Log log = LogFactory.getLog(Cluster.class.getName());
 	
 	private String name;
-	private List<Node> nodes = new LinkedList<Node>();
+	private List<Node> nodes = Collections.synchronizedList(new LinkedList<Node>());
+	private Map<String, Session> sessions = new Hashtable<String, Session>();
 
 	public Cluster(String name) {
 		this.name = name;
@@ -33,8 +34,10 @@ public class Cluster {
 
 	public List<Node> getAvailableNodes(long timeout) {
 		List<Node> l = new LinkedList<Node>();
-		for (Node n : getAllNodes(timeout)) {
-			if ( n.isUp() ) l.add(n);
+		synchronized (nodes) {
+			for (Node n : getAllNodes(timeout)) {
+				if ( n.isUp() ) l.add(n);
+			}			
 		}
 		return l;
 	}
@@ -43,16 +46,20 @@ public class Cluster {
 		if (timeout <= 0) {
 			return nodes;
 		}
-		for (Node n : nodes) {
-			if ( System.currentTimeMillis()-n.getLastUpTime() > timeout ) n.setUp(false);
+		synchronized (nodes) {
+			for (Node n : nodes) {
+				if ( System.currentTimeMillis()-n.getLastUpTime() > timeout ) n.setUp(false);
+			}			
 		}
 		return nodes;
 	}
 
 	public Node getNode(Node ep) {
-		return nodes.get(nodes.indexOf(ep));
+		synchronized (nodes) {
+			return nodes.get(nodes.indexOf(ep));
+		}		
 	}
-
+	
 	private Node getNodeCreateIfNeeded(Node ep) {
 		if ( nodes.contains(ep) ) {
 			return getNode(ep);			
@@ -62,13 +69,35 @@ public class Cluster {
 		return getNode(ep);			
 	}
 
-
 	public String getName() {
 		return name;
 	}
 
 	public void setName(String name) {
 		this.name = name;
+	}
+
+	public boolean containsSession(String sessionId) {
+		return sessions.containsKey(sessionId) && sessions.get(sessionId).getNode().isUp();
+	}
+	
+	public void addSession(String sessionId, Node n) {
+		sessions.put(sessionId, new Session(sessionId, n));
+	}
+	
+	public Map<String, Session> getSessions() {
+		return sessions;
+	}
+
+	public List<Session> getSessionsByNode(Node node) {
+		List<Session> l = new LinkedList<Session>();
+		synchronized (sessions) {
+			for (Session s : sessions.values()) {
+				if ( s.getNode().equals(node)) 
+					l.add(s);
+			}			
+		}
+		return l;
 	}
 		
 }
