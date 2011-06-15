@@ -56,7 +56,7 @@ public class ClusterBalancerTest extends TestCase {
 
 		lb.handleRequest(exc);
 
-		assertEquals("localhost", lb.sessions.get("555555").getHost());
+		assertEquals("localhost", cm.getSessions("Default").get("555555").getNode().getHost());
 
 		assertEquals(2, exc.getDestinations().size());
 
@@ -64,7 +64,7 @@ public class ClusterBalancerTest extends TestCase {
 
 		lb.handleRequest(exc);
 
-		assertEquals(1, lb.sessions.size());
+		assertEquals(1, cm.getSessions("Default").size());
 		assertEquals(stickyDestination, exc.getDestinations().get(0));
 
 	}
@@ -74,7 +74,7 @@ public class ClusterBalancerTest extends TestCase {
 		Exchange exc = getExchangeWithOutSession();
 
 		lb.handleRequest(exc);
-		assertNull(lb.sessions.get("444444"));
+		assertNull(cm.getSessions("Default").get("444444"));
 
 		Node stickyNode = (Node)exc.getProperty("dispatchedNode");
 		assertNotNull(stickyNode);
@@ -83,7 +83,7 @@ public class ClusterBalancerTest extends TestCase {
 
 		lb.handleResponse(exc);
 
-		assertEquals(stickyNode, lb.sessions.get("444444"));
+		assertEquals(stickyNode, cm.getSessions("Default").get("444444").getNode());
 
 	}
 	

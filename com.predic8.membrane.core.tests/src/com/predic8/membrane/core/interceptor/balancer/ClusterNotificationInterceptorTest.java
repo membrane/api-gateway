@@ -65,7 +65,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 										  			     "cluster","c1"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals("node1.clustera", clusterManager.getAllNodes("c1").get(0).getHost());
+		assertEquals("node1.clustera", clusterManager.getAllNodesByCluster("c1").get(0).getHost());
 		
 	}	
 	
@@ -77,8 +77,8 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 										  			     "cluster","c1"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals(1, clusterManager.getAllNodes("c1").size());
-		assertEquals(false, clusterManager.getAllNodes("c1").get(0).isUp());		
+		assertEquals(1, clusterManager.getAllNodesByCluster("c1").size());
+		assertEquals(false, clusterManager.getAllNodesByCluster("c1").get(0).isUp());		
 	}	
 
 	@Test
@@ -88,8 +88,8 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 									   			 		 "port", "5000"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals(1, clusterManager.getAllNodes("Default").size());
-		assertEquals("node1.clustera", clusterManager.getAllNodes("Default").get(0).getHost());
+		assertEquals(1, clusterManager.getAllNodesByCluster("Default").size());
+		assertEquals("node1.clustera", clusterManager.getAllNodesByCluster("Default").get(0).getHost());
 	}	
 
 	@Test

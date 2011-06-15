@@ -27,23 +27,23 @@ public class ClusterManagerTest extends TestCase {
 
 		cm.up("c1", "localhost", 2000);
 		
-		assertEquals(1, cm.getAllNodes("c1").size());
-		assertEquals(true, cm.getAllNodes("c1").get(0).isUp());
-		assertEquals("localhost", cm.getAllNodes("c1").get(0).getHost());
-		assertEquals(2000, cm.getAllNodes("c1").get(0).getPort());
+		assertEquals(1, cm.getAllNodesByCluster("c1").size());
+		assertEquals(true, cm.getAllNodesByCluster("c1").get(0).isUp());
+		assertEquals("localhost", cm.getAllNodesByCluster("c1").get(0).getHost());
+		assertEquals(2000, cm.getAllNodesByCluster("c1").get(0).getPort());
 	}	
 
 	@Test
 	public void testDownEndpoint() throws Exception {
 
 		cm.down("c2", "localhost", 2000);
-		assertEquals(false, cm.getAllNodes("c2").get(0).isUp());
+		assertEquals(false, cm.getAllNodesByCluster("c2").get(0).isUp());
 	}	
 
 	@Test
 	public void testEmptyEndpoints() throws Exception {
 
-		assertEquals(0, cm.getAllNodes("c3").size());
+		assertEquals(0, cm.getAllNodesByCluster("c3").size());
 	}	
 	
 	@Test
@@ -51,9 +51,9 @@ public class ClusterManagerTest extends TestCase {
 
 		cm.up("c3", "localhost", 2000);
 		cm.setTimeout(2000);
-		assertEquals(1, cm.getAvailableNodes("c3").size());
+		assertEquals(1, cm.getAvailableNodesByCluster("c3").size());
 		Thread.sleep(3000);
-		assertEquals(0, cm.getAvailableNodes("c3").size());
+		assertEquals(0, cm.getAvailableNodesByCluster("c3").size());
 	}	
 	
 }
