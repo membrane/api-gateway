@@ -1,6 +1,6 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 
 public class Node {
@@ -12,7 +12,7 @@ public class Node {
 	private int counter;
 	private int threads;
 	
-	private Map<Integer, Integer> statusCodes = new HashMap<Integer, Integer>();  
+	private Map<Integer, Integer> statusCodes = new Hashtable<Integer, Integer>();  
 	
 	public Node(String host, int port) {
 		this.host = host;
