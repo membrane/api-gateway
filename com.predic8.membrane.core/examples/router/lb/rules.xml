@@ -1,0 +1,114 @@
+<?xml version = "1.0" ?>
+<configuration>
+  <rules>
+    <forwarding-rule name="* * .*:9000"
+                      port="9000"
+                      blockRequest="false"
+                      blockResponse="false"
+                      inboundTLS="false"
+                      outboundTLS="false"
+                      host="*"
+                      method="*">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="administrationInterceptor"
+                      name="Administration" />
+        <interceptor id="webServerInterceptor"
+                      name="Web Server" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name=""
+                      port="4000"
+                      blockRequest="false"
+                      blockResponse="false"
+                      inboundTLS="false"
+                      outboundTLS="false"
+                      host="*"
+                      method="*">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="dummyNode1"
+                      name="Node 1" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name=""
+                      port="4001"
+                      blockRequest="false"
+                      blockResponse="false"
+                      inboundTLS="false"
+                      outboundTLS="false"
+                      host="*"
+                      method="*">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="dummyNode2"
+                      name="Node 2" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name=""
+                      port="4002"
+                      blockRequest="false"
+                      blockResponse="false"
+                      inboundTLS="false"
+                      outboundTLS="false"
+                      host="*"
+                      method="*">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="dummyNode3"
+                      name="Node 3" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name=""
+                      port="8001"
+                      blockRequest="false"
+                      blockResponse="false"
+                      inboundTLS="false"
+                      outboundTLS="false"
+                      host="*"
+                      method="*">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="clusterNotificationInterceptor"
+                      name="ClusterNotifcationInterceptor" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name=""
+                      port="8080"
+                      blockRequest="false"
+                      blockResponse="false"
+                      inboundTLS="false"
+                      outboundTLS="false"
+                      host="*"
+                      method="*">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="balancer"
+                      name="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor" />
+      </interceptors>
+    </forwarding-rule>
+  </rules>
+  <global>
+    <adjustHostHeader>true</adjustHostHeader>
+  </global>
+  <gui>
+    <autotrackexchange>false</autotrackexchange>
+    <indentMessage>true</indentMessage>
+  </gui>
+  <security>
+    <keystore>
+      <location />
+      <password />
+    </keystore>
+    <truststore>
+      <location />
+      <password />
+    </truststore>
+  </security>
+</configuration>
