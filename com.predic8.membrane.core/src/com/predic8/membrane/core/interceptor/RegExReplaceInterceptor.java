@@ -13,10 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import org.apache.commons.logging.*;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
 public class RegExReplaceInterceptor extends AbstractInterceptor {
+
+	private static Log log = LogFactory.getLog(RegExReplaceInterceptor.class.getName());
 
 	private String pattern;
 	
@@ -29,6 +33,8 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		
 		if (res.hasNoContent())
 			return Outcome.CONTINUE;
+		log.debug("pattern: " +pattern);
+		log.debug("replacement: " +replacement);
 		
 		res.readBody();
 		byte[] content = res.getBody().getContent();
