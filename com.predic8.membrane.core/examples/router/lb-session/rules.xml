@@ -1,0 +1,25 @@
+<?xml version = "1.0" ?>
+<configuration>
+  <rules>
+    <forwarding-rule name="Administration"
+                      port="9000">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="administrationInterceptor"
+                      name="Administration" />
+        <interceptor id="webServerInterceptor"
+                      name="Web Server" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name="Balancer"
+                      port="2000">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="balancer"
+                      name="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor" />
+      </interceptors>
+    </forwarding-rule>
+  </rules>
+</configuration>
