@@ -44,7 +44,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			dispatchedNode = getDispatchedNode(exc.getRequest());
 		} catch (EmptyNodeListException e) {
 			log.error("No Node found.");
-			exc.setResponse(HttpUtil.createResponse(500, "Internal Server Error", null, "text/html;charset=utf-8"));
+			exc.setResponse(HttpUtil.createResponse(500, "Internal Server Error", getErrorPage(), "text/html"));
 			return Outcome.ABORT;
 		}
 		
@@ -61,6 +61,10 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		setFailOverNodes(exc, dispatchedNode);
 
 		return Outcome.CONTINUE;
+	}
+
+	private String getErrorPage() {
+		return "<html><head><title>Internal Server Error</title></head><body><h1>Internal Server Error</h1></body></html>";
 	}
 	
 	@Override
