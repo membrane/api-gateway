@@ -30,19 +30,17 @@ start ant run-node2
 
 6. Create a cluster by typing "Default" into the input box and pressing "Add Cluster".
 
-7. Click on the link called "Default".
+7. Nodes are identified by host name and port. Fill in the formular with "localhost" as host and 4000 as port and press "Add Node".
 
-8. Nodes are identified by host name and port. Fill in the formular with "localhost" as host and 4000 as port and press "Add Node".
+8. Create another node with host name "localhost" and port 4001.
 
-9. Create another node with host name "localhost" and port 4001.
-
-10. Go to the command line and run the following command:
+9. Go to the command line and run the following command:
 
 start ant run-client -Dlogin=jim
 
-11. Take a look at the output of node 1 and node 2. You will notice that only node 1 received requests. Thats because of the session id. Membrane sends messages with the same session id to the same node.  
+10. Take a look at the output of node 1 and node 2. You will notice that only node 1 received requests. Thats because of the session id. Membrane sends messages with the same session id to the same node.  
 
-12. Run the client again. You will notice that this time all requests will be send to node 2. 
+11. Run the client again. You will notice that this time all requests will be send to node 2. 
      
      
 

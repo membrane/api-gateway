@@ -22,34 +22,29 @@ To run the example execute the following steps:
 
 5. Click on the LoadBalancer tab.
 
-6. Create a cluster by typing "Default" into the input box and pressing "Add Cluster".
+6. Click on the link called "Default".
 
-7. Click on the link called "Default".
+7. Nodes are identified by host name and port. Fill in the formular with "localhost" as host and 4000 as port and press "Add Node".
 
-8. Nodes are identified by host name and port. Fill in the formular with "localhost" as host and 4000 as port and press "Add Node".
+8. Create another node with host name "localhost" and port 4001.
 
-9. Create another node with host name "localhost" and port 4001.
+9. Open the URL http://localhost:8080. 
 
-10. Open the URL http://localhost:8080. 
+10. Click the refresh button in your browser a few times. You will notice that requests will be redirected to Node 1 and Node 2.
 
-11. Click the refresh button in your browser a few times. You will notice that requests will be redirected to Node 1 and Node 2.
-
-12. Open the URL 
+11. Open the URL 
 
 http://localhost:8001/clustermanager/up?host=localhost&port=4002
 
 This will create another node.
 
-13. Open the URL 
+12. Open the URL 
 
 http://localhost:9000/admin/clusters/show?cluster=Default
 
 Notice the third node you have just created. 	
 
-14. Open the URL http://localhost:8080 again. When you use the refresh button, you will notice that the request will be distributed between Node 1-3.  
-
-
-HOW IT IS DONE
+13. Open the URL http://localhost:8080 again. When you use the refresh button, you will notice that the request will be distributed between Node 1-3.  
 
 
 
