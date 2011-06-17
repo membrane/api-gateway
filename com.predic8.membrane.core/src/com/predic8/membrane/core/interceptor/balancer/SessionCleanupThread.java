@@ -22,6 +22,10 @@ public class SessionCleanupThread extends Thread {
 	
 	@Override
 	public void run() {
+		try {
+			sleep(10000); //TODO without exceptions are thrown because log4j is not ready.
+		} catch (InterruptedException e1) {
+		}
 		
 		log.debug("SessionCleanupThread started");
 		
