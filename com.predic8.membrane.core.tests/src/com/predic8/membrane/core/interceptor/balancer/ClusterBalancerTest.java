@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.balancer;
 import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
 
 import java.io.IOException;
-import java.net.*;
 
 import junit.framework.TestCase;
 
@@ -58,7 +57,7 @@ public class ClusterBalancerTest extends TestCase {
 
 		assertEquals("localhost", cm.getSessions("Default").get("555555").getNode().getHost());
 
-		assertEquals(2, exc.getDestinations().size());
+		assertEquals(2, exc.getDestinations().size()); 
 
 		String stickyDestination = exc.getDestinations().get(0);
 
