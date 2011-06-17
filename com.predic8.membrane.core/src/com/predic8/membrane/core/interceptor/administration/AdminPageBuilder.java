@@ -203,7 +203,7 @@ public class AdminPageBuilder extends Html {
 			div()
 				.span().text("Name").end()
 				.span().input().type("text").id("name").name("name").classAttr("validate[required]").end(2) 
-				.span().input().value("Add").type("submit").classAttr("mb-button").end(2);
+				.span().input().value("Add Cluster").type("submit").classAttr("mb-button").end(2);
 			end();		  		
 		end();
 	}
@@ -239,7 +239,7 @@ public class AdminPageBuilder extends Html {
 				.span().input().type("text").id("host").name("host").classAttr("validate[required]").end(2) 
 				.span().text("Port").end()
 				.span().input().type("text").id("port").name("port").size("5").classAttr("validate[required,custom[integer]]").end(2)
-				.span().input().value("Add").type("submit").classAttr("mb-button").end(2);
+				.span().input().value("Add Node").type("submit").classAttr("mb-button").end(2);
 			end();		  		
 		end();
 	}
