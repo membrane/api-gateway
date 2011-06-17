@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema elementFormDefault="qualified" xmlns:tns="http://chat.predic8.com/" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0" targetNamespace="http://chat.predic8.com/">
+
+<xs:element name="login" type="tns:login"></xs:element>
+
+<xs:element name="loginResponse" type="tns:loginResponse"></xs:element>
+
+<xs:element name="say" type="tns:say"></xs:element>
+
+<xs:element name="sayResponse" type="tns:sayResponse"></xs:element>
+
+<xs:element name="session" nillable="true" type="xs:string"></xs:element>
+
+<xs:complexType name="say">
+<xs:sequence>
+<xs:element name="msg" type="xs:string" minOccurs="0"></xs:element>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="sayResponse">
+<xs:sequence></xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="login">
+<xs:sequence>
+<xs:element name="name" type="xs:string" minOccurs="0"></xs:element>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="loginResponse">
+<xs:sequence>
+<xs:element name="session" type="xs:string" minOccurs="0"></xs:element>
+</xs:sequence>
+</xs:complexType>
+</xs:schema>
