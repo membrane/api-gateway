@@ -42,7 +42,7 @@
     </property>
   </bean>
 
-  <bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.MemoryExchangeStore" />
+  <bean id="exchangeStore" class="com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore" />
   
   <bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager">
     <property name="configurationStore">
