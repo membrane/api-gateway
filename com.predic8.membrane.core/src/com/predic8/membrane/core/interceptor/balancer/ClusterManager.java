@@ -13,6 +13,7 @@ public class ClusterManager {
 	
 	public ClusterManager() {
 		new SessionCleanupThread(clusters, sessionTimeout).start();
+		getCluster("Default");
 	}
 	
 	public void up(String cName, String host, int port) {
