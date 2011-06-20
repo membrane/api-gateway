@@ -26,14 +26,26 @@ public class Node {
 			   port == ((Node)obj).getPort();
 	}
 	
-	public int getLost() {
+	public synchronized int getLost() {
 		int received = 0;
 		for ( int i : statusCodes.values() ) {
 			received += i;
-		}
-		return counter - received;
+		}			
+		return counter - received - threads;
 	}
 
+	public synchronized double getErrors() {
+		int successes = 0;
+		int all = 0;
+		for (Map.Entry<Integer, Integer> e: statusCodes.entrySet() ) {
+			all += e.getValue();
+			if ( e.getKey() < 500 && e.getKey() > 0) {
+				successes+=e.getValue();
+			}
+		}			
+		return all == 0 ? 0: 1-(double)successes/all; 
+	}
+	
 	public long getLastUpTime() {
 		return lastUpTime;
 	}
@@ -72,37 +84,37 @@ public class Node {
 		return "["+host+":"+port+"]";
 	}
 
-	public int getCounter() {
+	public synchronized int getCounter() {
 		return counter;
 	}
 
-	public void incCounter() {
+	public synchronized void incCounter() {
 		counter++;		
 	}
 
-	public void clearCounter() {
+	public synchronized void clearCounter() {
 		counter = 0;	
 		statusCodes.clear();
 	}
 
-	public void addStatusCode(int code) {
+	public synchronized void addStatusCode(int code) {
 		if ( !statusCodes.containsKey(code) ) {
 			statusCodes.put(code, 0);
 		}
-		statusCodes.put(code, statusCodes.get(code) + 1 );
+		statusCodes.put(code, statusCodes.get(code) + 1 );			
 	}
 	
-	public void addThread() {
+	public synchronized void addThread() {
 		if (!isUp) return;
-		threads++;		
+		++threads;		
 	}
 
-	public void removeThread() {
+	public synchronized void removeThread() {
 		if (!isUp) return;
-		threads--;	
+		--threads;		
 	}
 
-	public int getThreads() {
+	public synchronized int getThreads() {
 		return threads;
 	}
 
