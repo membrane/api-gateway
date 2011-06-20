@@ -17,13 +17,13 @@ public class Cluster {
 	}
 
 	public void nodeUp(Node ep) {		
-		log.info("endpoint: " + ep +" up");
+		log.debug("endpoint: " + ep +" up");
 		getNodeCreateIfNeeded(ep).setLastUpTime(System.currentTimeMillis());
 		getNodeCreateIfNeeded(ep).setUp(true);
 	}
 
 	public void nodeDown(Node ep) {
-		log.info("endpoint: " + ep +" down");
+		log.debug("endpoint: " + ep +" down");
 		Node n = getNodeCreateIfNeeded(ep);
 		n.setUp(false);
 	}
@@ -64,7 +64,7 @@ public class Cluster {
 		if ( nodes.contains(ep) ) {
 			return getNode(ep);			
 		}
-		log.info("creating endpoint: "+ep);
+		log.debug("creating endpoint: "+ep);
 		nodes.add(new Node(ep.getHost(), ep.getPort()));
 		return getNode(ep);			
 	}
