@@ -45,6 +45,12 @@
 		<mkdir dir="dist/router/membrane-router-${version}/classes" />
 		<mkdir dir="dist/router/membrane-router-${version}/lib" />
 		<mkdir dir="dist/router/membrane-router-${version}/examples" />
+		<mkdir dir="dist/router/membrane-router-${version}/docBase" />
+		<copy todir="dist/router/membrane-router-${version}/docBase"> 
+			<fileset dir="docBase">
+				<include name="**/*" />
+			</fileset>
+		</copy>
 		<copy todir="dist/router/membrane-router-${version}/examples"> 
 			<fileset dir="examples/router">
 				<include name="**/*" />
