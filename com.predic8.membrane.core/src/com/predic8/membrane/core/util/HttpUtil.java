@@ -164,17 +164,7 @@ public class HttpUtil {
 		}
 		return header;
 	}
-
 	
-	/*private static Header createHeader(String contentType) {
-		Header header = new Header();
-		header.setContentType(contentType);
-		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
-		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
-		header.add("Connection", "close");
-		return header;
-	}*/
-
 	public static List<Chunk> readChunks(InputStream in) throws IOException {
 		List<Chunk> chunks = new ArrayList<Chunk>();
 		int chunkSize;
