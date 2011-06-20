@@ -219,8 +219,9 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 						params.get("host"),
 						Integer.parseInt(params.get("port")));
 				createStatusNodes(n);
-				p().text("Total Requests: " + n.getCounter()).end();
-				p().text("Requests without Responses: " + n.getLost()).end();
+				p().text("Total requests: " + n.getCounter()).end();
+				p().text("Current threads: " + n.getThreads()).end();
+				p().text("Requests without responses: " + n.getLost()).end();
 				span().classAttr("mb-button");
 					createLink("Reset Counter", "node", "reset", createQueryString("cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
 				end();
@@ -276,7 +277,7 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 	}
 
 	public Response handleNodeDeleteRequest(Map<String, String> params) throws Exception {
-		router.getClusterManager().delete(params.get("cluster"), params.get("host"),
+		router.getClusterManager().removeNode(params.get("cluster"), params.get("host"),
 				                          Integer.parseInt(params.get("port")));
 		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
 	}	
