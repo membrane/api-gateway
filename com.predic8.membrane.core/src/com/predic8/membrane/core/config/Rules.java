@@ -46,7 +46,7 @@ public class Rules extends AbstractConfigElement {
 		if (ForwardingRule.ELEMENT_NAME.equals(child)) {
 			rules.add((ForwardingRule) new ForwardingRule(router).parse(token));
 		} else if (ProxyRule.ELEMENT_NAME.equals(child)) {
-			rules.add((ProxyRule) new ProxyRule().parse(token));
+			rules.add((ProxyRule) new ProxyRule(router).parse(token));
 		}
 
 	}

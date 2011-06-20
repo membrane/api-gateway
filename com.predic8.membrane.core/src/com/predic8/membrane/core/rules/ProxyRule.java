@@ -2,7 +2,7 @@ package com.predic8.membrane.core.rules;
 
 import javax.xml.stream.XMLStreamReader;
 
-import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.*;
 
 
 public class ProxyRule extends AbstractRule {
@@ -11,6 +11,10 @@ public class ProxyRule extends AbstractRule {
 	
 	public ProxyRule() {
 		
+	}
+	
+	public ProxyRule(Router router) {
+		setRouter(router);
 	}
 	
 	public ProxyRule(ProxyRuleKey ruleKey) {
