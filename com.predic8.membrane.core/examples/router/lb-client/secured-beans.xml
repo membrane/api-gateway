@@ -35,13 +35,24 @@
 
   <bean id="administrationInterceptor" class="com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor" />
 
+  <bean id="basicAuthInterceptor" class="com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor" >
+  	<property name="users">
+  		<map>
+  			<entry key="admin" value="admin" />
+  		</map>
+  	</property>
+  </bean>
+
   <bean id="webServerInterceptor" class="com.predic8.membrane.core.interceptor.server.WebServerInterceptor">
     <property name="docBase" value="docBase" />
   </bean>
 
   <bean id="balancer" class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor" />
     	     
-  <bean id="clusterNotificationInterceptor" class="com.predic8.membrane.core.interceptor.balancer.ClusterNotificationInterceptor" />
+  <bean id="clusterNotificationInterceptor" class="com.predic8.membrane.core.interceptor.balancer.ClusterNotificationInterceptor" >
+  	<property name="validateSignature" value="true" />
+  	<property name="keyBase64" value="b0iKZCt0D7cMUlCYeihNwA==" />
+  </bean>
   
   <bean id="dummyNode1" class="com.predic8.membrane.core.interceptor.CountInterceptor" >
   	<property name="displayName" value="Node 1"/>
