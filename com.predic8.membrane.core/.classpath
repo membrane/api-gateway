@@ -25,6 +25,7 @@
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="examples/router/soap-schema-validation/src"/>
+	<classpathentry kind="src" path="examples/router/loadbalancer-session-3/src"/>
 	<classpathentry exported="true" kind="lib" path="lib/commons-logging.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/activation-1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/commons-cli-1.1.jar"/>
@@ -32,5 +33,6 @@
 	<classpathentry exported="true" kind="lib" path="lib/commons-discovery.jar"/>
 	<classpathentry kind="lib" path="classes"/>
 	<classpathentry kind="lib" path="examples/router/soap-schema-validation/build/classes"/>
+	<classpathentry kind="lib" path="examples/router/loadbalancer-session-3/build/classes"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
