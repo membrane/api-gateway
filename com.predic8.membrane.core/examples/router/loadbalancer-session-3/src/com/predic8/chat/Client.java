@@ -8,7 +8,7 @@ public class Client {
 	public static void main(String[] args) {
 		ChatService service = new ChatService();
 		ChatServicePT port = service.getChatServicePTPort();
-		((BindingProvider)port).getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, "http://localhost:2000/ChatService");		
+		((BindingProvider)port).getRequestContext().put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, "http://localhost:8080/ChatService");		
 
 		String session = port.login(args[0]);
 		System.out.println("login: " + session);
