@@ -105,7 +105,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			return strategy.dispatch(this);
 		}
 		
-		if ( !router.getClusterManager().containsSession("Default", sessionId) ) {
+		if ( sessionNotExisting(sessionId) ) {
 			router.getClusterManager().addSession2Cluster(sessionId, "Default", strategy.dispatch(this));
 		}			
 		Session s = router.getClusterManager().getSessions("Default").get(sessionId);
@@ -115,6 +115,10 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	public String getDestinationURL(Node ep, Exchange exc) throws MalformedURLException{
 		return "http://" + ep.getHost() + ":" + ep.getPort() + getRequestURI(exc);
+	}
+
+	private boolean sessionNotExisting(String sessionId) {
+		return !router.getClusterManager().containsSession("Default", sessionId);
 	}
 
 	private String getSessionId(Message msg) throws Exception {
@@ -138,7 +142,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	public List<Node> getEndpoints() {
 		if (router.getClusterManager() != null) {
-			log.info("using endpoints from cluster manager");
+			log.debug("using endpoints from cluster manager");
 			return router.getClusterManager().getAvailableNodesByCluster("Default");
 		}
 		return endpoints;
