@@ -43,7 +43,7 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 
 	@Test
 	public void testRulesSize() throws Exception {
-	 	Assert.assertEquals(1, rules.size());
+	 	Assert.assertEquals(2, rules.size());
 	}
 	
 	@Test
