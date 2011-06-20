@@ -10,6 +10,12 @@
 				<interceptor id="urlRewriter" name="Simple URL Rewriter" />
 			</interceptors>			
 		</forwarding-rule>
+		<proxy-rule name="proxy" port="2001">
+      		<interceptors>
+				<interceptor id="roundRobinBalancer" name="Round Robin Balancer" />
+				<interceptor id="urlRewriter" name="Simple URL Rewriter" />
+		    </interceptors>
+    	</proxy-rule>		
 	</rules>
 	<global>
 		<adjustHostHeader>true</adjustHostHeader>
