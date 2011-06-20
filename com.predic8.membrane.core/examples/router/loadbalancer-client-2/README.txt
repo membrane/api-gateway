@@ -5,7 +5,7 @@ In the previous example we set up a load balancer with 3 nodes. We used a URL ba
 
 RUNNING THE EXAMPLE
 
-In this example we will use a simple client to communicate with the URL interface. We also will encrypt the parameters that are send.
+In this example we will use a simple client to communicate with the URL interface. We also will encrypt the parameters that are sent.
 
 To run the example execute the following steps:
 
@@ -18,7 +18,7 @@ start router.bat.
 This will start 3 web apps and the load balancer.
 
 3. Open the URL http://localhost:4000/ in your browser. 
-   You will see a simple web app that counts how often it was opened. There are 2 more web apps of the same kind located at port 4001 and 4002.
+   You will see a simple web app that counts how often it was called. There are 2 more web apps of the same kind listing at port 4001 and 4002.
 
 4. Execute 
 
@@ -28,24 +28,22 @@ java -jar lbclient.jar up localhost 4000
 
 6. Click on the LoadBalancer tab. Than click on the link called "Default".
 
-7. Notice the node you registered with the lbclient.
+7. You will find there the node you registered with the lbclient.
 
-8. Register the 2 other nodes:
+8. Register 2 additional nodes:
 
 java -jar lbclient.jar up localhost 4001
 java -jar lbclient.jar up localhost 4002
 
-9. Create another node with host name "localhost" and port 4001.
-
 10. Open the URL http://localhost:8080. 
 
-11. Click the refresh button in your browser a few times. You will notice that requests will be redirected to Node 1-3.
+11. Click the refresh button in your browser a few times. You will notice that requests will be distributed to Node 1-3.
 
 12. Execute 
 
 java -jar lbclient.jar down localhost 4000
 
-13. Open the URL http://localhost:8080 again. When you use the refresh button, you will notice that no request are directed to node 1 anymore.  
+13. Open the URL http://localhost:8080 again. After several refreshes, you will notice that no request are directed to node 1 anymore.  
 
 14. Stop the router by closing the command line that runs the router.
 
