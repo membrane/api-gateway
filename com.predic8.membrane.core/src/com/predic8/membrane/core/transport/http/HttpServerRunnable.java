@@ -90,15 +90,15 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		} catch (SocketTimeoutException e) {
 			log.debug("Socket of thread " + counter + " timed out");
 		} catch (SocketException se) {
-			log.debug("client socket closed");
+			log.info("client socket closed");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (EndOfStreamException e) {
-			log.debug("stream closed");
+			log.info("stream closed");
 		} catch (AbortException e) {
-			log.debug("exchange aborted.");
+			log.info("exchange aborted.");
 		} catch (ErrorReadingStartLineException e) {
-			log.warn("Client connection terminated before start line was read. Start line so far: (" + e.getStartLine() + ")");
+			log.info("Client connection terminated before start line was read. Start line so far: (" + e.getStartLine() + ")");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
