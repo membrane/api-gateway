@@ -1,3 +1,0 @@
-C:\work\membrane\monitor\eclipse\com.predic8.membrane.core\examples\router\lb-client\..\..
-Please set the MEMBRANE_HOME environment variable to point to
-the directory where you have extracted the Membrane software.
