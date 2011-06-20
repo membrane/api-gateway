@@ -294,6 +294,10 @@
 
   <bean id="administrationInterceptor" class="com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor" />
 
+  <bean id="webServerInterceptor" class="com.predic8.membrane.core.interceptor.server.WebServerInterceptor">
+    <property name="docBase" value="docBase" />
+  </bean>
+
   <!--
   Configuration of DataSource 
   ============================ 
