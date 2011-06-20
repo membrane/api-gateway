@@ -9,7 +9,7 @@ public class ClusterManager {
 	
 	Map<String, Cluster> clusters = new Hashtable<String, Cluster>();
 	long timeout = 0;
-	long sessionTimeout = 2*60000;
+	long sessionTimeout = 2*60*60000;
 	
 	public ClusterManager() {
 		new SessionCleanupThread(clusters, sessionTimeout).start();
@@ -42,7 +42,7 @@ public class ClusterManager {
 	
 	private Cluster getCluster(String name) {
 		if ( !clusters.containsKey(name) ) {
-			log.info("creating cluster with name ["+name+"]");
+			log.debug("creating cluster with name ["+name+"]");
 			clusters.put(name, new Cluster(name));
 		}
 		return clusters.get(name);
@@ -54,12 +54,12 @@ public class ClusterManager {
 
 	public boolean addCluster(String name) {		
 		if ( clusters.containsKey(name) ) return false;
-		log.info("adding cluster with name ["+name+"]");
+		log.debug("adding cluster with name ["+name+"]");
 		clusters.put(name, new Cluster(name));
 		return true;
 	}
 
-	public void delete(String cluster, String host, int port) {
+	public void removeNode(String cluster, String host, int port) {
 		getCluster(cluster).removeNode(new Node(host, port));		
 	}
 
