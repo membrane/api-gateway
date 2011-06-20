@@ -269,10 +269,12 @@ public class AdminPageBuilder extends Html {
 			    end();
 			end();
 			tbody();
-				for (Map.Entry<Integer, Integer> codes : n.getStatusCodes().entrySet() ) {
-					tr();
-						createTds(""+codes.getKey(), ""+codes.getValue());
-					end();				
+				synchronized (n.getStatusCodes()) {
+					for (Map.Entry<Integer, Integer> codes : n.getStatusCodes().entrySet() ) {
+						tr();
+							createTds(""+codes.getKey(), ""+codes.getValue());
+						end();				
+					}					
 				}
 			end();
 		end();
@@ -293,7 +295,7 @@ public class AdminPageBuilder extends Html {
 								   createQueryString("cluster", params.get("cluster"), "host", n.getHost(),"port", ""+n.getPort() ));
 						end();
 						createTds( n.isUp()?"Up":"Down", ""+n.getCounter(), 
-								   String.format("%1$.2f%%", getErrors(n)*100)
+								   String.format("%1$.2f%%", n.getErrors()*100)
 						           ,formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),""+n.getThreads());
 						td();
 							createIcon("ui-icon-trash", "node", "delete", createQuery4Node(n));
@@ -304,18 +306,6 @@ public class AdminPageBuilder extends Html {
 				}
 			end();
 		end();
-	}
-
-	private double getErrors(Node n) {
-		if (n.getCounter() == 0) return 0;
-		
-		int successes = 0;
-		for (Map.Entry<Integer, Integer> e: n.getStatusCodes().entrySet() ) {
-			if ( e.getKey() < 500 && e.getKey() > 0) {
-				successes++;
-			}
-		}
-		return 1-(double)successes/n.getCounter();
 	}
 
 	private String createQuery4Node(Node n) throws UnsupportedEncodingException {
