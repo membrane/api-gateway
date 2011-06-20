@@ -20,7 +20,7 @@ import java.util.Vector;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.io.ConfigurationStore;
+import com.predic8.membrane.core.io.*;
 import com.predic8.membrane.core.rules.Rule;
 
 public class ConfigurationManager {
@@ -29,27 +29,27 @@ public class ConfigurationManager {
 	
 	private Configuration configuration;
 
-	private ConfigurationStore configurationStore;
+	private ConfigurationStore configurationStore = new ConfigurationFileStore();
 
 	private Router router;
 
 	private List<SecurityConfigurationChangeListener> securityChangeListeners = new Vector<SecurityConfigurationChangeListener>();
 	
 	public void saveConfiguration(String fileName) throws Exception {
-		configuration.setRules(router.getRuleManager().getRules());
-		configuration.write(fileName);
+		getConfiguration().setRules(router.getRuleManager().getRules());
+		getConfiguration().write(fileName);
 	}
 
 
 	public void loadConfiguration(String fileName) throws Exception {
 
-		configuration = configurationStore.read(fileName);
+		setConfiguration(configurationStore.read(fileName));
 
 		setSecuritySystemProperties();
 		
 		router.getRuleManager().removeAllRules();
 		
-		for (Rule rule : configuration.getRules()) {
+		for (Rule rule : getConfiguration().getRules()) {
 			router.getRuleManager().addRuleIfNew(rule);
 		}
 
@@ -82,7 +82,8 @@ public class ConfigurationManager {
 	}
 
 	public Configuration getConfiguration() {
-		return configuration==null?new Configuration(router):configuration;
+		if ( configuration==null ) configuration = new Configuration(router);
+		return configuration;
 	}
 
 	public void setConfiguration(Configuration configuration) {
@@ -108,12 +109,9 @@ public class ConfigurationManager {
 	}
 
 	public void setRouter(Router router) {
-		this.router = router;
-		
-		//Fix because configurationStore can by injected befor router
-		if (configurationStore != null) {
-			configurationStore.setRouter(router);
-		}
+		this.router = router;		
+		configurationStore.setRouter(router);
+		getConfiguration().setRouter(router);
 	}
 	
 	public void addSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {

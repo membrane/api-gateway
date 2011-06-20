@@ -80,11 +80,16 @@ public class Configuration extends AbstractConfigElement {
 	private Proxy proxy; 
 
 	public Configuration() {
-		super(null);
+		this(null);
+		
 	}
 
 	public Configuration(Router router) {
 		super(router);
+		setAdjustHostHeader(true);
+		setIndentMessage(true);
+		setAdjustContentLength(true);
+		setTrackExchange(false);
 	}
 	
 	public Map<String, Object> getProps() {

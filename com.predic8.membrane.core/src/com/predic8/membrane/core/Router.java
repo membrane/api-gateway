@@ -31,13 +31,13 @@ import com.predic8.membrane.core.transport.Transport;
 
 public class Router {
 
-	protected RuleManager ruleManager;
+	protected RuleManager ruleManager = new RuleManager();
 
 	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
 
 	protected Transport transport;
 
-	protected ConfigurationManager configurationManager;
+	protected ConfigurationManager configurationManager = new ConfigurationManager();
 
 	protected ClusterManager clusterManager;
 	
@@ -47,6 +47,10 @@ public class Router {
 
 	protected static Log log = LogFactory.getLog(Router.class.getName());
 
+	public Router() {
+		configurationManager.setRouter(this);
+		ruleManager.setRouter(this);
+	}
 	
 	public static Router init(String configFileName) throws MalformedURLException {
 		log.debug("loading spring config from classpath: " + configFileName);
@@ -64,7 +68,6 @@ public class Router {
 		beanFactory.refresh();
 		
 		router = (Router) beanFactory.getBean("router");
-		router.configurationManager.setRouter(router); 
 		return router; 
 	}
 		
@@ -104,6 +107,7 @@ public class Router {
 
 	public void setConfigurationManager(ConfigurationManager configurationManager) {
 		this.configurationManager = configurationManager;
+		configurationManager.setRouter(this);
 	}
 	
 	public ClusterManager getClusterManager() {
