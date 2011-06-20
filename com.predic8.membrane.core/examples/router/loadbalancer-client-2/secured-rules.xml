@@ -33,7 +33,7 @@
       </interceptors>
     </forwarding-rule>
     <forwarding-rule name="Push Interface"
-                      port="8001" >
+                      port="9010" >
       <targetport>8080</targetport>
       <targethost>localhost</targethost>
       <interceptors>
