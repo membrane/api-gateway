@@ -39,6 +39,11 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		if (!m.matches()) return Outcome.CONTINUE;
 		
 		log.debug("request received: "+m.group(1));
+		if (validateSignature && !getParams(exc).containsKey("data")) {
+			exc.setResponse(createResponse(403, "Forbidden", null, null));
+			return Outcome.ABORT;			
+		}
+		
 		Map<String, String> params = validateSignature?
 				getDecryptedParams(getParams(exc).get("data")):
 				getParams(exc);
