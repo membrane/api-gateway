@@ -125,17 +125,27 @@ public class HttpClient {
 				con = conMgr.getConnection(host, port, localHost, tls);
 				exc.setTargetConnection(con);
 				return doCall(exc, con);
+				// java.net.SocketException: Software caused connection abort: socket write error
 			} catch (ConnectException e) {
 				exception = e;
-				log.warn("Connection to " + dest + " on port " + port + " refused.");
+				log.info("Connection to " + dest + " on port " + port + " refused.");
+			} catch(SocketException e){
+				if ( e.getMessage().contains("Software caused connection abort")) {
+					log.info("Connection to " + dest + "was aborted externally. Maybe by the server or the OS Membrane is running on.");
+				} else if (e.getMessage().contains("Connection reset") ) {
+					log.info("Connection to " + dest + "was reset externally. Maybe by the server or the OS Membrane is running on.");
+ 				} else {
+ 					logException(exc, counter, e);
+ 				}
+				exception = e;
 			} catch (UnknownHostException e) {
-				log.warn("Unknown host: " + host);
+				log.info("Unknown host: " + host);
 				exception = e;
 				if (exc.getDestinations().size() < 2) {
 					break; 
 				}
 			} catch (ErrorReadingStartLineException e) {
-				log.warn("Server connection to " + dest + " terminated before start line was read. Start line so far: " + e.getStartLine());
+				log.info("Server connection to " + dest + " terminated before start line was read. Start line so far: " + e.getStartLine());
 				exception = e;
 			} catch (Exception e) {
 				logException(exc, counter, e);
@@ -172,7 +182,7 @@ public class HttpClient {
 			handleConnectRequest(exc, con);
 			return Response.createOKResponse();
 		}
-
+		
 		exc.getRequest().write(con.out);
 		exc.setTimeReqSent(System.currentTimeMillis());
 		
@@ -181,12 +191,7 @@ public class HttpClient {
 		}
 
 		Response res = new Response();
-		try{
-			res.read(con.in, !exc.getRequest().isHEADRequest());
-		}catch(SocketException e){
-			log.error("Connection aborted: " + e);	
-			exc.getRequest().write(System.err);
-		}
+		res.read(con.in, !exc.getRequest().isHEADRequest());
 
 		if (res.getStatusCode() == 100) {
 			do100ExpectedHandling(exc, res, con);
