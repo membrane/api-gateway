@@ -53,6 +53,7 @@
 		</copy>
 		<copy todir="dist/router/membrane-router-${version}/examples"> 
 			<fileset dir="examples/router">
+				<exclude name="**/build/"/>
 				<include name="**/*" />
 			</fileset>
 		</copy>
