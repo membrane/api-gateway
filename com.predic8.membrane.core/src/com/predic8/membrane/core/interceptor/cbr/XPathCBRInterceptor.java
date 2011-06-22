@@ -22,6 +22,10 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 	private RouteProvider routeProvider = new DefaultRouteProvider();
 	private Map<String, String> namespaces;
 	
+	public XPathCBRInterceptor() {
+		name = "Content Based Router";
+	}
+	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest().isBodyEmpty()) {
