@@ -13,20 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.xslt;
 
-import java.io.*;
+import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
 
-import javax.xml.xpath.*;
+import java.io.InputStream;
+
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.junit.Test;
 import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
-import static com.predic8.membrane.core.util.ByteUtil.*;
 
 public class XSLTInterceptorTest extends TestCase {
 		

@@ -14,20 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.cbr;
 
-import java.io.*;
-import java.util.*;
+import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
 
-import javax.xml.xpath.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import junit.framework.*;
+import junit.framework.Assert;
+import junit.framework.TestCase;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.junit.Test;
-import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import static com.predic8.membrane.core.util.ByteUtil.*;
+import com.predic8.membrane.core.http.Request;
 
 public class XPathCBRInterceptorTest extends TestCase {
 		
@@ -49,15 +47,6 @@ public class XPathCBRInterceptorTest extends TestCase {
 		i.handleRequest(exc);
 		Assert.assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
 		
-	}
-	
-	private void printBodyContent() throws Exception {
-		InputStream i = exc.getRequest().getBodyAsStream();
-		int read = 0;
-		byte[] buf = new byte[4096];
-		while ((read = i.read(buf)) != -1) {
-			System.out.write(buf, 0, read);
-		}
 	}
 	
 }

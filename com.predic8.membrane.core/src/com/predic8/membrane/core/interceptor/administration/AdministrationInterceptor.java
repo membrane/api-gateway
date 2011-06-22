@@ -14,22 +14,31 @@
 package com.predic8.membrane.core.interceptor.administration;
 
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
-import static com.predic8.membrane.core.util.URLUtil.*;
+import static com.predic8.membrane.core.util.URLUtil.createQueryString;
+import static com.predic8.membrane.core.util.URLUtil.parseQueryString;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URI;
-import java.util.*;
-import java.util.regex.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.WordUtils;
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.balancer.Cluster;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.balancer.Node;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.rules.ProxyRuleKey;
+import com.predic8.membrane.core.rules.Rule;
 
 public class AdministrationInterceptor extends AbstractInterceptor {
 

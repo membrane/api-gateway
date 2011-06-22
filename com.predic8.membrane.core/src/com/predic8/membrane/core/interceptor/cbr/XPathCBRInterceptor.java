@@ -1,17 +1,20 @@
 package com.predic8.membrane.core.interceptor.cbr;
 
-import java.io.*;
-import java.util.*;
+import static com.predic8.membrane.core.util.SynchronizedXPathFactory.newXPath;
 
-import javax.xml.xpath.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.apache.commons.logging.*;
+import javax.xml.xpath.XPathConstants;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.*;
-import static com.predic8.membrane.core.util.SynchronizedXPathFactory.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 
 public class XPathCBRInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(XPathCBRInterceptor.class.getName());

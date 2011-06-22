@@ -26,6 +26,7 @@ public class ExchangeComparator implements Comparator<AbstractExchange> {
 	
 	private boolean ascending = true;
 	
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public int compare(AbstractExchange e1, AbstractExchange e2) {
 		if (e1.getResponse() == null || e2.getResponse() == null)
 			return 0;

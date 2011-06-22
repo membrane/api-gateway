@@ -23,8 +23,12 @@ import java.util.concurrent.Executors;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.core.runtime.*;
-import org.eclipse.osgi.service.environment.EnvironmentInfo;
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.ILog;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.core.runtime.Plugin;
+import org.eclipse.core.runtime.Status;
 import org.osgi.framework.BundleContext;
 
 import com.predic8.membrane.core.util.FileUtil;

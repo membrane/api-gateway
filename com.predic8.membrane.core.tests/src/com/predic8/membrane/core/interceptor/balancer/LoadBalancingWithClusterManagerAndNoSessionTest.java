@@ -13,27 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static junit.framework.Assert.assertEquals;
+import java.util.LinkedList;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.*;
-
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
-import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 
-import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.rules.ForwardingRule;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
-import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 public class LoadBalancingWithClusterManagerAndNoSessionTest extends LoadBalancingInterceptorTest{

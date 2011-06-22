@@ -53,8 +53,6 @@ public class AccessControlInterceptorIntegrationTest {
 	
 	private static final byte[] LOCALHOST_IP = new byte[]{ (byte)127, (byte)0, (byte)0,  (byte)1 };
 
-	private static final byte[] FIXED_IP = new byte[]{ (byte)192, (byte)168, (byte)2,  (byte)155 };
-
 	private static HttpRouter router;
 	
 	@Before

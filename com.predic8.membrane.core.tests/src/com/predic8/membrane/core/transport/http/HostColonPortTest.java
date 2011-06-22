@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.transport.http;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
 
 import org.junit.Test;
 
