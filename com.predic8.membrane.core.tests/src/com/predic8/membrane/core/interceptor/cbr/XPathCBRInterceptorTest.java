@@ -16,11 +16,10 @@ package com.predic8.membrane.core.interceptor.cbr;
 
 import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.InputStream;
+import java.util.*;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import junit.framework.*;
 
 import org.junit.Test;
 
@@ -39,14 +38,60 @@ public class XPathCBRInterceptorTest extends TestCase {
 		exc.setRequest(res);
 
 		XPathCBRInterceptor i = new XPathCBRInterceptor();
-		List<Route> routes = new ArrayList<Route>();
-		routes.add(new Route("//CITY[text()='England']","http://www.host.uk/service"));
-		routes.add(new Route("//CITY[text()='Bonn']","http://www.host.de/service"));
-		i.setRoutes(routes);
+		DefaultRouteProvider rp = new DefaultRouteProvider();
+		rp.setRoutes(getRouteList("//CITY[text()='England']","http://www.host.uk/service",
+								  "//CITY[text()='Bonn']","http://www.host.de/service"));
+		i.setRouteProvider(rp);
 		
 		i.handleRequest(exc);
 		Assert.assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
 		
+	}
+
+	@Test
+	public void testRoutingNSAware() throws Exception {
+		exc = new Exchange();
+		Request res = new Request();		
+		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream("/customerFromBonnWithNS.xml")));
+		exc.setRequest(res);
+
+		XPathCBRInterceptor i = new XPathCBRInterceptor();
+		
+		DefaultRouteProvider rp = new DefaultRouteProvider();
+		rp.setRoutes(getRouteList("//pre:CITY[text()='England']","http://www.host.uk/service",
+								  "//pre:CITY[text()='Bonn']","http://www.host.de/service"));
+		
+		i.setRoutProvider(rp);		
+		i.setNamespaces(getNamespaceMap("pre", "http://predic8.de/customer/1"));
+		
+		i.handleRequest(exc);
+		Assert.assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
+		
+	}
+
+	private List<Route> getRouteList(String... args) {
+		List<Route> l = new ArrayList<Route>();
+		for (int i = 0; i < args.length; i+=2) {
+			l.add(new Route(args[i],args[i+1]));
+		}
+		return l;
+	}
+
+	private Map<String, String> getNamespaceMap(String... args) {
+		Map<String, String> map = new HashMap<String, String>();
+		for (int i = 0; i < args.length; i+=2) {
+			map.put(args[i], args[i+1]);
+		}
+		return map;
+	}
+	
+	private void printBodyContent() throws Exception {
+		InputStream i = exc.getRequest().getBodyAsStream();
+		int read = 0;
+		byte[] buf = new byte[4096];
+		while ((read = i.read(buf)) != -1) {
+			System.out.write(buf, 0, read);
+		}
 	}
 	
 }
