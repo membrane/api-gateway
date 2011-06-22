@@ -1,0 +1,7 @@
+<ns:CUSTOMER xmlns:ns="http://predic8.de/customer/1">
+    <ns:ID>1</ns:ID>
+    <ns:FIRSTNAME>Jim</ns:FIRSTNAME>
+    <ns:LASTNAME>Panse</ns:LASTNAME>
+    <ns:STREET>Moltkestrasse 44</ns:STREET>
+    <ns:CITY>Bonn</ns:CITY>
+</ns:CUSTOMER>
