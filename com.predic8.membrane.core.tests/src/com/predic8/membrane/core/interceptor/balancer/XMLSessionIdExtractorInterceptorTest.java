@@ -14,15 +14,15 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 
+import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
+
 import java.io.IOException;
 
 import junit.framework.TestCase;
 
 import org.junit.Test;
 
-import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import static com.predic8.membrane.core.util.ByteUtil.*;
 
 public class XMLSessionIdExtractorInterceptorTest extends TestCase {
 	
