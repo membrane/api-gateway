@@ -110,6 +110,9 @@ public class CoreActivator extends Plugin {
 	 */
 	private String[] fixArguments(String[] args) {
 		int i = ArrayUtils.indexOf(args, "-product");
+		if (i == -1)
+			return args;
+		
 		return (String[])ArrayUtils.remove( (String[])ArrayUtils.remove(args, i),i);
 	}
 
