@@ -28,6 +28,7 @@ import com.predic8.membrane.core.interceptor.WSDLInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
 import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
 import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptorTest;
@@ -73,6 +74,7 @@ import com.predic8.membrane.core.xslt.XSLTInterceptorTest;
 	LoadBalancingWithClusterManagerTest.class,
 	DNSCacheTest.class,
 	SOAPMessageValidatorInterceptorTest.class,
+	XPathCBRInterceptorTest.class
 })
 public class UnitlTests {
 
