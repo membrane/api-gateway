@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
@@ -140,8 +141,8 @@ public class AccessControlInterceptorIntegrationTest {
 		
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity); 
-		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
-		post.setRequestHeader("SOAPAction", "\"\"");
+		post.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
 		return post;
 	}
 	

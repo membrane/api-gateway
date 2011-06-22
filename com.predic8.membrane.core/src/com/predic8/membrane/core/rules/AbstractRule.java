@@ -94,7 +94,8 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	public String toString() { //TODO toString, getName, setName und name="" Initialisierung vereinheitlichen. 
 		if (!"".equals(name))
 			return name;
-		return "" + getKey().toString();
+		
+		return getKey().toString();
 	}
 	
 	public void setBlockRequest(boolean blockStatus) {

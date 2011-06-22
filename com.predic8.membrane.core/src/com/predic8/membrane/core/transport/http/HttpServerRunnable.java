@@ -35,7 +35,7 @@ import com.predic8.membrane.core.util.*;
 public class HttpServerRunnable extends AbstractHttpRunnable {
 
 	public static int counter = 0;
-
+	
 	public HttpServerRunnable(Socket socket, HttpTransport transport) throws IOException {
 		this.exchange = new Exchange();
 		exchange.setServerThread(this);
@@ -45,7 +45,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		this.sourceSocket = socket;
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
-		sourceSocket.setSoTimeout(transport.getSoTimeout());
+		sourceSocket.setSoTimeout(transport.getSocketTimeout());
 		sourceSocket.setTcpNoDelay(transport.isTcpNoDelay());
 		this.transport = transport;
 		setClientSettings();
@@ -130,9 +130,8 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		targetRes = null;
 		try {
 			
-			//TODO
-			//exchange.setSourceHostname(sourceSocket.getInetAddress().getHostName());
-			//exchange.setSourceIp(sourceSocket.getInetAddress().getHostAddress());
+			exchange.setSourceHostname(transport.getRouter().getDnsCache().getHostName(sourceSocket.getInetAddress()));
+			exchange.setSourceIp(transport.getRouter().getDnsCache().getHostAddress(sourceSocket.getInetAddress()));
 			
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());

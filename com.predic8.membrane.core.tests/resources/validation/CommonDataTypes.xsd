@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Published by JAX-WS RI at http://jax-ws.dev.java.net. RI's version is JAX-WS RI 2.2.1-b01-. -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://predic8.com/common/1/" targetNamespace="http://predic8.com/common/1/">
+    <xsd:annotation>
+        <xsd:documentation>
+            Common datatypes that are used in different systems.
+        </xsd:documentation>
+    </xsd:annotation>
+    <xsd:include schemaLocation="CurrencyType.xsd"/>
+    <xsd:simpleType name="IdentifierType">
+        <xsd:annotation>
+            <xsd:documentation>
+                Identifier for business objects.
+            </xsd:documentation>
+        </xsd:annotation>
+        <xsd:restriction base="xsd:string">
+            <xsd:pattern value="[A-Z]{2}-\d{5}"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+
+    <xsd:complexType name="PersonType">
+		<xsd:sequence>
+			<xsd:element name="id" type="tns:IdentifierType"/>
+			<xsd:element name="firstName" type="xsd:string"/>
+			<xsd:element name="lastName" type="xsd:string"/>
+			<xsd:element name="address" type="tns:AddressType"/>
+		</xsd:sequence>
+	</xsd:complexType>
+
+	<xsd:complexType name="AddressType">
+    <xsd:sequence>
+      <xsd:element name="street" type="xsd:string"/>
+      <xsd:element name="city" type="xsd:string"/>
+      <xsd:element name="zipCode" type="xsd:string"/>
+      <xsd:element name="country" type="xsd:string"/>
+    </xsd:sequence>
+	</xsd:complexType>
+
+</xsd:schema>

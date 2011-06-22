@@ -173,23 +173,19 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	}
 
 	public Object[] getAllExchanges() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public Object[] getLatExchanges(int count) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public List<AbstractExchange> getAllExchangesAsList() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public void removeAllExchanges(AbstractExchange[] exchanges) {
-		// TODO Auto-generated method stub
-
+		// ignore
 	}
 
 	public boolean isSaveBodyOnly() {

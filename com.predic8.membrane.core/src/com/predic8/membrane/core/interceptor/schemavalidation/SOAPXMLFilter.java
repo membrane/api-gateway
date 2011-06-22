@@ -58,5 +58,13 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 		super.endElement(uri, localName, qName);
 	}
 	
-	
+//	@Override
+//	public void startPrefixMapping(String prefix, String uri) throws SAXException {
+////		System.err.println("prefix: " + prefix);
+////		System.err.println("uri: " + uri);
+//		if (!"soapenv".equals(prefix)) {
+//			
+//		}
+//		super.startPrefixMapping(prefix, uri);
+//	}
 }

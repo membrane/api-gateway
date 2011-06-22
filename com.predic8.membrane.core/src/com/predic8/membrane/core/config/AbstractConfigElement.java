@@ -17,7 +17,7 @@ package com.predic8.membrane.core.config;
 
 import com.predic8.membrane.core.Router;
 
-public class AbstractConfigElement extends AbstractXmlElement {
+public abstract class AbstractConfigElement extends AbstractXmlElement {
 
 	/**
 	 * Needed to resolve interceptor IDs into interceptor beans

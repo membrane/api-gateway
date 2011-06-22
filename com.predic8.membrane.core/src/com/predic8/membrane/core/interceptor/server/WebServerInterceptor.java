@@ -73,9 +73,9 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	
 	private void setContentType(Header h, File file) {
 		if (file.getPath().endsWith(".css")) {
-			h.add("Content-Type", "text/css");
+			h.setContentType("text/css");
 		} else if (file.getPath().endsWith(".js")) {
-			h.add("Content-Type", "application/x-javascript");			
+			h.setContentType("application/x-javascript");			
 		}
 	}
 

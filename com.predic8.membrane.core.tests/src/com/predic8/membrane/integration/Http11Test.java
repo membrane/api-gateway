@@ -13,14 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
+import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static org.junit.Assert.assertFalse;
-import static com.predic8.membrane.core.util.TextUtil.*;
 
 import java.io.InputStream;
-
-import javax.swing.plaf.TextUI;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
@@ -30,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -58,8 +57,8 @@ public class Http11Test {
 		
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity); 
-		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
-		post.setRequestHeader("SOAPAction", "");
+		post.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		post.setRequestHeader(Header.SOAP_ACTION, "");
 		
 		int status = client.executeMethod(post);
 		assertEquals(200, status);

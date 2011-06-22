@@ -32,6 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.MockInterceptor;
@@ -98,8 +99,8 @@ public class InterceptorInvocationTest {
 		
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity); 
-		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
-		post.setRequestHeader("SOAPAction", "");
+		post.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		post.setRequestHeader(Header.SOAP_ACTION, "");
 	}
 	
 	private List<String> getReverseList(List<String> list) {

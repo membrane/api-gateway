@@ -29,7 +29,7 @@ public class Port extends AbstractXmlElement {
 	}
 
 	public Port() {
-		// TODO Auto-generated constructor stub
+		
 	}
 
 	@Override

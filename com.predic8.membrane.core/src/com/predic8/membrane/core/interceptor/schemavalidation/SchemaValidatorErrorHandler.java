@@ -13,30 +13,39 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-public class TestErrorHandler implements ErrorHandler {
+public class SchemaValidatorErrorHandler implements ErrorHandler {
 
+	private static Log log = LogFactory.getLog(SchemaValidatorErrorHandler.class.getName());
+	
 	private Exception exception; 
 	
 	public void error(SAXParseException e) throws SAXException {
 		exception = e;
+		log.info("Error: " + e);
 	}
 
 	public void fatalError(SAXParseException e) throws SAXException {
 		exception = e;
+		log.info("Fatal Error: " + e);
 	}
 
 	public void warning(SAXParseException e) throws SAXException {
-		
+		log.info("Warning: " + e);
 	}
 	
 	public Exception getException() {
 		return exception;
 	}
 	
+	public boolean noErrors() {
+		return exception == null;
+	}
 	
 	public void reset() {
 		exception = null;

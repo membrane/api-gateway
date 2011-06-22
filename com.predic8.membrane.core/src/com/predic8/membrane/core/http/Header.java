@@ -53,6 +53,8 @@ public class Header {
 
 	public static final String SOAP_ACTION = "SOAPAction";
 	
+	public static final String ACCEPT = "Accept";
+	
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
@@ -179,6 +181,26 @@ public class Header {
 		return getFirstValue(CONTENT_TYPE);
 	}
 
+	public void setContentType(String value) {
+		add(CONTENT_TYPE, value);
+	}
+	
+	public String getSOAPAction() {
+		return getFirstValue(SOAP_ACTION);
+	}
+	
+	public void setSOAPAction(String value) {
+		add(SOAP_ACTION, value);
+	}
+	
+	public String getAccept() {
+		return getFirstValue(ACCEPT);
+	}
+	
+	public void setAccept(String value) {
+		add(ACCEPT, value);
+	}
+	
 	public String getConnection() {
 		return getFirstValue(CONNECTION);
 	}
@@ -208,14 +230,6 @@ public class Header {
 			return false;
 		
 		return "close".equalsIgnoreCase(getConnection());
-	}
-	
-	public void setContentType(String value) {
-		add(CONTENT_TYPE, value);
-	}
-
-	public void setSOAPAction(String value) {
-		add(SOAP_ACTION, value);
 	}
 	
 	public boolean hasContentLength() {

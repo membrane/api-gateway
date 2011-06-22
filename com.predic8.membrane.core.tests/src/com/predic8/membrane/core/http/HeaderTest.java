@@ -26,9 +26,9 @@ public class HeaderTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		header.add("Content-Type","text/xml; charset=utf-8");
+		header.setContentType("text/xml; charset=utf-8");
 		header.add("host","127.0.0.1:2000");
-		header.add("ACCEPT","application/soap+xml, application/dime, multipart/related, text/*");
+		header.setAccept("application/soap+xml, application/dime, multipart/related, text/*");
 	}
 
 	@Test	
@@ -46,14 +46,14 @@ public class HeaderTest {
 	@Test
 	public void testGetCharsetNull() throws Exception {
 		Header header = new Header();
-		header.add("Content-Type", "text/xml");
+		header.setContentType("text/xml");
 		assertEquals(Constants.ISO_8859_1, header.getCharset());
 	}
 
 	@Test
 	public void testStringCharset() throws Exception {
 		Header header = new Header();
-		header.add("Content-Type", "text/xml ;charset=\"UTF-8\"");
+		header.setContentType("text/xml ;charset=\"UTF-8\"");
 		assertEquals("UTF-8", header.getCharset());
 	}		
 	
@@ -64,7 +64,7 @@ public class HeaderTest {
 	
 	@Test
 	public void testGetCharset() throws Exception {
-		header.add("Content-Type","text/xml; charset=utf-8");
+		header.setContentType("text/xml; charset=utf-8");
 		assertEquals("utf-8", header.getCharset());
 	}
 	

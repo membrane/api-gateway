@@ -15,9 +15,8 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import static com.predic8.membrane.core.util.URLUtil.createQueryString;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.security.*;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
@@ -27,10 +26,13 @@ import junit.framework.TestCase;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 
 public class ClusterNotificationInterceptorTest extends TestCase {
@@ -49,7 +51,6 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 		interceptor = new ClusterNotificationInterceptor();
 		interceptor.setRouter(router);
 		router.getTransport().getInterceptors().add(interceptor);
-
 	}
 	
 	@After

@@ -18,7 +18,7 @@ import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.transport.http.HttpResendThread;
+import com.predic8.membrane.core.transport.http.HttpResendRunnable;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 
@@ -44,7 +44,7 @@ public class RequestComp extends BaseComp {
 				tabManager.setBodyModified(false);
 				copyBodyFromGUIToModel();
 			}
-			new Thread(new HttpResendThread(getCompositeHost().getExchange(), getTransport())).start();
+			new Thread(new HttpResendRunnable(getCompositeHost().getExchange(), getTransport())).start();
 		}
 	}
 

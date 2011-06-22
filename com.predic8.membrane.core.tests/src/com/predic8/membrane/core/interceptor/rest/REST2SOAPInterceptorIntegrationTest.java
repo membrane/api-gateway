@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -71,7 +72,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 
 	private Map<String, String> getBLZMapping() {
 		Map<String,String> mapping = new HashMap<String, String>();
-		mapping.put("SOAPAction", "");
+		mapping.put(Header.SOAP_ACTION, "");
 		mapping.put("SOAPURI", "/axis2/services/BLZService");
 		mapping.put("requestXSLT", "classpath:/blz-httpget2soap-request.xsl");
 		mapping.put("responseXSLT", "classpath:/strip-soap-envelope.xsl");

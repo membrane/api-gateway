@@ -28,9 +28,12 @@ import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.balancer.ClusterManager;
 import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.util.DNSCache;
 
 public class Router {
 
+	protected static Log log = LogFactory.getLog(Router.class.getName());
+	
 	protected RuleManager ruleManager = new RuleManager();
 
 	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
@@ -45,8 +48,8 @@ public class Router {
 
 	protected static FileSystemXmlApplicationContext beanFactory;
 
-	protected static Log log = LogFactory.getLog(Router.class.getName());
-
+	protected DNSCache dnsCache = new DNSCache();
+	
 	public Router() {
 		configurationManager.setRouter(this);
 		ruleManager.setRouter(this);
@@ -136,4 +139,8 @@ public class Router {
 		return i;
 	}
 
+	public DNSCache getDnsCache() {
+		return dnsCache;
+	}
+	
 }

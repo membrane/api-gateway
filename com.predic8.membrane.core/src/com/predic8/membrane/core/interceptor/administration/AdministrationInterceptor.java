@@ -386,7 +386,7 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 
 	private boolean hasNoFormParams(Exchange exc) throws IOException {
 		return !"application/x-www-form-urlencoded".equals(exc.getRequest()
-				.getHeader().getFirstValue("Content-Type"))
+				.getHeader().getContentType())
 				|| exc.getRequest().isBodyEmpty();
 	}
 

@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -61,8 +62,8 @@ public class Http10Test {
 		
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity); 
-		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
-		post.setRequestHeader("SOAPAction", "\"\"");
+		post.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
 		int status = client.executeMethod(post);
 		assertEquals(200, status);
 		assertEquals("HTTP/1.1", post.getStatusLine().getHttpVersion());
@@ -85,8 +86,8 @@ public class Http10Test {
 		
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity); 
-		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
-		post.setRequestHeader("SOAPAction", "\"\"");
+		post.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
 		
 		for (int i = 0; i < 100; i ++) {
 			System.out.println("Iteration: " + i);

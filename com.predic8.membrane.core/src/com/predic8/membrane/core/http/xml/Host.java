@@ -29,7 +29,7 @@ public class Host extends AbstractXmlElement {
 	}
 
 	public Host() {
-		// TODO Auto-generated constructor stub
+		
 	}
 
 	@Override

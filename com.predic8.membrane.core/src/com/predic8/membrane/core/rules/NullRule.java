@@ -19,7 +19,11 @@ public class NullRule extends AbstractRule {
 
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
-		// TODO Auto-generated method stub
+	}
+
+	@Override
+	protected String getElementName() {
+		return "Null Rule";
 	}
 
 }

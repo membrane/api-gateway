@@ -23,7 +23,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Constants;
 
-public class AbstractXmlElement implements XMLElement {
+public abstract class AbstractXmlElement implements XMLElement {
 
 	/**
 	 * Needed to resolve interceptor IDs into interceptor beans
@@ -61,9 +61,7 @@ public class AbstractXmlElement implements XMLElement {
 		  
 	  }
 
-	  protected String getElementName() { // TODO Sollte m.E abstrakt sein um Fehler zur Kompilierzeit zu entdecken.
-		  return null;
-	  }
+	  protected abstract String getElementName();
 	  
 	  /* (non-Javadoc)
 	 * @see com.predic8.membrane.core.config.XMLElement#write(javax.xml.stream.XMLStreamWriter)

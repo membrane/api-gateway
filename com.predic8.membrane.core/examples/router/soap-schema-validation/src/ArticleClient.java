@@ -23,11 +23,11 @@ public class ArticleClient {
 		
 		/**
 		 * The correct pattern of the article ID is
-		 * 				\w\w - \d{3}
+		 * 				[A-Z]{2}-\d{5}
 		 * Here we intentionally make an invalid input
 		 */
 		aType.setId("123");
-		//aType.setId("EX-123");  //Correct ID for article type
+		//aType.setId("EX-12345");  //Correct ID for article type
 		
 		aType.setDescription("Descr");
 		aType.setName("A_Name");

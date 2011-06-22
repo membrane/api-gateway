@@ -36,7 +36,7 @@ public class HttpTransport extends Transport {
 	public static final String HEADER_HOST = "com.predic8.membrane.transport.http.header.Host";
 	public static final String SOURCE_IP = "com.predic8.membrane.transport.http.source.Ip";
 
-	private int soTimeout = 30000;
+	private int socketTimeout = 30000;
 	private boolean tcpNoDelay = true;
 	private int httpClientRetries = 5;
 	
@@ -105,12 +105,13 @@ public class HttpTransport extends Transport {
 		return executorService;
 	}
 
-	public int getSoTimeout() {
-		return soTimeout;
+	public int getSocketTimeout() {
+		return socketTimeout;
 	}
 
-	public void setSoTimeout(int soTimeout) {
-		this.soTimeout = soTimeout;
+	public void setSocketTimeout(int timeout) {
+		System.err.println("timeout value: " + timeout);
+		this.socketTimeout = timeout;
 	}
 
 	public boolean isTcpNoDelay() {

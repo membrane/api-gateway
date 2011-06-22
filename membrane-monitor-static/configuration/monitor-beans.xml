@@ -22,6 +22,7 @@
     <property name="transport" ref="transport" />
     <property name="exchangeStore" ref="exchangeStore" />
     <property name="configurationManager" ref="configurationManager" />
+    <property name="clusterManager" ref="clusterManager" />
   </bean>
 
   <bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
@@ -124,7 +125,7 @@
         -->
         
          <!-- 
-        <bean class="com.predic8.membrane.core.interceptor.schemavalidation.ValidateSOAPMsgInterceptor" init-method="init">
+        <bean class="com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptor" init-method="init">
           <property name="wsdl" value="http://www.predic8.com:8080/material/ArticleService?wsdl" />
         </bean>
       	 -->     
@@ -164,6 +165,8 @@
     </property>
   </bean>
 
+  <bean id="clusterManager" class="com.predic8.membrane.core.interceptor.balancer.ClusterManager"/>
+  
   <bean id="roundRobinBalancer" class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
     <property name="displayName" value="roundRobinBalancer" />
     <property name="endpoints">
@@ -349,5 +352,10 @@
     <property name="displayName" value="Web Server" />
     <property name="docBase" value="docBase" />
   </bean>
-  
+  	    
+ 
+  <bean id="clusterNotificationInterceptor" class="com.predic8.membrane.core.interceptor.balancer.ClusterNotificationInterceptor" >
+  	<property name="validateSignature" value="true" />
+  </bean>
+    
 </beans>

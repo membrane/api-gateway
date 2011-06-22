@@ -99,7 +99,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	private void modifyRequest(AbstractExchange exc, String regex) {
 
 		exc.getRequest().setMethod("POST");
-		exc.getRequest().getHeader().add("SOAPAction", getSOAPAction(regex));
+		exc.getRequest().getHeader().setSOAPAction(getSOAPAction(regex));
 		setContentType(exc.getRequest().getHeader());
 		
 		exc.setProperty("restURL", regex);
@@ -107,8 +107,8 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	}
 
 	private void setContentType(Header header) {
-		header.removeFields("Content-Type");
-		header.add("Content-Type","text/xml;charset=UTF-8");
+		header.removeFields(Header.CONTENT_TYPE);
+		header.setContentType("text/xml;charset=UTF-8");
 	}
 
 	private void setServiceEndpoint(AbstractExchange exc, String regex) {
@@ -135,7 +135,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	}
 
 	private String getSOAPAction(String regex) {
-		return mappings.get(regex).get("SOAPAction");
+		return mappings.get(regex).get(Header.SOAP_ACTION);
 	}
 
 	private String getSOAPURI(String regex) {

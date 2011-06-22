@@ -16,25 +16,22 @@ package com.predic8.membrane.core.interceptor.balancer;
 import static com.predic8.membrane.core.util.URLUtil.createQueryString;
 import static junit.framework.Assert.assertEquals;
 
-import java.io.*;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.*;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpVersion;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
-import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 public class LoadBalancingWithClusterManagerTest {
 
@@ -129,8 +126,8 @@ public class LoadBalancingWithClusterManagerTest {
 	private PostMethod getPostMethod(String request) {
 		PostMethod post = new PostMethod("http://localhost:5000/axis2/services/BLZService");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream(request)));
-		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
-		post.setRequestHeader("SOAPAction", "");
+		post.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		post.setRequestHeader(Header.SOAP_ACTION, "");
 
 		return post;
 	}

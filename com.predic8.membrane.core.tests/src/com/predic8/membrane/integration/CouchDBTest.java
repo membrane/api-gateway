@@ -91,8 +91,8 @@ public class CouchDBTest extends TestCase {
 		request.setVersion("1.1");
 		request.setUri(url);
 		Header header = new Header();
-		header.add("Accept", "application/json");
-		header.add("Content-Type", "application/json");
+		header.setAccept("application/json");
+		header.setContentType("application/json");
 		
 		request.setHeader(header);
 		if (content != null)

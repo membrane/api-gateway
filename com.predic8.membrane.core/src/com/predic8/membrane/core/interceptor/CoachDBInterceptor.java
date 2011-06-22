@@ -131,8 +131,8 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		request.setVersion("1.1");
 		request.setUri("http://" + targetHost + ":" + targetPort + "/membrane/1");
 		Header header = new Header();
-		header.add("Accept", "application/json");
-		header.add("Content-Type", "application/json");
+		header.setAccept("application/json");
+		header.setContentType("application/json");
 		
 		request.setHeader(header);
 		request.setBodyContent(buffer.toString().getBytes());

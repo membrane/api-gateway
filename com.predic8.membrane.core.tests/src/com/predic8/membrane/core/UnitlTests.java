@@ -30,6 +30,7 @@ import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
+import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.rules.ForwardingRuleKeyTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
@@ -69,8 +70,9 @@ import com.predic8.membrane.core.xslt.XSLTInterceptorTest;
 	XMLSessionIdExtractorInterceptorTest.class,
 	ClusterBalancerTest.class,
 	LoadBalancingWithClusterManagerAndNoSessionTest.class,
-	LoadBalancingWithClusterManagerTest.class
-
+	LoadBalancingWithClusterManagerTest.class,
+	DNSCacheTest.class,
+	SOAPMessageValidatorInterceptorTest.class,
 })
 public class UnitlTests {
 

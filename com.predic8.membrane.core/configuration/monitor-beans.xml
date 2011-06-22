@@ -125,7 +125,7 @@
         -->
         
          <!-- 
-        <bean class="com.predic8.membrane.core.interceptor.schemavalidation.ValidateSOAPMsgInterceptor" init-method="init">
+        <bean class="com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptor" init-method="init">
           <property name="wsdl" value="http://www.predic8.com:8080/material/ArticleService?wsdl" />
         </bean>
       	 -->     

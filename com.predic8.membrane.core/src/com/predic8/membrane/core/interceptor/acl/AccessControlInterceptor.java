@@ -106,7 +106,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		response.setVersion("1.1");
 
 		Header header = new Header();
-		header.add("Content-Type", "text;charset=UTF-8");
+		header.setContentType("text;charset=UTF-8");
 		response.setHeader(header);
 
 		response.setBodyContent(content.getBytes());

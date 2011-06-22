@@ -26,6 +26,7 @@ import org.junit.Test;
 import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.config.Proxy;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -64,8 +65,8 @@ public class ViaProxyTest {
 		
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
 		post.setRequestEntity(entity); 
-		post.setRequestHeader("Content-Type", "text/xml;charset=UTF-8");
-		post.setRequestHeader("SOAPAction", "");
+		post.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		post.setRequestHeader(Header.SOAP_ACTION, "");
 		
 		assertEquals(200, client.executeMethod(post));
 	}

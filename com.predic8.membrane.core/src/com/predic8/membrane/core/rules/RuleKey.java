@@ -16,18 +16,63 @@ package com.predic8.membrane.core.rules;
 
 public interface RuleKey {
 
+	/**
+	 * Returns the TCP port that receives the messages
+	 * @return 
+	 * 		an integer value which corresponds to TCP port
+	 * 		
+	 */
 	public int getPort();
 	
+	/**
+	 * Returns the name of the HTTP method
+	 * @return 
+	 * 		a String specifying the name of the HTTP method
+	 */
 	public String getMethod();
 	
+	/**
+	 * Returns the request URI. 
+	 * For the request 
+	 * 		GET index.htm
+	 * it is
+	 * 		index.htm
+	 * 
+	 * @return 
+	 * 		a String specifying the request URI
+	 */
 	public String getPath();
 	
+	/**
+	 * @return the value of the HTTP Host header field
+	 */
 	public String getHost();
 	
+	/**
+	 * When isMethodWildcard is set to true any value of the HTTP Host header will match
+	 * @return  true
+	 * 				if HTTP method wildcard is set to true
+	 * 			false
+	 * 				otherwise
+	 */			
+	 
 	public boolean isMethodWildcard();
 	
+	/**
+	 * When isHostWidldcard is set to true any value of the HTTP Host header will match.
+	 * @return
+	 */
 	public boolean isHostWildcard();
 	
+	/**
+	 * If isPathRegExp is true, than the path will be treated as a regexp pattern. 
+	 * The path of the incoming request will be match against this regexp. 
+	 * 
+	 * return true
+	 * 			if a path is an regexp expression
+	 * 		  false
+	 * 			otherwise
+	 */
 	public boolean isPathRegExp();
 	
 	public boolean isUsePathPattern();
