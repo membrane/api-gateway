@@ -13,10 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import java.io.IOException;
+import java.util.zip.GZIPInputStream;
+
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.util.ByteUtil;
 
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 
@@ -31,16 +35,30 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	
 		Response res = exc.getResponse();
 		
-		if (res.hasNoContent())
+		if (hasNoTextContent(res) ) 
 			return Outcome.CONTINUE;
+		
 		log.debug("pattern: " +pattern);
 		log.debug("replacement: " +replacement);
 		
 		res.readBody();
-		byte[] content = res.getBody().getContent();
+		byte[] content = getContent(res);
 		res.setBodyContent(new String(content).replaceAll(pattern, replacement).getBytes());
-		
+		res.getHeader().removeFields("Content-Encoding");
 		return Outcome.CONTINUE;
+	}
+
+	private boolean hasNoTextContent(Response res) {
+		return res.hasNoContent() || res.getHeader().getContentType() == null || !res.getHeader().getContentType().contains("text");
+	}
+
+	private byte[] getContent(Response res) throws Exception, IOException {
+		if (res.isGzip()) {
+			return ByteUtil.getByteArrayData(new GZIPInputStream(res.getBodyAsStream()));
+		} else if (res.isDeflate()) {
+			return ByteUtil.getDecompressedData(res.getBody().getContent());
+		}
+		return res.getBody().getContent();
 	}
 
 	public String getPattern() {
