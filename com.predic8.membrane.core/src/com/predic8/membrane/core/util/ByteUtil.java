@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -72,21 +73,17 @@ public class ByteUtil {
 		List<Chunk> chunks = new ArrayList<Chunk>();
 		
 		while (!decompressor.finished()) {
-			try {
-				int count = decompressor.inflate(buf);
-				if (buf.length == count) {
-					Chunk chunk = new Chunk(buf);
-					chunks.add(chunk);
-				} else if (count < buf.length){
-					byte[] shortContent = new byte[count];
-					for (int j = 0; j < count; j ++) {
-						shortContent[j] = buf[j];
-					}
-					Chunk chunk = new Chunk(shortContent);
-					chunks.add(chunk);
+			int count = decompressor.inflate(buf);
+			if (buf.length == count) {
+				Chunk chunk = new Chunk(buf);
+				chunks.add(chunk);
+			} else if (count < buf.length){
+				byte[] shortContent = new byte[count];
+				for (int j = 0; j < count; j ++) {
+					shortContent[j] = buf[j];
 				}
-			} catch (DataFormatException e) {
-				throw e;
+				Chunk chunk = new Chunk(shortContent);
+				chunks.add(chunk);
 			}
 		}
 		
