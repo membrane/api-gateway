@@ -48,8 +48,8 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private boolean hasNoTextContent(Response res) {
-		return res.hasNoContent() || res.getHeader().getContentType() == null || !res.getHeader().getContentType().contains("text");
+	private boolean hasNoTextContent(Response res) {		
+		return res.hasNoContent() || !res.isXML() && !res.isHTML();
 	}
 
 	private byte[] getContent(Response res) throws Exception, IOException {
