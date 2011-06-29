@@ -102,10 +102,10 @@ Bundle-ClassPath: lib/commons-logging.jar,
  lib/xmlbeautifier-1.2.1.jar,
  lib/groovy-all-1.7.4.jar,
  lib/commons-httpclient-3.1.jar,
- lib/soa-model-2.0.4.jar,
  lib/jackson-all-1.7.4.jar,
  lib/jatl-0.1.0.jar,
- lib/commons-lang-2.6.jar
+ lib/commons-lang-2.6.jar,
+ lib/soa-model-2.0.6.jar
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0"
 Eclipse-RegisterBuddy: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
