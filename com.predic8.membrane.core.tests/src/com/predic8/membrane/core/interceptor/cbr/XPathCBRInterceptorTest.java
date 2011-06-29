@@ -61,7 +61,7 @@ public class XPathCBRInterceptorTest extends TestCase {
 		rp.setRoutes(getRouteList("//pre:CITY[text()='England']","http://www.host.uk/service",
 								  "//pre:CITY[text()='Bonn']","http://www.host.de/service"));
 		
-		i.setRoutProvider(rp);		
+		i.setRouteProvider(rp);		
 		i.setNamespaces(getNamespaceMap("pre", "http://predic8.de/customer/1"));
 		
 		i.handleRequest(exc);
