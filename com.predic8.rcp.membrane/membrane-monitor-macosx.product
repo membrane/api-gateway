@@ -35,7 +35,6 @@
       </win>
    </launcher>
 
-
    <vm>
    </vm>
 
@@ -253,6 +252,7 @@
       <plugin id="com.predic8.rcp.membrane"/>
       <plugin id="org.apache.lucene"/>
       <plugin id="org.apache.lucene.analysis"/>
+      <plugin id="org.apache.lucene.core"/>
       <plugin id="org.eclipse.core.commands"/>
       <plugin id="org.eclipse.core.contenttype"/>
       <plugin id="org.eclipse.core.databinding"/>
@@ -266,6 +266,7 @@
       <plugin id="org.eclipse.equinox.common"/>
       <plugin id="org.eclipse.equinox.launcher"/>
       <plugin id="org.eclipse.equinox.launcher.cocoa.macosx" fragment="true"/>
+      <plugin id="org.eclipse.equinox.launcher.cocoa.macosx.x86_64" fragment="true"/>
       <plugin id="org.eclipse.equinox.preferences"/>
       <plugin id="org.eclipse.equinox.registry"/>
       <plugin id="org.eclipse.help"/>
@@ -276,6 +277,7 @@
       <plugin id="org.eclipse.osgi"/>
       <plugin id="org.eclipse.swt"/>
       <plugin id="org.eclipse.swt.cocoa.macosx" fragment="true"/>
+      <plugin id="org.eclipse.swt.cocoa.macosx.x86_64" fragment="true"/>
       <plugin id="org.eclipse.ui"/>
       <plugin id="org.eclipse.ui.cocoa" fragment="true"/>
       <plugin id="org.eclipse.ui.forms"/>
