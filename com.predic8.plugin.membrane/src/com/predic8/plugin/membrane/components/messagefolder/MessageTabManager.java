@@ -227,11 +227,11 @@ public class MessageTabManager {
 		}
 	}
 
-	public void setMessageEditable(boolean bool) {
-		currentBodyTab.setBodyTextEditable(bool);
+	public void setMessageEditable(boolean editable) {
+		currentBodyTab.setBodyTextEditable(editable);
 
 		if (headerTabComposite != null && !headerTabComposite.isDisposed()) {
-			headerTabComposite.setWidgetEditable(bool);
+			headerTabComposite.setWidgetEditable(editable);
 		}
 	}
 

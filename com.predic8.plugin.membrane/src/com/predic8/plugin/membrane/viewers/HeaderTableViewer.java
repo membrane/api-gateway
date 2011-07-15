@@ -30,7 +30,6 @@ import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 
 import com.predic8.membrane.core.http.HeaderField;
@@ -41,31 +40,28 @@ import com.predic8.plugin.membrane.labelproviders.HeaderTableLabelProvider;
 
 public class HeaderTableViewer extends TableViewer {
 
-	private Table table;
-
 	private String[] columnNames = new String[] { "Header Names", "Value" };
 
 	private HeaderTableMenuAction menuAction;
 
-	private CellEditor[] editors;
-
+	private boolean editEnabled;
+	
 	public HeaderTableViewer(Composite parent, int style) {
 		super(parent, style);
 
-		table = getTable();
-		table.setHeaderVisible(true);
-		table.setLinesVisible(true);
+		getTable().setHeaderVisible(true);
+		getTable().setLinesVisible(true);
 
 		TableLayout layout = new TableLayout();
-		table.setLayout(layout);
+		getTable().setLayout(layout);
 
 		layout.addColumnData((new ColumnWeightData(1)));
 
-		new TableColumn(table, SWT.NONE).setText("Header Name");
+		new TableColumn(getTable(), SWT.NONE).setText("Header Name");
 
 		layout.addColumnData((new ColumnWeightData(2)));
 
-		new TableColumn(table, SWT.NONE).setText("Value");
+		new TableColumn(getTable(), SWT.NONE).setText("Value");
 
 		setContentProvider(new HeaderTableContentProvider());
 
@@ -73,10 +69,9 @@ public class HeaderTableViewer extends TableViewer {
 
 		setColumnProperties(columnNames);
 
-		editors = new CellEditor[] { new TextCellEditor(table), new TextCellEditor(table) };
-
-		setCellEditors(editors);
+		setCellEditors(new CellEditor[] { new TextCellEditor(getTable()), new TextCellEditor(getTable())});
 		setCellModifier(new HeaderTableCellModifier(this));
+		
 		TableViewerEditor.create(this, new ColumnViewerEditorActivationStrategy(this) {
 			protected boolean isEditorActivationEvent(ColumnViewerEditorActivationEvent event) {
 				return event.eventType == ColumnViewerEditorActivationEvent.PROGRAMMATIC;
@@ -102,19 +97,17 @@ public class HeaderTableViewer extends TableViewer {
 			public void doubleClick(DoubleClickEvent event) {
 				Object selectedItem = ((IStructuredSelection) event.getSelection()).getFirstElement();
 				if (selectedItem instanceof HeaderField) {
-					HeaderTableViewer.this.editElement(selectedItem, 1);
+					if (editEnabled)
+						HeaderTableViewer.this.editElement(selectedItem, 1);
 				}
 			}
 		});
 	}
 
-	public void setEditable(boolean bool) {
-		if (bool) {
-			setCellEditors(editors);
-		} else {
+	public void setEditable(boolean aFlag) {
+		this.editEnabled = aFlag;
+		if (!editEnabled)
 			cancelEditing();
-			setCellEditors(null);
-		}
 	}
 
 }

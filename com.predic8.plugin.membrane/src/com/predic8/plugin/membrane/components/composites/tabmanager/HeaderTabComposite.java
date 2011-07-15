@@ -23,24 +23,24 @@ import com.predic8.plugin.membrane.viewers.HeaderTableViewer;
 
 public class HeaderTabComposite extends AbstractTabComposite {
 
-	protected HeaderTableViewer headerTableViewer;
+	protected HeaderTableViewer tableViewer;
 	
 	public HeaderTabComposite(TabFolder parent) {
 		super(parent, "HTTP");
-		headerTableViewer = new HeaderTableViewer(this, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
+		tableViewer = new HeaderTableViewer(this, SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION);
 	}
 
 	@Override
 	public void updateInternal(Message msg) {
-		headerTableViewer.setInput(msg);
+		tableViewer.setInput(msg);
 	}
 	
-	public void setWidgetEditable(boolean status) {
-		headerTableViewer.setEditable(status);
+	public void setWidgetEditable(boolean editable) {
+		tableViewer.setEditable(editable);
 	}
 	
 	public void updateWidget(Message msg, byte[] inputBodyBytes) {
-		headerTableViewer.update(msg.getHeader().setValue(Header.CONTENT_LENGTH, Integer.toString(inputBodyBytes.length)), null);
+		tableViewer.update(msg.getHeader().setValue(Header.CONTENT_LENGTH, Integer.toString(inputBodyBytes.length)), null);
 	}
 	
 }
