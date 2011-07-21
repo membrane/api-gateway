@@ -35,6 +35,7 @@ public class MembranePerspective implements IPerspectiveFactory {
 	public void createInitialLayout(IPageLayout layout) {
 		
 		layout.setEditorAreaVisible(false);
+		layout.setFixed(false);
 		
 		if (showSingle) {
 			IFolderLayout centerLayoutFolder = layout.createFolder("center folder", IPageLayout.TOP, 1.0f, IPageLayout.ID_EDITOR_AREA);
@@ -58,8 +59,6 @@ public class MembranePerspective implements IPerspectiveFactory {
 			southLayoutFolder.addView(RequestView.VIEW_ID);
 			southLayoutFolder.addView(ResponseView.VIEW_ID);
 		}
-		
-		layout.setFixed(true);
 	}
 
 	public boolean isShowSingle() {
@@ -70,4 +69,6 @@ public class MembranePerspective implements IPerspectiveFactory {
 		this.showSingle = showSingle;
 	}
 
+	
+	
 }

@@ -14,6 +14,9 @@
 
 package com.predic8.rcp.membrane;
 
+import org.eclipse.ui.IWorkbenchPreferenceConstants;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.application.IWorkbenchConfigurer;
 import org.eclipse.ui.application.IWorkbenchWindowConfigurer;
 import org.eclipse.ui.application.WorkbenchAdvisor;
 import org.eclipse.ui.application.WorkbenchWindowAdvisor;
@@ -29,4 +32,17 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 	public String getInitialWindowPerspectiveId() {
 		return MembranePerspective.PERSPECTIVE_ID;
 	}
+	
+	@Override
+	public void initialize(IWorkbenchConfigurer configurer) {
+		super.initialize(configurer);
+		
+		PlatformUI.getPreferenceStore().setDefault(IWorkbenchPreferenceConstants.ENABLE_ANIMATIONS, true);
+		PlatformUI.getPreferenceStore().setDefault(IWorkbenchPreferenceConstants.ENABLE_NEW_MIN_MAX, false);
+		PlatformUI.getPreferenceStore().setDefault(IWorkbenchPreferenceConstants.SHOW_INTRO, true);
+		PlatformUI.getPreferenceStore().setDefault(IWorkbenchPreferenceConstants.SHOW_TRADITIONAL_STYLE_TABS, false);
+	
+	}
+	
+	
 }
