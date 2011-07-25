@@ -106,7 +106,6 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 		composite.setLayout(createTopLayout());
 
 		createTableViewer(composite);
-		extendTableViewer();
 		
 		createActions();
 
@@ -215,13 +214,22 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 		return new ExchangesViewLazyContentProvider(tableViewer);
 	}
 	
-	private void extendTableViewer() {
-				
+	@Override
+	protected void setPropertiesForTableViewer() {
+		super.setPropertiesForTableViewer();
 		tableViewer.setUseHashlookup(true);
-
-		tableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+	}
+	
+	@Override
+	protected void addListenersForTableViewer() {
+		super.addListenersForTableViewer();
+		tableViewer.addSelectionChangedListener(createSelectionChangeListener());
+	}
+	
+	private ISelectionChangedListener createSelectionChangeListener() {
+		return new ISelectionChangedListener() {
+			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
-
 				IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
 				if (selection.isEmpty()) {
 					updateRequestResponseViews(null);
@@ -233,15 +241,16 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 					enableStopMenu(exc);
 				}
 			}
-
+			
 			private void updateRequestResponseViews(Exchange exc) {
 				setInputForMessageView(exc, ResponseView.VIEW_ID);
 				setInputForMessageView(exc, RequestView.VIEW_ID);
 				canShowBody = true;
 			}
-		});
+			
+		};
 	}
-
+	
 	private Layout createTopLayout() {
 		GridLayout layout = new GridLayout();
 		layout.numColumns = 1;

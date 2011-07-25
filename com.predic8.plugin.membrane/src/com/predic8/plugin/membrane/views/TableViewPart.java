@@ -17,14 +17,18 @@ public abstract class TableViewPart extends ViewPart {
 	
 	protected void createTableViewer(Composite composite) {
 		tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER | SWT.VIRTUAL);
-		createColumns();
-		tableViewer.setLabelProvider(createLabelProvider());
-		tableViewer.setContentProvider(createContentProvider());
-		
 		GridData gData = new GridData(GridData.FILL_BOTH);
 		gData.grabExcessVerticalSpace = true;
 		gData.grabExcessHorizontalSpace = true;
 		tableViewer.getTable().setLayoutData(gData);
+		
+		createColumns();
+		tableViewer.setLabelProvider(createLabelProvider());
+		tableViewer.setContentProvider(createContentProvider());
+		
+		setPropertiesForTableViewer();
+		addListenersForTableViewer();
+		addCellEditorsAndModifiersToViewer();
 	}
 	
 	@Override
@@ -64,5 +68,17 @@ public abstract class TableViewPart extends ViewPart {
 	protected abstract IBaseLabelProvider createLabelProvider();
 	
 	protected abstract IContentProvider createContentProvider();
+	
+	protected void setPropertiesForTableViewer() {
+		
+	}
+	
+	protected void addListenersForTableViewer() {
+		
+	}
+	
+	protected void addCellEditorsAndModifiersToViewer() {
+		
+	}
 	
 }

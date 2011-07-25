@@ -34,7 +34,6 @@ public abstract class AbstractRulesView extends TableViewPart implements IExchan
 
 	protected RuleNameCellEditorModifier cellEditorModifier;
 	
-	
 	protected RuleEditAction editRuleAction;
 	
 	protected RemoveRuleAction removeRuleAction;

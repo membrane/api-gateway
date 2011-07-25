@@ -56,16 +56,6 @@ public class RuleStatisticsView extends AbstractRulesView {
 	
 		addCellEditorsAndModifiersToViewer();
 		
-		tableViewer.addDoubleClickListener(new IDoubleClickListener() {
-			public void doubleClick(DoubleClickEvent event) {
-				IStructuredSelection selection = (IStructuredSelection) event.getSelection();
-				Object selectedItem = selection.getFirstElement();
-				if (selectedItem instanceof Rule) {
-					tableViewer.editElement(selectedItem, 0);
-				} 
-			}
-		});
-		
 		new Label(composite, SWT.NONE).setText(" All times in ms");
 		
 		
@@ -76,6 +66,25 @@ public class RuleStatisticsView extends AbstractRulesView {
 	    setInputForTable(Router.getInstance().getRuleManager());
 	}
 
+	@Override
+	protected void addListenersForTableViewer() {
+		super.addListenersForTableViewer();
+		tableViewer.addDoubleClickListener(createDoubleClickListener());
+	}
+	
+	private IDoubleClickListener createDoubleClickListener() {
+		return new IDoubleClickListener() {
+			@Override
+			public void doubleClick(DoubleClickEvent event) {
+				IStructuredSelection selection = (IStructuredSelection) event.getSelection();
+				Object selectedItem = selection.getFirstElement();
+				if (selectedItem instanceof Rule) {
+					tableViewer.editElement(selectedItem, 0);
+				} 
+			}
+		};
+	}
+	
 	@Override
 	protected IBaseLabelProvider createLabelProvider() {
 		return new RuleStatisticsLabelProvider();
@@ -101,13 +110,16 @@ public class RuleStatisticsView extends AbstractRulesView {
 		return Router.getInstance().getExchangeStore();
 	}
 
+	@Override
+	protected void setPropertiesForTableViewer() {
+		super.setPropertiesForTableViewer();
+		tableViewer.setColumnProperties(new String[] {"name"});
+	}
 
-	private void addCellEditorsAndModifiersToViewer() {
+	protected void addCellEditorsAndModifiersToViewer() {
 		final CellEditor[] cellEditors = new CellEditor[1];
 		cellEditors[0] = new TextCellEditor(tableViewer.getTable(), SWT.BORDER);
 		tableViewer.setCellEditors(cellEditors);
-		tableViewer.setColumnProperties(new String[] {"name"});
-		
 		
 		cellEditorModifier = new RuleNameCellEditorModifier();
 		cellEditorModifier.setTableViewer(tableViewer);

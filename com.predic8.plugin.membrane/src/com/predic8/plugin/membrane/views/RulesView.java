@@ -58,8 +58,7 @@ public class RulesView extends AbstractRulesView {
 		Composite composite = createComposite(parent);
 
 		createTableViewer(composite);
-		extendTableViewer();
-		
+	
 		controlsComposite = new RulesViewControlsComposite(composite);
 		
 		
@@ -104,11 +103,21 @@ public class RulesView extends AbstractRulesView {
 		return new RulesViewContentProvider();
 	}
 	
-	private void extendTableViewer() {
+	@Override
+	protected void setPropertiesForTableViewer() {
+		super.setPropertiesForTableViewer();
+		tableViewer.setColumnProperties(new String[] {"name" });
+	}
+	
+	@Override
+	protected void addListenersForTableViewer() {
+		super.addListenersForTableViewer();
+		tableViewer.addDoubleClickListener(createDoubleClickListener());
+		tableViewer.addSelectionChangedListener(createSelectionChangeListener());
+	}
+	
+	protected void addCellEditorsAndModifiersToViewer() {
 		setCellEditorForTableViewer(tableViewer);
-		
-		tableViewer.setColumnProperties(new String[] { "name" });
-
 		cellEditorModifier = new RuleNameCellEditorModifier();
 		cellEditorModifier.setTableViewer(tableViewer);
 		tableViewer.setCellModifier(cellEditorModifier);
@@ -118,18 +127,11 @@ public class RulesView extends AbstractRulesView {
 				return event.eventType == ColumnViewerEditorActivationEvent.PROGRAMMATIC;
 			}
 		}, ColumnViewerEditor.DEFAULT);
+	}
 
-		tableViewer.addDoubleClickListener(new IDoubleClickListener() {
-			public void doubleClick(DoubleClickEvent event) {
-				IStructuredSelection selection = (IStructuredSelection) event.getSelection();
-				Object selectedItem = selection.getFirstElement();
-				if (selectedItem instanceof Rule) {
-					tableViewer.editElement(selectedItem, 0);
-				}
-			}
-		});
-		
-		tableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
+	private ISelectionChangedListener createSelectionChangeListener() {
+		return new ISelectionChangedListener() {
+			@Override
 			public void selectionChanged(SelectionChangedEvent event) {
 				IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
 				if (selection == null || selection.isEmpty()) {
@@ -139,9 +141,8 @@ public class RulesView extends AbstractRulesView {
 				controlsComposite.enableDependentButtons(true);
 				
 				setSelectedRule((Rule)selection.getFirstElement());
-				
 			}
-
+			
 			private void setSelectedRule(Rule selectedRule) {
 				removeRuleAction.setSelectedRule(selectedRule);
 				editRuleAction.setSelectedRule(selectedRule);
@@ -151,11 +152,23 @@ public class RulesView extends AbstractRulesView {
 			
 				updatedetailsViewIfVisible(selectedRule);
 			}
-
-		});	
-		
+			
+		};
 	}
-
+	
+	private IDoubleClickListener createDoubleClickListener() {
+		return new IDoubleClickListener() {
+			@Override
+			public void doubleClick(DoubleClickEvent event) {
+				IStructuredSelection selection = (IStructuredSelection) event.getSelection();
+				Object selectedItem = selection.getFirstElement();
+				if (selectedItem instanceof Rule) {
+					tableViewer.editElement(selectedItem, 0);
+				}
+			}
+		};
+	}
+	
 	private void updatedetailsViewIfVisible(Rule selectedRule) {
 		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 		IViewPart part = page.findView(RuleDetailsView.VIEW_ID);
@@ -216,8 +229,7 @@ public class RulesView extends AbstractRulesView {
 	}
 
 	public void setExchangeStopped(AbstractExchange exchange) {
-		// TODO Auto-generated method stub
-		
+		// ignore
 	}
 	
 }
