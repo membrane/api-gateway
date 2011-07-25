@@ -15,9 +15,7 @@
 package com.predic8.plugin.membrane.views;
 
 import org.eclipse.jface.action.MenuManager;
-import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
@@ -32,10 +30,7 @@ import com.predic8.plugin.membrane.actions.rules.RuleEditAction;
 import com.predic8.plugin.membrane.actions.views.ShowRuleDetailsViewAction;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
 
-public abstract class AbstractRulesView extends ViewPart implements IExchangesStoreListener, IRuleChangeListener {
-
-	
-	protected TableViewer tableViewer;
+public abstract class AbstractRulesView extends TableViewPart implements IExchangesStoreListener, IRuleChangeListener {
 
 	protected RuleNameCellEditorModifier cellEditorModifier;
 	
@@ -78,11 +73,6 @@ public abstract class AbstractRulesView extends ViewPart implements IExchangesSt
 		
 		tableViewer.getControl().setMenu(menuManager.createContextMenu(tableViewer.getControl()));
 		getSite().registerContextMenu(menuManager, tableViewer);
-	}
-	
-	@Override
-	public void setFocus() {
-		tableViewer.getTable().setFocus();
 	}
 	
 	public void setInputForTable(RuleManager manager) {

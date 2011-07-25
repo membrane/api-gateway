@@ -18,13 +18,14 @@ import org.eclipse.jface.viewers.ColumnViewerEditor;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
 import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IBaseLabelProvider;
+import org.eclipse.jface.viewers.IContentProvider;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.swt.SWT;
@@ -41,12 +42,10 @@ import org.eclipse.ui.PlatformUI;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
 import com.predic8.plugin.membrane.components.composites.RulesViewControlsComposite;
 import com.predic8.plugin.membrane.contentproviders.RulesViewContentProvider;
 import com.predic8.plugin.membrane.labelproviders.RulesViewLabelProvider;
-import com.predic8.plugin.membrane.labelproviders.TableHeaderLabelProvider;
 
 public class RulesView extends AbstractRulesView {
 
@@ -58,7 +57,8 @@ public class RulesView extends AbstractRulesView {
 	public void createPartControl(Composite parent) {
 		Composite composite = createComposite(parent);
 
-		tableViewer = createTableViewer(composite);	
+		createTableViewer(composite);
+		extendTableViewer();
 		
 		controlsComposite = new RulesViewControlsComposite(composite);
 		
@@ -94,20 +94,17 @@ public class RulesView extends AbstractRulesView {
 		label.setLayoutData(gData);
 	}
 
-	private TableViewer createTableViewer(Composite composite) {
-		final TableViewer tableViewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
-		createColumns(tableViewer);
-		tableViewer.setContentProvider(new RulesViewContentProvider());
-		
-		
-		tableViewer.setLabelProvider(new RulesViewLabelProvider());
-		
-		GridData gridData = new GridData(GridData.FILL_BOTH);
-		gridData.grabExcessVerticalSpace = true;
-		gridData.grabExcessHorizontalSpace = true;
-		tableViewer.getTable().setLayoutData(gridData);
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "RuleStatistics");
-
+	@Override
+	protected IBaseLabelProvider createLabelProvider() {
+		return new RulesViewLabelProvider();
+	}
+	
+	@Override
+	protected IContentProvider createContentProvider() {
+		return new RulesViewContentProvider();
+	}
+	
+	private void extendTableViewer() {
 		setCellEditorForTableViewer(tableViewer);
 		
 		tableViewer.setColumnProperties(new String[] { "name" });
@@ -157,7 +154,6 @@ public class RulesView extends AbstractRulesView {
 
 		});	
 		
-		return tableViewer;  
 	}
 
 	private void updatedetailsViewIfVisible(Rule selectedRule) {
@@ -177,23 +173,14 @@ public class RulesView extends AbstractRulesView {
 		tableViewer.setCellEditors(cellEditors);
 	}
 
-	private void createColumns(TableViewer viewer) {
-		String[] titles = { "Rule", "Exchanges"};
-		int[] bounds = { 158, 80 };
-
-		for (int i = 0; i < titles.length; i++) {
-			TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
-			column.getViewer().setLabelProvider(new TableHeaderLabelProvider());
-			column.getColumn().setAlignment(SWT.CENTER);
-			column.getColumn().setText(titles[i]);
-			column.getColumn().setWidth(bounds[i]);
-			column.getColumn().setResizable(true);
-			column.getColumn().setMoveable(true);
-		}
-				
-		viewer.getTable().setHeaderVisible(true);
-		viewer.getTable().setLinesVisible(true);
-		
+	@Override
+	protected String[] getTableColumnTitles() {
+		return new String[] { "Rule", "Exchanges"};
+	}
+	
+	@Override
+	protected int[] getTableColumnBounds() {
+		return new int[] { 158, 80 };
 	}
 	
 	public void ruleRemoved(Rule rule) {

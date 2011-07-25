@@ -24,12 +24,12 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.viewers.IBaseLabelProvider;
+import org.eclipse.jface.viewers.IContentProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -45,18 +45,15 @@ import org.eclipse.swt.widgets.Link;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchActionConstants;
-import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.Configuration;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeComparator;
 import com.predic8.membrane.core.exchange.ExchangeState;
-import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.PluginUtil;
 import com.predic8.plugin.membrane.actions.ShowFiltersDialogAction;
 import com.predic8.plugin.membrane.actions.ShowSortersDialogAction;
@@ -69,14 +66,9 @@ import com.predic8.plugin.membrane.labelproviders.ExchangesViewLabelProvider;
 import com.predic8.plugin.membrane.views.util.ExpandThread;
 import com.predic8.plugin.membrane.views.util.ShrinkThread;
 
-public class ExchangesView extends ViewPart implements IExchangesStoreListener {
+public class ExchangesView extends TableViewPart implements IExchangesStoreListener {
 
 	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.ExchangesView";
-
-	private static final String[] TITLES = { "Status-Code", "Time", "Rule", "Method", "Path", "Client", "Server", "Request Content-Type", "Request Content Length", "Response Content Type", "Response Content Length", "Duration" };
-	private static final int[] BOUNDS = { 90, 100, 80, 90, 90, 80, 80, 130, 140, 140, 140, 70 };
-
-	private TableViewer tableViewer;
 
 	private boolean canShowBody = true;
 
@@ -99,12 +91,23 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 	private String filterCountText = "";
 
 	@Override
+	protected String[] getTableColumnTitles() {
+		return new String[] {"Status-Code", "Time", "Rule", "Method", "Path", "Client", "Server", "Request Content-Type", "Request Content Length", "Response Content Type", "Response Content Length", "Duration" };
+	}
+	
+	@Override
+	protected int[] getTableColumnBounds() {
+		return new int[] { 90, 100, 80, 90, 90, 80, 80, 130, 140, 140, 140, 70 };
+	}
+	
+	@Override
 	public void createPartControl(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
 		composite.setLayout(createTopLayout());
 
-		tableViewer = createTableViewer(composite);
-
+		createTableViewer(composite);
+		extendTableViewer();
+		
 		createActions();
 
 		addMenu();
@@ -202,25 +205,24 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 		});
 	}
 	
-	private TableViewer createTableViewer(Composite composite) {
-		final TableViewer viewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER | SWT.VIRTUAL);
-		createColumns(viewer);
+	@Override
+	protected IBaseLabelProvider createLabelProvider() {
+		return new ExchangesViewLabelProvider();
+	}
+	
+	@Override
+	protected IContentProvider createContentProvider() {
+		return new ExchangesViewLazyContentProvider(tableViewer);
+	}
+	
+	private void extendTableViewer() {
+				
+		tableViewer.setUseHashlookup(true);
 
-		viewer.setContentProvider(new ExchangesViewLazyContentProvider(viewer));
-		viewer.setUseHashlookup(true);
-
-		viewer.setLabelProvider(new ExchangesViewLabelProvider());
-
-		GridData gData = new GridData(GridData.FILL_BOTH);
-		gData.grabExcessVerticalSpace = true;
-		gData.grabExcessHorizontalSpace = true;
-		viewer.getTable().setLayoutData(gData);
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "ExchangesOverview");
-
-		viewer.addSelectionChangedListener(new ISelectionChangedListener() {
+		tableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 			public void selectionChanged(SelectionChangedEvent event) {
 
-				IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+				IStructuredSelection selection = (IStructuredSelection) tableViewer.getSelection();
 				if (selection.isEmpty()) {
 					updateRequestResponseViews(null);
 				}
@@ -238,7 +240,6 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 				canShowBody = true;
 			}
 		});
-		return viewer;
 	}
 
 	private Layout createTopLayout() {
@@ -260,20 +261,6 @@ public class ExchangesView extends ViewPart implements IExchangesStoreListener {
 
 		tableViewer.getControl().setMenu(manager.createContextMenu(tableViewer.getControl()));
 		getSite().registerContextMenu(manager, tableViewer);
-	}
-
-	private void createColumns(TableViewer viewer) {
-		for (int i = 0; i < TITLES.length; i++) {
-			TableViewerColumn col = new TableViewerColumn(viewer, SWT.NONE);
-			col.getColumn().setAlignment(SWT.LEFT);
-			col.getColumn().setText(TITLES[i]);
-			col.getColumn().setWidth(BOUNDS[i]);
-			col.getColumn().setResizable(true);
-			col.getColumn().setMoveable(true);
-		}
-
-		viewer.getTable().setHeaderVisible(true);
-		viewer.getTable().setLinesVisible(true);
 	}
 
 	@Override

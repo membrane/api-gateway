@@ -20,31 +20,27 @@ import org.eclipse.jface.viewers.ColumnViewerEditor;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
 import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IBaseLabelProvider;
+import org.eclipse.jface.viewers.IContentProvider;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TableViewerEditor;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
 import com.predic8.plugin.membrane.contentproviders.RuleStatisticsContentProvider;
 import com.predic8.plugin.membrane.labelproviders.RuleStatisticsLabelProvider;
-import com.predic8.plugin.membrane.labelproviders.TableHeaderLabelProvider;
 
 public class RuleStatisticsView extends AbstractRulesView {
 
@@ -56,7 +52,7 @@ public class RuleStatisticsView extends AbstractRulesView {
 
 		createRefreshButton(composite);
 		
-		tableViewer = createTableViewer(composite);
+		createTableViewer(composite);
 	
 		addCellEditorsAndModifiersToViewer();
 		
@@ -80,7 +76,16 @@ public class RuleStatisticsView extends AbstractRulesView {
 	    setInputForTable(Router.getInstance().getRuleManager());
 	}
 
-
+	@Override
+	protected IBaseLabelProvider createLabelProvider() {
+		return new RuleStatisticsLabelProvider();
+	}
+	
+	@Override
+	protected IContentProvider createContentProvider() {
+		return new RuleStatisticsContentProvider();
+	}
+	
 	private void createRefreshButton(Composite composite) {
 		Button btRefresh = new Button(composite, SWT.PUSH);
 		btRefresh.setText("Refresh Table");
@@ -115,22 +120,6 @@ public class RuleStatisticsView extends AbstractRulesView {
 		}, ColumnViewerEditor.DEFAULT);
 	}
 
-
-	private TableViewer createTableViewer(Composite composite) {
-		TableViewer viewer = new TableViewer(composite, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL | SWT.FULL_SELECTION | SWT.BORDER);
-		createColumns(viewer);
-		viewer.setContentProvider(new RuleStatisticsContentProvider());
-		viewer.setLabelProvider(new RuleStatisticsLabelProvider());
-		
-		GridData gridData = new GridData(GridData.FILL_BOTH);
-		gridData.grabExcessVerticalSpace = true;
-		gridData.grabExcessHorizontalSpace = true;
-		viewer.getTable().setLayoutData(gridData);
-		PlatformUI.getWorkbench().getHelpSystem().setHelp(composite, MembraneUIPlugin.PLUGIN_ID + "RuleStatistics");
-		return viewer;
-	}
-
-
 	private Composite createComposite(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
 		
@@ -145,25 +134,16 @@ public class RuleStatisticsView extends AbstractRulesView {
 		return composite;
 	}
 
-	
-	private void createColumns(TableViewer viewer) {
-		String[] titles = { "Rule", "Exchanges", "Minimum Time", "Maximum Time", "Average Time", "Bytes Sent", "Bytes Received", "Errors"};
-		int[] bounds = { 140, 80, 90, 90, 100, 80, 90, 70};	
-		
-		for (int i = 0; i < titles.length; i++) {
-			TableViewerColumn column = new TableViewerColumn(viewer, SWT.NONE);
-			column.getViewer().setLabelProvider(new TableHeaderLabelProvider());
-			column.getColumn().setAlignment(SWT.CENTER);
-			column.getColumn().setText(titles[i]);
-			column.getColumn().setWidth(bounds[i]);
-			column.getColumn().setResizable(true);
-			column.getColumn().setMoveable(true);
-		}
-		viewer.getTable().setHeaderVisible(true);
-		viewer.getTable().setLinesVisible(true);
+	@Override
+	protected String[] getTableColumnTitles() {
+		return new String[] { "Rule", "Exchanges", "Minimum Time", "Maximum Time", "Average Time", "Bytes Sent", "Bytes Received", "Errors"};
 	}
 
-
+	@Override
+	protected int[] getTableColumnBounds() {
+		return new int[] { 140, 80, 90, 90, 100, 80, 90, 70};
+	}
+	
 	public void ruleRemoved(Rule rule) {
 		setInputForTable(Router.getInstance().getRuleManager());
 	}
@@ -180,8 +160,7 @@ public class RuleStatisticsView extends AbstractRulesView {
 
 
 	public void setExchangeStopped(AbstractExchange exchange) {
-		// TODO Auto-generated method stub
-		
+		// ignore
 	}
 
 
