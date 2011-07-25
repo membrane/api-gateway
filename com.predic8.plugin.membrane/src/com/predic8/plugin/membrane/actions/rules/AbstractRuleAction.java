@@ -1,4 +1,4 @@
-/* Copyright 2009 predic8 GmbH, www.predic8.com
+/* Copyright 2011 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,22 +11,24 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.plugin.membrane.actions.rules;
 
-import org.eclipse.jface.viewers.TableViewer;
+import org.eclipse.jface.action.Action;
 
-public class RenameRuleAction extends AbstractRuleAction {
+import com.predic8.membrane.core.rules.Rule;
 
-	private TableViewer tableViewer;
+public abstract class AbstractRuleAction extends Action {
+
+	protected Rule selectedRule;
 	
-	public RenameRuleAction(TableViewer treeView) {
-		super("Rename Rule Action", "Rename Rule");
-		this.tableViewer = treeView;
+	public AbstractRuleAction(String id, String text) {
+		setId(id);
+		setText(text);
+		setEnabled(false);
 	}
 	
-	public void run() {		
-		tableViewer.editElement(selectedRule, 0);
+	public void setSelectedRule(Rule selectedRule) {
+		this.selectedRule = selectedRule;
 	}
 	
 }

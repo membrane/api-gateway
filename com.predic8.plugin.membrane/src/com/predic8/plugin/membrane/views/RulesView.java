@@ -50,7 +50,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.actions.exchanges.RemoveAllExchangesAction;
 import com.predic8.plugin.membrane.actions.rules.RemoveRuleAction;
 import com.predic8.plugin.membrane.actions.rules.RenameRuleAction;
-import com.predic8.plugin.membrane.actions.rules.RuleAction;
+import com.predic8.plugin.membrane.actions.rules.AbstractRuleAction;
 import com.predic8.plugin.membrane.actions.rules.RuleEditAction;
 import com.predic8.plugin.membrane.actions.views.ShowRuleDetailsViewAction;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
@@ -66,7 +66,7 @@ public class RulesView extends AbstractRulesView {
 	
 	protected RuleNameCellEditorModifier cellEditorModifier;
 	
-	protected List<RuleAction> actions = new ArrayList<RuleAction>();
+	protected List<AbstractRuleAction> actions = new ArrayList<AbstractRuleAction>();
 	
 	@Override
 	public void createPartControl(Composite parent) {
@@ -97,7 +97,7 @@ public class RulesView extends AbstractRulesView {
 	
 	protected void addTableMenu() {
 		MenuManager menuManager = new MenuManager();
-		for (RuleAction action : actions) {
+		for (AbstractRuleAction action : actions) {
 			menuManager.add(action);
 		}
 		tableViewer.getControl().setMenu(menuManager.createContextMenu(tableViewer.getControl()));
@@ -105,7 +105,7 @@ public class RulesView extends AbstractRulesView {
 	}
 	
 	private void enableActions(boolean enabled) {
-		for (RuleAction action : actions) {
+		for (AbstractRuleAction action : actions) {
 			action.setEnabled(enabled);
 		}
 	}
@@ -182,7 +182,7 @@ public class RulesView extends AbstractRulesView {
 			}
 			
 			private void setSelectedRule(Rule selectedRule) {
-				for (RuleAction action : actions) {
+				for (AbstractRuleAction action : actions) {
 					action.setSelectedRule(selectedRule);
 				}
 				controlsComposite.setSelectedRule(selectedRule);

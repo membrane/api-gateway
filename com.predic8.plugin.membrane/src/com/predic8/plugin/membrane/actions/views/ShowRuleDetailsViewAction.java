@@ -15,10 +15,10 @@
 package com.predic8.plugin.membrane.actions.views;
 
 import com.predic8.plugin.membrane.PluginUtil;
-import com.predic8.plugin.membrane.actions.rules.RuleAction;
+import com.predic8.plugin.membrane.actions.rules.AbstractRuleAction;
 import com.predic8.plugin.membrane.views.RuleDetailsView;
 
-public class ShowRuleDetailsViewAction extends RuleAction {
+public class ShowRuleDetailsViewAction extends AbstractRuleAction {
 
 	public ShowRuleDetailsViewAction() {
 		super("Show Rule Details Action", "Show Rule Details");
