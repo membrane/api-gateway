@@ -15,22 +15,18 @@ package com.predic8.membrane.core.interceptor.rest;
 
 import static junit.framework.Assert.assertEquals;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
-import com.predic8.membrane.core.rules.ForwardingRule;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.rules.Rule;
 public class RESTBLZServiceIntegrationTest {
 
@@ -48,9 +44,9 @@ public class RESTBLZServiceIntegrationTest {
 		router.getTransport().getInterceptors().add(http2xml);
 
 		RegExURLRewriteInterceptor urlRewriter = new RegExURLRewriteInterceptor();
-		Map<String, String> mapping = new HashMap<String, String>();
-		mapping.put("/bank/.*", "/axis2/services/BLZService");
-		urlRewriter.setMapping(mapping );
+		List<Mapping> mappings = new ArrayList<Mapping>();
+		mappings.add( new Mapping("/bank/.*", "/axis2/services/BLZService"));
+		urlRewriter.setMappings(mappings);
 		router.getTransport().getInterceptors().add(urlRewriter);
 		
 		XSLTInterceptor xslt = new XSLTInterceptor();

@@ -40,7 +40,7 @@ public class AccessControlParserTest extends TestCase {
 		assertEquals(3, resources.size());
 	}
 	
-	@Test
+	/*@Test
 	public void testAxis2ResourceClientsSize() throws Exception {
 		assertEquals(4, resources.get(0).getClientAddresses().size());
 	}
@@ -90,6 +90,6 @@ public class AccessControlParserTest extends TestCase {
 	@Test
 	public void testAbcResourceClientList() throws Exception {
 		assertEquals("^.*$", resources.get(2).getClientAddresses().get(0).toString());
-	}
+	}*/
 
 }

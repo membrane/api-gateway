@@ -74,7 +74,9 @@ import com.predic8.membrane.core.xslt.XSLTInterceptorTest;
 	LoadBalancingWithClusterManagerTest.class,
 	DNSCacheTest.class,
 	SOAPMessageValidatorInterceptorTest.class,
-	XPathCBRInterceptorTest.class
+	XPathCBRInterceptorTest.class,
+	CustomSpringConfigurationTest.class,
+	CustomRulesConfigurationTest.class
 })
 public class UnitlTests {
 

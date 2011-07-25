@@ -91,7 +91,7 @@ public class LoadBalancingWithClusterManagerTest {
 		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
 		extractor.setLocalName("session");
 		extractor.setNamespace("http://predic8.com/session/");
-		lbi.setSesssionIdExtractor(extractor);
+		lbi.setSessionIdExtractor(extractor);
 
 		ForwardingRule lbiRule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 5000), "thomas-bayer.com", 80);
 		lbiRule.getInterceptors().add(lbi);

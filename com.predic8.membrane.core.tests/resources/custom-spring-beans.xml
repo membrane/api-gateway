@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2009 predic8 GmbH, www.predic8.com Licensed under the Apache 
+	License, Version 2.0 (the "License"); you may not use this file except in 
+	compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
+	Unless required by applicable law or agreed to in writing, software distributed 
+	under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES 
+	OR CONDITIONS OF ANY KIND, either express or implied. See the License for 
+	the specific language governing permissions and limitations under the License. -->
+<spring:beans xmlns="http://membrane-soa.org/router/beans/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd					    
+					    http://membrane-soa.org/router/beans/1/ http:/www.predic8.com/schema/router/conf/router-conf.xsd">
+
+	<router useClusterManager="false" 
+			exchangeStore="memoryExchangeStore" 
+			adjustHostHeader="true" 
+			indentMessage="true" 
+			adjustContentLength="true" />
+ 
+	<transport coreThreadPoolSize="20">
+		<interceptors>
+			<ruleMatching />
+			<dispatching />
+			<exchangeStore name="forgetfulExchangeStore" />
+			<exchangeStore name="memoryExchangeStore" />
+			<exchangeStore name="fileExchangeStore" />
+			<transform requestXSLT="/test/request.xslt"
+				responseXSLT="/test/response.xslt" />
+			<regExUrlRewriter>
+				<mapping regex="/bank/" uri="/axis2/" />
+			</regExUrlRewriter>
+			<adminConsole />
+			<webServer docBase="docBase" />
+			<balancer>
+				<xmlSessionIdExtractor namespace="http://chat.predic8.com/" localName="session" />
+				<nodes>
+					<node host="localhost" port="8080"/>
+				</nodes>
+				<byThreadStrategy maxNumberOfThreadsPerEndpoint="10" retryTimeOnBusy="1000" />
+			</balancer>
+			<clusterNotification validateSignature="true"
+				keyHex="2324920293" timeout="5000" />
+			<basicAuthentication>
+				<user name="jim" password="password" />
+			</basicAuthentication>
+			<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register" 
+						  port="4000" protocol="http" host="localhost" />
+			<statisticsCSV file="c:\temp\stat.csv" />
+			<rest2Soap>
+				<mapping regex="/bank/.*" 
+						 soapAction=""
+						 soapURI="/axis2/services/BLZService"
+						 requestXSLT="request.xsl" 
+						 responseXSLT="response.xsl" />
+			</rest2Soap>			
+    		<soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
+			<cbr>
+				<route xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
+			</cbr>
+			<regExReplacer regex="Hallo" replace="Hello" />
+			<counter name="Node 1"/>
+			<accessControl file="resources/acl/acl.xml"/>
+			<!-- 
+    		<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />
+    		-->
+		</interceptors>
+	</transport>
+
+	<transform requestXSLT="/test/request.xslt"
+		responseXSLT="/test/response.xslt" />
+	<regExUrlRewriter>
+		<mapping regex="/bank/" uri="/axis2/" />
+	</regExUrlRewriter>
+	<adminConsole />
+	<webServer docBase="docBase" />
+	<balancer >
+		<roundRobinStrategy />
+	</balancer>
+	<clusterNotification validateSignature="true"
+		keyHex="2324920293" timeout="5000" />
+	<basicAuthentication>
+		<user name="jim" password="password" />
+	</basicAuthentication>
+	<accessControl file="resources/acl/acl.xml"/>
+	<wsdlRewriter />
+	<statisticsCSV file="c:\temp\stat.csv" />
+
+<!-- 
+	<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />
+-->
+	<rest2Soap>
+		<mapping regex="/bank/.*" 
+				 soapAction=""
+				 soapURI="/axis2/services/BLZService"
+				 requestXSLT="examples/rest2soap/blz-httpget2soap-request.xsl" 
+				 responseXSLT="examples/rest2soap/strip-soap-envelope.xsl" />
+	</rest2Soap>			
+  	<soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />	
+	<cbr>
+		<route xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
+	</cbr>
+	<regExReplacer regex="Hallo" replace="Hello" />
+	<counter name="Node 1"/>
+	
+	<memoryExchangeStore />
+	<forgetfulExchangeStore />
+	<fileExchangeStore dir="temp" raw="false" saveBodyOnly="false"/>
+
+<!-- 
+  <spring:bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
+    <spring:property name="driverClassName" value="com.mysql.jdbc.Driver" /> 
+    <spring:property name="url" value="jdbc:mysql://localhost:3306/membrane" /> 
+    <spring:property name="username" value="root" /> 
+    <spring:property name="password" value="root" /> 
+  </spring:bean>
+--> 
+
+</spring:beans>

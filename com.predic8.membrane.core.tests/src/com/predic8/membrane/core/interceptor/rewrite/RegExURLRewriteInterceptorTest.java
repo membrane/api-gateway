@@ -15,13 +15,13 @@ package com.predic8.membrane.core.interceptor.rewrite;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
 import com.predic8.membrane.core.util.MessageUtil;
 public class RegExURLRewriteInterceptorTest {
 
@@ -36,9 +36,9 @@ public class RegExURLRewriteInterceptorTest {
 	@Test
 	public void testRewrite() throws Exception {
 		RegExURLRewriteInterceptor interceptor = new RegExURLRewriteInterceptor();
-		Map<String, String> mapping = new HashMap<String, String>();
-		mapping.put("/buy/(.*)/(.*)", "/buy?item=$1&amount=$2");
-		interceptor.setMapping(mapping);
+		List<Mapping> mappings = new ArrayList<Mapping>();
+		mappings.add( new Mapping("/buy/(.*)/(.*)", "/buy?item=$1&amount=$2"));
+		interceptor.setMappings(mappings);
 		interceptor.handleRequest(exc);
 		
 		assertEquals("/buy?item=banana&amount=3", exc.getRequest().getUri());

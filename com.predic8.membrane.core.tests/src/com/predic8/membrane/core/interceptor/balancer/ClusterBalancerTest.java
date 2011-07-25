@@ -39,7 +39,7 @@ public class ClusterBalancerTest extends TestCase {
 		extracor.setNamespace("http://predic8.com/session/");
 
 		lb = new LoadBalancingInterceptor();
-		lb.setSesssionIdExtractor(extracor);
+		lb.setSessionIdExtractor(extracor);
 
 		cm = new ClusterManager();
 		cm.up("Default", "localhost", 2000);
@@ -54,18 +54,30 @@ public class ClusterBalancerTest extends TestCase {
 		Exchange exc = getExchangeWithSession();
 
 		lb.handleRequest(exc);
+		System.out.println("1");
 
-		assertEquals("localhost", cm.getSessions("Default").get("555555").getNode().getHost());
+		Session s = cm.getSessions("Default").get("555555");
+		assertEquals("localhost", s.getNode().getHost());
 
 		assertEquals(2, exc.getDestinations().size()); 
 
 		String stickyDestination = exc.getDestinations().get(0);
-
 		lb.handleRequest(exc);
 
 		assertEquals(1, cm.getSessions("Default").size());
 		assertEquals(stickyDestination, exc.getDestinations().get(0));
 
+		cm.takeout("Default", "localhost", s.getNode().getPort());
+		assertEquals(1, cm.getAvailableNodesByCluster("Default").size());
+		assertFalse(stickyDestination.equals(cm.getAvailableNodesByCluster("Default").get(0)));
+		
+		lb.handleRequest(exc);
+		assertEquals(stickyDestination, exc.getDestinations().get(0));
+		
+		cm.down("Default", "localhost", s.getNode().getPort());
+		lb.handleRequest(exc);
+		
+		assertFalse(stickyDestination.equals(exc.getDestinations().get(0)));		
 	}
 
 	@Test

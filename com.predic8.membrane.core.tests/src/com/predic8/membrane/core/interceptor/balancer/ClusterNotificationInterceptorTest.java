@@ -23,7 +23,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.*;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.After;
@@ -71,6 +71,18 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	}	
 	
 	@Test
+	public void testTakeOutEndpoint() throws Exception {
+		GetMethod get = new GetMethod("http://localhost:8000/clustermanager/takeout?"+
+									   createQueryString("host", "node1.clustera",
+											   			 "port", "5000",
+										  			     "cluster","c1"));
+		
+		assertEquals(204, new HttpClient().executeMethod(get));
+		assertEquals(1, clusterManager.getAllNodesByCluster("c1").size());
+		assertTrue(clusterManager.getAllNodesByCluster("c1").get(0).isTakeOut());		
+	}	
+
+	@Test
 	public void testDownEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:8000/clustermanager/down?"+
 									   createQueryString("host", "node1.clustera",
@@ -96,7 +108,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	@Test
 	public void testSecurity() throws Exception {
 		interceptor.setValidateSignature(true);
-		interceptor.setKeyBase64("b0iKZCt0D7cMUlCYeihNwA==");
+		interceptor.setKeyHex("6f488a642b740fb70c5250987a284dc0");
 		
 		assertEquals(204, new HttpClient().executeMethod(getSecurityTestMethod(5004)));
 		
@@ -119,7 +131,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	private String getEncryptedQueryString(String qParams) throws Exception {
 		Cipher cipher = Cipher.getInstance("AES");
 		
-		cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Base64.decodeBase64("b0iKZCt0D7cMUlCYeihNwA==".getBytes("UTF-8")), "AES"));
+		cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Hex.decodeHex("6f488a642b740fb70c5250987a284dc0".toCharArray()), "AES"));
 		return new String(Base64.encodeBase64(cipher.doFinal(qParams.getBytes("UTF-8"))),"UTF-8");
 	}	
 }

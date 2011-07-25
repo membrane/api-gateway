@@ -15,21 +15,16 @@ package com.predic8.membrane.core.interceptor.rest;
 
 import static junit.framework.Assert.assertEquals;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.rules.ForwardingRule;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor.Mapping;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.rules.Rule;
 public class REST2SOAPInterceptorIntegrationTest {
 
@@ -64,18 +59,12 @@ public class REST2SOAPInterceptorIntegrationTest {
 		assertEquals(200, status);			    
 	}
 	
-	private Map<String, Map<String, String>> getMappings() {
-		Map<String, Map<String, String> > mappings = new HashMap<String, Map<String, String>>();
-		mappings.put("/bank/.*", getBLZMapping());
+	private List<Mapping> getMappings() {
+		List<Mapping> mappings = new ArrayList<Mapping>();
+		mappings.add( new Mapping( "/bank/.*", 
+								   "", "/axis2/services/BLZService",
+								   "classpath:/blz-httpget2soap-request.xsl",
+								   "classpath:/strip-soap-envelope.xsl" ) );
 		return mappings;
 	}
-
-	private Map<String, String> getBLZMapping() {
-		Map<String,String> mapping = new HashMap<String, String>();
-		mapping.put(Header.SOAP_ACTION, "");
-		mapping.put("SOAPURI", "/axis2/services/BLZService");
-		mapping.put("requestXSLT", "classpath:/blz-httpget2soap-request.xsl");
-		mapping.put("responseXSLT", "classpath:/strip-soap-envelope.xsl");
-		return mapping;
-	}	
 }
