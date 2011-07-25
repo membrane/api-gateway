@@ -125,8 +125,7 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 
 		createLabelSortedBy(gData, sorters);
 
-		Composite controls = createInnerComposite(composite, 1);
-		createTrackRequestButton(controls);
+		createTrackRequestButton(createInnerComposite(composite, 1));
 
 		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
 		refreshTable(false);

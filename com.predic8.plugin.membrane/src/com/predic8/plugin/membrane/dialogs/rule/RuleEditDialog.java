@@ -134,7 +134,7 @@ public abstract class RuleEditDialog extends Dialog {
 		return ((HttpTransport) Router.getInstance().getTransport());
 	}
 
-	protected void doRuleUpdateRule(RuleKey ruleKey) {
+	protected void doRuleUpdate(RuleKey ruleKey) {
 		if (ruleKey.equals(rule.getKey())) {
 			try {
 				updateRule(ruleKey, false);

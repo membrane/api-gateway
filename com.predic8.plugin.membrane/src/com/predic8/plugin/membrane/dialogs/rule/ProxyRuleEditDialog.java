@@ -84,7 +84,7 @@ public class ProxyRuleEditDialog extends RuleEditDialog {
 		}
 
 		ProxyRuleKey ruleKey = new ProxyRuleKey(port);
-		doRuleUpdateRule(ruleKey);
+		doRuleUpdate(ruleKey);
 		
 	}	
 

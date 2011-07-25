@@ -140,7 +140,7 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 			return;
 		}
 
-		doRuleUpdateRule(ruleKey);
+		doRuleUpdate(ruleKey);
 	}
 
 	@Override
