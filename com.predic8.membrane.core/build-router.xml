@@ -67,10 +67,17 @@
 		<copy todir="dist/router/membrane-router-${version}">
 				<fileset dir="router"/>
 		</copy>
+
 		
+		<copy todir="build/classes">
+				<fileset dir="src" >
+					<exclude name="**/*.java"/>
+					<exclude name="**/log4j.properties"/>
+				</fileset> 
+		</copy>
 		<jar destfile="dist/router/membrane-router-${version}/lib/membrane-router.jar" basedir="build/classes" includes="**" excludes="**/Starter.class, **/ClassloaderUtil*.class" />
 
-		<jar destfile="dist/router/membrane-router-${version}/starter.jar" basedir="build/classes" includes="**/Starter.class, **/ClassloaderUtil*.class" />
+		<jar destfile="dist/router/membrane-router-${version}/starter.jar" basedir="build/classes" includes="**/Starter.class, **/ClassloaderUtil*.class, META-INF/**" />
 		
         <zip destfile="dist/membrane-router-${version}.zip" basedir="dist/router/"/>
 		<tar destfile="dist/membrane-router-${version}.tgz" basedir="dist/router" compression="gzip"/>
