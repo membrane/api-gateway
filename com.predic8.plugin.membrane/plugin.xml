@@ -123,12 +123,6 @@
       </page>
    </extension>
    <extension
-         point="org.eclipse.ui.helpSupport">
-      <config
-            class="com.predic8.plugin.membrane.help.MembraneHelpUI">
-      </config>
-   </extension>
-   <extension
          point="org.eclipse.help.contexts">
       <contexts
             file="contexts.xml"
