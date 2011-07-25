@@ -106,6 +106,6 @@ Bundle-ClassPath: lib/commons-logging.jar,
  lib/jatl-0.1.0.jar,
  lib/commons-lang-2.6.jar,
  lib/soa-model-2.0.6.jar
-Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0"
+Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0";visibility:=reexport
 Eclipse-RegisterBuddy: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
