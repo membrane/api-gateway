@@ -22,7 +22,6 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
@@ -36,6 +35,7 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleActionsTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleGeneralInfoTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public abstract class RuleEditDialog extends Dialog {
 
@@ -69,13 +69,7 @@ public abstract class RuleEditDialog extends Dialog {
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.marginTop = 10;
-		gridLayout.marginLeft = 10;
-		gridLayout.marginBottom = 10;
-		gridLayout.marginRight = 10;
-		
-		container.setLayout(gridLayout);
+		container.setLayout(SWTUtil.createGridLayout(1, 10));
 		
 		tabFolder = new TabFolder(container, SWT.NONE);
 		GridData griddata4TabFolder = new GridData();

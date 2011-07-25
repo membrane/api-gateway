@@ -29,6 +29,7 @@ import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public abstract class InterceptorDialog extends Dialog {
 
@@ -88,14 +89,7 @@ public abstract class InterceptorDialog extends Dialog {
 		Group group = new Group(composite, SWT.NONE);
 		group.setText("Interceptor Description");
 		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-		
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
-		layout.marginTop = 10;
-		layout.marginLeft = 10;
-		layout.marginBottom = 10;
-		layout.marginRight = 10;
-		group.setLayout(layout);
+		group.setLayout(SWTUtil.createGridLayout(2, 10));
 		return group;
 	}
 
@@ -127,7 +121,7 @@ public abstract class InterceptorDialog extends Dialog {
 		close();
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"rawtypes" })
 	private Interceptor instantinateInterceptor() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
 		Interceptor interceptor = (Interceptor)((Class) Class.forName(textClassName.getText().trim())).newInstance();
 		interceptor.setDisplayName(textName.getText().trim());

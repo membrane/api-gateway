@@ -14,12 +14,12 @@
 package com.predic8.plugin.membrane.dialogs.rule.composites;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.components.RuleTargetGroup;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class RuleTargetTabComposite extends SecurityTabComposite {
 
@@ -27,21 +27,11 @@ public class RuleTargetTabComposite extends SecurityTabComposite {
 	
 	public RuleTargetTabComposite(Composite parent) {
 		super(parent);
-		setGridLayout();
+		setLayout(SWTUtil.createGridLayout(1, 20));
 		
 		createSecurityComposite(this);
 		
 		targetGroup = new RuleTargetGroup(this, SWT.NONE);
-	}
-
-	private void setGridLayout() {
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 20;
-		gridLayout.marginLeft = 20;
-		gridLayout.marginBottom = 20;
-		gridLayout.marginRight = 20;
-		setLayout(gridLayout);
 	}
 
 	public RuleTargetGroup getTargetGroup() {

@@ -14,7 +14,6 @@
 
 package com.predic8.plugin.membrane.actions.rules;
 
-import org.eclipse.jface.action.Action;
 import org.eclipse.swt.widgets.Display;
 
 import com.predic8.membrane.core.rules.ForwardingRule;
@@ -24,14 +23,10 @@ import com.predic8.plugin.membrane.dialogs.rule.ForwardingRuleEditDialog;
 import com.predic8.plugin.membrane.dialogs.rule.ProxyRuleEditDialog;
 import com.predic8.plugin.membrane.dialogs.rule.RuleEditDialog;
 
-public class RuleEditAction extends Action {
-
-	private Rule selectedRule;
+public class RuleEditAction extends RuleAction {
 
 	public RuleEditAction() {
-		super();
-		setText("Edit Rule");
-		setId("Rule Edit Action");
+		super("Rule Edit Action", "Edit Rule");
 	}
 
 	@Override
@@ -57,8 +52,4 @@ public class RuleEditAction extends Action {
 		dialog.open();
 	}
 
-	public void setSelectedRule(Rule selectedRule) {
-		this.selectedRule = selectedRule;
-	}
-	
 }

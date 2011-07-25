@@ -25,7 +25,6 @@ import org.eclipse.swt.widgets.Display;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.filtering.ClientFilter;
 import com.predic8.plugin.membrane.filtering.ExchangesFilter;
 

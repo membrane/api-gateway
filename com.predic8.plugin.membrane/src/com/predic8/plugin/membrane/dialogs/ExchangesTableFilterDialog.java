@@ -43,6 +43,7 @@ import com.predic8.plugin.membrane.filtering.MethodFilter;
 import com.predic8.plugin.membrane.filtering.RulesFilter;
 import com.predic8.plugin.membrane.filtering.ServerFilter;
 import com.predic8.plugin.membrane.filtering.StatusCodeFilter;
+import com.predic8.plugin.membrane.util.SWTUtil;
 import com.predic8.plugin.membrane.views.ExchangesView;
 
 public class ExchangesTableFilterDialog extends Dialog {
@@ -127,13 +128,7 @@ public class ExchangesTableFilterDialog extends Dialog {
 
 	private Composite createContainer(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
-
-		GridLayout layout = new GridLayout();
-		layout.marginTop = 20;
-		layout.marginLeft = 20;
-		layout.marginBottom = 20;
-		layout.marginRight = 20;
-		container.setLayout(layout);
+		container.setLayout(SWTUtil.createGridLayout(1, 20));
 		return container;
 	}
 

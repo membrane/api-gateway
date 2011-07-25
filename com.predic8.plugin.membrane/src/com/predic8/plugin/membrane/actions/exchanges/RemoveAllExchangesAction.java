@@ -14,21 +14,15 @@
 
 package com.predic8.plugin.membrane.actions.exchanges;
 
-import org.eclipse.jface.action.Action;
-
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
+import com.predic8.plugin.membrane.actions.rules.RuleAction;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
-public class RemoveAllExchangesAction extends Action {
+public class RemoveAllExchangesAction extends RuleAction {
 
-	private Rule selectedRule;
-	
 	public RemoveAllExchangesAction() {
-		super();
-		setText("Remove all Exchanges");
-		setId("remove all exhanges action");
+		super("remove all exhanges action", "Remove all Exchanges");
 		setImageDescriptor(MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_DELETE_EXCHANGE));
 	}
 	
@@ -36,8 +30,4 @@ public class RemoveAllExchangesAction extends Action {
 		Router.getInstance().getExchangeStore().removeAllExchanges(selectedRule);
 	}
 
-	public void setSelectedRule(Rule selectedRule) {
-		this.selectedRule = selectedRule;
-	}
-	
 }

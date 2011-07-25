@@ -13,6 +13,10 @@
    limitations under the License. */
 package com.predic8.plugin.membrane.views;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnViewerEditor;
 import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
@@ -40,8 +44,15 @@ import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.plugin.membrane.actions.exchanges.RemoveAllExchangesAction;
+import com.predic8.plugin.membrane.actions.rules.RemoveRuleAction;
+import com.predic8.plugin.membrane.actions.rules.RenameRuleAction;
+import com.predic8.plugin.membrane.actions.rules.RuleAction;
+import com.predic8.plugin.membrane.actions.rules.RuleEditAction;
+import com.predic8.plugin.membrane.actions.views.ShowRuleDetailsViewAction;
 import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
 import com.predic8.plugin.membrane.components.composites.RulesViewControlsComposite;
 import com.predic8.plugin.membrane.contentproviders.RulesViewContentProvider;
@@ -53,6 +64,10 @@ public class RulesView extends AbstractRulesView {
 
 	private RulesViewControlsComposite controlsComposite;
 	
+	protected RuleNameCellEditorModifier cellEditorModifier;
+	
+	protected List<RuleAction> actions = new ArrayList<RuleAction>();
+	
 	@Override
 	public void createPartControl(Composite parent) {
 		Composite composite = createComposite(parent);
@@ -60,7 +75,6 @@ public class RulesView extends AbstractRulesView {
 		createTableViewer(composite);
 	
 		controlsComposite = new RulesViewControlsComposite(composite);
-		
 		
 		createCommentLabel(composite);
 		
@@ -70,6 +84,30 @@ public class RulesView extends AbstractRulesView {
 		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
 		Router.getInstance().getRuleManager().addRuleChangeListener(this);
 		setInputForTable(Router.getInstance().getRuleManager());
+	}
+	
+	
+	protected void createActions () {
+		actions.add(new RemoveRuleAction());
+		actions.add(new RuleEditAction());
+		actions.add(new RemoveAllExchangesAction());
+		actions.add(new RenameRuleAction(tableViewer));
+		actions.add(new ShowRuleDetailsViewAction());
+	}
+	
+	protected void addTableMenu() {
+		MenuManager menuManager = new MenuManager();
+		for (RuleAction action : actions) {
+			menuManager.add(action);
+		}
+		tableViewer.getControl().setMenu(menuManager.createContextMenu(tableViewer.getControl()));
+		getSite().registerContextMenu(menuManager, tableViewer);
+	}
+	
+	private void enableActions(boolean enabled) {
+		for (RuleAction action : actions) {
+			action.setEnabled(enabled);
+		}
 	}
 
 	private Composite createComposite(Composite parent) {
@@ -144,12 +182,10 @@ public class RulesView extends AbstractRulesView {
 			}
 			
 			private void setSelectedRule(Rule selectedRule) {
-				removeRuleAction.setSelectedRule(selectedRule);
-				editRuleAction.setSelectedRule(selectedRule);
-				removeAllExchangesAction.setSelectedRule(selectedRule);
-				showRuleDetailsAction.setSelectedRule(selectedRule);
+				for (RuleAction action : actions) {
+					action.setSelectedRule(selectedRule);
+				}
 				controlsComposite.setSelectedRule(selectedRule);
-			
 				updatedetailsViewIfVisible(selectedRule);
 			}
 			
@@ -232,4 +268,30 @@ public class RulesView extends AbstractRulesView {
 		// ignore
 	}
 	
+	@Override
+	public void ruleAdded(Rule rule) {
+		super.ruleAdded(rule);
+		enableActions(true);
+	}
+	
+	@Override
+	public void batchUpdate(int size) {
+		super.batchUpdate(size);
+		if (size > 0)
+			enableActions(true);
+	}
+	
+	@Override
+	public void setInputForTable(RuleManager manager) {
+		super.setInputForTable(manager);
+		enableActions(manager.getTotalNumberOfRules() > 0);
+	}
+	
+	@Override
+	public void removeRule(Rule rule, int rulesLeft) {
+		super.removeRule(rule, rulesLeft);
+		if (rulesLeft == 0){
+			enableActions(false);
+		}
+	}
 }

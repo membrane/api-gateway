@@ -14,10 +14,10 @@
 package com.predic8.plugin.membrane.dialogs.rule.composites;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.plugin.membrane.components.RuleKeyGroup;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class ForwardingRuleKeyTabComposite extends SecurityTabComposite {
 
@@ -25,7 +25,7 @@ public class ForwardingRuleKeyTabComposite extends SecurityTabComposite {
 	
 	public ForwardingRuleKeyTabComposite(Composite parent) {
 		super(parent);
-		setGridLayout();
+		setLayout(SWTUtil.createGridLayout(1, 12));
 	
 		createSecurityComposite(this);
 		
@@ -33,16 +33,6 @@ public class ForwardingRuleKeyTabComposite extends SecurityTabComposite {
 		
 	}
 
-	private void setGridLayout() {
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 12;
-		gridLayout.marginLeft = 12;
-		gridLayout.marginBottom = 12;
-		gridLayout.marginRight = 12;
-		setLayout(gridLayout);
-	}
-	
 	public RuleKeyGroup getRuleKeyGroup() {
 		return ruleKeyGroup;
 	}

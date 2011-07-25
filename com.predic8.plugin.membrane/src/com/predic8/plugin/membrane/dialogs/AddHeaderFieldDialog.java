@@ -20,7 +20,6 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
@@ -29,6 +28,7 @@ import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class AddHeaderFieldDialog extends Dialog {
 
@@ -79,13 +79,7 @@ public class AddHeaderFieldDialog extends Dialog {
 
 	private Composite createBaseAreaComposite(Composite parent) {
 		Composite composite = (Composite) super.createDialogArea(parent);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
-		layout.marginLeft = 20;
-		layout.marginRight = 20;
-		layout.marginTop = 20;
-		layout.marginBottom = 20;
-		composite.setLayout(layout);
+		composite.setLayout(SWTUtil.createGridLayout(2, 20));
 		return composite;
 	}
 

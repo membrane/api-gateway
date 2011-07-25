@@ -45,6 +45,7 @@ import com.predic8.membrane.core.exchange.accessors.RuleExchangeAccessor;
 import com.predic8.membrane.core.exchange.accessors.ServerExchangeAccessor;
 import com.predic8.membrane.core.exchange.accessors.StatusCodeExchangeAccessor;
 import com.predic8.membrane.core.exchange.accessors.TimeExchangeAccessor;
+import com.predic8.plugin.membrane.util.SWTUtil;
 import com.predic8.plugin.membrane.views.ExchangesView;
 
 public class ExchangesTableSorterDialog extends Dialog {
@@ -83,7 +84,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 	@Override
 	protected Control createDialogArea(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
-		container.setLayout(createTopLayout());
+		container.setLayout(SWTUtil.createGridLayout(1, 25));
 
 		createDisableButton(container);
 
@@ -226,16 +227,6 @@ public class ExchangesTableSorterDialog extends Dialog {
 		layoutChild.numColumns = 2;
 		layoutChild.verticalSpacing = 12;
 		return layoutChild;
-	}
-
-	private GridLayout createTopLayout() {
-		GridLayout layout = new GridLayout();
-		layout.marginTop = 25;
-		layout.marginLeft = 25;
-		layout.marginBottom = 25;
-		layout.marginRight = 25;
-		layout.numColumns = 1;
-		return layout;
 	}
 
 	private Button createAddButton() {

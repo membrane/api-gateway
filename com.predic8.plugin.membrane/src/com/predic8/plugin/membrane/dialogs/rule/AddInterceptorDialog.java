@@ -22,7 +22,6 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
@@ -33,6 +32,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.providers.AddInterceptorTableViewerContentProvider;
 import com.predic8.plugin.membrane.dialogs.rule.providers.AddInterceptorTableViewerLabelProvider;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class AddInterceptorDialog extends Dialog {
 
@@ -85,12 +85,7 @@ public class AddInterceptorDialog extends Dialog {
 
 	private Composite createTopContainer(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.marginTop = 20;
-		gridLayout.marginLeft = 20;
-		gridLayout.marginBottom = 20;
-		gridLayout.marginRight = 20;
-		container.setLayout(gridLayout);
+		container.setLayout(SWTUtil.createGridLayout(1, 20));
 		return container;
 	}
 	

@@ -14,7 +14,6 @@
 
 package com.predic8.plugin.membrane.views;
 
-import org.eclipse.jface.action.MenuManager;
 import org.eclipse.swt.widgets.Display;
 
 import com.predic8.membrane.core.Router;
@@ -23,59 +22,10 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.actions.exchanges.RemoveAllExchangesAction;
-import com.predic8.plugin.membrane.actions.rules.RemoveRuleAction;
-import com.predic8.plugin.membrane.actions.rules.RenameRuleAction;
-import com.predic8.plugin.membrane.actions.rules.RuleEditAction;
-import com.predic8.plugin.membrane.actions.views.ShowRuleDetailsViewAction;
-import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
 
 public abstract class AbstractRulesView extends TableViewPart implements IExchangesStoreListener, IRuleChangeListener {
 
-	protected RuleNameCellEditorModifier cellEditorModifier;
-	
-	protected RuleEditAction editRuleAction;
-	
-	protected RemoveRuleAction removeRuleAction;
-	
-	protected RemoveAllExchangesAction removeAllExchangesAction;
-	
-	protected RenameRuleAction renameRuleAction;
-	
-	protected ShowRuleDetailsViewAction showRuleDetailsAction;
-	
-	protected void createActions () {
-		removeRuleAction = new RemoveRuleAction();
-		removeRuleAction.setEnabled(false);
-		
-		editRuleAction = new RuleEditAction();
-		editRuleAction.setEnabled(false);
-		
-		removeAllExchangesAction = new RemoveAllExchangesAction();
-		removeAllExchangesAction.setEnabled(false);
-		
-		renameRuleAction = new RenameRuleAction(tableViewer);
-		renameRuleAction.setEnabled(false);
-		
-		
-		showRuleDetailsAction = new ShowRuleDetailsViewAction();
-		showRuleDetailsAction.setEnabled(false);
-	}
-	
-	protected void addTableMenu() {
-		MenuManager menuManager = new MenuManager();
-		menuManager.add(removeRuleAction);
-		menuManager.add(editRuleAction);
-		menuManager.add(removeAllExchangesAction);
-		menuManager.add(renameRuleAction);
-		menuManager.add(showRuleDetailsAction);
-		
-		tableViewer.getControl().setMenu(menuManager.createContextMenu(tableViewer.getControl()));
-		getSite().registerContextMenu(menuManager, tableViewer);
-	}
-	
 	public void setInputForTable(RuleManager manager) {
-		enableActions(manager.getTotalNumberOfRules() > 0);
 		tableViewer.setInput(manager);
 	}
 
@@ -84,13 +34,10 @@ public abstract class AbstractRulesView extends TableViewPart implements IExchan
 	}
 
 	public void ruleAdded(Rule rule) {
-		enableActions(true);
 		refreshTable();
 	}
 
 	public void batchUpdate(int size) {
-		if (size > 0)
-			enableActions(true);
 		refreshTable();
 	}
 	
@@ -107,9 +54,6 @@ public abstract class AbstractRulesView extends TableViewPart implements IExchan
 	}
 
 	public void removeRule(Rule rule, int rulesLeft) {
-		if (rulesLeft == 0){
-			enableActions(false);
-		}
 		refreshTable();
 	}
 
@@ -117,19 +61,12 @@ public abstract class AbstractRulesView extends TableViewPart implements IExchan
 		refreshTable();
 	}
 	
-	private void enableActions(boolean enabled) {
-		editRuleAction.setEnabled(enabled);
-		removeRuleAction.setEnabled(enabled);
-		removeAllExchangesAction.setEnabled(enabled);
-		renameRuleAction.setEnabled(enabled);
-		showRuleDetailsAction.setEnabled(enabled);
-	}
-	
 	private void refreshTable() {
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
-				if (tableViewer.getTable() == null || tableViewer.getTable().isDisposed() || tableViewer.getContentProvider() == null)
+				if (tableViewer.getTable() == null || tableViewer.getTable().isDisposed())
 					return;
+				
 				tableViewer.setInput(Router.getInstance().getRuleManager());
 			}
 		});

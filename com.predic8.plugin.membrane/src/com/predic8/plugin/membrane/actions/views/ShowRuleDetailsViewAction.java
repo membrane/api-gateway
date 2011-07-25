@@ -14,28 +14,19 @@
 
 package com.predic8.plugin.membrane.actions.views;
 
-import org.eclipse.jface.action.Action;
-
-import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.PluginUtil;
+import com.predic8.plugin.membrane.actions.rules.RuleAction;
 import com.predic8.plugin.membrane.views.RuleDetailsView;
 
-public class ShowRuleDetailsViewAction extends Action {
-
-	private Rule selectedRule;
+public class ShowRuleDetailsViewAction extends RuleAction {
 
 	public ShowRuleDetailsViewAction() {
-		setText("Show Rule Details");
-		setId("Show Rule Details Action");
+		super("Show Rule Details Action", "Show Rule Details");
 	}
 
 	public void run() {
 		RuleDetailsView ruleView = (RuleDetailsView)PluginUtil.showView(RuleDetailsView.VIEW_ID);
 		ruleView.setRuleToDisplay(selectedRule);
-	}
-
-	public void setSelectedRule(Rule selectedRule) {
-		this.selectedRule = selectedRule;
 	}
 
 }

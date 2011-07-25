@@ -29,6 +29,7 @@ import org.eclipse.swt.widgets.Group;
 
 import com.predic8.plugin.membrane.components.GridPanel;
 import com.predic8.plugin.membrane.filtering.ExchangesFilter;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public abstract class AbstractFilterComposite extends GridPanel {
 
@@ -114,12 +115,7 @@ public abstract class AbstractFilterComposite extends GridPanel {
 		Group group = new Group(this, SWT.NONE);
 		group.setText(getGroupText());
 		group.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_BEGINNING));
-
-		GridLayout layout = new GridLayout();
-		layout.marginTop = 10;
-		layout.marginLeft = 10;
-		layout.marginRight = 10;
-		group.setLayout(layout);
+		group.setLayout(SWTUtil.createGridLayout(1, 10));
 		return group;
 	}
 

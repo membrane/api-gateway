@@ -15,17 +15,11 @@
 package com.predic8.plugin.membrane.views;
 
 
-import org.eclipse.jface.viewers.CellEditor;
-import org.eclipse.jface.viewers.ColumnViewerEditor;
-import org.eclipse.jface.viewers.ColumnViewerEditorActivationEvent;
-import org.eclipse.jface.viewers.ColumnViewerEditorActivationStrategy;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IBaseLabelProvider;
 import org.eclipse.jface.viewers.IContentProvider;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.TableViewerEditor;
-import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -38,7 +32,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
 import com.predic8.plugin.membrane.contentproviders.RuleStatisticsContentProvider;
 import com.predic8.plugin.membrane.labelproviders.RuleStatisticsLabelProvider;
 
@@ -57,11 +50,7 @@ public class RuleStatisticsView extends AbstractRulesView {
 		addCellEditorsAndModifiersToViewer();
 		
 		new Label(composite, SWT.NONE).setText(" All times in ms");
-		
-		
-		createActions();
-		addTableMenu();
-				
+					
 	    getExchangeStore().addExchangesViewListener(this);
 	    setInputForTable(Router.getInstance().getRuleManager());
 	}
@@ -114,22 +103,6 @@ public class RuleStatisticsView extends AbstractRulesView {
 	protected void setPropertiesForTableViewer() {
 		super.setPropertiesForTableViewer();
 		tableViewer.setColumnProperties(new String[] {"name"});
-	}
-
-	protected void addCellEditorsAndModifiersToViewer() {
-		final CellEditor[] cellEditors = new CellEditor[1];
-		cellEditors[0] = new TextCellEditor(tableViewer.getTable(), SWT.BORDER);
-		tableViewer.setCellEditors(cellEditors);
-		
-		cellEditorModifier = new RuleNameCellEditorModifier();
-		cellEditorModifier.setTableViewer(tableViewer);
-		tableViewer.setCellModifier(cellEditorModifier);
-		
-		TableViewerEditor.create(tableViewer, new ColumnViewerEditorActivationStrategy(tableViewer) {
-			protected boolean isEditorActivationEvent(ColumnViewerEditorActivationEvent event) {
-				return event.eventType == ColumnViewerEditorActivationEvent.PROGRAMMATIC;
-			}
-		}, ColumnViewerEditor.DEFAULT);
 	}
 
 	private Composite createComposite(Composite parent) {

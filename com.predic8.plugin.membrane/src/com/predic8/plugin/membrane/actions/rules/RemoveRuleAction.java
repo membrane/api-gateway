@@ -16,20 +16,14 @@ package com.predic8.plugin.membrane.actions.rules;
 
 import java.io.IOException;
 
-import org.eclipse.jface.action.Action;
-
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
-public class RemoveRuleAction extends Action {
-
-	private Rule selectedRule;
+public class RemoveRuleAction extends RuleAction {
 
 	public RemoveRuleAction() {
-		setText("Remove Rule");
-		setId("Remove Rule Action");
+		super("Remove Rule Action", "Remove Rule");
 	}
 
 	@Override
@@ -51,10 +45,6 @@ public class RemoveRuleAction extends Action {
 
 	private HttpTransport getHttpTransport() {
 		return ((HttpTransport) Router.getInstance().getTransport());
-	}
-
-	public void setSelectedRule(Rule selectedRule) {
-		this.selectedRule = selectedRule;
 	}
 
 }
