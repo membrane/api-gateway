@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="membrane-monitor-macosx" id="com.predic8.rcp.membrane.membrane_macosx_product" application="com.predic8.rcp.membrane.application" version="2.0.3" useFeatures="false" includeLaunchers="true">
+<product name="membrane-monitor-macosx" id="com.predic8.rcp.membrane.membrane_macosx_product" application="com.predic8.rcp.membrane.application" version="2.1.0" useFeatures="false" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/com.predic8.rcp.membrane/icons/logo32.png"/>
       <text>
-         Membrane SOAP Monitor Version 2.0.3
+         Membrane SOAP Monitor Version 2.1.0
   Copyright @  2004-2011 by predic8 GmbH
   Moltkestr. 40  53173 Bonn Germany 
   www.predic8.com 
@@ -34,6 +34,7 @@
          <bmp/>
       </win>
    </launcher>
+
 
    <vm>
    </vm>
@@ -252,7 +253,7 @@
       <plugin id="com.predic8.rcp.membrane"/>
       <plugin id="org.apache.lucene"/>
       <plugin id="org.apache.lucene.analysis"/>
-      <plugin id="org.apache.lucene.core"/>
+      <plugin id="org.apache.lucene.core" fragment=""/>
       <plugin id="org.eclipse.core.commands"/>
       <plugin id="org.eclipse.core.contenttype"/>
       <plugin id="org.eclipse.core.databinding"/>
