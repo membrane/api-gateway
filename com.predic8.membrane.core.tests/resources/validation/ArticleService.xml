@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Published by JAX-WS RI at http://jax-ws.dev.java.net. RI's version is JAX-WS RI 2.2.1-b01-. -->
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://predic8.com/wsdl/material/ArticleService/1/" xmlns:ns="http://predic8.com/material/1/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:ns1="http://predic8.com/material/1/" xmlns:ns2="http://predic8.com/common/1/" name="article" targetNamespace="http://predic8.com/wsdl/material/ArticleService/1/">
+    <types>
+        <xsd:schema xmlns:ns1="http://predic8.com/material/1/" xmlns:ns2="http://predic8.com/common/1/" targetNamespace="http://predic8.com/wsdl/material/ArticleService/1/">
+            <xsd:import namespace="http://predic8.com/material/1/" schemaLocation="ArticleType.xsd"/>
+            <xsd:import namespace="http://predic8.com/common/1/" schemaLocation="CommonDataTypes.xsd"/>
+            <xsd:element name="createResponse">
+                <xsd:complexType>
+                    <xsd:sequence/>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="create" type="tns:CreateType"/>
+            <xsd:complexType name="CreateType">
+                <xsd:sequence>
+                    <xsd:element name="article" type="ns1:ArticleType"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:element name="get" type="tns:GetType"/>
+            <xsd:complexType name="GetType">
+                <xsd:sequence>
+                    <xsd:element name="id" type="ns2:IdentifierType"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:element name="getResponse" type="tns:GetResponseType"/>
+            <xsd:complexType name="GetResponseType">
+                <xsd:sequence>
+                    <xsd:element name="article" type="ns1:ArticleType"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:element name="getAll" type="tns:GetAllType"/>
+            <xsd:complexType name="GetAllType">
+                <xsd:sequence>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:element name="getAllResponse" type="tns:GetAllResponseType"/>
+            <xsd:complexType name="GetAllResponseType">
+                <xsd:sequence>
+                    <xsd:element name="article" type="ns1:ArticleType" minOccurs="0" maxOccurs="unbounded"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+        </xsd:schema>
+    </types>
+    <message name="createRequest">
+        <part name="parameters" element="tns:create"/>
+    </message>
+    <message name="createResponse">
+        <part name="parameters" element="tns:createResponse"/>
+    </message>
+    <message name="getRequest">
+        <part name="parameters" element="tns:get"/>
+    </message>
+    <message name="getResponse">
+        <part name="parameters" element="tns:getResponse"/>
+    </message>
+    <message name="getAllRequest">
+        <part name="parameters" element="tns:getAll"/>
+    </message>
+    <message name="getAllResponse">
+        <part name="parameters" element="tns:getAllResponse"/>
+    </message>
+    <portType name="ArticleServicePT">
+        <documentation>Interface provided by this Service</documentation>
+        <operation name="create">
+            <input name="input1" message="tns:createRequest"/>
+            <output name="output1" message="tns:createResponse"/>
+        </operation>
+        <operation name="get">
+            <input name="input2" message="tns:getRequest"/>
+            <output name="output2" message="tns:getResponse"/>
+        </operation>
+        <operation name="getAll">
+            <input name="input3" message="tns:getAllRequest"/>
+            <output name="output3" message="tns:getAllResponse"/>
+        </operation>
+    </portType>
+    <wsdl:binding name="ArticleServicePTBinding" type="tns:ArticleServicePT">
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+        <wsdl:operation name="create">
+            <soap:operation soapAction="create_action"/>
+            <wsdl:input name="input1">
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output name="output1">
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="get">
+            <soap:operation soapAction="get_action"/>
+            <wsdl:input name="input2">
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output name="output2">
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getAll">
+            <soap:operation soapAction="getAll_action"/>
+            <wsdl:input name="input3">
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output name="output3">
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="ArticleService">
+        <wsdl:port name="ArticleServicePTPort" binding="tns:ArticleServicePTBinding">
+            <soap:address location="http://www.predic8.com:8080/material/ArticleService"/>
+        </wsdl:port>
+    </wsdl:service>
+</definitions>

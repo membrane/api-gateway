@@ -1,0 +1,11 @@
+<configuration>
+  <rules>
+    <forwarding-rule name="BLZ REST 2 SOAP" port="2000">
+      <targetport>80</targetport>
+      <targethost>www.thomas-bayer.com</targethost>
+      <interceptors>
+        <interceptor id="rest2SoapInterceptor" />
+      </interceptors>
+    </forwarding-rule>
+  </rules>
+</configuration>

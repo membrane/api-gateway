@@ -1,0 +1,37 @@
+<!--  
+The access permissions are scanned from top to bottom. 
+The first matching rule will be used. 
+For that reason the order of the rules is significant.
+-->
+
+<accessControl>
+  <!-- 
+  Allow connections from the IP 192.168.2.* to access the URIs 
+  starting with 'open-source'. 
+  -->
+  <resource uri="/open-source/*">
+    <clients>
+	  <ip>192.168.2.*</ip>
+	 </clients>
+  </resource>
+
+  <!-- 
+  Allow connections from 'localhost' to access the URIs 
+  starting with 'contact'. 
+  -->
+  <resource uri="/contact/*">
+    <clients>
+	  <hostname>localhost</hostname>
+	</clients>
+  </resource>
+  
+  <!-- 
+  All other resources can be accessed by anybody.  
+  -->
+  <resource uri="*">
+	<clients>
+	  <any/>
+	</clients>
+  </resource>
+  
+</accessControl>

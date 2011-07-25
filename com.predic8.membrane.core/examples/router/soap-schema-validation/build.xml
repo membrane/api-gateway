@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." name="soap-schema-validation">
+
+	<target name="init">
+		<mkdir dir="build/classes" />
+	</target>
+
+	<path id="classpath">
+		<pathelement path="build/classes" />
+	</path>
+
+	<target name="compile" depends="stubs">
+		<javac debug="true" classpathref="classpath" srcdir="src" destdir="build/classes">
+
+		</javac>
+	</target>
+
+	<target name="stubs" depends="init">
+		<exec dir="build/classes" executable="wsimport.exe">
+			<arg value="http://www.predic8.com:8080/material/ArticleService?wsdl" />
+		</exec>
+
+	</target>
+
+	<target name="run" depends="compile">
+		<java fork="true" classpathref="classpath" classname="ArticleClient">
+			
+		</java>
+	</target>
+
+	<target name="clean" description="clean up">
+		<delete dir="build/classes" />
+	</target>
+
+
+
+</project>

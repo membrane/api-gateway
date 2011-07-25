@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<configuration>
+	<rules>
+		<forwarding-rule name="localhost" host="*" port="2000" path=".*"
+			method="*">
+			<targetport>8080</targetport>
+			<targethost>localhost</targethost>
+			<interceptors>
+				<interceptor id="roundRobinBalancer" name="Round Robin Balancer" />
+				<interceptor id="urlRewriter" name="Simple URL Rewriter" />
+			</interceptors>			
+		</forwarding-rule>
+		<proxy-rule name="proxy" port="2001">
+      		<interceptors>
+				<interceptor id="roundRobinBalancer" name="Round Robin Balancer" />
+				<interceptor id="urlRewriter" name="Simple URL Rewriter" />
+		    </interceptors>
+    	</proxy-rule>		
+	</rules>
+	<global>
+		<adjustHostHeader>true</adjustHostHeader>
+	</global>
+</configuration>

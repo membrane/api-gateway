@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<configuration>
+	<rules>
+		<proxy-rule name="HTTP proxy" port="9000" 
+			 		  blockRequest="true"
+                      blockResponse="false"
+                      inboundTLS="false"
+                      outboundTLS="false" 
+		/>
+		<forwarding-rule name="thomas-bayer.com"  port="3000" path=".*"  
+					  blockRequest="false"
+                      blockResponse="true"
+                      inboundTLS="false"
+                      outboundTLS="false" >
+			<targetport>80</targetport>
+			<targethost>thomas-bayer.com</targethost>
+		</forwarding-rule>
+		<forwarding-rule name="localhost" port="2000" path=".*" 
+					  method="GET" 
+					  host="/abc/*"		 
+					  blockRequest="false"
+                      blockResponse="false"
+                      inboundTLS="false"
+                      outboundTLS="false" >
+			<targetport>8080</targetport>
+			<targethost>localhost</targethost>
+		</forwarding-rule>
+	</rules>
+	<global>
+		<adjustHostHeader>true</adjustHostHeader>
+	</global>
+</configuration>

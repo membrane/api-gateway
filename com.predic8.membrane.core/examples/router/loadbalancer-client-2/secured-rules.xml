@@ -1,0 +1,53 @@
+<?xml version = "1.0" ?>
+<configuration>
+  <rules>
+    <forwarding-rule name="Administration" port="9000">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="basicAuthInterceptor" />
+        <interceptor id="administrationInterceptor"/>
+        <interceptor id="webServerInterceptor" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name="Node 1" port="4000">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="dummyNode1" name="Node 1" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name="Node 2" port="4001">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="dummyNode2" name="Node 2" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name="Node 3" port="4002" >
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="dummyNode3"
+                      name="Node 3" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name="Push Interface"
+                      port="9010" >
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="clusterNotificationInterceptor"
+                      name="ClusterNotifcationInterceptor" />
+      </interceptors>
+    </forwarding-rule>
+    <forwarding-rule name="Balancer" port="8080">
+      <targetport>8080</targetport>
+      <targethost>localhost</targethost>
+      <interceptors>
+        <interceptor id="balancer"
+                      name="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor" />
+      </interceptors>
+    </forwarding-rule>
+  </rules>
+ </configuration>

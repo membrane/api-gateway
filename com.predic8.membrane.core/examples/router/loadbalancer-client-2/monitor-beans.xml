@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+
+  Copyright 2009 predic8 GmbH, www.predic8.com Licensed under the Apache 
+  License, Version 2.0 (the "License"); you may not use this file except in 
+  compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
+  Unless required by applicable law or agreed to in writing, software distributed 
+  under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES 
+  OR CONDITIONS OF ANY KIND, either express or implied. See the License for 
+  the specific language governing permissions and limitations under the License. 
+
+-->
+<beans  xmlns="http://www.springframework.org/schema/beans"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+  
+  <bean id="router" class="com.predic8.membrane.core.Router">
+    <property name="transport" ref="transport" />
+    <property name="clusterManager">
+    	<bean id="clusterManager" class="com.predic8.membrane.core.interceptor.balancer.ClusterManager"/>
+    </property>
+  </bean>
+
+  <bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
+    <property name="coreThreadPoolSize" value="20" />
+   
+    <property name="interceptors">
+      <list>
+        <bean class="com.predic8.membrane.core.interceptor.RuleMatchingInterceptor" />
+        <bean class="com.predic8.membrane.core.interceptor.DispatchingInterceptor" />        
+      </list>
+    </property>
+  </bean>
+
+  <bean id="administrationInterceptor" class="com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor" />
+
+  <bean id="webServerInterceptor" class="com.predic8.membrane.core.interceptor.server.WebServerInterceptor">
+    <property name="docBase" value="docBase" />
+  </bean>
+
+  <bean id="balancer" class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor" />
+    	     
+  <bean id="clusterNotificationInterceptor" class="com.predic8.membrane.core.interceptor.balancer.ClusterNotificationInterceptor" />
+  
+  <bean id="dummyNode1" class="com.predic8.membrane.core.interceptor.CountInterceptor" >
+  	<property name="displayName" value="Node 1"/>
+  </bean>
+  <bean id="dummyNode2" class="com.predic8.membrane.core.interceptor.CountInterceptor" >
+  	<property name="displayName" value="Node 2"/>
+  </bean>
+  <bean id="dummyNode3" class="com.predic8.membrane.core.interceptor.CountInterceptor" >
+  	<property name="displayName" value="Node 3"/>
+  </bean>
+    
+</beans>
