@@ -213,7 +213,7 @@
    -->  
   <bean id="regExUrlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor">
     <property name="displayName" value="RegEx URL Rewriter" />
-    <property name="mapping">
+    <property name="mappings">
       <map>
         <entry key="/bank/(.*)" value="/axis2/$1"/>
         <entry key="/static/(.*)" value="/$1"/>
