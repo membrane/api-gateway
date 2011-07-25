@@ -14,20 +14,15 @@
 package com.predic8.plugin.membrane.components;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class GridPanel extends Composite {
 
 	public GridPanel(Composite parent, int margin, int columns) {
 		super(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = columns;
-		layout.marginTop = margin;
-		layout.marginLeft = margin;
-		layout.marginBottom = margin;
-		layout.marginRight = margin;
-		setLayout(layout);
+		setLayout(SWTUtil.createGridLayout(columns, margin));
 	}
 
 }
