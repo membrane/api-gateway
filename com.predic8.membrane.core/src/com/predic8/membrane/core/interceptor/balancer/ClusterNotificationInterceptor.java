@@ -8,8 +8,9 @@ import java.util.regex.*;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
+import javax.xml.stream.*;
 
-import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.*;
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
@@ -19,11 +20,11 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory
 			.getLog(ClusterNotificationInterceptor.class.getName());
 
-	private Pattern urlPattern = Pattern.compile("/clustermanager/(up|down)/?\\??(.*)");
+	private Pattern urlPattern = Pattern.compile("/clustermanager/(up|down|takeout)/?\\??(.*)");
 
 	private boolean validateSignature = false;
 	private int timeout = 0;
-	private String keyBase64;
+	private String keyHex;
 	
 	public ClusterNotificationInterceptor() {
 		name = "ClusterNotifcationInterceptor";
@@ -66,8 +67,13 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 					getClusterParam(params),
 					params.get("host"), 
 					getPortParam(params));			
-		} else {
+		} else if ("down".equals(m.group(1))) {
 			router.getClusterManager().down(
+					getClusterParam(params),
+					params.get("host"), 
+					getPortParam(params));			
+		} else {
+			router.getClusterManager().takeout(
 					getClusterParam(params),
 					params.get("host"), 
 					getPortParam(params));			
@@ -80,7 +86,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 
 	private Map<String, String> getDecryptedParams(String data) throws Exception {
 		Cipher cipher = Cipher.getInstance("AES");
-		SecretKeySpec skeySpec = new SecretKeySpec(Base64.decodeBase64(keyBase64.getBytes("UTF-8")), "AES");
+		SecretKeySpec skeySpec = new SecretKeySpec(Hex.decodeHex(keyHex.toCharArray()), "AES");
 		cipher.init(Cipher.DECRYPT_MODE, skeySpec);
 	    return parseQueryString(new String(cipher.doFinal(Base64.decodeBase64(data.getBytes("UTF-8"))),"UTF-8"));						
 	}
@@ -118,13 +124,37 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		this.timeout = timeout;
 	}
 
-	public String getKeyBase64() {
-		return keyBase64;
+	public String getKeyHex() {
+		return keyHex;
 	}
 
-	public void setKeyBase64(String keyBase64) {
-		this.keyBase64 = keyBase64;
+	public void setKeyHex(String keyHex) {
+		this.keyHex = keyHex;
 	}
 	
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("clusterNotification");
+		
+		out.writeAttribute("keyHex", keyHex);		
+		out.writeAttribute("validateSignature", ""+validateSignature);		
+		out.writeAttribute("timeout", ""+timeout);		
+		
+		out.writeEndElement();
+	}
 	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+
+		if ( token.getAttributeValue("", "keyHex") != null ) 
+			keyHex = token.getAttributeValue("", "keyHex");
+		
+		if ( token.getAttributeValue("", "validateSignature") != null ) 
+			validateSignature = Boolean.parseBoolean(token.getAttributeValue("", "validateSignature"));
+
+		if ( token.getAttributeValue("", "timeout") != null ) 
+			timeout = Integer.parseInt(token.getAttributeValue("", "timeout"));
+	}	
 }

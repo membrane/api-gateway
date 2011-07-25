@@ -13,10 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
+import javax.xml.stream.*;
+
+import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
 
-public class RoundRobinStrategy implements DispatchingStrategy {
+public class RoundRobinStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
 	private int last = -1;
 	
@@ -32,6 +35,20 @@ public class RoundRobinStrategy implements DispatchingStrategy {
 			last = 0;
 		
 		return interceptor.getEndpoints().get(last);
+	}
+
+	@Override
+	public void write(XMLStreamWriter out)
+			throws XMLStreamException {
+
+		out.writeStartElement("roundRobinStrategy");
+
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected String getElementName() {
+		return "roundRobinStrategy";
 	}
 
 }

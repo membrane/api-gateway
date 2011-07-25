@@ -23,5 +23,5 @@ public interface ConfigurationStore {
 	public Configuration read(String path) throws Exception;
 
 	public void setRouter(Router router);
-	
+	public Router getRouter();
 }

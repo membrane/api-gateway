@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
+import javax.xml.stream.*;
 import javax.xml.transform.stream.StreamSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
@@ -63,4 +64,28 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		this.responseXSLT = responseXSLT;
 	}
 
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("transform");
+		
+		out.writeAttribute("requestXSLT", requestXSLT);		
+		out.writeAttribute("responseXSLT", responseXSLT);		
+		
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		requestXSLT = token.getAttributeValue("", "requestXSLT");
+		responseXSLT = token.getAttributeValue("", "responseXSLT");
+	}
+	
+	@Override
+	protected String getElementName() {
+		return "transformation";
+	}
+	
 }

@@ -14,16 +14,23 @@
 
 package com.predic8.membrane.core.config;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
+import com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor;
+import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
+import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
+import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
+import com.predic8.membrane.core.interceptor.statistics.*;
+import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 
 public class Interceptors extends AbstractConfigElement {
 
@@ -44,9 +51,11 @@ public class Interceptors extends AbstractConfigElement {
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		if (AbstractInterceptor.ELEMENT_NAME.equals(child)) {
 			interceptors.add(getInterceptorBId(readInterceptor(token).getId()));
+		} else {
+			interceptors.add(getInterceptor(router, token, child));
 		}
 	}
-
+	
 	private AbstractInterceptor readInterceptor(XMLStreamReader token)
 			throws XMLStreamException {
 		return (AbstractInterceptor) (new AbstractInterceptor(router)).parse(token);
@@ -56,6 +65,49 @@ public class Interceptors extends AbstractConfigElement {
 		return router.getInterceptorFor(id);
 	}
 
+	public Interceptor getInterceptor(Router router, XMLStreamReader token, String name ) throws XMLStreamException {
+		AbstractInterceptor i = null;
+		
+		if ("transform".equals(name)) {
+			i = new XSLTInterceptor();
+		} else if ("counter".equals(name)) {
+			i = new CountInterceptor();
+		} else if ("adminConsole".equals(name)) {
+			i = new AdministrationInterceptor();
+		} else if ("webServer".equals(name)) {
+			i = new WebServerInterceptor();
+		} else if ("balancer".equals(name)) {
+			i = new LoadBalancingInterceptor();
+		} else if ("clusterNotification".equals(name)) {
+			i = new ClusterNotificationInterceptor();
+		} else if ("regExUrlRewriter".equals(name)) {
+			i = new RegExURLRewriteInterceptor();
+		} else if ("soapValidator".equals(name)) {
+			i = new SOAPMessageValidatorInterceptor();
+		} else if ("rest2Soap".equals(name)) {
+			i = new REST2SOAPInterceptor();
+		} else if ("basicAuthentication".equals(name)) {
+			i = new BasicAuthenticationInterceptor();
+		} else if ("regExReplacer".equals(name)) {
+			i = new RegExReplaceInterceptor();
+		} else if ("cbr".equals(name)) {
+			i = new XPathCBRInterceptor();
+		} else if ("wsdlRewriter".equals(name)) {
+			i = new WSDLInterceptor();
+		} else if ("accessControl".equals(name)) {
+			i = new AccessControlInterceptor();
+		} else if ("statisticsCSV".equals(name)) {
+			i = new StatisticsCSVInterceptor();
+		} else if ("statisticsJDBC".equals(name)) {
+			i = new StatisticsJDBCInterceptor();
+		} else if ("exchangeStore".equals(name)) {
+			i = new ExchangeStoreInterceptor();
+		}
+		i.setRouter(router);
+		i.parse(token);
+		return i;
+	}	
+	
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);

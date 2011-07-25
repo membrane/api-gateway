@@ -15,9 +15,12 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import java.util.*;
 
+import javax.xml.stream.*;
+
+import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
-public class ByThreadStrategy implements DispatchingStrategy {
+public class ByThreadStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
 	private int maxNumberOfThreadsPerEndpoint = 5;
 
@@ -74,8 +77,39 @@ public class ByThreadStrategy implements DispatchingStrategy {
 		this.retryTimeOnBusy = retryTimeOnBusy;
 	}
 	
+	public int getMaxNumberOfThreadsPerEndpoint() {
+		return maxNumberOfThreadsPerEndpoint;
+	}
+
+	public int getRetryTimeOnBusy() {
+		return retryTimeOnBusy;
+	}
+
 	private String getHostColonPort(Node ep) {
 		return ep.getHost()+":"+ep.getPort();
+	}
+
+	@Override
+	public void write(XMLStreamWriter out)
+			throws XMLStreamException {
+
+		out.writeStartElement("byThreadStrategy");
+
+		out.writeAttribute("retryTimeOnBusy", ""+retryTimeOnBusy);
+		out.writeAttribute("maxNumberOfThreadsPerEndpoint", ""+maxNumberOfThreadsPerEndpoint);
+
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {		
+		retryTimeOnBusy = Integer.parseInt(token.getAttributeValue("", "retryTimeOnBusy"));
+		maxNumberOfThreadsPerEndpoint = Integer.parseInt(token.getAttributeValue("", "maxNumberOfThreadsPerEndpoint"));
+	}
+	
+	@Override
+	protected String getElementName() {		
+		return "byThreadStrategy";
 	}
 	
 

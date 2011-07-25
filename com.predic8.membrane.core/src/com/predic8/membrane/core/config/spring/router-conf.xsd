@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://membrane-soa.org/router/beans/1/"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:beans="http://www.springframework.org/schema/beans"
+	targetNamespace="http://membrane-soa.org/router/beans/1/"
+	elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+	<xsd:import namespace="http://www.springframework.org/schema/beans" />
+
+	<xsd:element name="router">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="exchangeStore" type="xsd:string"/>
+					<xsd:attribute name="useClusterManager" type="xsd:boolean"/>
+					<xsd:attribute name="adjustHostHeader" default="true" type="xsd:boolean" />
+					<xsd:attribute name="indentMessage" default="true" type="xsd:boolean" />
+					<xsd:attribute name="adjustContentLength" default="true" type="xsd:boolean" />
+					<xsd:attribute name="trackExchange" default="false" type="xsd:boolean" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="transport">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence>
+						<xsd:element name="interceptors">
+							<xsd:complexType>
+								<xsd:sequence minOccurs="0" maxOccurs="unbounded">
+									<xsd:choice>
+										<xsd:element name="ruleMatching" type="EmptyElementType" />
+										<xsd:element name="dispatching" type="EmptyElementType" />
+										<xsd:element ref="exchangeStore" />
+										<xsd:element ref="transform" />
+										<xsd:element ref="soapValidator" />
+										<xsd:element ref="regExUrlRewriter" />
+										<xsd:element ref="adminConsole" />
+										<xsd:element ref="webServer" />
+										<xsd:element ref="balancer" />
+										<xsd:element ref="clusterNotification" />
+										<xsd:element ref="basicAuthentication" />
+										<xsd:element ref="accessControl" />
+										<xsd:element ref="wsdlRewriter" />
+										<xsd:element ref="statisticsCSV" />
+										<xsd:element ref="statisticsJDBC" />
+										<xsd:element ref="rest2Soap" />
+										<xsd:element ref="cbr" />
+										<xsd:element ref="regExReplacer" />
+										<xsd:element ref="counter" />
+									</xsd:choice>
+								</xsd:sequence>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+					<xsd:attribute name="coreThreadPoolSize" default="20" type="xsd:int" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="exchangeStore">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="name" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="transform">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="requestXSLT" type="xsd:string" />
+					<xsd:attribute name="responseXSLT" type="xsd:string" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="soapValidator">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="wsdl" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="regExUrlRewriter">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence>
+						<xsd:element name="mapping" minOccurs="1" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="regex" type="xsd:string" use="required"/>
+								<xsd:attribute name="uri" type="xsd:string" use="required"/>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="cbr">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence>
+						<xsd:element name="route" minOccurs="1" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="xPath" type="xsd:string" use="required"/>
+								<xsd:attribute name="url" type="xsd:string" use="required"/>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="rest2Soap">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence>
+						<xsd:element name="mapping" minOccurs="1" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="regex" type="xsd:string" use="required"/>
+								<xsd:attribute name="soapAction" type="xsd:string" use="required"/>
+								<xsd:attribute name="soapURI" type="xsd:string" use="required"/>
+								<xsd:attribute name="requestXSLT" type="xsd:string" use="required"/>
+								<xsd:attribute name="responseXSLT" type="xsd:string" use="required"/>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="adminConsole" type="EmptyElementType" />
+
+	<xsd:element name="clusterNotification">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="timeout" type="xsd:long" />
+					<xsd:attribute name="validateSignature" type="xsd:boolean" />
+					<xsd:attribute name="keyHex" type="xsd:string" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="balancer">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence>
+						<xsd:element name="xmlSessionIdExtractor" minOccurs="0">
+							<xsd:complexType>
+								<xsd:attribute name="namespace" type="xsd:string" use="required"/>
+								<xsd:attribute name="localName" type="xsd:string" use="required"/>
+							</xsd:complexType>
+						</xsd:element>
+						<xsd:element name="nodes" minOccurs="0">
+							<xsd:complexType>
+								<xsd:sequence>
+									<xsd:element name="node">
+										<xsd:complexType>
+											<xsd:attribute name="host" type="xsd:string" use="required"/>
+											<xsd:attribute name="port" type="xsd:int" default="8080"/>
+										</xsd:complexType>
+									</xsd:element>
+								</xsd:sequence>								
+							</xsd:complexType>
+						</xsd:element>
+						<xsd:choice minOccurs="0">
+							<xsd:element name="roundRobinStrategy" type="EmptyElementType" />
+							<xsd:element name="byThreadStrategy" >
+								<xsd:complexType>
+									<xsd:attribute name="maxNumberOfThreadsPerEndpoint" type="xsd:int" default="5"/>
+									<xsd:attribute name="retryTimeOnBusy" type="xsd:int" default="1000"/>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:choice>						
+					</xsd:sequence>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="regExReplacer">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="regex" type="xsd:string" use="required"/>
+					<xsd:attribute name="replace" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="webServer">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="docBase" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="accessControl">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="file" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="counter">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="name" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="wsdlRewriter">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="registryWSDLRegisterURL" type="xsd:string" />
+					<xsd:attribute name="port" type="xsd:int" />
+					<xsd:attribute name="protocol" type="xsd:string" />
+					<xsd:attribute name="host" type="xsd:string" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="basicAuthentication">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence>
+						<xsd:element name="user" minOccurs="0" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="name" type="xsd:string" use="required"/>
+								<xsd:attribute name="password" type="xsd:string" use="required"/>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="statisticsCSV">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="file" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="statisticsJDBC">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="postMethodOnly" type="xsd:boolean" default="false"/>
+					<xsd:attribute name="soapOnly" type="xsd:boolean" default="false"/>
+					<xsd:attribute name="dataSource" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="memoryExchangeStore" type="EmptyElementType" />
+	<xsd:element name="forgetfulExchangeStore" type="EmptyElementType" />
+	<xsd:element name="fileExchangeStore">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="raw" type="xsd:boolean" default="false"/>
+					<xsd:attribute name="saveBodyOnly" type="xsd:boolean" default="false"/>
+					<xsd:attribute name="dir" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:complexType name="EmptyElementType">
+		<xsd:complexContent>
+			<xsd:extension base="beans:identifiedType">
+				<xsd:sequence />
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+
+</xsd:schema>

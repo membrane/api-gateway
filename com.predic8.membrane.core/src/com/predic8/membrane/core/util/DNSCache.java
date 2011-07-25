@@ -24,7 +24,7 @@ public class DNSCache {
 		if (hostNames.containsKey(address))
 			return hostNames.get(address);
 		
-		String hostName = address.getCanonicalHostName();
+		String hostName = address.getHostName();
 		hostNames.put(address, hostName);
 		return hostName;
 	}

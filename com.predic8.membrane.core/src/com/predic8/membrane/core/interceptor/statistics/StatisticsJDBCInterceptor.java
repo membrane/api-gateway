@@ -18,7 +18,11 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 
 import javax.sql.DataSource;
+import javax.xml.stream.*;
 
+import org.apache.commons.dbcp.BasicDataSource;
+
+import com.predic8.membrane.core.config.GenericConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
@@ -40,7 +44,9 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	private String statString;
 	
-	private Connection con; 
+	private Connection con;
+
+	private String dataSourceBeanId; 
 	
 	public StatisticsJDBCInterceptor() {
 		priority = 500;
@@ -149,4 +155,55 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		this.soapOnly = soapOnly;
 	}
 
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("statisticsJDBC");
+		out.writeAttribute("postMethodOnly", ""+postMethodOnly);
+		out.writeAttribute("soapOnly", ""+soapOnly);
+
+		out.writeStartElement("dataSource");
+		BasicDataSource ds = (BasicDataSource)dataSource;
+		out.writeAttribute("driverClassName", ds.getDriverClassName());
+		out.writeAttribute("url", ds.getUrl());
+		out.writeAttribute("user", ds.getUsername());
+		out.writeAttribute("password", ds.getPassword());
+		out.writeEndElement();
+		
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws XMLStreamException {
+		if ( "dataSource".equals(child) ) {
+			GenericConfigElement ce = new GenericConfigElement(); 
+			ce.parse(token);
+			BasicDataSource ds = new BasicDataSource();
+			
+			ds.setDriverClassName(ce.getAttribute("driverClassName"));
+			ds.setUrl(ce.getAttribute("url"));
+			ds.setUsername(ce.getAttribute("user"));
+			ds.setPassword(ce.getAttribute("password"));
+			dataSource = ds;
+			init();
+			return;
+		}
+			
+		super.parseChildren(token, child);
+	}
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		try {
+			postMethodOnly = Boolean.parseBoolean(token.getAttributeValue("", "postMethodOnly"));
+			soapOnly = Boolean.parseBoolean(token.getAttributeValue("", "soapOnly"));
+			dataSourceBeanId = token.getAttributeValue("", "dataSource");
+			dataSource = router.getBean(dataSourceBeanId, DataSource.class);
+			init();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}	
 }

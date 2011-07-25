@@ -20,6 +20,8 @@ import static com.predic8.membrane.core.util.HttpUtil.createResponse;
 import java.io.StringWriter;
 import java.net.*;
 
+import javax.xml.stream.*;
+
 import org.apache.commons.logging.*;
 
 import com.googlecode.jatl.Html;
@@ -59,4 +61,21 @@ public class CountInterceptor extends AbstractInterceptor {
 		};
 		return writer.toString();
 	}
+	
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("counter");
+		
+		out.writeAttribute("name", name);		
+		
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		name = token.getAttributeValue("", "name");
+	}	
 }

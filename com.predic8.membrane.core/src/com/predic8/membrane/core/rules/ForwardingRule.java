@@ -20,13 +20,11 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.Path;
-import com.predic8.membrane.core.config.TargetHost;
-import com.predic8.membrane.core.config.TargetPort;
+import com.predic8.membrane.core.config.*;
 
 public class ForwardingRule extends AbstractRule {
 
-	public static final String ELEMENT_NAME = "forwarding-rule";
+	public static final String ELEMENT_NAME = "forwardingRule";
 
 	private String targetHost;
 	private int targetPort;
@@ -86,13 +84,12 @@ public class ForwardingRule extends AbstractRule {
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
 		super.parseChildren(token, child);
 		
-		if (TargetPort.ELEMENT_NAME.equals(child)) {
-			this.targetPort = Integer.parseInt(((TargetPort) (new TargetPort().parse(token))).getValue());
-		} else if (TargetHost.ELEMENT_NAME.equals(child)) {
-			this.targetHost = ((TargetHost) (new TargetHost().parse(token))).getValue();
-		} 
-		
-		if (Path.ELEMENT_NAME.equals(child)) {
+		if ("target".equals(child)) {
+			GenericConfigElement target = new GenericConfigElement();
+			target.parse(token);
+			targetHost = target.getAttribute("host");
+			targetPort = Integer.parseInt(target.getAttribute("port"));			
+		} else if (Path.ELEMENT_NAME.equals(child)) {
 			key.setUsePathPattern(true);
 			Path p = (Path)(new Path(router)).parse(token);
 			key.setPathRegExp(p.isRegExp());
@@ -109,9 +106,8 @@ public class ForwardingRule extends AbstractRule {
 	protected void writeExtension(XMLStreamWriter out) throws XMLStreamException {
 		out.writeAttribute("host", key.getHost());
 		out.writeAttribute("method", key.getMethod());
-
-		new TargetPort("" + targetPort).write(out);
-		new TargetHost(targetHost).write(out);
+		
+		writeTarget(out);
 		
 		if (key.isUsePathPattern()) {
 			Path path = new Path(router);
@@ -119,6 +115,15 @@ public class ForwardingRule extends AbstractRule {
 			path.setRegExp(key.isPathRegExp());
 			path.write(out);
 		}
+	}
+
+	private void writeTarget(XMLStreamWriter out) throws XMLStreamException {
+		out.writeStartElement("target");
+		
+		out.writeAttribute("host", targetHost);
+		out.writeAttribute("port", ""+targetPort);
+		
+		out.writeEndElement();
 	}
 	
 }

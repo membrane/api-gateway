@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core;
 
-import java.net.MalformedURLException;
+import java.net.*;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +62,7 @@ public class Router {
 	
 	public static Router init(String resource, ClassLoader classLoader) {
 		log.debug("loading spring config: " + resource);
+
 		try {
 			beanFactory = new FileSystemXmlApplicationContext(   new String[] { resource }, false );
 		} catch (Error e) {
@@ -133,10 +134,14 @@ public class Router {
 	}
 	
 	public Interceptor getInterceptorFor(String id) {
-		Interceptor i = (Interceptor)beanFactory.getBean(id, Interceptor.class);
+		Interceptor i = beanFactory.getBean(id, Interceptor.class);
 		i.setId(id); //very important, returned bean does not have id set	
 		i.setRouter(this);
 		return i;
+	}
+	
+	public <E> E getBean(String id, Class<E> clazz) {
+		return beanFactory.getBean(id, clazz);
 	}
 
 	public DNSCache getDnsCache() {

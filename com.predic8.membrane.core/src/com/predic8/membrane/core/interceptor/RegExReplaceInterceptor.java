@@ -16,6 +16,8 @@ package com.predic8.membrane.core.interceptor;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
+import javax.xml.stream.*;
+
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
@@ -77,4 +79,22 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		this.replacement = replacement;
 	}
 	
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+
+		out.writeStartElement("regExReplacer");
+
+		out.writeAttribute("regex", pattern);
+		out.writeAttribute("replace", replacement);
+
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		pattern = token.getAttributeValue("", "regex");
+		replacement = token.getAttributeValue("", "replace");
+	}
 }

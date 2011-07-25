@@ -16,12 +16,16 @@ package com.predic8.membrane.core.interceptor.authentication;
 
 import java.util.*;
 
+import javax.xml.stream.*;
+
 import org.apache.commons.codec.binary.Base64;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.config.GenericConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
 import com.predic8.membrane.core.util.HttpUtil;
 
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
@@ -97,4 +101,33 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		this.users = users;
 	}
 
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("basicAuthentication");
+		
+		for (Map.Entry<String, String> u : users.entrySet()) {
+			out.writeStartElement("user");
+			
+			out.writeAttribute("name", u.getKey());		
+			out.writeAttribute("password", u.getValue());		
+
+			out.writeEndElement();
+		}
+		
+		out.writeEndElement();
+	}
+		
+	@Override
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws XMLStreamException {
+		if (token.getLocalName().equals("user")) {
+			GenericConfigElement user = new GenericConfigElement();
+			user.parse(token);
+			users.put(user.getAttribute("name"), user.getAttribute("password"));
+		} else {
+			super.parseChildren(token, child);
+		}
+	}
 }

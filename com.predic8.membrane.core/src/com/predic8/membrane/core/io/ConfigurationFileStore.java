@@ -54,4 +54,9 @@ public class ConfigurationFileStore implements ConfigurationStore {
 		this.router = router;
 	}
 
+	public Router getRouter() {
+		return router;
+	}
+
+	
 }

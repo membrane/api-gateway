@@ -23,6 +23,10 @@ public class ClusterManager {
 	public void down(String cName, String host, int port) {
 		getCluster(cName).nodeDown(new Node(host, port));
 	}	
+
+	public void takeout(String cName, String host, int port) {
+		getCluster(cName).nodeTakeOut(new Node(host, port));
+	}	
 	
 	public List<Node> getAllNodesByCluster(String cName) {
 		return getCluster(cName).getAllNodes(timeout);
@@ -32,10 +36,6 @@ public class ClusterManager {
 		return getCluster(cName).getAvailableNodes(timeout);
 	}
 
-	public boolean containsSession(String cName, String sessionId) {
-		return getCluster(cName).containsSession(sessionId);
-	}
-	
 	public void addSession2Cluster(String sessionId, String cName, Node n) {
 		getCluster(cName).addSession(sessionId, n);
 	}

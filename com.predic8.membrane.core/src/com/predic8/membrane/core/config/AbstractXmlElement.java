@@ -16,6 +16,7 @@ package com.predic8.membrane.core.config;
 
 import java.io.StringWriter;
 
+import javax.xml.XMLConstants;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -28,65 +29,88 @@ public abstract class AbstractXmlElement implements XMLElement {
 	/**
 	 * Needed to resolve interceptor IDs into interceptor beans
 	 */
-	 
+
 	public XMLElement parse(XMLStreamReader token) throws XMLStreamException {
-	    parseAttributes(token);
-	    while(token.hasNext()) {
-	      if(token.isStartElement()) {
-	        parseChildren(token, token.getName().getLocalPart());
-	      }
-	      if (token.isCharacters()) {
-	    	  parseCharacters(token);
-	      }
-	      if(token.isEndElement()) {
-	    	 if(getElementName().equals(token.getName().getLocalPart() ))
-		    	  break;
-	      }
-	      if(token.hasNext()) {
-	    	  token.next();
-	      }
-	    }
-	    return this;
-	  }
-
-	  protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		  
-	  }
-
-	  protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
-		  
-	  }
-	  
-	  protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
-		  
-	  }
-
-	  protected abstract String getElementName();
-	  
-	  /* (non-Javadoc)
-	 * @see com.predic8.membrane.core.config.XMLElement#write(javax.xml.stream.XMLStreamWriter)
-	 */
-	public void write(XMLStreamWriter out) throws XMLStreamException {		 
+		move2RootElementIfNeeded(token);
+		parseAttributes(token);
+		while (token.hasNext()) {
+			token.next();
+			if (token.isStartElement()) {			
+				parseChildren(token, token.getName().getLocalPart());
+			} else if (token.isCharacters()) {
+				parseCharacters(token);
+			} else if (token.isEndElement()) {
+				break;
+			}
+		}
+		return this;
 	}
-	
+
+	protected void move2RootElementIfNeeded(XMLStreamReader token) throws XMLStreamException {
+		if (token.getEventType()== XMLStreamReader.START_DOCUMENT) {
+			while(!token.isStartElement()) {
+				token.next();
+			}
+		}
+		
+	}
+
+	protected void parseAttributes(XMLStreamReader token)
+			throws XMLStreamException {
+
+	}
+
+	protected void parseCharacters(XMLStreamReader token)
+			throws XMLStreamException {
+
+	}
+
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws XMLStreamException {
+		int count = 0; 
+		while (true) { // ignore child 
+			token.next();				
+			if ( token.isEndElement()  && child.equals(token.getName().getLocalPart())) {
+				if (count == 0) return;
+				count--;
+			} else if (token.isStartElement() && child.equals(token.getName().getLocalPart()) ) {
+				count++;
+			}
+		}
+	}
+
+	protected String getElementName() {
+		return null;
+	};
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see com.predic8.membrane.core.config.XMLElement#write(javax.xml.stream.
+	 * XMLStreamWriter)
+	 */
+	public void write(XMLStreamWriter out) throws XMLStreamException {
+	}
+
 	public String toXml() throws Exception {
-		StringWriter sw = new StringWriter(); 
-		XMLStreamWriter w = XMLOutputFactory.newInstance().createXMLStreamWriter(sw);
+		StringWriter sw = new StringWriter();
+		XMLStreamWriter w = XMLOutputFactory.newInstance()
+				.createXMLStreamWriter(sw);
 		w.writeStartDocument();
 		write(w);
 		w.writeEndDocument();
 		return sw.toString();
 	}
-	
+
 	protected boolean getBoolean(XMLStreamReader token, String attr) {
-		return "true".equals(token.getAttributeValue(Constants.NS_UNDEFINED, attr)) ? true : false;
+		return "true".equals(token.getAttributeValue(Constants.NS_UNDEFINED,
+				attr)) ? true : false;
 	}
 
 	protected void writeIfNotNull(AbstractXmlElement e, XMLStreamWriter out)
 			throws XMLStreamException {
-				if (e != null ) e.write(out);
-			}
-	
-	
-	
+		if (e != null)
+			e.write(out);
+	}
+
 }

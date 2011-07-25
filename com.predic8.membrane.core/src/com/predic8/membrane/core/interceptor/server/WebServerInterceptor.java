@@ -16,6 +16,8 @@ package com.predic8.membrane.core.interceptor.server;
 import java.io.*;
 import java.util.Date;
 
+import javax.xml.stream.*;
+
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.Constants;
@@ -96,5 +98,21 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		this.docBase = docBase;
 	}
 	
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("webServer");
+		
+		out.writeAttribute("docBase", docBase);		
+		
+		out.writeEndElement();
+	}
 
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		docBase = token.getAttributeValue("", "docBase");
+	}
+	
 }

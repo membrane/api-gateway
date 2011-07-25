@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.stream.*;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
@@ -119,4 +120,22 @@ public class SOAPMessageValidatorInterceptor extends AbstractInterceptor {
 	public String getWsdl() {
 		return wsdl;
 	}
+
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("soapValidator");
+		
+		out.writeAttribute("wsdl", wsdl);		
+		
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		wsdl = token.getAttributeValue("", "wsdl");
+	}
+	
 }

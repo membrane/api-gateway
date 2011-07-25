@@ -1,14 +1,21 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.Hashtable;
-import java.util.Map;
+import java.util.*;
 
-public class Node {
+import javax.xml.stream.*;
 
+import com.predic8.membrane.core.config.AbstractXmlElement;
+
+public class Node extends AbstractXmlElement {
+
+	public static enum Status {
+		UP, DOWN, TAKEOUT;
+	}
+	
 	private long lastUpTime;
 	private String host;
 	private int port;
-	private boolean isUp = false;
+	private Status status;
 	private int counter;
 	private int threads;
 	
@@ -17,6 +24,9 @@ public class Node {
 	public Node(String host, int port) {
 		this.host = host;
 		this.port = port;
+	}
+
+	public Node() {
 	}
 
 	@Override
@@ -71,14 +81,26 @@ public class Node {
 	}
 
 	public boolean isUp() {
-		return isUp;
+		return status == Status.UP;
 	}
 
-	public void setUp(boolean isUp) {
-		if (!isUp) threads = 0;
-		this.isUp = isUp;
+	public boolean isDown() {
+		return status == Status.DOWN;		
 	}
 	
+	public boolean isTakeOut() {
+		return status == Status.TAKEOUT;		
+	}
+	
+	public void setStatus(Status status) {
+		if (status==Status.DOWN) threads = 0;
+		this.status = status;
+	}
+	
+	public Status getStatus() {
+		return status;
+	}
+
 	@Override
 	public String toString() {
 		return "["+host+":"+port+"]";
@@ -105,12 +127,12 @@ public class Node {
 	}
 	
 	public synchronized void addThread() {
-		if (!isUp) return;
+		if (!isUp()) return;
 		++threads;		
 	}
 
 	public synchronized void removeThread() {
-		if (!isUp) return;
+		if (!isUp()) return;
 		--threads;		
 	}
 
@@ -122,4 +144,23 @@ public class Node {
 		return statusCodes;
 	}
 
+	@Override
+	public void write(XMLStreamWriter out)
+			throws XMLStreamException {
+
+		out.writeStartElement("node");
+
+		out.writeAttribute("host", host);
+		out.writeAttribute("port", ""+port);
+
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		host = token.getAttributeValue("", "host");
+		port = Integer.parseInt(token.getAttributeValue("", "port"));
+	}
+	
 }

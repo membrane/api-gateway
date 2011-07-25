@@ -14,25 +14,44 @@
 package com.predic8.membrane.core.interceptor.rest;
 
 import java.io.StringReader;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
+import javax.xml.stream.*;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.config.GenericConfigElement;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.xml.Request;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 
 public class REST2SOAPInterceptor extends AbstractInterceptor {
 
+	public static class Mapping {
+		public String regex;
+		public String soapAction;
+		public String soapURI;
+		public String requestXSLT;
+		public String responseXSLT;
+		
+		public Mapping(String regex, String soapAction, String soapURI, String requestXSLT, String responseXSLT) {
+			this.regex = regex;
+			this.soapAction = soapAction;
+			this.soapURI = soapURI;
+			this.requestXSLT = requestXSLT;
+			this.responseXSLT = responseXSLT;
+		}
+	}
+	
 	private static Log log = LogFactory.getLog(REST2SOAPInterceptor.class.getName());
 
-	private Map<String, Map<String, String>> mappings;
+	private List<Mapping> mappings = new ArrayList<Mapping>();	
 	private XSLTTransformer xsltTransformer = new XSLTTransformer();
 
 	public REST2SOAPInterceptor() {
@@ -45,14 +64,14 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		log.debug("uri: " + getURI(exc));
 		String uri = getURI(exc);
 
-		String regex = findFirstMatchingRegEx(uri);
-		if (regex == null)
+		Mapping mapping = findFirstMatchingRegEx(uri);
+		if (mapping == null)
 			return Outcome.CONTINUE;
 
 		transformAndReplaceBody(exc.getRequest(), 
-								getRequestXSLT(regex), 
+								mapping.requestXSLT, 
 								getRequestXMLSource(exc));
-		modifyRequest(exc, regex);
+		modifyRequest(exc, mapping);
 
 		return Outcome.CONTINUE;
 	}
@@ -65,7 +84,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		log.debug("response: " + xsltTransformer.transform(null, getBodySource(exc)));		
 		
 		transformAndReplaceBody(exc.getResponse(),
-				                getResponseXSLT(getRESTURL(exc)),
+				                getRESTURL(exc).responseXSLT,
 				                getBodySource(exc));
 		setContentType(exc.getResponse().getHeader());
 		return Outcome.CONTINUE;
@@ -84,26 +103,26 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		return new StreamSource(exc.getResponse().getBodyAsStream());
 	}
 
-	private String getRESTURL(Exchange exc) {
-		return (String) exc.getProperty("restURL");
+	private Mapping getRESTURL(Exchange exc) {
+		return (Mapping) exc.getProperty("mapping");
 	}
 
-	private String findFirstMatchingRegEx(String uri) {
-		for (String regex : mappings.keySet()) {
-			if (Pattern.matches(regex, uri))
-				return regex;
+	private Mapping findFirstMatchingRegEx(String uri) {
+		for (Mapping m : mappings) {
+			if (Pattern.matches(m.regex, uri))
+				return m;
 		}
 		return null;
 	}
 
-	private void modifyRequest(AbstractExchange exc, String regex) {
+	private void modifyRequest(AbstractExchange exc, Mapping mapping) {
 
 		exc.getRequest().setMethod("POST");
-		exc.getRequest().getHeader().setSOAPAction(getSOAPAction(regex));
+		exc.getRequest().getHeader().setSOAPAction(mapping.soapAction);
 		setContentType(exc.getRequest().getHeader());
 		
-		exc.setProperty("restURL", regex);
-		setServiceEndpoint(exc, regex);
+		exc.setProperty("mapping", mapping);
+		setServiceEndpoint(exc, mapping);
 	}
 
 	private void setContentType(Header header) {
@@ -111,9 +130,9 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		header.setContentType("text/xml;charset=UTF-8");
 	}
 
-	private void setServiceEndpoint(AbstractExchange exc, String regex) {
+	private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {
 		exc.getRequest().setUri(
-				getURI(exc).replaceAll(regex, getSOAPURI(regex)));
+				getURI(exc).replaceAll(mapping.regex, mapping.soapURI));
 	}
 
 	private void transformAndReplaceBody(Message msg, String ss, Source src) throws Exception {
@@ -126,28 +145,48 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		return exc.getRequest().getUri();
 	}
 
-	private String getResponseXSLT(String regex) {
-		return mappings.get(regex).get("responseXSLT");
-	}
-
-	private String getRequestXSLT(String regex) {
-		return mappings.get(regex).get("requestXSLT");
-	}
-
-	private String getSOAPAction(String regex) {
-		return mappings.get(regex).get(Header.SOAP_ACTION);
-	}
-
-	private String getSOAPURI(String regex) {
-		return mappings.get(regex).get("SOAPURI");
-	}
-
-	public Map<String, Map<String, String>> getMappings() {
+	public List<Mapping> getMappings() {
 		return mappings;
 	}
 
-	public void setMappings(Map<String, Map<String, String>> mappings) {
+	public void setMappings(List<Mapping> mappings) {
 		this.mappings = mappings;
 	}
 
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+
+		out.writeStartElement("rest2Soap");
+
+		for (Mapping m : mappings) {
+			out.writeStartElement("mapping");
+
+			out.writeAttribute("regex", m.regex);
+			out.writeAttribute("soapAction", m.soapAction);
+			out.writeAttribute("soapURI", m.soapURI);
+			out.writeAttribute("requestXSLT", m.requestXSLT);
+			out.writeAttribute("responseXSLT", m.responseXSLT);
+
+			out.writeEndElement();
+		}
+
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws XMLStreamException {
+		if (token.getLocalName().equals("mapping")) {
+			GenericConfigElement mapping = new GenericConfigElement();
+			mapping.parse(token);
+			mappings.add(new Mapping(mapping.getAttribute("regex"), 
+												           mapping.getAttribute("soapAction"),
+												           mapping.getAttribute("soapURI"),
+												           mapping.getAttribute("requestXSLT"),
+												           mapping.getAttribute("responseXSLT")));
+		} else {
+			super.parseChildren(token, child);
+		}
+	}
 }

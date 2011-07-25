@@ -284,7 +284,7 @@ public class AdminPageBuilder extends Html {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
-					createThs("Node", "Health", "Count", "Errors", "Time since last up", "Current Threads", "Action");
+					createThs("Node", "Status", "Count", "Errors", "Time since last up", "Sessions", "Current Threads", "Action");
 			    end();
 			end();
 			tbody();
@@ -294,13 +294,16 @@ public class AdminPageBuilder extends Html {
 						createLink(""+n.getHost()+":"+n.getPort(), "node", "show", 
 								   createQueryString("cluster", params.get("cluster"), "host", n.getHost(),"port", ""+n.getPort() ));
 						end();
-						createTds( n.isUp()?"Up":"Down", ""+n.getCounter(), 
-								   String.format("%1$.2f%%", n.getErrors()*100)
-						           ,formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),""+n.getThreads());
+						createTds( getStatusString(n), ""+n.getCounter(), 
+								   String.format("%1$.2f%%", n.getErrors()*100),
+								   formatDurationHMS(System.currentTimeMillis()-n.getLastUpTime()),
+								   ""+router.getClusterManager().getSessionsByNode(params.get("cluster"),n).size(),
+						           ""+n.getThreads());
 						td();
-							createIcon("ui-icon-trash", "node", "delete", createQuery4Node(n));
-							createIcon("ui-icon-circle-arrow-n", "node", "up", createQuery4Node(n));
-							createIcon("ui-icon-circle-arrow-s", "node", "down", createQuery4Node(n));
+							createIcon("ui-icon-eject", "node", "takeout", "takeout", createQuery4Node(n));
+							createIcon("ui-icon-circle-arrow-n", "node", "up", "up", createQuery4Node(n));
+							createIcon("ui-icon-circle-arrow-s", "node", "down", "down", createQuery4Node(n));
+							createIcon("ui-icon-trash", "node", "delete", "delete", createQuery4Node(n));
 						end();
 					end();
 				}
@@ -308,13 +311,20 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
+	private String getStatusString(Node n) {
+		switch (n.getStatus()) { 
+			case TAKEOUT:
+				return "In take out";
+		}
+		return ""+n.getStatus();
+	}
+
 	private String createQuery4Node(Node n) throws UnsupportedEncodingException {
 		return createQueryString("cluster", params.get("cluster"),"host", n.getHost(), "port", ""+n.getPort());
 	}
 
-	private void createIcon(String icon, String ctrl, String action,
-			String query) {
-		a().href(createHRef(ctrl, action, query)).span().classAttr("ui-icon "+icon).style("float:left;").end(2);
+	private void createIcon(String icon, String ctrl, String action, String tooltip, String query) {
+		a().href(createHRef(ctrl, action, query)).span().classAttr("ui-icon "+icon).style("float:left;").title(tooltip).end(2);
 	}
 
 	private String getFormatedHealth(String name) {

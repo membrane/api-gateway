@@ -14,9 +14,12 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import javax.naming.OperationNotSupportedException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
+
+import org.apache.commons.lang.NotImplementedException;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
@@ -70,6 +73,15 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
+		if ( getId() != null ) writeReferenz(out);
+		else writeInterceptor(out);
+	}
+
+	protected void writeInterceptor(XMLStreamWriter out) throws XMLStreamException {
+		throw new NotImplementedException();
+	}
+	
+	private void writeReferenz(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 
 		out.writeAttribute("id", getId());

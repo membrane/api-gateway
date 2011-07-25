@@ -38,12 +38,6 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	private static Log log = LogFactory.getLog(FileExchangeStore.class
 			.getName());
 
-	private String dir;
-
-	private boolean raw;
-
-	private File directory;
-
 	private static int counter = 0;
 
 	private static final DateFormat dateFormat = new SimpleDateFormat(
@@ -53,6 +47,12 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			.getProperty("file.separator");
 
 	public static final String MESSAGE_FILE_PATH = "message.file.path";
+
+	private String dir;
+
+	private boolean raw;
+
+	private File directory;
 
 	private boolean saveBodyOnly = false;
 

@@ -17,6 +17,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import javax.xml.stream.*;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -29,21 +31,22 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(StatisticsCSVInterceptor.class.getName());
 	
-	private File csvFile;
-
+	//private File csvFile;
+	private String fileName;
+	
 	public StatisticsCSVInterceptor() {
 		priority = 510;
 	}
 	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		log.debug("logging statistics to " + csvFile.getAbsolutePath());
+		log.debug("logging statistics to " + new File(fileName).getAbsolutePath());
 		writeExchange(exc);
 		return Outcome.CONTINUE;
 	}
 
 	private void writeExchange(Exchange exc) throws Exception {
-		FileWriter w = new FileWriter(csvFile,true);
+		FileWriter w = new FileWriter(fileName,true);
 		
 		writeCSV(ExchangesUtil.getStatusCode(exc),w);
 		writeCSV(ExchangesUtil.getTime(exc),w);
@@ -63,7 +66,12 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	}
 
 	public void setFileName(String fileName) throws Exception {
-		csvFile = new File(fileName);
+		this.fileName = fileName;
+		createCSVFile();
+	}
+
+	private void createCSVFile() throws IOException, Exception {
+		File csvFile = new File(fileName);
 		
 		csvFile.createNewFile();
 		
@@ -74,6 +82,10 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 			writeHeaders();
 	}
 
+	public String getFileName() {
+		return new File(fileName).getName();
+	}
+	
 	private void writeCSV(String value, FileWriter w) throws IOException {
 		w.append(value+";");
 	}
@@ -83,7 +95,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	}
 	
 	private void writeHeaders() throws Exception {
-		FileWriter w = new FileWriter(csvFile);
+		FileWriter w = new FileWriter(fileName,true);
 		
 		writeCSV("Status Code",w);
 		writeCSV("Time",w);
@@ -100,5 +112,25 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 		writeNewLine(w);
 		
 		w.close();
+	}
+
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("statisticsCSV");
+		out.writeAttribute("file", fileName);
+		
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		try {
+			setFileName(token.getAttributeValue("", "file"));
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

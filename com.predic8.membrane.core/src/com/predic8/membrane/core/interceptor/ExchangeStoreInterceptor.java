@@ -14,12 +14,15 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import javax.xml.stream.*;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 
 public class ExchangeStoreInterceptor extends AbstractInterceptor {
 
 	private ExchangeStore store;
+	private String exchangeStoreBeanId;
 	
 	public ExchangeStoreInterceptor() {
 		name = "Exchange Store Interceptor";
@@ -39,10 +42,27 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	}
 	
 	public ExchangeStore getExchangeStore() {
-		return store;
+		return store;		
 	}
 
 	public void setExchangeStore(ExchangeStore exchangeStore) {
 		store = exchangeStore;
 	}
+	
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+
+		out.writeStartElement("exchangeStore");
+
+		out.writeAttribute("name", exchangeStoreBeanId);
+
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		exchangeStoreBeanId = token.getAttributeValue("", "name");
+		store = router.getBean(exchangeStoreBeanId, ExchangeStore.class);
+	}	
 }

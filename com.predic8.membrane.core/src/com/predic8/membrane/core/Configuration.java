@@ -29,18 +29,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.config.AbstractConfigElement;
-import com.predic8.membrane.core.config.Global;
-import com.predic8.membrane.core.config.GUI;
-import com.predic8.membrane.core.config.Proxy;
-import com.predic8.membrane.core.config.Rules;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.Security;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class Configuration extends AbstractConfigElement {
-
-	public static final String ELEMENT_NAME = "configuration";
 
 	private static final long serialVersionUID = 1L;
 
@@ -225,6 +219,17 @@ public class Configuration extends AbstractConfigElement {
 	}
 	
 	@Override
+	public XMLElement parse(XMLStreamReader token) throws XMLStreamException {
+		move2RootElementIfNeeded(token);
+		if ("rules".equals(token.getLocalName())) {
+			XMLElement rulesE = new Rules(router).parse(token);
+			rules = ((Rules) rulesE).getValues();
+			return this;
+		}
+		return super.parse(token);
+	}
+	
+	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {	
 		if (Rules.ELEMENT_NAME.equals(child)) {
 			rules = ((Rules) new Rules(router).parse(token)).getValues();
@@ -243,16 +248,11 @@ public class Configuration extends AbstractConfigElement {
 			props.put(TRUST_STORE_PASSWORD, security.getTrustStorePassword());
 		} 
  	}
-
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
 	
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartDocument(Constants.UTF_8, Constants.XML_VERSION);
-		out.writeStartElement(ELEMENT_NAME);
+		out.writeStartElement("configuration");
 		
 		Rules childRules = new Rules(router);
 		childRules.setValues(rules);

@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.stream.*;
+
 import org.apache.commons.lang.WordUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -279,6 +281,12 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
 	}
 
+	public Response handleNodeTakeoutRequest(Map<String, String> params) throws Exception {
+		router.getClusterManager().takeout(params.get("cluster"), params.get("host"),
+				                      Integer.parseInt(params.get("port")));
+		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
+	}
+
 	public Response handleNodeDownRequest(Map<String, String> params) throws Exception {
 		router.getClusterManager().down(params.get("cluster"), params.get("host"),
 				                        Integer.parseInt(params.get("port")));
@@ -298,7 +306,7 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 														"host",params.get("host"),
 														"port",params.get("port")));
 	}	
-
+	
 	private String getRulesPage(Map<String, String> params)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
@@ -379,7 +387,6 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {
-
 		URI jUri = new URI(exc.getOriginalRequestUri());
 		String q = jUri.getQuery();
 		if (q == null) {
@@ -426,4 +433,13 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 		log.debug("target host: " + params.get("targetHost"));
 		log.debug("target port: " + params.get("targetPort"));
 	}
+
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("adminConsole");		
+		out.writeEndElement();
+	}
+
 }

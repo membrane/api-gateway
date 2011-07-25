@@ -25,7 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractConfigElement;
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class Resource extends AbstractConfigElement {
@@ -55,8 +55,12 @@ public class Resource extends AbstractConfigElement {
 			clientAddresses.add(((Hostname) (new Hostname(router)).parse(token)));
 		} else if (Any.ELEMENT_NAME.equals(child)) {
 			clientAddresses.add(((Any) (new Any(router)).parse(token)));
+		} else if ("clients".equals(child)) {
+			new GenericConfigElement(this).parse(token);
 		}
 	}
+	
+	
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {

@@ -16,26 +16,35 @@ package com.predic8.membrane.core.interceptor.balancer;
 import java.net.*;
 import java.util.*;
 
+import javax.xml.stream.*;
+
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
 import com.predic8.membrane.core.transport.http.HostColonPort;
 import com.predic8.membrane.core.util.HttpUtil;
 
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(LoadBalancingInterceptor.class.getName());
-	
-	private List<Node> endpoints;
+	private static Log log = LogFactory.getLog(LoadBalancingInterceptor.class
+			.getName());
+
+	private List<Node> nodes = new LinkedList<Node>();;
 
 	private DispatchingStrategy strategy = new RoundRobinStrategy();
 
-	private XMLElementSessionIdExtractor sesssionIdExtractor;
+	private XMLElementSessionIdExtractor sessionIdExtractor;
 
 	private boolean failOver = true;
-	
+
+	public LoadBalancingInterceptor() {
+		name = "Balancer";
+	}
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 
@@ -44,17 +53,18 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			dispatchedNode = getDispatchedNode(exc.getRequest());
 		} catch (EmptyNodeListException e) {
 			log.error("No Node found.");
-			exc.setResponse(HttpUtil.createResponse(500, "Internal Server Error", getErrorPage(), "text/html"));
+			exc.setResponse(HttpUtil.createResponse(500,
+					"Internal Server Error", getErrorPage(), "text/html"));
 			return Outcome.ABORT;
 		}
-		
+
 		dispatchedNode.incCounter();
 		dispatchedNode.addThread();
-		
+
 		exc.setProperty("dispatchedNode", dispatchedNode);
-		
+
 		exc.setOriginalRequestUri(getDestinationURL(dispatchedNode, exc));
-		
+
 		exc.getDestinations().clear();
 		exc.getDestinations().add(getDestinationURL(dispatchedNode, exc));
 
@@ -66,26 +76,28 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	private String getErrorPage() {
 		return "<html><head><title>Internal Server Error</title></head><body><h1>Internal Server Error</h1></body></html>";
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 
-		if (sesssionIdExtractor != null && exc.getResponse().isXML() ) {
+		if (sessionIdExtractor != null && exc.getResponse().isXML()) {
 			String sessionId = getSessionId(exc.getResponse());
-			
-			if ( sessionId != null ) {
-				router.getClusterManager().addSession2Cluster(sessionId, "Default", (Node)exc.getProperty("dispatchedNode"));
+
+			if (sessionId != null) {
+				router.getClusterManager().addSession2Cluster(sessionId,
+						"Default", (Node) exc.getProperty("dispatchedNode"));
 			}
-		}		
-		
+		}
+
 		updateDispatchedNode(exc);
-		
+
 		return Outcome.CONTINUE;
 	}
 
 	private void setFailOverNodes(Exchange exc, Node dispatchedNode)
-	  throws MalformedURLException {
-		if ( !failOver ) return;
+			throws MalformedURLException {
+		if (!failOver)
+			return;
 
 		for (Node ep : getEndpoints()) {
 			if (!ep.equals(dispatchedNode))
@@ -94,41 +106,52 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 
 	private void updateDispatchedNode(Exchange exc) {
-		Node n = (Node)exc.getProperty("dispatchedNode");
+		Node n = (Node) exc.getProperty("dispatchedNode");
 		n.removeThread();
 		n.addStatusCode(exc.getResponse().getStatusCode());
-	} 
+	}
 
 	private Node getDispatchedNode(Message msg) throws Exception {
 		String sessionId;
-		if ( sesssionIdExtractor == null || !msg.isXML() || (sessionId = getSessionId(msg)) == null ) {
+		if (sessionIdExtractor == null || !msg.isXML()
+				|| (sessionId = getSessionId(msg)) == null) {
+			log.debug("no session id found.");
 			return strategy.dispatch(this);
 		}
-		
-		if ( sessionNotExisting(sessionId) ) {
-			router.getClusterManager().addSession2Cluster(sessionId, "Default", strategy.dispatch(this));
-		}			
-		Session s = router.getClusterManager().getSessions("Default").get(sessionId);
+
+		Session s = getSession(sessionId);
+		if (s == null ) log.debug("no session found for id "+sessionId);		
+		if ( s == null || s.getNode().isDown() ) {
+			log.debug("assigning new node for session id "+sessionId+(s!=null?" (old node was "+s.getNode()+")":""));
+			router.getClusterManager().addSession2Cluster(sessionId, "Default",
+					strategy.dispatch(this));
+		}
+		s = getSession(sessionId);
 		s.used();
 		return s.getNode();
 	}
 
-	public String getDestinationURL(Node ep, Exchange exc) throws MalformedURLException{
-		return "http://" + ep.getHost() + ":" + ep.getPort() + getRequestURI(exc);
+	private Session getSession(String sessionId) {
+		return router.getClusterManager().getSessions("Default").get(sessionId);
 	}
 
-	private boolean sessionNotExisting(String sessionId) {
-		return !router.getClusterManager().containsSession("Default", sessionId);
+	public String getDestinationURL(Node ep, Exchange exc)
+			throws MalformedURLException {
+		return "http://" + ep.getHost() + ":" + ep.getPort()
+				+ getRequestURI(exc);
 	}
 
 	private String getSessionId(Message msg) throws Exception {
-		return sesssionIdExtractor.getSessionId(msg);
+		return sessionIdExtractor.getSessionId(msg);
 	}
 
 	private String getRequestURI(Exchange exc) throws MalformedURLException {
-		if(exc.getOriginalRequestUri().toLowerCase().startsWith("http://")) // TODO what about HTTPS?
+		if (exc.getOriginalRequestUri().toLowerCase().startsWith("http://")) // TODO
+																				// what
+																				// about
+																				// HTTPS?
 			return new URL(exc.getOriginalRequestUri()).getFile();
-		
+
 		return exc.getOriginalRequestUri();
 	}
 
@@ -143,26 +166,27 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public List<Node> getEndpoints() {
 		if (router.getClusterManager() != null) {
 			log.debug("using endpoints from cluster manager");
-			return router.getClusterManager().getAvailableNodesByCluster("Default");
+			return router.getClusterManager().getAvailableNodesByCluster(
+					"Default");
 		}
-		return endpoints;
+		return nodes;
 	}
 
 	public void setEndpoints(List<String> endpoints) {
-		this.endpoints = new LinkedList<Node>();
-		for (String s : endpoints ) {
-			this.endpoints.add(new Node( new HostColonPort(s).host,
-										     new HostColonPort(s).port ));
-		}		
+		this.nodes = new LinkedList<Node>();
+		for (String s : endpoints) {
+			this.nodes.add(new Node(new HostColonPort(s).host,
+					new HostColonPort(s).port));
+		}
 	}
 
-	public XMLElementSessionIdExtractor getSesssionIdExtractor() {
-		return sesssionIdExtractor;
+	public XMLElementSessionIdExtractor getSessionIdExtractor() {
+		return sessionIdExtractor;
 	}
 
-	public void setSesssionIdExtractor(
-			XMLElementSessionIdExtractor sesssionIdExtractor) {
-		this.sesssionIdExtractor = sesssionIdExtractor;
+	public void setSessionIdExtractor(
+			XMLElementSessionIdExtractor sessionIdExtractor) {
+		this.sessionIdExtractor = sessionIdExtractor;
 	}
 
 	public boolean isFailOver() {
@@ -172,6 +196,70 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public void setFailOver(boolean failOver) {
 		this.failOver = failOver;
 	}
+
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+
+		out.writeStartElement("balancer");
+		
+		if (sessionIdExtractor != null) {
+			sessionIdExtractor.write(out);
+		}
+		
+		if (!nodes.isEmpty()) {
+			out.writeStartElement("nodes");
+
+			for (Node n : nodes) {
+				n.write(out);
+			}
+
+			out.writeEndElement();
+		}
+		
+		((AbstractXmlElement)strategy).write(out);
+
+		out.writeEndElement();
+	}
 	
-	
+	@Override
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws XMLStreamException {
+		if (token.getLocalName().equals("xmlSessionIdExtractor")) {
+			parseSessionIdExtractor(token);
+		} else if (token.getLocalName().equals("nodes")) {
+			new GenericConfigElement(this).parse(token);
+		} else if (token.getLocalName().equals("node")) {
+			Node n = new Node();
+			n.parse(token);
+			nodes.add(n);
+		} else if (token.getLocalName().equals("byThreadStrategy")) {
+			parseByThreadStrategy(token);
+		} else if (token.getLocalName().equals("roundRobinStrategy")) {
+			parseRoundRobinStrategy(token);
+		} else {
+			super.parseChildren(token, child);
+		}
+	}
+
+	private void parseByThreadStrategy(XMLStreamReader token)
+			throws XMLStreamException {
+		ByThreadStrategy byTStrat = new ByThreadStrategy();
+		byTStrat.parse(token);
+		strategy = byTStrat;
+	}
+
+	private void parseRoundRobinStrategy(XMLStreamReader token)
+			throws XMLStreamException {
+		RoundRobinStrategy rrStrat = new RoundRobinStrategy();
+		rrStrat.parse(token);
+		strategy = rrStrat;
+	}
+
+	private void parseSessionIdExtractor(XMLStreamReader token)
+			throws XMLStreamException {
+		sessionIdExtractor = new XMLElementSessionIdExtractor();
+		sessionIdExtractor.parse(token);
+	}
+
 }

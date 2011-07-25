@@ -5,12 +5,14 @@ import static com.predic8.membrane.core.util.SynchronizedXPathFactory.newXPath;
 
 import java.util.*;
 
+import javax.xml.stream.*;
 import javax.xml.xpath.XPathConstants;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.xml.sax.InputSource;
 
+import com.predic8.membrane.core.config.GenericConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -74,5 +76,28 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		this.namespaces = namespaces;
 	}
 
-	
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("cbr");
+		
+		for (Route r : routeProvider.getRoutes()) {
+			r.write(out);
+		}
+		
+		out.writeEndElement();
+	}
+		
+	@Override
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws XMLStreamException {
+		if (token.getLocalName().equals("route")) {
+			Route r = new Route();
+			r.parse(token);
+			routeProvider.getRoutes().add(r);
+		} else {
+			super.parseChildren(token, child);
+		}	
+	}
 }

@@ -4,6 +4,8 @@ import java.util.*;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.interceptor.balancer.Node.Status;
+
 public class Cluster {
 
 	private static Log log = LogFactory.getLog(Cluster.class.getName());
@@ -16,16 +18,20 @@ public class Cluster {
 		this.name = name;
 	}
 
-	public void nodeUp(Node ep) {		
-		log.debug("endpoint: " + ep +" up");
-		getNodeCreateIfNeeded(ep).setLastUpTime(System.currentTimeMillis());
-		getNodeCreateIfNeeded(ep).setUp(true);
+	public void nodeUp(Node n) {		
+		log.debug("node: " + n +" up");
+		getNodeCreateIfNeeded(n).setLastUpTime(System.currentTimeMillis());
+		getNodeCreateIfNeeded(n).setStatus(Status.UP);
 	}
 
-	public void nodeDown(Node ep) {
-		log.debug("endpoint: " + ep +" down");
-		Node n = getNodeCreateIfNeeded(ep);
-		n.setUp(false);
+	public void nodeDown(Node n) {
+		log.debug("node: " + n +" down");
+		getNodeCreateIfNeeded(n).setStatus(Status.DOWN);
+	}
+
+	public void nodeTakeOut(Node n) {
+		log.debug("node: " + n +" takeout");
+		getNodeCreateIfNeeded(n).setStatus(Status.TAKEOUT);
 	}
 	
 	public boolean removeNode(Node node) {		
@@ -48,7 +54,7 @@ public class Cluster {
 		}
 		synchronized (nodes) {
 			for (Node n : nodes) {
-				if ( System.currentTimeMillis()-n.getLastUpTime() > timeout ) n.setUp(false);
+				if ( System.currentTimeMillis()-n.getLastUpTime() > timeout ) n.setStatus(Status.DOWN);
 			}			
 		}
 		return nodes;

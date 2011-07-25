@@ -7,7 +7,7 @@ import com.predic8.membrane.core.*;
 
 public class ProxyRule extends AbstractRule {
 
-	public static final String ELEMENT_NAME = "proxy-rule";
+	public static final String ELEMENT_NAME = "proxyRule";
 	
 	public ProxyRule() {
 		

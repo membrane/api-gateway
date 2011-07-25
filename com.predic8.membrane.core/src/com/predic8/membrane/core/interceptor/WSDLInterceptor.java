@@ -25,6 +25,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 
+import javax.xml.stream.*;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -164,6 +166,10 @@ public class WSDLInterceptor extends AbstractInterceptor {
 		this.registryWSDLRegisterURL = registryWSDLRegisterURL;
 	}
 
+	public String getRegistryWSDLRegisterURL() {
+		return registryWSDLRegisterURL;
+	}
+
 	private boolean hasContent(Exchange exc) {
 		return exc.getResponse().getHeader().getContentType() != null;
 	}
@@ -234,4 +240,26 @@ public class WSDLInterceptor extends AbstractInterceptor {
 		this.port = port;
 	}
 	
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("wsdlRewriter");
+		
+		if (port != null) out.writeAttribute("port", port);		
+		if (host != null) out.writeAttribute("host", host);		
+		if (protocol != null) out.writeAttribute("protocol", protocol);		
+		if (registryWSDLRegisterURL !=null) out.writeAttribute("registryWSDLRegisterURL", registryWSDLRegisterURL);		
+		
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		port = token.getAttributeValue("", "port");
+		host = token.getAttributeValue("", "host");
+		protocol = token.getAttributeValue("", "protocol");
+		registryWSDLRegisterURL = token.getAttributeValue("", "registryWSDLRegisterURL");
+	}
 }

@@ -18,8 +18,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamReader;
+import javax.management.RuntimeErrorException;
+import javax.xml.stream.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,8 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
 
 public class AccessControlInterceptor extends AbstractInterceptor {
 
@@ -77,6 +76,10 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		this.aclFilename = aclFilename;
 	}
 
+	public String getAclFilename() {
+		return aclFilename;
+	}
+
 	public AccessControl getAccessControl() throws Exception {
 		if (accessControl == null) {
 			init();
@@ -113,4 +116,23 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		return response;
 	}
 
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out) throws XMLStreamException {
+		out.writeStartElement("accessControl");
+		
+		out.writeAttribute("file", aclFilename);
+		
+		out.writeEndElement();
+	}
+
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		
+		aclFilename = token.getAttributeValue("", "file");
+		try {
+			init();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

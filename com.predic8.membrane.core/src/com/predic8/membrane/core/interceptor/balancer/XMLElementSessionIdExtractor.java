@@ -17,9 +17,15 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.http.Message;
 
-public class XMLElementSessionIdExtractor {
+public class XMLElementSessionIdExtractor extends AbstractConfigElement {
+
+	public XMLElementSessionIdExtractor() {
+		super(null);
+	}
 
 	private static Log log = LogFactory.getLog(XMLElementSessionIdExtractor.class.getName());
 	
@@ -69,6 +75,30 @@ public class XMLElementSessionIdExtractor {
 
 	public void setNamespace(String namespace) {
 		this.namespace = namespace;
+	}
+
+	@Override
+	public void write(XMLStreamWriter out)
+			throws XMLStreamException {
+
+		out.writeStartElement("xmlSessionIdExtractor");
+
+		out.writeAttribute("localName", localName);
+		out.writeAttribute("namespace", namespace);
+
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token)
+			throws XMLStreamException {
+		localName = token.getAttributeValue("", "localName");
+		namespace = token.getAttributeValue("", "namespace");
+	}
+	
+	@Override
+	protected String getElementName() {
+		return "sessionIdExtractor";
 	}
 		
 	
