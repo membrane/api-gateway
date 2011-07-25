@@ -72,12 +72,12 @@ public abstract class RuleEditDialog extends Dialog {
 		container.setLayout(SWTUtil.createGridLayout(1, 10));
 		
 		tabFolder = new TabFolder(container, SWT.NONE);
-		GridData griddata4TabFolder = new GridData();
-		griddata4TabFolder.widthHint = 440;
-		griddata4TabFolder.heightHint = 440;
-		griddata4TabFolder.grabExcessHorizontalSpace = true;
-		griddata4TabFolder.grabExcessVerticalSpace = true;
-		tabFolder.setLayoutData(griddata4TabFolder);
+		GridData gd = new GridData();
+		gd.widthHint = 440;
+		gd.heightHint = 440;
+		gd.grabExcessHorizontalSpace = true;
+		gd.grabExcessVerticalSpace = true;
+		tabFolder.setLayoutData(gd);
 		
 		
 		return container;
