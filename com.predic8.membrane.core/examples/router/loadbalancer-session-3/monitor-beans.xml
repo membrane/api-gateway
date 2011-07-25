@@ -10,40 +10,19 @@
   the specific language governing permissions and limitations under the License. 
 
 -->
-<beans  xmlns="http://www.springframework.org/schema/beans"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+<spring:beans xmlns="http://membrane-soa.org/router/beans/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd					    
+					    http://membrane-soa.org/router/beans/1/ http:/www.predic8.com/schema/router/conf/router-conf.xsd">
 
-  <bean id="router" class="com.predic8.membrane.core.Router">
-    <property name="transport" ref="transport" />
-    <property name="clusterManager">
-    	<bean id="clusterManager" class="com.predic8.membrane.core.interceptor.balancer.ClusterManager"/>
-    </property>
-  </bean>
 
-  <bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
-    <property name="coreThreadPoolSize" value="20" />   
-    <property name="interceptors">
-      <list>
-        <bean class="com.predic8.membrane.core.interceptor.RuleMatchingInterceptor" />
-        <bean class="com.predic8.membrane.core.interceptor.DispatchingInterceptor" />
-      </list>
-    </property>
-  </bean>
-  
-  <bean id="administrationInterceptor" class="com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor" />
+	<router useClusterManager="true" />
 
-  <bean id="webServerInterceptor" class="com.predic8.membrane.core.interceptor.server.WebServerInterceptor">
-    <property name="docBase" value="docBase" />
-  </bean>
+	<transport>
+		<interceptors>
+			<ruleMatching />
+			<dispatching />
+		</interceptors>
+	</transport>
 
-  <bean id="balancer" class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor" >
-  	<property name="sesssionIdExtractor">
-  		<bean class="com.predic8.membrane.core.interceptor.balancer.XMLElementSessionIdExtractor">
-  			<property name="namespace" value="http://chat.predic8.com/" />
-  			<property name="localName" value="session" />
-  		</bean>
-  	</property>
-  </bean>
-    	     
-</beans>
+</spring:beans>

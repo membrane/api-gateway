@@ -51,13 +51,17 @@ java -jar lbclient.jar down localhost 4000
 
 start router-secured.bat
 
-16. The parameters are not encrypted so the operation fails.
+16. Execute 
+
+java -jar lbclient.jar up localhost 4000
+
+The parameters are not encrypted so the operation fails.
 
 17. Open the file client.properties
 
 18. Remove the # from the following line:
 
-#key=b0iKZCt0D7cMUlCYeihNwA==
+#key=6f488a642b740fb70c5250987a284dc0
 
 19. Execute:
 

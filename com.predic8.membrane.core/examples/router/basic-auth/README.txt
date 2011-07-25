@@ -41,7 +41,9 @@ First take a look at the rules.xml file.
       <targetport>80</targetport>
       <targethost>www.thomas-bayer.com</targethost>
       <interceptors>
-        <interceptor id="basicAuthenticationInterceptor" />
+		<basicAuthentication>
+			<user name="membrane" password="membrane" />
+		</basicAuthentication>
       </interceptors>
     </forwarding-rule>
   </rules>
@@ -50,19 +52,15 @@ First take a look at the rules.xml file.
 
 You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the BasicAuthentictionInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
 
-Now take a look at the bean configuration of the interceptor in the basic-auth-beans.xml file.
+Now take a closer look at the basicAuthentication element:
 
 
-  <bean id="basicAuthenticationInterceptor" class="com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor">    
-    <property name="users">
-    	<map>
-    		<entry key="membrane" value="membrane"/>
-    	</map>
-    </property>
-  </bean>
+<basicAuthentication>
+	<user name="membrane" password="membrane" />
+</basicAuthentication>
 
 
-The interceptor can be configured with a map of users. Each username and password is given as a key-value pair. Use the key for the username and the value for the password. In our example there is one user with the username membrane who has got the password membrane. 
+The basicAuthentication elements sets up a BasicAuthenticationInterceptor. You can add users by using nested user elements. The user name and the password are given by the attributes name and password of the user element. In our example there is one user with the username membrane who has got the password membrane. 
 
 When you open the URL http://localhost:2000/sqlrest/CUSTOMER/2/ in your browser the monitor will response with a 401 Not Authorized message.
 

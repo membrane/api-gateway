@@ -48,12 +48,11 @@ The rule forwards calls to the port 2000 to predic8.com:80.
 
 Next take a look at the bean configuration of the interceptor in the examples/acl/acl-beans.xml file.
 
-<bean class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
-    <property name="aclFilename" value="acl.xml" />
-</bean>
+
+<accessControl file="acl.xml" />
 
 
-The value of the property 'aclFilename' is the name of the access control list XML file. 
+The value of the attribute 'file' is the name of the access control list XML file. 
 Before processing the first request the ACL file is read and the access control component is initialized. 
 
 Next take a look at acl.xml file located under the examples/acl directory:

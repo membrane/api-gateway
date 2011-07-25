@@ -1,11 +1,10 @@
-<configuration>
-  <rules>
-    <forwarding-rule name="Basic Authentication" port="2000">
-      <targetport>80</targetport>
-      <targethost>www.thomas-bayer.com</targethost>
-      <interceptors>
-        <interceptor id="basicAuthenticationInterceptor"/>
-      </interceptors>
-    </forwarding-rule>
-  </rules>
-</configuration>
+<rules>
+	<forwarding-rule name="Basic Authentication" port="2000">
+		<target host="www.thomas-bayer.com" port="80" />
+		<interceptors>
+			<basicAuthentication>
+				<user name="membrane" password="membrane" />
+			</basicAuthentication>
+		</interceptors>
+	</forwarding-rule>
+</rules>

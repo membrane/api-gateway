@@ -1,12 +1,10 @@
-<?xml version = "1.0" ?>
-<configuration>
-  <rules>
-    <forwarding-rule name="predic8.com" port="2000">
-      <targetport>8080</targetport>
-      <targethost>predic8.com</targethost>
-      <interceptors>
-        <interceptor id="soapValidator"/>
-      </interceptors>
-    </forwarding-rule>
-  </rules>
-</configuration>
+<rules>
+	<forwardingRule name="predic8.com" port="2000">
+		<target host="predic8.com" port="8080" />
+		<interceptors>
+			<soapValidator
+				wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
+		</interceptors>
+	</forwardingRule>
+</rules>
+

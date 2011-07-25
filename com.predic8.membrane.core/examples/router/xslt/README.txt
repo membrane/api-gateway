@@ -40,7 +40,7 @@ First take a look at the rules.xml file.
       <targetport>80</targetport>
       <targethost>www.thomas-bayer.com</targethost>
       <interceptors>
-        <interceptor id="xsltTransformer" />
+        <transformation requestXSLT="" responseXSLT="examples/xslt/customer2person.xsl" />
       </interceptors>
     </forwarding-rule>
   </rules>
@@ -48,18 +48,16 @@ First take a look at the rules.xml file.
 
 
 
+
 You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the XSLTInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
 
-Now take a look at the bean configuration of the interceptor in the xslt-beans.xml file.
+Now take a closer look at the transformation element.
 
 
-<bean id="xsltTransformer" class="com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor">
-	<property name="requestXSLT" value="" /> 
-	<property name="responseXSLT" value="examples/xslt/customer2person.xsl" /> 
-</bean> 
+<transformation requestXSLT="" responseXSLT="examples/xslt/customer2person.xsl" />
 
 
-The interceptor is only configured to apply an XSLT stylesheet to the response. 
+You can reference stylesheets that will be applied to the request and response with the attributes requestXSLT and responseXSLT. If you leave the attribute blanc or don't specifiy them at all, no transformation will be done. With the above element the interceptor is only configured to apply an XSLT stylesheet to the response. 
 
 Take a look at the stylesheet:
 

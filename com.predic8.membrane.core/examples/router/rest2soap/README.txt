@@ -39,7 +39,13 @@ First take a look at the rules.xml file.
       <targetport>80</targetport>
       <targethost>www.thomas-bayer.com</targethost>
       <interceptors>
-        <interceptor id="rest2SoapInterceptor" />
+		<rest2Soap>
+			<mapping regex="/bank/.*" 
+					 soapAction=""
+					 soapURI="/axis2/services/BLZService"
+					 requestXSLT="examples/rest2soap/blz-httpget2soap-request.xsl" 
+					 responseXSLT="examples/rest2soap/strip-soap-envelope.xsl" />
+		</rest2Soap>			
       </interceptors>
     </forwarding-rule>
   </rules>
@@ -48,28 +54,21 @@ First take a look at the rules.xml file.
 
 You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the REST2SOAPInterceptor is set for the rule. The interceptor will be called during the processing of each request.
 
-Now take a look at the bean configuration of the interceptor in the rest2soap-beans.xml file.
+Now take a closer look at the rest2Soap element:
 
 
- <bean id="rest2SoapInterceptor" class="com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor">
-  <property name="mappings">
-	<map>
-		<entry key="/bank/.*">
-			<map>
-				<entry key="SOAPAction" value=""/>
-				<entry key="SOAPURI" value="/axis2/services/BLZService" />
-				<entry key="requestXSLT" value="examples/rest2soap/blz-httpget2soap-request.xsl" />
-				<entry key="responseXSLT" value="examples/rest2soap/strip-soap-envelope.xsl" />          				
-			</map>
-		</entry>
-	</map>
-  </property>
-</bean>
+<rest2Soap>
+	<mapping regex="/bank/.*" 
+			 soapAction=""
+			 soapURI="/axis2/services/BLZService"
+			 requestXSLT="examples/rest2soap/blz-httpget2soap-request.xsl" 
+			 responseXSLT="examples/rest2soap/strip-soap-envelope.xsl" />
+</rest2Soap>			
 
 
-The mappings property contains a map. Each key will by matched against the URI of incoming requests. The data mapped by the key that matches the URI first will be taken for the following steps. If no match is found nothing will be done.
+The interceptor can be configured with nested mapping elements. Each mapping element has a regex attribute that will by matched against the URI of incoming requests. The data given by the mapping element which regex matches the URI first will be taken for the following steps. If no match is found nothing will be done.
 
-In this example the regular expression bank/.* will match /bank/37050198 so that the interceptor takes the data mapped by the key and continues with the next step.
+In this example the regular expression bank/.* will match /bank/37050198 so that the interceptor takes the other data given by the mapping element and continues with the next step.
 
 If we now open the following URL in a browser:
 
@@ -115,7 +114,7 @@ Now the REST2SOAPInterceptor will transform the HTTP request into a temporary XM
 </request>
 
 
-As you see there are elements for the HTTP headers too. This allows an XSLT stylesheet to reference HTTP headers when constructing the SOAP envelope in the next step. The stylesheet that is used to transform the XML document into a SOAP message is referenced by the map entry "requestXSLT". In our example the stylesheet looks like the following:
+As you see there are elements for the HTTP headers too. This allows an XSLT stylesheet to reference HTTP headers when constructing the SOAP envelope in the next step. The stylesheet that is used to transform the XML document into a SOAP message is referenced by the mapping attribute "requestXSLT". In our example the stylesheet looks like the following:
 
 
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -145,7 +144,7 @@ After the transformation the SOAP message will look like the following:
 </s11:Envelope>
 
 
-Next the interceptor will replace the body of the request with the SOAP message. With the map entries "SOAPAction" and "SOAPURI" the interceptor will finally create a new HTTP POST request.
+Next the interceptor will replace the body of the request with the SOAP message. Using the mapping attributes "SOAPAction" and "SOAPURI" the interceptor will finally create a new HTTP POST request.
 
 
 POST /axis2/services/BLZService HTTP/1.1
@@ -198,7 +197,7 @@ Date: Thu, 12 May 2011 15:05:17 GMT
 0
 
 
-The interceptor than applies another XSLT stylesheet to the body of the response to strip the soap envelope and soap body from the XML document. The stylesheet is referenced by the responseXSLT map entry. You will find a copy of the stylesheet below:
+The interceptor than applies another XSLT stylesheet to the body of the response to strip the soap envelope and soap body from the XML document. The stylesheet is referenced by the responseXSLT attribute. You will find a copy of the stylesheet below:
 
 
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"

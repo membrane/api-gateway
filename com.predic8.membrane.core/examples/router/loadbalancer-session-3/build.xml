@@ -7,11 +7,11 @@
 	</target>
 
 	<path id="classpath">
-		<pathelement path="build/classes" />
+		<pathelement path="build/classes" />		
 	</path>
 
 	<target name="compile" depends="stubs">
-		<javac debug="true" classpathref="classpath" srcdir="src" destdir="build/classes" />
+		<javac includejavaruntime="true" includeantruntime="true" debug="true" classpathref="classpath" srcdir="src" destdir="build/classes" />
 	</target>
 
 	<target name="stubs" depends="init">

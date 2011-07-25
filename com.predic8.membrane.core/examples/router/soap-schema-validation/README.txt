@@ -42,20 +42,19 @@ First take a look at the examples/soap-schema-validation/rules.xml file.
       <targetport>8080</targetport>
       <targethost>predic8.com</targethost>
       <interceptors>
-        <interceptor id="soapValidator"/>
+        <soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
       </interceptors>
     </forwarding-rule>
   </rules>
 </configuration>
 
 
+
 The rule forwards calls to the port 2000 to predic8.com:8080. As you can see, the schema validation interceptor is appended to the list of the interceptors of the rule. This interceptor will be invoked for given rule only.  
 
-Next take a look at the bean configuration of the interceptor in the examples/soap-schema-validation/validation-beans.xml file.
+Next take a closer look at the soapValidator element:
 
-  <bean id="soapValidator" class="com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptor" init-method="init">
-    <property name="wsdl" value="http://www.predic8.com:8080/material/ArticleService?wsdl" />
-  </bean>
+<soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
 
 For every referenced schema referenced from the WSDL definition validators are created and applied to the input. If the schema validation fails, an exception is raised and error response will be sent back to the client.
 
