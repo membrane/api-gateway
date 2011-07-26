@@ -1,10 +1,10 @@
 <rules>
-	<forwarding-rule name="Basic Authentication" port="2000">
+	<forwardingRule name="Basic Authentication" port="2000">
 		<target host="www.thomas-bayer.com" port="80" />
 		<interceptors>
 			<basicAuthentication>
 				<user name="membrane" password="membrane" />
 			</basicAuthentication>
 		</interceptors>
-	</forwarding-rule>
+	</forwardingRule>
 </rules>

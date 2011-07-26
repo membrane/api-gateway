@@ -1,10 +1,10 @@
 <rules>
-	<forwarding-rule name="BLZ without AXIS2" port="2000">
+	<forwardingRule name="BLZ without AXIS2" port="2000">
 		<target host="www.thomas-bayer.com" port="80" />
 		<interceptors>
 			<regExUrlRewriter>
 				<mapping regex="/bank/(.*)" uri="/axis2/$1" />
 			</regExUrlRewriter>
 		</interceptors>
-	</forwarding-rule>
+	</forwardingRule>
 </rules>

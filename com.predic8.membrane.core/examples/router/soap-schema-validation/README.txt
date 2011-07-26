@@ -11,7 +11,7 @@ To run the example execute the following steps:
 
 1. Go to the examples/soap-schema-validation directory and run
 
-	c:\temp\membrane-router-2.0.1\examples\soap-schema-validation> router.bat
+	c:\temp\membrane-router-2.0.1\examples\soap-schema-validation> start router.bat
 
 2. Execute
 
