@@ -31,7 +31,7 @@ public abstract class Store extends AbstractConfigElement {
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Location.ELEMENT_NAME.equals(child)) {
 			location = ((Location) new Location().parse(token)).getValue();
 		} 

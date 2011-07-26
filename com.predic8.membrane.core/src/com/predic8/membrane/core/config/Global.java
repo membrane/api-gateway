@@ -40,7 +40,7 @@ public class Global extends AbstractConfigElement {
 	}
 
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (AdjustHostHeader.ELEMENT_NAME.equals(child)) {
 			boolean value = ((AdjustHostHeader)(new AdjustHostHeader(router).parse(token))).getValue();
 			values.put(Configuration.ADJ_HOST_HEADER, value);

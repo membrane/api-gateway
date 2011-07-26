@@ -224,7 +224,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
-			throws XMLStreamException {
+			throws Exception {
 		if (token.getLocalName().equals("xmlSessionIdExtractor")) {
 			parseSessionIdExtractor(token);
 		} else if (token.getLocalName().equals("nodes")) {
@@ -243,21 +243,21 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 
 	private void parseByThreadStrategy(XMLStreamReader token)
-			throws XMLStreamException {
+			throws Exception {
 		ByThreadStrategy byTStrat = new ByThreadStrategy();
 		byTStrat.parse(token);
 		strategy = byTStrat;
 	}
 
 	private void parseRoundRobinStrategy(XMLStreamReader token)
-			throws XMLStreamException {
+			throws Exception {
 		RoundRobinStrategy rrStrat = new RoundRobinStrategy();
 		rrStrat.parse(token);
 		strategy = rrStrat;
 	}
 
 	private void parseSessionIdExtractor(XMLStreamReader token)
-			throws XMLStreamException {
+			throws Exception {
 		sessionIdExtractor = new XMLElementSessionIdExtractor();
 		sessionIdExtractor.parse(token);
 	}

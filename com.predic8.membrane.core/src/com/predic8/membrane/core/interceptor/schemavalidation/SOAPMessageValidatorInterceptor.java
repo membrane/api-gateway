@@ -133,9 +133,10 @@ public class SOAPMessageValidatorInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
-	protected void parseAttributes(XMLStreamReader token) {
+	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		
 		wsdl = token.getAttributeValue("", "wsdl");
+		init();
 	}
 	
 }

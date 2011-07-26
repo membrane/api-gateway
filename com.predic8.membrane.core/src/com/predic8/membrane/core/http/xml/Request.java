@@ -47,7 +47,7 @@ public class Request extends AbstractXmlElement {
 	}
 
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (URI.ELEMENT_NAME.equals(child)) {
 			uri = (URI) new URI().parse(token);
 		} else if (URI.ELEMENT_NAME.equals(child)) {

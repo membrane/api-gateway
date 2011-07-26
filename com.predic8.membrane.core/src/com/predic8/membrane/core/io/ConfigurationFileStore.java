@@ -44,7 +44,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 
 	}
 
-	private Configuration read(InputStream is) throws XMLStreamException {
+	private Configuration read(InputStream is) throws Exception {
 		XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(is, Constants.UTF_8);
 
 		return (Configuration) new Configuration(router).parse(reader);

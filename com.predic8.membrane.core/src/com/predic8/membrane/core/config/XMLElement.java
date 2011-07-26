@@ -20,7 +20,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 public interface XMLElement {
 
-	public abstract XMLElement parse(XMLStreamReader token) throws XMLStreamException;
+	public abstract XMLElement parse(XMLStreamReader token) throws Exception;
 
 	public abstract void write(XMLStreamWriter out) throws XMLStreamException;
 

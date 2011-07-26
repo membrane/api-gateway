@@ -48,7 +48,7 @@ public class Resource extends AbstractConfigElement {
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Ip.ELEMENT_NAME.equals(child)) {
 			clientAddresses.add(((Ip) (new Ip(router)).parse(token)));
 		} else if (Hostname.ELEMENT_NAME.equals(child)) {

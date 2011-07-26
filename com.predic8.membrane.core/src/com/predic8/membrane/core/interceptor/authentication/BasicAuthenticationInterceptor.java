@@ -121,7 +121,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
-			throws XMLStreamException {
+			throws Exception {
 		if (token.getLocalName().equals("user")) {
 			GenericConfigElement user = new GenericConfigElement();
 			user.parse(token);

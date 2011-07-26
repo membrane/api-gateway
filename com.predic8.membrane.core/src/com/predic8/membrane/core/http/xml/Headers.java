@@ -38,7 +38,7 @@ public class Headers extends AbstractXmlElement {
 	}
 		
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Param.ELEMENT_NAME.equals(child)) {
 			headers.add((Header)new Header().parse(token));
 		} 

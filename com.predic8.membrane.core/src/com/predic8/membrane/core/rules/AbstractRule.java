@@ -138,7 +138,7 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (LocalHost.ELEMENT_NAME.equals(child)) {
 			this.localHost = ((LocalHost) (new LocalHost().parse(token))).getValue();
 		} else if (Interceptors.ELEMENT_NAME.equals(child)) {

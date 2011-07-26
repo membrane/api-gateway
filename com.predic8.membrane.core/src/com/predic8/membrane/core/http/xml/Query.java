@@ -28,7 +28,7 @@ public class Query extends AbstractXmlElement {
 	private List<Param> params = new ArrayList<Param>();
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Param.ELEMENT_NAME.equals(child)) {
 			params.add((Param)new Param().parse(token));
 		} 

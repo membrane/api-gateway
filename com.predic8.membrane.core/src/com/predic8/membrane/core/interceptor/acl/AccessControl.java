@@ -38,7 +38,7 @@ public class AccessControl extends AbstractConfigElement {
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Resource.ELEMENT_NAME.equals(child)) {
 			resources.add((Resource) (new Resource(router)).parse(token));
 		} 

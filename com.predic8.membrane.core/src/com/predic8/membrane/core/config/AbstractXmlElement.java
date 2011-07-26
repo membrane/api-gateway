@@ -30,7 +30,7 @@ public abstract class AbstractXmlElement implements XMLElement {
 	 * Needed to resolve interceptor IDs into interceptor beans
 	 */
 
-	public XMLElement parse(XMLStreamReader token) throws XMLStreamException {
+	public XMLElement parse(XMLStreamReader token) throws Exception {
 		move2RootElementIfNeeded(token);
 		parseAttributes(token);
 		while (token.hasNext()) {
@@ -56,7 +56,7 @@ public abstract class AbstractXmlElement implements XMLElement {
 	}
 
 	protected void parseAttributes(XMLStreamReader token)
-			throws XMLStreamException {
+			throws Exception {
 
 	}
 
@@ -66,7 +66,7 @@ public abstract class AbstractXmlElement implements XMLElement {
 	}
 
 	protected void parseChildren(XMLStreamReader token, String child)
-			throws XMLStreamException {
+			throws Exception {
 		int count = 0; 
 		while (true) { // ignore child 
 			token.next();				

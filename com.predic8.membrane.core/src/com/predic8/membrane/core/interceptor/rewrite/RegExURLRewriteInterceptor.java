@@ -108,7 +108,7 @@ public class RegExURLRewriteInterceptor extends AbstractInterceptor {
 
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
-			throws XMLStreamException {
+			throws Exception {
 		if (token.getLocalName().equals("mapping")) {
 			GenericConfigElement mapping = new GenericConfigElement();
 			mapping.parse(token);

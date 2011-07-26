@@ -42,7 +42,7 @@ public class Rules extends AbstractConfigElement {
 	}
 
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (ForwardingRule.ELEMENT_NAME.equals(child)) {
 			rules.add((ForwardingRule) new ForwardingRule(router).parse(token));
 		} else if (ProxyRule.ELEMENT_NAME.equals(child)) {

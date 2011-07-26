@@ -91,7 +91,7 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
-			throws XMLStreamException {
+			throws Exception {
 		if (token.getLocalName().equals("route")) {
 			Route r = new Route();
 			r.parse(token);

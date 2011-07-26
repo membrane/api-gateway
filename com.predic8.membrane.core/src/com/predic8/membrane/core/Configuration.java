@@ -219,7 +219,7 @@ public class Configuration extends AbstractConfigElement {
 	}
 	
 	@Override
-	public XMLElement parse(XMLStreamReader token) throws XMLStreamException {
+	public XMLElement parse(XMLStreamReader token) throws Exception {
 		move2RootElementIfNeeded(token);
 		if ("rules".equals(token.getLocalName())) {
 			XMLElement rulesE = new Rules(router).parse(token);
@@ -230,7 +230,7 @@ public class Configuration extends AbstractConfigElement {
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {	
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {	
 		if (Rules.ELEMENT_NAME.equals(child)) {
 			rules = ((Rules) new Rules(router).parse(token)).getValues();
 		} else if (Global.ELEMENT_NAME.equals(child)) {

@@ -81,7 +81,7 @@ public class ForwardingRule extends AbstractRule {
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		super.parseChildren(token, child);
 		
 		if ("target".equals(child)) {

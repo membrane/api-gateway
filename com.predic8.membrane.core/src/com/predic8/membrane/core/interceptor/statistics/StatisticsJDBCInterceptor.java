@@ -176,7 +176,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
-			throws XMLStreamException {
+			throws Exception {
 		if ( "dataSource".equals(child) ) {
 			GenericConfigElement ce = new GenericConfigElement(); 
 			ce.parse(token);

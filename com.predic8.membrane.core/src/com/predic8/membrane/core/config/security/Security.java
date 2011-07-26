@@ -101,7 +101,7 @@ public class Security extends AbstractConfigElement {
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (KeyStore.ELEMENT_NAME.equals(child)) {
 			keyStore = ((KeyStore) new KeyStore(router).parse(token));
 		} 

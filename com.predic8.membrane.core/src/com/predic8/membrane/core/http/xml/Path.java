@@ -28,7 +28,7 @@ public class Path extends AbstractXmlElement {
 	List<Component> components = new ArrayList<Component>();
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Component.ELEMENT_NAME.equals(child)) {
 			components.add((Component)new Component().parse(token));
 		} 

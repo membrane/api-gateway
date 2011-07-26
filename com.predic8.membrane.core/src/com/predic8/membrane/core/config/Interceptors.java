@@ -48,7 +48,7 @@ public class Interceptors extends AbstractConfigElement {
 	}
 
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (AbstractInterceptor.ELEMENT_NAME.equals(child)) {
 			interceptors.add(getInterceptorBId(readInterceptor(token).getId()));
 		} else {
@@ -57,7 +57,7 @@ public class Interceptors extends AbstractConfigElement {
 	}
 	
 	private AbstractInterceptor readInterceptor(XMLStreamReader token)
-			throws XMLStreamException {
+			throws Exception {
 		return (AbstractInterceptor) (new AbstractInterceptor(router)).parse(token);
 	}
 
@@ -65,7 +65,7 @@ public class Interceptors extends AbstractConfigElement {
 		return router.getInterceptorFor(id);
 	}
 
-	public Interceptor getInterceptor(Router router, XMLStreamReader token, String name ) throws XMLStreamException {
+	public Interceptor getInterceptor(Router router, XMLStreamReader token, String name ) throws Exception {
 		AbstractInterceptor i = null;
 		
 		if ("transform".equals(name)) {

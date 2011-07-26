@@ -41,7 +41,7 @@ public class GUI extends AbstractConfigElement {
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (AutoTrackExchange.ELEMENT_NAME.equals(child)) {
 			boolean value = ((AutoTrackExchange) new AutoTrackExchange(router).parse(token)).getValue();
 			values.put(Configuration.TRACK_EXCHANGE, value);

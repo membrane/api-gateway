@@ -45,7 +45,7 @@ public class URI extends AbstractXmlElement {
 	}
 
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Port.ELEMENT_NAME.equals(child)) {
 			port = (Port) new Port().parse(token);
 		} else if (Host.ELEMENT_NAME.equals(child)) {

@@ -53,14 +53,14 @@ public class Proxy extends AbstractConfigElement {
 	}
 
 	@Override
-	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
+	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		useProxy = getBoolean(token, ATTRIBUTE_ACTIVE);
 		useAuthentication = getBoolean(token, ATTRIBUTE_AUTHENTICATION);
 		super.parseAttributes(token);
 	}
 
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws XMLStreamException {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (ProxyHost.ELEMENT_NAME.equals(child)) {
 			proxyHost = ((ProxyHost) (new ProxyHost().parse(token))).value;
 		} else if (ProxyPort.ELEMENT_NAME.equals(child)) {

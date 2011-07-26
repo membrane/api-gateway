@@ -18,7 +18,7 @@ public class GenericConfigElement extends AbstractXmlElement {
 	
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
-			throws XMLStreamException {
+			throws Exception {
 		if (childParser != null) { 
 			childParser.parseChildren(token, child);
 			return;
