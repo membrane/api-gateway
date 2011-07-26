@@ -22,6 +22,8 @@ import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
+import javax.net.ssl.SSLSocket;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -225,8 +227,11 @@ public class HttpClient {
 	}
 
 	private void shutDownSourceSocket(Exchange exc, Connection con) throws IOException {
-		exc.getServerThread().sourceSocket.shutdownInput();
-		if (!con.socket.isOutputShutdown()) {
+		//SSLSocket does not implement shutdown input and output
+		if (!(exc.getServerThread().sourceSocket instanceof SSLSocket))
+			exc.getServerThread().sourceSocket.shutdownInput();
+		
+		if (!con.socket.isOutputShutdown() && !(con.socket instanceof SSLSocket)) {
 			log.info("Shutting down socket outputstream");
 			con.socket.shutdownOutput();
 		}
