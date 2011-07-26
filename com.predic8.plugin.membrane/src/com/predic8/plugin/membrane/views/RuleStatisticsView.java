@@ -74,7 +74,9 @@ public class RuleStatisticsView extends AbstractRulesView {
 		
 		
 		createActions();
-		addTableMenu();
+		
+		// fix for 2.0.X, do not merge into 2.1.X 
+		// addTableMenu();
 				
 	    getExchangeStore().addExchangesViewListener(this);
 	    setInputForTable(Router.getInstance().getRuleManager());
