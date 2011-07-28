@@ -102,15 +102,11 @@ public class RuleManager {
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleAdded(rule);
 		}
-		getExchangeStore().notifyListenersOnRuleAdd(rule);
+		
 	}
 
 	public boolean exists(RuleKey key) {
-		for (Rule r : rules) {
-			if (r.getKey().equals(key))
-				return true;
-		}
-		return false;
+		return getRule(key) != null;
 	}
 
 	private Rule getRule(RuleKey key) {
@@ -118,7 +114,7 @@ public class RuleManager {
 			if (r.getKey().equals(key))
 				return r;
 		}
-		throw new IllegalArgumentException("There is no rule with this key");
+		return null;
 	}
 
 	public List<Rule> getRules() {
@@ -209,10 +205,8 @@ public class RuleManager {
 		rules.remove(rule);
 
 		for (IRuleChangeListener listener : listeners) {
-			listener.ruleRemoved(rule);
+			listener.ruleRemoved(rule, rules.size());
 		}
-
-		getExchangeStore().notifyListenersOnRuleRemoval(rule, rules.size());
 
 	}
 
@@ -227,7 +221,7 @@ public class RuleManager {
 		}
 	}
 
-	public synchronized int getTotalNumberOfRules() {
+	public synchronized int getNumberOfRules() {
 		return rules.size();
 	}
 
