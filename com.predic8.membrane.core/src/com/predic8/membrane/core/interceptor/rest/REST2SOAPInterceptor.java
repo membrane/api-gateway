@@ -14,21 +14,28 @@
 package com.predic8.membrane.core.interceptor.rest;
 
 import java.io.StringReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.config.GenericConfigElement;
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.xml.Request;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 
 public class REST2SOAPInterceptor extends AbstractInterceptor {
@@ -127,7 +134,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 	private void setContentType(Header header) {
 		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType("text/xml;charset=UTF-8");
+		header.setContentType(MimeType.TEXT_XML_UTF8);
 	}
 
 	private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {

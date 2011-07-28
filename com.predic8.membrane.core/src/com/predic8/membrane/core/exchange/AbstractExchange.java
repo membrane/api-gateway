@@ -71,6 +71,10 @@ public abstract class AbstractExchange {
 		
 	}
 	
+	/**
+	 * For HttpResendRunnable
+	 * @param original
+	 */
 	public AbstractExchange(AbstractExchange original) {
 		properties = new HashMap<String, Object>(original.properties);
 		originalRequestUri = original.originalRequestUri;
@@ -314,6 +318,7 @@ public abstract class AbstractExchange {
 	private String extractContentTypeValue(String contentType) {
 		if (contentType == null)
 			return "";
+		
 		int index = contentType.indexOf(";");
 		if (index > 0) {
 			return contentType.substring(0, index);

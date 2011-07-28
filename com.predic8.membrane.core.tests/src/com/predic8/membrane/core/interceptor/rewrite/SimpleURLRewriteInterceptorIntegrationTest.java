@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -69,7 +70,7 @@ public class SimpleURLRewriteInterceptorIntegrationTest {
 	private PostMethod getPostMethod() {
 		PostMethod post = new PostMethod("http://localhost:8000/blz-service?wsdl");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
-		post.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
 
 		return post;

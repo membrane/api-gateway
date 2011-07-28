@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -56,7 +57,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 	
 	private GetMethod getGetMethod() {
 		GetMethod get = new GetMethod("http://localhost:8000/axis2/services/BLZService?wsdl");
-		get.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		get.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		get.setRequestHeader(Header.SOAP_ACTION, "");		
 		return get;
 	}

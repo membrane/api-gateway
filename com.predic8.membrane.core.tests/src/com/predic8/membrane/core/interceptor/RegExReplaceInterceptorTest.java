@@ -24,6 +24,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -49,7 +50,7 @@ public class RegExReplaceInterceptorTest {
 		HttpClient client = new HttpClient();
 		
 		GetMethod method = new GetMethod("http://localhost:7000");
-		method.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+		method.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		method.setRequestHeader(Header.SOAP_ACTION, "");
 		
 		assertEquals(200, client.executeMethod(method));

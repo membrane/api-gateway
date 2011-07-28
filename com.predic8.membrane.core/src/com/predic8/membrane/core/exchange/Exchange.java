@@ -31,6 +31,10 @@ public class Exchange extends AbstractExchange {
 		
 	}
 	
+	/**
+	 * For HttpResendRunnable
+	 * @param original
+	 */
 	public Exchange(Exchange original) {
 		super(original);
 		originalHostHeader = original.originalHostHeader;

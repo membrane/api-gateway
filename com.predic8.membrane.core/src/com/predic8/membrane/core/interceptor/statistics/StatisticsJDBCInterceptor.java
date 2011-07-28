@@ -91,8 +91,8 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 
 	private boolean ignoreNotSoap(Exchange exc) {
 		return soapOnly && 
-			 !MimeType.SOAP.equals(exc.getRequestContentType()) &&
-			 !MimeType.XML.equals(exc.getRequestContentType());
+			 !MimeType.APPLICATION_SOAP.equals(exc.getRequestContentType()) &&
+			 !MimeType.TEXT_XML.equals(exc.getRequestContentType());
 	}
 
 	private boolean ignoreGetMethod(Exchange exc) {

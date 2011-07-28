@@ -5,8 +5,8 @@ With the SOAPMessageValidatorInterceptor you can validate SOAP messages against 
 
 RUNNING THE EXAMPLE
 
-In this example we will use a sample SOAP service named ArticleService. Then we will call the service's operations with a valid and an invalid parameters.
-A Membrane router placed between client and service will be validating each request and response against an WSDL definition and its included XML schemas.
+In this example we will use a sample SOAP service named ArticleService. We will call the service's operations with valid and invalid parameters.
+A Membrane router placed between client and service will be validating each request and response against an WSDL definition and its referenced XML schemas.
 
 To run the example execute the following steps:
 

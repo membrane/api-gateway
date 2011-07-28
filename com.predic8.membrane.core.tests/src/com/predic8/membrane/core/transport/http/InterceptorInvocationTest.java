@@ -17,7 +17,6 @@ package com.predic8.membrane.core.transport.http;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,6 +32,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.MockInterceptor;
@@ -42,8 +42,6 @@ import com.predic8.membrane.core.rules.ForwardingRuleKey;
 public class InterceptorInvocationTest {
 
 	private HttpRouter router;
-	
-	private PostMethod post;
 	
 	List<String> backboneInterceptorNames;
 	
@@ -56,13 +54,16 @@ public class InterceptorInvocationTest {
 	@Before
 	public void setUp() throws Exception {
 		
-		createInterceptorNames();
+		ruleInterceptorNames = Arrays.asList(new String[] {"Rule 1", "Rule 2", "Rule 3"});
 		
-		createRouter();
+		backboneInterceptorNames = Arrays.asList(new String[] {"TR Backbone 1", "TR Backbone 2", "TR Backbone 3" });
 		
-		createInterceptorSequance();
+		regularInterceptorNames = Arrays.asList(new String[] {"TR Normal 1", "TR Normal 2", "TR Normal 3", "TR Normal 4" });
 		
-		createPostMethod();
+		router = createRouter();
+		
+		interceptorSequence = createInterceptorSequence();
+		
 	}
 
 	@After
@@ -71,7 +72,7 @@ public class InterceptorInvocationTest {
 	}
 	
 	@Test
-	public void testBla() throws Exception {
+	public void testInterceptorSequence() throws Exception {
 		callService();
 		
 		assertEquals(MockInterceptor.reqLabels.size(), MockInterceptor.respLabels.size());
@@ -87,20 +88,16 @@ public class InterceptorInvocationTest {
 		return rule;
 	}
 	
-	
 	private void callService() throws HttpException, IOException {
-		HttpClient client = new HttpClient();
-		client.executeMethod(post);
+		new HttpClient().executeMethod(createPostMethod());
 	}
 	
-	private void createPostMethod() {
-		post = new PostMethod("http://localhost:4000/axis2/services/BLZService");
-		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
-		
-		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
-		post.setRequestEntity(entity); 
-		post.setRequestHeader(Header.CONTENT_TYPE, "text/xml;charset=UTF-8");
+	private PostMethod createPostMethod() {
+		PostMethod post = new PostMethod("http://localhost:4000/axis2/services/BLZService");
+		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml"))); 
+		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
+		return post;
 	}
 	
 	private List<String> getReverseList(List<String> list) {
@@ -108,24 +105,20 @@ public class InterceptorInvocationTest {
 		return list;
 	}
 	
-	private void createInterceptorSequance() {
-		interceptorSequence = new ArrayList<String>();
-		interceptorSequence.addAll(backboneInterceptorNames);
-		interceptorSequence.addAll(regularInterceptorNames);
-		interceptorSequence.addAll(ruleInterceptorNames);
+	private List<String> createInterceptorSequence() {
+		List<String> sequense = new ArrayList<String>();
+		sequense.addAll(backboneInterceptorNames);
+		sequense.addAll(regularInterceptorNames);
+		sequense.addAll(ruleInterceptorNames);
+		return sequense;
 	}
 
-	private void createInterceptorNames() {
-		ruleInterceptorNames = Arrays.asList(new String[] {"Rule 1", "Rule 2", "Rule 3"});
-		backboneInterceptorNames = Arrays.asList(new String[] {"TR Backbone 1", "TR Backbone 2", "TR Backbone 3" });
-		regularInterceptorNames = Arrays.asList(new String[] {"TR Normal 1", "TR Normal 2", "TR Normal 3", "TR Normal 4" });
-	}
-
-	private void createRouter() throws IOException {
-		router = new HttpRouter();
+	private HttpRouter createRouter() throws IOException {
+		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(createForwardingRule());
 		addMockInterceptors(router.getTransport().getBackboneInterceptors(), backboneInterceptorNames);
 		addMockInterceptors(router.getTransport().getInterceptors(), regularInterceptorNames);
+		return router;
 	}
 
 	private void addMockInterceptors(List<Interceptor> list, List<String> labels) {
