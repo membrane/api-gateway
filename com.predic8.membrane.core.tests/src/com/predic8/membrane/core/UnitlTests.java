@@ -34,6 +34,7 @@ import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.rules.ForwardingRuleKeyTest;
+import com.predic8.membrane.core.rules.ProxyRuleTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
@@ -62,6 +63,7 @@ import com.predic8.membrane.core.xslt.XSLTInterceptorTest;
 	RuleManagerTest.class,
 	ProxyTest.class,
 	ForwardingRuleKeyTest.class,
+	ProxyRuleTest.class,
 	TextUtilTest.class,
 	RelocatorTest.class,
 	XSLTInterceptorTest.class,

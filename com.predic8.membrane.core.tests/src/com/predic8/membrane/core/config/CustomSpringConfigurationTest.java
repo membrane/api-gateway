@@ -13,27 +13,40 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
+import static junit.framework.Assert.assertTrue;
+
 import java.util.List;
 
-import static junit.framework.Assert.*;
-
-import org.eclipse.core.runtime.internal.stats.StatsManager;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchangestore.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.exchangestore.FileExchangeStore;
+import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
+import com.predic8.membrane.core.interceptor.CountInterceptor;
+import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.RegExReplaceInterceptor;
+import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
-import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
+import com.predic8.membrane.core.interceptor.balancer.ClusterNotificationInterceptor;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
-import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
-import com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor;
+import com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor;
+import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 
 public class CustomSpringConfigurationTest {
 

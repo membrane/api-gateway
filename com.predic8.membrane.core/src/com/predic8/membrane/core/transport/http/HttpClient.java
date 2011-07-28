@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.Proxy;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.OKResponse;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ForwardingRule;
@@ -182,7 +183,7 @@ public class HttpClient {
 	private Response doCall(Exchange exc, Connection con) throws IOException, SocketException, EndOfStreamException {
 		if (exc.getRequest().isCONNECTRequest()) {
 			handleConnectRequest(exc, con);
-			return Response.createOKResponse();
+			return new OKResponse();
 		}
 		
 		exc.getRequest().write(con.out);

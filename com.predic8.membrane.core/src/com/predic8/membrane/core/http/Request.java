@@ -105,6 +105,10 @@ public class Request extends Message {
 		return METHOD_GET.equals(method);
 	}
 
+	public boolean isPOSTRequest() {
+		return METHOD_POST.equals(method);
+	}
+
 	public boolean isDELETERequest() {
 		return METHOD_DELETE.equals(method);
 	}

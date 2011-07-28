@@ -55,11 +55,18 @@ public class SOAPMessageValidatorInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
+		if (!exc.getRequest().isPOSTRequest())
+			return Outcome.CONTINUE;
+			
 		return validateMessage(exc, exc.getRequest());
 	}
 	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
+		// Yes! we want to check if the request is not a POST-request
+		if (!exc.getRequest().isPOSTRequest())
+			return Outcome.CONTINUE;
+		
 		return validateMessage(exc, exc.getResponse());
 	}
 	

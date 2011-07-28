@@ -134,12 +134,4 @@ public class Response extends Message {
 		return statusCode >= 500;
 	}
 
-	public static Response createOKResponse() {
-		Response res = new Response();
-		res.setStatusCode(200);
-		res.setStatusMessage("OK");
-		res.setVersion("1.1");
-		return res;
-	}
-	
 }

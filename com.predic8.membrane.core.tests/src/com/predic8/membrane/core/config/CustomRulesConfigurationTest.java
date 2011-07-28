@@ -13,27 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import java.io.*;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotNull;
 
-import javax.xml.stream.*;
-import javax.xml.xpath.*;
+import java.io.StringReader;
+import java.io.StringWriter;
 
-import org.junit.*;
-import org.osgi.framework.AdminPermission;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.xml.sax.InputSource;
 
-import static junit.framework.Assert.*;
-
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.CountInterceptor;
-import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
-import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
-import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptor;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
-import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
-import com.predic8.membrane.core.interceptor.administration.*;
-import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
-import com.predic8.membrane.core.interceptor.balancer.*;
 
 public class CustomRulesConfigurationTest {
 
