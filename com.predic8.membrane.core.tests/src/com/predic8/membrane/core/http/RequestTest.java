@@ -69,14 +69,13 @@ public class RequestTest {
 			tempOut.close();
 		}
 		
-		
 	}
 	
 
 	@Test
 	public void testParseStartLineChunked() throws IOException, EndOfStreamException {
 		reqChunked.parseStartLine(inChunked);
-		assertEquals("POST", reqChunked.getMethod());
+		assertTrue(reqChunked.isPOSTRequest());
 		assertEquals("/axis2/services/BLZService", reqChunked.getUri());
 		assertEquals("1.1", reqChunked.getVersion());
 	}
