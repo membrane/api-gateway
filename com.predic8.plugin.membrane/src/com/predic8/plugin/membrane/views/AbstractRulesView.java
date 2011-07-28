@@ -33,10 +33,12 @@ public abstract class AbstractRulesView extends TableViewPart implements IExchan
 		
 	}
 
+	@Override
 	public void ruleAdded(Rule rule) {
 		refreshTable();
 	}
 
+	@Override
 	public void batchUpdate(int size) {
 		refreshTable();
 	}
@@ -53,9 +55,9 @@ public abstract class AbstractRulesView extends TableViewPart implements IExchan
 		refreshTable();
 	}
 
-	public void removeRule(Rule rule, int rulesLeft) {
-		refreshTable();
-	}
+//	public void removeRule(Rule rule, int rulesLeft) {
+//		refreshTable();
+//	}
 
 	public void setExchangeFinished(AbstractExchange exchange) {
 		refreshTable();

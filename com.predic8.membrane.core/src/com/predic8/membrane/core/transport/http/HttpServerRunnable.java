@@ -28,6 +28,7 @@ import javax.net.ssl.SSLSocket;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.ErrorResponse;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.*;
@@ -150,10 +151,10 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 			try {
 				targetRes = client.call(exchange);
 			} catch (ConnectException e) {
-				targetRes = HttpUtil.createErrorResponse("Target " + dest + " is not reachable.");
+				targetRes = new ErrorResponse(500, "Internal Server Error", "Target " + dest + " is not reachable.");  
 				log.warn("Target " + dest + " is not reachable. " + e);
 			} catch (UnknownHostException e) {
-				targetRes = HttpUtil.createErrorResponse("Target host " + HttpUtil.getHostName(dest) + " is unknown. DNS was unable to resolve host name.");
+				targetRes = new ErrorResponse(500, "Internal Server Error", "Target host " + HttpUtil.getHostName(dest) + " is unknown. DNS was unable to resolve host name.");
 			}
 			exchange.setResponse(targetRes);
 			

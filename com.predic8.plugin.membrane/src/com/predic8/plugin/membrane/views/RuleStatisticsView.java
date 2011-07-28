@@ -129,21 +129,23 @@ public class RuleStatisticsView extends AbstractRulesView {
 		return new int[] { 140, 80, 90, 90, 100, 80, 90, 70};
 	}
 	
-	public void ruleRemoved(Rule rule) {
+	@Override
+	public void ruleRemoved(Rule rule, int rulesleft) {
 		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
-
+	@Override
 	public void ruleUpdated(Rule rule) {
 		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
 
+	@Override
 	public void rulePositionsChanged() {
 		setInputForTable(Router.getInstance().getRuleManager());
 	}
 
-
+	@Override
 	public void setExchangeStopped(AbstractExchange exchange) {
 		// ignore
 	}

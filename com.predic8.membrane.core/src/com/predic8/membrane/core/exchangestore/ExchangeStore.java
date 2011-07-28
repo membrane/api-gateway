@@ -35,10 +35,9 @@ public interface ExchangeStore {
 	
 	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange);
 	
-	public void notifyListenersOnRuleAdd(Rule rule);
-	
-	public void notifyListenersOnRuleRemoval(Rule rule, int rulesLeft);
-	
+//	public void notifyListenersOnRuleAdd(Rule rule);
+//	
+//	public void notifyListenersOnRuleRemoval(Rule rule, int rulesLeft);
 	
 	
 	public void add(AbstractExchange exchange);

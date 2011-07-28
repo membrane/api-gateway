@@ -21,7 +21,7 @@ public interface IRuleChangeListener {
 	
 	public void ruleAdded(Rule rule);
 
-	public void ruleRemoved(Rule rule);
+	public void ruleRemoved(Rule rule, int rulesLeft);
 	
 	public void ruleUpdated(Rule rule);
 	

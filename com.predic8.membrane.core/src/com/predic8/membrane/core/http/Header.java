@@ -127,8 +127,8 @@ public class Header {
 		return null;
 	}
 
-	public Object[] getAllHeaderFields() {
-		return fields.toArray();
+	public HeaderField[] getAllHeaderFields() {
+		return fields.toArray(new HeaderField[fields.size()]);
 	}
 
 	public void write(OutputStream out) throws IOException {

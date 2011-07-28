@@ -29,6 +29,7 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.ErrorReadingStartLineException;
 
@@ -82,23 +83,12 @@ public class HttpUtil {
 		return Integer.parseInt(buffer.toString().trim(), 16);
 	}
 
-	public static Response createErrorResponse(String message) {
-		Response response = new Response();
-		response.setStatusCode(500);
-		response.setStatusMessage("Internal Server Error");
-
-		response.setHeader(createHeaders("text/html;charset=utf-8"));
-
-		response.setBody(new Body("<html>" + message + "</html>"));
-		return response;
-	}
-
 	public static Response createNotFoundResponse() {
 		Response response = new Response();
 		response.setStatusCode(404);
 		response.setStatusMessage("Not Found");
 
-		response.setHeader(createHeaders("text/html;charset=utf-8"));
+		response.setHeader(createHeaders(MimeType.TEXT_XML_UTF8));
 
 		response.setBody(new Body("<html><head><title>Page Not Found</title></head><body>" + "The requested page could't be found!" + "</body></html>"));
 		return response;
@@ -153,11 +143,11 @@ public class HttpUtil {
 		return res;		
 	}
 	
-	private static Header createHeaders(String contentType, String... headers) {
+	public static Header createHeaders(String contentType, String... headers) {
 		Header header = new Header();
 		if (contentType != null ) header.setContentType(contentType);
 		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
-		header.add("Server", "Membrane" + Constants.VERSION);
+		header.add("Server", "Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
 		header.add("Connection", "close");
 		for (int i = 0; i<headers.length; i+=2) {
 			header.add(headers[i],headers[i+1]);

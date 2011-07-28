@@ -18,25 +18,25 @@ import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 
 
 public class HeaderTableContentProvider implements IStructuredContentProvider {
 
 	public Object[] getElements(Object inputElement) {
-		Object[] headers;
-		if (inputElement instanceof Message) {
-			Message msg = (Message) inputElement;
-			Header header = msg.getHeader();
-			headers = header.getAllHeaderFields();	 
-		} else
-			headers = new Object[0];
+		if (!(inputElement instanceof Message)) 
+			return new Object[0];
 		
-		Object[] ret = new Object[headers.length];
-		for(int i = 0; i < headers.length; i++){
-			ret[i] = headers[i];
+		Message msg = (Message) inputElement;
+		Header header = msg.getHeader();
+		HeaderField[]headerFields = header.getAllHeaderFields();	 
+		
+		HeaderField[] copyHeaderFields = new HeaderField[headerFields.length];
+		for(int i = 0; i < headerFields.length; i++){
+			copyHeaderFields[i] = headerFields[i];
 		}
-		return ret;
+		return copyHeaderFields;
 	}
 
 	public void dispose() {

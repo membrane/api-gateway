@@ -170,11 +170,6 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 		}
 	}
 	
-	public void removeRule(Rule rule, int rulesLeft) {
-		// TODO Auto-generated method stub
-		
-	}
-	
 	public void removeExchanges(AbstractExchange[] exchanges) {
 		// TODO Auto-generated method stub
 		
@@ -190,8 +185,12 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 		
 	}
 	
-	public void ruleAdded(Rule rule) {
-		// TODO Auto-generated method stub
-		
-	}
+//	public void ruleAdded(Rule rule) {
+//		// TODO Auto-generated method stub
+//	}
+//	
+//	public void removeRule(Rule rule, int rulesLeft) {
+//		// TODO Auto-generated method stub
+//		
+//	}
 }

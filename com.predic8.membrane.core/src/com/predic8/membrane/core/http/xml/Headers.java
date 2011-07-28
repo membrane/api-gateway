@@ -31,9 +31,8 @@ public class Headers extends AbstractXmlElement {
 	public Headers() {}
 	
 	public Headers( com.predic8.membrane.core.http.Header header) {
-		for (Object o : header.getAllHeaderFields()) {
-			HeaderField h = (HeaderField)o;
-			headers.add(new Header(""+h.getHeaderName(), h.getValue()));
+		for (HeaderField o : header.getAllHeaderFields()) {
+			headers.add(new Header("" + o.getHeaderName(), o.getValue()));
 		}
 	}
 		

@@ -21,13 +21,12 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.ErrorResponse;
 import com.predic8.membrane.core.rules.ForwardingRule;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.util.HttpUtil;
 
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
@@ -58,8 +57,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private void handleNoRuleFound(Exchange exc) throws IOException {
 		exc.getRequest().readBody();
 		exc.getServerThread().getSourceSocket().shutdownInput();
-		Response res = HttpUtil.createErrorResponse("This request was not accepted by Membrane Monitor. Please correct the request and try again.");
-		exc.setResponse(res);
+		exc.setResponse(new ErrorResponse(500, "Internal Server Error", "This request was not accepted by Membrane Monitor. Please correct the request and try again."));
 	}
 
 	private Rule getRule(Exchange exc) {

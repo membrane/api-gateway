@@ -53,16 +53,16 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		}
 	}
 	
-	public void notifyListenersOnRuleAdd(Rule rule) {
-		for (IExchangesStoreListener listener : exchangesStoreListeners) {
-			listener.ruleAdded(rule);
-		}
-	}
-	
-	public void notifyListenersOnRuleRemoval(Rule rule, int rulesLeft) {
-		for (IExchangesStoreListener listener : exchangesStoreListeners) {
-			listener.removeRule(rule, rulesLeft);
-		}
-	}
+//	public void notifyListenersOnRuleAdd(Rule rule) {
+//		for (IExchangesStoreListener listener : exchangesStoreListeners) {
+//			listener.ruleAdded(rule);
+//		}
+//	}
+//	
+//	public void notifyListenersOnRuleRemoval(Rule rule, int rulesLeft) {
+//		for (IExchangesStoreListener listener : exchangesStoreListeners) {
+//			listener.removeRule(rule, rulesLeft);
+//		}
+//	}
 	
 }

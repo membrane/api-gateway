@@ -87,22 +87,27 @@ public class RuleTableView extends TableViewPart implements IRuleChangeListener 
 		return new int[] { 140, 80, 60, 120, 160, 80 };
 	}
 	
+	@Override
 	public void ruleAdded(Rule rule) {
 		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 
-	public void ruleRemoved(Rule rule) {
+	@Override
+	public void ruleRemoved(Rule rule, int rulesLeft) {
 		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 
+	@Override
 	public void ruleUpdated(Rule rule) {
 		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 
+	@Override
 	public void rulePositionsChanged() {
 		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}
 
+	@Override
 	public void batchUpdate(int size) {
 		tableViewer.setInput(Router.getInstance().getRuleManager());
 	}

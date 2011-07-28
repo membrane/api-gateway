@@ -232,9 +232,13 @@ public class RulesView extends AbstractRulesView {
 		return new int[] { 158, 80 };
 	}
 	
-	public void ruleRemoved(Rule rule) {
+	@Override
+	public void ruleRemoved(Rule rule, int rulesLeft) {
 		setInputForTable(Router.getInstance().getRuleManager());
 		changeSelectionAfterRemoval();
+		if (rulesLeft == 0){
+			enableActions(false);
+		}
 	}
 
 	public void ruleUpdated(Rule rule) {
@@ -284,14 +288,7 @@ public class RulesView extends AbstractRulesView {
 	@Override
 	public void setInputForTable(RuleManager manager) {
 		super.setInputForTable(manager);
-		enableActions(manager.getTotalNumberOfRules() > 0);
+		enableActions(manager.getNumberOfRules() > 0);
 	}
 	
-	@Override
-	public void removeRule(Rule rule, int rulesLeft) {
-		super.removeRule(rule, rulesLeft);
-		if (rulesLeft == 0){
-			enableActions(false);
-		}
-	}
 }
