@@ -17,6 +17,8 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
@@ -39,63 +41,61 @@ public class BodyTest {
 	private static String chunk2 = "2\r\naa\r\n3\r\nbbb\r\n0\r\n";
 	private static String chunk2Body = "aabbb";
 
-	private static AbstractBody body1;
-	private static AbstractBody body2;
+	private static AbstractBody unchunkedBody;
+	
+	private static AbstractBody chunkedBody;
+	
+	private static AbstractBody unchunkedBody2;
 
 	@Before
 	public void setUp() throws Exception {
 		Arrays.fill(msg2, (byte) 20);
-		body1 = new Body(new ByteArrayInputStream(msg1), msg1.length);
-		body2 = new Body(new ByteArrayInputStream(msg2), msg2.length);
+		unchunkedBody = new Body(new ByteArrayInputStream(msg1), msg1.length);
+		unchunkedBody2 = new Body(new ByteArrayInputStream(msg2), msg2.length);
+		
+		chunkedBody = new ChunkedBody(new ByteArrayInputStream(msg1));
 	}
 
-//	public void testWrite() throws IOException {
-//
-//		ByteArrayOutputStream out = new ByteArrayOutputStream(100);
-//		body1.write(out, false);
-//		assertEquals(new String(out.toByteArray()), new String(msg1));
-//
-//		ByteArrayOutputStream out2 = new ByteArrayOutputStream(10000);
-//		body2.write(out2, false);
-//		assertEquals(new String(out2.toByteArray()), new String(msg2));
-//	}
-//
-//	public void testWriteChunked() throws IOException {
-//		ByteArrayOutputStream os = new ByteArrayOutputStream();
-//		body1.write(os, true);
-//		String s = os.toString();
-//		assertEquals(16, s.length());
-//	}
-//
-//	public void testGetLength() {
-//		assertEquals(8, body1.getLength());
-//		assertEquals(10000, body2.getLength());
-//	}
+	@Test
+	public void testWrite() throws IOException {
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream(100);
+		unchunkedBody.write(out);
+		assertEquals(new String(out.toByteArray()), new String(msg1));
+
+		ByteArrayOutputStream out2 = new ByteArrayOutputStream(10000);
+		unchunkedBody2.write(out2);
+		assertEquals(new String(out2.toByteArray()), new String(msg2));
+	}
 
 	@Test
-	public void testCreateBodyFromChunk() throws Exception {
-		InputStream stream = new ByteArrayInputStream(chunk.getBytes());
-		AbstractBody body = new ChunkedBody(stream);
+	public void testGetLengthUnchunked() throws Exception {
+		assertEquals(8, unchunkedBody.getLength());
+		assertEquals(10000, unchunkedBody2.getLength());
+	}
 
-		stream = new ByteArrayInputStream(chunk1.getBytes());
-		body = new ChunkedBody(stream);
+	@Test
+	public void testChunkedBodyContent() throws Exception {
+		AbstractBody body = new ChunkedBody(new ByteArrayInputStream(chunk.getBytes()));
+		assertEquals(426, body.getContent().length);
+		assertEquals(426, body.getLength());
+	}
+	
+	@Test
+	public void testChunkedBodyContent2() throws Exception {
+		AbstractBody body = new ChunkedBody( new ByteArrayInputStream(chunk1.getBytes()));
 		assertTrue(Arrays.equals(body.getContent(), chunk1Body.getBytes()));
 
-		stream = new ByteArrayInputStream(chunk2.getBytes());
-		body = new ChunkedBody(stream);
-		
+	}
+	
+	@Test
+	public void testChunkedBodyConten3() throws Exception {
+		AbstractBody body = new ChunkedBody(new ByteArrayInputStream(chunk2.getBytes()));
 		StringBuffer buf = new StringBuffer();
 		for (int i = 0; i < body.getContent().length; i ++) {
 			buf.append((char)body.getContent()[i]);
 		}
-		
-		buf = new StringBuffer();
-		for (int i = 0; i < chunk2Body.getBytes().length; i ++) {
-			buf.append((char)chunk2Body.getBytes()[i]);
-		}
-		
-		assertTrue(Arrays.equals(body.getContent(), chunk2Body.getBytes()));
-	
+		assertEquals(chunk2Body, buf.toString());
 	}
 	
 	@Test
@@ -104,45 +104,5 @@ public class BodyTest {
 		assertEquals(24, body.getContent().length);
 		assertEquals(24, body.getLength());
 	}
-
-//	@Test
-//	public void testReadChunkSize() throws Exception {
-//		InputStream stream = new ByteArrayInputStream(chunk.getBytes());
-//		Body body = new Body();
-//		int size = body.readChunkSize(stream);
-//		assertEquals(426, size);
-//
-//		stream = new ByteArrayInputStream(chunk1.getBytes());
-//		size = body.readChunkSize(stream);
-//		assertEquals(7, size);
-//
-//		Arrays.equals(body.getBody(), chunk1Body.getBytes());
-//
-//		stream = new ByteArrayInputStream(chunk2.getBytes());
-//		size = body.readChunkSize(stream);
-//	}
-
-//	public void testMultipleRead() throws Exception {
-//		InputStream io1 = body1.getBodyAsStream();
-//		InputStream io2 = body1.getBodyAsStream();
-//
-//		int c1 = io1.available();
-//		int c2 = io2.available();
-//
-//		assertTrue(c1 == c2);
-//		System.out.println();
-//		while (c1 > 0) {
-//			System.out.print(io1.read() + " # ");
-//			c1--;
-//		}
-//		System.out.println();
-//		while (c2 > 0) {
-//			System.out.print(io2.read() + " # ");
-//			c2--;
-//		}
-//		System.out.println();
-//		System.out.println(body1.getBodyAsStream());
-//		System.out.println(body1.getBodyAsStream());
-//	}
 
 }
