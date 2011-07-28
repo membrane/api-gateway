@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  Copyright 2009 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<project name="Cobertura" default="test" basedir=".">
+
+	<property name="cobertura.dir" value="C:/java/cobertura-1.9.4.1" />
+
+	<path id="core.classpath">
+		<fileset dir="../com.predic8.membrane.core/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<pathelement path="../com.predic8.membrane.core/build/classes" />
+		<pathelement path="../com.predic8.membrane.core/static/common/conf" />
+	</path>
+
+	<path id="test.classpath">
+		<fileset dir="lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<pathelement location="resources" />
+		<pathelement location="junit/classes" />
+	</path>
+	
+	<path id="cobertura.classpath">
+		<fileset dir="${cobertura.dir}">
+			<include name="cobertura.jar" />
+			<include name="lib/**/*.jar" />
+		</fileset>
+	</path>
+
+	<taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
+
+	<target name="compile-core">
+		<ant dir="../com.predic8.membrane.core" antfile="build-router.xml" target="dist-router"/>
+	</target>
+
+	<target name="instrument" depends="compile-core">
+		<mkdir dir="cobertura/lib"/>
+		<delete file="cobertura/cobertura.ser" />
+		<cobertura-instrument datafile="cobertura/cobertura.ser" todir="cobertura/lib">
+		    <fileset dir="../com.predic8.membrane.core/dist/router/membrane-router-2.1.0/lib">
+		        <include name="membrane-router.jar" />
+		    </fileset>
+		</cobertura-instrument>
+	</target>	
+	
+	<target name="compile-tests" depends="instrument">
+		<mkdir dir="junit/classes"/>
+		<javac debug="true" srcdir="src" destdir="junit/classes">
+			<exclude name="**/CoreActivatorTest.java"/>
+			<include name="**/*Test.java"/>
+			<classpath refid="test.classpath" />
+			<classpath refid="core.classpath" />
+			<classpath refid="cobertura.classpath" />
+		</javac>
+	</target>
+	
+	<target name="test" depends="clean, compile-tests">
+		<mkdir dir="junit/reports"/>
+		<junit printsummary="yes" haltonerror="yes" haltonfailure="yes" fork="yes" dir="." failureProperty="test.failed">
+			<!--
+				Specify the name of the coverage data file to use.
+				The value specified below is the default.
+			-->
+			<sysproperty key="net.sourceforge.cobertura.datafile"
+				file="cobertura/cobertura.ser" />
+	
+			<!--
+				Note the classpath order: instrumented classes are before the
+				original (uninstrumented) classes.  This is important.
+			-->
+			<classpath>
+				<fileset dir="cobertura/lib">
+					<include name="**/*"/>
+				</fileset>
+			</classpath>			
+			<classpath refid="core.classpath" />
+			<classpath refid="test.classpath" />
+
+			<!--
+				The instrumented classes reference classes used by the
+				Cobertura runtime, so Cobertura and its dependencies
+				must be on your classpath.
+			-->
+			<classpath refid="cobertura.classpath" />
+	
+			<formatter type="xml" />
+			<batchtest todir="junit/reports">
+				<fileset dir="junit/classes">
+					<include name="**/*Test.class" />
+				</fileset>
+			</batchtest>
+		</junit>
+
+		<mkdir dir="cobertura/reports" />
+		<cobertura-report format="html" datafile="cobertura/cobertura.ser"
+						  destdir="cobertura/reports">
+			<fileset dir="../com.predic8.membrane.core/src">
+				<include name="**/*.java" />
+			</fileset>
+		</cobertura-report>
+	</target>
+	
+	<target name="clean" >
+		<delete dir="cobertura"/>
+		<delete dir="junit"/>
+	</target>
+</project>
