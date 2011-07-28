@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.http;
 
+import com.predic8.membrane.core.Constants;
+
 
 
 public class OKResponse extends Response {
@@ -7,7 +9,7 @@ public class OKResponse extends Response {
 	public OKResponse() {
 		setStatusCode(200);
 		setStatusMessage("OK");
-		
-		//getHeader().addHeader("Server", "Membrane" + Constants.VERSION);
+		getHeader().add("Server", "Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
 	}
+	
 }
