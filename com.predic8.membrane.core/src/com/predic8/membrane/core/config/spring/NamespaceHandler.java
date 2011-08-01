@@ -24,7 +24,7 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("statisticsCSV", new StatisticsCSVInterceptorParser());        
         registerBeanDefinitionParser("statisticsJDBC", new StatisticsJDBCInterceptorParser());        
         registerBeanDefinitionParser("rest2Soap", new Rest2SoapInterceptorParser());        
-        registerBeanDefinitionParser("cbr", new CbrInterceptorParser());        
+        registerBeanDefinitionParser("switch", new SwitchInterceptorParser());        
         registerBeanDefinitionParser("regExReplacer", new RegExReplacerInterceptorParser());        
     }
 }

@@ -8,7 +8,7 @@ import org.w3c.dom.Element;
 
 import com.predic8.membrane.core.interceptor.cbr.*;
 
-public class CbrInterceptorParser extends AbstractParser {
+public class SwitchInterceptorParser extends AbstractParser {
 
 	protected Class getBeanClass(Element element) {
 		return XPathCBRInterceptor.class;
@@ -16,7 +16,7 @@ public class CbrInterceptorParser extends AbstractParser {
 
 	@Override
 	protected void doParse(Element element, BeanDefinitionBuilder builder) {
-		setIdIfNeeded(element, "cbr");
+		setIdIfNeeded(element, "switch");
 		builder.addPropertyValue("routeProvider",getRouteProvider(element));
 	}
 
@@ -26,10 +26,10 @@ public class CbrInterceptorParser extends AbstractParser {
 		return p;
 	}
 
-	private List<Route> getRoutes(Element e) {
-		List<Route> m = new ArrayList<Route>();
-		for (Element mapping : DomUtils.getChildElementsByTagName(e, "route")) {
-			m.add( new Route(mapping.getAttribute("xPath"), mapping.getAttribute("url"))); 
+	private List<Case> getRoutes(Element e) {
+		List<Case> m = new ArrayList<Case>();
+		for (Element mapping : DomUtils.getChildElementsByTagName(e, "case")) {
+			m.add( new Case(mapping.getAttribute("xPath"), mapping.getAttribute("url"))); 
 		}
 		return m;
 	}

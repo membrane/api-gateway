@@ -17,7 +17,7 @@
 					<xsd:attribute name="indentMessage" default="true" type="xsd:boolean" />
 					<xsd:attribute name="adjustContentLength" default="true" type="xsd:boolean" />
 					<xsd:attribute name="trackExchange" default="false" type="xsd:boolean" />
-				</xsd:extension>
+				</xsd:extension> 
 			</xsd:complexContent>
 		</xsd:complexType>
 	</xsd:element>
@@ -47,7 +47,7 @@
 										<xsd:element ref="statisticsCSV" />
 										<xsd:element ref="statisticsJDBC" />
 										<xsd:element ref="rest2Soap" />
-										<xsd:element ref="cbr" />
+										<xsd:element ref="switch" />
 										<xsd:element ref="regExReplacer" />
 										<xsd:element ref="counter" />
 									</xsd:choice>
@@ -77,8 +77,7 @@
 			<xsd:complexContent>
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence />
-					<xsd:attribute name="requestXSLT" type="xsd:string" />
-					<xsd:attribute name="responseXSLT" type="xsd:string" />
+					<xsd:attribute name="xslt" type="xsd:string" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>
@@ -113,12 +112,12 @@
 		</xsd:complexType>
 	</xsd:element>
 
-	<xsd:element name="cbr">
+	<xsd:element name="switch">
 		<xsd:complexType>
 			<xsd:complexContent>
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence>
-						<xsd:element name="route" minOccurs="1" maxOccurs="unbounded">
+						<xsd:element name="case" minOccurs="1" maxOccurs="unbounded">
 							<xsd:complexType>
 								<xsd:sequence />
 								<xsd:attribute name="xPath" type="xsd:string" use="required"/>

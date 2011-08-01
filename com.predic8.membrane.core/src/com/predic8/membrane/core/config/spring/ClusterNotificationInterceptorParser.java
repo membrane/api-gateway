@@ -3,7 +3,7 @@ package com.predic8.membrane.core.config.spring;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.w3c.dom.Element;
 
-import com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.ClusterNotificationInterceptor;
 
 public class ClusterNotificationInterceptorParser extends AbstractParser {

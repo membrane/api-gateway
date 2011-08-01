@@ -32,10 +32,10 @@ public class RouterParser extends
 		}					
 		
 		ConfigurationManager cm = new ConfigurationManager();
-		cm.getConfiguration().setAdjustHostHeader(Boolean.parseBoolean(e.getAttribute("adjustHostHeader")));
-		cm.getConfiguration().setIndentMessage(Boolean.parseBoolean(e.getAttribute("indentMessage")));
-		cm.getConfiguration().setAdjustContentLength(Boolean.parseBoolean(e.getAttribute("adjustContentLength")));
-		cm.getConfiguration().setTrackExchange(Boolean.parseBoolean(e.getAttribute("trackExchange")));
+		cm.getProxies().setAdjustHostHeader(Boolean.parseBoolean(e.getAttribute("adjustHostHeader")));
+		cm.getProxies().setIndentMessage(Boolean.parseBoolean(e.getAttribute("indentMessage")));
+		cm.getProxies().setAdjustContentLength(Boolean.parseBoolean(e.getAttribute("adjustContentLength")));
+		cm.getProxies().setTrackExchange(Boolean.parseBoolean(e.getAttribute("trackExchange")));
 		bean.addPropertyValue("configurationManager", cm);
 	}
 }

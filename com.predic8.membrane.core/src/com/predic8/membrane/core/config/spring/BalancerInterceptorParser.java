@@ -8,7 +8,7 @@ import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 
-import com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
 
