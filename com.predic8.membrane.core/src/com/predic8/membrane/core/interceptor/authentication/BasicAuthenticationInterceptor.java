@@ -34,7 +34,6 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	
 	public BasicAuthenticationInterceptor() {
 		name = "Basic Authenticator";		
-		priority = 40;
 	}
 	
 	public Outcome handleRequest(Exchange exc) throws Exception {

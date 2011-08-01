@@ -21,7 +21,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Router;
 
 public class Global extends AbstractConfigElement {
@@ -43,7 +43,7 @@ public class Global extends AbstractConfigElement {
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (AdjustHostHeader.ELEMENT_NAME.equals(child)) {
 			boolean value = ((AdjustHostHeader)(new AdjustHostHeader(router).parse(token))).getValue();
-			values.put(Configuration.ADJ_HOST_HEADER, value);
+			values.put(Proxies.ADJ_HOST_HEADER, value);
 		}
 	}
 
@@ -52,12 +52,12 @@ public class Global extends AbstractConfigElement {
 	}
 
 	public void setValues(Map<String, Object> newValues) {
-		if (newValues.containsKey(Configuration.ADJ_CONT_LENGTH)) {
-			values.put(Configuration.ADJ_CONT_LENGTH, newValues.get(Configuration.ADJ_CONT_LENGTH));
+		if (newValues.containsKey(Proxies.ADJ_CONT_LENGTH)) {
+			values.put(Proxies.ADJ_CONT_LENGTH, newValues.get(Proxies.ADJ_CONT_LENGTH));
 		} 
 		
-		if (newValues.containsKey(Configuration.ADJ_HOST_HEADER)) {
-			values.put(Configuration.ADJ_HOST_HEADER, newValues.get(Configuration.ADJ_HOST_HEADER));
+		if (newValues.containsKey(Proxies.ADJ_HOST_HEADER)) {
+			values.put(Proxies.ADJ_HOST_HEADER, newValues.get(Proxies.ADJ_HOST_HEADER));
 		} 
 	}
 
@@ -66,8 +66,8 @@ public class Global extends AbstractConfigElement {
 		out.writeStartElement(ELEMENT_NAME);
 		
 		AdjustHostHeader adjustHostHeader = new AdjustHostHeader(router);
-		if (values.containsKey(Configuration.ADJ_HOST_HEADER)) {
-			adjustHostHeader.setValue((Boolean)values.get(Configuration.ADJ_HOST_HEADER));
+		if (values.containsKey(Proxies.ADJ_HOST_HEADER)) {
+			adjustHostHeader.setValue((Boolean)values.get(Proxies.ADJ_HOST_HEADER));
 		}
 		adjustHostHeader.write(out);
 		

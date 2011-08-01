@@ -22,16 +22,22 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.logging.*;
+
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 
 public abstract class AbstractXmlElement implements XMLElement {
 
+	private static Log log = LogFactory.getLog(AbstractXmlElement.class
+			.getName());
 	/**
 	 * Needed to resolve interceptor IDs into interceptor beans
 	 */
 
 	public XMLElement parse(XMLStreamReader token) throws Exception {
 		move2RootElementIfNeeded(token);
+		log.debug("<"+token.getLocalName()+">");
 		parseAttributes(token);
 		while (token.hasNext()) {
 			token.next();
@@ -40,11 +46,15 @@ public abstract class AbstractXmlElement implements XMLElement {
 			} else if (token.isCharacters()) {
 				parseCharacters(token);
 			} else if (token.isEndElement()) {
+				log.debug("</"+token.getLocalName()+">");
 				break;
 			}
 		}
+		doAfterParsing();
 		return this;
 	}
+
+	protected void doAfterParsing() throws Exception {}
 
 	protected void move2RootElementIfNeeded(XMLStreamReader token) throws XMLStreamException {
 		if (token.getEventType()== XMLStreamReader.START_DOCUMENT) {

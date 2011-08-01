@@ -142,7 +142,7 @@ public class AdminPageBuilder extends Html {
 			    end();
 			end();
 			tbody();
-				for (ForwardingRule rule : getForwardingRules()) {
+				for (ServiceProxy rule : getForwardingRules()) {
 					tr();
 						td();
 							createLink(rule.toString(), "frule", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
@@ -347,11 +347,11 @@ public class AdminPageBuilder extends Html {
 		return rules;
 	}
 
-	private List<ForwardingRule> getForwardingRules() {
-		List<ForwardingRule> rules = new LinkedList<ForwardingRule>();
+	private List<ServiceProxy> getForwardingRules() {
+		List<ServiceProxy> rules = new LinkedList<ServiceProxy>();
 		for (Rule r : router.getRuleManager().getRules()) {
-			if (!(r instanceof ForwardingRule)) continue;
-			rules.add((ForwardingRule) r);
+			if (!(r instanceof ServiceProxy)) continue;
+			rules.add((ServiceProxy) r);
 		}			
 		return rules;
 	}

@@ -36,23 +36,24 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.balancer.Node;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 
-public class AdministrationInterceptor extends AbstractInterceptor {
+public class AdminConsoleInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(AdministrationInterceptor.class
+	private static Log log = LogFactory.getLog(AdminConsoleInterceptor.class
 			.getName());
 
 	private Pattern urlPattern = Pattern
 			.compile("/admin/?([^/]*)(/[^/\\?]*)?(\\?.*)?");
 
-	public AdministrationInterceptor() {
+	public AdminConsoleInterceptor() {
 		name = "Administration";
 		priority = 1000;
+		setFlow(Flow.REQUEST);
 	}
 
 	@Override
@@ -81,7 +82,7 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 			protected void createTabContent() throws Exception {
 				h1().text("Forwarding Rule Details").end();
 				table();
-					ForwardingRule rule = (ForwardingRule) RuleUtil
+					ServiceProxy rule = (ServiceProxy) RuleUtil
 							.findRuleByIdentifier(router,
 									params.get("name"));
 					createTr("Name", rule.toString());
@@ -125,7 +126,7 @@ public class AdministrationInterceptor extends AbstractInterceptor {
 	public Response handleFruleSaveRequest(Map<String, String> params) throws Exception {
 		logAddFwdRuleParams(params);
 		
-		Rule r = new ForwardingRule(new ForwardingRuleKey("*",
+		Rule r = new ServiceProxy(new ForwardingRuleKey("*",
 				params.get("method"), ".*", getPortParam(params)),
 				params.get("targetHost"), getTargetPortParam(params));
 		r.setName(params.get("name"));

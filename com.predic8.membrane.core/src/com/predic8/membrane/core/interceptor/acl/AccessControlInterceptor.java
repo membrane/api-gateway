@@ -126,13 +126,14 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		
-		aclFilename = token.getAttributeValue("", "file");
-		try {
-			init();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	protected void parseAttributes(XMLStreamReader token) {		
+		aclFilename = token.getAttributeValue("", "file");	
 	}
+
+	@Override
+	protected void doAfterParsing() throws Exception {
+		init();
+	}
+	
+	
 }

@@ -19,7 +19,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
@@ -66,13 +66,13 @@ public class Security extends AbstractConfigElement {
 
 	public void setValues(Map<String, Object> props) {
 		keyStore = new KeyStore(router);
-		setKeyStoreLocation(props.get(Configuration.KEY_STORE_LOCATION));
-		setKeyStorePassword(props.get(Configuration.KEY_STORE_PASSWORD));
+		setKeyStoreLocation(props.get(Proxies.KEY_STORE_LOCATION));
+		setKeyStorePassword(props.get(Proxies.KEY_STORE_PASSWORD));
 		
 		
 		trustStore = new TrustStore(router);
-		setTrustStoreLocation(props.get(Configuration.TRUST_STORE_LOCATION));
-		setTrustStorePassword(props.get(Configuration.TRUST_STORE_PASSWORD));
+		setTrustStoreLocation(props.get(Proxies.TRUST_STORE_LOCATION));
+		setTrustStorePassword(props.get(Proxies.TRUST_STORE_PASSWORD));
 		
 	}
 	

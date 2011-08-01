@@ -21,27 +21,24 @@ import javax.xml.stream.XMLStreamWriter;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.interceptor.Interceptor;
 
-public class ForwardingRule extends AbstractRule {
-
-	public static final String ELEMENT_NAME = "forwardingRule";
+public class ServiceProxy extends AbstractRule {
 
 	private String targetHost;
 	private int targetPort;
 
-	public ForwardingRule() {
-		
-	}
+	public ServiceProxy() {}
 
-	public ForwardingRule(Router router) {
+	public ServiceProxy(Router router) {
 		setRouter(router);
 	}
 
-	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, int targetPort) {
+	public ServiceProxy(ForwardingRuleKey ruleKey, String targetHost, int targetPort) {
 		this(ruleKey, targetHost, targetPort, false, false);
 	}
 
-	public ForwardingRule(ForwardingRuleKey ruleKey, String targetHost, int targetPort, boolean inboundTLS, boolean outboundTLS) {
+	public ServiceProxy(ForwardingRuleKey ruleKey, String targetHost, int targetPort, boolean inboundTLS, boolean outboundTLS) {
 		this.key = ruleKey;
 		this.targetHost = targetHost;
 		this.targetPort = targetPort;
@@ -81,9 +78,7 @@ public class ForwardingRule extends AbstractRule {
 	}
 	
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
-		super.parseChildren(token, child);
-		
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {		
 		if ("target".equals(child)) {
 			GenericConfigElement target = new GenericConfigElement();
 			target.parse(token);
@@ -94,21 +89,40 @@ public class ForwardingRule extends AbstractRule {
 			Path p = (Path)(new Path(router)).parse(token);
 			key.setPathRegExp(p.isRegExp());
 			key.setPath(p.getValue());
+		} else {
+			super.parseChildren(token, child);
+		}
+	}
+	
+	
+	@Override
+	protected void doAfterParsing() {
+		int prio = 1000;
+		for (Interceptor i : interceptors) {
+			if (i.getPriority()==0) {
+				i.setPriority(prio);
+				prio+=100;
+			}
 		}
 	}
 
 	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
+	public void write(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("serviceProxy");
+		
+		writeRule(out);
+		
+		writeTarget(out);
+		out.writeEndElement();
 	}
 
 	@Override
 	protected void writeExtension(XMLStreamWriter out) throws XMLStreamException {
-		out.writeAttribute("host", key.getHost());
-		out.writeAttribute("method", key.getMethod());
-		
-		writeTarget(out);
-		
+		writeAttrIfTrue(out, !"*".equals(key.getHost()), "host", key.getHost());		
+		writeAttrIfTrue(out, !"*".equals(key.getMethod()), "method", key.getMethod());		
+
 		if (key.isUsePathPattern()) {
 			Path path = new Path(router);
 			path.setValue(key.getPath());

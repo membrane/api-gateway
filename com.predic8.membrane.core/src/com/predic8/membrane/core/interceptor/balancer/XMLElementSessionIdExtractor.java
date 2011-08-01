@@ -39,9 +39,9 @@ public class XMLElementSessionIdExtractor extends AbstractConfigElement {
 		
 	public String getSessionId(Message msg) throws Exception {
 		log.debug("searching for sessionid");
-		
+				
+		fac.setProperty("javax.xml.stream.isNamespaceAware", namespace != null);
 		XMLStreamReader reader = fac.createXMLStreamReader(msg.getBodyAsStream());
-		
 		while ( reader.hasNext() ) {
 			reader.next();
 			if (isSessionIdElement(reader)) {
@@ -58,7 +58,7 @@ public class XMLElementSessionIdExtractor extends AbstractConfigElement {
 	private boolean isSessionIdElement(XMLStreamReader reader) {
 		return reader.isStartElement() &&
 			localName.equals(reader.getLocalName()) &&
-			namespace.equals(reader.getNamespaceURI());
+			(namespace == null || namespace.equals(reader.getNamespaceURI()));
 	}
 
 	public String getLocalName() {

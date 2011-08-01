@@ -4,5 +4,5 @@ import java.util.List;
 
 public interface RouteProvider {
 
-	public List<Route> getRoutes();
+	public List<Case> getRoutes();
 }

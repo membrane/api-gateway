@@ -24,17 +24,19 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.util.*;
 
 public class WebServerInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(WebServerInterceptor.class.getName());
 	
-	String docBase = "";
+	String docBase = "docBase";
 	
 	public WebServerInterceptor() {
 		name = "Web Server";
 		priority = 5000;
+		setFlow(Flow.REQUEST);
 	}
 	
 	@Override

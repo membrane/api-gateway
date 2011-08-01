@@ -13,20 +13,33 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.regex.Pattern;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.AbstractConfigElement;
-import com.predic8.membrane.core.config.Interceptors;
-import com.predic8.membrane.core.config.LocalHost;
-import com.predic8.membrane.core.interceptor.Interceptor;
+import org.apache.commons.logging.*;
+
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
+import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
+import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
+import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
+import com.predic8.membrane.core.interceptor.schemavalidation.SoapValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
+import com.predic8.membrane.core.interceptor.statistics.*;
+import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 
 public abstract class AbstractRule extends AbstractConfigElement implements Rule {
+
+	private static Log log = LogFactory.getLog(AbstractRule.class
+			.getName());
 
 	protected String name = "";
 	
@@ -46,6 +59,24 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	 */
 	protected String localHost;
 	
+	private class InOutElement extends AbstractXmlElement {
+		private Interceptor.Flow flow;
+
+		protected void parseAttributes(XMLStreamReader token) throws Exception {
+			if ("request".equals(token.getLocalName())) {
+				flow = Flow.REQUEST;
+			} else {
+				flow = Flow.RESPONSE;
+			}
+		}
+		
+		@Override
+		protected void parseChildren(XMLStreamReader token, String child)
+				throws Exception {
+			parseInterceptors(token, child, flow);
+		}
+	}
+	
 	public AbstractRule() {
 		super(null);
 	}
@@ -55,6 +86,189 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 		this.key = ruleKey;
 	}
 	
+	protected abstract void parseKeyAttributes(XMLStreamReader token);
+	
+	@Override
+	public String toString() { //TODO toString, getName, setName und name="" Initialisierung vereinheitlichen. 
+		if (!"".equals(name))
+			return name;
+		
+		return getKey().toString();
+	}
+	
+	
+	@Override
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
+		if (LocalHost.ELEMENT_NAME.equals(child)) {
+			this.localHost = ((LocalHost) (new LocalHost().parse(token))).getValue();
+		} else if (Pattern.matches("request|response", child)){
+			new InOutElement().parse(token);
+		} else {
+			parseInterceptors(token, child, null);
+		}  
+	}
+	
+	protected void writeExtension(XMLStreamWriter out)
+	throws XMLStreamException {}	
+	
+	protected void writeRule(XMLStreamWriter out) throws XMLStreamException {
+		
+		out.writeAttribute("name", this.name);
+		out.writeAttribute("port", "" + key.getPort());
+		writeAttrIfTrue(out, blockRequest, "blockRequest", blockRequest);
+		writeAttrIfTrue(out, blockResponse, "blockResponse", blockResponse);
+		
+		writeTLS(out);
+		
+		writeExtension(out);
+		
+		writeLocalHost(out);
+		
+		writeInterceptors(out);
+		
+	}
+	
+	private void writeLocalHost(XMLStreamWriter out) throws XMLStreamException {
+		if (localHost == null)
+			return;
+		
+		new LocalHost(localHost).write(out);
+	}
+	
+	private void parseInterceptors(XMLStreamReader token, String child, Flow flow) throws Exception {
+		Interceptor i = null;
+		if ("interceptor".equals(child)) {
+			i = getInterceptorBId(readInterceptor(token).getId());
+		} else if ("adminConsole".equals(child)) {
+			super.parseChildren(token,child); //ignores element
+			addAdminAndWebServerInterceptor(token);
+			return;
+		} else {
+			i = getInlinedInterceptor(token, child);
+		}		
+		if (flow != null ) i.setFlow(flow);
+		interceptors.add(i);
+	}
+
+	private void addAdminAndWebServerInterceptor(XMLStreamReader token) {
+		AbstractInterceptor i = new AdminConsoleInterceptor();
+		i.setRouter(router);
+		interceptors.add(i);
+		i = new WebServerInterceptor();
+		i.setRouter(router);
+		interceptors.add(i);
+	}
+
+	private AbstractInterceptor readInterceptor(XMLStreamReader token)
+		throws Exception {
+		return (AbstractInterceptor) (new AbstractInterceptor(router)).parse(token);
+	}
+	
+	private Interceptor getInterceptorBId(String id) {
+		return router.getInterceptorFor(id);
+	}
+
+	private Interceptor getInlinedInterceptor(XMLStreamReader token, String name ) throws Exception {
+		AbstractInterceptor i = null;
+		if ("transform".equals(name)) {
+			i = new XSLTInterceptor();
+		} else if ("counter".equals(name)) {
+			i = new CountInterceptor();
+		} else if ("webServer".equals(name)) {
+			i = new WebServerInterceptor();
+		} else if ("balancer".equals(name)) {
+			i = new LoadBalancingInterceptor();
+		} else if ("clusterNotification".equals(name)) {
+			i = new ClusterNotificationInterceptor();
+		} else if ("regExUrlRewriter".equals(name)) {
+			i = new RegExURLRewriteInterceptor();
+		} else if ("soapValidator".equals(name)) {
+			i = new SoapValidatorInterceptor();
+		} else if ("rest2Soap".equals(name)) {
+			i = new REST2SOAPInterceptor();
+		} else if ("basicAuthentication".equals(name)) {
+			i = new BasicAuthenticationInterceptor();
+		} else if ("regExReplacer".equals(name)) {
+			i = new RegExReplaceInterceptor();
+		} else if ("switch".equals(name)) {
+			i = new XPathCBRInterceptor();
+		} else if ("wsdlRewriter".equals(name)) {
+			i = new WSDLInterceptor();
+		} else if ("accessControl".equals(name)) {
+			i = new AccessControlInterceptor();
+		} else if ("statisticsCSV".equals(name)) {
+			i = new StatisticsCSVInterceptor();
+		} else if ("statisticsJDBC".equals(name)) {
+			i = new StatisticsJDBCInterceptor();
+		} else if ("exchangeStore".equals(name)) {
+			i = new ExchangeStoreInterceptor();
+		} else {
+			throw new Exception("Unknown interceptor found: "+name);
+		}
+		i.setRouter(router);
+		i.parse(token);
+		return i;
+	}	
+	
+	private void parseTLS(XMLStreamReader token) {
+		inboundTLS = getBoolean(token, "inboundTLS");
+		outboundTLS = getBoolean(token, "outboundTLS");
+	}
+	
+	private void parseBlocking(XMLStreamReader token) {
+		blockRequest = getBoolean(token, "blockRequest");
+		blockResponse = getBoolean(token, "blockResponse");
+	}
+		
+	private void writeInterceptors(XMLStreamWriter out) throws XMLStreamException {
+		Flow lastFlow = Flow.REQUEST_RESPONSE;
+		for (Interceptor i : interceptors){
+			if (i.getFlow() != lastFlow) {
+				if (lastFlow != Flow.REQUEST_RESPONSE) {
+					out.writeEndElement();
+					log.debug(lastFlow==Flow.REQUEST?"</request>":"</response>");
+				}
+				
+				if (i.getFlow() == Flow.REQUEST) {
+					out.writeStartElement("request");
+					log.debug("<request>");
+				} else if (i.getFlow() == Flow.RESPONSE) {
+					out.writeStartElement("response");					
+					log.debug("<response>");
+				}
+				lastFlow = i.getFlow();
+			}
+			log.debug(i.getFlow() +":"+ i.getDisplayName());
+			i.write(out);			
+		}
+		if (lastFlow != Flow.REQUEST_RESPONSE) {
+			out.writeEndElement();
+			log.debug(lastFlow==Flow.REQUEST?"</request>":"</response>");
+		}
+//		for (Interceptor i : interceptors){
+//			i.write(out);
+//		}
+	}
+	
+	private void writeTLS(XMLStreamWriter out) throws XMLStreamException {
+		writeAttrIfTrue(out, inboundTLS, "inboundTLS", inboundTLS);
+		writeAttrIfTrue(out, outboundTLS, "outboundTLS", outboundTLS);
+	}	
+	
+	protected <E> void writeAttrIfTrue(XMLStreamWriter out, boolean exp, String n, E v) throws XMLStreamException {
+		if (exp) {
+			out.writeAttribute(n,""+v);
+		}
+	}	
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");
+		parseKeyAttributes(token);
+		parseTLS(token);
+		parseBlocking(token);
+	}
+
 	public List<Interceptor> getInterceptors() {
 		return interceptors;
 	}
@@ -85,19 +299,10 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 		this.name = name;
 
 	}
-
 	public void setKey(RuleKey ruleKey) {
 		this.key = ruleKey;
 	}
-	
-	@Override
-	public String toString() { //TODO toString, getName, setName und name="" Initialisierung vereinheitlichen. 
-		if (!"".equals(name))
-			return name;
-		
-		return getKey().toString();
-	}
-	
+
 	public void setBlockRequest(boolean blockStatus) {
 		this.blockRequest = blockStatus;
 	}
@@ -128,80 +333,5 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 
 	public void setLocalHost(String localHost) {
 		this.localHost = localHost;
-	}
-	
-	protected void writeLocalHost(XMLStreamWriter out) throws XMLStreamException {
-		if (localHost == null)
-			return;
-		
-		new LocalHost(localHost).write(out);
-	}
-	
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
-		if (LocalHost.ELEMENT_NAME.equals(child)) {
-			this.localHost = ((LocalHost) (new LocalHost().parse(token))).getValue();
-		} else if (Interceptors.ELEMENT_NAME.equals(child)) {
-			Interceptors interceptorsElement = new Interceptors(router);
-			this.interceptors = ((Interceptors) (interceptorsElement.parse(token))).getInterceptors();
-		}  
-	}
-	
-	protected void writeLeading(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(getElementName());
-		out.writeAttribute("name", name);
-		out.writeAttribute("port", "" + key.getPort());
-		out.writeAttribute("blockRequest", "" + Boolean.toString(blockRequest));
-		out.writeAttribute("blockResponse", "" + Boolean.toString(blockResponse));
-		writeTls(out);
-	}
-	
-	protected void writeTrailing(XMLStreamWriter out) throws XMLStreamException {
-		writeLocalHost(out);
-		writeInterceptors(out);
-		out.writeEndElement();
-	}
-	
-	protected void writeInterceptors(XMLStreamWriter out) throws XMLStreamException {
-		Interceptors inters = new Interceptors(router);
-		inters.setInterceptors(interceptors);
-		inters.write(out);
-	}
-	
-	protected void writeTls(XMLStreamWriter out) throws XMLStreamException {
-		out.writeAttribute("inboundTLS", Boolean.toString(inboundTLS));
-		out.writeAttribute("outboundTLS", Boolean.toString(outboundTLS));
-	}
-	
-	protected void parseTLS(XMLStreamReader token) {
-		inboundTLS = getBoolean(token, "inboundTLS");
-		outboundTLS = getBoolean(token, "outboundTLS");
-	}
-	
-	protected void parseBlocking(XMLStreamReader token) {
-		blockRequest = getBoolean(token, "blockRequest");
-		blockResponse = getBoolean(token, "blockResponse");
-	}
-	
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		writeLeading(out);
-		writeExtension(out);
-		writeTrailing(out);
-	}
-	
-	protected abstract void parseKeyAttributes(XMLStreamReader token);
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");
-		parseKeyAttributes(token);
-		parseTLS(token);
-		parseBlocking(token);
-	}
-	
-	protected void writeExtension(XMLStreamWriter out)
-			throws XMLStreamException {
-	}
-	
+	}	
 }

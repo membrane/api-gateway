@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.io;
 
-import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Router;
 
 
 public interface ConfigurationStore {
 
-	public Configuration read(String path) throws Exception;
+	public Proxies read(String path) throws Exception;
 
 	public void setRouter(Router router);
 	public Router getRouter();

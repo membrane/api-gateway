@@ -34,7 +34,7 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE;
 		}
 		
-		Route r = findRoute(exc.getRequest());		
+		Case r = findRoute(exc.getRequest());		
 		if (r == null) {
 			return Outcome.CONTINUE;
 		}
@@ -44,14 +44,14 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private void updateDestination(Exchange exc, Route r) {
+	private void updateDestination(Exchange exc, Case r) {
 		exc.setOriginalRequestUri(r.getUrl());		
 		exc.getDestinations().clear();
 		exc.getDestinations().add(r.getUrl());
 	}
 
-	private Route findRoute(Request request) throws Exception {
-		for (Route r : routeProvider.getRoutes()) {
+	private Case findRoute(Request request) throws Exception {
+		for (Case r : routeProvider.getRoutes()) {
 			//TODO getBodyAsStream creates ByteArray each call. That could be a performance issue. Using BufferedInputStream did't work, because stream got closed.
 			if ( (Boolean) newXPath(namespaces).evaluate(r.getxPath(), new InputSource(request.getBodyAsStream()), XPathConstants.BOOLEAN) ) 
 				return r;
@@ -80,9 +80,9 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
 		
-		out.writeStartElement("cbr");
+		out.writeStartElement("switch");
 		
-		for (Route r : routeProvider.getRoutes()) {
+		for (Case r : routeProvider.getRoutes()) {
 			r.write(out);
 		}
 		
@@ -92,8 +92,8 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
 			throws Exception {
-		if (token.getLocalName().equals("route")) {
-			Route r = new Route();
+		if (token.getLocalName().equals("case")) {
+			Case r = new Case();
 			r.parse(token);
 			routeProvider.getRoutes().add(r);
 		} else {

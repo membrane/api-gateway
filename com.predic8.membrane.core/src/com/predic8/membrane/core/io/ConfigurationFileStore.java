@@ -20,7 +20,7 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 
@@ -32,10 +32,10 @@ public class ConfigurationFileStore implements ConfigurationStore {
 	 * Reads a configuration from the classpath or a file location
 	 * 
 	 * @param fileName
-	 *            Path to rules.xml. Use classpath:<path> to load from the
+	 *            Path to proxies.xml. Use classpath:<path> to load from the
 	 *            classpath.
 	 */
-	public Configuration read(String fileName) throws Exception {
+	public Proxies read(String fileName) throws Exception {
 
 		if (fileName.startsWith("classpath:"))
 			return read(getClass().getResourceAsStream(fileName.substring(10)));
@@ -44,10 +44,10 @@ public class ConfigurationFileStore implements ConfigurationStore {
 
 	}
 
-	private Configuration read(InputStream is) throws Exception {
+	private Proxies read(InputStream is) throws Exception {
 		XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(is, Constants.UTF_8);
 
-		return (Configuration) new Configuration(router).parse(reader);
+		return (Proxies) new Proxies(router).parse(reader);
 	}
 
 	public void setRouter(Router router) {

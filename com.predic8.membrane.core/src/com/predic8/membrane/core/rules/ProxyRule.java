@@ -1,17 +1,13 @@
 package com.predic8.membrane.core.rules;
 
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.*;
 
 import com.predic8.membrane.core.*;
 
 
 public class ProxyRule extends AbstractRule {
 
-	public static final String ELEMENT_NAME = "proxyRule";
-	
-	public ProxyRule() {
-		
-	}
+	public ProxyRule() {}
 	
 	public ProxyRule(Router router) {
 		setRouter(router);
@@ -22,12 +18,19 @@ public class ProxyRule extends AbstractRule {
 	}
 	
 	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
-	
-	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
 		key = new ProxyRuleKey(Integer.parseInt(token.getAttributeValue(Constants.NS_UNDEFINED, "port")));
 	}
+	
+	@Override
+	public void write(XMLStreamWriter out)
+			throws XMLStreamException {
+		
+		out.writeStartElement("proxy");
+		
+		writeRule(out);
+		
+		out.writeEndElement();
+	}
+	
 }

@@ -22,8 +22,6 @@ import javax.xml.transform.stream.*;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.util.FileUtil;
-
 public class XSLTTransformer {
 	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());
 	
@@ -45,9 +43,12 @@ public class XSLTTransformer {
 	}
 	
 	private StreamSource getStylesheetSource(String name) {
-		if (name.startsWith("classpath:"))
+		if (name.startsWith("classpath:")) {
+			log.debug("loading stylesheet from classpath: "+name);
 			return new StreamSource(getClass().getResourceAsStream(name.substring(10)));
-		
-		return new StreamSource(FileUtil.prefixMembraneHomeIfNeeded(new File(name)));
+		}
+		//return new StreamSource(FileUtil.prefixMembraneHomeIfNeeded(new File(name)));
+		log.debug("loading stylesheet from filesystem: "+name);
+		return new StreamSource(new File(name));
 	}
 }

@@ -21,7 +21,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Router;
 
 public class GUI extends AbstractConfigElement {
@@ -44,10 +44,10 @@ public class GUI extends AbstractConfigElement {
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (AutoTrackExchange.ELEMENT_NAME.equals(child)) {
 			boolean value = ((AutoTrackExchange) new AutoTrackExchange(router).parse(token)).getValue();
-			values.put(Configuration.TRACK_EXCHANGE, value);
+			values.put(Proxies.TRACK_EXCHANGE, value);
 		} else if (IndentMessage.ELEMENT_NAME.equals(child)) {
 			boolean value = ((IndentMessage)(new IndentMessage(router).parse(token))).getValue();
-			values.put(Configuration.INDENT_MSG, value);
+			values.put(Proxies.INDENT_MSG, value);
 		} 
 	}
 
@@ -56,12 +56,12 @@ public class GUI extends AbstractConfigElement {
 	}
 
 	public void setValues(Map<String, Object> newValues) {
-		if (newValues.containsKey(Configuration.TRACK_EXCHANGE)) {
-			this.values.put(Configuration.TRACK_EXCHANGE, newValues.get(Configuration.TRACK_EXCHANGE));
+		if (newValues.containsKey(Proxies.TRACK_EXCHANGE)) {
+			this.values.put(Proxies.TRACK_EXCHANGE, newValues.get(Proxies.TRACK_EXCHANGE));
 		} 
 		
-		if (newValues.containsKey(Configuration.INDENT_MSG)) {
-			this.values.put(Configuration.INDENT_MSG, newValues.get(Configuration.INDENT_MSG));
+		if (newValues.containsKey(Proxies.INDENT_MSG)) {
+			this.values.put(Proxies.INDENT_MSG, newValues.get(Proxies.INDENT_MSG));
 		} 
 	}
 	
@@ -70,14 +70,14 @@ public class GUI extends AbstractConfigElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 		AutoTrackExchange trackExchange = new AutoTrackExchange(router);
-		if (values.containsKey(Configuration.TRACK_EXCHANGE)) {
-			trackExchange.setValue((Boolean)values.get(Configuration.TRACK_EXCHANGE));
+		if (values.containsKey(Proxies.TRACK_EXCHANGE)) {
+			trackExchange.setValue((Boolean)values.get(Proxies.TRACK_EXCHANGE));
 		}
 		trackExchange.write(out);
 		
 		IndentMessage indentMessage = new IndentMessage(router);
-		if (values.containsKey(Configuration.INDENT_MSG)) {
-			indentMessage.setValue((Boolean)values.get(Configuration.INDENT_MSG));
+		if (values.containsKey(Proxies.INDENT_MSG)) {
+			indentMessage.setValue((Boolean)values.get(Proxies.INDENT_MSG));
 		}
 		indentMessage.write(out);
 		

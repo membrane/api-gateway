@@ -4,15 +4,15 @@ import java.util.*;
 
 public class DefaultRouteProvider implements RouteProvider {
 
-	private List<Route> routes = new ArrayList<Route>();
+	private List<Case> routes = new ArrayList<Case>();
 
 	
-	public void setRoutes(List<Route> routes) {
+	public void setRoutes(List<Case> routes) {
 		this.routes = routes;
 	}
 
 	@Override
-	public List<Route> getRoutes() {
+	public List<Case> getRoutes() {
 		
 		return routes ;
 	}

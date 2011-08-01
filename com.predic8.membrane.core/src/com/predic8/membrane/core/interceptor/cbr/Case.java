@@ -4,14 +4,14 @@ import javax.xml.stream.*;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
-public class Route extends AbstractXmlElement {
+public class Case extends AbstractXmlElement {
 
 	private String url;
 	private String xPath;
 	
-	public Route() {}
+	public Case() {}
 	
-	public Route(String xPath, String url) {
+	public Case(String xPath, String url) {
 		this.url = url;
 		this.xPath = xPath;
 	}
@@ -36,7 +36,7 @@ public class Route extends AbstractXmlElement {
 	public void write(XMLStreamWriter out)
 			throws XMLStreamException {
 		
-		out.writeStartElement("route");
+		out.writeStartElement("case");
 		
 		out.writeAttribute("xPath", xPath);		
 		out.writeAttribute("url", url);		
@@ -50,12 +50,4 @@ public class Route extends AbstractXmlElement {
 		xPath = token.getAttributeValue("", "xPath");
 		url = token.getAttributeValue("", "url");
 	}
-	
-	@Override
-	protected String getElementName() {
-		return "route";
-	}
-	
-	
-
 }
