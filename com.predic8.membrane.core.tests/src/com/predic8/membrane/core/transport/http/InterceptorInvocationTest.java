@@ -36,7 +36,7 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.MockInterceptor;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 
 public class InterceptorInvocationTest {
@@ -80,8 +80,8 @@ public class InterceptorInvocationTest {
 		assertEquals(getReverseList(interceptorSequence), MockInterceptor.respLabels);
 	}
 
-	private ForwardingRule createForwardingRule() {
-		ForwardingRule rule = new ForwardingRule(new ForwardingRuleKey("localhost", Request.METHOD_POST, "*", 4000), "thomas-bayer", 80);
+	private ServiceProxy createForwardingRule() {
+		ServiceProxy rule = new ServiceProxy(new ForwardingRuleKey("localhost", Request.METHOD_POST, "*", 4000), "thomas-bayer", 80);
 		for (String label : ruleInterceptorNames) {
 			rule.getInterceptors().add(new MockInterceptor(label));
 		}

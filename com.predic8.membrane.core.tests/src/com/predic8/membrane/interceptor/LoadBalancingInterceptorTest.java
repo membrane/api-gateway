@@ -33,7 +33,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 
@@ -64,12 +64,12 @@ public class LoadBalancingInterceptorTest {
 		service1 = new HttpRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		service1.getTransport().getInterceptors().add(mockInterceptor1);
-		service1.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 2000), "thomas-bayer.com", 80));
+		service1.getRuleManager().addRuleIfNew(new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 2000), "thomas-bayer.com", 80));
 
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		service2.getTransport().getInterceptors().add(mockInterceptor2);
-		service2.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", 80));
+		service2.getRuleManager().addRuleIfNew(new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", 80));
 
 		balancingInterceptor = new LoadBalancingInterceptor();
 		List<String> endpoints = new ArrayList<String>();
@@ -78,7 +78,7 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setEndpoints(endpoints);
 
 		balancer = new HttpRouter();
-		balancer.getRuleManager().addRuleIfNew(new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 7000), "thomas-bayer.com", 80));
+		balancer.getRuleManager().addRuleIfNew(new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 7000), "thomas-bayer.com", 80));
 		balancer.getTransport().getInterceptors().add(balancingInterceptor);
 		balancingInterceptor.setRouter(balancer);
 
