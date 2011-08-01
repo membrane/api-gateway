@@ -24,8 +24,7 @@
 			<exchangeStore name="forgetfulExchangeStore" />
 			<exchangeStore name="memoryExchangeStore" />
 			<exchangeStore name="fileExchangeStore" />
-			<transform requestXSLT="/test/request.xslt"
-				responseXSLT="/test/response.xslt" />
+			<transform xslt="strip.xslt"/>
 			<regExUrlRewriter>
 				<mapping regex="/bank/" uri="/axis2/" />
 			</regExUrlRewriter>
@@ -54,9 +53,9 @@
 						 responseXSLT="response.xsl" />
 			</rest2Soap>			
     		<soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
-			<cbr>
-				<route xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
-			</cbr>
+			<switch>
+				<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
+			</switch>
 			<regExReplacer regex="Hallo" replace="Hello" />
 			<counter name="Node 1"/>
 			<accessControl file="resources/acl/acl.xml"/>
@@ -66,8 +65,7 @@
 		</interceptors>
 	</transport>
 
-	<transform requestXSLT="/test/request.xslt"
-		responseXSLT="/test/response.xslt" />
+	<transform xslt="strip.xslt" />
 	<regExUrlRewriter>
 		<mapping regex="/bank/" uri="/axis2/" />
 	</regExUrlRewriter>
@@ -96,9 +94,9 @@
 				 responseXSLT="examples/rest2soap/strip-soap-envelope.xsl" />
 	</rest2Soap>			
   	<soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />	
-	<cbr>
-		<route xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
-	</cbr>
+	<switch>
+		<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
+	</switch>
 	<regExReplacer regex="Hallo" replace="Hello" />
 	<counter name="Node 1"/>
 	

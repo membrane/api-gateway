@@ -131,8 +131,8 @@
 			<bean class="com.predic8.membrane.core.io.ConfigurationFileStore" />
 		</property>
 
-		<property name="configuration">
-			<bean class="com.predic8.membrane.core.Configuration">
+		<property name="proxies">
+			<bean class="com.predic8.membrane.core.Proxies">
 				<property name="adjustHostHeader" value="true" />
 				<property name="indentMessage" value="true" />
 				<property name="adjustContentLength" value="true" />
@@ -207,7 +207,7 @@
 	</bean>
 
 	<bean id="administratorInterceptor"
-		class="com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor">
+		class="com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor">
 		<property name="displayName" value="Admistrator Interceptor" />
 	</bean>
 

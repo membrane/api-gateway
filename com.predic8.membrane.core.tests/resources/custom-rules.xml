@@ -1,47 +1,58 @@
-<?xml version='1.0' encoding='UTF-8'?>
-<!-- <configuration>-->
-	<rules>
-	    <forwardingRule name="Test Rule" port="2001">
-	    	<target host="www.thomas-bayer.com" port="80" />
-	      <interceptors>
-	        <transform requestXSLT="request.xslt" responseXSLT="response.xslt" />
-	        <counter name="Node 1"/>
-	        <adminConsole />
-	        <webServer docBase="docBase" />
-	        <balancer >
-	        	<xmlSessionIdExtractor namespace="http://chat.predic8.com/" localName="session" />
-				<nodes>
-					<node host="localhost" port="8080"/>
-				</nodes>
-				<byThreadStrategy maxNumberOfThreadsPerEndpoint="10" retryTimeOnBusy="1000" />
-	        </balancer>
-	        <clusterNotification validateSignature="true" keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
-	        <basicAuthentication>
+<proxies>
+	<serviceProxy name="Service Proxy" port="2001">
+		<request>
+			<basicAuthentication>
 				<user name="admin" password="adminadmin" />
 			</basicAuthentication>
+			<clusterNotification validateSignature="true"
+				keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
+			<counter name="Node 1" />
 			<regExUrlRewriter>
 				<mapping regex="/home" uri="/index" />
-			</regExUrlRewriter>			
-			<soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
-			<rest2Soap>
-				<mapping regex="/bank/.*" 
-						 soapAction=""
-						 soapURI="/axis2/services/BLZService"
-						 requestXSLT="request.xsl" 
-						 responseXSLT="response.xsl" />
-			</rest2Soap>	
-			<interceptor id="counter" name="Counter 2" />		
+			</regExUrlRewriter>
+			<adminConsole />
+			<webServer docBase="docBase" />
+			<switch>
+				<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
+			</switch>
+			<accessControl file="resources/acl/acl.xml" />
+		</request>
+		<exchangeStore name="forgetfulExchangeStore" />
+		<!--<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource"/> -->
+		<statisticsCSV file="c:/temp/stat.csv" />
+		<transform xslt="strip.xslt" />
+		<balancer>
+			<xmlSessionIdExtractor namespace="http://chat.predic8.com/"
+				localName="session" />
+			<nodes>
+				<node host="localhost" port="8080" />
+			</nodes>
+			<byThreadStrategy maxNumberOfThreadsPerEndpoint="10"
+				retryTimeOnBusy="1000" />
+	
+		</balancer>
+		<soapValidator
+			wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
+		<rest2Soap>
+			<mapping regex="/bank/.*" soapAction=""
+				soapURI="/axis2/services/BLZService" requestXSLT="request.xsl"
+				responseXSLT="response.xsl" />
+		</rest2Soap>
+
+		<interceptor id="counter" name="Counter 2" />
+		<response>	
 			<regExReplacer regex="Hallo" replace="Hello" />
-			<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register" 
-						  port="4000" protocol="http" host="localhost" />
-			<cbr>
-				<route xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
-			</cbr>
-			<statisticsCSV file="c:/temp/stat.csv" />
-			<accessControl file="resources/acl/acl.xml"/>
-			<exchangeStore name="forgetfulExchangeStore" />
-    		<!--<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource"/>-->
-	      </interceptors>
-	    </forwardingRule>	
-	</rules>
-<!--</configuration>-->
+			<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register"
+				port="4000" protocol="http" host="localhost" />
+		</response>
+		<target host="www.thomas-bayer.com" port="80" />
+	</serviceProxy>
+    <proxy name="HTTP Proxy" port="3128" >
+		<transform xslt="strip.xslt"/>
+		<switch>
+			<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
+		</switch>	
+	</proxy>
+	
+</proxies>
+<!--</configuration> -->
