@@ -31,10 +31,10 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.config.*;
 import com.predic8.membrane.core.config.security.Security;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.TextUtil;
 
-public class Configuration extends AbstractConfigElement {
+public class Proxies extends AbstractConfigElement {
 
 	private static final long serialVersionUID = 1L;
 
@@ -73,12 +73,12 @@ public class Configuration extends AbstractConfigElement {
 
 	private Proxy proxy; 
 
-	public Configuration() {
+	public Proxies() {
 		this(null);
 		
 	}
 
-	public Configuration(Router router) {
+	public Proxies(Router router) {
 		super(router);
 		setAdjustHostHeader(true);
 		setIndentMessage(true);
@@ -219,20 +219,11 @@ public class Configuration extends AbstractConfigElement {
 	}
 	
 	@Override
-	public XMLElement parse(XMLStreamReader token) throws Exception {
-		move2RootElementIfNeeded(token);
-		if ("rules".equals(token.getLocalName())) {
-			XMLElement rulesE = new Rules(router).parse(token);
-			rules = ((Rules) rulesE).getValues();
-			return this;
-		}
-		return super.parse(token);
-	}
-	
-	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {	
-		if (Rules.ELEMENT_NAME.equals(child)) {
-			rules = ((Rules) new Rules(router).parse(token)).getValues();
+		if ("serviceProxy".equals(child)) {
+			rules.add((ServiceProxy) new ServiceProxy(router).parse(token));
+		} else if ("proxy".equals(child)) {
+			rules.add((ProxyRule) new ProxyRule(router).parse(token));
 		} else if (Global.ELEMENT_NAME.equals(child)) {
 			props.putAll(((Global) new Global(router).parse(token)).getValues());
 		} else if (GUI.ELEMENT_NAME.equals(child)) {
@@ -252,11 +243,11 @@ public class Configuration extends AbstractConfigElement {
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartDocument(Constants.UTF_8, Constants.XML_VERSION);
-		out.writeStartElement("configuration");
+		out.writeStartElement("proxies");
 		
-		Rules childRules = new Rules(router);
-		childRules.setValues(rules);
-		childRules.write(out);
+		for (Rule rule : rules) {
+			rule.write(out);
+		}
 		
 		Global childFormat = new Global(router);
 		childFormat.setValues(props);

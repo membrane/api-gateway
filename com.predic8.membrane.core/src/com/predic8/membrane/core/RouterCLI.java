@@ -40,7 +40,7 @@ public class RouterCLI {
 			System.exit(1);
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMBRANE_HOME") + "/conf/rules.xml exists");
+			System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml exists");
 			System.exit(1);
 		}
 
@@ -61,7 +61,7 @@ public class RouterCLI {
 		if (line.hasConfiguration()) {
 			return line.getConfiguration();
 		} else {
-			return System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "rules.xml";
+			return System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "proxies.xml";
 		}
 	}
 

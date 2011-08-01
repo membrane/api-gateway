@@ -27,7 +27,7 @@ public class ConfigurationManager {
 
 	protected static Log log = LogFactory.getLog(ConfigurationManager.class.getName());
 	
-	private Configuration configuration;
+	private Proxies proxies;
 
 	private ConfigurationStore configurationStore = new ConfigurationFileStore();
 
@@ -36,37 +36,37 @@ public class ConfigurationManager {
 	private List<SecurityConfigurationChangeListener> securityChangeListeners = new Vector<SecurityConfigurationChangeListener>();
 	
 	public void saveConfiguration(String fileName) throws Exception {
-		getConfiguration().setRules(router.getRuleManager().getRules());
-		getConfiguration().write(fileName);
+		getProxies().setRules(router.getRuleManager().getRules());
+		getProxies().write(fileName);
 	}
 
 
 	public void loadConfiguration(String fileName) throws Exception {
 
-		setConfiguration(configurationStore.read(fileName));
+		setProxies(configurationStore.read(fileName));
 
 		setSecuritySystemProperties();
 		
 		router.getRuleManager().removeAllRules();
 		
-		for (Rule rule : getConfiguration().getRules()) {
+		for (Rule rule : getProxies().getRules()) {
 			router.getRuleManager().addRuleIfNew(rule);
 		}
 
 	}
 
 	public void setSecuritySystemProperties() {
-		if (getConfiguration().getKeyStoreLocation() != null)
-			System.setProperty("javax.net.ssl.keyStore", getConfiguration().getKeyStoreLocation());
+		if (getProxies().getKeyStoreLocation() != null)
+			System.setProperty("javax.net.ssl.keyStore", getProxies().getKeyStoreLocation());
 		
-		if (getConfiguration().getKeyStorePassword() != null)
-			System.setProperty("javax.net.ssl.keyStorePassword", getConfiguration().getKeyStorePassword());
+		if (getProxies().getKeyStorePassword() != null)
+			System.setProperty("javax.net.ssl.keyStorePassword", getProxies().getKeyStorePassword());
 		
-		if (getConfiguration().getTrustStoreLocation() != null)
-			System.setProperty("javax.net.ssl.trustStore", getConfiguration().getTrustStoreLocation());
+		if (getProxies().getTrustStoreLocation() != null)
+			System.setProperty("javax.net.ssl.trustStore", getProxies().getTrustStoreLocation());
 		
-		if (getConfiguration().getTrustStorePassword() != null)
-			System.setProperty("javax.net.ssl.trustStorePassword", getConfiguration().getTrustStorePassword());
+		if (getProxies().getTrustStorePassword() != null)
+			System.setProperty("javax.net.ssl.trustStorePassword", getProxies().getTrustStorePassword());
 	
 		notifySecurityChangeListeners();
 	}
@@ -81,13 +81,13 @@ public class ConfigurationManager {
 		}
 	}
 
-	public Configuration getConfiguration() {
-		if ( configuration==null ) configuration = new Configuration(router);
-		return configuration;
+	public Proxies getProxies() {
+		if ( proxies==null ) proxies = new Proxies(router);
+		return proxies;
 	}
 
-	public void setConfiguration(Configuration configuration) {
-		this.configuration = configuration;
+	public void setProxies(Proxies configuration) {
+		this.proxies = configuration;
 		configuration.setRouter(router);
 	}
 
@@ -111,7 +111,7 @@ public class ConfigurationManager {
 	public void setRouter(Router router) {
 		this.router = router;		
 		configurationStore.setRouter(router);
-		getConfiguration().setRouter(router);
+		getProxies().setRouter(router);
 	}
 	
 	public void addSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {
