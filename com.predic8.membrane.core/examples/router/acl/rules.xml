@@ -1,9 +1,0 @@
-<?xml version = "1.0" ?>
-<rules>
-	<forwardingRule name="predic8.com" port="2000">
-		<target host="predic8.com" port="80" />
-		<interceptors>
-			<accessControl file="acl.xml" />
-		</interceptors>
-	</forwardingRule>
-</rules>

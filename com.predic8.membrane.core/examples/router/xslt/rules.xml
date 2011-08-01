@@ -1,8 +1,0 @@
-<rules>
-	<forwardingRule name="SQLREST Customer" port="2000">
-		<target host="www.thomas-bayer.com" port="80" />
-		<interceptors>
-			<transform requestXSLT="" responseXSLT="examples/xslt/customer2person.xsl" />
-		</interceptors>
-	</forwardingRule>
-</rules>

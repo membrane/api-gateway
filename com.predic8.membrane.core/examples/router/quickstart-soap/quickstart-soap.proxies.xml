@@ -1,0 +1,5 @@
+<proxies>
+	<serviceProxy name="BLZ" port="2000">
+		<target host="www.thomas-bayer.com" port="80" />
+	</serviceProxy>
+</proxies>

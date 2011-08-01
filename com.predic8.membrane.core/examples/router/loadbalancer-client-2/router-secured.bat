@@ -15,4 +15,4 @@ set CLASSPATH=%MEMBRANE_HOME%
 set CLASSPATH=%MEMBRANE_HOME%/conf
 set CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar
 echo Membrane Router running...
-java  -classpath %CLASSPATH% com.predic8.membrane.core.Starter -c secured-rules.xml -b monitor-beans.xml
+java  -classpath %CLASSPATH% com.predic8.membrane.core.Starter -c lb-client-secured.proxies.xml -b lb-beans.xml

@@ -1,0 +1,6 @@
+<proxies>
+	<serviceProxy name="predic8.com" port="2000">
+		<statisticsJDBC dataSource="dataSource" />
+		<target host="membrane-soa.org" port="80" />
+	</serviceProxy>
+</proxies>

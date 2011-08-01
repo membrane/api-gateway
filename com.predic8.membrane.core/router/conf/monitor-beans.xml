@@ -173,8 +173,8 @@
       <bean class="com.predic8.membrane.core.io.ConfigurationFileStore" />
     </property>
  
-    <property name="configuration">
-      <bean class="com.predic8.membrane.core.Configuration">
+    <property name="proxies">
+      <bean class="com.predic8.membrane.core.Proxies">
         <property name="adjustHostHeader" value="true" />
         <property name="indentMessage" value="true" />
         <property name="adjustContentLength" value="true" />
@@ -290,12 +290,6 @@
   <bean id="accessControlInterceptor" class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
     <property name="displayName" value="Access Control List Interceptor" />
     <property name="aclFilename" value="C:\temp\acl.xml" />
-  </bean>
-
-  <bean id="administrationInterceptor" class="com.predic8.membrane.core.interceptor.administration.AdministrationInterceptor" />
-
-  <bean id="webServerInterceptor" class="com.predic8.membrane.core.interceptor.server.WebServerInterceptor">
-    <property name="docBase" value="docBase" />
   </bean>
 
   <!--

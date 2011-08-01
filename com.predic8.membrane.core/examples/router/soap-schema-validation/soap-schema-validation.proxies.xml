@@ -1,0 +1,8 @@
+<proxies>
+	<serviceProxy port="2000">
+		<soapValidator
+			wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
+		<target host="predic8.com" port="8080" />
+	</serviceProxy>
+</proxies>
+

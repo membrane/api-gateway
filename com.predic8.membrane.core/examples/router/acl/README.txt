@@ -32,21 +32,18 @@ HOW IT IS DONE
 
 The following part describes the example in detail.  
 
-First take a look at the examples/acl/rules.xml file.
+First take a look at the examples/acl/acl.proxies.xml file.
 
-<configuration>
-  <rules>
-    <forwarding-rule name="predic8.com" port="2000">
-      <targetport>80</targetport>
-      <targethost>predic8.com</targethost>
-    </forwarding-rule>
-  </rules>
-</configuration>
+<proxies>
+	<serviceProxy name="predic8.com" port="2000">
+		<accessControl file="acl.xml" />
+		<target host="predic8.com" port="80" />
+	</serviceProxy>
+</proxies>
 
+The serviceProxy forwards calls to the port 2000 to predic8.com:80. 
 
-The rule forwards calls to the port 2000 to predic8.com:80. 
-
-Next take a look at the bean configuration of the interceptor in the examples/acl/acl-beans.xml file.
+Further a AccessControl interceptor is added to the serviceProxy.
 
 
 <accessControl file="acl.xml" />

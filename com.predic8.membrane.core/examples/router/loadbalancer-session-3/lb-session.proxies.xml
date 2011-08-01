@@ -1,0 +1,11 @@
+<proxies>
+	<serviceProxy name="Balancer" port="8080">
+		<balancer>
+			<xmlSessionIdExtractor namespace="http://chat.predic8.com/"
+				localName="session" />
+		</balancer>
+	</serviceProxy>
+	<serviceProxy name="Administration" port="9000">
+		<adminConsole />
+	</serviceProxy>
+</proxies>

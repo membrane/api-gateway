@@ -1,0 +1,6 @@
+<proxies>
+	<serviceProxy port="2000">
+		<transform requestXSLT="" responseXSLT="examples/xslt/customer2person.xsl" />
+		<target host="www.thomas-bayer.com" port="80" />
+	</serviceProxy>
+</proxies>

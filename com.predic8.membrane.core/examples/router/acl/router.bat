@@ -15,4 +15,4 @@ set CLASSPATH=%MEMBRANE_HOME%
 set CLASSPATH=%MEMBRANE_HOME%/conf
 set CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar
 echo Membrane Router running...
-java  -classpath %CLASSPATH% com.predic8.membrane.core.Starter -c rules.xml -b acl-beans.xml
+java  -classpath %CLASSPATH% com.predic8.membrane.core.Starter -c acl.proxies.xml -b ..\..\conf\monitor-beans.min.xml

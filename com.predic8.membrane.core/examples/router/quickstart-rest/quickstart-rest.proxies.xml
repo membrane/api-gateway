@@ -1,0 +1,5 @@
+<proxies>
+	<serviceProxy name="names" port="2000">
+		<target host="thomas-bayer.com" port="80" />
+	</serviceProxy>
+</proxies>
