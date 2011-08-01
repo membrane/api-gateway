@@ -14,24 +14,14 @@
 
 package com.predic8.membrane.core;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URLClassLoader;
+import java.io.*;
+import java.net.*;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.eclipse.core.runtime.FileLocator;
-import org.eclipse.core.runtime.ILog;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Platform;
-import org.eclipse.core.runtime.Plugin;
-import org.eclipse.core.runtime.Status;
+import org.apache.commons.logging.*;
+import org.eclipse.core.runtime.*;
 import org.osgi.framework.BundleContext;
-
-import com.predic8.membrane.core.util.FileUtil;
 
 /**
  * The activator class controls the plug-in life cycle
@@ -66,7 +56,7 @@ public class CoreActivator extends Plugin {
 		
 		if (cl.hasMonitorBeans()) {
 			log.info("loading monitor beans from command line argument: "+cl.getMonitorBeans());
-			Router.init(FileUtil.prefixMembraneHomeIfNeeded(new File(cl.getMonitorBeans())).getAbsolutePath(), 
+			Router.init(new File(cl.getMonitorBeans()).getAbsolutePath(), 
 						this.getClass().getClassLoader());
 		} else {		
 			try {
@@ -98,7 +88,7 @@ public class CoreActivator extends Plugin {
 			private String getConfigurationFileName(MembraneCommandLine cl) {
 				if (cl.hasConfiguration()) {
 					log.info("loading configuration from command line argument: "+cl.getConfiguration());
-					return FileUtil.prefixMembraneHomeIfNeeded(new File(cl.getConfiguration())).getAbsolutePath();
+					return new File(cl.getConfiguration()).getAbsolutePath();
 				}
 				return System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml";
 			}
