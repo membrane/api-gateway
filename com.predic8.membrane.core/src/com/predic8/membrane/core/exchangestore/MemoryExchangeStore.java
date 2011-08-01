@@ -87,7 +87,6 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 
 
 	public void removeAllExchanges(Rule rule) {
-		System.out.println("removing all excahnges");
 		AbstractExchange[] exchanges = getExchanges(rule.getKey());
 		
 		exchangesMap.remove(rule.getKey());
