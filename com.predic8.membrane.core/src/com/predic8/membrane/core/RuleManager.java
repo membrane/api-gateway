@@ -145,7 +145,7 @@ public class RuleManager {
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleUpdated(rule);
 		}
-		getExchangeStore().refreshExchangeStoreViewers();
+		getExchangeStore().refreshExchangeStoreListeners();
 	}
 
 	public Rule getMatchingRule(RuleKey keyFromReq) {
@@ -192,12 +192,12 @@ public class RuleManager {
 	}
 
 	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
-		getExchangeStore().addExchangesViewListener(viewer);
+		getExchangeStore().addExchangesStoreListener(viewer);
 
 	}
 
 	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
-		getExchangeStore().removeExchangesViewListener(viewer);
+		getExchangeStore().removeExchangesStoreListener(viewer);
 	}
 
 	public synchronized void removeRule(Rule rule) {

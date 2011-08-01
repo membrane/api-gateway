@@ -51,7 +51,7 @@ public class RuleStatisticsView extends AbstractRulesView {
 		
 		new Label(composite, SWT.NONE).setText(" All times in ms");
 					
-	    getExchangeStore().addExchangesViewListener(this);
+	    getExchangeStore().addExchangesStoreListener(this);
 	    setInputForTable(Router.getInstance().getRuleManager());
 	}
 

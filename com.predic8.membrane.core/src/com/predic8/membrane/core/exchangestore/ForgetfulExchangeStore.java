@@ -28,7 +28,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 		
 	}
 
-	public void addExchangesViewListener(IExchangesStoreListener viewer) {
+	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
 		
 	}
 
@@ -65,7 +65,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	
-	public void refreshExchangeStoreViewers() {
+	public void refreshExchangeStoreListeners() {
 		
 	}
 
@@ -79,7 +79,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	}
 
 	
-	public void removeExchangesViewListener(IExchangesStoreListener viewer) {
+	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
 		
 	}
 

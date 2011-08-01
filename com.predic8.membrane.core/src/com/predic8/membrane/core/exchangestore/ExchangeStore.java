@@ -25,21 +25,16 @@ import com.predic8.membrane.core.statistics.RuleStatistics;
 public interface ExchangeStore {
 	
 	
-	public void addExchangesViewListener(IExchangesStoreListener viewer);	
+	public void addExchangesStoreListener(IExchangesStoreListener viewer);	
 	
-	public void removeExchangesViewListener(IExchangesStoreListener viewer);	
+	public void removeExchangesStoreListener(IExchangesStoreListener viewer);	
 	
-	public void refreshExchangeStoreViewers();
+	public void refreshExchangeStoreListeners();
 	
 	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange);
 	
 	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange);
-	
-//	public void notifyListenersOnRuleAdd(Rule rule);
-//	
-//	public void notifyListenersOnRuleRemoval(Rule rule, int rulesLeft);
-	
-	
+		
 	public void add(AbstractExchange exchange);
 	
 	public void remove(AbstractExchange exchange);

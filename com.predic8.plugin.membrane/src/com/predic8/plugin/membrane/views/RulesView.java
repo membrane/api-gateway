@@ -81,7 +81,7 @@ public class RulesView extends AbstractRulesView {
 		createActions();
 		addTableMenu();
 		
-		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
+		Router.getInstance().getExchangeStore().addExchangesStoreListener(this);
 		Router.getInstance().getRuleManager().addRuleChangeListener(this);
 		setInputForTable(Router.getInstance().getRuleManager());
 	}

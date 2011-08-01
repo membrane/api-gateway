@@ -68,7 +68,7 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 
 		itemSave = createItemSave();
 
-		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
+		Router.getInstance().getExchangeStore().addExchangesStoreListener(this);
 	}
 
 	private ToolItem createItemContinue() {

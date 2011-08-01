@@ -127,7 +127,7 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 
 		createTrackRequestButton(createInnerComposite(composite, 1));
 
-		Router.getInstance().getExchangeStore().addExchangesViewListener(this);
+		Router.getInstance().getExchangeStore().addExchangesStoreListener(this);
 		refreshTable(false);
 
 		contributeToActionBars();

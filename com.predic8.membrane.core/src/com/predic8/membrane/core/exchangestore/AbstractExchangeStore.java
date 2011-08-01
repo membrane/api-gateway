@@ -25,15 +25,15 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 
 	protected Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<IExchangesStoreListener>();
 	
-	public void addExchangesViewListener(IExchangesStoreListener viewer) {
+	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
 		exchangesStoreListeners.add(viewer);
 		
 	}
-	public void removeExchangesViewListener(IExchangesStoreListener viewer) {
+	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
 		exchangesStoreListeners.remove(viewer);
 	}
 	
-	public void refreshExchangeStoreViewers(){
+	public void refreshExchangeStoreListeners(){
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			listener.refresh();
 		}
@@ -52,17 +52,5 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 			listener.removeExchange(exchange);
 		}
 	}
-	
-//	public void notifyListenersOnRuleAdd(Rule rule) {
-//		for (IExchangesStoreListener listener : exchangesStoreListeners) {
-//			listener.ruleAdded(rule);
-//		}
-//	}
-//	
-//	public void notifyListenersOnRuleRemoval(Rule rule, int rulesLeft) {
-//		for (IExchangesStoreListener listener : exchangesStoreListeners) {
-//			listener.removeRule(rule, rulesLeft);
-//		}
-//	}
-	
+		
 }
