@@ -21,20 +21,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
+import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 
 public abstract class AbstractHttpRunnable implements Runnable {
 
-	protected static Log log;
+	private static Log log = LogFactory.getLog(AbstractHttpRunnable.class.getName());
 	
 	protected HttpClient client = new HttpClient();
 
@@ -56,18 +56,20 @@ public abstract class AbstractHttpRunnable implements Runnable {
 	
 
 	protected void invokeRequestHandlers(List<Interceptor> interceptors) throws Exception {
-		for (Interceptor interceptor : interceptors) {
-			log.debug("Invoking request handlers:" + interceptor + " on exchange: " + exchange);
-			if (interceptor.handleRequest(exchange) == Outcome.ABORT) {
+		for (Interceptor i : interceptors) {
+			if (i.getFlow() == Flow.RESPONSE) continue;
+			log.debug("Invoking request handlers: " + i.getDisplayName() + " on exchange: " + exchange);
+			if (i.handleRequest(exchange) == Outcome.ABORT) {
 				throw new AbortException();
 			}
 		}
 	}
 
 	protected void invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) throws Exception {
-		for (Interceptor interceptor : interceptors) {
-			log.debug("Invoking response handlers :" + interceptor + " on exchange: " + exchange);
-			if (interceptor.handleResponse(exchange) == Outcome.ABORT) {
+		for (Interceptor i : interceptors) {
+			if (i.getFlow() == Flow.REQUEST) continue;
+			log.debug("Invoking response handlers: " + i.getDisplayName() + " on exchange: " + exchange);
+			if (i.handleResponse(exchange) == Outcome.ABORT) {
 				throw new AbortException();
 			}
 		}
@@ -119,7 +121,7 @@ public abstract class AbstractHttpRunnable implements Runnable {
 	}
 	
 	protected void setClientSettings() {
-		Configuration cfg = transport.getRouter().getConfigurationManager().getConfiguration();
+		Proxies cfg = transport.getRouter().getConfigurationManager().getProxies();
 		client.setAdjustHostHeader(cfg.getAdjustHostHeader());
 		client.setProxy(cfg.getProxy());
 		client.setMaxRetries(transport.getHttpClientRetries());

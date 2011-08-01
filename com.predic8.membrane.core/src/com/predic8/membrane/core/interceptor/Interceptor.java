@@ -20,6 +20,10 @@ import com.predic8.membrane.core.exchange.Exchange;
 
 public interface Interceptor extends XMLElement, Comparable<Interceptor> {
 
+	public enum Flow {
+		REQUEST_RESPONSE, REQUEST, RESPONSE;
+	}
+	
 	public Outcome handleRequest(Exchange exc) throws Exception;
 	
 	public Outcome handleResponse(Exchange exc) throws Exception;
@@ -39,5 +43,9 @@ public interface Interceptor extends XMLElement, Comparable<Interceptor> {
 	public int getPriority();
 	
 	public void setPriority(int priority);
+	
+	public void setFlow(Flow flow);	
+	
+	public Flow getFlow();
 	
 }

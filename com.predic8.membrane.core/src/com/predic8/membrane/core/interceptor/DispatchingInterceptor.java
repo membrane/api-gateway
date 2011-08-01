@@ -17,7 +17,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class DispatchingInterceptor extends AbstractInterceptor {
 
@@ -26,12 +27,13 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	public DispatchingInterceptor() {		
 		name = "Dispatching Interceptor";		
 		priority = 200;
+		setFlow(Flow.REQUEST);
 	}
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 	
-		if (exc.getRule() instanceof ForwardingRule) {
+		if (exc.getRule() instanceof ServiceProxy) {
 			exc.getDestinations().add(getForwardingDestination(exc));	
 			return Outcome.CONTINUE;
 		}
@@ -44,9 +46,9 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	private String getForwardingDestination(Exchange exc) {
 		StringBuffer buf = new StringBuffer();
 		buf.append("http://");
-		buf.append(((ForwardingRule)exc.getRule()).getTargetHost());
+		buf.append(((ServiceProxy)exc.getRule()).getTargetHost());
 		buf.append(":");
-		buf.append(((ForwardingRule)exc.getRule()).getTargetPort() );
+		buf.append(((ServiceProxy)exc.getRule()).getTargetPort() );
 		buf.append(exc.getRequest().getUri());
 		log.debug("destination: " + buf.toString());
 		return buf.toString();

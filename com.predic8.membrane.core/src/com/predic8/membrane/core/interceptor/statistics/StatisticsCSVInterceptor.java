@@ -35,7 +35,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	private String fileName;
 	
 	public StatisticsCSVInterceptor() {
-		priority = 510;
+		name = "CSV Logging";
 	}
 	
 	@Override
@@ -70,8 +70,9 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 		createCSVFile();
 	}
 
-	private void createCSVFile() throws IOException, Exception {
+	private void createCSVFile() throws Exception {
 		File csvFile = new File(fileName);
+		log.debug("creating csv file at "+csvFile.getAbsolutePath());
 		
 		csvFile.createNewFile();
 		
@@ -125,12 +126,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		
-		try {
-			setFileName(token.getAttributeValue("", "file"));
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	protected void parseAttributes(XMLStreamReader token) throws Exception {		
+		setFileName(token.getAttributeValue("", "file"));
 	}
 }

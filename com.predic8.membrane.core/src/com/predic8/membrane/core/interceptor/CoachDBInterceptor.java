@@ -21,7 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -110,7 +110,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 		exchange.setProperty(HttpTransport.HEADER_HOST, exchange.getRequest().getHeader().getHost());
 		exchange.setOriginalRequestUri(exchange.getRequest().getUri());
-		exchange.getRequest().getHeader().setHost(((ForwardingRule) exchange.getRule()).getTargetHost() + ":" + ((ForwardingRule) exchange.getRule()).getTargetPort());
+		exchange.getRequest().getHeader().setHost(((ServiceProxy) exchange.getRule()).getTargetHost() + ":" + ((ServiceProxy) exchange.getRule()).getTargetPort());
 		
 		try {
 			Response resp = client.call(exchange);
@@ -156,7 +156,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 	private Rule getRule() {
 		if (rule == null) {
-			rule = new ForwardingRule(new ForwardingRuleKey("localhost", Request.METHOD_POST, ".*", 4100), targetHost, targetPort);
+			rule = new ServiceProxy(new ForwardingRuleKey("localhost", Request.METHOD_POST, ".*", 4100), targetHost, targetPort);
 		}
 		return rule;
 	}

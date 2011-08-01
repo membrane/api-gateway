@@ -21,7 +21,7 @@ import javax.xml.stream.*;
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.util.ByteUtil;
 
 public class RegExReplaceInterceptor extends AbstractInterceptor {
@@ -32,13 +32,25 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	
 	private String replacement;
 	
+	public RegExReplaceInterceptor() {
+		name="Regex Replacer";
+	}
+	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
+		replaceBody(exc.getResponse());
+		return Outcome.CONTINUE;
+	}
 	
-		Response res = exc.getResponse();
-		
-		if (hasNoTextContent(res) ) 
-			return Outcome.CONTINUE;
+	@Override
+	public Outcome handleRequest(Exchange exc) throws Exception {
+		replaceBody(exc.getRequest());
+
+		return Outcome.CONTINUE;
+	}
+
+	private void replaceBody(Message res) throws IOException, Exception {
+		if (hasNoTextContent(res) ) return; 
 		
 		log.debug("pattern: " +pattern);
 		log.debug("replacement: " +replacement);
@@ -47,14 +59,13 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		byte[] content = getContent(res);
 		res.setBodyContent(new String(content).replaceAll(pattern, replacement).getBytes());
 		res.getHeader().removeFields("Content-Encoding");
-		return Outcome.CONTINUE;
 	}
 
-	private boolean hasNoTextContent(Response res) {		
-		return res.hasNoContent() || !res.isXML() && !res.isHTML();
+	private boolean hasNoTextContent(Message res) throws Exception {		
+		return res.isBodyEmpty() || !res.isXML() && !res.isHTML();
 	}
 
-	private byte[] getContent(Response res) throws Exception, IOException {
+	private byte[] getContent(Message res) throws Exception, IOException {
 		if (res.isGzip()) {
 			return ByteUtil.getByteArrayData(new GZIPInputStream(res.getBodyAsStream()));
 		} else if (res.isDeflate()) {

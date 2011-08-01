@@ -14,15 +14,11 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import javax.naming.OperationNotSupportedException;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
 import org.apache.commons.lang.NotImplementedException;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
@@ -32,9 +28,11 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	
 	protected String name = this.getClass().getName();
 	
+	private Flow flow = Flow.REQUEST_RESPONSE;
+	
 	protected String id;
 	
-	protected int priority = 10000;
+	protected int priority;
 
 	public AbstractInterceptor() {
 		super(null);
@@ -67,7 +65,8 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");	
+		if (token.getAttributeValue("", "name") != null)
+			name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");	
 		id = token.getAttributeValue(Constants.NS_UNDEFINED, "id");	
 	}
 	
@@ -109,6 +108,15 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	
 	public int compareTo(Interceptor o) {
 		return this.getPriority() - o.getPriority();
+	}
+
+	public void setFlow(Flow flow) {
+		this.flow = flow;
+	}
+
+	
+	public Flow getFlow() {
+		return flow;
 	}
 
 }

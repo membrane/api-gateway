@@ -6,7 +6,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 
 public class ExchangesUtil {
@@ -27,8 +27,8 @@ public class ExchangesUtil {
 			}
 			return exc.getOriginalRequestUri();
 		}
-		if (exc.getRule() instanceof ForwardingRule) {
-			return ((ForwardingRule) exc.getRule()).getTargetHost();
+		if (exc.getRule() instanceof ServiceProxy) {
+			return ((ServiceProxy) exc.getRule()).getTargetHost();
 		}
 		return "";
 	}
