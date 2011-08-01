@@ -25,7 +25,7 @@ import java.net.UnknownHostException;
 
 import javax.net.ssl.SSLSocket;
 
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ErrorResponse;
@@ -34,13 +34,14 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.*;
 
 public class HttpServerRunnable extends AbstractHttpRunnable {
-
+	
+	private static Log log = LogFactory.getLog(HttpServerRunnable.class.getName());
+	
 	public static int counter = 0;
 	
 	public HttpServerRunnable(Socket socket, HttpTransport transport) throws IOException {
 		this.exchange = new Exchange();
 		exchange.setServerThread(this);
-		log = LogFactory.getLog(HttpServerRunnable.class.getName());
 		counter++;
 		log.debug("New ServerThread created. " + counter);
 		this.sourceSocket = socket;

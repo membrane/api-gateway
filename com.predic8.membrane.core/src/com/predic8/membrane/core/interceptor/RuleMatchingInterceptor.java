@@ -22,7 +22,8 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ErrorResponse;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -37,6 +38,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	public RuleMatchingInterceptor() {
 		name = "Rule Matching Interceptor";		
 		priority = 50;
+		setFlow(Flow.REQUEST);
 	}
 	
 	public Outcome handleRequest(Exchange exc) throws Exception {
@@ -48,7 +50,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 		
-		if (xForwardedForEnabled && (rule instanceof ForwardingRule))
+		if (xForwardedForEnabled && (rule instanceof ServiceProxy))
 			insertXForwardedFor(exc);
 
 		return Outcome.CONTINUE;

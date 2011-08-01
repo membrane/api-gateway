@@ -49,6 +49,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	private String dataSourceBeanId; 
 	
 	public StatisticsJDBCInterceptor() {
+		name = "JDBC Logging";
 		priority = 500;
 	}
 	
@@ -196,14 +197,16 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
 		
-		try {
-			postMethodOnly = Boolean.parseBoolean(token.getAttributeValue("", "postMethodOnly"));
-			soapOnly = Boolean.parseBoolean(token.getAttributeValue("", "soapOnly"));
-			dataSourceBeanId = token.getAttributeValue("", "dataSource");
-			dataSource = router.getBean(dataSourceBeanId, DataSource.class);
-			init();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		postMethodOnly = Boolean.parseBoolean(token.getAttributeValue("", "postMethodOnly"));
+		soapOnly = Boolean.parseBoolean(token.getAttributeValue("", "soapOnly"));
+		dataSourceBeanId = token.getAttributeValue("", "dataSource");
+		dataSource = router.getBean(dataSourceBeanId, DataSource.class);
 	}	
+	
+	@Override
+	protected void doAfterParsing() throws Exception {
+		init();
+	}
+	
+	
 }

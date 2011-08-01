@@ -33,7 +33,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.OKResponse;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
@@ -103,7 +103,7 @@ public class HttpClient {
 		tls = getOutboundTLS(exc);
 		localHost = exc.getRule().getLocalHost();
 		
-		if (adjustHostHeader && exc.getRule() instanceof ForwardingRule) {
+		if (adjustHostHeader && exc.getRule() instanceof ServiceProxy) {
 			URL destination = new URL(dest); //duplicate
 			exc.getRequest().getHeader().setHost(destination.getHost() + ":" + port);
 		}

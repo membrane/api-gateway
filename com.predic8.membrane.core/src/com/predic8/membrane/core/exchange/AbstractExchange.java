@@ -16,6 +16,7 @@ package com.predic8.membrane.core.exchange;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -28,7 +29,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.model.IExchangeViewerListener;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 
@@ -293,8 +294,8 @@ public abstract class AbstractExchange {
 			}
 			return getOriginalRequestUri();
 		}
-		if (getRule() instanceof ForwardingRule) {
-			return ((ForwardingRule) getRule()).getTargetHost();
+		if (getRule() instanceof ServiceProxy) {
+			return ((ServiceProxy) getRule()).getTargetHost();
 		}
 		return "";
 	}
@@ -344,6 +345,11 @@ public abstract class AbstractExchange {
 
 	public void setSourceIp(String sourceIp) {
 		this.sourceIp = sourceIp;
+	}
+	
+	@Override
+	public String toString() {
+		return "[time:"+DateFormat.getDateInstance().format(time.getTime())+",requestURI:"+request.getUri()+"]";
 	}
 	
 	
