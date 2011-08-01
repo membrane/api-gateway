@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
@@ -45,9 +45,9 @@ public class RuleManagerTest {
 		proxy5000 = new ProxyRule(new ProxyRuleKey(5000));
 		manager.addRuleIfNew(proxy5000);
 		
-		forwardBlz = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 5001), "thomas-bayer.com", 80);
+		forwardBlz = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 5001), "thomas-bayer.com", 80);
 		
-		forwardBlzPOST = new ForwardingRule(new ForwardingRuleKey("localhost", "POST", ".*", 5002), "thomas-bayer.com", 80);
+		forwardBlzPOST = new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 5002), "thomas-bayer.com", 80);
 		
 		manager.addRuleIfNew(forwardBlz);
 		manager.addRuleIfNew(forwardBlzPOST);

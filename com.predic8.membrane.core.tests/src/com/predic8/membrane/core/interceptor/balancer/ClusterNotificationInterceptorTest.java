@@ -31,7 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 
@@ -43,7 +43,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 		router.setClusterManager(clusterManager);

@@ -21,7 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
@@ -70,8 +70,8 @@ public class DispatchingInterceptorTest {
 		
 	}
 	
-	private ForwardingRule getForwardingRule() {		
-		return new ForwardingRule(new ForwardingRuleKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
+	private ServiceProxy getForwardingRule() {		
+		return new ServiceProxy(new ForwardingRuleKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
 	}
 	
 	private ProxyRule getProxyrRule() {

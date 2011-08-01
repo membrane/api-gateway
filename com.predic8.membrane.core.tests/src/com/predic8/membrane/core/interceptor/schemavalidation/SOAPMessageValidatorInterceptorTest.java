@@ -100,8 +100,8 @@ public class SOAPMessageValidatorInterceptorTest {
 		return TextUtil.formatXML(new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
 	}
 	
-	private SOAPMessageValidatorInterceptor createValidatorInterceptor(String wsdl) throws Exception {
-		SOAPMessageValidatorInterceptor interceptor = new SOAPMessageValidatorInterceptor();
+	private SoapValidatorInterceptor createValidatorInterceptor(String wsdl) throws Exception {
+		SoapValidatorInterceptor interceptor = new SoapValidatorInterceptor();
 		interceptor.setWsdl(wsdl);
 		interceptor.init();
 		return interceptor;

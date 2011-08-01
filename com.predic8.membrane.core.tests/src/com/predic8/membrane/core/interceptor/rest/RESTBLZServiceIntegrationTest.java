@@ -23,6 +23,7 @@ import org.apache.http.params.HttpProtocolParams;
 import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
@@ -35,7 +36,7 @@ public class RESTBLZServiceIntegrationTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ForwardingRule(new ForwardingRuleKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 		
@@ -50,8 +51,10 @@ public class RESTBLZServiceIntegrationTest {
 		router.getTransport().getInterceptors().add(urlRewriter);
 		
 		XSLTInterceptor xslt = new XSLTInterceptor();
-		xslt.setRequestXSLT("classpath:/blz-httpget2soap-request.xsl");
-		xslt.setResponseXSLT("classpath:/strip-soap-envelope.xsl");
+		xslt.setXslt("classpath:/blz-httpget2soap-request.xsl");
+		xslt.setFlow(Flow.REQUEST);
+		xslt.setXslt("classpath:/strip-soap-envelope.xsl");
+		xslt.setFlow(Flow.RESPONSE);
 		router.getTransport().getInterceptors().add(xslt);
 		
 	}

@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 
 public class ReadRulesConfigurationTest {
@@ -37,7 +37,7 @@ public class ReadRulesConfigurationTest {
 	@Before
 	public void setUp() throws Exception {
 		router = new HttpRouter();
-		router.getConfigurationManager().loadConfiguration("resources/rules.xml");
+		router.getConfigurationManager().loadConfiguration("resources/proxies.xml");
 		rules = router.getRuleManager().getRules();
 	}
 	
@@ -63,67 +63,67 @@ public class ReadRulesConfigurationTest {
 	
 	@Test
 	public void testForwardingRuleListenPort() throws Exception {
-		Assert.assertEquals(3000, ((ForwardingRule)rules.get(1)).getKey().getPort());
+		Assert.assertEquals(3000, ((ServiceProxy)rules.get(1)).getKey().getPort());
 	}
 	
 	@Test
 	public void testForwardingRuleTargetPort() throws Exception {
-		Assert.assertEquals(80, ((ForwardingRule)rules.get(1)).getTargetPort());
+		Assert.assertEquals(80, ((ServiceProxy)rules.get(1)).getTargetPort());
 	}
 	
 	@Test
 	public void testForwardingRuleTargetHost() throws Exception {
-		Assert.assertEquals("thomas-bayer.com", ((ForwardingRule)rules.get(1)).getTargetHost());
+		Assert.assertEquals("thomas-bayer.com", ((ServiceProxy)rules.get(1)).getTargetHost());
 	}
 	
 	@Test
 	public void testForwardingRuleDefaultMethod() throws Exception {
-		Assert.assertEquals("*", ((ForwardingRule)rules.get(1)).getKey().getMethod());
+		Assert.assertEquals("*", ((ServiceProxy)rules.get(1)).getKey().getMethod());
 	}
 	
 	@Test
 	public void testForwardingRuleDefaultHost() throws Exception {
-		Assert.assertEquals("*", ((ForwardingRule)rules.get(1)).getKey().getHost());
+		Assert.assertEquals("*", ((ServiceProxy)rules.get(1)).getKey().getHost());
 	}
 	
 	@Test
 	public void testForwardingRuleBlockRequest() throws Exception {
-		Assert.assertEquals(false, ((ForwardingRule)rules.get(1)).isBlockRequest());
+		Assert.assertEquals(false, ((ServiceProxy)rules.get(1)).isBlockRequest());
 	}
 	
 	@Test
 	public void testForwardingRuleBlockResponse() throws Exception {
-		Assert.assertEquals(true, ((ForwardingRule)rules.get(1)).isBlockResponse());
+		Assert.assertEquals(true, ((ServiceProxy)rules.get(1)).isBlockResponse());
 	}
 	
 	@Test
 	public void testLocalForwardingRuleListenPort() throws Exception {
-		Assert.assertEquals(2000, ((ForwardingRule)rules.get(2)).getKey().getPort());
+		Assert.assertEquals(2000, ((ServiceProxy)rules.get(2)).getKey().getPort());
 	}
 	
 	@Test
 	public void testLocalForwardingRuleTargetPort() throws Exception {
-		assertEquals(8080, ((ForwardingRule)rules.get(2)).getTargetPort());
+		assertEquals(8080, ((ServiceProxy)rules.get(2)).getTargetPort());
 	}
 	
 	@Test
 	public void testForwardingRuleMethodSet() throws Exception {
-		assertEquals("GET", ((ForwardingRule)rules.get(2)).getKey().getMethod());
+		assertEquals("GET", ((ServiceProxy)rules.get(2)).getKey().getMethod());
 	}
 	
 	@Test
 	public void testForwardingRuleHostSet() throws Exception {
-		assertEquals("/abc/*", ((ForwardingRule)rules.get(2)).getKey().getHost());
+		assertEquals("/abc/*", ((ServiceProxy)rules.get(2)).getKey().getHost());
 	}
 	
 	@Test
 	public void testLocalForwardingRuleInboundSSL() throws Exception {
-		assertEquals(false, ((ForwardingRule)rules.get(2)).isInboundTLS());
+		assertEquals(false, ((ServiceProxy)rules.get(2)).isInboundTLS());
 	}
 	
 	@Test
 	public void testLocalForwardingRuleOutboundSSL() throws Exception {
-		assertEquals(false, ((ForwardingRule)rules.get(2)).isOutboundTLS());
+		assertEquals(false, ((ServiceProxy)rules.get(2)).isOutboundTLS());
 	}
 	
 	@After

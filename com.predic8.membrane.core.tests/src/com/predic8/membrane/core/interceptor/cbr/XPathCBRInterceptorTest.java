@@ -69,10 +69,10 @@ public class XPathCBRInterceptorTest extends TestCase {
 		
 	}
 
-	private List<Route> getRouteList(String... args) {
-		List<Route> l = new ArrayList<Route>();
+	private List<Case> getRouteList(String... args) {
+		List<Case> l = new ArrayList<Case>();
 		for (int i = 0; i < args.length; i+=2) {
-			l.add(new Route(args[i],args[i+1]));
+			l.add(new Case(args[i],args[i+1]));
 		}
 		return l;
 	}

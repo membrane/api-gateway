@@ -28,7 +28,7 @@ public class XMLSessionIdExtractorInterceptorTest extends TestCase {
 	
 
 	@Test
-	public void testSessionIdExtractionRequest() throws Exception {
+	public void testSessionIdExtraction() throws Exception {
 		Request res = new Request();	
 		res.setHeader(getHeader());
 		res.setBodyContent(getBodyContent());
@@ -42,14 +42,13 @@ public class XMLSessionIdExtractorInterceptorTest extends TestCase {
 	}
 
 	@Test
-	public void testSessionIdExtractionResponse() throws Exception {
+	public void testSessionIdExtractionNoNS() throws Exception {
 		Response res = new Response();		
 		res.setHeader(getHeader());
 		res.setBodyContent(getBodyContent());
 
 		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
-		extractor.setLocalName("session");
-		extractor.setNamespace("http://predic8.com/session/");
+		extractor.setLocalName("ses:session");
 		
 		assertEquals("555555", extractor.getSessionId(res));
 		

@@ -43,7 +43,7 @@ public class XSLTInterceptorTest extends TestCase {
 		exc.setResponse(res);
 
 		XSLTInterceptor i = new XSLTInterceptor();
-		i.setResponseXSLT("classpath:/customer2person.xsl");
+		i.setXslt("classpath:/customer2person.xsl");
 		i.handleResponse(exc);
 				
 		printBodyContent();
