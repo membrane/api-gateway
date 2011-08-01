@@ -23,7 +23,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.statistics.RuleStatistics;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
@@ -47,7 +47,7 @@ public class RuleStatisticsLabelProvider extends LabelProvider implements ITable
 	public Image getColumnImage(Object element, int columnIndex) {
 		if (columnIndex != 0)
 			return null;
-		if (element instanceof ForwardingRule) {
+		if (element instanceof ServiceProxy) {
 			return ruleForwardingImage;
 		}
 		return ruleProxyImage;

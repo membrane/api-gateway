@@ -44,7 +44,7 @@ public abstract class SecurityWizardPage extends AbstractRuleWizardPage implemen
 	protected void createSecureConnectionButton(Composite composite) {
 		btSecureConnection = new Button(composite, SWT.CHECK);
 		btSecureConnection.setText("SecureConnection (SSL/STL)");
-		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isKeyStoreAvailable());
+		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getProxies().isKeyStoreAvailable());
 	}
 
 	protected void createLink(Composite composite, String linkText) {
@@ -66,7 +66,7 @@ public abstract class SecurityWizardPage extends AbstractRuleWizardPage implemen
 	protected void enableSecureConnectionButton() {
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
-				btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getConfiguration().isKeyStoreAvailable());
+				btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getProxies().isKeyStoreAvailable());
 			}
 		});
 	}

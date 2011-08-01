@@ -32,7 +32,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
-import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Proxy;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
@@ -134,7 +134,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 	}
 	
 	private void setWidgets() {
-		Configuration config = Router.getInstance().getConfigurationManager().getConfiguration();
+		Proxies config = Router.getInstance().getConfigurationManager().getProxies();
 		
 		Proxy proxy = config.getProxy();
 		
@@ -269,7 +269,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		proxy.setProxyUsername(textUser.getText());
 		proxy.setProxyPassword(textPassword.getText());
 		
-		router.getConfigurationManager().getConfiguration().setProxy(proxy);
+		router.getConfigurationManager().getProxies().setProxy(proxy);
 		
 	}
 

@@ -22,7 +22,7 @@ import org.eclipse.jface.wizard.Wizard;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
@@ -62,7 +62,7 @@ public class AddRuleWizard extends Wizard {
 	}
 
 	void createForwardingRule(ForwardingRuleKey ruleKey) throws IOException {
-		ForwardingRule rule = new ForwardingRule();
+		ServiceProxy rule = new ServiceProxy();
 		rule.setTargetHost(targetHostConfigPage.getTargetHost());
 		rule.setTargetPort(Integer.parseInt(targetHostConfigPage.getTargetPort()));
 		rule.setKey(ruleKey);

@@ -16,7 +16,7 @@ package com.predic8.plugin.membrane.dialogs.rule.composites;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.components.RuleTargetGroup;
 import com.predic8.plugin.membrane.util.SWTUtil;
@@ -39,9 +39,9 @@ public class RuleTargetTabComposite extends SecurityTabComposite {
 	}
 	
 	public void setInput(Rule rule) {
-		if (!(rule instanceof ForwardingRule))
+		if (!(rule instanceof ServiceProxy))
 			return;
-		ForwardingRule fRule = (ForwardingRule)rule;
+		ServiceProxy fRule = (ServiceProxy)rule;
 		targetGroup.setTargetHost(fRule.getTargetHost());
 		targetGroup.setTargetPort(fRule.getTargetPort());
 		btSecureConnection.setSelection(rule.isOutboundTLS());

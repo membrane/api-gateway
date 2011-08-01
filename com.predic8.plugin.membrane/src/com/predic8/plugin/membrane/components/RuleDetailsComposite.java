@@ -27,7 +27,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
@@ -199,15 +199,15 @@ public class RuleDetailsComposite extends GridPanel {
 			reset();
 			return;
 		}
-		if (rule instanceof ForwardingRule) {
-			displayForwardingRuleDetails((ForwardingRule) rule);
+		if (rule instanceof ServiceProxy) {
+			displayForwardingRuleDetails((ServiceProxy) rule);
 		} else if (rule instanceof ProxyRule) {
 			displayProxyRuleDetails((ProxyRule) rule);
 		}
 		update();
 	}
 
-	private void displayForwardingRuleDetails(final ForwardingRule rule) {
+	private void displayForwardingRuleDetails(final ServiceProxy rule) {
 		Display.getCurrent().asyncExec(new Runnable() {
 			public void run() {
 				labelTitle.setText("Forwarding Rule Description");				

@@ -46,7 +46,7 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.IWorkbenchActionConstants;
 
-import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -448,8 +448,8 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 		part.updateUIStatus(canShowBody);
 	}
 
-	private Configuration getConfiguration() {
-		return Router.getInstance().getConfigurationManager().getConfiguration();
+	private Proxies getConfiguration() {
+		return Router.getInstance().getConfigurationManager().getProxies();
 	}
 
 	

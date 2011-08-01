@@ -56,7 +56,7 @@ public class SOAPTabComposite extends BodyTextTabComposite {
 	}
 	
 	protected boolean isBeautifyBody() {
-		return Router.getInstance().getConfigurationManager().getConfiguration().getIndentMessage();
+		return Router.getInstance().getConfigurationManager().getProxies().getIndentMessage();
 	}
 	
 	@Override

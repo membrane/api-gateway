@@ -27,7 +27,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -145,8 +145,8 @@ public class ForwardingRuleEditDialog extends RuleEditDialog {
 
 	@Override
 	protected void updateRule(RuleKey ruleKey, boolean addToManager) throws IOException {
-		((ForwardingRule) rule).setTargetHost(targetComposite.getTargetGroup().getTargetHost());
-		((ForwardingRule) rule).setTargetPort(Integer.parseInt(targetComposite.getTargetGroup().getTargetPort()));
+		((ServiceProxy) rule).setTargetHost(targetComposite.getTargetGroup().getTargetHost());
+		((ServiceProxy) rule).setTargetPort(Integer.parseInt(targetComposite.getTargetGroup().getTargetPort()));
 		rule.setOutboundTLS(targetComposite.getSecureConnection());
 		rule.setInboundTLS(ruleKeyComposite.getSecureConnection());
 		super.updateRule(ruleKey, addToManager);

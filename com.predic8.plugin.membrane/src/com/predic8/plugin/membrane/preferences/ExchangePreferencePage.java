@@ -53,7 +53,7 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 		comp.setLayout(new RowLayout(SWT.VERTICAL));
 		autotrack = new Button(comp, SWT.CHECK);
 		autotrack.setText("Autotrack New Exchanges");
-		autotrack.setSelection(Router.getInstance().getConfigurationManager().getConfiguration().getTrackExchange());
+		autotrack.setSelection(Router.getInstance().getConfigurationManager().getProxies().getTrackExchange());
 
 		return comp;
 	}
@@ -64,7 +64,7 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 
 	@Override
 	protected void performApply() {
-		Router.getInstance().getConfigurationManager().getConfiguration().setTrackExchange(autotrack.getSelection());
+		Router.getInstance().getConfigurationManager().getProxies().setTrackExchange(autotrack.getSelection());
 		try {
 			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 		} catch (Exception e) {
@@ -75,7 +75,7 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 
 	@Override
 	public boolean performOk() {
-		Router.getInstance().getConfigurationManager().getConfiguration().setTrackExchange(autotrack.getSelection());
+		Router.getInstance().getConfigurationManager().getProxies().setTrackExchange(autotrack.getSelection());
 		try {
 			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 		} catch (Exception e) {

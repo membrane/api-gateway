@@ -42,7 +42,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchPreferencePage;
 
-import com.predic8.membrane.core.Configuration;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
@@ -189,8 +189,8 @@ public class SecurityPreferencePage extends PreferencePage implements
 		return getConfiguration().getKeyStoreLocation() == null ? "" : getConfiguration().getKeyStoreLocation();  
 	}
 
-	private Configuration getConfiguration() {
-		return Router.getInstance().getConfigurationManager().getConfiguration();
+	private Proxies getConfiguration() {
+		return Router.getInstance().getConfigurationManager().getProxies();
 	}
 	
 	private String getSavedKeystorePassword() {

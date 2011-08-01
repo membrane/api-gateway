@@ -16,7 +16,7 @@ package com.predic8.plugin.membrane.actions.rules;
 
 import org.eclipse.swt.widgets.Display;
 
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.dialogs.rule.ForwardingRuleEditDialog;
@@ -33,8 +33,8 @@ public class RuleEditAction extends AbstractRuleAction {
 	public void run() {
 		
 		try {
-			if (selectedRule instanceof ForwardingRule) {
-				openRuleDialog(new ForwardingRuleEditDialog(Display.getCurrent().getActiveShell()), (ForwardingRule) selectedRule);
+			if (selectedRule instanceof ServiceProxy) {
+				openRuleDialog(new ForwardingRuleEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedRule);
 
 			} else if (selectedRule instanceof ProxyRule) {
 				openRuleDialog(new ProxyRuleEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedRule);

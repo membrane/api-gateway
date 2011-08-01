@@ -18,7 +18,7 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 
-import com.predic8.membrane.core.rules.ForwardingRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 
 
@@ -30,8 +30,8 @@ public class RuleTableLabelProvider extends LabelProvider implements ITableLabel
 	}
 
 	public String getColumnText(Object element, int columnIndex) {
-		if (element instanceof ForwardingRule) {
-			ForwardingRule rule = (ForwardingRule)element;
+		if (element instanceof ServiceProxy) {
+			ServiceProxy rule = (ServiceProxy)element;
 			switch (columnIndex) {
 			case 0:
 				return rule.getKey().getHost();
