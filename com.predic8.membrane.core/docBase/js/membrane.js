@@ -4,6 +4,14 @@ $(function() {
 	  'sPaginationType': 'full_numbers'
 	});
 	
+	/*	
+	$('table.sortPrio').dataTable({
+	  'bJQueryUI': true,
+	  'sPaginationType': 'full_numbers',
+	  'aaSorting':[[ 1, "desc" ]]
+	});
+	*/
+	
     $('#tabs li').hover(
     	    function () {
     	    	    $(this).addClass("ui-state-hover");
