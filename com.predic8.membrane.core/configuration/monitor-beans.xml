@@ -21,11 +21,9 @@
 	<memoryExchangeStore id="exchangeStore" />
 
 	<transport>
-		<interceptors>
-			<ruleMatching />
-			<dispatching />
-			<exchangeStore name="exchangeStore" />
-		</interceptors>
+		<ruleMatching />
+		<dispatching />
+		<exchangeStore name="exchangeStore" />
 	</transport>
 
 </spring:beans>
