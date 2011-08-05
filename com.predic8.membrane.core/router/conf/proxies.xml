@@ -6,8 +6,12 @@
 <proxies>
 	<!-- Sets up the Administration Web Interface on port 9000-->
 	<serviceProxy name="Console" port="9000">
-		<adminConsole/>
-	</serviceProxy>
+		<basicAuthentication>
+			<user name="admin" password="membrane" />
+		</basicAuthentication>	
+		<accessControl file="conf/acl.xml" />
+		<adminConsole />
+	</serviceProxy>	
 
 	<!-- Startup an HTTP proxy on port 3128. -->
 	<proxy name="HTTP Proxy" port="3128" />
