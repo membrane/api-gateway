@@ -24,25 +24,20 @@ HOW IT IS DONE
 
 This section describes the example in detail.  
 
-First take a look at the rules.xml file.
+First take a look at the regex-url-rewriter.proxies.xml file.
 
-<configuration>
-  <rules>
-    <forwarding-rule name="BLZ without AXIS2"
-                      port="2000">
-      <targetport>80</targetport>
-      <targethost>www.thomas-bayer.com</targethost>
-      <interceptors>
+<proxies>
+	<serviceProxy port="2000">
 		<regExUrlRewriter>
 			<mapping regex="/bank/(.*)" uri="/axis2/$1" />
 		</regExUrlRewriter>
-      </interceptors>
-    </forwarding-rule>
-  </rules>
-</configuration>
+		<target host="www.thomas-bayer.com" port="80" />
+	</serviceProxy>
+</proxies>
 
 
-You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the RegExURLRewriteInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
+
+You will see that there is a serviceProxy that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the RegExURLRewriteInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
 
 Now take a closer look at the regExUrlRewriter element:
 

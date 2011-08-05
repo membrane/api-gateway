@@ -24,7 +24,7 @@ Execute the following steps:
 
 3. Open the URL http://localhost:2000/sqlrest/CUSTOMER/2/ in your browser.
 
-4. Login with the username membrane and the password membrane.
+4. Login with the username alice and the password membrane.
 
 
 
@@ -32,25 +32,20 @@ HOW IT IS DONE
 
 The following part describes the example in detail.  
 
-First take a look at the rules.xml file.
+First take a look at the basic-auth.proxies.xml file.
 
 
-<configuration>
-  <rules>
-    <forwarding-rule name="Basic Authentication" port="2000">
-      <targetport>80</targetport>
-      <targethost>www.thomas-bayer.com</targethost>
-      <interceptors>
+<proxies>
+	<serviceProxy port="2000">
 		<basicAuthentication>
-			<user name="membrane" password="membrane" />
+			<user name="alice" password="membrane" />
 		</basicAuthentication>
-      </interceptors>
-    </forwarding-rule>
-  </rules>
-</configuration>
+		<target host="www.thomas-bayer.com" port="80" />
+	</serviceProxy>
+</proxies>
 
 
-You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the BasicAuthentictionInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
+You will see that there is a serviceProxy that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the BasicAuthentictionInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
 
 Now take a closer look at the basicAuthentication element:
 

@@ -30,29 +30,23 @@ HOW IT IS DONE
 
 The following part describes the example in detail.  
 
-First take a look at the rules.xml file.
+First take a look at the rest2Soap.proxies.xml file.
 
 
-<configuration>
-  <rules>
-    <forwarding-rule name="BLZ REST 2 SOAP" port="2000">
-      <targetport>80</targetport>
-      <targethost>www.thomas-bayer.com</targethost>
-      <interceptors>
+<proxies>
+	<serviceProxy port="2000">
 		<rest2Soap>
-			<mapping regex="/bank/.*" 
-					 soapAction=""
-					 soapURI="/axis2/services/BLZService"
-					 requestXSLT="examples/rest2soap/blz-httpget2soap-request.xsl" 
-					 responseXSLT="examples/rest2soap/strip-soap-envelope.xsl" />
-		</rest2Soap>			
-      </interceptors>
-    </forwarding-rule>
-  </rules>
-</configuration>
+			<mapping regex="/bank/.*" soapAction=""
+				soapURI="/axis2/services/BLZService" requestXSLT="blz-httpget2soap-request.xsl"
+				responseXSLT="strip-soap-envelope.xsl" />
+		</rest2Soap>
+		<target host="www.thomas-bayer.com" port="80" />
+	</serviceProxy>
+</proxies>
 
 
-You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the REST2SOAPInterceptor is set for the rule. The interceptor will be called during the processing of each request.
+
+You will see that there is a serviceProxy that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the REST2SOAPInterceptor is set for the rule. The interceptor will be called during the processing of each request.
 
 Now take a closer look at the rest2Soap element:
 
@@ -61,8 +55,8 @@ Now take a closer look at the rest2Soap element:
 	<mapping regex="/bank/.*" 
 			 soapAction=""
 			 soapURI="/axis2/services/BLZService"
-			 requestXSLT="examples/rest2soap/blz-httpget2soap-request.xsl" 
-			 responseXSLT="examples/rest2soap/strip-soap-envelope.xsl" />
+			 requestXSLT="blz-httpget2soap-request.xsl" 
+			 responseXSLT="strip-soap-envelope.xsl" />
 </rest2Soap>			
 
 

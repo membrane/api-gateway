@@ -31,33 +31,36 @@ HOW IT IS DONE
 
 The following part describes the example in detail.  
 
-First take a look at the rules.xml file.
-
-
-<configuration>
-  <rules>
-    <forwarding-rule name="SQLREST Customer" port="2000">
-      <targetport>80</targetport>
-      <targethost>www.thomas-bayer.com</targethost>
-      <interceptors>
-        <transformation requestXSLT="" responseXSLT="examples/xslt/customer2person.xsl" />
-      </interceptors>
-    </forwarding-rule>
-  </rules>
-</configuration>
+First take a look at the xslt.proxies.xml file.
 
 
 
+<proxies>
+	<serviceProxy port="2000">
+		<response>
+			<transform xslt="customer2person.xsl" />
+		</response>		
+		<target host="www.thomas-bayer.com" port="80" />
+	</serviceProxy>
+</proxies>
 
-You will see that there is a rule that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the XSLTInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
-
-Now take a closer look at the transformation element.
 
 
-<transformation requestXSLT="" responseXSLT="examples/xslt/customer2person.xsl" />
+You will see that there is a serviceProxy that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the XSLTInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
+
+Now take a closer look at the transform element.
 
 
-You can reference stylesheets that will be applied to the request and response with the attributes requestXSLT and responseXSLT. If you leave the attribute blanc or don't specifiy them at all, no transformation will be done. With the above element the interceptor is only configured to apply an XSLT stylesheet to the response. 
+<transform xslt="examples/xslt/customer2person.xsl" />
+
+
+You can reference stylesheets that will be applied to the request and response with the xslt attribute. If you leave the attribute blanc or don't specifiy them at all, no transformation will be done. With the above element the interceptor will apply the specified XSLT stylesheet to the response and request. To limit the transformation only to the request or response use request or response elements to wrap the interceptor. In this example we wrapped the interceptor with an response element so that the transformation is only applied to the response. 
+
+
+<response>
+	<transform xslt="customer2person.xsl" />
+</response>		
+
 
 Take a look at the stylesheet:
 

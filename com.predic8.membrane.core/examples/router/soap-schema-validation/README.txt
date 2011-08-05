@@ -37,19 +37,17 @@ HOW IT IS DONE
 
 The following part describes the example in detail.  
 
-First take a look at the examples/soap-schema-validation/rules.xml file.
+First take a look at the soap-schema-validation.proxies.xml file.
 
-<configuration>
-  <rules>
-    <forwarding-rule name="predic8.com" port="2000">
-      <targetport>8080</targetport>
-      <targethost>predic8.com</targethost>
-      <interceptors>
-        <soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
-      </interceptors>
-    </forwarding-rule>
-  </rules>
-</configuration>
+
+
+<proxies>
+	<serviceProxy port="2000">
+		<soapValidator
+			wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
+		<target host="predic8.com" port="8080" />
+	</serviceProxy>
+</proxies>
 
 
 

@@ -15,10 +15,8 @@
 	<router useClusterManager="true" />
 
 	<transport>
-		<interceptors>
-			<ruleMatching />
-			<dispatching />
-		</interceptors>
+		<ruleMatching />
+		<dispatching />
 	</transport>
 
 </spring:beans>
