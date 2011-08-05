@@ -36,9 +36,9 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	private PreparedStatement stat;
 	
-	private boolean postMethodOnly = false;
+	private boolean postMethodOnly;
 	
-	private boolean soapOnly = false;
+	private boolean soapOnly;
 	
 	private boolean idGenerated;
 	

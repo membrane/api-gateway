@@ -160,7 +160,7 @@ public class Node extends AbstractXmlElement {
 	protected void parseAttributes(XMLStreamReader token) {
 		
 		host = token.getAttributeValue("", "host");
-		port = Integer.parseInt(token.getAttributeValue("", "port"));
+		port = Integer.parseInt(token.getAttributeValue("", "port")!=null?token.getAttributeValue("", "port"):"80");
 	}
 	
 }

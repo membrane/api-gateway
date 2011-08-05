@@ -25,8 +25,11 @@ public class HttpTransportParser extends
 		e.setAttribute("id", "transport");
 
 		bean.addPropertyValue("coreThreadPoolSize", e.getAttribute("coreThreadPoolSize"));
-		bean.addPropertyValue("interceptors", parseInterceptors(DomUtils
-				.getChildElementByTagName(e, "interceptors")));
+		bean.addPropertyValue("socketTimeout", e.getAttribute("socketTimeout"));
+		bean.addPropertyValue("httpClientRetries", e.getAttribute("httpClientRetries"));
+		bean.addPropertyValue("tcpNoDelay", e.getAttribute("tcpNoDelay"));
+		
+		bean.addPropertyValue("interceptors", parseInterceptors(e));
 	}
 
 	private List<BeanDefinition> parseInterceptors(Element e) {

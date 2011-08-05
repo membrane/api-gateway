@@ -156,8 +156,10 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 				log.warn("Target " + dest + " is not reachable. " + e);
 			} catch (UnknownHostException e) {
 				targetRes = new ErrorResponse(500, "Internal Server Error", "Target host " + HttpUtil.getHostName(dest) + " is unknown. DNS was unable to resolve host name.");
-			}
+			}			
 			exchange.setResponse(targetRes);
+			
+			exchange.getRule().addStatusCode(exchange.getResponse().getStatusCode());
 			
 			invokeResponseHandlers(exchange, getInterceptorsReverse(getInterceptors()));
 			invokeResponseHandlers(exchange, getInterceptorsReverse(transport.getBackboneInterceptors()));
@@ -181,6 +183,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		writeResponse(targetRes);
 		exchange.setCompleted();
 		log.debug("exchange set completed");
+		
 	}
 
 }

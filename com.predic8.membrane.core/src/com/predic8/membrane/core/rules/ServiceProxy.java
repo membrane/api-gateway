@@ -83,7 +83,7 @@ public class ServiceProxy extends AbstractRule {
 			GenericConfigElement target = new GenericConfigElement();
 			target.parse(token);
 			targetHost = target.getAttribute("host");
-			targetPort = Integer.parseInt(target.getAttribute("port"));			
+			targetPort = Integer.parseInt(target.getAttributeOrDefault("port","80"));			
 		} else if (Path.ELEMENT_NAME.equals(child)) {
 			key.setUsePathPattern(true);
 			Path p = (Path)(new Path(router)).parse(token);
@@ -95,17 +95,6 @@ public class ServiceProxy extends AbstractRule {
 	}
 	
 	
-	@Override
-	protected void doAfterParsing() {
-		int prio = 1000;
-		for (Interceptor i : interceptors) {
-			if (i.getPriority()==0) {
-				i.setPriority(prio);
-				prio+=100;
-			}
-		}
-	}
-
 	@Override
 	public void write(XMLStreamWriter out)
 			throws XMLStreamException {

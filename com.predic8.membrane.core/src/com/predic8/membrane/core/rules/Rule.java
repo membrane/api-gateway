@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import java.util.List;
+import java.util.*;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -55,5 +55,11 @@ public interface Rule {
 	public String getLocalHost();
 	
 	public void setLocalHost(String localHost);
+	
+	public void addStatusCode(int code);
+
+	public Map<Integer, Integer> getStatusCodes();
+	
+	public int getCount();
 	
 }

@@ -37,6 +37,12 @@ public class GenericConfigElement extends AbstractXmlElement {
 		}
 	}
 
+	public String getAttributeOrDefault(String name, String def) {
+		if (attributes.containsKey(name)) 
+			return attributes.get(name);
+		return ""+def;
+	}
+
 	public String getAttribute(String name) {
 		return attributes.get(name);
 	}

@@ -26,36 +26,33 @@
 		<xsd:complexType>
 			<xsd:complexContent>
 				<xsd:extension base="beans:identifiedType">
-					<xsd:sequence>
-						<xsd:element name="interceptors">
-							<xsd:complexType>
-								<xsd:sequence minOccurs="0" maxOccurs="unbounded">
-									<xsd:choice>
-										<xsd:element name="ruleMatching" type="EmptyElementType" />
-										<xsd:element name="dispatching" type="EmptyElementType" />
-										<xsd:element ref="exchangeStore" />
-										<xsd:element ref="transform" />
-										<xsd:element ref="soapValidator" />
-										<xsd:element ref="regExUrlRewriter" />
-										<xsd:element ref="adminConsole" />
-										<xsd:element ref="webServer" />
-										<xsd:element ref="balancer" />
-										<xsd:element ref="clusterNotification" />
-										<xsd:element ref="basicAuthentication" />
-										<xsd:element ref="accessControl" />
-										<xsd:element ref="wsdlRewriter" />
-										<xsd:element ref="statisticsCSV" />
-										<xsd:element ref="statisticsJDBC" />
-										<xsd:element ref="rest2Soap" />
-										<xsd:element ref="switch" />
-										<xsd:element ref="regExReplacer" />
-										<xsd:element ref="counter" />
-									</xsd:choice>
-								</xsd:sequence>
-							</xsd:complexType>
-						</xsd:element>
+					<xsd:sequence minOccurs="0" maxOccurs="unbounded">
+						<xsd:choice>
+							<xsd:element name="ruleMatching" type="EmptyElementType" />
+							<xsd:element name="dispatching" type="EmptyElementType" />
+							<xsd:element ref="exchangeStore" />
+							<xsd:element ref="transform" />
+							<xsd:element ref="soapValidator" />
+							<xsd:element ref="regExUrlRewriter" />
+							<xsd:element ref="adminConsole" />
+							<xsd:element ref="webServer" />
+							<xsd:element ref="balancer" />
+							<xsd:element ref="clusterNotification" />
+							<xsd:element ref="basicAuthentication" />
+							<xsd:element ref="accessControl" />
+							<xsd:element ref="wsdlRewriter" />
+							<xsd:element ref="statisticsCSV" />
+							<xsd:element ref="statisticsJDBC" />
+							<xsd:element ref="rest2Soap" />
+							<xsd:element ref="switch" />
+							<xsd:element ref="regExReplacer" />
+							<xsd:element ref="counter" />
+						</xsd:choice>
 					</xsd:sequence>
 					<xsd:attribute name="coreThreadPoolSize" default="20" type="xsd:int" />
+					<xsd:attribute name="socketTimeout" default="30000" type="xsd:int" />
+					<xsd:attribute name="tcpNoDelay" default="true" type="xsd:boolean" />
+					<xsd:attribute name="httpClientRetries" default="5" type="xsd:int" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>
@@ -171,12 +168,15 @@
 			<xsd:complexContent>
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence>
-						<xsd:element name="xmlSessionIdExtractor" minOccurs="0">
-							<xsd:complexType>
-								<xsd:attribute name="namespace" type="xsd:string" use="required"/>
-								<xsd:attribute name="localName" type="xsd:string" use="required"/>
-							</xsd:complexType>
-						</xsd:element>
+						<xsd:choice minOccurs="0">
+							<xsd:element name="xmlSessionIdExtractor">
+								<xsd:complexType>
+									<xsd:attribute name="namespace" type="xsd:string" use="required"/>
+									<xsd:attribute name="localName" type="xsd:string" use="required"/>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="jSessionIdExtractor" type="EmptyElementType" />							
+						</xsd:choice>
 						<xsd:element name="nodes" minOccurs="0">
 							<xsd:complexType>
 								<xsd:sequence>

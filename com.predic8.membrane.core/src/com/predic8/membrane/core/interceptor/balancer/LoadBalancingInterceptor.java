@@ -37,7 +37,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	private DispatchingStrategy strategy = new RoundRobinStrategy();
 
-	private XMLElementSessionIdExtractor sessionIdExtractor;
+	private AbstractSessionIdExtractor sessionIdExtractor;
 
 	private boolean failOver = true;
 
@@ -180,12 +180,12 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		}
 	}
 
-	public XMLElementSessionIdExtractor getSessionIdExtractor() {
+	public AbstractSessionIdExtractor getSessionIdExtractor() {
 		return sessionIdExtractor;
 	}
 
 	public void setSessionIdExtractor(
-			XMLElementSessionIdExtractor sessionIdExtractor) {
+			AbstractSessionIdExtractor sessionIdExtractor) {
 		this.sessionIdExtractor = sessionIdExtractor;
 	}
 
@@ -226,7 +226,11 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	protected void parseChildren(XMLStreamReader token, String child)
 			throws Exception {
 		if (token.getLocalName().equals("xmlSessionIdExtractor")) {
-			parseSessionIdExtractor(token);
+			sessionIdExtractor = new XMLElementSessionIdExtractor();
+			sessionIdExtractor.parse(token);
+		} else if (token.getLocalName().equals("jSessionIdExtractor")) {
+			sessionIdExtractor = new JSESSIONIDExtractor();
+			sessionIdExtractor.parse(token);
 		} else if (token.getLocalName().equals("nodes")) {
 			new GenericConfigElement(this).parse(token);
 		} else if (token.getLocalName().equals("node")) {
@@ -254,12 +258,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		RoundRobinStrategy rrStrat = new RoundRobinStrategy();
 		rrStrat.parse(token);
 		strategy = rrStrat;
-	}
-
-	private void parseSessionIdExtractor(XMLStreamReader token)
-			throws Exception {
-		sessionIdExtractor = new XMLElementSessionIdExtractor();
-		sessionIdExtractor.parse(token);
 	}
 
 }

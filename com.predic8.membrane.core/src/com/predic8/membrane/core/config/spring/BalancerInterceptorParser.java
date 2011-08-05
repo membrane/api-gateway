@@ -35,6 +35,9 @@ public class BalancerInterceptorParser extends AbstractParser {
 			
 			if ( "xmlSessionIdExtractor".equals(n.getNodeName())) {
 				parserSessionIdExtractor(b, (Element)n);
+			} else if ( "jSessionIdExtractor".equals(n.getNodeName())) {
+				JSESSIONIDExtractor ext = new JSESSIONIDExtractor();
+				b.addPropertyValue("sessionIdExtractor", ext);
 			} else if ( "nodes".equals(n.getNodeName())) {
 				parserEndpoints(b, (Element)n);
 			} else if ( "byThreadStrategy".equals(n.getNodeName())) {

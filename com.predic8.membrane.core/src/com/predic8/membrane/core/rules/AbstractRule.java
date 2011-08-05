@@ -41,8 +41,8 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	private static Log log = LogFactory.getLog(AbstractRule.class
 			.getName());
 
-	protected String name = "";
-	
+	protected String name = ""; 
+	 
 	protected RuleKey key;
 	
 	protected boolean blockRequest;
@@ -58,6 +58,11 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	 * Used to determine the IP address for outgoing connections
 	 */
 	protected String localHost;
+
+	/** 
+	 * Map<Status Code, Count>
+	 */
+	private Map<Integer, Integer> statusCodes = new Hashtable<Integer, Integer>();
 	
 	private class InOutElement extends AbstractXmlElement {
 		private Interceptor.Flow flow;
@@ -73,7 +78,7 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 		@Override
 		protected void parseChildren(XMLStreamReader token, String child)
 				throws Exception {
-			parseInterceptors(token, child, flow);
+			parseInterceptors(token, child).setFlow(flow);
 		}
 	}
 	
@@ -90,7 +95,7 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	
 	@Override
 	public String toString() { //TODO toString, getName, setName und name="" Initialisierung vereinheitlichen. 
-		if (!"".equals(name))
+		if (name != null && !"".equals(name))
 			return name;
 		
 		return getKey().toString();
@@ -104,8 +109,19 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 		} else if (Pattern.matches("request|response", child)){
 			new InOutElement().parse(token);
 		} else {
-			parseInterceptors(token, child, null);
+			parseInterceptors(token, child);
 		}  
+	}
+	
+	@Override
+	protected void doAfterParsing() {
+		int prio = 1000;
+		for (Interceptor i : interceptors) {
+			if (i.getPriority()==0) {
+				i.setPriority(prio);
+				prio+=100;
+			}
+		}
 	}
 	
 	protected void writeExtension(XMLStreamWriter out)
@@ -135,28 +151,28 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 		new LocalHost(localHost).write(out);
 	}
 	
-	private void parseInterceptors(XMLStreamReader token, String child, Flow flow) throws Exception {
+	private Interceptor parseInterceptors(XMLStreamReader token, String child) throws Exception {
 		Interceptor i = null;
 		if ("interceptor".equals(child)) {
 			i = getInterceptorBId(readInterceptor(token).getId());
 		} else if ("adminConsole".equals(child)) {
 			super.parseChildren(token,child); //ignores element
-			addAdminAndWebServerInterceptor(token);
-			return;
+			return addAdminAndWebServerInterceptor(token);
 		} else {
 			i = getInlinedInterceptor(token, child);
 		}		
-		if (flow != null ) i.setFlow(flow);
 		interceptors.add(i);
+		return i;
 	}
 
-	private void addAdminAndWebServerInterceptor(XMLStreamReader token) {
-		AbstractInterceptor i = new AdminConsoleInterceptor();
+	private Interceptor addAdminAndWebServerInterceptor(XMLStreamReader token) {
+		Interceptor a = new AdminConsoleInterceptor();
+		a.setRouter(router);
+		interceptors.add(a);
+		Interceptor i = new WebServerInterceptor();
 		i.setRouter(router);
 		interceptors.add(i);
-		i = new WebServerInterceptor();
-		i.setRouter(router);
-		interceptors.add(i);
+		return a;
 	}
 
 	private AbstractInterceptor readInterceptor(XMLStreamReader token)
@@ -334,4 +350,24 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	public void setLocalHost(String localHost) {
 		this.localHost = localHost;
 	}	
+	
+	public synchronized void addStatusCode(int code) {
+		if ( !statusCodes.containsKey(code) ) {
+			statusCodes.put(code, 0);
+		}
+		statusCodes.put(code, statusCodes.get(code) + 1 );			
+	}
+
+	public Map<Integer, Integer> getStatusCodes() {
+		return statusCodes;
+	}
+
+	public synchronized int getCount() {
+		int c = 0;
+		for ( int i : statusCodes.values() ) {
+			c += i;
+		}			
+		return c;
+	}
+	
 }

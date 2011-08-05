@@ -65,6 +65,11 @@ public abstract class AbstractXmlElement implements XMLElement {
 		
 	}
 
+	
+	@Override
+	public void write(XMLStreamWriter out) throws XMLStreamException {
+	}
+
 	protected void parseAttributes(XMLStreamReader token)
 			throws Exception {
 
@@ -93,15 +98,6 @@ public abstract class AbstractXmlElement implements XMLElement {
 		return null;
 	};
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see com.predic8.membrane.core.config.XMLElement#write(javax.xml.stream.
-	 * XMLStreamWriter)
-	 */
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-	}
-
 	public String toXml() throws Exception {
 		StringWriter sw = new StringWriter();
 		XMLStreamWriter w = XMLOutputFactory.newInstance()
@@ -114,7 +110,7 @@ public abstract class AbstractXmlElement implements XMLElement {
 
 	protected boolean getBoolean(XMLStreamReader token, String attr) {
 		return "true".equals(token.getAttributeValue(Constants.NS_UNDEFINED,
-				attr)) ? true : false;
+				attr));
 	}
 
 	protected void writeIfNotNull(AbstractXmlElement e, XMLStreamWriter out)

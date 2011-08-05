@@ -31,7 +31,7 @@ public class AdminPageBuilder extends Html {
 
 	public String createPage() throws Exception {
 		html();
-		  createHead("Membrane Administration");
+		  createHead();
 		  body();
 		  	div().id("tabs").classAttr("ui-tabs ui-widget ui-widget-content ui-corner-all");
 			  	createTabs(getSelectedTab());
@@ -44,6 +44,10 @@ public class AdminPageBuilder extends Html {
 		return writer.getBuffer().toString();
 	}
 	
+	protected String getTitle() {
+		return "Membrane Administration";
+	}
+	
 	protected int getSelectedTab() {
 		return 0;
 	}
@@ -52,9 +56,9 @@ public class AdminPageBuilder extends Html {
 	}
 
 
-	protected void createHead(String title) {
+	protected void createHead() {
 		head();
-		    title().text(title).end();
+		    title().text(getTitle()).end();
 			style().attr("type", "text/css").text("@import '/datatables/css/demo_table_jui.css';\n" +
 												  "@import '/jquery-ui/css/custom-theme/jquery-ui-1.8.13.custom.css';"+
 					                              "@import '/css/membrane.css';").end();	
@@ -95,7 +99,7 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createAddFwdRuleForm() {
-		form().id("addFwdRuleForm").action("/admin/frule/save").method("POST");
+		form().id("addFwdRuleForm").action("/admin/service-proxy/save").method("POST");
 			div()
 				.span().text("Name").end()
 				.span().input().type("text").id("name").name("name").classAttr("validate[required]").end(2)
@@ -123,7 +127,7 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createAddProxyRuleForm() {
-		form().id("addProxyRuleForm").action("/admin/prule/save").method("POST");
+		form().id("addProxyRuleForm").action("/admin/proxy/save").method("POST");
 			div()
 				.span().text("Name").end()
 				.span().input().type("text").id("p-name").name("name").classAttr("validate[required]").end(2) //id != name so that validation error reports on the page show of at the right places.
@@ -138,22 +142,23 @@ public class AdminPageBuilder extends Html {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
-					createThs("Name", "Listen Port", "Client Host", "Method","Path","Target Host","Target Port","Actions");
+					createThs("Name", "Listen Port", "Client Host", "Method","Path","Target Host","Target Port","Count","Actions");
 			    end();
 			end();
 			tbody();
 				for (ServiceProxy rule : getForwardingRules()) {
 					tr();
 						td();
-							createLink(rule.toString(), "frule", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
+							createLink(rule.toString(), "service-proxy", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
 						end();
 						createTds(""+rule.getKey().getPort(),
 						             rule.getKey().getHost(),
 						             rule.getKey().getMethod(),
 						             rule.getKey().getPath(),
 						             rule.getTargetHost(),
-						             ""+rule.getTargetPort());
-						td().a().href("/admin/rule/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
+						             ""+rule.getTargetPort(),
+						             ""+rule.getCount());
+						td().a().href("/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
 					end();
 				}
 			end();
@@ -164,17 +169,18 @@ public class AdminPageBuilder extends Html {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
-					createThs("Name", "Listen Port", "Actions");
+					createThs("Name", "Listen Port", "Count", "Actions");
 			    end();
 			end();
 			tbody();
 				for (ProxyRule rule : getProxyRules()) {
 					tr();
 						td();
-							createLink(rule.toString(), "prule", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
+							createLink(rule.toString(), "proxy", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
 						end();
-						createTds(""+rule.getKey().getPort());
-						td().a().href("/admin/rule/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
+						createTds(""+rule.getKey().getPort(),
+								  ""+rule.getCount());
+						td().a().href("/admin/proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
 					end();
 				}
 			end();
@@ -184,15 +190,18 @@ public class AdminPageBuilder extends Html {
 	protected void createTabs(int selected) throws Exception {
 		ul().classAttr("ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all");
 			li().classAttr(getSelectedTabStyle(0, selected));
-				a().href("/admin").text("Rules").end();
+				a().href("/admin").text("ServiceProxies").end();
 			end();
 			li().classAttr(getSelectedTabStyle(1, selected));
-				createLink("Transport", "transport", null, null);
+				createLink("Proxies", "proxy", null, null);
 			end();
 			li().classAttr(getSelectedTabStyle(2, selected));
-				createLink("System", "system", null, null);
+				createLink("Transport", "transport", null, null);
 			end();
 			li().classAttr(getSelectedTabStyle(3, selected));
+				createLink("System", "system", null, null);
+			end();
+			li().classAttr(getSelectedTabStyle(4, selected));
 				createLink("Loadbalancer", "clusters", null, null);
 			end();
 		end();
@@ -261,7 +270,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createStatusNodes(Node n) throws Exception {
+	protected void createStatusCodesTable(Map<Integer, Integer> statusCodes) throws Exception {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
@@ -269,8 +278,8 @@ public class AdminPageBuilder extends Html {
 			    end();
 			end();
 			tbody();
-				synchronized (n.getStatusCodes()) {
-					for (Map.Entry<Integer, Integer> codes : n.getStatusCodes().entrySet() ) {
+				synchronized (statusCodes) {
+					for (Map.Entry<Integer, Integer> codes : statusCodes.entrySet() ) {
 						tr();
 							createTds(""+codes.getKey(), ""+codes.getValue());
 						end();				

@@ -17,15 +17,9 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.http.Message;
 
-public class XMLElementSessionIdExtractor extends AbstractConfigElement {
-
-	public XMLElementSessionIdExtractor() {
-		super(null);
-	}
+public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
 	private static Log log = LogFactory.getLog(XMLElementSessionIdExtractor.class.getName());
 	
@@ -33,10 +27,7 @@ public class XMLElementSessionIdExtractor extends AbstractConfigElement {
 	private String namespace;
 	private XMLInputFactory fac = XMLInputFactory.newInstance();
 	
-	public boolean hasSessionId(Message msg) throws Exception {
-		return getSessionId(msg) != null;
-	}
-		
+	@Override
 	public String getSessionId(Message msg) throws Exception {
 		log.debug("searching for sessionid");
 				
@@ -77,7 +68,6 @@ public class XMLElementSessionIdExtractor extends AbstractConfigElement {
 		this.namespace = namespace;
 	}
 
-	@Override
 	public void write(XMLStreamWriter out)
 			throws XMLStreamException {
 
