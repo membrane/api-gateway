@@ -144,8 +144,9 @@ public class CustomSpringConfigurationTest {
 	}
 
 	private void assertLoadBalancingInterceptor(LoadBalancingInterceptor i) {
-	 	assertEquals("http://chat.predic8.com/", i.getSessionIdExtractor().getNamespace());
-	 	assertEquals("session", i.getSessionIdExtractor().getLocalName());
+		XMLElementSessionIdExtractor ext = (XMLElementSessionIdExtractor)i.getSessionIdExtractor();
+	 	assertEquals("http://chat.predic8.com/", ext.getNamespace());
+	 	assertEquals("session", ext.getLocalName());
 
 	 	assertEquals("localhost", i.getEndpoints().get(0).getHost());
 	 	assertEquals(8080, i.getEndpoints().get(0).getPort());

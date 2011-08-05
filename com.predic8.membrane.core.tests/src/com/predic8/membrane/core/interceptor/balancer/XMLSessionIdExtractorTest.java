@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.http.*;
 
-public class XMLSessionIdExtractorInterceptorTest extends TestCase {
+public class XMLSessionIdExtractorTest extends TestCase {
 	
 
 	@Test

@@ -51,7 +51,9 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 		int status = client.executeMethod(getGetMethod());
 	
-	    assertEquals(401, status);	   
+	    assertEquals(401, status);
+	    
+	    router.getTransport().closeAll();
 	    //TODO Basic Authentication test
 	}
 	

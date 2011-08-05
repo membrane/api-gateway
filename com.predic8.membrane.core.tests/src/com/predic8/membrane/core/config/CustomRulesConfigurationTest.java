@@ -84,6 +84,8 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(), "/proxies/serviceProxy/balancer/byThreadStrategy/@maxNumberOfThreadsPerEndpoint", "10");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/balancer/byThreadStrategy/@retryTimeOnBusy", "1000");		
 
+		assertElement(w.toString(), "/proxies/serviceProxy/balancer/jSessionIdExtractor");		
+
 		assertAttribute(w.toString(), "/proxies/serviceProxy/interceptor/@id", "counter");		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/interceptor/@name", "Counter 2");		
 

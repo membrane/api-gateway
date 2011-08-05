@@ -17,52 +17,53 @@
 			indentMessage="true" 
 			adjustContentLength="true" />
  
-	<transport coreThreadPoolSize="20">
-		<interceptors>
-			<ruleMatching />
-			<dispatching />
-			<exchangeStore name="forgetfulExchangeStore" />
-			<exchangeStore name="memoryExchangeStore" />
-			<exchangeStore name="fileExchangeStore" />
-			<transform xslt="strip.xslt"/>
-			<regExUrlRewriter>
-				<mapping regex="/bank/" uri="/axis2/" />
-			</regExUrlRewriter>
-			<adminConsole />
-			<webServer docBase="docBase" />
-			<balancer>
-				<xmlSessionIdExtractor namespace="http://chat.predic8.com/" localName="session" />
-				<nodes>
-					<node host="localhost" port="8080"/>
-				</nodes>
-				<byThreadStrategy maxNumberOfThreadsPerEndpoint="10" retryTimeOnBusy="1000" />
-			</balancer>
-			<clusterNotification validateSignature="true"
-				keyHex="2324920293" timeout="5000" />
-			<basicAuthentication>
-				<user name="jim" password="password" />
-			</basicAuthentication>
-			<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register" 
-						  port="4000" protocol="http" host="localhost" />
-			<statisticsCSV file="c:\temp\stat.csv" />
-			<rest2Soap>
-				<mapping regex="/bank/.*" 
-						 soapAction=""
-						 soapURI="/axis2/services/BLZService"
-						 requestXSLT="request.xsl" 
-						 responseXSLT="response.xsl" />
-			</rest2Soap>			
-    		<soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
-			<switch>
-				<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
-			</switch>
-			<regExReplacer regex="Hallo" replace="Hello" />
-			<counter name="Node 1"/>
-			<accessControl file="resources/acl/acl.xml"/>
-			<!-- 
-    		<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />
-    		-->
-		</interceptors>
+	<transport coreThreadPoolSize="20" socketTimeout="30000" httpClientRetries="5" tcpNoDelay="true">
+		<ruleMatching />
+		<dispatching />
+		<exchangeStore name="forgetfulExchangeStore" />
+		<exchangeStore name="memoryExchangeStore" />
+		<exchangeStore name="fileExchangeStore" />
+		<transform xslt="strip.xslt"/>
+		<regExUrlRewriter>
+			<mapping regex="/bank/" uri="/axis2/" />
+		</regExUrlRewriter>
+		<adminConsole />
+		<webServer docBase="docBase" />
+		<balancer>
+			<xmlSessionIdExtractor namespace="http://chat.predic8.com/" localName="session" />
+			<nodes>
+				<node host="localhost" port="8080"/>
+			</nodes>
+			<byThreadStrategy maxNumberOfThreadsPerEndpoint="10" retryTimeOnBusy="1000" />
+		</balancer>
+		<balancer>
+			<jSessionIdExtractor />
+		</balancer>
+		<clusterNotification validateSignature="true"
+			keyHex="2324920293" timeout="5000" />
+		<basicAuthentication>
+			<user name="jim" password="password" />
+		</basicAuthentication>
+		<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register" 
+					  port="4000" protocol="http" host="localhost" />
+		<statisticsCSV file="c:\temp\stat.csv" />
+		<rest2Soap>
+			<mapping regex="/bank/.*" 
+					 soapAction=""
+					 soapURI="/axis2/services/BLZService"
+					 requestXSLT="request.xsl" 
+					 responseXSLT="response.xsl" />
+		</rest2Soap>			
+   		<soapValidator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
+		<switch>
+			<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
+		</switch>
+		<regExReplacer regex="Hallo" replace="Hello" />
+		<counter name="Node 1"/>
+		<accessControl file="resources/acl/acl.xml"/>
+		<!-- 
+   		<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />
+   		-->
 	</transport>
 
 	<transform xslt="strip.xslt" />
@@ -73,6 +74,9 @@
 	<webServer docBase="docBase" />
 	<balancer >
 		<roundRobinStrategy />
+	</balancer>
+	<balancer id="balancer2">
+		<jSessionIdExtractor />
 	</balancer>
 	<clusterNotification validateSignature="true"
 		keyHex="2324920293" timeout="5000" />

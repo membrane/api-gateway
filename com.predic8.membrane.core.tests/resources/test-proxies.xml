@@ -1,0 +1,7 @@
+<proxies>
+	<serviceProxy name="Service Proxy" port="2000">
+		<regExReplacer regex="Hallo" replace="Hello" />
+		<target host="www.thomas-bayer.com" port="80" />
+	</serviceProxy>
+</proxies>
+<!--</configuration> -->

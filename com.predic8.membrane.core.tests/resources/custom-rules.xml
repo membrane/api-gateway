@@ -29,7 +29,9 @@
 			</nodes>
 			<byThreadStrategy maxNumberOfThreadsPerEndpoint="10"
 				retryTimeOnBusy="1000" />
-	
+		</balancer>
+		<balancer>
+			<jSessionIdExtractor />
 		</balancer>
 		<soapValidator
 			wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />

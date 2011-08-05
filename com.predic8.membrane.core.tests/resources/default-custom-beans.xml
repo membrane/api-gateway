@@ -14,10 +14,8 @@
 	<router />
  
 	<transport coreThreadPoolSize="20">
-		<interceptors>
-			<ruleMatching />
-			<dispatching />
-		</interceptors>
+		<ruleMatching />
+		<dispatching />
 	</transport>
 
 	<counter name="Counter 2" />

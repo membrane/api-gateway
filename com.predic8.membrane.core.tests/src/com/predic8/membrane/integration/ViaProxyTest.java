@@ -20,8 +20,7 @@ import java.io.InputStream;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.HttpRouter;
@@ -36,13 +35,16 @@ import com.predic8.membrane.core.rules.ProxyRuleKey;
 
 public class ViaProxyTest {
 
+	HttpRouter proxyRouter;
+	HttpRouter router;
+	
 	@Before
 	public void setUp() throws Exception {
-		HttpRouter proxyRouter = new HttpRouter();
+		proxyRouter = new HttpRouter();
 		
 		proxyRouter.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 		
-		HttpRouter router = new HttpRouter();
+		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
 		
 		Proxies config = new Proxies(proxyRouter);
@@ -72,5 +74,9 @@ public class ViaProxyTest {
 		assertEquals(200, client.executeMethod(post));
 	}
 	
-	
+	@After
+	public void tearDown() throws Exception {
+		router.getTransport().closeAll();
+		proxyRouter.getTransport().closeAll();
+	}
 }
