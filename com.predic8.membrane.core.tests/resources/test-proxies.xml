@@ -1,7 +1,20 @@
 <proxies>
-	<serviceProxy name="Service Proxy" port="2000">
-		<regExReplacer regex="Hallo" replace="Hello" />
-		<target host="www.thomas-bayer.com" port="80" />
+	<serviceProxy name="Balancer" port="2000">
+		<balancer>
+			<jSessionIdExtractor/>
+		</balancer>
 	</serviceProxy>
+	
+	<serviceProxy name="Prim Service" port="3000">
+		<target host="localhost" port="80"/>
+	</serviceProxy>
+
+	<serviceProxy name="Console" port="9000">
+		<adminConsole />
+	</serviceProxy>
+	
+	<serviceProxy name="Up/Down Push Interface" port="9010">
+		<clusterNotification />
+	</serviceProxy>
+	
 </proxies>
-<!--</configuration> -->

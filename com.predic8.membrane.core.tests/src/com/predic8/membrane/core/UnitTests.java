@@ -14,19 +14,13 @@
 package com.predic8.membrane.core;
 
 import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.runners.*;
 import org.junit.runners.Suite.SuiteClasses;
 
 import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.http.BodyTest;
-import com.predic8.membrane.core.http.HeaderTest;
-import com.predic8.membrane.core.http.RequestTest;
-import com.predic8.membrane.core.http.ResponseTest;
-import com.predic8.membrane.core.interceptor.AbstractInterceptorTest;
-import com.predic8.membrane.core.interceptor.DispatchingInterceptorTest;
-import com.predic8.membrane.core.interceptor.WSDLInterceptorTest;
-import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
-import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.acl.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
@@ -54,7 +48,6 @@ import com.predic8.membrane.core.xslt.XSLTInterceptorTest;
 	AccessControlInterceptorTest.class,
 	DispatchingInterceptorTest.class,
 	SimpleURLRewriteInterceptorTest.class,
-	AbstractInterceptorTest.class,
 	HostColonPortTest.class,
 	HTTP2XMLInterceptorTest.class,	
 	ReadRulesConfigurationTest.class,

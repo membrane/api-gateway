@@ -30,6 +30,7 @@ import org.junit.Test;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.interceptor.UserFeatureInterceptor;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
@@ -111,10 +112,10 @@ public class LoadBalancingWithClusterManagerTest {
 	}
 
 	private DummyWebServiceInterceptor startNode(int port) throws IOException {
-		HttpRouter node1 = new HttpRouter();
+		HttpRouter node = new HttpRouter();
 		DummyWebServiceInterceptor service1 = new DummyWebServiceInterceptor();
-		node1.getTransport().getInterceptors().add(service1);
-		node1.getRuleManager().addRuleIfNew(new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
+		node.getTransport().getInterceptors().add(service1);
+		node.getRuleManager().addRuleIfNew(new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
 		return service1;
 	}
 

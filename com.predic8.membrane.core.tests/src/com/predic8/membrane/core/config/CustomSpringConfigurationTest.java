@@ -57,8 +57,9 @@ public class CustomSpringConfigurationTest {
 	 	
 	 	List<Interceptor> inters = router.getTransport().getInterceptors();
 	 	
-	 	assertEquals("Dispatching Interceptor", inters.get(0).getDisplayName());
-
+	 	assertEquals("Rule Matching Interceptor", inters.get(0).getDisplayName());
+	 	assertEquals("Dispatching Interceptor", inters.get(1).getDisplayName());
+	 	
 //TODO
 //	 	assertForgetfulExchangeStore(((ExchangeStoreInterceptor)inters.get(1)));
 //	 	assertMemoryExchangeStore(((ExchangeStoreInterceptor)inters.get(2)));
@@ -93,10 +94,7 @@ public class CustomSpringConfigurationTest {
 //	 	assertAccessControlInterceptor((AccessControlInterceptor)inters.get(17));
 	 	
 	 	//assertStatisticsJDBCInterceptor((StatisticsJDBCInterceptor)inters.get(13));
-
-	 	List<Interceptor> backbones = router.getTransport().getBackboneInterceptors();
 	 	
-	 	assertEquals("Rule Matching Interceptor", backbones.get(0).getDisplayName());
 	 	//assertBasicAuthenticationInterceptor((BasicAuthenticationInterceptor) backbones.get(1));
 	}
 

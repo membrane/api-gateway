@@ -56,8 +56,6 @@ public class InterceptorInvocationTest {
 		
 		ruleInterceptorNames = Arrays.asList(new String[] {"Rule 1", "Rule 2", "Rule 3"});
 		
-		backboneInterceptorNames = Arrays.asList(new String[] {"TR Backbone 1", "TR Backbone 2", "TR Backbone 3" });
-		
 		regularInterceptorNames = Arrays.asList(new String[] {"TR Normal 1", "TR Normal 2", "TR Normal 3", "TR Normal 4" });
 		
 		router = createRouter();
@@ -107,16 +105,14 @@ public class InterceptorInvocationTest {
 	
 	private List<String> createInterceptorSequence() {
 		List<String> sequense = new ArrayList<String>();
-		sequense.addAll(backboneInterceptorNames);
-		sequense.addAll(regularInterceptorNames);
 		sequense.addAll(ruleInterceptorNames);
+		sequense.addAll(regularInterceptorNames);
 		return sequense;
 	}
 
 	private HttpRouter createRouter() throws IOException {
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(createForwardingRule());
-		addMockInterceptors(router.getTransport().getBackboneInterceptors(), backboneInterceptorNames);
 		addMockInterceptors(router.getTransport().getInterceptors(), regularInterceptorNames);
 		return router;
 	}

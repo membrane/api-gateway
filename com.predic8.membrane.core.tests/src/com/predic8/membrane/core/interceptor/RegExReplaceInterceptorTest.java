@@ -40,11 +40,6 @@ public class RegExReplaceInterceptorTest {
 		router.getRuleManager().addRuleIfNew(serverRule);
 	}
 	
-	@After
-	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
-	}
-	
 	@Test
 	public void testReplace() throws Exception {
 		HttpClient client = new HttpClient();
@@ -57,5 +52,9 @@ public class RegExReplaceInterceptorTest {
 		
 		assertTrue(new String(method.getResponseBody()).contains("Membrane RegEx Replacement Is Cool"));
 	}
-	
+
+	@After
+	public void tearDown() throws Exception {
+		router.getTransport().closeAll();
+	}	
 }

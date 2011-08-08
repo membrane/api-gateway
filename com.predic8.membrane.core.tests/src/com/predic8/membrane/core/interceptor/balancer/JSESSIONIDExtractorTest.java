@@ -40,6 +40,9 @@ public class JSESSIONIDExtractorTest extends TestCase {
 
 		req.setHeader(getHeader("name=jim;path=root/dir;"));
 		assertEquals(false, extractor.hasSessionId(req));
+
+		req.setHeader(getHeader(null));
+		assertEquals(false, extractor.hasSessionId(req));
 	}
 
 	@Test
@@ -59,12 +62,15 @@ public class JSESSIONIDExtractorTest extends TestCase {
 
 		res.setHeader(getHeader("name=jim;path=root/dir;"));
 		assertEquals(false, extractor.hasSessionId(res));
+
+		res.setHeader(getHeader(null));
+		assertEquals(false, extractor.hasSessionId(res));
 	}
 
 	private Header getHeader(String cookie) {
 		Header h = new Header();
 		h.setContentType("application/soap+xml");
-		h.setValue("Cookie", cookie);
+		if (cookie != null ) h.setValue("Cookie", cookie);
 		return h;
 	}
 
