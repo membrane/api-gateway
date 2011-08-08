@@ -29,8 +29,13 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 	
 	@Override
 	public String getSessionId(Message msg) throws Exception {
+		if ( !msg.isXML() ) {
+			log.debug("Didn't search a XML element in none XML message.");
+			return null;
+		}
+		
 		log.debug("searching for sessionid");
-				
+		
 		fac.setProperty("javax.xml.stream.isNamespaceAware", namespace != null);
 		XMLStreamReader reader = fac.createXMLStreamReader(msg.getBodyAsStream());
 		while ( reader.hasNext() ) {

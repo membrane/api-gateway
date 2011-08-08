@@ -113,8 +113,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	private Node getDispatchedNode(Message msg) throws Exception {
 		String sessionId;
-		if (sessionIdExtractor == null || !msg.isXML()
-				|| (sessionId = getSessionId(msg)) == null) {
+		if (sessionIdExtractor == null || (sessionId = getSessionId(msg)) == null) {
 			log.debug("no session id found.");
 			return strategy.dispatch(this);
 		}

@@ -17,19 +17,32 @@ import java.util.regex.*;
 
 import javax.xml.stream.*;
 
+import org.apache.commons.logging.*;
+
 import com.predic8.membrane.core.http.Message;
 
 public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
+
+	private static Log log = LogFactory.getLog(JSESSIONIDExtractor.class.getName());
 
 	Pattern pattern = Pattern.compile(".*JSESSIONID\\s*=([^;]*)");
 	
 	@Override
 	public String getSessionId(Message msg) throws Exception {
 
-		Matcher m = pattern.matcher(msg.getHeader().getFirstValue("Cookie"));
-
+		String cookie = msg.getHeader().getFirstValue("Cookie");
+		if (cookie == null) {
+			log.debug("no cookie set");
+			return null;
+		}
+		
+		Matcher m = pattern.matcher(cookie);
+		
+		log.debug("cookie: " + msg.getHeader().getFirstValue("Cookie"));
+		
 		if (!m.lookingAt()) return null;
 		
+		log.debug("JSESSION cookie found: "+m.group(1).trim());
 		return m.group(1).trim();
 	}
 	
