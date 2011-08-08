@@ -21,6 +21,7 @@
 	<transport>
 		<ruleMatching />
 		<dispatching />
+		<userFeature />
 	</transport>
 
 </spring:beans>
