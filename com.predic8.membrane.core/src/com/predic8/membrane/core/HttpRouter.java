@@ -18,9 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.io.ConfigurationFileStore;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
@@ -39,10 +37,10 @@ public class HttpRouter extends Router {
 		RuleMatchingInterceptor ruleMatcher = new RuleMatchingInterceptor();
 		ruleMatcher.setRouter(this);
 		
-		interceptors.add(ruleMatcher);
-		
+		interceptors.add(ruleMatcher);		
 		interceptors.add(new DispatchingInterceptor());
-		
+		interceptors.add(new UserFeatureInterceptor());
+
 		transport.setInterceptors(interceptors);
 	}
 	
