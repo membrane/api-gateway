@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor.rewrite;
 
 import java.util.*;
-import java.util.regex.Pattern;
+import java.util.regex.*;
 
 import javax.xml.stream.*;
 
@@ -30,10 +30,17 @@ public class RegExURLRewriteInterceptor extends AbstractInterceptor {
 	public static class Mapping {
 		public String uri;
 		public String regex;
-
+		
+		private Pattern pattern;
+		
 		public Mapping(String regex, String uri) {
 			this.regex = regex;
 			this.uri = uri;
+			pattern = Pattern.compile(".*"+regex);
+		}
+		
+		public boolean matchesSubstring(String input) {
+			return pattern.matcher(input).lookingAt();
 		}
 	}
 
@@ -44,26 +51,36 @@ public class RegExURLRewriteInterceptor extends AbstractInterceptor {
 
 	public RegExURLRewriteInterceptor() {
 		name = "RegEx URL Rewriter";
-		priority = 150;
 	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		String uri = exc.getRequest().getUri();
+	
+		logMappings();
+		
+		ListIterator<String>  it = exc.getDestinations().listIterator();
+		while ( it.hasNext() ) {
+			String dest = it.next();
+			log.debug("destination: " + dest);
+			
+			Mapping mapping = findFirstMatchingRegEx(dest);
+			if (mapping == null)
+				continue;
+			
+			log.debug("match found: " + mapping.regex);
+			log.debug("replacing with: " + mapping.uri);
 
-		log.debug("uri: " + uri);
-
-		Mapping mapping = findFirstMatchingRegEx(uri);
-		if (mapping == null)
-			return Outcome.CONTINUE;
-
-		log.debug("match found: " + mapping.regex);
-		log.debug("replacing with: " + mapping.uri);
-
-		exc.getRequest().setUri(replace(uri, mapping));
+			it.set(replace(dest, mapping));			
+		}
 		return Outcome.CONTINUE;
 	}
 
+	private void logMappings() {
+		for (Mapping m : mappings) {
+			log.debug("[regex:"+m.regex+"],[uri:"+m.uri+"]");
+		}
+	}
+	
 	private String replace(String uri, Mapping mapping) {
 		String replaced = uri.replaceAll(mapping.regex, mapping.uri);
 
@@ -73,9 +90,9 @@ public class RegExURLRewriteInterceptor extends AbstractInterceptor {
 	}
 
 	private Mapping findFirstMatchingRegEx(String uri) {
-		for (Mapping mapping : mappings) {
-			if (Pattern.matches(mapping.regex, uri))
-				return mapping;
+		for (Mapping m : mappings) {
+			if (m.matchesSubstring(uri))
+				return m;
 		}
 		return null;
 	}
