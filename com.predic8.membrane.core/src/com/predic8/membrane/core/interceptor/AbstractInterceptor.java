@@ -23,7 +23,7 @@ import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
 public class AbstractInterceptor extends AbstractConfigElement implements Interceptor {
-
+ 
 	public static final String ELEMENT_NAME = "interceptor";
 	
 	protected String name = this.getClass().getName();
@@ -32,8 +32,6 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	
 	protected String id;
 	
-	protected int priority;
-
 	public AbstractInterceptor() {
 		super(null);
 	}
@@ -97,19 +95,7 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	public void setId(String id) {
 		this.id = id;
 	}
-
-	public int getPriority() {
-		return priority;
-	}
-
-	public void setPriority(int priority) {
-		this.priority = priority;
-	}
 	
-	public int compareTo(Interceptor o) {
-		return this.getPriority() - o.getPriority();
-	}
-
 	public void setFlow(Flow flow) {
 		this.flow = flow;
 	}

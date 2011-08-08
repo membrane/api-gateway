@@ -26,7 +26,6 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	
 	public DispatchingInterceptor() {		
 		name = "Dispatching Interceptor";		
-		priority = 200;
 		setFlow(Flow.REQUEST);
 	}
 	

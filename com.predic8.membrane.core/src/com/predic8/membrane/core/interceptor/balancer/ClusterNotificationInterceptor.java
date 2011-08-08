@@ -28,7 +28,6 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	
 	public ClusterNotificationInterceptor() {
 		name = "ClusterNotifcationInterceptor";
-		priority = 3000;
 	}
 
 	@Override

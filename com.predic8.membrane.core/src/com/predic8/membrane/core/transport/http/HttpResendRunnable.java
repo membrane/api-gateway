@@ -35,7 +35,7 @@ public class HttpResendRunnable extends AbstractHttpRunnable {
 		try {
 			exchange.setRequest(srcReq);
 	
-			invokeRequestHandlers(getInterceptors());
+			invokeRequestHandlers();
 			
 			synchronized (exchange.getRequest()) {
 				if (exchange.getRule().isBlockRequest()) {
@@ -48,7 +48,7 @@ public class HttpResendRunnable extends AbstractHttpRunnable {
 			
 			exchange.setResponse(targetRes);
 
-			invokeResponseHandlers(exchange, getInterceptorsReverse(getInterceptors()));
+			invokeResponseHandlers(exchange);
 
 			synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {

@@ -50,7 +50,6 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	public StatisticsJDBCInterceptor() {
 		name = "JDBC Logging";
-		priority = 500;
 	}
 	
 	public void init() {

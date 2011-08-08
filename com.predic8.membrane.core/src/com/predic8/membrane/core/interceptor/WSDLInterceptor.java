@@ -53,7 +53,6 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	
 	public WSDLInterceptor() {
 		name = "WSDL Rewriting Interceptor";		
-		priority = 400;
 		setFlow(Flow.RESPONSE);
 	}
 	

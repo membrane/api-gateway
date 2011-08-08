@@ -27,37 +27,22 @@ public class Transport {
 
 	protected Set<IPortChangeListener> menuListeners = new HashSet<IPortChangeListener>();
 	
-	private List<Interceptor> backbouneInterceptors = new Vector<Interceptor>();
-	
 	private List<Interceptor> interceptors = new Vector<Interceptor>();
 
 	private Router router;
 	
-	private void setRouterForInterceptors() {
-		for (Interceptor interceptor : backbouneInterceptors) {
-			interceptor.setRouter(router);
-		}
-		
+	private void setRouterForInterceptors() {	
 		for (Interceptor interceptor : interceptors) {
 			interceptor.setRouter(router);
 		}
 	}
 
-	public List<Interceptor> getBackboneInterceptors() {
-		return backbouneInterceptors;
-	}
-	
 	public List<Interceptor> getInterceptors() {
 		return interceptors;
 	}
 
 	public void setInterceptors(List<Interceptor> interceptors) {
-		for (Interceptor interceptor : interceptors) {
-			if (interceptor.getPriority() < 100)
-				backbouneInterceptors.add(interceptor);
-			else
-				this.interceptors.add(interceptor);
-		}
+		this.interceptors = interceptors;
 	}
 
 	public void setRouter(Router router) {

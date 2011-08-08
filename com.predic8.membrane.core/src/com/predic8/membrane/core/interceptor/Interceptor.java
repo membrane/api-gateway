@@ -18,7 +18,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.XMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
-public interface Interceptor extends XMLElement, Comparable<Interceptor> {
+public interface Interceptor extends XMLElement {
 
 	public enum Flow {
 		REQUEST_RESPONSE, REQUEST, RESPONSE;
@@ -40,10 +40,6 @@ public interface Interceptor extends XMLElement, Comparable<Interceptor> {
 	
 	public Router getRouter();
 
-	public int getPriority();
-	
-	public void setPriority(int priority);
-	
 	public void setFlow(Flow flow);	
 	
 	public Flow getFlow();

@@ -37,7 +37,6 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	public RuleMatchingInterceptor() {
 		name = "Rule Matching Interceptor";		
-		priority = 50;
 		setFlow(Flow.REQUEST);
 	}
 	

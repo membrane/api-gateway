@@ -39,7 +39,6 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	public AdminConsoleInterceptor() {
 		name = "Administration";
-		priority = 4000;
 		setFlow(Flow.REQUEST);
 	}
 
@@ -186,9 +185,6 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 			@Override
 			protected void createTabContent() throws Exception {
 				h2().text("Transport").end();
-				
-				h3().text("Backbone Interceptors").end();
-				createInterceptorTable(router.getTransport().getBackboneInterceptors());
 				
 				h3().text("Transport Interceptors").end();
 				createInterceptorTable(router.getTransport().getInterceptors());

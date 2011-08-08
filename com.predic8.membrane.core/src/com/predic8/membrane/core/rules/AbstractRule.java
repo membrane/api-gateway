@@ -113,17 +113,6 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 		}  
 	}
 	
-	@Override
-	protected void doAfterParsing() {
-		int prio = 1000;
-		for (Interceptor i : interceptors) {
-			if (i.getPriority()==0) {
-				i.setPriority(prio);
-				prio+=100;
-			}
-		}
-	}
-	
 	protected void writeExtension(XMLStreamWriter out)
 	throws XMLStreamException {}	
 	

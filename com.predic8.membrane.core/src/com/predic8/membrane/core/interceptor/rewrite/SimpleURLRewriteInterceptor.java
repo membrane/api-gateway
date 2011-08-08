@@ -24,7 +24,6 @@ public class SimpleURLRewriteInterceptor extends AbstractInterceptor {
 	private Map<String, String> mapping;
 
 	public SimpleURLRewriteInterceptor() {
-		priority = 150;
 	}
 	
 	@Override

@@ -35,7 +35,6 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	
 	public WebServerInterceptor() {
 		name = "Web Server";
-		priority = 5000;
 		setFlow(Flow.REQUEST);
 	}
 	

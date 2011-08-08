@@ -37,6 +37,7 @@ import com.predic8.membrane.core.http.xml.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
+import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class REST2SOAPInterceptor extends AbstractInterceptor {
 
@@ -63,7 +64,6 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 	public REST2SOAPInterceptor() {
 		name = "REST 2 SOAP Gateway";
-		priority = 140;
 	}
 
 	@Override
@@ -138,8 +138,19 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	}
 
 	private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {
-		exc.getRequest().setUri(
-				getURI(exc).replaceAll(mapping.regex, mapping.soapURI));
+		exc.getRequest().setUri(getURI(exc).replaceAll(mapping.regex, mapping.soapURI));		
+		
+		String newDestination = getNewDestination(exc);	
+		exc.getDestinations().clear();
+		exc.getDestinations().add(newDestination);
+		
+		log.debug("destination set to: "+ newDestination);
+	}
+
+	private String getNewDestination(AbstractExchange exc) {
+		return "http://"+((ServiceProxy)exc.getRule()).getTargetHost()+
+		   ":"+((ServiceProxy)exc.getRule()).getTargetPort()+
+		   exc.getRequest().getUri();
 	}
 
 	private void transformAndReplaceBody(Message msg, String ss, Source src) throws Exception {
@@ -147,7 +158,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		log.debug("soap-env: " + soapEnv);
 		msg.setBodyContent(soapEnv.getBytes("UTF-8"));
 	}
-
+		
 	private String getURI(AbstractExchange exc) {
 		return exc.getRequest().getUri();
 	}

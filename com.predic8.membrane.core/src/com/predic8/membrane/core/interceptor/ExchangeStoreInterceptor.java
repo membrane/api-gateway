@@ -26,7 +26,6 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	
 	public ExchangeStoreInterceptor() {
 		name = "Exchange Store Interceptor";
-		priority = 300;
 	}
 	
 	@Override

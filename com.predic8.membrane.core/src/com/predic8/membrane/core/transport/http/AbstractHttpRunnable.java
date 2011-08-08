@@ -14,21 +14,14 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.Proxies;
-import com.predic8.membrane.core.TerminateException;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 
@@ -55,21 +48,34 @@ public abstract class AbstractHttpRunnable implements Runnable {
 	protected boolean stop = false;
 	
 
-	protected void invokeRequestHandlers(List<Interceptor> interceptors) throws Exception {
-		for (Interceptor i : interceptors) {
+	protected void invokeRequestHandlers() throws Exception {
+		for (Interceptor i : transport.getInterceptors()) {
+			
+			log.debug("Handler flow: "+i.getDisplayName()+":"+i.getFlow());
+			
 			if (i.getFlow() == Flow.RESPONSE) continue;
-			log.debug("Invoking request handlers: " + i.getDisplayName() + " on exchange: " + exchange);
+			
+			log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exchange);
+			
 			if (i.handleRequest(exchange) == Outcome.ABORT) {
 				throw new AbortException();
 			}
 		}
 	}
 
-	protected void invokeResponseHandlers(Exchange exchange, List<Interceptor> interceptors) throws Exception {
-		for (Interceptor i : interceptors) {
+	protected void invokeResponseHandlers(Exchange exc) throws Exception {
+		
+		for (int j = transport.getInterceptors().size()-1; j >= 0; j--) {
+			
+			Interceptor i = transport.getInterceptors().get(j);
+
+			log.debug("Handler flow: "+i.getDisplayName()+":"+i.getFlow());
+			
 			if (i.getFlow() == Flow.REQUEST) continue;
-			log.debug("Invoking response handlers: " + i.getDisplayName() + " on exchange: " + exchange);
-			if (i.handleResponse(exchange) == Outcome.ABORT) {
+			
+			log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exc);
+			
+			if (i.handleResponse(exc) == Outcome.ABORT) {
 				throw new AbortException();
 			}
 		}
@@ -107,19 +113,6 @@ public abstract class AbstractHttpRunnable implements Runnable {
 		return transport;
 	}
 
-	protected List<Interceptor> getInterceptors() {
-		List<Interceptor> list = new ArrayList<Interceptor>();
-		list.addAll(transport.getInterceptors());
-		list.addAll(exchange.getRule().getInterceptors());
-		Collections.sort(list);
-		return list;
-	}
-	
-	protected List<Interceptor> getInterceptorsReverse(List<Interceptor> list) {
-		Collections.reverse(list);
-		return list;
-	}
-	
 	protected void setClientSettings() {
 		Proxies cfg = transport.getRouter().getConfigurationManager().getProxies();
 		client.setAdjustHostHeader(cfg.getAdjustHostHeader());

@@ -138,8 +138,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
 			
-			invokeRequestHandlers(transport.getBackboneInterceptors());
-			invokeRequestHandlers(getInterceptors());
+			invokeRequestHandlers();
 
 			synchronized (exchange.getRequest()) {
 				if (exchange.getRule().isBlockRequest()) {
@@ -161,8 +160,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 			
 			exchange.getRule().addStatusCode(exchange.getResponse().getStatusCode());
 			
-			invokeResponseHandlers(exchange, getInterceptorsReverse(getInterceptors()));
-			invokeResponseHandlers(exchange, getInterceptorsReverse(transport.getBackboneInterceptors()));
+			invokeResponseHandlers(exchange);
 
 			synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {

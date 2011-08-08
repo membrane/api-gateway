@@ -26,7 +26,7 @@ public class HTTP2XMLInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(HTTP2XMLInterceptor.class.getName());
 
 	public HTTP2XMLInterceptor() {
-		priority = 140;
+		name = "HTTP 2 XML";
 	}
 	
 	@Override

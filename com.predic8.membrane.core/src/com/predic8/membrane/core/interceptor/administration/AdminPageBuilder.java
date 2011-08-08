@@ -85,13 +85,13 @@ public class AdminPageBuilder extends Html {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
-					createThs("Name", "Priority");
+					createThs("Name");
 			    end();
 			end();
 			tbody();
 				for (Interceptor i : interceptors) {
 					tr();
-						createTds(i.getDisplayName(), ""+i.getPriority());								  
+						createTds(i.getDisplayName());								  
 					end();
 				}
 			end();
