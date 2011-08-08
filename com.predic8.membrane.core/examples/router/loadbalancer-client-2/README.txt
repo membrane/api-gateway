@@ -13,7 +13,7 @@ To run the example execute the following steps:
 
 2. Execute 
 
-start router.bat. 
+router.bat. 
 
 This will start 3 web apps and the load balancer.
 
@@ -22,7 +22,7 @@ This will start 3 web apps and the load balancer.
 
 4. Execute 
 
-java -jar lbclient.jar up localhost 4000
+lbclient.bat up localhost 4000
 
 5. Open the URL http://localhost:9000/admin/
 
@@ -32,8 +32,8 @@ java -jar lbclient.jar up localhost 4000
 
 8. Register 2 additional nodes:
 
-java -jar lbclient.jar up localhost 4001
-java -jar lbclient.jar up localhost 4002
+lbclient.bat up localhost 4001
+lbclient.bat up localhost 4002
 
 10. Open the URL http://localhost:8080. 
 
@@ -41,7 +41,7 @@ java -jar lbclient.jar up localhost 4002
 
 12. Execute 
 
-java -jar lbclient.jar down localhost 4000
+lbclient.bat down localhost 4000
 
 13. Open the URL http://localhost:8080 again. After several refreshes, you will notice that no request are directed to node 1 anymore.  
 
@@ -49,11 +49,11 @@ java -jar lbclient.jar down localhost 4000
 
 15. Execute 
 
-start router-secured.bat
+router-secured.bat
 
 16. Execute 
 
-java -jar lbclient.jar up localhost 4000
+lbclient.bat up localhost 4000
 
 The parameters are not encrypted so the operation fails.
 
@@ -65,7 +65,7 @@ The parameters are not encrypted so the operation fails.
 
 19. Execute:
 
-java -jar lbclient.jar up localhost 4000
+lbclient.bat up localhost 4000
 
 This time the parameters will be encrypted.
 
@@ -73,4 +73,4 @@ This time the parameters will be encrypted.
 
 http://localhost:9000/admin/clusters/show?cluster=Default
 
-21. Login with admin/admin and notice the node you created.
+21. Login with alice/admin and notice the node you created.

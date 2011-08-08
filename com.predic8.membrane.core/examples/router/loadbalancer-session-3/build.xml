@@ -11,7 +11,8 @@
 	</path>
 
 	<target name="compile" depends="stubs">
-		<javac includejavaruntime="true" includeantruntime="true" debug="true" classpathref="classpath" srcdir="src" destdir="build/classes" />
+		<javac debug="true" classpathref="classpath" srcdir="src" destdir="build/classes">
+		</javac>
 	</target>
 
 	<target name="stubs" depends="init">
@@ -23,19 +24,19 @@
 	</target>
 
 	<target name="run-node1" depends="compile">
-		<java classpathref="classpath" classname="com.predic8.chat.Server">
+		<java fork="true" classpathref="classpath" classname="com.predic8.chat.Server">
 			<arg line="Node1 4000"/>
 		</java>
 	</target>
 	
 	<target name="run-node2" depends="compile">
-		<java classpathref="classpath" classname="com.predic8.chat.Server">
+		<java fork="true" classpathref="classpath" classname="com.predic8.chat.Server">
 			<arg line="Node2 4001"/>
 		</java>
 	</target>
 
 	<target name="run-client" depends="compile">
-		<java classpathref="classpath" classname="com.predic8.chat.Client" >
+		<java fork="true" classpathref="classpath" classname="com.predic8.chat.Client" >
 			<arg line="${login}"/>
 		</java>
 	</target>
