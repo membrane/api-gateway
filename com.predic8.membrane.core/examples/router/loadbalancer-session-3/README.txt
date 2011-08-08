@@ -11,9 +11,9 @@ To run the example execute the following steps:
 
 1. Go to the examples/loadbalancer-session-3 directory.
 
-2. First we start the router with the following command:
+2. Execute
 
-start router.bat
+router.bat
 
 This will initialize the LoadBalancingInterceptor and associate it with a rule.
 
