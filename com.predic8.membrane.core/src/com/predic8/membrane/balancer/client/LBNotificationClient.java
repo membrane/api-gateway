@@ -1,6 +1,6 @@
 package com.predic8.membrane.balancer.client;
 
-import java.io.FileInputStream;
+import java.io.*;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.util.Properties;
@@ -11,14 +11,16 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.cli.*;
 import org.apache.commons.codec.binary.*;
 import org.apache.commons.logging.*;
-//import org.apache.http.HttpResponse;
-//import org.apache.http.client.methods.HttpGet;
-//import org.apache.http.impl.client.DefaultHttpClient;
+
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.util.MessageUtil;
 
 public class LBNotificationClient {
 
-	private static Log log = LogFactory.getLog(LBNotificationClient.class
-			.getName());
+	private static Log log = LogFactory.getLog(LBNotificationClient.class.getName());
 
 	private String propertiesFile = "client.properties";
 	private String cmd;
@@ -42,17 +44,28 @@ public class LBNotificationClient {
 
 		logArguments();
 
-//		log.debug("URL: " + getRequestURL());
-//		HttpResponse res = new DefaultHttpClient().execute(new HttpGet(
-//				getRequestURL()));
-//
-//		if (getStatusCode(res) != 204) {
-//			throw new Exception("Got StatusCode: " + getStatusCode(res));
-//		}
-//		log.info("Sent " +cmd + " message to "+host+":"+port + (skeySpec!=null?" encrypted":""));
+		Response res = notifiyClusterManager();
+		
+		if (res.getStatusCode() != 204) {
+			throw new Exception("Got StatusCode: " + res.getStatusCode());
+		}
+		
+		log.info("Sent " +cmd + " message to "+host+":"+port + (skeySpec!=null?" encrypted":""));
+	}
+
+	private Response notifiyClusterManager() throws Exception {
+		HttpClient client = new HttpClient();
+		Exchange exc = new Exchange();
+		exc.setRequest(MessageUtil.getPostRequest(getRequestURL()));
+		exc.getDestinations().add(getRequestURL());
+		exc.setRule(new ServiceProxy());
+		Response res = client.call(exc);
+		return res;
 	}
 
 	private void parseArguments(CommandLine cl) throws Exception {
+		if (!new File(propertiesFile).exists()) log.warn("no properties file found at: "+ new File(propertiesFile).getAbsolutePath());
+		
 		cmd = getArgument(cl, 0, '-', null, null,
 				"No command up, down or takeout specified!");
 		host = getArgument(cl, 1, 'H', null, null, "No host name specified!");
@@ -76,7 +89,7 @@ public class LBNotificationClient {
 			return cl.getOptionValue(option);
 		}
 
-		if (prop != null) {
+		if (prop != null && new File(propertiesFile).exists()) {
 			Properties props = new Properties();
 			props.load(new FileInputStream(propertiesFile));
 			if (props.containsKey(prop)) {
@@ -110,13 +123,8 @@ public class LBNotificationClient {
 		Cipher cipher = Cipher.getInstance("AES");
 
 		cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
-		//return Base64.encodeBase64String(cipher.doFinal(getQueryString().getBytes("UTF-8")));
-		return "";
+		return new String(Base64.encodeBase64(cipher.doFinal(getQueryString().getBytes("UTF-8"))),"UTF-8");
 	}
-
-//	private int getStatusCode(HttpResponse res) {
-//		return res.getStatusLine().getStatusCode();
-//	}
 
 	private void logArguments() {
 		log.debug("cmd: " + cmd);
@@ -135,7 +143,7 @@ public class LBNotificationClient {
 				"Sets the host name for the operation.");
 		options.addOption("p", "port", true,
 				"Sets the port for the operation. (Default:80)");
-		options.addOption("c", "clusterManager", true,
+		options.addOption("u", "clusterManager", true,
 				"Sets the url of the cluster manager.");
 		options.addOption("e", "useEncryption", false,
 			"When set the parameters will be encrypted.");
