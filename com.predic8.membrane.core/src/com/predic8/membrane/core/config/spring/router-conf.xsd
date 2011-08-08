@@ -30,6 +30,7 @@
 						<xsd:choice>
 							<xsd:element name="ruleMatching" type="EmptyElementType" />
 							<xsd:element name="dispatching" type="EmptyElementType" />
+							<xsd:element name="userFeature" type="EmptyElementType" />
 							<xsd:element ref="exchangeStore" />
 							<xsd:element ref="transform" />
 							<xsd:element ref="soapValidator" />
