@@ -1,14 +1,9 @@
 package com.predic8.membrane.core.config.spring;
 
-import java.util.*;
-
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptor;
-import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
-import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
 
 public class RegExReplacerInterceptorParser extends AbstractParser {
 

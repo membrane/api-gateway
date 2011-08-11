@@ -46,7 +46,6 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		if ( msg.isBodyEmpty() ) return;
 		msg.setBodyContent(xsltTransformer.transform(ss, new StreamSource(msg.getBodyAsStream())).getBytes("UTF-8"));
 	}
-
 	
 	public String getXslt() {
 		return xslt;
@@ -71,11 +70,6 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	protected void parseAttributes(XMLStreamReader token) {
 		
 		xslt = token.getAttributeValue("", "xslt");
-	}
-	
-	@Override
-	protected String getElementName() {
-		return "transformation";
 	}
 	
 }

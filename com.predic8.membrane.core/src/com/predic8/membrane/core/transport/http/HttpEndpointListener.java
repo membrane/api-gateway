@@ -36,19 +36,18 @@ public class HttpEndpointListener extends Thread {
 	private HttpTransport transport;
 
 	public HttpEndpointListener(int port, HttpTransport transport, boolean tsl) throws IOException {
+		this.transport = transport;
 		if (tsl) {
 			serverSocket = ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault()).createServerSocket(port);
+			return;
 		}
 
-		else {
-			try {
-				serverSocket = new ServerSocket(port);
-			} catch (BindException e) {
-				throw new PortOccupiedException(port);
-			}
+		try {
+			serverSocket = new ServerSocket(port);
+			log.debug("listening at port "+port);
+		} catch (BindException e) {
+			throw new PortOccupiedException(port);
 		}
-
-		this.transport = transport;
 	}
 
 	public void run() {

@@ -110,7 +110,6 @@ public class HttpTransport extends Transport {
 	}
 
 	public void setSocketTimeout(int timeout) {
-		System.err.println("timeout value: " + timeout);
 		this.socketTimeout = timeout;
 	}
 

@@ -82,8 +82,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				log.error(e, e);
 			}
 		} else {
-			log.error("Directory does not exists or file is not a directory: "
-					+ buf.toString());
+			log.error("Directory does not exists or file is not a directory: "+ buf.toString());
 		}
 
 	}
