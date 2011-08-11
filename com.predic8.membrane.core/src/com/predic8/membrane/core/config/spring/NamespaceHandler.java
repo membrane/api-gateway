@@ -26,5 +26,7 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("rest2Soap", new Rest2SoapInterceptorParser());        
         registerBeanDefinitionParser("switch", new SwitchInterceptorParser());        
         registerBeanDefinitionParser("regExReplacer", new RegExReplacerInterceptorParser());        
+        registerBeanDefinitionParser("groovy", new GroovyInterceptorParser());        
+        registerBeanDefinitionParser("throttle", new ThrottleInterceptorParser());        
     }
 }

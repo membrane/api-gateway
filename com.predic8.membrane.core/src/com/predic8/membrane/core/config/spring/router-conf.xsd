@@ -48,6 +48,8 @@
 							<xsd:element ref="switch" />
 							<xsd:element ref="regExReplacer" />
 							<xsd:element ref="counter" />
+							<xsd:element ref="groovy" />
+							<xsd:element ref="throttle" />
 						</xsd:choice>
 					</xsd:sequence>
 					<xsd:attribute name="coreThreadPoolSize" default="20" type="xsd:int" />
@@ -164,6 +166,16 @@
 		</xsd:complexType>
 	</xsd:element>
 
+	<xsd:element name="groovy">
+		<xsd:complexType>
+			<xsd:complexContent mixed="true">
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
 	<xsd:element name="balancer">
 		<xsd:complexType>
 			<xsd:complexContent>
@@ -212,6 +224,19 @@
 					<xsd:sequence />
 					<xsd:attribute name="regex" type="xsd:string" use="required"/>
 					<xsd:attribute name="replace" type="xsd:string" use="required"/>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="throttle">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="delay" type="xsd:long" default="0"/>
+					<xsd:attribute name="maxThreads" type="xsd:int" default="0"/>
+					<xsd:attribute name="busyDelay" type="xsd:int" default="0"/>
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>

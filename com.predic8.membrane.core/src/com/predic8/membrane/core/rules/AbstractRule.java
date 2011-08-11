@@ -29,6 +29,7 @@ import com.predic8.membrane.core.interceptor.administration.AdminConsoleIntercep
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
+import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
 import com.predic8.membrane.core.interceptor.schemavalidation.SoapValidatorInterceptor;
@@ -207,6 +208,10 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 			i = new StatisticsJDBCInterceptor();
 		} else if ("exchangeStore".equals(name)) {
 			i = new ExchangeStoreInterceptor();
+		} else if ("groovy".equals(name)) {
+			i = new GroovyInterceptor();
+		} else if ("throttle".equals(name)) {
+			i = new ThrottleInterceptor();
 		} else {
 			throw new Exception("Unknown interceptor found: "+name);
 		}
