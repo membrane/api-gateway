@@ -16,7 +16,7 @@
 -->
 <project name="Membrane-Router" default="compile-core" basedir=".">
 
-	<property name="version" value="3.0.0" />
+	<property name="version" value="3.0.1" />
 
 	<path id="classpath">
 		<fileset dir="lib">
