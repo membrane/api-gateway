@@ -19,6 +19,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
@@ -195,15 +196,15 @@ public class JDBCUtil {
 	}
 
 	public static boolean isOracleDatabase(DatabaseMetaData metaData) throws SQLException {
-		return metaData.getDatabaseProductName().startsWith("Oracle");
+		return Pattern.matches(".*oracle.*", metaData.getDatabaseProductName().toLowerCase());
 	}
 	
 	public static boolean isMySQLDatabase(DatabaseMetaData metaData) throws SQLException {
-		return metaData.getDatabaseProductName().startsWith("MySQL");
+		return Pattern.matches(".*mysql.*", metaData.getDatabaseProductName().toLowerCase());
 	}
 	
 	public static boolean isDerbyDatabase(DatabaseMetaData metaData) throws SQLException {
-		return metaData.getDatabaseProductName().startsWith("Derby");
+		return Pattern.matches(".*derby.*", metaData.getDatabaseProductName().toLowerCase());
 	}
 	
 	public static boolean tableExists(Connection con, String table) throws SQLException {

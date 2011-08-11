@@ -13,25 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.statistics;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.Statement;
+import java.sql.*;
 
 import javax.sql.DataSource;
 import javax.xml.stream.*;
 
-import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.config.GenericConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 
 public class StatisticsJDBCInterceptor extends AbstractInterceptor {
-
+	private static Log log = LogFactory.getLog(StatisticsJDBCInterceptor.class.getName());
+	
 	private DataSource dataSource;
 	
 	private PreparedStatement stat;
@@ -56,8 +52,9 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		Connection con = null;
 		try {
 			con = dataSource.getConnection();
-			idGenerated = JDBCUtil.isIdGenerated(con.getMetaData());
+			idGenerated = JDBCUtil.isIdGenerated(con.getMetaData());	
 			statString = JDBCUtil.getPreparedInsertStatement(idGenerated);
+			logDatabaseMetaData(con.getMetaData());
 			createTableIfNecessary(con);
 		} catch (Exception e) {
 			throw new RuntimeException("Init for StatisticsJDBCInterceptor failed: " + e.getMessage());
@@ -160,39 +157,14 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 			throws XMLStreamException {
 		
 		out.writeStartElement("statisticsJDBC");
+
 		out.writeAttribute("postMethodOnly", ""+postMethodOnly);
 		out.writeAttribute("soapOnly", ""+soapOnly);
-
-		out.writeStartElement("dataSource");
-		BasicDataSource ds = (BasicDataSource)dataSource;
-		out.writeAttribute("driverClassName", ds.getDriverClassName());
-		out.writeAttribute("url", ds.getUrl());
-		out.writeAttribute("user", ds.getUsername());
-		out.writeAttribute("password", ds.getPassword());
-		out.writeEndElement();
+		out.writeAttribute("dataSourceBeanId", dataSourceBeanId);
 		
 		out.writeEndElement();
 	}
 	
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		if ( "dataSource".equals(child) ) {
-			GenericConfigElement ce = new GenericConfigElement(); 
-			ce.parse(token);
-			BasicDataSource ds = new BasicDataSource();
-			
-			ds.setDriverClassName(ce.getAttribute("driverClassName"));
-			ds.setUrl(ce.getAttribute("url"));
-			ds.setUsername(ce.getAttribute("user"));
-			ds.setPassword(ce.getAttribute("password"));
-			dataSource = ds;
-			init();
-			return;
-		}
-			
-		super.parseChildren(token, child);
-	}
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
 		
@@ -207,5 +179,12 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		init();
 	}
 	
+	private void logDatabaseMetaData(DatabaseMetaData metaData) throws Exception {
+		log.debug("Database metadata:");
+		log.debug("Name: "+metaData.getDatabaseProductName());
+		log.debug("Version: "+metaData.getDatabaseProductVersion());
+		log.debug("idGenerated: "+idGenerated);
+		log.debug("statString: "+statString);
+	}
 	
 }
