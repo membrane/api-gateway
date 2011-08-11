@@ -105,6 +105,12 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(), "/proxies/serviceProxy/request/accessControl/@file", "resources/acl/acl.xml");		
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/exchangeStore/@name", "forgetfulExchangeStore");		
+
+		assertAttribute(w.toString(), "/proxies/serviceProxy/groovy", "exc.setProperty('foo', 'bar');CONTINUE");		
+
+		assertAttribute(w.toString(), "/proxies/serviceProxy/throttle/@delay", "1000");		
+		assertAttribute(w.toString(), "/proxies/serviceProxy/throttle/@maxThreads", "5");		
+		assertAttribute(w.toString(), "/proxies/serviceProxy/throttle/@busyDelay", "3000");		
 		
 //		assertAttribute(w.toString(), "/proxies/serviceProxy/statisticsJDBC/@postMethodOnly", "false");		
 //		assertAttribute(w.toString(), "/proxies/serviceProxy/statisticsJDBC/@soapOnly", "true");		

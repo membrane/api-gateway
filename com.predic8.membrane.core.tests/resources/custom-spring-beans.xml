@@ -36,6 +36,7 @@
 			</nodes>
 			<byThreadStrategy maxNumberOfThreadsPerEndpoint="10" retryTimeOnBusy="1000" />
 		</balancer>
+		<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
 		<balancer>
 			<jSessionIdExtractor />
 		</balancer>
@@ -61,6 +62,7 @@
 		<regExReplacer regex="Hallo" replace="Hello" />
 		<counter name="Node 1"/>
 		<accessControl file="resources/acl/acl.xml"/>
+		<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>		
 		<!-- 
    		<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />
    		-->
@@ -86,7 +88,9 @@
 	<accessControl file="resources/acl/acl.xml"/>
 	<wsdlRewriter />
 	<statisticsCSV file="c:\temp\stat.csv" />
-
+	<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
+	<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
+	
 <!-- 
 	<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />
 -->

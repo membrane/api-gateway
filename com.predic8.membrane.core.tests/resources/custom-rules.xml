@@ -42,11 +42,13 @@
 		</rest2Soap>
 
 		<interceptor id="counter" name="Counter 2" />
+		<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
+		<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
 		<response>	
 			<regExReplacer regex="Hallo" replace="Hello" />
 			<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register"
 				port="4000" protocol="http" host="localhost" />
-		</response>
+		</response>		
 		<target host="www.thomas-bayer.com" port="80" />
 	</serviceProxy>
     <proxy name="HTTP Proxy" port="3128" >

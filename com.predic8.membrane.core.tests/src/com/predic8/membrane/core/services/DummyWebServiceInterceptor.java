@@ -13,12 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.services;
 
+import org.apache.commons.logging.*;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.util.MessageUtil;
 
 public class DummyWebServiceInterceptor extends AbstractInterceptor {
+
+	private static Log log = LogFactory.getLog(DummyWebServiceInterceptor.class.getName());
 
 	public long counter;
 	
@@ -27,6 +32,7 @@ public class DummyWebServiceInterceptor extends AbstractInterceptor {
 		exc.getRequest().readBody();
 		exc.setResponse(MessageUtil.getOKResponse("<aaa></aaa>".getBytes(), "text/xml"));
 		counter ++;
+		log.debug("handle request "+counter);
 		return Outcome.ABORT;
 	}
 	

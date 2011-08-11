@@ -71,7 +71,6 @@ public class LoadBalancingWithClusterManagerTest {
 		sendNotification("up", 4000);
 
 		assertEquals(0, service3.counter);
-		
 		assertEquals(200, post("/getBankwithSession666666.xml")); // goes to service 3
 		assertEquals(2, service1.counter);
 		assertEquals(2, service2.counter);
