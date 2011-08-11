@@ -1,0 +1,6 @@
+<proxies>
+	<serviceProxy port="2000">
+		<throttle delay="1000" />
+		<target host="membrane-soa.org" port="80" />
+	</serviceProxy>
+</proxies>

@@ -15,4 +15,4 @@ set CLASSPATH=%MEMBRANE_HOME%
 set CLASSPATH=%MEMBRANE_HOME%/conf
 set CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar
 echo Membrane Router running...
-java  -classpath %CLASSPATH% com.predic8.membrane.core.Starter -c logging-jdbc.proxies.xml -b jdbc-beans.xml
+java  -classpath %CLASSPATH% com.predic8.membrane.core.Starter -c file-exchangestore.proxies.xml -b file-exchangestore-beans.xml

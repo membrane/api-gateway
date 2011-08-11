@@ -1,0 +1,12 @@
+<proxies>
+	<serviceProxy port="2000">
+		<groovy>
+			if (exc.response)
+				println "response code: $exc.response.statusCode"
+			else if (exc.request)
+				println "request for $exc.request.uri"			
+			CONTINUE
+		</groovy>
+		<target host="membrane-soa.org" port="80" />
+	</serviceProxy>
+</proxies>

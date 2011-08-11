@@ -24,11 +24,6 @@
 		<userFeature />
 	</transport>
 
-  <spring:bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 
-    <spring:property name="driverClassName" value="org.apache.derby.jdbc.ClientDriver"/> 
-    <spring:property name="url" value="jdbc:derby://localhost:1527/membranedb;create=true"/>
-    <spring:property name="username" value="membrane" /> 
-    <spring:property name="password" value="membranemembrane" /> 
-  </spring:bean>
-
+	<fileExchangeStore dir="exchanges"/>
+	
 </spring:beans>
