@@ -226,7 +226,7 @@ public class ProxyDetailsComposite extends GridPanel {
 	private void displayProxyRuleDetails(final ProxyRule rule) {
 		Display.getCurrent().asyncExec(new Runnable() {
 			public void run() {
-				labelTitle.setText("Proxy Rule Description");
+				labelTitle.setText("Proxy Description");
 				labelTargetHost.setText("");
 				targetHost = "";
 				labelTargetPort.setText("");
