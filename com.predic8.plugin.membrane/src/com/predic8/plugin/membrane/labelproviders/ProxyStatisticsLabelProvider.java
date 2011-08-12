@@ -34,23 +34,23 @@ public class ProxyStatisticsLabelProvider extends LabelProvider implements ITabl
 	
 	private NumberFormat nf = NumberFormat.getInstance();
 	
-	private Image ruleProxyImage;
+	private Image proxyImage;
 	
-	private Image ruleForwardingImage;
+	private Image serviceProxyImage;
 	
 	public ProxyStatisticsLabelProvider() {
 		nf.setMaximumFractionDigits(3);
-		ruleProxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PROXY).createImage();
-		ruleForwardingImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_SERVICE_PROXY).createImage();
+		proxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PROXY).createImage();
+		serviceProxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_SERVICE_PROXY).createImage();
 	}
 	
 	public Image getColumnImage(Object element, int columnIndex) {
 		if (columnIndex != 0)
 			return null;
 		if (element instanceof ServiceProxy) {
-			return ruleForwardingImage;
+			return serviceProxyImage;
 		}
-		return ruleProxyImage;
+		return proxyImage;
 	}
 
 	public String getColumnText(Object element, int columnIndex) {
@@ -82,7 +82,7 @@ public class ProxyStatisticsLabelProvider extends LabelProvider implements ITabl
 		case 7:
 			return error;	
 		default:
-			throw new RuntimeException("Rule table viewer must have only 6 columns");
+			throw new RuntimeException("Proxy statistics table viewer must have only 6 columns");
 		}
 	}
 

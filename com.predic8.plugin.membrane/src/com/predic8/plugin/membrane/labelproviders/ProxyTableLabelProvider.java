@@ -46,7 +46,7 @@ public class ProxyTableLabelProvider extends LabelProvider implements ITableLabe
 			case 5:
 				return rule.getTargetPort() + "";
 			default:
-				throw new RuntimeException("Rule table viewer must have only 6 columns for ForwardingRule");
+				throw new RuntimeException("Proxy table viewer must have only 6 columns for Service Proxy");
 			}
 		} else if (element instanceof ProxyRule) {
 			ProxyRule rule = (ProxyRule)element;
@@ -64,11 +64,11 @@ public class ProxyTableLabelProvider extends LabelProvider implements ITableLabe
 			case 5:
 				return "";
 			default:
-				throw new RuntimeException("Rule table viewer must have only 6 columns for ProxyRule");
+				throw new RuntimeException("Proxy table viewer must have only 6 columns for Proxy Rule");
 			}
 		}
 		
-		throw new RuntimeException("Unknown object type: labels are provided only for ProxyRule or ForwardingRule.");
+		throw new RuntimeException("Unknown object type: labels are provided only for Proxy or Service Proxy.");
 	}
 
 	
