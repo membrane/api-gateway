@@ -13,16 +13,16 @@ import com.predic8.plugin.membrane.wizards.AddProxyWizard;
 
 public class ProxiesViewControlsComposite extends ControlsComposite {
 
-	private Rule selectedRule; 
+	private Rule selectedProxy; 
 	
-	private RemoveProxyAction removeRuleAction;
+	private RemoveProxyAction removeProxyAction;
 	
-	private EditProxyAction editRuleAction;
+	private EditProxyAction editProxyAction;
 	
 	public ProxiesViewControlsComposite(Composite parent) {
 		super(parent, SWT.NONE);
-		removeRuleAction = new RemoveProxyAction();
-		editRuleAction = new EditProxyAction();
+		removeProxyAction = new RemoveProxyAction();
+		editProxyAction = new EditProxyAction();
 	}
 
 	
@@ -35,28 +35,28 @@ public class ProxiesViewControlsComposite extends ControlsComposite {
 	
 	@Override
 	public void editButtonPressed() {
-		editRuleAction.setSelectedProxy(selectedRule);
-		editRuleAction.run();
+		editProxyAction.setSelectedProxy(selectedProxy);
+		editProxyAction.run();
 	}
 
 	@Override
 	public void removeButtonPressed() {
-		removeRuleAction.setSelectedProxy(selectedRule);
-		removeRuleAction.run();
+		removeProxyAction.setSelectedProxy(selectedProxy);
+		removeProxyAction.run();
 	}
 
 	@Override
 	public void upButtonPressed() {
-		Router.getInstance().getRuleManager().ruleUp(selectedRule);
+		Router.getInstance().getRuleManager().ruleUp(selectedProxy);
 	}
 	
 	@Override
 	public void downButtonPressed() {
-		Router.getInstance().getRuleManager().ruleDown(selectedRule);
+		Router.getInstance().getRuleManager().ruleDown(selectedProxy);
 	}
 
-	public void setSelectedRule(Rule selectedRule) {
-		this.selectedRule = selectedRule;
+	public void setSelectedProxy(Rule selectedRule) {
+		this.selectedProxy = selectedRule;
 	}
 
 	
