@@ -28,25 +28,25 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class AddProxyWizard extends Wizard {
 
-	private RuleTypeSelectionPage selectionWizardPage = new RuleTypeSelectionPage();
+	private ProxyTypeSelectionPage selectionWizardPage = new ProxyTypeSelectionPage();
 
 	ListenPortConfigurationPage listenPortConfigPage = new ListenPortConfigurationPage();
 
 	private TargetConfigurationPage targetHostConfigPage = new TargetConfigurationPage();
 
-	AdvancedRuleConfigurationPage advancedRuleConfigPage = new AdvancedRuleConfigurationPage();
+	private AdvancedProxyConfigurationPage advancedProxyConfigPage = new AdvancedProxyConfigurationPage();
 
 	private ProxyRuleConfigurationPage proxyRuleConfigPage = new ProxyRuleConfigurationPage();
 	
 	public AddProxyWizard() {
-		setWindowTitle("Add Rule ...");
+		setWindowTitle("Add Proxy ...");
 	}
 
 	@Override
 	public void addPages() {
 		addPage(selectionWizardPage);
 		addPage(listenPortConfigPage);
-		addPage(advancedRuleConfigPage);
+		addPage(advancedProxyConfigPage);
 		addPage(targetHostConfigPage);
 		addPage(proxyRuleConfigPage);
 	}
@@ -66,7 +66,7 @@ public class AddProxyWizard extends Wizard {
 		rule.setTargetHost(targetHostConfigPage.getTargetHost());
 		rule.setTargetPort(Integer.parseInt(targetHostConfigPage.getTargetPort()));
 		rule.setKey(ruleKey);
-		rule.setInboundTLS(advancedRuleConfigPage.getSecureConnection());
+		rule.setInboundTLS(advancedProxyConfigPage.getSecureConnection());
 		rule.setOutboundTLS(targetHostConfigPage.getSecureConnection());
 		
 		getRuleManager().addRuleIfNew(rule);
@@ -91,22 +91,22 @@ public class AddProxyWizard extends Wizard {
 	}
 	
 	private int getListenPort() {
-		return Integer.parseInt(advancedRuleConfigPage.getListenPort());
+		return Integer.parseInt(advancedProxyConfigPage.getListenPort());
 	}
 
 	private String getListenHost() {
-		return advancedRuleConfigPage.getListenHost();
+		return advancedProxyConfigPage.getListenHost();
 	}
 
 	private String getMethod() {
-		return advancedRuleConfigPage.getMethod();
+		return advancedProxyConfigPage.getMethod();
 	}
 
 	ForwardingRuleKey getRuleKey() {
-		if (advancedRuleConfigPage.getUsePathPatter()) {
-			ForwardingRuleKey key = new ForwardingRuleKey(getListenHost(), getMethod(), advancedRuleConfigPage.getPathPattern(), getListenPort());
+		if (advancedProxyConfigPage.getUsePathPatter()) {
+			ForwardingRuleKey key = new ForwardingRuleKey(getListenHost(), getMethod(), advancedProxyConfigPage.getPathPattern(), getListenPort());
 			key.setUsePathPattern(true);
-			key.setPathRegExp(advancedRuleConfigPage.isRegExp());
+			key.setPathRegExp(advancedProxyConfigPage.isRegExp());
 			return key;
 		} 
 		return  new ForwardingRuleKey(getListenHost(), getMethod(), ".*", getListenPort());
@@ -128,7 +128,7 @@ public class AddProxyWizard extends Wizard {
 		return ((HttpTransport) Router.getInstance().getTransport());
 	}
 	
-	void addRule() throws IOException {
+	void addProxy() throws IOException {
 		createForwardingRule(getRuleKey());
 	}
 

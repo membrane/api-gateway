@@ -21,7 +21,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
-public class RuleTypeSelectionPage extends AbstractProxyWizardPage {
+public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 
 	public static final String PAGE_NAME = "Type Selection";
 	
@@ -31,7 +31,7 @@ public class RuleTypeSelectionPage extends AbstractProxyWizardPage {
 	
 	protected Button btProxyRule;
 	
-	protected RuleTypeSelectionPage() {
+	protected ProxyTypeSelectionPage() {
 		super(PAGE_NAME);
 		setTitle(" Add new Rule for a ");
 	}
@@ -77,7 +77,7 @@ public class RuleTypeSelectionPage extends AbstractProxyWizardPage {
 		if (btSimpleRule.getSelection()) {
 			return getWizard().getPage(ListenPortConfigurationPage.PAGE_NAME);
 		} else if (btAdvancedRule.getSelection()) {
-			return getWizard().getPage(AdvancedRuleConfigurationPage.PAGE_NAME);
+			return getWizard().getPage(AdvancedProxyConfigurationPage.PAGE_NAME);
 		}
 		return getWizard().getPage(ProxyRuleConfigurationPage.PAGE_NAME);
 	}

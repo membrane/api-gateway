@@ -126,12 +126,12 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 			return wizard.listenPortConfigPage.performFinish(wizard);
 		}
 
-		if (getPreviousPage().getName().equals(AdvancedRuleConfigurationPage.PAGE_NAME)) {
+		if (getPreviousPage().getName().equals(AdvancedProxyConfigurationPage.PAGE_NAME)) {
 
 			if (wizard.checkIfSimilarRuleExists())
 				return false;
 
-			wizard.addRule();
+			wizard.addProxy();
 		}
 		return true;
 	}

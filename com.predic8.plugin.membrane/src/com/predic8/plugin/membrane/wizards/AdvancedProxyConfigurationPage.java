@@ -27,13 +27,13 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.components.RuleKeyGroup;
 
-public class AdvancedRuleConfigurationPage extends SecurityWizardPage {
+public class AdvancedProxyConfigurationPage extends SecurityWizardPage {
 
 	public static final String PAGE_NAME = "Advanced Rule Configuration";
 	
 	RuleKeyGroup ruleKeyGroup;
 	
-	protected AdvancedRuleConfigurationPage() {
+	protected AdvancedProxyConfigurationPage() {
 		super(PAGE_NAME);
 		setTitle("Advanced Rule");
 		setDescription("Specify all rule configuration parameters");
