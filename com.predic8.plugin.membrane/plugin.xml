@@ -169,11 +169,11 @@
             </command>
          </menu>
          <menu
-               label="Rules">
+               label="Proxies">
             <command
-                  commandId="addRule"
+                  commandId="addProxy"
                   icon="icons/add_rule.png"
-                  label="&amp;Add Rule"
+                  label="&amp;Add  ProxyRule"
                   style="push">
             </command>
          </menu>
@@ -185,9 +185,9 @@
                   visible="true">
             </separator>
             <command
-                  commandId="showRuleStatistics"
+                  commandId="showProxyStatistics"
                   icon="icons/calculator.png"
-                  label="Show Rule Statistics"
+                  label="Show Proxy Statistics"
                   style="push">
             </command>
             <command
@@ -197,9 +197,9 @@
                   style="push">
             </command>
             <command
-                  commandId="showRules"
+                  commandId="showProxies"
                   icon="icons/report_key.png"
-                  label="Show Rules"
+                  label="Show Proxies"
                   style="push">
             </command>
             <command
@@ -221,7 +221,7 @@
          <toolbar
                id="com.predic8.plugin.membrane.toolbar">
             <command
-                  commandId="addRule"
+                  commandId="addProxy"
                   icon="icons/add_rule.png"
                   style="push">
             </command>
@@ -244,12 +244,12 @@
                   visible="true">
             </separator>
             <command
-                  commandId="showRules"
+                  commandId="showProxies"
                   icon="icons/report_key.png"
                   style="push">
             </command>
             <command
-                  commandId="showRuleStatistics"
+                  commandId="showProxyStatistics"
                   icon="icons/calculator.png"
                   style="push">
             </command>
@@ -274,14 +274,14 @@
             name="Save Configuration">
       </command>
       <command
-            defaultHandler="com.predic8.plugin.membrane.commands.AddRuleCommand"
-            id="addRule"
-            name="&amp;Add Rule">
+            defaultHandler="com.predic8.plugin.membrane.commands.AddProxyCommand"
+            id="addProxy"
+            name="&amp;Add Proxy">
       </command>
       <command
-            defaultHandler="com.predic8.plugin.membrane.commands.ShowRuleStatisticsCommand"
-            id="showRuleStatistics"
-            name="Show Rule Statistics">
+            defaultHandler="com.predic8.plugin.membrane.commands.ShowProxyStatisticsCommand"
+            id="showProxyStatistics"
+            name="Show Proxy Statistics">
       </command>
       <command
             defaultHandler="com.predic8.plugin.membrane.commands.ShowExchangesCommand"
@@ -289,9 +289,9 @@
             name="Show Exchanges">
       </command>
       <command
-            defaultHandler="com.predic8.plugin.membrane.commands.ShowRulesCommand"
-            id="showRules"
-            name="Show Rules">
+            defaultHandler="com.predic8.plugin.membrane.commands.ShowProxiesCommand"
+            id="showProxies"
+            name="Show Proxies">
       </command>
       <command
             defaultHandler="com.predic8.plugin.membrane.commands.ExitCommand"

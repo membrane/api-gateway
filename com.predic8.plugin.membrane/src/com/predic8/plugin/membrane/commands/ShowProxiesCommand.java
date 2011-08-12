@@ -22,11 +22,11 @@ import com.predic8.plugin.membrane.PluginUtil;
 import com.predic8.plugin.membrane.views.ProxiesView;
 
 
-public class ShowRulesCommand extends AbstractHandler {
+public class ShowProxiesCommand extends AbstractHandler {
 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		ProxiesView rulesView = (ProxiesView)PluginUtil.showView(ProxiesView.VIEW_ID);
-		rulesView.setInputForTable(Router.getInstance().getRuleManager());
+		ProxiesView proxiesView = (ProxiesView)PluginUtil.showView(ProxiesView.VIEW_ID);
+		proxiesView.setInputForTable(Router.getInstance().getRuleManager());
 		
 		return null;
 	}

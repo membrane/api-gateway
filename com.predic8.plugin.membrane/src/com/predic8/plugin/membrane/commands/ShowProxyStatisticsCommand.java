@@ -21,11 +21,11 @@ import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.PluginUtil;
 import com.predic8.plugin.membrane.views.ProxyStatisticsView;
 
-public class ShowRuleStatisticsCommand extends AbstractHandler {
+public class ShowProxyStatisticsCommand extends AbstractHandler {
 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		ProxyStatisticsView ruleStatisticsView = (ProxyStatisticsView) PluginUtil.showView(ProxyStatisticsView.VIEW_ID);
-		ruleStatisticsView.setInputForTable(Router.getInstance().getRuleManager());
+		ProxyStatisticsView proxyStatisticsView = (ProxyStatisticsView) PluginUtil.showView(ProxyStatisticsView.VIEW_ID);
+		proxyStatisticsView.setInputForTable(Router.getInstance().getRuleManager());
 		return null;
 	}
 

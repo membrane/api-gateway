@@ -22,10 +22,10 @@ import org.eclipse.swt.widgets.Display;
 import com.predic8.plugin.membrane.wizards.AddProxyWizard;
 
 
-public class AddRuleCommand extends AbstractHandler {
+public class AddProxyCommand extends AbstractHandler {
 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		//TODO copied from RulesViewControlsComposite, does the same as clicking the Button
+		//TODO copied from ProxiesViewControlsComposite, does the same as clicking the Button
 		WizardDialog wizardDialog = new WizardDialog(Display.getCurrent().getActiveShell(), new AddProxyWizard());
 		wizardDialog.create();
 		wizardDialog.open();
