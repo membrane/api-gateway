@@ -45,8 +45,8 @@ public class ProxyDetailsComposite extends GridPanel {
 	Label labelPath;
 	Label labelHost;
 
-	Group ruleGroup;
-	Group ruleTargetGroup;
+	Group proxyGroup;
+	Group proxyTargetGroup;
 
 	private String targetHost = "";
 
@@ -66,33 +66,33 @@ public class ProxyDetailsComposite extends GridPanel {
 		
 		
 		labelTitle = new Label(compositeText, SWT.NONE);
-		labelTitle.setText("Rule Description");
+		labelTitle.setText("Proxy Description");
 		labelTitle.setLayoutData(wgd);
 
 		createLabelSeparator(compositeText, wgd);
 
 		new Label(compositeText, SWT.NONE).setLayoutData(wgd);
 
-		ruleGroup = createRuleGroup(compositeText);
+		proxyGroup = createProxyGroup(compositeText);
 
-		labelHost = new Label(ruleGroup, SWT.NONE);
+		labelHost = new Label(proxyGroup, SWT.NONE);
 		labelHost.setLayoutData(wgd);
 		
-		labelListenPort = new Label(ruleGroup, SWT.NONE);
+		labelListenPort = new Label(proxyGroup, SWT.NONE);
 		labelListenPort.setLayoutData(wgd);
 		
-		labelMethod = new Label(ruleGroup, SWT.NONE);
+		labelMethod = new Label(proxyGroup, SWT.NONE);
 		labelMethod.setLayoutData(wgd);
 		
-		labelPath = new Label(ruleGroup, SWT.NONE);
+		labelPath = new Label(proxyGroup, SWT.NONE);
 		labelPath.setLayoutData(wgd);
 		
-		ruleTargetGroup = createRuleTargetGroup(compositeText);
+		proxyTargetGroup = createProxyTargetGroup(compositeText);
 
-		labelTargetHost = new Label(ruleTargetGroup, SWT.NONE);
+		labelTargetHost = new Label(proxyTargetGroup, SWT.NONE);
 		labelTargetHost.setLayoutData(wgd);
 		
-		labelTargetPort = new Label(ruleTargetGroup, SWT.NONE);
+		labelTargetPort = new Label(proxyTargetGroup, SWT.NONE);
 		labelTargetPort.setLayoutData(wgd);
 		
 		final Composite compositeCanvas = new Composite(this, SWT.NONE);
@@ -146,9 +146,9 @@ public class ProxyDetailsComposite extends GridPanel {
 		label.setLayoutData(gd);
 	}
 
-	private Group createRuleGroup(Composite groupComposite) {
+	private Group createProxyGroup(Composite groupComposite) {
 		Group group = new Group(groupComposite, SWT.NONE);
-		group.setText("Rule Key");
+		group.setText("Key");
 		
 		GridData gData = new GridData(GridData.VERTICAL_ALIGN_BEGINNING | GridData.FILL_HORIZONTAL);
 		gData.grabExcessHorizontalSpace = true;
@@ -161,7 +161,7 @@ public class ProxyDetailsComposite extends GridPanel {
 		return group;
 	}
 
-	private Group createRuleTargetGroup(Composite groupComposite) {
+	private Group createProxyTargetGroup(Composite groupComposite) {
 		Group group = new Group(groupComposite, SWT.NONE);
 		group.setText("Target");
 		GridData gData = new GridData(GridData.VERTICAL_ALIGN_BEGINNING | GridData.FILL_HORIZONTAL);
@@ -200,17 +200,17 @@ public class ProxyDetailsComposite extends GridPanel {
 			return;
 		}
 		if (rule instanceof ServiceProxy) {
-			displayForwardingRuleDetails((ServiceProxy) rule);
+			displayServiceProxyDetails((ServiceProxy) rule);
 		} else if (rule instanceof ProxyRule) {
 			displayProxyRuleDetails((ProxyRule) rule);
 		}
 		update();
 	}
 
-	private void displayForwardingRuleDetails(final ServiceProxy rule) {
+	private void displayServiceProxyDetails(final ServiceProxy rule) {
 		Display.getCurrent().asyncExec(new Runnable() {
 			public void run() {
-				labelTitle.setText("Forwarding Rule Description");				
+				labelTitle.setText("Service Proxy Description");				
 				labelTargetHost.setText("Target Host:   " + rule.getTargetHost());
 				targetHost = rule.getTargetHost();
 				hostCharacters = new char[targetHost.length()];
