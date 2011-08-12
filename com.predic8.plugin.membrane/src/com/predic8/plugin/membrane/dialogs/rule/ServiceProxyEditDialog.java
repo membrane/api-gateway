@@ -37,13 +37,13 @@ import com.predic8.plugin.membrane.dialogs.rule.composites.RuleGeneralInfoTabCom
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleTargetTabComposite;
 
-public class ForwardingRuleEditDialog extends RuleEditDialog {
+public class ServiceProxyEditDialog extends ProxyEditDialog {
 
 	private RuleTargetTabComposite targetComposite;
 
 	private ForwardingRuleKeyTabComposite ruleKeyComposite;
 
-	public ForwardingRuleEditDialog(Shell parentShell) {
+	public ServiceProxyEditDialog(Shell parentShell) {
 		super(parentShell);
 
 	}

@@ -19,9 +19,9 @@ import org.eclipse.swt.widgets.Display;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.dialogs.rule.ForwardingRuleEditDialog;
+import com.predic8.plugin.membrane.dialogs.rule.ServiceProxyEditDialog;
 import com.predic8.plugin.membrane.dialogs.rule.ProxyRuleEditDialog;
-import com.predic8.plugin.membrane.dialogs.rule.RuleEditDialog;
+import com.predic8.plugin.membrane.dialogs.rule.ProxyEditDialog;
 
 public class EditProxyAction extends AbstractProxyAction {
 
@@ -34,17 +34,17 @@ public class EditProxyAction extends AbstractProxyAction {
 		
 		try {
 			if (selectedProxy instanceof ServiceProxy) {
-				openRuleDialog(new ForwardingRuleEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedProxy);
+				openProxyDialog(new ServiceProxyEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedProxy);
 
 			} else if (selectedProxy instanceof ProxyRule) {
-				openRuleDialog(new ProxyRuleEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedProxy);
+				openProxyDialog(new ProxyRuleEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedProxy);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 	}
 
-	private void openRuleDialog(RuleEditDialog dialog, Rule rule) {
+	private void openProxyDialog(ProxyEditDialog dialog, Rule rule) {
 		if (dialog.getShell() == null) {
 			dialog.create();
 		}

@@ -37,7 +37,7 @@ import com.predic8.plugin.membrane.dialogs.rule.composites.RuleGeneralInfoTabCom
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
-public abstract class RuleEditDialog extends Dialog {
+public abstract class ProxyEditDialog extends Dialog {
 
 	protected Rule rule;
 	
@@ -49,7 +49,7 @@ public abstract class RuleEditDialog extends Dialog {
 	
 	protected RuleInterceptorTabComposite interceptorsComposite;
 	
-	protected RuleEditDialog(Shell parentShell) {
+	protected ProxyEditDialog(Shell parentShell) {
 		super(parentShell);
 	}
 
