@@ -17,11 +17,11 @@ import org.eclipse.jface.action.Action;
 
 import com.predic8.membrane.core.rules.Rule;
 
-public abstract class AbstractRuleAction extends Action {
+public abstract class AbstractProxyAction extends Action {
 
 	protected Rule selectedRule;
 	
-	public AbstractRuleAction(String id, String text) {
+	public AbstractProxyAction(String id, String text) {
 		setId(id);
 		setText(text);
 		setEnabled(false);

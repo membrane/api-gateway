@@ -48,25 +48,25 @@ import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.actions.exchanges.RemoveAllExchangesAction;
-import com.predic8.plugin.membrane.actions.rules.RemoveRuleAction;
-import com.predic8.plugin.membrane.actions.rules.RenameRuleAction;
-import com.predic8.plugin.membrane.actions.rules.AbstractRuleAction;
-import com.predic8.plugin.membrane.actions.rules.RuleEditAction;
-import com.predic8.plugin.membrane.actions.views.ShowRuleDetailsViewAction;
-import com.predic8.plugin.membrane.celleditors.RuleNameCellEditorModifier;
-import com.predic8.plugin.membrane.components.composites.RulesViewControlsComposite;
-import com.predic8.plugin.membrane.contentproviders.RulesViewContentProvider;
-import com.predic8.plugin.membrane.labelproviders.RulesViewLabelProvider;
+import com.predic8.plugin.membrane.actions.rules.RemoveProxyAction;
+import com.predic8.plugin.membrane.actions.rules.RenameProxyAction;
+import com.predic8.plugin.membrane.actions.rules.AbstractProxyAction;
+import com.predic8.plugin.membrane.actions.rules.EditProxyAction;
+import com.predic8.plugin.membrane.actions.views.ShowProxyDetailsViewAction;
+import com.predic8.plugin.membrane.celleditors.ProxyNameCellEditorModifier;
+import com.predic8.plugin.membrane.components.composites.ProxiesViewControlsComposite;
+import com.predic8.plugin.membrane.contentproviders.ProxiesViewContentProvider;
+import com.predic8.plugin.membrane.labelproviders.ProxiesViewLabelProvider;
 
-public class RulesView extends AbstractRulesView {
+public class ProxiesView extends AbstractProxiesView {
 
-	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.RulesView";
+	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.ProxiesView";
 
-	private RulesViewControlsComposite controlsComposite;
+	private ProxiesViewControlsComposite controlsComposite;
 	
-	protected RuleNameCellEditorModifier cellEditorModifier;
+	protected ProxyNameCellEditorModifier cellEditorModifier;
 	
-	protected List<AbstractRuleAction> actions = new ArrayList<AbstractRuleAction>();
+	protected List<AbstractProxyAction> actions = new ArrayList<AbstractProxyAction>();
 	
 	@Override
 	public void createPartControl(Composite parent) {
@@ -74,7 +74,7 @@ public class RulesView extends AbstractRulesView {
 
 		createTableViewer(composite);
 	
-		controlsComposite = new RulesViewControlsComposite(composite);
+		controlsComposite = new ProxiesViewControlsComposite(composite);
 		
 		createCommentLabel(composite);
 		
@@ -88,16 +88,16 @@ public class RulesView extends AbstractRulesView {
 	
 	
 	protected void createActions () {
-		actions.add(new RemoveRuleAction());
-		actions.add(new RuleEditAction());
+		actions.add(new RemoveProxyAction());
+		actions.add(new EditProxyAction());
 		actions.add(new RemoveAllExchangesAction());
-		actions.add(new RenameRuleAction(tableViewer));
-		actions.add(new ShowRuleDetailsViewAction());
+		actions.add(new RenameProxyAction(tableViewer));
+		actions.add(new ShowProxyDetailsViewAction());
 	}
 	
 	protected void addTableMenu() {
 		MenuManager menuManager = new MenuManager();
-		for (AbstractRuleAction action : actions) {
+		for (AbstractProxyAction action : actions) {
 			menuManager.add(action);
 		}
 		tableViewer.getControl().setMenu(menuManager.createContextMenu(tableViewer.getControl()));
@@ -105,7 +105,7 @@ public class RulesView extends AbstractRulesView {
 	}
 	
 	private void enableActions(boolean enabled) {
-		for (AbstractRuleAction action : actions) {
+		for (AbstractProxyAction action : actions) {
 			action.setEnabled(enabled);
 		}
 	}
@@ -125,7 +125,7 @@ public class RulesView extends AbstractRulesView {
 
 	private void createCommentLabel(Composite composite) {
 		Label label = new Label(composite, SWT.NONE);
-		label.setText("Rules are evaluated in top-down direction.");
+		label.setText("Proxies are evaluated in top-down direction.");
 		GridData gData = new GridData();
 		gData.horizontalSpan = 2;
 		label.setLayoutData(gData);
@@ -133,12 +133,12 @@ public class RulesView extends AbstractRulesView {
 
 	@Override
 	protected IBaseLabelProvider createLabelProvider() {
-		return new RulesViewLabelProvider();
+		return new ProxiesViewLabelProvider();
 	}
 	
 	@Override
 	protected IContentProvider createContentProvider() {
-		return new RulesViewContentProvider();
+		return new ProxiesViewContentProvider();
 	}
 	
 	@Override
@@ -156,7 +156,7 @@ public class RulesView extends AbstractRulesView {
 	
 	protected void addCellEditorsAndModifiersToViewer() {
 		setCellEditorForTableViewer(tableViewer);
-		cellEditorModifier = new RuleNameCellEditorModifier();
+		cellEditorModifier = new ProxyNameCellEditorModifier();
 		cellEditorModifier.setTableViewer(tableViewer);
 		tableViewer.setCellModifier(cellEditorModifier);
 
@@ -178,15 +178,15 @@ public class RulesView extends AbstractRulesView {
 				}
 				controlsComposite.enableDependentButtons(true);
 				
-				setSelectedRule((Rule)selection.getFirstElement());
+				setSelectedProxy((Rule)selection.getFirstElement());
 			}
 			
-			private void setSelectedRule(Rule selectedRule) {
-				for (AbstractRuleAction action : actions) {
-					action.setSelectedRule(selectedRule);
+			private void setSelectedProxy(Rule selectedProxy) {
+				for (AbstractProxyAction action : actions) {
+					action.setSelectedRule(selectedProxy);
 				}
-				controlsComposite.setSelectedRule(selectedRule);
-				updatedetailsViewIfVisible(selectedRule);
+				controlsComposite.setSelectedRule(selectedProxy);
+				updateDetailsViewIfVisible(selectedProxy);
 			}
 			
 		};
@@ -205,14 +205,14 @@ public class RulesView extends AbstractRulesView {
 		};
 	}
 	
-	private void updatedetailsViewIfVisible(Rule selectedRule) {
+	private void updateDetailsViewIfVisible(Rule selectedProxy) {
 		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-		IViewPart part = page.findView(RuleDetailsView.VIEW_ID);
+		IViewPart part = page.findView(ProxyDetailsView.VIEW_ID);
 		if (part == null || !page.isPartVisible(part)) 
 			return;
 		
-		RuleDetailsView ruleView = (RuleDetailsView)part;
-		ruleView.setRuleToDisplay(selectedRule);
+		ProxyDetailsView proxyDetailsView = (ProxyDetailsView)part;
+		proxyDetailsView.setProxyToDisplay(selectedProxy);
 		
 	}
 	
@@ -224,7 +224,7 @@ public class RulesView extends AbstractRulesView {
 
 	@Override
 	protected String[] getTableColumnTitles() {
-		return new String[] { "Rule", "Exchanges"};
+		return new String[] { "Proxy", "Exchanges"};
 	}
 	
 	@Override
@@ -252,7 +252,7 @@ public class RulesView extends AbstractRulesView {
 	
 	private void changeSelectionAfterRemoval() {
 		if (tableViewer.getTable().getItemCount() == 0) {
-			updatedetailsViewIfVisible(null);
+			updateDetailsViewIfVisible(null);
 			return;
 		}
 		TableItem item = tableViewer.getTable().getItem(0);

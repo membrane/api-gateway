@@ -33,7 +33,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
-public class RuleDetailsComposite extends GridPanel {
+public class ProxyDetailsComposite extends GridPanel {
 
 	Label labelTitle;
 
@@ -56,7 +56,7 @@ public class RuleDetailsComposite extends GridPanel {
 
 	private int hostCharactersLength;
 
-	public RuleDetailsComposite(Composite parent) {
+	public ProxyDetailsComposite(Composite parent) {
 		super(parent, 10, 2);
 		
 		Composite compositeText = createCompositeText();

@@ -23,7 +23,7 @@ import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 
-public abstract class AbstractRulesView extends TableViewPart implements IExchangesStoreListener, IRuleChangeListener {
+public abstract class AbstractProxiesView extends TableViewPart implements IExchangesStoreListener, IRuleChangeListener {
 
 	public void setInputForTable(RuleManager manager) {
 		tableViewer.setInput(manager);

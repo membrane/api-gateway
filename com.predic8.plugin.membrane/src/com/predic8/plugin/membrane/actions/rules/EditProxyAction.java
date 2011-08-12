@@ -23,9 +23,9 @@ import com.predic8.plugin.membrane.dialogs.rule.ForwardingRuleEditDialog;
 import com.predic8.plugin.membrane.dialogs.rule.ProxyRuleEditDialog;
 import com.predic8.plugin.membrane.dialogs.rule.RuleEditDialog;
 
-public class RuleEditAction extends AbstractRuleAction {
+public class EditProxyAction extends AbstractProxyAction {
 
-	public RuleEditAction() {
+	public EditProxyAction() {
 		super("Rule Edit Action", "Edit Rule");
 	}
 

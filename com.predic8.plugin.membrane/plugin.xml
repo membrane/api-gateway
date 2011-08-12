@@ -13,23 +13,23 @@
    <extension
          point="org.eclipse.ui.views">
       <category
-            id="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
-            name="membrane rules">
+            id="com.predic8.plugin.membrane.views.MembraneProxiesViewCategory"
+            name="membrane proxies">
       </category>
       <category
             id="com.predic8.plugin.membrane.views.MembraneExchangesViewCategory"
             name="membrane exchanges">
       </category>
       <view
-            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
-            class="com.predic8.plugin.membrane.views.RuleDetailsView"
+            category="com.predic8.plugin.membrane.views.MembraneProxiesViewCategory"
+            class="com.predic8.plugin.membrane.views.ProxyDetailsView"
             icon="icons/rule_details.png"
-            id="com.predic8.plugin.membrane.views.RuleDetailsView"
-            name="Rule Details"
+            id="com.predic8.plugin.membrane.views.ProxyDetailsView"
+            name="Proxy Details"
             restorable="true">
       </view>
       <view
-            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
+            category="com.predic8.plugin.membrane.views.MembraneProxiesViewCategory"
             class="com.predic8.plugin.membrane.views.RuleTableView"
             icon="icons/table.png"
             id="com.predic8.plugin.membrane.views.RuleTableView"
@@ -37,7 +37,7 @@
             restorable="true">
       </view>
       <view
-            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
+            category="com.predic8.plugin.membrane.views.MembraneProxiesViewCategory"
             class="com.predic8.plugin.membrane.views.RuleStatisticsView"
             icon="icons/calculator.png"
             id="com.predic8.plugin.membrane.views.RuleStatisticsView"
@@ -82,11 +82,11 @@
             restorable="true">
       </view>
       <view
-            category="com.predic8.plugin.membrane.views.MembraneRulesViewCategory"
-            class="com.predic8.plugin.membrane.views.RulesView"
+            category="com.predic8.plugin.membrane.views.MembraneProxiesViewCategory"
+            class="com.predic8.plugin.membrane.views.ProxiesView"
             icon="icons/report_key.png"
-            id="com.predic8.plugin.membrane.views.RulesView"
-            name="Rules"
+            id="com.predic8.plugin.membrane.views.ProxiesView"
+            name="Proxies"
             restorable="true">
       </view>
    </extension>

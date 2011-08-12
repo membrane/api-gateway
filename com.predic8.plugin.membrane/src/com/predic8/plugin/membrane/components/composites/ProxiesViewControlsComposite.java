@@ -7,22 +7,22 @@ import org.eclipse.swt.widgets.Display;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.actions.rules.RemoveRuleAction;
-import com.predic8.plugin.membrane.actions.rules.RuleEditAction;
+import com.predic8.plugin.membrane.actions.rules.RemoveProxyAction;
+import com.predic8.plugin.membrane.actions.rules.EditProxyAction;
 import com.predic8.plugin.membrane.wizards.AddRuleWizard;
 
-public class RulesViewControlsComposite extends ControlsComposite {
+public class ProxiesViewControlsComposite extends ControlsComposite {
 
 	private Rule selectedRule; 
 	
-	private RemoveRuleAction removeRuleAction;
+	private RemoveProxyAction removeRuleAction;
 	
-	private RuleEditAction editRuleAction;
+	private EditProxyAction editRuleAction;
 	
-	public RulesViewControlsComposite(Composite parent) {
+	public ProxiesViewControlsComposite(Composite parent) {
 		super(parent, SWT.NONE);
-		removeRuleAction = new RemoveRuleAction();
-		editRuleAction = new RuleEditAction();
+		removeRuleAction = new RemoveProxyAction();
+		editRuleAction = new EditProxyAction();
 	}
 
 	

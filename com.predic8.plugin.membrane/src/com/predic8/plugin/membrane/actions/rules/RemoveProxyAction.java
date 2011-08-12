@@ -20,9 +20,9 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
-public class RemoveRuleAction extends AbstractRuleAction {
+public class RemoveProxyAction extends AbstractProxyAction {
 
-	public RemoveRuleAction() {
+	public RemoveProxyAction() {
 		super("Remove Rule Action", "Remove Rule");
 	}
 

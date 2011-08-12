@@ -35,7 +35,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.contentproviders.RuleStatisticsContentProvider;
 import com.predic8.plugin.membrane.labelproviders.RuleStatisticsLabelProvider;
 
-public class RuleStatisticsView extends AbstractRulesView {
+public class RuleStatisticsView extends AbstractProxiesView {
 
 	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.RuleStatisticsView";
 

@@ -19,13 +19,13 @@ import org.eclipse.core.commands.ExecutionException;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.PluginUtil;
-import com.predic8.plugin.membrane.views.RulesView;
+import com.predic8.plugin.membrane.views.ProxiesView;
 
 
 public class ShowRulesCommand extends AbstractHandler {
 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		RulesView rulesView = (RulesView)PluginUtil.showView(RulesView.VIEW_ID);
+		ProxiesView rulesView = (ProxiesView)PluginUtil.showView(ProxiesView.VIEW_ID);
 		rulesView.setInputForTable(Router.getInstance().getRuleManager());
 		
 		return null;

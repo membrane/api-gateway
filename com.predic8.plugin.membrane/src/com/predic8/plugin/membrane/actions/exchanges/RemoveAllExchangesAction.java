@@ -16,10 +16,10 @@ package com.predic8.plugin.membrane.actions.exchanges;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
-import com.predic8.plugin.membrane.actions.rules.AbstractRuleAction;
+import com.predic8.plugin.membrane.actions.rules.AbstractProxyAction;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
-public class RemoveAllExchangesAction extends AbstractRuleAction {
+public class RemoveAllExchangesAction extends AbstractProxyAction {
 
 	public RemoveAllExchangesAction() {
 		super("remove all exhanges action", "Remove all Exchanges");

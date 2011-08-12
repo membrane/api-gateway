@@ -18,29 +18,27 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.components.RuleDetailsComposite;
+import com.predic8.plugin.membrane.components.ProxyDetailsComposite;
 
-public class RuleDetailsView extends ViewPart {
+public class ProxyDetailsView extends ViewPart {
 
-	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.RuleDetailsView";
+	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.ProxyDetailsView";
 	
-	private RuleDetailsComposite ruleDetailsComposite;
+	private ProxyDetailsComposite proxyDetailsComposite;
 	
 	@Override
 	public void createPartControl(Composite parent) {
-		ruleDetailsComposite = new RuleDetailsComposite(parent);
+		proxyDetailsComposite = new ProxyDetailsComposite(parent);
 	}
 
 	@Override
 	public void setFocus() {
-		ruleDetailsComposite.setFocus();
+		proxyDetailsComposite.setFocus();
 	}
 
-	public void setRuleToDisplay(Rule rule) {
-		ruleDetailsComposite.configure(rule);
-		
-		ruleDetailsComposite.layout();
-		//ruleDetailsComposite.redraw();
+	public void setProxyToDisplay(Rule rule) {
+		proxyDetailsComposite.configure(rule);
+		proxyDetailsComposite.layout();
 	}
 	
 }

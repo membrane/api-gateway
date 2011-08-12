@@ -19,7 +19,7 @@ import org.eclipse.jface.viewers.Viewer;
 
 import com.predic8.membrane.core.RuleManager;
 
-public class RulesViewContentProvider implements IStructuredContentProvider {
+public class ProxiesViewContentProvider implements IStructuredContentProvider {
 
 	public Object[] getElements(Object inputElement) {
 		RuleManager ruleManager = (RuleManager)inputElement;

@@ -21,7 +21,7 @@ import org.eclipse.swt.widgets.TableItem;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
 
-public class RuleNameCellEditorModifier implements ICellModifier {
+public class ProxyNameCellEditorModifier implements ICellModifier {
 
 	private boolean allowModify;
 	

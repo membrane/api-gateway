@@ -30,7 +30,7 @@ import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
 
-public class RulesViewLabelProvider extends LabelProvider implements ITableLabelProvider, ITableColorProvider  {
+public class ProxiesViewLabelProvider extends LabelProvider implements ITableLabelProvider, ITableColorProvider  {
 	
 	private NumberFormat nf = NumberFormat.getInstance();
 	
@@ -38,7 +38,7 @@ public class RulesViewLabelProvider extends LabelProvider implements ITableLabel
 	
 	private Image ruleForwardingImage;
 	
-	public RulesViewLabelProvider() {
+	public ProxiesViewLabelProvider() {
 		nf.setMaximumFractionDigits(3);
 		ruleProxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_RULE_PROXY).createImage();
 		ruleForwardingImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_RULE_REVERSE_PROXY).createImage();

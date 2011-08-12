@@ -12,21 +12,21 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.plugin.membrane.actions.views;
+package com.predic8.plugin.membrane.actions.rules;
 
-import com.predic8.plugin.membrane.PluginUtil;
-import com.predic8.plugin.membrane.actions.rules.AbstractRuleAction;
-import com.predic8.plugin.membrane.views.RuleDetailsView;
+import org.eclipse.jface.viewers.TableViewer;
 
-public class ShowRuleDetailsViewAction extends AbstractRuleAction {
+public class RenameProxyAction extends AbstractProxyAction {
 
-	public ShowRuleDetailsViewAction() {
-		super("Show Rule Details Action", "Show Rule Details");
+	private TableViewer tableViewer;
+	
+	public RenameProxyAction(TableViewer treeView) {
+		super("Rename Rule Action", "Rename Rule");
+		this.tableViewer = treeView;
 	}
-
-	public void run() {
-		RuleDetailsView ruleView = (RuleDetailsView)PluginUtil.showView(RuleDetailsView.VIEW_ID);
-		ruleView.setRuleToDisplay(selectedRule);
+	
+	public void run() {		
+		tableViewer.editElement(selectedRule, 0);
 	}
-
+	
 }
