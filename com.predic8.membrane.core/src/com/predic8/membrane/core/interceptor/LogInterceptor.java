@@ -14,59 +14,38 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import org.apache.commons.logging.*;
+
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.Message;
 
 public class LogInterceptor extends AbstractInterceptor {
 
-	private Writer writer;
+	private static Log log = LogFactory.getLog(LogInterceptor.class.getName());
 	
 	public LogInterceptor() {
-		writer = new BufferedWriter(new OutputStreamWriter(System.out));
-	}
-	
-	public Outcome handleRequest(AbstractExchange exchange) throws Exception {
-		printRequest(exchange);
-		writer.write("\n");
-		writer.flush();
-		return Outcome.CONTINUE;
-	}
-
-	private void printRequest(AbstractExchange exchange) throws IOException {
-		Request request = exchange.getRequest();
-		writer.write("==== Request ===\n");
-		if (request == null) {
-			writer.write(" !!! Request object is null !!! \n");
-		} else {
-			writer.write(request.toString() + "\n");
-		}
-		writer.write("================\n");
-	}
-	
-	private void printResponse(AbstractExchange exchange) throws IOException {
-		Response response = exchange.getResponse();
-		writer.write("==== Response ===\n");
-		if (response == null) {
-			writer.write(" !!! Response object is null !!! \n");
-		} else {
-			writer.write(response.toString() + "\n");
-		}
-		writer.write("================\n");
+		name = "Log";
 	}
 	
 	@Override
-	public Outcome handleResponse(Exchange exchange) throws Exception {
-		printResponse(exchange);
-		writer.write("\n");
-		writer.flush();
+	public Outcome handleRequest(Exchange exc) throws Exception {
+		log.info("==== Request ===");
+		logMessage(exc.getRequest());
 		return Outcome.CONTINUE;
+	}
+
+	@Override
+	public Outcome handleResponse(Exchange exc) throws Exception {
+		log.info("==== Response ===");
+		logMessage(exc.getResponse());
+		return Outcome.CONTINUE;
+	}
+	
+	private void logMessage(Message msg) throws IOException {
+		log.info(msg==null?"N/A":msg);		
+		log.info("================");
 	}
 }
 

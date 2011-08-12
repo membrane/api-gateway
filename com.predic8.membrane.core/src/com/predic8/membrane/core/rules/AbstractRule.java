@@ -212,6 +212,8 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 			i = new GroovyInterceptor();
 		} else if ("throttle".equals(name)) {
 			i = new ThrottleInterceptor();
+		} else if ("log".equals(name)) {
+			i = new LogInterceptor();
 		} else {
 			throw new Exception("Unknown interceptor found: "+name);
 		}
