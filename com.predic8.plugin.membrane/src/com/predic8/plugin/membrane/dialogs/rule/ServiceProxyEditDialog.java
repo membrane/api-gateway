@@ -37,7 +37,7 @@ import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyGeneralInfoTabCo
 import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleTargetTabComposite;
 
-public class ServiceProxyEditDialog extends ProxyEditDialog {
+public class ServiceProxyEditDialog extends AbstractProxyEditDialog {
 
 	private RuleTargetTabComposite targetComposite;
 

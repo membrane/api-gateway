@@ -12,168 +12,80 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-
 package com.predic8.plugin.membrane.dialogs.rule;
 
-import java.io.IOException;
-
-import org.eclipse.jface.dialogs.Dialog;
-import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
+import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyRuleKeyTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyActionsTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyGeneralInfoTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
-import com.predic8.plugin.membrane.util.SWTUtil;
 
-public abstract class ProxyEditDialog extends Dialog {
+public class ProxyEditDialog extends AbstractProxyEditDialog {
 
-	protected Rule rule;
-	
-	protected TabFolder tabFolder;
-	
-	protected ProxyGeneralInfoTabComposite generalInfoComposite;
-	
-	protected ProxyActionsTabComposite actionsComposite;
-	
-	protected ProxyInterceptorTabComposite interceptorsComposite;
-	
-	protected ProxyEditDialog(Shell parentShell) {
+	private ProxyRuleKeyTabComposite ruleKeyComposite;
+
+	public ProxyEditDialog(Shell parentShell) {
 		super(parentShell);
 	}
 
 	@Override
-	protected void configureShell(Shell shell) {
-		super.configureShell(shell);
-		shell.setText(getTitle());
-		shell.setSize(520, 500);
+	public String getTitle() {
+		return "Edit Proxy Rule";
 	}
-	
-	@Override
-	protected void createButtonsForButtonBar(Composite parent) {
-		createButton(parent, IDialogConstants.OK_ID, "OK", false);
-		createButton(parent, IDialogConstants.CANCEL_ID, "Cancel", true);
-	}
-	
+
 	@Override
 	protected Control createDialogArea(Composite parent) {
-		Composite container = (Composite) super.createDialogArea(parent);
-		container.setLayout(SWTUtil.createGridLayout(1, 10));
-		
-		tabFolder = new TabFolder(container, SWT.NONE);
-		GridData gd = new GridData();
-		gd.widthHint = 440;
-		gd.heightHint = 440;
-		gd.grabExcessHorizontalSpace = true;
-		gd.grabExcessVerticalSpace = true;
-		tabFolder.setLayoutData(gd);
-		
-		
-		return container;
-	}
-	
-	public abstract String getTitle();
-	
-	public void setInput(Rule rule) {
-		if (rule == null)
-			return;
-		this.rule = rule;
-		generalInfoComposite.setRule(rule);
-		actionsComposite.setInput(rule);
-		interceptorsComposite.setInput(rule);
-	}
-	
-	protected void openErrorDialog(String msg) {
-		MessageDialog.openError(this.getShell(), "Error", msg);
+		Control comp = super.createDialogArea(parent);
+
+		generalInfoComposite = new ProxyGeneralInfoTabComposite(tabFolder);
+		TabItem generalTabItem = new TabItem(tabFolder, SWT.NONE);
+		generalTabItem.setText("General");
+		generalTabItem.setControl(generalInfoComposite);
+
+		ruleKeyComposite = new ProxyRuleKeyTabComposite(tabFolder);
+		TabItem keyTabItem = new TabItem(tabFolder, SWT.NONE);
+		keyTabItem.setText("Rule Key");
+		keyTabItem.setControl(ruleKeyComposite);
+
+		actionsComposite = new ProxyActionsTabComposite(tabFolder);
+		TabItem actionsTabItem = new TabItem(tabFolder, SWT.NONE);
+		actionsTabItem.setText("Actions");
+		actionsTabItem.setControl(actionsComposite);
+
+		interceptorsComposite = new ProxyInterceptorTabComposite(tabFolder);
+		TabItem interceptorsTabItem = new TabItem(tabFolder, SWT.NONE);
+		interceptorsTabItem.setText("Interceptors");
+		interceptorsTabItem.setControl(interceptorsComposite);
+
+		return comp;
 	}
 
-	protected void openWarningDialog(String msg) {
-		MessageDialog.openWarning(this.getShell(), "Warning", msg);
-	}
-
-	protected boolean openConfirmDialog(String msg) {
-		return MessageDialog.openConfirm(this.getShell(), "Confirm", msg);
-	}
-	
-	public abstract void onOkPressed();
-	
 	@Override
-	protected void okPressed() {
-		onOkPressed();
-		close();
-	}
-	
-	protected void updateProxy(RuleKey ruleKey, boolean addToManager) throws IOException {
-		rule.setName(generalInfoComposite.getRuleName());
-		rule.setKey(ruleKey);
-		rule.setLocalHost(generalInfoComposite.getLocalHost());
-		rule.setBlockRequest(actionsComposite.isRequestBlocked());
-		rule.setBlockResponse(actionsComposite.isResponseBlocked());
-		rule.setInterceptors(interceptorsComposite.getInterceptors());
-		if (addToManager) {
-			getRuleManager().addRuleIfNew(rule);
-		}
-	}
-	
-	protected RuleManager getRuleManager() {
-		return Router.getInstance().getRuleManager();
-	}
-	
-	protected HttpTransport getTransport() {
-		return ((HttpTransport) Router.getInstance().getTransport());
+	public void setInput(Rule rule) {
+		super.setInput(rule);
+		ruleKeyComposite.setInput(rule.getKey());
 	}
 
-	protected void doRuleUpdate(RuleKey ruleKey) {
-		if (ruleKey.equals(rule.getKey())) {
-			try {
-				updateProxy(ruleKey, false);
-			} catch (IOException e) {
-				openErrorDialog("Can not open port. Please check again");
-			}
-			getRuleManager().ruleChanged(rule);
-			return;
-		}
-
-		if (getRuleManager().exists(ruleKey)) {
-			openErrorDialog("Illeagal input! Your rule key conflict with another existent rule.");
-			return;
-		}
-		if (!openConfirmDialog("You've changed the rule key, so all the old history will be cleared."))
-			return;
-
-		if (!getTransport().isAnyThreadListeningAt(ruleKey.getPort())) {
-			try {
-				getTransport().openPort(ruleKey.getPort(), rule.isInboundTLS());
-			} catch (IOException e1) {
-				openErrorDialog("Failed to open the new port. Please change another one. Old rule is retained");
-				return;
-			}
-		}
-		getRuleManager().removeRule(rule);
-		if (!getRuleManager().isAnyRuleWithPort(rule.getKey().getPort()) && (rule.getKey().getPort() != ruleKey.getPort())) {
-			try {
-				getTransport().closePort(rule.getKey().getPort());
-			} catch (IOException e2) {
-				openErrorDialog("Failed to close the obsolete port: " + rule.getKey().getPort());
-			}
-		}
+	@Override
+	public void onOkPressed() {
+		int port = 0;
 		try {
-			updateProxy(ruleKey, true);
-		} catch (IOException e) {
-			openErrorDialog("Can not open port. Please check again");
+			port = Integer.parseInt(ruleKeyComposite.getListenPort());
+		} catch (NumberFormatException nfe) {
+			openErrorDialog("Illeagal input! Please check listen port again");
+			return;
 		}
-		getRuleManager().ruleChanged(rule);
-	}
-	
+
+		ProxyRuleKey ruleKey = new ProxyRuleKey(port);
+		doRuleUpdate(ruleKey);
+		
+	}	
+
 }
