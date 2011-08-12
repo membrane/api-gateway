@@ -53,12 +53,12 @@ public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 	}
 
 	private Button createRuleButton(Composite composite, String text) {
-		Button btSimpleRule = new Button(composite, SWT.RADIO);
-		btSimpleRule.setText(text);
+		Button bt = new Button(composite, SWT.RADIO);
+		bt.setText(text);
 		GridData gData = new GridData();
 		gData.grabExcessHorizontalSpace = true;
-		btSimpleRule.setLayoutData(gData);
-		return btSimpleRule;
+		bt.setLayoutData(gData);
+		return bt;
 	}
 
 	private void addVericalGap(Composite composite) {
