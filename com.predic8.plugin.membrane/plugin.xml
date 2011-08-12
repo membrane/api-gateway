@@ -173,7 +173,7 @@
             <command
                   commandId="addProxy"
                   icon="icons/add_rule.png"
-                  label="&amp;Add  ProxyRule"
+                  label="&amp;Add  Proxy"
                   style="push">
             </command>
          </menu>
