@@ -21,12 +21,12 @@ import com.predic8.plugin.membrane.views.ProxyDetailsView;
 public class ShowProxyDetailsViewAction extends AbstractProxyAction {
 
 	public ShowProxyDetailsViewAction() {
-		super("Show Rule Details Action", "Show Rule Details");
+		super("Show Proxy Details Action", "Show Proxy Details");
 	}
 
 	public void run() {
 		ProxyDetailsView ruleView = (ProxyDetailsView)PluginUtil.showView(ProxyDetailsView.VIEW_ID);
-		ruleView.setProxyToDisplay(selectedRule);
+		ruleView.setProxyToDisplay(selectedProxy);
 	}
 
 }

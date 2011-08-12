@@ -23,11 +23,11 @@ import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.PluginUtil;
 import com.predic8.plugin.membrane.views.ProxyTableView;
 
-public class ShowRulesTableAction implements IWorkbenchWindowActionDelegate {
+public class ShowProxiesTableAction implements IWorkbenchWindowActionDelegate {
 
 	private IWorkbenchWindow window;
 
-	public ShowRulesTableAction() {
+	public ShowProxiesTableAction() {
 
 	}
 
@@ -40,8 +40,8 @@ public class ShowRulesTableAction implements IWorkbenchWindowActionDelegate {
 	}
 
 	public void run(IAction action) {
-		ProxyTableView ruleTableView = (ProxyTableView) PluginUtil.showView(ProxyTableView.VIEW_ID);
-		ruleTableView.getTableViewer().setInput(Router.getInstance().getRuleManager());
+		ProxyTableView proxyTableView = (ProxyTableView) PluginUtil.showView(ProxyTableView.VIEW_ID);
+		proxyTableView.getTableViewer().setInput(Router.getInstance().getRuleManager());
 
 	}
 

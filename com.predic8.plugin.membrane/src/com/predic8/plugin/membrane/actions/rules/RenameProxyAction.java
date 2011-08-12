@@ -21,12 +21,12 @@ public class RenameProxyAction extends AbstractProxyAction {
 	private TableViewer tableViewer;
 	
 	public RenameProxyAction(TableViewer treeView) {
-		super("Rename Rule Action", "Rename Rule");
+		super("Rename Proxy Action", "Rename Proxy");
 		this.tableViewer = treeView;
 	}
 	
 	public void run() {		
-		tableViewer.editElement(selectedRule, 0);
+		tableViewer.editElement(selectedProxy, 0);
 	}
 	
 }

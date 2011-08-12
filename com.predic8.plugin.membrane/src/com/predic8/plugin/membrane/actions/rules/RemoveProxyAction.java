@@ -23,17 +23,17 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 public class RemoveProxyAction extends AbstractProxyAction {
 
 	public RemoveProxyAction() {
-		super("Remove Rule Action", "Remove Rule");
+		super("Remove Proxy Action", "Remove Proxy");
 	}
 
 	@Override
 	public void run() {
-		getRuleManager().removeRule(selectedRule);
-		if (getRuleManager().isAnyRuleWithPort(selectedRule.getKey().getPort()))
+		getRuleManager().removeRule(selectedProxy);
+		if (getRuleManager().isAnyRuleWithPort(selectedProxy.getKey().getPort()))
 			return;
 
 		try {
-			getHttpTransport().closePort(selectedRule.getKey().getPort());
+			getHttpTransport().closePort(selectedProxy.getKey().getPort());
 		} catch (IOException e2) {
 			e2.printStackTrace();
 		}

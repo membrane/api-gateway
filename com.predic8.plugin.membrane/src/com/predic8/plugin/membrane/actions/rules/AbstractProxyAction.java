@@ -19,7 +19,7 @@ import com.predic8.membrane.core.rules.Rule;
 
 public abstract class AbstractProxyAction extends Action {
 
-	protected Rule selectedRule;
+	protected Rule selectedProxy;
 	
 	public AbstractProxyAction(String id, String text) {
 		setId(id);
@@ -27,8 +27,8 @@ public abstract class AbstractProxyAction extends Action {
 		setEnabled(false);
 	}
 	
-	public void setSelectedRule(Rule selectedRule) {
-		this.selectedRule = selectedRule;
+	public void setSelectedProxy(Rule selectedProxy) {
+		this.selectedProxy = selectedProxy;
 	}
 	
 }

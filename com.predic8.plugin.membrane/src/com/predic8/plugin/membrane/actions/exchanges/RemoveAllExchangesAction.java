@@ -27,7 +27,7 @@ public class RemoveAllExchangesAction extends AbstractProxyAction {
 	}
 	
 	public void run() {
-		Router.getInstance().getExchangeStore().removeAllExchanges(selectedRule);
+		Router.getInstance().getExchangeStore().removeAllExchanges(selectedProxy);
 	}
 
 }

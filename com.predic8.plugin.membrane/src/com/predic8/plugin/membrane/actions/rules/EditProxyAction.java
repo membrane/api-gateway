@@ -26,18 +26,18 @@ import com.predic8.plugin.membrane.dialogs.rule.RuleEditDialog;
 public class EditProxyAction extends AbstractProxyAction {
 
 	public EditProxyAction() {
-		super("Rule Edit Action", "Edit Rule");
+		super("Edit Proxy Action", "Edit Proxy");
 	}
 
 	@Override
 	public void run() {
 		
 		try {
-			if (selectedRule instanceof ServiceProxy) {
-				openRuleDialog(new ForwardingRuleEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedRule);
+			if (selectedProxy instanceof ServiceProxy) {
+				openRuleDialog(new ForwardingRuleEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedProxy);
 
-			} else if (selectedRule instanceof ProxyRule) {
-				openRuleDialog(new ProxyRuleEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedRule);
+			} else if (selectedProxy instanceof ProxyRule) {
+				openRuleDialog(new ProxyRuleEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedProxy);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();

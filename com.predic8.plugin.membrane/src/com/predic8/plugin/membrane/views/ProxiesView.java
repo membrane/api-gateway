@@ -183,7 +183,7 @@ public class ProxiesView extends AbstractProxiesView {
 			
 			private void setSelectedProxy(Rule selectedProxy) {
 				for (AbstractProxyAction action : actions) {
-					action.setSelectedRule(selectedProxy);
+					action.setSelectedProxy(selectedProxy);
 				}
 				controlsComposite.setSelectedRule(selectedProxy);
 				updateDetailsViewIfVisible(selectedProxy);

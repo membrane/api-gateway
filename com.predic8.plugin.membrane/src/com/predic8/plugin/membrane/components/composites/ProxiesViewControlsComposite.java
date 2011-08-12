@@ -35,13 +35,13 @@ public class ProxiesViewControlsComposite extends ControlsComposite {
 	
 	@Override
 	public void editButtonPressed() {
-		editRuleAction.setSelectedRule(selectedRule);
+		editRuleAction.setSelectedProxy(selectedRule);
 		editRuleAction.run();
 	}
 
 	@Override
 	public void removeButtonPressed() {
-		removeRuleAction.setSelectedRule(selectedRule);
+		removeRuleAction.setSelectedProxy(selectedRule);
 		removeRuleAction.run();
 	}
 
