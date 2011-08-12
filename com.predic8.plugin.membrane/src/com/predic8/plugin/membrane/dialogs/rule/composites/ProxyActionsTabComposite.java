@@ -25,13 +25,13 @@ import org.eclipse.swt.widgets.Group;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.components.GridPanel;
 
-public class RuleActionsTabComposite extends GridPanel {
+public class ProxyActionsTabComposite extends GridPanel {
 
 	private Button btBlockRequest;
 
 	private Button btBlockResponse;
 
-	public RuleActionsTabComposite(Composite parent) {
+	public ProxyActionsTabComposite(Composite parent) {
 		super(parent, 20, 1);
 		
 		Group ruleActionGroup = new Group(this, SWT.NONE);

@@ -18,11 +18,11 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
 
 public class EditInterceptorDialog extends InterceptorDialog {
 
-	public EditInterceptorDialog(Shell parentShell, RuleInterceptorTabComposite parent) {
+	public EditInterceptorDialog(Shell parentShell, ProxyInterceptorTabComposite parent) {
 		super(parentShell, parent);
 	}
 

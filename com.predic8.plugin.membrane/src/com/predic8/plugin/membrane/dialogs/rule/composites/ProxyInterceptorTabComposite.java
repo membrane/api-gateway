@@ -36,7 +36,7 @@ import com.predic8.plugin.membrane.dialogs.rule.EditInterceptorDialog;
 import com.predic8.plugin.membrane.dialogs.rule.providers.InterceptorTableViewerContentProvider;
 import com.predic8.plugin.membrane.dialogs.rule.providers.InterceptorTableViewerLabelProvider;
 
-public class RuleInterceptorTabComposite extends Composite {
+public class ProxyInterceptorTabComposite extends Composite {
 
 	private TableViewer tableViewer;
 
@@ -46,7 +46,7 @@ public class RuleInterceptorTabComposite extends Composite {
 	
 	private RuleInterceptorControlsComposite controlsComposite;
 	
-	public RuleInterceptorTabComposite(final Composite parent) {
+	public ProxyInterceptorTabComposite(final Composite parent) {
 		super(parent, SWT.NONE);
 		
 		Composite listComposite = createListComposite();
@@ -71,7 +71,7 @@ public class RuleInterceptorTabComposite extends Composite {
 	}
 	
 	public void addNewInterceptor() {
-		AddInterceptorDialog dialog = new AddInterceptorDialog(Display.getCurrent().getActiveShell(), RuleInterceptorTabComposite.this);
+		AddInterceptorDialog dialog = new AddInterceptorDialog(Display.getCurrent().getActiveShell(), ProxyInterceptorTabComposite.this);
 		if (dialog.getShell() == null) {
 			dialog.create();
 		}

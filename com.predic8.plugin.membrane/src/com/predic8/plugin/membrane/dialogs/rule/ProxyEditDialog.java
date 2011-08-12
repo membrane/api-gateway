@@ -32,9 +32,9 @@ import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleActionsTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleGeneralInfoTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyActionsTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyGeneralInfoTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
 public abstract class ProxyEditDialog extends Dialog {
@@ -43,11 +43,11 @@ public abstract class ProxyEditDialog extends Dialog {
 	
 	protected TabFolder tabFolder;
 	
-	protected RuleGeneralInfoTabComposite generalInfoComposite;
+	protected ProxyGeneralInfoTabComposite generalInfoComposite;
 	
-	protected RuleActionsTabComposite actionsComposite;
+	protected ProxyActionsTabComposite actionsComposite;
 	
-	protected RuleInterceptorTabComposite interceptorsComposite;
+	protected ProxyInterceptorTabComposite interceptorsComposite;
 	
 	protected ProxyEditDialog(Shell parentShell) {
 		super(parentShell);
@@ -114,7 +114,7 @@ public abstract class ProxyEditDialog extends Dialog {
 		close();
 	}
 	
-	protected void updateRule(RuleKey ruleKey, boolean addToManager) throws IOException {
+	protected void updateProxy(RuleKey ruleKey, boolean addToManager) throws IOException {
 		rule.setName(generalInfoComposite.getRuleName());
 		rule.setKey(ruleKey);
 		rule.setLocalHost(generalInfoComposite.getLocalHost());
@@ -137,7 +137,7 @@ public abstract class ProxyEditDialog extends Dialog {
 	protected void doRuleUpdate(RuleKey ruleKey) {
 		if (ruleKey.equals(rule.getKey())) {
 			try {
-				updateRule(ruleKey, false);
+				updateProxy(ruleKey, false);
 			} catch (IOException e) {
 				openErrorDialog("Can not open port. Please check again");
 			}
@@ -169,7 +169,7 @@ public abstract class ProxyEditDialog extends Dialog {
 			}
 		}
 		try {
-			updateRule(ruleKey, true);
+			updateProxy(ruleKey, true);
 		} catch (IOException e) {
 			openErrorDialog("Can not open port. Please check again");
 		}

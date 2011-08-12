@@ -35,7 +35,7 @@ import org.eclipse.swt.widgets.Text;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.components.GridPanel;
 
-public class RuleGeneralInfoTabComposite extends GridPanel {
+public class ProxyGeneralInfoTabComposite extends GridPanel {
 
 	private Text textRuleName;
 	
@@ -45,7 +45,7 @@ public class RuleGeneralInfoTabComposite extends GridPanel {
 	
 	private String[] interfaces;
 	
-	public RuleGeneralInfoTabComposite(Composite parent) {
+	public ProxyGeneralInfoTabComposite(Composite parent) {
 		super(parent, 20, 3);
 		
 		initInterfaces();

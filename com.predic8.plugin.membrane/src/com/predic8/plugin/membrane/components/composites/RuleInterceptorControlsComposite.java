@@ -2,38 +2,38 @@ package com.predic8.plugin.membrane.components.composites;
 
 import org.eclipse.swt.SWT;
 
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
 
 public class RuleInterceptorControlsComposite extends ControlsComposite {
 	
 	
-	public RuleInterceptorControlsComposite(RuleInterceptorTabComposite parent) {
+	public RuleInterceptorControlsComposite(ProxyInterceptorTabComposite parent) {
 		super(parent, SWT.NONE);
 	}
 
 	@Override
 	public void downButtonPressed() {
-		((RuleInterceptorTabComposite)getParent()).moveDownSelectedInterceptor();
+		((ProxyInterceptorTabComposite)getParent()).moveDownSelectedInterceptor();
 	}
 
 	@Override
 	public void editButtonPressed() {
-		((RuleInterceptorTabComposite)getParent()).editSelectedInterceptor();
+		((ProxyInterceptorTabComposite)getParent()).editSelectedInterceptor();
 	}
 
 	@Override
 	public void newButtonPressed() {
-		((RuleInterceptorTabComposite)getParent()).addNewInterceptor();
+		((ProxyInterceptorTabComposite)getParent()).addNewInterceptor();
 	}
 
 	@Override
 	public void removeButtonPressed() {
-		((RuleInterceptorTabComposite)getParent()).removeSelectedInterceptor();
+		((ProxyInterceptorTabComposite)getParent()).removeSelectedInterceptor();
 	}
 
 	@Override
 	public void upButtonPressed() {
-		((RuleInterceptorTabComposite)getParent()).moveUpSelectedInterceptor();
+		((ProxyInterceptorTabComposite)getParent()).moveUpSelectedInterceptor();
 	}
 	
 	@Override

@@ -28,7 +28,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
 public abstract class InterceptorDialog extends Dialog {
@@ -36,9 +36,9 @@ public abstract class InterceptorDialog extends Dialog {
 	protected Text textName;
 	protected Text textClassName;
 	
-	protected RuleInterceptorTabComposite interceptorComposite;
+	protected ProxyInterceptorTabComposite interceptorComposite;
 	
-	public InterceptorDialog(Shell shell, RuleInterceptorTabComposite parent) {
+	public InterceptorDialog(Shell shell, ProxyInterceptorTabComposite parent) {
 		super(shell);
 		this.interceptorComposite = parent;
 	}

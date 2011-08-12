@@ -23,9 +23,9 @@ import org.eclipse.swt.widgets.TabItem;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyRuleKeyTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleActionsTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleGeneralInfoTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyActionsTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyGeneralInfoTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
 
 public class ProxyRuleEditDialog extends ProxyEditDialog {
 
@@ -44,7 +44,7 @@ public class ProxyRuleEditDialog extends ProxyEditDialog {
 	protected Control createDialogArea(Composite parent) {
 		Control comp = super.createDialogArea(parent);
 
-		generalInfoComposite = new RuleGeneralInfoTabComposite(tabFolder);
+		generalInfoComposite = new ProxyGeneralInfoTabComposite(tabFolder);
 		TabItem generalTabItem = new TabItem(tabFolder, SWT.NONE);
 		generalTabItem.setText("General");
 		generalTabItem.setControl(generalInfoComposite);
@@ -54,12 +54,12 @@ public class ProxyRuleEditDialog extends ProxyEditDialog {
 		keyTabItem.setText("Rule Key");
 		keyTabItem.setControl(ruleKeyComposite);
 
-		actionsComposite = new RuleActionsTabComposite(tabFolder);
+		actionsComposite = new ProxyActionsTabComposite(tabFolder);
 		TabItem actionsTabItem = new TabItem(tabFolder, SWT.NONE);
 		actionsTabItem.setText("Actions");
 		actionsTabItem.setControl(actionsComposite);
 
-		interceptorsComposite = new RuleInterceptorTabComposite(tabFolder);
+		interceptorsComposite = new ProxyInterceptorTabComposite(tabFolder);
 		TabItem interceptorsTabItem = new TabItem(tabFolder, SWT.NONE);
 		interceptorsTabItem.setText("Interceptors");
 		interceptorsTabItem.setControl(interceptorsComposite);

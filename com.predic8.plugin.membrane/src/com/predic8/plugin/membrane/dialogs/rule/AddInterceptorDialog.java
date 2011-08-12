@@ -29,7 +29,7 @@ import org.eclipse.swt.widgets.Shell;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.providers.AddInterceptorTableViewerContentProvider;
 import com.predic8.plugin.membrane.dialogs.rule.providers.AddInterceptorTableViewerLabelProvider;
 import com.predic8.plugin.membrane.util.SWTUtil;
@@ -38,9 +38,9 @@ public class AddInterceptorDialog extends Dialog {
 
 	private TableViewer tableViewer;
 	
-	private RuleInterceptorTabComposite interceptorComposite;
+	private ProxyInterceptorTabComposite interceptorComposite;
 	
-	public AddInterceptorDialog(Shell shell, RuleInterceptorTabComposite parent) {
+	public AddInterceptorDialog(Shell shell, ProxyInterceptorTabComposite parent) {
 		super(shell);
 		this.interceptorComposite = parent;
 	}

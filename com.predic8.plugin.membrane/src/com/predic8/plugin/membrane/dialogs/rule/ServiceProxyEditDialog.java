@@ -32,9 +32,9 @@ import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.plugin.membrane.dialogs.rule.composites.ForwardingRuleKeyTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleActionsTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleGeneralInfoTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleInterceptorTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyActionsTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyGeneralInfoTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
 import com.predic8.plugin.membrane.dialogs.rule.composites.RuleTargetTabComposite;
 
 public class ServiceProxyEditDialog extends ProxyEditDialog {
@@ -90,14 +90,14 @@ public class ServiceProxyEditDialog extends ProxyEditDialog {
 	}
 
 	private void createInterceptorsComposite() {
-		interceptorsComposite = new RuleInterceptorTabComposite(tabFolder);
+		interceptorsComposite = new ProxyInterceptorTabComposite(tabFolder);
 		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
 		tabItem.setText("Interceptors");
 		tabItem.setControl(interceptorsComposite);
 	}
 
 	private void createActionComposite() {
-		actionsComposite = new RuleActionsTabComposite(tabFolder);
+		actionsComposite = new ProxyActionsTabComposite(tabFolder);
 		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
 		tabItem.setText("Actions");
 		tabItem.setControl(actionsComposite);
@@ -118,7 +118,7 @@ public class ServiceProxyEditDialog extends ProxyEditDialog {
 	}
 
 	private void createGeneralComposite() {
-		generalInfoComposite = new RuleGeneralInfoTabComposite(tabFolder);
+		generalInfoComposite = new ProxyGeneralInfoTabComposite(tabFolder);
 		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
 		tabItem.setText("General");
 		tabItem.setControl(generalInfoComposite);
@@ -144,12 +144,12 @@ public class ServiceProxyEditDialog extends ProxyEditDialog {
 	}
 
 	@Override
-	protected void updateRule(RuleKey ruleKey, boolean addToManager) throws IOException {
+	protected void updateProxy(RuleKey ruleKey, boolean addToManager) throws IOException {
 		((ServiceProxy) rule).setTargetHost(targetComposite.getTargetGroup().getTargetHost());
 		((ServiceProxy) rule).setTargetPort(Integer.parseInt(targetComposite.getTargetGroup().getTargetPort()));
 		rule.setOutboundTLS(targetComposite.getSecureConnection());
 		rule.setInboundTLS(ruleKeyComposite.getSecureConnection());
-		super.updateRule(ruleKey, addToManager);
+		super.updateProxy(ruleKey, addToManager);
 	}
 
 }
