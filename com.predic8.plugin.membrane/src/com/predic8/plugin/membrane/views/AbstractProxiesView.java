@@ -55,10 +55,6 @@ public abstract class AbstractProxiesView extends TableViewPart implements IExch
 		refreshTable();
 	}
 
-//	public void removeRule(Rule rule, int rulesLeft) {
-//		refreshTable();
-//	}
-
 	public void setExchangeFinished(AbstractExchange exchange) {
 		refreshTable();
 	}

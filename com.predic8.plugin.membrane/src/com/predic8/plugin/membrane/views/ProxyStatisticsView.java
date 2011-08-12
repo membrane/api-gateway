@@ -32,12 +32,12 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.contentproviders.RuleStatisticsContentProvider;
-import com.predic8.plugin.membrane.labelproviders.RuleStatisticsLabelProvider;
+import com.predic8.plugin.membrane.contentproviders.ProxyStatisticsContentProvider;
+import com.predic8.plugin.membrane.labelproviders.ProxyStatisticsLabelProvider;
 
-public class RuleStatisticsView extends AbstractProxiesView {
+public class ProxyStatisticsView extends AbstractProxiesView {
 
-	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.RuleStatisticsView";
+	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.ProxyStatisticsView";
 
 	@Override
 	public void createPartControl(Composite parent) {
@@ -76,12 +76,12 @@ public class RuleStatisticsView extends AbstractProxiesView {
 	
 	@Override
 	protected IBaseLabelProvider createLabelProvider() {
-		return new RuleStatisticsLabelProvider();
+		return new ProxyStatisticsLabelProvider();
 	}
 	
 	@Override
 	protected IContentProvider createContentProvider() {
-		return new RuleStatisticsContentProvider();
+		return new ProxyStatisticsContentProvider();
 	}
 	
 	private void createRefreshButton(Composite composite) {
@@ -108,20 +108,20 @@ public class RuleStatisticsView extends AbstractProxiesView {
 	private Composite createComposite(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
 		
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 10;
-		gridLayout.marginLeft = 5;
-		gridLayout.marginBottom = 20;
-		gridLayout.marginRight = 5;
-		gridLayout.verticalSpacing = 20;
-		composite.setLayout(gridLayout);
+		GridLayout layout = new GridLayout();
+		layout.numColumns = 1;
+		layout.marginTop = 10;
+		layout.marginLeft = 5;
+		layout.marginBottom = 20;
+		layout.marginRight = 5;
+		layout.verticalSpacing = 20;
+		composite.setLayout(layout);
 		return composite;
 	}
 
 	@Override
 	protected String[] getTableColumnTitles() {
-		return new String[] { "Rule", "Exchanges", "Minimum Time", "Maximum Time", "Average Time", "Bytes Sent", "Bytes Received", "Errors"};
+		return new String[] { "Proxy", "Exchanges", "Minimum Time", "Maximum Time", "Average Time", "Bytes Sent", "Bytes Received", "Errors"};
 	}
 
 	@Override

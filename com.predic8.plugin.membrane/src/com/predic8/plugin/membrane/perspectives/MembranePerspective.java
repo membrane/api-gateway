@@ -23,7 +23,7 @@ import com.predic8.plugin.membrane.views.ExchangesView;
 import com.predic8.plugin.membrane.views.RequestView;
 import com.predic8.plugin.membrane.views.ResponseView;
 import com.predic8.plugin.membrane.views.ProxyDetailsView;
-import com.predic8.plugin.membrane.views.RuleStatisticsView;
+import com.predic8.plugin.membrane.views.ProxyStatisticsView;
 import com.predic8.plugin.membrane.views.ProxiesView;
 
 public class MembranePerspective implements IPerspectiveFactory {
@@ -42,14 +42,14 @@ public class MembranePerspective implements IPerspectiveFactory {
 			centerLayoutFolder.addPlaceholder(RequestView.VIEW_ID);
 			centerLayoutFolder.addPlaceholder(ResponseView.VIEW_ID);
 			centerLayoutFolder.addPlaceholder(BrowserView.VIEW_ID);
-			centerLayoutFolder.addPlaceholder(RuleStatisticsView.VIEW_ID);
+			centerLayoutFolder.addPlaceholder(ProxyStatisticsView.VIEW_ID);
 			centerLayoutFolder.addPlaceholder(ExchangesView.VIEW_ID);
 		} else {
 			IFolderLayout topLayoutFolder = layout.createFolder("top folder", IPageLayout.TOP, 0.52f, IPageLayout.ID_EDITOR_AREA);
 			topLayoutFolder.addPlaceholder(ProxyDetailsView.VIEW_ID);
 			topLayoutFolder.addView(ExchangesView.VIEW_ID);
 			topLayoutFolder.addPlaceholder(BrowserView.VIEW_ID);
-			topLayoutFolder.addPlaceholder(RuleStatisticsView.VIEW_ID);
+			topLayoutFolder.addPlaceholder(ProxyStatisticsView.VIEW_ID);
 			
 			
 			IFolderLayout topLeftLayoutFolder = layout.createFolder("top left folder", IPageLayout.LEFT, 0.31f, "top folder");

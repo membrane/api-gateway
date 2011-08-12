@@ -38,10 +38,10 @@
       </view>
       <view
             category="com.predic8.plugin.membrane.views.MembraneProxiesViewCategory"
-            class="com.predic8.plugin.membrane.views.RuleStatisticsView"
+            class="com.predic8.plugin.membrane.views.ProxyStatisticsView"
             icon="icons/calculator.png"
-            id="com.predic8.plugin.membrane.views.RuleStatisticsView"
-            name="Rule Statistics"
+            id="com.predic8.plugin.membrane.views.ProxyStatisticsView"
+            name="Proxy Statistics"
             restorable="true">
       </view>
       <view
