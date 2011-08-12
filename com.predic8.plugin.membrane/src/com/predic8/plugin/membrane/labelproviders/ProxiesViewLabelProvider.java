@@ -25,7 +25,7 @@ import org.eclipse.swt.graphics.Image;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.statistics.RuleStatistics;
+import com.predic8.membrane.core.statistics.ProxyStatistics;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
@@ -34,29 +34,29 @@ public class ProxiesViewLabelProvider extends LabelProvider implements ITableLab
 	
 	private NumberFormat nf = NumberFormat.getInstance();
 	
-	private Image ruleProxyImage;
+	private Image proxyImage;
 	
-	private Image ruleForwardingImage;
+	private Image serviceProxyImage;
 	
 	public ProxiesViewLabelProvider() {
 		nf.setMaximumFractionDigits(3);
-		ruleProxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_RULE_PROXY).createImage();
-		ruleForwardingImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_RULE_REVERSE_PROXY).createImage();
+		proxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PROXY).createImage();
+		serviceProxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_SERVICE_PROXY).createImage();
 	}
 	
 	public Image getColumnImage(Object element, int columnIndex) {
 		if (columnIndex != 0)
 			return null;
 		if (element instanceof ServiceProxy) {
-			return ruleForwardingImage;
+			return serviceProxyImage;
 		}
-		return ruleProxyImage;
+		return proxyImage;
 	}
 
 	public String getColumnText(Object element, int columnIndex) {
 		Rule rule = (Rule)element;
 		
-		RuleStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getKey());
+		ProxyStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getKey());
 		
 		switch (columnIndex) {
 		case 0:
@@ -64,7 +64,7 @@ public class ProxiesViewLabelProvider extends LabelProvider implements ITableLab
 		case 1:
 			return "" + statistics.getCountTotal();
 		default:
-			throw new RuntimeException("Table in rules view  must have only 3 columns");
+			throw new RuntimeException("Table in proxies view  must have only 3 columns");
 		}
 	}
 

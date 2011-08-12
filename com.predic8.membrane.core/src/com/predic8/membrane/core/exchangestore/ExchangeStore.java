@@ -20,7 +20,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.statistics.RuleStatistics;
+import com.predic8.membrane.core.statistics.ProxyStatistics;
 
 public interface ExchangeStore {
 	
@@ -48,7 +48,7 @@ public interface ExchangeStore {
 	public int getNumberOfExchanges(RuleKey ruleKey);
 	
 	
-	public RuleStatistics getStatistics(RuleKey ruleKey);
+	public ProxyStatistics getStatistics(RuleKey ruleKey);
 	
 	
 	public Object[] getAllExchanges();

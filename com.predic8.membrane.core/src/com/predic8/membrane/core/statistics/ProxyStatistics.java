@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.statistics;
 
-public class RuleStatistics {
+public class ProxyStatistics {
 
 	int min = -1;
 	int max = -1;
@@ -25,7 +25,7 @@ public class RuleStatistics {
 	int countTotal = 0;
 	int countError = 0;
 	
-	public RuleStatistics() {
+	public ProxyStatistics() {
 		
 	}
 	

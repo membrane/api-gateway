@@ -26,7 +26,7 @@ import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.statistics.RuleStatistics;
+import com.predic8.membrane.core.statistics.ProxyStatistics;
 
 public class MemoryExchangeStore extends AbstractExchangeStore {
 
@@ -112,8 +112,8 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		return exchangesMap.get(ruleKey).size();
 	}
 
-	public RuleStatistics getStatistics(RuleKey key) {
-		RuleStatistics statistics = new RuleStatistics();
+	public ProxyStatistics getStatistics(RuleKey key) {
+		ProxyStatistics statistics = new ProxyStatistics();
 		statistics.setCountTotal(getNumberOfExchanges(key));
 		List<AbstractExchange> exchangesList = exchangesMap.get(key);
 		if (exchangesList == null || exchangesList.isEmpty())

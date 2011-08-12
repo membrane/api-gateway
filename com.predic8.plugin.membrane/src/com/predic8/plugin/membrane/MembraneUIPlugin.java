@@ -59,8 +59,8 @@ public class MembraneUIPlugin extends AbstractUIPlugin {
 	protected void initializeImageRegistry(ImageRegistry reg) {
 		reg.put(ImageKeys.IMAGE_RULE, imageDescriptorFromPlugin(PLUGIN_ID, "icons/rule_icon.png"));
 		
-		reg.put(ImageKeys.IMAGE_RULE_PROXY, imageDescriptorFromPlugin(PLUGIN_ID, "icons/rule_reverse_proxy.png"));
-		reg.put(ImageKeys.IMAGE_RULE_REVERSE_PROXY, imageDescriptorFromPlugin(PLUGIN_ID, "icons/rule_proxy.png"));
+		reg.put(ImageKeys.IMAGE_PROXY, imageDescriptorFromPlugin(PLUGIN_ID, "icons/rule_reverse_proxy.png"));
+		reg.put(ImageKeys.IMAGE_SERVICE_PROXY, imageDescriptorFromPlugin(PLUGIN_ID, "icons/rule_proxy.png"));
 		
 		reg.put(ImageKeys.IMAGE_PENDING, imageDescriptorFromPlugin(PLUGIN_ID, "icons/rule_pending.png"));
 		reg.put(ImageKeys.IMAGE_FAILED, imageDescriptorFromPlugin(PLUGIN_ID, "icons/rule_failed.png"));
