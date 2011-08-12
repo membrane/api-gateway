@@ -20,7 +20,7 @@ import org.eclipse.swt.widgets.TreeItem;
 
 import com.predic8.membrane.core.rules.Rule;
 
-public class RuleTreeCellEditorModifier implements ICellModifier {
+public class ProxyTreeCellEditorModifier implements ICellModifier {
 
 	private boolean allowModify;
 	
