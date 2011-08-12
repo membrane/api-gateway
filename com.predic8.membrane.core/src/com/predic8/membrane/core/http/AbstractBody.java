@@ -115,4 +115,8 @@ public abstract class AbstractBody {
 		}
 	}
 
+	public boolean isRead() {
+		return read;
+	}
+	
 }

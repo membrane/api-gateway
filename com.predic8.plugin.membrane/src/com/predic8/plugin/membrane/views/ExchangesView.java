@@ -101,6 +101,11 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 	}
 	
 	@Override
+	protected int getAlignemnt(int column) {
+		return SWT.LEFT;
+	}
+	
+	@Override
 	public void createPartControl(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
 		composite.setLayout(createTopLayout());

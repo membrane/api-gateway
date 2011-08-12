@@ -46,11 +46,16 @@ public class EmptyBody extends AbstractBody {
 
 	@Override
 	protected byte[] getRawLocal() throws IOException {
-		return null;
+		return new byte[0];
 	}
 	
 	@Override
 	public void write(OutputStream out) throws IOException {
 		
+	}
+	
+	@Override
+	public boolean isRead() {
+		return true;
 	}
 }

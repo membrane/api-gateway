@@ -49,7 +49,6 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 	}
 
 	public Image getColumnImage(Object element, int columnIndex) {
-
 		switch (columnIndex) {
 		case 0:
 			return selectImage(element);
@@ -90,57 +89,69 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 
 	public String getColumnText(Object element, int columnIndex) {
 
-		Exchange exchange = (Exchange) element;
+		Exchange exc = (Exchange) element;
 
 		switch (columnIndex) {
 
 		case 0:
-			if (exchange.getResponse() == null)
-				return "";
-			return "" + exchange.getResponse().getStatusCode();
+			if (exc.getResponse() == null)
+				return Constants.EMPTY_STRING;
+			
+			return "" + exc.getResponse().getStatusCode();
 
 		case 1:
-			if (exchange.getTime() == null)
+			if (exc.getTime() == null)
 				return Constants.UNKNOWN;
-			return DATE_FORMATTER.format(exchange.getTime().getTime());
+			
+			return DATE_FORMATTER.format(exc.getTime().getTime());
 
 		case 2:
-			return exchange.getRule().toString();
+			return exc.getRule().toString();
 
 		case 3:
-			return exchange.getRequest().getMethod();
+			return exc.getRequest().getMethod();
 
 		case 4:
-			return exchange.getRequest().getUri(); // path
+			return exc.getRequest().getUri(); // path
 
 		case 5:
-			return exchange.getSourceHostname(); // client
+			return exc.getSourceHostname(); // client
 
 		case 6:
-			return exchange.getServer();
+			return exc.getServer();
+			
 		case 7:
-			return exchange.getRequestContentType();
+			if (exc.getRequest().isGETRequest())
+				return Constants.N_A;
+			
+			return exc.getRequestContentType();
 
 		case 8:
-			if (exchange.getRequestContentLength() == -1)
+			if (exc.getRequestContentLength() == -1) {
+				if (exc.getRequest().isGETRequest())
+					return Constants.N_A;
+				
 				return Constants.UNKNOWN;
-			return "" + exchange.getRequestContentLength();
+			}
+			return "" + exc.getRequestContentLength();
 
 		case 9:
-			if (exchange.getResponse() == null)
+			if (exc.getResponse() == null)
 				return Constants.N_A;
-			return exchange.getResponseContentType();
+			
+			return exc.getResponseContentType();
 
 		case 10:
-			if (exchange.getResponse() == null)
+			if (exc.getResponse() == null)
 				return Constants.N_A;
-			return "" + exchange.getResponseContentLength();
+			
+			return "" + exc.getResponseContentLength();
 
 		case 11:
-			return "" + (exchange.getTimeResReceived() - exchange.getTimeReqSent());
+			return "" + (exc.getTimeResReceived() - exc.getTimeReqSent());
 		}
 		
-		return "";
+		return Constants.EMPTY_STRING;
 	}
 
 	private void createImages() {

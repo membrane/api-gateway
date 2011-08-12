@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.exchange;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -301,7 +302,19 @@ public abstract class AbstractExchange {
 	}
 	
 	public int getResponseContentLength() {
-		return getResponse().getHeader().getContentLength();
+		int length = getResponse().getHeader().getContentLength();
+		if (length != -1)
+			return length;
+		
+		if (length == -1 && getResponse().getBody().isRead()) {
+			try {
+				return  getResponse().getBody().getLength();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+			
+		return -1;
 	}
 
 	public int getRequestContentLength() {
