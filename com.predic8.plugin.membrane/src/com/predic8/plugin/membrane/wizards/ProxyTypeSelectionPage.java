@@ -25,25 +25,25 @@ public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 
 	public static final String PAGE_NAME = "Type Selection";
 	
-	private Button btSimpleRule;
+	private Button btSimpleProxy;
 	
-	private Button btAdvancedRule;
+	private Button btAdvancedProxy;
 	
 	protected Button btProxyRule;
 	
 	protected ProxyTypeSelectionPage() {
 		super(PAGE_NAME);
-		setTitle(" Add new Rule for a ");
+		setTitle(" Add new Proxy for a ");
 	}
 
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 2);
 		
-		btSimpleRule = createRuleButton(composite, "Simple Reverse Proxy");
+		btSimpleProxy = createRuleButton(composite, "Simple Reverse Proxy");
 		createFullDescriptionLabel(composite, "Create rule to forward  HTTP and SOAP over HTTP requests.");
 		addVericalGap(composite);
 		
-		btAdvancedRule = createRuleButton(composite, "Advanced Reverse Proxy");
+		btAdvancedProxy = createRuleButton(composite, "Advanced Reverse Proxy");
 		createFullDescriptionLabel(composite, "Offers all available options for reverse proxy rules like virtual host,\nHTTP method and request URL.");
 		addVericalGap(composite);
 		
@@ -74,9 +74,9 @@ public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 
 	@Override
 	public IWizardPage getNextPage() {
-		if (btSimpleRule.getSelection()) {
+		if (btSimpleProxy.getSelection()) {
 			return getWizard().getPage(ListenPortConfigurationPage.PAGE_NAME);
-		} else if (btAdvancedRule.getSelection()) {
+		} else if (btAdvancedProxy.getSelection()) {
 			return getWizard().getPage(AdvancedProxyConfigurationPage.PAGE_NAME);
 		}
 		return getWizard().getPage(ProxyRuleConfigurationPage.PAGE_NAME);
