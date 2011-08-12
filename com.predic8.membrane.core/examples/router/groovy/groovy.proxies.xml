@@ -1,12 +1,21 @@
 <proxies>
 	<serviceProxy port="2000">
-		<groovy>
-			if (exc.response)
-				println "response code: $exc.response.statusCode"
-			else if (exc.request)
-				println "request for $exc.request.uri"			
-			CONTINUE
-		</groovy>
+		<request>
+			<groovy>
+				exc.request.header.add("X-Groovy", "Groovy interceptor")
+				println "X-Groovy header added." 				
+				CONTINUE
+			</groovy>
+		</request>
+		<response>
+			<groovy>
+				println "Response headers:"
+				exc.response.header.allHeaderFields.each {
+					println it 
+				}				
+				CONTINUE
+			</groovy>
+		</response>
 		<target host="membrane-soa.org" port="80" />
 	</serviceProxy>
 </proxies>

@@ -1,10 +1,12 @@
 <proxies>
 	<serviceProxy port="2000">
-		<rest2Soap>
+		<log />
+		<rest2Soap>		
 			<mapping regex="/bank/.*" soapAction=""
-				soapURI="/axis2/services/BLZService" requestXSLT="blz-httpget2soap-request.xsl"
-				responseXSLT="strip-soap-envelope.xsl" />
+				soapURI="/axis2/services/BLZService" requestXSLT="get2soap.xsl"
+				responseXSLT="strip-env.xsl" />
 		</rest2Soap>
+		<log />
 		<target host="www.thomas-bayer.com" port="80" />
 	</serviceProxy>
 </proxies>

@@ -6,7 +6,7 @@ With the GroovyInterceptor you can run groovy scripts to manipulate or monitor m
 
 RUNNING THE EXAMPLE
 
-In this example we will use the GroovyInterceptor to print logs to the console.
+In this example we will use the GroovyInterceptor to add a header to the request and to print all headers of the response to the console.
 
 To run the example execute the following steps: 
 
