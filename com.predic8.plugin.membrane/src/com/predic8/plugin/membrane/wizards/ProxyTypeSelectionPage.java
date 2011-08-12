@@ -39,15 +39,15 @@ public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 2);
 		
-		btSimpleProxy = createRuleButton(composite, "Simple Reverse Proxy");
-		createFullDescriptionLabel(composite, "Create rule to forward  HTTP and SOAP over HTTP requests.");
+		btSimpleProxy = createRuleButton(composite, "Simple Service Proxy");
+		createFullDescriptionLabel(composite, "Create service proxy that forwards  HTTP and SOAP over HTTP requests.");
 		addVericalGap(composite);
 		
-		btAdvancedProxy = createRuleButton(composite, "Advanced Reverse Proxy");
-		createFullDescriptionLabel(composite, "Offers all available options for reverse proxy rules like virtual host,\nHTTP method and request URL.");
+		btAdvancedProxy = createRuleButton(composite, "Advanced Service Proxy");
+		createFullDescriptionLabel(composite, "Offers all available options for service proxies like virtual host,\nHTTP method and request URL.");
 		addVericalGap(composite);
 		
-		btProxyRule = createRuleButton(composite, "HTTP  Proxy Rule");
+		btProxyRule = createRuleButton(composite, "HTTP  Proxy");
 		createFullDescriptionLabel(composite, "Works like a regular HTTP Proxy.\nCan proxy SOAP and HTTP requests.");
 		setControl(composite);
 	}
