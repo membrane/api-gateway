@@ -30,8 +30,8 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 				return Outcome.ABORT;
 			}
 		}
-		increaseThreads();
-		log.debug("thread count increased: "+threads);
+		increaseThreads();		
+		log.debug("thread count increased: "+threads);		
 		return Outcome.CONTINUE;
 	}
 
