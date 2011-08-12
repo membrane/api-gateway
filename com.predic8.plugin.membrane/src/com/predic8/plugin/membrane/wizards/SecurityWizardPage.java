@@ -14,7 +14,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.SecurityConfigurationChangeListener;
 import com.predic8.plugin.membrane.actions.ShowSecurityPreferencesAction;
 
-public abstract class SecurityWizardPage extends AbstractRuleWizardPage implements SecurityConfigurationChangeListener {
+public abstract class SecurityWizardPage extends AbstractProxyWizardPage implements SecurityConfigurationChangeListener {
 
 	protected Button btSecureConnection;
 	

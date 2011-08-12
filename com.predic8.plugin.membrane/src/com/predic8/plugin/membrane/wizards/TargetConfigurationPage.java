@@ -121,7 +121,7 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 	}
 
 	@Override
-	boolean performFinish(AddRuleWizard wizard) throws IOException {
+	boolean performFinish(AddProxyWizard wizard) throws IOException {
 		if (getPreviousPage().getName().equals(ListenPortConfigurationPage.PAGE_NAME)) {
 			return wizard.listenPortConfigPage.performFinish(wizard);
 		}

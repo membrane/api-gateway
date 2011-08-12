@@ -21,7 +21,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 
-public class RuleTypeSelectionPage extends AbstractRuleWizardPage {
+public class RuleTypeSelectionPage extends AbstractProxyWizardPage {
 
 	public static final String PAGE_NAME = "Type Selection";
 	

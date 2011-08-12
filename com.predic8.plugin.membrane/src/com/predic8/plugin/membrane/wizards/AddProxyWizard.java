@@ -26,7 +26,7 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
-public class AddRuleWizard extends Wizard {
+public class AddProxyWizard extends Wizard {
 
 	private RuleTypeSelectionPage selectionWizardPage = new RuleTypeSelectionPage();
 
@@ -38,7 +38,7 @@ public class AddRuleWizard extends Wizard {
 
 	private ProxyRuleConfigurationPage proxyRuleConfigPage = new ProxyRuleConfigurationPage();
 	
-	public AddRuleWizard() {
+	public AddProxyWizard() {
 		setWindowTitle("Add Rule ...");
 	}
 
@@ -82,8 +82,8 @@ public class AddRuleWizard extends Wizard {
 		return getCurrentPage().canFinish();		
 	}
 
-	private AbstractRuleWizardPage getCurrentPage() {
-		return ((AbstractRuleWizardPage)getContainer().getCurrentPage());
+	private AbstractProxyWizardPage getCurrentPage() {
+		return ((AbstractProxyWizardPage)getContainer().getCurrentPage());
 	}
 
 	void openWarningDialog(String msg) {

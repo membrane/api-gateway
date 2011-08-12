@@ -13,9 +13,9 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
-public abstract class AbstractRuleWizardPage extends WizardPage {
+public abstract class AbstractProxyWizardPage extends WizardPage {
 
-	protected AbstractRuleWizardPage(String pageName) {
+	protected AbstractProxyWizardPage(String pageName) {
 		super(pageName);
 	}
 
@@ -23,7 +23,7 @@ public abstract class AbstractRuleWizardPage extends WizardPage {
 		return false;
 	}
 	
-	boolean performFinish(AddRuleWizard wizard) throws IOException {
+	boolean performFinish(AddProxyWizard wizard) throws IOException {
 		return true;
 	}
 	

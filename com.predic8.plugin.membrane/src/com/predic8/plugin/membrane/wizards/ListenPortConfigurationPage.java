@@ -31,7 +31,7 @@ import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
+public class ListenPortConfigurationPage extends AbstractProxyWizardPage {
 
 	public static final String PAGE_NAME = "Listen Port Configuration";
 	
@@ -121,7 +121,7 @@ public class ListenPortConfigurationPage extends AbstractRuleWizardPage {
 		return listenPortText.getText();
 	}
 
-	protected boolean performFinish(AddRuleWizard wizard) throws IOException {
+	protected boolean performFinish(AddProxyWizard wizard) throws IOException {
 		ForwardingRuleKey ruleKey = new ForwardingRuleKey("*", "*", ".*", Integer.parseInt(getListenPort()));
 		
 		if (Router.getInstance().getRuleManager().exists(ruleKey)) {

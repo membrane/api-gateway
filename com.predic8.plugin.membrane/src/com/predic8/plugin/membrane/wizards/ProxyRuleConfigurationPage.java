@@ -29,7 +29,7 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class ProxyRuleConfigurationPage extends AbstractRuleWizardPage {
+public class ProxyRuleConfigurationPage extends AbstractProxyWizardPage {
 
 	public static final String PAGE_NAME = "Proxy Rule Configuration";
 
@@ -101,7 +101,7 @@ public class ProxyRuleConfigurationPage extends AbstractRuleWizardPage {
 	}
 
 	@Override
-	boolean performFinish(AddRuleWizard wizard) throws IOException {
+	boolean performFinish(AddProxyWizard wizard) throws IOException {
 		ProxyRuleKey key = new ProxyRuleKey(getListenPort());
 		if (getRuleManager().exists(key)) {
 			wizard.openWarningDialog("You've entered a duplicated rule key.");

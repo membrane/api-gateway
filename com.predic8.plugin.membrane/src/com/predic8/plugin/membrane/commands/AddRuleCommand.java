@@ -19,14 +19,14 @@ import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.widgets.Display;
 
-import com.predic8.plugin.membrane.wizards.AddRuleWizard;
+import com.predic8.plugin.membrane.wizards.AddProxyWizard;
 
 
 public class AddRuleCommand extends AbstractHandler {
 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		//TODO copied from RulesViewControlsComposite, does the same as clicking the Button
-		WizardDialog wizardDialog = new WizardDialog(Display.getCurrent().getActiveShell(), new AddRuleWizard());
+		WizardDialog wizardDialog = new WizardDialog(Display.getCurrent().getActiveShell(), new AddProxyWizard());
 		wizardDialog.create();
 		wizardDialog.open();
 		return null;

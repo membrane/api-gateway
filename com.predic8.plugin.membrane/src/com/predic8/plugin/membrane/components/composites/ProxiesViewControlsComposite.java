@@ -9,7 +9,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.actions.rules.RemoveProxyAction;
 import com.predic8.plugin.membrane.actions.rules.EditProxyAction;
-import com.predic8.plugin.membrane.wizards.AddRuleWizard;
+import com.predic8.plugin.membrane.wizards.AddProxyWizard;
 
 public class ProxiesViewControlsComposite extends ControlsComposite {
 
@@ -28,7 +28,7 @@ public class ProxiesViewControlsComposite extends ControlsComposite {
 	
 	@Override
 	public void newButtonPressed() {
-		WizardDialog wizardDialog = new WizardDialog(Display.getCurrent().getActiveShell(), new AddRuleWizard());
+		WizardDialog wizardDialog = new WizardDialog(Display.getCurrent().getActiveShell(), new AddProxyWizard());
 		wizardDialog.create();
 		wizardDialog.open();
 	}
