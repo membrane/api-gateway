@@ -29,14 +29,14 @@ import com.predic8.plugin.membrane.components.RuleKeyGroup;
 
 public class AdvancedProxyConfigurationPage extends SecurityWizardPage {
 
-	public static final String PAGE_NAME = "Advanced Rule Configuration";
+	public static final String PAGE_NAME = "Advanced Proxy Configuration";
 	
 	RuleKeyGroup ruleKeyGroup;
 	
 	protected AdvancedProxyConfigurationPage() {
 		super(PAGE_NAME);
-		setTitle("Advanced Rule");
-		setDescription("Specify all rule configuration parameters");
+		setTitle("Advanced Proxy");
+		setDescription("Specify all proxy configuration parameters");
 	}
 
 	public void createControl(Composite parent) {
@@ -81,7 +81,7 @@ public class AdvancedProxyConfigurationPage extends SecurityWizardPage {
 	public IWizardPage getNextPage() {
 		IWizardPage page = getWizard().getPage(TargetConfigurationPage.PAGE_NAME);
 		//page is used in simple and advanced configuration, therefore title must be adjusted
-		page.setTitle("Advanced Rule");
+		page.setTitle("Advanced Proxy");
 		return page;
 	}
 	

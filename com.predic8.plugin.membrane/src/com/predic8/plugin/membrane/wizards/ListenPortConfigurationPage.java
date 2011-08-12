@@ -39,14 +39,14 @@ public class ListenPortConfigurationPage extends AbstractProxyWizardPage {
 	
 	protected ListenPortConfigurationPage() {
 		super(PAGE_NAME);
-		setTitle("Simple Rule");
+		setTitle("Simple Proxy");
 		setDescription("Specify Listen Port");
 	}
 
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 2);
 		
-		createFullDescriptionLabel(composite, "A rule is listenening on a TCP port for incomming connections.\n" + "The port number can be any integer between 1 and 65535.");
+		createFullDescriptionLabel(composite, "A proxy is listenening on a TCP port for incomming connections.\n" + "The port number can be any integer between 1 and 65535.");
 		
 		Label listenPortLabel = createListenPortLabel(composite);
 		listenPortLabel.setText("Listen Port:");
@@ -113,7 +113,7 @@ public class ListenPortConfigurationPage extends AbstractProxyWizardPage {
 	public IWizardPage getNextPage() {
 		IWizardPage page = getWizard().getPage(TargetConfigurationPage.PAGE_NAME);
 		//page is used in simple and advanced configuration, therefore title must be adjusted
-		page.setTitle("Simple Rule"); 
+		page.setTitle("Simple Proxy"); 
 		return page;
 	}
 	

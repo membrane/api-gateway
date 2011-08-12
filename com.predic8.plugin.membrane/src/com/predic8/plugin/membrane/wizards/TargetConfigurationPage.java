@@ -42,7 +42,7 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 1);
 		
-		createFullDescriptionLabel(composite, "If this rule applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
+		createFullDescriptionLabel(composite, "If this proxy applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
 
 		createSecurityComposite(composite);
 
