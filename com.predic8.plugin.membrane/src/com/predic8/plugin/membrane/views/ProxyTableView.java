@@ -26,12 +26,12 @@ import org.eclipse.swt.widgets.Label;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.contentproviders.RuleTableContentProvider;
-import com.predic8.plugin.membrane.labelproviders.RuleTableLabelProvider;
+import com.predic8.plugin.membrane.contentproviders.ProxyTableContentProvider;
+import com.predic8.plugin.membrane.labelproviders.ProxyTableLabelProvider;
 
-public class RuleTableView extends TableViewPart implements IRuleChangeListener {
+public class ProxyTableView extends TableViewPart implements IRuleChangeListener {
 
-	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.RuleTableView";
+	public static final String VIEW_ID = "com.predic8.plugin.membrane.views.ProxyTableView";
 
 	@Override
 	public void createPartControl(Composite parent) {
@@ -50,17 +50,17 @@ public class RuleTableView extends TableViewPart implements IRuleChangeListener 
 
 	@Override
 	protected IBaseLabelProvider createLabelProvider() {
-		return new RuleTableLabelProvider();
+		return new ProxyTableLabelProvider();
 	}
 	
 	@Override
 	protected IContentProvider createContentProvider() {
-		return new RuleTableContentProvider();
+		return new ProxyTableContentProvider();
 	}
 	
 	private void createTitleLabel(Composite dummyComposite) {
 		Label titleLabel = new Label(dummyComposite, SWT.NONE);
-		titleLabel.setText("List of currently available Rules");
+		titleLabel.setText("List of currently available Proxis");
 		titleLabel.setFont(JFaceResources.getFontRegistry().get(JFaceResources.HEADER_FONT));
 	}
 

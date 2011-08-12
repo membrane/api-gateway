@@ -21,7 +21,7 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.PluginUtil;
-import com.predic8.plugin.membrane.views.RuleTableView;
+import com.predic8.plugin.membrane.views.ProxyTableView;
 
 public class ShowRulesTableAction implements IWorkbenchWindowActionDelegate {
 
@@ -40,7 +40,7 @@ public class ShowRulesTableAction implements IWorkbenchWindowActionDelegate {
 	}
 
 	public void run(IAction action) {
-		RuleTableView ruleTableView = (RuleTableView) PluginUtil.showView(RuleTableView.VIEW_ID);
+		ProxyTableView ruleTableView = (ProxyTableView) PluginUtil.showView(ProxyTableView.VIEW_ID);
 		ruleTableView.getTableViewer().setInput(Router.getInstance().getRuleManager());
 
 	}

@@ -19,7 +19,7 @@ import org.eclipse.jface.viewers.Viewer;
 
 import com.predic8.membrane.core.RuleManager;
 
-public class RuleTableContentProvider implements IStructuredContentProvider {
+public class ProxyTableContentProvider implements IStructuredContentProvider {
 
 	public Object[] getElements(Object inputElement) {
 		RuleManager ruleManager = (RuleManager)inputElement;

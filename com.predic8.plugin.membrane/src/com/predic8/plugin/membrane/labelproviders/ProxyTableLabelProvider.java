@@ -22,7 +22,7 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 
 
-public class RuleTableLabelProvider extends LabelProvider implements ITableLabelProvider {
+public class ProxyTableLabelProvider extends LabelProvider implements ITableLabelProvider {
 
 	public Image getColumnImage(Object element, int columnIndex) {
 		
