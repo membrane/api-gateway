@@ -23,7 +23,13 @@ To run the example execute the following steps:
 
 4. Try it again with a different banking code e.g. http://localhost:2000/bank/66762332.
 
+To get a JSON response execute the following steps:
 
+1. Stop the router.
+
+2. Execute router-json.bat.
+
+3. Open the URL http://localhost:2000/bank/37050198 in your browser.
 
 
 HOW IT IS DONE

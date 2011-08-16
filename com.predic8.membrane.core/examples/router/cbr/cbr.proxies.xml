@@ -1,0 +1,37 @@
+<proxies>
+	<serviceProxy name="ImportItems">
+		<groovy>
+			println "Order contains import items." 	
+			exc.response = new OKResponse()			
+			ABORT
+		</groovy>
+		<path>/shop/import-items</path>
+	</serviceProxy>
+
+	<serviceProxy name="Order">
+		<groovy>
+			println "Normal order received." 	
+			exc.response = new OKResponse()			
+			ABORT
+		</groovy>
+		<path>/shop/order</path>
+	</serviceProxy>
+	
+	<serviceProxy name="Express">
+		<groovy>
+			println "Express order received." 	
+			exc.response = new OKResponse()			
+			ABORT
+		</groovy>
+		<path>/shop/express</path>
+	</serviceProxy>
+
+	<serviceProxy name="Router">
+		<switch>
+			<case xPath="//order[@express='yes']" url="http://localhost/shop/express" />
+			<case xPath="//order/items/item[@id='7']" url="http://localhost/shop/import-items" />
+			<case xPath="//order" url="http://localhost/shop/order" />
+		</switch>
+		<path>/shop</path>
+	</serviceProxy>
+</proxies>
