@@ -25,11 +25,11 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		Binding b = new Binding();
 		b.setVariable("exc", exc);
 		GroovyShell shell = new GroovyShell(b);
-		return (Outcome)shell.evaluate(srcWithOutcomeImport());
+		return (Outcome)shell.evaluate(srcWithImports());
 	}
 
-	private String srcWithOutcomeImport() {
-		return "import static com.predic8.membrane.core.interceptor.Outcome.*\n"+src;
+	private String srcWithImports() {
+		return "import static com.predic8.membrane.core.interceptor.Outcome.*\nimport com.predic8.membrane.core.http.*\n"+src;
 	}		
 	
 	@Override
