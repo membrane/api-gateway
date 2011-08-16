@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.net.URL;
+
+import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class DispatchingInterceptor extends AbstractInterceptor {
@@ -42,15 +42,16 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private String getForwardingDestination(Exchange exc) {
-		StringBuffer buf = new StringBuffer();
-		buf.append("http://");
-		buf.append(((ServiceProxy)exc.getRule()).getTargetHost());
-		buf.append(":");
-		buf.append(((ServiceProxy)exc.getRule()).getTargetPort() );
-		buf.append(exc.getRequest().getUri());
-		log.debug("destination: " + buf.toString());
-		return buf.toString();
+	private String getForwardingDestination(Exchange exc) throws Exception {
+		ServiceProxy p = (ServiceProxy)exc.getRule();
+		if (p.getTargetURL()!=null) {
+			log.debug("destination: " + p.getTargetURL());
+			return p.getTargetURL();
+		}
+		
+		URL url = new URL("http", p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri());
+		log.debug("destination: " + url);
+		return ""+url; 
 	}
 
 }
