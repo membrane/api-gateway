@@ -14,19 +14,16 @@
 
 package com.predic8.membrane.core.rules;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.interceptor.Interceptor;
 
 public class ServiceProxy extends AbstractRule {
 
 	private String targetHost;
 	private int targetPort;
+	private String targetURL;
 
 	public ServiceProxy() {}
 
@@ -62,10 +59,18 @@ public class ServiceProxy extends AbstractRule {
 		this.targetPort = targetPort;
 	}
 
+	public String getTargetURL() {
+		return targetURL;
+	}
+
+	public void setTargetURL(String targetURL) {
+		this.targetURL = targetURL;
+	}
+
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
 		String host = defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "host"), "*");
-		int port = Integer.parseInt(token.getAttributeValue(Constants.NS_UNDEFINED, "port"));
+		int port = Integer.parseInt(defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "port"),"80"));
 		String method = defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "method"), "*");
 		key = new ForwardingRuleKey(host, method, ".*", port);
 	}
@@ -84,6 +89,7 @@ public class ServiceProxy extends AbstractRule {
 			target.parse(token);
 			targetHost = target.getAttribute("host");
 			targetPort = Integer.parseInt(target.getAttributeOrDefault("port","80"));			
+			targetURL = target.getAttribute("url");
 		} else if (Path.ELEMENT_NAME.equals(child)) {
 			key.setUsePathPattern(true);
 			Path p = (Path)(new Path(router)).parse(token);
@@ -125,6 +131,8 @@ public class ServiceProxy extends AbstractRule {
 		
 		out.writeAttribute("host", targetHost);
 		out.writeAttribute("port", ""+targetPort);
+		if (targetURL!=null)
+			out.writeAttribute("url", targetURL);
 		
 		out.writeEndElement();
 	}
