@@ -47,7 +47,13 @@ public class Case extends AbstractXmlElement {
 	@Override
 	protected void parseAttributes(XMLStreamReader token)
 			throws XMLStreamException {
+		
 		xPath = token.getAttributeValue("", "xPath");
+		
 		url = token.getAttributeValue("", "url");
+		
+		if (token.getAttributeValue("", "service") != null ) {
+			url = "service:"+token.getAttributeValue("", "service");
+		}
 	}
 }

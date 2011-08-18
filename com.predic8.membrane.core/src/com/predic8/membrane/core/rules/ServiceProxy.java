@@ -89,7 +89,9 @@ public class ServiceProxy extends AbstractRule {
 			target.parse(token);
 			targetHost = target.getAttribute("host");
 			targetPort = Integer.parseInt(target.getAttributeOrDefault("port","80"));			
-			targetURL = target.getAttribute("url");
+			targetURL = target.getAttribute("service")!=null?
+						"service:"+target.getAttribute("service"):
+						target.getAttribute("url");
 		} else if (Path.ELEMENT_NAME.equals(child)) {
 			key.setUsePathPattern(true);
 			Path p = (Path)(new Path(router)).parse(token);
