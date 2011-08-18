@@ -5,6 +5,7 @@ import javax.xml.stream.*;
 import groovy.lang.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 
 public class GroovyInterceptor extends AbstractInterceptor {
@@ -25,7 +26,23 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		Binding b = new Binding();
 		b.setVariable("exc", exc);
 		GroovyShell shell = new GroovyShell(b);
-		return (Outcome)shell.evaluate(srcWithImports());
+		return getOutcome(shell.evaluate(srcWithImports()), exc);
+	}
+
+	private Outcome getOutcome(Object res, Exchange exc) {
+		if (res instanceof Outcome) {
+			return (Outcome) res;
+		}
+		
+		if (res instanceof Response) {
+			exc.setResponse((Response)res);
+			return Outcome.ABORT;
+		}
+		
+		if (res instanceof Request) {
+			exc.setRequest((Request) res);
+		}
+		return Outcome.CONTINUE;
 	}
 
 	private String srcWithImports() {
