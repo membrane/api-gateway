@@ -17,20 +17,16 @@ package com.predic8.membrane.core.transport.http;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
+import java.net.*;
 
 import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.ErrorResponse;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.*;
 
 public class HttpServerRunnable extends AbstractHttpRunnable {
@@ -69,7 +65,6 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 				
 				
 				process();
-				
 				
 				if (srcReq.isCONNECTRequest()) {
 					log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
@@ -129,7 +124,6 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 	}
 
 	private void process() throws Exception {
-		targetRes = null;
 		try {
 			
 			exchange.setSourceHostname(transport.getRouter().getDnsCache().getHostName(sourceSocket.getInetAddress()));
@@ -138,29 +132,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
 			
-			invokeRequestHandlers();
-
-			synchronized (exchange.getRequest()) {
-				if (exchange.getRule().isBlockRequest()) {
-					exchange.setStopped();
-					block(exchange.getRequest());
-				}
-			}
-
-			String dest = exchange.getDestinations().get(0);
-			try {
-				targetRes = client.call(exchange);
-			} catch (ConnectException e) {
-				targetRes = new ErrorResponse(500, "Internal Server Error", "Target " + dest + " is not reachable.");  
-				log.warn("Target " + dest + " is not reachable. " + e);
-			} catch (UnknownHostException e) {
-				targetRes = new ErrorResponse(500, "Internal Server Error", "Target host " + HttpUtil.getHostName(dest) + " is unknown. DNS was unable to resolve host name.");
-			}			
-			exchange.setResponse(targetRes);
-			
-			exchange.getRule().addStatusCode(exchange.getResponse().getStatusCode());
-			
-			invokeResponseHandlers(exchange);
+			invokeHandlers();
 
 			synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {
@@ -178,10 +150,54 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 			return;
 		}
 		
-		writeResponse(targetRes);
+		writeResponse(exchange.getResponse());
 		exchange.setCompleted();
 		log.debug("exchange set completed");
 		
+	}
+
+	private void invokeHandlers() throws Exception {
+		
+		invokeRequestHandlers();
+
+		synchronized (exchange.getRequest()) {
+			if (exchange.getRule().isBlockRequest()) {
+				exchange.setStopped();
+				block(exchange.getRequest());
+			}
+		}
+
+		String dest = exchange.getDestinations().get(0);
+		if (dest.startsWith("service:")) {
+			
+			log.debug("routing to serviceProxy with name: " + dest.substring(8));
+			
+			Rule r = exchange.getRule();
+			exchange.getDestinations().clear();
+			exchange.setRule(transport.getRouter().getRuleManager().getRuleByName(dest.substring(8)));
+			
+			invokeHandlers();
+			
+			exchange.setRule(r);
+		} else {
+			callClient(dest);			
+		}
+		exchange.getRule().addStatusCode(exchange.getResponse().getStatusCode());
+		invokeResponseHandlers(exchange);
+	}
+
+	private void callClient(String dest) throws Exception {
+		Response targetRes = null;
+
+		try {
+			targetRes = client.call(exchange);
+		} catch (ConnectException e) {
+			targetRes = new ErrorResponse(500, "Internal Server Error", "Target " + dest + " is not reachable.");  
+			log.warn("Target " + dest + " is not reachable. " + e);
+		} catch (UnknownHostException e) {
+			targetRes = new ErrorResponse(500, "Internal Server Error", "Target host " + HttpUtil.getHostName(dest) + " is unknown. DNS was unable to resolve host name.");
+		}			
+		exchange.setResponse(targetRes);
 	}
 
 }

@@ -41,6 +41,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 	
 	public Outcome handleRequest(Exchange exc) throws Exception {
+		if (exc.getRule() != null ) return Outcome.CONTINUE;
+		
 		Rule rule = getRule(exc);
 		exc.setRule(rule);
 		

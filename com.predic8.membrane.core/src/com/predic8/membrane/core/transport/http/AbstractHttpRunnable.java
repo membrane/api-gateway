@@ -31,8 +31,6 @@ public abstract class AbstractHttpRunnable implements Runnable {
 	
 	protected HttpClient client = new HttpClient();
 
-	protected Response targetRes;
-
 	protected Exchange exchange;
 	
 	protected Request srcReq;

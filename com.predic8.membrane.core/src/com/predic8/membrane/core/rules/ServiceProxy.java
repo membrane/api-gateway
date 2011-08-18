@@ -24,7 +24,7 @@ public class ServiceProxy extends AbstractRule {
 	private String targetHost;
 	private int targetPort;
 	private String targetURL;
-
+	
 	public ServiceProxy() {}
 
 	public ServiceProxy(Router router) {

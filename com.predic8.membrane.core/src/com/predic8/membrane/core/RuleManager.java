@@ -233,4 +233,11 @@ public class RuleManager {
 		return router.getExchangeStore();
 	}
 
+	public Rule getRuleByName(String name) {
+		for (Rule r : rules ) {
+			if ( name.equals(r.getName()) ) return r;
+		}
+		return null;
+	}
+
 }
