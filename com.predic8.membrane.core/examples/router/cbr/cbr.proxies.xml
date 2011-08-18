@@ -1,30 +1,27 @@
 <proxies>
 	<serviceProxy name="Router">
 		<switch>
-			<case xPath="//order[@express='yes']" url="service:Express" />
-			<case xPath="//order/items/item[@id='7']" url="service:ImportItems" />
-			<case xPath="//order" url="service:Order" />
+			<case xPath="//order[@express='yes']" service="Express" />
+			<case xPath="//order/items/item[@id='7']" service="ImportItems" />
+			<case xPath="//order" service="Order" />
 		</switch>
 	</serviceProxy>
 
 	<serviceProxy name="ImportItems">
 		<groovy>
-			exc.response = Response.ok("Order contains import items.").build()			
-			ABORT
+			Response.ok("Order contains import items.").build()			
 		</groovy>
 	</serviceProxy>
 
 	<serviceProxy name="Order">
 		<groovy>
-			exc.response = Response.ok("Normal order received.").build()			
-			ABORT
+			Response.ok("Normal order received.").build()						
 		</groovy>
 	</serviceProxy>
 	
 	<serviceProxy name="Express">
 		<groovy>
-			exc.response = Response.ok("Express order received.").build()			
-			ABORT
+			Response.ok("Express order received.").build()			
 		</groovy>
 	</serviceProxy>
 
