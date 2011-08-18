@@ -2,7 +2,6 @@
 	<serviceProxy port="2000">
 		<response>
 			<groovy>
-				println exc.response.header.contentType
 				exc.response.header.contentType = 'application/json;charset=utf-8'
 				CONTINUE
 			</groovy>

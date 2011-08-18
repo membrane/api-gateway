@@ -14,6 +14,12 @@ Execute the following steps:
 
 1. Execute examples/cbr/router.bat
 
+   To test the router we will use the command line tool curl that can transfer data with URL syntax. You can download it form the following location:
+   
+     
+   http://curl.haxx.se/download.html
+      
+   
 2. Execute examples/curl -d @order.xml localhost/shop
 
 3. Take a look at the output of the console. You should see the line:
