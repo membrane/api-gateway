@@ -14,8 +14,7 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +35,50 @@ public class Response extends Message {
 
 	private static Pattern pattern = Pattern.compile("HTTP/(.+?) (.+?) (.+?)$");
 
+	public static class ResponseBuilder {
+		private Response res = new Response();
+
+		public Response build() {
+			return res;
+		}
+
+		public ResponseBuilder status(int code, String msg) {
+			res.setStatusCode(code);
+			res.setStatusMessage(msg);
+			return this;
+		}
+
+		public ResponseBuilder entity(String msg) throws Exception {
+			res.setBodyContent(msg.getBytes("UTF-8"));
+			return this;
+		}
+		
+		public ResponseBuilder header(String k, String v) {
+			res.getHeader().add(k, v);
+			return this;
+		}
+
+		public ResponseBuilder contentType(String type) {
+			res.getHeader().setContentType(type);
+			return this;
+		}
+
+		public static ResponseBuilder newInstance() {
+			return new ResponseBuilder();
+		}
+
+	}
+
+	public static ResponseBuilder ok(String msg) throws Exception {
+		return ok().entity(msg);
+	}
+	
+	public static ResponseBuilder ok() {
+		return ResponseBuilder.newInstance().
+							   status(200, "Ok").
+							   header("Server","Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
+	}
+	
 	@Override
 	public String getStartLine() {
 		StringBuffer buf = new StringBuffer();
@@ -65,7 +108,8 @@ public class Response extends Message {
 		this.statusMessage = statusMessage;
 	}
 
-	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
+	public void parseStartLine(InputStream in) throws IOException,
+			EndOfStreamException {
 
 		Matcher matcher = pattern.matcher(HttpUtil.readLine(in));
 		boolean find = matcher.find();
@@ -79,16 +123,17 @@ public class Response extends Message {
 
 	}
 
-	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
+	public void read(InputStream in, boolean createBody) throws IOException,
+			EndOfStreamException {
 		parseStartLine(in);
-		
+
 		if (getStatusCode() == 100) {
 			HttpUtil.readLine(in);
 			return;
 		}
 
 		header = new Header(in);
-		
+
 		if (createBody)
 			createBody(in);
 	}
@@ -96,13 +141,13 @@ public class Response extends Message {
 	protected void createBody(InputStream in) throws IOException {
 		if (isRedirect())
 			return;
-		
+
 		if (isBodyEmpty()) {
 			log.debug("empty body created");
 			body = new EmptyBody();
 			return;
 		}
-		
+
 		super.createBody(in);
 	}
 
@@ -113,19 +158,19 @@ public class Response extends Message {
 	public boolean hasNoContent() {
 		return statusCode == 204;
 	}
-	
+
 	@Override
 	public String getName() {
 		return " " + statusCode;
 	}
-	
+
 	@Override
 	public boolean isBodyEmpty() throws IOException {
-		if (statusCode == 100 || statusCode == 204 || statusCode == 205) 
+		if (statusCode == 100 || statusCode == 204 || statusCode == 205)
 			return true;
 		return super.isBodyEmpty();
 	}
-	
+
 	public boolean isUserError() {
 		return statusCode >= 400 && statusCode < 500;
 	}
