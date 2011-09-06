@@ -34,7 +34,7 @@ public class ConfigurationManager {
 	private Router router;
 
 	private List<SecurityConfigurationChangeListener> securityChangeListeners = new Vector<SecurityConfigurationChangeListener>();
-	
+
 	public void saveConfiguration(String fileName) throws Exception {
 		getProxies().setRules(router.getRuleManager().getRules());
 		getProxies().write(fileName);
@@ -52,7 +52,9 @@ public class ConfigurationManager {
 		for (Rule rule : getProxies().getRules()) {
 			router.getRuleManager().addRuleIfNew(rule);
 		}
-
+		
+		if (!fileName.startsWith("classpath:"))
+			new HotDeploymentThread(fileName, router).start();
 	}
 
 	public void setSecuritySystemProperties() {
