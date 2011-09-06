@@ -1,0 +1,9 @@
+<proxies>
+	<serviceProxy port="2000">
+		<formValidation>
+			<field name="name" regex="[a-zA-Z]+" />
+		</formValidation>
+		<target host="www.thomas-bayer.com" />
+	</serviceProxy>
+</proxies>
+

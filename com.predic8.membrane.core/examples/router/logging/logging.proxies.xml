@@ -1,6 +1,6 @@
 <proxies>
 	<serviceProxy name="predic8.com" port="2000">
-		<log />
+		<log/>
 		<target host="membrane-soa.org" port="80" />
-	</serviceProxy>
+	</serviceProxy> 
 </proxies>
