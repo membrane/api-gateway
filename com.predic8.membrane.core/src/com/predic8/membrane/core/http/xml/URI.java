@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.http.xml;
 
-import static com.predic8.membrane.core.util.URLUtil.parseQueryString;
+import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;

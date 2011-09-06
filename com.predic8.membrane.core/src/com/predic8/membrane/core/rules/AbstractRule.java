@@ -29,10 +29,11 @@ import com.predic8.membrane.core.interceptor.administration.AdminConsoleIntercep
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
+import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
-import com.predic8.membrane.core.interceptor.schemavalidation.SoapValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
@@ -188,8 +189,8 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 			i = new ClusterNotificationInterceptor();
 		} else if ("regExUrlRewriter".equals(name)) {
 			i = new RegExURLRewriteInterceptor();
-		} else if ("soapValidator".equals(name)) {
-			i = new SoapValidatorInterceptor();
+		} else if ("validator".equals(name)) {
+			i = new ValidatorInterceptor();
 		} else if ("rest2Soap".equals(name)) {
 			i = new REST2SOAPInterceptor();
 		} else if ("basicAuthentication".equals(name)) {
@@ -214,6 +215,8 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 			i = new ThrottleInterceptor();
 		} else if ("log".equals(name)) {
 			i = new LogInterceptor();
+		} else if ("formValidation".equals(name)) {
+			i = new FormValidationInterceptor();
 		} else {
 			throw new Exception("Unknown interceptor found: "+name);
 		}
@@ -257,9 +260,6 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 			out.writeEndElement();
 			log.debug(lastFlow==Flow.REQUEST?"</request>":"</response>");
 		}
-//		for (Interceptor i : interceptors){
-//			i.write(out);
-//		}
 	}
 	
 	private void writeTLS(XMLStreamWriter out) throws XMLStreamException {

@@ -14,12 +14,11 @@
 package com.predic8.membrane.core.interceptor.administration;
 
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
-import static com.predic8.membrane.core.util.URLUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 
-import java.io.*;
+import java.io.StringWriter;
 import java.lang.reflect.Method;
-import java.net.URI;
-import java.util.*;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.xml.stream.*;
@@ -31,6 +30,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.URLParamUtil;
 
 public class AdminConsoleInterceptor extends AbstractInterceptor {
 
@@ -430,23 +430,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {
-		URI jUri = new URI(exc.getOriginalRequestUri());
-		String q = jUri.getQuery();
-		if (q == null) {
-			if (hasNoFormParams(exc))
-				return new HashMap<String, String>();
-			q = new String(exc.getRequest().getBody().getRaw());// TODO
-																// getBody().toString()
-																// doesn't work.
-		}
-
-		return parseQueryString(q);
-	}
-
-	private boolean hasNoFormParams(Exchange exc) throws IOException {
-		return !"application/x-www-form-urlencoded".equals(exc.getRequest()
-				.getHeader().getContentType())
-				|| exc.getRequest().isBodyEmpty();
+		return URLParamUtil.getParams(exc);
 	}
 
 	private Response respond(String page) throws Exception {

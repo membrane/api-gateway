@@ -13,12 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import java.util.zip.GZIPInputStream;
+
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 
 public class MessageUtil {
 
+	public static byte[] getContent(Message res) throws Exception {
+		if (res.isGzip()) {
+			return ByteUtil.getByteArrayData(new GZIPInputStream(res.getBodyAsStream()));
+		} else if (res.isDeflate()) {
+			return ByteUtil.getDecompressedData(res.getBody().getContent());
+		}
+		return res.getBody().getContent();
+	}
+	
 	public static Request getGetRequest(String uri) {
 		Request req = getStandartRequest(Request.METHOD_GET);
 		req.setUri(uri);

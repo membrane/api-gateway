@@ -1,7 +1,7 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
-import static com.predic8.membrane.core.util.URLUtil.parseQueryString;
+import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 
 import java.util.*;
 import java.util.regex.*;

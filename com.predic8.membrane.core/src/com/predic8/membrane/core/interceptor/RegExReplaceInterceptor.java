@@ -22,7 +22,7 @@ import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.ByteUtil;
+import com.predic8.membrane.core.util.*;
 
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 
@@ -56,22 +56,13 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		log.debug("replacement: " +replacement);
 		
 		res.readBody();
-		byte[] content = getContent(res);
+		byte[] content = MessageUtil.getContent(res);
 		res.setBodyContent(new String(content).replaceAll(pattern, replacement).getBytes());
 		res.getHeader().removeFields("Content-Encoding");
 	}
 
 	private boolean hasNoTextContent(Message res) throws Exception {		
 		return res.isBodyEmpty() || !res.isXML() && !res.isHTML();
-	}
-
-	private byte[] getContent(Message res) throws Exception, IOException {
-		if (res.isGzip()) {
-			return ByteUtil.getByteArrayData(new GZIPInputStream(res.getBodyAsStream()));
-		} else if (res.isDeflate()) {
-			return ByteUtil.getDecompressedData(res.getBody().getContent());
-		}
-		return res.getBody().getContent();
 	}
 
 	public String getPattern() {

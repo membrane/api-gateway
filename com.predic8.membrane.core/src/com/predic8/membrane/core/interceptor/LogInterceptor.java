@@ -14,16 +14,18 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import java.io.IOException;
+import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.util.MessageUtil;
 
 public class LogInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(LogInterceptor.class.getName());
+	private boolean headerOnly = false;
 	
 	public LogInterceptor() {
 		name = "Log";
@@ -43,8 +45,60 @@ public class LogInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 	
-	private void logMessage(Message msg) throws IOException {
-		log.info(msg==null?"N/A":msg);		
+	@Override
+	protected void parseAttributes(XMLStreamReader token) throws Exception {
+		if ( token.getAttributeValue("", "headerOnly")!=null ) {
+			headerOnly = Boolean.parseBoolean(token.getAttributeValue("", "headerOnly"));
+		}
+	}
+
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		out.writeStartElement("log");
+
+		if (headerOnly) out.writeAttribute("headerOnly", ""+headerOnly);
+
+		out.writeEndElement();
+	}
+
+	public boolean isHeaderOnly() {
+		return headerOnly;
+	}
+
+	public void setHeaderOnly(boolean headerOnly) {
+		this.headerOnly = headerOnly;
+	}
+
+	private void logMessage(Message msg) throws Exception {
+		log.info(msg==null?"N/A":msg);
+		if (msg == null) { 
+			log.info("no message");
+			log.info("================");
+			return;
+		}
+				
+		log.info(msg.getStartLine());
+		log.info("Headers:");
+		log.info(msg.getHeader().toString());
+		if (headerOnly) {
+			log.info("================");
+			return;			
+		}
+		
+		log.info("Body:");
+		if (msg.isBodyEmpty()) {
+			log.info("empty");
+			log.info("================");
+			return;						
+		}
+		
+		if (msg.isImage()) {
+			log.info("[binary image data]");
+			log.info("================");
+			return;			
+		}
+		log.info(new String(MessageUtil.getContent(msg)));
 		log.info("================");
 	}
 }

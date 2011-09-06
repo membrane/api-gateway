@@ -34,7 +34,7 @@
 							<xsd:element name="log" type="EmptyElementType" />
 							<xsd:element ref="exchangeStore" />
 							<xsd:element ref="transform" />
-							<xsd:element ref="soapValidator" />
+							<xsd:element ref="validator" />
 							<xsd:element ref="regExUrlRewriter" />
 							<xsd:element ref="adminConsole" />
 							<xsd:element ref="webServer" />
@@ -51,6 +51,8 @@
 							<xsd:element ref="counter" />
 							<xsd:element ref="groovy" />
 							<xsd:element ref="throttle" />
+							<xsd:element ref="formValidation" />
+							<xsd:element ref="log" />
 						</xsd:choice>
 					</xsd:sequence>
 					<xsd:attribute name="coreThreadPoolSize" default="20" type="xsd:int" />
@@ -84,12 +86,24 @@
 		</xsd:complexType>
 	</xsd:element>
 
-	<xsd:element name="soapValidator">
+	<xsd:element name="log">
 		<xsd:complexType>
 			<xsd:complexContent>
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence />
-					<xsd:attribute name="wsdl" type="xsd:string" use="required"/>
+					<xsd:attribute name="headerOnly" default="true" type="xsd:boolean" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="validator">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="wsdl" type="xsd:string" />
+					<xsd:attribute name="schema" type="xsd:string" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>
@@ -105,6 +119,24 @@
 								<xsd:sequence />
 								<xsd:attribute name="regex" type="xsd:string" use="required"/>
 								<xsd:attribute name="uri" type="xsd:string" use="required"/>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="formValidation">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence>
+						<xsd:element name="field" minOccurs="1" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="name" type="xsd:string" use="required"/>
+								<xsd:attribute name="regex" type="xsd:string" use="required"/>
 							</xsd:complexType>
 						</xsd:element>
 					</xsd:sequence>

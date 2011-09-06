@@ -14,8 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +27,7 @@ import javax.xml.validation.Validator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.xml.sax.InputSource;
+import org.xml.sax.*;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import com.predic8.membrane.core.Constants;
@@ -37,20 +36,21 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.schema.Schema;
+import com.predic8.schema.*;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 
-public class SoapValidatorInterceptor extends AbstractInterceptor {
+public class ValidatorInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(SoapValidatorInterceptor.class.getName());
+	private static Log log = LogFactory.getLog(ValidatorInterceptor.class.getName());
 		
 	private List<Validator> validators;
 	
 	private String wsdl;
+	private String schema;
 	
-	public SoapValidatorInterceptor() {
-		name =	"SOAP Validator";
+	public ValidatorInterceptor() {
+		name =	"Validator";
 	}
 	
 	public void init() throws Exception {
@@ -77,7 +77,7 @@ public class SoapValidatorInterceptor extends AbstractInterceptor {
 	private Outcome validateMessage(Exchange exc, Message msg) throws Exception {
 		List<Exception> exceptions = new ArrayList<Exception>();
 		for (Validator validator: validators) {
-			validator.validate(getSOAPBody(msg.getBodyAsStream()));
+			validator.validate(getMessageBody(msg.getBodyAsStream()));
 			SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
 			// the message must be valid for one schema embedded into WSDL 
 			if (handler.noErrors()) {
@@ -88,6 +88,13 @@ public class SoapValidatorInterceptor extends AbstractInterceptor {
 		}
 		exc.setResponse(HttpUtil.createSOAPFaultResponse(getErrorMsg(exceptions)));
 		return Outcome.ABORT;
+	}
+
+	private Source getMessageBody(InputStream input) throws Exception {
+		if ( schema != null ) {
+			return new SAXSource(new InputSource(input));
+		}
+		return getSOAPBody(input);
 	}
 	
 	private String getErrorMsg(List<Exception> excs) {
@@ -101,23 +108,28 @@ public class SoapValidatorInterceptor extends AbstractInterceptor {
 	}
 	
 	private List<Validator> getValidators() throws Exception {
-		log.info("Get validators for WSDL: " + wsdl);
-		WSDLParserContext ctx = new WSDLParserContext();
-		ctx.setInput(wsdl);
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
-		sf.setResourceResolver(new SOAModelResourceResolver(wsdl));
+		SOAModelResourceResolver resolver = getResolver();
+		sf.setResourceResolver(resolver);
+		
 		List<Validator> validators = new ArrayList<Validator>();
-		for (Schema schema : getEmbeddedSchemas(ctx)) {
-			log.info("Adding embedded schema: " + schema);
-			Validator validator = sf.newSchema(new StreamSource(new ByteArrayInputStream(schema.getAsString().getBytes()))).newValidator();
+		for (Schema schema : resolver.schemas) {
+			log.info("Creating validator for schema: " + schema);
+			Validator validator = sf.newSchema(new StreamSource(new StringReader(schema.getAsString()))).newValidator();
 			validator.setErrorHandler(new SchemaValidatorErrorHandler());
 			validators.add(validator);
 		}
 		return validators;
 	}
 	
-	private List<Schema> getEmbeddedSchemas(WSDLParserContext ctx) {
-		return new WSDLParser().parse(ctx).getTypes().getSchemas();
+	private SOAModelResourceResolver getResolver() {
+		SOAModelResourceResolver resolver = new SOAModelResourceResolver();
+		if (schema != null) {
+			resolver.loadFromSchema(schema);
+		} else {
+			resolver.loadFromWSDL(wsdl);
+		}
+		return resolver;
 	}
 	
 	private static Source getSOAPBody(InputStream stream) throws Exception {
@@ -132,13 +144,27 @@ public class SoapValidatorInterceptor extends AbstractInterceptor {
 		return wsdl;
 	}
 
+	public String getSchema() {
+		return schema;
+	}
+
+	public void setSchema(String schema) {
+		this.schema = schema;
+	}
+
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
 		
-		out.writeStartElement("soapValidator");
+		out.writeStartElement("validator");
 		
-		out.writeAttribute("wsdl", wsdl);		
+		if (schema != null) {
+			out.writeAttribute("schema", schema);
+		}
+		if (wsdl != null) {
+			out.writeAttribute("wsdl", wsdl);
+		}
+				
 		
 		out.writeEndElement();
 	}
@@ -147,6 +173,7 @@ public class SoapValidatorInterceptor extends AbstractInterceptor {
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		
 		wsdl = token.getAttributeValue("", "wsdl");
+		schema = token.getAttributeValue("", "schema");
 	}
 	
 	@Override

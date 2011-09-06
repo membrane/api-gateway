@@ -1,12 +1,35 @@
 package com.predic8.membrane.core.util;
 
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
-public class URLUtil {
+import com.predic8.membrane.core.exchange.Exchange;
+
+public class URLParamUtil {
 	private static Pattern paramsPat = Pattern.compile("([^=]*)=?(.*)");
+	
+	public static Map<String, String> getParams(Exchange exc) throws Exception {		
+		URI jUri = new URI(exc.getRequest().getUri());
+		String q = jUri.getQuery();
+		if (q == null) {
+			if (hasNoFormParams(exc))
+				return new HashMap<String, String>();
+			q = new String(exc.getRequest().getBody().getRaw());// TODO
+																// getBody().toString()
+																// doesn't work.
+		}
+
+		return parseQueryString(q);
+	}
+
+	private static boolean hasNoFormParams(Exchange exc) throws IOException {
+		return !"application/x-www-form-urlencoded".equals(exc.getRequest()
+				.getHeader().getContentType())
+				|| exc.getRequest().isBodyEmpty();
+	}
+
 	
 	public static String createQueryString( String... params ) throws UnsupportedEncodingException {
 		StringBuffer buf = new StringBuffer();

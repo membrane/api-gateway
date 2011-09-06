@@ -9,7 +9,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.rules.*;
-import static com.predic8.membrane.core.util.URLUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
 import static org.apache.commons.lang.time.DurationFormatUtils.*;
 
 public class AdminPageBuilder extends Html {

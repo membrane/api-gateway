@@ -8,7 +8,7 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("router", new RouterParser());        
         registerBeanDefinitionParser("transport", new HttpTransportParser());
         registerBeanDefinitionParser("transform", new TransformInterceptorParser());
-        registerBeanDefinitionParser("soapValidator", new SoapValidatorInterceptorParser());
+        registerBeanDefinitionParser("validator", new ValidatorInterceptorParser());
         registerBeanDefinitionParser("regExUrlRewriter", new RegExUrlRewriterInterceptorParser());
         registerBeanDefinitionParser("balancer", new BalancerInterceptorParser());
         registerBeanDefinitionParser("adminConsole", new AdminConsoleInterceptorParser());
@@ -28,5 +28,7 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("regExReplacer", new RegExReplacerInterceptorParser());        
         registerBeanDefinitionParser("groovy", new GroovyInterceptorParser());        
         registerBeanDefinitionParser("throttle", new ThrottleInterceptorParser());        
+        registerBeanDefinitionParser("formValidation", new FormValidationInterceptorParser());        
+        registerBeanDefinitionParser("log", new LogInterceptorParser());        
     }
 }

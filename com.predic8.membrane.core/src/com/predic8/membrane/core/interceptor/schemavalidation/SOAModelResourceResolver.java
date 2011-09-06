@@ -20,7 +20,7 @@ import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
-import com.predic8.schema.Schema;
+import com.predic8.schema.*;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 
@@ -28,12 +28,16 @@ public class SOAModelResourceResolver implements LSResourceResolver {
 
 	private static Log log = LogFactory.getLog(SOAModelResourceResolver.class.getName());
 	
-	private List<Schema> schemas;
+	public List<Schema> schemas;
 	
-	public SOAModelResourceResolver(String wsdl) {
+	public void loadFromWSDL(String wsdl) {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(wsdl);
-		schemas = getAllSchemas(ctx);
+		schemas = getAllSchemas(ctx);		
+	}
+	
+	public void loadFromSchema(String schema) {
+		schemas = (List<Schema>) new SchemaParser().parse(schema).getAllSchemas();
 	}
 
 	private List<Schema> getAllSchemas(WSDLParserContext ctx) {
