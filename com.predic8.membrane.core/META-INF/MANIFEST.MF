@@ -54,6 +54,7 @@ Export-Package:
  com.predic8.membrane.core.interceptor.authentication,
  com.predic8.membrane.core.interceptor.balancer;uses:="com.predic8.membrane.core.exchange,com.predic8.membrane.core.interceptor",
  com.predic8.membrane.core.interceptor.cbr,
+ com.predic8.membrane.core.interceptor.formvalidation,
  com.predic8.membrane.core.interceptor.groovy,
  com.predic8.membrane.core.interceptor.rest,
  com.predic8.membrane.core.interceptor.rewrite;uses:="com.predic8.membrane.core.exchange,com.predic8.membrane.core.interceptor",
@@ -113,3 +114,4 @@ Bundle-ClassPath: lib/commons-logging.jar,
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0";visibility:=reexport
 Eclipse-RegisterBuddy: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Import-Package: com.predic8.membrane.core.util
