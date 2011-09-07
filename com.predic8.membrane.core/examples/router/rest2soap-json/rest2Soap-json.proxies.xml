@@ -1,15 +1,9 @@
 <proxies>
 	<serviceProxy port="2000">
-		<response>
-			<groovy>
-				exc.response.header.contentType = 'application/json;charset=utf-8'
-				CONTINUE
-			</groovy>
-		</response>
 		<rest2Soap>		
 			<mapping regex="/bank/.*" soapAction=""
 				soapURI="/axis2/services/BLZService" requestXSLT="get2soap.xsl"
-				responseXSLT="soap2json.xsl" />
+				responseXSLT="strip-env.xsl" responseType="json"/>
 		</rest2Soap>
 		<target host="thomas-bayer.com" />
 	</serviceProxy>

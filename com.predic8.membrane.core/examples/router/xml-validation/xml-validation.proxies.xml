@@ -1,0 +1,14 @@
+<proxies>
+	<serviceProxy port='2000'>
+		<request>
+			<validator schema="year.xsd" />
+		</request>
+		<response>
+			<validator schema="amount.xsd" />
+			<groovy>
+				Response.ok("&lt;amount&gt;100&lt;/amount&gt;").build()			
+			</groovy>				
+		</response>
+	</serviceProxy>
+</proxies>
+
