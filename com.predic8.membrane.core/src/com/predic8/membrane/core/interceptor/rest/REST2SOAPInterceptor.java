@@ -14,54 +14,67 @@
 package com.predic8.membrane.core.interceptor.rest;
 
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.config.GenericConfigElement;
-import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.exchange.*;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.xml.Request;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class REST2SOAPInterceptor extends AbstractInterceptor {
 
-	public static class Mapping {
+	public static class Mapping extends AbstractXmlElement {
 		public String regex;
 		public String soapAction;
 		public String soapURI;
 		public String requestXSLT;
 		public String responseXSLT;
-		
-		public Mapping(String regex, String soapAction, String soapURI, String requestXSLT, String responseXSLT) {
-			this.regex = regex;
-			this.soapAction = soapAction;
-			this.soapURI = soapURI;
-			this.requestXSLT = requestXSLT;
-			this.responseXSLT = responseXSLT;
+		public String responseType = "xml";
+
+		@Override
+		protected void parseAttributes(XMLStreamReader token) throws Exception {
+			regex = token.getAttributeValue("", "regex");
+			soapAction = token.getAttributeValue("", "soapAction");
+			soapURI = token.getAttributeValue("", "soapURI");
+			requestXSLT = token.getAttributeValue("", "requestXSLT");
+			responseXSLT = token.getAttributeValue("", "responseXSLT");
+			if (token.getAttributeValue("", "responseType")!=null) {
+				responseType = token.getAttributeValue("", "responseType");
+			}
+			
 		}
+
+		@Override
+		public void write(XMLStreamWriter out) throws XMLStreamException {
+			out.writeStartElement("mapping");
+
+			out.writeAttribute("regex", regex);
+			out.writeAttribute("soapAction", soapAction);
+			out.writeAttribute("soapURI", soapURI);
+			out.writeAttribute("requestXSLT", requestXSLT);
+			out.writeAttribute("responseXSLT", responseXSLT);
+			if (!"xml".equals(responseType)) {
+				out.writeAttribute("responseType", responseType);	
+			}			
+			out.writeEndElement();
+		}		
 	}
 	
 	private static Log log = LogFactory.getLog(REST2SOAPInterceptor.class.getName());
 
 	private List<Mapping> mappings = new ArrayList<Mapping>();	
-	private XSLTTransformer xsltTransformer = new XSLTTransformer();
-
+	private XSLTTransformer xsltTransformer = new XSLTTransformer();	
+	
 	public REST2SOAPInterceptor() {
 		name = "REST 2 SOAP Gateway";
 	}
@@ -90,11 +103,19 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 		log.debug("response: " + xsltTransformer.transform(null, getBodySource(exc)));		
 		
-		transformAndReplaceBody(exc.getResponse(),
-				                getRESTURL(exc).responseXSLT,
-				                getBodySource(exc));
+		String transformedResp = xsltTransformer.transform(getRESTURL(exc).responseXSLT, getBodySource(exc));
 		setContentType(exc.getResponse().getHeader());
+		
+		if ("json".equals(getRESTURL(exc).responseType)) {
+			transformedResp = xml2json(transformedResp);
+			setJSONContentType(exc.getResponse().getHeader());
+		}
+		exc.getResponse().setBodyContent(transformedResp.getBytes("UTF-8"));
 		return Outcome.CONTINUE;
+	}
+	
+	private String xml2json(String xmlResp) throws Exception {
+		return xsltTransformer.transform("classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl", new StreamSource(new StringReader(xmlResp)));
 	}
 
 	private StreamSource getRequestXMLSource(Exchange exc) throws Exception {
@@ -135,6 +156,11 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	private void setContentType(Header header) {
 		header.removeFields(Header.CONTENT_TYPE);
 		header.setContentType(MimeType.TEXT_XML_UTF8);
+	}
+
+	private void setJSONContentType(Header header) {
+		header.removeFields(Header.CONTENT_TYPE);
+		header.setContentType(MimeType.JSON);
 	}
 
 	private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {
@@ -178,15 +204,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		out.writeStartElement("rest2Soap");
 
 		for (Mapping m : mappings) {
-			out.writeStartElement("mapping");
-
-			out.writeAttribute("regex", m.regex);
-			out.writeAttribute("soapAction", m.soapAction);
-			out.writeAttribute("soapURI", m.soapURI);
-			out.writeAttribute("requestXSLT", m.requestXSLT);
-			out.writeAttribute("responseXSLT", m.responseXSLT);
-
-			out.writeEndElement();
+			m.write(out);
 		}
 
 		out.writeEndElement();
@@ -196,13 +214,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	protected void parseChildren(XMLStreamReader token, String child)
 			throws Exception {
 		if (token.getLocalName().equals("mapping")) {
-			GenericConfigElement mapping = new GenericConfigElement();
-			mapping.parse(token);
-			mappings.add(new Mapping(mapping.getAttribute("regex"), 
-												           mapping.getAttribute("soapAction"),
-												           mapping.getAttribute("soapURI"),
-												           mapping.getAttribute("requestXSLT"),
-												           mapping.getAttribute("responseXSLT")));
+			mappings.add((Mapping)new Mapping().parse(token));
 		} else {
 			super.parseChildren(token, child);
 		}

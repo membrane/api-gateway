@@ -25,7 +25,7 @@ public class HotDeploymentThread extends Thread {
 		log.debug("Hot Deployment Thread started.");
 		try {
 			while (!configurationChanged()) {
-				sleep(5000);
+				sleep(1000);
 			}
 		
 			log.debug("configuration changed. Reloading from "+proxiesFile);

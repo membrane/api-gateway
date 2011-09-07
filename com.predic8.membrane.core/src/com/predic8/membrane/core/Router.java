@@ -64,7 +64,7 @@ public class Router {
 		log.debug("loading spring config: " + resource);
 
 		try {
-			beanFactory = new FileSystemXmlApplicationContext(   new String[] { resource }, false );
+			beanFactory = new FileSystemXmlApplicationContext( new String[] { resource }, false );
 		} catch (Error e) {
 			e.printStackTrace();
 		}

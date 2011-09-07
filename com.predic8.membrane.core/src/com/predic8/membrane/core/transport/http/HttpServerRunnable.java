@@ -47,7 +47,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		sourceSocket.setTcpNoDelay(transport.isTcpNoDelay());
 		this.transport = transport;
 		setClientSettings();
-	}
+	} 
 
 	public void run() {
 		try {

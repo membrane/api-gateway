@@ -58,7 +58,7 @@ public abstract class AbstractHttpRunnable implements Runnable {
 			if (i.handleRequest(exchange) == Outcome.ABORT) {
 				throw new AbortException();
 			}
-		}
+		} 
 	}
 
 	protected void invokeResponseHandlers(Exchange exc) throws Exception {

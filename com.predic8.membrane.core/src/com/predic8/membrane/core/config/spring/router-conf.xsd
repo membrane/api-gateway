@@ -17,6 +17,7 @@
 					<xsd:attribute name="indentMessage" default="true" type="xsd:boolean" />
 					<xsd:attribute name="adjustContentLength" default="true" type="xsd:boolean" />
 					<xsd:attribute name="trackExchange" default="false" type="xsd:boolean" />
+					<xsd:attribute name="hotDeploy" default="true" type="xsd:boolean" />
 				</xsd:extension> 
 			</xsd:complexContent>
 		</xsd:complexType>
@@ -176,6 +177,7 @@
 								<xsd:attribute name="soapURI" type="xsd:string" use="required"/>
 								<xsd:attribute name="requestXSLT" type="xsd:string" use="required"/>
 								<xsd:attribute name="responseXSLT" type="xsd:string" use="required"/>
+								<xsd:attribute name="responseType" type="xsd:string" default="xml" />
 							</xsd:complexType>
 						</xsd:element>
 					</xsd:sequence>

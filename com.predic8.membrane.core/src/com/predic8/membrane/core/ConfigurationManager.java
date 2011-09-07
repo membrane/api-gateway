@@ -29,6 +29,8 @@ public class ConfigurationManager {
 	
 	private Proxies proxies;
 
+	private boolean hotDeploy = true;
+	
 	private ConfigurationStore configurationStore = new ConfigurationFileStore();
 
 	private Router router;
@@ -53,7 +55,7 @@ public class ConfigurationManager {
 			router.getRuleManager().addRuleIfNew(rule);
 		}
 		
-		if (!fileName.startsWith("classpath:"))
+		if (!fileName.startsWith("classpath:") && hotDeploy)
 			new HotDeploymentThread(fileName, router).start();
 	}
 
@@ -123,5 +125,12 @@ public class ConfigurationManager {
 	public void removeSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {
 		securityChangeListeners.remove(listener);
 	}
-	
+
+	public boolean isHotDeploy() {
+		return hotDeploy;
+	}
+
+	public void setHotDeploy(boolean hotDeploy) {
+		this.hotDeploy = hotDeploy;
+	}		
 }

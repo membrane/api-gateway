@@ -22,14 +22,17 @@ public class Rest2SoapInterceptorParser extends AbstractParser {
 	}
 
 	private List<Mapping> getMappings(Element e) {
-		List<Mapping> m = new ArrayList<Mapping>();
+		List<Mapping> mappings = new ArrayList<Mapping>();
 		for (Element mapping : DomUtils.getChildElementsByTagName(e, "mapping")) {
-			m.add( new Mapping(mapping.getAttribute("regex"), 
-			           mapping.getAttribute("soapAction"),
-			           mapping.getAttribute("soapURI"),
-			           mapping.getAttribute("requestXSLT"),
-			           mapping.getAttribute("responseXSLT")));
+			Mapping m = new Mapping();
+			m.regex = mapping.getAttribute("regex");
+			m.soapAction = mapping.getAttribute("soapAction");
+			m.soapURI = mapping.getAttribute("soapURI");
+			m.requestXSLT = mapping.getAttribute("requestXSLT");
+			m.responseXSLT = mapping.getAttribute("responseXSLT");
+			m.responseType = mapping.getAttribute("responseType");
+			mappings.add(m);
 		}
-		return m;
+		return mappings;
 	}
 }
