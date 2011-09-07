@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry exported="true" kind="lib" path="lib/soa-model-2.0.6.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-all-1.7.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/commons-httpclient-3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/groovy-all-1.7.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.2.1.jar"/>
@@ -21,6 +20,7 @@
 			<attribute name="javadoc_location" value="jar:file:/C:/java/jatl/jatl-0.1.0-javadoc.jar!/"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/jackson-core-asl-1.8.5.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="src" path="src"/>
