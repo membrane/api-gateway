@@ -19,7 +19,7 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.*;
 import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.plugin.membrane.labelproviders.TableHeaderLabelProvider;
@@ -46,7 +46,12 @@ public abstract class TableViewPart extends ViewPart {
 	
 	@Override
 	public void setFocus() {
-		tableViewer.getTable().setFocus();
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				tableViewer.getTable().setFocus();
+			}
+		});
 	}
 
 	protected void createColumns() {

@@ -278,7 +278,12 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 
 	@Override
 	public void setFocus() {
-		tableViewer.getTable().setFocus();
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				tableViewer.getTable().setFocus();
+			}
+		});
 	}
 
 	public void addExchange(Rule rule, final AbstractExchange exchange) {

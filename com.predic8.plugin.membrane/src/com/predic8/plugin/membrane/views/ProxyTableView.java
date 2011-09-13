@@ -20,8 +20,7 @@ import org.eclipse.jface.viewers.IContentProvider;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.*;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.model.IRuleChangeListener;
@@ -89,26 +88,35 @@ public class ProxyTableView extends TableViewPart implements IRuleChangeListener
 	
 	@Override
 	public void ruleAdded(Rule rule) {
-		tableViewer.setInput(Router.getInstance().getRuleManager());
+		reloadTableViewer();
 	}
 
 	@Override
 	public void ruleRemoved(Rule rule, int rulesLeft) {
-		tableViewer.setInput(Router.getInstance().getRuleManager());
+		reloadTableViewer();
 	}
 
 	@Override
 	public void ruleUpdated(Rule rule) {
-		tableViewer.setInput(Router.getInstance().getRuleManager());
+		reloadTableViewer();
 	}
 
 	@Override
 	public void rulePositionsChanged() {
-		tableViewer.setInput(Router.getInstance().getRuleManager());
+		reloadTableViewer();
 	}
 
 	@Override
 	public void batchUpdate(int size) {
-		tableViewer.setInput(Router.getInstance().getRuleManager());
+		reloadTableViewer();
+	}
+	
+	private void reloadTableViewer() {
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				tableViewer.setInput(Router.getInstance().getRuleManager());
+			}
+		});
 	}
 }
