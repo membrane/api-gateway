@@ -14,7 +14,7 @@
 
 package com.predic8.plugin.membrane.views;
 
-import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.*;
 import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.rules.Rule;
@@ -33,12 +33,23 @@ public class ProxyDetailsView extends ViewPart {
 
 	@Override
 	public void setFocus() {
-		proxyDetailsComposite.setFocus();
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				proxyDetailsComposite.setFocus();
+			}
+		});
+		
 	}
 
-	public void setProxyToDisplay(Rule rule) {
-		proxyDetailsComposite.configure(rule);
-		proxyDetailsComposite.layout();
+	public void setProxyToDisplay(final Rule rule) {
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				proxyDetailsComposite.configure(rule);
+				proxyDetailsComposite.layout();
+			}
+		});
 	}
 	
 }

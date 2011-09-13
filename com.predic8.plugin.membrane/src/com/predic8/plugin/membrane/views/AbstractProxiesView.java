@@ -27,7 +27,6 @@ public abstract class AbstractProxiesView extends TableViewPart implements IExch
 
 	public void setInputForTable(final RuleManager manager) {
 		Display.getDefault().asyncExec(new Runnable() {
-			
 			@Override
 			public void run() {
 				tableViewer.setInput(manager);

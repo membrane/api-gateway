@@ -465,12 +465,12 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 	
 	
 	public void ruleAdded(Rule rule) {
-		// TODO Delete this method
+		// ignore
 		
 	}
 
 	public void removeRule(Rule rule, int rulesLeft) {
-		// TODO Delete this method
+		// ignore
 	}
 
 	public void setExchangeStopped(AbstractExchange exchange) {

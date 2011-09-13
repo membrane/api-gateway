@@ -21,9 +21,7 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.ToolBar;
-import org.eclipse.swt.widgets.ToolItem;
+import org.eclipse.swt.widgets.*;
 import org.eclipse.ui.part.ViewPart;
 
 import com.predic8.membrane.core.Router;
@@ -142,8 +140,14 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 
 	}
 
-	public void setMessage(Message message) {
-		baseComp.setMsg(message);
+	public void setMessage(final Message message) {
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				baseComp.setMsg(message);
+			}
+		});
+		
 	}
 
 	public abstract void updateUIStatus(boolean canShowBody);
@@ -171,26 +175,18 @@ public abstract class AbstractMessageView extends ViewPart implements IBaseCompo
 	}
 	
 	public void removeExchanges(AbstractExchange[] exchanges) {
-		// TODO Auto-generated method stub
+		// ignore
 		
 	}
 	
 	public void setExchangeFinished(AbstractExchange exchange) {
-		// TODO Auto-generated method stub
+		// ignore
 		
 	}
 	
 	public void setExchangeStopped(AbstractExchange exchange) {
-		// TODO Auto-generated method stub
+		// ignore
 		
 	}
 	
-//	public void ruleAdded(Rule rule) {
-//		// TODO Auto-generated method stub
-//	}
-//	
-//	public void removeRule(Rule rule, int rulesLeft) {
-//		// TODO Auto-generated method stub
-//		
-//	}
 }
