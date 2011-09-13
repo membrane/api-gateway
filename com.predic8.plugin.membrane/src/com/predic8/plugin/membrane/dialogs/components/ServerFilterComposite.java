@@ -69,26 +69,30 @@ public class ServerFilterComposite extends AbstractFilterComposite {
 		}
 		
 		for (String server : servers) {
-			final Button bt = new Button(composite, SWT.CHECK);
-			bt.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
-			bt.setText(server);
-			bt.setData(server);
-			bt.setSelection(filter.getDisplayedItems().contains(server));
-			
-
-			bt.addSelectionListener(new SelectionAdapter() {
-				@Override
-				public void widgetSelected(SelectionEvent e) {
-					if (bt.getSelection()) {
-						filter.getDisplayedItems().add((String) bt.getData());
-					} else {
-						filter.getDisplayedItems().remove((String) bt.getData());
-					}
-				}
-			});
-			buttons.add(bt);
+			buttons.add(createButton(composite, server));
 		}
 
+	}
+
+
+	private Button createButton(Composite composite, String server) {
+		final Button bt = new Button(composite, SWT.CHECK);
+		bt.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+		bt.setText(server);
+		bt.setData(server);
+		bt.setSelection(filter.getDisplayedItems().contains(server));
+		
+		bt.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (bt.getSelection()) {
+					filter.getDisplayedItems().add((String) bt.getData());
+				} else {
+					filter.getDisplayedItems().remove((String) bt.getData());
+				}
+			}
+		});
+		return bt;
 	}
 
 
