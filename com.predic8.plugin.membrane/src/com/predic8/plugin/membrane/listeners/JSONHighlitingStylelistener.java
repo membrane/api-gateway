@@ -15,30 +15,33 @@ import org.eclipse.swt.widgets.Display;
 
 public class JSONHighlitingStylelistener implements LineStyleListener {
 
-	private StyleRangeComparator comparator = new StyleRangeComparator();
+	StyleRangeComparator comparator = new StyleRangeComparator();
 	
-	private static final Pattern patternKey = Pattern
+	static final Pattern patternKey = Pattern
 	.compile("(['\"].*?['\"])(?=(\\s*:))");
+	
+	static final Pattern patternKeyUnquoted = Pattern
+	.compile("([^'\"\\s]+)(?=(\\s*:))");
 	
 //	private static final Pattern patternValueString = Pattern
 //	.compile("(?<=(:\\s{0,20}))(['\"].*?['\"])");
 	
-	private static final Pattern patternValueString2 = Pattern
+	static final Pattern patternValueString2 = Pattern
 	.compile("(?<=(:\\s{0,20}))((\".*?\")|('.*?'))");
 	
-	private static final Pattern patternValueNull = Pattern
+	static final Pattern patternValueNull = Pattern
 	.compile("(?<=(:\\s{0,20}))(null)");
 	
-	private static final Pattern patternValueNumber = Pattern
+	static final Pattern patternValueNumber = Pattern
 	.compile("(?<=(:\\s{0,20}))([+-]?(\\d+(\\.)?(\\d+))|(\\d+))");
 	
-	private static final Color colorKey = new Color(Display
+	static final Color colorKey = new Color(Display
 			.getCurrent(), 0, 0, 255);
 
-	private static final Color colorValue = new Color(Display
+	static final Color colorValue = new Color(Display
 			.getCurrent(), 0, 128, 0);
 	
-	private static final Color colorValueNull = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+	static final Color colorValueNull = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
 	
 	public void lineGetStyle(LineStyleEvent event) {
 		
@@ -48,6 +51,13 @@ public class JSONHighlitingStylelistener implements LineStyleListener {
 		while (mKey.find()) {
 			for (int i = 1; i <= mKey.groupCount(); i++) {
 				styles.add(getStyle(event.lineOffset + mKey.start(i), mKey.end(i) - mKey.start(i) , colorKey));
+			}
+		}
+		
+		Matcher mKeyUnquoted = patternKeyUnquoted.matcher(event.lineText);
+		while (mKeyUnquoted.find()) {
+			for (int i = 1; i <= mKeyUnquoted.groupCount(); i++) {
+				styles.add(getStyle(event.lineOffset + mKeyUnquoted.start(i), mKeyUnquoted.end(i) - mKeyUnquoted.start(i) , colorKey));
 			}
 		}
 		
