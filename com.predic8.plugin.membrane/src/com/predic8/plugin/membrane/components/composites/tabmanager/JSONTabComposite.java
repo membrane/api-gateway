@@ -19,6 +19,7 @@ import java.io.IOException;
 import org.eclipse.swt.widgets.TabFolder;
 
 import com.predic8.membrane.balancer.beautifiers.JSONBeautifier;
+import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.listeners.JSONHighlitingStylelistener;
 
 
@@ -31,7 +32,7 @@ public class JSONTabComposite extends BodyTextTabComposite {
 	public JSONTabComposite(TabFolder parent) {
 		super(parent, TAB_TITLE);
 		bodyText.addLineStyleListener(new JSONHighlitingStylelistener());
-		beautifier = new JSONBeautifier();
+		beautifier = Router.getInstance().getBean("JSONBeautifier", JSONBeautifier.class);
 	}
 
 	@Override
@@ -43,5 +44,9 @@ public class JSONTabComposite extends BodyTextTabComposite {
 	@Override
 	protected boolean isBeautifyBody() {
 		return true;
+	}
+	
+	public void setBeautifier(JSONBeautifier beautifier) {
+		this.beautifier = beautifier;
 	}
 }

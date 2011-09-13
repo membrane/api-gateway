@@ -25,5 +25,12 @@
 		<dispatching />
 		<exchangeStore name="exchangeStore" />
 	</transport>
+	
+	<spring:bean id="JSONBeautifier" class="com.predic8.membrane.balancer.beautifiers.JSONBeautifier" init-method="configure">
+		<spring:property name="indentOutput" value="true"/>
+		<spring:property name="allowedUnquotedFieldNames" value="true"/>
+		<spring:property name="quoteFieldNames" value="false"/>
+		<spring:property name="failOnUnknownProperties" value="false"/>
+	</spring:bean>
 
 </spring:beans>
