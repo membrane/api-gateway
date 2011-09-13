@@ -61,10 +61,18 @@ public class REST2SOAPInterceptorIntegrationTest {
 	
 	private List<Mapping> getMappings() {
 		List<Mapping> mappings = new ArrayList<Mapping>();
-		mappings.add( new Mapping( "/bank/.*", 
-								   "", "/axis2/services/BLZService",
-								   "classpath:/blz-httpget2soap-request.xsl",
-								   "classpath:/strip-soap-envelope.xsl" ) );
+		Mapping mapping = new Mapping(); 
+		mapping.regex = "/bank/.*";
+		mapping.soapAction = "";
+		mapping.soapURI = "/axis2/services/BLZService";
+		mapping.requestXSLT = "classpath:/blz-httpget2soap-request.xsl";
+		mapping.responseXSLT = "classpath:/strip-soap-envelope.xsl";
+//		mappings.add( new Mapping( "/bank/.*", 
+//								   "", "/axis2/services/BLZService",
+//								   "classpath:/blz-httpget2soap-request.xsl",
+//								   "classpath:/strip-soap-envelope.xsl" ) );
+		
+		mappings.add(mapping);
 		return mappings;
 	}
 }

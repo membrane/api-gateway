@@ -28,7 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.Proxy;
+import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.OKResponse;
 import com.predic8.membrane.core.http.Request;
@@ -49,7 +49,7 @@ public class HttpClient {
 	
 	private boolean adjustHostHeader;
 	
-	private Proxy proxy;
+	private ProxyConfiguration proxy;
 	
 	private InetAddress host;
 	
@@ -251,7 +251,7 @@ public class HttpClient {
 		this.adjustHostHeader = adjustHostHeader;
 	}
 	
-	public void setProxy(Proxy proxy) {
+	public void setProxy(ProxyConfiguration proxy) {
 		this.proxy = proxy;
 	}
 	

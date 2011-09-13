@@ -25,8 +25,14 @@ import com.predic8.membrane.core.rules.Rule;
 
 public abstract class AbstractProxiesView extends TableViewPart implements IExchangesStoreListener, IRuleChangeListener {
 
-	public void setInputForTable(RuleManager manager) {
-		tableViewer.setInput(manager);
+	public void setInputForTable(final RuleManager manager) {
+		Display.getDefault().asyncExec(new Runnable() {
+			
+			@Override
+			public void run() {
+				tableViewer.setInput(manager);
+			}
+		});
 	}
 
 	public void addExchange(Rule rule, AbstractExchange exchange) {

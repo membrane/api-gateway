@@ -35,10 +35,7 @@ import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.*;
 import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
@@ -251,13 +248,18 @@ public class ProxiesView extends AbstractProxiesView {
 
 	
 	private void changeSelectionAfterRemoval() {
-		if (tableViewer.getTable().getItemCount() == 0) {
-			updateDetailsViewIfVisible(null);
-			return;
-		}
-		TableItem item = tableViewer.getTable().getItem(0);
-		tableViewer.setSelection(new StructuredSelection(item.getData()));
-		notifytableSelectionListeners(item); 
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				if (tableViewer.getTable().getItemCount() == 0) {
+					updateDetailsViewIfVisible(null);
+					return;
+				}
+				TableItem item = tableViewer.getTable().getItem(0);
+				tableViewer.setSelection(new StructuredSelection(item.getData()));
+				notifytableSelectionListeners(item); 
+			}
+		});
 	}
 
 	private void notifytableSelectionListeners(TableItem item) {

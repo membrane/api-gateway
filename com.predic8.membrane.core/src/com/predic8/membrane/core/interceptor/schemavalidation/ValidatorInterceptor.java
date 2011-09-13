@@ -37,8 +37,6 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.schema.*;
-import com.predic8.wsdl.WSDLParser;
-import com.predic8.wsdl.WSDLParserContext;
 
 public class ValidatorInterceptor extends AbstractInterceptor {
 

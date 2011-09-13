@@ -24,7 +24,7 @@ import org.junit.*;
 
 import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.config.Proxy;
+import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -49,7 +49,7 @@ public class ViaProxyTest {
 		
 		Proxies config = new Proxies(proxyRouter);
 		
-		Proxy proxy = new Proxy(proxyRouter);
+		ProxyConfiguration proxy = new ProxyConfiguration(proxyRouter);
 		proxy.setUseProxy(true);
 		proxy.setProxyHost("localhost");
 		proxy.setProxyPort(3128);

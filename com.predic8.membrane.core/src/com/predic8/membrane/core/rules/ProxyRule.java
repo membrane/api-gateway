@@ -7,6 +7,8 @@ import com.predic8.membrane.core.*;
 
 public class ProxyRule extends AbstractRule {
 
+	public static final String ELEMENT_NAME = "proxy";
+	
 	public ProxyRule() {}
 	
 	public ProxyRule(Router router) {
@@ -26,11 +28,15 @@ public class ProxyRule extends AbstractRule {
 	public void write(XMLStreamWriter out)
 			throws XMLStreamException {
 		
-		out.writeStartElement("proxy");
+		out.writeStartElement(getElementName());
 		
 		writeRule(out);
 		
 		out.writeEndElement();
 	}
 	
+	@Override
+	protected String getElementName() {
+		return ELEMENT_NAME;
+	}
 }

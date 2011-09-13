@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static com.predic8.membrane.core.util.URLUtil.createQueryString;
+import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 
 import java.net.URLEncoder;
 import java.security.SecureRandom;

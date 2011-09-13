@@ -22,9 +22,9 @@ import org.apache.commons.codec.binary.Base64;
 
 import com.predic8.membrane.core.Router;
 
-public class Proxy extends AbstractConfigElement {
+public class ProxyConfiguration extends AbstractConfigElement {
 
-	public static final String ELEMENT_NAME = "proxy";
+	public static final String ELEMENT_NAME = "proxyConfiguration";
 
 	public static final String ATTRIBUTE_ACTIVE = "active";
 	
@@ -43,7 +43,7 @@ public class Proxy extends AbstractConfigElement {
 	
 	private String proxyPassword;
 
-	public Proxy(Router router) {
+	public ProxyConfiguration(Router router) {
 		super(router);
 	}
 

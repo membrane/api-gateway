@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static com.predic8.membrane.core.util.URLUtil.createQueryString;
+import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import static junit.framework.Assert.assertEquals;
 
 import java.io.IOException;
@@ -30,7 +30,6 @@ import org.junit.Test;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.interceptor.UserFeatureInterceptor;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;

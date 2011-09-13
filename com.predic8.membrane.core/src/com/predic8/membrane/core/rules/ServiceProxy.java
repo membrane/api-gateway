@@ -21,6 +21,8 @@ import com.predic8.membrane.core.config.*;
 
 public class ServiceProxy extends AbstractRule {
 
+	public static final String ELEMENT_NAME = "serviceProxy";
+	
 	private String targetHost;
 	private int targetPort;
 	private String targetURL;
@@ -107,7 +109,7 @@ public class ServiceProxy extends AbstractRule {
 	public void write(XMLStreamWriter out)
 			throws XMLStreamException {
 		
-		out.writeStartElement("serviceProxy");
+		out.writeStartElement(getElementName());
 		
 		writeRule(out);
 		
@@ -139,4 +141,8 @@ public class ServiceProxy extends AbstractRule {
 		out.writeEndElement();
 	}
 	
+	@Override
+	protected String getElementName() {
+		return ELEMENT_NAME;
+	}
 }

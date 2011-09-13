@@ -16,9 +16,7 @@ package com.predic8.plugin.membrane.components.composites.tabmanager;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.TabFolder;
-import org.eclipse.swt.widgets.TabItem;
+import org.eclipse.swt.widgets.*;
 
 import com.predic8.membrane.core.http.Message;
 
@@ -63,18 +61,29 @@ public class AbstractTabComposite extends Composite {
 	}
 
 	public void hide() {
-		tabItem.dispose();
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				tabItem.dispose();
+			}
+		});
+		
 	}
 	
 	public void show() {
-		if (tabItem == null) {
-			return;
-		}
-		if (tabItem.isDisposed()) {
-			tabItem = new TabItem((TabFolder)getParent(), SWT.NONE);
-			tabItem.setText(tabTitle);
-			tabItem.setControl(this);
-		} 
+		Display.getDefault().asyncExec(new Runnable() {
+			@Override
+			public void run() {
+				if (tabItem == null) {
+					return;
+				}
+				if (tabItem.isDisposed()) {
+					tabItem = new TabItem((TabFolder)getParent(), SWT.NONE);
+					tabItem.setText(tabTitle);
+					tabItem.setControl(AbstractTabComposite.this);
+				} 
+			}
+		});
 	}
 
 	public String getTabTitle() {

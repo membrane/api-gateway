@@ -71,7 +71,7 @@ public class Proxies extends AbstractConfigElement {
 
 	public Map<String, Object> props = new HashMap<String, Object>();
 
-	private Proxy proxy; 
+	private ProxyConfiguration proxy; 
 
 	public Proxies() {
 		this(null);
@@ -210,11 +210,11 @@ public class Proxies extends AbstractConfigElement {
 		props.put(TRUST_STORE_PASSWORD, password);
 	}
 	
-	public void setProxy(Proxy proxy) {
+	public void setProxy(ProxyConfiguration proxy) {
 		this.proxy = proxy;
 	}
 	
-	public Proxy getProxy() {
+	public ProxyConfiguration getProxy() {
 		return proxy;
 	}
 	
@@ -228,8 +228,8 @@ public class Proxies extends AbstractConfigElement {
 			props.putAll(((Global) new Global(router).parse(token)).getValues());
 		} else if (GUI.ELEMENT_NAME.equals(child)) {
 			props.putAll(((GUI) new GUI(router).parse(token)).getValues());
-		} else if (Proxy.ELEMENT_NAME.equals(child)) {
-			proxy = (Proxy) new Proxy(router).parse(token);
+		} else if (ProxyConfiguration.ELEMENT_NAME.equals(child)) {
+			proxy = (ProxyConfiguration) new ProxyConfiguration(router).parse(token);
 		} else if (Security.ELEMENT_NAME.equals(child)) {
 			Security security = ((Security) new Security(router).parse(token));
 			props.put(KEY_STORE_LOCATION, security.getKeyStoreLocation());

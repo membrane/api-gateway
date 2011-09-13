@@ -23,11 +23,11 @@ import com.predic8.membrane.core.MockRouter;
 
 public class ProxyTest {
 
-	private Proxy proxy;
+	private ProxyConfiguration proxy;
 	
 	@Before
 	public void setUp() throws Exception {
-		proxy = new Proxy(new MockRouter());
+		proxy = new ProxyConfiguration(new MockRouter());
 		proxy.setProxyUsername("predic8");
 		proxy.setProxyPassword("secret");
 	}

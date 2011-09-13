@@ -16,11 +16,9 @@ package com.predic8.plugin.membrane.components.composites.tabmanager;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
 import org.eclipse.swt.widgets.TabFolder;
 
+import com.predic8.membrane.balancer.beautifiers.JSONBeautifier;
 import com.predic8.plugin.membrane.listeners.JSONHighlitingStylelistener;
 
 
@@ -28,17 +26,17 @@ public class JSONTabComposite extends BodyTextTabComposite {
 
 	public static final String TAB_TITLE = "JSON";
 	
+	private JSONBeautifier beautifier;
+	
 	public JSONTabComposite(TabFolder parent) {
 		super(parent, TAB_TITLE);
 		bodyText.addLineStyleListener(new JSONHighlitingStylelistener());
+		beautifier = new JSONBeautifier();
 	}
 
 	@Override
 	public void beautify(byte[] content, String encoding) throws IOException {
-		ObjectMapper objectMapper = new ObjectMapper();
-	    objectMapper.configure(SerializationConfig.Feature.INDENT_OUTPUT, true);
-	    JsonNode tree = objectMapper.readTree(new String(content));
-	    bodyText.setText(objectMapper.writeValueAsString(tree));
+	    bodyText.setText(beautifier.beautify(content));
 	    bodyText.redraw();
 	}
 	

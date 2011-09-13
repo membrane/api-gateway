@@ -28,7 +28,7 @@ import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
-import com.predic8.membrane.core.interceptor.schemavalidation.SoapValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
@@ -112,7 +112,7 @@ public class CustomSpringConfigurationTest {
 	 	assertEquals("http://www.thomas-bayer.com/axis2/", i.getRouteProvider().getRoutes().get(0).getUrl());
 	}
 
-	private void assertSOAPMessageValidatorInterceptor(SoapValidatorInterceptor i) {
+	private void assertSOAPMessageValidatorInterceptor(ValidatorInterceptor i) {
 	 	assertEquals("http://www.predic8.com:8080/material/ArticleService?wsdl", i.getWsdl());
 	}
 
