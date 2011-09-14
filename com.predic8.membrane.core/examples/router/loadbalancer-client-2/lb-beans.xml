@@ -22,6 +22,7 @@
 		<ruleMatching />
 		<dispatching />
 		<userFeature />
+		<client />
 	</transport>
 
 </spring:beans>

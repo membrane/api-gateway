@@ -34,13 +34,13 @@ public class HttpRouter extends Router {
 		configurationManager.setConfigurationStore(new ConfigurationFileStore());
 		configurationManager.setRouter(this);
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
-		RuleMatchingInterceptor ruleMatcher = new RuleMatchingInterceptor();
-		ruleMatcher.setRouter(this);
-		
-		interceptors.add(ruleMatcher);		
+		interceptors.add(new RuleMatchingInterceptor());		
 		interceptors.add(new DispatchingInterceptor());
 		interceptors.add(new UserFeatureInterceptor());
-
+		interceptors.add(new HTTPClientInterceptor());
+		for (Interceptor i : interceptors) {
+			i.setRouter(this);
+		}
 		transport.setInterceptors(interceptors);
 	}
 	

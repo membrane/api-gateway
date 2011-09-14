@@ -17,7 +17,6 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 
@@ -29,7 +28,6 @@ public class HttpResendRunnable extends AbstractHttpRunnable {
 		exchange.setServerThread(this);
 		
 		srcReq = exc.getRequest();
-		setClientSettings();
 	}
 
 	public void run() {
@@ -38,25 +36,23 @@ public class HttpResendRunnable extends AbstractHttpRunnable {
 	
 			invokeRequestHandlers();
 			
-			synchronized (exchange.getRequest()) {
+			/*synchronized (exchange.getRequest()) {
 				if (exchange.getRule().isBlockRequest()) {
 					exchange.setStopped();
 					block(exchange.getRequest());
 				}
-			}
+			}*/
 			
-			makeClientCall();
-			
-			
-
+			//makeClientCall();
+						
 			invokeResponseHandlers(exchange);
 
-			synchronized (exchange.getResponse()) {
+			/*synchronized (exchange.getResponse()) {
 				if (exchange.getRule().isBlockResponse()) {
 					exchange.setStopped();
 					block(exchange.getResponse());
 				}
-			}
+			}*/
 			
 			exchange.setCompleted();
 
@@ -69,12 +65,6 @@ public class HttpResendRunnable extends AbstractHttpRunnable {
 			ex.printStackTrace();
 		}
 
-	}
-
-	private void makeClientCall() throws Exception, IOException {
-		Response targetRes = client.call(exchange);
-		targetRes.readBody();
-		exchange.setResponse(targetRes);
 	}
 
 }

@@ -14,28 +14,26 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
 
 import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.EndOfStreamException;
 
 public class HttpServerRunnable extends AbstractHttpRunnable {
-	
-	private static Log log = LogFactory.getLog(HttpServerRunnable.class.getName());
-	
+
+	private static Log log = LogFactory.getLog(HttpServerRunnable.class
+			.getName());
+
 	public static int counter = 0;
-	
-	public HttpServerRunnable(Socket socket, HttpTransport transport) throws IOException {
+
+	public HttpServerRunnable(Socket socket, HttpTransport transport)
+			throws IOException {
 		this.exchange = new Exchange();
 		exchange.setServerThread(this);
 		counter++;
@@ -46,32 +44,31 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		sourceSocket.setSoTimeout(transport.getSocketTimeout());
 		sourceSocket.setTcpNoDelay(transport.isTcpNoDelay());
 		this.transport = transport;
-		setClientSettings();
-	} 
+	}
 
 	public void run() {
 		try {
 			while (true) {
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
-				
-				
+
 				exchange.setTimeReqReceived(System.currentTimeMillis());
-				
+
 				if (srcReq.getHeader().getProxyConnection() != null) {
-					srcReq.getHeader().add(Header.CONNECTION, srcReq.getHeader().getProxyConnection());
+					srcReq.getHeader().add(Header.CONNECTION,
+							srcReq.getHeader().getProxyConnection());
 					srcReq.getHeader().removeFields(Header.PROXY_CONNECTION);
 				}
-				
-				
+
 				process();
-				
+
 				if (srcReq.isCONNECTRequest()) {
 					log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
 					return;
 				}
-				if (!srcReq.isKeepAlive() || !exchange.getResponse().isKeepAlive()) {
-					if ( exchange.getTargetConnection() != null ) {
+				if (!srcReq.isKeepAlive()
+						|| !exchange.getResponse().isKeepAlive()) {
+					if (exchange.getTargetConnection() != null) {
 						exchange.getTargetConnection().close();
 						exchange.setTargetConnection(null);
 					}
@@ -82,7 +79,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 				}
 				exchange = new Exchange();
 				exchange.setServerThread(this);
-				
+
 			}
 		} catch (SocketTimeoutException e) {
 			log.debug("Socket of thread " + counter + " timed out");
@@ -95,22 +92,23 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		} catch (AbortException e) {
 			log.info("exchange aborted.");
 		} catch (ErrorReadingStartLineException e) {
-			log.info("Client connection terminated before start line was read. Start line so far: (" + e.getStartLine() + ")");
+			log.info("Client connection terminated before start line was read. Start line so far: ("
+					+ e.getStartLine() + ")");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
 		finally {
-			if (srcReq.isCONNECTRequest()) 
+			if (srcReq.isCONNECTRequest())
 				return;
-			
+
 			closeConnections();
 		}
 
 	}
 
 	private void closeConnections() {
-		
+
 		try {
 			if (!sourceSocket.isClosed()) {
 				if (!(sourceSocket instanceof SSLSocket))
@@ -118,86 +116,53 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 				sourceSocket.close();
 			}
 		} catch (Exception e2) {
-			log.error("problems closing socket on remote port: " + sourceSocket.getPort() + " on remote host: " + sourceSocket.getInetAddress());
+			log.error("problems closing socket on remote port: "
+					+ sourceSocket.getPort() + " on remote host: "
+					+ sourceSocket.getInetAddress());
 			e2.printStackTrace();
 		}
 	}
 
 	private void process() throws Exception {
 		try {
-			
-			exchange.setSourceHostname(transport.getRouter().getDnsCache().getHostName(sourceSocket.getInetAddress()));
-			exchange.setSourceIp(transport.getRouter().getDnsCache().getHostAddress(sourceSocket.getInetAddress()));
-			
+
+			exchange.setSourceHostname(transport.getRouter().getDnsCache()
+					.getHostName(sourceSocket.getInetAddress()));
+			exchange.setSourceIp(transport.getRouter().getDnsCache()
+					.getHostAddress(sourceSocket.getInetAddress()));
+
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
-			
-			invokeHandlers();
 
-			synchronized (exchange.getResponse()) {
-				if (exchange.getRule().isBlockResponse()) {
-					exchange.setStopped();
-					block(exchange.getResponse());
-				}
-			}
+			invokeRequestHandlers();
+
+			/*
+			 * synchronized (exchange.getRequest()) { if
+			 * (exchange.getRule().isBlockRequest()) { exchange.setStopped();
+			 * block(exchange.getRequest()); } }
+			 */
+
+			// client call was here
+			invokeResponseHandlers(exchange);
+
+			/*
+			 * synchronized (exchange.getResponse()) { if
+			 * (exchange.getRule().isBlockResponse()) { exchange.setStopped();
+			 * block(exchange.getResponse()); } }
+			 */
 
 		} catch (AbortException e) {
 			log.debug("Aborted");
 			exchange.finishExchange(true, exchange.getErrorMessage());
 			writeResponse(exchange.getResponse());
-			
+
 			log.debug("exchange set aborted");
 			return;
 		}
-		
+
 		writeResponse(exchange.getResponse());
 		exchange.setCompleted();
 		log.debug("exchange set completed");
-		
+
 	}
-
-	private void invokeHandlers() throws Exception {
-		
-		invokeRequestHandlers();
-
-		synchronized (exchange.getRequest()) {
-			if (exchange.getRule().isBlockRequest()) {
-				exchange.setStopped();
-				block(exchange.getRequest());
-			}
-		}
-
-		String dest = exchange.getDestinations().get(0);
-		if (dest.startsWith("service:")) {
-			
-			log.debug("routing to serviceProxy with name: " + dest.substring(8));
-			
-			Rule r = exchange.getRule();
-			exchange.getDestinations().clear();
-			exchange.setRule(transport.getRouter().getRuleManager().getRuleByName(dest.substring(8)));
-			
-			invokeHandlers();
-			
-			exchange.setRule(r);
-		} else {
-			callClient(dest);			
-		}
-		exchange.getRule().addStatusCode(exchange.getResponse().getStatusCode());
-		invokeResponseHandlers(exchange);
-	}
-
-	private void callClient(String dest) throws Exception {
-		Response targetRes = null;
-
-		try {
-			targetRes = client.call(exchange);
-		} catch (ConnectException e) {
-			targetRes = new ErrorResponse(500, "Internal Server Error", "Target " + dest + " is not reachable.");  
-			log.warn("Target " + dest + " is not reachable. " + e);
-		} catch (UnknownHostException e) {
-			targetRes = new ErrorResponse(500, "Internal Server Error", "Target host " + HttpUtil.getHostName(dest) + " is unknown. DNS was unable to resolve host name.");
-		}			
-		exchange.setResponse(targetRes);
-	}
-
 }

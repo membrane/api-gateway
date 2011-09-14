@@ -29,6 +29,7 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("groovy", new GroovyInterceptorParser());        
         registerBeanDefinitionParser("throttle", new ThrottleInterceptorParser());        
         registerBeanDefinitionParser("formValidation", new FormValidationInterceptorParser());        
-        registerBeanDefinitionParser("log", new LogInterceptorParser());        
+        registerBeanDefinitionParser("log", new LogInterceptorParser());
+        registerBeanDefinitionParser("httpClient", new HttpClientInterceptorParser());     
     }
 }

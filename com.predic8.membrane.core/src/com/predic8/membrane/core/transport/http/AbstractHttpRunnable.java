@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.List;
 
 import org.apache.commons.logging.*;
 
@@ -29,8 +30,6 @@ public abstract class AbstractHttpRunnable implements Runnable {
 
 	private static Log log = LogFactory.getLog(AbstractHttpRunnable.class.getName());
 	
-	protected HttpClient client = new HttpClient();
-
 	protected Exchange exchange;
 	
 	protected Request srcReq;
@@ -45,7 +44,27 @@ public abstract class AbstractHttpRunnable implements Runnable {
 	
 	protected boolean stop = false;
 	
-
+	protected void invokeInterceptors(Flow f, List<Interceptor> list, int start, int end, int step) throws Exception {
+		for (int j = start; j != transport.getInterceptors().size(); j+=step) {
+			Interceptor i = transport.getInterceptors().get(j);
+			
+			if (i.getFlow() != Flow.REQUEST_RESPONSE && 
+				i.getFlow() != f) continue;
+			
+			log.debug("Flow: "+f+". Invoking: " + i.getDisplayName() + " on exchange: " + exchange);
+			
+			Outcome outcome;
+			if (f == Flow.REQUEST) {
+				outcome = i.handleRequest(exchange);
+			} else {
+				outcome = i.handleResponse(exchange);
+			}
+			
+			if ( outcome == Outcome.ABORT) {
+				throw new AbortException();
+			}
+		} 		
+	}
 	protected void invokeRequestHandlers() throws Exception {
 		for (Interceptor i : transport.getInterceptors()) {
 			
@@ -111,19 +130,12 @@ public abstract class AbstractHttpRunnable implements Runnable {
 		return transport;
 	}
 
-	protected void setClientSettings() {
-		Proxies cfg = transport.getRouter().getConfigurationManager().getProxies();
-		client.setAdjustHostHeader(cfg.getAdjustHostHeader());
-		client.setProxy(cfg.getProxy());
-		client.setMaxRetries(transport.getHttpClientRetries());
-	}
-	
 	protected void block(Message msg) throws TerminateException {
 		try {
 			log.debug("Message thread waits");
 			msg.wait();
 			log.debug("Message thread received notify");
-			if (exchange.isForceToStop())
+			if (exchange.isForcedToStop())
 				throw new TerminateException("Force the exchange to stop.");
 		} catch (InterruptedException e1) {
 			e1.printStackTrace();

@@ -212,7 +212,7 @@ public abstract class AbstractExchange {
 		
 	}
 
-	public boolean isForceToStop() {
+	public boolean isForcedToStop() {
 		return forceToStop;
 	}
 
