@@ -10,9 +10,15 @@ Require-Bundle: org.eclipse.ui;bundle-version="3.6.0";visibility:=reexport,
 Bundle-ActivationPolicy: lazy
 Export-Package: com.predic8.plugin.membrane;uses:="org.eclipse.jface.resource,org.eclipse.ui.plugin,org.osgi.framework",
  com.predic8.plugin.membrane.actions,
+ com.predic8.plugin.membrane.beautifier,
  com.predic8.plugin.membrane.commands,
  com.predic8.plugin.membrane.listeners,
  com.predic8.plugin.membrane.perspectives,
  com.predic8.plugin.membrane.resources,
- com.predic8.plugin.membrane.views
+ com.predic8.plugin.membrane.views,
+ org.codehaus.jackson,
+ org.codehaus.jackson.map
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-ClassPath: lib/jackson-core-asl-1.8.5.jar,
+ lib/jackson-mapper-asl-1.8.5.jar,
+ .
