@@ -79,7 +79,7 @@ public class InterceptorInvocationTest {
 	}
 
 	private ServiceProxy createForwardingRule() {
-		ServiceProxy rule = new ServiceProxy(new ForwardingRuleKey("localhost", Request.METHOD_POST, "*", 4000), "thomas-bayer", 80);
+		ServiceProxy rule = new ServiceProxy(new ForwardingRuleKey("localhost", Request.METHOD_POST, "*", 4000), "thomas-bayer.com", 80);
 		for (String label : ruleInterceptorNames) {
 			rule.getInterceptors().add(new MockInterceptor(label));
 		}

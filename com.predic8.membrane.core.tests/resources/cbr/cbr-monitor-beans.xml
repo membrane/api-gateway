@@ -10,9 +10,7 @@
 		<ruleMatching />
 		<dispatching />
 		<userFeature />
-		<regExReplacer regex="&lt;title&gt;.*&lt;/title&gt;" replace="&lt;title&gt;Membrane RegEx Replacement Is Cool&lt;/title&gt;" />
-		<httpClient />
+		<client />
 	</transport>
 
 </spring:beans>
-

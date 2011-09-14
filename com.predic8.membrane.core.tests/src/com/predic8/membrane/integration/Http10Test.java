@@ -35,8 +35,8 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 
-public class Http10Test {
 
+public class Http10Test {
 	private static HttpRouter router;
 	
 	@Before

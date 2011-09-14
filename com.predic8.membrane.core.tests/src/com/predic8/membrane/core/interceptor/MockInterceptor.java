@@ -28,6 +28,7 @@ public class MockInterceptor extends AbstractInterceptor {
 	
 	public MockInterceptor(String label) {
 		this.label = label;
+		name = "MockInterceptor: "+label; 
 	}
 	
 	@Override
@@ -41,5 +42,5 @@ public class MockInterceptor extends AbstractInterceptor {
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		respLabels.add(label);
 		return super.handleResponse(exc);
-	}
+	}	
 }

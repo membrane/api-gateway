@@ -23,14 +23,15 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.acl.*;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
+import com.predic8.membrane.core.interceptor.formvalidation.*;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
-import com.predic8.membrane.core.interceptor.schemavalidation.SOAPMessageValidatorInterceptorTest;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.transport.http.HostColonPortTest;
+import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 
@@ -68,13 +69,15 @@ import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 	LoadBalancingWithClusterManagerAndNoSessionTest.class,
 	LoadBalancingWithClusterManagerTest.class,
 	DNSCacheTest.class,
-	SOAPMessageValidatorInterceptorTest.class,
+	ValidatorInterceptorTest.class,
 	XPathCBRInterceptorTest.class,
 	CustomSpringConfigurationTest.class,
 	CustomRulesConfigurationTest.class,
 	JSESSIONIDExtractorTest.class,
 	ThrottleInterceptorTest.class,
-	GroovyInterceptorTest.class
+	GroovyInterceptorTest.class,
+	FormValidationInterceptorTest.class,
+	ServiceInvocationTest.class
 })
 public class UnitTests {
 

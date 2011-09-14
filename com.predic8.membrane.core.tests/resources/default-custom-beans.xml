@@ -16,6 +16,7 @@
 	<transport coreThreadPoolSize="20">
 		<ruleMatching />
 		<dispatching />
+		<httpClient />
 	</transport>
 
 	<counter name="Counter 2" />

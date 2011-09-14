@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
 import com.predic8.membrane.core.util.MessageUtil;
 public class RegExURLRewriteInterceptorTest {
@@ -39,8 +40,8 @@ public class RegExURLRewriteInterceptorTest {
 		List<Mapping> mappings = new ArrayList<Mapping>();
 		mappings.add( new Mapping("/buy/(.*)/(.*)", "/buy?item=$1&amount=$2"));
 		interceptor.setMappings(mappings);
-		interceptor.handleRequest(exc);
-		
+
+		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
 		assertEquals("/buy?item=banana&amount=3", exc.getRequest().getUri());
 	}
 	

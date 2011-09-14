@@ -1,20 +1,39 @@
 <proxies>
-	<serviceProxy name="Balancer" port="2000">
-		<balancer>
-			<jSessionIdExtractor/>
-		</balancer>
-	</serviceProxy>
-	
-	<serviceProxy name="Prim Service" port="3000">
-		<target host="localhost" port="80"/>
+	<serviceProxy name="virtualProxy" port="2000">
+		<request>
+			<groovy>
+				println "request: virtualProxy" 	
+				CONTINUE
+			</groovy>
+		</request>
+		<response>
+			<groovy>
+				println "response: virtualProxy" 	
+				CONTINUE
+			</groovy>
+		</response>
+		<target url="mem://thomas-bayer.com"  />
 	</serviceProxy>
 
-	<serviceProxy name="Console" port="9000">
-		<adminConsole />
-	</serviceProxy>
+	<serviceProxy name="thomas-bayer.com" port="3000">
+		<request>
+			<groovy>
+				println "request: thomas-bayer.com"
+				exc.response = new OKResponse() 	
+				ABORT
+			</groovy>
+		</request>
+		<response>
+			<groovy>
+				println "response: thomas-bayer.com" 	
+				CONTINUE
+			</groovy>
+		</response>
+		<target host="thomas-bayer.com"  />
+	</serviceProxy>	
 	
-	<serviceProxy name="Up/Down Push Interface" port="9010">
-		<clusterNotification />
+	<serviceProxy name="Administration" port="9000">
+		<adminConsole />
 	</serviceProxy>
 	
 </proxies>

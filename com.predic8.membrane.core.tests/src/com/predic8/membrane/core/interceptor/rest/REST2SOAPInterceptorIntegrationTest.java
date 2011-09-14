@@ -39,7 +39,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 				
 		REST2SOAPInterceptor rest2SoapInt = new REST2SOAPInterceptor();
 		rest2SoapInt.setMappings(getMappings());
-		router.getTransport().getInterceptors().add(rest2SoapInt);		
+		rule.getInterceptors().add(rest2SoapInt);		
 	}
 
 	@After
@@ -61,18 +61,13 @@ public class REST2SOAPInterceptorIntegrationTest {
 	
 	private List<Mapping> getMappings() {
 		List<Mapping> mappings = new ArrayList<Mapping>();
-		Mapping mapping = new Mapping(); 
-		mapping.regex = "/bank/.*";
-		mapping.soapAction = "";
-		mapping.soapURI = "/axis2/services/BLZService";
-		mapping.requestXSLT = "classpath:/blz-httpget2soap-request.xsl";
-		mapping.responseXSLT = "classpath:/strip-soap-envelope.xsl";
-//		mappings.add( new Mapping( "/bank/.*", 
-//								   "", "/axis2/services/BLZService",
-//								   "classpath:/blz-httpget2soap-request.xsl",
-//								   "classpath:/strip-soap-envelope.xsl" ) );
-		
-		mappings.add(mapping);
+		Mapping m = new Mapping();
+		m.regex = "/bank/.*";
+		m.soapAction = "";
+		m.soapURI = "/axis2/services/BLZService";
+		m.requestXSLT = "classpath:/blz-httpget2soap-request.xsl";
+		m.responseXSLT = "classpath:/strip-soap-envelope.xsl";
+		mappings.add(m);
 		return mappings;
 	}
 }

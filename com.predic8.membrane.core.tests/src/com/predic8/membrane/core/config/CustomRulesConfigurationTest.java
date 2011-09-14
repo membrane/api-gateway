@@ -50,7 +50,8 @@ public class CustomRulesConfigurationTest {
 		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/target/@port", "80");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/target/@host", "www.thomas-bayer.com");
-
+		assertAttribute(w.toString(), "/proxies/serviceProxy/target/@url", "http://predic8.de/membrane.htm");
+		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/transform/@xslt", "strip.xslt");
 		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/request/counter/@name", "Node 1");
@@ -69,13 +70,15 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(), "/proxies/serviceProxy/request/regExUrlRewriter/mapping/@regex", "/home");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/request/regExUrlRewriter/mapping/@uri", "/index");
 		
-		assertAttribute(w.toString(), "/proxies/serviceProxy/soapValidator/@wsdl", "http://www.predic8.com:8080/material/ArticleService?wsdl");
+		assertAttribute(w.toString(), "/proxies/serviceProxy/validator/@wsdl", "http://www.predic8.com:8080/material/ArticleService?wsdl");
+		assertAttribute(w.toString(), "/proxies/serviceProxy/validator/@schema", "http://www.predic8.com:8080/material/ArticleService?xsd=2");
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/rest2Soap/mapping/@regex", "/bank/.*");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/rest2Soap/mapping/@soapAction", "");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/rest2Soap/mapping/@soapURI", "/axis2/services/BLZService");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/rest2Soap/mapping/@requestXSLT", "request.xsl");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/rest2Soap/mapping/@responseXSLT", "response.xsl");
+		assertAttribute(w.toString(), "/proxies/serviceProxy/rest2Soap/mapping/@responseType", "json");
 		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/balancer/xmlSessionIdExtractor/@namespace", "http://chat.predic8.com/");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/balancer/xmlSessionIdExtractor/@localName", "session");
@@ -88,6 +91,8 @@ public class CustomRulesConfigurationTest {
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/interceptor/@id", "counter");		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/interceptor/@name", "Counter 2");		
+
+		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@headerOnly", "true");		
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/response/regExReplacer/@regex", "Hallo");		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/response/regExReplacer/@replace", "Hello");		
@@ -111,6 +116,12 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(), "/proxies/serviceProxy/throttle/@delay", "1000");		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/throttle/@maxThreads", "5");		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/throttle/@busyDelay", "3000");		
+
+		assertAttribute(w.toString(), "/proxies/serviceProxy/request/formValidation/field[1]/@name", "age");		
+		assertAttribute(w.toString(), "/proxies/serviceProxy/request/formValidation/field[1]/@regex", "\\d+");		
+
+		assertAttribute(w.toString(), "/proxies/serviceProxy/request/formValidation/field[2]/@name", "name");		
+		assertAttribute(w.toString(), "/proxies/serviceProxy/request/formValidation/field[2]/@regex", "[a-z]+");		
 		
 //		assertAttribute(w.toString(), "/proxies/serviceProxy/statisticsJDBC/@postMethodOnly", "false");		
 //		assertAttribute(w.toString(), "/proxies/serviceProxy/statisticsJDBC/@soapOnly", "true");		
