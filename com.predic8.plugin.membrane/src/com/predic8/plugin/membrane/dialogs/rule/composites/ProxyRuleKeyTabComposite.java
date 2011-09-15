@@ -29,8 +29,7 @@ public class ProxyRuleKeyTabComposite extends GridPanel {
 	public ProxyRuleKeyTabComposite(Composite parent) {
 		super(parent, 20, 2);
 		
-		Label lbListenPort = new Label(this, SWT.NONE);
-		lbListenPort.setText("Listen Port: ");
+		new Label(this, SWT.NONE).setText("Listen Port: ");
 		
 		textListenPort = new Text(this, SWT.BORDER);
 		GridData gData = new GridData();
