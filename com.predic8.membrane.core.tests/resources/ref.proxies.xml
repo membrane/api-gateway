@@ -1,13 +1,13 @@
 <membrane>
 	<serviceProxy name="localhost" host="*" port="2000" path=".*"
 		method="*">
-		<interceptor id="roundRobinBalancer" name="Round Robin Balancer" />
-		<interceptor id="urlRewriter" name="Simple URL Rewriter" />
+		<interceptor refid="roundRobinBalancer" name="Round Robin Balancer" />
+		<interceptor refid="urlRewriter" name="Simple URL Rewriter" />
 		<target host="localhost" port="8080" />
 	</serviceProxy>
 	<proxy name="proxy" port="2001">
-		<interceptor id="roundRobinBalancer" name="Round Robin Balancer" />
-		<interceptor id="urlRewriter" name="Simple URL Rewriter" />
+		<interceptor refid="roundRobinBalancer" name="Round Robin Balancer" />
+		<interceptor refid="urlRewriter" name="Simple URL Rewriter" />
 	</proxy>
 	<global>
 		<adjustHostHeader>true</adjustHostHeader>
