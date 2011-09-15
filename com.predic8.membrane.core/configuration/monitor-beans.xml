@@ -24,6 +24,7 @@
 		<ruleMatching />
 		<dispatching />
 		<exchangeStore name="exchangeStore" />
+		<userFeature />
 		<httpClient />
 	</transport>
 	
