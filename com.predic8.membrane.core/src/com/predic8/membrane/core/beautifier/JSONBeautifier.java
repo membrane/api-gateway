@@ -1,4 +1,4 @@
-package com.predic8.plugin.membrane.beautifier;
+package com.predic8.membrane.core.beautifier;
 
 import java.io.IOException;
 

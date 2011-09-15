@@ -19,7 +19,7 @@ import java.io.IOException;
 import org.eclipse.swt.widgets.TabFolder;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.plugin.membrane.beautifier.JSONBeautifier;
+import com.predic8.membrane.core.beautifier.JSONBeautifier;
 import com.predic8.plugin.membrane.listeners.JSONHighlitingStylelistener;
 
 

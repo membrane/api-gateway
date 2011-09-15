@@ -27,7 +27,7 @@
 		<httpClient />
 	</transport>
 	
-	<spring:bean id="JSONBeautifier" class="com.predic8.plugin.membrane.beautifier.JSONBeautifier" init-method="configure">
+	<spring:bean id="JSONBeautifier" class="com.predic8.membrane.core.beautifier.JSONBeautifier" init-method="configure">
 		<spring:property name="indentOutput" value="true"/>
 		<spring:property name="allowedUnquotedFieldNames" value="true"/>
 		<spring:property name="quoteFieldNames" value="false"/>

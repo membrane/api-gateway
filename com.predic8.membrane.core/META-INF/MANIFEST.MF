@@ -23,6 +23,7 @@ Export-Package:
    org.osgi.framework,
    com.predic8.membrane.core.model,
    com.predic8.membrane.core.io",
+ com.predic8.membrane.core.beautifier,
  com.predic8.membrane.core.config;uses:="javax.xml.stream",
  com.predic8.membrane.core.exchange;
   uses:="com.predic8.membrane.core.http,
@@ -108,6 +109,7 @@ Bundle-ClassPath: lib/commons-logging.jar,
  lib/jatl-0.1.0.jar,
  lib/commons-lang-2.6.jar,
  lib/soa-model-2.0.6.jar,
+ lib/jackson-mapper-asl-1.8.5.jar,
  lib/jackson-core-asl-1.8.5.jar
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0";visibility:=reexport
 Eclipse-RegisterBuddy: org.apache.log4j
