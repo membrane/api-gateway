@@ -133,23 +133,14 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
-
+			 
 			invokeRequestHandlers();
-
-			/*
-			 * synchronized (exchange.getRequest()) { if
-			 * (exchange.getRule().isBlockRequest()) { exchange.setStopped();
-			 * block(exchange.getRequest()); } }
-			 */
 
 			// client call was here
 			invokeResponseHandlers(exchange);
-
-			/*
-			 * synchronized (exchange.getResponse()) { if
-			 * (exchange.getRule().isBlockResponse()) { exchange.setStopped();
-			 * block(exchange.getResponse()); } }
-			 */
+			
+			exchange.blockResponseIfNeeded();
+			 
 
 		} catch (AbortException e) {
 			log.debug("Aborted");

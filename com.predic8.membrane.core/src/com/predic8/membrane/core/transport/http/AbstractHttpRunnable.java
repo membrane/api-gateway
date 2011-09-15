@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -130,18 +129,6 @@ public abstract class AbstractHttpRunnable implements Runnable {
 		return transport;
 	}
 
-	protected void block(Message msg) throws TerminateException {
-		try {
-			log.debug("Message thread waits");
-			msg.wait();
-			log.debug("Message thread received notify");
-			if (exchange.isForcedToStop())
-				throw new TerminateException("Force the exchange to stop.");
-		} catch (InterruptedException e1) {
-			e1.printStackTrace();
-		}
-	}
-	
 	protected void writeResponse(Response res) throws Exception{
 		res.write(srcOut);
 		srcOut.flush();

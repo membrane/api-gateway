@@ -14,23 +14,21 @@
 
 package com.predic8.membrane.core;
 
-import java.util.List;
-import java.util.Vector;
+import java.util.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.io.*;
 import com.predic8.membrane.core.rules.Rule;
 
 public class ConfigurationManager {
 
-	protected static Log log = LogFactory.getLog(ConfigurationManager.class.getName());
-	
-	private Proxies proxies;
+	protected static Log log = LogFactory.getLog(ConfigurationManager.class
+			.getName());
 
+	private Proxies proxies;
+	private HotDeploymentThread deploymentThread;
 	private boolean hotDeploy = true;
-	
 	private ConfigurationStore configurationStore = new ConfigurationFileStore();
 
 	private Router router;
@@ -42,39 +40,48 @@ public class ConfigurationManager {
 		getProxies().write(fileName);
 	}
 
-
 	public void loadConfiguration(String fileName) throws Exception {
 
 		setProxies(configurationStore.read(fileName));
 
 		setSecuritySystemProperties();
-		
+
 		router.getRuleManager().removeAllRules();
-		
+
 		for (Rule rule : getProxies().getRules()) {
 			router.getRuleManager().addRuleIfNew(rule);
 		}
-		
-		if (!fileName.startsWith("classpath:") && hotDeploy)
-			new HotDeploymentThread(fileName, router).start();
+
+		if (!fileName.startsWith("classpath:") && hotDeploy) {
+			if (deploymentThread == null) {
+				deploymentThread = new HotDeploymentThread(router);
+				deploymentThread.setProxiesFile(fileName);
+				deploymentThread.start();
+			}
+			deploymentThread.setProxiesFile(fileName);
+		}
 	}
 
 	public void setSecuritySystemProperties() {
 		if (getProxies().getKeyStoreLocation() != null)
-			System.setProperty("javax.net.ssl.keyStore", getProxies().getKeyStoreLocation());
-		
+			System.setProperty("javax.net.ssl.keyStore", getProxies()
+					.getKeyStoreLocation());
+
 		if (getProxies().getKeyStorePassword() != null)
-			System.setProperty("javax.net.ssl.keyStorePassword", getProxies().getKeyStorePassword());
-		
+			System.setProperty("javax.net.ssl.keyStorePassword", getProxies()
+					.getKeyStorePassword());
+
 		if (getProxies().getTrustStoreLocation() != null)
-			System.setProperty("javax.net.ssl.trustStore", getProxies().getTrustStoreLocation());
-		
+			System.setProperty("javax.net.ssl.trustStore", getProxies()
+					.getTrustStoreLocation());
+
 		if (getProxies().getTrustStorePassword() != null)
-			System.setProperty("javax.net.ssl.trustStorePassword", getProxies().getTrustStorePassword());
-	
+			System.setProperty("javax.net.ssl.trustStorePassword", getProxies()
+					.getTrustStorePassword());
+
 		notifySecurityChangeListeners();
 	}
-	
+
 	private void notifySecurityChangeListeners() {
 		for (SecurityConfigurationChangeListener listener : securityChangeListeners) {
 			try {
@@ -86,7 +93,8 @@ public class ConfigurationManager {
 	}
 
 	public Proxies getProxies() {
-		if ( proxies==null ) proxies = new Proxies(router);
+		if (proxies == null)
+			proxies = new Proxies(router);
 		return proxies;
 	}
 
@@ -103,9 +111,10 @@ public class ConfigurationManager {
 		this.configurationStore = configurationStore;
 		configurationStore.setRouter(router);
 	}
-	
+
 	public String getDefaultConfigurationFile() {
-		return System.getProperty("user.home") + System.getProperty("file.separator") + ".membrane.xml";
+		return System.getProperty("user.home")
+				+ System.getProperty("file.separator") + ".membrane.xml";
 	}
 
 	public Router getRouter() {
@@ -113,16 +122,18 @@ public class ConfigurationManager {
 	}
 
 	public void setRouter(Router router) {
-		this.router = router;		
+		this.router = router;
 		configurationStore.setRouter(router);
 		getProxies().setRouter(router);
 	}
-	
-	public void addSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {
+
+	public void addSecurityConfigurationChangeListener(
+			SecurityConfigurationChangeListener listener) {
 		securityChangeListeners.add(listener);
 	}
 
-	public void removeSecurityConfigurationChangeListener(SecurityConfigurationChangeListener listener) {
+	public void removeSecurityConfigurationChangeListener(
+			SecurityConfigurationChangeListener listener) {
 		securityChangeListeners.remove(listener);
 	}
 
@@ -132,5 +143,5 @@ public class ConfigurationManager {
 
 	public void setHotDeploy(boolean hotDeploy) {
 		this.hotDeploy = hotDeploy;
-	}		
+	}
 }

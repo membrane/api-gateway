@@ -65,7 +65,7 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		if (token.getAttributeValue("", "name") != null)
 			name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");	
-		id = token.getAttributeValue(Constants.NS_UNDEFINED, "id");	
+		id = token.getAttributeValue(Constants.NS_UNDEFINED, "refid");	
 	}
 	
 	@Override
@@ -81,7 +81,7 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	private void writeReferenz(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 
-		out.writeAttribute("id", getId());
+		out.writeAttribute("refid", getId());
 		
 		out.writeAttribute("name", getDisplayName());
 		

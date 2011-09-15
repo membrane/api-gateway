@@ -14,35 +14,40 @@
 
 package com.predic8.membrane.core.exchange;
 
-import com.predic8.membrane.core.http.Request;
+import org.apache.commons.logging.*;
+
+import com.predic8.membrane.core.TerminateException;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.rules.ForwardingRuleKey;
-import com.predic8.membrane.core.transport.http.AbstractHttpRunnable;
-import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.transport.http.*;
 
 public class Exchange extends AbstractExchange {
-	
+
+	private static Log log = LogFactory.getLog(Exchange.class.getName());
+
 	private AbstractHttpRunnable serverThread;
-	
+
 	private String originalHostHeader = "";
 
 	private Connection targetConnection;
-	
+
 	public Exchange() {
-		
+
 	}
-	
+
 	/**
 	 * For HttpResendRunnable
+	 * 
 	 * @param original
 	 */
 	public Exchange(Exchange original) {
 		super(original);
 		originalHostHeader = original.originalHostHeader;
 	}
-	
+
 	@Override
 	public void close() {
-		
+
 	}
 
 	public AbstractHttpRunnable getServerThread() {
@@ -52,27 +57,59 @@ public class Exchange extends AbstractExchange {
 	public void setServerThread(AbstractHttpRunnable serverThread) {
 		this.serverThread = serverThread;
 	}
-	
+
 	public String getOriginalHostHeaderHost() {
 		return originalHostHeader.replaceFirst(":.*", "");
 	}
-	
+
+	public void blockRequestIfNeeded() throws TerminateException {
+		synchronized (getRequest()) {
+			if (getRule().isBlockRequest()) {
+				setStopped();
+				block(getRequest());
+			}
+		}
+	}
+
+	public void blockResponseIfNeeded() throws TerminateException {
+		synchronized (getResponse()) {
+			if (getRule().isBlockResponse()) {
+				setStopped();
+				block(getResponse());
+			}
+		}
+	}
+
+	public void block(Message msg) throws TerminateException {
+		try {
+			log.debug("Message thread waits");
+			msg.wait();
+			log.debug("Message thread received notify");
+			if (isForcedToStop())
+				throw new TerminateException("Force the exchange to stop.");
+		} catch (InterruptedException e1) {
+			e1.printStackTrace();
+		}
+	}
+
 	public String getOriginalHostHeaderPort() {
 		return originalHostHeader.replaceFirst(".*:", "");
 	}
-	
+
 	public void setOriginalHostHeader(String hostHeader) {
 		originalHostHeader = hostHeader;
 	}
-	
+
 	@Override
 	public void setRequest(Request req) {
 		super.setRequest(req);
 		setOriginalHostHeader(req.getHeader().getHost());
 	}
-	
+
 	public ForwardingRuleKey getForwardingRuleKey() {
-		return new ForwardingRuleKey(request.getHeader().getHost(), request.getMethod(), request.getUri(), serverThread.getSourceSocket().getLocalPort());
+		return new ForwardingRuleKey(request.getHeader().getHost(),
+				request.getMethod(), request.getUri(), serverThread
+						.getSourceSocket().getLocalPort());
 	}
 
 	public Connection getTargetConnection() {
@@ -80,7 +117,6 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void setTargetConnection(Connection con) {
-		targetConnection = con;		
+		targetConnection = con;
 	}
-	
 }

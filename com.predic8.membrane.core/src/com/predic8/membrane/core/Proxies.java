@@ -249,6 +249,9 @@ public class Proxies extends AbstractConfigElement {
 			rule.write(out);
 		}
 		
+		if (proxy !=  null)
+			proxy.write(out);
+		
 		Global childFormat = new Global(router);
 		childFormat.setValues(props);
 		childFormat.write(out);
@@ -256,9 +259,6 @@ public class Proxies extends AbstractConfigElement {
 		GUI childGui = new GUI(router);
 		childGui.setValues(props);
 		childGui.write(out);
-		
-		if (proxy !=  null)
-			proxy.write(out);
 		
 		Security security = new Security(router);
 		security.setValues(props);
@@ -272,7 +272,7 @@ public class Proxies extends AbstractConfigElement {
 		return getKeyStoreLocation() != null && !"".equals(getKeyStoreLocation().trim()) && getKeyStorePassword() != null;
 	}
 
-	public byte[] toBytes() throws XMLStreamException, FactoryConfigurationError {
+	public byte[] toBytes() throws Exception, FactoryConfigurationError {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 	
 		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(baos, Constants.UTF_8);

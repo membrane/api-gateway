@@ -34,6 +34,8 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
+		exc.blockRequestIfNeeded();
+		
 		Response targetRes = null;
 
 		try {
