@@ -23,7 +23,7 @@ import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Text;
 
-import com.predic8.plugin.membrane.components.RuleTargetGroup;
+import com.predic8.plugin.membrane.components.ServiceProxyTargetGroup;
 
 public class TargetConfigurationPage extends SecurityWizardPage {
 
@@ -31,7 +31,7 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 
 	private boolean canFinish = true;
 
-	RuleTargetGroup ruleTargetGroup;
+	ServiceProxyTargetGroup ruleTargetGroup;
 	
 	protected TargetConfigurationPage() {
 		super(PAGE_NAME);
@@ -46,7 +46,7 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 
 		createSecurityComposite(composite);
 
-		ruleTargetGroup = new RuleTargetGroup(composite, SWT.NONE);
+		ruleTargetGroup = new ServiceProxyTargetGroup(composite, SWT.NONE);
 		
 		ruleTargetGroup.getTextTargetHost().addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {

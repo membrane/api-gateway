@@ -18,23 +18,23 @@ import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.components.RuleTargetGroup;
+import com.predic8.plugin.membrane.components.ServiceProxyTargetGroup;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
-public class RuleTargetTabComposite extends SecurityTabComposite {
+public class ServiceProxyTargetTabComposite extends SecurityTabComposite {
 
-	private RuleTargetGroup targetGroup;
+	private ServiceProxyTargetGroup targetGroup;
 	
-	public RuleTargetTabComposite(Composite parent) {
+	public ServiceProxyTargetTabComposite(Composite parent) {
 		super(parent);
 		setLayout(SWTUtil.createGridLayout(1, 20));
 		
 		createSecurityComposite(this);
 		
-		targetGroup = new RuleTargetGroup(this, SWT.NONE);
+		targetGroup = new ServiceProxyTargetGroup(this, SWT.NONE);
 	}
 
-	public RuleTargetGroup getTargetGroup() {
+	public ServiceProxyTargetGroup getTargetGroup() {
 		return targetGroup;
 	}
 	

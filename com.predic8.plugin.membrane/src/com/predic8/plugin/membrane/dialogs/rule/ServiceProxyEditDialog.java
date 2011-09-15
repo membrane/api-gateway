@@ -26,7 +26,7 @@ import com.predic8.plugin.membrane.dialogs.rule.composites.*;
 
 public class ServiceProxyEditDialog extends AbstractProxyEditDialog {
 
-	private RuleTargetTabComposite targetComposite;
+	private ServiceProxyTargetTabComposite targetComposite;
 
 	private ServiceProxyKeyTabComposite ruleKeyComposite;
 
@@ -62,7 +62,7 @@ public class ServiceProxyEditDialog extends AbstractProxyEditDialog {
 	}
 
 	private void createTargetTabComposite() {
-		targetComposite = new RuleTargetTabComposite(tabFolder);
+		targetComposite = new ServiceProxyTargetTabComposite(tabFolder);
 		targetComposite.getTargetGroup().getTextTargetHost().addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				Text t = (Text) e.getSource();

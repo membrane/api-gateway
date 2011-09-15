@@ -27,7 +27,7 @@ import org.eclipse.swt.widgets.Text;
 import com.predic8.membrane.core.Router;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
-public class RuleTargetGroup {
+public class ServiceProxyTargetGroup {
 
 	private Text textTargetPort;
 
@@ -37,7 +37,7 @@ public class RuleTargetGroup {
 
 	Pattern pIp = Pattern.compile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9])$");
 	
-	public RuleTargetGroup(Composite parent, int style) {
+	public ServiceProxyTargetGroup(Composite parent, int style) {
 		Group group = createGroup(parent, style);
 
 		new Label(group, SWT.NONE).setText("Host");
