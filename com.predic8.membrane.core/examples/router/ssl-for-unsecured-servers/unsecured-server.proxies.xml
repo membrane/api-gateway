@@ -1,0 +1,15 @@
+<proxies>
+	<serviceProxy port="443" inboundTLS="true">>
+		<target host="thomas-bayer.com" />
+	</serviceProxy>
+	<security>
+		<keystore>
+			<location>..\..\conf\membrane.jks</location>
+			<password>secret</password>
+		</keystore>
+		<truststore>
+			<location>..\..\conf\membrane.jks</location>
+			<password>secret</password>
+		</truststore>
+	</security>
+</proxies>
