@@ -1,0 +1,31 @@
+<proxies>
+	<serviceProxy name="Service Proxy" port="2001">
+		<target host="www.thomas-bayer.com" port="80" />
+	</serviceProxy>
+    <proxy name="HTTP Proxy" port="3128" />
+	
+	<global>
+		<adjustHostHeader>true</adjustHostHeader>		
+	</global>
+	<gui>
+		<autotrackexchange>false</autotrackexchange>
+		<indentMessage>true</indentMessage>
+	</gui>
+	<proxyConfiguration active="false"
+			authentication="false">
+		<proxy-host />
+		<proxy-port>0</proxy-port>
+		<proxy-username />
+		<proxy-password />		
+	</proxyConfiguration>
+	<security>
+		<keystore>
+			<location>configuration\membrane.jks</location>
+			<password>secret</password>
+		</keystore>
+		<truststore>
+			<location>configuration\membrane.jks</location>
+			<password>secret</password>
+		</truststore>
+	</security>
+</proxies>

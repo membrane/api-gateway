@@ -27,7 +27,7 @@ import javax.xml.xpath.*;
 import org.junit.*;
 import org.xml.sax.InputSource;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 
 public class CustomRulesConfigurationTest {
 
@@ -89,7 +89,7 @@ public class CustomRulesConfigurationTest {
 
 		assertElement(w.toString(), "/proxies/serviceProxy/balancer/jSessionIdExtractor");		
 
-		assertAttribute(w.toString(), "/proxies/serviceProxy/interceptor/@id", "counter");		
+		assertAttribute(w.toString(), "/proxies/serviceProxy/interceptor/@refid", "counter");		
 		assertAttribute(w.toString(), "/proxies/serviceProxy/interceptor/@name", "Counter 2");		
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@headerOnly", "true");		
@@ -137,6 +137,19 @@ public class CustomRulesConfigurationTest {
 		
 		assertAttribute(w.toString(), "/proxies/proxy/switch/case/@xPath", "//convert");		
 		assertAttribute(w.toString(), "/proxies/proxy/switch/case/@url", "http://www.thomas-bayer.com/axis2/");		
+	}
+	
+	@Test
+	public void testOtherConfigElements() throws Exception {
+		router.getConfigurationManager().loadConfiguration("resources/non-rule-configuration.xml");
+		StringWriter w = new StringWriter();
+		router.getConfigurationManager().getProxies().write(XMLOutputFactory.newInstance().createXMLStreamWriter(w));
+		assertElement(w.toString(), "/proxies/*[1][local-name()='serviceProxy']");
+		assertElement(w.toString(), "/proxies/*[2][local-name()='proxy']");
+		assertElement(w.toString(), "/proxies/*[3][local-name()='proxyConfiguration']");
+		assertElement(w.toString(), "/proxies/*[4][local-name()='global']");
+		assertElement(w.toString(), "/proxies/*[5][local-name()='gui']");
+		assertElement(w.toString(), "/proxies/*[6][local-name()='security']");
 	}
 	
 	@After

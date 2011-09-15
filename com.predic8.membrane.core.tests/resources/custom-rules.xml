@@ -47,7 +47,7 @@
 				responseType="json"/>
 		</rest2Soap>
 
-		<interceptor id="counter" name="Counter 2" />
+		<interceptor refid="counter" name="Counter 2" />
 		<log headerOnly="true"/>
 		<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
 		<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
