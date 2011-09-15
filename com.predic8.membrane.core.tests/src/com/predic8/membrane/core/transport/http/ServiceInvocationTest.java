@@ -54,14 +54,14 @@ public class ServiceInvocationTest {
 	}
 	
 	private ServiceProxy createFirstRule() {
-		ServiceProxy rule = new ServiceProxy(new ForwardingRuleKey("localhost", Request.METHOD_POST, "*", 5000), "thomas-bayer.com", 80);
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 5000), "thomas-bayer.com", 80);
 		rule.setTargetURL("service:log");
 		rule.getInterceptors().add(new MockInterceptor("process"));
 		return rule;
 	}
 	
 	private ServiceProxy createServiceRule() {
-		ServiceProxy rule = new ServiceProxy(new ForwardingRuleKey("localhost","*", "*", 6000), "thomas-bayer.com", 80);
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 6000), "thomas-bayer.com", 80);
 		rule.setName("log");
 		rule.getInterceptors().add(new MockInterceptor("log"));
 		return rule;

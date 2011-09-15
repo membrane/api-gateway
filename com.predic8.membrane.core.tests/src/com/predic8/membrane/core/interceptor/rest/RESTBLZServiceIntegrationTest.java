@@ -36,7 +36,7 @@ public class RESTBLZServiceIntegrationTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 		

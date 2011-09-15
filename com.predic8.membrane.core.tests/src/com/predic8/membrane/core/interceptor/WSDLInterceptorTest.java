@@ -35,7 +35,7 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.MessageUtil;
@@ -132,7 +132,7 @@ public class WSDLInterceptorTest {
 	}
 	
 	private Rule getRule() {		
-		return new ServiceProxy(new ForwardingRuleKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
+		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
 	}
 
 	private XMLEventReader getParser() throws Exception {

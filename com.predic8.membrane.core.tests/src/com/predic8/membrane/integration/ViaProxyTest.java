@@ -28,7 +28,7 @@ import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 
@@ -45,7 +45,7 @@ public class ViaProxyTest {
 		proxyRouter.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 		
 		router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
+		router.getRuleManager().addRuleIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
 		
 		Proxies config = new Proxies(proxyRouter);
 		

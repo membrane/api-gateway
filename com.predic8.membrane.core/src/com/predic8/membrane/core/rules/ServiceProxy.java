@@ -33,11 +33,11 @@ public class ServiceProxy extends AbstractRule {
 		setRouter(router);
 	}
 
-	public ServiceProxy(ForwardingRuleKey ruleKey, String targetHost, int targetPort) {
+	public ServiceProxy(ServiceProxyKey ruleKey, String targetHost, int targetPort) {
 		this(ruleKey, targetHost, targetPort, false, false);
 	}
 
-	public ServiceProxy(ForwardingRuleKey ruleKey, String targetHost, int targetPort, boolean inboundTLS, boolean outboundTLS) {
+	public ServiceProxy(ServiceProxyKey ruleKey, String targetHost, int targetPort, boolean inboundTLS, boolean outboundTLS) {
 		this.key = ruleKey;
 		this.targetHost = targetHost;
 		this.targetPort = targetPort;
@@ -74,7 +74,7 @@ public class ServiceProxy extends AbstractRule {
 		String host = defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "host"), "*");
 		int port = Integer.parseInt(defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "port"),"80"));
 		String method = defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "method"), "*");
-		key = new ForwardingRuleKey(host, method, ".*", port);
+		key = new ServiceProxyKey(host, method, ".*", port);
 	}
 	
 	private String defaultTo(String value, String default_) {

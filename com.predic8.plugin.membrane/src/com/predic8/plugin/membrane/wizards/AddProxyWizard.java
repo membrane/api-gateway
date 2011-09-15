@@ -23,7 +23,7 @@ import org.eclipse.jface.wizard.Wizard;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class AddProxyWizard extends Wizard {
@@ -61,7 +61,7 @@ public class AddProxyWizard extends Wizard {
 		}
 	}
 
-	void createForwardingRule(ForwardingRuleKey ruleKey) throws IOException {
+	void createForwardingRule(ServiceProxyKey ruleKey) throws IOException {
 		ServiceProxy rule = new ServiceProxy();
 		rule.setTargetHost(targetHostConfigPage.getTargetHost());
 		rule.setTargetPort(Integer.parseInt(targetHostConfigPage.getTargetPort()));
@@ -102,14 +102,14 @@ public class AddProxyWizard extends Wizard {
 		return advancedProxyConfigPage.getMethod();
 	}
 
-	ForwardingRuleKey getRuleKey() {
+	ServiceProxyKey getRuleKey() {
 		if (advancedProxyConfigPage.getUsePathPatter()) {
-			ForwardingRuleKey key = new ForwardingRuleKey(getListenHost(), getMethod(), advancedProxyConfigPage.getPathPattern(), getListenPort());
+			ServiceProxyKey key = new ServiceProxyKey(getListenHost(), getMethod(), advancedProxyConfigPage.getPathPattern(), getListenPort());
 			key.setUsePathPattern(true);
 			key.setPathRegExp(advancedProxyConfigPage.isRegExp());
 			return key;
 		} 
-		return  new ForwardingRuleKey(getListenHost(), getMethod(), ".*", getListenPort());
+		return  new ServiceProxyKey(getListenHost(), getMethod(), ".*", getListenPort());
 	}
 
 	boolean checkIfSimilarRuleExists() {

@@ -14,16 +14,16 @@
 
 package com.predic8.membrane.core.rules;
 
-public class ForwardingRuleKey extends AbstractRuleKey {
+public class ServiceProxyKey extends AbstractRuleKey {
 
 	String method = "*";
 	String host = "*";
 
-	public ForwardingRuleKey(int port) {
+	public ServiceProxyKey(int port) {
 		super(port);
 	}
 	
-	public ForwardingRuleKey(String host, String method, String path, int port) {
+	public ServiceProxyKey(String host, String method, String path, int port) {
 		super(port);
 		this.host = host;
 		setPath(path);
@@ -70,7 +70,7 @@ public class ForwardingRuleKey extends AbstractRuleKey {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ForwardingRuleKey other = (ForwardingRuleKey) obj;
+		ServiceProxyKey other = (ServiceProxyKey) obj;
 		if (host == null) {
 			if (other.host != null)
 				return false;

@@ -35,6 +35,7 @@ import com.predic8.plugin.membrane.dialogs.rule.AddInterceptorDialog;
 import com.predic8.plugin.membrane.dialogs.rule.EditInterceptorDialog;
 import com.predic8.plugin.membrane.dialogs.rule.providers.InterceptorTableViewerContentProvider;
 import com.predic8.plugin.membrane.dialogs.rule.providers.InterceptorTableViewerLabelProvider;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class ProxyInterceptorTabComposite extends Composite {
 
@@ -57,14 +58,7 @@ public class ProxyInterceptorTabComposite extends Composite {
 	}
 
 	private Composite createListComposite() {
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
-		layout.marginTop = 10;
-		layout.marginLeft = 5;
-		layout.marginBottom = 10;
-		layout.marginRight = 5;
-		setLayout(layout);
-
+		setLayout(SWTUtil.createGridLayout(2, 10, 5, 10, 5));
 		Composite listComposite = new Composite(this, SWT.NONE);
 		listComposite.setLayout(new GridLayout());
 		return listComposite;

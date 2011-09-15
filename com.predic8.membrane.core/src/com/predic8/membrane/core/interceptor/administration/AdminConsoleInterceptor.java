@@ -135,7 +135,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public Response handleFruleSaveRequest(Map<String, String> params) throws Exception {
 		logAddFwdRuleParams(params);
 		
-		Rule r = new ServiceProxy(new ForwardingRuleKey("*",
+		Rule r = new ServiceProxy(new ServiceProxyKey("*",
 				params.get("method"), ".*", getPortParam(params)),
 				params.get("targetHost"), getTargetPortParam(params));
 		r.setName(params.get("name"));

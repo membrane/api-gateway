@@ -34,7 +34,7 @@ public class ForwardingRuleKeyTest {
 	
 	@Test
 	public void testSimpleConstructor() throws Exception {
-		ForwardingRuleKey key = new ForwardingRuleKey(3000);
+		ServiceProxyKey key = new ServiceProxyKey(3000);
 		assertEquals(3000, key.getPort());
 		assertEquals("*", key.getMethod());
 		assertEquals("*", key.getHost());
@@ -46,7 +46,7 @@ public class ForwardingRuleKeyTest {
 	
 	@Test
 	public void testNoRegExpMatchesPath() throws Exception {
-		ForwardingRuleKey key = new ForwardingRuleKey("localhost", Request.METHOD_POST, "/axis2/services", 3000);
+		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, "/axis2/services", 3000);
 		key.setPathRegExp(false);
 		
 		assertTrue(key.matchesPath("/axis2/services/bla/other"));
@@ -55,14 +55,14 @@ public class ForwardingRuleKeyTest {
 	
 	@Test
 	public void testRegularExpressionMatchesPath() throws Exception {
-		ForwardingRuleKey key = new ForwardingRuleKey("localhost", Request.METHOD_POST, ".*FooService", 3000);
+		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, ".*FooService", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertFalse(key.matchesPath("/axis2/services/FooService/Bla")); //???
 	}
 	
 	@Test
 	public void testRegularExpressionMatchesPathAnyURI() throws Exception {
-		ForwardingRuleKey key = new ForwardingRuleKey("localhost", Request.METHOD_POST, ".*", 3000);
+		ServiceProxyKey key = new ServiceProxyKey("localhost", Request.METHOD_POST, ".*", 3000);
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertTrue(key.matchesPath("/axis2/services/FooService/Bla"));
 	}

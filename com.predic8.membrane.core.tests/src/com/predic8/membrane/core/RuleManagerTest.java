@@ -21,7 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -45,9 +45,9 @@ public class RuleManagerTest {
 		proxy5000 = new ProxyRule(new ProxyRuleKey(5000));
 		manager.addRuleIfNew(proxy5000);
 		
-		forwardBlz = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 5001), "thomas-bayer.com", 80);
+		forwardBlz = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 5001), "thomas-bayer.com", 80);
 		
-		forwardBlzPOST = new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 5002), "thomas-bayer.com", 80);
+		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 5002), "thomas-bayer.com", 80);
 		
 		manager.addRuleIfNew(forwardBlz);
 		manager.addRuleIfNew(forwardBlzPOST);
@@ -66,13 +66,13 @@ public class RuleManagerTest {
 	
 	@Test
 	public void testGetMatchingRuleForwardBlz() throws Exception {
-		RuleKey key = new ForwardingRuleKey("localhost", "POST", "/axis2/services/blzservice", 5001);
+		RuleKey key = new ServiceProxyKey("localhost", "POST", "/axis2/services/blzservice", 5001);
 		assertEquals(forwardBlz, manager.getMatchingRule(key));
 	}
 	
 	@Test
 	public void testGetMatchingRuleForwardBlzPOST() throws Exception {
-		RuleKey key = new ForwardingRuleKey("localhost", "POST", "/axis2/services/blzservice", 5001);
+		RuleKey key = new ServiceProxyKey("localhost", "POST", "/axis2/services/blzservice", 5001);
 		assertEquals(forwardBlz, manager.getMatchingRule(key));
 	}
 	

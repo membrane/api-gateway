@@ -15,7 +15,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 
 public class HTTPContinueTest {

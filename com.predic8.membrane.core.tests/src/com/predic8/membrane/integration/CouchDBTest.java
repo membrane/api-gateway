@@ -23,7 +23,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpTransport;
@@ -102,7 +102,7 @@ public class CouchDBTest extends TestCase {
 	
 	private Rule getRule() {
 		if (rule == null) {
-			rule = new ServiceProxy(new ForwardingRuleKey("localhost", Request.METHOD_POST, ".*", 4100), targetHost, targetPort);
+			rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, ".*", 4100), targetHost, targetPort);
 		}
 		return rule;
 	}

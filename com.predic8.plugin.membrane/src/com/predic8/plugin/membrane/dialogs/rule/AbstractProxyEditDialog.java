@@ -17,24 +17,16 @@ package com.predic8.plugin.membrane.dialogs.rule;
 
 import java.io.IOException;
 
+import org.eclipse.jface.dialogs.*;
 import org.eclipse.jface.dialogs.Dialog;
-import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.*;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.http.HttpTransport;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyActionsTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyGeneralInfoTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.*;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
 public abstract class AbstractProxyEditDialog extends Dialog {
@@ -48,6 +40,8 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 	protected ProxyActionsTabComposite actionsComposite;
 	
 	protected ProxyInterceptorTabComposite interceptorsComposite;
+	
+	protected ProxyFeaturesTabComposite featuresTabComposite;
 	
 	protected AbstractProxyEditDialog(Shell parentShell) {
 		super(parentShell);
@@ -71,6 +65,18 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 		Composite container = (Composite) super.createDialogArea(parent);
 		container.setLayout(SWTUtil.createGridLayout(1, 10));
 		
+		createTabFolder(container);
+		createGeneralInfoTab();
+		createRuleKeyTab();
+		createExtensionTabs();
+		createActionTab();
+		createInterceptorsTab();
+		createFeaturesTab();
+		
+		return container;
+	}
+
+	private void createTabFolder(Composite container) {
 		tabFolder = new TabFolder(container, SWT.NONE);
 		GridData gd = new GridData();
 		gd.widthHint = 440;
@@ -78,9 +84,6 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 		gd.grabExcessHorizontalSpace = true;
 		gd.grabExcessVerticalSpace = true;
 		tabFolder.setLayoutData(gd);
-		
-		
-		return container;
 	}
 	
 	public abstract String getTitle();
@@ -124,6 +127,10 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 		if (addToManager) {
 			getRuleManager().addRuleIfNew(rule);
 		}
+	}
+	
+	protected void createExtensionTabs() {
+		
 	}
 	
 	protected RuleManager getRuleManager() {
@@ -176,4 +183,38 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 		getRuleManager().ruleChanged(rule);
 	}
 	
+	protected void createGeneralInfoTab() {
+		generalInfoComposite = new ProxyGeneralInfoTabComposite(tabFolder);
+		createTabItem("General", generalInfoComposite);
+	}
+	
+	protected void createActionTab() {
+		actionsComposite = new ProxyActionsTabComposite(tabFolder);
+		createTabItem("Actions", actionsComposite);
+	}
+	
+	protected void createInterceptorsTab() {
+		interceptorsComposite = new ProxyInterceptorTabComposite(tabFolder);
+		createTabItem("Interceptors", interceptorsComposite);
+	}
+	
+	protected void createRuleKeyTab() {
+		createRuleKeyComposite();
+		createTabItem("Rule Key", getRuleKeyComposite());
+	}
+
+	protected void createFeaturesTab() {
+		featuresTabComposite = new ProxyFeaturesTabComposite(tabFolder);
+		createTabItem("Features", featuresTabComposite);
+	}
+	
+	protected void createTabItem(String title, Composite content) {
+		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
+		tabItem.setText(title);
+		tabItem.setControl(content);
+	}
+	
+	protected abstract void createRuleKeyComposite();
+	
+	protected abstract Composite getRuleKeyComposite();
 }

@@ -11,7 +11,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 
 public class ConnectionTest {
@@ -25,7 +25,7 @@ public class ConnectionTest {
 	@Before
 	public void setUp() throws Exception {
 		
-		Rule rule2000 = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 2000), "predic8.com", 80);
+		Rule rule2000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "predic8.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule2000);
 		

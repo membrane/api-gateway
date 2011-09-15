@@ -26,7 +26,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 
 public class RegExReplaceInterceptorTest {
@@ -36,7 +36,7 @@ public class RegExReplaceInterceptorTest {
 	@Before
 	public void setUp() throws Exception {
 		router = Router.init("resources/regex-monitor-beans.xml");
-		Rule serverRule = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 7000), "predic8.de", 80);
+		Rule serverRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 7000), "predic8.de", 80);
 		router.getRuleManager().addRuleIfNew(serverRule);
 	}
 	

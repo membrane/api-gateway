@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 public class AccessControlInterceptorTest {
 
@@ -40,7 +40,7 @@ public class AccessControlInterceptorTest {
 		interceptor.setAclFilename("resources/acl/acl.xml");
 		
 		
-		Rule rule4000 = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 4000), "oio.de", 80);
+		Rule rule4000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "oio.de", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule4000);
 		router.getTransport().getInterceptors().add(interceptor);

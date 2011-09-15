@@ -28,7 +28,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
@@ -225,13 +225,13 @@ public class RuleKeyGroup {
 		comboRuleMethod.clearSelection();
 	}
 
-	public ForwardingRuleKey getUserInput() {
+	public ServiceProxyKey getUserInput() {
 		if (textListenPort.getText().trim().length() == 0 || getMethod(comboRuleMethod.getSelectionIndex()).length() == 0) {
 			return null;
 		}
 
 		if (btAnyPath.getSelection()) {
-			ForwardingRuleKey rulekey = new ForwardingRuleKey(getHost(), getMethod(comboRuleMethod.getSelectionIndex()), ".*", getListenPort());
+			ServiceProxyKey rulekey = new ServiceProxyKey(getHost(), getMethod(comboRuleMethod.getSelectionIndex()), ".*", getListenPort());
 			rulekey.setUsePathPattern(false);
 			return rulekey;
 		}
@@ -239,7 +239,7 @@ public class RuleKeyGroup {
 		if (getPath().length() == 0) 
 			return null;
 		
-		ForwardingRuleKey rulekey = new ForwardingRuleKey(getHost(), getMethod(comboRuleMethod.getSelectionIndex()), getPath(), getListenPort());
+		ServiceProxyKey rulekey = new ServiceProxyKey(getHost(), getMethod(comboRuleMethod.getSelectionIndex()), getPath(), getListenPort());
 		rulekey.setUsePathPattern(true);
 		rulekey.setPathRegExp(btRegExp.getSelection());
 		

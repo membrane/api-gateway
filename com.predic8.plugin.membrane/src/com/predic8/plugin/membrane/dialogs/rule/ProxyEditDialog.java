@@ -14,18 +14,10 @@
 
 package com.predic8.plugin.membrane.dialogs.rule;
 
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.TabItem;
+import org.eclipse.swt.widgets.*;
 
-import com.predic8.membrane.core.rules.ProxyRuleKey;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyRuleKeyTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyActionsTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyGeneralInfoTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
 
 public class ProxyEditDialog extends AbstractProxyEditDialog {
 
@@ -37,36 +29,19 @@ public class ProxyEditDialog extends AbstractProxyEditDialog {
 
 	@Override
 	public String getTitle() {
-		return "Edit Proxy Rule";
+		return "Edit Proxy";
 	}
 
 	@Override
-	protected Control createDialogArea(Composite parent) {
-		Control comp = super.createDialogArea(parent);
-
-		generalInfoComposite = new ProxyGeneralInfoTabComposite(tabFolder);
-		TabItem generalTabItem = new TabItem(tabFolder, SWT.NONE);
-		generalTabItem.setText("General");
-		generalTabItem.setControl(generalInfoComposite);
-
+	protected void createRuleKeyComposite() {
 		ruleKeyComposite = new ProxyRuleKeyTabComposite(tabFolder);
-		TabItem keyTabItem = new TabItem(tabFolder, SWT.NONE);
-		keyTabItem.setText("Rule Key");
-		keyTabItem.setControl(ruleKeyComposite);
-
-		actionsComposite = new ProxyActionsTabComposite(tabFolder);
-		TabItem actionsTabItem = new TabItem(tabFolder, SWT.NONE);
-		actionsTabItem.setText("Actions");
-		actionsTabItem.setControl(actionsComposite);
-
-		interceptorsComposite = new ProxyInterceptorTabComposite(tabFolder);
-		TabItem interceptorsTabItem = new TabItem(tabFolder, SWT.NONE);
-		interceptorsTabItem.setText("Interceptors");
-		interceptorsTabItem.setControl(interceptorsComposite);
-
-		return comp;
 	}
-
+	
+	@Override
+	protected Composite getRuleKeyComposite() {
+		return ruleKeyComposite;
+	}
+	
 	@Override
 	public void setInput(Rule rule) {
 		super.setInput(rule);

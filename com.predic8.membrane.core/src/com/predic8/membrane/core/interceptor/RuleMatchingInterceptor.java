@@ -24,7 +24,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ErrorResponse;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
@@ -64,7 +64,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private Rule getRule(Exchange exc) {
-		ForwardingRuleKey key = exc.getForwardingRuleKey();
+		ServiceProxyKey key = exc.getForwardingRuleKey();
 
 		Rule rule = router.getRuleManager().getMatchingRule(key);
 		if (rule != null) {

@@ -21,7 +21,7 @@ import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class ListenPortConfigurationPage extends AbstractPortConfigurationPage {
@@ -71,7 +71,7 @@ public class ListenPortConfigurationPage extends AbstractPortConfigurationPage {
 	}
 	
 	protected boolean performFinish(AddProxyWizard wizard) throws IOException {
-		ForwardingRuleKey ruleKey = new ForwardingRuleKey("*", "*", ".*", getListenPort());
+		ServiceProxyKey ruleKey = new ServiceProxyKey("*", "*", ".*", getListenPort());
 		
 		if (Router.getInstance().getRuleManager().exists(ruleKey)) {
 			wizard.openWarningDialog("You've entered a duplicated rule key.");

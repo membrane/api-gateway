@@ -31,7 +31,7 @@ import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 
 public class LoadBalancingWithClusterManagerTest {
@@ -93,12 +93,12 @@ public class LoadBalancingWithClusterManagerTest {
 		extractor.setNamespace("http://predic8.com/session/");
 		lbi.setSessionIdExtractor(extractor);
 
-		ServiceProxy lbiRule = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 5000), "thomas-bayer.com", 80);
+		ServiceProxy lbiRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 5000), "thomas-bayer.com", 80);
 		lbiRule.getInterceptors().add(lbi);
 		
 		ClusterNotificationInterceptor cni = new ClusterNotificationInterceptor();
 		
-		ServiceProxy cniRule = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 6000), "thomas-bayer.com", 80);
+		ServiceProxy cniRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 6000), "thomas-bayer.com", 80);
 		cniRule.getInterceptors().add(cni);
 		
 		lb = new HttpRouter();
@@ -113,7 +113,7 @@ public class LoadBalancingWithClusterManagerTest {
 		HttpRouter node = new HttpRouter();
 		DummyWebServiceInterceptor service1 = new DummyWebServiceInterceptor();
 		node.getTransport().getInterceptors().add(service1);
-		node.getRuleManager().addRuleIfNew(new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
+		node.getRuleManager().addRuleIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
 		return service1;
 	}
 

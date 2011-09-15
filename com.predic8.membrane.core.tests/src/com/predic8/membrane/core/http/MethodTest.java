@@ -23,7 +23,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 
 public class MethodTest {
@@ -32,7 +32,7 @@ public class MethodTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 4000), "oio.de", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "oio.de", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 	}

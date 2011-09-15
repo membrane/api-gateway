@@ -16,14 +16,15 @@ package com.predic8.plugin.membrane.dialogs.rule.composites;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 
+import com.predic8.membrane.core.rules.*;
 import com.predic8.plugin.membrane.components.RuleKeyGroup;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
-public class ForwardingRuleKeyTabComposite extends SecurityTabComposite {
+public class ServiceProxyKeyTabComposite extends SecurityTabComposite {
 
 	private RuleKeyGroup ruleKeyGroup;
 	
-	public ForwardingRuleKeyTabComposite(Composite parent) {
+	public ServiceProxyKeyTabComposite(Composite parent) {
 		super(parent);
 		setLayout(SWTUtil.createGridLayout(1, 12));
 	
@@ -33,8 +34,12 @@ public class ForwardingRuleKeyTabComposite extends SecurityTabComposite {
 		
 	}
 
-	public RuleKeyGroup getRuleKeyGroup() {
-		return ruleKeyGroup;
+	public void setInput(Rule rule) {
+		ruleKeyGroup.setInput(rule.getKey());
+		setSecureConnection(rule.isInboundTLS());
 	}
 	
+	public ServiceProxyKey getUserInput() {
+		return ruleKeyGroup.getUserInput();
+	}
 }

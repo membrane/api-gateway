@@ -34,7 +34,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 
 public class LoadBalancingInterceptorTest {
@@ -63,13 +63,13 @@ public class LoadBalancingInterceptorTest {
 
 		service1 = new HttpRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
-		ServiceProxy sp1 = new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 2000), "thomas-bayer.com", 80);
+		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), "thomas-bayer.com", 80);
 		sp1.getInterceptors().add(mockInterceptor1);
 		service1.getRuleManager().addRuleIfNew(sp1);
 
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
-		ServiceProxy sp2 = new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", 80);
+		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", 80);
 		sp2.getInterceptors().add(mockInterceptor2);
 		service2.getRuleManager().addRuleIfNew(sp2);
 
@@ -80,7 +80,7 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setEndpoints(endpoints);
 
 		balancer = new HttpRouter();
-		ServiceProxy sp3 = new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 7000), "thomas-bayer.com", 80);
+		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 7000), "thomas-bayer.com", 80);
 		sp3.getInterceptors().add(balancingInterceptor);
 		balancer.getRuleManager().addRuleIfNew(sp3);
 		balancingInterceptor.setRouter(balancer);

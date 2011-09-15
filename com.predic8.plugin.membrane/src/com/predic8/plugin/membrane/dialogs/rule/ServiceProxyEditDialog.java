@@ -18,30 +18,17 @@ package com.predic8.plugin.membrane.dialogs.rule;
 import java.io.IOException;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.TabItem;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.widgets.*;
 
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ForwardingRuleKeyTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyActionsTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyGeneralInfoTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyInterceptorTabComposite;
-import com.predic8.plugin.membrane.dialogs.rule.composites.RuleTargetTabComposite;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.plugin.membrane.dialogs.rule.composites.*;
 
 public class ServiceProxyEditDialog extends AbstractProxyEditDialog {
 
 	private RuleTargetTabComposite targetComposite;
 
-	private ForwardingRuleKeyTabComposite ruleKeyComposite;
+	private ServiceProxyKeyTabComposite ruleKeyComposite;
 
 	public ServiceProxyEditDialog(Shell parentShell) {
 		super(parentShell);
@@ -50,28 +37,35 @@ public class ServiceProxyEditDialog extends AbstractProxyEditDialog {
 
 	@Override
 	public String getTitle() {
-		return "Edit Forwarding Rule";
+		return "Edit Service Proxy";
 	}
 
 	@Override
-	protected Control createDialogArea(Composite parent) {
-		Control comp = super.createDialogArea(parent);
+	protected void createExtensionTabs() {
+		super.createExtensionTabs();
+		createTargetTab();
+	}
+	
+	@Override
+	protected void createRuleKeyComposite() {
+		ruleKeyComposite = new ServiceProxyKeyTabComposite(tabFolder);
+	}
+	
+	@Override
+	protected Composite getRuleKeyComposite() {
+		return ruleKeyComposite;
+	}
+	
+	private void createTargetTab() {
+		createTargetTabComposite();
+		createTabItem("Target", targetComposite);
+	}
 
-		createGeneralComposite();
-
-		createRuleKeyComposite();
-
-		createTargetComposite();
-
-		createActionComposite();
-
-		createInterceptorsComposite();
-
+	private void createTargetTabComposite() {
+		targetComposite = new RuleTargetTabComposite(tabFolder);
 		targetComposite.getTargetGroup().getTextTargetHost().addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
-
 				Text t = (Text) e.getSource();
-
 				if ("".equals(t.getText().trim())) {
 					getButton(IDialogConstants.OK_ID).setEnabled(false);
 					return;
@@ -81,60 +75,21 @@ public class ServiceProxyEditDialog extends AbstractProxyEditDialog {
 					getButton(IDialogConstants.OK_ID).setEnabled(false);
 					return;
 				}
-				
 				getButton(IDialogConstants.OK_ID).setEnabled(true);
 			}
 		});
-		
-		return comp;
 	}
-
-	private void createInterceptorsComposite() {
-		interceptorsComposite = new ProxyInterceptorTabComposite(tabFolder);
-		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
-		tabItem.setText("Interceptors");
-		tabItem.setControl(interceptorsComposite);
-	}
-
-	private void createActionComposite() {
-		actionsComposite = new ProxyActionsTabComposite(tabFolder);
-		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
-		tabItem.setText("Actions");
-		tabItem.setControl(actionsComposite);
-	}
-
-	private void createTargetComposite() {
-		targetComposite = new RuleTargetTabComposite(tabFolder);
-		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
-		tabItem.setText("Target");
-		tabItem.setControl(targetComposite);
-	}
-
-	private void createRuleKeyComposite() {
-		ruleKeyComposite = new ForwardingRuleKeyTabComposite(tabFolder);
-		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
-		tabItem.setText("Rule Key");
-		tabItem.setControl(ruleKeyComposite);
-	}
-
-	private void createGeneralComposite() {
-		generalInfoComposite = new ProxyGeneralInfoTabComposite(tabFolder);
-		TabItem tabItem = new TabItem(tabFolder, SWT.NONE);
-		tabItem.setText("General");
-		tabItem.setControl(generalInfoComposite);
-	}
-
+	
 	@Override
 	public void setInput(Rule rule) {
 		super.setInput(rule);
-		ruleKeyComposite.getRuleKeyGroup().setInput(rule.getKey());
-		ruleKeyComposite.setSecureConnection(rule.isInboundTLS());
+		ruleKeyComposite.setInput(rule);
 		targetComposite.setInput(rule);
 	}
 
 	@Override
 	public void onOkPressed() {
-		ForwardingRuleKey ruleKey = ruleKeyComposite.getRuleKeyGroup().getUserInput();
+		ServiceProxyKey ruleKey = ruleKeyComposite.getUserInput();
 		if (ruleKey == null) {
 			openErrorDialog("Illeagal input! Please check again");
 			return;

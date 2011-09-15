@@ -33,7 +33,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ForwardingRuleKey("localhost", "*", ".*", 8000), "www.thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 8000), "www.thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 				

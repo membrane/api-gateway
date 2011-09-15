@@ -38,7 +38,7 @@ public class RegExURLRewriteInterceptorIntegrationTest {
 		interceptor = new RegExURLRewriteInterceptor();
 		interceptor.getMappings().add(new Mapping("/blz-service\\?wsdl", "/axis2/services/BLZService?wsdl"));
 
-		Rule rule = new ServiceProxy(new ForwardingRuleKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", 80);
 		rule.getInterceptors().add(interceptor);
 		
 		router = new HttpRouter();

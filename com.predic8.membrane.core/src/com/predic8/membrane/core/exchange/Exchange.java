@@ -18,7 +18,7 @@ import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.rules.ForwardingRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.*;
 
 public class Exchange extends AbstractExchange {
@@ -106,8 +106,8 @@ public class Exchange extends AbstractExchange {
 		setOriginalHostHeader(req.getHeader().getHost());
 	}
 
-	public ForwardingRuleKey getForwardingRuleKey() {
-		return new ForwardingRuleKey(request.getHeader().getHost(),
+	public ServiceProxyKey getForwardingRuleKey() {
+		return new ServiceProxyKey(request.getHeader().getHost(),
 				request.getMethod(), request.getUri(), serverThread
 						.getSourceSocket().getLocalPort());
 	}
