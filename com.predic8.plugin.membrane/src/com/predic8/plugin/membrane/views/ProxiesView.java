@@ -204,8 +204,8 @@ public class ProxiesView extends AbstractProxiesView {
 		if (part == null || !page.isPartVisible(part)) 
 			return;
 		
-		ProxyDetailsView proxyDetailsView = (ProxyDetailsView)part;
-		proxyDetailsView.setProxyToDisplay(selectedProxy);
+		ProxyDetailsView view = (ProxyDetailsView)part;
+		view.setProxyToDisplay(selectedProxy);
 		
 	}
 	

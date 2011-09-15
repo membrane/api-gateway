@@ -20,10 +20,10 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Group;
 
 
-public class RuleOptionsActionsGroup {
+public class RuleActionsGroup {
 	private Group ruleOptionsActionGroup;
 
-	public RuleOptionsActionsGroup(Composite parent, int style) {
+	public RuleActionsGroup(Composite parent, int style) {
 		ruleOptionsActionGroup = new Group(parent, style);
 		ruleOptionsActionGroup.setText("Action");
 		ruleOptionsActionGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));

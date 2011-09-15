@@ -95,12 +95,7 @@ public abstract class InterceptorDialog extends Dialog {
 
 	private Composite createComposite(Composite parent) {
 		Composite container = (Composite) super.createDialogArea(parent);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 1;
-		gridLayout.marginTop = 30;
-		gridLayout.marginLeft = 10;
-		gridLayout.marginBottom = 30;
-		gridLayout.marginRight = 10;
+		GridLayout gridLayout = SWTUtil.createGridLayout(1, 30, 10, 30, 10);
 		container.setLayout(gridLayout);
 		return container;
 	}

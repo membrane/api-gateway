@@ -177,12 +177,12 @@ public class SecurityPreferencePage extends PreferencePage implements
 	}
 	
 	private void addDummyLabel(Composite parent) {
-		GridData lbGridData = new GridData(GridData.FILL_HORIZONTAL);
-		lbGridData.grabExcessHorizontalSpace = true;
+		GridData gd = new GridData(GridData.FILL_HORIZONTAL);
+		gd.grabExcessHorizontalSpace = true;
 		
-		Label lbKeyDummy8 = new Label(parent, SWT.NONE);
-		lbKeyDummy8.setText(" ");
-		lbKeyDummy8.setLayoutData(lbGridData);
+		Label lb = new Label(parent, SWT.NONE);
+		lb.setText(" ");
+		lb.setLayoutData(gd);
 	}
 	
 	private String getSavedKeystoreLocation() {

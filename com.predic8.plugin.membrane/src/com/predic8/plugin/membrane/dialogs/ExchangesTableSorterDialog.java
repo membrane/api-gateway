@@ -14,37 +14,16 @@
 
 package com.predic8.plugin.membrane.dialogs;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.layout.FillLayout;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
 
-import com.predic8.membrane.core.exchange.accessors.ClientExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.DurationExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.ExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.MethodExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.PathExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.RequestContentLengthExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.RequestContentTypeExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.ResponseContentLengthExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.ResponseContentTypeExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.RuleExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.ServerExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.StatusCodeExchangeAccessor;
-import com.predic8.membrane.core.exchange.accessors.TimeExchangeAccessor;
+import com.predic8.membrane.core.exchange.accessors.*;
 import com.predic8.plugin.membrane.util.SWTUtil;
 import com.predic8.plugin.membrane.views.ExchangesView;
 
@@ -147,7 +126,7 @@ public class ExchangesTableSorterDialog extends Dialog {
 		gData.heightHint = 300;
 		comp.setLayoutData(gData);
 
-		comp.setLayout(createChildLayout());
+		comp.setLayout(SWTUtil.createGridLayout(2, 15, 12));
 		return comp;
 	}
 
@@ -218,16 +197,6 @@ public class ExchangesTableSorterDialog extends Dialog {
 		btDisable.setSelection(exchangesView.getComparator().isEmpty());
 	}
 
-	private GridLayout createChildLayout() {
-		GridLayout layoutChild = new GridLayout();
-		layoutChild.marginTop = 15;
-		layoutChild.marginLeft = 15;
-		layoutChild.marginBottom = 15;
-		layoutChild.marginRight = 15;
-		layoutChild.numColumns = 2;
-		layoutChild.verticalSpacing = 12;
-		return layoutChild;
-	}
 
 	private Button createAddButton() {
 		final int index = comboSorters.size() - 1;

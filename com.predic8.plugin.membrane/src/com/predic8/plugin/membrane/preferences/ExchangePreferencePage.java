@@ -33,7 +33,7 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 
 	public static final String PAGE_ID = "com.predic8.plugin.membrane.preferences.ExchangePreferencePage";
 
-	private Button autotrack;
+	private Button autoTrack;
 
 	public ExchangePreferencePage() {
 
@@ -51,9 +51,9 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 	protected Control createContents(Composite parent) {
 		Composite comp = new Composite(parent, SWT.NONE);
 		comp.setLayout(new RowLayout(SWT.VERTICAL));
-		autotrack = new Button(comp, SWT.CHECK);
-		autotrack.setText("Autotrack New Exchanges");
-		autotrack.setSelection(Router.getInstance().getConfigurationManager().getProxies().getTrackExchange());
+		autoTrack = new Button(comp, SWT.CHECK);
+		autoTrack.setText("Autotrack New Exchanges");
+		autoTrack.setSelection(Router.getInstance().getConfigurationManager().getProxies().getTrackExchange());
 
 		return comp;
 	}
@@ -64,7 +64,7 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 
 	@Override
 	protected void performApply() {
-		Router.getInstance().getConfigurationManager().getProxies().setTrackExchange(autotrack.getSelection());
+		Router.getInstance().getConfigurationManager().getProxies().setTrackExchange(autoTrack.getSelection());
 		try {
 			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 		} catch (Exception e) {
@@ -75,7 +75,7 @@ public class ExchangePreferencePage extends PreferencePage implements IWorkbench
 
 	@Override
 	public boolean performOk() {
-		Router.getInstance().getConfigurationManager().getProxies().setTrackExchange(autotrack.getSelection());
+		Router.getInstance().getConfigurationManager().getProxies().setTrackExchange(autoTrack.getSelection());
 		try {
 			Router.getInstance().getConfigurationManager().saveConfiguration(Router.getInstance().getConfigurationManager().getDefaultConfigurationFile());
 		} catch (Exception e) {

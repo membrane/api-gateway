@@ -34,6 +34,7 @@ import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.contentproviders.ProxyStatisticsContentProvider;
 import com.predic8.plugin.membrane.labelproviders.ProxyStatisticsLabelProvider;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class ProxyStatisticsView extends AbstractProxiesView {
 
@@ -107,13 +108,7 @@ public class ProxyStatisticsView extends AbstractProxiesView {
 
 	private Composite createComposite(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
-		
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 1;
-		layout.marginTop = 10;
-		layout.marginLeft = 5;
-		layout.marginBottom = 20;
-		layout.marginRight = 5;
+		GridLayout layout = SWTUtil.createGridLayout(1, 10, 5, 20, 5);
 		layout.verticalSpacing = 20;
 		composite.setLayout(layout);
 		return composite;

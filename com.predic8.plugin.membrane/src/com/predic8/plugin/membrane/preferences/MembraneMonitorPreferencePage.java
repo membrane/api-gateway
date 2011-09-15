@@ -18,10 +18,10 @@ import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.ui.IWorkbench;
-import org.eclipse.ui.IWorkbenchPreferencePage;
+import org.eclipse.swt.widgets.*;
+import org.eclipse.ui.*;
+
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class MembraneMonitorPreferencePage extends PreferencePage implements
 		IWorkbenchPreferencePage {
@@ -44,12 +44,7 @@ public class MembraneMonitorPreferencePage extends PreferencePage implements
 	@Override
 	protected Control createContents(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout gridLayout = new GridLayout();
-		gridLayout.numColumns = 2;
-		gridLayout.marginTop = 25;
-		gridLayout.marginLeft = 15;
-		gridLayout.marginBottom = 15;
-		gridLayout.marginRight = 15;
+		GridLayout gridLayout = SWTUtil.createGridLayout(2, 25, 15, 15, 15);
 		gridLayout.verticalSpacing = 10;
 		composite.setLayout(gridLayout);
 		

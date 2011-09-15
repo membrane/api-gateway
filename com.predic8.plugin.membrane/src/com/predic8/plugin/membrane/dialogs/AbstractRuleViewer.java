@@ -24,7 +24,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.components.RuleOptionsActionsGroup;
+import com.predic8.plugin.membrane.components.RuleActionsGroup;
 import com.predic8.plugin.membrane.components.RuleOptionsBlockComp;
 
 public abstract class AbstractRuleViewer extends Composite {
@@ -33,14 +33,14 @@ public abstract class AbstractRuleViewer extends Composite {
 	
 	protected Text nameText;
 	
-	protected Button ruleOptionsModifyButton;
-	protected Button ruleOptionsResetButton;
+	protected Button ruleModifyButton;
+	protected Button ruleResetButton;
 	
-	protected RuleOptionsBlockComp ruleOptionsBlockComp;
+	protected RuleOptionsBlockComp ruleBlockComp;
 	
-	protected RuleOptionsActionsGroup ruleOptionsActionsGroup;
+	protected RuleActionsGroup ruleActionsGroup;
 	
-	protected Composite ruleOptionsCommandComp;
+	protected Composite ruleCommandComp;
 	
 	public AbstractRuleViewer(Composite parent) {
 		super(parent, SWT.NONE);
@@ -80,8 +80,8 @@ public abstract class AbstractRuleViewer extends Composite {
 	}
 	
 	public void setEnableOnlyModifyAndRestoreButton(boolean b) {
-		ruleOptionsModifyButton.setEnabled(b);
-		ruleOptionsResetButton.setEnabled(b);
+		ruleModifyButton.setEnabled(b);
+		ruleResetButton.setEnabled(b);
 	}
 	
 	public abstract void editSelectedRule();

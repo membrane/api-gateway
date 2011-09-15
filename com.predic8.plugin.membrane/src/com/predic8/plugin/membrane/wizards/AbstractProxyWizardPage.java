@@ -12,6 +12,7 @@ import org.eclipse.swt.widgets.Label;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.RuleManager;
 import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public abstract class AbstractProxyWizardPage extends WizardPage {
 
@@ -37,12 +38,7 @@ public abstract class AbstractProxyWizardPage extends WizardPage {
 	
 	protected Composite createComposite(Composite parent, int columns) {
 		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = columns;
-		layout.marginTop = 10;
-		layout.marginLeft = 2;
-		layout.marginBottom = 10;
-		layout.marginRight = 10;
+		GridLayout layout = SWTUtil.createGridLayout(columns, 10, 2, 10, 10);
 		layout.verticalSpacing = 20;
 		composite.setLayout(layout);
 		return composite;

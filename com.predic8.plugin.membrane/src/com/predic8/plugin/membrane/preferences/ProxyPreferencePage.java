@@ -37,6 +37,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.listeners.PortVerifyListener;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPreferencePage {
 
@@ -209,13 +210,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 	private Group createGroup(Composite composite, String title) {
 		Group group = new Group(composite, SWT.NONE);
 		group.setText(title);
-		GridLayout layout = new GridLayout();
-		layout.marginTop = 5;
-		layout.marginLeft = 5;
-		layout.marginBottom = 5;
-		layout.marginRight = 5;
-		
-		layout.numColumns = 2;
+		GridLayout layout = SWTUtil.createGridLayout(2, 5);
 		layout.verticalSpacing = 5;
 		group.setLayout(layout);
 		return group;

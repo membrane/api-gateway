@@ -17,6 +17,17 @@ public class SWTUtil {
 		return layout;
 	}
 	
+	public static GridLayout createGridLayout(int col, int margin, int vSpacing) {
+		GridLayout layout = new GridLayout();
+		layout.numColumns = col;
+		layout.marginTop = margin;
+		layout.marginLeft = margin;
+		layout.marginBottom = margin;
+		layout.marginRight = margin;
+		layout.verticalSpacing = vSpacing;
+		return layout;
+	}
+	
 	public static GridLayout createGridLayout(int col,  int marginTop, int marginLeft, int marginBottom, int marginRight) {
 		GridLayout layout = new GridLayout();
 		layout.numColumns = col;
