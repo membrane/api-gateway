@@ -33,9 +33,9 @@ public class ProxyRuleKeyTabComposite extends GridPanel {
 		lbListenPort.setText("Listen Port: ");
 		
 		textListenPort = new Text(this, SWT.BORDER);
-		GridData gridData4PortText = new GridData();
-		gridData4PortText.widthHint = 150;
-		textListenPort.setLayoutData(gridData4PortText);
+		GridData gData = new GridData();
+		gData.widthHint = 150;
+		textListenPort.setLayoutData(gData);
 	}
 
 	public void setInput(RuleKey ruleKey) {
