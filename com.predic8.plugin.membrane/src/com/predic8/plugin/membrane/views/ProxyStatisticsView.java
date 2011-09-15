@@ -85,9 +85,9 @@ public class ProxyStatisticsView extends AbstractProxiesView {
 	}
 	
 	private void createRefreshButton(Composite composite) {
-		Button btRefresh = new Button(composite, SWT.PUSH);
-		btRefresh.setText("Refresh Table");
-		btRefresh.addSelectionListener(new SelectionAdapter() {
+		Button bt = new Button(composite, SWT.PUSH);
+		bt.setText("Refresh Table");
+		bt.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				 setInputForTable(Router.getInstance().getRuleManager());
 			}

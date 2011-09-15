@@ -27,6 +27,7 @@ import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.contentproviders.ProxyTableContentProvider;
 import com.predic8.plugin.membrane.labelproviders.ProxyTableLabelProvider;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class ProxyTableView extends TableViewPart implements IRuleChangeListener {
 
@@ -36,12 +37,12 @@ public class ProxyTableView extends TableViewPart implements IRuleChangeListener
 	public void createPartControl(Composite parent) {
 		Composite composite = createComposite(parent);
 		
-		Composite dummyComposite = new Composite(composite, SWT.NONE);
-		dummyComposite.setLayout(new RowLayout(SWT.HORIZONTAL));
+		Composite titleComposite = new Composite(composite, SWT.NONE);
+		titleComposite.setLayout(new RowLayout(SWT.HORIZONTAL));
 		
-		new Label(dummyComposite, SWT.NONE).setText(" ");
+		new Label(titleComposite, SWT.NONE).setText(" ");
 		
-		createTitleLabel(dummyComposite);
+		createTitleLabel(titleComposite);
 		
 		createTableViewer(composite);
 		Router.getInstance().getRuleManager().addRuleChangeListener(this);
@@ -57,20 +58,15 @@ public class ProxyTableView extends TableViewPart implements IRuleChangeListener
 		return new ProxyTableContentProvider();
 	}
 	
-	private void createTitleLabel(Composite dummyComposite) {
-		Label titleLabel = new Label(dummyComposite, SWT.NONE);
-		titleLabel.setText("List of currently available Proxis");
-		titleLabel.setFont(JFaceResources.getFontRegistry().get(JFaceResources.HEADER_FONT));
+	private void createTitleLabel(Composite composite) {
+		Label lb = new Label(composite, SWT.NONE);
+		lb.setText("List of currently available Proxis");
+		lb.setFont(JFaceResources.getFontRegistry().get(JFaceResources.HEADER_FONT));
 	}
 
 	private Composite createComposite(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 1;
-		layout.marginTop = 25;
-		layout.marginLeft = 15;
-		layout.marginBottom = 80;
-		layout.marginRight = 35;
+		GridLayout layout = SWTUtil.createGridLayout(1, 25, 15, 80, 35);
 		layout.verticalSpacing = 20;
 		composite.setLayout(layout);
 		return composite;

@@ -54,6 +54,7 @@ import com.predic8.plugin.membrane.celleditors.ProxyNameCellEditorModifier;
 import com.predic8.plugin.membrane.components.composites.ProxiesViewControlsComposite;
 import com.predic8.plugin.membrane.contentproviders.ProxiesViewContentProvider;
 import com.predic8.plugin.membrane.labelproviders.ProxiesViewLabelProvider;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class ProxiesView extends AbstractProxiesView {
 
@@ -109,12 +110,7 @@ public class ProxiesView extends AbstractProxiesView {
 
 	private Composite createComposite(Composite parent) {
 		Composite composite = new Composite(parent, SWT.NONE);
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 2;
-		layout.marginTop = 10;
-		layout.marginLeft = 5;
-		layout.marginBottom = 20;
-		layout.marginRight = 5;
+		GridLayout layout = SWTUtil.createGridLayout(2, 10, 5, 20, 5);
 		layout.verticalSpacing = 10;
 		composite.setLayout(layout);
 		return composite;

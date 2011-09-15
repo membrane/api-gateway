@@ -1,6 +1,8 @@
 package com.predic8.plugin.membrane.util;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Composite;
 
 public class SWTUtil {
 
@@ -14,5 +16,22 @@ public class SWTUtil {
 		layout.marginRight = margin;
 		return layout;
 	}
+	
+	public static GridLayout createGridLayout(int col,  int marginTop, int marginLeft, int marginBottom, int marginRight) {
+		GridLayout layout = new GridLayout();
+		layout.numColumns = col;
+		layout.marginTop = marginTop;
+		layout.marginLeft = marginLeft;
+		layout.marginBottom = marginBottom;
+		layout.marginRight = marginRight;
+		return layout;
+	}
+	
+	public static Composite createGridComposite(Composite parent, int col, int margin) {
+		Composite composite = new Composite(parent, SWT.NONE);
+		composite.setLayout(createGridLayout(col, margin));
+		return composite;
+	}
+	
 	
 }
