@@ -31,28 +31,25 @@ public class AddInterceptorTableViewerLabelProvider implements ITableLabelProvid
 	}
 
 	public Image getColumnImage(Object element, int columnIndex) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public void addListener(ILabelProviderListener listener) {
-		// TODO Auto-generated method stub
+		// ignore
 
 	}
 
 	public void dispose() {
-		// TODO Auto-generated method stub
+		// ignore
 
 	}
 
 	public boolean isLabelProperty(Object element, String property) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	public void removeListener(ILabelProviderListener listener) {
-		// TODO Auto-generated method stub
-
+		// ignore
 	}
 
 }

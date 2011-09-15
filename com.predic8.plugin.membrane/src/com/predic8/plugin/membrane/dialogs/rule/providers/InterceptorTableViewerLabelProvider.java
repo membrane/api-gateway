@@ -34,17 +34,16 @@ public class InterceptorTableViewerLabelProvider implements ITableLabelProvider 
 	}
 
 	public Image getColumnImage(Object element, int columnIndex) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	public void addListener(ILabelProviderListener listener) {
-		// TODO Auto-generated method stub
+		// ignore
 
 	}
 
 	public void dispose() {
-		// TODO Auto-generated method stub
+		// ignore
 
 	}
 
