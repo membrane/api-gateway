@@ -95,6 +95,7 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 		generalInfoComposite.setRule(rule);
 		actionsComposite.setInput(rule);
 		interceptorsComposite.setInput(rule);
+		featuresTabComposite.setInput(rule);
 	}
 	
 	protected void openErrorDialog(String msg) {

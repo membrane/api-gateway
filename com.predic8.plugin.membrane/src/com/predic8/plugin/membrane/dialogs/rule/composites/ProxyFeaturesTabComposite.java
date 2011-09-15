@@ -5,6 +5,7 @@ import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
 public class ProxyFeaturesTabComposite extends Composite {
@@ -30,6 +31,10 @@ public class ProxyFeaturesTabComposite extends Composite {
 
 	public String getContent() {
 		return text.getText();
+	}
+	
+	public void setInput(Rule rule) {
+		
 	}
 	
 }
