@@ -17,10 +17,13 @@ package com.predic8.plugin.membrane.dialogs.rule;
 
 import java.io.IOException;
 
+import javax.xml.stream.XMLStreamReader;
+
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.widgets.*;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.plugin.membrane.dialogs.rule.composites.*;
 
@@ -83,8 +86,8 @@ public class ServiceProxyEditDialog extends AbstractProxyEditDialog {
 	@Override
 	public void setInput(Rule rule) {
 		super.setInput(rule);
-		ruleKeyComposite.setInput(rule);
-		targetComposite.setInput(rule);
+//		ruleKeyComposite.setInput(rule);
+//		targetComposite.setInput(rule);
 	}
 
 	@Override
@@ -105,6 +108,11 @@ public class ServiceProxyEditDialog extends AbstractProxyEditDialog {
 		rule.setOutboundTLS(targetComposite.getSecureConnection());
 		rule.setInboundTLS(ruleKeyComposite.getSecureConnection());
 		super.updateProxy(ruleKey, addToManager);
+	}
+	
+	@Override
+	protected Rule parseRule(XMLStreamReader reader) throws Exception {
+		return (ServiceProxy)new ServiceProxy(Router.getInstance()).parse(reader);
 	}
 
 }

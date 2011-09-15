@@ -17,6 +17,8 @@ package com.predic8.plugin.membrane.dialogs.rule;
 
 import java.io.IOException;
 
+import javax.xml.stream.*;
+
 import org.eclipse.jface.dialogs.*;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
@@ -66,11 +68,11 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 		container.setLayout(SWTUtil.createGridLayout(1, 10));
 		
 		createTabFolder(container);
-		createGeneralInfoTab();
-		createRuleKeyTab();
-		createExtensionTabs();
-		createActionTab();
-		createInterceptorsTab();
+//		createGeneralInfoTab();
+//		createRuleKeyTab();
+//		createExtensionTabs();
+//		createActionTab();
+//		createInterceptorsTab();
 		createFeaturesTab();
 		
 		return container;
@@ -92,9 +94,9 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 		if (rule == null)
 			return;
 		this.rule = rule;
-		generalInfoComposite.setRule(rule);
-		actionsComposite.setInput(rule);
-		interceptorsComposite.setInput(rule);
+//		generalInfoComposite.setRule(rule);
+//		actionsComposite.setInput(rule);
+//		interceptorsComposite.setInput(rule);
 		featuresTabComposite.setInput(rule);
 	}
 	
@@ -114,9 +116,19 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 	
 	@Override
 	protected void okPressed() {
-		onOkPressed();
+		//onOkPressed();
+		try {
+			XMLStreamReader reader = featuresTabComposite.getStreamReaderForContent();
+			getRuleManager().removeRule(rule);
+			getRuleManager().addRuleIfNew(parseRule(reader));
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		close();
 	}
+	
+	protected abstract Rule parseRule(XMLStreamReader reader) throws Exception;
 	
 	protected void updateProxy(RuleKey ruleKey, boolean addToManager) throws IOException {
 		rule.setName(generalInfoComposite.getRuleName());

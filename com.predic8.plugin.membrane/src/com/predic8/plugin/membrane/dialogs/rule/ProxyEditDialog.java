@@ -14,8 +14,11 @@
 
 package com.predic8.plugin.membrane.dialogs.rule;
 
+import javax.xml.stream.XMLStreamReader;
+
 import org.eclipse.swt.widgets.*;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyRuleKeyTabComposite;
 
@@ -45,7 +48,7 @@ public class ProxyEditDialog extends AbstractProxyEditDialog {
 	@Override
 	public void setInput(Rule rule) {
 		super.setInput(rule);
-		ruleKeyComposite.setInput(rule.getKey());
+		//ruleKeyComposite.setInput(rule.getKey());
 	}
 
 	@Override
@@ -62,5 +65,10 @@ public class ProxyEditDialog extends AbstractProxyEditDialog {
 		doRuleUpdate(ruleKey);
 		
 	}	
+	
+	@Override
+	protected Rule parseRule(XMLStreamReader reader) throws Exception {
+		return (ProxyRule)new ProxyRule(Router.getInstance()).parse(reader);
+	}
 
 }

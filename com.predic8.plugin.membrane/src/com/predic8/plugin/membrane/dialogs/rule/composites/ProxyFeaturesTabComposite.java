@@ -56,4 +56,10 @@ public class ProxyFeaturesTabComposite extends Composite {
 		} 
 	}
 	
+	public XMLStreamReader getStreamReaderForContent() throws XMLStreamException {
+		XMLInputFactory factory = XMLInputFactory.newInstance();
+	    ByteArrayInputStream stream = new ByteArrayInputStream(text.getText().getBytes());
+	    return factory.createXMLStreamReader(stream);
+	}
+	
 }
