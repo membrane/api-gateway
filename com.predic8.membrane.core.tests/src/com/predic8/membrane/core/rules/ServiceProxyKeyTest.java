@@ -24,7 +24,7 @@ import org.junit.Test;
 import com.predic8.membrane.core.http.Request;
 
 
-public class ForwardingRuleKeyTest {
+public class ServiceProxyKeyTest {
 
 	
 	@Before

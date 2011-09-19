@@ -61,7 +61,7 @@ public class AddProxyWizard extends Wizard {
 		}
 	}
 
-	void createForwardingRule(ServiceProxyKey ruleKey) throws IOException {
+	void createServiceProxy(ServiceProxyKey ruleKey) throws IOException {
 		ServiceProxy rule = new ServiceProxy();
 		rule.setTargetHost(targetHostConfigPage.getTargetHost());
 		rule.setTargetPort(Integer.parseInt(targetHostConfigPage.getTargetPort()));
@@ -129,7 +129,7 @@ public class AddProxyWizard extends Wizard {
 	}
 	
 	void addProxy() throws IOException {
-		createForwardingRule(getRuleKey());
+		createServiceProxy(getRuleKey());
 	}
 
 }

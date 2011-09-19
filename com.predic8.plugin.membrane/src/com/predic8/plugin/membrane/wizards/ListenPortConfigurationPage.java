@@ -79,7 +79,7 @@ public class ListenPortConfigurationPage extends AbstractPortConfigurationPage {
 		}
 		
 		
-		wizard.createForwardingRule(ruleKey);
+		wizard.createServiceProxy(ruleKey);
 		return true;
 	}
 	

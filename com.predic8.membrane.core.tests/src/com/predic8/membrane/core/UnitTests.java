@@ -56,7 +56,7 @@ import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 	ReadRulesWithInterceptorsConfigurationTest.class,
 	RuleManagerTest.class,
 	ProxyTest.class,
-	ForwardingRuleKeyTest.class,
+	ServiceProxyKeyTest.class,
 	ProxyRuleTest.class,
 	TextUtilTest.class,
 	RelocatorTest.class,

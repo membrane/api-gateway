@@ -78,7 +78,7 @@ public class InterceptorInvocationTest {
 		assertEquals(getReverseList(interceptorSequence), MockInterceptor.respLabels);
 	}
 
-	private ServiceProxy createForwardingRule() {
+	private ServiceProxy createServiceProxy() {
 		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 4000), "thomas-bayer.com", 80);
 		for (String label : ruleInterceptorNames) {
 			rule.getInterceptors().add(new MockInterceptor(label));
@@ -112,7 +112,7 @@ public class InterceptorInvocationTest {
 
 	private HttpRouter createRouter() throws IOException {
 		HttpRouter router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(createForwardingRule());
+		router.getRuleManager().addRuleIfNew(createServiceProxy());
 		addMockInterceptors(router.getTransport().getInterceptors(), regularInterceptorNames);
 		return router;
 	}

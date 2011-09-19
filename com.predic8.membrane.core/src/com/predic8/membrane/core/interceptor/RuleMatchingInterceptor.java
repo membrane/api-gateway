@@ -64,7 +64,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private Rule getRule(Exchange exc) {
-		ServiceProxyKey key = exc.getForwardingRuleKey();
+		ServiceProxyKey key = exc.getServiceProxyKey();
 
 		Rule rule = router.getRuleManager().getMatchingRule(key);
 		if (rule != null) {

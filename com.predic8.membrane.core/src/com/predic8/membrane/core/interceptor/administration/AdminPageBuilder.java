@@ -146,7 +146,7 @@ public class AdminPageBuilder extends Html {
 			    end();
 			end();
 			tbody();
-				for (ServiceProxy rule : getForwardingRules()) {
+				for (ServiceProxy rule : getServiceProxies()) {
 					tr();
 						td();
 							createLink(rule.toString(), "service-proxy", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
@@ -356,7 +356,7 @@ public class AdminPageBuilder extends Html {
 		return rules;
 	}
 
-	private List<ServiceProxy> getForwardingRules() {
+	private List<ServiceProxy> getServiceProxies() {
 		List<ServiceProxy> rules = new LinkedList<ServiceProxy>();
 		for (Rule r : router.getRuleManager().getRules()) {
 			if (!(r instanceof ServiceProxy)) continue;

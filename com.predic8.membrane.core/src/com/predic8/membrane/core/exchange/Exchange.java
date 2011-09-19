@@ -106,7 +106,7 @@ public class Exchange extends AbstractExchange {
 		setOriginalHostHeader(req.getHeader().getHost());
 	}
 
-	public ServiceProxyKey getForwardingRuleKey() {
+	public ServiceProxyKey getServiceProxyKey() {
 		return new ServiceProxyKey(request.getHeader().getHost(),
 				request.getMethod(), request.getUri(), serverThread
 						.getSourceSocket().getLocalPort());

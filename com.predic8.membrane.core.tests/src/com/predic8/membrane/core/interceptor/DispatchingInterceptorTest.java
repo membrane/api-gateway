@@ -39,9 +39,9 @@ public class DispatchingInterceptorTest {
 	}
 	
 	@Test
-	public void testForwardingRule() throws Exception {
+	public void testServiceProxy() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
-		exc.setRule(getForwardingRule());
+		exc.setRule(getServiceProxy());
 		
 		assertEquals(Outcome.CONTINUE, dispatcher.handleRequest(exc));
 		
@@ -70,7 +70,7 @@ public class DispatchingInterceptorTest {
 		
 	}
 	
-	private ServiceProxy getForwardingRule() {		
+	private ServiceProxy getServiceProxy() {		
 		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
 	}
 	
