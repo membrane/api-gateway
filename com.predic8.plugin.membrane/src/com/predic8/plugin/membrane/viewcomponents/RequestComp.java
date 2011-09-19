@@ -29,11 +29,7 @@ public class RequestComp extends BaseComp {
 	}
 
 	public void updateUIStatus(AbstractExchange exchange, boolean canShowBody) {
-		if (exchange == null) {
-			setMessageEditable(false);
-		} else {
-			setMessageEditable(true);
-		}
+		setMessageEditable(exchange != null);
 		if (canShowBody)
 			tabManager.setSelectionOnBodyTabItem();
 	}

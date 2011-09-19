@@ -20,8 +20,8 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.dialogs.rule.ServiceProxyEditDialog;
-import com.predic8.plugin.membrane.dialogs.rule.ProxyEditDialog;
-import com.predic8.plugin.membrane.dialogs.rule.AbstractProxyEditDialog;
+import com.predic8.plugin.membrane.dialogs.rule.ProxyConfigurationEditDialog;
+import com.predic8.plugin.membrane.dialogs.rule.AbstractProxyConfigurationEditDialog;
 
 public class EditProxyAction extends AbstractProxyAction {
 
@@ -37,14 +37,14 @@ public class EditProxyAction extends AbstractProxyAction {
 				openProxyDialog(new ServiceProxyEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedProxy);
 
 			} else if (selectedProxy instanceof ProxyRule) {
-				openProxyDialog(new ProxyEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedProxy);
+				openProxyDialog(new ProxyConfigurationEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedProxy);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 	}
 
-	private void openProxyDialog(AbstractProxyEditDialog dialog, Rule rule) {
+	private void openProxyDialog(AbstractProxyConfigurationEditDialog dialog, Rule rule) {
 		if (dialog.getShell() == null) {
 			dialog.create();
 		}

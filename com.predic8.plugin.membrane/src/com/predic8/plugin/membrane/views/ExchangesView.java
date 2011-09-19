@@ -63,6 +63,7 @@ import com.predic8.plugin.membrane.actions.exchanges.RemoveExchangeAction;
 import com.predic8.plugin.membrane.contentproviders.ExchangesViewLazyContentProvider;
 import com.predic8.plugin.membrane.filtering.FilterManager;
 import com.predic8.plugin.membrane.labelproviders.ExchangesViewLabelProvider;
+import com.predic8.plugin.membrane.util.SWTUtil;
 import com.predic8.plugin.membrane.views.util.ExpandThread;
 import com.predic8.plugin.membrane.views.util.ShrinkThread;
 
@@ -256,12 +257,7 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 	}
 	
 	private Layout createTopLayout() {
-		GridLayout layout = new GridLayout();
-		layout.numColumns = 1;
-		layout.marginTop = 10;
-		layout.marginLeft = 2;
-		layout.marginBottom = 5;
-		layout.marginRight = 2;
+		GridLayout layout = SWTUtil.createGridLayout(1, 10, 2, 5, 2);
 		layout.verticalSpacing = 7;
 		return layout;
 	}

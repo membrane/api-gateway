@@ -1,7 +1,7 @@
 package com.predic8.plugin.membrane.util;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.Composite;
 
 public class SWTUtil {
@@ -15,6 +15,15 @@ public class SWTUtil {
 		layout.marginBottom = margin;
 		layout.marginRight = margin;
 		return layout;
+	}
+	
+	public static GridData getGreedyGridData() {
+		GridData gData = new GridData();
+		gData.horizontalAlignment = GridData.FILL;
+		gData.grabExcessHorizontalSpace = true;
+		gData.verticalAlignment = GridData.FILL;
+		gData.grabExcessVerticalSpace = true;
+		return gData;
 	}
 	
 	public static GridLayout createGridLayout(int col, int margin, int vSpacing) {

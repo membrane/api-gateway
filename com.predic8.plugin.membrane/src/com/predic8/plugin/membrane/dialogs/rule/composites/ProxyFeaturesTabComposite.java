@@ -6,7 +6,6 @@ import javax.xml.stream.*;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.Constants;
@@ -22,18 +21,15 @@ public class ProxyFeaturesTabComposite extends Composite {
 	public ProxyFeaturesTabComposite(final Composite parent) {
 		super(parent, SWT.NONE);
 		setLayout(SWTUtil.createGridLayout(1, 10));
+		this.setLayoutData(SWTUtil.getGreedyGridData());
+		
 		text = createStyledText();
 		text.addLineStyleListener(new HighligtingLineStyleListner());
 	}
 
 	private StyledText createStyledText() {
 		StyledText text = new StyledText(this, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
-		GridData gData = new GridData();
-		gData.horizontalAlignment = GridData.FILL;
-		gData.grabExcessHorizontalSpace = true;
-		gData.verticalAlignment = GridData.FILL;
-		gData.grabExcessVerticalSpace = true;
-		text.setLayoutData(gData);
+		text.setLayoutData(SWTUtil.getGreedyGridData());
 		return text;
 	}
 
@@ -46,11 +42,11 @@ public class ProxyFeaturesTabComposite extends Composite {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(baos, Constants.UTF_8);
 			rule.write(writer);
-			
 			ByteArrayInputStream stream = new ByteArrayInputStream(baos.toByteArray());
 			InputStreamReader reader = new InputStreamReader(stream, Constants.UTF_8);
 			String xml = TextUtil.formatXML(reader); //new String(baos.toByteArray())
 			text.setText(xml);
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 

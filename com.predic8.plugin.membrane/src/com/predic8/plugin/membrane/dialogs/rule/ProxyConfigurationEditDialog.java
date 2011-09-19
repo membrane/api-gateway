@@ -16,56 +16,22 @@ package com.predic8.plugin.membrane.dialogs.rule;
 
 import javax.xml.stream.XMLStreamReader;
 
-import org.eclipse.swt.widgets.*;
+import org.eclipse.swt.widgets.Shell;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.*;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyRuleKeyTabComposite;
 
-public class ProxyEditDialog extends AbstractProxyEditDialog {
+public class ProxyConfigurationEditDialog extends AbstractProxyConfigurationEditDialog {
 
-	private ProxyRuleKeyTabComposite ruleKeyComposite;
-
-	public ProxyEditDialog(Shell parentShell) {
+	public ProxyConfigurationEditDialog(Shell parentShell) {
 		super(parentShell);
 	}
 
 	@Override
 	public String getTitle() {
-		return "Edit Proxy";
+		return "Edit Proxy Configuration";
 	}
 
-	@Override
-	protected void createRuleKeyComposite() {
-		ruleKeyComposite = new ProxyRuleKeyTabComposite(tabFolder);
-	}
-	
-	@Override
-	protected Composite getRuleKeyComposite() {
-		return ruleKeyComposite;
-	}
-	
-	@Override
-	public void setInput(Rule rule) {
-		super.setInput(rule);
-		//ruleKeyComposite.setInput(rule.getKey());
-	}
-
-	@Override
-	public void onOkPressed() {
-		int port = 0;
-		try {
-			port = Integer.parseInt(ruleKeyComposite.getListenPort());
-		} catch (NumberFormatException nfe) {
-			openErrorDialog("Illeagal input! Please check listen port again");
-			return;
-		}
-
-		ProxyRuleKey ruleKey = new ProxyRuleKey(port);
-		doRuleUpdate(ruleKey);
-		
-	}	
-	
 	@Override
 	protected Rule parseRule(XMLStreamReader reader) throws Exception {
 		return (ProxyRule)new ProxyRule(Router.getInstance()).parse(reader);
