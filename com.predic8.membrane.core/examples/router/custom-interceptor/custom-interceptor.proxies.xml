@@ -1,0 +1,6 @@
+<proxies>
+	<serviceProxy port="2000">
+		<interceptor refid="myInterceptor" />
+		<target host="membrane-soa.org" />
+	</serviceProxy> 
+</proxies>
