@@ -43,7 +43,7 @@ public abstract class SecurityWizardPage extends AbstractProxyWizardPage impleme
 	
 	protected void createSecureConnectionButton(Composite composite) {
 		btSecureConnection = new Button(composite, SWT.CHECK);
-		btSecureConnection.setText("SecureConnection (SSL/STL)");
+		btSecureConnection.setText("SecureConnection (SSL/TLS)");
 		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getProxies().isKeyStoreAvailable());
 	}
 
