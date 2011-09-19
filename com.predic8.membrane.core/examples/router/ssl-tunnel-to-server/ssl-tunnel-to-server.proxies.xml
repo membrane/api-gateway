@@ -1,5 +1,5 @@
 <proxies>
-	<serviceProxy port="2000" outboundTLS="true">
+	<serviceProxy inboundTLS="false" outboundTLS="true">
 		<path>/svn</path>
 		<target host="predic8.com" port="443" />
 	</serviceProxy>

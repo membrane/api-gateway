@@ -1,5 +1,5 @@
 <proxies>
-	<serviceProxy port="443" inboundTLS="true">>
+	<serviceProxy port="443" inboundTLS="true" outboundTLS="false">
 		<target host="thomas-bayer.com" />
 	</serviceProxy>
 	<security>
