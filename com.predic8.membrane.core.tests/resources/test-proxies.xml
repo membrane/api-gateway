@@ -1,39 +1,6 @@
 <proxies>
-	<serviceProxy name="virtualProxy" port="2000">
-		<request>
-			<groovy>
-				println "request: virtualProxy" 	
-				CONTINUE
-			</groovy>
-		</request>
-		<response>
-			<groovy>
-				println "response: virtualProxy" 	
-				CONTINUE
-			</groovy>
-		</response>
-		<target url="mem://thomas-bayer.com"  />
+	<serviceProxy port="2000">
+		<target host="google.com"  />
 	</serviceProxy>
 
-	<serviceProxy name="thomas-bayer.com" port="3000">
-		<request>
-			<groovy>
-				println "request: thomas-bayer.com"
-				exc.response = new OKResponse() 	
-				ABORT
-			</groovy>
-		</request>
-		<response>
-			<groovy>
-				println "response: thomas-bayer.com" 	
-				CONTINUE
-			</groovy>
-		</response>
-		<target host="thomas-bayer.com"  />
-	</serviceProxy>	
-	
-	<serviceProxy name="Administration" port="9000">
-		<adminConsole />
-	</serviceProxy>
-	
 </proxies>
