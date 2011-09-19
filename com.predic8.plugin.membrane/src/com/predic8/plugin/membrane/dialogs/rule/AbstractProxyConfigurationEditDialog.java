@@ -15,7 +15,7 @@
 
 package com.predic8.plugin.membrane.dialogs.rule;
 
-import java.net.*;
+import java.net.URL;
 
 import javax.xml.stream.XMLStreamReader;
 
@@ -23,9 +23,8 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.jface.dialogs.*;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.*;
-import org.eclipse.ui.*;
+import org.eclipse.ui.PlatformUI;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.rules.Rule;
@@ -68,13 +67,9 @@ public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
 		
 		createLink(composite, getText());
 	
-		new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL).setLayoutData(new GridData(410, 12));
-		
 		featuresTabComposite = new ProxyFeaturesTabComposite(composite);
 		featuresTabComposite.setFocus();
 		
-		new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL).setLayoutData(new GridData(410, 12));
-
 		return composite;
 	}
 	
