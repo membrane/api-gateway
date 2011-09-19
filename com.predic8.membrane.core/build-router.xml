@@ -76,6 +76,10 @@
 				</fileset> 
 		</copy>
 		<jar destfile="dist/router/membrane-router-${version}/lib/membrane-router.jar" basedir="build/classes" includes="**" excludes="**/Starter.class, **/ClassloaderUtil*.class" />
+		
+		<!-- Copy membrane lib to custom-interceptor example -->
+		<copy file="dist/router/membrane-router-${version}/lib/membrane-router.jar" 
+			  todir="dist/router/membrane-router-${version}/examples/custom-interceptor/lib" />
 
 		<jar destfile="dist/router/membrane-router-${version}/starter.jar" basedir="build/classes" includes="**/Starter.class, **/ClassloaderUtil*.class, META-INF/**" />
 		
