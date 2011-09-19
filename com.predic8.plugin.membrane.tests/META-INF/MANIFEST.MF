@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Tests
 Bundle-SymbolicName: com.predic8.plugin.membrane.tests
-Bundle-Version: 1.0.0
+Bundle-Version: 3.1.0
 Bundle-Activator: com.predic8.plugin.membrane.tests.Activator
 Bundle-Vendor: predic8 GmbH
-Require-Bundle: com.predic8.plugin.membrane;bundle-version="2.1.0",
- org.junit
+Require-Bundle: org.junit,
+ com.predic8.plugin.membrane;bundle-version="3.1.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Bundle-ActivationPolicy: lazy
