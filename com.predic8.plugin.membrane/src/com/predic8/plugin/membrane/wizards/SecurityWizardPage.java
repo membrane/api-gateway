@@ -18,8 +18,11 @@ public abstract class SecurityWizardPage extends AbstractProxyWizardPage impleme
 
 	protected Button btSecureConnection;
 	
-	protected SecurityWizardPage(String pageName) {
+	protected boolean outgoing;
+	
+	protected SecurityWizardPage(String pageName, boolean outgoing) {
 		super(pageName);
+		this.outgoing = outgoing;
 	}
 	
 	protected void createSecurityComposite(Composite parent) {
@@ -31,10 +34,11 @@ public abstract class SecurityWizardPage extends AbstractProxyWizardPage impleme
 		
 		createSecureConnectionButton(composite);
 		
-		Label label = new Label(composite, SWT.NONE);
-		label.setText("To enable secure connection you must provide keystore and truststore data.");
-	
-		createLink(composite, "<A>Security Preferences Page</A>");
+		if (!outgoing) {
+			Label label = new Label(composite, SWT.NONE);
+			label.setText("To enable secure connection you must provide keystore and truststore data.");
+			createLink(composite, "<A>Security Preferences Page</A>");
+		}
 		
 		Router.getInstance().getConfigurationManager().addSecurityConfigurationChangeListener(this);
 	}
@@ -44,9 +48,13 @@ public abstract class SecurityWizardPage extends AbstractProxyWizardPage impleme
 	protected void createSecureConnectionButton(Composite composite) {
 		btSecureConnection = new Button(composite, SWT.CHECK);
 		btSecureConnection.setText("SecureConnection (SSL/TLS)");
-		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getProxies().isKeyStoreAvailable());
+		btSecureConnection.setEnabled(getEnabledStatus());
 	}
 
+	protected boolean getEnabledStatus() {
+		return outgoing || Router.getInstance().getConfigurationManager().getProxies().isKeyStoreAvailable();
+	}
+	
 	protected void createLink(Composite composite, String linkText) {
 		Link link = new Link(composite, SWT.NONE);
 		link.setText(linkText);
@@ -66,7 +74,7 @@ public abstract class SecurityWizardPage extends AbstractProxyWizardPage impleme
 	protected void enableSecureConnectionButton() {
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
-				btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getProxies().isKeyStoreAvailable());
+				btSecureConnection.setEnabled(getEnabledStatus());
 			}
 		});
 	}

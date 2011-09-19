@@ -34,7 +34,7 @@ public class AdvancedProxyConfigurationPage extends SecurityWizardPage {
 	RuleKeyGroup ruleKeyGroup;
 	
 	protected AdvancedProxyConfigurationPage() {
-		super(PAGE_NAME);
+		super(PAGE_NAME, false);
 		setTitle("Advanced Proxy");
 		setDescription("Specify all proxy configuration parameters");
 	}

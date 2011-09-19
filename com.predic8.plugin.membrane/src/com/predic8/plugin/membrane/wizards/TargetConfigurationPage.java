@@ -34,7 +34,7 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 	ServiceProxyTargetGroup ruleTargetGroup;
 	
 	protected TargetConfigurationPage() {
-		super(PAGE_NAME);
+		super(PAGE_NAME, true);
 		setTitle("Simple Rule");
 		setDescription("Specify Target Host and Port");
 	}
