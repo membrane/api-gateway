@@ -58,4 +58,10 @@ public class ProxyFeaturesTabComposite extends Composite {
 	    return factory.createXMLStreamReader(stream);
 	}
 	
+	@Override
+	public boolean setFocus() {
+		text.setFocus();
+		return true;
+	}
+	
 }

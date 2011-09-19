@@ -23,21 +23,21 @@ import org.eclipse.core.runtime.*;
 import org.eclipse.jface.dialogs.*;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.widgets.*;
 import org.eclipse.ui.*;
 
 import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.rules.*;
-import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyFeaturesTabComposite;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
 public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
 
-	public static final String LINK_URL = "http://www.membrane-soa.org/soap-router/doc/configuration/reference/";
+	public static final String LINK_CONFIGURATION_REFERENCE = "http://www.membrane-soa.org/soap-router/doc/configuration/reference/";
+	
+	public static final String LINK_EXAMPLES_REFERENCE = "http://www.membrane-soa.org/soap-monitor-doc/interceptors/examples.htm";
 	
 	protected Rule rule;
 	
@@ -65,28 +65,36 @@ public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
 	protected Control createDialogArea(Composite parent) {
 		Composite composite = (Composite) super.createDialogArea(parent);
 		composite.setLayout(SWTUtil.createGridLayout(1, 10));		
-		createFeaturesTab(composite);
 		
-		new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL).setLayoutData(new GridData(210, 12));
+		createLink(composite, getText());
+	
+		new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL).setLayoutData(new GridData(410, 12));
 		
-		createLink(composite, "Configuration Reference");
+		featuresTabComposite = new ProxyFeaturesTabComposite(composite);
+		featuresTabComposite.setFocus();
 		
+		new Label(composite, SWT.SEPARATOR | SWT.HORIZONTAL).setLayoutData(new GridData(410, 12));
+
 		return composite;
 	}
 	
-	private void createLink(Composite composite, String linkText) {
-		Link link = new Link(composite, SWT.NONE);
-		link.setText("<A>" + linkText + "</A>");
-		link.addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				try {
-					PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL(LINK_URL));
-				} catch (Exception e1) {
-					e1.printStackTrace();
+	private String getText() {
+		return "Here you can configure advanced features like loadbalancing or routing for a proxy using" + System.getProperty("line.separator")  + "the XML based DSL. Have a look at the <A href=\"" +  LINK_CONFIGURATION_REFERENCE  + "\"> configuration reference </A> "  + "or the <A href=\"" + LINK_EXAMPLES_REFERENCE + "\"> examples </A> for " + System.getProperty("line.separator") + "reference.";
+	}
+	
+	private Link createLink(Composite composite, String linkText) {
+		Link link = new Link(composite, SWT.NONE | SWT.NO_FOCUS);
+		link.setText(linkText);
+		link.addListener(SWT.Selection, new Listener() {
+		      public void handleEvent(Event event) {
+		    	  try {
+					PlatformUI.getWorkbench().getBrowserSupport().getExternalBrowser().openURL(new URL(event.text));
+				} catch (Exception e) {
+					openErrorDialog("Unable to open external browser or specified URL.");
 				} 
-			}
+		      }
 		});
+		return link;
 	}
 	
 	public abstract String getTitle();
@@ -143,12 +151,6 @@ public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
 		return Router.getInstance().getRuleManager();
 	}
 	
-	protected HttpTransport getTransport() {
-		return ((HttpTransport) Router.getInstance().getTransport());
-	}
-
-
-
 	protected void createFeaturesTab(Composite composite) {
 		featuresTabComposite = new ProxyFeaturesTabComposite(composite);
 	}
