@@ -13,19 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
+import java.io.*;
+import java.net.*;
+import java.util.*;
 
 public class ClassloaderUtil {
 
 	public static List<URL> getJarUrls(String folder) {
-		
+
 		if (folder.startsWith("file:"))
 			folder = folder.substring(5);
 
@@ -40,7 +35,7 @@ public class ClassloaderUtil {
 		});
 
 		List<URL> urls = new ArrayList<URL>();
-		
+
 		for (int i = 0; i < jars.length; i++) {
 			try {
 				urls.add(new URL("file:" + folder + jars[i]));
@@ -53,25 +48,30 @@ public class ClassloaderUtil {
 
 	}
 
-	public static boolean fileExists(String configFileName) throws MalformedURLException, IOException {
+	public static boolean fileExists(String configFileName)
+			throws MalformedURLException, IOException {
 		if (configFileName.startsWith("file:"))
 			return new File(new URL(configFileName).getPath()).exists();
 		return new File(configFileName).exists();
 	}
 
-	public static String getFullQualifiedFolderName(String rootDir, String folder) throws IOException {
-		return rootDir + System.getProperty("file.separator") + folder + System.getProperty("file.separator");
+	public static String getFullQualifiedFolderName(String rootDir,
+			String folder) throws IOException {
+		return rootDir + System.getProperty("file.separator") + folder
+				+ System.getProperty("file.separator");
 	}
 
 	public static URLClassLoader getExternalClassloader(String rootDir) {
 		try {
-			List<URL> urls = getJarUrls(getFullQualifiedFolderName(rootDir, "lib"));
+			List<URL> urls = getJarUrls(getFullQualifiedFolderName(rootDir,
+					"lib"));
 			urls.add(new URL(getFullQualifiedFolderName(rootDir, "classes")));
-			return new URLClassLoader( urls.toArray(new URL[urls.size()]) , ClassloaderUtil.class.getClassLoader() );
+			return new URLClassLoader(urls.toArray(new URL[urls.size()]),
+					ClassloaderUtil.class.getClassLoader());
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);
-		} 
+		}
 		return null;
 	}
 

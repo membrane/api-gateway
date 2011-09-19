@@ -17,13 +17,12 @@ package com.predic8.membrane.core;
 import java.lang.reflect.Method;
 import java.net.URLClassLoader;
 
-
 /**
  * 
  * Main class for memrouter.bat file
  * 
  * @author predic8
- *
+ * 
  */
 public class Starter {
 
@@ -33,7 +32,8 @@ public class Starter {
 
 	private static Method getMainMethod() throws NoSuchMethodException,
 			ClassNotFoundException {
-		return getRouterCLIClass().getDeclaredMethod("main", new Class[] { String[].class });
+		return getRouterCLIClass().getDeclaredMethod("main",
+				new Class[] { String[].class });
 	}
 
 	private static Class<?> getRouterCLIClass() throws ClassNotFoundException {
@@ -41,7 +41,8 @@ public class Starter {
 	}
 
 	private static URLClassLoader getLoader() {
-		return ClassloaderUtil.getExternalClassloader("file:" + System.getenv("MEMBRANE_HOME"));
+		return ClassloaderUtil.getExternalClassloader("file:"
+				+ System.getenv("MEMBRANE_HOME"));
 	}
 
 }
