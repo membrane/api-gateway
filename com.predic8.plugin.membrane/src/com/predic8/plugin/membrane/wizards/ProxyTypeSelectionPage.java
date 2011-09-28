@@ -33,7 +33,7 @@ public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 	
 	protected ProxyTypeSelectionPage() {
 		super(PAGE_NAME);
-		setTitle(" Add new Proxy for a ");
+		setTitle(" Add a ");
 	}
 
 	public void createControl(Composite parent) {

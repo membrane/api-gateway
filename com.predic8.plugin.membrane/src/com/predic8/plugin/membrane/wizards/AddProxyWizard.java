@@ -39,7 +39,7 @@ public class AddProxyWizard extends Wizard {
 	private ProxyRuleConfigurationPage proxyRuleConfigPage = new ProxyRuleConfigurationPage();
 	
 	public AddProxyWizard() {
-		setWindowTitle("Add Proxy ...");
+		setWindowTitle("Add a new Proxy");
 	}
 
 	@Override
