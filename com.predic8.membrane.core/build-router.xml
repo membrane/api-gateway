@@ -57,6 +57,11 @@
 				<include name="**/*" />
 			</fileset>
 		</copy>
+		<copy todir="dist/router/membrane-router-${version}/examples"> 
+			<fileset dir="examples/router">
+				<include name="custom-interceptor/build/**/*"/>
+			</fileset>
+		</copy>
 		<copy todir="dist/router/membrane-router-${version}/lib">
 			<fileset dir="lib">
 				<exclude name="**/rcp/**" />
