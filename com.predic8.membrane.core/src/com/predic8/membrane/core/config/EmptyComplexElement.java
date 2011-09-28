@@ -4,15 +4,15 @@ import java.util.*;
 
 import javax.xml.stream.*;
 
-public class GenericConfigElement extends AbstractXmlElement {
+public class EmptyComplexElement extends AbstractXmlElement {
 
 	private Map<String, String> attributes = new HashMap<String, String>();
 	private String name;
 	private AbstractXmlElement childParser; 
 	
-	public GenericConfigElement() {}
+	public EmptyComplexElement() {}
 	
-	public GenericConfigElement(AbstractXmlElement p) {
+	public EmptyComplexElement(AbstractXmlElement p) {
 		childParser = p;
 	}
 	

@@ -20,7 +20,7 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.config.GenericConfigElement;
+import com.predic8.membrane.core.config.EmptyComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -127,7 +127,7 @@ public class RegExURLRewriteInterceptor extends AbstractInterceptor {
 	protected void parseChildren(XMLStreamReader token, String child)
 			throws Exception {
 		if (token.getLocalName().equals("mapping")) {
-			GenericConfigElement mapping = new GenericConfigElement();
+			EmptyComplexElement mapping = new EmptyComplexElement();
 			mapping.parse(token);
 			mappings.add(new RegExURLRewriteInterceptor.Mapping(mapping
 					.getAttribute("regex"), mapping.getAttribute("uri")));

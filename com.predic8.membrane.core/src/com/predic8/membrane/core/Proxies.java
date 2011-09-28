@@ -14,23 +14,12 @@
 
 package com.predic8.membrane.core;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileWriter;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
-import javax.xml.stream.FactoryConfigurationError;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
 import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.config.security.Security;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.TextUtil;
 
@@ -44,38 +33,28 @@ public class Proxies extends AbstractConfigElement {
 	public static final String INDENT_CONFIG = "indent_config";
 	public static final String ADJ_HOST_HEADER = "adjust_host_header_field";
 
-	
 	public static final String PROXY_HOST = "proxy_host";
 	public static final String PROXY_PORT = "proxy_port";
 	public static final String USE_PROXY = "proxy_use";
 
 	public static final String TRACK_EXCHANGE = "autotrack_new_exchanges";
 
-	public static final String KEY_STORE_LOCATION = "keystore location";
-	
-	public static final String KEY_STORE_PASSWORD = "keystore password";
-	
-	public static final String TRUST_STORE_LOCATION = "truststore location";
-	
-	public static final String TRUST_STORE_PASSWORD = "truststore password";
-	
-	
-	
 	public static final String USE_PROXY_AUTH = "use proxy authentification";
-	
+
 	public static final String PROXY_AUTH_PASSWORD = "proxy authentification password";
-	
+
 	public static final String PROXY_AUTH_USERNAME = "proxy authentification username";
-	
+
 	private Collection<Rule> rules = new ArrayList<Rule>();
 
 	public Map<String, Object> props = new HashMap<String, Object>();
 
-	private ProxyConfiguration proxy; 
+	private ProxyConfiguration proxy;
+
+	private Global global;
 
 	public Proxies() {
 		this(null);
-		
 	}
 
 	public Proxies(Router router) {
@@ -84,8 +63,14 @@ public class Proxies extends AbstractConfigElement {
 		setIndentMessage(true);
 		setAdjustContentLength(true);
 		setTrackExchange(false);
+		global = new Global(router);
 	}
-	
+
+	public void setRouter(Router router) {
+		global.setRouter(router);
+		super.setRouter(router);
+	}
+
 	public Map<String, Object> getProps() {
 		return props;
 	}
@@ -112,7 +97,7 @@ public class Proxies extends AbstractConfigElement {
 		}
 		return false;
 	}
-	
+
 	public void setIndentConfig(boolean status) {
 		props.put(INDENT_CONFIG, status);
 	}
@@ -131,7 +116,7 @@ public class Proxies extends AbstractConfigElement {
 	public void setAdjustContentLength(boolean status) {
 		props.put(ADJ_CONT_LENGTH, status);
 	}
-	
+
 	public boolean getAdjustHostHeader() {
 		if (props.containsKey(ADJ_HOST_HEADER)) {
 			return (Boolean) props.get(ADJ_HOST_HEADER);
@@ -145,152 +130,114 @@ public class Proxies extends AbstractConfigElement {
 		}
 		return false;
 	}
-	
+
 	public void setTrackExchange(boolean status) {
 		props.put(TRACK_EXCHANGE, status);
 	}
 
 	public boolean getTrackExchange() {
-		if (props.containsKey(TRACK_EXCHANGE)) {			
+		if (props.containsKey(TRACK_EXCHANGE)) {
 			return (Boolean) props.get(TRACK_EXCHANGE);
 		}
 		return false;
 	}
 
 	public String getKeyStoreLocation() {
-		if (props.containsKey(KEY_STORE_LOCATION))
-			return (String)props.get(KEY_STORE_LOCATION);
-	
-		return null;
+		return global.getSecurity().getKeyStore().getLocation();
 	}
-	
-	
+
 	public String getTrustStoreLocation() {
-		if (props.containsKey(TRUST_STORE_LOCATION))
-			return (String)props.get(TRUST_STORE_LOCATION);
-	
-		return null;
+		return global.getSecurity().getTrustStore().getLocation();
 	}
-	
+
 	public void setKeyStoreLocation(String location) {
-		if (location == null)
-			return;
-		props.put(KEY_STORE_LOCATION, location);
+		global.getSecurity().getKeyStore().setLocation(location);
 	}
-	
+
 	public void setTrustStoreLocation(String location) {
-		if (location == null)
-			return;
-		props.put(TRUST_STORE_LOCATION, location);
+		global.getSecurity().getTrustStore().setLocation(location);
 	}
-	
+
 	public String getKeyStorePassword() {
-		if (props.containsKey(KEY_STORE_PASSWORD))
-			return (String)props.get(KEY_STORE_PASSWORD);
-	
-		return null;
+		return global.getSecurity().getKeyStore().getPassword();
 	}
-	
+
 	public String getTrustStorePassword() {
-		if (props.containsKey(TRUST_STORE_PASSWORD))
-			return (String)props.get(TRUST_STORE_PASSWORD);
-	
-		return null;
+		return global.getSecurity().getTrustStore().getPassword();
 	}
-	
+
 	public void setKeyStorePassword(String password) {
-		if (password == null)
-			return;
-		props.put(KEY_STORE_PASSWORD, password);
+		global.getSecurity().getKeyStore().setPassword(password);
 	}
-	
+
 	public void setTrustStorePassword(String password) {
-		if (password == null)
-			return;
-		props.put(TRUST_STORE_PASSWORD, password);
+		global.getSecurity().getTrustStore().setPassword(password);
 	}
-	
+
 	public void setProxy(ProxyConfiguration proxy) {
 		this.proxy = proxy;
 	}
-	
+
 	public ProxyConfiguration getProxy() {
 		return proxy;
 	}
-	
+
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {	
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws Exception {
 		if ("serviceProxy".equals(child)) {
 			rules.add((ServiceProxy) new ServiceProxy(router).parse(token));
 		} else if ("proxy".equals(child)) {
 			rules.add((ProxyRule) new ProxyRule(router).parse(token));
-		} else if (Global.ELEMENT_NAME.equals(child)) {
-			props.putAll(((Global) new Global(router).parse(token)).getValues());
-		} else if (GUI.ELEMENT_NAME.equals(child)) {
-			props.putAll(((GUI) new GUI(router).parse(token)).getValues());
-		} else if (ProxyConfiguration.ELEMENT_NAME.equals(child)) {
-			proxy = (ProxyConfiguration) new ProxyConfiguration(router).parse(token);
-		} else if (Security.ELEMENT_NAME.equals(child)) {
-			Security security = ((Security) new Security(router).parse(token));
-			props.put(KEY_STORE_LOCATION, security.getKeyStoreLocation());
-			props.put(TRUST_STORE_LOCATION, security.getTrustStoreLocation());
-			
-			props.put(KEY_STORE_PASSWORD, security.getKeyStorePassword());
-			props.put(TRUST_STORE_PASSWORD, security.getTrustStorePassword());
-		} 
- 	}
-	
+		} else if ("global".equals(child)) {
+			global.parse(token);
+			props.putAll(global.getValues());
+			proxy = global.getProxyConfiguration();
+		}
+	}
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartDocument(Constants.UTF_8, Constants.XML_VERSION);
 		out.writeStartElement("proxies");
-		
+
 		for (Rule rule : rules) {
 			rule.write(out);
 		}
-		
-		if (proxy !=  null)
-			proxy.write(out);
-		
-		Global childFormat = new Global(router);
-		childFormat.setValues(props);
-		childFormat.write(out);
-		
-		GUI childGui = new GUI(router);
-		childGui.setValues(props);
-		childGui.write(out);
-		
-		Security security = new Security(router);
-		security.setValues(props);
-		security.write(out);
-		
+
+		global.setValues(props);
+		global.setProxyConfiguration(proxy);
+		global.write(out);
+
 		out.writeEndElement();
 		out.writeEndDocument();
 	}
 
 	public boolean isKeyStoreAvailable() {
-		return getKeyStoreLocation() != null && !"".equals(getKeyStoreLocation().trim()) && getKeyStorePassword() != null;
+		return getKeyStoreLocation() != null
+				&& !"".equals(getKeyStoreLocation().trim())
+				&& getKeyStorePassword() != null;
 	}
 
 	public byte[] toBytes() throws Exception, FactoryConfigurationError {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	
-		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(baos, Constants.UTF_8);
+
+		XMLStreamWriter writer = XMLOutputFactory.newInstance()
+				.createXMLStreamWriter(baos, Constants.UTF_8);
 		write(writer);
 		writer.flush();
 		writer.close();
-	
+
 		return baos.toByteArray();
 	}
 
 	public void write(String path) throws Exception {
 		FileWriter out = new FileWriter(path);
-		out.write(TextUtil.formatXML(new InputStreamReader(new ByteArrayInputStream(toBytes()), Constants.UTF_8)));
+		out.write(TextUtil.formatXML(new InputStreamReader(
+				new ByteArrayInputStream(toBytes()), Constants.UTF_8)));
 		out.flush();
 		out.close();
-	
+
 	}
-	
-	
-	
+
 }

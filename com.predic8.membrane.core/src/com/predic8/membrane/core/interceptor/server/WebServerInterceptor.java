@@ -24,33 +24,34 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.util.*;
 
 public class WebServerInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(WebServerInterceptor.class.getName());
-	
+	private static Log log = LogFactory.getLog(WebServerInterceptor.class
+			.getName());
+
 	String docBase = "docBase";
-	
+
 	public WebServerInterceptor() {
 		name = "Web Server";
 		setFlow(Flow.REQUEST);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		String uri = exc.getOriginalRequestUri();
-		
-		log.debug("request: "+uri);
 
-		log.debug("looking for file: "+getFile(uri).getAbsolutePath());
-		
+		log.debug("request: " + uri);
+
+		log.debug("looking for file: " + getFile(uri).getAbsolutePath());
+
 		if (isNotFoundOrDirectory(uri)) {
+			log.debug("resource not found: " + getFile(uri).getAbsolutePath());
 			exc.setResponse(HttpUtil.createNotFoundResponse());
 			return Outcome.ABORT;
 		}
-		
+
 		exc.setResponse(createResponse(getFile(uri)));
 		return Outcome.ABORT;
 	}
@@ -69,16 +70,16 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		response.setStatusMessage("OK");
 		response.setHeader(createHeader(file));
 
-		response.setBody(new Body(new FileInputStream(file),
-								(int) file.length()));
+		response.setBody(new Body(new FileInputStream(file), (int) file
+				.length()));
 		return response;
 	}
-	
+
 	private void setContentType(Header h, File file) {
 		if (file.getPath().endsWith(".css")) {
 			h.setContentType("text/css");
 		} else if (file.getPath().endsWith(".js")) {
-			h.setContentType("application/x-javascript");			
+			h.setContentType("application/x-javascript");
 		}
 	}
 
@@ -98,22 +99,22 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	public void setDocBase(String docBase) {
 		this.docBase = docBase;
 	}
-	
+
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
-		
+
 		out.writeStartElement("webServer");
-		
-		out.writeAttribute("docBase", docBase);		
-		
+
+		out.writeAttribute("docBase", docBase);
+
 		out.writeEndElement();
 	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		
+
 		docBase = token.getAttributeValue("", "docBase");
 	}
-	
+
 }

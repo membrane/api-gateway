@@ -12,7 +12,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.xml.sax.InputSource;
 
-import com.predic8.membrane.core.config.GenericConfigElement;
+import com.predic8.membrane.core.config.EmptyComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;

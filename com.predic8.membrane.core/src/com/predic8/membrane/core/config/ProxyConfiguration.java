@@ -14,9 +14,7 @@
 
 package com.predic8.membrane.core.config;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -24,95 +22,75 @@ import com.predic8.membrane.core.Router;
 
 public class ProxyConfiguration extends AbstractConfigElement {
 
-	public static final String ELEMENT_NAME = "proxyConfiguration";
-
 	public static final String ATTRIBUTE_ACTIVE = "active";
-	
+
 	public static final String ATTRIBUTE_AUTHENTICATION = "authentication";
-	
+
 	private boolean useProxy;
-	
-	private String proxyHost;
 
-	private int proxyPort;
+	private String host;
 
+	private int port;
 
 	private boolean useAuthentication;
-	
-	private String proxyUsername;
-	
-	private String proxyPassword;
+
+	private String username;
+
+	private String password;
 
 	public ProxyConfiguration(Router router) {
 		super(router);
 	}
 
 	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
-
-	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		useProxy = getBoolean(token, ATTRIBUTE_ACTIVE);
 		useAuthentication = getBoolean(token, ATTRIBUTE_AUTHENTICATION);
+		host = token.getAttributeValue("", "host");
+		port = Integer.parseInt(token.getAttributeValue("", "port"));
+		username = token.getAttributeValue("", "username");
+		password = token.getAttributeValue("", "password");
 		super.parseAttributes(token);
 	}
 
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
-		if (ProxyHost.ELEMENT_NAME.equals(child)) {
-			proxyHost = ((ProxyHost) (new ProxyHost().parse(token))).value;
-		} else if (ProxyPort.ELEMENT_NAME.equals(child)) {
-			proxyPort = Integer.parseInt(((ProxyPort) (new ProxyPort().parse(token))).getValue());
-		} else if (ProxyUsername.ELEMENT_NAME.equals(child)) {
-			proxyUsername = ((ProxyUsername) (new ProxyUsername().parse(token))).getValue();
-		} else if (ProxyPassword.ELEMENT_NAME.equals(child)) {
-			proxyPassword = ((ProxyPassword) (new ProxyPassword().parse(token))).getValue();
-		}
-	}
-
-	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(ELEMENT_NAME);
+		out.writeStartElement("proxyConfiguration");
 
-		out.writeAttribute(ATTRIBUTE_ACTIVE, Boolean.toString(useProxy));
+		out.writeAttribute(ATTRIBUTE_ACTIVE, "" + useProxy);
 
-		out.writeAttribute(ATTRIBUTE_AUTHENTICATION, Boolean.toString(useAuthentication));
+		out.writeAttribute(ATTRIBUTE_AUTHENTICATION, "" + useAuthentication);
 
-		new ProxyHost(proxyHost).write(out);
-
-		new ProxyPort(Integer.toString(proxyPort)).write(out);
-
-		new ProxyUsername(proxyUsername).write(out);
-
-		new ProxyPassword(proxyPassword).write(out);
+		out.writeAttribute("host", host);
+		out.writeAttribute("port", "" + port);
+		out.writeAttribute("password", password);
+		out.writeAttribute("username", username);
 
 		out.writeEndElement();
 	}
 
 	public String getProxyHost() {
-		return proxyHost;
+		return host;
 	}
 
 	public void setProxyHost(String proxyHost) {
-		this.proxyHost = proxyHost;
+		this.host = proxyHost;
 	}
 
 	public int getProxyPort() {
-		return proxyPort;
+		return port;
 	}
 
 	public void setProxyPort(int proxyPort) {
-		this.proxyPort = proxyPort;
+		this.port = proxyPort;
 	}
 
 	public String getProxyPassword() {
-		return proxyPassword;
+		return password;
 	}
 
 	public void setProxyPassword(String proxyPassword) {
-		this.proxyPassword = proxyPassword;
+		this.password = proxyPassword;
 	}
 
 	public boolean useProxy() {
@@ -124,11 +102,11 @@ public class ProxyConfiguration extends AbstractConfigElement {
 	}
 
 	public String getProxyUsername() {
-		return proxyUsername;
+		return username;
 	}
 
 	public void setProxyUsername(String proxyUsername) {
-		this.proxyUsername = proxyUsername;
+		this.username = proxyUsername;
 	}
 
 	public boolean isUseAuthentication() {
@@ -138,11 +116,12 @@ public class ProxyConfiguration extends AbstractConfigElement {
 	public void setUseAuthentication(boolean useAuthentication) {
 		this.useAuthentication = useAuthentication;
 	}
-	
+
 	public String getCredentials() {
 		StringBuffer buffer = new StringBuffer();
 		buffer.append("Basic ");
-		byte[] base64UserPass = Base64.encodeBase64((proxyUsername + ":" + proxyPassword).getBytes());
+		byte[] base64UserPass = Base64
+				.encodeBase64((username + ":" + password).getBytes());
 		buffer.append(new String(base64UserPass));
 		return buffer.toString();
 	}

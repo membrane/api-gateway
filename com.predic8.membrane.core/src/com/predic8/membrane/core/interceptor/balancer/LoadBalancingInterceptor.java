@@ -232,7 +232,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			sessionIdExtractor = new JSESSIONIDExtractor();
 			sessionIdExtractor.parse(token);
 		} else if (token.getLocalName().equals("nodes")) {
-			new GenericConfigElement(this).parse(token);
+			new EmptyComplexElement(this).parse(token);
 		} else if (token.getLocalName().equals("node")) {
 			Node n = new Node();
 			n.parse(token);

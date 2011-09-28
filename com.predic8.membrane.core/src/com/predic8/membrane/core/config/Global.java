@@ -14,36 +14,45 @@
 
 package com.predic8.membrane.core.config;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
-import com.predic8.membrane.core.Proxies;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.security.Security;
 
 public class Global extends AbstractConfigElement {
 
-	public Global(Router router) {
-		super(router);
-	}
-
-	public static final String ELEMENT_NAME = "global";
-
 	public Map<String, Object> values = new HashMap<String, Object>();
 
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
+	private ProxyConfiguration proxyConfiguration;
+
+	private Security security;
+
+	public Global(Router router) {
+		super(router);
+		security = new Security(router);
 	}
 
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
-		if (AdjustHostHeader.ELEMENT_NAME.equals(child)) {
-			boolean value = ((AdjustHostHeader)(new AdjustHostHeader(router).parse(token))).getValue();
-			values.put(Proxies.ADJ_HOST_HEADER, value);
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws Exception {
+
+		if ("router".equals(child)) {
+			EmptyComplexElement r = new EmptyComplexElement();
+			r.parse(token);
+			values.put(Proxies.ADJ_HOST_HEADER,
+					r.getAttribute("adjustHostHeader"));
+		} else if ("monitor-gui".equals(child)) {
+			EmptyComplexElement r = new EmptyComplexElement();
+			r.parse(token);
+			values.put(Proxies.TRACK_EXCHANGE, r.getAttribute("autoTrack"));
+			values.put(Proxies.INDENT_MSG, r.getAttribute("indentMessage"));
+		} else if ("proxyConfiguration".equals(child)) {
+			proxyConfiguration = (ProxyConfiguration) new ProxyConfiguration(
+					router).parse(token);
+		} else if ("security".equals(child)) {
+			security.parse(token);
 		}
 	}
 
@@ -51,27 +60,48 @@ public class Global extends AbstractConfigElement {
 		return values;
 	}
 
-	public void setValues(Map<String, Object> newValues) {
-		if (newValues.containsKey(Proxies.ADJ_CONT_LENGTH)) {
-			values.put(Proxies.ADJ_CONT_LENGTH, newValues.get(Proxies.ADJ_CONT_LENGTH));
-		} 
-		
-		if (newValues.containsKey(Proxies.ADJ_HOST_HEADER)) {
-			values.put(Proxies.ADJ_HOST_HEADER, newValues.get(Proxies.ADJ_HOST_HEADER));
-		} 
+	public void setValues(Map<String, Object> values) {
+		this.values = values;
 	}
 
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(ELEMENT_NAME);
-		
-		AdjustHostHeader adjustHostHeader = new AdjustHostHeader(router);
-		if (values.containsKey(Proxies.ADJ_HOST_HEADER)) {
-			adjustHostHeader.setValue((Boolean)values.get(Proxies.ADJ_HOST_HEADER));
+		out.writeStartElement("global");
+
+		out.writeStartElement("router");
+		out.writeAttribute("adjustHostHeader",
+				"" + values.get(Proxies.ADJ_HOST_HEADER));
+		out.writeEndElement();
+		out.writeStartElement("monitor-gui");
+		out.writeAttribute("indentMessage", "" + values.get(Proxies.INDENT_MSG));
+		out.writeAttribute("autoTrack", "" + values.get(Proxies.TRACK_EXCHANGE));
+		out.writeEndElement();
+
+		if (proxyConfiguration != null) {
+			proxyConfiguration.write(out);
 		}
-		adjustHostHeader.write(out);
-		
+
+		if (security.isSet()) {
+			security.write(out);
+		}
+
 		out.writeEndElement();
 	}
-	
+
+	public ProxyConfiguration getProxyConfiguration() {
+		return proxyConfiguration;
+	}
+
+	public void setProxyConfiguration(ProxyConfiguration proxyConfiguration) {
+		this.proxyConfiguration = proxyConfiguration;
+	}
+
+	public Security getSecurity() {
+		return security;
+	}
+
+	public void setSecurity(Security security) {
+		this.security = security;
+	}
+
 }

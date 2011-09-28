@@ -15,15 +15,10 @@
 package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.Transport;
@@ -39,10 +34,12 @@ public class HttpTransport extends Transport {
 	private int socketTimeout = 30000;
 	private boolean tcpNoDelay = true;
 	private int httpClientRetries = 5;
-	
+
 	public Hashtable<Integer, HttpEndpointListener> portListenerMapping = new Hashtable<Integer, HttpEndpointListener>();
 
-	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new HttpServerThreadFactory());
+	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(0,
+			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory());
 
 	public boolean isAnyThreadListeningAt(int port) {
 		return portListenerMapping.get(port) != null;
@@ -84,7 +81,8 @@ public class HttpTransport extends Transport {
 			return;
 		}
 
-		HttpEndpointListener portListenerThread = new HttpEndpointListener(port, this, tsl);
+		HttpEndpointListener portListenerThread = new HttpEndpointListener(
+				port, this, tsl);
 		portListenerMapping.put(port, portListenerThread);
 		portListenerThread.start();
 
@@ -96,7 +94,7 @@ public class HttpTransport extends Transport {
 	public void setCoreThreadPoolSize(int corePoolSize) {
 		executorService.setCorePoolSize(corePoolSize);
 	}
-	
+
 	public void setMaxThreadPoolSize(int value) {
 		executorService.setMaximumPoolSize(value);
 	}

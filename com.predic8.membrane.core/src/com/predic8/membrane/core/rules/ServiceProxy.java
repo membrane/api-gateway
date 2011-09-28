@@ -87,7 +87,7 @@ public class ServiceProxy extends AbstractRule {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {		
 		if ("target".equals(child)) {
-			GenericConfigElement target = new GenericConfigElement();
+			EmptyComplexElement target = new EmptyComplexElement();
 			target.parse(token);
 			targetHost = target.getAttribute("host");
 			targetPort = Integer.parseInt(target.getAttributeOrDefault("port","80"));			

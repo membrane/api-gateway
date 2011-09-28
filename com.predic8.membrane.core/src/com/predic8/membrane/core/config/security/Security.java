@@ -13,111 +13,63 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
-import java.util.Map;
+import javax.xml.stream.*;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
-import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
 public class Security extends AbstractConfigElement {
 
-	public static final String ELEMENT_NAME = "security";
-
 	private KeyStore keyStore;
-	
+
 	private TrustStore trustStore;
 
 	public Security(Router router) {
 		super(router);
-	}
-
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
-
-	public String getKeyStoreLocation() {
-		if (keyStore != null)
-			return keyStore.getLocation();
-		return null;
-	}
-	
-	public String getTrustStoreLocation() {
-		if (trustStore != null)
-			return trustStore.getLocation();
-		return null;
-	}
-	
-	public String getKeyStorePassword() {
-		if (keyStore != null)
-			return keyStore.getPassword();
-		return null;
-	}
-	
-	public String getTrustStorePassword() {
-		if (trustStore != null)
-			return trustStore.getPassword();
-		return null;
-	}
-
-	public void setValues(Map<String, Object> props) {
 		keyStore = new KeyStore(router);
-		setKeyStoreLocation(props.get(Proxies.KEY_STORE_LOCATION));
-		setKeyStorePassword(props.get(Proxies.KEY_STORE_PASSWORD));
-		
-		
 		trustStore = new TrustStore(router);
-		setTrustStoreLocation(props.get(Proxies.TRUST_STORE_LOCATION));
-		setTrustStorePassword(props.get(Proxies.TRUST_STORE_PASSWORD));
-		
 	}
-	
-	private void setKeyStoreLocation(Object location) {
-		if (location == null)
-			return;
-		keyStore.setLocation(location.toString());
+
+	public boolean isSet() {
+		return keyStore.location != null || trustStore.location != null;
 	}
-	
-	private void setKeyStorePassword(Object password) {
-		if (password == null)
-			return;
-		keyStore.setPassword(password.toString());
-	}
-	
-	private void setTrustStoreLocation(Object location) {
-		if (location == null)
-			return;
-		trustStore.setLocation(location.toString());
-	}
-	
-	private void setTrustStorePassword(Object password) {
-		if (password == null)
-			return;
-		trustStore.setPassword(password.toString());
-	}
-	
+
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws Exception {
 		if (KeyStore.ELEMENT_NAME.equals(child)) {
-			keyStore = ((KeyStore) new KeyStore(router).parse(token));
-		} 
-		
+			keyStore.parse(token);
+		}
+
 		if (TrustStore.ELEMENT_NAME.equals(child)) {
-			trustStore = ((TrustStore) new TrustStore(router).parse(token));
-		} 
+			trustStore.parse(token);
+		}
 	}
-	
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(ELEMENT_NAME);
-		
+		out.writeStartElement("security");
+
 		keyStore.write(out);
 		trustStore.write(out);
-		
+
 		out.writeEndElement();
 	}
+
+	public KeyStore getKeyStore() {
+		return keyStore;
+	}
+
+	public void setKeyStore(KeyStore keyStore) {
+		this.keyStore = keyStore;
+	}
+
+	public TrustStore getTrustStore() {
+		return trustStore;
+	}
+
+	public void setTrustStore(TrustStore trustStore) {
+		this.trustStore = trustStore;
+	}
+
 }
