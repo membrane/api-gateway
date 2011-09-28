@@ -54,7 +54,7 @@ public class ViaProxyTest {
 		proxy.setProxyHost("localhost");
 		proxy.setProxyPort(3128);
 		
-		config.setProxy(proxy);
+		config.setProxyConfiguration(proxy);
 		
 		router.getConfigurationManager().setProxies(config);
 	}

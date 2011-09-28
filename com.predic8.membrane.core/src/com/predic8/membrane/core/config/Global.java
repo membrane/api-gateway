@@ -23,6 +23,24 @@ import com.predic8.membrane.core.config.security.Security;
 
 public class Global extends AbstractConfigElement {
 
+	public static final String INDENT_MSG = "indent_message";
+	
+	public static final String ADJ_HOST_HEADER = "adjust_host_header_field";
+	
+	public static final String TRACK_EXCHANGE = "autotrack_new_exchanges";
+	
+	public static final String ADJ_CONT_LENGTH = "auto_adjust_content_length";
+	
+	
+	public static final String ATTRIBUTE_INDENT_MSG = "indentMessage"; 
+	
+	public static final String ATTRIBUTE_AUTO_TRACK = "autoTrack"; 
+	
+	public static final String ATTRIBUTE_ADJ_HOST_HEADER = "adjustHostHeader"; 
+	
+	public static final String ATTRIBUTE_ADJ_CONTENT_LENGTH = "adjustContentLength"; 
+	
+	
 	public Map<String, Object> values = new HashMap<String, Object>();
 
 	private ProxyConfiguration proxyConfiguration;
@@ -32,6 +50,10 @@ public class Global extends AbstractConfigElement {
 	public Global(Router router) {
 		super(router);
 		security = new Security(router);
+		setIndentMessage(true);
+		setAdjustHostHeader(true);
+		setTrackExchange(false);
+		setAdjustContentLength(true);
 	}
 
 	@Override
@@ -41,13 +63,13 @@ public class Global extends AbstractConfigElement {
 		if ("router".equals(child)) {
 			EmptyComplexElement r = new EmptyComplexElement();
 			r.parse(token);
-			values.put(Proxies.ADJ_HOST_HEADER,
-					r.getAttribute("adjustHostHeader"));
+			values.put(ADJ_HOST_HEADER, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_ADJ_HOST_HEADER)));
+			values.put(ADJ_CONT_LENGTH, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_ADJ_CONTENT_LENGTH)));
 		} else if ("monitor-gui".equals(child)) {
 			EmptyComplexElement r = new EmptyComplexElement();
 			r.parse(token);
-			values.put(Proxies.TRACK_EXCHANGE, r.getAttribute("autoTrack"));
-			values.put(Proxies.INDENT_MSG, r.getAttribute("indentMessage"));
+			values.put(TRACK_EXCHANGE, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_AUTO_TRACK)));
+			values.put(INDENT_MSG, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_INDENT_MSG)));
 		} else if ("proxyConfiguration".equals(child)) {
 			proxyConfiguration = (ProxyConfiguration) new ProxyConfiguration(
 					router).parse(token);
@@ -69,12 +91,12 @@ public class Global extends AbstractConfigElement {
 		out.writeStartElement("global");
 
 		out.writeStartElement("router");
-		out.writeAttribute("adjustHostHeader",
-				"" + values.get(Proxies.ADJ_HOST_HEADER));
+		out.writeAttribute(ATTRIBUTE_ADJ_HOST_HEADER, "" + values.get(ADJ_HOST_HEADER));
+		out.writeAttribute(ATTRIBUTE_ADJ_CONTENT_LENGTH, "" + values.get(ADJ_CONT_LENGTH));
 		out.writeEndElement();
 		out.writeStartElement("monitor-gui");
-		out.writeAttribute("indentMessage", "" + values.get(Proxies.INDENT_MSG));
-		out.writeAttribute("autoTrack", "" + values.get(Proxies.TRACK_EXCHANGE));
+		out.writeAttribute(ATTRIBUTE_INDENT_MSG, "" + values.get(INDENT_MSG));
+		out.writeAttribute(ATTRIBUTE_AUTO_TRACK, "" + values.get(TRACK_EXCHANGE));
 		out.writeEndElement();
 
 		if (proxyConfiguration != null) {
@@ -102,6 +124,50 @@ public class Global extends AbstractConfigElement {
 
 	public void setSecurity(Security security) {
 		this.security = security;
+	}
+	
+	public void setIndentMessage(boolean status) {
+		values.put(INDENT_MSG, status);
+	}
+
+	public boolean getIndentMessage() {
+		if (values.containsKey(INDENT_MSG)) {
+			return (Boolean)values.get(INDENT_MSG);
+		}
+		return false;
+	}
+	
+	public void setAdjustHostHeader(boolean status) {
+		values.put(ADJ_HOST_HEADER, status);
+	}
+	
+	public boolean getAdjustHostHeader() {
+		if (values.containsKey(ADJ_HOST_HEADER)) {
+			return (Boolean) values.get(ADJ_HOST_HEADER);
+		}
+		return true;
+	}
+	
+	public void setTrackExchange(boolean status) {
+		values.put(TRACK_EXCHANGE, status);
+	}
+
+	public boolean getTrackExchange() {
+		if (values.containsKey(TRACK_EXCHANGE)) {
+			return (Boolean)values.get(TRACK_EXCHANGE);
+		}
+		return false;
+	}
+	
+	public void setAdjustContentLength(boolean status) {
+		values.put(ADJ_CONT_LENGTH, status);
+	}
+
+	public boolean getAdjustContentLength() {
+		if (values.containsKey(ADJ_CONT_LENGTH)) {
+			return (Boolean) values.get(ADJ_CONT_LENGTH);
+		}
+		return false;
 	}
 
 }

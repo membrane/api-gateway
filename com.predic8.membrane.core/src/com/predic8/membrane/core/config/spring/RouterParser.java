@@ -3,10 +3,10 @@ package com.predic8.membrane.core.config.spring;
 import org.apache.commons.logging.*;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
-import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.config.Global;
 import com.predic8.membrane.core.interceptor.balancer.ClusterManager;
 
 public class RouterParser extends
@@ -14,6 +14,7 @@ public class RouterParser extends
 	
 	private static Log log = LogFactory.getLog(RouterParser.class.getName());
 
+	@SuppressWarnings("rawtypes")
 	protected Class getBeanClass(Element element) {
 		return Router.class;
 	}
@@ -33,10 +34,10 @@ public class RouterParser extends
 		
 		ConfigurationManager cm = new ConfigurationManager();
 		cm.setHotDeploy(Boolean.parseBoolean(e.getAttribute("hotDeploy")));
-		cm.getProxies().setAdjustHostHeader(Boolean.parseBoolean(e.getAttribute("adjustHostHeader")));
-		cm.getProxies().setIndentMessage(Boolean.parseBoolean(e.getAttribute("indentMessage")));
-		cm.getProxies().setAdjustContentLength(Boolean.parseBoolean(e.getAttribute("adjustContentLength")));
-		cm.getProxies().setTrackExchange(Boolean.parseBoolean(e.getAttribute("trackExchange")));
+		cm.getProxies().setAdjustHostHeader(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_HOST_HEADER)));
+		cm.getProxies().setIndentMessage(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_INDENT_MSG)));
+		cm.getProxies().setAdjustContentLength(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_CONTENT_LENGTH)));
+		cm.getProxies().setTrackExchange(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_AUTO_TRACK)));
 		bean.addPropertyValue("configurationManager", cm);
 	}
 }

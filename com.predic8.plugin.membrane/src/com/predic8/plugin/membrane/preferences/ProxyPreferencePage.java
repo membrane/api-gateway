@@ -137,7 +137,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 	private void setWidgets() {
 		Proxies config = Router.getInstance().getConfigurationManager().getProxies();
 		
-		ProxyConfiguration proxy = config.getProxy();
+		ProxyConfiguration proxy = config.getProxyConfiguration();
 		
 		if (proxy == null)
 			return;
@@ -264,7 +264,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 		proxy.setProxyUsername(textUser.getText());
 		proxy.setProxyPassword(textPassword.getText());
 		
-		router.getConfigurationManager().getProxies().setProxy(proxy);
+		router.getConfigurationManager().getProxies().setProxyConfiguration(proxy);
 		
 	}
 

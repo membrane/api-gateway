@@ -35,6 +35,7 @@
 								<xsd:complexType>
 									<xsd:sequence/>
 									<xsd:attribute name="adjustHostHeader" type="xsd:boolean" />
+									<xsd:attribute name="adjustContentLength" type="xsd:boolean" />
 								</xsd:complexType>
 							</xsd:element>
 							<xsd:element name="monitor-gui" minOccurs="0"> 

@@ -62,7 +62,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		HttpClient client = new HttpClient();
 		Proxies cfg = router.getConfigurationManager().getProxies();
 		client.setAdjustHostHeader(cfg.getAdjustHostHeader());
-		client.setProxy(cfg.getProxy());
+		client.setProxy(cfg.getProxyConfiguration());
 		client.setMaxRetries(((HttpTransport)router.getTransport()).getHttpClientRetries());
 		return client;
 	}	

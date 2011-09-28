@@ -27,17 +27,10 @@ public class Proxies extends AbstractConfigElement {
 
 	private static final long serialVersionUID = 1L;
 
-	// Control names
-	public static final String ADJ_CONT_LENGTH = "auto_adjust_content_length";
-	public static final String INDENT_MSG = "indent_message";
-	public static final String INDENT_CONFIG = "indent_config";
-	public static final String ADJ_HOST_HEADER = "adjust_host_header_field";
-
+	// Control names	
 	public static final String PROXY_HOST = "proxy_host";
 	public static final String PROXY_PORT = "proxy_port";
 	public static final String USE_PROXY = "proxy_use";
-
-	public static final String TRACK_EXCHANGE = "autotrack_new_exchanges";
 
 	public static final String USE_PROXY_AUTH = "use proxy authentification";
 
@@ -47,9 +40,7 @@ public class Proxies extends AbstractConfigElement {
 
 	private Collection<Rule> rules = new ArrayList<Rule>();
 
-	public Map<String, Object> props = new HashMap<String, Object>();
-
-	private ProxyConfiguration proxy;
+	//private Map<String, Object> props = new HashMap<String, Object>();
 
 	private Global global;
 
@@ -59,10 +50,6 @@ public class Proxies extends AbstractConfigElement {
 
 	public Proxies(Router router) {
 		super(router);
-		setAdjustHostHeader(true);
-		setIndentMessage(true);
-		setAdjustContentLength(true);
-		setTrackExchange(false);
 		global = new Global(router);
 	}
 
@@ -71,13 +58,13 @@ public class Proxies extends AbstractConfigElement {
 		super.setRouter(router);
 	}
 
-	public Map<String, Object> getProps() {
-		return props;
-	}
-
-	public void setProps(Map<String, Object> props) {
-		this.props = props;
-	}
+//	public Map<String, Object> getProps() {
+//		return props;
+//	}
+//
+//	public void setProps(Map<String, Object> props) {
+//		this.props = props;
+//	}
 
 	public Collection<Rule> getRules() {
 		return rules;
@@ -88,58 +75,35 @@ public class Proxies extends AbstractConfigElement {
 	}
 
 	public void setIndentMessage(boolean status) {
-		props.put(INDENT_MSG, status);
+		global.setIndentMessage(status);
 	}
 
 	public boolean getIndentMessage() {
-		if (props.containsKey(INDENT_MSG)) {
-			return (Boolean) props.get(INDENT_MSG);
-		}
-		return false;
-	}
-
-	public void setIndentConfig(boolean status) {
-		props.put(INDENT_CONFIG, status);
-	}
-
-	public boolean getIndentConfig() {
-		if (props.containsKey(INDENT_CONFIG)) {
-			return (Boolean) props.get(INDENT_CONFIG);
-		}
-		return false;
-	}
-
-	public void setAdjustHostHeader(boolean status) {
-		props.put(ADJ_HOST_HEADER, status);
+		return global.getIndentMessage();
 	}
 
 	public void setAdjustContentLength(boolean status) {
-		props.put(ADJ_CONT_LENGTH, status);
+		global.setAdjustContentLength(status);
 	}
 
+	public void setAdjustHostHeader(boolean status) {
+		global.setAdjustHostHeader(status);
+	}
+	
 	public boolean getAdjustHostHeader() {
-		if (props.containsKey(ADJ_HOST_HEADER)) {
-			return (Boolean) props.get(ADJ_HOST_HEADER);
-		}
-		return true;
+		return global.getAdjustHostHeader();
 	}
 
 	public boolean getAdjustContentLength() {
-		if (props.containsKey(ADJ_CONT_LENGTH)) {
-			return (Boolean) props.get(ADJ_CONT_LENGTH);
-		}
-		return false;
+		return global.getAdjustContentLength();
 	}
 
 	public void setTrackExchange(boolean status) {
-		props.put(TRACK_EXCHANGE, status);
+		global.setTrackExchange(status);
 	}
 
 	public boolean getTrackExchange() {
-		if (props.containsKey(TRACK_EXCHANGE)) {
-			return (Boolean) props.get(TRACK_EXCHANGE);
-		}
-		return false;
+		return global.getTrackExchange();
 	}
 
 	public String getKeyStoreLocation() {
@@ -174,25 +138,22 @@ public class Proxies extends AbstractConfigElement {
 		global.getSecurity().getTrustStore().setPassword(password);
 	}
 
-	public void setProxy(ProxyConfiguration proxy) {
-		this.proxy = proxy;
+	public void setProxyConfiguration(ProxyConfiguration proxy) {
+		global.setProxyConfiguration(proxy);
 	}
 
-	public ProxyConfiguration getProxy() {
-		return proxy;
+	public ProxyConfiguration getProxyConfiguration() {
+		return global.getProxyConfiguration();
 	}
 
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
+	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if ("serviceProxy".equals(child)) {
 			rules.add((ServiceProxy) new ServiceProxy(router).parse(token));
 		} else if ("proxy".equals(child)) {
 			rules.add((ProxyRule) new ProxyRule(router).parse(token));
 		} else if ("global".equals(child)) {
 			global.parse(token);
-			props.putAll(global.getValues());
-			proxy = global.getProxyConfiguration();
 		}
 	}
 
@@ -205,8 +166,6 @@ public class Proxies extends AbstractConfigElement {
 			rule.write(out);
 		}
 
-		global.setValues(props);
-		global.setProxyConfiguration(proxy);
 		global.write(out);
 
 		out.writeEndElement();
