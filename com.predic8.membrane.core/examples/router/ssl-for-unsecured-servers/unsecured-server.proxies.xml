@@ -1,15 +1,12 @@
 <proxies>
 	<serviceProxy port="443" inboundTLS="true" outboundTLS="false">
 		<target host="thomas-bayer.com" />
+		<wsdlRewriter protocol="https" />
 	</serviceProxy>
-	<security>
-		<keystore>
-			<location>..\..\conf\membrane.jks</location>
-			<password>secret</password>
-		</keystore>
-		<truststore>
-			<location>..\..\conf\membrane.jks</location>
-			<password>secret</password>
-		</truststore>
-	</security>
+	<global>
+		<security>
+			<keystore location="..\..\conf\membrane.jks" password="secret"/>
+			<truststore location="..\..\conf\membrane.jks" password="secret"/>
+		</security>
+	</global>
 </proxies>
