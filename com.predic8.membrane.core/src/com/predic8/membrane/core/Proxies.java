@@ -27,20 +27,7 @@ public class Proxies extends AbstractConfigElement {
 
 	private static final long serialVersionUID = 1L;
 
-	// Control names	
-	public static final String PROXY_HOST = "proxy_host";
-	public static final String PROXY_PORT = "proxy_port";
-	public static final String USE_PROXY = "proxy_use";
-
-	public static final String USE_PROXY_AUTH = "use proxy authentification";
-
-	public static final String PROXY_AUTH_PASSWORD = "proxy authentification password";
-
-	public static final String PROXY_AUTH_USERNAME = "proxy authentification username";
-
 	private Collection<Rule> rules = new ArrayList<Rule>();
-
-	//private Map<String, Object> props = new HashMap<String, Object>();
 
 	private Global global;
 
@@ -57,14 +44,6 @@ public class Proxies extends AbstractConfigElement {
 		global.setRouter(router);
 		super.setRouter(router);
 	}
-
-//	public Map<String, Object> getProps() {
-//		return props;
-//	}
-//
-//	public void setProps(Map<String, Object> props) {
-//		this.props = props;
-//	}
 
 	public Collection<Rule> getRules() {
 		return rules;
