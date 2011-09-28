@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+	<xsd:element name="proxies">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:choice minOccurs="0" maxOccurs="unbounded">
+					<xsd:element name="serviceProxy">
+						<xsd:complexType>
+							<xsd:complexContent>
+								<xsd:extension base="ProxyBaseType">
+									<xsd:sequence>
+										<xsd:element name="target" minOccurs="0">
+											<xsd:complexType>
+												<xsd:sequence />
+												<xsd:attribute name="host" type="xsd:string" />
+												<xsd:attribute name="port" type="xsd:int" />
+												<xsd:attribute name="url" type="xsd:string" />
+											</xsd:complexType>
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:attribute name="host" type="xsd:int" />
+									<xsd:attribute name="method" type="xsd:int" />
+								</xsd:extension>
+							</xsd:complexContent>
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="proxy" type="ProxyBaseType" />
+				</xsd:choice>
+				<xsd:element name="global">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="router">
+								<xsd:complexType>
+									<xsd:sequence/>
+									<xsd:attribute name="adjustHostHeader" type="xsd:boolean" />
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="monitor-gui">
+								<xsd:complexType>
+									<xsd:sequence/>
+									<xsd:attribute name="autoTrack" type="xsd:boolean" />
+									<xsd:attribute name="indentMessage" type="xsd:boolean" />
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="proxyConfiguration">
+								<xsd:complexType>
+									<xsd:sequence/>
+									<xsd:attribute name="active" type="xsd:boolean" />
+									<xsd:attribute name="authentication" type="xsd:boolean" />
+									<xsd:attribute name="host" type="xsd:string" />
+									<xsd:attribute name="port" type="xsd:integer" />
+									<xsd:attribute name="username" type="xsd:string" />
+									<xsd:attribute name="password" type="xsd:string" />
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="security">
+								<xsd:complexType>								
+									<xsd:choice maxOccurs="unbounded">
+										<xsd:element name="keystore" type="KeyStoreType" />
+										<xsd:element name="truststore" type="KeyStoreType" />
+									</xsd:choice>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>			
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:group name="InterceptorGroup">
+		<xsd:choice>
+			<xsd:element name="exchangeStore">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="name" type="xsd:string" use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="transform">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="xslt" type="xsd:string" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="log">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="headerOnly" default="true"
+						type="xsd:boolean" />
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="validator">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="wsdl" type="xsd:string" />
+					<xsd:attribute name="schema" type="xsd:string" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="regExUrlRewriter">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="mapping" minOccurs="1" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="regex" type="xsd:string" use="required" />
+								<xsd:attribute name="uri" type="xsd:string" use="required" />
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="formValidation">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="field" minOccurs="1" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="name" type="xsd:string" use="required" />
+								<xsd:attribute name="regex" type="xsd:string" use="required" />
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="switch">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="case" minOccurs="1" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="xPath" type="xsd:string" use="required" />
+								<xsd:attribute name="url" type="xsd:string" use="required" />
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="rest2Soap">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="mapping" minOccurs="1" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="regex" type="xsd:string" use="required" />
+								<xsd:attribute name="soapAction" type="xsd:string"
+									use="required" />
+								<xsd:attribute name="soapURI" type="xsd:string"
+									use="required" />
+								<xsd:attribute name="requestXSLT" type="xsd:string"
+									use="required" />
+								<xsd:attribute name="responseXSLT" type="xsd:string"
+									use="required" />
+								<xsd:attribute name="responseType" type="xsd:string"
+									default="xml" />
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="adminConsole" type="EmptyElementType" />
+
+			<xsd:element name="clusterNotification">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="timeout" type="xsd:long" />
+					<xsd:attribute name="validateSignature" type="xsd:boolean" />
+					<xsd:attribute name="keyHex" type="xsd:string" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="interceptor">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="name" type="xsd:string" />
+					<xsd:attribute name="refid" type="xsd:string" use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="groovy" type="xsd:string" />
+
+			<xsd:element name="balancer">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:choice minOccurs="0">
+							<xsd:element name="xmlSessionIdExtractor">
+								<xsd:complexType>
+									<xsd:attribute name="namespace" type="xsd:string"
+										use="required" />
+									<xsd:attribute name="localName" type="xsd:string"
+										use="required" />
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="jSessionIdExtractor" type="EmptyElementType" />
+						</xsd:choice>
+						<xsd:element name="nodes" minOccurs="0">
+							<xsd:complexType>
+								<xsd:sequence>
+									<xsd:element name="node">
+										<xsd:complexType>
+											<xsd:attribute name="host" type="xsd:string"
+												use="required" />
+											<xsd:attribute name="port" type="xsd:int"
+												default="8080" />
+										</xsd:complexType>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:complexType>
+						</xsd:element>
+						<xsd:choice minOccurs="0">
+							<xsd:element name="roundRobinStrategy" type="EmptyElementType" />
+							<xsd:element name="byThreadStrategy">
+								<xsd:complexType>
+									<xsd:attribute name="maxNumberOfThreadsPerEndpoint"
+										type="xsd:int" default="5" />
+									<xsd:attribute name="retryTimeOnBusy" type="xsd:int"
+										default="1000" />
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:choice>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="regExReplacer">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="regex" type="xsd:string" use="required" />
+					<xsd:attribute name="replace" type="xsd:string" use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="throttle">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="delay" type="xsd:long" default="0" />
+					<xsd:attribute name="maxThreads" type="xsd:int"
+						default="0" />
+					<xsd:attribute name="busyDelay" type="xsd:int"
+						default="0" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="webServer">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="docBase" type="xsd:string" use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="accessControl">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="file" type="xsd:string" use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="counter">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="name" type="xsd:string" use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="wsdlRewriter">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="registryWSDLRegisterURL" type="xsd:string" />
+					<xsd:attribute name="port" type="xsd:int" />
+					<xsd:attribute name="protocol" type="xsd:string" />
+					<xsd:attribute name="host" type="xsd:string" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="basicAuthentication">
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="user" minOccurs="0" maxOccurs="unbounded">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="name" type="xsd:string" use="required" />
+								<xsd:attribute name="password" type="xsd:string"
+									use="required" />
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="statisticsCSV">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="file" type="xsd:string" use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="statisticsJDBC">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="postMethodOnly" type="xsd:boolean"
+						default="false" />
+					<xsd:attribute name="soapOnly" type="xsd:boolean"
+						default="false" />
+					<xsd:attribute name="dataSource" type="xsd:string"
+						use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
+			<xsd:element name="memoryExchangeStore" type="EmptyElementType" />
+			<xsd:element name="forgetfulExchangeStore" type="EmptyElementType" />
+			<xsd:element name="fileExchangeStore">
+				<xsd:complexType>
+					<xsd:sequence />
+					<xsd:attribute name="raw" type="xsd:boolean" default="false" />
+					<xsd:attribute name="saveBodyOnly" type="xsd:boolean"
+						default="false" />
+					<xsd:attribute name="dir" type="xsd:string" use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
+		</xsd:choice>
+	</xsd:group>
+
+	<xsd:complexType name="ProxyBaseType">
+		<xsd:sequence>
+			<xsd:choice minOccurs="0" maxOccurs="unbounded">
+				<xsd:group ref="InterceptorGroup" />
+				<xsd:element name="request">
+					<xsd:complexType>
+						<xsd:sequence minOccurs="0" maxOccurs="unbounded">
+							<xsd:group ref="InterceptorGroup" />
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="response">
+					<xsd:complexType>
+						<xsd:sequence minOccurs="0" maxOccurs="unbounded">
+							<xsd:group ref="InterceptorGroup" />
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:choice>
+		</xsd:sequence>
+		<xsd:attribute name="name" type="xsd:string" />
+		<xsd:attribute name="port" type="xsd:int" />
+		<xsd:attribute name="blockResponse" type="xsd:boolean" />
+		<xsd:attribute name="blockRequest" type="xsd:boolean" />
+		<xsd:attribute name="inboundTLS" type="xsd:boolean" />
+		<xsd:attribute name="outboundTLS" type="xsd:boolean" />
+	</xsd:complexType>
+
+	<xsd:complexType name="EmptyElementType">
+		<xsd:sequence />
+	</xsd:complexType>
+
+	<xsd:complexType name="KeyStoreType">
+		<xsd:sequence/>
+		<xsd:attribute name="location" type="xsd:string" />
+	</xsd:complexType>
+
+</xsd:schema>

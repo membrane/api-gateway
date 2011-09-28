@@ -1,4 +1,5 @@
-<proxies>
+<proxies xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:noNamespaceSchemaLocation="../../com.predic8.membrane.core/router/conf/proxies.xsd">
 	<serviceProxy name="Service Proxy" port="2001">
 		<request>
 			<basicAuthentication>

@@ -1,6 +1,5 @@
 <proxies>
-	<serviceProxy port="2000">
-		<target host="google.com"  />
-	</serviceProxy>
-
-</proxies>
+        <serviceProxy name="LBSLED" port="8081">
+                <target host="localhost" port="8080" />                
+        </serviceProxy>        
+</proxies> 
