@@ -3,7 +3,9 @@
 	
 	Here you can configure routing rules for Membrane Monitor and Router. It contains some rules to show how to setup routing. Please make sure to remove these rules before you put the router into production. More sample configurations you can find in the examples directory.  
 -->
-<proxies>
+<proxies xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:noNamespaceSchemaLocation="proxies.xsd">
+      	 
 	<!-- Sets up the Administration Web Interface on port 9000-->
 	<serviceProxy name="Console" port="9000">
 		<basicAuthentication>
@@ -26,6 +28,6 @@
 	<!-- Global configuration options -->
 	<global>
 		<!-- Sets the HTTP header field Host to the name of the target host. This is necessary if the target host hosts several web sites. -->
-		<adjustHostHeader>true</adjustHostHeader>
+		<router adjustHostHeader="true" />
 	</global>
 </proxies>
