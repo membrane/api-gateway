@@ -26,20 +26,22 @@ import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor.Mapping;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.rules.Rule;
+
 public class REST2SOAPInterceptorIntegrationTest {
 
 	private static HttpRouter router;
 
-	
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 8000), "www.thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*",
+				".*", 8000), "www.thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
-				
+
 		REST2SOAPInterceptor rest2SoapInt = new REST2SOAPInterceptor();
+		rest2SoapInt.setRouter(router);
 		rest2SoapInt.setMappings(getMappings());
-		rule.getInterceptors().add(rest2SoapInt);		
+		rule.getInterceptors().add(rest2SoapInt);
 	}
 
 	@After
@@ -50,15 +52,16 @@ public class REST2SOAPInterceptorIntegrationTest {
 	@Test
 	public void testRest() throws Exception {
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
+				HttpVersion.HTTP_1_1);
 		GetMethod get = new GetMethod("http://localhost:8000/bank/37050198");
-		
+
 		int status = client.executeMethod(get);
 		System.out.println(get.getResponseBodyAsString());
-		
-		assertEquals(200, status);			    
+
+		assertEquals(200, status);
 	}
-	
+
 	private List<Mapping> getMappings() {
 		List<Mapping> mappings = new ArrayList<Mapping>();
 		Mapping m = new Mapping();

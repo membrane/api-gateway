@@ -17,42 +17,43 @@ import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
 
 import java.io.InputStream;
 
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.*;
 
 import junit.framework.TestCase;
 
 import org.junit.Test;
 import org.xml.sax.InputSource;
 
+import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 
 public class XSLTInterceptorTest extends TestCase {
-		
+
 	Exchange exc = new Exchange();
 	XPath xpath = XPathFactory.newInstance().newXPath();
-	
+
 	@Test
 	public void testRequest() throws Exception {
 		exc = new Exchange();
-		Response res = new Response();		
-		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream("/customer.xml")));
+		Response res = new Response();
+		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
+				"/customer.xml")));
 		exc.setResponse(res);
 
 		XSLTInterceptor i = new XSLTInterceptor();
+		i.setRouter(new HttpRouter());
 		i.setXslt("classpath:/customer2person.xsl");
 		i.handleResponse(exc);
-				
+
 		printBodyContent();
-		assertXPath("/person/name/first","Rick");
-		assertXPath("/person/name/last","Cortés Ribotta");
-		assertXPath("/person/address/street","Calle Pública \"B\" 5240 Casa 121");
-		assertXPath("/person/address/city","Omaha");
+		assertXPath("/person/name/first", "Rick");
+		assertXPath("/person/name/last", "Cortés Ribotta");
+		assertXPath("/person/address/street",
+				"Calle Pública \"B\" 5240 Casa 121");
+		assertXPath("/person/address/city", "Omaha");
 	}
-	
+
 	private void printBodyContent() throws Exception {
 		InputStream i = exc.getResponse().getBodyAsStream();
 		int read = 0;
@@ -61,9 +62,11 @@ public class XSLTInterceptorTest extends TestCase {
 			System.out.write(buf, 0, read);
 		}
 	}
-	
-	private void assertXPath(String xpathExpr, String expected) throws XPathExpressionException {
-		assertEquals(expected, xpath.evaluate(xpathExpr, new InputSource(exc.getResponse().getBodyAsStream())));
+
+	private void assertXPath(String xpathExpr, String expected)
+			throws XPathExpressionException {
+		assertEquals(expected, xpath.evaluate(xpathExpr, new InputSource(exc
+				.getResponse().getBodyAsStream())));
 	}
-	
+
 }
