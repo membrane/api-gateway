@@ -3,8 +3,9 @@
 	
 	Here you can configure routing rules for Membrane Monitor and Router. It contains some rules to show how to setup routing. Please make sure to remove these rules before you put the router into production. More sample configurations you can find in the examples directory.  
 -->
-<proxies xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:noNamespaceSchemaLocation="proxies.xsd">
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
       	 
 	<!-- Sets up the Administration Web Interface on port 9000-->
 	<serviceProxy name="Console" port="9000">
