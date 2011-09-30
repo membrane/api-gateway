@@ -14,26 +14,22 @@
 
 package com.predic8.membrane.core;
 
-import java.net.*;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.net.MalformedURLException;
+import java.util.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.balancer.ClusterManager;
 import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.*;
 
 public class Router {
 
 	protected static Log log = LogFactory.getLog(Router.class.getName());
-	
+
 	protected RuleManager ruleManager = new RuleManager();
 
 	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
@@ -43,38 +39,42 @@ public class Router {
 	protected ConfigurationManager configurationManager = new ConfigurationManager();
 
 	protected ClusterManager clusterManager;
-	
+
+	protected ResourceResolver resourceResolver = new ResourceResolver();
+
 	protected static Router router;
 
 	protected static FileSystemXmlApplicationContext beanFactory;
 
 	protected DNSCache dnsCache = new DNSCache();
-	
+
 	public Router() {
 		configurationManager.setRouter(this);
 		ruleManager.setRouter(this);
 	}
-	
-	public static Router init(String configFileName) throws MalformedURLException {
+
+	public static Router init(String configFileName)
+			throws MalformedURLException {
 		log.debug("loading spring config from classpath: " + configFileName);
 		return init(configFileName, Router.class.getClassLoader());
 	}
-	
+
 	public static Router init(String resource, ClassLoader classLoader) {
 		log.debug("loading spring config: " + resource);
 
 		try {
-			beanFactory = new FileSystemXmlApplicationContext( new String[] { resource }, false );
+			beanFactory = new FileSystemXmlApplicationContext(
+					new String[] { resource }, false);
 		} catch (Error e) {
 			e.printStackTrace();
 		}
 		beanFactory.setClassLoader(classLoader);
 		beanFactory.refresh();
-		
+
 		router = (Router) beanFactory.getBean("router");
-		return router; 
+		return router;
 	}
-		
+
 	public static Router getInstance() {
 		return router;
 	}
@@ -109,11 +109,12 @@ public class Router {
 		return configurationManager;
 	}
 
-	public void setConfigurationManager(ConfigurationManager configurationManager) {
+	public void setConfigurationManager(
+			ConfigurationManager configurationManager) {
 		this.configurationManager = configurationManager;
 		configurationManager.setRouter(this);
 	}
-	
+
 	public ClusterManager getClusterManager() {
 		return clusterManager;
 	}
@@ -123,7 +124,8 @@ public class Router {
 	}
 
 	public Collection<Interceptor> getInterceptors() {
-		Map<String, Interceptor> map = beanFactory.getBeansOfType(Interceptor.class);
+		Map<String, Interceptor> map = beanFactory
+				.getBeansOfType(Interceptor.class);
 		Set<String> keys = map.keySet();
 		for (String id : keys) {
 			Interceptor i = map.get(id);
@@ -132,14 +134,14 @@ public class Router {
 		}
 		return map.values();
 	}
-	
+
 	public Interceptor getInterceptorFor(String id) {
 		Interceptor i = beanFactory.getBean(id, Interceptor.class);
-		i.setId(id); //very important, returned bean does not have id set	
+		i.setId(id); // very important, returned bean does not have id set
 		i.setRouter(this);
 		return i;
 	}
-	
+
 	public <E> E getBean(String id, Class<E> clazz) {
 		return beanFactory.getBean(id, clazz);
 	}
@@ -147,5 +149,13 @@ public class Router {
 	public DNSCache getDnsCache() {
 		return dnsCache;
 	}
-	
+
+	public ResourceResolver getResourceResolver() {
+		return resourceResolver;
+	}
+
+	public void setResourceResolver(ResourceResolver resourceResolver) {
+		this.resourceResolver = resourceResolver;
+	}
+
 }

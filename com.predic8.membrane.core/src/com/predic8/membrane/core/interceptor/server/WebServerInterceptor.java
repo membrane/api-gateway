@@ -44,51 +44,43 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 		log.debug("request: " + uri);
 
-		log.debug("looking for file: " + getFile(uri).getAbsolutePath());
+		log.debug("looking for file: " + uri);
 
-		if (isNotFoundOrDirectory(uri)) {
-			log.debug("resource not found: " + getFile(uri).getAbsolutePath());
+		try {
+			exc.setResponse(createResponse(uri));
+		} catch (FileNotFoundException e) {
 			exc.setResponse(HttpUtil.createNotFoundResponse());
-			return Outcome.ABORT;
 		}
 
-		exc.setResponse(createResponse(getFile(uri)));
 		return Outcome.ABORT;
 	}
 
-	private boolean isNotFoundOrDirectory(String uri) {
-		return !getFile(uri).exists() || getFile(uri).isDirectory();
-	}
-
-	private File getFile(String uri) {
-		return FileUtil.prefixMembraneHomeIfNeeded(new File(docBase, uri));
-	}
-
-	private Response createResponse(File file) throws Exception {
+	private Response createResponse(String uri) throws Exception {
 		Response response = new Response();
 		response.setStatusCode(200);
 		response.setStatusMessage("OK");
-		response.setHeader(createHeader(file));
+		response.setHeader(createHeader(uri));
 
-		response.setBody(new Body(new FileInputStream(file), (int) file
-				.length()));
+		response.setBodyContent(ByteUtil.getByteArrayData(router
+				.getResourceResolver().resolve(
+						new File(docBase, uri).getPath(), true)));
 		return response;
 	}
 
-	private void setContentType(Header h, File file) {
-		if (file.getPath().endsWith(".css")) {
+	private void setContentType(Header h, String uri) {
+		if (uri.endsWith(".css")) {
 			h.setContentType("text/css");
-		} else if (file.getPath().endsWith(".js")) {
+		} else if (uri.endsWith(".js")) {
 			h.setContentType("application/x-javascript");
 		}
 	}
 
-	private Header createHeader(File file) {
+	private Header createHeader(String uri) {
 		Header header = new Header();
 		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
 		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
 		header.add("Connection", "close");
-		setContentType(header, file);
+		setContentType(header, uri);
 		return header;
 	}
 

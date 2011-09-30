@@ -48,10 +48,10 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 			soapURI = token.getAttributeValue("", "soapURI");
 			requestXSLT = token.getAttributeValue("", "requestXSLT");
 			responseXSLT = token.getAttributeValue("", "responseXSLT");
-			if (token.getAttributeValue("", "responseType")!=null) {
+			if (token.getAttributeValue("", "responseType") != null) {
 				responseType = token.getAttributeValue("", "responseType");
 			}
-			
+
 		}
 
 		@Override
@@ -64,17 +64,18 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 			out.writeAttribute("requestXSLT", requestXSLT);
 			out.writeAttribute("responseXSLT", responseXSLT);
 			if (!"xml".equals(responseType)) {
-				out.writeAttribute("responseType", responseType);	
-			}			
+				out.writeAttribute("responseType", responseType);
+			}
 			out.writeEndElement();
-		}		
+		}
 	}
-	
-	private static Log log = LogFactory.getLog(REST2SOAPInterceptor.class.getName());
 
-	private List<Mapping> mappings = new ArrayList<Mapping>();	
-	private XSLTTransformer xsltTransformer = new XSLTTransformer();	
-	
+	private static Log log = LogFactory.getLog(REST2SOAPInterceptor.class
+			.getName());
+
+	private List<Mapping> mappings = new ArrayList<Mapping>();
+	private XSLTTransformer xsltTransformer = new XSLTTransformer();
+
 	public REST2SOAPInterceptor() {
 		name = "REST 2 SOAP Gateway";
 	}
@@ -88,9 +89,8 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		if (mapping == null)
 			return Outcome.CONTINUE;
 
-		transformAndReplaceBody(exc.getRequest(), 
-								mapping.requestXSLT, 
-								getRequestXMLSource(exc));
+		transformAndReplaceBody(exc.getRequest(), mapping.requestXSLT,
+				getRequestXMLSource(exc));
 		modifyRequest(exc, mapping);
 
 		return Outcome.CONTINUE;
@@ -99,13 +99,15 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		log.debug("restURL: " + getRESTURL(exc));
-		if (getRESTURL(exc)==null) return Outcome.CONTINUE;
+		if (getRESTURL(exc) == null)
+			return Outcome.CONTINUE;
 
-		log.debug("response: " + xsltTransformer.transform(null, getBodySource(exc)));		
-		
-		String transformedResp = xsltTransformer.transform(getRESTURL(exc).responseXSLT, getBodySource(exc));
+		log.debug("response: " + transform(null, getBodySource(exc)));
+
+		String transformedResp = transform(getRESTURL(exc).responseXSLT,
+				getBodySource(exc));
 		setContentType(exc.getResponse().getHeader());
-		
+
 		if ("json".equals(getRESTURL(exc).responseType)) {
 			transformedResp = xml2json(transformedResp);
 			setJSONContentType(exc.getResponse().getHeader());
@@ -113,17 +115,24 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		exc.getResponse().setBodyContent(transformedResp.getBytes("UTF-8"));
 		return Outcome.CONTINUE;
 	}
-	
+
 	private String xml2json(String xmlResp) throws Exception {
-		return xsltTransformer.transform("classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl", new StreamSource(new StringReader(xmlResp)));
+		return transform(
+				"classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl",
+				new StreamSource(new StringReader(xmlResp)));
+	}
+
+	private String transform(String ss, Source source) throws Exception {
+		return xsltTransformer.transform(ss, source,
+				router.getResourceResolver());
 	}
 
 	private StreamSource getRequestXMLSource(Exchange exc) throws Exception {
 		Request req = new Request(exc.getRequest());
-		
+
 		String res = req.toXml();
-		log.debug("http-xml: " + res);		
-		
+		log.debug("http-xml: " + res);
+
 		return new StreamSource(new StringReader(res));
 	}
 
@@ -148,7 +157,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().getHeader().setSOAPAction(mapping.soapAction);
 		setContentType(exc.getRequest().getHeader());
-		
+
 		exc.setProperty("mapping", mapping);
 		setServiceEndpoint(exc, mapping);
 	}
@@ -164,27 +173,29 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	}
 
 	private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {
-		exc.getRequest().setUri(getURI(exc).replaceAll(mapping.regex, mapping.soapURI));		
-		
-		String newDestination = getNewDestination(exc);	
+		exc.getRequest().setUri(
+				getURI(exc).replaceAll(mapping.regex, mapping.soapURI));
+
+		String newDestination = getNewDestination(exc);
 		exc.getDestinations().clear();
 		exc.getDestinations().add(newDestination);
-		
-		log.debug("destination set to: "+ newDestination);
+
+		log.debug("destination set to: " + newDestination);
 	}
 
 	private String getNewDestination(AbstractExchange exc) {
-		return "http://"+((ServiceProxy)exc.getRule()).getTargetHost()+
-		   ":"+((ServiceProxy)exc.getRule()).getTargetPort()+
-		   exc.getRequest().getUri();
+		return "http://" + ((ServiceProxy) exc.getRule()).getTargetHost() + ":"
+				+ ((ServiceProxy) exc.getRule()).getTargetPort()
+				+ exc.getRequest().getUri();
 	}
 
-	private void transformAndReplaceBody(Message msg, String ss, Source src) throws Exception {
-		String soapEnv = xsltTransformer.transform(ss, src);
+	private void transformAndReplaceBody(Message msg, String ss, Source src)
+			throws Exception {
+		String soapEnv = transform(ss, src);
 		log.debug("soap-env: " + soapEnv);
 		msg.setBodyContent(soapEnv.getBytes("UTF-8"));
 	}
-		
+
 	private String getURI(AbstractExchange exc) {
 		return exc.getRequest().getUri();
 	}
@@ -209,12 +220,12 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 		out.writeEndElement();
 	}
-	
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
 			throws Exception {
 		if (token.getLocalName().equals("mapping")) {
-			mappings.add((Mapping)new Mapping().parse(token));
+			mappings.add((Mapping) new Mapping().parse(token));
 		} else {
 			super.parseChildren(token, child);
 		}

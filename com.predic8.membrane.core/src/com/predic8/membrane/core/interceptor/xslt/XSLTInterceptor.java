@@ -18,18 +18,17 @@ import javax.xml.transform.stream.StreamSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.*;
 
-public class XSLTInterceptor extends AbstractInterceptor {	
-	
+public class XSLTInterceptor extends AbstractInterceptor {
+
 	private String xslt;
 	private XSLTTransformer xsltTransformer = new XSLTTransformer();
-	
+
 	public XSLTInterceptor() {
 		name = "XSLT Transformer";
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		transformMsg(exc.getRequest(), xslt);
@@ -43,10 +42,13 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	}
 
 	private void transformMsg(Message msg, String ss) throws Exception {
-		if ( msg.isBodyEmpty() ) return;
-		msg.setBodyContent(xsltTransformer.transform(ss, new StreamSource(msg.getBodyAsStream())).getBytes("UTF-8"));
+		if (msg.isBodyEmpty())
+			return;
+		msg.setBodyContent(xsltTransformer.transform(ss,
+				new StreamSource(msg.getBodyAsStream()),
+				router.getResourceResolver()).getBytes("UTF-8"));
 	}
-	
+
 	public String getXslt() {
 		return xslt;
 	}
@@ -58,18 +60,18 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
-		
+
 		out.writeStartElement("transform");
-		
-		out.writeAttribute("xslt", xslt);		
-		
+
+		out.writeAttribute("xslt", xslt);
+
 		out.writeEndElement();
 	}
-	
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		
+
 		xslt = token.getAttributeValue("", "xslt");
 	}
-	
+
 }

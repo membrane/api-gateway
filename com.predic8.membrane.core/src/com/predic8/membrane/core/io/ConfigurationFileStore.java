@@ -13,16 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.io;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.*;
 
-import com.predic8.membrane.core.Proxies;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.*;
 
 public class ConfigurationFileStore implements ConfigurationStore {
 
@@ -37,15 +32,18 @@ public class ConfigurationFileStore implements ConfigurationStore {
 	 */
 	public Proxies read(String fileName) throws Exception {
 
-		if (fileName.startsWith("classpath:"))
-			return read(getClass().getResourceAsStream(fileName.substring(10)));
-		else
-			return read(new FileInputStream(fileName));
+		/*
+		 * if (fileName.startsWith("classpath:")) return
+		 * read(getClass().getResourceAsStream(fileName.substring(10))); else
+		 * return read(new FileInputStream(fileName));
+		 */
+		return read(router.getResourceResolver().resolve(fileName));
 
 	}
 
 	private Proxies read(InputStream is) throws Exception {
-		XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(is, Constants.UTF_8);
+		XMLStreamReader reader = XMLInputFactory.newInstance()
+				.createXMLStreamReader(is, Constants.UTF_8);
 
 		return (Proxies) new Proxies(router).parse(reader);
 	}
@@ -58,5 +56,4 @@ public class ConfigurationFileStore implements ConfigurationStore {
 		return router;
 	}
 
-	
 }
