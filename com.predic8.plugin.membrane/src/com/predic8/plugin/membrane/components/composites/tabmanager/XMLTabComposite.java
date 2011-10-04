@@ -25,11 +25,11 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.plugin.membrane.listeners.HighligtingLineStyleListner;
 
-public class SOAPTabComposite extends BodyTextTabComposite {
+public class XMLTabComposite extends BodyTextTabComposite {
 
-	public static final String TAB_TITLE = "SOAP";
+	public static final String TAB_TITLE = "XML";
 	
-	public SOAPTabComposite(TabFolder parent) {
+	public XMLTabComposite(TabFolder parent) {
 		super(parent, TAB_TITLE);
 		bodyText.addLineStyleListener(new HighligtingLineStyleListner());
 	}

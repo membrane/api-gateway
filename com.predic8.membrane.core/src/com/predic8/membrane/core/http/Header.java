@@ -268,17 +268,11 @@ public class Header {
 	//TODO header value is a complex unit
 	public String getCharset() {
 		if (getContentType() == null)
-			return Constants.ISO_8859_1;
+			return Constants.UTF_8;
 		
 		String charset = getMediaTypeParameters().get("charset");
-		if ( charset == null ) return Constants.ISO_8859_1;
+		if ( charset == null ) return Constants.UTF_8;
 		return charset;
-		
-		/*int idx = type.indexOf("charset=");
-		if (idx < 0)
-			return Constants.ISO_8859_1;
-		
-		return type.substring(idx + 8);*/
 	}
 	
 	private Map<String, String> getMediaTypeParameters() {

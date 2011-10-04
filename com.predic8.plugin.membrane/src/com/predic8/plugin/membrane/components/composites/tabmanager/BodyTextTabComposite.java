@@ -76,10 +76,10 @@ public class BodyTextTabComposite extends BodyTabComposite {
 		
 		try {
 			if (msg.isGzip()) {
-				displayData(ByteUtil.getByteArrayData(new GZIPInputStream(msg.getBodyAsStream())), msg.getHeader().getContentEncoding());
+				displayData(ByteUtil.getByteArrayData(new GZIPInputStream(msg.getBodyAsStream())), msg.getHeader().getCharset());
 			    return;
 			} else if (msg.isDeflate()) {
-				displayData(ByteUtil.getDecompressedData(bodyContent), msg.getHeader().getContentEncoding());
+				displayData(ByteUtil.getDecompressedData(bodyContent), msg.getHeader().getCharset());
 			    return;
 			}
 		} catch (Exception e) {
@@ -87,7 +87,7 @@ public class BodyTextTabComposite extends BodyTabComposite {
 		}
 	
 		try {
-			displayData(bodyContent, msg.getHeader().getContentEncoding());
+			displayData(bodyContent, msg.getHeader().getCharset());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

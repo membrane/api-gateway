@@ -41,7 +41,7 @@ import com.predic8.plugin.membrane.components.composites.tabmanager.JSONTabCompo
 import com.predic8.plugin.membrane.components.composites.tabmanager.JavaScriptTabComposite;
 import com.predic8.plugin.membrane.components.composites.tabmanager.NullBodyTabComposite;
 import com.predic8.plugin.membrane.components.composites.tabmanager.RawTabComposite;
-import com.predic8.plugin.membrane.components.composites.tabmanager.SOAPTabComposite;
+import com.predic8.plugin.membrane.components.composites.tabmanager.XMLTabComposite;
 import com.predic8.plugin.membrane.viewcomponents.BaseComp;
 
 public class MessageTabManager {
@@ -124,7 +124,7 @@ public class MessageTabManager {
 		bodyTabs.add(new CSSTabComposite(folder));
 		bodyTabs.add(new JavaScriptTabComposite(folder));
 		bodyTabs.add(new HTMLTabComposite(folder));
-		bodyTabs.add(new SOAPTabComposite(folder));
+		bodyTabs.add(new XMLTabComposite(folder));
 		bodyTabs.add(new JSONTabComposite(folder));
 		bodyTabs.add(new ImageTabComposite(folder));
 		bodyTabs.add(new ContentTabComposite(folder));
