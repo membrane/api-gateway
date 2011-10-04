@@ -93,7 +93,7 @@ public class ExchangesView extends TableViewPart implements IExchangesStoreListe
 
 	@Override
 	protected String[] getTableColumnTitles() {
-		return new String[] {"Status-Code", "Time", "Rule", "Method", "Path", "Client", "Server", "Request Content-Type", "Request Content Length", "Response Content Type", "Response Content Length", "Duration" };
+		return new String[] {"Status-Code", "Time", "Proxy", "Method", "Path", "Client", "Server", "Request Content-Type", "Request Content Length", "Response Content Type", "Response Content Length", "Duration" };
 	}
 	
 	@Override
