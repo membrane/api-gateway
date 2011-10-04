@@ -122,14 +122,14 @@ public class ExchangesViewLabelProvider extends LabelProvider implements ITableL
 			
 		case 7:
 			if (exc.getRequest().isGETRequest())
-				return Constants.N_A;
+				return Constants.EMPTY_STRING;
 			
 			return exc.getRequestContentType();
 
 		case 8:
 			if (exc.getRequestContentLength() == -1) {
 				if (exc.getRequest().isGETRequest())
-					return Constants.N_A;
+					return Constants.EMPTY_STRING;
 				
 				return Constants.UNKNOWN;
 			}
