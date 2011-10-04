@@ -38,7 +38,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor {
         configurer.setShowCoolBar(true);
         configurer.setShowMenuBar(true);
         configurer.setShowStatusLine(false);
-        configurer.setTitle("Membrane SOAP Monitor");
+        configurer.setTitle("Membrane Monitor");
     }
     
     @Override
