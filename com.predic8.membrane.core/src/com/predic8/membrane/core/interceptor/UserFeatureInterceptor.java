@@ -14,7 +14,7 @@
 package com.predic8.membrane.core.interceptor;
 
 import java.net.URL;
-import java.util.*;
+import java.util.Stack;
 
 import org.apache.commons.logging.*;
 
@@ -33,7 +33,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 
-		Deque<Interceptor> stack = new LinkedList<Interceptor>();
+		Stack<Interceptor> stack = new Stack<Interceptor>();
 
 		Outcome outcome = invokeInterceptors(exc, stack);
 		Rule predecessorRule = exc.getRule();
@@ -96,10 +96,10 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 		return router.getRuleManager().getRuleByName(dest.substring(8));
 	}
 
-	private Outcome invokeInterceptors(Exchange exc, Deque<Interceptor> stack)
+	private Outcome invokeInterceptors(Exchange exc, Stack<Interceptor> stack)
 			throws Exception {
 		for (Interceptor i : exc.getRule().getInterceptors()) {
-			stack.addFirst(i);
+			stack.push(i);
 			if (i.getFlow() == Flow.RESPONSE)
 				continue;
 
@@ -113,7 +113,10 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	}
 
 	private Interceptor getInterceptor(Exchange exc) {
-		return ((Queue<Interceptor>) exc.getProperty("interceptorStack"))
-				.poll();
+		Stack<Interceptor> stack = (Stack<Interceptor>) exc
+				.getProperty("interceptorStack");
+		if (stack.empty())
+			return null;
+		return stack.pop();
 	}
 }
