@@ -21,7 +21,7 @@ import javax.xml.stream.*;
 import org.apache.commons.codec.binary.Base64;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.EmptyComplexElement;
+import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
@@ -122,7 +122,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	protected void parseChildren(XMLStreamReader token, String child)
 			throws Exception {
 		if (token.getLocalName().equals("user")) {
-			EmptyComplexElement user = new EmptyComplexElement();
+			GenericComplexElement user = new GenericComplexElement();
 			user.parse(token);
 			users.put(user.getAttribute("name"), user.getAttribute("password"));
 		} else {

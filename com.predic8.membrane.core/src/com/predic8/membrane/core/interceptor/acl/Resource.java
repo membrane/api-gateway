@@ -56,7 +56,7 @@ public class Resource extends AbstractConfigElement {
 		} else if (Any.ELEMENT_NAME.equals(child)) {
 			clientAddresses.add(((Any) (new Any(router)).parse(token)));
 		} else if ("clients".equals(child)) {
-			new EmptyComplexElement(this).parse(token);
+			new GenericComplexElement(this).parse(token);
 		}
 	}
 	

@@ -2,32 +2,36 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import java.util.*;
 
+import javax.xml.stream.*;
+
 import org.apache.commons.logging.*;
 
-public class ClusterManager {
+import com.predic8.membrane.core.config.*;
+
+public class ClusterManager extends AbstractXmlElement {
 	private static Log log = LogFactory.getLog(ClusterManager.class.getName());
-	
+
 	Map<String, Cluster> clusters = new Hashtable<String, Cluster>();
 	long timeout = 0;
-	long sessionTimeout = 2*60*60000;
-	
+	long sessionTimeout = 2 * 60 * 60000;
+
 	public ClusterManager() {
 		new SessionCleanupThread(clusters, sessionTimeout).start();
 		getCluster("Default");
 	}
-	
+
 	public void up(String cName, String host, int port) {
 		getCluster(cName).nodeUp(new Node(host, port));
 	}
-	
+
 	public void down(String cName, String host, int port) {
 		getCluster(cName).nodeDown(new Node(host, port));
-	}	
+	}
 
 	public void takeout(String cName, String host, int port) {
 		getCluster(cName).nodeTakeOut(new Node(host, port));
-	}	
-	
+	}
+
 	public List<Node> getAllNodesByCluster(String cName) {
 		return getCluster(cName).getAllNodes(timeout);
 	}
@@ -39,10 +43,10 @@ public class ClusterManager {
 	public void addSession2Cluster(String sessionId, String cName, Node n) {
 		getCluster(cName).addSession(sessionId, n);
 	}
-	
+
 	private Cluster getCluster(String name) {
-		if ( !clusters.containsKey(name) ) {
-			log.debug("creating cluster with name ["+name+"]");
+		if (!clusters.containsKey(name)) {
+			log.debug("creating cluster with name [" + name + "]");
 			clusters.put(name, new Cluster(name));
 		}
 		return clusters.get(name);
@@ -52,15 +56,59 @@ public class ClusterManager {
 		return new LinkedList<Cluster>(clusters.values());
 	}
 
-	public boolean addCluster(String name) {		
-		if ( clusters.containsKey(name) ) return false;
-		log.debug("adding cluster with name ["+name+"]");
+	public boolean addCluster(String name) {
+		if (clusters.containsKey(name))
+			return false;
+		log.debug("adding cluster with name [" + name + "]");
 		clusters.put(name, new Cluster(name));
 		return true;
 	}
 
 	public void removeNode(String cluster, String host, int port) {
-		getCluster(cluster).removeNode(new Node(host, port));		
+		getCluster(cluster).removeNode(new Node(host, port));
+	}
+
+	@Override
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws Exception {
+		if (token.getLocalName().equals("cluster")) {
+			final GenericComplexElement c = new GenericComplexElement();
+			c.setChildParser(new AbstractXmlElement() {
+				@Override
+				protected void parseChildren(XMLStreamReader token, String child)
+						throws Exception {
+					if (token.getLocalName().equals("node")) {
+						GenericComplexElement n = new GenericComplexElement();
+						n.parse(token);
+						up(c.getAttribute("name"), n.getAttribute("host"),
+								Integer.parseInt(n.getAttribute("port")));
+					} else {
+						super.parseChildren(token, child);
+					}
+				}
+			});
+			c.parse(token);
+		} else {
+			super.parseChildren(token, child);
+		}
+	}
+
+	@Override
+	public void write(XMLStreamWriter out) throws XMLStreamException {
+		out.writeStartElement("clusters");
+		for (Cluster c : clusters.values()) {
+			out.writeStartElement("cluster");
+			out.writeAttribute("name", c.getName());
+
+			for (Node n : c.getAllNodes(0)) {
+				out.writeStartElement("node");
+				out.writeAttribute("host", n.getHost());
+				out.writeAttribute("port", "" + n.getPort());
+				out.writeEndElement();
+			}
+			out.writeEndElement();
+		}
+		out.writeEndElement();
 	}
 
 	public long getTimeout() {
@@ -72,7 +120,7 @@ public class ClusterManager {
 	}
 
 	public Node getNode(String cluster, String host, int port) {
-		return getCluster(cluster).getNode(new Node(host,port));		
+		return getCluster(cluster).getNode(new Node(host, port));
 	}
 
 	public Map<String, Session> getSessions(String cluster) {
@@ -90,6 +138,5 @@ public class ClusterManager {
 	public void setSessionTimeout(long sessionTimeout) {
 		this.sessionTimeout = sessionTimeout;
 	}
-	
-	
+
 }

@@ -13,26 +13,25 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.io.InputStream;
 import java.net.*;
-import java.util.*;
+import java.util.List;
 
 import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.transport.http.HostColonPort;
 import com.predic8.membrane.core.util.HttpUtil;
 
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(LoadBalancingInterceptor.class.getName());
+	private static Log log = LogFactory.getLog(LoadBalancingInterceptor.class
+			.getName());
 
-	private List<Node> nodes = new LinkedList<Node>();;
+	// private List<Node> nodes = new LinkedList<Node>();
 
 	private DispatchingStrategy strategy = new RoundRobinStrategy();
 
@@ -81,7 +80,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		log.debug("handleResponse");
 
-		if (sessionIdExtractor != null ) {
+		if (sessionIdExtractor != null) {
 			String sessionId = getSessionId(exc.getResponse());
 
 			if (sessionId != null) {
@@ -114,15 +113,18 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	private Node getDispatchedNode(Message msg) throws Exception {
 		String sessionId;
-		if (sessionIdExtractor == null || (sessionId = getSessionId(msg)) == null) {
+		if (sessionIdExtractor == null
+				|| (sessionId = getSessionId(msg)) == null) {
 			log.debug("no session id found.");
 			return strategy.dispatch(this);
 		}
 
 		Session s = getSession(sessionId);
-		if (s == null ) log.debug("no session found for id "+sessionId);		
-		if ( s == null || s.getNode().isDown() ) {
-			log.debug("assigning new node for session id "+sessionId+(s!=null?" (old node was "+s.getNode()+")":""));
+		if (s == null)
+			log.debug("no session found for id " + sessionId);
+		if (s == null || s.getNode().isDown()) {
+			log.debug("assigning new node for session id " + sessionId
+					+ (s != null ? " (old node was " + s.getNode() + ")" : ""));
 			router.getClusterManager().addSession2Cluster(sessionId, "Default",
 					strategy.dispatch(this));
 		}
@@ -164,20 +166,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 
 	public List<Node> getEndpoints() {
-		if (router.getClusterManager() != null) {
-			log.debug("using endpoints from cluster manager");
-			return router.getClusterManager().getAvailableNodesByCluster(
-					"Default");
-		}
-		return nodes;
-	}
-
-	public void setEndpoints(List<String> endpoints) {
-		this.nodes = new LinkedList<Node>();
-		for (String s : endpoints) {
-			this.nodes.add(new Node(new HostColonPort(s).host,
-					new HostColonPort(s).port));
-		}
+		return router.getClusterManager().getAvailableNodesByCluster("Default");
 	}
 
 	public AbstractSessionIdExtractor getSessionIdExtractor() {
@@ -202,26 +191,18 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			throws XMLStreamException {
 
 		out.writeStartElement("balancer");
-		
+
 		if (sessionIdExtractor != null) {
 			sessionIdExtractor.write(out);
 		}
-		
-		if (!nodes.isEmpty()) {
-			out.writeStartElement("nodes");
 
-			for (Node n : nodes) {
-				n.write(out);
-			}
+		router.getClusterManager().write(out);
 
-			out.writeEndElement();
-		}
-		
-		((AbstractXmlElement)strategy).write(out);
+		((AbstractXmlElement) strategy).write(out);
 
 		out.writeEndElement();
 	}
-	
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
 			throws Exception {
@@ -231,12 +212,8 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		} else if (token.getLocalName().equals("jSessionIdExtractor")) {
 			sessionIdExtractor = new JSESSIONIDExtractor();
 			sessionIdExtractor.parse(token);
-		} else if (token.getLocalName().equals("nodes")) {
-			new EmptyComplexElement(this).parse(token);
-		} else if (token.getLocalName().equals("node")) {
-			Node n = new Node();
-			n.parse(token);
-			nodes.add(n);
+		} else if (token.getLocalName().equals("clusters")) {
+			router.getClusterManager().parse(token);
 		} else if (token.getLocalName().equals("byThreadStrategy")) {
 			parseByThreadStrategy(token);
 		} else if (token.getLocalName().equals("roundRobinStrategy")) {
@@ -246,8 +223,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		}
 	}
 
-	private void parseByThreadStrategy(XMLStreamReader token)
-			throws Exception {
+	private void parseByThreadStrategy(XMLStreamReader token) throws Exception {
 		ByThreadStrategy byTStrat = new ByThreadStrategy();
 		byTStrat.parse(token);
 		strategy = byTStrat;
