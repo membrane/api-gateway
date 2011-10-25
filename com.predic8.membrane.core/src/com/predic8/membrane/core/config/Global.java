@@ -61,12 +61,12 @@ public class Global extends AbstractConfigElement {
 			throws Exception {
 
 		if ("router".equals(child)) {
-			EmptyComplexElement r = new EmptyComplexElement();
+			GenericComplexElement r = new GenericComplexElement();
 			r.parse(token);
 			values.put(ADJ_HOST_HEADER, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_ADJ_HOST_HEADER)));
 			values.put(ADJ_CONT_LENGTH, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_ADJ_CONTENT_LENGTH)));
 		} else if ("monitor-gui".equals(child)) {
-			EmptyComplexElement r = new EmptyComplexElement();
+			GenericComplexElement r = new GenericComplexElement();
 			r.parse(token);
 			values.put(TRACK_EXCHANGE, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_AUTO_TRACK)));
 			values.put(INDENT_MSG, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_INDENT_MSG)));
