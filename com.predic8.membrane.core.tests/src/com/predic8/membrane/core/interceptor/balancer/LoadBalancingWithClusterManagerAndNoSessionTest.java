@@ -13,13 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.LinkedList;
-
 import org.junit.Before;
 
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
-public class LoadBalancingWithClusterManagerAndNoSessionTest extends LoadBalancingInterceptorTest{
+public class LoadBalancingWithClusterManagerAndNoSessionTest extends
+		LoadBalancingInterceptorTest {
 
 	@Before
 	public void setUp() throws Exception {
@@ -29,7 +28,6 @@ public class LoadBalancingWithClusterManagerAndNoSessionTest extends LoadBalanci
 		cm.up("Default", "localhost", 3000);
 		balancer.setClusterManager(cm);
 		balancingInterceptor.setRouter(balancer);
-		balancingInterceptor.setEndpoints(new LinkedList<String>());
 	}
 
 }

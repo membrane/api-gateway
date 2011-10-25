@@ -124,9 +124,14 @@ public class CustomRulesConfigurationTest {
 				"/proxies/serviceProxy/balancer/xmlSessionIdExtractor/@localName",
 				"session");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/balancer/nodes/node/@host", "localhost");
+				"/proxies/serviceProxy/balancer/clusters/cluster/@name",
+				"Default");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/balancer/nodes/node/@port", "8080");
+				"/proxies/serviceProxy/balancer/clusters/cluster/node/@host",
+				"localhost");
+		assertAttribute(w.toString(),
+				"/proxies/serviceProxy/balancer/clusters/cluster/node/@port",
+				"8080");
 		assertAttribute(
 				w.toString(),
 				"/proxies/serviceProxy/balancer/byThreadStrategy/@maxNumberOfThreadsPerEndpoint",

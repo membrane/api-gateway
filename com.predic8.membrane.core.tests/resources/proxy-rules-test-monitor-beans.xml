@@ -144,12 +144,6 @@
 	<bean id="roundRobinBalancer"
 		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
 		<property name="displayName" value="roundRobinBalancer" />
-		<property name="endpoints">
-			<list>
-				<value>www.thomas-bayer.com:80</value>
-				<value>www.thomas-bayer.com</value>
-			</list>
-		</property>
 		<property name="dispatchingStrategy">
 			<bean
 				class="com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy" />
@@ -159,12 +153,6 @@
 	<bean id="byThreadBalancer"
 		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
 		<property name="displayName" value="byThreadBalancer" />
-		<property name="endpoints">
-			<list>
-				<value>www.thomas-bayer.com:80</value>
-				<value>www.thomas-bayer.com</value>
-			</list>
-		</property>
 		<property name="dispatchingStrategy">
 			<bean
 				class="com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy">

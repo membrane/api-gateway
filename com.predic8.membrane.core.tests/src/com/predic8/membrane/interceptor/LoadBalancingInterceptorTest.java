@@ -16,25 +16,18 @@ package com.predic8.membrane.interceptor;
 import static junit.framework.Assert.assertEquals;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.methods.*;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 
 public class LoadBalancingInterceptorTest {
@@ -63,24 +56,27 @@ public class LoadBalancingInterceptorTest {
 
 		service1 = new HttpRouter();
 		mockInterceptor1 = new DummyWebServiceInterceptor();
-		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 2000), "thomas-bayer.com", 80);
+		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
+				"POST", ".*", 2000), "thomas-bayer.com", 80);
 		sp1.getInterceptors().add(mockInterceptor1);
 		service1.getRuleManager().addRuleIfNew(sp1);
 
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
-		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3000), "thomas-bayer.com", 80);
+		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost",
+				"POST", ".*", 3000), "thomas-bayer.com", 80);
 		sp2.getInterceptors().add(mockInterceptor2);
 		service2.getRuleManager().addRuleIfNew(sp2);
 
-		balancingInterceptor = new LoadBalancingInterceptor();
-		List<String> endpoints = new ArrayList<String>();
-		endpoints.add(endPoint1);
-		endpoints.add(endPoint2);
-		balancingInterceptor.setEndpoints(endpoints);
+		ClusterManager cm = new ClusterManager();
+		cm.up("Default", "localhost", 2000);
+		cm.up("Default", "localhost", 3000);
 
 		balancer = new HttpRouter();
-		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 7000), "thomas-bayer.com", 80);
+		balancer.setClusterManager(cm);
+		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",
+				"POST", ".*", 7000), "thomas-bayer.com", 80);
+		balancingInterceptor = new LoadBalancingInterceptor();
 		sp3.getInterceptors().add(balancingInterceptor);
 		balancer.getRuleManager().addRuleIfNew(sp3);
 		balancingInterceptor.setRouter(balancer);
@@ -97,19 +93,26 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testGetDestinationURLWithHostname() throws MalformedURLException {
-		doTestGetDestinationURL("http://localhost/axis2/services/BLZService?wsdl", "http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
+	public void testGetDestinationURLWithHostname()
+			throws MalformedURLException {
+		doTestGetDestinationURL(
+				"http://localhost/axis2/services/BLZService?wsdl",
+				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 	}
 
 	@Test
-	public void testGetDestinationURLWithoutHostname() throws MalformedURLException {
-		doTestGetDestinationURL("/axis2/services/BLZService?wsdl", "http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
+	public void testGetDestinationURLWithoutHostname()
+			throws MalformedURLException {
+		doTestGetDestinationURL("/axis2/services/BLZService?wsdl",
+				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 	}
 
-	private void doTestGetDestinationURL(String requestUri, String expectedUri) throws MalformedURLException {
+	private void doTestGetDestinationURL(String requestUri, String expectedUri)
+			throws MalformedURLException {
 		Exchange exc = new Exchange();
 		exc.setOriginalRequestUri(requestUri);
-		assertEquals(expectedUri, balancingInterceptor.getDestinationURL(new Node("thomas-bayer.com",80), exc));
+		assertEquals(expectedUri, balancingInterceptor.getDestinationURL(
+				new Node("thomas-bayer.com", 80), exc));
 	}
 
 	@Test
@@ -117,12 +120,13 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
+				HttpVersion.HTTP_1_1);
 
 		PostMethod vari = getPostMethod();
 		int status = client.executeMethod(vari);
 		System.out.println(new String(vari.getResponseBody()));
-		
+
 		assertEquals(200, status);
 		assertEquals(1, mockInterceptor1.counter);
 		assertEquals(0, mockInterceptor2.counter);
@@ -141,8 +145,10 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	private PostMethod getPostMethod() {
-		PostMethod post = new PostMethod("http://localhost:7000/axis2/services/BLZService");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
+		PostMethod post = new PostMethod(
+				"http://localhost:7000/axis2/services/BLZService");
+		post.setRequestEntity(new InputStreamRequestEntity(this.getClass()
+				.getResourceAsStream("/getBank.xml")));
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
 
@@ -154,7 +160,8 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
+		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
+				HttpVersion.HTTP_1_1);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
 		assertEquals(1, mockInterceptor1.counter);
@@ -166,9 +173,9 @@ public class LoadBalancingInterceptorTest {
 
 		service1.getTransport().closeAll();
 
-		// TODO may be close connection 
+		// TODO may be close connection
 		Thread.sleep(32000);
-		
+
 		assertEquals(200, client.executeMethod(getPostMethod()));
 		assertEquals(1, mockInterceptor1.counter);
 		assertEquals(2, mockInterceptor2.counter);

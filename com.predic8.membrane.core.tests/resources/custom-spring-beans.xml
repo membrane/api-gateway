@@ -31,9 +31,12 @@
 		<webServer docBase="docBase" />
 		<balancer>
 			<xmlSessionIdExtractor namespace="http://chat.predic8.com/" localName="session" />
-			<nodes>
-				<node host="localhost" port="8080"/>
-			</nodes>
+			<!-- <clusters>
+				<cluster name="Default">
+					<node host="localhost" port="8080"/>
+				</cluster>				
+			</clusters>
+			-->
 			<byThreadStrategy maxNumberOfThreadsPerEndpoint="10" retryTimeOnBusy="1000" />
 		</balancer>
 		<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
