@@ -16,6 +16,9 @@ jQuery (See JQUERY-LICENSE.txt),
 jQuery UI (See JQUERYUI-LICENSE.txt),
 jQuery.validationEngine v2.0
 
+BSD 2-Clause License:
+xml2json.xsl (See xml2json-LICENSE.txt)
+
 
 
 
