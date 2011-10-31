@@ -1,7 +1,7 @@
 @echo off
 if not "%MEMBRANE_HOME%" == "" goto homeSet
-set MEMBRANE_HOME=%cd%\..\..
-echo %MEMBRANE_HOME%
+set "MEMBRANE_HOME=%cd%\..\.."
+echo "%MEMBRANE_HOME%"
 if exist "%MEMBRANE_HOME%\memrouter.bat" goto homeOk
 
 :homeSet
@@ -11,8 +11,8 @@ echo the directory where you have extracted the Membrane software.
 exit
 
 :homeOk
-set CLASSPATH=%MEMBRANE_HOME%
-set CLASSPATH=%MEMBRANE_HOME%/conf
-set CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar
+set "CLASSPATH=%MEMBRANE_HOME%"
+set "CLASSPATH=%MEMBRANE_HOME%/conf"
+set "CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar"
 echo Membrane Router running...
-java  -classpath %CLASSPATH% com.predic8.membrane.core.Starter -c file-exchangestore.proxies.xml -b file-exchangestore-beans.xml
+java  -classpath "%CLASSPATH%" com.predic8.membrane.core.Starter -c file-exchangestore.proxies.xml -b file-exchangestore-beans.xml
