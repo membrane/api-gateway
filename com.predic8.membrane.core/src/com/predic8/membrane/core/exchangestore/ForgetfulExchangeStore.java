@@ -20,7 +20,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.statistics.ProxyStatistics;
+import com.predic8.membrane.core.rules.StatisticCollector;
 
 public class ForgetfulExchangeStore implements ExchangeStore {
 
@@ -40,7 +40,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 		return 0;
 	}
 
-	public ProxyStatistics getStatistics(RuleKey ruleKey) {
+	public StatisticCollector getStatistics(RuleKey ruleKey) {
 		return null;
 	}
 

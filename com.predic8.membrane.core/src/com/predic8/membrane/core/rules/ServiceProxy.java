@@ -19,7 +19,7 @@ import javax.xml.stream.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
 
-public class ServiceProxy extends AbstractRule {
+public class ServiceProxy extends AbstractProxy {
 
 	public static final String ELEMENT_NAME = "serviceProxy";
 	

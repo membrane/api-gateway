@@ -270,18 +270,27 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createStatusCodesTable(Map<Integer, Integer> statusCodes) throws Exception {
+	protected void createStatusCodesTable(Map<Integer, StatisticCollector> statusCodes) throws Exception {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
-					createThs("Status Code", "Count");
+					createThs("Status Code", "Count", "Minimum Time", "Maximum Time", "Average Time", 
+							"Bytes Sent", "Bytes Received");
 			    end();
 			end();
 			tbody();
 				synchronized (statusCodes) {
-					for (Map.Entry<Integer, Integer> codes : statusCodes.entrySet() ) {
+					for (Map.Entry<Integer, StatisticCollector> codes : statusCodes.entrySet() ) {
+						StatisticCollector statisticCollector = codes.getValue();
 						tr();
-							createTds(""+codes.getKey(), ""+codes.getValue());
+							createTds(
+									""+codes.getKey(), 
+									""+statisticCollector.getCount(),
+									""+statisticCollector.getMinTime(),
+									""+statisticCollector.getMaxTime(),
+									""+statisticCollector.getAvgTime(),
+									""+statisticCollector.getBytesSent(),
+									""+statisticCollector.getBytesReceived());
 						end();				
 					}					
 				}

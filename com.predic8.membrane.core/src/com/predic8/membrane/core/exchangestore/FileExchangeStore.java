@@ -30,7 +30,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.statistics.ProxyStatistics;
+import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class FileExchangeStore extends AbstractExchangeStore {
@@ -166,8 +166,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		this.raw = raw;
 	}
 
-	public ProxyStatistics getStatistics(RuleKey ruleKey) {
-
+	public StatisticCollector getStatistics(RuleKey ruleKey) {
 		return null;
 	}
 

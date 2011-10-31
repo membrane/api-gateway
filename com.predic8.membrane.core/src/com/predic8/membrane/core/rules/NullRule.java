@@ -15,7 +15,7 @@ package com.predic8.membrane.core.rules;
 
 import javax.xml.stream.XMLStreamReader;
 
-public class NullRule extends AbstractRule {
+public class NullRule extends AbstractProxy {
 
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {

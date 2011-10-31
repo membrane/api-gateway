@@ -23,9 +23,9 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.statistics.ProxyStatistics;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
@@ -56,13 +56,13 @@ public class ProxiesViewLabelProvider extends LabelProvider implements ITableLab
 	public String getColumnText(Object element, int columnIndex) {
 		Rule rule = (Rule)element;
 		
-		ProxyStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getKey());
+		StatisticCollector statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getKey());
 		
 		switch (columnIndex) {
 		case 0:
 			return rule.toString();
 		case 1:
-			return "" + statistics.getCountTotal();
+			return "" + statistics.getCount();
 		default:
 			throw new RuntimeException("Table in proxies view  must have only 3 columns");
 		}

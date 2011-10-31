@@ -108,7 +108,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	private void updateDispatchedNode(Exchange exc) {
 		Node n = (Node) exc.getProperty("dispatchedNode");
 		n.removeThread();
-		n.addStatusCode(exc.getResponse().getStatusCode());
+		n.collectStatisticsFrom(exc);
 	}
 
 	private Node getDispatchedNode(Message msg) throws Exception {

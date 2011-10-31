@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -22,11 +21,10 @@ import java.util.Map;
 import java.util.Vector;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
-import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.statistics.ProxyStatistics;
+import com.predic8.membrane.core.rules.StatisticCollector;
 
 public class MemoryExchangeStore extends AbstractExchangeStore {
 
@@ -112,55 +110,15 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		return exchangesMap.get(ruleKey).size();
 	}
 
-	public ProxyStatistics getStatistics(RuleKey key) {
-		ProxyStatistics statistics = new ProxyStatistics();
-		statistics.setCountTotal(getNumberOfExchanges(key));
+	public StatisticCollector getStatistics(RuleKey key) {
+		StatisticCollector statistics = new StatisticCollector(false);
 		List<AbstractExchange> exchangesList = exchangesMap.get(key);
 		if (exchangesList == null || exchangesList.isEmpty())
 			return statistics;
 
-		int min = -1;
-		int max = -1;
-		long sum = 0;
-		int count = 0;
-		int errorCount = 0;
-		long bytesSent = 0;
-		long bytesReceived = 0;
+		for (int i = 0; i < exchangesList.size(); i++)
+			statistics.collectFrom(exchangesList.get(i));
 		
-		
-		for (int i = 0; i < exchangesList.size(); i++) {
-			if (exchangesList.get(i).getStatus() != ExchangeState.COMPLETED) {
-				if (exchangesList.get(i).getStatus() == ExchangeState.FAILED)
-					errorCount++;
-				continue;
-			}
-			count++;
-			int diff = (int) (exchangesList.get(i).getTimeResSent() - exchangesList.get(i).getTimeReqSent());
-			sum += diff;
-			if (min < 0 || diff < min) {
-				min = diff;
-			}
-
-			if (diff > max) {
-				max = diff;
-			}
-			
-			try {
-				bytesSent += exchangesList.get(i).getRequest().getBody().getLength();			
-				bytesReceived += exchangesList.get(i).getResponse().getBody().getLength();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-
-		if (count == 0)
-			count++;
-
-		statistics.setMin(min);
-		statistics.setMax(max);
-		statistics.setAvg(sum / count);
-		statistics.setBytesSent(bytesSent);
-		statistics.setBytesReceived(bytesReceived);
 		return statistics;
 	}
 

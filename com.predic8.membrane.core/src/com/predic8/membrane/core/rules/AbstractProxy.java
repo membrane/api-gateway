@@ -22,6 +22,7 @@ import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
@@ -38,9 +39,9 @@ import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 
-public abstract class AbstractRule extends AbstractConfigElement implements Rule {
+public abstract class AbstractProxy extends AbstractConfigElement implements Rule {
 
-	private static Log log = LogFactory.getLog(AbstractRule.class
+	private static Log log = LogFactory.getLog(AbstractProxy.class
 			.getName());
 
 	protected String name = ""; 
@@ -62,9 +63,9 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 	protected String localHost;
 
 	/** 
-	 * Map<Status Code, Count>
+	 * Map<Status Code, StatisticCollector>
 	 */
-	private Map<Integer, Integer> statusCodes = new Hashtable<Integer, Integer>();
+	private Map<Integer, StatisticCollector> statusCodes = new Hashtable<Integer, StatisticCollector>();
 	
 	private class InOutElement extends AbstractXmlElement {
 		private Interceptor.Flow flow;
@@ -84,11 +85,11 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 		}
 	}
 	
-	public AbstractRule() {
+	public AbstractProxy() {
 		super(null);
 	}
 	
-	public AbstractRule(RuleKey ruleKey) {
+	public AbstractProxy(RuleKey ruleKey) {
 		super(null);
 		this.key = ruleKey;
 	}
@@ -347,21 +348,22 @@ public abstract class AbstractRule extends AbstractConfigElement implements Rule
 		this.localHost = localHost;
 	}	
 	
-	public synchronized void addStatusCode(int code) {
+	public synchronized void collectStatisticsFrom(Exchange exc) {
+		int code = exc.getResponse().getStatusCode();
 		if ( !statusCodes.containsKey(code) ) {
-			statusCodes.put(code, 0);
+			statusCodes.put(code, new StatisticCollector(true));
 		}
-		statusCodes.put(code, statusCodes.get(code) + 1 );			
+		statusCodes.get(code).collectFrom(exc);			
 	}
 
-	public Map<Integer, Integer> getStatusCodes() {
+	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
 		return statusCodes;
 	}
 
 	public synchronized int getCount() {
 		int c = 0;
-		for ( int i : statusCodes.values() ) {
-			c += i;
+		for ( StatisticCollector statisticCollector : statusCodes.values() ) {
+			c += statisticCollector.getCount();
 		}			
 		return c;
 	}

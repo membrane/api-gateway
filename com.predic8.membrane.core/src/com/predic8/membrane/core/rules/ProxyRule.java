@@ -5,7 +5,7 @@ import javax.xml.stream.*;
 import com.predic8.membrane.core.*;
 
 
-public class ProxyRule extends AbstractRule {
+public class ProxyRule extends AbstractProxy {
 
 	public static final String ELEMENT_NAME = "proxy";
 	

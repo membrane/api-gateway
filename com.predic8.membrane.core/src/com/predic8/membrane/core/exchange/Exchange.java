@@ -119,4 +119,8 @@ public class Exchange extends AbstractExchange {
 	public void setTargetConnection(Connection con) {
 		targetConnection = con;
 	}
+
+	public void collectStatistics() {
+		rule.collectStatisticsFrom(this);
+	}
 }

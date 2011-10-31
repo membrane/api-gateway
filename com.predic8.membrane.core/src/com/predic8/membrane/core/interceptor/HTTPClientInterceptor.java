@@ -50,7 +50,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		} finally {
 			exc.setResponse(targetRes);
-			exc.getRule().addStatusCode(exc.getResponse().getStatusCode());
 		}						
 	}
 

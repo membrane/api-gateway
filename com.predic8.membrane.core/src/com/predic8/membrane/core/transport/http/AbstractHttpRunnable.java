@@ -133,6 +133,7 @@ public abstract class AbstractHttpRunnable implements Runnable {
 		res.write(srcOut);
 		srcOut.flush();
 		exchange.setTimeResSent(System.currentTimeMillis());
+		exchange.collectStatistics();
 	}
 
 

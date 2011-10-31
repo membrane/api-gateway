@@ -14,8 +14,6 @@
 
 package com.predic8.plugin.membrane.labelproviders;
 
-import java.text.NumberFormat;
-
 import org.eclipse.jface.viewers.ITableColorProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -23,23 +21,20 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.statistics.ProxyStatistics;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
 import com.predic8.plugin.membrane.resources.ImageKeys;
 
 
 public class ProxyStatisticsLabelProvider extends LabelProvider implements ITableLabelProvider, ITableColorProvider  {
 	
-	private NumberFormat nf = NumberFormat.getInstance();
-	
 	private Image proxyImage;
 	
 	private Image serviceProxyImage;
 	
 	public ProxyStatisticsLabelProvider() {
-		nf.setMaximumFractionDigits(3);
 		proxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_PROXY).createImage();
 		serviceProxyImage =  MembraneUIPlugin.getDefault().getImageRegistry().getDescriptor(ImageKeys.IMAGE_SERVICE_PROXY).createImage();
 	}
@@ -56,19 +51,19 @@ public class ProxyStatisticsLabelProvider extends LabelProvider implements ITabl
 	public String getColumnText(Object element, int columnIndex) {
 		Rule rule = (Rule)element;
 		
-		ProxyStatistics statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getKey());
-		String min = (statistics.getMin() < 0) ? "" : "" +statistics.getMin(); 
-		String max = (statistics.getMax() < 0) ? "" : "" +statistics.getMax(); 
-		String avg = (statistics.getAvg() < 0) ? "" : nf.format(statistics.getAvg()); 
-		String error = (statistics.getCountError() == 0) ? "" : "" + statistics.getCountError(); 
-		String bytesSent = (statistics.getBytesSent() == 0) ? "" : "" + statistics.getBytesSent(); 
-		String bytesReceived = (statistics.getBytesReceived() == 0) ? "" : "" + statistics.getBytesReceived(); 
+		StatisticCollector statistics = Router.getInstance().getExchangeStore().getStatistics(rule.getKey());
+		String min = statistics.getMinTime(); 
+		String max = statistics.getMaxTime(); 
+		String avg = statistics.getAvgTime(); 
+		String error = statistics.getErrorCount(); 
+		String bytesSent = statistics.getBytesSent(); 
+		String bytesReceived = statistics.getBytesReceived(); 
 		
 		switch (columnIndex) {
 		case 0:
 			return rule.toString();
 		case 1:
-			return "" + statistics.getCountTotal();
+			return "" + statistics.getCount();
 		case 2:
 			return min;
 		case 3:

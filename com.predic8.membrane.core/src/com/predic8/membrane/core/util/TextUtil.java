@@ -18,6 +18,7 @@ package com.predic8.membrane.core.util;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringWriter;
 
 import com.predic8.beautifier.PlainBeautifierFormatter;
@@ -35,7 +36,7 @@ public class TextUtil {
 		replace = new String[] { ".*",   ".",  "\\.",  "\\\\",   "\\(",   "\\)",   "\\+",   "\\|",  "\\^",   "\\$",    "\\%",   "\\@"   };
 	}
 	
-	public static String formatXML(InputStreamReader reader) {
+	public static String formatXML(Reader reader) {
 		StringWriter out = new StringWriter();
 		
 		try {      

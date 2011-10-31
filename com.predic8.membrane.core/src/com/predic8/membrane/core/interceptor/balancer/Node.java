@@ -5,6 +5,8 @@ import java.util.*;
 import javax.xml.stream.*;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.rules.StatisticCollector;
 
 public class Node extends AbstractXmlElement {
 
@@ -19,7 +21,7 @@ public class Node extends AbstractXmlElement {
 	private int counter;
 	private int threads;
 	
-	private Map<Integer, Integer> statusCodes = new Hashtable<Integer, Integer>();  
+	private Map<Integer, StatisticCollector> statusCodes = new Hashtable<Integer, StatisticCollector>();  
 	
 	public Node(String host, int port) {
 		this.host = host;
@@ -38,8 +40,8 @@ public class Node extends AbstractXmlElement {
 	
 	public synchronized int getLost() {
 		int received = 0;
-		for ( int i : statusCodes.values() ) {
-			received += i;
+		for ( StatisticCollector statisticCollector : statusCodes.values() ) {
+			received += statisticCollector.getCount();
 		}			
 		return counter - received - threads;
 	}
@@ -47,10 +49,10 @@ public class Node extends AbstractXmlElement {
 	public synchronized double getErrors() {
 		int successes = 0;
 		int all = 0;
-		for (Map.Entry<Integer, Integer> e: statusCodes.entrySet() ) {
-			all += e.getValue();
+		for (Map.Entry<Integer, StatisticCollector> e: statusCodes.entrySet() ) {
+			all += e.getValue().getCount();
 			if ( e.getKey() < 500 && e.getKey() > 0) {
-				successes+=e.getValue();
+				successes += e.getValue().getCount();
 			}
 		}			
 		return all == 0 ? 0: 1-(double)successes/all; 
@@ -119,11 +121,12 @@ public class Node extends AbstractXmlElement {
 		statusCodes.clear();
 	}
 
-	public synchronized void addStatusCode(int code) {
+	public synchronized void collectStatisticsFrom(Exchange exc) {
+		int code = exc.getResponse().getStatusCode();
 		if ( !statusCodes.containsKey(code) ) {
-			statusCodes.put(code, 0);
+			statusCodes.put(code, new StatisticCollector(true));
 		}
-		statusCodes.put(code, statusCodes.get(code) + 1 );			
+		statusCodes.get(code).collectFrom(exc);			
 	}
 	
 	public synchronized void addThread() {
@@ -140,7 +143,7 @@ public class Node extends AbstractXmlElement {
 		return threads;
 	}
 
-	public Map<Integer, Integer> getStatusCodes() {
+	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
 		return statusCodes;
 	}
 

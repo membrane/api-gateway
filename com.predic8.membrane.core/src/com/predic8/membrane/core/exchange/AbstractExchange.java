@@ -44,7 +44,7 @@ public abstract class AbstractExchange {
 	private String errMessage = "";
 	private Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<IExchangeViewerListener>();
 	private Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<IExchangesStoreListener>();
-	private Rule rule;
+	protected Rule rule;
 
 	protected Map<String, Object> properties = new HashMap<String, Object>();
 

@@ -34,7 +34,6 @@ Export-Package:
  com.predic8.membrane.core.exchange.accessors;uses:="com.predic8.membrane.core.exchange",
  com.predic8.membrane.core.exchangestore;
   uses:="com.predic8.membrane.core.exchange,
-   com.predic8.membrane.core.statistics,
    com.predic8.membrane.core.model,
    com.predic8.membrane.core.rules",
  com.predic8.membrane.core.http;uses:="org.apache.commons.logging",
@@ -66,7 +65,6 @@ Export-Package:
  com.predic8.membrane.core.io;uses:="com.predic8.membrane.core",
  com.predic8.membrane.core.model;uses:="com.predic8.membrane.core.http,com.predic8.membrane.core.exchange,com.predic8.membrane.core.rules",
  com.predic8.membrane.core.rules;uses:="javax.xml.stream,com.predic8.membrane.core.config",
- com.predic8.membrane.core.statistics,
  com.predic8.membrane.core.transport;uses:="com.predic8.membrane.core",
  com.predic8.membrane.core.transport.http;
   uses:="com.predic8.membrane.core.transport,

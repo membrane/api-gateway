@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.administration;
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -30,6 +31,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 public class AdminConsoleInterceptor extends AbstractInterceptor {
@@ -91,9 +93,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 					createTr("Target Port", "" + rule.getTargetPort());
 				end();
 				h2().text("Status Codes").end();
-				createStatusCodesTable(rule.getStatusCodes());
-				h2().text("Interceptors").end();
-				createInterceptorTable(rule.getInterceptors());
+				createStatusCodesTable(rule.getStatisticsByStatusCodes());
+				h2().text("Configuration").end();
+				pre().text(TextUtil.formatXML(new StringReader(rule.toXml()))).end();
 			}
 		}.createPage());
 	}
@@ -123,7 +125,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 					createTr("Listen Port",""+rule.getKey().getPort());
 				end();
 				h2().text("Status Codes").end();
-				createStatusCodesTable(rule.getStatusCodes());
+				createStatusCodesTable(rule.getStatisticsByStatusCodes());
 				h2().text("Interceptors").end();
 				createInterceptorTable(rule.getInterceptors());
 			}
@@ -252,7 +254,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 				Node n = router.getClusterManager().getNode(params.get("cluster"),
 						params.get("host"),
 						Integer.parseInt(params.get("port")));
-				createStatusCodesTable(n.getStatusCodes());
+				createStatusCodesTable(n.getStatisticsByStatusCodes());
 				p().text("Total requests: " + n.getCounter()).end();
 				p().text("Current threads: " + n.getThreads()).end();
 				p().text("Requests without responses: " + n.getLost()).end();

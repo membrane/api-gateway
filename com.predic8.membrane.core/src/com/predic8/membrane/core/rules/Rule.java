@@ -18,6 +18,7 @@ import java.util.*;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 
 public interface Rule {
@@ -56,9 +57,9 @@ public interface Rule {
 	
 	public void setLocalHost(String localHost);
 	
-	public void addStatusCode(int code);
+	public void collectStatisticsFrom(Exchange exc);
 
-	public Map<Integer, Integer> getStatusCodes();
+	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes();
 	
 	public int getCount();
 	
