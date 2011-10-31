@@ -5,13 +5,13 @@ homeSet() {
  CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
  export CLASSPATH
  echo Membrane Router running...
- java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c soap-schema-validation.proxies.xml -b ../../conf/monitor-beans.xml
+ java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c ssl-tunnel-to-server.proxies.xml -b ../../conf/monitor-beans.xml
  
 }
 
 terminate() {
 	echo "Starting of Membrane Router failed."
-	echo "Please execute this script from the MEMBRANE_HOME/examples/soap-schema-validation directory"
+	echo "Please execute this script from the MEMBRANE_HOME/examples/acl directory"
 	
 }
 

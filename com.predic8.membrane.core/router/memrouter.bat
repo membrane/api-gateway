@@ -12,9 +12,6 @@ goto end
 :homeOk
 set CLASSPATH=%MEMBRANE_HOME%
 set CLASSPATH=%MEMBRANE_HOME%/conf
-set CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/lib/stax2-api-3.0.1.jar
-set CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/lib/stax-api-1.0.1.jar
-set CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/lib/woodstox-core-asl-4.0.5.jar
 set CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar
 echo Membrane Router running...
 java  -classpath %CLASSPATH% com.predic8.membrane.core.Starter %1 %2 %3 %4 %5  %6 %7 %8 %9

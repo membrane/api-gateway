@@ -7,8 +7,8 @@
 	</serviceProxy>
 	<global>
 		<security>
-			<keystore location="..\..\conf\membrane.jks" password="secret"/>
-			<truststore location="..\..\conf\membrane.jks" password="secret"/>
+			<keystore location="../../conf/membrane.jks" password="secret"/>
+			<truststore location="../../conf/membrane.jks" password="secret"/>
 		</security>
 	</global>
 </proxies>

@@ -18,14 +18,17 @@
 
 	<!-- Startup an HTTP proxy on port 3128. -->
 	<proxy name="HTTP Proxy" port="3128" />
+
 	<!-- Forwards HTTP requests on port 2000 to the Web server on host thomas-bayer.com -->
 	<serviceProxy name="thomas-bayer.com" port="2000">
 		<target host="thomas-bayer.com" port="80"/>
 	</serviceProxy>
+
 	<!-- Forwards HTTP requests on port 2001 to a local web container running on port 8080, maybe a Tomcat server. -->
 	<serviceProxy name="localhost" port="2001" >
 		<target host="localhost" port="8080"/>
 	</serviceProxy>
+
 	<!-- Global configuration options -->
 	<global>
 		<!-- Sets the HTTP header field Host to the name of the target host. This is necessary if the target host hosts several web sites. -->
