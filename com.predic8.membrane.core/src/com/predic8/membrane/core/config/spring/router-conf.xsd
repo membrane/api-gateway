@@ -55,6 +55,7 @@
 							<xsd:element ref="throttle" />
 							<xsd:element ref="formValidation" />
 							<xsd:element ref="log" />
+							<xsd:element ref="xmlProtection" />
 						</xsd:choice>
 					</xsd:sequence>
 					<xsd:attribute name="coreThreadPoolSize" default="20" type="xsd:int" />
@@ -382,6 +383,19 @@
 		</xsd:complexType>
 	</xsd:element>
 
+	<xsd:element name="xmlProtection">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="removeDTD" type="xsd:boolean" default="true"/>
+					<xsd:attribute name="maxElementNameLength" type="xsd:int" default="1000" />
+					<xsd:attribute name="maxAttibuteCount" type="xsd:int" default="1000" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+	
 	<xsd:complexType name="EmptyElementType">
 		<xsd:complexContent>
 			<xsd:extension base="beans:identifiedType">

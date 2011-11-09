@@ -30,6 +30,7 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("throttle", new ThrottleInterceptorParser());        
         registerBeanDefinitionParser("formValidation", new FormValidationInterceptorParser());        
         registerBeanDefinitionParser("log", new LogInterceptorParser());
-        registerBeanDefinitionParser("httpClient", new HttpClientInterceptorParser());     
+        registerBeanDefinitionParser("httpClient", new HttpClientInterceptorParser());
+        registerBeanDefinitionParser("xmlProtection", new XmlProtectionInterceptorParser());
     }
 }

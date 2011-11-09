@@ -79,6 +79,12 @@ public class Response extends Message {
 							   header("Server","Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
 	}
 	
+	public static ResponseBuilder badRequest() {
+		return ResponseBuilder.newInstance().
+				status(400, "Bad Request").
+				header("Server","Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
+	}
+	
 	@Override
 	public String getStartLine() {
 		StringBuffer buf = new StringBuffer();

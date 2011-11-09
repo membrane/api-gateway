@@ -38,6 +38,7 @@ import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
+import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 import com.predic8.membrane.core.util.TextUtil;
 
@@ -220,6 +221,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 			i = new LogInterceptor();
 		} else if ("formValidation".equals(name)) {
 			i = new FormValidationInterceptor();
+		} else if ("xmlProtection".equals(name)) {
+			i = new XMLProtectionInterceptor();
 		} else {
 			throw new Exception("Unknown interceptor found: "+name);
 		}
