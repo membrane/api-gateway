@@ -145,4 +145,9 @@ public class ServiceProxy extends AbstractProxy {
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
+	
+	@Override
+	protected AbstractProxy getNewInstance() {
+		return new ServiceProxy();
+	}
 }

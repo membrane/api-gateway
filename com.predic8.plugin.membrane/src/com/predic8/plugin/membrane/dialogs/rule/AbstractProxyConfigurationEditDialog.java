@@ -29,7 +29,7 @@ import org.eclipse.ui.PlatformUI;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.MembraneUIPlugin;
-import com.predic8.plugin.membrane.dialogs.rule.composites.ProxyFeaturesTabComposite;
+import com.predic8.plugin.membrane.dialogs.rule.composites.AbstractProxyXMLConfTabComposite;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
 public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
@@ -40,7 +40,7 @@ public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
 	
 	protected Rule rule;
 	
-	protected ProxyFeaturesTabComposite featuresTabComposite;
+	protected AbstractProxyXMLConfTabComposite featuresTabComposite;
 	
 	protected AbstractProxyConfigurationEditDialog(Shell parentShell) {
 		super(parentShell);
@@ -67,8 +67,8 @@ public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
 		
 		createLink(composite, getText());
 	
-		featuresTabComposite = new ProxyFeaturesTabComposite(composite);
-		featuresTabComposite.setFocus();
+//		featuresTabComposite = new AbstractProxyXMLConfTabComposite(composite);
+//		featuresTabComposite.setFocus();
 		
 		return composite;
 	}
@@ -99,7 +99,7 @@ public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
 			return;
 		
 		this.rule = rule;
-		featuresTabComposite.setInput(rule);
+		featuresTabComposite.setRule(rule);
 	}
 	
 	protected void openErrorDialog(String msg) {
@@ -147,7 +147,7 @@ public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
 	}
 	
 	protected void createFeaturesTab(Composite composite) {
-		featuresTabComposite = new ProxyFeaturesTabComposite(composite);
+		//featuresTabComposite = new AbstractProxyXMLConfTabComposite(composite);
 	}
 	
 }

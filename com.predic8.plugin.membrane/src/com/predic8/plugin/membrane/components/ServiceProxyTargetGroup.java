@@ -17,6 +17,7 @@ package com.predic8.plugin.membrane.components;
 import java.util.regex.Pattern;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -36,6 +37,12 @@ public class ServiceProxyTargetGroup {
 	Pattern pHost = Pattern.compile("^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9])(\\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]{0,61}[a-zA-Z0-9]))*$");
 
 	Pattern pIp = Pattern.compile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9])$");
+	
+	private boolean dataChanged;
+	
+	private String originalTargetHost;
+	
+	private String originalTargetPort;
 	
 	public ServiceProxyTargetGroup(Composite parent, int style) {
 		Group group = createGroup(parent, style);
@@ -60,6 +67,20 @@ public class ServiceProxyTargetGroup {
 	private Text createTargetHostText(Group group) {
 		Text text = new Text(group, SWT.BORDER);
 		text.setText(Router.getInstance().getRuleManager().getDefaultTargetHost());
+		text.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				if (originalTargetHost == null)
+					return;
+				
+				Text t = (Text)e.widget;
+				if (!t.getText().equals(originalTargetHost)) {
+					dataChanged = true;
+					System.err.println("target host text reported data change");
+				}
+			}
+		});
+		
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return text;
 	}
@@ -68,6 +89,20 @@ public class ServiceProxyTargetGroup {
 		Text text = new Text(group,SWT.BORDER);
 		text.setText("" + Router.getInstance().getRuleManager().getDefaultTargetPort());
 		text.addVerifyListener(new PortVerifyListener());
+		text.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				if (originalTargetPort == null)
+					return;
+				
+				Text t = (Text)e.widget;
+				if (!t.getText().equals(originalTargetPort)) {
+					dataChanged = true;
+					System.err.println("target port text reported data change");
+				}
+			}
+		});
+		
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		return text;
 	}
@@ -101,14 +136,17 @@ public class ServiceProxyTargetGroup {
 	}
 
 	public void setTargetHost(String host) {
+		originalTargetHost = host;
 		textTargetHost.setText(host);
 	}
 
 	public void setTargetPort(String port) {
+		originalTargetPort = port;
 		textTargetPort.setText(port);
 	}
 
 	public void setTargetPort(int port) {
+		originalTargetPort = "" + port;
 		textTargetPort.setText(Integer.toString(port));
 	}
 	
@@ -129,5 +167,9 @@ public class ServiceProxyTargetGroup {
 			return true;
 
 		return pHost.matcher(txt).matches() || pIp.matcher(txt).matches();
+	}
+	
+	public boolean isDataChanged() {
+		return dataChanged;
 	}
 }

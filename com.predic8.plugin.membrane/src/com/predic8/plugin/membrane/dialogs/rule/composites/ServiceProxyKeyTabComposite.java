@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.plugin.membrane.dialogs.rule.composites;
 
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
 
@@ -34,12 +35,38 @@ public class ServiceProxyKeyTabComposite extends SecurityTabComposite {
 		
 	}
 
-	public void setInput(Rule rule) {
+	@Override
+	public void setRule(Rule rule) {
+		super.setRule(rule);
 		ruleKeyGroup.setInput(rule.getKey());
 		setSecureConnection(rule.isInboundTLS());
 	}
 	
 	public ServiceProxyKey getUserInput() {
 		return ruleKeyGroup.getUserInput();
+	}
+	
+	@Override
+	public String getTitle() {
+		return "Proxy Key";
+	}
+	
+	@Override
+	public void commit() {
+		if (rule == null)
+			return;
+		
+		ServiceProxyKey ruleKey = ruleKeyGroup.getUserInput();
+		if (ruleKey == null) {
+			MessageDialog.openError(this.getShell(), "Error", "Illeagal input! Please check again");
+			return;
+		}
+
+		rule.setKey(ruleKey);
+	}
+	
+	@Override
+	public boolean isDataChanged() {
+		return super.isDataChanged() || ruleKeyGroup.isDataChanged();
 	}
 }

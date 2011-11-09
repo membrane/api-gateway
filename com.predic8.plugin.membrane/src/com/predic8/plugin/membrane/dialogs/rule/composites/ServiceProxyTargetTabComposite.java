@@ -38,13 +38,33 @@ public class ServiceProxyTargetTabComposite extends SecurityTabComposite {
 		return targetGroup;
 	}
 	
-	public void setInput(Rule rule) {
-		if (!(rule instanceof ServiceProxy))
-			return;
+	@Override
+	public void setRule(Rule rule) {
+		super.setRule(rule);
 		ServiceProxy fRule = (ServiceProxy)rule;
 		targetGroup.setTargetHost(fRule.getTargetHost());
 		targetGroup.setTargetPort(fRule.getTargetPort());
 		btSecureConnection.setSelection(rule.isOutboundTLS());
 	}
 	
+	@Override
+	public String getTitle() {
+		return "Target";
+	}
+	
+	@Override
+	public void commit() {
+		if (rule == null)
+			return;
+		
+		((ServiceProxy) rule).setTargetHost(targetGroup.getTargetHost());
+		((ServiceProxy) rule).setTargetPort(Integer.parseInt(targetGroup.getTargetPort()));
+		rule.setOutboundTLS(getSecureConnection());
+		rule.setInboundTLS(getSecureConnection());
+	}
+	
+	@Override
+	public boolean isDataChanged() {
+		return super.isDataChanged() || targetGroup.isDataChanged();
+	}
 }

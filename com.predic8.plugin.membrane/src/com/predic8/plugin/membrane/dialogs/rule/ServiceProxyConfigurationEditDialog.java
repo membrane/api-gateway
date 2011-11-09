@@ -11,23 +11,32 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.rules;
+
+
+package com.predic8.plugin.membrane.dialogs.rule;
 
 import javax.xml.stream.XMLStreamReader;
 
-public class NullRule extends AbstractProxy {
+import org.eclipse.swt.widgets.Shell;
 
-	@Override
-	protected void parseKeyAttributes(XMLStreamReader token) {
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.rules.*;
+
+public class ServiceProxyConfigurationEditDialog extends AbstractProxyConfigurationEditDialog {
+
+
+	public ServiceProxyConfigurationEditDialog(Shell parentShell) {
+		super(parentShell);
 	}
 
 	@Override
-	protected String getElementName() {
-		return "Null Rule";
+	public String getTitle() {
+		return "Edit Service Proxy Configuration";
 	}
 
 	@Override
-	protected AbstractProxy getNewInstance() {
-		return new NullRule();
+	protected Rule parseRule(XMLStreamReader reader) throws Exception {
+		return (ServiceProxy)new ServiceProxy(Router.getInstance()).parse(reader);
 	}
+
 }

@@ -15,17 +15,10 @@
 package com.predic8.plugin.membrane.components;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
@@ -34,6 +27,8 @@ import com.predic8.plugin.membrane.listeners.PortVerifyListener;
 
 public class RuleKeyGroup {
 
+	public static final String SELECTION_INPUT_CHANGED = "SelectionInputChanged";
+	
 	private Text textListenPort;
 
 	private Combo comboRuleMethod;
@@ -50,6 +45,10 @@ public class RuleKeyGroup {
 
 	private Composite compPattern;
 
+	private boolean dataChanged;
+	
+	private RuleKey ruleKey;
+	
 	public RuleKeyGroup(Composite parent, int style) {
 
 		Group keyGroup = createKeyGroupe(parent);
@@ -80,9 +79,8 @@ public class RuleKeyGroup {
 
 		addDummyLabel(compPattern);
 
-		btSubstring = new Button(compPattern, SWT.RADIO);
-		btSubstring.setText("Substring");
-
+		btSubstring = createButtonSubstring();
+		
 		addDummyLabel(compPattern);
 
 		GridData gridData4LbExample = new GridData();
@@ -95,10 +93,8 @@ public class RuleKeyGroup {
 		Label lbSubstringExampleA = new Label(compPattern, SWT.NONE);
 		lbSubstringExampleA.setText("");
 		
-		btRegExp = new Button(compPattern, SWT.RADIO);
-		btRegExp.setText("Regular Expression");
-		btRegExp.setSelection(true);
-
+		btRegExp = createButtonRegExp();
+		
 		addDummyLabel(compPattern);
 
 		Label lbRefExpressExample = new Label(compPattern, SWT.NONE);
@@ -115,12 +111,49 @@ public class RuleKeyGroup {
 
 	}
 
+	private Button createButtonRegExp() {
+		Button bt = new Button(compPattern, SWT.RADIO);
+		bt.setText("Regular Expression");
+		bt.setSelection(true);
+		bt.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
+					dataChanged = true;
+					System.err.println("Button regexp reported data change");
+				}
+			}
+		});
+		return bt;
+	}
+	
+	private Button createButtonSubstring() {
+		Button bt = new Button(compPattern, SWT.RADIO);
+		bt.setText("Substring");
+		bt.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
+					dataChanged = true;
+					System.err.println("Button substring reported data change");
+				}
+			}
+		});
+		
+		return bt;
+	}
+	
 	private Button createPathPatternButton(Group keyGroup) {
 		Button bt = new Button(keyGroup, SWT.RADIO);
 		bt.setText("Path pattern");
 		bt.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
+					dataChanged = true;
+					System.err.println("Button path pattern reported data change");
+				}
+				
 				Display.getCurrent().asyncExec(new Runnable() {
 					public void run() {
 						textRulePath.setVisible(true);
@@ -139,12 +172,17 @@ public class RuleKeyGroup {
 		bt.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
+				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
+					dataChanged = true;
+					System.err.println("Button any path reported data change");
+				}
+
 				Display.getCurrent().asyncExec(new Runnable() {
 					public void run() {
 						textRulePath.setVisible(false);
 						compPattern.setVisible(false);
 					}
-				});
+				});				
 			}
 		});
 		return bt;
@@ -154,6 +192,19 @@ public class RuleKeyGroup {
 		Text text = new Text(keyGroup, SWT.BORDER);
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		text.setText(Router.getInstance().getRuleManager().getDefaultPath());
+		text.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				if (ruleKey == null)
+					return;
+				
+				Text t = (Text)e.widget;
+				if (!t.getText().equals(ruleKey.getPath())) {
+					dataChanged = true;
+					System.err.println("service proxy rule path reported data change");
+				}
+			}
+		});
 		text.setVisible(false);
 		return text;
 	}
@@ -165,6 +216,14 @@ public class RuleKeyGroup {
 		gData.widthHint = 100;
 		combo.setLayoutData(gData);
 		combo.select(Router.getInstance().getRuleManager().getDefaultMethod());
+		combo.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				dataChanged = true;
+				System.err.println("combo box http methods reported data change");
+			}
+		});
+		
 		return combo;
 	}
 
@@ -172,6 +231,21 @@ public class RuleKeyGroup {
 		Text text = new Text(keyGroup, SWT.BORDER);
 		text.setText(""+ Router.getInstance().getRuleManager().getDefaultListenPort());
 		text.addVerifyListener(new PortVerifyListener());
+		text.addModifyListener(new ModifyListener() {	
+			@Override
+			public void modifyText(ModifyEvent e) {
+				if (ruleKey == null)
+					return;
+				
+				Text t = (Text)e.widget;
+				if (!t.getText().equals("" + ruleKey.getPort())) {
+					dataChanged = true;
+					System.err.println("service proxy listen port reported data change");
+				}
+				
+			}
+		});
+		
 		GridData gData = new GridData();
 		gData.widthHint = 100;
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -183,6 +257,20 @@ public class RuleKeyGroup {
 		Text text = new Text(keyGroup, SWT.BORDER);
 		text.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
 		text.setText(Router.getInstance().getRuleManager().getDefaultHost());
+		text.addModifyListener(new ModifyListener() {	
+			@Override
+			public void modifyText(ModifyEvent e) {
+				if (ruleKey == null)
+					return;
+				
+				Text t = (Text)e.widget;
+				if (!t.getText().equals(ruleKey.getHost())) {
+					dataChanged = true;
+					System.err.println("service proxy host reported data change");
+				}
+				
+			}
+		});
 		return text;
 	}
 	
@@ -272,6 +360,8 @@ public class RuleKeyGroup {
 	}
 
 	public void setInput(RuleKey ruleKey) {
+		this.ruleKey = ruleKey;
+		
 		textListenPort.setText(Integer.toString(ruleKey.getPort()));
 
 		setSelectionForMethodCombo(ruleKey);
@@ -279,27 +369,35 @@ public class RuleKeyGroup {
 		if (ruleKey.isUsePathPattern()) {
 			btPathPattern.setSelection(true);
 			btAnyPath.setSelection(false);
-			btPathPattern.notifyListeners(SWT.Selection, null);
+			btPathPattern.notifyListeners(SWT.Selection, createSelectionEvent(SELECTION_INPUT_CHANGED));
 			if (ruleKey.isPathRegExp()) {
 				btRegExp.setSelection(true);
-				btRegExp.notifyListeners(SWT.Selection, null);
+				btRegExp.notifyListeners(SWT.Selection, createSelectionEvent(SELECTION_INPUT_CHANGED));
 				btSubstring.setSelection(false);
 			} else {
 				btSubstring.setSelection(true);
-				btSubstring.notifyListeners(SWT.Selection, null);
+				btSubstring.notifyListeners(SWT.Selection, createSelectionEvent(SELECTION_INPUT_CHANGED));
 				btRegExp.setSelection(false);
 			}
 			textRulePath.setText(ruleKey.getPath());
 		} else {
 			btAnyPath.setSelection(true);
-			btAnyPath.notifyListeners(SWT.Selection, null);
+			btAnyPath.notifyListeners(SWT.Selection, createSelectionEvent(SELECTION_INPUT_CHANGED));
 			btPathPattern.setSelection(false);
 		}
 
 		textRuleHost.setText(ruleKey.getHost());
 	}
 
+	protected Event createSelectionEvent(Object data) {
+		Event event = new Event();
+		event.type = SWT.Selection;
+		event.data = data;
+		return event;
+	}
+	
 	private void setSelectionForMethodCombo(RuleKey ruleKey) {
+		// do not fire selection listener here
 		String method = ruleKey.getMethod().trim();
 		if ("*".equals(method)) {
 			comboRuleMethod.select(4);
@@ -354,6 +452,8 @@ public class RuleKeyGroup {
 		return btRegExp;
 	}
 	
-	
+	public boolean isDataChanged() {
+		return dataChanged;
+	}
 
 }

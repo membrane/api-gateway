@@ -13,29 +13,19 @@
    limitations under the License. */
 package com.predic8.plugin.membrane.dialogs.rule.composites;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.Enumeration;
+import java.net.*;
+import java.util.*;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
 
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.components.GridPanel;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
-public class ProxyGeneralInfoTabComposite extends GridPanel {
+public class ProxyGeneralInfoTabComposite extends AbstractProxyFeatureComposite {
 
 	private Text textRuleName;
 	
@@ -45,8 +35,11 @@ public class ProxyGeneralInfoTabComposite extends GridPanel {
 	
 	private String[] interfaces;
 	
+	
+	
 	public ProxyGeneralInfoTabComposite(Composite parent) {
-		super(parent, 20, 3);
+		super(parent);
+		setLayout(SWTUtil.createGridLayout(3, 20));
 		
 		initInterfaces();
 		
@@ -91,12 +84,14 @@ public class ProxyGeneralInfoTabComposite extends GridPanel {
 		lb.setLayoutData(gd);
 	}
 	
+	@Override
 	public void setRule(final Rule rule) {
+		super.setRule(rule);
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
 				textRuleName.setText(rule.getName());
 				btInterfaces.setSelection(rule.getLocalHost() != null);
-				btInterfaces.notifyListeners(SWT.Selection, null);
+				btInterfaces.notifyListeners(SWT.Selection, createSelectionEvent(SELECTION_INPUT_CHANGED));
 				if (comboInterfaces.isEnabled()) {
 					int idx = comboInterfaces.indexOf(rule.getLocalHost());
 					comboInterfaces.select(idx);
@@ -110,6 +105,16 @@ public class ProxyGeneralInfoTabComposite extends GridPanel {
 		GridData gd = new GridData();
 		gd.widthHint = 150;
 		textRuleName.setLayoutData(gd);
+		textRuleName.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				Text t = (Text)e.widget;
+				if (!t.getText().equals(rule.getName())) {
+					dataChanged = true;
+					System.err.println("rule name text reported data change");
+				}
+			}
+		});
 	}
 	
 	public String getRuleName() {
@@ -135,6 +140,11 @@ public class ProxyGeneralInfoTabComposite extends GridPanel {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				comboInterfaces.setEnabled(btInterfaces.getSelection());
+				//distinguish between selection event when rule is set and user clicked
+				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
+					dataChanged = true;
+					System.err.println("button interfaces reported data change");
+				}
 			}
 		});
 		
@@ -166,6 +176,13 @@ public class ProxyGeneralInfoTabComposite extends GridPanel {
 			e.printStackTrace();
 		}
 		comboInterfaces.setEnabled(false);
+		comboInterfaces.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				dataChanged = true;
+				System.err.println("combo box interfaces reported data change");
+			}
+		});
 	}
 	
 	@SuppressWarnings("rawtypes")
@@ -185,6 +202,20 @@ public class ProxyGeneralInfoTabComposite extends GridPanel {
 			e.printStackTrace();
 		} 
 		interfaces = list.toArray(new String[]{});	
+	}
+	
+	@Override
+	public String getTitle() {
+		return "General";
+	}
+	
+	@Override
+	public void commit() {
+		if (rule == null)
+			return;
+		
+		rule.setName(getRuleName());
+		rule.setLocalHost(getLocalHost());
 	}
 	
 }

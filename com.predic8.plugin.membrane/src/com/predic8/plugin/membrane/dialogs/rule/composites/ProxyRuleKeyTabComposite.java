@@ -13,37 +13,84 @@
    limitations under the License. */
 package com.predic8.plugin.membrane.dialogs.rule.composites;
 
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 
-import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.plugin.membrane.components.GridPanel;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.plugin.membrane.listeners.PortVerifyListener;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
-public class ProxyRuleKeyTabComposite extends GridPanel {
+public class ProxyRuleKeyTabComposite extends AbstractProxyFeatureComposite {
 
 	protected Text textListenPort;
 	
 	public ProxyRuleKeyTabComposite(Composite parent) {
-		super(parent, 20, 2);
+		super(parent);
+		setLayout(SWTUtil.createGridLayout(2, 20));
 		
 		new Label(this, SWT.NONE).setText("Listen Port: ");
 		
-		textListenPort = new Text(this, SWT.BORDER);
-		GridData gData = new GridData();
-		gData.widthHint = 150;
-		textListenPort.setLayoutData(gData);
+		textListenPort = createText();
 	}
 
-	public void setInput(RuleKey ruleKey) {
-		if (ruleKey == null)
-			return;
-		textListenPort.setText(Integer.toString(ruleKey.getPort()));
+	private Text createText() {
+		Text text = new Text(this, SWT.BORDER);
+		text.addVerifyListener(new PortVerifyListener());
+		text.addModifyListener(new ModifyListener() {
+			@Override
+			public void modifyText(ModifyEvent e) {
+				Text t = (Text)e.widget;
+				if (!t.getText().equals("" + rule.getKey().getPort())) {
+					dataChanged = true;
+					System.err.println("proxy listener port text reported data change");
+				}
+			}
+		});
+		
+		GridData gData = new GridData();
+		gData.widthHint = 150;
+		text.setLayoutData(gData);
+		return text;
+	}
+
+	@Override
+	public void setRule(Rule rule) {
+		super.setRule(rule);
+		textListenPort.setText(Integer.toString(rule.getKey().getPort()));
 	}
 	
 	public String getListenPort() {
 		return textListenPort.getText().trim();
+	}
+
+	@Override
+	public String getTitle() {
+		return "Proxy Key";
+	}
+	
+	@Override
+	public void commit() {
+		if (rule == null)
+			return;
+		
+		int port = 0;
+		try {
+			port = Integer.parseInt(getListenPort());
+		} catch (NumberFormatException nfe) {
+			MessageDialog.openError(this.getShell(), "Error", "Illeagal input! Please check listen port again");
+			return;
+		}
+
+		ProxyRuleKey ruleKey = new ProxyRuleKey(port);
+		rule.setKey(ruleKey);
+	}
+	
+	@Override
+	public boolean isDataChanged() {
+		// TODO Auto-generated method stub
+		return super.isDataChanged();
 	}
 }

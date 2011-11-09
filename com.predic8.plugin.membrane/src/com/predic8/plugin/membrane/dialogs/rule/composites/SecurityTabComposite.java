@@ -1,8 +1,7 @@
 package com.predic8.plugin.membrane.dialogs.rule.composites;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -14,12 +13,12 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.SecurityConfigurationChangeListener;
 import com.predic8.plugin.membrane.actions.ShowSecurityPreferencesAction;
 
-public abstract class SecurityTabComposite extends Composite implements SecurityConfigurationChangeListener{
+public abstract class SecurityTabComposite extends AbstractProxyFeatureComposite implements SecurityConfigurationChangeListener{
 
 	protected Button btSecureConnection;
 	
 	public SecurityTabComposite(Composite parent) {
-		super(parent, SWT.NONE);
+		super(parent);
 	}
 
 	protected void createSecurityComposite(Composite parent) {
@@ -43,6 +42,14 @@ public abstract class SecurityTabComposite extends Composite implements Security
 		btSecureConnection = new Button(parent, SWT.CHECK);
 		btSecureConnection.setText("Secure Connection (SSL/TLS)");
 		btSecureConnection.setEnabled(Router.getInstance().getConfigurationManager().getProxies().isKeyStoreAvailable());
+		btSecureConnection.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				dataChanged = true;
+				System.err.println("security button reported data change");
+			}
+		
+		});
 	}
 	
 	protected void enableSecureConnectionButton() {
@@ -85,4 +92,5 @@ public abstract class SecurityTabComposite extends Composite implements Security
 		Router.getInstance().getConfigurationManager().removeSecurityConfigurationChangeListener(this);
 		super.dispose();
 	}
+	
 }

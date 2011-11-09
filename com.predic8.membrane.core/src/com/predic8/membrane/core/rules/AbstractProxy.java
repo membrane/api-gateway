@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
+import java.io.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -38,6 +39,7 @@ import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorIntercept
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
+import com.predic8.membrane.core.util.TextUtil;
 
 public abstract class AbstractProxy extends AbstractConfigElement implements Rule {
 
@@ -367,5 +369,32 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 		}			
 		return c;
 	}
+	
+	@Override
+	public Rule getDeepCopy() throws Exception {
+		String xml = serialize();
+		
+		XMLStreamReader r = getStreamReaderFor(xml.getBytes());
+		AbstractProxy newObject = (AbstractProxy)getNewInstance().parse(r);
+		newObject.setRouter(Router.getInstance());
+		return newObject;
+	}
+
+	private String serialize() throws XMLStreamException, FactoryConfigurationError, UnsupportedEncodingException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(baos, Constants.UTF_8);
+		write(writer);
+		ByteArrayInputStream stream = new ByteArrayInputStream(baos.toByteArray());
+		InputStreamReader reader = new InputStreamReader(stream, Constants.UTF_8);
+		return TextUtil.formatXML(reader);
+	}
+	
+	public XMLStreamReader getStreamReaderFor(byte[] bytes) throws XMLStreamException {
+		XMLInputFactory factory = XMLInputFactory.newInstance();
+	    ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+	    return factory.createXMLStreamReader(stream);
+	}
+	
+	protected abstract AbstractProxy getNewInstance();
 	
 }

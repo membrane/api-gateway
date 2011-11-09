@@ -14,25 +14,22 @@
 package com.predic8.plugin.membrane.dialogs.rule.composites;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
 
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.components.GridPanel;
+import com.predic8.plugin.membrane.util.SWTUtil;
 
-public class ProxyActionsTabComposite extends GridPanel {
+public class ProxyActionsTabComposite extends AbstractProxyFeatureComposite {
 
 	private Button btBlockRequest;
 
 	private Button btBlockResponse;
 
 	public ProxyActionsTabComposite(Composite parent) {
-		super(parent, 20, 1);
+		super(parent);
+		setLayout(SWTUtil.createGridLayout(1, 20));
 		
 		Group ruleActionGroup = new Group(this, SWT.NONE);
 		ruleActionGroup.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
@@ -41,7 +38,8 @@ public class ProxyActionsTabComposite extends GridPanel {
 		btBlockRequest = new Button(ruleActionGroup, SWT.CHECK);
 		btBlockRequest.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-
+				dataChanged = true;
+				System.err.println("block request reported data change");
 			}
 		});
 		btBlockRequest.setText("Block Request");
@@ -49,7 +47,8 @@ public class ProxyActionsTabComposite extends GridPanel {
 		btBlockResponse = new Button(ruleActionGroup, SWT.CHECK);
 		btBlockResponse.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
-
+				dataChanged = true;
+				System.err.println("block response reported data change");
 			}
 		});
 		btBlockResponse.setText("Block Response");
@@ -64,9 +63,25 @@ public class ProxyActionsTabComposite extends GridPanel {
 		return btBlockResponse.getSelection();
 	}
 	
-	public void setInput(Rule rule) {
+	@Override
+	public void setRule(Rule rule) {
+		super.setRule(rule);
 		btBlockRequest.setSelection((rule.isBlockRequest()));
 		btBlockResponse.setSelection(rule.isBlockResponse());
+	}
+	
+	@Override
+	public String getTitle() {
+		return "Actions";
+	}
+	
+	@Override
+	public void commit() {
+		if (rule == null)
+			return;
+		
+		rule.setBlockRequest(isRequestBlocked());
+		rule.setBlockResponse(isResponseBlocked());
 	}
 	
 }

@@ -63,4 +63,6 @@ public interface Rule {
 	
 	public int getCount();
 	
+	public Rule getDeepCopy() throws Exception;
+	
 }

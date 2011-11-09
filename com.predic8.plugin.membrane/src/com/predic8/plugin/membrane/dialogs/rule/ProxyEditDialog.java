@@ -4,30 +4,30 @@ import org.eclipse.swt.widgets.Shell;
 
 import com.predic8.plugin.membrane.dialogs.rule.composites.*;
 
-public class ServiceProxyEditDialog extends AbstractProxyEditDialog {
+public class ProxyEditDialog extends AbstractProxyEditDialog {
 	
-	public ServiceProxyEditDialog(Shell parentShell) {
+	public ProxyEditDialog(Shell parentShell) {
 		super(parentShell);
 	}
 
 	@Override
 	public String getTitle() {
-		return "Edit Service Proxy Configuration";
+		return "Edit Proxy Configuration";
 	}
 
 	@Override
 	protected AbstractProxyFeatureComposite createProxyKeyTabItem() {
-		return new ServiceProxyKeyTabComposite(tabFolder);
+		return new ProxyRuleKeyTabComposite(tabFolder);
 	}
 
 	@Override
 	protected void addCustomTabItems() {
-		addTabTabItem(new ServiceProxyTargetTabComposite(tabFolder));
+		// ProxyEditDialog has no custom tab items
 	}
 
 	@Override
 	protected AbstractProxyFeatureComposite createProxyXMLConfTabItem() {
-		return new ServiceProxyXMLConfComposite(tabFolder);
+		return new ProxyXMLConfComposite(tabFolder);
 	}
-
+	
 }

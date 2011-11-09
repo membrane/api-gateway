@@ -16,12 +16,8 @@ package com.predic8.plugin.membrane.actions.rules;
 
 import org.eclipse.swt.widgets.Display;
 
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.plugin.membrane.dialogs.rule.ServiceProxyEditDialog;
-import com.predic8.plugin.membrane.dialogs.rule.ProxyConfigurationEditDialog;
-import com.predic8.plugin.membrane.dialogs.rule.AbstractProxyConfigurationEditDialog;
+import com.predic8.membrane.core.rules.*;
+import com.predic8.plugin.membrane.dialogs.rule.*;
 
 public class EditProxyAction extends AbstractProxyAction {
 
@@ -32,16 +28,28 @@ public class EditProxyAction extends AbstractProxyAction {
 	@Override
 	public void run() {
 		
+//		try {
+//			if (selectedProxy instanceof ServiceProxy) {
+//				openProxyDialog(new ServiceProxyConfigurationEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedProxy);
+//
+//			} else if (selectedProxy instanceof ProxyRule) {
+//				openProxyDialog(new ProxyConfigurationEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedProxy);
+//			}
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//		}
+		
 		try {
 			if (selectedProxy instanceof ServiceProxy) {
-				openProxyDialog(new ServiceProxyEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedProxy);
+				openProxyEditDialog(new ServiceProxyEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedProxy);
 
 			} else if (selectedProxy instanceof ProxyRule) {
-				openProxyDialog(new ProxyConfigurationEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedProxy);
+				openProxyEditDialog(new ProxyEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedProxy);
 			}
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		
 	}
 
 	private void openProxyDialog(AbstractProxyConfigurationEditDialog dialog, Rule rule) {
@@ -52,4 +60,12 @@ public class EditProxyAction extends AbstractProxyAction {
 		dialog.open();
 	}
 
+	private void openProxyEditDialog(AbstractProxyEditDialog dialog, Rule rule) {
+		if (dialog.getShell() == null) {
+			dialog.create();
+		}
+		dialog.setInput(rule);
+		dialog.open();
+	}
+	
 }
