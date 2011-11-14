@@ -10,11 +10,23 @@ public class LogInterceptorParser extends AbstractParser {
 	protected Class getBeanClass(Element element) {
 		return LogInterceptor.class;
 	}
-	
+
 	@Override
 	protected void doParse(Element element, BeanDefinitionBuilder builder) {
-		setIdIfNeeded(element,"log");
-		builder.addPropertyValue("headerOnly", Boolean.parseBoolean(element.getAttribute("headerOnly")));
+		setIdIfNeeded(element, "log");
+
+		builder.addPropertyValue("headerOnly",
+				Boolean.parseBoolean(element.getAttribute("headerOnly")));
+
+		if (element.hasAttribute("category")) {
+			builder.addPropertyValue("category",
+					element.getAttribute("category"));
+		}
+
+		if (element.hasAttribute("level")) {
+			builder.addPropertyValue("level",
+					LogInterceptor.Level.valueOf(element.getAttribute("level")));
+		}
 	}
 
 }

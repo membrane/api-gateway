@@ -2,7 +2,7 @@
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
 	<serviceProxy name="predic8.com" port="2000">
-		<log/>
+		<log level="WARN"/>
 		<target host="membrane-soa.org" port="80" />
 	</serviceProxy> 
 </proxies>

@@ -16,7 +16,7 @@
 -->
 <project name="Membrane-Router" default="compile-core" basedir=".">
 
-	<property name="version" value="3.1.1" />
+	<property name="version" value="3.2.0-Snapshot" />
 
 	<path id="classpath">
 		<fileset dir="lib">
@@ -123,6 +123,28 @@
 		</copy>		
 		<copy file="dist/router/membrane-router-${version}/lib/membrane-router.jar" todir="build/sar" />
 		<jar destfile="build/router-service.sar" basedir="build/sar" />
+	</target>
+
+	<target name="war" depends="dist-router">
+		<mkdir dir="build/web"/>
+		<copy todir="build/web/WEB-INF">
+			<fileset dir="router/conf/web">
+				<include name="*"/>
+			</fileset>
+		</copy>
+		<copy todir="build/web/WEB-INF/lib">
+			<fileset dir="lib">
+				<include name="**/*"/>
+				<exclude name="**/servlet-api.jar" />
+			</fileset>
+		</copy>
+		<copy todir="build/web/docBase">
+			<fileset dir="docBase">
+				<include name="**/*"/>
+			</fileset>
+		</copy>
+		<copy file="dist/router/membrane-router-${version}/lib/membrane-router.jar" todir="build/web/WEB-INF/lib" />
+		<jar destfile="dist/router.war" basedir="build/web" />
 	</target>
 
 	<target name="copyResources">

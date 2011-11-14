@@ -3,19 +3,19 @@
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
 
 	<serviceProxy name="Balancer" port="8080">
-		<log />
 		<balancer>
 			<clusters>
 				<cluster name="Default">
+					<!-- In production replace this with your service nodes. -->					
 					<node host="localhost" port="4000"/>
 					<node host="localhost" port="4001"/>
 					<node host="localhost" port="4002"/>
 				</cluster>
 			</clusters>
 		</balancer>
-		<log />
 	</serviceProxy>
 	
+	<!-- The mock nodes are only for testing. You can remove them in production. -->
 	<serviceProxy name="Mock Node 1" port="4000">
 		<counter name="Mock Node 1" />
 	</serviceProxy>

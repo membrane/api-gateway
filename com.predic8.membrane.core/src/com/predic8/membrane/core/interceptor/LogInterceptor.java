@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor;
 
 import javax.xml.stream.*;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
@@ -24,31 +24,46 @@ import com.predic8.membrane.core.util.MessageUtil;
 
 public class LogInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(LogInterceptor.class.getName());
+	public enum Level {
+		TRACE, DEBUG, INFO, WARN, ERROR, FATAL
+	}
+
 	private boolean headerOnly = false;
-	
+	private String category = LogInterceptor.class.getName();
+	private Level level = Level.WARN;
+
 	public LogInterceptor() {
 		name = "Log";
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		log.info("==== Request ===");
+		log("==== Request ===");
 		logMessage(exc.getRequest());
 		return Outcome.CONTINUE;
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		log.info("==== Response ===");
+		log("==== Response ===");
 		logMessage(exc.getResponse());
 		return Outcome.CONTINUE;
 	}
-	
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		if ( token.getAttributeValue("", "headerOnly")!=null ) {
-			headerOnly = Boolean.parseBoolean(token.getAttributeValue("", "headerOnly"));
+
+		if (token.getAttributeValue("", "headerOnly") != null) {
+			headerOnly = Boolean.parseBoolean(token.getAttributeValue("",
+					"headerOnly"));
+		}
+
+		if (token.getAttributeValue("", "category") != null) {
+			category = token.getAttributeValue("", "category");
+		}
+
+		if (token.getAttributeValue("", "level") != null) {
+			level = Level.valueOf(token.getAttributeValue("", "level"));
 		}
 	}
 
@@ -57,7 +72,14 @@ public class LogInterceptor extends AbstractInterceptor {
 			throws XMLStreamException {
 		out.writeStartElement("log");
 
-		if (headerOnly) out.writeAttribute("headerOnly", ""+headerOnly);
+		if (headerOnly)
+			out.writeAttribute("headerOnly", "" + headerOnly);
+
+		if (!LogInterceptor.class.getName().equals(category))
+			out.writeAttribute("category", category);
+
+		if (level != Level.WARN)
+			out.writeAttribute("level", "" + level);
 
 		out.writeEndElement();
 	}
@@ -70,36 +92,76 @@ public class LogInterceptor extends AbstractInterceptor {
 		this.headerOnly = headerOnly;
 	}
 
+	public Level getLevel() {
+		return level;
+	}
+
+	public void setLevel(Level level) {
+		this.level = level;
+	}
+
 	private void logMessage(Message msg) throws Exception {
-		log.info(msg==null?"N/A":msg);
-		if (msg == null) { 
-			log.info("no message");
-			log.info("================");
+		log(msg == null ? "N/A" : "" + msg);
+		if (msg == null) {
+			log("no message");
+			log("================");
 			return;
 		}
-				
-		log.info(msg.getStartLine());
-		log.info("Headers:");
-		log.info(msg.getHeader().toString());
-		if (headerOnly) {
-			log.info("================");
-			return;			
-		}
-		
-		log.info("Body:");
-		if (msg.isBodyEmpty()) {
-			log.info("empty");
-			log.info("================");
-			return;						
-		}
-		
-		if (msg.isImage()) {
-			log.info("[binary image data]");
-			log.info("================");
-			return;			
-		}
-		log.info(new String(MessageUtil.getContent(msg)));
-		log.info("================");
-	}
-}
 
+		log(msg.getStartLine());
+		log("Headers:");
+		log(msg.getHeader().toString());
+		if (headerOnly) {
+			log("================");
+			return;
+		}
+
+		log("Body:");
+		if (msg.isBodyEmpty()) {
+			log("empty");
+			log("================");
+			return;
+		}
+
+		if (msg.isImage()) {
+			log("[binary image data]");
+			log("================");
+			return;
+		}
+		log(new String(MessageUtil.getContent(msg)));
+		log("================");
+	}
+
+	private void log(String msg) {
+		switch (level) {
+		case TRACE:
+			LogFactory.getLog(category).trace(msg);
+			break;
+		case DEBUG:
+			LogFactory.getLog(category).debug(msg);
+			break;
+		case INFO:
+			LogFactory.getLog(category).info(msg);
+			break;
+		case WARN:
+			LogFactory.getLog(category).warn(msg);
+			break;
+		case ERROR:
+			LogFactory.getLog(category).error(msg);
+			break;
+		case FATAL:
+			LogFactory.getLog(category).fatal(msg);
+			break;
+		}
+
+	}
+
+	public String getCategory() {
+		return category;
+	}
+
+	public void setCategory(String category) {
+		this.category = category;
+	}
+
+}

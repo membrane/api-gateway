@@ -95,6 +95,8 @@
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence />
 					<xsd:attribute name="headerOnly" default="true" type="xsd:boolean" />
+					<xsd:attribute name="category" default="com.predic8.membrane.core.interceptor.LogInterceptor" type="xsd:string" />
+					<xsd:attribute name="level" default="WARN" type="xsd:string" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>
