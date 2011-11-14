@@ -91,6 +91,17 @@ public class StatisticCollector {
 		}
 	}
 
+	public void collectFrom(StatisticCollector s) {
+		totalCount += s.totalCount;
+		goodCount += s.goodCount;
+		errorCount += s.errorCount;
+		minTime = Math.min(minTime, s.minTime);
+		maxTime = Math.max(maxTime, s.maxTime);
+		totalTime += s.totalTime;
+		totalBytesSent += s.totalBytesSent;
+		totalBytesReceived += s.totalBytesReceived;
+	}
+
 	public int getCount() {
 		return totalCount;
 	}

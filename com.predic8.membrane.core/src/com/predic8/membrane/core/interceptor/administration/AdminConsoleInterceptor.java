@@ -339,6 +339,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 														"port",params.get("port")));
 	}	
 	
+	@Mapping("/admin/statistics")
+	public Response handleStatisticsRequest(Map<String, String> params) throws Exception {
+		return respond(getStatisticsPage(params));
+	}
+	
 	private String getServiceProxyPage(Map<String, String> params)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
@@ -419,7 +424,25 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		
 		}.createPage();
 	}
-	 
+
+	private String getStatisticsPage(Map<String, String> params)
+			  throws Exception {
+		StringWriter writer = new StringWriter();
+		return new AdminPageBuilder(writer, router, params) {
+			@Override
+			protected int getSelectedTab() {
+				return 5;
+			}
+		
+			@Override
+			protected void createTabContent() throws Exception {
+				h3().text("Statistics").end();
+				createStatisticsTable();
+			}
+	
+		}.createPage();
+	}
+
 	private Outcome dipatchRequest(Exchange exc) throws Exception {
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);

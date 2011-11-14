@@ -1,16 +1,27 @@
 package com.predic8.membrane.core.interceptor.administration;
 
-import java.io.*;
+import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
+import static org.apache.commons.lang.time.DurationFormatUtils.formatDurationHMS;
+
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.rules.*;
-import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static org.apache.commons.lang.time.DurationFormatUtils.*;
+import com.predic8.membrane.core.interceptor.balancer.Cluster;
+import com.predic8.membrane.core.interceptor.balancer.Node;
+import com.predic8.membrane.core.interceptor.balancer.Session;
+import com.predic8.membrane.core.rules.AbstractProxy;
+import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.StatisticCollector;
 
 public class AdminPageBuilder extends Html {
 	
@@ -201,8 +212,13 @@ public class AdminPageBuilder extends Html {
 			li().classAttr(getSelectedTabStyle(3, selected));
 				createLink("System", "system", null, null);
 			end();
-			li().classAttr(getSelectedTabStyle(4, selected));
-				createLink("Loadbalancer", "clusters", null, null);
+			if (router.getClusterManager() != null) {
+				li().classAttr(getSelectedTabStyle(4, selected));
+					createLink("Loadbalancer", "clusters", null, null);
+				end();
+			}
+			li().classAttr(getSelectedTabStyle(5, selected));
+				createLink("Statistics", "statistics", null, null);
 			end();
 		end();
 	}
@@ -328,6 +344,33 @@ public class AdminPageBuilder extends Html {
 			end();
 		end();
 	}
+	
+	protected void createStatisticsTable() throws UnsupportedEncodingException {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+			thead();
+				tr();
+					createThs("Name", "Count", "Minimum Time", "Maximum Time", "Average Time", 
+							"Bytes Sent", "Bytes Received");
+			    end();
+			end();
+			tbody();
+				for (Map.Entry<String, StatisticCollector> entry : getStatistics().entrySet()) {
+					StatisticCollector statisticCollector = entry.getValue();
+					tr();
+						createTds(
+								""+entry.getKey(), 
+								""+statisticCollector.getCount(),
+								""+statisticCollector.getMinTime(),
+								""+statisticCollector.getMaxTime(),
+								""+statisticCollector.getAvgTime(),
+								""+statisticCollector.getBytesSent(),
+								""+statisticCollector.getBytesReceived());
+					end();
+				}
+			end();
+		end();
+	}
+
 
 	private String getStatusString(Node n) {
 		switch (n.getStatus()) { 
@@ -363,6 +406,18 @@ public class AdminPageBuilder extends Html {
 			rules.add((ProxyRule) r);
 		}			
 		return rules;
+	}
+
+	private Map<String, StatisticCollector> getStatistics() {
+		Map<String, StatisticCollector> res = new TreeMap<String, StatisticCollector>();
+		for (Rule r : router.getRuleManager().getRules()) {
+			if (!(r instanceof AbstractProxy)) continue;
+			StatisticCollector sc = new StatisticCollector(true);
+			for (StatisticCollector s : ((AbstractProxy) r).getStatisticsByStatusCodes().values())
+				sc.collectFrom(s);
+			res.put(r.getName(), sc);
+		}			
+		return res;
 	}
 
 	private List<ServiceProxy> getServiceProxies() {
