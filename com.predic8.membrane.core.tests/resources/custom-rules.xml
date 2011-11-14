@@ -22,10 +22,11 @@
 				<field name="age" regex="\d+" />
 				<field name="name" regex="[a-z]+" />
 			</formValidation>
+			<xmlProtection />
 		</request>
 		<exchangeStore name="forgetfulExchangeStore" />
 		<!--<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource"/> -->
-		<statisticsCSV file="c:/temp/stat.csv" />
+		<statisticsCSV file="temp/stat.csv" />
 		<transform xslt="strip.xslt" />
 		<balancer>
 			<xmlSessionIdExtractor namespace="http://chat.predic8.com/"

@@ -92,6 +92,9 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/request/regExUrlRewriter/mapping/@uri",
 				"/index");
+		
+		assertElement(w.toString(),
+				"/proxies/serviceProxy/request/xmlProtection");
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/validator/@wsdl",
 				"http://www.predic8.com:8080/material/ArticleService?wsdl");
@@ -169,7 +172,7 @@ public class CustomRulesConfigurationTest {
 				"http://www.thomas-bayer.com/axis2/");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/statisticsCSV/@file", "c:/temp/stat.csv");
+				"/proxies/serviceProxy/statisticsCSV/@file", "temp/stat.csv");
 
 		assertAttribute(
 				w.toString(),
