@@ -104,7 +104,7 @@
 	<statisticsCSV file="temp\stat.csv" />
 	<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
 	<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
-	<log headerOnly="true"/>
+	<log headerOnly="true" category="membrane" level="INFO"/>
 <!-- 
 	<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />
 -->

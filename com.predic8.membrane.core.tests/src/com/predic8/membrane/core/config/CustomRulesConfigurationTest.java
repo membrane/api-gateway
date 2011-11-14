@@ -151,6 +151,10 @@ public class CustomRulesConfigurationTest {
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@headerOnly",
 				"true");
+		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@category",
+				"membrane");
+		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@level",
+				"INFO");
 
 		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/response/regExReplacer/@regex", "Hallo");
