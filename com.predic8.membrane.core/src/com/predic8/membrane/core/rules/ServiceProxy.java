@@ -131,13 +131,20 @@ public class ServiceProxy extends AbstractProxy {
 	}
 
 	private void writeTarget(XMLStreamWriter out) throws XMLStreamException {
+		if (targetHost == null && targetPort == 0 && targetURL == null)
+			return;
+		
 		out.writeStartElement("target");
 		
-		out.writeAttribute("host", targetHost);
-		out.writeAttribute("port", ""+targetPort);
-		if (targetURL!=null)
-			out.writeAttribute("url", targetURL);
+		if (targetHost != null)
+			out.writeAttribute("host", targetHost);
 		
+		if (targetPort != 0 && targetPort != 80)
+			out.writeAttribute("port", "" + targetPort);
+		
+		if (targetURL != null)
+			out.writeAttribute("url", targetURL);
+
 		out.writeEndElement();
 	}
 	
