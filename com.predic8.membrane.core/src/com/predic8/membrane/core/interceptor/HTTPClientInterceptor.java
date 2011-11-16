@@ -13,20 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.net.*;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.http.ErrorResponse;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.HttpUtil;
 
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(HTTPClientInterceptor.class.getName());
 
+	private HttpClient httpClient;
+	
 	public HTTPClientInterceptor() {
 		name="HTTPClient";
 		setFlow(Flow.REQUEST);
@@ -56,13 +60,11 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	private String getDestination(Exchange exc) {
 		return exc.getDestinations().get(0);
 	}
-	
-	private HttpClient getClient() {
-		HttpClient client = new HttpClient();
-		Proxies cfg = router.getConfigurationManager().getProxies();
-		client.setAdjustHostHeader(cfg.getAdjustHostHeader());
-		client.setProxy(cfg.getProxyConfiguration());
-		client.setMaxRetries(((HttpTransport)router.getTransport()).getHttpClientRetries());
-		return client;
+
+	// synchronized is necessary for singleton - google "double checked locking"
+	private synchronized HttpClient getClient() {
+		if (httpClient == null)
+			httpClient = new HttpClient(router);
+		return httpClient;
 	}	
 }

@@ -66,14 +66,17 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 					log.debug("stopping HTTP Server Thread after establishing an HTTP connect");
 					return;
 				}
-				if (!srcReq.isKeepAlive()
-						|| !exchange.getResponse().isKeepAlive()) {
-					if (exchange.getTargetConnection() != null) {
+				boolean canKeepConnectionAlive = srcReq.isKeepAlive() && exchange.getResponse().isKeepAlive(); 
+				if (exchange.getTargetConnection() != null) {
+					if (canKeepConnectionAlive) {
+						exchange.getTargetConnection().release();
+					} else {
 						exchange.getTargetConnection().close();
-						exchange.setTargetConnection(null);
 					}
-					break;
+					exchange.setTargetConnection(null); // detach Connection from Exchange
 				}
+				if (!canKeepConnectionAlive)
+					break;
 				if (exchange.getResponse().isRedirect()) {
 					break;
 				}

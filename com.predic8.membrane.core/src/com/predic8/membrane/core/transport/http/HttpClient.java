@@ -28,6 +28,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.Proxies;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.OKResponse;
@@ -37,27 +39,31 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
+/**
+ * Instances are thread-safe.
+ */
 public class HttpClient {
 
 	private static Log log = LogFactory.getLog(HttpClient.class.getName());
-	
-	private int timeBetweenTries = 250;
 
-	private int maxRetries = 5;
+	private final ConnectionManager conMgr = new ConnectionManager();
+	private final ProxyConfiguration proxy;
+	private final int timeBetweenTries = 250;
+	private final int maxRetries;
+	private final boolean adjustHostHeader;
 	
-	private ConnectionManager conMgr = new ConnectionManager();
+	public HttpClient() {
+		proxy = null;
+		maxRetries = 5;
+		adjustHostHeader = false;
+	}
 	
-	private boolean adjustHostHeader;
-	
-	private ProxyConfiguration proxy;
-	
-	private InetAddress host;
-	
-	private int port;
-	
-	private boolean tls;
-	
-	private String localHost;
+	public HttpClient(Router router) {
+		Proxies cfg = router.getConfigurationManager().getProxies();
+		adjustHostHeader = cfg.getAdjustHostHeader();
+		maxRetries = ((HttpTransport)router.getTransport()).getHttpClientRetries();
+		proxy = cfg.getProxyConfiguration();
+	}
 	
 	private boolean useProxy() {
 		if (proxy == null)
@@ -72,41 +78,28 @@ public class HttpClient {
 			req.setUri(HttpUtil.getPathAndQueryString(dest));
 	}
 	
-	private void setHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
-		if (useProxy()) {
-			port = proxy.getProxyPort();
-			setHost(proxy.getProxyHost());
-			return;
-		}
+	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
+		if (useProxy())
+			return new HostColonPort(proxy.getProxyHost(), proxy.getProxyPort());
 		
-		if (connect) {
-			HostColonPort hcp = new HostColonPort(dest);
-			port = hcp.port;
-			setHost(hcp.host);
-			return;
-		} 
+		if (connect)
+			return new HostColonPort(dest);
 		
-		URL destination = new URL(dest);
-		port = HttpUtil.getPort(destination);
-		setHost(destination.getHost());
-		
+		return new HostColonPort(new URL(dest));
 	}
 	
-	private void init(Exchange exc, String dest) throws UnknownHostException, IOException, MalformedURLException {
+	private HostColonPort init(Exchange exc, String dest) throws UnknownHostException, IOException, MalformedURLException {
 		setRequestURI(exc.getRequest(), dest);
-		setHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
+		HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
 		
 		if (useProxy() && proxy.isUseAuthentication()) {
 			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
 		} 
 		
-		tls = getOutboundTLS(exc);
-		localHost = exc.getRule().getLocalHost();
-		
 		if (adjustHostHeader && exc.getRule() instanceof ServiceProxy) {
-			URL destination = new URL(dest); //duplicate
-			exc.getRequest().getHeader().setHost(destination.getHost() + ":" + port);
+			exc.getRequest().getHeader().setHost(new URL(dest).getHost() + ":" + target.port);
 		}
+		return target;
 	}
 
 	private boolean getOutboundTLS(Exchange exc) {
@@ -122,16 +115,17 @@ public class HttpClient {
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
+			HostColonPort target = null;
 			try {
 				log.debug("try # " + counter + " to " + dest);
-				init(exc, dest);
-				con = conMgr.getConnection(host, port, localHost, tls);
+				target = init(exc, dest);
+				con = conMgr.getConnection(InetAddress.getByName(target.host), target.port, exc.getRule().getLocalHost(), getOutboundTLS(exc));
 				exc.setTargetConnection(con);
 				return doCall(exc, con);
 				// java.net.SocketException: Software caused connection abort: socket write error
 			} catch (ConnectException e) {
 				exception = e;
-				log.info("Connection to " + dest + " on port " + port + " refused.");
+				log.info("Connection to " + (target == null ? dest : target ) + " refused.");
 			} catch(SocketException e){
 				if ( e.getMessage().contains("Software caused connection abort")) {
 					log.info("Connection to " + dest + "was aborted externally. Maybe by the server or the OS Membrane is running on.");
@@ -142,7 +136,7 @@ public class HttpClient {
  				}
 				exception = e;
 			} catch (UnknownHostException e) {
-				log.info("Unknown host: " + host);
+				log.info("Unknown host: " + (target == null ? dest : target ));
 				exception = e;
 				if (exc.getDestinations().size() < 2) {
 					break; 
@@ -155,7 +149,6 @@ public class HttpClient {
 				exception = e;
 			}
 			counter++;
-			closeConnection(con);
 			Thread.sleep(timeBetweenTries);
 		}
 		throw exception;
@@ -165,14 +158,6 @@ public class HttpClient {
 		return exc.getDestinations().get(counter % exc.getDestinations().size());
 	}
 
-	private void closeConnection(Connection con) {
-		try {
-			close(con);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-	
 	private void logException(Exchange exc, int counter, Exception e) throws IOException {
 		log.debug("try # " + counter + " failed");
 		exc.getRequest().writeStartLine(System.out);
@@ -180,7 +165,7 @@ public class HttpClient {
 		e.printStackTrace();
 	}
 
-	private Response doCall(Exchange exc, Connection con) throws IOException, SocketException, EndOfStreamException {
+	private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
 		if (exc.getRequest().isCONNECTRequest()) {
 			handleConnectRequest(exc, con);
 			return new OKResponse();
@@ -207,9 +192,6 @@ public class HttpClient {
 
 	private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
 		if (useProxy()) {
-			log.debug("host: " + host);
-			log.debug("port: " + port);
-			
 			exc.getRequest().write(con.out);
 			Response response = new Response();
 			response.read(con.in, false);
@@ -239,39 +221,4 @@ public class HttpClient {
 		}
 		// TODO close ?
 	}
-
-	public void close(Connection con) throws IOException {
-		if (con == null)
-			return;
-		
-		con.close();
-	}
-	
-	public void setAdjustHostHeader(boolean adjustHostHeader) {
-		this.adjustHostHeader = adjustHostHeader;
-	}
-	
-	public void setProxy(ProxyConfiguration proxy) {
-		this.proxy = proxy;
-	}
-	
-	public void setHost(String hostname) throws UnknownHostException {
-		host = InetAddress.getByName(hostname);
-	}
-
-	public int getTimeBetweenTries() {
-		return timeBetweenTries;
-	}
-
-	public void setTimeBetweenTries(int timeBetweenTries) {
-		this.timeBetweenTries = timeBetweenTries;
-	}
-
-	public int getMaxTries() {
-		return maxRetries;
-	}
-
-	public void setMaxRetries(int maxRetries) {
-		this.maxRetries = maxRetries;
-	}		
 }

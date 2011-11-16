@@ -13,16 +13,35 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import com.predic8.membrane.core.util.HttpUtil;
+
 public class HostColonPort {
 
-	public String host;
-	
-	public int port;
+	public final String host;
+	public final int port;
 	
 	public HostColonPort(String hostAndPort) {
 		String[] strs = hostAndPort.split(":");
 		
 		host = strs[0];
 		port = strs.length > 1 ? Integer.parseInt(strs[1]) : 80;
+	}
+	
+	public HostColonPort(String host, int port) {
+		this.host = host;
+		this.port = port;
+	}
+	
+	public HostColonPort(URL url) throws MalformedURLException {
+		host = url.getHost();
+		port = HttpUtil.getPort(url);
+	}
+	
+	@Override
+	public String toString() {
+		return host + ":" + port;
 	}
 }

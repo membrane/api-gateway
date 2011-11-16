@@ -34,14 +34,17 @@ public class Connection {
 	
 	private static Log log = LogFactory.getLog(Connection.class.getName());
 	
+	public final ConnectionManager mgr;
 	public Socket socket;
 	public InputStream in;
 	public OutputStream out;
 
-	
 	public static Connection open(InetAddress host, int port, String localHost, boolean tls) throws UnknownHostException, IOException {
-		
-		Connection con = new Connection();
+		return open(host, port, localHost, tls, null);
+	}
+	
+	public static Connection open(InetAddress host, int port, String localHost, boolean tls, ConnectionManager mgr) throws UnknownHostException, IOException {
+		Connection con = new Connection(mgr);
 		
 		if (tls) {
 			if (isNullOrEmpty(localHost))
@@ -63,6 +66,9 @@ public class Connection {
 		return con;
 	}
 	
+	private Connection(ConnectionManager mgr) {
+		this.mgr = mgr;
+	}
 	
 	public boolean isSame(InetAddress host, int port) {
 		return host.equals(socket.getInetAddress()) && port == socket.getPort();
@@ -87,11 +93,23 @@ public class Connection {
 			socket.shutdownInput();
 		
 		socket.close();
+		
+		if (mgr != null)
+			mgr.releaseConnection(this); // this.isClosed() == true, but mgr keeps track of number of connections
 	}
 
 	public boolean isClosed() {
 		return socket == null || socket.isClosed();
 	}
-	
+
+	/**
+	 * See {@link ConnectionManager} for documentation.
+	 */
+	public void release() throws IOException {
+		if (mgr != null)
+			mgr.releaseConnection(this);
+		else
+			close();
+	}
 	
 }
