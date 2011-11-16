@@ -40,7 +40,7 @@ public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 		Composite composite = createComposite(parent, 2);
 		
 		btSimpleProxy = createRuleButton(composite, "Simple Service Proxy");
-		createFullDescriptionLabel(composite, "Create service proxy that forwards  HTTP and SOAP over HTTP requests.");
+		createFullDescriptionLabel(composite, "Create service proxy that forwards  HTTP and SOAP requests.");
 		addVericalGap(composite);
 		
 		btAdvancedProxy = createRuleButton(composite, "Advanced Service Proxy");

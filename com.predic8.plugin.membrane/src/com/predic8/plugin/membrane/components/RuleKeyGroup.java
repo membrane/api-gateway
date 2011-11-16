@@ -88,7 +88,7 @@ public class RuleKeyGroup {
 		
 		Label lbSubstringExample = new Label(compPattern, SWT.NONE);
 		lbSubstringExample.setLayoutData(gridData4LbExample);
-		lbSubstringExample.setText("Examples:        " + "/axis2/         matches all URI containing /axis2/");
+		lbSubstringExample.setText("Examples:        " + "/axis2/         matches all URIs containing /axis2/");
 
 		Label lbSubstringExampleA = new Label(compPattern, SWT.NONE);
 		lbSubstringExampleA.setText("");
@@ -171,7 +171,6 @@ public class RuleKeyGroup {
 			public void widgetSelected(SelectionEvent e) {
 				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
 					dataChanged = true;
-					System.err.println("Button any path reported data change");
 				}
 
 				Display.getCurrent().asyncExec(new Runnable() {
