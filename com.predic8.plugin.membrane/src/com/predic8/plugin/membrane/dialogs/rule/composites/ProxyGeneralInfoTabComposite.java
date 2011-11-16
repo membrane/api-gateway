@@ -111,7 +111,6 @@ public class ProxyGeneralInfoTabComposite extends AbstractProxyFeatureComposite 
 				Text t = (Text)e.widget;
 				if (!t.getText().equals(rule.getName())) {
 					dataChanged = true;
-					System.err.println("rule name text reported data change");
 				}
 			}
 		});
@@ -143,7 +142,6 @@ public class ProxyGeneralInfoTabComposite extends AbstractProxyFeatureComposite 
 				//distinguish between selection event when rule is set and user clicked
 				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
 					dataChanged = true;
-					System.err.println("button interfaces reported data change");
 				}
 			}
 		});
@@ -180,7 +178,6 @@ public class ProxyGeneralInfoTabComposite extends AbstractProxyFeatureComposite 
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				dataChanged = true;
-				System.err.println("combo box interfaces reported data change");
 			}
 		});
 	}

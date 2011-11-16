@@ -120,7 +120,6 @@ public class RuleKeyGroup {
 			public void widgetSelected(SelectionEvent e) {
 				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
 					dataChanged = true;
-					System.err.println("Button regexp reported data change");
 				}
 			}
 		});
@@ -135,7 +134,6 @@ public class RuleKeyGroup {
 			public void widgetSelected(SelectionEvent e) {
 				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
 					dataChanged = true;
-					System.err.println("Button substring reported data change");
 				}
 			}
 		});
@@ -151,7 +149,6 @@ public class RuleKeyGroup {
 			public void widgetSelected(SelectionEvent e) {
 				if (!SELECTION_INPUT_CHANGED.equals(e.data)) {
 					dataChanged = true;
-					System.err.println("Button path pattern reported data change");
 				}
 				
 				Display.getCurrent().asyncExec(new Runnable() {
@@ -201,7 +198,6 @@ public class RuleKeyGroup {
 				Text t = (Text)e.widget;
 				if (!t.getText().equals(ruleKey.getPath())) {
 					dataChanged = true;
-					System.err.println("service proxy rule path reported data change");
 				}
 			}
 		});
@@ -220,7 +216,6 @@ public class RuleKeyGroup {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				dataChanged = true;
-				System.err.println("combo box http methods reported data change");
 			}
 		});
 		
@@ -240,7 +235,6 @@ public class RuleKeyGroup {
 				Text t = (Text)e.widget;
 				if (!t.getText().equals("" + ruleKey.getPort())) {
 					dataChanged = true;
-					System.err.println("service proxy listen port reported data change");
 				}
 				
 			}
@@ -266,7 +260,6 @@ public class RuleKeyGroup {
 				Text t = (Text)e.widget;
 				if (!t.getText().equals(ruleKey.getHost())) {
 					dataChanged = true;
-					System.err.println("service proxy host reported data change");
 				}
 				
 			}

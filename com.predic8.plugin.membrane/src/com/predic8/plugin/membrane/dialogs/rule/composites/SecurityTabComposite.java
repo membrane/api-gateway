@@ -46,7 +46,6 @@ public abstract class SecurityTabComposite extends AbstractProxyFeatureComposite
 			@Override
 			public void widgetSelected(SelectionEvent e) {
 				dataChanged = true;
-				System.err.println("security button reported data change");
 			}
 		
 		});

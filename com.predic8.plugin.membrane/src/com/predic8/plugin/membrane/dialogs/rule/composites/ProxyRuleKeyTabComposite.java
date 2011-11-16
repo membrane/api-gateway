@@ -45,7 +45,6 @@ public class ProxyRuleKeyTabComposite extends AbstractProxyFeatureComposite {
 				Text t = (Text)e.widget;
 				if (!t.getText().equals("" + rule.getKey().getPort())) {
 					dataChanged = true;
-					System.err.println("proxy listener port text reported data change");
 				}
 			}
 		});

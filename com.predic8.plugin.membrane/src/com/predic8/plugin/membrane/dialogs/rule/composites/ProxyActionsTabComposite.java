@@ -39,7 +39,6 @@ public class ProxyActionsTabComposite extends AbstractProxyFeatureComposite {
 		btBlockRequest.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				dataChanged = true;
-				System.err.println("block request reported data change");
 			}
 		});
 		btBlockRequest.setText("Block Request");
@@ -48,7 +47,6 @@ public class ProxyActionsTabComposite extends AbstractProxyFeatureComposite {
 		btBlockResponse.addSelectionListener(new SelectionAdapter() {
 			public void widgetSelected(SelectionEvent e) {
 				dataChanged = true;
-				System.err.println("block response reported data change");
 			}
 		});
 		btBlockResponse.setText("Block Response");

@@ -51,9 +51,7 @@ public abstract class AbstractProxyXMLConfTabComposite extends AbstractProxyFeat
 				StyledText t = (StyledText)e.widget;
 				if (!t.getText().equals(originalXml)) {
 					dataChanged = true;
-					System.err.println("xml tab reported data change");
 				}
-					
 			}
 		});
 		

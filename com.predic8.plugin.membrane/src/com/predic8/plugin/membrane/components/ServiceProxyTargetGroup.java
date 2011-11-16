@@ -76,7 +76,6 @@ public class ServiceProxyTargetGroup {
 				Text t = (Text)e.widget;
 				if (!t.getText().equals(originalTargetHost)) {
 					dataChanged = true;
-					System.err.println("target host text reported data change");
 				}
 			}
 		});
@@ -98,7 +97,6 @@ public class ServiceProxyTargetGroup {
 				Text t = (Text)e.widget;
 				if (!t.getText().equals(originalTargetPort)) {
 					dataChanged = true;
-					System.err.println("target port text reported data change");
 				}
 			}
 		});
