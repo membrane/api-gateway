@@ -139,9 +139,6 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 	}
 	
 	private void replaceRule() throws Exception {
-		
-		System.err.println("rule replaced . . . ");
-		
 		getRuleManager().removeRule(originalRule);
 		getRuleManager().addRuleIfNew(workingCopy);
 	}
