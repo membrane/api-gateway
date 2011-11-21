@@ -21,6 +21,7 @@
 	<path id="classpath">
 		<fileset dir="lib">
 			<include name="**/*.jar" />
+			<exclude name="MyInterceptor.jar" />
 		</fileset>
 		<pathelement path="build/classes" />
 		<pathelement path="static/common/conf" />
@@ -66,6 +67,9 @@
 			<fileset dir="lib">
 				<exclude name="**/rcp/**" />
 				<exclude name="**/ext/**" />
+				<exclude name="MyInterceptor.jar" />
+				<!-- the custom interceptor creates class path problems in the example, if it is
+					 alreay included here. -->
 			</fileset>
 		</copy>
 
