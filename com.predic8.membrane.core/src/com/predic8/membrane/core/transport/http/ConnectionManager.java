@@ -84,13 +84,16 @@ public class ConnectionManager {
 	private AtomicInteger numberInPool = new AtomicInteger();
 	private HashMap<ConnectionKey, ArrayList<OldConnection>> availableConnections =
 			new HashMap<ConnectionManager.ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
+	private Timer timer;
+	private volatile boolean shutdownWhenDone = false;
 
 	public ConnectionManager() {
-		final Timer t = new Timer("Connection Closer", true);
-		t.schedule(new TimerTask() {
+		timer = new Timer("Connection Closer", true);
+		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				closeOldConnections();
+				if (closeOldConnections() == 0 && shutdownWhenDone)
+					timer.cancel();
 			}
 		}, CLOSE_AFTER_MILLISECONDS, CLOSE_AFTER_MILLISECONDS);
 	}
@@ -136,11 +139,11 @@ public class ConnectionManager {
 		}
 	}
 	
-	private void closeOldConnections() {
+	private int closeOldConnections() {
 		ArrayList<ConnectionKey> toRemove = new ArrayList<ConnectionKey>();
 		long deathPoint = System.currentTimeMillis() - CLOSE_AFTER_MILLISECONDS;
 		log.debug("closing old connections");
-		int closed = 0;
+		int closed = 0, remaining;
 		synchronized(this) {
 			// close connections older than CLOSE_AFTER_MILLISECONDS 
 			for (Map.Entry<ConnectionKey, ArrayList<OldConnection>> e : availableConnections.entrySet()) {
@@ -162,8 +165,14 @@ public class ConnectionManager {
 			}
 			for (ConnectionKey remove : toRemove)
 				availableConnections.remove(remove);
+			remaining = availableConnections.size();
 		}
 		numberInPool.addAndGet(-closed);
 		log.debug("closed " + closed + " connections");
+		return remaining;
+	}
+	
+	public void shutdownWhenDone() {
+		shutdownWhenDone = true;
 	}
 }

@@ -65,6 +65,11 @@ public class HttpClient {
 		proxy = cfg.getProxyConfiguration();
 	}
 	
+	@Override
+	protected void finalize() throws Throwable {
+		conMgr.shutdownWhenDone();
+	}
+	
 	private boolean useProxy() {
 		if (proxy == null)
 			return false;
