@@ -76,7 +76,8 @@ import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 	ThrottleInterceptorTest.class,
 	GroovyInterceptorTest.class,
 	FormValidationInterceptorTest.class,
-	ServiceInvocationTest.class
+	ServiceInvocationTest.class,
+	HttpKeepAliveTest.class,
 })
 public class UnitTests {
 
