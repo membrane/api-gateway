@@ -55,9 +55,7 @@ public class HttpUtil {
 			line.append((char) b);
 		}
 		
-		ErrorReadingStartLineException exc = new ErrorReadingStartLineException();
-		exc.setStartLine(line.toString());
-		throw exc;
+		throw new ErrorReadingStartLineException(line.toString());
 	}
 
 	

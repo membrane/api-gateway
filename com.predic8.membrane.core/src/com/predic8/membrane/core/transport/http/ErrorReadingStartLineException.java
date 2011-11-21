@@ -5,12 +5,13 @@ public class ErrorReadingStartLineException extends RuntimeException {
 	private static final long serialVersionUID = -6998133859472737055L;
 	
 	private String startLine;
-	
+
+	public ErrorReadingStartLineException(String startLine) {
+		this.startLine = startLine;
+	}
+
 	public String getStartLine() {
 		return startLine;
 	}
 	
-	public void setStartLine(String startLine) {
-		this.startLine = startLine;
-	}
 }

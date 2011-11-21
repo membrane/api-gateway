@@ -14,15 +14,22 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 import javax.net.ssl.SSLSocket;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 public class HttpServerRunnable extends AbstractHttpRunnable {
@@ -94,8 +101,10 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 			log.info("stream closed");
 		} catch (AbortException e) {
 			log.info("exchange aborted.");
+		} catch (NoMoreRequestsException e) {
+			// happens at the end of a keep-alive connection
 		} catch (ErrorReadingStartLineException e) {
-			log.info("Client connection terminated before start line was read. Start line so far: ("
+			log.debug("Client connection terminated before line was read. Line so far: ("
 					+ e.getStartLine() + ")");
 		} catch (Exception e) {
 			e.printStackTrace();
