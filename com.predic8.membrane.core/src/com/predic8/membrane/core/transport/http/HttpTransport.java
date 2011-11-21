@@ -128,11 +128,11 @@ public class HttpTransport extends Transport {
 		this.httpClientRetries = httpClientRetries;
 	}
 
-	public boolean isContinue100Expected() {
+	public boolean isAutoContinue100Expected() {
 		return autoContinue100Expected;
 	}
 	
-	public void setContinue100Expected(boolean autoContinue100Expected) {
+	public void setAutoContinue100Expected(boolean autoContinue100Expected) {
 		this.autoContinue100Expected = autoContinue100Expected;
 	}
 }

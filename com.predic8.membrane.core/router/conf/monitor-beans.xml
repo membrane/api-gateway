@@ -18,7 +18,12 @@
 
 	<router/>
 
-	<transport autoContinue100Expected="true">
+	<transport 
+			coreThreadPoolSize="5" 
+			socketTimeout="30000" 
+			tcpNoDelay="true" 
+			httpClientRetries="5" 
+			autoContinue100Expected="true">
 		<ruleMatching />
 		<dispatching />
 		<userFeature />

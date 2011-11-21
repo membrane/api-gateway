@@ -137,7 +137,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
 			
-			if (transport.isContinue100Expected() && exchange.getRequest().getHeader().is100ContinueExpected())
+			if (transport.isAutoContinue100Expected() && exchange.getRequest().getHeader().is100ContinueExpected())
 				tellClientToContinueWithBody();
 
 			invokeRequestHandlers();

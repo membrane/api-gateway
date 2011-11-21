@@ -1,17 +1,16 @@
 package com.predic8.membrane.core.config.spring;
 
-import java.util.*;
+import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.support.*;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.ManagedList;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
-import org.springframework.util.xml.DomUtils;
-import org.w3c.dom.*;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
-import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class HttpTransportParser extends
