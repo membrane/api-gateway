@@ -137,15 +137,8 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
 			
-			if (exchange.getRequest().getHeader().is100ContinueExpected()) {
-				// request body from client so that interceptors can handle it
-				Response response = new Response();
-				response.setStatusCode(100);
-				response.setStatusMessage("Continue");
-				response.write(srcOut);
-				// remove "Expect: 100-continue" since we already sent "100 Continue"
-				exchange.getRequest().getHeader().removeFields(Header.EXPECT);
-			}
+			if (transport.isContinue100Expected() && exchange.getRequest().getHeader().is100ContinueExpected())
+				tellClientToContinueWithBody();
 
 			invokeRequestHandlers();
 
@@ -168,5 +161,12 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		exchange.setCompleted();
 		log.debug("exchange set completed");
 
+	}
+
+	private void tellClientToContinueWithBody() throws IOException {
+		// request body from client so that interceptors can handle it
+		Response.continue100().build().write(srcOut);
+		// remove "Expect: 100-continue" since we already sent "100 Continue"
+		exchange.getRequest().getHeader().removeFields(Header.EXPECT);
 	}
 }

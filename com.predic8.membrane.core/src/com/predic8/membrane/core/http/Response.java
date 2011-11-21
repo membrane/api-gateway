@@ -73,16 +73,23 @@ public class Response extends Message {
 		return ok().entity(msg);
 	}
 	
+	private static String SERVER_HEADER = "Membrane " + Constants.VERSION + ". See http://membrane-soa.org";
+	
 	public static ResponseBuilder ok() {
 		return ResponseBuilder.newInstance().
 							   status(200, "Ok").
-							   header("Server","Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
+							   header("Server", SERVER_HEADER);
 	}
 	
 	public static ResponseBuilder badRequest() {
 		return ResponseBuilder.newInstance().
 				status(400, "Bad Request").
-				header("Server","Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
+				header("Server", SERVER_HEADER);
+	}
+	
+	public static ResponseBuilder continue100() {
+		return ResponseBuilder.newInstance().
+				status(100, "Continue");
 	}
 	
 	@Override

@@ -28,6 +28,7 @@ public class HttpTransportParser extends
 		bean.addPropertyValue("socketTimeout", e.getAttribute("socketTimeout"));
 		bean.addPropertyValue("httpClientRetries", e.getAttribute("httpClientRetries"));
 		bean.addPropertyValue("tcpNoDelay", e.getAttribute("tcpNoDelay"));
+		bean.addPropertyValue("autoContinue100Expected", e.getAttribute("autoContinue100Expected"));
 		
 		bean.addPropertyValue("interceptors", parseInterceptors(e));
 	}

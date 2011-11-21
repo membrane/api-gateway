@@ -62,6 +62,7 @@
 					<xsd:attribute name="socketTimeout" default="30000" type="xsd:int" />
 					<xsd:attribute name="tcpNoDelay" default="true" type="xsd:boolean" />
 					<xsd:attribute name="httpClientRetries" default="5" type="xsd:int" />
+					<xsd:attribute name="autoContinue100Expected" default="true" type="xsd:int" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>
