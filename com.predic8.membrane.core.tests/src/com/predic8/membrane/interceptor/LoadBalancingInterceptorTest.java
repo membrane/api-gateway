@@ -17,38 +17,39 @@ import static junit.framework.Assert.assertEquals;
 
 import java.net.MalformedURLException;
 
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.*;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpVersion;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.interceptor.balancer.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
+import com.predic8.membrane.core.interceptor.balancer.ClusterManager;
+import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
+import com.predic8.membrane.core.interceptor.balancer.Node;
+import com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
+import com.predic8.membrane.integration.Http11Test;
 
 public class LoadBalancingInterceptorTest {
 
 	private DummyWebServiceInterceptor mockInterceptor1;
-
 	private DummyWebServiceInterceptor mockInterceptor2;
-
 	protected LoadBalancingInterceptor balancingInterceptor;
-
 	private DispatchingStrategy roundRobinStrategy;
-
 	private DispatchingStrategy byThreadStrategy;
-
-	private String endPoint1 = "localhost:2000";
-
-	private String endPoint2 = "localhost:3000";
-
 	private HttpRouter service1;
 	private HttpRouter service2;
-
 	protected HttpRouter balancer;
 
 	@Before
@@ -144,6 +145,34 @@ public class LoadBalancingInterceptorTest {
 		assertEquals(2, mockInterceptor2.counter);
 	}
 
+	@Test
+	public void testExpect100Continue() throws Exception {
+		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+
+		HttpClient client = new HttpClient();
+		Http11Test.initExpect100ContinueWithFastFail(client);
+
+		PostMethod vari = getPostMethod();
+		int status = client.executeMethod(vari);
+		System.out.println(new String(vari.getResponseBody()));
+
+		assertEquals(200, status);
+		assertEquals(1, mockInterceptor1.counter);
+		assertEquals(0, mockInterceptor2.counter);
+
+		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(1, mockInterceptor1.counter);
+		assertEquals(1, mockInterceptor2.counter);
+
+		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(2, mockInterceptor1.counter);
+		assertEquals(1, mockInterceptor2.counter);
+
+		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(2, mockInterceptor1.counter);
+		assertEquals(2, mockInterceptor2.counter);
+	}
+
 	private PostMethod getPostMethod() {
 		PostMethod post = new PostMethod(
 				"http://localhost:7000/axis2/services/BLZService");
@@ -188,6 +217,5 @@ public class LoadBalancingInterceptorTest {
 	@Test
 	public void testByThreadStrategy() throws Exception {
 		balancingInterceptor.setDispatchingStrategy(byThreadStrategy);
-
 	}
 }

@@ -136,7 +136,17 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
-			 
+			
+			if (exchange.getRequest().getHeader().is100ContinueExpected()) {
+				// request body from client so that interceptors can handle it
+				Response response = new Response();
+				response.setStatusCode(100);
+				response.setStatusMessage("Continue");
+				response.write(srcOut);
+				// remove "Expect: 100-continue" since we already sent "100 Continue"
+				exchange.getRequest().getHeader().removeFields(Header.EXPECT);
+			}
+
 			invokeRequestHandlers();
 
 			// client call was here

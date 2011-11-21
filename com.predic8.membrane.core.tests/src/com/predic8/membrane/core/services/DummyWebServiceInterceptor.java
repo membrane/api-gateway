@@ -13,12 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.services;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.util.MessageUtil;
 
 public class DummyWebServiceInterceptor extends AbstractInterceptor {
