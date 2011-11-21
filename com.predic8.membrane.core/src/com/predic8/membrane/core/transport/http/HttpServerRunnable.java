@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
@@ -55,6 +56,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 
 	public void run() {
 		try {
+			updateThreadName(true);
 			while (true) {
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
@@ -115,6 +117,8 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 				return;
 
 			closeConnections();
+			
+			updateThreadName(false);
 		}
 
 	}
@@ -177,5 +181,21 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 		Response.continue100().build().write(srcOut);
 		// remove "Expect: 100-continue" since we already sent "100 Continue"
 		exchange.getRequest().getHeader().removeFields(Header.EXPECT);
+	}
+	
+	private void updateThreadName(boolean fromConnection) {
+		if (fromConnection) {
+			StringBuilder sb = new StringBuilder();
+			sb.append(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
+			sb.append(" ");
+			InetAddress ia = sourceSocket.getInetAddress();
+			if (ia != null)
+				sb.append(ia.toString());
+			sb.append(":");
+			sb.append(sourceSocket.getPort());
+			Thread.currentThread().setName(sb.toString());
+		} else {
+			Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
+		}
 	}
 }

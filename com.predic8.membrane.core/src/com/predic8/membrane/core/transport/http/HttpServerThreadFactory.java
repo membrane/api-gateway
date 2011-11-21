@@ -17,10 +17,12 @@ import java.util.concurrent.ThreadFactory;
 
 public class HttpServerThreadFactory implements ThreadFactory {
 
+	public static final String DEFAULT_THREAD_NAME = "RouterThread"; 
+	
 	@Override
 	public Thread newThread(Runnable r) {
 		Thread th = new Thread(r);
-		th.setName("RouterThread");
+		th.setName(DEFAULT_THREAD_NAME);
 		return th;
 	}
 
