@@ -206,6 +206,7 @@ public class HttpClient {
 		response.write(exc.getServerThread().srcOut);
 		exc.getRequest().readBody();
 		exc.getRequest().getBody().write(con.out);
+		con.out.flush();
 		response.read(con.in, !exc.getRequest().isHEADRequest());
 	}
 
