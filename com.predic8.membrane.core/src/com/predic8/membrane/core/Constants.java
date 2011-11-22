@@ -16,6 +16,8 @@ package com.predic8.membrane.core;
 
 public class Constants {
 
+	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
+	
 	public static final String EMPTY_STRING = "";
 	
 	public static final String CRLF = ""+((char)13)+((char)10);

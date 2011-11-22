@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.acl;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import com.predic8.membrane.core.Router;

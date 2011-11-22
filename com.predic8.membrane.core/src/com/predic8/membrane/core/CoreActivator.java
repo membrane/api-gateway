@@ -124,7 +124,7 @@ public class CoreActivator extends Plugin {
 		log.debug("Reading configuration from configuration/monitor-beans.xml");
 		info("Reading configuration from configuration/monitor-beans.xml");
 
-		String membraneHome = System.getenv("MEMBRANE_HOME");
+		String membraneHome = System.getenv(Constants.MEMBRANE_HOME);
 		if (membraneHome == null)
 			throw new IllegalStateException("MEMBRANE_HOME not set"); 		
 		

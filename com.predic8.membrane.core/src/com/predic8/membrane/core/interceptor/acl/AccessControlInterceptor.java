@@ -13,17 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 
-import javax.management.RuntimeErrorException;
 import javax.xml.stream.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
@@ -46,10 +44,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		Resource resource;
 		try {
 			resource = getAccessControl().getResourceFor(exc.getOriginalRequestUri());
-		} catch (FileNotFoundException e) {
-			log.warn("Could not find access control file: " + aclFilename );
-			setResponseToAccessDenied(exc);
-			return Outcome.ABORT;
 		} catch (Exception e) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
@@ -89,17 +83,35 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	private void init() throws Exception {
-		if (aclFilename == null)
-			throw new IllegalStateException("file name is not set");
+		if (aclFilename == null) {
+			log.error("Fatal error in proxy configuration: <accessControl> element is invalid.");
+			log.error("File name is not specified for access control. The valid element looks like <accessControl file='conf/acl.xml'/>");
+			System.exit(1);
+		}
 		accessControl = parse(aclFilename);
 	}
 
 	protected AccessControl parse(String fileName) throws Exception {
-		
 		XMLInputFactory factory = XMLInputFactory.newInstance();
-	    XMLStreamReader reader = factory.createXMLStreamReader(new FileInputStream(fileName));
-	    
+	    XMLStreamReader reader = factory.createXMLStreamReader(new FileInputStream(checkAclFile(fileName)));
 	    return (AccessControl) new AccessControl(router).parse(reader);
+	}
+	
+	private String checkAclFile(String fileName) {
+		File file = new File(fileName);
+		if (file.exists()) {
+			return fileName;
+		}
+		
+		fileName = System.getenv(Constants.MEMBRANE_HOME) + System.getProperty("file.separator") + fileName;
+		file = new File(fileName);
+		if (!file.exists()) {
+			log.error("Error in proxy configuration: <accessControl> element may contain invalid data.");
+			log.error("Unable to locate access control file "  + fileName + ". Please set MEMBRANE_HOME or start the Membrane from the instalation directory.");
+			System.exit(1);
+		}
+		
+		return fileName;
 	}
 	
 	public Response getResponse(String content) {
