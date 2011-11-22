@@ -21,6 +21,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,10 +39,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	private static Log log = LogFactory.getLog(FileExchangeStore.class
 			.getName());
 
-	private static int counter = 0;
+	private static AtomicInteger counter = new AtomicInteger();
 
-	private static final DateFormat dateFormat = new SimpleDateFormat(
-			"'h'hh'm'mm's'ss'ms'ms");
+	private static final String DATE_FORMAT = "'h'hh'm'mm's'ss'ms'ms"; 
+	
+	private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<DateFormat>();
 
 	private static final String separator = System
 			.getProperty("file.separator");
@@ -57,21 +59,24 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	private boolean saveBodyOnly = false;
 
 	public void add(AbstractExchange exc) {
+		int fileNumber;
 		if (exc.getResponse() == null)
-			counter++;
+			fileNumber = counter.incrementAndGet();
+		else
+			fileNumber = counter.get();
 
 		Message msg = exc.getResponse() == null ? exc.getRequest() : exc
 				.getResponse();
 
-		StringBuffer buf = getFileNameBuffer(exc);
+		StringBuffer buf = getDirectoryNameBuffer(exc);
 
 		directory = new File(buf.toString());
 		directory.mkdirs();
 		if (directory.exists() && directory.isDirectory()) {
 			buf.append(separator);
-			buf.append(dateFormat.format(exc.getTime().getTime()));
+			buf.append(getDateFormat().format(exc.getTime().getTime()));
 			buf.append("-");
-			buf.append(counter);
+			buf.append(fileNumber);
 			exc.setProperty(MESSAGE_FILE_PATH, buf.toString());
 			buf.append("-");
 			buf.append(exc.getResponse() == null ? "Request" : "Response");
@@ -87,7 +92,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	}
 
-	private synchronized StringBuffer getFileNameBuffer(AbstractExchange exc) {
+	private StringBuffer getDirectoryNameBuffer(AbstractExchange exc) {
 		StringBuffer buf = new StringBuffer();
 		buf.append(dir);
 		buf.append(separator);
@@ -97,6 +102,15 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		buf.append(separator);
 		buf.append(exc.getTime().get(Calendar.DAY_OF_MONTH));
 		return buf;
+	}
+	
+	private static DateFormat getDateFormat() {
+		DateFormat df = dateFormat.get();
+		if (df == null) {
+			df = new SimpleDateFormat(DATE_FORMAT);
+			dateFormat.set(df);
+		}
+		return df;
 	}
 
 	private void writeFile(Message msg, String path) throws Exception {
