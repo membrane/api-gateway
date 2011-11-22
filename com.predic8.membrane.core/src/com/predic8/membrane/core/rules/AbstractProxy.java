@@ -15,6 +15,7 @@ package com.predic8.membrane.core.rules;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import javax.xml.stream.*;
@@ -51,8 +52,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	 
 	protected RuleKey key;
 	
-	protected boolean blockRequest;
-	protected boolean blockResponse;
+	protected volatile boolean blockRequest;
+	protected volatile boolean blockResponse;
 	
 	protected boolean inboundTLS;
 	
@@ -68,7 +69,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	/** 
 	 * Map<Status Code, StatisticCollector>
 	 */
-	private Map<Integer, StatisticCollector> statusCodes = new Hashtable<Integer, StatisticCollector>();
+	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();
 	
 	private class InOutElement extends AbstractXmlElement {
 		private Interceptor.Flow flow;
@@ -353,19 +354,29 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 		this.localHost = localHost;
 	}	
 	
-	public synchronized void collectStatisticsFrom(Exchange exc) {
-		int code = exc.getResponse().getStatusCode();
-		if ( !statusCodes.containsKey(code) ) {
-			statusCodes.put(code, new StatisticCollector(true));
+	private StatisticCollector getStatisticCollectorByStatusCode(int code) {
+		StatisticCollector sc = statusCodes.get(code);
+		if (sc == null) {
+			sc = new StatisticCollector(true);
+			StatisticCollector sc2 = statusCodes.putIfAbsent(code, sc);
+			if (sc2 != null)
+				sc = sc2;
 		}
-		statusCodes.get(code).collectFrom(exc);			
+		return sc;
+	}
+	
+	public void collectStatisticsFrom(Exchange exc) {
+		StatisticCollector sc = getStatisticCollectorByStatusCode(exc.getResponse().getStatusCode());
+		synchronized(sc) {
+			sc.collectFrom(exc);			
+		}
 	}
 
 	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
 		return statusCodes;
 	}
 
-	public synchronized int getCount() {
+	public int getCount() {
 		int c = 0;
 		for ( StatisticCollector statisticCollector : statusCodes.values() ) {
 			c += statisticCollector.getCount();

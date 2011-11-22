@@ -53,6 +53,16 @@ public class Response extends Message {
 			return this;
 		}
 		
+		public ResponseBuilder body(AbstractBody body) {
+			res.setBody(body);
+			return this;
+		}
+		
+		public ResponseBuilder bodyContent(byte[] content) {
+			res.setBodyContent(content);
+			return this;
+		}
+		
 		public ResponseBuilder header(String k, String v) {
 			res.getHeader().add(k, v);
 			return this;

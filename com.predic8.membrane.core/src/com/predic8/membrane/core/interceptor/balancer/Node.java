@@ -1,6 +1,8 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.stream.*;
 
@@ -14,14 +16,15 @@ public class Node extends AbstractXmlElement {
 		UP, DOWN, TAKEOUT;
 	}
 	
-	private long lastUpTime;
 	private String host;
 	private int port;
-	private Status status;
-	private int counter;
-	private int threads;
 	
-	private Map<Integer, StatisticCollector> statusCodes = new Hashtable<Integer, StatisticCollector>();  
+	private volatile long lastUpTime;
+	private volatile Status status;
+	private AtomicInteger counter;
+	private AtomicInteger threads;
+	
+	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();  
 	
 	public Node(String host, int port) {
 		this.host = host;
@@ -38,21 +41,22 @@ public class Node extends AbstractXmlElement {
 			   port == ((Node)obj).getPort();
 	}
 	
-	public synchronized int getLost() {
+	public int getLost() {
 		int received = 0;
 		for ( StatisticCollector statisticCollector : statusCodes.values() ) {
 			received += statisticCollector.getCount();
 		}			
-		return counter - received - threads;
+		return counter.get() - received - threads.get();
 	}
 
-	public synchronized double getErrors() {
+	public double getErrors() {
 		int successes = 0;
 		int all = 0;
 		for (Map.Entry<Integer, StatisticCollector> e: statusCodes.entrySet() ) {
-			all += e.getValue().getCount();
+			int count = e.getValue().getCount();
+			all += count;
 			if ( e.getKey() < 500 && e.getKey() > 0) {
-				successes += e.getValue().getCount();
+				successes += count;
 			}
 		}			
 		return all == 0 ? 0: 1-(double)successes/all; 
@@ -95,7 +99,8 @@ public class Node extends AbstractXmlElement {
 	}
 	
 	public void setStatus(Status status) {
-		if (status==Status.DOWN) threads = 0;
+		if (status == Status.DOWN) 
+			threads.set(0);
 		this.status = status;
 	}
 	
@@ -108,39 +113,49 @@ public class Node extends AbstractXmlElement {
 		return "["+host+":"+port+"]";
 	}
 
-	public synchronized int getCounter() {
-		return counter;
+	public int getCounter() {
+		return counter.get();
 	}
 
-	public synchronized void incCounter() {
-		counter++;		
+	public void incCounter() {
+		counter.incrementAndGet();		
 	}
 
-	public synchronized void clearCounter() {
-		counter = 0;	
+	public void clearCounter() {
+		counter.set(0);	
 		statusCodes.clear();
 	}
 
-	public synchronized void collectStatisticsFrom(Exchange exc) {
-		int code = exc.getResponse().getStatusCode();
-		if ( !statusCodes.containsKey(code) ) {
-			statusCodes.put(code, new StatisticCollector(true));
+	private StatisticCollector getStatisticCollectorByStatusCode(int code) {
+		StatisticCollector sc = statusCodes.get(code);
+		if (sc == null) {
+			sc = new StatisticCollector(true);
+			StatisticCollector sc2 = statusCodes.putIfAbsent(code, sc);
+			if (sc2 != null)
+				sc = sc2;
 		}
-		statusCodes.get(code).collectFrom(exc);			
+		return sc;
+	}
+
+	public void collectStatisticsFrom(Exchange exc) {
+		StatisticCollector sc = getStatisticCollectorByStatusCode(exc.getResponse().getStatusCode());
+		synchronized(sc) {
+			sc.collectFrom(exc);			
+		}
 	}
 	
-	public synchronized void addThread() {
+	public void addThread() {
 		if (!isUp()) return;
-		++threads;		
+		threads.incrementAndGet();		
 	}
 
-	public synchronized void removeThread() {
+	public void removeThread() {
 		if (!isUp()) return;
-		--threads;		
+		threads.incrementAndGet();		
 	}
 
-	public synchronized int getThreads() {
-		return threads;
+	public int getThreads() {
+		return threads.get();
 	}
 
 	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {

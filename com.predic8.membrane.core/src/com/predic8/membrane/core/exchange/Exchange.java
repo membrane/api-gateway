@@ -63,8 +63,8 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void blockRequestIfNeeded() throws TerminateException {
-		synchronized (getRequest()) {
-			if (getRule().isBlockRequest()) {
+		if (getRule().isBlockRequest()) {
+			synchronized (getRequest()) {
 				setStopped();
 				block(getRequest());
 			}
@@ -72,8 +72,8 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void blockResponseIfNeeded() throws TerminateException {
-		synchronized (getResponse()) {
-			if (getRule().isBlockResponse()) {
+		if (getRule().isBlockResponse()) {
+			synchronized (getResponse()) {
 				setStopped();
 				block(getResponse());
 			}

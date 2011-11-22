@@ -54,7 +54,7 @@ public class Transport {
 		return router;
 	}
 	
-	public synchronized void closeAll() throws IOException {
+	public void closeAll() throws IOException {
 		
 	}
 }
