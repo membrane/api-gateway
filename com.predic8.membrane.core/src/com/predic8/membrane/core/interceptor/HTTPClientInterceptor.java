@@ -29,7 +29,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(HTTPClientInterceptor.class.getName());
 
-	private HttpClient httpClient;
+	private volatile HttpClient httpClient;
 	
 	public HTTPClientInterceptor() {
 		name="HTTPClient";
@@ -61,10 +61,15 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		return exc.getDestinations().get(0);
 	}
 
-	// synchronized is necessary for singleton - google "double checked locking"
-	private synchronized HttpClient getClient() {
-		if (httpClient == null)
-			httpClient = new HttpClient(router);
-		return httpClient;
+	// http://en.wikipedia.org/wiki/Double-checked_locking
+	private HttpClient getClient() {
+		HttpClient result = httpClient;
+		if (result == null)
+			synchronized(this) {
+				result = httpClient;
+				if (result == null)
+					httpClient = result = new HttpClient(router);
+			}
+		return result;
 	}	
 }
