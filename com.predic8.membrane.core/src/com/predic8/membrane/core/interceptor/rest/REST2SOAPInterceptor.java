@@ -13,8 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
+import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import javax.xml.stream.*;
@@ -74,7 +76,8 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 			.getName());
 
 	private List<Mapping> mappings = new ArrayList<Mapping>();
-	private XSLTTransformer xsltTransformer = new XSLTTransformer();
+	private final ConcurrentHashMap<String, XSLTTransformer> xsltTransformers = 
+			new ConcurrentHashMap<String, XSLTTransformer>();
 
 	public REST2SOAPInterceptor() {
 		name = "REST 2 SOAP Gateway";
@@ -102,29 +105,37 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		if (getRESTURL(exc) == null)
 			return Outcome.CONTINUE;
 
-		log.debug("response: " + transform(null, getBodySource(exc)));
+		if (log.isDebugEnabled())
+			log.debug("response: " + getTransformer(null).transform(getBodySource(exc)));
 
-		String transformedResp = transform(getRESTURL(exc).responseXSLT,
-				getBodySource(exc));
+		byte[] transformedResp = getTransformer(getRESTURL(exc).responseXSLT).
+				transform(getBodySource(exc));
 		setContentType(exc.getResponse().getHeader());
 
 		if ("json".equals(getRESTURL(exc).responseType)) {
 			transformedResp = xml2json(transformedResp);
 			setJSONContentType(exc.getResponse().getHeader());
 		}
-		exc.getResponse().setBodyContent(transformedResp.getBytes("UTF-8"));
+		exc.getResponse().setBodyContent(transformedResp);
 		return Outcome.CONTINUE;
 	}
 
-	private String xml2json(String xmlResp) throws Exception {
-		return transform(
-				"classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl",
-				new StreamSource(new StringReader(xmlResp)));
+	private byte[] xml2json(byte[] xmlResp) throws Exception {
+		return getTransformer("classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl").
+				transform(new StreamSource(new ByteArrayInputStream(xmlResp)));
 	}
 
-	private String transform(String ss, Source source) throws Exception {
-		return xsltTransformer.transform(ss, source,
-				router.getResourceResolver());
+	private XSLTTransformer getTransformer(String ss) throws Exception {
+		String key = ss == null ? "null" : ss;
+		XSLTTransformer t = xsltTransformers.get(key);
+		if (t == null) {
+			int concurrency = 2 * Runtime.getRuntime().availableProcessors();
+			t = new XSLTTransformer(ss, router.getResourceResolver(), concurrency);
+			XSLTTransformer t2 = xsltTransformers.putIfAbsent(key, t);
+			if (t2 != null)
+				return t2;
+		}
+		return t;
 	}
 
 	private StreamSource getRequestXMLSource(Exchange exc) throws Exception {
@@ -191,9 +202,10 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 	private void transformAndReplaceBody(Message msg, String ss, Source src)
 			throws Exception {
-		String soapEnv = transform(ss, src);
-		log.debug("soap-env: " + soapEnv);
-		msg.setBodyContent(soapEnv.getBytes("UTF-8"));
+		byte[] soapEnv = getTransformer(ss).transform(src);
+		if (log.isDebugEnabled())
+			log.debug("soap-env: " + new String(soapEnv));
+		msg.setBodyContent(soapEnv);
 	}
 
 	private String getURI(AbstractExchange exc) {

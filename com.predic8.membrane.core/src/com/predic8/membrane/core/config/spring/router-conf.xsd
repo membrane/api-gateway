@@ -85,6 +85,7 @@
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence />
 					<xsd:attribute name="xslt" type="xsd:string" />
+					<xsd:attribute name="concurrency" default="0" type="xsd:integer" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>

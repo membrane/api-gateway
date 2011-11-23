@@ -13,17 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.stream.StreamSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 
 public class XSLTInterceptor extends AbstractInterceptor {
 
 	private String xslt;
-	private XSLTTransformer xsltTransformer = new XSLTTransformer();
+	private int concurrency = 0; // number of parallel transformers to use. 0 = 2xCPUs
+	private volatile XSLTTransformer xsltTransformer;
 
 	public XSLTInterceptor() {
 		name = "XSLT Transformer";
@@ -44,9 +48,25 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	private void transformMsg(Message msg, String ss) throws Exception {
 		if (msg.isBodyEmpty())
 			return;
-		msg.setBodyContent(xsltTransformer.transform(ss,
-				new StreamSource(msg.getBodyAsStream()),
-				router.getResourceResolver()).getBytes("UTF-8"));
+		msg.setBodyContent(getTransformer().transform(
+				new StreamSource(msg.getBodyAsStream())));
+	}
+	
+	// http://en.wikipedia.org/wiki/Double-checked_locking
+	private XSLTTransformer getTransformer() throws Exception {
+		XSLTTransformer t = xsltTransformer;
+		if (t == null) {
+			synchronized(this) {
+				t = xsltTransformer;
+				if (t == null) {
+					int concurrency = this.concurrency;
+					if (concurrency <= 0)
+						concurrency = Runtime.getRuntime().availableProcessors() * 2;
+					xsltTransformer = t = new XSLTTransformer(xslt, router.getResourceResolver(), concurrency);
+				}
+			}
+		}
+		return t;
 	}
 
 	public String getXslt() {
@@ -55,23 +75,32 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
 	public void setXslt(String xslt) {
 		this.xslt = xslt;
+		this.xsltTransformer = null;
+	}
+	
+	public int getConcurrency() {
+		return concurrency;
+	}
+	
+	public void setConcurrency(int concurrency) {
+		this.concurrency = concurrency;
+		this.xsltTransformer = null;
 	}
 
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
-
 		out.writeStartElement("transform");
-
 		out.writeAttribute("xslt", xslt);
-
+		if (concurrency != 0)
+			out.writeAttribute("concurrency", ""+concurrency);
 		out.writeEndElement();
 	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-
 		xslt = token.getAttributeValue("", "xslt");
+		concurrency = Integer.parseInt(token.getAttributeValue("", "concurrency"));
 	}
 
 }

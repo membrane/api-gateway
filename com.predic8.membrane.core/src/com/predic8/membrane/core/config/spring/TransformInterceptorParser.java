@@ -15,5 +15,6 @@ public class TransformInterceptorParser extends AbstractParser {
 	protected void doParse(Element element, BeanDefinitionBuilder builder) {
 		setIdIfNeeded(element,"transform");
 		builder.addPropertyValue("xslt", element.getAttribute("xslt"));
+		builder.addPropertyValue("concurrency", element.getAttribute("concurrency"));
 	}
 }

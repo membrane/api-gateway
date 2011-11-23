@@ -15,35 +15,53 @@ package com.predic8.membrane.core.interceptor.xslt;
 
 import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
 
-import java.io.StringWriter;
+import java.io.ByteArrayOutputStream;
+import java.util.concurrent.ArrayBlockingQueue;
 
-import javax.xml.transform.*;
-import javax.xml.transform.stream.*;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.util.ResourceResolver;
 
 public class XSLTTransformer {
 	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());
 
-	private TransformerFactory fac = TransformerFactory.newInstance();
-
-	public String transform(String ss, Source xml, ResourceResolver resolver)
-			throws Exception {
-		log.debug("applying transformation: " + ss);
-		StringWriter sw = new StringWriter();
-		getTransformer(ss, resolver).transform(xml, new StreamResult(sw));
-		return sw.toString();
+	private final TransformerFactory fac = TransformerFactory.newInstance();
+	private final ArrayBlockingQueue<Transformer> transformers;
+	private final String styleSheet;
+	
+	public XSLTTransformer(String styleSheet, ResourceResolver resolver, int concurrency) throws Exception {
+		this.styleSheet = styleSheet;
+		log.debug("using " + concurrency + " parallel transformer instances for " + styleSheet);
+		transformers = new ArrayBlockingQueue<Transformer>(concurrency);
+		for (int i = 0; i < concurrency; i++) {
+			Transformer t;
+			if (isNullOrEmpty(styleSheet))
+				t = fac.newTransformer();
+			else
+				t = fac.newTransformer(new StreamSource(resolver.resolve(styleSheet)));
+			transformers.put(t);
+		}
 	}
 
-	private Transformer getTransformer(String ss, ResourceResolver resolver)
+	public byte[] transform(Source xml)
 			throws Exception {
-
-		if (isNullOrEmpty(ss))
-			return fac.newTransformer();
-
-		return fac.newTransformer(new StreamSource(resolver.resolve(ss)));
+		log.debug("applying transformation: " + styleSheet);
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		Transformer t = transformers.take();
+		try {
+			t.transform(xml, new StreamResult(baos));
+		} finally {
+			transformers.put(t);
+		}
+		return baos.toByteArray();
 	}
 
 }
