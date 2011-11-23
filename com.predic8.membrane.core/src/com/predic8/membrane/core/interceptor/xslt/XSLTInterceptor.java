@@ -100,7 +100,8 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
 		xslt = token.getAttributeValue("", "xslt");
-		concurrency = Integer.parseInt(token.getAttributeValue("", "concurrency"));
+		String concurrencyString = token.getAttributeValue("", "concurrency");
+		concurrency = concurrencyString == null ? 0 : Integer.parseInt(concurrencyString);
 	}
 
 }

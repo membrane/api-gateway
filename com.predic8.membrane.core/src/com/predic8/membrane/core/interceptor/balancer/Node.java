@@ -21,8 +21,8 @@ public class Node extends AbstractXmlElement {
 	
 	private volatile long lastUpTime;
 	private volatile Status status;
-	private AtomicInteger counter;
-	private AtomicInteger threads;
+	private AtomicInteger counter = new AtomicInteger();
+	private AtomicInteger threads = new AtomicInteger();
 	
 	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();  
 	

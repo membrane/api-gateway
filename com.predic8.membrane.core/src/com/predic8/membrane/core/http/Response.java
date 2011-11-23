@@ -162,7 +162,7 @@ public class Response extends Message {
 	}
 
 	protected void createBody(InputStream in) throws IOException {
-		if (isRedirect())
+		if (isRedirect() && mayHaveNoBody())
 			return;
 
 		if (isBodyEmpty()) {
@@ -200,6 +200,28 @@ public class Response extends Message {
 
 	public boolean isServerError() {
 		return statusCode >= 500;
+	}
+	
+	/**
+	 * Some web servers may not send a body e.g. after a redirect. We therefore
+	 * do not parse it in {@link #createBody(InputStream)} and close the connection
+	 * even when it is keep-alive.
+	 */
+	private boolean mayHaveNoBody() {
+		if (header.isChunked())
+			return false;
+		if (header.hasContentLength())
+			return false;
+		if (header.getContentType() != null)
+			return false;
+		return true;
+	}
+	
+	@Override
+	public boolean isKeepAlive() {
+		if (isRedirect() && mayHaveNoBody())
+			return false;
+		return super.isKeepAlive();
 	}
 
 }
