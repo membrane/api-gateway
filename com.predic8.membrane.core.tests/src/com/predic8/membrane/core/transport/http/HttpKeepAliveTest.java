@@ -17,11 +17,11 @@ import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.util.MessageUtil;
 
 public class HttpKeepAliveTest {
 
@@ -39,7 +39,7 @@ public class HttpKeepAliveTest {
 			@Override
 			public Outcome handleRequest(Exchange exc) throws Exception {
 				exc.getRequest().readBody();
-				exc.setResponse(MessageUtil.getOKResponse("<aaa></aaa>".getBytes(), "text/xml"));
+				exc.setResponse(Response.ok("OK.").build());
 				set.add(exc.getServerThread().srcOut.hashCode());
 				return Outcome.ABORT;
 			}
