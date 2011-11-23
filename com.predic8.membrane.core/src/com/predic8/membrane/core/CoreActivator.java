@@ -23,6 +23,8 @@ import org.apache.commons.logging.*;
 import org.eclipse.core.runtime.*;
 import org.osgi.framework.BundleContext;
 
+import com.predic8.membrane.core.logger.MembraneLogListener;
+
 /**
  * The activator class controls the plug-in life cycle
  */
@@ -33,23 +35,20 @@ public class CoreActivator extends Plugin {
 
 	private static Log log = LogFactory.getLog(CoreActivator.class.getName());
 
-	private static ILog pluginLogger;
-
 	// The shared instance
 	private static CoreActivator plugin;
 
+	private ILogListener logListener;
 	
 	public CoreActivator() {
-
+		logListener = new MembraneLogListener();
 	}
 
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 		plugin = this;
 
-		pluginLogger = CoreActivator.getDefault().getLog();
-
-		//String path = new File(FileLocator.resolve(CoreActivator.getDefault().getBundle().getEntry("/")).getPath()).getAbsolutePath();
+		Platform.addLogListener(logListener);
 		
 		final MembraneCommandLine cl = new MembraneCommandLine();
 		cl.parse(fixArguments(Platform.getCommandLineArgs()));
@@ -61,14 +60,14 @@ public class CoreActivator extends Plugin {
 		} else {		
 			try {
 				if (ClassloaderUtil.fileExists(getMonitorBeansFileName())) {
-					info("Eclipse framework found config file: " + getMonitorBeansFileName());
+					log.info("Eclipse framework found config file: " + getMonitorBeansFileName());
 					readBeanConfigWhenStartedAsProduct();
 				} else {
 					readBeanConfigWhenStartedInEclipse();
 				}
 			} catch (Exception e1) {
-				error("Unable to read bean configuration file: " + e1.getMessage());
-				error("Unable to read bean configuration file: " + e1.getStackTrace());
+				log.error("Unable to read bean configuration file: " + e1.getMessage());
+				log.error("Unable to read bean configuration file: " + e1.getStackTrace());
 				e1.printStackTrace();
 			}
 		}
@@ -107,9 +106,8 @@ public class CoreActivator extends Plugin {
 	}
 
 	private void readBeanConfigWhenStartedAsProduct() throws Exception {
-		info("Reading router configuration from " + getMonitorBeansFileName());
-		log.debug("Reading configuration from " + getMonitorBeansFileName());
-		info("Project root: " + getProjectRoot());
+		log.info("Reading router configuration from " + getMonitorBeansFileName());
+		log.info("Project root: " + getProjectRoot());
 		
 		URLClassLoader externalClassloader = ClassloaderUtil.getExternalClassloader(getProjectRoot());
 		//DataSource was unable to load oracle JDBC driver class with external class loader
@@ -117,12 +115,11 @@ public class CoreActivator extends Plugin {
 		Thread.currentThread().setContextClassLoader(externalClassloader);
 		
 		Router.init(getMonitorBeansFileName(), externalClassloader );
-		info("Router instance: " + Router.getInstance());
+		log.info("Router instance: " + Router.getInstance());
 	}
 
 	private void readBeanConfigWhenStartedInEclipse() throws MalformedURLException {
-		log.debug("Reading configuration from configuration/monitor-beans.xml");
-		info("Reading configuration from configuration/monitor-beans.xml");
+		log.info("Reading configuration from configuration/monitor-beans.xml");
 
 		String membraneHome = System.getenv(Constants.MEMBRANE_HOME);
 		if (membraneHome == null)
@@ -131,14 +128,6 @@ public class CoreActivator extends Plugin {
 		Router.init("file:" + membraneHome + System.getProperty("file.separator") + "configuration" + System.getProperty("file.separator") + "monitor-beans.xml", this.getClass().getClassLoader());
 	}
 
-	private void error(String message) {
-		pluginLogger.log(new Status(IStatus.ERROR, CoreActivator.PLUGIN_ID, message));
-	}
-
-	private void info(String message) {
-		pluginLogger.log(new Status(IStatus.INFO, CoreActivator.PLUGIN_ID, message));
-	}
-	
 	private String getMonitorBeansFileName() throws IOException {
 		return getProjectRoot() + System.getProperty("file.separator") + "configuration" + System.getProperty("file.separator") + "monitor-beans.xml";
 	}
@@ -149,6 +138,8 @@ public class CoreActivator extends Plugin {
 	
 	public void stop(BundleContext context) throws Exception {
 		plugin = null;
+		Platform.removeLogListener(logListener);
+		logListener = null;
 		super.stop(context);
 	}
 

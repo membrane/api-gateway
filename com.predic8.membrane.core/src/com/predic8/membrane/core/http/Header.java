@@ -54,7 +54,9 @@ public class Header {
 	public static final String SOAP_ACTION = "SOAPAction";
 	
 	public static final String ACCEPT = "Accept";
-	
+
+	public static final String LOCATION = "Location";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";

@@ -25,6 +25,7 @@
 		<dispatching />
 		<exchangeStore name="exchangeStore" />
 		<userFeature />
+		<reverseProxying />
 		<httpClient />
 	</transport>
 	

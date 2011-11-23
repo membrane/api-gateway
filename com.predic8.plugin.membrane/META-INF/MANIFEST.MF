@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Membrane Plugin
 Bundle-SymbolicName: com.predic8.plugin.membrane;singleton:=true
-Bundle-Version: 3.2.0
+Bundle-Version: 3.2.2
 Bundle-Activator: com.predic8.plugin.membrane.MembraneUIPlugin
 Bundle-Vendor: predic8 GmbH
 Require-Bundle: org.eclipse.ui;bundle-version="3.6.0";visibility:=reexport,
- com.predic8.membrane.core;bundle-version="3.2.0";visibility:=reexport
+ com.predic8.membrane.core;bundle-version="3.2.2";visibility:=reexport
 Bundle-ActivationPolicy: lazy
 Export-Package: com.predic8.plugin.membrane;uses:="org.eclipse.jface.resource,org.eclipse.ui.plugin,org.osgi.framework",
  com.predic8.plugin.membrane.actions,

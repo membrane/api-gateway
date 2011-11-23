@@ -31,6 +31,7 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("formValidation", new FormValidationInterceptorParser());        
         registerBeanDefinitionParser("log", new LogInterceptorParser());
         registerBeanDefinitionParser("httpClient", new HttpClientInterceptorParser());
+        registerBeanDefinitionParser("reverseProxying", new ReverseProxyingInterceptorParser());
         registerBeanDefinitionParser("xmlProtection", new XmlProtectionInterceptorParser());
     }
 }

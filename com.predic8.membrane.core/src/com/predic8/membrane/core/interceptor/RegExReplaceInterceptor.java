@@ -14,15 +14,14 @@
 package com.predic8.membrane.core.interceptor;
 
 import java.io.IOException;
-import java.util.zip.GZIPInputStream;
 
 import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.util.MessageUtil;
 
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 

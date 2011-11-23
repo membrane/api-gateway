@@ -71,22 +71,10 @@ public class Relocator {
 		public Attribute next() {
 			Attribute atr = attrs.next();
 			if (atr.getName().equals(new QName(replace)) && atr.getValue().startsWith("http")) {
-				return XMLEventFactory.newInstance().createAttribute(replace, getNewLocation(atr));
+				return XMLEventFactory.newInstance().createAttribute(replace, 
+						getNewLocation(atr.getValue(), protocol, host, port));
 			}
 			return atr;
-		}
-
-		private String getNewLocation(Attribute atr) {
-			try {
-				URL oldURL = new URL(atr.getValue());
-				if (port == -1) {
-					return new URL(protocol, host, oldURL.getFile()).toString();
-				}
-				return new URL(protocol, host, port, oldURL.getFile()).toString();
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			}
-			return "";
 		}
 
 		public void remove() {
@@ -146,5 +134,18 @@ public class Relocator {
 
 	public boolean isWsdlFound() {
 		return wsdlFound;
+	}
+
+	public static String getNewLocation(String addr, String protocol, String host, int port) {
+		try {
+			URL oldURL = new URL(addr);
+			if (port == -1) {
+				return new URL(protocol, host, oldURL.getFile()).toString();
+			}
+			return new URL(protocol, host, port, oldURL.getFile()).toString();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+		return "";
 	}
 }

@@ -16,7 +16,7 @@
 -->
 <project name="Membrane-Router" default="compile-core" basedir=".">
 
-	<property name="version" value="3.3.0-snapshot" />
+	<property name="version" value="3.2.2" />
 
 	<path id="classpath">
 		<fileset dir="lib">
@@ -30,6 +30,7 @@
 	<target name="compile-core" depends="init">
 		<javac debug="true" target="1.5" classpathref="classpath" srcdir="src" destdir="build/classes">
 			<exclude name="**/CoreActivator*"/>
+			<exclude name="**/MembraneLogListener*"/>
 			<exclude name="**/MembraneStarter*"/>
 		</javac>
 	</target>

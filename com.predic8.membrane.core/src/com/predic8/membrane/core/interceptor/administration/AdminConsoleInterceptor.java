@@ -27,6 +27,7 @@ import javax.xml.stream.*;
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.Node;
@@ -464,7 +465,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	private Response redirect(String ctrl, String action, String query) throws Exception {
 		return createResponse(302, "Found", null, "text/html;charset=utf-8",
-				"Location",AdminPageBuilder.createHRef(ctrl, action, query));
+				Header.LOCATION, AdminPageBuilder.createHRef(ctrl, action, query));
 	}
 
 	private int getPortParam(Map<String, String> params) {

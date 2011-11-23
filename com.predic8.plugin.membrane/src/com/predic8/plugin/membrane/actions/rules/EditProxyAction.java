@@ -27,18 +27,7 @@ public class EditProxyAction extends AbstractProxyAction {
 
 	@Override
 	public void run() {
-		
-//		try {
-//			if (selectedProxy instanceof ServiceProxy) {
-//				openProxyDialog(new ServiceProxyConfigurationEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedProxy);
-//
-//			} else if (selectedProxy instanceof ProxyRule) {
-//				openProxyDialog(new ProxyConfigurationEditDialog(Display.getCurrent().getActiveShell()), (ProxyRule) selectedProxy);
-//			}
-//		} catch (Exception ex) {
-//			ex.printStackTrace();
-//		}
-		
+				
 		try {
 			if (selectedProxy instanceof ServiceProxy) {
 				openProxyEditDialog(new ServiceProxyEditDialog(Display.getCurrent().getActiveShell()), (ServiceProxy) selectedProxy);
@@ -50,14 +39,6 @@ public class EditProxyAction extends AbstractProxyAction {
 			ex.printStackTrace();
 		}
 		
-	}
-
-	private void openProxyDialog(AbstractProxyConfigurationEditDialog dialog, Rule rule) {
-		if (dialog.getShell() == null) {
-			dialog.create();
-		}
-		dialog.setInput(rule);
-		dialog.open();
 	}
 
 	private void openProxyEditDialog(AbstractProxyEditDialog dialog, Rule rule) {
