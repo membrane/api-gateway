@@ -14,7 +14,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<project name="Membrane-Router" default="compile-core" basedir=".">
+<project name="Membrane-ESB" default="compile-core" basedir=".">
 
 	<property name="version" value="3.2.2" />
 
@@ -43,28 +43,28 @@
 	<target name="dist-router" depends="clean, compile-core, javadoc">
 		<mkdir dir="dist" />
 		<mkdir dir="dist/router" />
-		<mkdir dir="dist/router/membrane-router-${version}" />
-		<mkdir dir="dist/router/membrane-router-${version}/classes" />
-		<mkdir dir="dist/router/membrane-router-${version}/lib" />
-		<mkdir dir="dist/router/membrane-router-${version}/examples" />
-		<mkdir dir="dist/router/membrane-router-${version}/docBase" />
-		<copy todir="dist/router/membrane-router-${version}/docBase"> 
+		<mkdir dir="dist/router/membrane-esb-${version}" />
+		<mkdir dir="dist/router/membrane-esb-${version}/classes" />
+		<mkdir dir="dist/router/membrane-esb-${version}/lib" />
+		<mkdir dir="dist/router/membrane-esb-${version}/examples" />
+		<mkdir dir="dist/router/membrane-esb-${version}/docBase" />
+		<copy todir="dist/router/membrane-esb-${version}/docBase"> 
 			<fileset dir="docBase">
 				<include name="**/*" />
 			</fileset>
 		</copy>
-		<copy todir="dist/router/membrane-router-${version}/examples"> 
+		<copy todir="dist/router/membrane-esb-${version}/examples"> 
 			<fileset dir="examples/router">
 				<exclude name="**/build/"/>
 				<include name="**/*" />
 			</fileset>
 		</copy>
-		<copy todir="dist/router/membrane-router-${version}/examples"> 
+		<copy todir="dist/router/membrane-esb-${version}/examples"> 
 			<fileset dir="examples/router">
 				<include name="custom-interceptor/build/**/*"/>
 			</fileset>
 		</copy>
-		<copy todir="dist/router/membrane-router-${version}/lib">
+		<copy todir="dist/router/membrane-esb-${version}/lib">
 			<fileset dir="lib">
 				<exclude name="**/rcp/**" />
 				<exclude name="**/ext/**" />
@@ -74,7 +74,7 @@
 			</fileset>
 		</copy>
 
-		<copy todir="dist/router/membrane-router-${version}">
+		<copy todir="dist/router/membrane-esb-${version}">
 				<fileset dir="router"/>
 		</copy>
 
@@ -85,18 +85,18 @@
 					<exclude name="**/log4j.properties"/>
 				</fileset> 
 		</copy>
-		<jar destfile="dist/router/membrane-router-${version}/lib/membrane-router.jar" basedir="build/classes" includes="**" excludes="**/Starter.class, **/ClassloaderUtil*.class" />
+		<jar destfile="dist/router/membrane-esb-${version}/lib/membrane-esb.jar" basedir="build/classes" includes="**" excludes="**/Starter.class, **/ClassloaderUtil*.class" />
 		
 		<!-- Copy membrane lib to custom-interceptor example -->
-		<copy file="dist/router/membrane-router-${version}/lib/membrane-router.jar" 
-			  todir="dist/router/membrane-router-${version}/examples/custom-interceptor/lib" />
+		<copy file="dist/router/membrane-esb-${version}/lib/membrane-esb.jar" 
+			  todir="dist/router/membrane-esb-${version}/examples/custom-interceptor/lib" />
 
-		<jar destfile="dist/router/membrane-router-${version}/starter.jar" basedir="build/classes" includes="**/Starter.class, **/ClassloaderUtil*.class, META-INF/**" />
+		<jar destfile="dist/router/membrane-esb-${version}/starter.jar" basedir="build/classes" includes="**/Starter.class, **/ClassloaderUtil*.class, META-INF/**" />
 		
-        <zip destfile="dist/membrane-router-${version}.zip" basedir="dist/router/"/>
-		<tar destfile="dist/membrane-router-${version}.tgz" basedir="dist/router" compression="gzip"/>
+        <zip destfile="dist/membrane-esb-${version}.zip" basedir="dist/router/"/>
+		<tar destfile="dist/membrane-esb-${version}.tgz" basedir="dist/router" compression="gzip"/>
 		
-		<copy todir="dist/router/membrane-router-${version}-api">
+		<copy todir="dist/router/membrane-esb-${version}-api">
 			<fileset dir="build/doc/api" />
 		</copy>
 	</target>
@@ -126,7 +126,7 @@
 				<exclude name="**/log4j*"/>
 			</fileset>
 		</copy>		
-		<copy file="dist/router/membrane-router-${version}/lib/membrane-router.jar" todir="build/sar" />
+		<copy file="dist/router/membrane-esb-${version}/lib/membrane-esb.jar" todir="build/sar" />
 		<jar destfile="build/router-service.sar" basedir="build/sar" />
 	</target>
 
@@ -148,7 +148,7 @@
 				<include name="**/*"/>
 			</fileset>
 		</copy>
-		<copy file="dist/router/membrane-router-${version}/lib/membrane-router.jar" todir="build/web/WEB-INF/lib" />
+		<copy file="dist/router/membrane-esb-${version}/lib/membrane-esb.jar" todir="build/web/WEB-INF/lib" />
 		<jar destfile="dist/router.war" basedir="build/web" />
 	</target>
 

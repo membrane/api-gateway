@@ -43,6 +43,6 @@ Execute the following steps:
 ON LINUX
 
 On Linux, you need to be root to open network ports <1024. Therefore, to start
-this example, you either need to start the membrane-router as root, or specify
+this example, you either need to start the membrane-esb as root, or specify
 a port >=1024, e.g. using '<serviceProxy port="8080">' (on every occurance of
 '<serviceProxy>') in cbr.proxies.xml .

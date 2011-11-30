@@ -101,7 +101,7 @@ Building a router distribution
 	Before releasing, tag the source code in subversion with the current version number.
 
 3. mirror.predic8.com:
-	3.1 Upload com.predic8.membrane.core/dist/membrane-router-${version}.zip via ftp.
+	3.1 Upload com.predic8.membrane.core/dist/membrane-esb-${version}.zip via ftp.
 	
 4. membrane-soa.org:
 	4.1 /src/content/soap-monitor/release-notes.xml
@@ -109,7 +109,7 @@ Building a router distribution
 	4.2 /src/content/soap-monitor/download.xml
 		Add row to the target system's table.
 	4.3 /src/static/monitor/documentation/api/
-		Replace directory content with com.predic8.membrane.core/dist/membrane-router-${version}-api
+		Replace directory content with com.predic8.membrane.core/dist/membrane-esb-${version}-api
 	4.4	Run build.bat
 		Check that the build succeeds.
 		Make sure the download link works.

@@ -13,5 +13,5 @@ exit
 :homeOk
 set "CLASSPATH=%MEMBRANE_HOME%"
 set "CLASSPATH=%MEMBRANE_HOME%/conf"
-set "CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/lib/membrane-router.jar;%MEMBRANE_HOME%/lib/commons-cli-1.1.jar;%MEMBRANE_HOME%/lib/commons-logging.jar;%MEMBRANE_HOME%/lib/xmlbeautifier-1.2.1.jar;%MEMBRANE_HOME%/lib/commons-codec-1.3.jar"
+set "CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/lib/membrane-esb.jar;%MEMBRANE_HOME%/lib/commons-cli-1.1.jar;%MEMBRANE_HOME%/lib/commons-logging.jar;%MEMBRANE_HOME%/lib/xmlbeautifier-1.2.1.jar;%MEMBRANE_HOME%/lib/commons-codec-1.3.jar"
 java -classpath "%CLASSPATH%" com.predic8.membrane.balancer.client.LBNotificationClient %1 %2 %3 %4 %5 %6 %7 %8 %9

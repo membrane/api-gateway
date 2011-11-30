@@ -12,13 +12,13 @@ To run the example execute the following steps:
 
 1. Go to the examples/soap-schema-validation directory and run
 
-	\membrane-router-2.0.1\examples\soap-schema-validation> start router.bat
+	\membrane-esb\examples\soap-schema-validation> start router.bat
   
   This will startup the router
     
 2. Execute
 
-	\membrane-router-2.0.1\examples\soap-schema-validation> ant run
+	\membrane-esb\examples\soap-schema-validation> ant run
   	
 3. An error notification will be displayed: Message validation failed! 
    
