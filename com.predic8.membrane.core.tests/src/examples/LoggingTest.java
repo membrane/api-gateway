@@ -19,11 +19,9 @@ public class LoggingTest extends ScriptLauncher {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
-		Process router = startScript("router");
-		
 		final boolean[] success = new boolean[1];
-		
-		addConsoleWatcher(router, new AbstractConsoleWatcher() {
+
+		Process router = startScript("router", new AbstractConsoleWatcher() {
 			public void outputLine(boolean error, String line) {
 				if (line.contains("HTTP"))
 					success[0] = true;

@@ -24,7 +24,8 @@ import org.junit.After;
 import org.junit.Before;
 
 /**
- * Starts a shell script (Windows batch file) and later kills it.
+ * Starts a shell script (Windows batch file or Linux shell script) and
+ * later kills it.
  * 
  * **********************************************************************
  * You might have to run "powershell Set-ExecutionPolicy RemoteSigned" as
@@ -46,7 +47,7 @@ public class ScriptLauncher {
 	
 	@Before
 	public void init() throws IOException, InterruptedException {
-		projectHome = new File("..\\com.predic8.membrane.core").getCanonicalFile();
+		projectHome = new File("../com.predic8.membrane.core").getCanonicalFile();
 		if (!projectHome.exists())
 			throw new RuntimeException("membraneHome " + projectHome.getName() + " does not exist.");
 		
@@ -86,7 +87,7 @@ public class ScriptLauncher {
 			}
 		})[0];
 		
-		exampleDir = new File(membraneHome, "examples\\" + name);
+		exampleDir = new File(membraneHome, "examples/" + name);
 		System.out.println("running test...");
 	}
 
@@ -95,24 +96,6 @@ public class ScriptLauncher {
 		System.out.println("cleaning up...");
 		recursiveDelete(unzipDir);
 		System.out.println("done.");
-	}
-
-	private void recursiveCopy(File from, File to) throws IOException {
-		if (from.isDirectory()) {
-			to.mkdir();
-			for (File child : from.listFiles())
-				recursiveCopy(child, new File(to, child.getName()));
-		} else {
-			InputStream in = new FileInputStream(from);
-			OutputStream out = new FileOutputStream(to);
-			byte[] buf = new byte[1024];
-			int len;
-			while ((len = in.read(buf)) > 0) {
-				out.write(buf, 0, len);
-			}
-			in.close();
-			out.close(); 
-		}
 	}
 
 	private void recursiveDelete(File file) {
@@ -182,28 +165,38 @@ public class ScriptLauncher {
 		}
 	}
 	
-	protected Process startScript(String scriptName) throws IOException, InterruptedException {
+	protected Process startScript(String scriptName, AbstractConsoleWatcher... consoleWatchers) throws IOException, InterruptedException {
 		if (!exampleDir.exists())
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 		
 		ArrayList<String> command = new ArrayList<String>();
+		Charset charset;
 		if (System.getProperty("os.name").contains("Windows")) {
 			File ps1 = new File(exampleDir, scriptName + ".ps1");
 			FileWriter fw = new FileWriter(ps1);
 			fw.write("\"\" + [System.Diagnostics.Process]::GetCurrentProcess().Id > \""+scriptName+".pid\"\r\n" +
 					"cmd /c "+scriptName+".bat");
 			fw.close();
+			charset = Charset.forName("UTF-16"); // powershell writes UTF-16 files by default 
 			
 			command.add("powershell");
 			command.add(ps1.getAbsolutePath());
 		} else {
-			command.add("bash");
-			command.add(scriptName + ".sh");
-			
-			// TODO: write PID file on linux
+			File ps1 = new File(exampleDir, scriptName + "_launcher.sh");
+			FileWriter fw = new FileWriter(ps1);
+			fw.write("#!/bin/bash\n"+
+					"echo $$ > \""+scriptName+".pid\"\n" +
+					"bash "+scriptName+".sh");
+			fw.close();
+			ps1.setExecutable(true);
+			charset = Charset.defaultCharset(); // on Linux, the file is probably using some 8-bit charset
+
+			command.add("setsid"); // start new process group so we can kill it at once
+			command.add(ps1.getAbsolutePath());
 		}
 		
 		ProcessBuilder pb = new ProcessBuilder(command).directory(exampleDir);
+		pb.environment().remove("MEMBRANE_HOME");
 		pb.redirectError(Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
 		final Process p = pb.start();
 		
@@ -211,6 +204,9 @@ public class ScriptLauncher {
 		
 		ProcessStuff ps = new ProcessStuff(p);
 		pids.put(p, ps);
+		
+		for (AbstractConsoleWatcher acw : consoleWatchers)
+			ps.watchers.add(acw);
 		
 		ps.startOutputWatchers();
 
@@ -224,7 +220,7 @@ public class ScriptLauncher {
 				continue;
 			FileInputStream fr = new FileInputStream(f);
 			try {
-				String line = new BufferedReader(new InputStreamReader(fr, Charset.forName("UTF-16"))).readLine();
+				String line = new BufferedReader(new InputStreamReader(fr, charset)).readLine();
 				if (line == null)
 					continue;
 				pids.get(p).pid = Integer.parseInt(line);
@@ -237,7 +233,6 @@ public class ScriptLauncher {
 		}
 		
 		Thread.sleep(1000); // wait for router to start
-		// TODO: improve this by watching the output
 
 		return p;
 	}
@@ -254,11 +249,17 @@ public class ScriptLauncher {
 		
 		// start the killer
 		ArrayList<String> command = new ArrayList<String>();
-		command.add("taskkill");
-		command.add("/T"); // kill whole subtree
-		command.add("/F");
-		command.add("/PID");
-		command.add(""+ps.pid);
+		if (System.getProperty("os.name").contains("Windows")) {
+			command.add("taskkill");
+			command.add("/T"); // kill whole subtree
+			command.add("/F");
+			command.add("/PID");
+			command.add(""+ps.pid);
+		} else {
+			command.add("kill");
+			command.add("-TERM");
+			command.add("-"+ps.pid);
+		}
 		ProcessBuilder pb = new ProcessBuilder(command).inheritIO();
 		pb.redirectInput(Redirect.PIPE).redirectError(Redirect.PIPE).redirectOutput(Redirect.PIPE);
 
