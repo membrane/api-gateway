@@ -10,19 +10,19 @@ A Membrane router placed between client and service will be validating each requ
 
 To run the example execute the following steps:
 
-1. Go to the examples/soap-schema-validation directory and run
+1. Go to the examples/validation/soap-custom directory and run
 
-	\membrane-esb\examples\soap-schema-validation> start router.bat
+	\membrane-esb\examples\validation\soap-custom> start router.bat
   
   This will startup the router
     
 2. Execute
 
-	\membrane-esb\examples\soap-schema-validation> ant run
+	\membrane-esb\examples\validation\soap-custom> ant run
   	
 3. An error notification will be displayed: Message validation failed! 
    
-4. Go to examples/soap-schema-validation/src directory.
+4. Go to examples/validation/soap-custom/src directory.
 
 5. Open ArticleClient.java file and set a valid ID for ArticleType:
    uncomment the line with:    aType.setId("EX-12345"); 

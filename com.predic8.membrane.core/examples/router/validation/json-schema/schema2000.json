@@ -1,0 +1,11 @@
+{
+	"properties": {
+		"p1": {
+			"required": true,
+			"format": "date"
+		},
+		"p2": {
+			"format": "phone"
+		}
+	}
+}

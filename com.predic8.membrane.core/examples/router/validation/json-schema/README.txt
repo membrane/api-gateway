@@ -1,0 +1,30 @@
+JSON Validation
+
+For this example to run you should install Curl from http://curl.haxx.se/download.html , if
+you have not done so already.
+
+Execute the following steps:
+
+1. Start "router.bat" in examples/validation/json-schema.
+
+2. Go to the directory examples/validation/json-schema.
+
+3. Look at schema2000.json, read http://tools.ietf.org/html/draft-zyp-json-schema-03 and 
+   compare the schema to good2000.json and bad2000.json .
+
+4. Run "curl -d @good2000.json http://localhost:2000/". Observe that you get a successful response.
+
+5. Run "curl -d @bad2000.json http://localhost:2000/". Observe that you get a validation error response.
+
+
+7. Now have a look at schema2001.json, good2001.json and bad2001.json.
+
+6. Run "curl -d @good2001.json http://localhost:2001/". Observe that you get a successful response.
+
+7. Run "curl -d @bad2001.json http://localhost:2001/". Observe that you get a validation error response.
+
+
+
+
+(The file schema2001.json is loosely based on chapter 3 of
+http://tools.ietf.org/html/draft-zyp-json-schema-03 .)

@@ -22,6 +22,12 @@ public class ValidatorInterceptorParser extends AbstractParser {
 		if (e.hasAttribute("schema")) {
 			builder.addPropertyValue("schema", e.getAttribute("schema"));			
 		}
+		if (e.hasAttribute("jsonSchema")) {
+			builder.addPropertyValue("jsonSchema", e.getAttribute("jsonSchema"));
+		}
+		if (e.hasAttribute("schematron")) {
+			builder.addPropertyValue("schematron", e.getAttribute("schematron"));
+		}
 		
 		builder.setInitMethodName("init");
 	}

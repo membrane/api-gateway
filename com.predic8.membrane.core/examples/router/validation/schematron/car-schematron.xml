@@ -1,0 +1,57 @@
+<sch:schema xmlns:sch="http://www.ascc.net/xml/schematron" defaultPhase="default">
+
+	<sch:p>
+		This is an example schema for registered cars.
+	</sch:p>
+
+	<sch:phase id="default">
+		<sch:active pattern="data_checks"></sch:active>
+		<sch:active pattern="registered"></sch:active>
+	</sch:phase>
+
+	<sch:pattern name="Construction Checks" id="registered">
+		<sch:p>Constraints which are applied at car registration.</sch:p>
+
+		<sch:rule context="car">
+			<sch:assert test="count(wheel) = 4">A car should have 4 wheels.</sch:assert>
+			<sch:assert test="license_plate">A registered car must have a license plate.</sch:assert>
+			<sch:assert test="owner">A registered car must have an owner.</sch:assert>
+		</sch:rule>
+
+		<sch:rule context="address">
+			<sch:assert test="count(*) = count(street) + count(town) + count(postcode)">
+				An address may only include street, town and postcode elements.
+			</sch:assert>
+			<sch:assert test="street">An address must include the streetdetails</sch:assert>
+			<sch:assert test="town">An address must identify the town</sch:assert>
+			<sch:assert test="postcode">An address must have a postcode</sch:assert>
+		</sch:rule>
+
+		<sch:rule abstract="true" id="nameChecks">
+			<sch:assert test="firstname">A person must have a first name.</sch:assert>
+			<sch:assert test="lastname">A person must have a last name.</sch:assert>
+		</sch:rule>
+
+		<sch:rule context="owner">
+			<sch:extends rule="nameChecks"></sch:extends>
+			<sch:assert test="address">An owner must have an address.</sch:assert>
+		</sch:rule>
+
+		<sch:rule context="license_plate">
+			<sch:assert test="@number">A registered char must have a license plate number.</sch:assert>
+		</sch:rule>
+	</sch:pattern>
+
+	<sch:pattern name="Adminstration Checks" id="data_checks">
+		<sch:rule context="car">
+			<sch:assert test="manufacturer">A car must have a manufacturer.</sch:assert>
+			<sch:assert test="color">A car must have a color.</sch:assert>
+			
+			<sch:assert test="not(propeller)">A car may not have a propeller.</sch:assert>
+		</sch:rule>
+		
+		<sch:rule context="color">
+			<sch:assert test=".='red' or .='green'">The color must be one of the pre-defined colors.</sch:assert>
+		</sch:rule>
+	</sch:pattern>
+</sch:schema>

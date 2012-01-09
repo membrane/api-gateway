@@ -14,45 +14,50 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import javax.xml.stream.*;
-import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.xml.sax.*;
-import org.xml.sax.helpers.XMLReaderFactory;
-
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.HttpUtil;
-import com.predic8.schema.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.XMLValidator.Type;
 
+/**
+ * Basically switches over {@link XMLValidator}, {@link JSONValidator} and
+ * {@link SchematronValidator} depending on the attributes.
+ */
 public class ValidatorInterceptor extends AbstractInterceptor {
-
-	private static Log log = LogFactory.getLog(ValidatorInterceptor.class.getName());
 		
-	private List<Validator> validators;
-	
 	private String wsdl;
 	private String schema;
+	private String jsonSchema;
+	private String schematron;
+	
+	private IValidator validator;
 	
 	public ValidatorInterceptor() {
 		name =	"Validator";
 	}
+
+	private void setValidator(IValidator validator) throws Exception {
+		if (this.validator != null)
+			throw new Exception("<validator> cannot have more than one validator attribute.");
+		this.validator = validator;
+	}
 	
 	public void init() throws Exception {
-		validators = getValidators();
+		if (wsdl != null)
+			setValidator(new XMLValidator(Type.WSDL, wsdl));
+		if (schema != null)
+			setValidator(new XMLValidator(Type.XSD, schema));
+		if (jsonSchema != null)
+			setValidator((IValidator) Class.forName("com.predic8.membrane.core.interceptor.schemavalidation.JSONValidator").getConstructor(String.class).newInstance(jsonSchema));
+		if (schematron != null)
+			setValidator(new SchematronValidator(schematron, router.getResourceResolver()));
+		
+		if (validator == null)
+			throw new Exception("<validator> must have an attribute specifying the validator.");
 	}
 	
 	@Override
@@ -60,7 +65,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		if (!exc.getRequest().isPOSTRequest())
 			return Outcome.CONTINUE;
 			
-		return validateMessage(exc, exc.getRequest());
+		return validator.validateMessage(exc, exc.getRequest());
 	}
 	
 	@Override
@@ -69,71 +74,37 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		if (!exc.getRequest().isPOSTRequest())
 			return Outcome.CONTINUE;
 		
-		return validateMessage(exc, exc.getResponse());
+		return validator.validateMessage(exc, exc.getResponse());
 	}
 	
-	private Outcome validateMessage(Exchange exc, Message msg) throws Exception {
-		List<Exception> exceptions = new ArrayList<Exception>();
-		for (Validator validator: validators) {
-			validator.validate(getMessageBody(msg.getBodyAsStream()));
-			SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
-			// the message must be valid for one schema embedded into WSDL 
-			if (handler.noErrors()) {
-				return Outcome.CONTINUE;
-			}
-			exceptions.add(handler.getException());
-			handler.reset();
-		}
-		exc.setResponse(HttpUtil.createSOAPFaultResponse(getErrorMsg(exceptions)));
-		return Outcome.ABORT;
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out)
+			throws XMLStreamException {
+		out.writeStartElement("validator");
+		if (schema != null)
+			out.writeAttribute("schema", schema);
+		if (wsdl != null)
+			out.writeAttribute("wsdl", wsdl);
+		if (jsonSchema != null)
+			out.writeAttribute("jsonSchema", jsonSchema);
+		if (schematron != null)
+			out.writeAttribute("schematron", schematron);
+		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) throws Exception {
+		wsdl = token.getAttributeValue("", "wsdl");
+		schema = token.getAttributeValue("", "schema");
+		jsonSchema = token.getAttributeValue("", "jsonSchema");
+		schematron = token.getAttributeValue("", "schematron");
+	}
+	
+	@Override
+	protected void doAfterParsing() throws Exception {
+		init();
 	}
 
-	private Source getMessageBody(InputStream input) throws Exception {
-		if ( schema != null ) {
-			return new SAXSource(new InputSource(input));
-		}
-		return getSOAPBody(input);
-	}
-	
-	private String getErrorMsg(List<Exception> excs) {
-		StringBuffer buf = new StringBuffer();
-		buf.append("Validation failed: ");
-		for (Exception e : excs) {
-			buf.append(e);
-			buf.append("; ");
-		}
-		return buf.toString();
-	}
-	
-	private List<Validator> getValidators() throws Exception {
-		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
-		SOAModelResourceResolver resolver = getResolver();
-		sf.setResourceResolver(resolver);
-		
-		List<Validator> validators = new ArrayList<Validator>();
-		for (Schema schema : resolver.schemas) {
-			log.info("Creating validator for schema: " + schema);
-			Validator validator = sf.newSchema(new StreamSource(new StringReader(schema.getAsString()))).newValidator();
-			validator.setErrorHandler(new SchemaValidatorErrorHandler());
-			validators.add(validator);
-		}
-		return validators;
-	}
-	
-	private SOAModelResourceResolver getResolver() {
-		SOAModelResourceResolver resolver = new SOAModelResourceResolver();
-		if (schema != null) {
-			resolver.loadFromSchema(schema);
-		} else {
-			resolver.loadFromWSDL(wsdl);
-		}
-		return resolver;
-	}
-	
-	private static Source getSOAPBody(InputStream stream) throws Exception {
-		return new SAXSource(new SOAPXMLFilter(XMLReaderFactory.createXMLReader()), new InputSource(stream));
-	}
-	
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
 	}
@@ -150,33 +121,20 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		this.schema = schema;
 	}
 
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement("validator");
-		
-		if (schema != null) {
-			out.writeAttribute("schema", schema);
-		}
-		if (wsdl != null) {
-			out.writeAttribute("wsdl", wsdl);
-		}
-				
-		
-		out.writeEndElement();
+	public String getJsonSchema() {
+		return jsonSchema;
 	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		
-		wsdl = token.getAttributeValue("", "wsdl");
-		schema = token.getAttributeValue("", "schema");
+
+	public void setJsonSchema(String jsonSchema) {
+		this.jsonSchema = jsonSchema;
 	}
-	
-	@Override
-	protected void doAfterParsing() throws Exception {
-		init();
+
+	public String getSchematron() {
+		return schematron;
+	}
+
+	public void setSchematron(String schematron) {
+		this.schematron = schematron;
 	}
 	
 }

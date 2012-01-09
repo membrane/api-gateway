@@ -1,23 +1,23 @@
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+      	 
 	<serviceProxy port="2000">
 		<request>
-			<validator schema="year.xsd" />
+			<validator jsonSchema="schema2000.json" />
 			<groovy>
-				Response.ok("&lt;amount&gt;100&lt;/amount&gt;").build()			
-			</groovy>				
+				Response.ok(/{ "message": "good response" }/).build()
+			</groovy>
 		</request>
-		<response>
-			<validator schema="amount.xsd" />
-		</response>
 	</serviceProxy>
-	
+
 	<serviceProxy port="2001">
 		<request>
-			<validator wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl" />
+			<validator jsonSchema="schema2001.json" />
+			<groovy>
+				Response.ok(/{ "message": "good response" }/).build()
+			</groovy>
 		</request>
-		<target host="thomas-bayer.com" />
 	</serviceProxy>
 	
 </proxies>

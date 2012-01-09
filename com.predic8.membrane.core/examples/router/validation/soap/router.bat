@@ -1,6 +1,6 @@
 @echo off
 if not "%MEMBRANE_HOME%" == "" goto homeSet
-set "MEMBRANE_HOME=%cd%\..\.."
+set "MEMBRANE_HOME=%cd%\..\..\.."
 echo "%MEMBRANE_HOME%"
 if exist "%MEMBRANE_HOME%\memrouter.bat" goto homeOk
 
@@ -15,4 +15,4 @@ set "CLASSPATH=%MEMBRANE_HOME%"
 set "CLASSPATH=%MEMBRANE_HOME%/conf"
 set "CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar"
 echo Membrane Router running...
-java  -classpath "%CLASSPATH%" com.predic8.membrane.core.Starter -c form-validation.proxies.xml -b ..\..\conf\monitor-beans.xml
+java  -classpath "%CLASSPATH%" com.predic8.membrane.core.Starter -c soap-validation.proxies.xml -b ..\..\..\conf\monitor-beans.xml

@@ -5,22 +5,22 @@ homeSet() {
  CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
  export CLASSPATH
  echo Membrane Router running...
- java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c form-validation.proxies.xml -b ../../conf/monitor-beans.xml
+ java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c json-validation.proxies.xml -b ../../../conf/monitor-beans.xml
  
 }
 
 terminate() {
 	echo "Starting of Membrane Router failed."
-	echo "Please execute this script from the MEMBRANE_HOME/examples/acl directory"
+	echo "Please execute this script from the MEMBRANE_HOME/examples/validation/json-schema directory"
 	
 }
 
 homeNotSet() {
   echo "MEMBRANE_HOME variable is not set"
 
-  if [ -f  "`pwd`/../../starter.jar" ]
+  if [ -f  "`pwd`/../../../starter.jar" ]
     then 
-    	export MEMBRANE_HOME="`pwd`/../.."
+    	export MEMBRANE_HOME="`pwd`/../../.."
     	homeSet	
     else
     	terminate    
