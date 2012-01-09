@@ -22,6 +22,9 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.schema.Schema;
+import com.predic8.schema.SchemaParser;
+import com.predic8.wsdl.WSDLParser;
+import com.predic8.wsdl.WSDLParserContext;
 
 public class XMLValidator implements IValidator {
 	private static Log log = LogFactory.getLog(XMLValidator.class.getName());
@@ -31,14 +34,13 @@ public class XMLValidator implements IValidator {
 	private Type type;
 	private String location;
 
-	
 	/**
 	 * @param location the location of the WSDL, if type == WSDL, or the location of the XSD, if type == XSD.
 	 */
 	public XMLValidator(Type type, String location) throws Exception {
 		this.type = type;
 		this.location = location;
-		validators = getValidators();
+		validators = createValidators();
 	}
 	
 	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
@@ -57,32 +59,30 @@ public class XMLValidator implements IValidator {
 		return Outcome.ABORT;
 	}
 	
-	private List<Validator> getValidators() throws Exception {
+	private List<Validator> createValidators() throws Exception {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
-		SOAModelResourceResolver resolver = getResolver();
-		sf.setResourceResolver(resolver);
-		
 		List<Validator> validators = new ArrayList<Validator>();
-		for (Schema schema : resolver.schemas) {
+		for (Schema schema : getSchemas()) {
 			log.info("Creating validator for schema: " + schema);
-			Validator validator = sf.newSchema(new StreamSource(new StringReader(schema.getAsString()))).newValidator();
+			StreamSource ss = new StreamSource(new StringReader(schema.getAsString()));
+			ss.setSystemId(location);
+			Validator validator = sf.newSchema(ss).newValidator();
 			validator.setErrorHandler(new SchemaValidatorErrorHandler());
 			validators.add(validator);
 		}
 		return validators;
 	}
-	
-	private SOAModelResourceResolver getResolver() {
-		SOAModelResourceResolver resolver = new SOAModelResourceResolver();
+
+	private List<Schema> getSchemas() {
 		switch (type) {
 		case XSD:
-			resolver.loadFromSchema(location);
-			break;
+			return (List<Schema>) new SchemaParser().parse(location).getAllSchemas();
 		case WSDL:
-			resolver.loadFromWSDL(location);
-			break;
+			WSDLParserContext ctx = new WSDLParserContext();
+			ctx.setInput(location);
+			return new WSDLParser().parse(ctx).getTypes().getSchemas();
 		}
-		return resolver;
+		throw new RuntimeException("not implemented type=" + type);
 	}
 	
 	private static Source getSOAPBody(InputStream stream) throws Exception {

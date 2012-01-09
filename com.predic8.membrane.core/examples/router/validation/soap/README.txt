@@ -12,7 +12,7 @@ Execute the following steps:
 
 2. Start router.bat on Windows or router.sh on Linux.
 
-3. Run the following command. Observe a successful response.
+3. Run the following command on the console. Observe a successful response.
 
 curl --header "Content-Type: application/soap+xml" -d @blz-soap.xml http://localhost:2000/axis2/services/BLZService/getBankResponse
 

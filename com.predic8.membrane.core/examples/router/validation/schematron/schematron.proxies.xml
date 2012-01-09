@@ -5,11 +5,14 @@
 	<serviceProxy port="2000">
 		<request>
 			<validator schematron="car-schematron.xml" />
-			<groovy>
-				Response.ok("&lt;amount&gt;100&lt;/amount&gt;").build()			
-			</groovy>
 		</request>
-		
+		<target target="localhost" port="2001" />
+	</serviceProxy>
+	
+	<serviceProxy port="2001">
+		<groovy>
+			Response.ok("&lt;response&gt;good request&lt;/response&gt;").build()			
+		</groovy>
 	</serviceProxy>
 	
 </proxies>

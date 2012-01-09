@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.MessageUtil;
@@ -69,7 +70,14 @@ public class ValidatorInterceptorTest {
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
 		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/articleRequestInvalid.xml"));
 	}
-	
+
+	@Test
+	public void testHandleResponseValidArticleMessage() throws Exception {
+		exc.setRequest(requestTB);
+		exc.setResponse(Response.ok().bodyContent(getContent("/articleResponse.xml").getBytes()).build());
+		assertEquals(Outcome.CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
+	}
+
 	@Test
 	public void testHandleRequestValidEmailMessage() throws Exception {
 		assertEquals(Outcome.CONTINUE, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/validEmail.xml"));
