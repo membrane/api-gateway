@@ -26,17 +26,24 @@ public class HotDeploymentThread extends Thread {
 	@Override
 	public void run() {
 		log.debug("Hot Deployment Thread started.");
-		while (!isInterrupted()) {
+		while (true) {
 			try {
-				while (!configurationChanged()) {
+				while (!configurationChanged() && !isInterrupted()) {
 					sleep(1000);
 				}
+				
+				if (isInterrupted())
+					break;
 
 				log.debug("configuration changed. Reloading from "
 						+ proxiesFile);
 
 				router.getTransport().closeAll();
 				router.getConfigurationManager().loadConfiguration(proxiesFile);
+				
+				sleep(1000);
+			} catch (InterruptedException e) {
+				break;
 			} catch (Exception e) {
 				log.warn("Could not redeploy " + proxiesFile, e);
 			}

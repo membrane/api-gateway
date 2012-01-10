@@ -21,7 +21,9 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
@@ -34,8 +36,15 @@ public class SchematronValidator implements IValidator {
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final XMLInputFactory xmlInputFactory;
 	
-	public SchematronValidator(String schematron, ResourceResolver resolver) throws Exception {
-		TransformerFactory fac = TransformerFactory.newInstance();
+	public SchematronValidator(String schematron, ResourceResolver resolver, Router router) throws Exception {
+		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
+		TransformerFactory fac;
+		try {
+			fac = router.getBean("transformerFactory", TransformerFactory.class);
+		} catch (NoSuchBeanDefinitionException e) {
+			throw new RuntimeException("Please define a bean called 'transformerFactory' in monitor-beans.xml, e.g. with " +
+					"<spring:bean id=\"transformerFactory\" class=\"com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl\" />", e);
+		}
 		fac.setURIResolver(new URIResolver() {
 			@Override
 			public Source resolve(String href, String base) throws TransformerException {
@@ -47,6 +56,12 @@ public class SchematronValidator implements IValidator {
 		// transform schematron-XML into XSLT
 		DOMResult r = new DOMResult();
 		t.transform(new StreamSource(resolver.resolve(schematron)), r);
+		
+		/*
+		// debug code
+		System.out.println("The generated XSLT:");
+		fac.newTransformer().transform(new DOMSource(r.getNode()), new StreamResult(System.out));
+		*/
 		
 		// build XSLT transformers
 		fac.setURIResolver(null);
@@ -76,6 +91,12 @@ public class SchematronValidator implements IValidator {
 			}
 
 			byte[] result = baos.toByteArray();
+			
+			/*
+			// debug code
+			System.out.println("The resulting XML:");
+			System.out.println(new String(result));
+			*/
 			
 			// check for errors
 			XMLEventReader parser;

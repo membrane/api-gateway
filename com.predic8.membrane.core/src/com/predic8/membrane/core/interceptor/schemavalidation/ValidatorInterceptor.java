@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import java.security.InvalidParameterException;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -41,12 +43,16 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	}
 
 	private void setValidator(IValidator validator) throws Exception {
+		if (validator == null)
+			throw new InvalidParameterException("validator is null");
 		if (this.validator != null)
 			throw new Exception("<validator> cannot have more than one validator attribute.");
 		this.validator = validator;
 	}
 	
 	public void init() throws Exception {
+		validator = null;
+		
 		if (wsdl != null)
 			setValidator(new WSDLValidator(wsdl));
 		if (schema != null)
@@ -54,7 +60,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		if (jsonSchema != null)
 			setValidator((IValidator) Class.forName("com.predic8.membrane.core.interceptor.schemavalidation.JSONValidator").getConstructor(String.class).newInstance(jsonSchema));
 		if (schematron != null)
-			setValidator(new SchematronValidator(schematron, router.getResourceResolver()));
+			setValidator(new SchematronValidator(schematron, router.getResourceResolver(), router));
 		
 		if (validator == null)
 			throw new Exception("<validator> must have an attribute specifying the validator.");
