@@ -54,6 +54,10 @@ public class Constants {
 	 */
 	public static final String NS_UNDEFINED = null;
 	
+	public static final String PROTOCOL_SOAP11 = "SOAP11"; 
 	
+	public static final String PROTOCOL_SOAP12 = "SOAP12"; 
+	
+	public static final String PROTOCOL_HTTP = "HTTP";
 	
 }

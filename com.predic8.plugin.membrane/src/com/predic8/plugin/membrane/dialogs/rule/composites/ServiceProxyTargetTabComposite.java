@@ -26,10 +26,10 @@ public class ServiceProxyTargetTabComposite extends SecurityTabComposite {
 	private ServiceProxyTargetGroup targetGroup;
 	
 	public ServiceProxyTargetTabComposite(Composite parent) {
-		super(parent);
+		super(parent, true);
 		setLayout(SWTUtil.createGridLayout(1, 20));
 		
-		createSecurityComposite(this);
+		createSecurityGroup(this);
 		
 		targetGroup = new ServiceProxyTargetGroup(this, SWT.NONE);
 	}
@@ -44,7 +44,7 @@ public class ServiceProxyTargetTabComposite extends SecurityTabComposite {
 		ServiceProxy fRule = (ServiceProxy)rule;
 		targetGroup.setTargetHost(fRule.getTargetHost());
 		targetGroup.setTargetPort(fRule.getTargetPort());
-		btSecureConnection.setSelection(rule.isOutboundTLS());
+		securityGroup.getSecureConnectionButton().setSelection(rule.isOutboundTLS());
 	}
 	
 	@Override
@@ -59,8 +59,8 @@ public class ServiceProxyTargetTabComposite extends SecurityTabComposite {
 		
 		((ServiceProxy) rule).setTargetHost(targetGroup.getTargetHost());
 		((ServiceProxy) rule).setTargetPort(Integer.parseInt(targetGroup.getTargetPort()));
-		rule.setOutboundTLS(getSecureConnection());
-		rule.setInboundTLS(getSecureConnection());
+		rule.setOutboundTLS(securityGroup.getSecureConnection());
+		rule.setInboundTLS(securityGroup.getSecureConnection());
 	}
 	
 	@Override

@@ -10,6 +10,8 @@ public class Cluster {
 
 	private static Log log = LogFactory.getLog(Cluster.class.getName());
 	
+	public static final String DEFAULT_NAME = "Default";
+	
 	private String name;
 	private List<Node> nodes = Collections.synchronizedList(new LinkedList<Node>());
 	private Map<String, Session> sessions = new Hashtable<String, Session>();

@@ -23,7 +23,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.codec.binary.*;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.After;
@@ -31,31 +32,38 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.Rule;
 
 public class ClusterNotificationInterceptorTest extends TestCase {
-	
-	static private ClusterManager clusterManager  = new ClusterManager();
 	private HttpRouter router;
 	private ClusterNotificationInterceptor interceptor;
-
+	private LoadBalancingInterceptor lbi;
+	
 	@Before
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
-		router.setClusterManager(clusterManager);
 		
 		interceptor = new ClusterNotificationInterceptor();
 		interceptor.setRouter(router);
 		router.getTransport().getInterceptors().add(interceptor);
+		
+		lbi = new LoadBalancingInterceptor();
+		lbi.setRouter(router);
+		lbi.setName("Default");
+		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 8001), "thomas-bayer.com", 80);
+		router.getRuleManager().addRuleIfNew(rule2);
+		rule2.getInterceptors().add(lbi);
 	}
 	
 	@After
 	public void tearDown() throws Exception {
 		router.getTransport().closeAll();
+		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException 
+		Thread.sleep(100);
 	}
 	
 	@Test
@@ -66,7 +74,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 										  			     "cluster","c1"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals("node1.clustera", clusterManager.getAllNodesByCluster("c1").get(0).getHost());
+		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).getHost());
 		
 	}	
 	
@@ -78,8 +86,8 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 										  			     "cluster","c1"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals(1, clusterManager.getAllNodesByCluster("c1").size());
-		assertTrue(clusterManager.getAllNodesByCluster("c1").get(0).isTakeOut());		
+		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").size());
+		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).isTakeOut());		
 	}	
 
 	@Test
@@ -90,8 +98,8 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 										  			     "cluster","c1"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals(1, clusterManager.getAllNodesByCluster("c1").size());
-		assertEquals(false, clusterManager.getAllNodesByCluster("c1").get(0).isUp());		
+		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").size());
+		assertEquals(false, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).isUp());	
 	}	
 
 	@Test
@@ -101,8 +109,8 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 									   			 		 "port", "5000"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
-		assertEquals(1, clusterManager.getAllNodesByCluster("Default").size());
-		assertEquals("node1.clustera", clusterManager.getAllNodesByCluster("Default").get(0).getHost());
+		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").size());
+		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").get(0).getHost());
 	}	
 
 	@Test

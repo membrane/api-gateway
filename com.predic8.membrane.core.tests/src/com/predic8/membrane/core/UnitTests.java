@@ -34,6 +34,7 @@ import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.http.*;
 import com.predic8.membrane.core.util.*;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
+import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 
 @RunWith(Suite.class)
 @SuiteClasses( { 
@@ -68,6 +69,7 @@ import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 	ClusterBalancerTest.class,
 	LoadBalancingWithClusterManagerAndNoSessionTest.class,
 	LoadBalancingWithClusterManagerTest.class,
+	MultipleLoadBalancersTest.class,
 	DNSCacheTest.class,
 	ValidatorInterceptorTest.class,
 	XPathCBRInterceptorTest.class,

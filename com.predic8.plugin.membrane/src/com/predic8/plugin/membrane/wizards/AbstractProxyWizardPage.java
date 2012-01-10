@@ -4,13 +4,10 @@ import java.io.IOException;
 
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.layout.*;
+import org.eclipse.swt.widgets.*;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.RuleManager;
+import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.util.SWTUtil;
 

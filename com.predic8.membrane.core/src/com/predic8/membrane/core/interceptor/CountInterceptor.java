@@ -15,17 +15,20 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import static com.predic8.membrane.core.util.HttpUtil.createResponse;
-
 import java.io.StringWriter;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 
 public class CountInterceptor extends AbstractInterceptor {
 
@@ -40,7 +43,7 @@ public class CountInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log.info(""+ (++counter) +". request received.");
-		exc.setResponse(createResponse(200, "OK", getPage(), "text/html;charset=utf-8"));
+		exc.setResponse(Response.ok().entity(getPage()).build());
 		return Outcome.ABORT;
 	}
 

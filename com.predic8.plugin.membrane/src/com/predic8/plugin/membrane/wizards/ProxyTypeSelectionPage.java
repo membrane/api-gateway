@@ -27,6 +27,8 @@ public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 	
 	private Button btSimpleProxy;
 	
+	private Button btWSDLProxy;
+	
 	private Button btAdvancedProxy;
 	
 	protected Button btProxyRule;
@@ -41,6 +43,10 @@ public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 		
 		btSimpleProxy = createRuleButton(composite, "Simple Service Proxy");
 		createFullDescriptionLabel(composite, "Create service proxy that forwards  HTTP and SOAP requests.");
+		addVericalGap(composite);
+		
+		btWSDLProxy = createRuleButton(composite, "WSDL Proxy");
+		createFullDescriptionLabel(composite, "Create Proxy from WSDL.");
 		addVericalGap(composite);
 		
 		btAdvancedProxy = createRuleButton(composite, "Advanced Service Proxy");
@@ -76,6 +82,8 @@ public class ProxyTypeSelectionPage extends AbstractProxyWizardPage {
 	public IWizardPage getNextPage() {
 		if (btSimpleProxy.getSelection()) {
 			return getWizard().getPage(ListenPortConfigurationPage.PAGE_NAME);
+		} else if (btWSDLProxy.getSelection()) {
+			return getWizard().getPage(WSDLProxyConfigurationPage.PAGE_NAME);
 		} else if (btAdvancedProxy.getSelection()) {
 			return getWizard().getPage(AdvancedProxyConfigurationPage.PAGE_NAME);
 		}

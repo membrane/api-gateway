@@ -13,16 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.formvalidation;
 
-import java.util.*;
-import java.util.regex.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.ErrorResponse;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URLParamUtil;
@@ -102,7 +107,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 	}
 
 	private void setErrorResponse(Exchange exc, Map<String, String> propMap, Field f) {
-		exc.setResponse(new ErrorResponse(400, "Bad Request", "Parameter "+f.name+"="+propMap.get(f.name)+" didn't match "+f.regex+""));
+		exc.setResponse(Response.badRequest(
+				"Parameter "+f.name+"="+propMap.get(f.name)+" didn't match "+f.regex+"").build());
 	}
 
 	private void logMappings() {

@@ -18,10 +18,8 @@ import java.io.IOException;
 
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.ModifyEvent;
-import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.events.*;
+import org.eclipse.swt.widgets.*;
 
 import com.predic8.plugin.membrane.components.ServiceProxyTargetGroup;
 
@@ -42,9 +40,7 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 1);
 		
-		createFullDescriptionLabel(composite, "If this proxy applies to an incomming message Membrane Monitor will" + "\nforward the message to the target host on the specified port number.");
-
-		createSecurityComposite(composite);
+		createSecurityGroup(composite);
 
 		ruleTargetGroup = new ServiceProxyTargetGroup(composite, SWT.NONE);
 		
@@ -140,5 +136,5 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 	protected void addListenersToSecureConnectionButton() {
 		// do nothing
 	}
-
+	
 }

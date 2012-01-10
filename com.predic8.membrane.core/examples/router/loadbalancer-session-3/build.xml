@@ -16,7 +16,7 @@
 	</target>
 
 	<target name="stubs" depends="init">
-		<exec executable="wsimport.exe" >
+		<exec executable="wsimport.bat" >
 			<arg value="data/ChatService.wsdl" />
 			<arg value="-d"/>
 			<arg value="build/classes"/>

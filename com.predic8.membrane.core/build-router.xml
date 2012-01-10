@@ -16,7 +16,7 @@
 -->
 <project name="Membrane-ESB" default="compile-core" basedir=".">
 
-	<property name="version" value="3.2.2" />
+	<property name="version" value="3.3.0-snapshot" />
 
 	<path id="classpath">
 		<fileset dir="lib">

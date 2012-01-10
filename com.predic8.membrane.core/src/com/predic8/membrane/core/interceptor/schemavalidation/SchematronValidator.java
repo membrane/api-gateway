@@ -91,7 +91,7 @@ public class SchematronValidator implements IValidator {
 						exc.setResponse(Response.
 								badRequest().
 								contentType("text/xml;charset=utf-8").
-								bodyContent(result).
+								body(result).
 								build());
 						return Outcome.ABORT;
 					}
@@ -114,7 +114,7 @@ public class SchematronValidator implements IValidator {
 		exc.setResponse(Response.
 				badRequest().
 				contentType("text/xml;charset=utf-8").
-				bodyContent(("<error>" + StringEscapeUtils.escapeXml(message) + "</error>").getBytes(UTF8)).
+				body(("<error>" + StringEscapeUtils.escapeXml(message) + "</error>").getBytes(UTF8)).
 				build());
 	}
 

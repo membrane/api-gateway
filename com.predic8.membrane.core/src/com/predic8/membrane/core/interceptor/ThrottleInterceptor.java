@@ -6,6 +6,7 @@ import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ErrorResponse;
+import com.predic8.membrane.core.http.Response;
 
 public class ThrottleInterceptor extends AbstractInterceptor {
 	private Log log = LogFactory.getLog(ThrottleInterceptor.class.getName());
@@ -26,7 +27,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 			Thread.sleep(busyDelay);
 			if ( threads >= maxThreads ) {
 				log.info("Max thread limit of " +maxThreads+ " reached. Server Busy.");
-				exc.setResponse(new ErrorResponse(503, "Service Unavailable", "Server Busy"));
+				exc.setResponse(Response.serverUnavailable("Server busy.").build());
 				return Outcome.ABORT;
 			}
 		}

@@ -51,8 +51,8 @@
 		<mkdir dir="cobertura/lib"/>
 		<delete file="cobertura/cobertura.ser" />
 		<cobertura-instrument datafile="cobertura/cobertura.ser" todir="cobertura/lib">
-		    <fileset dir="../com.predic8.membrane.core/dist/router/membrane-router-2.1.0/lib">
-		        <include name="membrane-router.jar" />
+		    <fileset dir="../com.predic8.membrane.core/dist/router/membrane-esb-2.1.0/lib">
+		        <include name="membrane-esb.jar" />
 		    </fileset>
 		</cobertura-instrument>
 	</target>	

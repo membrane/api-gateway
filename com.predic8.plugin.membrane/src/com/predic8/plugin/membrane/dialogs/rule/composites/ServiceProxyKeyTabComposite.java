@@ -26,10 +26,10 @@ public class ServiceProxyKeyTabComposite extends SecurityTabComposite {
 	private RuleKeyGroup ruleKeyGroup;
 	
 	public ServiceProxyKeyTabComposite(Composite parent) {
-		super(parent);
+		super(parent, false);
 		setLayout(SWTUtil.createGridLayout(1, 12));
 	
-		createSecurityComposite(this);
+		createSecurityGroup(this);
 		
 		ruleKeyGroup = new RuleKeyGroup(this, SWT.NONE);
 		
@@ -39,7 +39,7 @@ public class ServiceProxyKeyTabComposite extends SecurityTabComposite {
 	public void setRule(Rule rule) {
 		super.setRule(rule);
 		ruleKeyGroup.setInput(rule.getKey());
-		setSecureConnection(rule.isInboundTLS());
+		securityGroup.getSecureConnectionButton().setSelection(rule.isInboundTLS());
 	}
 	
 	public ServiceProxyKey getUserInput() {

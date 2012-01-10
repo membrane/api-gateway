@@ -20,7 +20,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.ErrorResponse;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -46,11 +45,11 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			targetRes = getClient().call(exc);
 			return Outcome.CONTINUE;
 		} catch (ConnectException e) {
-			targetRes = new ErrorResponse(500, "Internal Server Error", "Target " + getDestination(exc) + " is not reachable.");  
+			targetRes = Response.interalServerError("Target " + getDestination(exc) + " is not reachable.").build();
 			log.warn("Target " + getDestination(exc) + " is not reachable. " + e);
 			return Outcome.ABORT;
 		} catch (UnknownHostException e) {
-			targetRes = new ErrorResponse(500, "Internal Server Error", "Target host " + HttpUtil.getHostName(getDestination(exc)) + " is unknown. DNS was unable to resolve host name.");
+			targetRes = Response.interalServerError("Target host " + HttpUtil.getHostName(getDestination(exc)) + " is unknown. DNS was unable to resolve host name.").build();
 			return Outcome.ABORT;
 		} finally {
 			exc.setResponse(targetRes);

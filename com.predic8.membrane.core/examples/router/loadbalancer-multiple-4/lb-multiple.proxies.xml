@@ -1,0 +1,42 @@
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+	<serviceProxy name="Balancer 1" port="8080">
+		<balancer name="balancer1">
+			<clusters>
+				<cluster>
+					<node host="localhost" port="4000"/>
+					<node host="localhost" port="4001"/>
+				</cluster>
+			</clusters>
+		</balancer>
+	</serviceProxy>
+	<serviceProxy name="Balancer 2" port="8081">
+		<balancer name="balancer2">
+			<clusters>
+				<cluster>
+					<node host="localhost" port="4002"/>
+					<node host="localhost" port="4003"/>
+				</cluster>
+			</clusters>
+		</balancer>
+	</serviceProxy>
+	<serviceProxy name="Up/Down Push Interface" port="9010">
+		<clusterNotification />
+	</serviceProxy>
+	<serviceProxy name="Mock Node 1" port="4000">
+		<counter name="Mock Node 1" />
+	</serviceProxy>
+	<serviceProxy name="Mock Node 2" port="4001">
+		<counter name="Mock Node 2" />
+	</serviceProxy>
+	<serviceProxy name="Mock Node 3" port="4002">
+		<counter name="Mock Node 3" />
+	</serviceProxy>
+	<serviceProxy name="Mock Node 4" port="4003">
+		<counter name="Mock Node 4" />
+	</serviceProxy>
+	<serviceProxy name="Administration" port="9000">
+		<adminConsole />
+	</serviceProxy>
+</proxies>

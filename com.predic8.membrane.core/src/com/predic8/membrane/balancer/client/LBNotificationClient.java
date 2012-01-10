@@ -14,6 +14,8 @@ import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.balancer.Balancer;
+import com.predic8.membrane.core.interceptor.balancer.Cluster;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
@@ -27,6 +29,7 @@ public class LBNotificationClient {
 	private String host;
 	private String port;
 	private String cmURL;
+	private String balancer;
 	private String cluster;
 	private SecretKeySpec skeySpec;
 
@@ -70,7 +73,8 @@ public class LBNotificationClient {
 				"No command up, down or takeout specified!");
 		host = getArgument(cl, 1, 'H', null, null, "No host name specified!");
 		port = getArgument(cl, 2, 'p', null, "80", "");
-		cluster = getArgument(cl, -1, 'c', null, "Default", "");
+		balancer = getArgument(cl, -1, 'b', null, Balancer.DEFAULT_NAME, "");
+		cluster = getArgument(cl, -1, 'c', null, Cluster.DEFAULT_NAME, "");
 		cmURL = getArgument(cl, -1, 'u', "clusterManager", null,
 				"No cluster manager location found!");
 		String key = getArgument(cl, -1, '-', "key", "", null);
@@ -106,7 +110,7 @@ public class LBNotificationClient {
 
 	private String getQueryString() {
 		String time = String.valueOf(System.currentTimeMillis());
-		return "cluster=" + cluster + "&host=" + host + "&port=" + port
+		return "balancer=" + balancer + "&cluster=" + cluster + "&host=" + host + "&port=" + port
 				+ "&time=" + time + "&nonce=" + new SecureRandom().nextLong();
 	}
 
@@ -116,7 +120,7 @@ public class LBNotificationClient {
 			   URLEncoder.encode(getEncryptedQueryString(),"UTF-8");
 		}
 		String time = String.valueOf(System.currentTimeMillis()); 
-		return cmURL + "/" + cmd + "?cluster=" + cluster + "&host=" + host + "&port=" + port + "&time=" + time;		 
+		return cmURL + "/" + cmd + "?balancer=" + balancer + "&cluster=" + cluster + "&host=" + host + "&port=" + port + "&time=" + time;
 	}
 	
 	private String getEncryptedQueryString() throws Exception {
@@ -132,13 +136,16 @@ public class LBNotificationClient {
 		log.debug("port: " + port);
 		log.debug("cmURL: " + cmURL);
 		log.debug("cluster: " + cluster);
+		log.debug("balancer: " + balancer);
 	}
 
 	private Options getOptions() {
 		Options options = new Options();
 		options.addOption("h", "help", false, "print usage.");
+		options.addOption("b", "balancer", true,
+				"Sets the balancer name for the operation. (Default:" + Balancer.DEFAULT_NAME + ")");
 		options.addOption("c", "cluster", true,
-				"Sets the cluster name for the operation. (Default:Default)");
+				"Sets the cluster name for the operation. (Default:" + Cluster.DEFAULT_NAME + ")");
 		options.addOption("H", "host", true,
 				"Sets the host name for the operation.");
 		options.addOption("p", "port", true,

@@ -37,8 +37,12 @@ public class ConfigurationFileStore implements ConfigurationStore {
 		 * read(getClass().getResourceAsStream(fileName.substring(10))); else
 		 * return read(new FileInputStream(fileName));
 		 */
-		return read(router.getResourceResolver().resolve(fileName));
-
+		InputStream is = router.getResourceResolver().resolve(fileName);
+		try {
+			return read(is);
+		} finally {
+			is.close();
+		}
 	}
 
 	private Proxies read(InputStream is) throws Exception {

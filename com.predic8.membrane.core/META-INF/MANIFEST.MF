@@ -7,6 +7,7 @@ Bundle-Activator: com.predic8.membrane.core.CoreActivator
 Bundle-Vendor: predic8 GmbH
 Bundle-ActivationPolicy: lazy
 Export-Package: 
+ .,
  com.googlecode.jatl,
  com.predic8.beautifier,
  com.predic8.membrane.core;
@@ -32,10 +33,7 @@ Export-Package:
    com.predic8.membrane.core.rules,
    com.predic8.membrane.core.exchange.accessors",
  com.predic8.membrane.core.exchange.accessors;uses:="com.predic8.membrane.core.exchange",
- com.predic8.membrane.core.exchangestore;
-  uses:="com.predic8.membrane.core.exchange,
-   com.predic8.membrane.core.model,
-   com.predic8.membrane.core.rules",
+ com.predic8.membrane.core.exchangestore;uses:="com.predic8.membrane.core.exchange,com.predic8.membrane.core.model,com.predic8.membrane.core.rules",
  com.predic8.membrane.core.http;uses:="org.apache.commons.logging",
  com.predic8.membrane.core.http.xml,
  com.predic8.membrane.core.interceptor;
@@ -61,8 +59,8 @@ Export-Package:
  com.predic8.membrane.core.interceptor.schemavalidation,
  com.predic8.membrane.core.interceptor.server,
  com.predic8.membrane.core.interceptor.statistics,
- com.predic8.membrane.core.interceptor.xslt,
  com.predic8.membrane.core.interceptor.xmlprotection,
+ com.predic8.membrane.core.interceptor.xslt,
  com.predic8.membrane.core.io;uses:="com.predic8.membrane.core",
  com.predic8.membrane.core.model;uses:="com.predic8.membrane.core.http,com.predic8.membrane.core.exchange,com.predic8.membrane.core.rules",
  com.predic8.membrane.core.rules;uses:="javax.xml.stream,com.predic8.membrane.core.config",
@@ -77,7 +75,22 @@ Export-Package:
  com.predic8.membrane.core.util;uses:="com.predic8.membrane.core.http",
  com.predic8.membrane.core.ws.magic,
  com.predic8.membrane.core.ws.relocator;uses:="javax.xml.stream,javax.xml.namespace",
+ com.predic8.policy,
  com.predic8.schema,
+ com.predic8.schema.creator,
+ com.predic8.schema.diff,
+ com.predic8.schema.restriction,
+ com.predic8.schema.restriction.facet,
+ com.predic8.soamodel,
+ com.predic8.wsdl,
+ com.predic8.wsdl.creator,
+ com.predic8.wsdl.diff,
+ com.predic8.wsdl.http,
+ com.predic8.wsdl.soap11,
+ com.predic8.wsdl.soap12,
+ com.predic8.wsi,
+ com.predic8.wstool.creator,
+ com.predic8.xml.util,
  com.sun.activation.registries,
  com.sun.activation.viewers,
  javax.activation,
@@ -106,10 +119,10 @@ Bundle-ClassPath: lib/commons-logging.jar,
  lib/commons-httpclient-3.1.jar,
  lib/jatl-0.1.0.jar,
  lib/commons-lang-2.6.jar,
- lib/soa-model-2.0.6.jar,
  lib/jackson-mapper-asl-1.8.5.jar,
  lib/jackson-core-asl-1.8.5.jar,
- lib/org.apache.log4j_1.2.13.v200903072027.jar
+ lib/org.apache.log4j_1.2.13.v200903072027.jar,
+ lib/soa-model-2.0.9.jar
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.5.0";visibility:=reexport
 Eclipse-RegisterBuddy: org.apache.log4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6

@@ -20,6 +20,7 @@ import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.ErrorResponse;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.*;
 
 public class RuleMatchingInterceptor extends AbstractInterceptor {
@@ -53,7 +54,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private void handleNoRuleFound(Exchange exc) throws IOException {
 		exc.getRequest().readBody();
 		exc.getServerThread().getSourceSocket().shutdownInput();
-		exc.setResponse(new ErrorResponse(500, "Internal Server Error", "This request was not accepted by Membrane Monitor. Please correct the request and try again."));
+		exc.setResponse(Response.interalServerError("This request was not accepted by Membrane Monitor. Please correct the request and try again.").build());
 	}
 
 	private Rule getRule(Exchange exc) {

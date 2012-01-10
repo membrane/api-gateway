@@ -57,29 +57,12 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome deny(Exchange exc) {
-		Response response = createUnauthorizedResponse();
-		response.setBody(new Body("<HTML><HEAD><TITLE>Error</TITLE><META HTTP-EQUIV='Content-Type' CONTENT='text/html; charset=utf-8'></HEAD><BODY><H1>401 Unauthorized.</H1></BODY></HTML>"));
-		exc.setResponse(response);
+		exc.setResponse(Response.unauthorized("").
+				header("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date())).
+				header("Server", "Membrane-Monitor " + Constants.VERSION).
+				header("WWW-Authenticate", "Basic realm=\"Membrane Authentication\"").
+				header("Connection", "close").build());
 		return Outcome.ABORT;
-	}
-
-	private Response createUnauthorizedResponse() {
-		Response response = new Response();
-		response.setStatusCode(401);
-		response.setStatusMessage("Unauthorized");
-		Header header = createHeader();
-		response.setHeader(header);
-		return response;
-	}
-
-	private Header createHeader() {
-		Header header = new Header();
-		header.setContentType("text/html;charset=utf-8");
-		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
-		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
-		header.add("WWW-Authenticate", "Basic realm=\"Membrane Authentication\"");
-		header.add("Connection", "close");		
-		return header;
 	}
 
 	private boolean hasNoAuthorizationHeader(Exchange exc) {

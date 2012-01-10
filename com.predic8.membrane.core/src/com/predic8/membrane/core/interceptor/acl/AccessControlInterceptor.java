@@ -59,7 +59,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	private void setResponseToAccessDenied(Exchange exc) throws IOException {
 		exc.getRequest().getBody().read();
-		exc.setResponse(getResponse("Access denied: you are not authorized to access this service."));
+		exc.setResponse(Response.forbidden("Access denied: you are not authorized to access this service.").build());
 	}
 
 	private InetAddress getInetAddress(Exchange exc) {
@@ -112,20 +112,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		}
 		
 		return fileName;
-	}
-	
-	public Response getResponse(String content) {
-		Response response = new Response();
-		response.setStatusCode(403);
-		response.setStatusMessage("Forbidden");
-		response.setVersion("1.1");
-
-		Header header = new Header();
-		header.setContentType("text;charset=UTF-8");
-		response.setHeader(header);
-
-		response.setBodyContent(content.getBytes());
-		return response;
 	}
 
 	@Override

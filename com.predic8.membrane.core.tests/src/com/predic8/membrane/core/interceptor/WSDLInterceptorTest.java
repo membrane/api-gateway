@@ -34,10 +34,9 @@ import org.junit.Test;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 public class WSDLInterceptorTest {
@@ -51,7 +50,7 @@ public class WSDLInterceptorTest {
 		exc = new Exchange();
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService?wsdl"));
 		InputStream resourceAsStream = this.getClass().getResourceAsStream("/blz-service.wsdl");
-		Response okResponse = MessageUtil.getOKResponse(ByteUtil.getByteArrayData(resourceAsStream), "text/xml; charset=utf-8");
+		Response okResponse = Response.ok().contentType("text/xml; charset=utf-8").body(resourceAsStream).build();
 		exc.setResponse(okResponse);
 		
 		exc.setOriginalHostHeader("thomas-bayer.com:80");

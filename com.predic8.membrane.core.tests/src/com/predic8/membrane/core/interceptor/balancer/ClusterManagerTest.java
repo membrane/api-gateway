@@ -20,7 +20,11 @@ import org.junit.Test;
 
 public class ClusterManagerTest extends TestCase {
 	
-	private ClusterManager cm = new ClusterManager();
+	private Balancer cm;
+	
+	public ClusterManagerTest() {
+		cm = new Balancer();
+	}
 	
 	@Test
 	public void testAddEndpoint() throws Exception {
@@ -55,5 +59,5 @@ public class ClusterManagerTest extends TestCase {
 		Thread.sleep(3000);
 		assertEquals(0, cm.getAvailableNodesByCluster("c3").size());
 	}	
-	
+
 }

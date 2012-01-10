@@ -45,7 +45,6 @@ public class CustomSpringConfigurationTest {
 	@Test
 	public void testInit() throws Exception {
 	 	assertNotNull(router);
-	 	assertNull(router.getClusterManager());
 	 	assertTrue(router.getExchangeStore().getClass().getName().endsWith("MemoryExchangeStore"));
 	 	assertTrue(router.getConfigurationManager().getProxies().getIndentMessage());
 	 	assertTrue(router.getConfigurationManager().getProxies().getAdjustContentLength());

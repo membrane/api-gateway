@@ -1,7 +1,11 @@
 <!--
 	Routing Configuration
 	
-	Here you can configure routing rules for Membrane Monitor and Router. It contains some rules to show how to setup routing. Please make sure to remove these rules before you put the router into production. More sample configurations you can find in the examples directory.  
+	Here you can configure routing rules for Membrane Monitor and ESB. It contains some rules to show how to setup routing. Please make sure to remove these rules before you put the router into production. More sample configurations you can find in the examples directory.
+
+	Have a look at http://membrane-soa.org/esb-doc/configuration/proxy-configuration.htm for documentation and a reference explaining what XML elements can be used how and where.
+	
+	See the *.proxies.xml files in the /examples/* directories in the ESB distribution for several examples of how to configure different ESB features within this file.
 -->
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

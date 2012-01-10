@@ -74,7 +74,7 @@ public class ValidatorInterceptorTest {
 	@Test
 	public void testHandleResponseValidArticleMessage() throws Exception {
 		exc.setRequest(requestTB);
-		exc.setResponse(Response.ok().bodyContent(getContent("/articleResponse.xml").getBytes()).build());
+		exc.setResponse(Response.ok().body(getContent("/articleResponse.xml").getBytes()).build());
 		assertEquals(Outcome.CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
 	}
 

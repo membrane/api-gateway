@@ -31,7 +31,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
-import com.predic8.membrane.core.interceptor.balancer.ClusterManager;
+import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
 import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
 import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.Node;
@@ -69,18 +69,17 @@ public class LoadBalancingInterceptorTest {
 		sp2.getInterceptors().add(mockInterceptor2);
 		service2.getRuleManager().addRuleIfNew(sp2);
 
-		ClusterManager cm = new ClusterManager();
-		cm.up("Default", "localhost", 2000);
-		cm.up("Default", "localhost", 3000);
-
 		balancer = new HttpRouter();
-		balancer.setClusterManager(cm);
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"POST", ".*", 7000), "thomas-bayer.com", 80);
 		balancingInterceptor = new LoadBalancingInterceptor();
+		balancingInterceptor.setName("Default");
+		balancingInterceptor.setRouter(balancer);
 		sp3.getInterceptors().add(balancingInterceptor);
 		balancer.getRuleManager().addRuleIfNew(sp3);
-		balancingInterceptor.setRouter(balancer);
+
+		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 2000);
+		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 3000);
 
 		roundRobinStrategy = new RoundRobinStrategy();
 		byThreadStrategy = new ByThreadStrategy();
@@ -91,6 +90,8 @@ public class LoadBalancingInterceptorTest {
 		service1.getTransport().closeAll();
 		service2.getTransport().closeAll();
 		balancer.getTransport().closeAll();
+		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException 
+		Thread.sleep(100);
 	}
 
 	@Test
@@ -112,8 +113,7 @@ public class LoadBalancingInterceptorTest {
 			throws MalformedURLException {
 		Exchange exc = new Exchange();
 		exc.setOriginalRequestUri(requestUri);
-		assertEquals(expectedUri, balancingInterceptor.getDestinationURL(
-				new Node("thomas-bayer.com", 80), exc));
+		assertEquals(expectedUri, new Node("thomas-bayer.com", 80).getDestinationURL(exc));
 	}
 
 	@Test

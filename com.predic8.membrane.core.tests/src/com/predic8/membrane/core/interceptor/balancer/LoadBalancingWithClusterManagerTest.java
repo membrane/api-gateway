@@ -85,9 +85,10 @@ public class LoadBalancingWithClusterManagerTest {
 		lb.getTransport().closeAll();
 	}
 
-	private void startLB() throws IOException {
+	private void startLB() throws Exception {
 
 		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
+		lbi.setName("Default");
 		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
 		extractor.setLocalName("session");
 		extractor.setNamespace("http://predic8.com/session/");
@@ -104,7 +105,6 @@ public class LoadBalancingWithClusterManagerTest {
 		lb = new HttpRouter();
 		lbi.setRouter(lb);
 		cni.setRouter(lb);
-		lb.setClusterManager(new ClusterManager());
 		lb.getRuleManager().addRuleIfNew(lbiRule);
 		lb.getRuleManager().addRuleIfNew(cniRule);
 	}

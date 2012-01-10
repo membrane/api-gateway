@@ -12,7 +12,6 @@
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence />
 					<xsd:attribute name="exchangeStore" type="xsd:string"/>
-					<xsd:attribute name="useClusterManager" type="xsd:boolean"/>
 					<xsd:attribute name="adjustHostHeader" default="true" type="xsd:boolean" />
 					<xsd:attribute name="indentMessage" default="true" type="xsd:boolean" />
 					<xsd:attribute name="adjustContentLength" default="true" type="xsd:boolean" />
@@ -256,6 +255,8 @@
 							</xsd:element>
 						</xsd:choice>						
 					</xsd:sequence>
+					<xsd:attribute name="name" type="xsd:string" />
+					<xsd:attribute name="sessionTimeout" type="xsd:int" default="3600000"/>
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>

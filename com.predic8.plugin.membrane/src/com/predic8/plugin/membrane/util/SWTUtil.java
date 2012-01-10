@@ -2,7 +2,7 @@ package com.predic8.plugin.membrane.util;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.*;
-import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.*;
 
 public class SWTUtil {
 
@@ -23,6 +23,13 @@ public class SWTUtil {
 		gData.grabExcessHorizontalSpace = true;
 		gData.verticalAlignment = GridData.FILL;
 		gData.grabExcessVerticalSpace = true;
+		return gData;
+	}
+	
+	public static GridData getGreedyHorizontalGridData() {
+		GridData gData = new GridData();
+		gData.horizontalAlignment = GridData.FILL;
+		gData.grabExcessHorizontalSpace = true;
 		return gData;
 	}
 	
@@ -51,6 +58,14 @@ public class SWTUtil {
 		Composite composite = new Composite(parent, SWT.NONE);
 		composite.setLayout(createGridLayout(col, margin));
 		return composite;
+	}
+	
+	public static Event createSelectionEvent(Object data, Widget source) {
+		Event event = new Event();
+		event.type = SWT.Selection;
+		event.data = data;
+		event.widget = source;
+		return event;
 	}
 	
 	

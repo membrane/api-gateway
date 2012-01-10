@@ -2,12 +2,14 @@ SIMPLE LOAD BALANCING
 
 By using the LoadBalancerInterceptor you can balance requests to a number of different nodes.
 
-The nodes can be organized in clusters. The clusters can be configured dynamically over a Web console or statically in the proxies.xml file.  
+The nodes can be organized in clusters. The clusters can be configured dynamically over a Web console or statically in
+the proxies.xml file.  
 
 
 RUNNING THE EXAMPLE
 
-This example shows a proxies.xml configuration that sets up a LoadBalancerInterceptor to distribute requests to 3 different nodes. 
+This example shows a proxies.xml configuration that sets up a LoadBalancerInterceptor to distribute requests to
+3 different nodes. 
 
 To run the example execute the following steps:
 

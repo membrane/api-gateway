@@ -36,10 +36,8 @@ public class XSLTInterceptorTest extends TestCase {
 	@Test
 	public void testRequest() throws Exception {
 		exc = new Exchange();
-		Response res = new Response();
-		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
-				"/customer.xml")));
-		exc.setResponse(res);
+		exc.setResponse(Response.ok().body(getClass().getResourceAsStream(
+				"/customer.xml")).build());
 
 		XSLTInterceptor i = new XSLTInterceptor();
 		i.setRouter(new HttpRouter());

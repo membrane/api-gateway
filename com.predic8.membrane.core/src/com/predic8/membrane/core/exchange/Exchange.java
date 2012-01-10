@@ -14,12 +14,19 @@
 
 package com.predic8.membrane.core.exchange;
 
-import org.apache.commons.logging.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.TerminateException;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.transport.http.AbstractHttpRunnable;
+import com.predic8.membrane.core.transport.http.Connection;
+import com.predic8.membrane.core.util.HttpUtil;
 
 public class Exchange extends AbstractExchange {
 
@@ -123,4 +130,11 @@ public class Exchange extends AbstractExchange {
 	public void collectStatistics() {
 		rule.collectStatisticsFrom(this);
 	}
+	
+	public String getRequestURI() throws MalformedURLException {
+		if (HttpUtil.isAbsoluteURI(getOriginalRequestUri())) 
+			return new URL(getOriginalRequestUri()).getFile();
+		return getOriginalRequestUri();
+	}
+
 }

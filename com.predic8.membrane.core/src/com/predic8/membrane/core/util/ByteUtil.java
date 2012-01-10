@@ -43,14 +43,16 @@ public class ByteUtil {
 		return content;
 	}
 
-	//TODO use buffer
 	public static byte[] getByteArrayData(InputStream stream) throws IOException {
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
-		int c = -1;
-		while ((c = stream.read()) > 0) {
-			bos.write(c);
+		byte[] buffer = new byte[2048];
+		while (true) {
+			int read = stream.read(buffer);
+			if (read < 0)
+				break;
+			bos.write(buffer, 0, read);
 		}
 
 		try {

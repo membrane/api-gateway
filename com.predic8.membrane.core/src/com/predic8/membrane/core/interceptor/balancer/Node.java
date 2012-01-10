@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -181,4 +182,9 @@ public class Node extends AbstractXmlElement {
 		port = Integer.parseInt(token.getAttributeValue("", "port")!=null?token.getAttributeValue("", "port"):"80");
 	}
 	
+	public String getDestinationURL(Exchange exc)
+			throws MalformedURLException {
+		return "http://" + getHost() + ":" + getPort() + exc.getRequestURI();
+	}
+
 }

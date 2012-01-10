@@ -15,16 +15,20 @@
 package com.predic8.membrane.core;
 
 import java.net.MalformedURLException;
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.balancer.ClusterManager;
 import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.ResourceResolver;
 
 public class Router {
 
@@ -37,8 +41,6 @@ public class Router {
 	protected Transport transport;
 
 	protected ConfigurationManager configurationManager = new ConfigurationManager();
-
-	protected ClusterManager clusterManager;
 
 	protected ResourceResolver resourceResolver = new ResourceResolver();
 
@@ -113,14 +115,6 @@ public class Router {
 			ConfigurationManager configurationManager) {
 		this.configurationManager = configurationManager;
 		configurationManager.setRouter(this);
-	}
-
-	public ClusterManager getClusterManager() {
-		return clusterManager;
-	}
-
-	public void setClusterManager(ClusterManager clusterManager) {
-		this.clusterManager = clusterManager;
 	}
 
 	public Collection<Interceptor> getInterceptors() {

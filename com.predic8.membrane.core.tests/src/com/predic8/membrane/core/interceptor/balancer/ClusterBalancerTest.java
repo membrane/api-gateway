@@ -24,12 +24,14 @@ import org.junit.*;
 import com.predic8.membrane.core.*;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class ClusterBalancerTest extends TestCase {
 
 	private XMLElementSessionIdExtractor extracor;
-	private ClusterManager cm;
 	private LoadBalancingInterceptor lb;
+	private Router r;
 
 	@Before
 	public void setUp() throws Exception {
@@ -38,15 +40,26 @@ public class ClusterBalancerTest extends TestCase {
 		extracor.setLocalName("session");
 		extracor.setNamespace("http://predic8.com/session/");
 
+		r = new HttpRouter();
+
 		lb = new LoadBalancingInterceptor();
 		lb.setSessionIdExtractor(extracor);
-
-		cm = new ClusterManager();
-		cm.up("Default", "localhost", 2000);
-		cm.up("Default", "localhost", 3000);
-		Router r = new HttpRouter();
-		r.setClusterManager(cm);
+		lb.setName("Default");
 		lb.setRouter(r);
+		
+		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(8080), "predic8.com", 80);
+		sp.getInterceptors().add(lb);
+		r.getRuleManager().addRuleIfNew(sp);
+
+		BalancerUtil.up(r, "Default", "Default", "localhost", 2000);
+		BalancerUtil.up(r, "Default", "Default", "localhost", 3000);
+	}
+	
+	@After
+	public void tearDown() throws Exception {
+		r.getTransport().closeAll();
+		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException 
+		Thread.sleep(400);
 	}
 
 	@Test
@@ -56,7 +69,7 @@ public class ClusterBalancerTest extends TestCase {
 		lb.handleRequest(exc);
 		System.out.println("1");
 
-		Session s = cm.getSessions("Default").get("555555");
+		Session s = BalancerUtil.getSessions(r, "Default", "Default").get("555555");
 		assertEquals("localhost", s.getNode().getHost());
 
 		assertEquals(2, exc.getDestinations().size()); 
@@ -64,17 +77,17 @@ public class ClusterBalancerTest extends TestCase {
 		String stickyDestination = exc.getDestinations().get(0);
 		lb.handleRequest(exc);
 
-		assertEquals(1, cm.getSessions("Default").size());
+		assertEquals(1, BalancerUtil.getSessions(r, "Default", "Default").size());
 		assertEquals(stickyDestination, exc.getDestinations().get(0));
 
-		cm.takeout("Default", "localhost", s.getNode().getPort());
-		assertEquals(1, cm.getAvailableNodesByCluster("Default").size());
-		assertFalse(stickyDestination.equals(cm.getAvailableNodesByCluster("Default").get(0)));
+		BalancerUtil.takeout(r, "Default", "Default", "localhost", s.getNode().getPort());
+		assertEquals(1, BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").size());
+		assertFalse(stickyDestination.equals(BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").get(0)));
 		
 		lb.handleRequest(exc);
 		assertEquals(stickyDestination, exc.getDestinations().get(0));
 		
-		cm.down("Default", "localhost", s.getNode().getPort());
+		BalancerUtil.down(r, "Default", "Default", "localhost", s.getNode().getPort());
 		lb.handleRequest(exc);
 		
 		assertFalse(stickyDestination.equals(exc.getDestinations().get(0)));		
@@ -85,7 +98,7 @@ public class ClusterBalancerTest extends TestCase {
 		Exchange exc = getExchangeWithOutSession();
 
 		lb.handleRequest(exc);
-		assertNull(cm.getSessions("Default").get("444444"));
+		assertNull(BalancerUtil.getSessions(r, "Default", "Default").get("444444"));
 
 		Node stickyNode = (Node)exc.getProperty("dispatchedNode");
 		assertNotNull(stickyNode);
@@ -94,7 +107,7 @@ public class ClusterBalancerTest extends TestCase {
 
 		lb.handleResponse(exc);
 
-		assertEquals(stickyNode, cm.getSessions("Default").get("444444").getNode());
+		assertEquals(stickyNode, BalancerUtil.getSessions(r, "Default", "Default").get("444444").getNode());
 
 	}
 	
@@ -102,15 +115,15 @@ public class ClusterBalancerTest extends TestCase {
 	public void testNoNodeFound() throws Exception {
 		Exchange exc = getExchangeWithOutSession();
 
-		cm.down("Default", "localhost", 2000);
-		cm.down("Default", "localhost", 3000);
+		BalancerUtil.down(r, "Default", "Default", "localhost", 2000);
+		BalancerUtil.down(r, "Default", "Default", "localhost", 3000);
 
 		lb.handleRequest(exc);	
 		assertEquals(500, exc.getResponse().getStatusCode());
 	}
 
 	private Response getResponse() throws IOException {
-		Response res = new Response();
+		Response res = Response.ok().build();
 		res.setHeader(getHeader());
 		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
 				"/getBankResponsewithSession.xml")));

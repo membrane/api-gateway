@@ -56,9 +56,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	}
 
 	private Response createResponse(String uri) throws Exception {
-		Response response = new Response();
-		response.setStatusCode(200);
-		response.setStatusMessage("OK");
+		Response response = Response.ok().build();
 		response.setHeader(createHeader(uri));
 
 		response.setBodyContent(ByteUtil.getByteArrayData(router

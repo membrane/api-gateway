@@ -34,7 +34,7 @@ public class HttpKeepAliveTest {
 		
 		service1 = new HttpRouter();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
-				"POST", ".*", 2000), "thomas-bayer.com", 80);
+				"POST", ".*", 2003), "thomas-bayer.com", 80);
 		sp1.getInterceptors().add(new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) throws Exception {
@@ -54,7 +54,7 @@ public class HttpKeepAliveTest {
 
 	private PostMethod getPostMethod() {
 		PostMethod post = new PostMethod(
-				"http://localhost:2000/axis2/services/BLZService");
+				"http://localhost:2003/axis2/services/BLZService");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass()
 				.getResourceAsStream("/getBank.xml")));
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);

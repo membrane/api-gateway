@@ -98,6 +98,8 @@ public class RequestTest {
 	
 	@Test
 	public void testWritePost() throws Exception {
+		reqPost.read(inPost, true);
+		
 		tempOut = new ByteArrayOutputStream();
 		reqPost.write(tempOut);
 		

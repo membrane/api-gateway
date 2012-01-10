@@ -14,10 +14,13 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -48,8 +51,12 @@ public class Response extends Message {
 			return this;
 		}
 
-		public ResponseBuilder entity(String msg) throws Exception {
-			res.setBodyContent(msg.getBytes("UTF-8"));
+		public ResponseBuilder entity(String msg) {
+			try {
+				res.setBodyContent(msg.getBytes("UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				throw new RuntimeException(e);
+			}
 			return this;
 		}
 		
@@ -58,11 +65,16 @@ public class Response extends Message {
 			return this;
 		}
 		
-		public ResponseBuilder bodyContent(byte[] content) {
-			res.setBodyContent(content);
+		public ResponseBuilder body(byte[] body) {
+			res.setBodyContent(body);
 			return this;
 		}
-		
+
+		public ResponseBuilder body(InputStream is) throws IOException {
+			res.setBody(new Body(is, -1));
+			return this;
+		}
+
 		public ResponseBuilder header(String k, String v) {
 			res.getHeader().add(k, v);
 			return this;
@@ -80,7 +92,7 @@ public class Response extends Message {
 	}
 
 	public static ResponseBuilder ok(String msg) throws Exception {
-		return ok().entity(msg);
+		return ok().contentType("text/html;charset=utf-8").entity(msg);
 	}
 	
 	private static String SERVER_HEADER = "Membrane " + Constants.VERSION + ". See http://membrane-soa.org";
@@ -91,17 +103,80 @@ public class Response extends Message {
 							   header("Server", SERVER_HEADER);
 	}
 	
+	public static ResponseBuilder noContent() {
+		return ResponseBuilder.newInstance().
+				status(204, "No Content");
+	}
+	
+	
 	public static ResponseBuilder badRequest() {
 		return ResponseBuilder.newInstance().
 				status(400, "Bad Request").
 				header("Server", SERVER_HEADER);
 	}
-	
+
+	public static ResponseBuilder badRequest(String message) {
+		return ResponseBuilder.newInstance().
+				status(400, "Bad Request").
+				header("Server", SERVER_HEADER).
+				contentType("text/html;charset=utf-8").
+				entity(htmlMessage("Service Unavailable", message));
+	}
+
 	public static ResponseBuilder continue100() {
 		return ResponseBuilder.newInstance().
 				status(100, "Continue");
 	}
 	
+	private static String htmlMessage(String caption, String text) {
+		return "<html><head><title>" + StringEscapeUtils.escapeHtml(caption)
+				+ "</title></head>" + "<body><h1>"
+				+ StringEscapeUtils.escapeHtml(caption) + "</h1><p>"
+				+ StringEscapeUtils.escapeHtml(text) + "</p></body></html>";
+	}
+	
+	public static ResponseBuilder serverUnavailable(String message) {
+		return ResponseBuilder.newInstance().
+				status(503, "Service Unavailable").
+				contentType("text/html;charset=utf-8").
+				entity(htmlMessage("Service Unavailable", message));
+	}
+	
+	public static ResponseBuilder interalServerError() {
+		return ResponseBuilder.newInstance().
+				status(500, "Internal Server Error").
+				contentType("text/html;charset=utf-8").
+				entity(htmlMessage("Internal Server Error", ""));
+	}
+
+	public static ResponseBuilder interalServerError(String message) {
+		return ResponseBuilder.newInstance().
+				status(500, "Internal Server Error").
+				contentType("text/html;charset=utf-8").
+				entity(htmlMessage("Internal Server Error", message));
+	}
+	
+	public static ResponseBuilder forbidden() {
+		return ResponseBuilder.newInstance().
+				status(403, "Forbidden").
+				contentType("text/html;charset=utf-8").
+				entity(htmlMessage("Forbidden", ""));
+	}
+
+	public static ResponseBuilder forbidden(String message) {
+		return ResponseBuilder.newInstance().
+				status(403, "Forbidden").
+				contentType("text/html;charset=utf-8").
+				entity(htmlMessage("Forbidden", message));
+	}
+
+	public static ResponseBuilder unauthorized(String message) {
+		return ResponseBuilder.newInstance().
+				status(401, "Unauthorized.").
+				contentType("text/html;charset=utf-8").
+				entity(htmlMessage("Unauthorized.", message));
+	}
+
 	@Override
 	public String getStartLine() {
 		StringBuffer buf = new StringBuffer();

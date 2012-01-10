@@ -30,6 +30,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.balancer.Balancer;
+import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
 import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.TextUtil;
@@ -96,7 +98,15 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 				h2().text("Status Codes").end();
 				createStatusCodesTable(rule.getStatisticsByStatusCodes());
 				h2().text("Configuration").end();
-				pre().text(TextUtil.formatXML(new StringReader(rule.toXml()))).end();
+				String xml = "";
+				try {
+					xml = rule.toXml();
+					xml = TextUtil.formatXML(new StringReader(xml));
+					pre().text(xml).end();
+				} catch (Exception e) {
+					log.error(xml);
+					log.error(e);
+				}
 			}
 		}.createPage());
 	}
@@ -218,6 +228,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		}.createPage());
 	}
 
+	@Mapping("/admin/balancers/?(\\?.*)?")
+	public Response handleBalancersRequest(Map<String, String> params) throws Exception {
+		return respond(getBalancersPage(params));
+	}
+	
 	@Mapping("/admin/clusters/?(\\?.*)?")
 	public Response handleClustersRequest(Map<String, String> params) throws Exception {
 		return respond(getClustersPage(params));
@@ -231,9 +246,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	@Mapping("/admin/clusters/save/?(\\?.*)?")
 	public Response handleClustersSaveRequest(Map<String, String> params) throws Exception {
 		log.debug("adding cluster");
+		log.debug("balancer: " + getBalancerParam(params));
 		log.debug("name: " + params.get("name"));
 		
-		router.getClusterManager().addCluster(params.get("name"));
+		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).addCluster(params.get("name"));
 		
 		return respond(getClustersPage(params));
 	}
@@ -250,9 +266,12 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		
 			@Override
 			protected void createTabContent() throws Exception {
-				h2().text("Node " + params.get("host")+":"+params.get("port")).end();
+				String balancer = getBalancerParam(params);
+				h2().text("Node " + params.get("host")+":"+params.get("port") + " (" +
+						"Cluster " + params.get("cluster") + " of Balancer " + balancer + ")").end();
 				h3().text("Status Codes").end();
-				Node n = router.getClusterManager().getNode(params.get("cluster"),
+				Node n = BalancerUtil.lookupBalancer(router, balancer).getNode(
+						params.get("cluster"),
 						params.get("host"),
 						Integer.parseInt(params.get("port")));
 				createStatusCodesTable(n.getStatisticsByStatusCodes());
@@ -260,10 +279,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 				p().text("Current threads: " + n.getThreads()).end();
 				p().text("Requests without responses: " + n.getLost()).end();
 				span().classAttr("mb-button");
-					createLink("Reset Counter", "node", "reset", createQueryString("cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
+					createLink("Reset Counter", "node", "reset", createQueryString("balancer", balancer, "cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
 				end();
 				span().classAttr("mb-button");
-					createLink("Show Sessions", "node", "sessions", createQueryString("cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
+					createLink("Show Sessions", "node", "sessions", createQueryString("balancer", balancer, "cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
 				end();
 			}
 		}.createPage());
@@ -283,8 +302,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 			protected void createTabContent() throws Exception {
 				h2().text("Node " + params.get("host")+":"+params.get("port")).end();
 				h3().text("Sessions").end();
-				createSessionsTable( router.getClusterManager().getSessionsByNode( params.get("cluster"),
-									 new Node(params.get("host"), Integer.parseInt(params.get("port")))));
+				createSessionsTable( BalancerUtil.lookupBalancer(router, getBalancerParam(params)).getSessionsByNode(
+						params.get("cluster"),
+						new Node(params.get("host"), Integer.parseInt(params.get("port")))));
 			}
 
 		}.createPage());
@@ -293,49 +313,57 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	@Mapping("/admin/node/save/?(\\?.*)?")
 	public Response handleNodeSaveRequest(Map<String, String> params) throws Exception {
 		log.debug("adding node");
+		log.debug("balancer: " + getBalancerParam(params));
 		log.debug("cluster: " + params.get("cluster"));
 		log.debug("host: " + params.get("host"));
 		log.debug("port: " + params.get("port"));
 		
-		router.getClusterManager().up(params.get("cluster"),
-				                      params.get("host"), 
-				                      Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
+		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).up(
+				params.get("cluster"),
+				params.get("host"), 
+				Integer.parseInt(params.get("port")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster", params.get("cluster")));
 	}
 
 	@Mapping("/admin/node/up/?(\\?.*)?")
 	public Response handleNodeUpRequest(Map<String, String> params) throws Exception {
-		router.getClusterManager().up(params.get("cluster"), params.get("host"),
-				                      Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
+		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).up(
+				params.get("cluster"), params.get("host"),
+				Integer.parseInt(params.get("port")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")));
 	}
 
 	@Mapping("/admin/node/takeout/?(\\?.*)?")
 	public Response handleNodeTakeoutRequest(Map<String, String> params) throws Exception {
-		router.getClusterManager().takeout(params.get("cluster"), params.get("host"),
-				                      Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
+		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).takeout(
+				params.get("cluster"), params.get("host"),
+				Integer.parseInt(params.get("port")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")));
 	}
 
 	@Mapping("/admin/node/down/?(\\?.*)?")
 	public Response handleNodeDownRequest(Map<String, String> params) throws Exception {
-		router.getClusterManager().down(params.get("cluster"), params.get("host"),
-				                        Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
+		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).down(
+				params.get("cluster"), params.get("host"),
+				Integer.parseInt(params.get("port")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")));
 	}
 
 	@Mapping("/admin/node/delete/?(\\?.*)?")
 	public Response handleNodeDeleteRequest(Map<String, String> params) throws Exception {
-		router.getClusterManager().removeNode(params.get("cluster"), params.get("host"),
-				                          Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("cluster",params.get("cluster")));
+		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).removeNode(
+				params.get("cluster"), params.get("host"),
+				Integer.parseInt(params.get("port")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")));
 	}	
 
 	@Mapping("/admin/node/reset/?(\\?.*)?")
 	public Response handleNodeResetRequest(Map<String, String> params) throws Exception {
-		router.getClusterManager().getNode(params.get("cluster"), params.get("host"),
-				                          Integer.parseInt(params.get("port"))).clearCounter();
-		return redirect("node","show",createQueryString("cluster",params.get("cluster"),
+		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).getNode(
+				params.get("cluster"), params.get("host"),
+				Integer.parseInt(params.get("port"))).clearCounter();
+		return redirect("node","show",createQueryString("balancer", getBalancerParam(params),
+														"cluster",params.get("cluster"),
 														"host",params.get("host"),
 														"port",params.get("port")));
 	}	
@@ -398,9 +426,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		
 			@Override
 			protected void createTabContent() throws Exception {
-				h1().text("Cluster " + params.get("cluster")).end();
-				createNodesTable();
-				createAddNodeForm();				
+				String balancer = getBalancerParam(params);
+				h2().text("Cluster " + params.get("cluster") + " of Balancer " + balancer).end();
+				createNodesTable(balancer);
+				createAddNodeForm(balancer);				
 			}
 		
 		}.createPage();
@@ -418,11 +447,36 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		
 			@Override
 			protected void createTabContent() throws Exception {
-				h1().text("Clusters").end();
-				createClustersTable();
-				createAddClusterForm();				
+				String balancer = getBalancerParam(params);
+				h1().text("Balancer " + balancer).end();
+				h2().text("Clusters").end();
+				createClustersTable(balancer);
+				createAddClusterForm(balancer);
+				p();
+					text("Failover: ");
+					text(BalancerUtil.lookupBalancerInterceptor(router, balancer).isFailOver() ? "yes" : "no");
+				end();
 			}
 		
+		}.createPage();
+	}
+
+	private String getBalancersPage(final Map<String, String> params)
+			  throws Exception {
+		StringWriter writer = new StringWriter();
+		return new AdminPageBuilder(writer, router, params) {
+				
+			@Override
+			protected int getSelectedTab() {
+				return 4;
+			}
+
+			@Override
+			protected void createTabContent() throws Exception {
+				h1().text("Balancers").end();
+				createBalancersTable();
+			}
+
 		}.createPage();
 	}
 
@@ -493,6 +547,13 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		
 		out.writeStartElement("adminConsole");		
 		out.writeEndElement();
+	}
+	
+	public static String getBalancerParam(Map<String, String> params) {
+		String balancerName = params.get("balancer");
+		if (balancerName == null)
+			balancerName = Balancer.DEFAULT_NAME;
+		return balancerName;
 	}
 
 }

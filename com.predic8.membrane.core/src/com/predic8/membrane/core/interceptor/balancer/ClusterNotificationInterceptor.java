@@ -1,20 +1,27 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
-import static com.predic8.membrane.core.util.HttpUtil.createResponse;
 import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 
-import java.util.*;
-import java.util.regex.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.codec.binary.*;
-import org.apache.commons.logging.*;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 
 public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory
@@ -40,7 +47,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		
 		log.debug("request received: "+m.group(1));
 		if (validateSignature && !getParams(exc).containsKey("data")) {
-			exc.setResponse(createResponse(403, "Forbidden", null, null));
+			exc.setResponse(Response.forbidden().build());
 			return Outcome.ABORT;			
 		}
 		
@@ -49,30 +56,36 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 				getParams(exc);
 
 		if ( isTimedout(params) ) {
-			exc.setResponse(createResponse(403, "Forbidden", null, null));
+			exc.setResponse(Response.forbidden().build());
 			return Outcome.ABORT;
 		}
 		
 		updateClusterManager(m, params);
 		
-		exc.setResponse(createResponse(204, "No Content", null, null));
+		exc.setResponse(Response.noContent().build());
 		return Outcome.ABORT;
 	}
 
 	private void updateClusterManager(Matcher m, Map<String, String> params)
 			throws Exception {
 		if ("up".equals(m.group(1))) {
-			router.getClusterManager().up(
+			BalancerUtil.up(
+					router,
+					getBalancerParam(params),
 					getClusterParam(params),
 					params.get("host"), 
 					getPortParam(params));			
 		} else if ("down".equals(m.group(1))) {
-			router.getClusterManager().down(
+			BalancerUtil.down(
+					router,
+					getBalancerParam(params),
 					getClusterParam(params),
 					params.get("host"), 
 					getPortParam(params));			
 		} else {
-			router.getClusterManager().takeout(
+			BalancerUtil.takeout(
+					router,
+					getBalancerParam(params),
 					getClusterParam(params),
 					params.get("host"), 
 					getPortParam(params));			
@@ -95,7 +108,11 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	}
 
 	private String getClusterParam(Map<String, String> params) throws Exception {
-		return params.get("cluster") == null ? "Default" : params.get("cluster");
+		return params.get("cluster") == null ? Cluster.DEFAULT_NAME : params.get("cluster");
+	}
+
+	private String getBalancerParam(Map<String, String> params) throws Exception {
+		return params.get("balancer") == null ? Balancer.DEFAULT_NAME : params.get("balancer");
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {

@@ -1,13 +1,20 @@
 package com.predic8.membrane.core.config.spring;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.util.xml.DomUtils;
-import org.w3c.dom.*;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
-import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.interceptor.balancer.Balancer;
+import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
+import com.predic8.membrane.core.interceptor.balancer.JSESSIONIDExtractor;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
+import com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy;
+import com.predic8.membrane.core.interceptor.balancer.XMLElementSessionIdExtractor;
 
 public class BalancerInterceptorParser extends AbstractParser {
 
@@ -18,6 +25,14 @@ public class BalancerInterceptorParser extends AbstractParser {
 	@Override
 	protected void doParse(Element e, BeanDefinitionBuilder builder) {
 		setIdIfNeeded(e, "balancer");
+		
+		if (e.hasAttribute("name")) 
+			builder.addPropertyValue("name", e.getAttribute("name"));
+		else
+			builder.addPropertyValue("name", Balancer.DEFAULT_NAME);
+		
+		if (e.hasAttribute("sessionTimeout"))
+			builder.addPropertyValue("sessionTimeout", e.getAttribute("sessionTimeout"));
 
 		parseChildren(builder, e);
 	}

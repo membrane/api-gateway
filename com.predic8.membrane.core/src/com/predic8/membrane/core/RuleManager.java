@@ -47,7 +47,7 @@ public class RuleManager {
 	private int defaultListenPort = 2000;
 	private int defaultTargetPort = 8080;
 	private String defaultPath = ".*";
-	private int defaultMethod = 0;
+	private int defaultMethod = 4;
 
 	public int getDefaultListenPort() {
 		return defaultListenPort;

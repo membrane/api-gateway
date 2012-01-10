@@ -1,15 +1,15 @@
-Membrane SOA Router 
-=====================
+Membrane ESB 
+=============
 
-1. Starting the Router (Windows)
-	Execute memrouter.bat
+* Starting the ESB (Windows)
+  Execute memrouter.bat
 	
-2. Starting the Router (Linux)
-	Execute memrouter.sh
+* Starting the ESB (Linux)
+  Execute memrouter.sh
 	
-3. Optional command line arguments:
-	-c 'configurationFileName'
-		if not specified, Router looks for ROOT/conf/rules.xml
-		
-	-b 'springConfigurationFileName'
-		if not specified, Router looks for ROOT/conf/monitor-beans.xml 
+
+The ESB by default uses the sample configuration conf/proxies.xml .
+
+The documentation is available at http://membrane-soa.org/esb-doc/ .
+
+Examples are found in examples/ .

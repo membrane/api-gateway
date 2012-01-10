@@ -192,4 +192,8 @@ public class HttpUtil {
 		return url.getPort();
 	}
 
+	public static boolean isAbsoluteURI(String uri) {
+		uri = uri.toLowerCase();
+		return uri.startsWith("http://") || uri.startsWith("https://");
+	}
 }

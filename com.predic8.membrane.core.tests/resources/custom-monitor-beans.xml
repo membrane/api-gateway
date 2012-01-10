@@ -16,7 +16,7 @@
 					    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
 					    http://www.predic8.com/spring/conf/1/ http:/www.predic8.com/schema/router/conf/router-conf.xsd">
   
-	<router exchangeStore="exchangeStore" useClusterManager="false">
+	<router exchangeStore="exchangeStore">
 		<property name="ruleManager">
 	      <bean class="com.predic8.membrane.core.RuleManager" />
 		</property>
