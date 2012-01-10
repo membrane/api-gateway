@@ -13,10 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
+
+import javax.xml.transform.Source;
+import javax.xml.transform.sax.SAXSource;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
 
 public class MessageUtil {
 
@@ -27,6 +35,10 @@ public class MessageUtil {
 			return ByteUtil.getDecompressedData(res.getBody().getContent());
 		}
 		return res.getBody().getContent();
+	}
+	
+	public static Source getSOAPBody(InputStream stream) throws Exception {
+		return new SAXSource(new SOAPXMLFilter(XMLReaderFactory.createXMLReader()), new InputSource(stream));
 	}
 	
 	public static Request getGetRequest(String uri) {

@@ -21,11 +21,11 @@ import javax.xml.stream.XMLStreamWriter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.schemavalidation.XMLValidator.Type;
 
 /**
- * Basically switches over {@link XMLValidator}, {@link JSONValidator} and
- * {@link SchematronValidator} depending on the attributes.
+ * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
+ * {@link JSONValidator} and {@link SchematronValidator} depending on the
+ * attributes.
  */
 public class ValidatorInterceptor extends AbstractInterceptor {
 		
@@ -48,9 +48,9 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	public void init() throws Exception {
 		if (wsdl != null)
-			setValidator(new XMLValidator(Type.WSDL, wsdl));
+			setValidator(new WSDLValidator(wsdl));
 		if (schema != null)
-			setValidator(new XMLValidator(Type.XSD, schema));
+			setValidator(new XMLSchemaValidator(schema));
 		if (jsonSchema != null)
 			setValidator((IValidator) Class.forName("com.predic8.membrane.core.interceptor.schemavalidation.JSONValidator").getConstructor(String.class).newInstance(jsonSchema));
 		if (schematron != null)

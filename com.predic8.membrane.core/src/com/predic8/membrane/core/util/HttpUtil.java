@@ -92,9 +92,10 @@ public class HttpUtil {
 		return response;
 	}
 
-	public static Response createSOAPFaultResponse(String message) {
+	public static Response createSOAPValidationErrorResponse(String message) {
 		Response response = new Response();
-		response.setStatusCode(500);
+		response.setStatusCode(400);
+		response.setStatusMessage("Bad request");
 
 		response.setHeader(createHeaders("text/xml;charset=utf-8"));
 

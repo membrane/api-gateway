@@ -6,15 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.xml.sax.InputSource;
-import org.xml.sax.helpers.XMLReaderFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -22,23 +19,14 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.schema.Schema;
-import com.predic8.schema.SchemaParser;
-import com.predic8.wsdl.WSDLParser;
-import com.predic8.wsdl.WSDLParserContext;
 
-public class XMLValidator implements IValidator {
-	private static Log log = LogFactory.getLog(XMLValidator.class.getName());
-	public enum Type { WSDL, XSD }
+public abstract class AbstractXMLValidator implements IValidator {
+	private static Log log = LogFactory.getLog(AbstractXMLValidator.class.getName());
 
 	private List<Validator> validators;
-	private Type type;
-	private String location;
+	protected final String location;
 
-	/**
-	 * @param location the location of the WSDL, if type == WSDL, or the location of the XSD, if type == XSD.
-	 */
-	public XMLValidator(Type type, String location) throws Exception {
-		this.type = type;
+	public AbstractXMLValidator(String location) throws Exception {
 		this.location = location;
 		validators = createValidators();
 	}
@@ -55,7 +43,7 @@ public class XMLValidator implements IValidator {
 			exceptions.add(handler.getException());
 			handler.reset();
 		}
-		exc.setResponse(HttpUtil.createSOAPFaultResponse(getErrorMsg(exceptions)));
+		exc.setResponse(HttpUtil.createSOAPValidationErrorResponse(getErrorMsg(exceptions)));
 		return Outcome.ABORT;
 	}
 	
@@ -73,28 +61,6 @@ public class XMLValidator implements IValidator {
 		return validators;
 	}
 
-	private List<Schema> getSchemas() {
-		switch (type) {
-		case XSD:
-			return (List<Schema>) new SchemaParser().parse(location).getAllSchemas();
-		case WSDL:
-			WSDLParserContext ctx = new WSDLParserContext();
-			ctx.setInput(location);
-			return new WSDLParser().parse(ctx).getTypes().getSchemas();
-		}
-		throw new RuntimeException("not implemented type=" + type);
-	}
-	
-	private static Source getSOAPBody(InputStream stream) throws Exception {
-		return new SAXSource(new SOAPXMLFilter(XMLReaderFactory.createXMLReader()), new InputSource(stream));
-	}
-
-	private Source getMessageBody(InputStream input) throws Exception {
-		if (type == Type.XSD)
-			return new SAXSource(new InputSource(input));
-		return getSOAPBody(input);
-	}
-
 	private String getErrorMsg(List<Exception> excs) {
 		StringBuffer buf = new StringBuffer();
 		buf.append("Validation failed: ");
@@ -104,5 +70,8 @@ public class XMLValidator implements IValidator {
 		}
 		return buf.toString();
 	}
+
+	protected abstract List<Schema> getSchemas();
+	protected abstract Source getMessageBody(InputStream input) throws Exception;
 
 }
