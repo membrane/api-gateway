@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -197,7 +196,7 @@ public class ScriptLauncher {
 		
 		ProcessBuilder pb = new ProcessBuilder(command).directory(exampleDir);
 		pb.environment().remove("MEMBRANE_HOME");
-		pb.redirectError(Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
+		//pb.redirectError(ProcessBuilder.Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
 		final Process p = pb.start();
 		
 		p.getOutputStream().close();
@@ -260,8 +259,8 @@ public class ScriptLauncher {
 			command.add("-TERM");
 			command.add("-"+ps.pid);
 		}
-		ProcessBuilder pb = new ProcessBuilder(command).inheritIO();
-		pb.redirectInput(Redirect.PIPE).redirectError(Redirect.PIPE).redirectOutput(Redirect.PIPE);
+		ProcessBuilder pb = new ProcessBuilder(command);
+		//pb.redirectInput(Redirect.PIPE).redirectError(Redirect.PIPE).redirectOutput(Redirect.PIPE);
 
 		// wait for killer to complete
 		Process killer = pb.start();
