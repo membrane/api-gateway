@@ -3,20 +3,29 @@ package com.predic8.membrane.core.interceptor.administration;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import static org.apache.commons.lang.time.DurationFormatUtils.formatDurationHMS;
 
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
-import com.predic8.membrane.core.interceptor.balancer.Cluster;
 import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
+import com.predic8.membrane.core.interceptor.balancer.Cluster;
 import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.interceptor.balancer.Session;
@@ -25,6 +34,7 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.util.TextUtil;
 
 public class AdminPageBuilder extends Html {
 	
@@ -494,5 +504,122 @@ public class AdminPageBuilder extends Html {
 			td().text(d).end();
 		end();
 	}	
+	
+	private String getInterceptorXML(Interceptor i) {
+		try {
+			StringWriter sw = new StringWriter();
+			XMLStreamWriter w = XMLOutputFactory.newInstance().createXMLStreamWriter(sw);
+			w.writeStartDocument();
+			i.write(w);
+			w.writeEndDocument();
+			return sw.toString();
+		} catch (XMLStreamException e) {
+			return "unknown";
+		}
+	}
+	
+	private String shortenInterceptorXML(String xml) {
+		Pattern p = Pattern.compile("(<[a-zA-Z]+)([ >/].*)", Pattern.DOTALL);
+		Matcher m = p.matcher(xml);
+		if (m.matches()) { // if we could recognize the first element
+			if (m.group(2).equals(" />")) // if xml is a single element without attributes
+				return xml;
+			return m.group(1) + " ... />";
+		} else {
+			return xml;
+		}
+	}
+
+	private void createInterceptorVisualization(Interceptor i, int columnSpan, String id) {
+		td();
+		if (columnSpan > 1)
+			colspan(""+columnSpan);
+		if (i == null) {
+			div().style("padding:2px 5px; margin: 10px;");
+			raw("&nbsp;");
+			end();
+		} else {
+			div().style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + (columnSpan == 1 ? "width: 300px;" : "width: 612px;"));
+			String sid = "s" + id;
+			span().id(sid);
+			String xml = TextUtil.formatXML(new StringReader(getInterceptorXML(i)));
+			xml = xml.replace("<?xml version = \"1.0\" ?>\r\n", "");
+			while (xml.endsWith("\r\n"))
+				xml = xml.substring(0, xml.length()-2);
+			String shortText = shortenInterceptorXML(xml);
+			tt();
+			text(shortText);
+			end();
+			end();
+			if (!xml.equals(shortText)) {
+				String tid = "l" + id;
+				pre().id(tid).style("margin: 0px; cursor: pointer;");
+				text(xml);
+				end();
+				script();
+				raw("jQuery(document).ready(function() {\r\n" +
+					"  jQuery(\"#"+tid+"\").hide();\r\n" +
+					"  jQuery(\"#"+sid+"\").css('cursor', 'pointer');\r\n" +
+					"  jQuery(\"#"+sid+"\").click(function()\r\n" +
+					"  {\r\n" +
+					"    jQuery(\"#"+sid+"\").hide();\r\n" +
+					"    jQuery(\"#"+tid+"\").slideToggle(500);\r\n" +
+					"  });\r\n" +
+					"  jQuery(\"#"+tid+"\").click(function()\r\n" +
+					"  {\r\n" +
+					"    jQuery(\"#"+sid+"\").show();\r\n" +
+					"    jQuery(\"#"+tid+"\").slideToggle(500);\r\n" +
+					"  });\r\n" +
+					"});\r\n" + 
+					"</script>\r\n" + 
+					"\r\n" + 
+					"");
+				end();
+			}
+			end();
+		}
+		end();
+	}
+	
+	protected void createServiceProxyVisualization(ServiceProxy proxy) {
+		List<Interceptor> leftStack = new ArrayList<Interceptor>(), rightStack = new ArrayList<Interceptor>();
+		List<Interceptor> list = new ArrayList<Interceptor>(proxy.getInterceptors());
+		list.add(new AbstractInterceptor() { // fake interceptor so that both stacks end with the same size
+			public Flow getFlow() {
+				return Flow.REQUEST_RESPONSE;
+		}});
+		for (Interceptor i : list) {
+			switch (i.getFlow()) {
+			case REQUEST:	
+				leftStack.add(i);
+				break;
+			case RESPONSE:
+				rightStack.add(i);
+				break;
+			case REQUEST_RESPONSE:
+				// fill left and right to same height
+				while (leftStack.size() < rightStack.size())
+					leftStack.add(null);
+				while (rightStack.size() < leftStack.size())
+					rightStack.add(null);
+				// put i into both
+				leftStack.add(i);
+				rightStack.add(i);
+			}
+		}
+
+		table().style("border:1px solid black;");
+			for (int i = 0; i < leftStack.size() - 1; i++) {
+				tr();
+					if (leftStack.get(i) == rightStack.get(i)) {
+						createInterceptorVisualization(leftStack.get(i), 2, "spv_l" + i);
+					} else {
+						createInterceptorVisualization(leftStack.get(i), 1, "spv_l" + i);
+						createInterceptorVisualization(rightStack.get(i), 1, "spv_r" + i);
+					}
+				end();
+			}
+		end();
+	}
 	
 }

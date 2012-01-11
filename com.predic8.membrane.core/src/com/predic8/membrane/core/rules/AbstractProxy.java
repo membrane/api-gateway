@@ -144,8 +144,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	throws XMLStreamException {}	
 	
 	protected void writeRule(XMLStreamWriter out) throws XMLStreamException {
-		
-		out.writeAttribute("name", this.name);
+		if (this.name != null)
+			out.writeAttribute("name", this.name);
 		out.writeAttribute("port", "" + key.getPort());
 		writeAttrIfTrue(out, blockRequest, "blockRequest", blockRequest);
 		writeAttrIfTrue(out, blockResponse, "blockResponse", blockResponse);

@@ -98,6 +98,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 				h2().text("Status Codes").end();
 				createStatusCodesTable(rule.getStatisticsByStatusCodes());
 				h2().text("Configuration").end();
+				h3().text("Visualization").end();
+				createServiceProxyVisualization(rule);
+				h3().text("XML").end();
 				String xml = "";
 				try {
 					xml = rule.toXml();
@@ -105,7 +108,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 					pre().text(xml).end();
 				} catch (Exception e) {
 					log.error(xml);
-					log.error(e);
+					e.printStackTrace();
 				}
 			}
 		}.createPage());
