@@ -54,9 +54,9 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		validator = null;
 		
 		if (wsdl != null)
-			setValidator(new WSDLValidator(wsdl));
+			setValidator(new WSDLValidator(wsdl, router));
 		if (schema != null)
-			setValidator(new XMLSchemaValidator(schema));
+			setValidator(new XMLSchemaValidator(schema, router));
 		if (jsonSchema != null)
 			setValidator((IValidator) Class.forName("com.predic8.membrane.core.interceptor.schemavalidation.JSONValidator").getConstructor(String.class).newInstance(jsonSchema));
 		if (schematron != null)
