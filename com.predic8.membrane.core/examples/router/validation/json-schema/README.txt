@@ -1,13 +1,13 @@
-JSON Validation
+JSON Schema Validation
 
-For this example to run you should install Curl from http://curl.haxx.se/download.html , if
+To run this example you should install Curl from http://curl.haxx.se/download.html , if
 you have not done so already.
 
 Execute the following steps:
 
-1. Go to examples/validation/json-schema and start "router.bat".
+1. Go to the directory examples/validation/json-schema.
 
-2. Go to the directory examples/validation/json-schema.
+2. Start "router.bat" or "router.sh".
 
 3. Look at schema2000.json and compare the schema to good2000.json and bad2000.json .
 
@@ -16,11 +16,14 @@ Execute the following steps:
 5. Run "curl -d @bad2000.json http://localhost:2000/". Observe that you get a validation error response.
 
 
-7. Now have a look at schema2001.json, good2001.json and bad2001.json.
 
-6. Run "curl -d @good2001.json http://localhost:2001/". Observe that you get a successful response.
+Keeping the router running, you can try a more complex schema.
 
-7. Run "curl -d @bad2001.json http://localhost:2001/". Observe that you get a validation error response.
+1. Have a look at schema2001.json, good2001.json and bad2001.json.
+
+2. Run "curl -d @good2001.json http://localhost:2001/". Observe that you get a successful response.
+
+3. Run "curl -d @bad2001.json http://localhost:2001/". Observe that you get a validation error response.
 
 
 

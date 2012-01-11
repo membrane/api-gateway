@@ -29,6 +29,8 @@
 		<userFeature />
 		<httpClient />
 	</transport>
+	
+	<spring:bean id="transformerFactory" class="com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl" />
 
 </spring:beans>
 

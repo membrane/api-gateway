@@ -6,7 +6,7 @@
 		<request>
 			<validator schematron="car-schematron.xml" />
 		</request>
-		<target target="localhost" port="2001" />
+		<target host="localhost" port="2001" />
 	</serviceProxy>
 	
 	<serviceProxy port="2001">

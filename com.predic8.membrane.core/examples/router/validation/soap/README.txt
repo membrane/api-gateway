@@ -1,16 +1,17 @@
-SOAP Message validation
+SOAP Message Validation
 
-For this example to run you should install Curl from http://curl.haxx.se/download.html , if
+To run this example you should install Curl from http://curl.haxx.se/download.html , if
 you have not done so already. Let us assume it is in your PATH.
 
 As the URL of a WSDL is specified in soap-validation.proxies.xml ,
 the ESB retrieves all corresponding schemas and tries to validate the message body using them.
 
+
 Execute the following steps:
 
 1. Go to examples/validation/soap .
 
-2. Start router.bat on Windows or router.sh on Linux.
+2. Start "router.bat" or "router.sh".
 
 3. Run the following command on the console. Observe a successful response.
 

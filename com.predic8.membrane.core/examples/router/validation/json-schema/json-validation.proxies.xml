@@ -5,19 +5,21 @@
 	<serviceProxy port="2000">
 		<request>
 			<validator jsonSchema="schema2000.json" />
-			<groovy>
-				Response.ok(/{ "message": "good response" }/).build()
-			</groovy>
 		</request>
+		<target host="localhost" port="2002" />
 	</serviceProxy>
 
 	<serviceProxy port="2001">
 		<request>
 			<validator jsonSchema="schema2001.json" />
-			<groovy>
-				Response.ok(/{ "message": "good response" }/).build()
-			</groovy>
 		</request>
+		<target host="localhost" port="2002" />
+	</serviceProxy>
+	
+	<serviceProxy port="2002">
+		<groovy>
+			Response.ok("&lt;response&gt;good request&lt;/response&gt;").build()			
+		</groovy>
 	</serviceProxy>
 	
 </proxies>
