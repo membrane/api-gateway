@@ -124,11 +124,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	protected abstract void parseKeyAttributes(XMLStreamReader token);
 	
 	@Override
-	public String toString() { //TODO toString, getName, setName und name="" Initialisierung vereinheitlichen. 
-		if (name != null && !"".equals(name))
-			return name;
-		
-		return getKey().toString();
+	public String toString() { //TODO toString, getName, setName und name="" Initialisierung vereinheitlichen.
+		return getName();
 	}
 	
 	

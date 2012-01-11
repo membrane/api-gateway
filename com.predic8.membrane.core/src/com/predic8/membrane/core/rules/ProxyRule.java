@@ -2,6 +2,8 @@ package com.predic8.membrane.core.rules;
 
 import javax.xml.stream.*;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.predic8.membrane.core.*;
 
 
@@ -43,5 +45,10 @@ public class ProxyRule extends AbstractProxy {
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new ProxyRule();
+	}
+	
+	@Override
+	public String getName() {
+		return StringUtils.defaultIfEmpty(name, getKey().toString());
 	}
 }
