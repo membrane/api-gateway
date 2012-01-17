@@ -101,6 +101,7 @@ public class LogInterceptor extends AbstractInterceptor {
 	}
 
 	private void logMessage(Message msg) throws Exception {
+		log(msg == null ? "N/A" : "" + msg);
 		if (msg == null) {
 			log("no message");
 			log("================");
