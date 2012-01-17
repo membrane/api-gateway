@@ -33,7 +33,7 @@ public abstract class AbstractXMLValidator implements IValidator {
 	protected final AtomicLong valid = new AtomicLong();
 	protected final AtomicLong invalid = new AtomicLong();
 
-	public AbstractXMLValidator(String location, Router router) throws Exception {
+	public AbstractXMLValidator(Router router, String location) throws Exception {
 		this.location = location;
 		this.router = router;
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;

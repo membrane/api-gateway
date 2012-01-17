@@ -16,6 +16,7 @@ package com.predic8.membrane.core.rules;
 
 import java.io.IOException;
 import java.text.NumberFormat;
+import java.util.Locale;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -31,7 +32,7 @@ import com.predic8.membrane.core.transport.http.AbstractHttpRunnable;
  */
 public class StatisticCollector {
 
-	private final NumberFormat nf = NumberFormat.getInstance();
+	private final NumberFormat nf = NumberFormat.getInstance(Locale.US);
 	
 	private final boolean countErrorExchanges;
 	
@@ -111,11 +112,11 @@ public class StatisticCollector {
 	}
 
 	public String getMinTime() {
-		return minTime == Integer.MAX_VALUE ? "" : "" + minTime + " ms";
+		return minTime == Integer.MAX_VALUE ? "" : "" + nf.format(minTime) + " ms";
 	}
 
 	public String getMaxTime() {
-		return maxTime == -1 ? "" : "" + maxTime + " ms";
+		return maxTime == -1 ? "" : "" + nf.format(maxTime) + " ms";
 	}
 
 	public String getAvgTime() {
@@ -123,11 +124,11 @@ public class StatisticCollector {
 	}
 
 	public String getBytesSent() {
-		return goodCount == 0 ? "" : "" + totalBytesSent;
+		return goodCount == 0 ? "" : "" + nf.format(totalBytesSent);
 	}
 
 	public String getBytesReceived() {
-		return goodCount == 0 ? "" : "" + totalBytesReceived;
+		return goodCount == 0 ? "" : "" + nf.format(totalBytesReceived);
 	}
 	
 	@Override

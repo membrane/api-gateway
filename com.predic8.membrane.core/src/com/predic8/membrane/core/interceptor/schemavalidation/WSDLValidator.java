@@ -16,8 +16,8 @@ import com.predic8.xml.util.ResourceDownloadException;
 
 public class WSDLValidator extends AbstractXMLValidator {
 
-	public WSDLValidator(String location, Router router) throws Exception {
-		super(location, router);
+	public WSDLValidator(Router router, String location) throws Exception {
+		super(router, location);
 	}
 	
 	protected List<Schema> getSchemas() {

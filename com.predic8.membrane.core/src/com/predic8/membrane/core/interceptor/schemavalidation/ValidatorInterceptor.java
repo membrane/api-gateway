@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import java.security.InvalidParameterException;
-
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -49,19 +47,19 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 			
 		if (wsdl != null) {
 			name="SOAP Validator";
-			setValidator(new WSDLValidator(wsdl, router));
+			setValidator(new WSDLValidator(router, wsdl));
 		}
 		if (schema != null) {
 			name="XML Schema Validator";
-			setValidator(new XMLSchemaValidator(schema, router));
+			setValidator(new XMLSchemaValidator(router, schema));
 		}
 		if (jsonSchema != null) {
 			name="JSON Schema Validator";
-			setValidator((IValidator) Class.forName("com.predic8.membrane.core.interceptor.schemavalidation.JSONValidator").getConstructor(String.class).newInstance(jsonSchema));
+			setValidator(new JSONValidator(router, jsonSchema));
 		}
 		if (schematron != null) {
 			name="Schematron Validator";
-			setValidator(new SchematronValidator(schematron, router.getResourceResolver(), router));
+			setValidator(new SchematronValidator(router, schematron));
 		}
 		
 		if (validator == null)
@@ -151,7 +149,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public String getShortDescription() {
-		return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages are invalid";
+		return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages are invalid.";
 	}
 	
 }

@@ -330,9 +330,9 @@ public class AdminPageBuilder extends Html {
 				synchronized (statusCodes) {
 					for (Map.Entry<Integer, StatisticCollector> codes : statusCodes.entrySet() ) {
 						StatisticCollector statisticCollector = codes.getValue();
-						tr();
+						tr().style("text-align: right;");
+							td().style("text-align:left;").text(""+codes.getKey()).end();
 							createTds(
-									""+codes.getKey(), 
 									""+statisticCollector.getCount(),
 									""+statisticCollector.getMinTime(),
 									""+statisticCollector.getMaxTime(),
@@ -357,9 +357,9 @@ public class AdminPageBuilder extends Html {
 			tbody();
 				for (Map.Entry<String, StatisticCollector> entry : getStatistics().entrySet()) {
 					StatisticCollector statisticCollector = entry.getValue();
-					tr();
+					tr().style("text-align: right;");
+						td().style("text-align:left;").text(entry.getKey()).end();
 						createTds(
-								""+entry.getKey(), 
 								""+statisticCollector.getCount(),
 								""+statisticCollector.getMinTime(),
 								""+statisticCollector.getMaxTime(),

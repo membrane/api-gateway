@@ -29,7 +29,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.ResourceResolver;
 
 public class SchematronValidator implements IValidator {
 
@@ -40,7 +39,7 @@ public class SchematronValidator implements IValidator {
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 	
-	public SchematronValidator(String schematron, ResourceResolver resolver, Router router) throws Exception {
+	public SchematronValidator(Router router, String schematron) throws Exception {
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 		TransformerFactory fac;
 		try {
@@ -59,7 +58,7 @@ public class SchematronValidator implements IValidator {
 
 		// transform schematron-XML into XSLT
 		DOMResult r = new DOMResult();
-		t.transform(new StreamSource(resolver.resolve(schematron)), r);
+		t.transform(new StreamSource(router.getResourceResolver().resolve(schematron)), r);
 		
 		// build XSLT transformers
 		fac.setURIResolver(null);
