@@ -22,11 +22,11 @@ import org.eel.kitchen.jsonschema.main.ValidationConfig;
 import org.eel.kitchen.jsonschema.main.ValidationReport;
 import org.eel.kitchen.util.JsonLoader;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ResourceResolver;
 
 public class JSONValidator implements IValidator {
 	private static final Log log = LogFactory.getLog(JSONValidator.class.getName());
@@ -35,15 +35,15 @@ public class JSONValidator implements IValidator {
 	// Since JsonValidator is not thread-safe, we simply allocate 2*#CPU and use
 	// one exclusively for each validation request.
 	private ArrayBlockingQueue<JsonValidator> validators;
-	private final Router router;
+	private final ResourceResolver resourceResolver;
 	private final String jsonSchema;
 	private final ValidatorInterceptor.FailureHandler failureHandler;
 	
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 	
-	public JSONValidator(Router router, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException, JsonValidationFailureException {
-		this.router = router;
+	public JSONValidator(ResourceResolver resourceResolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException, JsonValidationFailureException {
+		this.resourceResolver = resourceResolver;
 		this.jsonSchema = jsonSchema;
 		this.failureHandler = failureHandler;
 		createValidators();
@@ -105,7 +105,7 @@ public class JSONValidator implements IValidator {
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
 		validators = new ArrayBlockingQueue<JsonValidator>(concurrency);
 		for (int i = 0; i < concurrency; i++) {
-			JsonNode schemaNode = new ObjectMapper().readTree(router.getResourceResolver().resolve(jsonSchema));
+			JsonNode schemaNode = new ObjectMapper().readTree(resourceResolver.resolve(jsonSchema));
 			ValidationConfig cfg = new ValidationConfig();
 			JsonValidator validator = new JsonValidator(cfg, schemaNode);
 			if (i == 0) {

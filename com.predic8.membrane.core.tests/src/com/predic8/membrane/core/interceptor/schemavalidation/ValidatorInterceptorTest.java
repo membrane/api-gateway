@@ -27,6 +27,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.membrane.core.util.TextUtil;
 
 
@@ -116,6 +117,7 @@ public class ValidatorInterceptorTest {
 	
 	private ValidatorInterceptor createSchemaValidatorInterceptor(String schema) throws Exception {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
+		interceptor.setResourceResolver(new ResourceResolver());
 		interceptor.setSchema(schema);
 		interceptor.init();
 		return interceptor;

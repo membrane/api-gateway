@@ -5,10 +5,10 @@ import java.util.List;
 
 import javax.xml.transform.Source;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.schema.Schema;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
@@ -16,8 +16,8 @@ import com.predic8.xml.util.ResourceDownloadException;
 
 public class WSDLValidator extends AbstractXMLValidator {
 
-	public WSDLValidator(Router router, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
-		super(router, location, failureHandler);
+	public WSDLValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+		super(resourceResolver, location, failureHandler);
 	}
 	
 	protected List<Schema> getSchemas() {

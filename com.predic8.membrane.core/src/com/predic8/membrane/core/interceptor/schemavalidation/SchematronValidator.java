@@ -29,6 +29,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ResourceResolver;
 
 public class SchematronValidator implements IValidator {
 
@@ -40,7 +41,7 @@ public class SchematronValidator implements IValidator {
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 	
-	public SchematronValidator(Router router, String schematron, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+	public SchematronValidator(ResourceResolver resourceResolver, String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router) throws Exception {
 		this.failureHandler = failureHandler;
 		
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"

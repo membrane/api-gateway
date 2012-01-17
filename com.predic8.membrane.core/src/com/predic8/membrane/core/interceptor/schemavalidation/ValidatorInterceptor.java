@@ -21,9 +21,11 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ResourceResolver;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -40,6 +42,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	private String failureHandler;
 	
 	private IValidator validator;
+	private ResourceResolver resourceResolver;
 	
 	private void setValidator(IValidator validator) throws Exception {
 		if (this.validator != null)
@@ -52,19 +55,19 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 			
 		if (wsdl != null) {
 			name="SOAP Validator";
-			setValidator(new WSDLValidator(router, wsdl, createFailureHandler()));
+			setValidator(new WSDLValidator(resourceResolver, wsdl, createFailureHandler()));
 		}
 		if (schema != null) {
 			name="XML Schema Validator";
-			setValidator(new XMLSchemaValidator(router, schema, createFailureHandler()));
+			setValidator(new XMLSchemaValidator(resourceResolver, schema, createFailureHandler()));
 		}
 		if (jsonSchema != null) {
 			name="JSON Schema Validator";
-			setValidator(new JSONValidator(router, jsonSchema, createFailureHandler()));
+			setValidator(new JSONValidator(resourceResolver, jsonSchema, createFailureHandler()));
 		}
 		if (schematron != null) {
 			name="Schematron Validator";
-			setValidator(new SchematronValidator(router, schematron, createFailureHandler()));
+			setValidator(new SchematronValidator(resourceResolver, schematron, createFailureHandler(), router));
 		}
 		
 		if (validator == null)
@@ -156,6 +159,16 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 
 	public void setSchematron(String schematron) {
 		this.schematron = schematron;
+	}
+	
+	@Override
+	public void setRouter(Router router) {
+		super.setRouter(router);
+		resourceResolver = router.getResourceResolver();
+	}
+	
+	public void setResourceResolver(ResourceResolver resourceResolver) {
+		this.resourceResolver = resourceResolver;
 	}
 	
 	@Override

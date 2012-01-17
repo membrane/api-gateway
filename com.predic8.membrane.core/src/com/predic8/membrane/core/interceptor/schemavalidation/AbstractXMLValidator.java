@@ -21,6 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.schema.Schema;
 
 public abstract class AbstractXMLValidator implements IValidator {
@@ -28,15 +29,15 @@ public abstract class AbstractXMLValidator implements IValidator {
 
 	private ArrayBlockingQueue<List<Validator>> validators;
 	protected final String location;
-	protected final Router router;
+	protected final ResourceResolver resourceResolver;
 	protected final ValidatorInterceptor.FailureHandler failureHandler;
 	
 	protected final AtomicLong valid = new AtomicLong();
 	protected final AtomicLong invalid = new AtomicLong();
 
-	public AbstractXMLValidator(Router router, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+	public AbstractXMLValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		this.location = location;
-		this.router = router;
+		this.resourceResolver = resourceResolver;
 		this.failureHandler = failureHandler;
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
 		validators = new ArrayBlockingQueue<List<Validator>>(concurrency);

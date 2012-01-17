@@ -16,15 +16,15 @@ import org.apache.commons.logging.LogFactory;
 import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.schema.Schema;
 
 public class XMLSchemaValidator extends AbstractXMLValidator {
 	private static Log log = LogFactory.getLog(XMLSchemaValidator.class.getName());
 
-	public XMLSchemaValidator(Router router, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
-		super(router, location, failureHandler);
+	public XMLSchemaValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+		super(resourceResolver, location, failureHandler);
 	}
 	
 	protected List<Schema> getSchemas() {
@@ -36,7 +36,7 @@ public class XMLSchemaValidator extends AbstractXMLValidator {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
 		List<Validator> validators = new ArrayList<Validator>();
 		log.info("Creating validator for schema: " + location);
-		StreamSource ss = new StreamSource(router.getResourceResolver().resolve(location));
+		StreamSource ss = new StreamSource(resourceResolver.resolve(location));
 		ss.setSystemId(location);
 		Validator validator = sf.newSchema(ss).newValidator();
 		validator.setErrorHandler(new SchemaValidatorErrorHandler());
