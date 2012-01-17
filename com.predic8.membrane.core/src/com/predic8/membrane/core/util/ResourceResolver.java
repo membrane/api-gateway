@@ -11,6 +11,13 @@ public class ResourceResolver {
 	public InputStream resolve(String uri) throws FileNotFoundException {
 		return resolve(uri, false);
 	}
+	
+	public long getTimestamp(String uri) {
+		if (uri.startsWith("classpath:"))
+			return 0;
+
+		return getRealFile(uri, false).lastModified();
+	}
 
 	public InputStream resolve(String uri, boolean useMembraneHome)
 			throws FileNotFoundException {

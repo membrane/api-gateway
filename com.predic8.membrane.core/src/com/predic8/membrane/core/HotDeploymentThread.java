@@ -1,8 +1,7 @@
 package com.predic8.membrane.core;
 
-import java.io.File;
-
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class HotDeploymentThread extends Thread {
 
@@ -10,8 +9,8 @@ public class HotDeploymentThread extends Thread {
 			.getName());
 
 	private Router router;
-	private String proxiesFile;
-	private long lastModified;
+	private volatile String proxiesFile;
+	private volatile long lastModified;
 
 	public HotDeploymentThread(Router router) {
 		super("Membrane Hot Deployment Thread");
@@ -20,7 +19,7 @@ public class HotDeploymentThread extends Thread {
 
 	public void setProxiesFile(String proxiesFile) {
 		this.proxiesFile = proxiesFile;
-		lastModified = new File(proxiesFile).lastModified();
+		lastModified = router.getResourceResolver().getTimestamp(proxiesFile);
 	}
 
 	@Override
@@ -52,7 +51,7 @@ public class HotDeploymentThread extends Thread {
 	}
 
 	private boolean configurationChanged() {
-		return new File(proxiesFile).lastModified() > lastModified;
+		return router.getResourceResolver().getTimestamp(proxiesFile) > lastModified;
 	}
 
 }
