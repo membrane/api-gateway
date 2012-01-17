@@ -44,4 +44,7 @@ public interface Interceptor extends XMLElement {
 	
 	public Flow getFlow();
 	
+	public String getShortDescription();
+	public String getLongDescription();
+	
 }

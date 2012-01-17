@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
@@ -36,6 +37,9 @@ public class SchematronValidator implements IValidator {
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final XMLInputFactory xmlInputFactory;
 	
+	private final AtomicLong valid = new AtomicLong();
+	private final AtomicLong invalid = new AtomicLong();
+	
 	public SchematronValidator(String schematron, ResourceResolver resolver, Router router) throws Exception {
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 		TransformerFactory fac;
@@ -56,12 +60,6 @@ public class SchematronValidator implements IValidator {
 		// transform schematron-XML into XSLT
 		DOMResult r = new DOMResult();
 		t.transform(new StreamSource(resolver.resolve(schematron)), r);
-		
-		/*
-		// debug code
-		System.out.println("The generated XSLT:");
-		fac.newTransformer().transform(new DOMSource(r.getNode()), new StreamResult(System.out));
-		*/
 		
 		// build XSLT transformers
 		fac.setURIResolver(null);
@@ -92,18 +90,11 @@ public class SchematronValidator implements IValidator {
 
 			byte[] result = baos.toByteArray();
 			
-			/*
-			// debug code
-			System.out.println("The resulting XML:");
-			System.out.println(new String(result));
-			*/
-			
 			// check for errors
 			XMLEventReader parser;
 			synchronized (xmlInputFactory) {
 				parser = xmlInputFactory.createXMLEventReader(new ByteArrayInputStream(result));
 			}
-
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();
 				if (event.isStartElement()) {
@@ -114,6 +105,7 @@ public class SchematronValidator implements IValidator {
 								contentType("text/xml;charset=utf-8").
 								body(result).
 								build());
+						invalid.incrementAndGet();
 						return Outcome.ABORT;
 					}
 				}
@@ -121,13 +113,15 @@ public class SchematronValidator implements IValidator {
 
 		} catch (TransformerException e) {
 			setErrorMessage(exc, e.getMessage());
+			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		} catch (Exception e) {
 			e.printStackTrace();
 			setErrorMessage(exc, "internal error");
+			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		}
-		
+		valid.incrementAndGet();
 		return Outcome.CONTINUE;
 	}
 	
@@ -137,6 +131,16 @@ public class SchematronValidator implements IValidator {
 				contentType("text/xml;charset=utf-8").
 				body(("<error>" + StringEscapeUtils.escapeXml(message) + "</error>").getBytes(UTF8)).
 				build());
+	}
+	
+	@Override
+	public long getValid() {
+		return valid.get();
+	}
+
+	@Override
+	public long getInvalid() {
+		return invalid.get();
 	}
 
 	private final class NullErrorListener implements ErrorListener {

@@ -6,4 +6,9 @@ import com.predic8.membrane.core.interceptor.Outcome;
 
 public interface IValidator {
 	public Outcome validateMessage(Exchange exc, Message msg) throws Exception;
+	
+	public long getValid();
+	
+	public long getInvalid();
+
 }

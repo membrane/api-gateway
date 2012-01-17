@@ -105,4 +105,14 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 		return flow;
 	}
 
+	@Override
+	public String getShortDescription() {
+		return "";
+	}
+	
+	@Override
+	public String getLongDescription() {
+		return getShortDescription();
+	}
+
 }

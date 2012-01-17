@@ -5,6 +5,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
@@ -28,6 +29,9 @@ public abstract class AbstractXMLValidator implements IValidator {
 	private ArrayBlockingQueue<List<Validator>> validators;
 	protected final String location;
 	protected final Router router;
+	
+	protected final AtomicLong valid = new AtomicLong();
+	protected final AtomicLong invalid = new AtomicLong();
 
 	public AbstractXMLValidator(String location, Router router) throws Exception {
 		this.location = location;
@@ -47,6 +51,7 @@ public abstract class AbstractXMLValidator implements IValidator {
 				SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
 				// the message must be valid for one schema embedded into WSDL 
 				if (handler.noErrors()) {
+					valid.incrementAndGet();
 					return Outcome.CONTINUE;
 				}
 				exceptions.add(handler.getException());
@@ -56,6 +61,7 @@ public abstract class AbstractXMLValidator implements IValidator {
 			validators.put(vals);
 		}
 		exc.setResponse(createErrorResponse(getErrorMsg(exceptions)));
+		invalid.incrementAndGet();
 		return Outcome.ABORT;
 	}
 	
@@ -83,6 +89,16 @@ public abstract class AbstractXMLValidator implements IValidator {
 		return buf.toString();
 	}
 
+	@Override
+	public long getValid() {
+		return valid.get();
+	}
+
+	@Override
+	public long getInvalid() {
+		return invalid.get();
+	}
+	
 	protected abstract List<Schema> getSchemas();
 	protected abstract Source getMessageBody(InputStream input) throws Exception;
 	protected abstract Response createErrorResponse(String message);

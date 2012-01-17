@@ -33,6 +33,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	
 	public BasicAuthenticationInterceptor() {
 		name = "Basic Authenticator";		
+		setFlow(Flow.REQUEST);
 	}
 	
 	public Outcome handleRequest(Exchange exc) throws Exception {

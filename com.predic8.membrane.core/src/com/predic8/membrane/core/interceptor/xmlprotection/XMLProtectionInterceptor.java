@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.xmlprotection;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -43,7 +42,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 	
 	public XMLProtectionInterceptor() {
-		name = "XML Protection Interceptor";
+		name = "XML Protection";
 		setFlow(Flow.REQUEST);
 	}
 	
@@ -137,6 +136,11 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 	public void setRemoveDTD(boolean removeDTD) {
 		this.removeDTD = removeDTD;
+	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Protects agains XML attacks.";
 	}
 }
 

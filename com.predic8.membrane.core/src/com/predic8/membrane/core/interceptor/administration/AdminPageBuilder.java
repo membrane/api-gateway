@@ -3,7 +3,6 @@ package com.predic8.membrane.core.interceptor.administration;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import static org.apache.commons.lang.time.DurationFormatUtils.formatDurationHMS;
 
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
@@ -12,12 +11,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.Router;
@@ -34,7 +27,6 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.StatisticCollector;
-import com.predic8.membrane.core.util.TextUtil;
 
 public class AdminPageBuilder extends Html {
 	
@@ -505,33 +497,8 @@ public class AdminPageBuilder extends Html {
 		end();
 	}	
 	
-	private String getInterceptorXML(Interceptor i) {
-		try {
-			StringWriter sw = new StringWriter();
-			XMLStreamWriter w = XMLOutputFactory.newInstance().createXMLStreamWriter(sw);
-			w.writeStartDocument();
-			i.write(w);
-			w.writeEndDocument();
-			return sw.toString();
-		} catch (XMLStreamException e) {
-			return "unknown";
-		}
-	}
-	
-	private String shortenInterceptorXML(String xml) {
-		Pattern p = Pattern.compile("(<[a-zA-Z]+)([ >/].*)", Pattern.DOTALL);
-		Matcher m = p.matcher(xml);
-		if (m.matches()) { // if we could recognize the first element
-			if (m.group(2).equals(" />")) // if xml is a single element without attributes
-				return xml;
-			return m.group(1) + " ... />";
-		} else {
-			return xml;
-		}
-	}
-
 	private void createInterceptorVisualization(Interceptor i, int columnSpan, String id) {
-		td();
+		td().style("padding:0px;");
 		if (columnSpan > 1)
 			colspan(""+columnSpan);
 		if (i == null) {
@@ -539,41 +506,45 @@ public class AdminPageBuilder extends Html {
 			raw("&nbsp;");
 			end();
 		} else {
-			div().style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + (columnSpan == 1 ? "width: 300px;" : "width: 612px;"));
-			String sid = "s" + id;
-			span().id(sid);
-			String xml = TextUtil.formatXML(new StringReader(getInterceptorXML(i)));
-			xml = xml.replace("<?xml version = \"1.0\" ?>\r\n", "");
-			while (xml.endsWith("\r\n"))
-				xml = xml.substring(0, xml.length()-2);
-			String shortText = shortenInterceptorXML(xml);
-			tt();
-			text(shortText);
+			div().style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + 
+					(columnSpan == 1 ? "width: 298px;" : "width: 630px;"));
+			div();
+			text(i.getDisplayName());
 			end();
-			end();
-			if (!xml.equals(shortText)) {
-				String tid = "l" + id;
-				pre().id(tid).style("margin: 0px; cursor: pointer;");
-				text(xml);
+			String shortDescription = i.getShortDescription();
+			String longDescription = i.getLongDescription();
+			if (shortDescription.length() > 0) {
+				div().style("padding-top: 4px;");
+				String sid = "s" + id;
+				small().id(sid);
+				text(i.getShortDescription());
+				if (!longDescription.equals(shortDescription)) {
+					a().href("#").text("Details").end();
+					String tid = "l" + id;
+					end();
+					small().id(tid).style("margin: 0px; cursor: pointer;");
+					text(longDescription);
+					end();
+					script();
+					raw("jQuery(document).ready(function() {\r\n" +
+						"  jQuery(\"#"+tid+"\").hide();\r\n" +
+						"  jQuery(\"#"+sid+"\").css('cursor', 'pointer');\r\n" +
+						"  jQuery(\"#"+sid+"\").click(function()\r\n" +
+						"  {\r\n" +
+						"    jQuery(\"#"+sid+"\").hide();\r\n" +
+						"    jQuery(\"#"+tid+"\").slideToggle(500);\r\n" +
+						"  });\r\n" +
+						"  jQuery(\"#"+tid+"\").click(function()\r\n" +
+						"  {\r\n" +
+						"    jQuery(\"#"+sid+"\").show();\r\n" +
+						"    jQuery(\"#"+tid+"\").slideToggle(500);\r\n" +
+						"  });\r\n" +
+						"});\r\n" + 
+						"</script>\r\n" + 
+						"\r\n" + 
+						"");
+				}
 				end();
-				script();
-				raw("jQuery(document).ready(function() {\r\n" +
-					"  jQuery(\"#"+tid+"\").hide();\r\n" +
-					"  jQuery(\"#"+sid+"\").css('cursor', 'pointer');\r\n" +
-					"  jQuery(\"#"+sid+"\").click(function()\r\n" +
-					"  {\r\n" +
-					"    jQuery(\"#"+sid+"\").hide();\r\n" +
-					"    jQuery(\"#"+tid+"\").slideToggle(500);\r\n" +
-					"  });\r\n" +
-					"  jQuery(\"#"+tid+"\").click(function()\r\n" +
-					"  {\r\n" +
-					"    jQuery(\"#"+sid+"\").show();\r\n" +
-					"    jQuery(\"#"+tid+"\").slideToggle(500);\r\n" +
-					"  });\r\n" +
-					"});\r\n" + 
-					"</script>\r\n" + 
-					"\r\n" + 
-					"");
 				end();
 			}
 			end();
@@ -588,6 +559,7 @@ public class AdminPageBuilder extends Html {
 			public Flow getFlow() {
 				return Flow.REQUEST_RESPONSE;
 		}});
+		// build left and right stacks
 		for (Interceptor i : list) {
 			switch (i.getFlow()) {
 			case REQUEST:	
@@ -608,9 +580,36 @@ public class AdminPageBuilder extends Html {
 			}
 		}
 
-		table().style("border:1px solid black;");
+		table().cellspacing("0px").cellpadding("0px");
+			tr();
+				td().style("padding:0px;").colspan("2");
+					div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 
+							"width: 630px;");
+						div();
+							b();
+								text("Listener");
+							end();
+						end();
+						div().style("padding-top: 4px;");
+							small();
+								text("Host: " + proxy.getKey().getHost());
+								br();
+								text("Port: " + proxy.getKey().getPort());
+								br();
+								text("Path: " + proxy.getKey().getPath());
+								br();
+								text("Method: " + proxy.getKey().getMethod());
+							end();
+						end();
+					end();
+				end();
+			end();
+			tr();
+				td().style("padding:0px;background:url(\"/images/spv-top.png\");background-repeat:repeat-y;height:14px;").colspan("2");
+				end();
+			end();
 			for (int i = 0; i < leftStack.size() - 1; i++) {
-				tr();
+				tr().style("background:url(\"/images/spv-middle.png\");background-repeat:repeat-y;");
 					if (leftStack.get(i) == rightStack.get(i)) {
 						createInterceptorVisualization(leftStack.get(i), 2, "spv_l" + i);
 					} else {
@@ -619,6 +618,33 @@ public class AdminPageBuilder extends Html {
 					}
 				end();
 			}
+			tr().style("background:url(\"/images/spv-bottom.png\");background-repeat:repeat-y;height:14px;");
+				td().style("padding:0px;").colspan("2");
+				end();
+			end();
+			tr();
+				td().style("padding:0px;").colspan("2");
+					div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 
+							"width: 630px;");
+						div();
+							b();
+								text("Target");
+							end();
+						end();
+						div().style("padding-top: 4px;");
+							small();
+								if (proxy.getTargetURL() == null) {
+									text("Host: " + proxy.getTargetHost());
+									br();
+									text("Port: " + proxy.getTargetPort());
+								} else {
+									text("URL: " + proxy.getTargetURL());
+								}
+							end();
+						end();
+					end();
+				end();
+			end();
 		end();
 	}
 	

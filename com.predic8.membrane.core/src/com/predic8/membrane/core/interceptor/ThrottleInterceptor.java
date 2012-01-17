@@ -1,11 +1,13 @@
 package com.predic8.membrane.core.interceptor;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.ErrorResponse;
 import com.predic8.membrane.core.http.Response;
 
 public class ThrottleInterceptor extends AbstractInterceptor {
@@ -15,6 +17,10 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	private int maxThreads = 0;
 	private int threads = 0;
 	private int busyDelay = 0;
+	
+	public ThrottleInterceptor() {
+		name = "Throttle";
+	}
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
@@ -104,6 +110,16 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	}
 	
 	
+	@Override
+	public String getShortDescription() {
+		return "Throttles the rate of incoming requests.";
+	}
 	
+	@Override
+	public String getLongDescription() {
+		return "Only allows " + maxThreads + " concurrent requests. The server waits at most " + 
+				String.format("%.1f", busyDelay/1000.0) + " seconds for enough running requests to terminate, " +
+						"returning an error if the server is still busy after the timeout.";
+	}
 	
 }

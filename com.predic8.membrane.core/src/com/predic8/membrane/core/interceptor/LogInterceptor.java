@@ -163,5 +163,11 @@ public class LogInterceptor extends AbstractInterceptor {
 	public void setCategory(String category) {
 		this.category = category;
 	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Logs the " + (headerOnly ? "headers of " : "") + "requests and responses" + 
+				" using Log4J's " + level.toString() + " level.";
+	}
 
 }

@@ -51,6 +51,7 @@ public class RegExURLRewriteInterceptor extends AbstractInterceptor {
 
 	public RegExURLRewriteInterceptor() {
 		name = "RegEx URL Rewriter";
+		setFlow(Flow.REQUEST);
 	}
 
 	@Override

@@ -38,13 +38,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	private IValidator validator;
 	
-	public ValidatorInterceptor() {
-		name =	"Validator";
-	}
-
 	private void setValidator(IValidator validator) throws Exception {
-		if (validator == null)
-			throw new InvalidParameterException("validator is null");
 		if (this.validator != null)
 			throw new Exception("<validator> cannot have more than one validator attribute.");
 		this.validator = validator;
@@ -52,15 +46,23 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	public void init() throws Exception {
 		validator = null;
-		
-		if (wsdl != null)
+			
+		if (wsdl != null) {
+			name="SOAP Validator";
 			setValidator(new WSDLValidator(wsdl, router));
-		if (schema != null)
+		}
+		if (schema != null) {
+			name="XML Schema Validator";
 			setValidator(new XMLSchemaValidator(schema, router));
-		if (jsonSchema != null)
+		}
+		if (jsonSchema != null) {
+			name="JSON Schema Validator";
 			setValidator((IValidator) Class.forName("com.predic8.membrane.core.interceptor.schemavalidation.JSONValidator").getConstructor(String.class).newInstance(jsonSchema));
-		if (schematron != null)
+		}
+		if (schematron != null) {
+			name="Schematron Validator";
 			setValidator(new SchematronValidator(schematron, router.getResourceResolver(), router));
+		}
 		
 		if (validator == null)
 			throw new Exception("<validator> must have an attribute specifying the validator.");
@@ -68,7 +70,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (!exc.getRequest().isPOSTRequest())
+		if (exc.getRequest().isBodyEmpty()) 
 			return Outcome.CONTINUE;
 			
 		return validator.validateMessage(exc, exc.getRequest());
@@ -76,9 +78,13 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		// Yes! we want to check if the request is not a POST-request
-		if (!exc.getRequest().isPOSTRequest())
+		// @TODO ???????????? Yes! we want to check if the request is not a POST-request
+		//if (!exc.getRequest().isPOSTRequest())
+		//	return Outcome.CONTINUE;
+
+		if (exc.getResponse().isBodyEmpty())
 			return Outcome.CONTINUE;
+		
 		
 		return validator.validateMessage(exc, exc.getResponse());
 	}
@@ -141,6 +147,11 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 
 	public void setSchematron(String schematron) {
 		this.schematron = schematron;
+	}
+	
+	@Override
+	public String getShortDescription() {
+		return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages are invalid";
 	}
 	
 }
