@@ -112,14 +112,25 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public String getShortDescription() {
-		return "Throttles the rate of incoming requests.";
+		if (delay > 0 || maxThreads > 0)
+			return "Throttles the rate of incoming requests.";
+		else
+			return "Not configured.";
 	}
 	
 	@Override
 	public String getLongDescription() {
-		return "Only allows " + maxThreads + " concurrent requests. The server waits at most " + 
+		StringBuilder sb = new StringBuilder();
+		if (delay > 0)
+			sb.append("Delays requests by " + String.format("%.1f", delay/1000.0) + " seconds.");
+		if (maxThreads > 0) {
+			sb.append("Only allows " + maxThreads + " concurrent requests.");
+			if (busyDelay > 0)
+				sb.append("The server waits at most " + 
 				String.format("%.1f", busyDelay/1000.0) + " seconds for enough running requests to terminate, " +
-						"returning an error if the server is still busy after the timeout.";
+						"returning an error if the server is still busy after the timeout.");
+		}
+		return sb.toString();
 	}
 	
 }
