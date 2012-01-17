@@ -1,0 +1,25 @@
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+      	 
+	<serviceProxy name="Console" port="9080">
+		<basicAuthentication>
+			<user name="admin" password="membrane" />
+		</basicAuthentication>	
+		<adminConsole />
+	</serviceProxy>	
+	
+	
+	<serviceProxy name="ArticleService" port="80" method="POST" host="sanfrancisco" >
+		<path>/services/ArticleService/</path>
+		<regExUrlRewriter>
+			<mapping regex="/services/ArticleService/" uri="/echo-webapp/" />
+		</regExUrlRewriter>			
+		<request>
+			<validator wsdl="C:/work/validation-demo/80-wsdl/ArticleService.wsdl" />
+			<validator schematron="C:\work\validation-demo\80-wsdl\article-schematron.xml" />			
+		</request>
+		<target host="localhost" port="8080" />
+	</serviceProxy>
+	
+</proxies>

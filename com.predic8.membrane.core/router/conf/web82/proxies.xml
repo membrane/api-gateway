@@ -1,0 +1,25 @@
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+      	 
+	<serviceProxy name="Console" port="9082">
+		<basicAuthentication>
+			<user name="admin" password="membrane" />
+		</basicAuthentication>	
+		<adminConsole />
+	</serviceProxy>	
+	
+	<serviceProxy name="CarResource" port="82">
+		<xmlProtection/>
+		<throttle maxThreads="50" busyDelay="3000" />
+		<regExUrlRewriter>
+			<mapping regex="^$" uri="/echo-webapp/" />
+			<mapping regex="/$" uri="/echo-webapp/" />
+		</regExUrlRewriter>	
+		<request>
+			<validator schematron="C:/work/workspace/com.predic8.membrane.core/examples/router/validation/schematron/car-schematron.xml" />
+		</request>
+		<target host="localhost" port="8080" />
+	</serviceProxy>
+	
+</proxies>

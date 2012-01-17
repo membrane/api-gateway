@@ -1,0 +1,24 @@
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+      	 
+	<serviceProxy name="Console" port="9081">
+		<basicAuthentication>
+			<user name="admin" password="membrane" />
+		</basicAuthentication>	
+		<adminConsole />
+	</serviceProxy>	
+	
+	<serviceProxy name="TravelResource" port="81">
+		<log level="ERROR" />
+		<regExUrlRewriter>
+			<mapping regex="^$" uri="/echo-webapp/" />
+			<mapping regex="/$" uri="/echo-webapp/" />
+		</regExUrlRewriter>			
+		<request>
+			<validator schema="C:/work/validation-demo/81-xsd/OTA_TravelItinerary.xsd" />
+		</request>
+		<target host="localhost" port="8080" />
+	</serviceProxy>
+	
+</proxies>

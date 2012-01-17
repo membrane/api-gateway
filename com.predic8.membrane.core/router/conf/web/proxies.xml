@@ -14,5 +14,19 @@
 		</basicAuthentication>	
 		<adminConsole />
 	</serviceProxy>	
-
+	
+	<serviceProxy port="2000">
+		<request>
+		
+			<validator schematron="C:/work/workspace/com.predic8.membrane.core/examples/router/validation/schematron/car-schematron.xml" />
+			<!-- <validator jsonSchema="C:/work/workspace/com.predic8.membrane.core/examples/router/validation/json-schema/schema2001.json" /> -->
+		</request>
+		<!-- 
+		<response>
+			<validator jsonSchema="C:/work/workspace/com.predic8.membrane.core/examples/router/validation/json-schema/schema2001.json" />
+		</response>
+		 -->
+		<target host="localhost" port="8080" />
+	</serviceProxy>
+	
 </proxies>
