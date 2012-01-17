@@ -3,6 +3,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -29,19 +30,22 @@ import com.predic8.membrane.core.interceptor.Outcome;
 
 public class JSONValidator implements IValidator {
 	private static final Log log = LogFactory.getLog(JSONValidator.class.getName());
+	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	// Since JsonValidator is not thread-safe, we simply allocate 2*#CPU and use
 	// one exclusively for each validation request.
 	private ArrayBlockingQueue<JsonValidator> validators;
 	private final Router router;
 	private final String jsonSchema;
+	private final ValidatorInterceptor.FailureHandler failureHandler;
 	
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 	
-	public JSONValidator(Router router, String jsonSchema) throws IOException, JsonValidationFailureException {
+	public JSONValidator(Router router, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException, JsonValidationFailureException {
 		this.router = router;
 		this.jsonSchema = jsonSchema;
+		this.failureHandler = failureHandler;
 		createValidators();
 	}
 	
@@ -79,10 +83,18 @@ public class JSONValidator implements IValidator {
         	jg.writeString(message);
         jg.close();
         	
-        exc.setResponse(Response.badRequest().
-        		contentType("application/json;charset=utf-8").
-        		body(baos.toByteArray()).
-        		build());
+		if (failureHandler != null) {
+			failureHandler.handleFailure(new String(baos.toByteArray(), UTF8), exc);
+			exc.setResponse(Response.badRequest().
+					contentType("application/json;charset=utf-8").
+					body("{\"error\":\"error\"}".getBytes(UTF8)).
+					build());
+		} else {
+	        exc.setResponse(Response.badRequest().
+	        		contentType("application/json;charset=utf-8").
+	        		body(baos.toByteArray()).
+	        		build());
+		}
 		
         invalid.incrementAndGet();
 		return Outcome.ABORT;

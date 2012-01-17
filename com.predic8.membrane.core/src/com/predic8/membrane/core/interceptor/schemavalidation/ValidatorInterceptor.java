@@ -18,6 +18,9 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -28,11 +31,13 @@ import com.predic8.membrane.core.interceptor.Outcome;
  * attributes.
  */
 public class ValidatorInterceptor extends AbstractInterceptor {
-		
+	private static Log log = LogFactory.getLog(ValidatorInterceptor.class.getName());
+
 	private String wsdl;
 	private String schema;
 	private String jsonSchema;
 	private String schematron;
+	private String failureHandler;
 	
 	private IValidator validator;
 	
@@ -47,19 +52,19 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 			
 		if (wsdl != null) {
 			name="SOAP Validator";
-			setValidator(new WSDLValidator(router, wsdl));
+			setValidator(new WSDLValidator(router, wsdl, createFailureHandler()));
 		}
 		if (schema != null) {
 			name="XML Schema Validator";
-			setValidator(new XMLSchemaValidator(router, schema));
+			setValidator(new XMLSchemaValidator(router, schema, createFailureHandler()));
 		}
 		if (jsonSchema != null) {
 			name="JSON Schema Validator";
-			setValidator(new JSONValidator(router, jsonSchema));
+			setValidator(new JSONValidator(router, jsonSchema, createFailureHandler()));
 		}
 		if (schematron != null) {
 			name="Schematron Validator";
-			setValidator(new SchematronValidator(router, schematron));
+			setValidator(new SchematronValidator(router, schematron, createFailureHandler()));
 		}
 		
 		if (validator == null)
@@ -76,13 +81,8 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		// @TODO ???????????? Yes! we want to check if the request is not a POST-request
-		//if (!exc.getRequest().isPOSTRequest())
-		//	return Outcome.CONTINUE;
-
 		if (exc.getResponse().isBodyEmpty())
 			return Outcome.CONTINUE;
-		
 		
 		return validator.validateMessage(exc, exc.getResponse());
 	}
@@ -99,6 +99,8 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 			out.writeAttribute("jsonSchema", jsonSchema);
 		if (schematron != null)
 			out.writeAttribute("schematron", schematron);
+		if (failureHandler != null)
+			out.writeAttribute("failureHandler", failureHandler);
 		out.writeEndElement();
 	}
 	
@@ -108,6 +110,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		schema = token.getAttributeValue("", "schema");
 		jsonSchema = token.getAttributeValue("", "jsonSchema");
 		schematron = token.getAttributeValue("", "schematron");
+		failureHandler = token.getAttributeValue("", "failureHandler");
 	}
 	
 	@Override
@@ -130,6 +133,14 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	public void setSchema(String schema) {
 		this.schema = schema;
 	}
+	
+	public String getFailureHandler() {
+		return failureHandler;
+	}
+	
+	public void setFailureHandler(String failureHandler) {
+		this.failureHandler = failureHandler;
+	}
 
 	public String getJsonSchema() {
 		return jsonSchema;
@@ -150,6 +161,23 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	@Override
 	public String getShortDescription() {
 		return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages are invalid.";
+	}
+	
+	public static interface FailureHandler {
+		void handleFailure(String message, Exchange exc);
+	}
+	
+	private FailureHandler createFailureHandler() {
+		if (failureHandler == null || failureHandler.equals("response"))
+			return null;
+		if (failureHandler.equals("log"))
+			return new FailureHandler() {
+				@Override
+				public void handleFailure(String message, Exchange exc) {
+					log.info("Validation failure: " + message);
+				}
+			};
+		throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
 	}
 	
 }

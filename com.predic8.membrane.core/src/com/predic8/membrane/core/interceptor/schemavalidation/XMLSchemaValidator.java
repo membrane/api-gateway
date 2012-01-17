@@ -23,8 +23,8 @@ import com.predic8.schema.Schema;
 public class XMLSchemaValidator extends AbstractXMLValidator {
 	private static Log log = LogFactory.getLog(XMLSchemaValidator.class.getName());
 
-	public XMLSchemaValidator(Router router, String location) throws Exception {
-		super(router, location);
+	public XMLSchemaValidator(Router router, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+		super(router, location, failureHandler);
 	}
 	
 	protected List<Schema> getSchemas() {

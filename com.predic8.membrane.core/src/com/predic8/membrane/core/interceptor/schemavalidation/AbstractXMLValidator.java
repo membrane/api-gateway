@@ -29,13 +29,15 @@ public abstract class AbstractXMLValidator implements IValidator {
 	private ArrayBlockingQueue<List<Validator>> validators;
 	protected final String location;
 	protected final Router router;
+	protected final ValidatorInterceptor.FailureHandler failureHandler;
 	
 	protected final AtomicLong valid = new AtomicLong();
 	protected final AtomicLong invalid = new AtomicLong();
 
-	public AbstractXMLValidator(Router router, String location) throws Exception {
+	public AbstractXMLValidator(Router router, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		this.location = location;
 		this.router = router;
+		this.failureHandler = failureHandler;
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
 		validators = new ArrayBlockingQueue<List<Validator>>(concurrency);
 		for (int i = 0; i < concurrency; i++)
@@ -60,7 +62,12 @@ public abstract class AbstractXMLValidator implements IValidator {
 		} finally {
 			validators.put(vals);
 		}
-		exc.setResponse(createErrorResponse(getErrorMsg(exceptions)));
+		if (failureHandler != null) {
+			failureHandler.handleFailure(getErrorMsg(exceptions), exc);
+			exc.setResponse(createErrorResponse("validation error"));
+		} else {
+			exc.setResponse(createErrorResponse(getErrorMsg(exceptions)));
+		}
 		invalid.incrementAndGet();
 		return Outcome.ABORT;
 	}

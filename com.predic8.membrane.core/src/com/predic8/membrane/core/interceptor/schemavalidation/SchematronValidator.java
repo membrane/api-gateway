@@ -35,11 +35,14 @@ public class SchematronValidator implements IValidator {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final XMLInputFactory xmlInputFactory;
+	private final ValidatorInterceptor.FailureHandler failureHandler;
 	
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 	
-	public SchematronValidator(Router router, String schematron) throws Exception {
+	public SchematronValidator(Router router, String schematron, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+		this.failureHandler = failureHandler;
+		
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 		TransformerFactory fac;
 		try {
@@ -99,11 +102,7 @@ public class SchematronValidator implements IValidator {
 				if (event.isStartElement()) {
 					StartElement startElement = (StartElement)event;
 					if (startElement.getName().getLocalPart().equals("failed-assert")) {
-						exc.setResponse(Response.
-								badRequest().
-								contentType("text/xml;charset=utf-8").
-								body(result).
-								build());
+						setErrorMessage(exc, new String(result, UTF8), false);
 						invalid.incrementAndGet();
 						return Outcome.ABORT;
 					}
@@ -111,12 +110,12 @@ public class SchematronValidator implements IValidator {
 			}
 
 		} catch (TransformerException e) {
-			setErrorMessage(exc, e.getMessage());
+			setErrorMessage(exc, e.getMessage(), true);
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		} catch (Exception e) {
 			e.printStackTrace();
-			setErrorMessage(exc, "internal error");
+			setErrorMessage(exc, "internal error", true);
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		}
@@ -124,12 +123,18 @@ public class SchematronValidator implements IValidator {
 		return Outcome.CONTINUE;
 	}
 	
-	private void setErrorMessage(Exchange exc, String message) {
-		exc.setResponse(Response.
-				badRequest().
-				contentType("text/xml;charset=utf-8").
-				body(("<error>" + StringEscapeUtils.escapeXml(message) + "</error>").getBytes(UTF8)).
-				build());
+	private void setErrorMessage(Exchange exc, String message, boolean escape) {
+		String MSG_HEADER = "<?xml version=\"1.0\"?>\r\n<error>";
+		String MSG_FOOTER = "</error>";
+		if (escape)
+			message = MSG_HEADER + StringEscapeUtils.escapeXml(message) + MSG_FOOTER;
+
+		if (failureHandler != null) {
+			failureHandler.handleFailure(message, exc);
+			exc.setResponse(Response.badRequest().contentType("text/xml;charset=utf-8").body((MSG_HEADER + MSG_FOOTER).getBytes()).build());
+		} else {
+			exc.setResponse(Response.badRequest().contentType("text/xml;charset=utf-8").body(message.getBytes(UTF8)).build());
+		}
 	}
 	
 	@Override
