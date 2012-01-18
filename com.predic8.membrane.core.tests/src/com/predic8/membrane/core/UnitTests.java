@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.formvalidation.*;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
+import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
@@ -80,6 +81,7 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	FormValidationInterceptorTest.class,
 	ServiceInvocationTest.class,
 	HttpKeepAliveTest.class,
+	ReverseProxyingInterceptorTest.class,
 })
 public class UnitTests {
 

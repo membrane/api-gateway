@@ -26,7 +26,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.rules.Rule;
-public class RegExURLRewriteInterceptorIntegrationTest {
+public class RewriteInterceptorIntegrationTest {
 
 	private static HttpRouter router;
 

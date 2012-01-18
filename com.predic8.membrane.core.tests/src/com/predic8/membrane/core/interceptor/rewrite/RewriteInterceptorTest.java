@@ -24,7 +24,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
 import com.predic8.membrane.core.util.MessageUtil;
-public class RegExURLRewriteInterceptorTest {
+public class RewriteInterceptorTest {
 
 	private Exchange exc;
 	
