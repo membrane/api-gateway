@@ -22,8 +22,6 @@ import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
 
-import javax.net.ssl.SSLSocket;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -38,6 +36,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.Util;
 
 /**
  * Instances are thread-safe.
@@ -180,7 +179,7 @@ public class HttpClient {
 		exc.setTimeReqSent(System.currentTimeMillis());
 		
 		if (exc.getRequest().isHTTP10()) {
-			shutDownSourceSocket(exc, con);
+			shutDownRequestInputOutput(exc, con);
 		}
 
 		Response res = new Response();
@@ -215,16 +214,8 @@ public class HttpClient {
 		response.read(con.in, !exc.getRequest().isHEADRequest());
 	}
 
-	private void shutDownSourceSocket(Exchange exc, Connection con) throws IOException {
-	
-		//SSLSocket does not implement shutdown input and output
-		if (!(exc.getServerThread().sourceSocket instanceof SSLSocket))
-			exc.getServerThread().sourceSocket.shutdownInput();
-		
-		if (!con.socket.isOutputShutdown() && !(con.socket instanceof SSLSocket)) {
-			log.info("Shutting down socket outputstream");
-			con.socket.shutdownOutput();
-		}
-		// TODO close ?
+	private void shutDownRequestInputOutput(Exchange exc, Connection con) throws IOException {
+		Util.shutdownInput(exc.getServerThread().sourceSocket);
+		Util.shutdownOutput(con.socket);
 	}
 }
