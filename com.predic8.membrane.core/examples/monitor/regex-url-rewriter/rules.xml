@@ -5,8 +5,7 @@
       <targetport>80</targetport>
       <targethost>www.thomas-bayer.com</targethost>
       <interceptors>
-        <interceptor id="regExUrlRewriter"
-                      name="RegEx URL Rewriter" />
+        <interceptor id="rewriter" name="RegEx URL Rewriter" />
       </interceptors>
     </forwarding-rule>
   </rules>

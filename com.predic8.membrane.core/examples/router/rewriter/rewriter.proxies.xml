@@ -2,9 +2,9 @@
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
 	<serviceProxy port="2000">
-		<regExUrlRewriter>
-			<mapping regex="/bank/(.*)" uri="/axis2/$1" />
-		</regExUrlRewriter>
+		<rewriter>
+			<map from="^/bank/(.*)" to="/axis2/$1" />
+		</rewriter>
 		<target host="www.thomas-bayer.com" port="80" />
 	</serviceProxy>
 </proxies>

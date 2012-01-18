@@ -23,20 +23,20 @@ import org.junit.*;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.rules.Rule;
 public class RegExURLRewriteInterceptorIntegrationTest {
 
 	private static HttpRouter router;
 
-	private RegExURLRewriteInterceptor  interceptor; 
+	private RewriteInterceptor  interceptor; 
 	
 	@Before
 	public void setUp() throws Exception {
 				
-		interceptor = new RegExURLRewriteInterceptor();
-		interceptor.getMappings().add(new Mapping("/blz-service\\?wsdl", "/axis2/services/BLZService?wsdl"));
+		interceptor = new RewriteInterceptor();
+		interceptor.getMappings().add(new Mapping("/blz-service\\?wsdl", "/axis2/services/BLZService?wsdl", null));
 
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", 80);
 		rule.getInterceptors().add(interceptor);

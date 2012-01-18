@@ -9,7 +9,7 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
         registerBeanDefinitionParser("transport", new HttpTransportParser());
         registerBeanDefinitionParser("transform", new TransformInterceptorParser());
         registerBeanDefinitionParser("validator", new ValidatorInterceptorParser());
-        registerBeanDefinitionParser("regExUrlRewriter", new RegExUrlRewriterInterceptorParser());
+        registerBeanDefinitionParser("rewriter", new RewriterInterceptorParser());
         registerBeanDefinitionParser("balancer", new BalancerInterceptorParser());
         registerBeanDefinitionParser("adminConsole", new AdminConsoleInterceptorParser());
         registerBeanDefinitionParser("clusterNotification", new ClusterNotificationInterceptorParser());

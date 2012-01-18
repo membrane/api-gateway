@@ -27,7 +27,7 @@ import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationI
 import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
-import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.schemavalidation.*;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
@@ -171,9 +171,9 @@ public class CustomSpringConfigurationTest {
 	 	assertTrue(i.getUsers().containsValue("password"));
 	}
 
-	private void assertRegExUrlRewriterInterceptor(RegExURLRewriteInterceptor i) {
-	 	assertEquals("/bank/", i.getMappings().get(0).regex);
-	 	assertEquals("/axis2/", i.getMappings().get(0).uri);
+	private void assertRewriterInterceptor(RewriteInterceptor i) {
+	 	assertEquals("^/bank/", i.getMappings().get(0).from);
+	 	assertEquals("^/axis2/", i.getMappings().get(0).to);
 	}
 
 	private void assertXsltInterceptor(XSLTInterceptor i) {

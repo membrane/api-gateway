@@ -128,13 +128,28 @@ public class Response extends Message {
 				status(100, "Continue");
 	}
 	
-	private static String htmlMessage(String caption, String text) {
-		return "<html><head><title>" + StringEscapeUtils.escapeHtml(caption)
-				+ "</title></head>" + "<body><h1>"
-				+ StringEscapeUtils.escapeHtml(caption) + "</h1><p>"
-				+ StringEscapeUtils.escapeHtml(text) + "</p></body></html>";
+	public static ResponseBuilder redirect(String uri, boolean permanent) {
+		String escaped = StringEscapeUtils.escapeXml(uri);
+		return ResponseBuilder.newInstance().
+				status(permanent ? 301 : 307, permanent ? "Moved Permanently" : "Temporary Redirect").
+				header("Location", uri).
+				contentType("text/html;charset=utf-8").
+				entity(unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
 	}
 	
+	private static String unescapedHtmlMessage(String caption, String text) {
+		return "<html><head><title>" + caption
+				+ "</title></head>" + "<body><h1>"
+				+ caption + "</h1><p>"
+				+ text + "</p></body></html>";
+	}
+
+	private static String htmlMessage(String caption, String text) {
+		return unescapedHtmlMessage(
+				StringEscapeUtils.escapeHtml(caption),
+				StringEscapeUtils.escapeHtml(text));
+	}
+
 	public static ResponseBuilder serverUnavailable(String message) {
 		return ResponseBuilder.newInstance().
 				status(503, "Service Unavailable").

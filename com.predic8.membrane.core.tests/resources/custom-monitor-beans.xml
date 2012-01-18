@@ -196,16 +196,16 @@
   -->
   
    <!--
-   RegEx URL Rewriter Interceptor 
+   Rewriter Interceptor 
    =======================================
-   An interceptor that can rewrite URLs that are matched by an regular expression. One can use groups in the replacing URL to reference parts of the matched URL. 
+   An interceptor that can rewrite or redirect URLs that are matched by an regular expression. One can use groups in the replacing URL to reference parts of the matched URL. 
 
-   Ihe regExUrlRewriter element contains mapping elements. Each element defines a regex and a url to replace by using the attributes regex and url. 
+   Ihe rewriter element contains mapping elements. Each element defines a regex and a url to replace by using the attributes regex and url. 
    -->  
-	<regExUrlRewriter>
-		<mapping regex="/bank/(.*)" url="/axis2/$1" />
-		<mapping regex="/static/(.*)" url="/$1" />
-	</regExUrlRewriter>
+	<rewriter>
+		<map from="^/bank/(.*)" to="/axis2/$1" />
+		<map from="^/static/(.*)" to="/$1" />
+	</rewriter>
   
  
    <!--

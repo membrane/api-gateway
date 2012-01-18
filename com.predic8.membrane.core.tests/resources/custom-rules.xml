@@ -9,9 +9,9 @@
 			<clusterNotification validateSignature="true"
 				keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
 			<counter name="Node 1" />
-			<regExUrlRewriter>
-				<mapping regex="/home" uri="/index" />
-			</regExUrlRewriter>
+			<rewriter>
+				<map from="^/home" to="/index" />
+			</rewriter>
 			<adminConsole />
 			<webServer docBase="docBase" />
 			<switch>

@@ -17,7 +17,7 @@ public class Rest2SoapInterceptorParser extends AbstractParser {
 
 	@Override
 	protected void doParse(Element element, BeanDefinitionBuilder builder) {
-		setIdIfNeeded(element, "regExUrlRewriter");
+		setIdIfNeeded(element, "rest2Soap");
 		builder.addPropertyValue("mappings",getMappings(element));
 	}
 

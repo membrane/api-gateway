@@ -221,7 +221,7 @@
   -->
   
   <!--
-  <bean id="regExUrlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor">
+  <bean id="rewriter" class="com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor">
     <property name="displayName" value="RegEx URL Rewriter" />
     <property name="mapping">
       <map>

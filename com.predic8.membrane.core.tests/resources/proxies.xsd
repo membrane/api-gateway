@@ -102,14 +102,23 @@
 				</xsd:complexType>
 			</xsd:element>
 
-			<xsd:element name="regExUrlRewriter">
+			<xsd:element name="rewriter">
 				<xsd:complexType>
 					<xsd:sequence>
-						<xsd:element name="mapping" minOccurs="1" maxOccurs="unbounded">
+						<xsd:element name="map" minOccurs="1" maxOccurs="unbounded">
 							<xsd:complexType>
 								<xsd:sequence />
-								<xsd:attribute name="regex" type="xsd:string" use="required" />
-								<xsd:attribute name="uri" type="xsd:string" use="required" />
+								<xsd:attribute name="from" type="xsd:string" use="required" />
+								<xsd:attribute name="to" type="xsd:string" use="required" />
+								<xsd:attribute name="do">
+									<xsd:simpleType>
+										<xsd:restriction base="xsd:string">
+											<xsd:enumeration value="rewrite" />
+											<xsd:enumeration value="redirect-permanent" />
+											<xsd:enumeration value="redirect-temporary" />
+										</xsd:restriction>
+									</xsd:simpleType>
+        						</xsd:attribute>
 							</xsd:complexType>
 						</xsd:element>
 					</xsd:sequence>

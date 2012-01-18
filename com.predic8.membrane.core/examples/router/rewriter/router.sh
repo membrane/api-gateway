@@ -5,13 +5,13 @@ homeSet() {
  CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
  export CLASSPATH
  echo Membrane Router running...
- java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c regex-url-rewriter.proxies.xml -b ../../conf/monitor-beans.xml
+ java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c rewriter.proxies.xml -b ../../conf/monitor-beans.xml
  
 }
 
 terminate() {
 	echo "Starting of Membrane Router failed."
-	echo "Please execute this script from the MEMBRANE_HOME/examples/regex-url-rewriter directory"
+	echo "Please execute this script from the MEMBRANE_HOME/examples/rewriter directory"
 	
 }
 

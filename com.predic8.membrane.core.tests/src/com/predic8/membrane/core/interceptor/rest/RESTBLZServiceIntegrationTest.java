@@ -25,7 +25,7 @@ import org.junit.*;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.rewrite.*;
-import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor.Mapping;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.rules.Rule;
@@ -44,9 +44,9 @@ public class RESTBLZServiceIntegrationTest {
 		HTTP2XMLInterceptor http2xml = new HTTP2XMLInterceptor();
 		router.getTransport().getInterceptors().add(http2xml);
 
-		RegExURLRewriteInterceptor urlRewriter = new RegExURLRewriteInterceptor();
+		RewriteInterceptor urlRewriter = new RewriteInterceptor();
 		List<Mapping> mappings = new ArrayList<Mapping>();
-		mappings.add( new Mapping("/bank/.*", "/axis2/services/BLZService"));
+		mappings.add( new Mapping("/bank/.*", "/axis2/services/BLZService", null));
 		urlRewriter.setMappings(mappings);
 		router.getTransport().getInterceptors().add(urlRewriter);
 		

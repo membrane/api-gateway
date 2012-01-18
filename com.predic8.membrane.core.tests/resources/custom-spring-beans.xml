@@ -24,9 +24,9 @@
 		<exchangeStore name="memoryExchangeStore" />
 		<exchangeStore name="fileExchangeStore" />
 		<transform xslt="strip.xslt"/>
-		<regExUrlRewriter>
-			<mapping regex="/bank/" uri="/axis2/" />
-		</regExUrlRewriter>
+		<rewriter>
+			<map from="^/bank/" to="/axis2/" />
+		</rewriter>
 		<adminConsole />
 		<webServer docBase="docBase" />
 		<balancer name="The Balancer">
@@ -83,9 +83,9 @@
 		<field name="name" regex="[a-z]+" />
 	</formValidation>
 	<transform xslt="strip.xslt" />
-	<regExUrlRewriter>
-		<mapping regex="/bank/" uri="/axis2/" />
-	</regExUrlRewriter>
+	<rewriter>
+		<map from="^/bank/" to="/axis2/" />
+	</rewriter>
 	<adminConsole />
 	<webServer docBase="docBase" />
 	<balancer >

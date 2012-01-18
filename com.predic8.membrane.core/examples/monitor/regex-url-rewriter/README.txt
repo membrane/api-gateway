@@ -31,8 +31,7 @@ First take a look at the rules.xml file.
       <targetport>80</targetport>
       <targethost>www.thomas-bayer.com</targethost>
       <interceptors>
-        <interceptor id="regExUrlRewriter"
-                      name="RegEx URL Rewriter" />
+        <interceptor id="rewriter" name="RegEx URL Rewriter" />
       </interceptors>
     </forwarding-rule>
   </rules>
@@ -42,7 +41,7 @@ You will see that there is a rule that directs calls to the port 2000 to www.tho
 
 Now take a look at the bean configuration of the interceptor in the configuration/monitor-beans.xml file.
 
-<bean id="regExUrlRewriter" class="com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor">
+<bean id="rewriter" class="com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor">
     <property name="displayName" value="RegEx URL Rewriter" />
     <property name="mapping">
       <map>

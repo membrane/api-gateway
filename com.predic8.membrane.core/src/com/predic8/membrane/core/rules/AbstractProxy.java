@@ -57,7 +57,7 @@ import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
-import com.predic8.membrane.core.interceptor.rewrite.RegExURLRewriteInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor;
@@ -212,8 +212,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 			i = new LoadBalancingInterceptor();
 		} else if ("clusterNotification".equals(name)) {
 			i = new ClusterNotificationInterceptor();
-		} else if ("regExUrlRewriter".equals(name)) {
-			i = new RegExURLRewriteInterceptor();
+		} else if ("rewriter".equals(name)) {
+			i = new RewriteInterceptor();
 		} else if ("validator".equals(name)) {
 			i = new ValidatorInterceptor();
 		} else if ("rest2Soap".equals(name)) {

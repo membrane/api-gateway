@@ -87,10 +87,10 @@ public class CustomRulesConfigurationTest {
 
 		assertAttribute(
 				w.toString(),
-				"/proxies/serviceProxy/request/regExUrlRewriter/mapping/@regex",
+				"/proxies/serviceProxy/request/rewriter/map/@from",
 				"/home");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/regExUrlRewriter/mapping/@uri",
+				"/proxies/serviceProxy/request/rewriter/map/@from",
 				"/index");
 		
 		assertElement(w.toString(),
