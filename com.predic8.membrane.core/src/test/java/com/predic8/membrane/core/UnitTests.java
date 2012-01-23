@@ -81,7 +81,7 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	FormValidationInterceptorTest.class,
 	ServiceInvocationTest.class,
 	HttpKeepAliveTest.class,
-	ReverseProxyingInterceptorTest.class,
+	ReverseProxyingInterceptorTest.class
 })
 public class UnitTests {
 
