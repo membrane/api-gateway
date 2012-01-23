@@ -1,40 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry exported="true" kind="lib" path="lib/soa-model-2.0.9.jar" sourcepath="/soa-model"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.apache.log4j_1.2.13.v200903072027.jar"/>
-	<classpathentry kind="lib" path="lib/jackson-core-asl-1.9.3.jar"/>
-	<classpathentry kind="lib" path="lib/jackson-mapper-asl-1.9.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-httpclient-3.1.jar" sourcepath="C:/Users/tobias/.VirtualBox/.m2/repository/commons-httpclient/commons-httpclient/3.1/commons-httpclient-3.1-sources.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/groovy-all-1.7.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/xmlbeautifier-1.2.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.springframework.expression-3.0.2.RELEASE.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.springframework.asm-3.0.2.RELEASE.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.springframework.context-3.0.2.RELEASE.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.springframework.beans-3.0.2.RELEASE.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/org.springframework.core-3.0.2.RELEASE.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/com.springsource.javax.annotation-1.0.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="configuration/"/>
-	<classpathentry kind="lib" path="lib/commons-dbcp-1.3.jar"/>
-	<classpathentry kind="lib" path="lib/commons-pool-1.5.5.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-lang-2.6.jar" sourcepath="C:/Users/tobias/.m2/repository/commons-lang/commons-lang/2.6/commons-lang-2.6-sources.jar"/>
-	<classpathentry kind="lib" path="lib/jatl-0.1.0.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:file:/C:/java/jatl/jatl-0.1.0-javadoc.jar!/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
-	<classpathentry kind="lib" path="lib/json-schema-validator-0.5-SNAPSHOT-membrane-library.jar" sourcepath="/json-schema-validator"/>
+	<classpathentry kind="src" output="target/classes" path="src/main/java"/>
+	<classpathentry excluding="**" kind="src" output="target/classes" path="src/main/resources"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="con" path="org.eclipse.m2e.MAVEN2_CLASSPATH_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="examples/router/validation/soap-custom/src"/>
-	<classpathentry kind="src" path="examples/router/custom-interceptor/src"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-logging.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/activation-1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-cli-1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-codec-1.3.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-discovery.jar"/>
-	<classpathentry kind="lib" path="classes"/>
-	<classpathentry kind="lib" path="examples/router/validation/soap-custom/build/classes"/>
-	<classpathentry kind="output" path="bin"/>
+	<classpathentry kind="output" path="target/classes"/>
 </classpath>

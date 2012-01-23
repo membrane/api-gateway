@@ -8,7 +8,7 @@
 
 	<path id="classpath">
 		<fileset dir="lib">
-			<include name="**/*.jar"/>
+			<include name="../../lib/*.jar"/>
 		</fileset>
 	</path>
 
