@@ -139,6 +139,19 @@
 			<version>[3.3,4.0)</version>
 			<scope>provided</scope>
 		</dependency>
+		
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.5</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<repositories>
@@ -182,6 +195,23 @@
 						<descriptor>src/assemble/rt.xml</descriptor>
 						<descriptor>src/assemble/distribution.xml</descriptor>
 					</descriptors>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.11</version>
+				<configuration>
+					<test>**/UnitTests.java</test>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.11</version>
+				<goals><goal>verify</goal></goals>
+				<configuration>
+					<test>**/IntegrationTests.java</test>
 				</configuration>
 			</plugin>
 

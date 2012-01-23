@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!-- Published by JAX-WS RI at http://jax-ws.dev.java.net. RI's version is JAX-WS RI 2.1.4-b01-. --><xs:schema xmlns:tns="http://namesservice.thomas_bayer.com/" xmlns:xs="http://www.w3.org/2001/XMLSchema" version="1.0" targetNamespace="http://namesservice.thomas_bayer.com/">
+
+<xs:element name="getCountries" type="tns:getCountries"></xs:element>
+
+<xs:element name="getCountriesResponse" type="tns:getCountriesResponse"></xs:element>
+
+<xs:element name="getNameInfo" type="tns:getNameInfo"></xs:element>
+
+<xs:element name="getNameInfoResponse" type="tns:getNameInfoResponse"></xs:element>
+
+<xs:element name="getNamesInCountry" type="tns:getNamesInCountry"></xs:element>
+
+<xs:element name="getNamesInCountryResponse" type="tns:getNamesInCountryResponse"></xs:element>
+
+<xs:complexType name="getNameInfo">
+<xs:sequence>
+<xs:element name="name" type="xs:string" minOccurs="0"></xs:element>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getNameInfoResponse">
+<xs:sequence>
+<xs:element name="nameinfo" type="tns:nameInfo" minOccurs="0"></xs:element>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="nameInfo">
+<xs:sequence>
+<xs:element name="name" type="xs:string" minOccurs="0"></xs:element>
+<xs:element name="gender" type="xs:string" minOccurs="0"></xs:element>
+<xs:element name="male" type="xs:boolean"></xs:element>
+<xs:element name="female" type="xs:boolean"></xs:element>
+<xs:element name="countries" minOccurs="0">
+<xs:complexType>
+<xs:sequence>
+<xs:element name="country" type="xs:string" minOccurs="0" maxOccurs="unbounded"></xs:element>
+</xs:sequence>
+</xs:complexType>
+</xs:element>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getNamesInCountry">
+<xs:sequence>
+<xs:element name="country" type="xs:string" minOccurs="0"></xs:element>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getNamesInCountryResponse">
+<xs:sequence>
+<xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="unbounded"></xs:element>
+</xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getCountries">
+<xs:sequence></xs:sequence>
+</xs:complexType>
+
+<xs:complexType name="getCountriesResponse">
+<xs:sequence>
+<xs:element name="country" type="xs:string" minOccurs="0" maxOccurs="unbounded"></xs:element>
+</xs:sequence>
+</xs:complexType>
+</xs:schema>

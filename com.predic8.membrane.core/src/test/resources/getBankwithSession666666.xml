@@ -1,0 +1,9 @@
+<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/"
+			  xmlns:ses="http://predic8.com/session/">
+  <s11:Body>
+    <ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/">
+      <ses:session>666666</ses:session>
+      <ns1:blz>66762332</ns1:blz>
+    </ns1:getBank>
+  </s11:Body>
+</s11:Envelope>

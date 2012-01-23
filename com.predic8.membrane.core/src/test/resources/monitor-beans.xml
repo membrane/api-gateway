@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright 2009 predic8 GmbH, www.predic8.com Licensed under the Apache 
+	License, Version 2.0 (the "License"); you may not use this file except in 
+	compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
+	Unless required by applicable law or agreed to in writing, software distributed 
+	under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES 
+	OR CONDITIONS OF ANY KIND, either express or implied. See the License for 
+	the specific language governing permissions and limitations under the License. -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<context:annotation-config />
+
+	<bean id="router" class="com.predic8.membrane.core.Router">
+		<property name="ruleManager">
+			<bean class="com.predic8.membrane.core.RuleManager" />
+		</property>
+		<property name="transport" ref="transport" />
+		<property name="exchangeStore" ref="exchangeStore" />
+		<property name="configurationManager" ref="configurationManager" />
+	</bean>
+
+	<bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
+		
+    	<property name="coreThreadPoolSize" value="20" />
+		
+		<property name="interceptors">
+			<list>
+				<bean
+					class="com.predic8.membrane.core.interceptor.RuleMatchingInterceptor" />
+
+				<bean class="com.predic8.membrane.core.interceptor.DispatchingInterceptor" />
+
+				<bean
+					class="com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor">
+					<property name="exchangeStore" ref="exchangeStore" />
+				</bean>
+
+				<bean class="com.predic8.membrane.core.interceptor.WSDLInterceptor">
+				</bean>
+
+			</list>
+		</property>
+	</bean>
+
+	<bean id="exchangeStore"
+		class="com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore" />
+
+
+	<bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager">
+		<property name="configurationStore">
+			<bean class="com.predic8.membrane.core.io.ConfigurationFileStore" />
+		</property>
+
+		<property name="proxies">
+			<bean class="com.predic8.membrane.core.Proxies">
+				<property name="adjustHostHeader" value="true" />
+				<property name="indentMessage" value="true" />
+				<property name="adjustContentLength" value="true" />
+				<property name="trackExchange" value="false" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="roundRobinBalancer"
+		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
+		<property name="displayName" value="roundRobinBalancer" />
+		<property name="dispatchingStrategy">
+			<bean
+				class="com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy" />
+		</property>
+	</bean>
+
+	<bean id="byThreadBalancer"
+		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
+		<property name="displayName" value="byThreadBalancer" />
+		<property name="dispatchingStrategy">
+			<bean
+				class="com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy">
+				<property name="maxNumberOfThreadsPerEndpoint" value="10" />
+				<property name="retryTimeOnBusy" value="1000" />
+			</bean>
+		</property>
+	</bean>
+
+	<bean id="urlRewriter"
+		class="com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor">
+		<property name="displayName" value="Simple URL Rewriter" />
+		<property name="mapping">
+			<map>
+				<entry>
+					<key>
+						<value>/blz-service</value>
+					</key>
+					<value>/axis2/services/BLZService</value>
+				</entry>
+				<entry>
+					<key>
+						<value>/blz-service?wsdl</value>
+					</key>
+					<value>/axis2/services/BLZService?wsdl</value>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
+	<bean id="accessControlInterceptor"
+		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
+		<property name="displayName" value="Access Control List Interceptor" />
+		<property name="aclFilename" value="C:\temp\acl.xml" />
+	</bean>
+
+	<bean id="administratorInterceptor"
+		class="com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor">
+		<property name="displayName" value="Admistrator Interceptor" />
+	</bean>
+	
+</beans>

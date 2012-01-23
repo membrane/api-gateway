@@ -1,0 +1,6 @@
+<?xml version="1.0" standalone="no" ?>
+<!DOCTYPE copyright [
+  <!ELEMENT copyright (#PCDATA)>
+  <!ENTITY c SYSTEM "http://www.predic8.de/">
+]>
+<copyright>&c;</copyright>

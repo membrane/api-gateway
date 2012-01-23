@@ -1,0 +1,13 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/">
+  <soapenv:Body>
+    <ns1:getBankResponse xmlns:ses="http://predic8.com/session/" xmlns:ns1="http://thomas-bayer.com/blz/">    	
+      <ns1:details>
+      	<ses:session>444444</ses:session>
+        <ns1:bezeichnung>Raiffeisenbank Kraichgau</ns1:bezeichnung>
+        <ns1:bic>GENODE61KIR</ns1:bic>
+        <ns1:ort>Kirchardt</ns1:ort>
+        <ns1:plz>74912</ns1:plz>
+      </ns1:details>
+    </ns1:getBankResponse>
+  </soapenv:Body>
+</soapenv:Envelope>

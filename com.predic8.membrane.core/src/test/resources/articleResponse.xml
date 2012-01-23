@@ -1,0 +1,15 @@
+<ns1:getAllResponse xmlns:ns1="http://predic8.com/wsdl/material/ArticleService/1/">
+  <article xmlns:ns1="http://predic8.com/material/1/">
+    <name>?XXX?</name>
+    <description>?XXX?</description>
+    <price xmlns:ns1="http://predic8.com/common/1/">
+      <amount>?999.99?</amount>
+      
+<!-- possible values: EUR,USD-->
+      <currency xmlns:ns1="http://predic8.com/common/1/">EUR</currency>
+    </price>
+    
+<!-- Pattern: [A-Z]{2}-\d{5}-->
+    <id xmlns:ns1="http://predic8.com/material/1/">?XXX?</id>
+  </article>
+</ns1:getAllResponse>

@@ -1,0 +1,775 @@
+HTTP/1.1 200 OK
+Server: Apache-Coyote/1.1
+Content-Type: text/html;charset=UTF-8
+Content-Language: de-DE
+Transfer-Encoding: chunked
+Date: Wed, 15 Jul 2009 15:19:45 GMT
+
+2000
+<html>
+    <head>
+        <title>Directory of public SOAP Web Services</title>
+        <link rel="stylesheet" href="/css/main.css" />
+        <link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" />
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    
+    <meta name="layout" content="main" />
+    <meta name="description" content="List of public available SOAP Web Services." />
+        <script type="text/javascript" src="/js/application.js"></script>
+				
+    </head>
+    <body>
+        <div id="spinner" class="spinner" style="display:none;">
+            <img src="/images/spinner.gif" alt="Spinner" />
+        </div>	
+        <div class="body">
+      <div class="nav">
+    <span class="menuButton"><a href="/">Home</a></span> 
+    <span class="menuButton"><a href="/client/start">SOAP Client</a></span>
+    <span class="menuButton"><a href="/service/register">Register Service</a></span>
+    <span class="menuButton"><a href="/schema/namespaces">Schemas</a></span>
+    <span class="menuButton"><a href="/endpoint/hosts">Hosts</a></span>
+    <span class="menuButton"><a href="/consumer/list">Consumer</a></span>
+    
+      <span class="menuButton"><a href="/service/about">About</a></span>
+      <span class="menuButton"><a href="/static/repository-faq.gsp">FAQ</a></span>
+    
+    <span class="menuButton"><a href="/account/login">Login</a></span>
+        
+  User: 
+</div>
+      <h1>Directory of public SOAP Web Services</h1>
+<br />
+<p>
+service-repository.com is a non-UDDI repository of public Web Services. You can browse Web Services and you can call their operations with the build-in <a href="/client/start">SOAP client</a>. The availability of the services is checked by continous service monitoring. Feel free to <a href="/service/register">register</a> yourself a service.
+</p>
+
+      <br />
+      
+      
+      <div class="list">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th class="sortable" ><a href="/?sort=name&amp;order=asc">Name</a></th>
+              <th>Description</th>
+              <th class="sortable sorted desc" ><a href="/?sort=rating&amp;order=asc">Rating</a></th>
+              <th>Availability</th>
+              <th>Action<th/>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr class="odd">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65572">NamesServiceService</a>
+                  </td>
+                  <td>
+                    
+                  </td>
+                  <td>
+                    <span>
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+</span>
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.thomas-bayer.com%2Fnames-service%2Fsoap%3Fwsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="even">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65570">USHolidayDates</a>
+                  </td>
+                  <td>
+                    
+                  </td>
+                  <td>
+                    <span>
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+</span>
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.27seconds.com%2FHolidays%2FUS%2FDates%2FUSHolidayDates.asmx%3FWSDL">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="odd">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65536">FootballPoolWebService</a>
+                  </td>
+                  <td>
+                    
+                  </td>
+                  <td>
+                    <span>
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+</span>
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Feuro2008.dataaccess.eu%2Ffootballpoolwebservice.wso%3FWSDL">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="even">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65553">BLZService</a>
+                  </td>
+                  <td>
+                    
+                        BLZService
+                    
+                  </td>
+                  <td>
+                    <span>
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/halfstar.png' width='16px' heigth='16px' />
+</span>
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.thomas-bayer.com%2Faxis2%2Fservices%2FBLZService%3Fwsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="odd">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65571">ZipCodes</a>
+                  </td>
+                  <td>
+                    
+                  </td>
+                  <td>
+                    <span>
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+  <img src='/
+2000
+images/star.png' width='16px' heigth='16px' />
+  <img src='/images/star.png' width='16px' heigth='16px' />
+</span>
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.jasongaylord.com%2Fwebservices%2Fzipcodes.asmx%3FWSDL">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="even">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65569">IP2Geo</a>
+                  </td>
+                  <td>
+                    
+                  </td>
+                  <td>
+                    <span />
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fws.cdyne.com%2Fip2geo%2Fip2geo.asmx%3Fwsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="odd">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65568">ChannelConnectService</a>
+                  </td>
+                  <td>
+                    
+                  </td>
+                  <td>
+                    <span />
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fcert.synxis.com%2Finterface%2FChannelConnect.asmx%3FWSDL">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="even">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65567">Samples</a>
+                  </td>
+                  <td>
+                    
+                  </td>
+                  <td>
+                    <span />
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.digitforge.com%2Fsamples.asmx%3Fwsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="odd">
+                  <td width="30">
+                    <img src="/icons/lightning.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65566">COPYMEService</a>
+                  </td>
+                  <td>
+                    
+                  </td>
+                  <td>
+                    <span />
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 0 ; background-color : rgb(0,255,0) ; height:15">
+                          0%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.unitesoftware.co.uk%2Fcopyme.wsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="even">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=65565">MareonService</a>
+                  </td>
+                  <td>
+                    
+                        
+    	Dies ist die Web Service Beschreibung der Mareon Handwerkersoftware Schnittstelle Version 2.0.1...
+                    
+                  </td>
+                  <td>
+                    <span />
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fsoap.mareon.com%2Fhwa%2Fwsdl%2Fmareonhwa.wsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+            </tbody>
+        </table>
+      </div>
+      <div class="paginateButtons">
+          <span class="currentStep">1</span><a href="/?offset=10&amp;max=10&amp;sort=rating&amp;order=desc" class="step">2</a><a href="/?offset=20&amp;max=10&amp;sort=rating&amp;order=desc" class="step">3</a><a href="/?offset=30&amp;max=10&amp;sort=rating&amp;order=desc" class="step">4</a><a href="/?offset=40&amp;max=10&amp;sort=rating&amp;order=desc" class="step">5</a><a href="/?offset=10&amp;max=10&amp;sort=rating&amp;order=desc" class="nextLink">Next</a>
+      </div>
+      <br />
+      <h2>Featured Services</h2>
+      <div class="list">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th class="sortable" ><a href="/?sort=name&amp;order=asc">Name</a></th>
+              <th>Description</th>
+              <th class="sortable sorted desc" ><a href="/?sort=rating&amp;order=asc">Rating</a></th>
+              <th>Availability</th>
+              <th>Action<th/>
+              </tr>
+            </thead>
+            <tbody>
+              
+                <tr class="odd">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=720909">ArticleService</a>
+                  </td>
+                  <td>
+                    
+                                The ArticleService manages all articles available in the shop.
+    
+                    
+                  </td>
+                  <td>
+                    <span />
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.predic8.com%3A8080%2Fmaterial%2FArticleService%3Fwsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="even">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+  
+2000
+                  <a href="/service/wsdl?id=720910">IDService</a>
+                  </td>
+                  <td>
+                    
+                        The IDService is an id generator and manager for other applications.
+                    
+                  </td>
+                  <td>
+                    <span />
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.predic8.com%3A8080%2Fbase%2FIDService%3Fwsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="odd">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=720911">ShopService</a>
+                  </td>
+                  <td>
+                    
+                                The ShopService is one of a few sample services for the Membrane SOA tools. Feel free to use ...
+                    
+                  </td>
+                  <td>
+                    <span />
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.predic8.com%3A8080%2Fshop%2FShopService%3Fwsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+                <tr class="even">
+                  <td width="30">
+                    <img src="/icons/tick.png" />
+                    
+                  </td>
+                  <td>
+                    <a href="/service/wsdl?id=720912">CRMService</a>
+                  </td>
+                  <td>
+                    
+                                The CustomerService manages the customer relationships.
+    
+                    
+                  </td>
+                  <td>
+                    <span />
+                  </td>
+                  <td>
+                    <div style="width: 60; background-color : rgb(255,0,0) ; height:15">
+                        <div style="width: 60 ; background-color : rgb(0,255,0) ; height:15">
+                          100%
+                          <br />
+                        </div>
+                    </div>
+                  </td>
+                  <td>
+                    <a href="/client/operations?wsdlURL=http%3A%2F%2Fwww.predic8.com%3A8080%2Fcrm%2FCustomerService%3Fwsdl">Call it!</a>
+                  </td>
+                </tr>
+              
+            </tbody>
+          </table>
+        </div>
+        <br />
+        <br />
+        <br />
+        <div>
+          
+            <h2>Events:</h2>
+            <table>
+              <thead>
+                <th/>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Action</th>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td width="30">
+                      <img src="/icons/accept.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-15 14:35:17 GMT
+                    </td>
+                    <td>
+  										Service: <a href='/service/wsdl?id=65551'>SnowReport</a> available again
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <td width="30">
+                      <img src="/icons/accept.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-15 14:32:04 GMT
+                    </td>
+                    <td>
+  										Service: <a href='/service/wsdl?id=65548'>LandmarkService</a> available again
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <td width="30">
+                      <img src="/icons/delete.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-15 13:38:52 GMT
+                    </td>
+                    <td>
+  										Service: <a href='/service/wsdl?id=65551'>SnowReport</a> went down
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <td width="30">
+                      <img src="/icons/delete.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-15 13:38:52 GMT
+                    </td>
+                    <td>
+  										Service: <a href='/service/wsdl?id=65548'>LandmarkService</a> went down
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <td width="30">
+                      <img src="/icons/accept.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-15 08:33:27 GMT
+                    </td>
+                    <td>
+  										Service: <a href='/service/wsdl?id=65548'>LandmarkService</a> available again
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <td width="30">
+                      <img src="/icons/add.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-13 13:56:17 GMT
+                    </td>
+                    <td>
+  										New Service: <a href='/service/wsdl?id=720912'>CRMService</a> registered!
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <td width="30">
+                      <img src="/icons/add.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-13 13:56:06 GMT
+                    </td>
+                    <td>
+  										New Service: <a href='/service/wsdl?id=720911'>ShopService</a> registered!
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <td width="30">
+                      <img src="/icons/add.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-13 13:55:48 GMT
+                    </td>
+                    <td>
+  										New Service: <a href='/service/wsdl?id=720910'>IDService</a> registered!
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <td width="30">
+                      <img src="/icons/add.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-13 13:55:31 GMT
+                    </td>
+                    <td>
+  										New Service: <a href='/service/wsdl?id=720909'>ArticleService</a> registered!
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+                  <tr>
+                    <t
+fc1
+d width="30">
+                      <img src="/icons/delete.png" />
+                    </td>
+                    <td width="200">
+                      2009-07-10 12:42:31 GMT
+                    </td>
+                    <td>
+  										Service: <a href='/service/wsdl?id=65548'>LandmarkService</a> went down
+                    </td>
+                    <td width="200">
+                      
+                    </td>
+                  </tr>
+                
+              </tbody>
+            </table>
+            <a href="/evententry/list">more</a>
+          
+        </div>
+        <br />
+        <br />
+     <!--   <h2>Tags</h2>
+        <div class="cloud">
+          
+            <a href="/tag/showtag?id=BLZ" class="t0">BLZ</a>
+               &nbsp;
+             
+            <a href="/tag/showtag?id=Banking" class="t0">Banking</a>
+               &nbsp;
+             
+            <a href="/tag/showtag?id=Code" class="t0">Code</a>
+               &nbsp;
+             
+            <a href="/tag/showtag?id=German" class="t0">German</a>
+               &nbsp;
+             
+            <a href="/tag/showtag?id=Lookup" class="t0">Lookup</a>
+               &nbsp;
+             
+        </div>         
+        <br />
+        <br />
+        <br />-->
+        <div>
+  <h2>News:</h2>
+    <br />
+   <h3>2009/07/15 - Site Launch</h3>
+   <p>
+     <br />
+     After a long period of testing, service-repository.com is leaving BETA state. The site is in production, now.
+   </p>
+   <br />
+   <h3>2009/06/29 - Registry Software Available</h3>
+   <p>
+     <br />
+     The <a href="http://www.predic8.com/open-source/soa-registry-repository/">registry software</a> used by service-repository.com is now available for download. The registry is a Java EE Web application that can be deployed into an Java EE application server or in a web container like Apache Tomcat.
+   </p>
+   <br />
+   <h3>2009/04/29 - Service Events</h3>
+   <p>
+     <br />
+     The registry is now displaying service events when:
+     <ul>
+     <li>a service is going down/up</li>
+     <li>a new service is registered</li>
+     <li>the WSDL of a service is changed</li>
+     </ul>
+     The events of each individual service are stored and can be displayed as service history.
+   </p>
+   <br />
+   <h3>2008/09/30 - Service Availability</h3>
+   <p>
+     <br />
+     The service availability is now measured by service-repository.com. Every day a request is send to the registered endpoints to test their availability. The availability in percent is displayed at each service description. You can even browse the messages exchanged to see what went wrong in case of failure. After creating a user by signing in you can get notifications about the services you are monitoring.
+   </p>
+   <br />
+   <h3>2008/08/14 - Service Invokation Statistics</h3>
+   <p>
+     <br />
+     Each Service invokation made by the generic client is now measured. You can get statistics about the duration of invokations by service and operation. 
+   </p>
+   <br />
+   <h3>2008/07/23 - Form Input for Soap Client</h3>
+   <p>
+     <br />
+     The <a href="/client/start">SOAP Client</a> offers now an HTML form to fill in the values for a SOAP request. The Client can be used also from the WSDL browser of the registry.
+     <br />
+     <br />
+     <img src="/images/soap-client-ui.png" title="Form Input of SOAP Client" alt="Form Input of SOAP Client" />
+   </p>
+   
+ </div>
+        <br />
+        <br />
+        <br />
+          In case of questions or problems please contact <a href="mailto:info@predic8.de">info@predic8.de</a> <!--See what service repository can do for <a href="/for-consumers.htm">Web Services Consumer</a> and <a href="/for-providers.htm">Web Services Provider</a>. -->
+          <br />
+        <br />
+        <div class="foot">
+  <div class="logo"><img src="/images/p8-110.png" alt="predic8" /></div>	
+</div>
+        <a href="http://www.predic8.de">SOA & Web Services Training</a>
+      </div>		
+    </body>	
+</html>
+0
+
+

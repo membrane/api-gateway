@@ -1,0 +1,8 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:urn="urn:ws-xwebservices-com:XWebEmailValidation:EmailValidation:v2:Messages">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <urn:ValidateEmailRequest>
+         <urn:Mail>gaprindashvili@predic8.de</urn:Mail>
+	  </urn:ValidateEmailRequest>
+   </soapenv:Body>
+</soapenv:Envelope>

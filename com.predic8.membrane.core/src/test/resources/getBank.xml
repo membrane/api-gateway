@@ -1,0 +1,7 @@
+<s11:Envelope xmlns:s11="http://schemas.xmlsoap.org/soap/envelope/">
+  <s11:Body>
+    <ns1:getBank xmlns:ns1="http://thomas-bayer.com/blz/">
+      <ns1:blz>66762332</ns1:blz>
+    </ns1:getBank>
+  </s11:Body>
+</s11:Envelope>

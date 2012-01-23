@@ -1,0 +1,36 @@
+<definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:ws-xwebservices-com:XWebEmailValidation:EmailValidation:v2" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:import0="urn:ws-xwebservices-com:XWebEmailValidation:EmailValidation:v2:Messages" targetNamespace="urn:ws-xwebservices-com:XWebEmailValidation:EmailValidation:v2" name="XWebEmailValidation" xmlns="http://schemas.xmlsoap.org/wsdl/">
+  <types>
+    <xsd:schema>
+      <xsd:import schemaLocation="XWebEmailValidation.xsd" namespace="urn:ws-xwebservices-com:XWebEmailValidation:EmailValidation:v2:Messages"/>
+    </xsd:schema>
+  </types>
+  <message name="validateEmailIn">
+    <part name="messagePart" element="import0:ValidateEmailRequest"/>
+  </message>
+  <message name="validateEmailOut">
+    <part name="messagePart" element="import0:ValidateEmailResponse"/>
+  </message>
+  <portType name="XWebEmailValidationInterface">
+    <operation name="ValidateEmail">
+      <input message="tns:validateEmailIn"/>
+      <output message="tns:validateEmailOut"/>
+    </operation>
+  </portType>
+  <binding name="XWebEmailValidation" type="tns:XWebEmailValidationInterface">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document"/>
+    <operation name="ValidateEmail">
+      <soap:operation soapAction="urn:ws-xwebservices-com:XWebEmailValidation:EmailValidation:v2:validateEmailIn" style="document"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+    </operation>
+  </binding>
+  <service name="EmailValidation">
+    <port name="EmailValidation" binding="tns:XWebEmailValidation">
+      <soap:address location="http://ws.xwebservices.com/XWebEmailValidation/V2/EmailValidation.asmx"/>
+    </port>
+  </service>
+</definitions>
