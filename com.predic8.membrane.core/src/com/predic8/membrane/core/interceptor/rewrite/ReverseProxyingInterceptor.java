@@ -25,8 +25,8 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		if (!location.contains("://"))
 			return Outcome.CONTINUE; // local redirect (illegal by spec)
 		// do not rewrite, if the server did a redirect to some other hostname/port
-		// (in which case we have to hope the hostname/port is valid from the client's POV)
-		if (!isSameHost(exc, location))
+		// (in which case we have to hope the hostname/port is valid on the client)
+		if (!isSameHost(exc.getRequest().getUri(), location))
 			return Outcome.CONTINUE;
 		// if we cannot determine the hostname we have been reached with (e.g. HTTP/1.0)
 		if (exc.getOriginalHostHeaderHost() == null) {
@@ -42,18 +42,16 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private boolean isSameHost(Exchange exc, String location)
+	private boolean isSameHost(String location2, String location)
 			throws MalformedURLException {
 		try {
-			URL dest = new URL(exc.getRequest().getUri());
-			URL loc = new URL(location);
-			if (dest.getHost() != null && !dest.getHost().equals(loc.getHost()))
+			URL loc2 = new URL(location2);
+			URL loc1 = new URL(location);
+			if (loc2.getHost() != null && !loc2.getHost().equals(loc1.getHost()))
 				return false;
-			int destPort = dest.getPort() == -1 ? dest.getDefaultPort() : dest.getPort();
-			int locPort = loc.getPort() == -1 ? loc.getDefaultPort() : loc.getPort();
-			// TODO: debug this
-			System.out.println(destPort + "  -  " + locPort);
-			if (destPort != locPort)
+			int loc2Port = loc2.getPort() == -1 ? loc2.getDefaultPort() : loc2.getPort();
+			int loc1Port = loc1.getPort() == -1 ? loc1.getDefaultPort() : loc1.getPort();
+			if (loc2Port != loc1Port)
 				return false;
 			return true;
 		} catch (MalformedURLException e) {
@@ -69,6 +67,5 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	private String getProtocol(Exchange exc) {
 		return "http";
 	}
-
 
 }
