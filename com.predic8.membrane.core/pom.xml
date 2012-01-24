@@ -199,6 +199,7 @@
 						<descriptor>src/assemble/starter.xml</descriptor>
 						<descriptor>src/assemble/rt.xml</descriptor>
 						<descriptor>src/assemble/distribution.xml</descriptor>
+						<descriptor>src/assemble/war.xml</descriptor>
 					</descriptors>
 				</configuration>
 				<executions>
