@@ -88,7 +88,7 @@ public class Http11Test {
 		assertEquals(200, status);
 		assertNotNull(post.getResponseBodyAsString());
 		assertFalse(isNullOrEmpty(post.getResponseBodyAsString()));
-		System.out.println(post.getResponseBodyAsString());
+		//System.out.println(post.getResponseBodyAsString());
 	}
 	
 	@Test

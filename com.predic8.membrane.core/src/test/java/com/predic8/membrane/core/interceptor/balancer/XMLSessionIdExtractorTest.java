@@ -64,12 +64,11 @@ public class XMLSessionIdExtractorTest extends TestCase {
 		extractor.setLocalName("session");
 		extractor.setNamespace("http://predic8.com/session/");
 		
-		
-		long t = System.currentTimeMillis();
+		//long t = System.currentTimeMillis();
 		for (int i = 0; i < 1000; i++) {
 			extractor.getSessionId(res);
 		}		
-		System.out.println("Time (ms): "+(System.currentTimeMillis()-t));
+		//System.out.println("Time (ms): "+(System.currentTimeMillis()-t));
 	}
 
 	private byte[] getBodyContent() throws IOException {

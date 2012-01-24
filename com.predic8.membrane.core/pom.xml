@@ -178,6 +178,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>2.8</version>
+				<configuration>
+					<quiet>true</quiet>
+				</configuration>
 				<executions>
 					<execution>
 						<phase>package</phase>
@@ -198,6 +201,14 @@
 						<descriptor>src/assemble/distribution.xml</descriptor>
 					</descriptors>
 				</configuration>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>assembly</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 			<plugin>
@@ -209,9 +220,13 @@
 			</plugin>
 
 			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
+				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>2.11</version>
-				<goals><goal>verify</goal></goals>
+				<executions>
+					<execution>
+						<goals><goal>integration-test</goal></goals>
+					</execution>
+				</executions>
 				<configuration>
 					<test>**/IntegrationTests.java</test>
 				</configuration>

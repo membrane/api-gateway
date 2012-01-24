@@ -14,16 +14,21 @@
 package com.predic8.membrane.core;
 
 import org.junit.runner.RunWith;
-import org.junit.runners.*;
+import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 import com.predic8.membrane.core.http.MethodTest;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.AdjustContentLengthIntegrationTest;
+import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorIntegrationTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
-import com.predic8.membrane.integration.*;
+import com.predic8.membrane.integration.AccessControlInterceptorIntegrationTest;
+import com.predic8.membrane.integration.Http10Test;
+import com.predic8.membrane.integration.Http11Test;
+import com.predic8.membrane.integration.ProxySSLConnectionMethodTest;
+import com.predic8.membrane.integration.ViaProxyTest;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 @RunWith(Suite.class)
@@ -38,5 +43,17 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 		ViaProxyTest.class, ProxySSLConnectionMethodTest.class,
 		AdjustContentLengthIntegrationTest.class })
 public class IntegrationTests {
-
+	/*
+	@BeforeClass
+	public static void forbidScreenOutput() {
+		PrintStream ps = new PrintStream(new OutputStream() {
+			@Override
+			public void write(int b) throws IOException {
+				throw new RuntimeException("this test uses stdout");
+			}
+		});
+		System.setOut(ps);
+		System.setErr(ps);
+	}
+	*/
 }

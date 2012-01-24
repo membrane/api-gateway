@@ -126,7 +126,7 @@ public class LoadBalancingInterceptorTest {
 
 		PostMethod vari = getPostMethod();
 		int status = client.executeMethod(vari);
-		System.out.println(new String(vari.getResponseBody()));
+		//System.out.println(new String(vari.getResponseBody()));
 
 		assertEquals(200, status);
 		assertEquals(1, mockInterceptor1.counter);

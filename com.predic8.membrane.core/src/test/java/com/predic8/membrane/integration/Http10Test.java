@@ -91,7 +91,7 @@ public class Http10Test {
 		post.setRequestHeader(Header.SOAP_ACTION, "\"\"");
 		
 		for (int i = 0; i < 100; i ++) {
-			System.out.println("Iteration: " + i);
+			//System.out.println("Iteration: " + i);
 			int status = client.executeMethod(post);
 			assertEquals(200, status);
 			String response = post.getResponseBodyAsString();

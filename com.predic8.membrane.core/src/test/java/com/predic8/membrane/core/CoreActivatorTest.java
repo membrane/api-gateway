@@ -29,10 +29,6 @@ public class CoreActivatorTest {
 		
 		assertFalse(urls == null);
 		assertFalse(urls.isEmpty());
-		
-		for (URL url : urls) {
-			System.out.println(url);
-		}
 	}
 	
 }

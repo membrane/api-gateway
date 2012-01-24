@@ -60,13 +60,13 @@ public class HttpEndpointListener extends Thread {
 					log.debug("socket closed.");
 					break;
 				} else
-					e.printStackTrace();
+					log.error(e);
 			} catch (NullPointerException e) {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
 			} catch (RejectedExecutionException e) {
 				log.error("Max Thread pool size is exceeded. Please increase the property maxThreadPoolSize in monitor-beans.xml!");				
 			} catch (Exception e) {
-				e.printStackTrace();
+				log.error(e);
 			}
 		}
 	}

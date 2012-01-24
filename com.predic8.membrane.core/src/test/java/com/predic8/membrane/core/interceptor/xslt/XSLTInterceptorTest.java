@@ -13,11 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
-import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
-
 import java.io.InputStream;
 
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import junit.framework.TestCase;
 
@@ -44,7 +44,7 @@ public class XSLTInterceptorTest extends TestCase {
 		i.setXslt("classpath:/customer2person.xsl");
 		i.handleResponse(exc);
 
-		printBodyContent();
+		//printBodyContent();
 		assertXPath("/person/name/first", "Rick");
 		assertXPath("/person/name/last", "Cortés Ribotta");
 		assertXPath("/person/address/street",
@@ -52,6 +52,7 @@ public class XSLTInterceptorTest extends TestCase {
 		assertXPath("/person/address/city", "Omaha");
 	}
 
+	@SuppressWarnings("unused")
 	private void printBodyContent() throws Exception {
 		InputStream i = exc.getResponse().getBodyAsStream();
 		int read = 0;

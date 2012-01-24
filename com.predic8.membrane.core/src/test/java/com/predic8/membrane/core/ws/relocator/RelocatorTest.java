@@ -21,6 +21,7 @@ import junit.framework.TestCase;
 
 import org.junit.Test;
 
+import com.google.common.io.NullOutputStream;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.ByteUtil;
 
@@ -30,7 +31,7 @@ public class RelocatorTest extends TestCase {
 
 	@Override
 	protected void setUp() throws Exception {
-		relocator = new Relocator(new OutputStreamWriter(System.out, Constants.UTF_8), "http", "localhost", 3000);
+		relocator = new Relocator(new OutputStreamWriter(new NullOutputStream(), Constants.UTF_8), "http", "localhost", 3000);
 		super.setUp();
 	}
 

@@ -67,7 +67,6 @@ public class ClusterBalancerTest extends TestCase {
 		Exchange exc = getExchangeWithSession();
 
 		lb.handleRequest(exc);
-		System.out.println("1");
 
 		Session s = BalancerUtil.getSessions(r, "Default", "Default").get("555555");
 		assertEquals("localhost", s.getNode().getHost());

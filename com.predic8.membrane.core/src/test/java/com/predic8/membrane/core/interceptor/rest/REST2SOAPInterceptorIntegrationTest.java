@@ -57,7 +57,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 		GetMethod get = new GetMethod("http://localhost:3004/bank/37050198");
 
 		int status = client.executeMethod(get);
-		System.out.println(get.getResponseBodyAsString());
+		//System.out.println(get.getResponseBodyAsString());
 
 		assertEquals(200, status);
 	}

@@ -66,11 +66,11 @@ public class WSDLInterceptorTest {
 		
 		XMLEventReader parser = getParser();
 		
-		System.out.println("parser is: " + parser);
+		//System.out.println("parser is: " + parser);
 		
 		StartElement element = getElement(parser, Relocator.ADDRESS_SOAP11);
 		String locationAttr = getLocationAttributeFor(element);
-		System.out.println("location attribute is: " + locationAttr);
+		//System.out.println("location attribute is: " + locationAttr);
 		assertTrue(locationAttr.startsWith("https://"));
 		assertTrue(getLocationAttributeFor(getElement(getParser(), Relocator.ADDRESS_SOAP12)).startsWith("https://"));
 		assertTrue(getLocationAttributeFor(getElement(getParser(), Relocator.ADDRESS_HTTP)).startsWith("https://"));
