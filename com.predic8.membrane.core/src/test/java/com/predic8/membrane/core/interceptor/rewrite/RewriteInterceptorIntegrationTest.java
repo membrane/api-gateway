@@ -38,7 +38,7 @@ public class RewriteInterceptorIntegrationTest {
 		interceptor = new RewriteInterceptor();
 		interceptor.getMappings().add(new Mapping("/blz-service\\?wsdl", "/axis2/services/BLZService?wsdl", null));
 
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3006), "thomas-bayer.com", 80);
 		rule.getInterceptors().add(interceptor);
 		
 		router = new HttpRouter();
@@ -60,7 +60,7 @@ public class RewriteInterceptorIntegrationTest {
 	}
 	
 	private PostMethod getPostMethod() {
-		PostMethod post = new PostMethod("http://localhost:8000/blz-service?wsdl");
+		PostMethod post = new PostMethod("http://localhost:3006/blz-service?wsdl");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");

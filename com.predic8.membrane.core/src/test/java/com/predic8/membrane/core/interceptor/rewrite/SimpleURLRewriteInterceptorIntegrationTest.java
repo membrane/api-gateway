@@ -41,7 +41,7 @@ public class SimpleURLRewriteInterceptorIntegrationTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3007), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 		
@@ -68,7 +68,7 @@ public class SimpleURLRewriteInterceptorIntegrationTest {
 	}
 	
 	private PostMethod getPostMethod() {
-		PostMethod post = new PostMethod("http://localhost:8000/blz-service?wsdl");
+		PostMethod post = new PostMethod("http://localhost:3007/blz-service?wsdl");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml")));
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");

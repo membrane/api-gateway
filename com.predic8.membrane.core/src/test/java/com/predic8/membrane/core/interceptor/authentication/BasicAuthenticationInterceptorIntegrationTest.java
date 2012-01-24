@@ -36,7 +36,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 
 	@Test
 	public void testDeny() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 		
@@ -58,7 +58,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 	}
 	
 	private GetMethod getGetMethod() {
-		GetMethod get = new GetMethod("http://localhost:8000/axis2/services/BLZService?wsdl");
+		GetMethod get = new GetMethod("http://localhost:3001/axis2/services/BLZService?wsdl");
 		get.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		get.setRequestHeader(Header.SOAP_ACTION, "");		
 		return get;

@@ -58,7 +58,7 @@ public class AccessControlInterceptorIntegrationTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3008), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 	}
@@ -135,7 +135,7 @@ public class AccessControlInterceptorIntegrationTest {
 	}
 	
 	private PostMethod getBLZRequestMethod() {
-		PostMethod post = new PostMethod("http://localhost:8000/axis2/services/BLZService");
+		PostMethod post = new PostMethod("http://localhost:3008/axis2/services/BLZService");
 		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
 		
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);

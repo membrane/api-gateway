@@ -34,7 +34,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 	@Before
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*",
-				".*", 8000), "www.thomas-bayer.com", 80);
+				".*", 3004), "www.thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 
@@ -54,7 +54,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 		HttpClient client = new HttpClient();
 		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
 				HttpVersion.HTTP_1_1);
-		GetMethod get = new GetMethod("http://localhost:8000/bank/37050198");
+		GetMethod get = new GetMethod("http://localhost:3004/bank/37050198");
 
 		int status = client.executeMethod(get);
 		System.out.println(get.getResponseBodyAsString());

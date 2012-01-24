@@ -43,7 +43,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	
 	@Before
 	public void setUp() throws Exception {
-		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 8000), "thomas-bayer.com", 80);
+		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3002), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addRuleIfNew(rule);
 		
@@ -54,7 +54,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 		lbi = new LoadBalancingInterceptor();
 		lbi.setRouter(router);
 		lbi.setName("Default");
-		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 8001), "thomas-bayer.com", 80);
+		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3003), "thomas-bayer.com", 80);
 		router.getRuleManager().addRuleIfNew(rule2);
 		rule2.getInterceptors().add(lbi);
 	}
@@ -68,7 +68,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	
 	@Test
 	public void testUpEndpoint() throws Exception {
-		GetMethod get = new GetMethod("http://localhost:8000/clustermanager/up?"+
+		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
 									   createQueryString("host", "node1.clustera",
 									   			 		 "port", "5000", 
 										  			     "cluster","c1"));
@@ -80,7 +80,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	
 	@Test
 	public void testTakeOutEndpoint() throws Exception {
-		GetMethod get = new GetMethod("http://localhost:8000/clustermanager/takeout?"+
+		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/takeout?"+
 									   createQueryString("host", "node1.clustera",
 											   			 "port", "5000",
 										  			     "cluster","c1"));
@@ -92,7 +92,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 
 	@Test
 	public void testDownEndpoint() throws Exception {
-		GetMethod get = new GetMethod("http://localhost:8000/clustermanager/down?"+
+		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/down?"+
 									   createQueryString("host", "node1.clustera",
 											   			 "port", "5000",
 										  			     "cluster","c1"));
@@ -104,7 +104,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 
 	@Test
 	public void testDefaultCluster() throws Exception {
-		GetMethod get = new GetMethod("http://localhost:8000/clustermanager/up?"+
+		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
 									   createQueryString("host", "node1.clustera",
 									   			 		 "port", "5000"));
 		
@@ -132,7 +132,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 
 	private GetMethod getSecurityTestMethod(long time) throws Exception {	
 		String qParams = "cluster=c3&host=node1.clustera&port=5000&time=" + time + "&nonce=" + new SecureRandom().nextLong();
-		return new GetMethod("http://localhost:8000/clustermanager/up?data=" + 
+		return new GetMethod("http://localhost:3002/clustermanager/up?data=" + 
 				   URLEncoder.encode(getEncryptedQueryString(qParams),"UTF-8"));
 	}
 
