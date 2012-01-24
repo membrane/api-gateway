@@ -103,7 +103,7 @@ public class ReadRulesConfigurationTest {
 	
 	@Test
 	public void testLocalServiceProxyTargetPort() throws Exception {
-		assertEquals(8080, ((ServiceProxy)rules.get(2)).getTargetPort());
+		assertEquals(3011, ((ServiceProxy)rules.get(2)).getTargetPort());
 	}
 	
 	@Test

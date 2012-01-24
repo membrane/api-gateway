@@ -97,9 +97,9 @@ public class WSDLInterceptorTest {
 	@Test
 	public void testPortDefault() throws Exception {
 		assertEquals(interceptor.handleResponse(exc), Outcome.CONTINUE);
-		assertTrue(matchSoap11(".*:8080.*"));
-		assertTrue(matchSoap12(".*:8080.*"));
-		assertTrue(matchHttp(".*:8080.*"));
+		assertTrue(matchSoap11(".*:3011.*"));
+		assertTrue(matchSoap12(".*:3011.*"));
+		assertTrue(matchHttp(".*:3011.*"));
 	}
 	
 	@Test
@@ -131,7 +131,7 @@ public class WSDLInterceptorTest {
 	}
 	
 	private Rule getRule() {		
-		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
+		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
 	}
 
 	private XMLEventReader getParser() throws Exception {

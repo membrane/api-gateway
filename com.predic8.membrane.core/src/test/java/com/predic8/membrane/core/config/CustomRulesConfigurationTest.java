@@ -134,7 +134,7 @@ public class CustomRulesConfigurationTest {
 				"localhost");
 		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/balancer/clusters/cluster/node/@port",
-				"8080");
+				"3011");
 		assertAttribute(
 				w.toString(),
 				"/proxies/serviceProxy/balancer/byThreadStrategy/@maxNumberOfThreadsPerEndpoint",

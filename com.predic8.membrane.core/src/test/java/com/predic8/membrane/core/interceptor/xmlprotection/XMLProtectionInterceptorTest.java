@@ -19,7 +19,7 @@ public class XMLProtectionInterceptorTest {
 	private XMLProtectionInterceptor interceptor;
 
 	private Rule getRule() {		
-		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 8080), "thomas-bayer.com", 80);
+		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
 	}
 
 	@Before

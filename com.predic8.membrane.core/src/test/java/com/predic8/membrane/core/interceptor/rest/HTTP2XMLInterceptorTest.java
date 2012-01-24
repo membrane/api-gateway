@@ -47,10 +47,10 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 	protected void setUp() throws Exception {
 		exc = new Exchange();
 		exc.setRequest(MessageUtil.getGetRequest("http://localhost/axis2/services/BLZService?wsdl"));
-		exc.getRequest().setUri("http://localhost:8080/manager/person?vorname=jim&nachname=panse");
+		exc.getRequest().setUri("http://localhost:3011/manager/person?vorname=jim&nachname=panse");
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().setVersion("1.1");
-		exc.getRequest().getHeader().add("Host", "localhost:8080");
+		exc.getRequest().getHeader().add("Host", "localhost:3011");
 	}
 	
 	@Test
@@ -60,17 +60,17 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 		
 		assertXPath("/request/@method", "POST");
 		assertXPath("/request/@http-version", "1.1");
-		assertXPath("/request/uri/@value", "http://localhost:8080/manager/person?vorname=jim&nachname=panse");
+		assertXPath("/request/uri/@value", "http://localhost:3011/manager/person?vorname=jim&nachname=panse");
 		assertXPath("/request/uri/path/component[1]", "manager");
 		assertXPath("/request/uri/path/component[2]", "person");
 		assertXPath("/request/uri/query/param[@name='vorname']", "jim");
 		assertXPath("/request/uri/query/param[@name='nachname']", "panse");
-		assertXPath("/request/headers/header[@name='Host']", "localhost:8080");
+		assertXPath("/request/headers/header[@name='Host']", "localhost:3011");
 	}
 
 	@Test
 	public void parseXML() throws Exception {
-		String xml = "<request method='POST' http-version='1.1'><uri value='http://localhost:8080/manager/person?vorname=jim&amp;nachname=panse'><host>localhost</host><port>8080</port><path><component>manager</component><component>person</component></path><query><param name='vorname'>jim</param><param name='nachname'>panse</param></query></uri></request>";
+		String xml = "<request method='POST' http-version='1.1'><uri value='http://localhost:3011/manager/person?vorname=jim&amp;nachname=panse'><host>localhost</host><port>8080</port><path><component>manager</component><component>person</component></path><query><param name='vorname'>jim</param><param name='nachname'>panse</param></query></uri></request>";
 		
 		XMLStreamReader r = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
 		r.next(); //skip DocumentNode
@@ -83,9 +83,9 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 	}
 
 	private void assertURI(URI uri) {
-		assertEquals("http://localhost:8080/manager/person?vorname=jim&nachname=panse", uri.getValue());
+		assertEquals("http://localhost:3011/manager/person?vorname=jim&nachname=panse", uri.getValue());
 		assertEquals("localhost", uri.getHost());
-		assertEquals(8080, uri.getPort());	
+		assertEquals(3011, uri.getPort());	
 		assertPath(uri.getPath());
 		assertQuery(uri.getQuery());
 	}

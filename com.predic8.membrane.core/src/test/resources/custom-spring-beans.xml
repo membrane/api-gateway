@@ -33,7 +33,7 @@
 			<xmlSessionIdExtractor namespace="http://chat.predic8.com/" localName="session" />
 			<!-- <clusters>
 				<cluster name="Default">
-					<node host="localhost" port="8080"/>
+					<node host="localhost" port="3011"/>
 				</cluster>				
 			</clusters>
 			-->

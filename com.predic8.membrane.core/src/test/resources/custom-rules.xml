@@ -33,7 +33,7 @@
 				localName="session" />
 			<clusters>				
 				<cluster name="Default">
-					<node host="localhost" port="8080" />
+					<node host="localhost" port="3011" />
 				</cluster>
 			</clusters>
 			<byThreadStrategy maxNumberOfThreadsPerEndpoint="10"

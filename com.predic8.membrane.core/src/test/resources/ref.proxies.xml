@@ -3,7 +3,7 @@
 		method="*">
 		<interceptor refid="roundRobinBalancer" name="Round Robin Balancer" />
 		<interceptor refid="urlRewriter" name="Simple URL Rewriter" />
-		<target host="localhost" port="8080" />
+		<target host="localhost" port="3011" />
 	</serviceProxy>
 	<proxy name="proxy" port="2001">
 		<interceptor refid="roundRobinBalancer" name="Round Robin Balancer" />

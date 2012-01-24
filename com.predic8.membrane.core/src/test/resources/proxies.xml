@@ -9,7 +9,7 @@
 	<serviceProxy name="localhost" port="2000" path=".*"
 		method="GET" host="/abc/*" blockRequest="false" blockResponse="false"
 		inboundTLS="false" outboundTLS="false">
-		<target host="localhost" port="8080" />
+		<target host="localhost" port="3011" />
 	</serviceProxy>
 	<global>
 		<adjustHostHeader>true</adjustHostHeader>

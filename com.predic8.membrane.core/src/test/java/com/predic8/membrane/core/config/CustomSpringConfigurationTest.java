@@ -146,7 +146,7 @@ public class CustomSpringConfigurationTest {
 	 	assertEquals("session", ext.getLocalName());
 
 	 	assertEquals("localhost", i.getEndpoints().get(0).getHost());
-	 	assertEquals(8080, i.getEndpoints().get(0).getPort());
+	 	assertEquals(3011, i.getEndpoints().get(0).getPort());
 	 	
 	 	assertEquals(10, ((ByThreadStrategy)i.getDispatchingStrategy()).getMaxNumberOfThreadsPerEndpoint());
 	 	assertEquals(1000, ((ByThreadStrategy)i.getDispatchingStrategy()).getRetryTimeOnBusy());
