@@ -36,7 +36,7 @@ public class RegExReplaceInterceptorTest {
 	@Before
 	public void setUp() throws Exception {
 		router = Router.init("src/test/resources/regex-monitor-beans.xml");
-		Rule serverRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 7000), "predic8.de", 80);
+		Rule serverRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3009), "predic8.de", 80);
 		router.getRuleManager().addRuleIfNew(serverRule);
 	}
 	
@@ -44,7 +44,7 @@ public class RegExReplaceInterceptorTest {
 	public void testReplace() throws Exception {
 		HttpClient client = new HttpClient();
 		
-		GetMethod method = new GetMethod("http://localhost:7000");
+		GetMethod method = new GetMethod("http://localhost:3009");
 		method.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		method.setRequestHeader(Header.SOAP_ACTION, "");
 		

@@ -65,7 +65,7 @@ public class AdjustContentLengthIntegrationTest extends TestCase {
 
 	private GetMethod getMonitoredRequest() {
 		GetMethod get = new GetMethod(
-				"http://localhost:5000/sqlrest/CUSTOMER/2/");
+				"http://localhost:3010/sqlrest/CUSTOMER/2/");
 		return get;
 	}
 }
