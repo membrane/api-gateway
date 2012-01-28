@@ -57,6 +57,11 @@ public class HttpTransport extends Transport {
 			return;
 
 		plt.closePort();
+		try {
+			plt.join();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 		portListenerMapping.remove(port);
 
 		for (IPortChangeListener listener : menuListeners) {
