@@ -16,18 +16,18 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.schema.Schema;
 
 public abstract class AbstractXMLValidator implements IValidator {
 	private static Log log = LogFactory.getLog(AbstractXMLValidator.class.getName());
 
-	private ArrayBlockingQueue<List<Validator>> validators;
+	private final ArrayBlockingQueue<List<Validator>> validators;
 	protected final String location;
 	protected final ResourceResolver resourceResolver;
 	protected final ValidatorInterceptor.FailureHandler failureHandler;
@@ -49,21 +49,28 @@ public abstract class AbstractXMLValidator implements IValidator {
 		List<Exception> exceptions = new ArrayList<Exception>();
 		List<Validator> vals = validators.take();
 		try {
+			// the message must be valid for one schema embedded into WSDL 
 			for (Validator validator: vals) {
-				validator.validate(getMessageBody(msg.getBodyAsStream()));
 				SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
-				// the message must be valid for one schema embedded into WSDL 
-				if (handler.noErrors()) {
-					valid.incrementAndGet();
-					return Outcome.CONTINUE;
+				try {
+					validator.validate(getMessageBody(msg.getBodyAsStream()));
+					if (handler.noErrors()) {
+						valid.incrementAndGet();
+						return Outcome.CONTINUE;
+					}
+					exceptions.add(handler.getException());
+				} finally {
+					handler.reset();
 				}
-				exceptions.add(handler.getException());
-				handler.reset();
 			}
+		} catch (Exception e) {
+			exceptions.add(e);
 		} finally {
 			validators.put(vals);
 		}
-		if (failureHandler != null) {
+		if (failureHandler == FailureHandler.VOID) {
+			exc.setProperty("error", getErrorMsg(exceptions));
+		} else if (failureHandler != null) {
 			failureHandler.handleFailure(getErrorMsg(exceptions), exc);
 			exc.setResponse(createErrorResponse("validation error"));
 		} else {

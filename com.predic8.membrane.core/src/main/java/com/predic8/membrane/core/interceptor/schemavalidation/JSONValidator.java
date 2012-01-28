@@ -26,6 +26,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.util.ResourceResolver;
 
 public class JSONValidator implements IValidator {
@@ -72,6 +73,17 @@ public class JSONValidator implements IValidator {
         if (success) {
         	valid.incrementAndGet();
         	return Outcome.CONTINUE;
+        }
+        
+        if (failureHandler == FailureHandler.VOID) {
+        	StringBuilder message = new StringBuilder();
+        	for (String error : errors) {
+        		message.append(error);
+        		message.append(";");
+        	}
+        	exc.setProperty("error", message.toString());
+        	invalid.incrementAndGet();
+        	return Outcome.ABORT;
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

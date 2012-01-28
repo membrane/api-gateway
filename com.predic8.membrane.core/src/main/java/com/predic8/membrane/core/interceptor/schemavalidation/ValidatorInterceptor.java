@@ -177,6 +177,11 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	}
 	
 	public static interface FailureHandler {
+		public static final FailureHandler VOID = new FailureHandler(){
+			@Override
+			public void handleFailure(String message, Exchange exc) {
+			}};
+		
 		void handleFailure(String message, Exchange exc);
 	}
 	
