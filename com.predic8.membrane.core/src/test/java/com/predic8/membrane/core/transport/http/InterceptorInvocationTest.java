@@ -54,6 +54,9 @@ public class InterceptorInvocationTest {
 	@Before
 	public void setUp() throws Exception {
 		
+		MockInterceptor.reqLabels.clear();
+		MockInterceptor.respLabels.clear();
+		
 		ruleInterceptorNames = Arrays.asList(new String[] {"Rule 1", "Rule 2", "Rule 3"});
 		
 		regularInterceptorNames = Arrays.asList(new String[] {"TR Normal 1", "TR Normal 2", "TR Normal 3", "TR Normal 4" });

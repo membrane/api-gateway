@@ -37,6 +37,8 @@ public class ServiceInvocationTest {
 	@Before
 	public void setUp() throws Exception {		
 		router = createRouter();
+		MockInterceptor.reqLabels.clear();
+		MockInterceptor.respLabels.clear();
 	}
 
 	@Test

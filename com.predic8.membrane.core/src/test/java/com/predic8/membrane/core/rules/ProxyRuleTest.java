@@ -49,16 +49,7 @@ public class ProxyRuleTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		router = Router.init("src/test/resources/proxy-rules-test-monitor-beans.xml");
-	}
-	
-	@After
-	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
-	}
-	
-	@Test
-	public void testWriteRuleToByteBuffer() throws Exception {
+		router = Router.init("resources/proxy-rules-test-monitor-beans.xml");
 		Rule rule = new ProxyRule(new ProxyRuleKey(8888));
 		rule.setName("Rule 1");
 		rule.setInboundTLS(true);
@@ -72,6 +63,11 @@ public class ProxyRuleTest {
 		buffer = os.toByteArray();
 	}
 	
+	@After
+	public void tearDown() throws Exception {
+		router.getTransport().closeAll();
+	}
+		
 	@Test
 	public void testReadRuleFromByteBuffer() throws Exception {
 		ProxyRule rule = new ProxyRule();

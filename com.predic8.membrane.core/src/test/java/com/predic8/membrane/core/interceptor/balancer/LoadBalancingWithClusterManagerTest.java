@@ -25,6 +25,7 @@ import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.http.params.HttpProtocolParams;
+import org.junit.After;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
@@ -37,12 +38,19 @@ import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 public class LoadBalancingWithClusterManagerTest {
 
 	private HttpRouter lb;
+	private HttpRouter node1;
+	private HttpRouter node2;
+	private HttpRouter node3;
 
 	@Test 
 	public void nodesTest() throws Exception {
-		DummyWebServiceInterceptor service1 = startNode(2000);
-		DummyWebServiceInterceptor service2 = startNode(3000);
-		DummyWebServiceInterceptor service3 = startNode(4000);
+		node1 = new HttpRouter();
+		node2 = new HttpRouter();
+		node3 = new HttpRouter();
+
+		DummyWebServiceInterceptor service1 = startNode(node1, 2000);
+		DummyWebServiceInterceptor service2 = startNode(node2, 3000);
+		DummyWebServiceInterceptor service3 = startNode(node3, 4000);
 		
 		startLB();
 		
@@ -82,9 +90,17 @@ public class LoadBalancingWithClusterManagerTest {
 		assertEquals(4, service2.counter);
 		assertEquals(2, service3.counter);
 		
-		lb.getTransport().closeAll();
+		
 	}
 
+	@After
+	public void tearDown() throws Exception {
+		lb.getTransport().closeAll();
+		node1.getTransport().closeAll();
+		node2.getTransport().closeAll();
+		node3.getTransport().closeAll();
+	}
+	
 	private void startLB() throws Exception {
 
 		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
@@ -109,8 +125,7 @@ public class LoadBalancingWithClusterManagerTest {
 		lb.getRuleManager().addRuleIfNew(cniRule);
 	}
 
-	private DummyWebServiceInterceptor startNode(int port) throws IOException {
-		HttpRouter node = new HttpRouter();
+	private DummyWebServiceInterceptor startNode(HttpRouter node, int port) throws IOException {
 		DummyWebServiceInterceptor service1 = new DummyWebServiceInterceptor();
 		node.getTransport().getInterceptors().add(service1);
 		node.getRuleManager().addRuleIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
