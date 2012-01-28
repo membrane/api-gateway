@@ -56,14 +56,14 @@ public class ServiceInvocationTest {
 	}
 	
 	private ServiceProxy createFirstRule() {
-		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 5000), "thomas-bayer.com", 80);
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, "*", 3016), "thomas-bayer.com", 80);
 		rule.setTargetURL("service:log");
 		rule.getInterceptors().add(new MockInterceptor("process"));
 		return rule;
 	}
 	
 	private ServiceProxy createServiceRule() {
-		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 6000), "thomas-bayer.com", 80);
+		ServiceProxy rule = new ServiceProxy(new ServiceProxyKey("localhost","*", "*", 3012), "thomas-bayer.com", 80);
 		rule.setName("log");
 		rule.getInterceptors().add(new MockInterceptor("log"));
 		return rule;
@@ -74,7 +74,7 @@ public class ServiceInvocationTest {
 	}
 	
 	private PostMethod createPostMethod() {
-		PostMethod post = new PostMethod("http://localhost:5000/axis2/services/BLZService?wsdl");
+		PostMethod post = new PostMethod("http://localhost:3016/axis2/services/BLZService?wsdl");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/getBank.xml"))); 
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");

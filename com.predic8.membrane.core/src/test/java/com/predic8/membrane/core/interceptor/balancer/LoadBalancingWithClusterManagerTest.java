@@ -110,12 +110,12 @@ public class LoadBalancingWithClusterManagerTest {
 		extractor.setNamespace("http://predic8.com/session/");
 		lbi.setSessionIdExtractor(extractor);
 
-		ServiceProxy lbiRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 5000), "thomas-bayer.com", 80);
+		ServiceProxy lbiRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3017), "thomas-bayer.com", 80);
 		lbiRule.getInterceptors().add(lbi);
 		
 		ClusterNotificationInterceptor cni = new ClusterNotificationInterceptor();
 		
-		ServiceProxy cniRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 6000), "thomas-bayer.com", 80);
+		ServiceProxy cniRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3012), "thomas-bayer.com", 80);
 		cniRule.getInterceptors().add(cni);
 		
 		lb = new HttpRouter();
@@ -139,7 +139,7 @@ public class LoadBalancingWithClusterManagerTest {
 	}
 
 	private PostMethod getPostMethod(String request) {
-		PostMethod post = new PostMethod("http://localhost:5000/axis2/services/BLZService");
+		PostMethod post = new PostMethod("http://localhost:3017/axis2/services/BLZService");
 		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream(request)));
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
@@ -149,7 +149,7 @@ public class LoadBalancingWithClusterManagerTest {
 	
 	private void sendNotification(String cmd, int port) throws UnsupportedEncodingException, IOException,
 			HttpException {
-		PostMethod post = new PostMethod("http://localhost:6000/clustermanager/"+cmd+"?"+
+		PostMethod post = new PostMethod("http://localhost:3012/clustermanager/"+cmd+"?"+
 				   createQueryString("host", "localhost",
 						   			 "port", String.valueOf(port)));
 		new HttpClient().executeMethod(post);

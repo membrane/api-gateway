@@ -70,7 +70,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	public void testUpEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
 									   createQueryString("host", "node1.clustera",
-									   			 		 "port", "5000", 
+									   			 		 "port", "3018", 
 										  			     "cluster","c1"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
@@ -82,7 +82,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	public void testTakeOutEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/takeout?"+
 									   createQueryString("host", "node1.clustera",
-											   			 "port", "5000",
+											   			 "port", "3018",
 										  			     "cluster","c1"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
@@ -94,7 +94,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	public void testDownEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/down?"+
 									   createQueryString("host", "node1.clustera",
-											   			 "port", "5000",
+											   			 "port", "3018",
 										  			     "cluster","c1"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
@@ -106,7 +106,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	public void testDefaultCluster() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
 									   createQueryString("host", "node1.clustera",
-									   			 		 "port", "5000"));
+									   			 		 "port", "3018"));
 		
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").size());
@@ -120,7 +120,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 		
 		assertEquals(204, new HttpClient().executeMethod(getSecurityTestMethod(5004)));
 		
-		interceptor.setTimeout(5000);
+		interceptor.setTimeout(3018);
 		GetMethod get = getSecurityTestMethod(System.currentTimeMillis());
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(204, new HttpClient().executeMethod(get));
@@ -131,7 +131,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	}
 
 	private GetMethod getSecurityTestMethod(long time) throws Exception {	
-		String qParams = "cluster=c3&host=node1.clustera&port=5000&time=" + time + "&nonce=" + new SecureRandom().nextLong();
+		String qParams = "cluster=c3&host=node1.clustera&port=3018&time=" + time + "&nonce=" + new SecureRandom().nextLong();
 		return new GetMethod("http://localhost:3002/clustermanager/up?data=" + 
 				   URLEncoder.encode(getEncryptedQueryString(qParams),"UTF-8"));
 	}

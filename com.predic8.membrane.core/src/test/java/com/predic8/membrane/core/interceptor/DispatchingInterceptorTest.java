@@ -75,7 +75,7 @@ public class DispatchingInterceptorTest {
 	}
 	
 	private ProxyRule getProxyrRule() {
-		return new ProxyRule(new ProxyRuleKey(9000));
+		return new ProxyRule(new ProxyRuleKey(3090));
 	}
 	
 }

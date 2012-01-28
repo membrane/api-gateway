@@ -48,7 +48,7 @@ public class ReadRulesConfigurationTest {
 
 	@Test
 	public void testProxyRuleListenPort() throws Exception {
-		Assert.assertEquals(9000, rules.get(0).getKey().getPort());
+		Assert.assertEquals(3090, rules.get(0).getKey().getPort());
 	}
 	
 	@Test

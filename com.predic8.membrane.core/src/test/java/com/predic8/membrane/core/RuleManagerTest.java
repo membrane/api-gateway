@@ -32,7 +32,7 @@ public class RuleManagerTest {
 
 	RuleManager manager;
 	
-	Rule proxy5000;
+	Rule proxy3013;
 	
 	Rule forwardBlz;
 	
@@ -42,12 +42,12 @@ public class RuleManagerTest {
 	public void setUp() throws Exception{
 		manager = new RuleManager();
 		manager.setRouter(new MockRouter());
-		proxy5000 = new ProxyRule(new ProxyRuleKey(5000));
-		manager.addRuleIfNew(proxy5000);
+		proxy3013 = new ProxyRule(new ProxyRuleKey(3013));
+		manager.addRuleIfNew(proxy3013);
 		
-		forwardBlz = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 5001), "thomas-bayer.com", 80);
+		forwardBlz = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3014), "thomas-bayer.com", 80);
 		
-		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 5002), "thomas-bayer.com", 80);
+		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3015), "thomas-bayer.com", 80);
 		
 		manager.addRuleIfNew(forwardBlz);
 		manager.addRuleIfNew(forwardBlzPOST);
@@ -61,26 +61,26 @@ public class RuleManagerTest {
 	
 	@Test
 	public void testExists() throws Exception {
-		assertTrue(manager.exists(proxy5000.getKey()));
+		assertTrue(manager.exists(proxy3013.getKey()));
 	}
 	
 	@Test
 	public void testGetMatchingRuleForwardBlz() throws Exception {
-		RuleKey key = new ServiceProxyKey("localhost", "POST", "/axis2/services/blzservice", 5001);
+		RuleKey key = new ServiceProxyKey("localhost", "POST", "/axis2/services/blzservice", 3014);
 		assertEquals(forwardBlz, manager.getMatchingRule(key));
 	}
 	
 	@Test
 	public void testGetMatchingRuleForwardBlzPOST() throws Exception {
-		RuleKey key = new ServiceProxyKey("localhost", "POST", "/axis2/services/blzservice", 5001);
+		RuleKey key = new ServiceProxyKey("localhost", "POST", "/axis2/services/blzservice", 3014);
 		assertEquals(forwardBlz, manager.getMatchingRule(key));
 	}
 	
 	@Test
 	public void testRemoveRule() throws Exception {
-		manager.removeRule(proxy5000);
+		manager.removeRule(proxy3013);
 		assertEquals(2, manager.getRules().size());
-		assertFalse(manager.getRules().contains(proxy5000));
+		assertFalse(manager.getRules().contains(proxy3013));
 	}
 	
 	@Test
@@ -92,9 +92,9 @@ public class RuleManagerTest {
 	@Test
 	public void testIsAnyRuleWithPort() throws Exception {
 		assertFalse(manager.isAnyRuleWithPort(1234));
-		assertTrue(manager.isAnyRuleWithPort(5000));
-		assertTrue(manager.isAnyRuleWithPort(5001));
-		assertTrue(manager.isAnyRuleWithPort(5002));
+		assertTrue(manager.isAnyRuleWithPort(3013));
+		assertTrue(manager.isAnyRuleWithPort(3014));
+		assertTrue(manager.isAnyRuleWithPort(3015));
 	}
 	
 	@Test

@@ -26,7 +26,7 @@
 		<counter name="Mock Node 3" />
 	</serviceProxy>
 	
-	<serviceProxy name="Administration" port="9000">
+	<serviceProxy name="Administration" port="3090">
 		<adminConsole />
 	</serviceProxy>
 </proxies>

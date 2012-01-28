@@ -49,7 +49,7 @@ public class ProxyRuleTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		router = Router.init("resources/proxy-rules-test-monitor-beans.xml");
+		router = Router.init("src/test/resources/proxy-rules-test-monitor-beans.xml");
 		Rule rule = new ProxyRule(new ProxyRuleKey(8888));
 		rule.setName("Rule 1");
 		rule.setInboundTLS(true);

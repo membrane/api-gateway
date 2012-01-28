@@ -1,5 +1,5 @@
 <membrane>
-	<proxy name="HTTP proxy" port="9000" blockRequest="true"
+	<proxy name="HTTP proxy" port="3090" blockRequest="true"
 		blockResponse="false" inboundTLS="false" outboundTLS="false" />
 	<serviceProxy name="thomas-bayer.com" port="3000" path=".*"
 		blockRequest="false" blockResponse="true" inboundTLS="false"
