@@ -41,7 +41,7 @@ public class MapNamespaceContext implements NamespaceContext {
 	}
 
 	@Override
-	public Iterator getPrefixes(String namespaceURI) {
+	public Iterator<String> getPrefixes(String namespaceURI) {
 		if (namespaceURI == null) {
 			throw new IllegalArgumentException();
 		}
