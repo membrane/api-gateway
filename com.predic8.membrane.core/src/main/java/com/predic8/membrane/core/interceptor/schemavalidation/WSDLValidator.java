@@ -14,7 +14,7 @@ import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.xml.util.ResourceDownloadException;
 
-public class WSDLValidator extends AbstractXMLValidator {
+public class WSDLValidator extends AbstractXMLSchemaValidator {
 
 	public WSDLValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		super(resourceResolver, location, failureHandler);

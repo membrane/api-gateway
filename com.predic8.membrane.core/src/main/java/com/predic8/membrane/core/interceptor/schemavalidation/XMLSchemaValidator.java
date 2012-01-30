@@ -20,7 +20,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.schema.Schema;
 
-public class XMLSchemaValidator extends AbstractXMLValidator {
+public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	private static Log log = LogFactory.getLog(XMLSchemaValidator.class.getName());
 
 	public XMLSchemaValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {

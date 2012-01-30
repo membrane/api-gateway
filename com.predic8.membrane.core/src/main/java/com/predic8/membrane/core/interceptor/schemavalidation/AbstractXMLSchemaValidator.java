@@ -24,8 +24,8 @@ import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorIntercept
 import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.schema.Schema;
 
-public abstract class AbstractXMLValidator implements IValidator {
-	private static Log log = LogFactory.getLog(AbstractXMLValidator.class.getName());
+public abstract class AbstractXMLSchemaValidator implements IValidator {
+	private static Log log = LogFactory.getLog(AbstractXMLSchemaValidator.class.getName());
 
 	private final ArrayBlockingQueue<List<Validator>> validators;
 	protected final String location;
@@ -35,7 +35,7 @@ public abstract class AbstractXMLValidator implements IValidator {
 	protected final AtomicLong valid = new AtomicLong();
 	protected final AtomicLong invalid = new AtomicLong();
 
-	public AbstractXMLValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+	public AbstractXMLSchemaValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		this.location = location;
 		this.resourceResolver = resourceResolver;
 		this.failureHandler = failureHandler;
