@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.evaluation;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
-import org.apache.http.util.ByteArrayBuffer;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.http.Request;
 

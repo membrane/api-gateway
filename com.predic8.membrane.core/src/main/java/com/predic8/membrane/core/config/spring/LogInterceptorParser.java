@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.LogInterceptor;
 
 public class LogInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return LogInterceptor.class;
 	}
 

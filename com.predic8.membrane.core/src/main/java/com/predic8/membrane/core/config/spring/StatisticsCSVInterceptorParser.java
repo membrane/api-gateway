@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor
 
 public class StatisticsCSVInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return StatisticsCSVInterceptor.class;
 	}
 

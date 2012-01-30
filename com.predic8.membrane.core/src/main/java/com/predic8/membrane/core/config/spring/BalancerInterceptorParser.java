@@ -18,7 +18,7 @@ import com.predic8.membrane.core.interceptor.balancer.XMLElementSessionIdExtract
 
 public class BalancerInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return LoadBalancingInterceptor.class;
 	}
 

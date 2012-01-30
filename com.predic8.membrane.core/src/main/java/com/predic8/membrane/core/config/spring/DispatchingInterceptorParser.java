@@ -6,7 +6,7 @@ import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
 
 public class DispatchingInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return DispatchingInterceptor.class;
 	}
 

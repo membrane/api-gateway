@@ -33,7 +33,7 @@ public class JSONBeautifier {
 	
 	public String beautify(byte[] content) throws IOException {
 	    JsonNode tree = objectMapper.readTree(new String(content));
-	    return objectMapper.defaultPrettyPrintingWriter().writeValueAsString(tree);
+	    return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tree);
 	}
 
 	public void configure() {

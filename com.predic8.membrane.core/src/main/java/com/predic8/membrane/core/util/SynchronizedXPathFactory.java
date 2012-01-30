@@ -2,8 +2,8 @@ package com.predic8.membrane.core.util;
 
 import java.util.Map;
 
-import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathFactory;
 
 
 public class SynchronizedXPathFactory {

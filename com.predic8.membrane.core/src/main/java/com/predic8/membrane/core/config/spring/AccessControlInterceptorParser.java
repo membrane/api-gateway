@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
 
 public class AccessControlInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return AccessControlInterceptor.class;
 	}
 

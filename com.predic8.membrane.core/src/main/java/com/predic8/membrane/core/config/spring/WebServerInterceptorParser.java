@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 
 public class WebServerInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return WebServerInterceptor.class;
 	}
 

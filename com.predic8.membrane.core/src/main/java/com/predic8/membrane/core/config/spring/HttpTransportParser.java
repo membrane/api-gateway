@@ -16,7 +16,7 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 public class HttpTransportParser extends
 		AbstractSingleBeanDefinitionParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return HttpTransport.class;
 	}
 

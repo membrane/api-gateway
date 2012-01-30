@@ -11,7 +11,7 @@ import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor.Mapping;
 
 public class Rest2SoapInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return REST2SOAPInterceptor.class;
 	}
 

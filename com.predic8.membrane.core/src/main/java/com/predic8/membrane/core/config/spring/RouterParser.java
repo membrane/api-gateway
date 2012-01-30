@@ -11,8 +11,7 @@ import com.predic8.membrane.core.config.Global;
 public class RouterParser extends
 		AbstractSingleBeanDefinitionParser {
 
-	@SuppressWarnings("rawtypes")
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return Router.class;
 	}
 

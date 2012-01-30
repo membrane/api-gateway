@@ -7,7 +7,7 @@ import com.predic8.membrane.core.exchangestore.*;
 
 public class ForgetfulExchangeStoreParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return ForgetfulExchangeStore.class;
 	}
 

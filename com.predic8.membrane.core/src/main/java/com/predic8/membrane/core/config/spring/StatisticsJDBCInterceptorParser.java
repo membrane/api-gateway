@@ -4,14 +4,13 @@ import javax.sql.DataSource;
 
 import org.apache.commons.dbcp.BasicDataSource;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
 import com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor;
 
 public class StatisticsJDBCInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return StatisticsJDBCInterceptor.class;
 	}
 

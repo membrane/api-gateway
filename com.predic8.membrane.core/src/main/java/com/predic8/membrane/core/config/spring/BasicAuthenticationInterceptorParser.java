@@ -10,7 +10,7 @@ import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationI
 
 public class BasicAuthenticationInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return BasicAuthenticationInterceptor.class;
 	}
 

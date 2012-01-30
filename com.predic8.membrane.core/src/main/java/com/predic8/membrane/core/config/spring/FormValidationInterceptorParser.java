@@ -11,7 +11,7 @@ import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterc
 
 public class FormValidationInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return FormValidationInterceptor.class;
 	}
 

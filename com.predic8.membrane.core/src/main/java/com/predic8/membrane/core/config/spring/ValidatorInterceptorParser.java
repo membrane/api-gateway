@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorIntercept
 
 public class ValidatorInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return ValidatorInterceptor.class;
 	}
 

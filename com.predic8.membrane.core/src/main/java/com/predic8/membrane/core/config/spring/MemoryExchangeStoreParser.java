@@ -7,7 +7,7 @@ import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
 
 public class MemoryExchangeStoreParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return MemoryExchangeStore.class;
 	}
 

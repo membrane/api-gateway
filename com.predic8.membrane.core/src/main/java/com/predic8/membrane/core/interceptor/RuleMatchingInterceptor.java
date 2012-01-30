@@ -16,12 +16,17 @@ package com.predic8.membrane.core.interceptor;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.exchange.*;
-import com.predic8.membrane.core.http.ErrorResponse;
+import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.NullRule;
+import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 

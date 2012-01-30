@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionIntercep
 
 public class XmlProtectionInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return XMLProtectionInterceptor.class;
 	}
 

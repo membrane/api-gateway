@@ -6,7 +6,7 @@ import com.predic8.membrane.core.interceptor.UserFeatureInterceptor;
 
 public class UserFeatureInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return UserFeatureInterceptor.class;
 	}
 }

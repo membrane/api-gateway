@@ -113,8 +113,8 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	}
 
 	private Interceptor getInterceptor(Exchange exc) {
-		Stack<Interceptor> stack = (Stack<Interceptor>) exc
-				.getProperty("interceptorStack");
+		@SuppressWarnings("unchecked")
+		Stack<Interceptor> stack = (Stack<Interceptor>) exc.getProperty("interceptorStack");
 		if (stack.empty())
 			return null;
 		return stack.pop();

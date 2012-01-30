@@ -7,7 +7,7 @@ import com.predic8.membrane.core.exchangestore.*;
 
 public class FileExchangeStoreParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return FileExchangeStore.class;
 	}
 

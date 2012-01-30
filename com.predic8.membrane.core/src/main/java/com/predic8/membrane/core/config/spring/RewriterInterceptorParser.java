@@ -11,7 +11,7 @@ import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor.Mapping;
 
 public class RewriterInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return RewriteInterceptor.class;
 	}
 

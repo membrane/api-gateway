@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.*;
 
 public class ExchangeStoreInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return ExchangeStoreInterceptor.class;
 	}
 

@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.administration.AdminConsoleIntercep
 
 public class AdminConsoleInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return AdminConsoleInterceptor.class;
 	}
 

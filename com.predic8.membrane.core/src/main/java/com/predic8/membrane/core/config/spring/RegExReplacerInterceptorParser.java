@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.RegExReplaceInterceptor;
 
 public class RegExReplacerInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return RegExReplaceInterceptor.class;
 	}
 

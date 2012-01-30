@@ -4,11 +4,10 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.w3c.dom.Element;
 
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
-import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 
 public class WsdlRewriterInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return WSDLInterceptor.class;
 	}
 

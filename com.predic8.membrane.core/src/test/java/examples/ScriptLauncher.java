@@ -109,13 +109,11 @@ public class ScriptLauncher {
 	
 	private final class OutputWatcher extends Thread {
 		private final ProcessStuff ps;
-		private final Process p;
 		private final InputStream is;
 		private final boolean error;
 
 		private OutputWatcher(ProcessStuff ps, Process p, InputStream is, boolean error) {
 			this.ps = ps;
-			this.p = p;
 			this.is = is;
 			this.error = error;
 		}

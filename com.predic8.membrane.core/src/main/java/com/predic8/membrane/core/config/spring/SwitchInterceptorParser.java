@@ -10,7 +10,7 @@ import com.predic8.membrane.core.interceptor.cbr.*;
 
 public class SwitchInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return XPathCBRInterceptor.class;
 	}
 

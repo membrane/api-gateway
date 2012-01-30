@@ -6,7 +6,7 @@ import com.predic8.membrane.core.interceptor.*;
 
 public class RuleMatchingInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return RuleMatchingInterceptor.class;
 	}
 

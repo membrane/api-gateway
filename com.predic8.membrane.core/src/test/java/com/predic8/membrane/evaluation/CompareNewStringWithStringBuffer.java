@@ -14,11 +14,6 @@
 
 package com.predic8.membrane.evaluation;
 
-import java.io.*;
-
-import org.junit.*;
-
-import com.predic8.membrane.core.http.Request;
 
 public class CompareNewStringWithStringBuffer {
 

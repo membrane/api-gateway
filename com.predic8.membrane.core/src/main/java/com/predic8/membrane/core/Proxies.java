@@ -24,9 +24,6 @@ import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class Proxies extends AbstractConfigElement {
-
-	private static final long serialVersionUID = 1L;
-
 	private Collection<Rule> rules = new ArrayList<Rule>();
 
 	private Global global;

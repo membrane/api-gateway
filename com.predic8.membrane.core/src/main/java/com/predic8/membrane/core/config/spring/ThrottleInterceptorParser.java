@@ -7,7 +7,7 @@ import com.predic8.membrane.core.interceptor.ThrottleInterceptor;
 
 public class ThrottleInterceptorParser extends AbstractParser {
 
-	protected Class getBeanClass(Element element) {
+	protected Class<?> getBeanClass(Element element) {
 		return ThrottleInterceptor.class;
 	}
 
