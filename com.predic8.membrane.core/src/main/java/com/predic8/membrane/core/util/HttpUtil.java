@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Chunk;
@@ -121,7 +123,7 @@ public class HttpUtil {
 		buf.append("<faultstring>" + "Message validation failed!" + "</faultstring>");
 		buf.append(Constants.CRLF);
 
-		buf.append("<detail>" + text + "</detail>");
+		buf.append("<detail>" + StringEscapeUtils.escapeXml(text) + "</detail>");
 
 		buf.append(Constants.CRLF);
 		buf.append("</soapenv:Fault>");

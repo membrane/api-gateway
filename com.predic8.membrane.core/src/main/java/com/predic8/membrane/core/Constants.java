@@ -46,6 +46,9 @@ public class Constants {
 	
 	public static final String XSD_NS = "http://www.w3.org/2001/XMLSchema";
 	
+	public static final String SOAP11_NS = "http://schemas.xmlsoap.org/soap/envelope/";
+	public static final String SOAP12_NS = "http://www.w3.org/2003/05/soap-envelope";
+	
 	/**
 	 * See: http://jira.codehaus.org/browse/WSTX-36
 	 * 
