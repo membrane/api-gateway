@@ -60,14 +60,14 @@ public class LoadBalancingInterceptorTest {
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"POST", ".*", 2000), "thomas-bayer.com", 80);
 		sp1.getInterceptors().add(mockInterceptor1);
-		service1.getRuleManager().addRuleIfNew(sp1);
+		service1.getRuleManager().addProxyIfNew(sp1);
 
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"POST", ".*", 3000), "thomas-bayer.com", 80);
 		sp2.getInterceptors().add(mockInterceptor2);
-		service2.getRuleManager().addRuleIfNew(sp2);
+		service2.getRuleManager().addProxyIfNew(sp2);
 
 		balancer = new HttpRouter();
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",
@@ -76,7 +76,7 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setName("Default");
 		balancingInterceptor.setRouter(balancer);
 		sp3.getInterceptors().add(balancingInterceptor);
-		balancer.getRuleManager().addRuleIfNew(sp3);
+		balancer.getRuleManager().addProxyIfNew(sp3);
 
 		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 2000);
 		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 3000);

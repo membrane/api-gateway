@@ -49,7 +49,7 @@ public class ConfigurationManager {
 		router.getRuleManager().removeAllRules();
 
 		for (Rule rule : getProxies().getRules()) {
-			router.getRuleManager().addRuleIfNew(rule);
+			router.getRuleManager().addProxyIfNew(rule);
 		}
 
 		if (!fileName.startsWith("classpath:") && hotDeploy) {

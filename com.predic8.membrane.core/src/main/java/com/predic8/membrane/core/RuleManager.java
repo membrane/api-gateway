@@ -90,7 +90,7 @@ public class RuleManager {
 		return false;
 	}
 
-	public synchronized void addRuleIfNew(Rule rule) throws IOException {
+	public synchronized void addProxyIfNew(Rule rule) throws IOException {
 		if (exists(rule.getKey()))
 			return;
 

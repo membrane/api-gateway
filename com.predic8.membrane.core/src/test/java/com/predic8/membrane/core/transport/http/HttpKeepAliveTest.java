@@ -44,7 +44,7 @@ public class HttpKeepAliveTest {
 				return Outcome.ABORT;
 			}
 		});
-		service1.getRuleManager().addRuleIfNew(sp1);
+		service1.getRuleManager().addProxyIfNew(sp1);
 	}
 
 	@After

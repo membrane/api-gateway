@@ -49,7 +49,7 @@ public class ClusterBalancerTest extends TestCase {
 		
 		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3011), "predic8.com", 80);
 		sp.getInterceptors().add(lb);
-		r.getRuleManager().addRuleIfNew(sp);
+		r.getRuleManager().addProxyIfNew(sp);
 
 		BalancerUtil.up(r, "Default", "Default", "localhost", 2000);
 		BalancerUtil.up(r, "Default", "Default", "localhost", 3000);

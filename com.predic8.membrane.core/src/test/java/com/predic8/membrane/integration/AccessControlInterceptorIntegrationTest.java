@@ -60,7 +60,7 @@ public class AccessControlInterceptorIntegrationTest {
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3008), "thomas-bayer.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(rule);
+		router.getRuleManager().addProxyIfNew(rule);
 	}
 	
 	@After

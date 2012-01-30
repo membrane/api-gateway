@@ -47,7 +47,7 @@ public class Http11Test {
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(rule);
+		router.getRuleManager().addProxyIfNew(rule);
 	}
 	
 	@After

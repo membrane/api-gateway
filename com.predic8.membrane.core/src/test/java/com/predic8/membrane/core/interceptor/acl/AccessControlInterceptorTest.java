@@ -42,7 +42,7 @@ public class AccessControlInterceptorTest {
 		
 		Rule rule4000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "oio.de", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(rule4000);
+		router.getRuleManager().addProxyIfNew(rule4000);
 		router.getTransport().getInterceptors().add(interceptor);
 	}
 	

@@ -37,7 +37,7 @@ public class RegExReplaceInterceptorTest {
 	public void setUp() throws Exception {
 		router = Router.init("src/test/resources/regex-monitor-beans.xml");
 		Rule serverRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3009), "predic8.de", 80);
-		router.getRuleManager().addRuleIfNew(serverRule);
+		router.getRuleManager().addProxyIfNew(serverRule);
 	}
 	
 	@Test

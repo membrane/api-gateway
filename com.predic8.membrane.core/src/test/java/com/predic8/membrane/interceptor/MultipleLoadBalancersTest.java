@@ -43,7 +43,7 @@ public class MultipleLoadBalancersTest {
 			ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
 					"POST", ".*", port), "thomas-bayer.com", 80);
 			sp1.getInterceptors().add(mockInterceptor1);
-			service1.getRuleManager().addRuleIfNew(sp1);
+			service1.getRuleManager().addProxyIfNew(sp1);
 		}
 
 		public void close() throws IOException {
@@ -56,7 +56,7 @@ public class MultipleLoadBalancersTest {
 		LoadBalancingInterceptor balancingInterceptor1 = new LoadBalancingInterceptor();
 		balancingInterceptor1.setName(name);
 		sp3.getInterceptors().add(balancingInterceptor1);
-		balancer.getRuleManager().addRuleIfNew(sp3);
+		balancer.getRuleManager().addProxyIfNew(sp3);
 		balancingInterceptor1.setRouter(balancer);
 		return balancingInterceptor1;
 	}

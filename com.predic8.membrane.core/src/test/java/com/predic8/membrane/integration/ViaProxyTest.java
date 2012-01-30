@@ -42,10 +42,10 @@ public class ViaProxyTest {
 	public void setUp() throws Exception {
 		proxyRouter = new HttpRouter();
 		
-		proxyRouter.getRuleManager().addRuleIfNew(new ProxyRule(new ProxyRuleKey(3128)));
+		proxyRouter.getRuleManager().addProxyIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 		
 		router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
+		router.getRuleManager().addProxyIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
 		
 		Proxies config = new Proxies(proxyRouter);
 		

@@ -34,7 +34,7 @@ public class MethodTest {
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "oio.de", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(rule);
+		router.getRuleManager().addProxyIfNew(rule);
 	}
 	
 	@Test

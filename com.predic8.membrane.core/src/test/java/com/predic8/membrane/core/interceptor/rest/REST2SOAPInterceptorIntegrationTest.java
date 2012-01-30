@@ -36,7 +36,7 @@ public class REST2SOAPInterceptorIntegrationTest {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*",
 				".*", 3004), "www.thomas-bayer.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(rule);
+		router.getRuleManager().addProxyIfNew(rule);
 
 		REST2SOAPInterceptor rest2SoapInt = new REST2SOAPInterceptor();
 		rest2SoapInt.setRouter(router);

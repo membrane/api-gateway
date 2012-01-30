@@ -42,7 +42,7 @@ public class RewriteInterceptorIntegrationTest {
 		rule.getInterceptors().add(interceptor);
 		
 		router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(rule);
+		router.getRuleManager().addProxyIfNew(rule);
 	}
 
 	@After

@@ -147,7 +147,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 				params.get("method"), ".*", getPortParam(params)),
 				params.get("targetHost"), getTargetPortParam(params));
 		r.setName(params.get("name"));
-		router.getRuleManager().addRuleIfNew(r);
+		router.getRuleManager().addProxyIfNew(r);
 		
 		return respond(getServiceProxyPage(params));
 	}
@@ -160,7 +160,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		
 		Rule r = new ProxyRule(new ProxyRuleKey(Integer.parseInt(params.get("port"))));
 		r.setName(params.get("name"));
-		router.getRuleManager().addRuleIfNew(r);
+		router.getRuleManager().addProxyIfNew(r);
 		return respond(getProxyPage(params));
 	}
 

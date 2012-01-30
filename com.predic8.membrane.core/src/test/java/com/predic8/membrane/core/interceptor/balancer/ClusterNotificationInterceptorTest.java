@@ -45,7 +45,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3002), "thomas-bayer.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addRuleIfNew(rule);
+		router.getRuleManager().addProxyIfNew(rule);
 		
 		interceptor = new ClusterNotificationInterceptor();
 		interceptor.setRouter(router);
@@ -55,7 +55,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 		lbi.setRouter(router);
 		lbi.setName("Default");
 		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3003), "thomas-bayer.com", 80);
-		router.getRuleManager().addRuleIfNew(rule2);
+		router.getRuleManager().addProxyIfNew(rule2);
 		rule2.getInterceptors().add(lbi);
 	}
 	
