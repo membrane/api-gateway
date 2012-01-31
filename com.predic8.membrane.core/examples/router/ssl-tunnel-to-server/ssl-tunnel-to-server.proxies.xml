@@ -1,8 +1,10 @@
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
-	<serviceProxy inboundTLS="false" outboundTLS="true">
+	<serviceProxy>
 		<path>/svn</path>
-		<target host="predic8.com" port="443" />
+		<target host="predic8.com" port="443">
+			<ssl />
+		</target>
 	</serviceProxy>
 </proxies>

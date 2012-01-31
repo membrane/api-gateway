@@ -15,10 +15,15 @@
 package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.Transport;
@@ -82,13 +87,13 @@ public class HttpTransport extends Transport {
 	 * @param port
 	 * @throws IOException
 	 */
-	public synchronized void openPort(int port, boolean tsl) throws IOException {
+	public synchronized void openPort(int port, SSLContext sslContext) throws IOException {
 		if (isAnyThreadListeningAt(port)) {
 			return;
 		}
 
 		HttpEndpointListener portListenerThread = new HttpEndpointListener(
-				port, this, tsl);
+				port, this, sslContext);
 		portListenerMapping.put(port, portListenerThread);
 		portListenerThread.start();
 

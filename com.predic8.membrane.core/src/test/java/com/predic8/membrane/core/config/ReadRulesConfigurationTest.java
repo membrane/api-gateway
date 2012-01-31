@@ -118,12 +118,12 @@ public class ReadRulesConfigurationTest {
 	
 	@Test
 	public void testLocalServiceProxyInboundSSL() throws Exception {
-		assertEquals(false, ((ServiceProxy)rules.get(2)).isInboundTLS());
+		Assert.assertNull(((ServiceProxy)rules.get(2)).getSslInboundContext());
 	}
 	
 	@Test
 	public void testLocalServiceProxyOutboundSSL() throws Exception {
-		assertEquals(false, ((ServiceProxy)rules.get(2)).isOutboundTLS());
+		Assert.assertNull(((ServiceProxy)rules.get(2)).getSslOutboundContext());
 	}
 	
 	@After

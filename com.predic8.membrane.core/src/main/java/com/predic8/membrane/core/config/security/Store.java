@@ -21,8 +21,8 @@ import com.predic8.membrane.core.config.AbstractConfigElement;
 public abstract class Store extends AbstractConfigElement {
 
 	protected String location;
-
 	protected String password;
+	protected String format;
 
 	public Store(Router router) {
 		super(router);
@@ -32,6 +32,7 @@ public abstract class Store extends AbstractConfigElement {
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		location = token.getAttributeValue("", "location");
 		password = token.getAttributeValue("", "password");
+		format = token.getAttributeValue("", "format");
 		super.parseAttributes(token);
 	}
 
@@ -42,13 +43,18 @@ public abstract class Store extends AbstractConfigElement {
 	public String getPassword() {
 		return password;
 	}
+	
+	public String getFormat() {
+		return format;
+	}
 
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(getElementName());
-
 		out.writeAttribute("location", location);
 		out.writeAttribute("password", password);
+		if (format != null)
+			out.writeAttribute("format", format);
 		out.writeEndElement();
 	}
 
@@ -58,6 +64,10 @@ public abstract class Store extends AbstractConfigElement {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+	
+	public void setFormat(String format) {
+		this.format = format;
 	}
 
 }

@@ -94,7 +94,7 @@ public class RuleManager {
 		if (exists(rule.getKey()))
 			return;
 
-		((HttpTransport) router.getTransport()).openPort(rule.getKey().getPort(), rule.isInboundTLS());
+		((HttpTransport) router.getTransport()).openPort(rule.getKey().getPort(), rule.getSslInboundContext());
 
 		((AbstractProxy) rule).setRouter(router);
 		rules.add(rule);

@@ -106,8 +106,8 @@ public class HttpClient {
 		return target;
 	}
 
-	private boolean getOutboundTLS(Exchange exc) {
-		return exc.getRule().isOutboundTLS();
+	private SSLContext getOutboundSSLContext(Exchange exc) {
+		return exc.getRule().getSslOutboundContext();
 	}
 
 	public Response call(Exchange exc) throws Exception {
@@ -123,7 +123,7 @@ public class HttpClient {
 			try {
 				log.debug("try # " + counter + " to " + dest);
 				target = init(exc, dest);
-				con = conMgr.getConnection(InetAddress.getByName(target.host), target.port, exc.getRule().getLocalHost(), getOutboundTLS(exc));
+				con = conMgr.getConnection(InetAddress.getByName(target.host), target.port, exc.getRule().getLocalHost(), getOutboundSSLContext(exc));
 				exc.setTargetConnection(con);
 				return doCall(exc, con);
 				// java.net.SocketException: Software caused connection abort: socket write error

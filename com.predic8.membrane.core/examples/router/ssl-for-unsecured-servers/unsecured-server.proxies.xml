@@ -1,14 +1,12 @@
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
-	<serviceProxy port="443" inboundTLS="true" outboundTLS="false">
+	<serviceProxy port="443">
+		<ssl>
+			<keystore location="../../conf/membrane.jks" password="secret"/>
+			<truststore location="../../conf/membrane.jks" password="secret"/>
+		</ssl>
 		<wsdlRewriter protocol="https" />
 		<target host="thomas-bayer.com" />
 	</serviceProxy>
-	<global>
-		<security>
-			<keystore location="../../conf/membrane.jks" password="secret"/>
-			<truststore location="../../conf/membrane.jks" password="secret"/>
-		</security>
-	</global>
 </proxies>

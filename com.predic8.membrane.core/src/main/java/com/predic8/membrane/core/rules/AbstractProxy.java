@@ -64,6 +64,7 @@ import com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor
 import com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor;
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
+import com.predic8.membrane.core.transport.http.SSLContext;
 import com.predic8.membrane.core.util.TextUtil;
 
 public abstract class AbstractProxy extends AbstractConfigElement implements Rule {
@@ -77,10 +78,6 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	
 	protected volatile boolean blockRequest;
 	protected volatile boolean blockResponse;
-	
-	protected boolean inboundTLS;
-	
-	protected boolean outboundTLS;
 	
 	protected List<Interceptor> interceptors = new ArrayList<Interceptor>();
 	
@@ -149,8 +146,6 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 		out.writeAttribute("port", "" + key.getPort());
 		writeAttrIfTrue(out, blockRequest, "blockRequest", blockRequest);
 		writeAttrIfTrue(out, blockResponse, "blockResponse", blockResponse);
-		
-		writeTLS(out);
 		
 		writeExtension(out);
 		
@@ -252,11 +247,6 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 		return i;
 	}	
 	
-	private void parseTLS(XMLStreamReader token) {
-		inboundTLS = getBoolean(token, "inboundTLS");
-		outboundTLS = getBoolean(token, "outboundTLS");
-	}
-	
 	private void parseBlocking(XMLStreamReader token) {
 		blockRequest = getBoolean(token, "blockRequest");
 		blockResponse = getBoolean(token, "blockResponse");
@@ -289,11 +279,6 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 		}
 	}
 	
-	private void writeTLS(XMLStreamWriter out) throws XMLStreamException {
-		writeAttrIfTrue(out, inboundTLS, "inboundTLS", inboundTLS);
-		writeAttrIfTrue(out, outboundTLS, "outboundTLS", outboundTLS);
-	}	
-	
 	protected <E> void writeAttrIfTrue(XMLStreamWriter out, boolean exp, String n, E v) throws XMLStreamException {
 		if (exp) {
 			out.writeAttribute(n,""+v);
@@ -304,7 +289,6 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	protected void parseAttributes(XMLStreamReader token) {
 		name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");
 		parseKeyAttributes(token);
-		parseTLS(token);
 		parseBlocking(token);
 	}
 
@@ -348,22 +332,6 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	
 	public void setBlockResponse(boolean blockStatus) {
 		this.blockResponse = blockStatus;
-	}
-
-	public boolean isInboundTLS() {
-		return inboundTLS;
-	}
-	
-	public boolean isOutboundTLS() {
-		return outboundTLS;
-	}
-	
-	public void setInboundTLS(boolean status) {
-		inboundTLS = status;	
-	}
-	
-	public void setOutboundTLS(boolean status) {
-		this.outboundTLS = status;
 	}
 
 	public String getLocalHost() {
@@ -431,4 +399,13 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	
 	protected abstract AbstractProxy getNewInstance();
 	
+	@Override
+	public SSLContext getSslInboundContext() {
+		return null;
+	}
+	
+	@Override
+	public SSLContext getSslOutboundContext() {
+		return null;
+	}
 }

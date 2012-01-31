@@ -18,40 +18,44 @@ import javax.xml.stream.*;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
-public class Security extends AbstractConfigElement {
+public class SSLParser extends AbstractConfigElement {
 
 	private KeyStore keyStore;
-
 	private TrustStore trustStore;
+	private String version;
 
-	public Security(Router router) {
+	public SSLParser(Router router) {
 		super(router);
-		keyStore = new KeyStore(router);
-		trustStore = new TrustStore(router);
 	}
 
-	public boolean isSet() {
-		return keyStore.location != null || trustStore.location != null;
+	@Override
+	protected void parseAttributes(XMLStreamReader token) throws Exception {
+		version = token.getAttributeValue("", "version");
+		super.parseAttributes(token);
 	}
-
+	
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child)
 			throws Exception {
 		if (KeyStore.ELEMENT_NAME.equals(child)) {
+			keyStore = new KeyStore(router);
 			keyStore.parse(token);
-		}
-
-		if (TrustStore.ELEMENT_NAME.equals(child)) {
+		} else if (TrustStore.ELEMENT_NAME.equals(child)) {
+			trustStore = new TrustStore(router);
 			trustStore.parse(token);
 		}
 	}
 
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement("security");
+		out.writeStartElement("ssl");
+		if (version != null)
+			out.writeAttribute("version", version);
 
-		keyStore.write(out);
-		trustStore.write(out);
+		if (keyStore != null)
+			keyStore.write(out);
+		if (trustStore != null)
+			trustStore.write(out);
 
 		out.writeEndElement();
 	}
@@ -70,6 +74,14 @@ public class Security extends AbstractConfigElement {
 
 	public void setTrustStore(TrustStore trustStore) {
 		this.trustStore = trustStore;
+	}
+	
+	public String getVersion() {
+		return version;
+	}
+	
+	public void setVersion(String version) {
+		this.version = version;
 	}
 
 }

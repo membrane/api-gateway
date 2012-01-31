@@ -52,7 +52,7 @@ public class ProxyRuleTest {
 		router = Router.init("src/test/resources/proxy-rules-test-monitor-beans.xml");
 		Rule rule = new ProxyRule(new ProxyRuleKey(8888));
 		rule.setName("Rule 1");
-		rule.setInboundTLS(true);
+		// TODO: this is not possible anymore rule.setInboundTLS(true);
 		rule.setBlockResponse(true);
 		rule.setInterceptors(getInterceptors());
 		
@@ -83,8 +83,8 @@ public class ProxyRuleTest {
 		assertEquals(8888, rule.getKey().getPort());
 		assertEquals("Rule 1", rule.getName());
 		assertNull(rule.getLocalHost()); 
-		assertEquals(true, rule.isInboundTLS());
-		assertFalse(rule.isOutboundTLS());
+		//TODO: see above assertEquals(true, rule.isInboundTLS());
+		assertNull(rule.getSslOutboundContext());
 		
 		List<Interceptor> inters = rule.getInterceptors();
 		assertFalse(inters.isEmpty());

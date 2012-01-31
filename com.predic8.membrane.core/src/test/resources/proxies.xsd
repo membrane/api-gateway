@@ -363,8 +363,6 @@
 		<xsd:attribute name="port" type="xsd:int" />
 		<xsd:attribute name="blockResponse" type="xsd:boolean" />
 		<xsd:attribute name="blockRequest" type="xsd:boolean" />
-		<xsd:attribute name="inboundTLS" type="xsd:boolean" />
-		<xsd:attribute name="outboundTLS" type="xsd:boolean" />
 	</xsd:complexType>
 
 	<xsd:complexType name="EmptyElementType">

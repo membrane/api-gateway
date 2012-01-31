@@ -13,13 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.transport.http.SSLContext;
 
 public interface Rule {
 	
@@ -45,14 +47,6 @@ public interface Rule {
 	
 	public void setBlockResponse(boolean blockStatus);
 	
-	public boolean isOutboundTLS();
-	
-	public boolean isInboundTLS();
-	
-	public void setInboundTLS(boolean status);
-	
-	public void setOutboundTLS(boolean status);
-	
 	public String getLocalHost();
 	
 	public void setLocalHost(String localHost);
@@ -64,5 +58,9 @@ public interface Rule {
 	public int getCount();
 	
 	public Rule getDeepCopy() throws Exception;
+	
+	public SSLContext getSslInboundContext();
+
+	public SSLContext getSslOutboundContext();
 	
 }

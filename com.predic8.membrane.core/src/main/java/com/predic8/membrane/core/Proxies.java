@@ -82,38 +82,6 @@ public class Proxies extends AbstractConfigElement {
 		return global.getTrackExchange();
 	}
 
-	public String getKeyStoreLocation() {
-		return global.getSecurity().getKeyStore().getLocation();
-	}
-
-	public String getTrustStoreLocation() {
-		return global.getSecurity().getTrustStore().getLocation();
-	}
-
-	public void setKeyStoreLocation(String location) {
-		global.getSecurity().getKeyStore().setLocation(location);
-	}
-
-	public void setTrustStoreLocation(String location) {
-		global.getSecurity().getTrustStore().setLocation(location);
-	}
-
-	public String getKeyStorePassword() {
-		return global.getSecurity().getKeyStore().getPassword();
-	}
-
-	public String getTrustStorePassword() {
-		return global.getSecurity().getTrustStore().getPassword();
-	}
-
-	public void setKeyStorePassword(String password) {
-		global.getSecurity().getKeyStore().setPassword(password);
-	}
-
-	public void setTrustStorePassword(String password) {
-		global.getSecurity().getTrustStore().setPassword(password);
-	}
-
 	public void setProxyConfiguration(ProxyConfiguration proxy) {
 		global.setProxyConfiguration(proxy);
 	}
@@ -146,12 +114,6 @@ public class Proxies extends AbstractConfigElement {
 
 		out.writeEndElement();
 		out.writeEndDocument();
-	}
-
-	public boolean isKeyStoreAvailable() {
-		return getKeyStoreLocation() != null
-				&& !"".equals(getKeyStoreLocation().trim())
-				&& getKeyStorePassword() != null;
 	}
 
 	public byte[] toBytes() throws Exception, FactoryConfigurationError {

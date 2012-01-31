@@ -25,7 +25,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,18 +38,18 @@ public class Connection {
 	public InputStream in;
 	public OutputStream out;
 
-	public static Connection open(InetAddress host, int port, String localHost, boolean tls) throws UnknownHostException, IOException {
-		return open(host, port, localHost, tls, null);
+	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext) throws UnknownHostException, IOException {
+		return open(host, port, localHost, sslContext, null);
 	}
 	
-	public static Connection open(InetAddress host, int port, String localHost, boolean tls, ConnectionManager mgr) throws UnknownHostException, IOException {
+	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext, ConnectionManager mgr) throws UnknownHostException, IOException {
 		Connection con = new Connection(mgr);
 		
-		if (tls) {
+		if (sslContext != null) {
 			if (isNullOrEmpty(localHost))
-				con.socket = SSLSocketFactory.getDefault().createSocket(host, port);
+				con.socket = sslContext.createSocket(host, port);
 			else
-				con.socket = SSLSocketFactory.getDefault().createSocket(host, port, InetAddress.getByName(localHost), 0);
+				con.socket = sslContext.createSocket(host, port, InetAddress.getByName(localHost), 0);
 		} else {
 			if (isNullOrEmpty(localHost))
 				con.socket = new Socket(host, port);

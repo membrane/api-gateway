@@ -14,12 +14,14 @@
 
 package com.predic8.membrane.core.config;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.security.Security;
+import com.predic8.membrane.core.Router;
 
 public class Global extends AbstractConfigElement {
 
@@ -45,11 +47,8 @@ public class Global extends AbstractConfigElement {
 
 	private ProxyConfiguration proxyConfiguration;
 
-	private Security security;
-
 	public Global(Router router) {
 		super(router);
-		security = new Security(router);
 		setIndentMessage(true);
 		setAdjustHostHeader(true);
 		setTrackExchange(false);
@@ -73,8 +72,6 @@ public class Global extends AbstractConfigElement {
 		} else if ("proxyConfiguration".equals(child)) {
 			proxyConfiguration = (ProxyConfiguration) new ProxyConfiguration(
 					router).parse(token);
-		} else if ("security".equals(child)) {
-			security.parse(token);
 		}
 	}
 
@@ -103,10 +100,6 @@ public class Global extends AbstractConfigElement {
 			proxyConfiguration.write(out);
 		}
 
-		if (security.isSet()) {
-			security.write(out);
-		}
-
 		out.writeEndElement();
 	}
 
@@ -116,14 +109,6 @@ public class Global extends AbstractConfigElement {
 
 	public void setProxyConfiguration(ProxyConfiguration proxyConfiguration) {
 		this.proxyConfiguration = proxyConfiguration;
-	}
-
-	public Security getSecurity() {
-		return security;
-	}
-
-	public void setSecurity(Security security) {
-		this.security = security;
 	}
 	
 	public void setIndentMessage(boolean status) {

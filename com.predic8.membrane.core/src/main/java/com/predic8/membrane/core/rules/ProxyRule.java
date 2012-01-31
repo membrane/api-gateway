@@ -1,10 +1,13 @@
 package com.predic8.membrane.core.rules;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.Router;
 
 
 public class ProxyRule extends AbstractProxy {

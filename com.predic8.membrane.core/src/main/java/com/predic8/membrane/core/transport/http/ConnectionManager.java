@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.google.common.base.Objects;
+
 /**
  * Pools TCP/IP connections, holding them open for 30 seconds.
  * 
@@ -61,7 +63,7 @@ public class ConnectionManager {
 		
 		@Override
 		public int hashCode() {
-			return host.hashCode() * 23 + port * 29;
+			return Objects.hashCode(host, port);
 		}
 		
 		@Override
@@ -98,7 +100,7 @@ public class ConnectionManager {
 		}, CLOSE_AFTER_MILLISECONDS, CLOSE_AFTER_MILLISECONDS);
 	}
 	
-	public Connection getConnection(InetAddress host, int port, String localHost, boolean tls) throws UnknownHostException, IOException {
+	public Connection getConnection(InetAddress host, int port, String localHost, SSLContext sslContext) throws UnknownHostException, IOException {
 		
 		log.debug("connection requested for host: " + host + " and port: " + port);
 		
@@ -112,7 +114,7 @@ public class ConnectionManager {
 				return l.remove(l.size()-1).connection;
 		}
 
-		Connection result = Connection.open(host, port, localHost, tls, this);
+		Connection result = Connection.open(host, port, localHost, sslContext, this);
 		numberInPool.incrementAndGet();
 		return result;
 	}

@@ -14,12 +14,19 @@
 
 package com.predic8.membrane.core.rules;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.config.GenericComplexElement;
+import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.transport.http.SSLContext;
 
 public class ServiceProxy extends AbstractProxy {
 
@@ -28,6 +35,7 @@ public class ServiceProxy extends AbstractProxy {
 	private String targetHost;
 	private int targetPort;
 	private String targetURL;
+	private SSLContext sslInboundContext, sslOutboundContext;
 	
 	public ServiceProxy() {}
 
@@ -36,15 +44,9 @@ public class ServiceProxy extends AbstractProxy {
 	}
 
 	public ServiceProxy(ServiceProxyKey ruleKey, String targetHost, int targetPort) {
-		this(ruleKey, targetHost, targetPort, false, false);
-	}
-
-	public ServiceProxy(ServiceProxyKey ruleKey, String targetHost, int targetPort, boolean inboundTLS, boolean outboundTLS) {
 		this.key = ruleKey;
 		this.targetHost = targetHost;
 		this.targetPort = targetPort;
-		this.inboundTLS = inboundTLS;
-		this.outboundTLS = outboundTLS;
 	}
 	
 	public String getTargetHost() {
@@ -99,6 +101,19 @@ public class ServiceProxy extends AbstractProxy {
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {		
 		if ("target".equals(child)) {
 			GenericComplexElement target = new GenericComplexElement();
+			target.setChildParser(new AbstractXmlElement() {
+				@Override
+				protected void parseChildren(XMLStreamReader token, String child)
+						throws Exception {
+					if ("ssl".equals(child)) {
+						SSLParser sslOutboundParser = new SSLParser(router);
+						sslOutboundParser.parse(token);
+						sslOutboundContext = new SSLContext(sslOutboundParser);
+					} else {
+						super.parseChildren(token, child);
+					}
+				}
+			});
 			target.parse(token);
 			targetHost = target.getAttribute("host");
 			targetPort = Integer.parseInt(target.getAttributeOrDefault("port","80"));			
@@ -110,6 +125,10 @@ public class ServiceProxy extends AbstractProxy {
 			Path p = (Path)(new Path(router)).parse(token);
 			key.setPathRegExp(p.isRegExp());
 			key.setPath(p.getValue());
+		} else if ("ssl".equals(child)) {
+			SSLParser sslInboundParser = new SSLParser(router);
+			sslInboundParser.parse(token);
+			sslInboundContext = new SSLContext(sslInboundParser);
 		} else {
 			super.parseChildren(token, child);
 		}
@@ -172,5 +191,15 @@ public class ServiceProxy extends AbstractProxy {
 	@Override
 	public String getName() {
 		return StringUtils.defaultIfEmpty(name, getKey().toString());
+	}
+
+	@Override
+	public SSLContext getSslInboundContext() {
+		return sslInboundContext;
+	}
+	
+	@Override
+	public SSLContext getSslOutboundContext() {
+		return sslOutboundContext;
 	}
 }

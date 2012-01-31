@@ -14,11 +14,11 @@
 
 package com.predic8.membrane.core;
 
-import java.util.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import org.apache.commons.logging.*;
-
-import com.predic8.membrane.core.io.*;
+import com.predic8.membrane.core.io.ConfigurationFileStore;
+import com.predic8.membrane.core.io.ConfigurationStore;
 import com.predic8.membrane.core.rules.Rule;
 
 public class ConfigurationManager {
@@ -33,8 +33,6 @@ public class ConfigurationManager {
 
 	private Router router;
 
-	private List<SecurityConfigurationChangeListener> securityChangeListeners = new Vector<SecurityConfigurationChangeListener>();
-
 	public void saveConfiguration(String fileName) throws Exception {
 		getProxies().setRules(router.getRuleManager().getRules());
 		getProxies().write(fileName);
@@ -43,8 +41,6 @@ public class ConfigurationManager {
 	public void loadConfiguration(String fileName) throws Exception {
 
 		setProxies(configurationStore.read(fileName));
-
-		setSecuritySystemProperties();
 
 		router.getRuleManager().removeAllRules();
 
@@ -59,36 +55,6 @@ public class ConfigurationManager {
 				deploymentThread.start();
 			} else {
 				deploymentThread.setProxiesFile(fileName);
-			}
-		}
-	}
-
-	public void setSecuritySystemProperties() {
-		if (getProxies().getKeyStoreLocation() != null)
-			System.setProperty("javax.net.ssl.keyStore", getProxies()
-					.getKeyStoreLocation());
-
-		if (getProxies().getKeyStorePassword() != null)
-			System.setProperty("javax.net.ssl.keyStorePassword", getProxies()
-					.getKeyStorePassword());
-
-		if (getProxies().getTrustStoreLocation() != null)
-			System.setProperty("javax.net.ssl.trustStore", getProxies()
-					.getTrustStoreLocation());
-
-		if (getProxies().getTrustStorePassword() != null)
-			System.setProperty("javax.net.ssl.trustStorePassword", getProxies()
-					.getTrustStorePassword());
-
-		notifySecurityChangeListeners();
-	}
-
-	private void notifySecurityChangeListeners() {
-		for (SecurityConfigurationChangeListener listener : securityChangeListeners) {
-			try {
-				listener.securityConfigurationChanged();
-			} catch (Exception e) {
-				securityChangeListeners.remove(listener);
 			}
 		}
 	}
@@ -126,16 +92,6 @@ public class ConfigurationManager {
 		this.router = router;
 		configurationStore.setRouter(router);
 		getProxies().setRouter(router);
-	}
-
-	public void addSecurityConfigurationChangeListener(
-			SecurityConfigurationChangeListener listener) {
-		securityChangeListeners.add(listener);
-	}
-
-	public void removeSecurityConfigurationChangeListener(
-			SecurityConfigurationChangeListener listener) {
-		securityChangeListeners.remove(listener);
 	}
 
 	public boolean isHotDeploy() {

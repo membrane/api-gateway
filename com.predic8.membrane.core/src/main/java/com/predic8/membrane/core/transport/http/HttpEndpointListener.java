@@ -20,8 +20,6 @@ import java.net.ServerSocket;
 import java.net.SocketException;
 import java.util.concurrent.RejectedExecutionException;
 
-import javax.net.ssl.SSLServerSocketFactory;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -35,15 +33,15 @@ public class HttpEndpointListener extends Thread {
 
 	private HttpTransport transport;
 
-	public HttpEndpointListener(int port, HttpTransport transport, boolean tsl) throws IOException {
+	public HttpEndpointListener(int port, HttpTransport transport, SSLContext sslContext) throws IOException {
 		this.transport = transport;
-		if (tsl) {
-			serverSocket = ((SSLServerSocketFactory) SSLServerSocketFactory.getDefault()).createServerSocket(port);
-			return;
-		}
 
 		try {
-			serverSocket = new ServerSocket(port);
+			if (sslContext != null)
+				serverSocket = sslContext.createServerSocket(port);
+			else
+				serverSocket = new ServerSocket(port);
+			
 			log.debug("listening at port "+port);
 		} catch (BindException e) {
 			throw new PortOccupiedException(port);

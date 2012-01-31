@@ -1,14 +1,12 @@
 <membrane>
 	<proxy name="HTTP proxy" port="3090" blockRequest="true"
-		blockResponse="false" inboundTLS="false" outboundTLS="false" />
+		blockResponse="false" />
 	<serviceProxy name="thomas-bayer.com" port="3000" path=".*"
-		blockRequest="false" blockResponse="true" inboundTLS="false"
-		outboundTLS="false">
+		blockRequest="false" blockResponse="true">
 		<target host="thomas-bayer.com" port="80" />
 	</serviceProxy>
 	<serviceProxy name="localhost" port="2000" path=".*"
-		method="GET" host="/abc/*" blockRequest="false" blockResponse="false"
-		inboundTLS="false" outboundTLS="false">
+		method="GET" host="/abc/*" blockRequest="false" blockResponse="false">
 		<target host="localhost" port="3011" />
 	</serviceProxy>
 	<global>

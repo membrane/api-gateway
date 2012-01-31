@@ -20,7 +20,6 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 public class MockHttpTransport extends HttpTransport {
 
 	@Override
-	public synchronized void openPort(int port, boolean tsl) throws IOException {
-		
+	public synchronized void openPort(int port, SSLContext sslContext) throws IOException {
 	}
 }
