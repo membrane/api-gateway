@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -98,7 +99,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	protected AccessControl parse(String fileName) throws Exception {
 		XMLInputFactory factory = XMLInputFactory.newInstance();
-	    XMLStreamReader reader = factory.createXMLStreamReader(new FileInputStream(checkAclFile(fileName)));
+	    XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(new FileInputStream(checkAclFile(fileName))));
 	    return (AccessControl) new AccessControl(router).parse(reader);
 	}
 	

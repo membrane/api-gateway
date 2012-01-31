@@ -42,8 +42,8 @@ public class Request extends AbstractXmlElement {
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		method = token.getAttributeValue(Constants.NS_UNDEFINED, "method");
-		httpVersion = token.getAttributeValue(Constants.NS_UNDEFINED, "http-version");
+		method = token.getAttributeValue("", "method");
+		httpVersion = token.getAttributeValue("", "http-version");
 	}
 
 	@Override

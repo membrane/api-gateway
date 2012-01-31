@@ -33,7 +33,7 @@ public class Constants {
 	public static final String ISO_8859_1 = "ISO-8859-1";
 	
 	public static final String UNKNOWN = "unknown";
-	
+	 
 	public static final String N_A = "N/A";
 	
 	public static final String HTTP_VERSION_11 = "1.1";
@@ -48,15 +48,7 @@ public class Constants {
 	
 	public static final String SOAP11_NS = "http://schemas.xmlsoap.org/soap/envelope/";
 	public static final String SOAP12_NS = "http://www.w3.org/2003/05/soap-envelope";
-	
-	/**
-	 * See: http://jira.codehaus.org/browse/WSTX-36
-	 * 
-	 * for woodstox set NS_UNDEFINED to empty string ""
-	 * for RI set NS_UNDEFINED to null
-	 */
-	public static final String NS_UNDEFINED = null;
-	
+
 	public static final String PROTOCOL_SOAP11 = "SOAP11"; 
 	
 	public static final String PROTOCOL_SOAP12 = "SOAP12"; 

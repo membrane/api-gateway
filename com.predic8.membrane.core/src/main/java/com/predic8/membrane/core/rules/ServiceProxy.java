@@ -20,7 +20,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
@@ -79,15 +78,15 @@ public class ServiceProxy extends AbstractProxy {
 	}
 
 	private String parseMethod(XMLStreamReader token) {
-		return defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "method"), "*");
+		return defaultTo(token.getAttributeValue("", "method"), "*");
 	}
 
 	private int parsePort(XMLStreamReader token) {
-		return Integer.parseInt(defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "port"),"80"));
+		return Integer.parseInt(defaultTo(token.getAttributeValue("", "port"),"80"));
 	}
 
 	private String parseHost(XMLStreamReader token) {
-		return defaultTo(token.getAttributeValue(Constants.NS_UNDEFINED, "host"), "*");
+		return defaultTo(token.getAttributeValue("", "host"), "*");
 	}
 	
 	private String defaultTo(String value, String default_) {

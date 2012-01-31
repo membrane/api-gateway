@@ -17,6 +17,7 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.http.Message;
 
 public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
@@ -37,7 +38,7 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 		log.debug("searching for sessionid");
 		
 		fac.setProperty("javax.xml.stream.isNamespaceAware", namespace != null);
-		XMLStreamReader reader = fac.createXMLStreamReader(msg.getBodyAsStream());
+		XMLStreamReader reader = new FixedStreamReader(fac.createXMLStreamReader(msg.getBodyAsStream()));
 		while ( reader.hasNext() ) {
 			reader.next();
 			if (isSessionIdElement(reader)) {

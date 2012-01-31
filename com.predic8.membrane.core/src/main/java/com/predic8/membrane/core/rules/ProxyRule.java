@@ -26,7 +26,7 @@ public class ProxyRule extends AbstractProxy {
 	
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
-		key = new ProxyRuleKey(Integer.parseInt(token.getAttributeValue(Constants.NS_UNDEFINED, "port")));
+		key = new ProxyRuleKey(Integer.parseInt(token.getAttributeValue("", "port")));
 	}
 	
 	@Override

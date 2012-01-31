@@ -34,6 +34,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
@@ -287,7 +288,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");
+		name = token.getAttributeValue("", "name");
 		parseKeyAttributes(token);
 		parseBlocking(token);
 	}
@@ -394,7 +395,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	public XMLStreamReader getStreamReaderFor(byte[] bytes) throws XMLStreamException {
 		XMLInputFactory factory = XMLInputFactory.newInstance();
 	    ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-	    return factory.createXMLStreamReader(stream);
+	    return new FixedStreamReader(factory.createXMLStreamReader(stream));
 	}
 	
 	protected abstract AbstractProxy getNewInstance();

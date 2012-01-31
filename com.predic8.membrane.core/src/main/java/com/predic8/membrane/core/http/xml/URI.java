@@ -41,7 +41,7 @@ public class URI extends AbstractXmlElement {
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
-		value = token.getAttributeValue(Constants.NS_UNDEFINED, "value");
+		value = token.getAttributeValue("", "value");
 	}
 
 	@Override

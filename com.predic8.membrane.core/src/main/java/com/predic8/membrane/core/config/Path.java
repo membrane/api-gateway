@@ -46,7 +46,7 @@ public class Path extends AbstractConfigElement {
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		regExp = Boolean.parseBoolean(token.getAttributeValue(Constants.NS_UNDEFINED, "isRegExp"));
+		regExp = Boolean.parseBoolean(token.getAttributeValue("", "isRegExp"));
 	}
 
 	

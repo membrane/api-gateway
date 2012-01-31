@@ -46,8 +46,8 @@ public class ConfigurationFileStore implements ConfigurationStore {
 	}
 
 	private Proxies read(InputStream is) throws Exception {
-		XMLStreamReader reader = XMLInputFactory.newInstance()
-				.createXMLStreamReader(is, Constants.UTF_8);
+		XMLStreamReader reader = new FixedStreamReader(XMLInputFactory.newInstance()
+				.createXMLStreamReader(is, Constants.UTF_8));
 
 		return (Proxies) new Proxies(router).parse(reader);
 	}

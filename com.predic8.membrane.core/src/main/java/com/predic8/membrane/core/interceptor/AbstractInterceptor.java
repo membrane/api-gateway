@@ -64,8 +64,8 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		if (token.getAttributeValue("", "name") != null)
-			name = token.getAttributeValue(Constants.NS_UNDEFINED, "name");	
-		id = token.getAttributeValue(Constants.NS_UNDEFINED, "refid");	
+			name = token.getAttributeValue("", "name");	
+		id = token.getAttributeValue("", "refid");	
 	}
 	
 	@Override

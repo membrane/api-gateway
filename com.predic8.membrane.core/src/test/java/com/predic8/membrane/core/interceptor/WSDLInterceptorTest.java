@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
@@ -31,7 +32,6 @@ import javax.xml.stream.events.XMLEvent;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.Rule;
@@ -139,7 +139,7 @@ public class WSDLInterceptorTest {
 	}
 	
 	private String getLocationAttributeFor(StartElement element) {
-		return element.getAttributeByName(new QName(Constants.NS_UNDEFINED , "location")).getValue();
+		return element.getAttributeByName(new QName(XMLConstants.NULL_NS_URI, "location")).getValue();
 	}
 	
 	private boolean matchSoap12(String pattern) throws XMLStreamException, Exception {
