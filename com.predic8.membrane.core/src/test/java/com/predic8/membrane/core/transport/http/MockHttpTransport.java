@@ -15,6 +15,7 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 
+import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class MockHttpTransport extends HttpTransport {

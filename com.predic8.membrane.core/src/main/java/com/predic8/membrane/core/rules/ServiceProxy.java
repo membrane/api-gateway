@@ -25,7 +25,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.transport.http.SSLContext;
+import com.predic8.membrane.core.transport.SSLContext;
 
 public class ServiceProxy extends AbstractProxy {
 
@@ -107,7 +107,7 @@ public class ServiceProxy extends AbstractProxy {
 					if ("ssl".equals(child)) {
 						SSLParser sslOutboundParser = new SSLParser(router);
 						sslOutboundParser.parse(token);
-						sslOutboundContext = new SSLContext(sslOutboundParser);
+						sslOutboundContext = new SSLContext(sslOutboundParser, router.getResourceResolver());
 					} else {
 						super.parseChildren(token, child);
 					}
@@ -127,7 +127,7 @@ public class ServiceProxy extends AbstractProxy {
 		} else if ("ssl".equals(child)) {
 			SSLParser sslInboundParser = new SSLParser(router);
 			sslInboundParser.parse(token);
-			sslInboundContext = new SSLContext(sslInboundParser);
+			sslInboundContext = new SSLContext(sslInboundParser, router.getResourceResolver());
 		} else {
 			super.parseChildren(token, child);
 		}

@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.transport.PortOccupiedException;
+import com.predic8.membrane.core.transport.SSLContext;
 
 public class HttpEndpointListener extends Thread {
 

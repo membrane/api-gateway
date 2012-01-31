@@ -21,7 +21,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.transport.http.SSLContext;
+import com.predic8.membrane.core.transport.SSLContext;
 
 public interface Rule {
 	

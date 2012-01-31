@@ -27,6 +27,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.google.common.base.Objects;
+import com.predic8.membrane.core.transport.SSLContext;
 
 /**
  * Pools TCP/IP connections, holding them open for 30 seconds.

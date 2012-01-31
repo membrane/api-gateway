@@ -13,14 +13,18 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
+
 import com.predic8.membrane.core.Router;
-
-
 
 public class TrustStore extends Store {
 
 	public static final String ELEMENT_NAME = "truststore";
 
+	protected String algorithm;
+	
 	public TrustStore(Router router) {
 		super(router);
 	}
@@ -28,6 +32,26 @@ public class TrustStore extends Store {
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) throws Exception {
+		super.parseAttributes(token);
+		algorithm = token.getAttributeValue("", "algorithm");
+	}
+	
+	protected void writeAttributes(XMLStreamWriter out) throws XMLStreamException {
+		super.writeAttributes(out);
+		if (algorithm != null)
+			out.writeAttribute("algorithm", algorithm);
+	}
+	
+	public String getAlgorithm() {
+		return algorithm;
+	}
+	
+	public void setAlgorithm(String algorithm) {
+		this.algorithm = algorithm;
 	}
 	
 }

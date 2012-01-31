@@ -22,7 +22,10 @@ public class SSLParser extends AbstractConfigElement {
 
 	private KeyStore keyStore;
 	private TrustStore trustStore;
-	private String version;
+	private String algorithm;
+	private String protocol;
+	private String ciphers;
+	private String clientAuth;
 
 	public SSLParser(Router router) {
 		super(router);
@@ -30,7 +33,10 @@ public class SSLParser extends AbstractConfigElement {
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		version = token.getAttributeValue("", "version");
+		algorithm = token.getAttributeValue("", "algorithm");
+		protocol = token.getAttributeValue("", "protocol");
+		ciphers = token.getAttributeValue("", "ciphers");
+		clientAuth = token.getAttributeValue("", "clientAuth");
 		super.parseAttributes(token);
 	}
 	
@@ -49,8 +55,15 @@ public class SSLParser extends AbstractConfigElement {
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement("ssl");
-		if (version != null)
-			out.writeAttribute("version", version);
+		if (algorithm != null)
+			out.writeAttribute("algorithm", algorithm);
+		if (protocol != null)
+			out.writeAttribute("protocol", protocol);
+		if (ciphers != null)
+			out.writeAttribute("ciphers", ciphers);
+		if (clientAuth != null)
+			out.writeAttribute("clientAuth", clientAuth);
+		
 
 		if (keyStore != null)
 			keyStore.write(out);
@@ -76,12 +89,36 @@ public class SSLParser extends AbstractConfigElement {
 		this.trustStore = trustStore;
 	}
 	
-	public String getVersion() {
-		return version;
+	public String getAlgorithm() {
+		return algorithm;
 	}
 	
-	public void setVersion(String version) {
-		this.version = version;
+	public void setAlgorithm(String algorithm) {
+		this.algorithm = algorithm;
+	}
+	
+	public String getProtocol() {
+		return protocol;
+	}
+	
+	public void setProtocol(String protocol) {
+		this.protocol = protocol;
+	}
+	
+	public String getCiphers() {
+		return ciphers;
+	}
+	
+	public void setCiphers(String ciphers) {
+		this.ciphers = ciphers;
+	}
+	
+	public String getClientAuth() {
+		return clientAuth;
+	}
+	
+	public void setClientAuth(String clientAuth) {
+		this.clientAuth = clientAuth;
 	}
 
 }

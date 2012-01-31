@@ -65,7 +65,7 @@ import com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor
 import com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor;
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
-import com.predic8.membrane.core.transport.http.SSLContext;
+import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.util.TextUtil;
 
 public abstract class AbstractProxy extends AbstractConfigElement implements Rule {

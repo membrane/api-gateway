@@ -34,6 +34,7 @@ import com.predic8.membrane.core.http.OKResponse;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.Util;

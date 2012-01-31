@@ -22,7 +22,8 @@ public abstract class Store extends AbstractConfigElement {
 
 	protected String location;
 	protected String password;
-	protected String format;
+	protected String type;
+	protected String provider;
 
 	public Store(Router router) {
 		super(router);
@@ -32,42 +33,56 @@ public abstract class Store extends AbstractConfigElement {
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		location = token.getAttributeValue("", "location");
 		password = token.getAttributeValue("", "password");
-		format = token.getAttributeValue("", "format");
+		type = token.getAttributeValue("", "type");
+		provider = token.getAttributeValue("", "provider");
 		super.parseAttributes(token);
+	}
+
+	protected void writeAttributes(XMLStreamWriter out) throws XMLStreamException {
+		out.writeAttribute("location", location);
+		out.writeAttribute("password", password);
+		if (type != null)
+			out.writeAttribute("type", type);
+		if (provider != null)
+			out.writeAttribute("provider", provider);
+	}
+	
+	@Override
+	public void write(XMLStreamWriter out) throws XMLStreamException {
+		out.writeStartElement(getElementName());
+		writeAttributes(out);
+		out.writeEndElement();
 	}
 
 	public String getLocation() {
 		return location;
 	}
 
-	public String getPassword() {
-		return password;
-	}
-	
-	public String getFormat() {
-		return format;
-	}
-
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(getElementName());
-		out.writeAttribute("location", location);
-		out.writeAttribute("password", password);
-		if (format != null)
-			out.writeAttribute("format", format);
-		out.writeEndElement();
-	}
-
 	public void setLocation(String location) {
 		this.location = location;
+	}
+
+	public String getPassword() {
+		return password;
 	}
 
 	public void setPassword(String password) {
 		this.password = password;
 	}
 	
-	public void setFormat(String format) {
-		this.format = format;
+	public String getType() {
+		return type;
+	}
+	
+	public void setType(String type) {
+		this.type = type;
 	}
 
+	public String getProvider() {
+		return provider;
+	}
+
+	public void setProvider(String provider) {
+		this.provider = provider;
+	}
 }
