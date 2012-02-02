@@ -1,19 +1,12 @@
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.Collection;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.config.GenericComplexElement;
+import com.predic8.membrane.core.config.*;
 
 public class Balancer extends AbstractXmlElement {
 	public static final String DEFAULT_NAME = "Default";
@@ -29,7 +22,7 @@ public class Balancer extends AbstractXmlElement {
 		sct = new SessionCleanupThread(clusters);
 		sct.start();
 	}
-	
+
 	@Override
 	protected void finalize() throws Throwable {
 		if (sct != null) {
@@ -38,11 +31,11 @@ public class Balancer extends AbstractXmlElement {
 		}
 		super.finalize();
 	}
-	
+
 	public long getSessionTimeout() {
 		return sct == null ? 0 : sct.getSessionTimeout();
 	}
-	
+
 	public void setSessionTimeout(long sessionTimeout) {
 		if (sessionTimeout == 0) {
 			if (sct != null) {
@@ -57,7 +50,6 @@ public class Balancer extends AbstractXmlElement {
 			sct.setSessionTimeout(sessionTimeout);
 		}
 	}
-	
 
 	public long getTimeout() {
 		return timeout;
@@ -70,9 +62,10 @@ public class Balancer extends AbstractXmlElement {
 	public Collection<Cluster> getClusters() {
 		return clusters.values();
 	}
-	
+
 	private Cluster getCluster(String name) {
-		if (!clusters.containsKey(name)) // backward-compatibility: auto create clusters as they are accessed
+		if (!clusters.containsKey(name)) // backward-compatibility: auto create
+											// clusters as they are accessed
 			addCluster(name);
 		return clusters.get(name);
 	}
@@ -80,7 +73,8 @@ public class Balancer extends AbstractXmlElement {
 	public boolean addCluster(String name) {
 		if (clusters.containsKey(name))
 			return false;
-		log.debug("adding cluster with name [" + name + "] to balancer [" + name + "]");
+		log.debug("adding cluster with name [" + name + "] to balancer ["
+				+ name + "]");
 		clusters.put(name, new Cluster(name));
 		return true;
 	}
@@ -137,8 +131,9 @@ public class Balancer extends AbstractXmlElement {
 					if (token.getLocalName().equals("node")) {
 						GenericComplexElement n = new GenericComplexElement();
 						n.parse(token);
-						up(c.getAttribute("name"), n.getAttribute("host"),
-								Integer.parseInt(n.getAttribute("port")));
+						up(c.getAttributeOrDefault("name", Cluster.DEFAULT_NAME),
+								n.getAttribute("host"), Integer.parseInt(n
+										.getAttribute("port")));
 					} else {
 						super.parseChildren(token, child);
 					}
@@ -175,5 +170,5 @@ public class Balancer extends AbstractXmlElement {
 	public void setName(String name) {
 		this.name = name;
 	}
-	
+
 }
