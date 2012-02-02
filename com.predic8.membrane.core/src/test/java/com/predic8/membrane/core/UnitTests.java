@@ -48,6 +48,7 @@ import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.rules.ProxyRuleTest;
 import com.predic8.membrane.core.rules.ServiceProxyKeyTest;
+import com.predic8.membrane.core.transport.SSLContextTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
 import com.predic8.membrane.core.transport.http.HttpKeepAliveTest;
 import com.predic8.membrane.core.transport.http.ServiceInvocationTest;
@@ -103,7 +104,8 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	FormValidationInterceptorTest.class,
 	ServiceInvocationTest.class,
 	HttpKeepAliveTest.class,
-	ReverseProxyingInterceptorTest.class
+	ReverseProxyingInterceptorTest.class,
+	SSLContextTest.class
 })
 public class UnitTests {
 	/*
