@@ -5,7 +5,7 @@
 	<serviceProxy name="Balancer" port="8080">
 		<balancer>
 			<clusters>
-				<cluster name="Default">
+				<cluster name="Default"> 
 					<!-- In production replace this with your service nodes. -->					
 					<node host="localhost" port="4000"/>
 					<node host="localhost" port="4001"/>
