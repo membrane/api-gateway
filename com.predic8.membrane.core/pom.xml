@@ -88,6 +88,11 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+			<version>3.0.2.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
 			<version>3.0.2.RELEASE</version>
 		</dependency>
@@ -141,7 +146,7 @@
 			<version>[3.3,4.0)</version>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -235,7 +240,9 @@
 				<version>2.11</version>
 				<executions>
 					<execution>
-						<goals><goal>integration-test</goal></goals>
+						<goals>
+							<goal>integration-test</goal>
+						</goals>
 					</execution>
 				</executions>
 				<configuration>
