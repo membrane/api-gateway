@@ -31,7 +31,7 @@ To run the example execute the following steps:
 
 8. Add another node with host name "localhost" and port 4001.
 
-9. Open the URL http://localhost:8080. 
+9. Open the URL http://localhost:8080/service. 
 
 10. Refresh your browser a few times. You will notice that requests will be redirected to Node 1 and Node 2.
 
@@ -47,7 +47,7 @@ To run the example execute the following steps:
 
     You will find the node you have just created. 	
 
-13. Open the URL http://localhost:8080 again. When you refresh your browser, you will notice that the request will be
+13. Open the URL http://localhost:8080/service again. When you refresh your browser, you will notice that the request will be
     distributed between Node 1-3.
 
 

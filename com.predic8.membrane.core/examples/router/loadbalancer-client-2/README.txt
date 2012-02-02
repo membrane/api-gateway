@@ -38,7 +38,7 @@ To run the example execute the following steps:
    lbclient.bat up localhost 4001
    lbclient.bat up localhost 4002
 
-10. Open the URL http://localhost:8080. 
+10. Open the URL http://localhost:8080/service. 
 
 11. Click the refresh button in your browser a few times. You will notice that requests will be distributed to Node 1-3.
 
@@ -46,7 +46,7 @@ To run the example execute the following steps:
 
     lbclient.bat down localhost 4000
 
-13. Open the URL http://localhost:8080 again. After several refreshes, you will notice that no request are directed to
+13. Open the URL http://localhost:8080/service again. After several refreshes, you will notice that no request are directed to
     node 1 anymore.  
 
 14. Stop the router by closing the command line that runs the router.

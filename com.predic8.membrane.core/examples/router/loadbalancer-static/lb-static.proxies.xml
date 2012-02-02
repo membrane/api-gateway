@@ -13,6 +13,7 @@
 				</cluster>
 			</clusters>
 		</balancer>
+		<path>/service</path>
 	</serviceProxy>
 	
 	<!-- The mock nodes are only for testing. You can remove them in production. -->

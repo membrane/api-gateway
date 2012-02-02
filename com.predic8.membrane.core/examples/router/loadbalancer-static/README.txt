@@ -17,7 +17,7 @@ To run the example execute the following steps:
 
 2. Execute router.bat
 
-3. Open the URL http://localhost:8080. 
+3. Open the URL http://localhost:8080/service. 
 
 4. Refresh your browser a few times. You will notice that requests will be redirected to Node 1, Node 2 and Node 3.
 

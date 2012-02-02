@@ -4,22 +4,24 @@
 	<serviceProxy name="Balancer 1" port="8080">
 		<balancer name="balancer1">
 			<clusters>
-				<cluster>
+				<cluster name="Default">
 					<node host="localhost" port="4000"/>
 					<node host="localhost" port="4001"/>
 				</cluster>
 			</clusters>
 		</balancer>
+		<path>/service</path>
 	</serviceProxy>
 	<serviceProxy name="Balancer 2" port="8081">
 		<balancer name="balancer2">
 			<clusters>
-				<cluster>
+				<cluster name="Default">
 					<node host="localhost" port="4002"/>
 					<node host="localhost" port="4003"/>
 				</cluster>
 			</clusters>
 		</balancer>
+		<path>/service</path>
 	</serviceProxy>
 	<serviceProxy name="Up/Down Push Interface" port="9010">
 		<clusterNotification />
