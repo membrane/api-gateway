@@ -3,6 +3,7 @@ package com.predic8.membrane.servlet;
 import javax.servlet.*;
 
 import org.apache.commons.logging.*;
+import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import com.predic8.membrane.core.Router;
 
@@ -19,7 +20,7 @@ public class MembraneServletContextListener implements ServletContextListener {
 
 			log.debug("loading beans configuration from: "
 					+ getContextConfigLocation(sce));
-			router = Router.initFromServlet(sce.getServletContext());
+			router = loadRouter(sce.getServletContext());
 
 			router.setResourceResolver(getResolver(sce));
 
@@ -44,6 +45,21 @@ public class MembraneServletContextListener implements ServletContextListener {
 		}
 	}
 
+	private Router loadRouter(ServletContext ctx) {
+		log.debug("loading spring config from servlet.");
+
+		XmlWebApplicationContext appCtx= new XmlWebApplicationContext();
+		appCtx.setServletContext(ctx);
+		appCtx.setConfigLocation(ctx.getInitParameter("contextConfigLocation"));
+		
+		Router.setBeanFactory(appCtx);
+		
+		appCtx.refresh();
+
+		return (Router) appCtx.getBean("router");
+	}
+	
+	
 	private String getContextConfigLocation(ServletContextEvent sce) {
 		return sce.getServletContext()
 				.getInitParameter("contextConfigLocation");

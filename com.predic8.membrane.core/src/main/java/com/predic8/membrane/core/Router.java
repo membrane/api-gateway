@@ -17,11 +17,8 @@ package com.predic8.membrane.core;
 import java.net.MalformedURLException;
 import java.util.*;
 
-import javax.servlet.ServletContext;
-
 import org.apache.commons.logging.*;
 import org.springframework.context.support.*;
-import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -57,21 +54,6 @@ public class Router {
 			throws MalformedURLException {
 		log.debug("loading spring config from classpath: " + configFileName);
 		return init(configFileName, Router.class.getClassLoader());
-	}
-
-	public static Router initFromServlet(ServletContext ctx) {
-		log.debug("loading spring config from servlet.");
-
-		beanFactory = new XmlWebApplicationContext();
-		((XmlWebApplicationContext) beanFactory).setServletContext(ctx);
-		((XmlWebApplicationContext) beanFactory).setConfigLocation(ctx
-				.getInitParameter("contextConfigLocation"));
-
-		beanFactory.refresh();
-
-		router = (Router) beanFactory.getBean("router");
-
-		return router;
 	}
 
 	public static Router init(String resource, ClassLoader classLoader) {
@@ -161,4 +143,12 @@ public class Router {
 		this.resourceResolver = resourceResolver;
 	}
 
+	public static AbstractApplicationContext getBeanFactory() {
+		return beanFactory;
+	}
+
+	public static void setBeanFactory(AbstractApplicationContext beanFactory) {
+		Router.beanFactory = beanFactory;
+	}
+	
 }

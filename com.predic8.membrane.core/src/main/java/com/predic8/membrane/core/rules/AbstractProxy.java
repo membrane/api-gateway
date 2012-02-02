@@ -68,30 +68,30 @@ import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.util.TextUtil;
 
-public abstract class AbstractProxy extends AbstractConfigElement implements Rule {
+public abstract class AbstractProxy extends AbstractConfigElement implements
+		Rule {
 
-	private static Log log = LogFactory.getLog(AbstractProxy.class
-			.getName());
+	private static Log log = LogFactory.getLog(AbstractProxy.class.getName());
 
-	protected String name = ""; 
-	 
+	protected String name = "";
+
 	protected RuleKey key;
-	
+
 	protected volatile boolean blockRequest;
 	protected volatile boolean blockResponse;
-	
+
 	protected List<Interceptor> interceptors = new ArrayList<Interceptor>();
-	
+
 	/**
 	 * Used to determine the IP address for outgoing connections
 	 */
 	protected String localHost;
 
-	/** 
+	/**
 	 * Map<Status Code, StatisticCollector>
 	 */
 	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();
-	
+
 	private class InOutElement extends AbstractXmlElement {
 		private Interceptor.Flow flow;
 
@@ -102,77 +102,80 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 				flow = Flow.RESPONSE;
 			}
 		}
-		
+
 		@Override
 		protected void parseChildren(XMLStreamReader token, String child)
 				throws Exception {
 			parseInterceptors(token, child).setFlow(flow);
 		}
 	}
-	
+
 	public AbstractProxy() {
 		super(null);
 	}
-	
+
 	public AbstractProxy(RuleKey ruleKey) {
 		super(null);
 		this.key = ruleKey;
 	}
-	
+
 	protected abstract void parseKeyAttributes(XMLStreamReader token);
-	
+
 	@Override
 	public String toString() { //TODO toString, getName, setName und name="" Initialisierung vereinheitlichen.
 		return getName();
 	}
-	
-	
+
 	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
+	protected void parseChildren(XMLStreamReader token, String child)
+			throws Exception {
 		if (LocalHost.ELEMENT_NAME.equals(child)) {
-			this.localHost = ((LocalHost) (new LocalHost().parse(token))).getValue();
-		} else if (Pattern.matches("request|response", child)){
+			this.localHost = ((LocalHost) (new LocalHost().parse(token)))
+					.getValue();
+		} else if (Pattern.matches("request|response", child)) {
 			new InOutElement().parse(token);
 		} else {
 			parseInterceptors(token, child);
-		}  
+		}
 	}
-	
+
 	protected void writeExtension(XMLStreamWriter out)
-	throws XMLStreamException {}	
-	
+			throws XMLStreamException {
+	}
+
 	protected void writeRule(XMLStreamWriter out) throws XMLStreamException {
 		if (this.name != null)
 			out.writeAttribute("name", this.name);
 		out.writeAttribute("port", "" + key.getPort());
 		writeAttrIfTrue(out, blockRequest, "blockRequest", blockRequest);
 		writeAttrIfTrue(out, blockResponse, "blockResponse", blockResponse);
-		
+
 		writeExtension(out);
-		
+
 		writeLocalHost(out);
-		
+
 		writeInterceptors(out);
-		
+
 	}
-	
+
 	private void writeLocalHost(XMLStreamWriter out) throws XMLStreamException {
 		if (localHost == null)
 			return;
-		
+
 		new LocalHost(localHost).write(out);
 	}
-	
-	private Interceptor parseInterceptors(XMLStreamReader token, String child) throws Exception {
+
+	private Interceptor parseInterceptors(XMLStreamReader token, String child)
+			throws Exception {
 		Interceptor i = null;
 		if ("interceptor".equals(child)) {
 			i = getInterceptorBId(readInterceptor(token).getId());
 		} else if ("adminConsole".equals(child)) {
-			super.parseChildren(token,child); //ignores element
+			super.parseChildren(token, child); // ignores element
 			return addAdminAndWebServerInterceptor(token);
 		} else {
 			i = getInlinedInterceptor(token, child);
-		}		
+		}
 		interceptors.add(i);
 		return i;
 	}
@@ -188,15 +191,17 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	}
 
 	private AbstractInterceptor readInterceptor(XMLStreamReader token)
-		throws Exception {
-		return (AbstractInterceptor) (new AbstractInterceptor(router)).parse(token);
+			throws Exception {
+		return (AbstractInterceptor) (new AbstractInterceptor(router))
+				.parse(token);
 	}
-	
+
 	private Interceptor getInterceptorBId(String id) {
 		return router.getInterceptorFor(id);
 	}
 
-	private Interceptor getInlinedInterceptor(XMLStreamReader token, String name ) throws Exception {
+	private Interceptor getInlinedInterceptor(XMLStreamReader token, String name)
+			throws Exception {
 		AbstractInterceptor i = null;
 		if ("transform".equals(name)) {
 			i = new XSLTInterceptor();
@@ -241,51 +246,53 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 		} else if ("xmlProtection".equals(name)) {
 			i = new XMLProtectionInterceptor();
 		} else {
-			throw new Exception("Unknown interceptor found: "+name);
+			throw new Exception("Unknown interceptor found: " + name);
 		}
 		i.setRouter(router);
 		i.parse(token);
 		return i;
-	}	
-	
+	}
+
 	private void parseBlocking(XMLStreamReader token) {
 		blockRequest = getBoolean(token, "blockRequest");
 		blockResponse = getBoolean(token, "blockResponse");
 	}
-		
-	private void writeInterceptors(XMLStreamWriter out) throws XMLStreamException {
+
+	private void writeInterceptors(XMLStreamWriter out)
+			throws XMLStreamException {
 		Flow lastFlow = Flow.REQUEST_RESPONSE;
-		for (Interceptor i : interceptors){
+		for (Interceptor i : interceptors) {
 			if (i.getFlow() != lastFlow) {
 				if (lastFlow != Flow.REQUEST_RESPONSE) {
 					out.writeEndElement();
-					log.debug(lastFlow==Flow.REQUEST?"</request>":"</response>");
+					log.debug(lastFlow == Flow.REQUEST ? "</request>"
+							: "</response>");
 				}
-				
+
 				if (i.getFlow() == Flow.REQUEST) {
 					out.writeStartElement("request");
 					log.debug("<request>");
 				} else if (i.getFlow() == Flow.RESPONSE) {
-					out.writeStartElement("response");					
+					out.writeStartElement("response");
 					log.debug("<response>");
 				}
 				lastFlow = i.getFlow();
 			}
-			log.debug(i.getFlow() +":"+ i.getDisplayName());
-			i.write(out);			
+			log.debug(i.getFlow() + ":" + i.getDisplayName());
+			i.write(out);
 		}
 		if (lastFlow != Flow.REQUEST_RESPONSE) {
 			out.writeEndElement();
-			log.debug(lastFlow==Flow.REQUEST?"</request>":"</response>");
+			log.debug(lastFlow == Flow.REQUEST ? "</request>" : "</response>");
 		}
 	}
-	
+
 	protected <E> void writeAttrIfTrue(XMLStreamWriter out, boolean exp, String n, E v) throws XMLStreamException {
 		if (exp) {
-			out.writeAttribute(n,""+v);
+			out.writeAttribute(n, "" + v);
 		}
-	}	
-	
+	}
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
 		name = token.getAttributeValue("", "name");
@@ -323,6 +330,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 		this.name = name;
 
 	}
+
 	public void setKey(RuleKey ruleKey) {
 		this.key = ruleKey;
 	}
@@ -330,7 +338,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 	public void setBlockRequest(boolean blockStatus) {
 		this.blockRequest = blockStatus;
 	}
-	
+
 	public void setBlockResponse(boolean blockStatus) {
 		this.blockResponse = blockStatus;
 	}
@@ -341,8 +349,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 
 	public void setLocalHost(String localHost) {
 		this.localHost = localHost;
-	}	
-	
+	}
+
 	private StatisticCollector getStatisticCollectorByStatusCode(int code) {
 		StatisticCollector sc = statusCodes.get(code);
 		if (sc == null) {
@@ -367,39 +375,44 @@ public abstract class AbstractProxy extends AbstractConfigElement implements Rul
 
 	public int getCount() {
 		int c = 0;
-		for ( StatisticCollector statisticCollector : statusCodes.values() ) {
+		for (StatisticCollector statisticCollector : statusCodes.values()) {
 			c += statisticCollector.getCount();
-		}			
+		}
 		return c;
 	}
-	
+
 	@Override
 	public Rule getDeepCopy() throws Exception {
 		String xml = serialize();
-		
+
 		XMLStreamReader r = getStreamReaderFor(xml.getBytes());
-		AbstractProxy newObject = (AbstractProxy)getNewInstance().parse(r);
+		AbstractProxy newObject = (AbstractProxy) getNewInstance().parse(r);
 		newObject.setRouter(Router.getInstance());
 		return newObject;
 	}
 
-	private String serialize() throws XMLStreamException, FactoryConfigurationError, UnsupportedEncodingException {
+	private String serialize() throws XMLStreamException,
+			FactoryConfigurationError, UnsupportedEncodingException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(baos, Constants.UTF_8);
+		XMLStreamWriter writer = XMLOutputFactory.newInstance()
+				.createXMLStreamWriter(baos, Constants.UTF_8);
 		write(writer);
-		ByteArrayInputStream stream = new ByteArrayInputStream(baos.toByteArray());
-		InputStreamReader reader = new InputStreamReader(stream, Constants.UTF_8);
+		ByteArrayInputStream stream = new ByteArrayInputStream(
+				baos.toByteArray());
+		InputStreamReader reader = new InputStreamReader(stream,
+				Constants.UTF_8);
 		return TextUtil.formatXML(reader);
 	}
-	
-	public XMLStreamReader getStreamReaderFor(byte[] bytes) throws XMLStreamException {
+
+	public XMLStreamReader getStreamReaderFor(byte[] bytes)
+			throws XMLStreamException {
 		XMLInputFactory factory = XMLInputFactory.newInstance();
-	    ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-	    return new FixedStreamReader(factory.createXMLStreamReader(stream));
+		ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+		return new FixedStreamReader(factory.createXMLStreamReader(stream));
 	}
-	
+
 	protected abstract AbstractProxy getNewInstance();
-	
+
 	@Override
 	public SSLContext getSslInboundContext() {
 		return null;
