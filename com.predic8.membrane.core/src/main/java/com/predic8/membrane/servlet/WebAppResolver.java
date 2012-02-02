@@ -1,6 +1,8 @@
 package com.predic8.membrane.servlet;
 
-import java.io.File;
+import java.io.*;
+
+import javax.servlet.ServletContext;
 
 import org.apache.commons.logging.*;
 
@@ -10,26 +12,21 @@ public class WebAppResolver extends ResourceResolver {
 
 	static private Log log = LogFactory.getLog(WebAppResolver.class.getName());
 
-	private String appBase;
+	private ServletContext ctx;
 
 	@Override
-	public File getRealFile(String uri, boolean useMembraneHome) {
-		if (new File(uri).isAbsolute()) {
-			log.debug("loading absolute resource: " + uri);
-			return new File(uri);
-		}
-
-		log.debug("loading resource relative to appBase: " + uri);
-		log.debug("appBase: " + appBase);
-		return new File(appBase, uri);
+	public InputStream resolve(String uri, boolean useMembraneHome)
+			throws FileNotFoundException {
+		log.debug("loading resource from: " + uri);
+		return ctx.getResourceAsStream(uri);
 	}
 
-	public String getAppBase() {
-		return appBase;
+	public ServletContext getCtx() {
+		return ctx;
 	}
 
-	public void setAppBase(String appBase) {
-		this.appBase = appBase;
+	public void setCtx(ServletContext ctx) {
+		this.ctx = ctx;
 	}
 
 }

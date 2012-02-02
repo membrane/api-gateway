@@ -2,23 +2,36 @@ package com.predic8.membrane.servlet;
 
 import javax.servlet.*;
 
-import com.predic8.membrane.core.HotDeploymentThread;
+import org.apache.commons.logging.*;
+
 import com.predic8.membrane.core.Router;
 
 public class MembraneServletContextListener implements ServletContextListener {
 
-	Router router;
-	HotDeploymentThread hdt;
+	private static Log log = LogFactory
+			.getLog(MembraneServletContextListener.class.getName());
+
+	private Router router;
 
 	public void contextInitialized(ServletContextEvent sce) {
 		try {
-			router = Router.init(getConfPath(sce, "monitorBeansXml"));
+			log.info("Starting Router...");
+
+			log.debug("loading beans configuration from: "
+					+ getContextConfigLocation(sce));
+			router = Router.initFromServlet(sce.getServletContext());
 
 			router.setResourceResolver(getResolver(sce));
-			String proxiesXml = sce.getServletContext().getInitParameter("proxiesXml");
-			router.getConfigurationManager().loadConfiguration(proxiesXml);
+
+			log.debug("loading proxies configuration from: "
+					+ getProxiesXmlLocation(sce));
+			router.getConfigurationManager().loadConfiguration(
+					getProxiesXmlLocation(sce));
+
+			log.info("Router running...");
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			log.error("Router not started!", ex);
+			throw new RuntimeException("Router not started!", ex);
 		}
 	}
 
@@ -27,19 +40,23 @@ public class MembraneServletContextListener implements ServletContextListener {
 			router.getConfigurationManager().stopHotDeployment();
 			router.getTransport().closeAll();
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			log.warn("Failed to shutdown router!", ex);
 		}
+	}
+
+	private String getContextConfigLocation(ServletContextEvent sce) {
+		return sce.getServletContext()
+				.getInitParameter("contextConfigLocation");
+	}
+
+	private String getProxiesXmlLocation(ServletContextEvent sce) {
+		return sce.getServletContext().getInitParameter("proxiesXml");
 	}
 
 	private WebAppResolver getResolver(ServletContextEvent sce) {
 		WebAppResolver r = new WebAppResolver();
-		r.setAppBase(sce.getServletContext().getRealPath("/"));
+		r.setCtx(sce.getServletContext());
 		return r;
-	}
-
-	private String getConfPath(ServletContextEvent sce, String param) {
-		return sce.getServletContext().getRealPath("/")
-				+ sce.getServletContext().getInitParameter(param);
 	}
 
 }

@@ -15,20 +15,18 @@
 package com.predic8.membrane.core;
 
 import java.net.MalformedURLException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
+import javax.servlet.ServletContext;
 
-import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import org.apache.commons.logging.*;
+import org.springframework.context.support.*;
+import org.springframework.web.context.support.XmlWebApplicationContext;
+
+import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.Transport;
-import com.predic8.membrane.core.util.DNSCache;
-import com.predic8.membrane.core.util.ResourceResolver;
+import com.predic8.membrane.core.util.*;
 
 public class Router {
 
@@ -46,7 +44,7 @@ public class Router {
 
 	protected static Router router;
 
-	protected static FileSystemXmlApplicationContext beanFactory;
+	protected static AbstractApplicationContext beanFactory;
 
 	protected DNSCache dnsCache = new DNSCache();
 
@@ -61,15 +59,26 @@ public class Router {
 		return init(configFileName, Router.class.getClassLoader());
 	}
 
+	public static Router initFromServlet(ServletContext ctx) {
+		log.debug("loading spring config from servlet.");
+
+		beanFactory = new XmlWebApplicationContext();
+		((XmlWebApplicationContext) beanFactory).setServletContext(ctx);
+		((XmlWebApplicationContext) beanFactory).setConfigLocation(ctx
+				.getInitParameter("contextConfigLocation"));
+
+		beanFactory.refresh();
+
+		router = (Router) beanFactory.getBean("router");
+
+		return router;
+	}
+
 	public static Router init(String resource, ClassLoader classLoader) {
 		log.debug("loading spring config: " + resource);
 
-		try {
-			beanFactory = new FileSystemXmlApplicationContext(
-					new String[] { resource }, false);
-		} catch (Error e) {
-			e.printStackTrace();
-		}
+		beanFactory = new FileSystemXmlApplicationContext(
+				new String[] { resource }, false);
 		beanFactory.setClassLoader(classLoader);
 		beanFactory.refresh();
 
