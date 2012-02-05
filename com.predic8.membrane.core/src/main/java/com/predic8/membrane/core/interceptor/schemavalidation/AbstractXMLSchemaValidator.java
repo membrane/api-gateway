@@ -87,7 +87,9 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 			log.info("Creating validator for schema: " + schema);
 			StreamSource ss = new StreamSource(new StringReader(schema.getAsString()));
 			ss.setSystemId(location);
+			sf.setResourceResolver(resourceResolver.toLSResourceResolver());
 			Validator validator = sf.newSchema(ss).newValidator();
+			validator.setResourceResolver(resourceResolver.toLSResourceResolver());
 			validator.setErrorHandler(new SchemaValidatorErrorHandler());
 			validators.add(validator);
 		}

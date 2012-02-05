@@ -2,7 +2,12 @@ package com.predic8.membrane.core.util;
 
 import java.io.*;
 
+import org.apache.commons.httpclient.URI;
 import org.apache.commons.logging.*;
+import org.w3c.dom.ls.LSInput;
+import org.w3c.dom.ls.LSResourceResolver;
+
+import com.predic8.xml.util.ExternalResolver;
 
 public class ResourceResolver {
 	static private Log log = LogFactory
@@ -40,5 +45,36 @@ public class ResourceResolver {
 
 		log.debug("loading resource from file system relative to cwd: " + uri);
 		return new File(uri);
+	}
+	
+	public LSResourceResolver toLSResourceResolver() {
+		return new LSResourceResolver() {
+			@Override
+			public LSInput resolveResource(String type, String namespaceURI,
+					String publicId, String systemId, String baseURI) {
+				try {
+					String file = new URI(new URI(baseURI, false), systemId, false).getPath();
+					return new LSInputImpl(publicId, file, resolve(file));
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+		};
+	}
+
+	public ExternalResolver toExternalResolver() {
+		return new ExternalResolver() {
+			@Override
+			public InputStream resolveAsFile(String filename, String baseDir) {
+				try {
+					if(baseDir != null) {
+						return ResourceResolver.this.resolve(baseDir+filename);
+					}
+					return ResourceResolver.this.resolve(filename);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+		};
 	}
 }

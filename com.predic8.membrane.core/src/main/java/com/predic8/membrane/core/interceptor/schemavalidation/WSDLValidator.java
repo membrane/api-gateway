@@ -5,6 +5,9 @@ import java.util.List;
 
 import javax.xml.transform.Source;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
@@ -15,6 +18,8 @@ import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.xml.util.ResourceDownloadException;
 
 public class WSDLValidator extends AbstractXMLSchemaValidator {
+	static Log log = LogFactory
+			.getLog(WSDLValidator.class.getName());
 
 	public WSDLValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		super(resourceResolver, location, failureHandler);
@@ -24,7 +29,9 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(location);
 		try {
-			return new WSDLParser().parse(ctx).getTypes().getSchemas();
+			WSDLParser wsdlParser = new WSDLParser();
+			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver());
+			return wsdlParser.parse(ctx).getTypes().getSchemas();
 		} catch (ResourceDownloadException e) {
 			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.");
 		}

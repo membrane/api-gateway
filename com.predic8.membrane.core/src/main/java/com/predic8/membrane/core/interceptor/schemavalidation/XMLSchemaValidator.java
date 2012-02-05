@@ -34,11 +34,13 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	@Override
 	protected List<Validator> createValidators() throws Exception {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
+		sf.setResourceResolver(resourceResolver.toLSResourceResolver());
 		List<Validator> validators = new ArrayList<Validator>();
 		log.info("Creating validator for schema: " + location);
 		StreamSource ss = new StreamSource(resourceResolver.resolve(location));
 		ss.setSystemId(location);
 		Validator validator = sf.newSchema(ss).newValidator();
+		validator.setResourceResolver(resourceResolver.toLSResourceResolver());
 		validator.setErrorHandler(new SchemaValidatorErrorHandler());
 		validators.add(validator);
 		return validators;

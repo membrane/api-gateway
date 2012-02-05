@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.interceptor.schemavalidation;
+package com.predic8.membrane.core.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -34,12 +34,18 @@ public class LSInputImpl implements LSInput {
 
 	private InputStream inputStream;
 	
-	public LSInputImpl(String publicId, String sysId, String input) {
+	public LSInputImpl(String publicId, String systemId, String input) {
 	    this.publicId = publicId;
-	    this.systemId = sysId;
+	    this.systemId = systemId;
 	    this.inputStream = new ByteArrayInputStream(input.getBytes());
 	}
-	
+
+	public LSInputImpl(String publicId, String systemId, InputStream inputStream) {
+	    this.publicId = publicId;
+	    this.systemId = systemId;
+	    this.inputStream = inputStream;
+	}
+
 	@Override
 	public String getPublicId() {
 	    return publicId;
