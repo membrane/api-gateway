@@ -24,9 +24,6 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.FixedStreamReader;
-
 public abstract class AbstractXmlElement implements XMLElement {
 
 	private static Log log = LogFactory.getLog(AbstractXmlElement.class
@@ -55,7 +52,7 @@ public abstract class AbstractXmlElement implements XMLElement {
 		return this;
 	}
 
-	protected void doAfterParsing() throws Exception {
+	public void doAfterParsing() throws Exception {
 	}
 
 	protected void move2RootElementIfNeeded(XMLStreamReader token)

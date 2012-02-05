@@ -135,7 +135,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	protected void doAfterParsing() throws Exception {
+	public void doAfterParsing() throws Exception {
 		init();
 	}
 	

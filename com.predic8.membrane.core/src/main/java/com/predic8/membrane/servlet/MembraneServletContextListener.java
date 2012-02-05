@@ -49,10 +49,10 @@ public class MembraneServletContextListener implements ServletContextListener {
 		log.debug("loading spring config from servlet.");
 
 		XmlWebApplicationContext appCtx= new XmlWebApplicationContext();
+		Router.setBeanFactory(appCtx);
+		
 		appCtx.setServletContext(ctx);
 		appCtx.setConfigLocation(ctx.getInitParameter("contextConfigLocation"));
-		
-		Router.setBeanFactory(appCtx);
 		
 		appCtx.refresh();
 

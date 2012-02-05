@@ -169,13 +169,14 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			throws Exception {
 		Interceptor i = null;
 		if ("interceptor".equals(child)) {
-			i = getInterceptorBId(readInterceptor(token).getId());
+			i = getInterceptorBId(readInterceptor(token).getId());			
+			((AbstractXmlElement)i).doAfterParsing(); //TODO move to right place
 		} else if ("adminConsole".equals(child)) {
 			super.parseChildren(token, child); // ignores element
 			return addAdminAndWebServerInterceptor(token);
 		} else {
 			i = getInlinedInterceptor(token, child);
-		}
+		}		
 		interceptors.add(i);
 		return i;
 	}

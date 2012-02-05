@@ -175,7 +175,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	}	
 	
 	@Override
-	protected void doAfterParsing() throws Exception {
+	public void doAfterParsing() throws Exception {
 		init();
 	}
 	
