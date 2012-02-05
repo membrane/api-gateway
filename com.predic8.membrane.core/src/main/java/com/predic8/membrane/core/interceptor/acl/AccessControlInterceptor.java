@@ -32,6 +32,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ResourceResolver;
 
 public class AccessControlInterceptor extends AbstractInterceptor {
 
@@ -89,37 +90,23 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	private void init() throws Exception {
-		if (aclFilename == null) {
-			log.error("Fatal error in proxy configuration: <accessControl> element is invalid.");
-			log.error("File name is not specified for access control. The valid element looks like <accessControl file='conf/acl.xml'/>");
-			System.exit(1);
-		}
-		accessControl = parse(aclFilename);
+		accessControl = parse(aclFilename, router.getResourceResolver());
 	}
 
-	protected AccessControl parse(String fileName) throws Exception {
-		XMLInputFactory factory = XMLInputFactory.newInstance();
-	    XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(new FileInputStream(checkAclFile(fileName))));
-	    return (AccessControl) new AccessControl(router).parse(reader);
+	protected AccessControl parse(String fileName, ResourceResolver resourceResolver) throws Exception {
+	    try {
+			XMLInputFactory factory = XMLInputFactory.newInstance();
+		    XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(resourceResolver.resolve(fileName)));
+		    return (AccessControl) new AccessControl(router).parse(reader);
+	    } catch (Exception e) {
+	    	log.error("Error initializing accessControl.", e);
+	    	e.printStackTrace();
+	    	System.err.println("Error initializing accessControl: terminating.");
+	    	System.exit(1);
+	    	throw e;
+	    }
 	}
 	
-	private String checkAclFile(String fileName) {
-		File file = new File(fileName);
-		if (file.exists()) {
-			return fileName;
-		}
-		
-		fileName = System.getenv(Constants.MEMBRANE_HOME) + System.getProperty("file.separator") + fileName;
-		file = new File(fileName);
-		if (!file.exists()) {
-			log.error("Error in proxy configuration: <accessControl> element may contain invalid data.");
-			log.error("Unable to locate access control file "  + fileName + ". Please set MEMBRANE_HOME or start the Membrane from the instalation directory.");
-			System.exit(1);
-		}
-		
-		return fileName;
-	}
-
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement("accessControl");

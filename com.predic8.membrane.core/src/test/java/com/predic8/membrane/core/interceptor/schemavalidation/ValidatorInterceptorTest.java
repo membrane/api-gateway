@@ -125,6 +125,7 @@ public class ValidatorInterceptorTest {
 
 	private ValidatorInterceptor createValidatorInterceptor(String wsdl) throws Exception {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
+		interceptor.setResourceResolver(new ResourceResolver());
 		interceptor.setWsdl(wsdl);
 		interceptor.init();
 		return interceptor;

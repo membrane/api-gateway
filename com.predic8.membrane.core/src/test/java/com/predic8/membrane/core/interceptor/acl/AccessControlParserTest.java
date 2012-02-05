@@ -17,11 +17,13 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.predic8.membrane.core.util.ResourceResolver;
+
 import junit.framework.TestCase;
 
 public class AccessControlParserTest extends TestCase {
 
-	public static final String FILE_NAME = "src/test/resources/acl/acl.xml";
+	public static final String FILE_NAME = "classpath:/acl/acl.xml";
 	
 	public static final String RESOURCE_URI_1 = "/axis2/services";
 	
@@ -32,7 +34,7 @@ public class AccessControlParserTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		resources = new AccessControlInterceptor().parse(FILE_NAME).getResources();
+		resources = new AccessControlInterceptor().parse(FILE_NAME, new ResourceResolver()).getResources();
 	}
 	
 	@Test

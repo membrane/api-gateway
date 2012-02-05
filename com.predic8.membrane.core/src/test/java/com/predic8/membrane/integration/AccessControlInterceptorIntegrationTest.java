@@ -130,6 +130,7 @@ public class AccessControlInterceptorIntegrationTest {
 	
 	private void setInterceptor(String fileName) {
 		AccessControlInterceptor interceptor = new AccessControlInterceptor();
+		interceptor.setRouter(router);
 		interceptor.setAclFilename(fileName);
 		router.getTransport().getInterceptors().add(interceptor);
 	}
