@@ -110,7 +110,7 @@ public class HttpUtil {
 	private static String getFaultSOAPBody(String text) {
 		StringBuffer buf = new StringBuffer();
 
-		buf.append("<soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'>");
+		buf.append("<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">");
 		buf.append(Constants.CRLF);
 		buf.append("<soapenv:Body>");
 		buf.append(Constants.CRLF);
