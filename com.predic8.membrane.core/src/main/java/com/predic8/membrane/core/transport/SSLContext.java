@@ -11,17 +11,14 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Set;
 
 import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509ExtendedTrustManager;
 
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.config.security.SSLParser;
@@ -29,44 +26,6 @@ import com.predic8.membrane.core.config.security.Store;
 import com.predic8.membrane.core.util.ResourceResolver;
 
 public class SSLContext {
-	@SuppressWarnings("unused")
-	private final class NullTrustManager extends X509ExtendedTrustManager {
-		@Override
-		public X509Certificate[] getAcceptedIssuers() {
-			return null;
-		}
-
-		@Override
-		public void checkServerTrusted(X509Certificate[] arg0, String arg1)
-				throws CertificateException {
-		}
-
-		@Override
-		public void checkClientTrusted(X509Certificate[] arg0, String arg1)
-				throws CertificateException {
-		}
-
-		@Override
-		public void checkServerTrusted(X509Certificate[] arg0, String arg1,
-				SSLEngine arg2) throws CertificateException {
-		}
-
-		@Override
-		public void checkServerTrusted(X509Certificate[] arg0, String arg1,
-				Socket arg2) throws CertificateException {
-		}
-
-		@Override
-		public void checkClientTrusted(X509Certificate[] arg0, String arg1,
-				SSLEngine arg2) throws CertificateException {
-		}
-
-		@Override
-		public void checkClientTrusted(X509Certificate[] arg0, String arg1,
-				Socket arg2) throws CertificateException {
-		}
-	}
-
 	private final javax.net.ssl.SSLContext sslc;
 	private final String[] ciphers;
 	private final boolean wantClientAuth, needClientAuth;
