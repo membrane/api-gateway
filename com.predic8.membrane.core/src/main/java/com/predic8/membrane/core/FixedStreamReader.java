@@ -20,7 +20,7 @@ public class FixedStreamReader extends StreamReaderDelegate {
         }
 
         for (int i = 0; i < getAttributeCount(); i++) {
-            if ( (ns == null || getAttributeNamespace(i) == null) && lName.equals(getAttributeLocalName(i))) {
+            if ( (ns == null || getAttributeNamespace(i) == null || "".equals(getAttributeNamespace(i))) && lName.equals(getAttributeLocalName(i))) {
                 return getAttributeValue(i);
             }
         }
