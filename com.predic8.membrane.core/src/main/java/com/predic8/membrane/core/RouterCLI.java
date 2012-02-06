@@ -20,16 +20,16 @@ import com.predic8.membrane.core.transport.PortOccupiedException;
 
 public class RouterCLI {
 
-	public static void main(String[] args) throws ParseException {
+	public static void main(String[] args) {
 
 		MembraneCommandLine cl = new MembraneCommandLine();
-		cl.parse(args);
-		if (cl.needHelp()) {
-			cl.printUsage();
-			return;
-		}
-
 		try {
+			cl.parse(args);
+			if (cl.needHelp()) {
+				cl.printUsage();
+				return;
+			}
+
 			Router.init(getConfigFile(cl), RouterCLI.class.getClassLoader()).getConfigurationManager().loadConfiguration(getRulesFile(cl));
 		} catch (ClassNotFoundException e) {
 		
@@ -44,7 +44,6 @@ public class RouterCLI {
 			System.exit(1);
 		}
 
-		
 		new RouterCLI().waitForever();
 		
 	}

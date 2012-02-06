@@ -91,7 +91,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			
 			String pathQuery = URIUtil.getPathQuery(dest);
 			int pathBegin = dest.lastIndexOf(pathQuery);
-			String schemaHostPort = pathBegin == -1 ? dest : dest.substring(0, pathBegin);
+			String schemaHostPort = pathBegin == -1 ? dest : dest.substring(0, pathBegin); // TODO check -1 case
 			
 			log.debug("pathQuery: " + pathQuery);
 			log.debug("schemaHostPort: " + schemaHostPort);
