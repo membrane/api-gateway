@@ -103,7 +103,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	    	e.printStackTrace();
 	    	System.err.println("Error initializing accessControl: terminating.");
 	    	System.exit(1);
-	    	throw e;
+	    	throw e; // is never reached
 	    }
 	}
 	
