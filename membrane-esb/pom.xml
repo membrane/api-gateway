@@ -217,6 +217,13 @@
 		</dependencies>
 	</dependencyManagement>
 
+	<repositories>
+		<repository>
+			<id>predic8-releases</id>
+			<url>http://maven.predic8.com/content/groups/public</url>
+		</repository>
+	</repositories>
+
 	<build>
 		<plugins>
 			<plugin>
