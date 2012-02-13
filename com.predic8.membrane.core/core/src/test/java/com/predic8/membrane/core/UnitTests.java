@@ -69,7 +69,6 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	RequestTest.class,
 	ResponseTest.class,
 	MagicTest.class,
-	CoreActivatorTest.class,	
 	WSDLInterceptorTest.class,
 	AccessControlParserTest.class,
 	AccessControlInterceptorTest.class,
