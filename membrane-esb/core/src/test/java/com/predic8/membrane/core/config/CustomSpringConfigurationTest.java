@@ -15,6 +15,7 @@ package com.predic8.membrane.core.config;
 
 import static junit.framework.Assert.*;
 
+import java.io.File;
 import java.util.List;
 
 import org.junit.*;
@@ -39,6 +40,7 @@ public class CustomSpringConfigurationTest {
 	
 	@Before
 	public void setUp() throws Exception {
+		new File("target/temp").mkdirs();
 		router = Router.init("src/test/resources/custom-spring-beans.xml");
 	}
 
