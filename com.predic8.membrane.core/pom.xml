@@ -54,7 +54,7 @@
 		<dependency>
 			<groupId>org.codehaus.groovy</groupId>
 			<artifactId>groovy-all</artifactId>
-			<version>1.7.4</version>
+			<version>1.8.5</version>
 		</dependency>
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
@@ -123,15 +123,11 @@
 			<groupId>com.predic8</groupId>
 			<artifactId>soa-model</artifactId>
 			<version>2.0.9</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/soa-model-2.0.9.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>com.predic8</groupId>
 			<artifactId>xmlbeautifier</artifactId>
 			<version>1.2.1</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/xmlbeautifier-1.2.1.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>com.springsource</groupId>
