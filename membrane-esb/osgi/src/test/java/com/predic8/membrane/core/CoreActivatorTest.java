@@ -25,7 +25,7 @@ public class CoreActivatorTest {
 	
 	@Test
 	public void testGetJarUrls() throws Exception {
-		List<URL> urls = ClassloaderUtil.getJarUrls("lib");
+		List<URL> urls = ClassloaderUtil.getJarUrls("target");
 		
 		assertFalse(urls == null);
 		assertFalse(urls.isEmpty());
