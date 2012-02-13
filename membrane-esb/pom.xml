@@ -6,15 +6,13 @@
 	<version>3.3.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-<!-- 
 	<modules>
 		<module>core</module>
+		<module>cli</module>
 		<module>osgi</module>
 		<module>war</module>
 	</modules>
-	 -->
-	 
-	 
+	  
 	 <!-- 
 	 
 	 			<plugin>
@@ -25,7 +23,6 @@
 						<descriptor>src/assemble/starter.xml</descriptor>
 						<descriptor>src/assemble/rt.xml</descriptor>
 						<descriptor>src/assemble/distribution.xml</descriptor>
-						<descriptor>src/assemble/war.xml</descriptor>
 					</descriptors>
 				</configuration>
 				<executions>
@@ -53,7 +50,12 @@
 			<dependency>
 				<groupId>com.predic8</groupId>
 				<artifactId>membrane-esb-core</artifactId>
-				<version>3.3.1-SNAPSHOT</version>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.predic8</groupId>
+				<artifactId>membrane-esb-cli</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 		
 			<dependency>

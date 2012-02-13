@@ -29,17 +29,5 @@
 			<artifactId>xalan</artifactId>
 		</dependency>
 	</dependencies>
-
-	<properties>
-		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
-	</properties>
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-source-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
     
 </project>
