@@ -16,6 +16,8 @@ package com.predic8.membrane.core.http;
 
 import static junit.framework.Assert.*;
 
+import java.io.UnsupportedEncodingException;
+
 import javax.activation.MimeType;
 
 import org.junit.*;
@@ -31,6 +33,7 @@ public class HeaderTest {
 		header.setContentType("text/xml; charset=utf-8");
 		header.add("host", "127.0.0.1:2000");
 		header.setAccept("application/soap+xml, application/dime, multipart/related, text/*");
+		header.setAuthorization("alice", "secret");
 	}
 
 	@Test
@@ -38,6 +41,12 @@ public class HeaderTest {
 		assertNotNull(header.getFirstValue("ACCEPT"));
 		assertNotNull(header.getFirstValue("accept"));
 		assertEquals("127.0.0.1:2000", header.getFirstValue("host"));
+	}
+
+	@Test
+	public void testAuthorization() throws UnsupportedEncodingException {
+		assertEquals("Basic YWxpY2U6c2VjcmV0",
+				header.getFirstValue("Authorization"));
 	}
 
 	@Test

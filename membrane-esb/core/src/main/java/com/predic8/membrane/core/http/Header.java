@@ -14,18 +14,15 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.util.EndOfStreamException;
-import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.*;
 
 public class Header {
 
@@ -42,7 +39,7 @@ public class Header {
 	public static final String CONNECTION = "Connection";
 
 	public static final String PROXY_CONNECTION = "Proxy-Connection";
-	
+
 	public static final String HOST = "Host";
 
 	public static final String EXPECT = "Expect";
@@ -52,7 +49,7 @@ public class Header {
 	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
 
 	public static final String SOAP_ACTION = "SOAPAction";
-	
+
 	public static final String ACCEPT = "Accept";
 
 	public static final String LOCATION = "Location";
@@ -63,7 +60,7 @@ public class Header {
 
 	Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
 	Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
-	
+
 	private Log log = LogFactory.getLog(Header.class.getName());
 
 	private Vector<HeaderField> fields = new Vector<HeaderField>();
@@ -121,7 +118,7 @@ public class Header {
 	}
 
 	public String getFirstValue(String name) {
-		HeaderName nameToFind = new HeaderName(name); 
+		HeaderName nameToFind = new HeaderName(name);
 		for (HeaderField field : fields) {
 			if (field.getHeaderName().equals(nameToFind))
 				return field.getValue();
@@ -138,7 +135,8 @@ public class Header {
 		for (HeaderField field : fields) {
 			String name = field.getHeaderName().toString();
 			String value = field.getValue();
-			buffer.append(name).append(": ").append(value).append(Constants.CRLF);
+			buffer.append(name).append(": ").append(value)
+					.append(Constants.CRLF);
 		}
 		out.write(buffer.toString().getBytes());
 	}
@@ -186,23 +184,23 @@ public class Header {
 	public void setContentType(String value) {
 		add(CONTENT_TYPE, value);
 	}
-	
+
 	public String getSOAPAction() {
 		return getFirstValue(SOAP_ACTION);
 	}
-	
+
 	public void setSOAPAction(String value) {
 		add(SOAP_ACTION, value);
 	}
-	
+
 	public String getAccept() {
 		return getFirstValue(ACCEPT);
 	}
-	
+
 	public void setAccept(String value) {
 		add(ACCEPT, value);
 	}
-	
+
 	public String getConnection() {
 		return getFirstValue(CONNECTION);
 	}
@@ -210,7 +208,6 @@ public class Header {
 	public void setConnection(String connection) {
 		add(CONNECTION, connection);
 	}
-
 
 	public String getProxyConnection() {
 		return getFirstValue(PROXY_CONNECTION);
@@ -223,17 +220,17 @@ public class Header {
 	public boolean isProxyConnectionClose() {
 		if (getProxyConnection() == null)
 			return false;
-		
+
 		return "close".equalsIgnoreCase(getProxyConnection());
 	}
-	
+
 	public boolean isConnectionClose() {
 		if (getConnection() == null)
 			return false;
-		
+
 		return "close".equalsIgnoreCase(getConnection());
 	}
-	
+
 	public boolean hasContentLength() {
 		return getFirstValue(CONTENT_LENGTH) != null;
 	}
@@ -255,6 +252,16 @@ public class Header {
 		return res.toString();
 	}
 
+	public void setAuthorization(String user, String password)
+			throws UnsupportedEncodingException {
+
+		String value = "Basic "
+				+ new String(Base64.encodeBase64((user + ":" + password)
+						.getBytes("UTF-8")), "UTF-8");
+
+		add("Authorization", value);
+	}
+
 	public void setXForwardedFor(String value) {
 		add(X_FORWARDED_FOR, value);
 	}
@@ -266,32 +273,35 @@ public class Header {
 	public String getContentEncoding() {
 		return getFirstValue(CONTENT_ENCODING);
 	}
-	
-	//TODO header value is a complex unit
+
+	// TODO header value is a complex unit
 	public String getCharset() {
 		if (getContentType() == null)
 			return Constants.UTF_8;
-		
+
 		String charset = getMediaTypeParameters().get("charset");
-		if ( charset == null ) return Constants.UTF_8;
+		if (charset == null)
+			return Constants.UTF_8;
 		return charset;
 	}
-	
+
 	private Map<String, String> getMediaTypeParameters() {
 		Matcher m = mediaTypePattern.matcher(getContentType());
 		m.matches();
 		log.debug("type: " + m.group(1));
 		log.debug("subtype: " + m.group(2));
 		log.debug("parameters: " + m.group(3));
-		
+
 		Map<String, String> map = new HashMap<String, String>();
-		if ( m.group(3) == null ) return map;
-					
+		if (m.group(3) == null)
+			return map;
+
 		for (String param : m.group(3).substring(1).split("\\s*;\\s*")) {
-			log.debug("parsing parameter: "+param);
-			Matcher paramMat = parameterPattern.matcher(param);		
+			log.debug("parsing parameter: " + param);
+			Matcher paramMat = parameterPattern.matcher(param);
 			paramMat.matches();
-			log.debug("parameter: "+paramMat.group(1)+ "=" + paramMat.group(2));
+			log.debug("parameter: " + paramMat.group(1) + "="
+					+ paramMat.group(2));
 			map.put(paramMat.group(1).trim(), paramMat.group(2));
 		}
 		return map;
