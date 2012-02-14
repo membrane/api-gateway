@@ -7,7 +7,7 @@
   </formats>
   <dependencySets>
   	<dependencySet>
-  		<excludes><exclude>com.predic8:membrane-esb</exclude></excludes>
+  		<excludes><exclude>com.predic8:membrane-esb-cli</exclude></excludes>
   		<unpack>false</unpack>
   		<outputDirectory>/lib</outputDirectory>
   	</dependencySet>
@@ -38,14 +38,9 @@
   </fileSets>
   <files>
   	<file>
-  		<source>${project.build.directory}/${project.name}-${project.version}-starter.jar</source>
+  		<source>${project.build.directory}/${project.name}-${project.version}.jar</source>
   		<outputDirectory>/</outputDirectory>
   		<destName>starter.jar</destName>
-  	</file>
-   	<file>
-  		<source>${project.build.directory}/${project.name}-${project.version}-rt.jar</source>
-  		<outputDirectory>/lib</outputDirectory>
-  		<destName>${project.name}-${project.version}.jar</destName>
   	</file>
   </files>
 </assembly>

@@ -12,31 +12,6 @@
 		<module>osgi</module>
 		<module>war</module>
 	</modules>
-	  
-	 <!-- 
-	 
-	 			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.2.2</version>
-				<configuration>
-					<descriptors>
-						<descriptor>src/assemble/starter.xml</descriptor>
-						<descriptor>src/assemble/rt.xml</descriptor>
-						<descriptor>src/assemble/distribution.xml</descriptor>
-					</descriptors>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>assembly</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-	 
-	 
-	  -->
 
     <properties>
         <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
