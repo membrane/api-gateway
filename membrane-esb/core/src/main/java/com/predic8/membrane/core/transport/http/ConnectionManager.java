@@ -171,7 +171,8 @@ public class ConnectionManager {
 			remaining = availableConnections.size();
 		}
 		numberInPool.addAndGet(-closed);
-		log.debug("closed " + closed + " connections");
+		if (closed != 0)
+			log.debug("closed " + closed + " connections");
 		return remaining;
 	}
 	
