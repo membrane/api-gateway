@@ -195,7 +195,7 @@
 	<repositories>
 		<repository>
 			<id>predic8-releases</id>
-			<url>http://maven.predic8.com/content/groups/public</url>
+			<url>http://repository.membrane-soa.org/content/groups/public</url>
 		</repository>
 	</repositories>
 
@@ -216,11 +216,11 @@
 	<distributionManagement>
 		<repository>
 			<id>predic8-releases</id>
-			<url>http://maven.predic8.com/content/repositories/releases</url>
+			<url>http://repository.membrane-soa.org/content/repositories/releases</url>
 		</repository>
 		<snapshotRepository>
 			<id>predic8-snapshots</id>
-			<url>http://maven.predic8.com/content/repositories/snapshots</url>
+			<url>http://repository.membrane-soa.org/content/repositories/snapshots</url>
 		</snapshotRepository>
 	</distributionManagement>
 </project>
