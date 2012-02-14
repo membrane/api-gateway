@@ -191,7 +191,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 		a.setRouter(router);
 		interceptors.add(a);
 		
-		Interceptor i = new WebServerInterceptor();
+		WebServerInterceptor i = new WebServerInterceptor();
+		i.setDocBase("classpath:/com/predic8/membrane/core/interceptor/administration/docBase");
 		i.setRouter(router);
 		interceptors.add(i);
 		return a;

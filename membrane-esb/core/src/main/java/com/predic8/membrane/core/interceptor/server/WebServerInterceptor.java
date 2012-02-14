@@ -59,13 +59,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		Response response = Response.ok().build();
 		response.setHeader(createHeader(uri));
 
-		String resPath = new File(docBase, uri).getPath().replace('\\', '/'); // TODO replace() is a temporary fix
+		String resPath = docBase + uri;
 		
 		InputStream in = router.getResourceResolver().resolve(resPath, true);
-		
-		if (in == null) {
+		if (in == null)
 			throw new FileNotFoundException(resPath);
-		}
 		
 		response.setBodyContent(ByteUtil.getByteArrayData(in));
 		return response;
