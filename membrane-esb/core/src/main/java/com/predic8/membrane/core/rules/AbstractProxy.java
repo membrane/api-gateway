@@ -38,6 +38,7 @@ import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.config.ElementName;
 import com.predic8.membrane.core.config.LocalHost;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -254,7 +255,17 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 		} else if ("xmlProtection".equals(name)) {
 			i = new XMLProtectionInterceptor();
 		} else {
-			throw new Exception("Unknown interceptor found: " + name);
+			for (Object bean : Router.getBeanFactory().getBeansWithAnnotation(ElementName.class).values()) {
+				String beanName = bean.getClass().getAnnotation(ElementName.class).value();
+				if (beanName == null)
+					throw new Exception(bean.getClass().getName() + " declared @ElementName(null), null is not allowed.");
+				if (beanName.equals(name)) {
+					i = (AbstractInterceptor) bean.getClass().newInstance();
+					break;
+				}
+			}
+			if (i == null)
+				throw new Exception("Unknown interceptor found: " + name);
 		}
 		i.setRouter(router);
 		i.parse(token);
