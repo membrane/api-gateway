@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core;
+package com.predic8.membrane.osgi;
 
 import static org.junit.Assert.assertFalse;
 
@@ -19,6 +19,9 @@ import java.net.URL;
 import java.util.List;
 
 import org.junit.Test;
+
+import com.predic8.membrane.core.ClassloaderUtil;
+import com.predic8.membrane.osgi.CoreActivator;
 public class CoreActivatorTest {
 
 	CoreActivator activator = new CoreActivator();

@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.osgi;
 
 import java.io.*;
 import java.net.*;
@@ -23,7 +23,11 @@ import org.apache.commons.logging.*;
 import org.eclipse.core.runtime.*;
 import org.osgi.framework.BundleContext;
 
-import com.predic8.membrane.core.logger.MembraneLogListener;
+import com.predic8.membrane.core.ClassloaderUtil;
+import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.MembraneCommandLine;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.osgi.logger.MembraneLogListener;
 
 /**
  * The activator class controls the plug-in life cycle

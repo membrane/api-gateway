@@ -1,4 +1,4 @@
-package com.predic8.membrane.core.logger;
+package com.predic8.membrane.osgi.logger;
 
 import org.apache.commons.logging.*;
 import org.eclipse.core.runtime.*;
