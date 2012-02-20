@@ -14,10 +14,6 @@
   </dependencySets>
   <fileSets>
   	<fileSet>
-  		<directory>docBase</directory>
-  		<outputDirectory>/docBase</outputDirectory>
-  	</fileSet>
-  	<fileSet>
   		<directory>examples/router</directory>
   		<outputDirectory>/examples</outputDirectory>
   		<excludes><exclude>**/build/</exclude></excludes>
@@ -30,10 +26,6 @@
   	<fileSet>
   		<directory>router</directory>
   		<outputDirectory>/</outputDirectory>
-  	</fileSet>
-  	<fileSet>
-  		<directory>lib</directory>
-  		<outputDirectory>lib</outputDirectory>
   	</fileSet>
   </fileSets>
   <files>

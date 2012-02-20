@@ -11,6 +11,7 @@
 		<module>cli</module>
 		<module>osgi</module>
 		<module>war</module>
+		<module>sar</module>
 	</modules>
 
     <properties>
