@@ -46,7 +46,7 @@ public class StatisticCollector {
 	private long totalBytesReceived = 0;
 
 	/**
-	 * @param countErrorExchanges: whether to count failed Exchange objects. Since
+	 * @param countErrorExchanges whether to count failed Exchange objects. Since
 	 * {@link AbstractHttpRunnable} counts Exchanges before their state is set to completed 
 	 * (and {@link Exchange#getStatus()} still returns {@link ExchangeState#FAILED},
 	 * we need to be able to count them as successful (and track their statistics). On the

@@ -60,7 +60,7 @@ public interface RuleKey {
 	
 	/**
 	 * When isHostWidldcard is set to true any value of the HTTP Host header will match.
-	 * @return
+	 * @return whether the host wildcard is set to true
 	 */
 	public boolean isHostWildcard();
 	
