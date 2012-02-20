@@ -28,6 +28,72 @@
 			<groupId>xalan</groupId>
 			<artifactId>xalan</artifactId>
 		</dependency>
+		
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
-    
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>2.11</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<test>**/IntegrationTests.java</test>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.mortbay.jetty</groupId>
+				<artifactId>jetty-maven-plugin</artifactId>
+				<version>8.1.0.RC5</version>
+				<configuration>
+					<war>${basedir}/target/${project.artifactId}-${project.version}.war</war>
+					<scanIntervalSeconds>10</scanIntervalSeconds>
+					<connectors>
+						<connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
+							<port>3021</port>
+							<maxIdleTime>60000</maxIdleTime>
+						</connector>
+					</connectors>
+					<stopPort>3022</stopPort>
+					<stopKey>STOP</stopKey>
+				</configuration>
+				<executions>
+					<execution>
+						<id>start-jetty</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>run-war</goal>
+						</goals>
+						<configuration>
+							<scanIntervalSeconds>0</scanIntervalSeconds>
+							<daemon>true</daemon>
+						</configuration>
+					</execution>
+					<execution>
+						<id>stop-jetty</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>    
 </project>
