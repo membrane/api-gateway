@@ -14,110 +14,61 @@
 package com.predic8.membrane.core;
 
 import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.runners.*;
 import org.junit.runners.Suite.SuiteClasses;
 
-import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
-import com.predic8.membrane.core.config.ProxyTest;
-import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
-import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
-import com.predic8.membrane.core.http.BodyTest;
-import com.predic8.membrane.core.http.HeaderTest;
-import com.predic8.membrane.core.http.RequestTest;
-import com.predic8.membrane.core.http.ResponseTest;
-import com.predic8.membrane.core.interceptor.DispatchingInterceptorTest;
-import com.predic8.membrane.core.interceptor.ThrottleInterceptorTest;
-import com.predic8.membrane.core.interceptor.WSDLInterceptorTest;
-import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
-import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
-import com.predic8.membrane.core.interceptor.balancer.ClusterBalancerTest;
-import com.predic8.membrane.core.interceptor.balancer.ClusterManagerTest;
-import com.predic8.membrane.core.interceptor.balancer.ClusterNotificationInterceptorTest;
-import com.predic8.membrane.core.interceptor.balancer.JSESSIONIDExtractorTest;
-import com.predic8.membrane.core.interceptor.balancer.LoadBalancingWithClusterManagerAndNoSessionTest;
-import com.predic8.membrane.core.interceptor.balancer.LoadBalancingWithClusterManagerTest;
-import com.predic8.membrane.core.interceptor.balancer.XMLSessionIdExtractorTest;
+import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.acl.*;
+import com.predic8.membrane.core.interceptor.balancer.*;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptorTest;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
-import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptorTest;
-import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
+import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
-import com.predic8.membrane.core.rules.ProxyRuleTest;
-import com.predic8.membrane.core.rules.ServiceProxyKeyTest;
+import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.SSLContextTest;
-import com.predic8.membrane.core.transport.http.HostColonPortTest;
-import com.predic8.membrane.core.transport.http.HttpKeepAliveTest;
-import com.predic8.membrane.core.transport.http.ServiceInvocationTest;
-import com.predic8.membrane.core.util.ByteUtilTest;
-import com.predic8.membrane.core.util.DNSCacheTest;
-import com.predic8.membrane.core.util.HttpUtilTest;
-import com.predic8.membrane.core.util.TextUtilTest;
-import com.predic8.membrane.core.util.URLUtilTest;
-import com.predic8.membrane.core.ws.relocator.RelocatorTest;
+import com.predic8.membrane.core.transport.http.*;
+import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.ws.relocator.*;
 import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 
 @RunWith(Suite.class)
-@SuiteClasses( { 
-	HeaderTest.class,
-	BodyTest.class,
-	ByteUtilTest.class,
-	HttpUtilTest.class,
-	RequestTest.class,
-	ResponseTest.class,
-	MagicTest.class,
-	WSDLInterceptorTest.class,
-	AccessControlParserTest.class,
-	AccessControlInterceptorTest.class,
-	DispatchingInterceptorTest.class,
-	SimpleURLRewriteInterceptorTest.class,
-	HostColonPortTest.class,
-	HTTP2XMLInterceptorTest.class,	
-	ReadRulesConfigurationTest.class,
-	ReadRulesWithInterceptorsConfigurationTest.class,
-	RuleManagerTest.class,
-	ProxyTest.class,
-	ServiceProxyKeyTest.class,
-	ProxyRuleTest.class,
-	TextUtilTest.class,
-	RelocatorTest.class,
-	XSLTInterceptorTest.class,
-	URLUtilTest.class,
-	ClusterManagerTest.class,
-	ClusterNotificationInterceptorTest.class,	
-	XMLSessionIdExtractorTest.class,
-	ClusterBalancerTest.class,
-	LoadBalancingWithClusterManagerAndNoSessionTest.class,
-	LoadBalancingWithClusterManagerTest.class,
-	MultipleLoadBalancersTest.class,
-	DNSCacheTest.class,
-	ValidatorInterceptorTest.class,
-	XPathCBRInterceptorTest.class,
-	CustomSpringConfigurationTest.class,	
-	JSESSIONIDExtractorTest.class,
-	ThrottleInterceptorTest.class,
-	GroovyInterceptorTest.class,
-	FormValidationInterceptorTest.class,
-	ServiceInvocationTest.class,
-	HttpKeepAliveTest.class,
-	ReverseProxyingInterceptorTest.class,
-	SSLContextTest.class
-})
+@SuiteClasses({ HeaderTest.class, BodyTest.class, ByteUtilTest.class,
+		HttpUtilTest.class, RequestTest.class, ResponseTest.class,
+		MagicTest.class, WSDLInterceptorTest.class,
+		AccessControlParserTest.class, AccessControlInterceptorTest.class,
+		DispatchingInterceptorTest.class,
+		SimpleURLRewriteInterceptorTest.class, HostColonPortTest.class,
+		HTTP2XMLInterceptorTest.class, ReadRulesConfigurationTest.class,
+		ReadRulesWithInterceptorsConfigurationTest.class,
+		RuleManagerTest.class, ProxyTest.class, ServiceProxyKeyTest.class,
+		ProxyRuleTest.class, TextUtilTest.class, RelocatorTest.class,
+		XSLTInterceptorTest.class, URLUtilTest.class, ClusterManagerTest.class,
+		ClusterNotificationInterceptorTest.class,
+		XMLSessionIdExtractorTest.class, ClusterBalancerTest.class,
+		LoadBalancingWithClusterManagerAndNoSessionTest.class,
+		LoadBalancingWithClusterManagerTest.class,
+		MultipleLoadBalancersTest.class, DNSCacheTest.class,
+		ValidatorInterceptorTest.class, XPathCBRInterceptorTest.class,
+		CustomRulesConfigurationTest.class,
+		CustomSpringConfigurationTest.class, JSESSIONIDExtractorTest.class,
+		ThrottleInterceptorTest.class, GroovyInterceptorTest.class,
+		FormValidationInterceptorTest.class, ServiceInvocationTest.class,
+		HttpKeepAliveTest.class, ReverseProxyingInterceptorTest.class,
+		SSLContextTest.class, RelocatorWADLTest.class,
+		WADLInterceptorTest.class })
 public class UnitTests {
 	/*
-	@BeforeClass
-	public static void forbidScreenOutput() {
-		PrintStream ps = new PrintStream(new OutputStream() {
-			@Override
-			public void write(int b) throws IOException {
-				throw new RuntimeException("this test uses stdout");
-			}
-		});
-		System.setOut(ps);
-		System.setErr(ps);
-	}
-	*/
+	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =
+	 * new PrintStream(new OutputStream() {
+	 * 
+	 * @Override public void write(int b) throws IOException { throw new
+	 * RuntimeException("this test uses stdout"); } }); System.setOut(ps);
+	 * System.setErr(ps); }
+	 */
 }
