@@ -17,42 +17,42 @@ package com.predic8.membrane.core;
 public class Constants {
 
 	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
-	
+
 	public static final String EMPTY_STRING = "";
-	
-	public static final String CRLF = ""+((char)13)+((char)10);
-	
+
+	public static final String CRLF = "" + ((char) 13) + ((char) 10);
+
 	public static final byte[] CRLF_BYTES = { 13, 10 };
-	
+
 	public static final String VERSION = "3.2.2";
-	
+
 	public static final String XML_VERSION = "1.0";
-	
+
 	public static final String UTF_8 = "UTF-8";
-	
+
 	public static final String ISO_8859_1 = "ISO-8859-1";
-	
+
 	public static final String UNKNOWN = "unknown";
-	 
+
 	public static final String N_A = "N/A";
-	
+
 	public static final String HTTP_VERSION_11 = "1.1";
-	
+
 	public static final String HTTP_VERSION_10 = "1.0";
-	
+
 	public static final String WSDL_SOAP11_NS = "http://schemas.xmlsoap.org/wsdl/soap/";
 	public static final String WSDL_SOAP12_NS = "http://schemas.xmlsoap.org/wsdl/soap12/";
 	public static final String WSDL_HTTP_NS = "http://schemas.xmlsoap.org/wsdl/http/";
-	
+	public static final String WADL_NS = "http://wadl.dev.java.net/2009/02";
 	public static final String XSD_NS = "http://www.w3.org/2001/XMLSchema";
-	
+
 	public static final String SOAP11_NS = "http://schemas.xmlsoap.org/soap/envelope/";
 	public static final String SOAP12_NS = "http://www.w3.org/2003/05/soap-envelope";
 
-	public static final String PROTOCOL_SOAP11 = "SOAP11"; 
-	
-	public static final String PROTOCOL_SOAP12 = "SOAP12"; 
-	
+	public static final String PROTOCOL_SOAP11 = "SOAP11";
+
+	public static final String PROTOCOL_SOAP12 = "SOAP12";
+
 	public static final String PROTOCOL_HTTP = "HTTP";
-	
+
 }
