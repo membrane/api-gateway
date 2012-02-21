@@ -13,10 +13,5 @@
 		<proxyConfiguration active="false"
 			authentication="false"
 			host="" port="0" username="" password="" />
-		<security>
-			<keystore location="configuration\membrane.jks" password="secret" />
-			<truststore location="configuration\membrane.jks" password="secret" />
-		</security>
-
 	</global>
 </proxies>

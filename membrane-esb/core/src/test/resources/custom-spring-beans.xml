@@ -50,6 +50,7 @@
 		</basicAuthentication>
 		<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register" 
 					  port="4000" protocol="http" host="localhost" />
+		<wadlRewriter port="4000" protocol="http" host="localhost" />
 		<statisticsCSV file="target/temp/stat.csv" />
 		<rest2Soap>
 			<mapping regex="/bank/.*" 
@@ -101,6 +102,7 @@
 	</basicAuthentication>
 	<accessControl file="src/test/resources/acl/acl.xml"/>
 	<wsdlRewriter />
+	<wadlRewriter />
 	<statisticsCSV file="target/temp/stat.csv" />
 	<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
 	<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		

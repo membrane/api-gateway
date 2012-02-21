@@ -12,7 +12,7 @@
 			<rewriter>
 				<map from="^/home" to="/index" />
 			</rewriter>
-			<adminConsole />
+			<!-- <adminConsole />-->
 			<webServer docBase="docBase" />
 			<switch>
 				<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
@@ -42,9 +42,9 @@
 		<balancer>
 			<jSessionIdExtractor />
 		</balancer>
+		<validator schema="http://www.predic8.com:8080/material/ArticleService?xsd=2" />
 		<validator
-			wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" 
-			schema="http://www.predic8.com:8080/material/ArticleService?xsd=2" />
+			wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
 		<rest2Soap>
 			<mapping regex="/bank/.*" soapAction=""
 				soapURI="/axis2/services/BLZService" requestXSLT="request.xsl"
@@ -60,8 +60,9 @@
 			<regExReplacer regex="Hallo" replace="Hello" />
 			<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register"
 				port="4000" protocol="http" host="localhost" />
+			<wadlRewriter port="443" protocol="https" host="abc.de" />
 		</response>		
-		<target host="www.thomas-bayer.com" port="80" url="http://predic8.de/membrane.htm" />
+		<target host="www.thomas-bayer.com" port="88" url="http://predic8.de/membrane.htm" />
 	</serviceProxy>
     <proxy name="HTTP Proxy" port="3128" >
 		<transform xslt="strip.xslt"/>

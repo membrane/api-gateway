@@ -48,7 +48,7 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(), "/proxies/serviceProxy/@port", "2001");
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/target/@port",
-				"80");
+				"88");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/target/@host",
 				"www.thomas-bayer.com");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/target/@url",
@@ -60,8 +60,10 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/request/counter/@name", "Node 1");
 
-		assertElement(w.toString(),
-				"/proxies/serviceProxy/request/adminConsole");
+		/*
+		 * assertElement(w.toString(),
+		 * "/proxies/serviceProxy/request/adminConsole");
+		 */
 
 		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/request/webServer/@docBase", "docBase");
@@ -85,14 +87,11 @@ public class CustomRulesConfigurationTest {
 				"/proxies/serviceProxy/request/basicAuthentication/user/@password",
 				"adminadmin");
 
-		assertAttribute(
-				w.toString(),
-				"/proxies/serviceProxy/request/rewriter/map/@from",
-				"/home");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/rewriter/map/@from",
-				"/index");
-		
+				"/proxies/serviceProxy/request/rewriter/map/@from", "^/home");
+		assertAttribute(w.toString(),
+				"/proxies/serviceProxy/request/rewriter/map/@to", "/index");
+
 		assertElement(w.toString(),
 				"/proxies/serviceProxy/request/xmlProtection");
 
@@ -187,6 +186,14 @@ public class CustomRulesConfigurationTest {
 				"localhost");
 
 		assertAttribute(w.toString(),
+				"/proxies/serviceProxy/response/wadlRewriter/@protocol",
+				"https");
+		assertAttribute(w.toString(),
+				"/proxies/serviceProxy/response/wadlRewriter/@port", "443");
+		assertAttribute(w.toString(),
+				"/proxies/serviceProxy/response/wadlRewriter/@host", "abc.de");
+
+		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/request/accessControl/@file",
 				"src/test/resources/acl/acl.xml");
 
@@ -275,16 +282,6 @@ public class CustomRulesConfigurationTest {
 				"/proxies/global/proxyConfiguration/@username", "");
 		assertAttribute(w.toString(),
 				"/proxies/global/proxyConfiguration/@password", "");
-		assertAttribute(w.toString(),
-				"/proxies/global/security/keystore/@location",
-				"configuration\\membrane.jks");
-		assertAttribute(w.toString(),
-				"/proxies/global/security/keystore/@password", "secret");
-		assertAttribute(w.toString(),
-				"/proxies/global/security/truststore/@location",
-				"configuration\\membrane.jks");
-		assertAttribute(w.toString(),
-				"/proxies/global/security/truststore/@password", "secret");
 
 	}
 
