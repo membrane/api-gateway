@@ -45,6 +45,7 @@
 							<xsd:element ref="basicAuthentication" />
 							<xsd:element ref="accessControl" />
 							<xsd:element ref="wsdlRewriter" />
+							<xsd:element ref="wadlRewriter" />
 							<xsd:element ref="statisticsCSV" />
 							<xsd:element ref="statisticsJDBC" />
 							<xsd:element ref="rest2Soap" />
@@ -336,6 +337,19 @@
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence />
 					<xsd:attribute name="registryWSDLRegisterURL" type="xsd:string" />
+					<xsd:attribute name="port" type="xsd:int" />
+					<xsd:attribute name="protocol" type="xsd:string" />
+					<xsd:attribute name="host" type="xsd:string" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="wadlRewriter">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
 					<xsd:attribute name="port" type="xsd:int" />
 					<xsd:attribute name="protocol" type="xsd:string" />
 					<xsd:attribute name="host" type="xsd:string" />

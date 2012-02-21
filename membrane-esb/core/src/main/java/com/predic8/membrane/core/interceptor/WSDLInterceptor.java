@@ -12,111 +12,82 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-
 package com.predic8.membrane.core.interceptor;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
+import static com.predic8.membrane.core.Constants.*;
 
+import java.io.*;
+import java.net.*;
+
+import javax.xml.namespace.QName;
 import javax.xml.stream.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.logging.*;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
-public class WSDLInterceptor extends AbstractInterceptor {
+public class WSDLInterceptor extends RelocatingInterceptor {
 
 	private static Log log = LogFactory.getLog(WSDLInterceptor.class.getName());
-	
-	private String host;
-	
-	private String protocol;
-	
-	private String port;
-	
+
 	private String registryWSDLRegisterURL;
-	
+
 	public WSDLInterceptor() {
-		name = "WSDL Rewriting Interceptor";		
+		name = "WSDL Rewriting Interceptor";
 		setFlow(Flow.RESPONSE);
 	}
-	
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		log.debug("handleResponse");
-		
-		if ( exc.getRule() instanceof ProxyRule ) return  Outcome.CONTINUE;
-		
-		if (!wasGetRequest(exc)) 
-			return Outcome.CONTINUE;
-		
-		if (!hasContent(exc)) 
-			return Outcome.CONTINUE;
-		
-		
-		if (!exc.getResponse().isXML())
-			return Outcome.CONTINUE;
-		
+
+	@Override
+	protected void rewrite(Exchange exc) throws Exception, IOException {
+
 		log.debug("Changing endpoint address in WSDL");
-			
-		rewriteWsdl(exc);
-		return Outcome.CONTINUE; 
-	}
 
-
-	private void rewriteWsdl(Exchange exc) throws Exception, IOException {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		
-		Relocator relocator = new Relocator(new OutputStreamWriter(stream, getCharset(exc)), getLocationProtocol(), getLocationHost(exc), getLocationPort(exc) );
-		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(exc.getResponse().getBody().getContent()), getCharset(exc) ));
+
+		Relocator relocator = new Relocator(new OutputStreamWriter(stream,
+				getCharset(exc)), getLocationProtocol(), getLocationHost(exc),
+				getLocationPort(exc));
+
+		relocator.getRelocatingAttributes().put(
+				new QName(WSDL_SOAP11_NS, "address"), "location");
+		relocator.getRelocatingAttributes().put(
+				new QName(WSDL_SOAP12_NS, "address"), "location");
+		relocator.getRelocatingAttributes().put(
+				new QName(WSDL_HTTP_NS, "address"), "location");
+		relocator.getRelocatingAttributes().put(new QName(XSD_NS, "import"),
+				"schemaLocation");
+		relocator.getRelocatingAttributes().put(new QName(XSD_NS, "include"),
+				"schemaLocation");
+
+		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(exc
+				.getResponse().getBody().getContent()), getCharset(exc)));
+
 		if (relocator.isWsdlFound()) {
 			registerWSDL(exc);
 		}
 		exc.getResponse().setBodyContent(stream.toByteArray());
 	}
 
-	/**
-	 * if no charset is specified use standard XML charset UTF-8
-	 */
-	private String getCharset(Exchange exc) {
-		String charset = exc.getResponse().getCharset();
-		if (charset == null)
-			return Constants.UTF_8;
-		
-		return charset;
-	}
-
-
 	private void registerWSDL(Exchange exc) {
 		if (registryWSDLRegisterURL == null)
 			return;
-		
+
 		StringBuffer buf = new StringBuffer();
 		buf.append(registryWSDLRegisterURL);
 		buf.append("?wsdl=");
-		
+
 		try {
 			buf.append(URLDecoder.decode(getWSDLURL(exc), "US-ASCII"));
 		} catch (UnsupportedEncodingException e) {
-			//ignored
+			// ignored
 		}
-		
+
 		callRegistry(buf.toString());
-		
+
 		log.debug(buf.toString());
 	}
 
@@ -130,7 +101,7 @@ public class WSDLInterceptor extends AbstractInterceptor {
 			e.printStackTrace();
 		}
 	}
-	
+
 	private Exchange createExchange(String uri) throws MalformedURLException {
 		URL url = new URL(uri);
 		Request req = MessageUtil.getGetRequest(getCompletePath(url));
@@ -144,10 +115,10 @@ public class WSDLInterceptor extends AbstractInterceptor {
 	private String getCompletePath(URL url) {
 		if (url.getQuery() == null)
 			return url.getPath();
-		
+
 		return url.getPath() + "?" + url.getQuery();
 	}
-	
+
 	private String getWSDLURL(Exchange exc) {
 		StringBuffer buf = new StringBuffer();
 		buf.append(getLocationProtocol());
@@ -170,96 +141,32 @@ public class WSDLInterceptor extends AbstractInterceptor {
 		return registryWSDLRegisterURL;
 	}
 
-	private boolean hasContent(Exchange exc) {
-		return exc.getResponse().getHeader().getContentType() != null;
-	}
-
-
-	private boolean wasGetRequest(Exchange exc) {
-		return Request.METHOD_GET.equals(exc.getRequest().getMethod());
-	}
-
-
-	private int getLocationPort(Exchange exc) {
-		if ("".equals(port)) {
-			return -1;
-		}
-		
-		if (port != null)
-			return Integer.parseInt(port);
-		
-		return exc.getRule().getKey().getPort();
-	}
-	
-
-	private String getLocationHost(Exchange exc) {
-		if (host != null)
-			return host;
-		
-	    String locHost =  exc.getOriginalHostHeaderHost();
-	    
-	    log.debug("host " + locHost);
-		
-	    if (locHost == null) {
-			return "localhost";
-		}
-	    
-		return locHost;
-	}
-	
-	private String getLocationProtocol() {
-		if (protocol != null)
-			return protocol;
-		
-		return "http";
-	}
-
-	public String getHost() {
-		return host;
-	}
-
-	public void setHost(String host) {
-		log.debug("host property set for WSDL Interceptor: " + host);
-		this.host = host;
-	}
-
-	public String getProtocol() {
-		return protocol;
-	}
-	
-	public void setProtocol(String protocol) {
-		log.debug("protocol property set for WSDL Interceptor: " + protocol);
-		this.protocol = protocol;
-	}
-
-	public String getPort() {
-		return port;
-	}
-
-	public void setPort(String port) {
-		this.port = port;
-	}
-	
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
-		
+
 		out.writeStartElement("wsdlRewriter");
-		
-		if (port != null) out.writeAttribute("port", port);		
-		if (host != null) out.writeAttribute("host", host);		
-		if (protocol != null) out.writeAttribute("protocol", protocol);		
-		if (registryWSDLRegisterURL !=null) out.writeAttribute("registryWSDLRegisterURL", registryWSDLRegisterURL);		
-		
+
+		if (port != null)
+			out.writeAttribute("port", port);
+		if (host != null)
+			out.writeAttribute("host", host);
+		if (protocol != null)
+			out.writeAttribute("protocol", protocol);
+		if (registryWSDLRegisterURL != null)
+			out.writeAttribute("registryWSDLRegisterURL",
+					registryWSDLRegisterURL);
+
 		out.writeEndElement();
 	}
-	
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		
+
 		port = token.getAttributeValue("", "port");
 		host = token.getAttributeValue("", "host");
 		protocol = token.getAttributeValue("", "protocol");
-		registryWSDLRegisterURL = token.getAttributeValue("", "registryWSDLRegisterURL");
+		registryWSDLRegisterURL = token.getAttributeValue("",
+				"registryWSDLRegisterURL");
 	}
 }
