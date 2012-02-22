@@ -1,4 +1,4 @@
-package examples;
+package com.predic8.membrane.examples.tests;
 
 import static org.junit.Assert.assertEquals;
 
@@ -7,6 +7,9 @@ import java.io.IOException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.Test;
+
+import com.predic8.membrane.examples.AbstractConsoleWatcher;
+import com.predic8.membrane.examples.ScriptLauncher;
 
 /**
  * Read {@link ScriptLauncher}.

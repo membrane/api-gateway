@@ -1,4 +1,4 @@
-package examples;
+package com.predic8.membrane.examples;
 
 /**
  * Watches what happens on a client process's console.

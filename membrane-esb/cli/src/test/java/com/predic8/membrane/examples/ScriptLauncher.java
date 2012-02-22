@@ -1,4 +1,4 @@
-package examples;
+package com.predic8.membrane.examples;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -37,7 +37,7 @@ import org.junit.Before;
 public class ScriptLauncher {
 	
 	private final String name;
-	private File projectHome, unzipDir, membraneHome, exampleDir;
+	private File targetDir, unzipDir, membraneHome, exampleDir;
 	
 	
 	public ScriptLauncher(String name) {
@@ -46,14 +46,13 @@ public class ScriptLauncher {
 	
 	@Before
 	public void init() throws IOException, InterruptedException {
-		projectHome = new File("../com.predic8.membrane.core").getCanonicalFile();
-		if (!projectHome.exists())
-			throw new RuntimeException("membraneHome " + projectHome.getName() + " does not exist.");
+		targetDir = new File("target").getCanonicalFile();
+		if (!targetDir.exists())
+			throw new RuntimeException("membraneHome " + targetDir.getName() + " does not exist.");
 		
 		File zip = null;
-		File dist = new File(projectHome, "dist");
-		if (dist.exists()) {
-			File[] files = dist.listFiles(new FilenameFilter() {
+		{
+			File[] files = targetDir.listFiles(new FilenameFilter() {
 				@Override
 				public boolean accept(File dir, String name) {
 					return name.startsWith("membrane-esb") && name.endsWith(".zip");
@@ -68,7 +67,7 @@ public class ScriptLauncher {
 		if (zip == null)
 			throw new RuntimeException("TODO: calling 'ant dist-router' automatically is not implemented.");
 
-		unzipDir = new File(projectHome, "examples-automatic");
+		unzipDir = new File(targetDir, "examples-automatic");
 		if (unzipDir.exists()) {
 			recursiveDelete(unzipDir);
 			Thread.sleep(1000);
@@ -86,7 +85,9 @@ public class ScriptLauncher {
 			}
 		})[0];
 		
-		exampleDir = new File(membraneHome, "examples/" + name);
+		exampleDir = new File(membraneHome, "examples" + File.separator + name);
+		if (!exampleDir.exists())
+			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 		System.out.println("running test...");
 	}
 

@@ -11,11 +11,13 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package examples;
+package com.predic8.membrane.examples;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
+
+import com.predic8.membrane.examples.tests.LoggingTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({ LoggingTest.class })
