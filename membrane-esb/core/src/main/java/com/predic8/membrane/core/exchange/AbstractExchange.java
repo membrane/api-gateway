@@ -238,6 +238,10 @@ public abstract class AbstractExchange {
 		return properties.get(key);
 	}
 
+	public String getStringProperty(String key) {
+		return (String) properties.get(key);
+	}
+
 	public void setProperty(String key, Object value) {
 		properties.put(key, value);
 	}
