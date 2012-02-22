@@ -209,8 +209,8 @@ public class ScriptLauncher {
 		ps.startOutputWatchers();
 
 		// now wait for the PID to be written
-		for (int i = 0; i < 101; i++) {
-			if (i == 100)
+		for (int i = 0; i < 1001; i++) {
+			if (i == 1000)
 				throw new RuntimeException("could not read PID file");
 			Thread.sleep(100);
 			File f = new File(exampleDir, scriptName + ".pid");
