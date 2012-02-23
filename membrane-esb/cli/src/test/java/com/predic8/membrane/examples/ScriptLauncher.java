@@ -230,7 +230,7 @@ public class ScriptLauncher {
 			}
 		}
 		
-		Thread.sleep(1000); // wait for router to start
+		Thread.sleep(5000); // wait for router to start
 
 		return p;
 	}
