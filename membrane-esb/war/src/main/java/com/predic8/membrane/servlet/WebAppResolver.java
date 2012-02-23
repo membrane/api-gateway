@@ -15,7 +15,7 @@ public class WebAppResolver extends ResourceResolver {
 	private ServletContext ctx;
 
 	@Override
-	public InputStream resolve(String uri, boolean useMembraneHome)
+	protected InputStream resolveFile(String uri, boolean useMembraneHome)
 			throws FileNotFoundException {
 		log.debug("loading resource from: " + uri);
 		return ctx.getResourceAsStream(uri);

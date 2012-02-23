@@ -49,7 +49,10 @@ public class ResourceResolver {
 	    		throw new RuntimeException(e);
 	    	}
 	    }
+	    return resolveFile(uri, useMembraneHome);
+	}
 
+	protected InputStream resolveFile(String uri, boolean useMembraneHome) throws FileNotFoundException {
 		return new FileInputStream(getRealFile(uri, useMembraneHome));
 	}
 
