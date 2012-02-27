@@ -210,6 +210,13 @@ public class ScriptLauncher {
 
 		// now wait for the PID to be written
 		for (int i = 0; i < 1001; i++) {
+			if (i % 20 == 0) {
+				try {
+					throw new RuntimeException("Process terminated with exit code " + p.exitValue());
+				} catch (IllegalThreadStateException e) {
+					// did not terminate yet
+				}
+			}
 			if (i == 1000)
 				throw new RuntimeException("could not read PID file");
 			Thread.sleep(100);
