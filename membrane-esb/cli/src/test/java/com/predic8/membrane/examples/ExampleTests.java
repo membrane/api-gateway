@@ -18,10 +18,11 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 import com.predic8.membrane.examples.tests.LoggingTest;
+import com.predic8.membrane.examples.tests.QuickstartRESTTest;
 
 @RunWith(Suite.class)
-@SuiteClasses({ LoggingTest.class })
-public class ExampleTests {
-	
-
-}
+@SuiteClasses({ 
+	LoggingTest.class,
+	QuickstartRESTTest.class
+})
+public class ExampleTests {}

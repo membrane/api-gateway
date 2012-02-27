@@ -9,34 +9,22 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.junit.Test;
 
 import com.predic8.membrane.examples.AbstractConsoleWatcher;
+import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.ScriptLauncher;
+import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
-/**
- * Read {@link ScriptLauncher}.
- */
-public class LoggingTest extends ScriptLauncher {
-
-	public LoggingTest() {
-		super("logging");
-	}
+public class LoggingTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
-		final boolean[] success = new boolean[1];
-
-		Process router = startScript("router", new AbstractConsoleWatcher() {
-			public void outputLine(boolean error, String line) {
-				if (line.contains("HTTP"))
-					success[0] = true;
-			}
-		});
-		
-		HttpClient hc = new HttpClient();
-		assertEquals(hc.executeMethod(new GetMethod("http://localhost:2000/")), 200);
-		
-		assertEquals(true, success[0]);
-		
-		killScript(router);
+		ScriptLauncher sl = new ScriptLauncher(getExampleDir("logging")).startScript("router");
+		try {
+			SubstringWaitableConsoleEvent logged = new SubstringWaitableConsoleEvent(sl, "HTTP/1.1");
+			assertEquals(200, new HttpClient().executeMethod(new GetMethod("http://localhost:2000/")));
+			assertEquals(true, logged.occurred());
+		} finally {
+			sl.killScript();
+		}
 	}
 
 }
