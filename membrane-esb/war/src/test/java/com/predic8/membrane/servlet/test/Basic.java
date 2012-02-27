@@ -50,6 +50,15 @@ public class Basic {
 		assertTrue(EntityUtils.toString(r.getEntity()).contains("ServiceProxies"));
 	}
 
+	@Test
+	public void testAdminConsoleJavascriptDownloadable() throws ClientProtocolException, IOException {
+		DefaultHttpClient hc = getAuthenticatingHttpClient();
+		HttpGet g = new HttpGet(getBaseURL() + "jquery-ui/js/jquery-ui-1.8.13.custom.min.js");
+		HttpResponse r = hc.execute(g);
+		assertSuccess(g, r);
+		assertTrue(EntityUtils.toString(r.getEntity()).contains("jQuery"));
+	}
+
 	private String getBaseURL() {
 		return "http://" + MEMBRANE_ADMIN_HOST + ":" + MEMBRANE_ADMIN_PORT + "/";
 	}
