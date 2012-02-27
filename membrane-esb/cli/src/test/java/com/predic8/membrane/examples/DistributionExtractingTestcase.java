@@ -113,9 +113,13 @@ public class DistributionExtractingTestcase {
 				// This is not robust, just for demonstration purposes.
 				new File(target, entry.getName()).mkdir();
 			} else {
-				copyInputStream(zipFile.getInputStream(entry),
-						new BufferedOutputStream(new FileOutputStream(new File(
-								target, entry.getName()))));
+				FileOutputStream fos = new FileOutputStream(new File(target, entry.getName()));
+				try {
+					copyInputStream(zipFile.getInputStream(entry),
+							new BufferedOutputStream(fos));
+				} finally {
+					fos.close();
+				}
 			}
 		}
 		zipFile.close();

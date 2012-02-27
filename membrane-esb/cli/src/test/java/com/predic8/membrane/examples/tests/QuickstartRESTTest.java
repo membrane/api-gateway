@@ -2,21 +2,16 @@ package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.examples.AssertUtils.assertContains;
 import static com.predic8.membrane.examples.AssertUtils.assertContainsNot;
-import static org.junit.Assert.assertEquals;
+import static com.predic8.membrane.examples.AssertUtils.getAndAssert200;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 import org.parboiled.common.FileUtils;
 
+import com.predic8.membrane.examples.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.HttpClientUtils;
 import com.predic8.membrane.examples.ProxiesXmlUtil;
 import com.predic8.membrane.examples.ScriptLauncher;
 
@@ -27,11 +22,8 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 		File baseDir = getExampleDir("quickstart-rest");
 		ScriptLauncher sl = new ScriptLauncher(baseDir).startScript("router");
 		try {
-
-			HttpClient hc = new DefaultHttpClient();
-			HttpResponse res = hc.execute(new HttpGet("http://localhost:2000/restnames/name.groovy?name=Pia"));
-			assertEquals(200, res.getStatusLine().getStatusCode());
-			assertContains("Italy", EntityUtils.toString(res.getEntity()));
+			String result = getAndAssert200("http://localhost:2000/restnames/name.groovy?name=Pia");
+			assertContains("Italy", result);
 
 			new ProxiesXmlUtil(new File(baseDir, "quickstart-rest.proxies.xml")).updateWith(
 					"     <proxies>\r\n" + 
@@ -58,20 +50,16 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 					"       </serviceProxy>	\r\n" + 
 					"     </proxies>", sl);
 			
-			res = hc.execute(new HttpGet("http://localhost:2000/names/Pia"));
-			assertEquals(200, res.getStatusLine().getStatusCode());
-			String result = EntityUtils.toString(res.getEntity());
+			result = getAndAssert200("http://localhost:2000/names/Pia");
 			assertContains("Italy, Spain", result);
 			assertContainsNot(",<", result);
 			
 			String csvLog = FileUtils.readAllText(new File(baseDir, "log.csv"));
 			assertContains("Pia", csvLog);
 			
-			hc = HttpClientUtils.getAuthenticatingHttpClient("localhost", 9000, "alice", "membrane");
-			res = hc.execute(new HttpGet("http://localhost:9000/admin/"));
-			assertEquals(200, res.getStatusLine().getStatusCode());
-			assertContains("ServiceProxies", EntityUtils.toString(res.getEntity()));
-
+			AssertUtils.setupHTTPAuthentication("localhost", 9000, "alice", "membrane");
+			result = getAndAssert200("http://localhost:9000/admin/");
+			assertContains("ServiceProxies", result);
 		} finally {
 			sl.killScript();
 		}
