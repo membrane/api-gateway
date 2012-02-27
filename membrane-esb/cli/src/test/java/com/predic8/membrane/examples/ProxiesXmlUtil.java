@@ -28,7 +28,7 @@ public class ProxiesXmlUtil {
 	public void updateWith(String proxiesXmlContent, ScriptLauncher sl) {
 		SubstringWaitableConsoleEvent reloaded = new SubstringWaitableConsoleEvent(sl, "listening at port " + getLastPort(proxiesXmlContent));
 		FileUtils.writeAllText(proxiesXmlContent, proxiesXml);
-		reloaded.waitFor(5000);
+		reloaded.waitFor(10000);
 	}
 	
 	private static int getLastPort(String proxiesXmlContent) {

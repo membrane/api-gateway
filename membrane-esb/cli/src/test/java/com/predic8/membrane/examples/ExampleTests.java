@@ -18,8 +18,10 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 import com.predic8.membrane.examples.tests.ACLTest;
+import com.predic8.membrane.examples.tests.BasicAuthTest;
 import com.predic8.membrane.examples.tests.CBRTest;
 import com.predic8.membrane.examples.tests.CustomInterceptorTest;
+import com.predic8.membrane.examples.tests.GroovyTest;
 import com.predic8.membrane.examples.tests.LoggingTest;
 import com.predic8.membrane.examples.tests.QuickstartRESTTest;
 import com.predic8.membrane.examples.tests.QuickstartSOAPTest;
@@ -27,8 +29,10 @@ import com.predic8.membrane.examples.tests.QuickstartSOAPTest;
 @RunWith(Suite.class)
 @SuiteClasses({ 
 	ACLTest.class,
+	BasicAuthTest.class,
 	CBRTest.class,
 	CustomInterceptorTest.class,
+	GroovyTest.class,
 	LoggingTest.class,
 	QuickstartRESTTest.class,
 	QuickstartSOAPTest.class

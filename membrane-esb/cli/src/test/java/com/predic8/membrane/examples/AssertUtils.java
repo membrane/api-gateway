@@ -71,6 +71,10 @@ public class AssertUtils {
 		return EntityUtils.toString(res.getEntity());
 	}
 	
+	public static void disableHTTPAuthentication() {
+		hc = new DefaultHttpClient();
+	}
+	
 	public static void setupHTTPAuthentication(String host, int port, String user, String pass) {
 		hc = getAuthenticatingHttpClient(host, port, user, pass);
 	}
