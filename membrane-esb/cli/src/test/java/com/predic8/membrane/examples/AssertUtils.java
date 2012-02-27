@@ -46,10 +46,14 @@ public class AssertUtils {
 	private static HttpClient hc;
 	
 	public static String getAndAssert200(String url) throws ParseException, IOException {
+		return getAndAssert(200, url);
+	}
+	
+	public static String getAndAssert(int expectedHttpStatusCode, String url) throws ParseException, IOException {
 		if (hc == null)
 			hc = new DefaultHttpClient();
 		HttpResponse res = hc.execute(new HttpGet(url));
-		assertEquals(200, res.getStatusLine().getStatusCode());
+		assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
 		return EntityUtils.toString(res.getEntity());
 	}
 

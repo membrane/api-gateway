@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
 import org.junit.Test;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
@@ -24,7 +23,6 @@ public class CustomInterceptorTest extends DistributionExtractingTestcase {
 		ScriptLauncher ant = new ScriptLauncher(baseDir).startExecutable("ant compile", b);
 		try {
 			int exitCode = ant.waitFor(60000);
-			System.out.println(b.toString());
 			if (exitCode != 0)
 				throw new RuntimeException("Ant exited with code " + exitCode + ": " + b.toString());
 		} finally {
