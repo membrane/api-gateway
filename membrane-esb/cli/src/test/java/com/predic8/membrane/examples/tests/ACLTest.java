@@ -10,14 +10,14 @@ import org.junit.Test;
 
 import com.predic8.membrane.examples.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.ScriptLauncher;
+import com.predic8.membrane.examples.Process2;
 
 public class ACLTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("acl");
-		ScriptLauncher sl = new ScriptLauncher(baseDir).startScript("router");
+		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
 			getAndAssert200("http://localhost:2000/");
 			

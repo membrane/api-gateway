@@ -11,14 +11,14 @@ import org.junit.Test;
 import com.predic8.membrane.examples.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.ProxiesXmlUtil;
-import com.predic8.membrane.examples.ScriptLauncher;
+import com.predic8.membrane.examples.Process2;
 
 public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void doit() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("quickstart-soap");
-		ScriptLauncher sl = new ScriptLauncher(baseDir).startScript("router");
+		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
 			String result = getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
 			assertContains("wsdl:documentation", result);

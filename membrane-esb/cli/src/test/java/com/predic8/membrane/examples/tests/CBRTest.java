@@ -9,13 +9,13 @@ import org.junit.Test;
 import org.parboiled.common.FileUtils;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.ScriptLauncher;
+import com.predic8.membrane.examples.Process2;
 
 public class CBRTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("cbr");
-		ScriptLauncher sl = new ScriptLauncher(baseDir).startScript("router");
+		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
 			String result = postAndAssert200("http://localhost:2000/shop", FileUtils.readAllText(new File(baseDir, "order.xml")));
 			assertContains("Normal order received.", result);

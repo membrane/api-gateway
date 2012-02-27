@@ -25,7 +25,7 @@ public class ProxiesXmlUtil {
 			throw new IllegalArgumentException("File " + file + " does not exist.");
 	}
 	
-	public void updateWith(String proxiesXmlContent, ScriptLauncher sl) {
+	public void updateWith(String proxiesXmlContent, Process2 sl) {
 		SubstringWaitableConsoleEvent reloaded = new SubstringWaitableConsoleEvent(sl, "listening at port " + getLastPort(proxiesXmlContent));
 		FileUtils.writeAllText(proxiesXmlContent, proxiesXml);
 		reloaded.waitFor(10000);

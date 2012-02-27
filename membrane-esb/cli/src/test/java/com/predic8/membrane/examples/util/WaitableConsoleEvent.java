@@ -4,7 +4,7 @@ import java.util.concurrent.TimeoutException;
 
 import com.google.common.base.Predicate;
 import com.predic8.membrane.examples.AbstractConsoleWatcher;
-import com.predic8.membrane.examples.ScriptLauncher;
+import com.predic8.membrane.examples.Process2;
 
 /**
  * Watches the console output until the predicate turns true.
@@ -13,7 +13,7 @@ public class WaitableConsoleEvent {
 	private AbstractConsoleWatcher watcher;
 	private boolean event;
 	
-	public WaitableConsoleEvent(final ScriptLauncher scriptLauncher, final Predicate<String> predicate) {
+	public WaitableConsoleEvent(final Process2 scriptLauncher, final Predicate<String> predicate) {
 		watcher = new AbstractConsoleWatcher() {
 			@Override
 			public void outputLine(boolean error, String line) {

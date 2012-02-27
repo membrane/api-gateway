@@ -8,15 +8,14 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.ScriptLauncher;
-import com.predic8.membrane.examples.util.ConsoleLogger;
+import com.predic8.membrane.examples.Process2;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
 public class GroovyTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
-		ScriptLauncher sl = new ScriptLauncher(getExampleDir("groovy")).startScript("router", new ConsoleLogger());
+		Process2 sl = new Process2.Builder().in(getExampleDir("groovy")).script("router").waitForMembrane().start();
 		try {
 			SubstringWaitableConsoleEvent groovyCalled = new SubstringWaitableConsoleEvent(sl, "X-Groovy header added.");
 			getAndAssert200("http://localhost:2000/");

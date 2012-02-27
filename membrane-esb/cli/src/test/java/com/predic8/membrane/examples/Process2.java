@@ -12,9 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 
+import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
+
 /**
- * Starts a shell script (Windows batch file or Linux shell script) and
- * later kills it.
+ * Starts a shell script (Windows batch file or Linux shell script) or
+ * executable and later kills it.
  * 
  * **********************************************************************
  * You might have to run "powershell Set-ExecutionPolicy RemoteSigned" as
@@ -24,15 +26,63 @@ import java.util.concurrent.TimeoutException;
  * 
  * Note that ProcessStuff is not synchronized, only ProcessStuff.watchers.
  */
-public class ScriptLauncher {
+public class Process2 {
 	
-	private final File exampleDir;
-	private ProcessStuff stuff;
-	
-	public ScriptLauncher(File exampleDir) {
-		this.exampleDir = exampleDir;
-		if (!exampleDir.exists())
-			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
+	public static class Builder {
+		private File baseDir;
+		private String id;
+		private String line;
+		private String waitAfterStartFor;
+		private ArrayList<AbstractConsoleWatcher> watchers = new ArrayList<AbstractConsoleWatcher>();
+		
+		public Builder() {}
+		
+		public Builder in(File baseDir) {
+			this.baseDir = baseDir;
+			return this;
+		}
+		
+		public Builder executable(String line) {
+			if (id != null)
+				throw new IllegalStateException("executable or script is already set.");
+			id = "executable";
+			this.line = line;
+			return this;
+		}
+		
+		public Builder script(String script) {
+			if (id != null)
+				throw new IllegalStateException("executable or script is already set.");
+			id = script;
+			line = isWindows() ? "cmd /c " + script + ".bat" : "bash " + script + ".sh";
+			return this;
+		}
+		
+		public Builder withWatcher(AbstractConsoleWatcher watcher) {
+			watchers.add(watcher);
+			return this;
+		}
+		
+		public Builder waitAfterStartFor(String s) {
+			waitAfterStartFor = s;
+			return this;
+		}
+
+		public Builder waitForMembrane() {
+			waitAfterStartFor("listening at port");
+			return this;
+		}
+
+		public Process2 start() throws IOException, InterruptedException {
+			if (baseDir == null)
+				throw new IllegalStateException("baseDir not set");
+			if (id == null)
+				throw new IllegalStateException("id not set");
+			if (line == null)
+				throw new IllegalStateException("line not set");
+			return new Process2(baseDir, id, line, watchers, waitAfterStartFor);
+		}
+		
 	}
 	
 	private final class OutputWatcher extends Thread {
@@ -92,15 +142,12 @@ public class ScriptLauncher {
 		}
 	}
 	
-	public ScriptLauncher startExecutable(String line, AbstractConsoleWatcher... consoleWatchers) throws IOException, InterruptedException {
-		return startScriptInternal("executable", line, consoleWatchers);
-	}
+	private ProcessStuff stuff;
 	
-	public ScriptLauncher startScript(String scriptName, AbstractConsoleWatcher... consoleWatchers) throws IOException, InterruptedException {
-		return startScriptInternal(scriptName, (isWindows() ? "cmd /c " + scriptName + ".bat" : "bash " + scriptName + ".sh"), consoleWatchers);
-	}
+	private Process2(File exampleDir, String id, String startCommand, List<AbstractConsoleWatcher> consoleWatchers, String waitAfterStartFor) throws IOException, InterruptedException {
+		if (!exampleDir.exists())
+			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 
-	public ScriptLauncher startScriptInternal(String id, String startCommand, AbstractConsoleWatcher... consoleWatchers) throws IOException, InterruptedException {
 		ArrayList<String> command = new ArrayList<String>();
 		Charset charset;
 		if (isWindows()) {
@@ -141,6 +188,10 @@ public class ScriptLauncher {
 		for (AbstractConsoleWatcher acw : consoleWatchers)
 			ps.watchers.add(acw);
 		
+		SubstringWaitableConsoleEvent afterStartWaiter = null;
+		if (waitAfterStartFor != null)
+			afterStartWaiter = new SubstringWaitableConsoleEvent(this, waitAfterStartFor);
+		
 		ps.startOutputWatchers();
 
 		// now wait for the PID to be written
@@ -172,23 +223,22 @@ public class ScriptLauncher {
 			}
 		}
 		
-		Thread.sleep(10000); // wait for router to start
-
-		return this;
+		if (afterStartWaiter != null)
+			afterStartWaiter.waitFor(60000);
 	}
 
-	private boolean isWindows() {
+	private static boolean isWindows() {
 		return System.getProperty("os.name").contains("Windows");
 	}
 	
-	public ScriptLauncher addConsoleWatcher(AbstractConsoleWatcher watcher) {
+	public Process2 addConsoleWatcher(AbstractConsoleWatcher watcher) {
 		synchronized(stuff.watchers) {
 			stuff.watchers.add(watcher);
 		}
 		return this;
 	}
 
-	public ScriptLauncher removeConsoleWatcher(AbstractConsoleWatcher watcher) {
+	public Process2 removeConsoleWatcher(AbstractConsoleWatcher watcher) {
 		synchronized(stuff.watchers) {
 			stuff.watchers.remove(watcher);
 		}
@@ -236,7 +286,7 @@ public class ScriptLauncher {
 			if (left <= 0)
 				throw new RuntimeException(new TimeoutException());
 			try {
-				wait(500);
+				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
