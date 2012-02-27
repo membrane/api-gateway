@@ -29,6 +29,11 @@ public class LoggingTest extends ScriptLauncher {
 				if (line.contains("HTTP"))
 					success[0] = true;
 			}
+		},new AbstractConsoleWatcher() {
+			public void outputLine(boolean error, String line) {
+				System.out.println(line);
+				
+			}
 		});
 		
 		HttpClient hc = new HttpClient();
