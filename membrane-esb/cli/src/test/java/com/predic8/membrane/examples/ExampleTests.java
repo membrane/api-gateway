@@ -25,6 +25,7 @@ import com.predic8.membrane.examples.tests.GroovyTest;
 import com.predic8.membrane.examples.tests.LoggingTest;
 import com.predic8.membrane.examples.tests.QuickstartRESTTest;
 import com.predic8.membrane.examples.tests.QuickstartSOAPTest;
+import com.predic8.membrane.examples.tests.XSLTTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({ 
@@ -35,6 +36,7 @@ import com.predic8.membrane.examples.tests.QuickstartSOAPTest;
 	GroovyTest.class,
 	LoggingTest.class,
 	QuickstartRESTTest.class,
-	QuickstartSOAPTest.class
+	QuickstartSOAPTest.class,
+	XSLTTest.class
 })
 public class ExampleTests {}
