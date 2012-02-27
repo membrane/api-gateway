@@ -22,7 +22,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 		try {
 			String result = getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
 			assertContains("wsdl:documentation", result);
-			assertContains("www.thomas-bayer.com:80", result);
+			assertContains("www.thomas-bayer.com:80", result);  // assert that rewriting did not take place
 
 			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "quickstart-soap.proxies.xml"));
 			pxu.updateWith(
@@ -38,7 +38,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"</proxies>", sl);
 
 			result = getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
-			assertContains("localhost:2000", result);
+			assertContains("localhost:2000", result); // assert that rewriting took place
 
 			pxu.updateWith(
 					"<proxies>\r\n" + 
@@ -81,7 +81,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"   <soapenv:Body>\r\n" + 
 					"      <blz:getBank>\r\n" + 
 					"	 <blz:blz>37050198</blz:blz>\r\n" + 
-					"	    <foo/>\r\n" + 
+					"	    <foo/>\r\n" + // <- invalid message 
 					"      </blz:getBank>\r\n" + 
 					"   </soapenv:Body>\r\n" + 
 					"</soapenv:Envelope>");

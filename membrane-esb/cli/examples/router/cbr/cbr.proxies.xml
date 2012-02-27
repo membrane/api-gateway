@@ -1,7 +1,7 @@
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
-	<serviceProxy name="Router">
+	<serviceProxy port="2000" name="Router">
 		<switch>
 			<case xPath="//order[@express='yes']" service="Express" />
 			<case xPath="//order/items/item[@id='7']" service="ImportItems" />
@@ -9,19 +9,19 @@
 		</switch>
 	</serviceProxy>
 
-	<serviceProxy name="ImportItems">
+	<serviceProxy port="2000" name="ImportItems">
 		<groovy>
 			Response.ok("Order contains import items.").build()			
 		</groovy>
 	</serviceProxy>
 
-	<serviceProxy name="Order">
+	<serviceProxy port="2000" name="Order">
 		<groovy>
 			Response.ok("Normal order received.").build()						
 		</groovy>
 	</serviceProxy>
 	
-	<serviceProxy name="Express">
+	<serviceProxy port="2000" name="Express">
 		<groovy>
 			Response.ok("Express order received.").build()			
 		</groovy>
