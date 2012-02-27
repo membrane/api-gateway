@@ -87,6 +87,10 @@ public class DistributionExtractingTestcase {
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 		return exampleDir;
 	}
+	
+	public File getMembraneHome() {
+		return membraneHome;
+	}
 
 	@After
 	public void done() {
