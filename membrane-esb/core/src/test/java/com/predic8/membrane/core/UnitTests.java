@@ -30,6 +30,7 @@ import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
+import com.predic8.membrane.core.multipart.ReassembleTest;
 import com.predic8.membrane.core.rules.*;
 import com.predic8.membrane.core.transport.SSLContextTest;
 import com.predic8.membrane.core.transport.http.*;
@@ -61,7 +62,7 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 		FormValidationInterceptorTest.class, ServiceInvocationTest.class,
 		HttpKeepAliveTest.class, ReverseProxyingInterceptorTest.class,
 		SSLContextTest.class, RelocatorWADLTest.class,
-		WADLInterceptorTest.class })
+		WADLInterceptorTest.class, ReassembleTest.class })
 public class UnitTests {
 	/*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

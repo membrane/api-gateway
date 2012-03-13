@@ -1,0 +1,1 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns2:sayHiResponse xmlns:ns2="http://service.spring.demo/"><return>MDEyMzQ1Njc4OQ==</return></ns2:sayHiResponse></soap:Body></soap:Envelope>

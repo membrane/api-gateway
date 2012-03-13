@@ -1,0 +1,13 @@
+--uuid:168683dc-43b3-4e71-8e66-efb633ef406b
+Content-Type: application/xop+xml; charset=UTF-8; type="text/xml";
+Content-Transfer-Encoding: binary
+Content-ID: <root.message@cxf.apache.org>
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"><soap:Body><ns2:sayHiResponse xmlns:ns2="http://service.spring.demo/"><return><xop:Include xmlns:xop="http://www.w3.org/2004/08/xop/include" href="cid:a416c16d-a50e-44ca-a6d7-3e8a61480afa-2@cxf.apache.org"/></return></ns2:sayHiResponse></soap:Body></soap:Envelope>
+--uuid:168683dc-43b3-4e71-8e66-efb633ef406b
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: binary
+Content-ID: <a416c16d-a50e-44ca-a6d7-3e8a61480afa-2@cxf.apache.org>
+
+0123456789
+--uuid:168683dc-43b3-4e71-8e66-efb633ef406b--

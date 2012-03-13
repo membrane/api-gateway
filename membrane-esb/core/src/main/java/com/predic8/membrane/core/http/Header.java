@@ -18,6 +18,9 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
+import javax.mail.internet.ContentType;
+import javax.mail.internet.ParseException;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.*;
 
@@ -179,6 +182,11 @@ public class Header {
 
 	public String getContentType() {
 		return getFirstValue(CONTENT_TYPE);
+	}
+	
+	public ContentType getContentTypeObject() throws ParseException {
+		String contentType = getContentType();
+		return contentType == null ? null : new ContentType(contentType);
 	}
 
 	public void setContentType(String value) {

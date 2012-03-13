@@ -59,6 +59,11 @@
 				<artifactId>commons-discovery</artifactId>
 				<version>0.2</version>
 			</dependency>
+	        <dependency>
+        		<groupId>commons-fileupload</groupId>
+        		<artifactId>commons-fileupload</artifactId>
+    	    	<version>1.2.2</version>
+	        </dependency>
 			<dependency>
 				<groupId>commons-httpclient</groupId>
 				<artifactId>commons-httpclient</artifactId>
@@ -181,6 +186,12 @@
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
 				<version>4.0</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>xmlunit</groupId>
+				<artifactId>xmlunit</artifactId>
+				<version>1.3</version>
 				<scope>test</scope>
 			</dependency>
 
