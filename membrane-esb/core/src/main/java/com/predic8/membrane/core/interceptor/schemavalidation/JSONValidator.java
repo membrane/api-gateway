@@ -2,6 +2,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -51,10 +52,14 @@ public class JSONValidator implements IValidator {
 	}
 	
 	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
+		return validateMessage(exc, msg.getBodyAsStream());
+	}
+	
+	public Outcome validateMessage(Exchange exc, InputStream body) throws Exception {
 		List<String> errors;
 		boolean success = true;
 		try {
-			JsonNode node = JsonLoader.fromReader(new InputStreamReader(msg.getBodyAsStream()));
+			JsonNode node = JsonLoader.fromReader(new InputStreamReader(body));
 			JsonValidator validator = validators.take();
 			ValidationReport report;
 			try {

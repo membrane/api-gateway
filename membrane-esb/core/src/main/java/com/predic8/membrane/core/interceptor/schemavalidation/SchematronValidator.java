@@ -2,6 +2,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -79,14 +80,18 @@ public class SchematronValidator implements IValidator {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
-	@Override
 	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
+		return validateMessage(exc, msg.getBodyAsStream());
+	}
+
+	@Override
+	public Outcome validateMessage(Exchange exc, InputStream body) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		try {
 			Transformer transformer = transformers.take();
 			try {
-				transformer.transform(new StreamSource(msg.getBodyAsStream()), new StreamResult(baos));
+				transformer.transform(new StreamSource(body), new StreamResult(baos));
 			} finally {
 				transformers.put(transformer);
 			}

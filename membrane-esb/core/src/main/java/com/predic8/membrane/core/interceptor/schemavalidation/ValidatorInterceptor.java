@@ -25,6 +25,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.multipart.SOAPMessageAccessor;
 import com.predic8.membrane.core.util.ResourceResolver;
 
 /**
@@ -34,6 +35,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
  */
 public class ValidatorInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(ValidatorInterceptor.class.getName());
+	private SOAPMessageAccessor messageAccessor = new SOAPMessageAccessor();
 
 	private String wsdl;
 	private String schema;
@@ -79,7 +81,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		if (exc.getRequest().isBodyEmpty()) 
 			return Outcome.CONTINUE;
 			
-		return validator.validateMessage(exc, exc.getRequest());
+		return validator.validateMessage(exc, messageAccessor.getSOAPStream(exc.getRequest()));
 	}
 	
 	@Override
@@ -87,7 +89,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		if (exc.getResponse().isBodyEmpty())
 			return Outcome.CONTINUE;
 		
-		return validator.validateMessage(exc, exc.getResponse());
+		return validator.validateMessage(exc, messageAccessor.getSOAPStream(exc.getResponse()));
 	}
 	
 	@Override

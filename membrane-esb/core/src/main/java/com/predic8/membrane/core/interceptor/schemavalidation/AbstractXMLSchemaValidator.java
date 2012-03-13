@@ -46,6 +46,10 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	}
 	
 	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
+		return validateMessage(exc, msg.getBodyAsStream());
+	}
+
+	public Outcome validateMessage(Exchange exc, InputStream body) throws Exception {
 		List<Exception> exceptions = new ArrayList<Exception>();
 		List<Validator> vals = validators.take();
 		try {
@@ -53,7 +57,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 			for (Validator validator: vals) {
 				SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
 				try {
-					validator.validate(getMessageBody(msg.getBodyAsStream()));
+					validator.validate(getMessageBody(body));
 					if (handler.noErrors()) {
 						valid.incrementAndGet();
 						return Outcome.CONTINUE;
