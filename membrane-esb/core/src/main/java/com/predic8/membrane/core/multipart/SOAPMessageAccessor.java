@@ -5,14 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Properties;
 
-import javax.mail.BodyPart;
-import javax.mail.Multipart;
-import javax.mail.Session;
 import javax.mail.internet.ContentType;
-import javax.mail.internet.MimeMessage;
 import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
 import javax.xml.stream.FactoryConfigurationError;
@@ -21,7 +15,6 @@ import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
@@ -31,7 +24,6 @@ import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.config.CharactersElement;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -100,6 +92,15 @@ public class SOAPMessageAccessor {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
 			multipartStream.readBodyData(baos);
 			
+			// see http://www.iana.org/assignments/transfer-encodings/transfer-encodings.xml
+			String cte = header.getFirstValue("Content-Transfer-Encoding");
+			if (cte != null &&
+					!cte.equals("binary") &&
+					!cte.equals("8bit") &&
+					!cte.equals("7bit"))
+				throw new RuntimeException("Content-Transfer-Encoding '" + cte + "' not implemented.");
+					
+			
 			Part part = new Part(header, baos.toByteArray());
 			String id = part.getContentID();
 			if (id != null) {
@@ -163,6 +164,6 @@ public class SOAPMessageAccessor {
 			return null;
 		}
 		return new ByteArrayInputStream(baos.toByteArray());
-}
+	}
 
 }
