@@ -17,9 +17,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.MessageUtil;
 
 public class DummyWebServiceInterceptor extends AbstractInterceptor {
 
@@ -30,7 +30,7 @@ public class DummyWebServiceInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		exc.getRequest().readBody();
-		exc.setResponse(MessageUtil.getOKResponse("<aaa></aaa>".getBytes(), "text/xml"));
+		exc.setResponse(Response.ok().contentType("text/html").body("<aaa></aaa>".getBytes()).build());
 		counter ++;
 		log.debug("handle request "+counter);
 		return Outcome.ABORT;

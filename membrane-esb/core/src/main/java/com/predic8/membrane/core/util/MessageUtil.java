@@ -23,7 +23,8 @@ import org.xml.sax.InputSource;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
 
 public class MessageUtil {
@@ -65,24 +66,6 @@ public class MessageUtil {
 		request.setVersion(Constants.HTTP_VERSION_11);
 		
 		return request;
-	}
-	
-	public static Response getOKResponse(byte[] content, String contentType) {
-		Response res = new Response();
-		res.setBodyContent(content);
-		res.setVersion("1.1");
-		res.setStatusCode(200);
-		res.setStatusMessage("OK");
-		res.getHeader().setContentType(contentType);
-		
-		return res;
-	}
-
-	public static Response getEmptyResponse(int statusCode, String statusMessage) {
-		Response res = new Response();
-		res.setStatusCode(statusCode);
-		res.setStatusMessage(statusMessage);
-		return res;
 	}
 	
 }

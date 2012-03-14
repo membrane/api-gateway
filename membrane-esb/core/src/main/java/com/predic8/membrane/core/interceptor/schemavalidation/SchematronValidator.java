@@ -2,7 +2,6 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
@@ -30,6 +29,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.ResourceResolver;
 
 public class SchematronValidator implements IValidator {
@@ -38,9 +38,11 @@ public class SchematronValidator implements IValidator {
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final XMLInputFactory xmlInputFactory;
 	private final ValidatorInterceptor.FailureHandler failureHandler;
+	private final XOPReconstitutor xopr = new XOPReconstitutor();
 	
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
+	
 	
 	public SchematronValidator(ResourceResolver resourceResolver, String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router) throws Exception {
 		this.failureHandler = failureHandler;
@@ -80,18 +82,14 @@ public class SchematronValidator implements IValidator {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
-	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
-		return validateMessage(exc, msg.getBodyAsStream());
-	}
-
 	@Override
-	public Outcome validateMessage(Exchange exc, InputStream body) throws Exception {
+	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		try {
 			Transformer transformer = transformers.take();
 			try {
-				transformer.transform(new StreamSource(body), new StreamResult(baos));
+				transformer.transform(new StreamSource(xopr.reconstituteIfNecessary(msg)), new StreamResult(baos));
 			} finally {
 				transformers.put(transformer);
 			}

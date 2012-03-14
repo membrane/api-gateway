@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.schema.Schema;
 
@@ -28,6 +29,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	private static Log log = LogFactory.getLog(AbstractXMLSchemaValidator.class.getName());
 
 	private final ArrayBlockingQueue<List<Validator>> validators;
+	private final XOPReconstitutor xopr;
 	protected final String location;
 	protected final ResourceResolver resourceResolver;
 	protected final ValidatorInterceptor.FailureHandler failureHandler;
@@ -43,13 +45,10 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 		validators = new ArrayBlockingQueue<List<Validator>>(concurrency);
 		for (int i = 0; i < concurrency; i++)
 			validators.add(createValidators());
+		xopr = new XOPReconstitutor();
 	}
 	
 	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
-		return validateMessage(exc, msg.getBodyAsStream());
-	}
-
-	public Outcome validateMessage(Exchange exc, InputStream body) throws Exception {
 		List<Exception> exceptions = new ArrayList<Exception>();
 		List<Validator> vals = validators.take();
 		try {
@@ -57,7 +56,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 			for (Validator validator: vals) {
 				SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
 				try {
-					validator.validate(getMessageBody(body));
+					validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
 					if (handler.noErrors()) {
 						valid.incrementAndGet();
 						return Outcome.CONTINUE;

@@ -29,14 +29,24 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 /**
- * Reassemble a multipart XOP message (see http://en.wikipedia.org/wiki/XML-binary_Optimized_Packaging ) into
- * one stream (that can be used for schema validation, for example).
+ * Reassemble a multipart XOP message (see
+ * http://en.wikipedia.org/wiki/XML-binary_Optimized_Packaging and
+ * http://www.w3.org/TR/xop10/ ) into one stream (that can be used for schema
+ * validation, for example).
  */
-public class SOAPMessageAccessor {
-	private static Log log = LogFactory.getLog(SOAPMessageAccessor.class.getName());
+public class XOPReconstitutor {
+	private static Log log = LogFactory.getLog(XOPReconstitutor.class.getName());
 	private static final String XOP_NAMESPACE_URI = "http://www.w3.org/2004/08/xop/include";
-
-	public InputStream getSOAPStream(Message message) {
+	
+	private final XMLInputFactory xmlInputFactory; 
+	
+	public XOPReconstitutor() {
+		xmlInputFactory = XMLInputFactory.newInstance();
+		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
+		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+	}
+	
+	public InputStream reconstituteIfNecessary(Message message) throws XMLStreamException {
 		try {
 			InputStream result = getSOAPStreamInternal(message);
 			if (result != null)
@@ -47,7 +57,13 @@ public class SOAPMessageAccessor {
 		}
 		return message.getBodyAsStream();
 	}
-
+	
+	private XMLEventReader createEventReaderFromStream(InputStream is) throws XMLStreamException {
+		synchronized (xmlInputFactory) {
+			return xmlInputFactory.createXMLEventReader(is);
+		}
+	}
+	
 	/**
 	 * @return reassembled SOAP stream or null if message is not SOAP or not multipart
 	 */
@@ -114,15 +130,11 @@ public class SOAPMessageAccessor {
 
 	private InputStream fillInXOPParts(InputStream inputStream,
 			HashMap<String, Part> parts) throws XMLStreamException, FactoryConfigurationError {
-		XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(baos);
 
 		try {
-			XMLEventReader parser = xmlInputFactory.createXMLEventReader(inputStream);
+			XMLEventReader parser = createEventReaderFromStream(inputStream);
 
 			boolean xopIncludeOpen = false;
 			

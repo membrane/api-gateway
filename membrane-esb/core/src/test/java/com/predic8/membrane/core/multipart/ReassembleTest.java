@@ -2,6 +2,8 @@ package com.predic8.membrane.core.multipart;
 
 import java.io.IOException;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.io.IOUtils;
 import org.custommonkey.xmlunit.XMLAssert;
@@ -26,8 +28,8 @@ public class ReassembleTest {
 	}
 	
 	@Test
-	public void doit() throws HttpException, IOException, SAXException {
-		String actual = IOUtils.toString(new SOAPMessageAccessor().getSOAPStream(getResponse()));
+	public void doit() throws HttpException, IOException, SAXException, XMLStreamException {
+		String actual = IOUtils.toString(new XOPReconstitutor().reconstituteIfNecessary(getResponse()));
 		String expected = IOUtils.toString(getClass().getResourceAsStream("/multipart/embedded-byte-array-reassembled.xml"));
 		
 		if (actual.startsWith("--"))

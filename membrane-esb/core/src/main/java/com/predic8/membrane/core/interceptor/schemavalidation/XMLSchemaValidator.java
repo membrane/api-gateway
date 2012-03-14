@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
@@ -13,7 +12,6 @@ import javax.xml.validation.Validator;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Response;
@@ -47,7 +45,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	}
 
 	protected Source getMessageBody(InputStream input) throws Exception {
-		return new SAXSource(new InputSource(input));
+		return new StreamSource(input);
 	}
 	
 	@Override
