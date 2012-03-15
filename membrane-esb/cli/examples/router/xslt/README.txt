@@ -9,7 +9,7 @@ RUNNING THE EXAMPLE
 At the following URL you will get a REST representation of a customer resource.
 
 
-http://www.thomas-bayer.com/sqlrest/CUSTOMER/2/ 
+http://www.thomas-bayer.com/samples/sqlrest/CUSTOMER/7/ 
 
 
 In this example we will transform that representation with the XSLTInterceptor. 
@@ -21,9 +21,9 @@ Execute the following steps:
 
 2. Execute router.bat
 
-2. Open the URL http://www.thomas-bayer.com/sqlrest/CUSTOMER/2/ in your browser.
+2. Open the URL http://www.thomas-bayer.com/samples/sqlrest/CUSTOMER/7/ in your browser.
 
-3. Compare it with the response of http://localhost:2000/sqlrest/CUSTOMER/2/
+3. Compare it with the response of http://localhost:2000/samples/sqlrest/CUSTOMER/7/
 
 
 
@@ -88,28 +88,28 @@ Take a look at the stylesheet:
 	</xsl:template>	
 </xsl:stylesheet>
 
-We will use the stylesheet to transform the REST resource into another representation. When we open http://www.thomas-bayer.com/sqlrest/CUSTOMER/2/ in our browser, the REST resource will return the following XML document. 
+We will use the stylesheet to transform the REST resource into another representation. When we open http://www.thomas-bayer.com/samples/sqlrest/CUSTOMER/7/ in our browser, the REST resource will return the following XML document. 
 
 
-<CUSTOMER>
-    <ID>-20</ID>
-    <FIRSTNAME>Rick</FIRSTNAME>
-    <LASTNAME>Cortés Ribotta</LASTNAME>
-    <STREET>Calle Pública "B" 5240 Casa 121</STREET>
-    <CITY>Sydney100</CITY>
+<?xml version="1.0"?><CUSTOMER xmlns:xlink="http://www.w3.org/1999/xlink">
+    <ID>7</ID>
+    <FIRSTNAME>Roger</FIRSTNAME>
+    <LASTNAME>Seid</LASTNAME>
+    <STREET>3738 N Monroe St</STREET>
+    <CITY>Tallahassee</CITY>
 </CUSTOMER>
 
 
-When we open http://localhost:2000/sqlrest/CUSTOMER/2/ in a browser the response is transformed by Membrane and the browser will show the following document:
+When we open http://localhost:2000/samples/sqlrest/CUSTOMER/7/ in a browser the response is transformed by Membrane and the browser will show the following document:
 
-
+<?xml version="1.0" encoding="UTF-8"?>
 <person>
-  <name>
-    <first>Rick</first>
-    <last>Cortés Ribotta</last>
-  </name>
-  <address>
-    <street>Calle Pública "B" 5240 Casa 121</street>
-    <city>Sydney100</city>
-  </address>
+	<name>
+		<first>Roger</first>
+		<last>Seid</last>
+	</name>
+	<address>
+		<street>3738 N Monroe St</street>
+		<city>Tallahassee</city>
+	</address>
 </person>
