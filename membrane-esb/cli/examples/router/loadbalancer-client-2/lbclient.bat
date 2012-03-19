@@ -10,8 +10,10 @@ echo Please set the MEMBRANE_HOME environment variable to point to
 echo the directory where you have extracted the Membrane software.
 exit
 
+:javaHomeMissing
+echo Please set the JAVA_HOME environment variable.
+exit
+
 :homeOk
-set "CLASSPATH=%MEMBRANE_HOME%"
-set "CLASSPATH=%MEMBRANE_HOME%/conf"
-set "CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/lib/membrane-esb.jar;%MEMBRANE_HOME%/lib/commons-cli-1.1.jar;%MEMBRANE_HOME%/lib/commons-logging.jar;%MEMBRANE_HOME%/lib/xmlbeautifier-1.2.1.jar;%MEMBRANE_HOME%/lib/commons-codec-1.3.jar"
-java -classpath "%CLASSPATH%" com.predic8.membrane.balancer.client.LBNotificationClient %1 %2 %3 %4 %5 %6 %7 %8 %9
+if not exist "%JAVA_HOME%" goto javaHomeMissing
+java "-Djava.ext.dirs=%JAVA_HOME%/jre/lib/ext/;%MEMBRANE_HOME%/lib/" com.predic8.membrane.balancer.client.LBNotificationClient %1 %2 %3 %4 %5 %6 %7 %8 %9

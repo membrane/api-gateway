@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
@@ -19,6 +20,7 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
@@ -54,11 +56,20 @@ public class AssertUtils {
 			hc = new DefaultHttpClient();
 		HttpResponse res = hc.execute(new HttpGet(url));
 		assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
-		return EntityUtils.toString(res.getEntity());
+		HttpEntity entity = res.getEntity();
+		return entity == null ? "" : EntityUtils.toString(entity);
 	}
 
 	public static String postAndAssert200(String url, String body) throws ClientProtocolException, IOException {
 		return postAndAssert(200, url, body);
+	}
+
+	public static String assertStatusCode(int expectedHttpStatusCode, HttpUriRequest request) throws ClientProtocolException, IOException {
+		if (hc == null)
+			hc = new DefaultHttpClient();
+		HttpResponse res = hc.execute(request);
+		assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
+		return EntityUtils.toString(res.getEntity());
 	}
 
 	public static String postAndAssert(int expectedHttpStatusCode, String url, String body) throws ClientProtocolException, IOException {
