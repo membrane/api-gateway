@@ -78,6 +78,8 @@ public class DistributionExtractingTestcase {
 				"log4j.appender.stdout.layout=org.apache.log4j.PatternLayout\r\n" + 
 				"log4j.appender.stdout.layout.ConversionPattern=%d{ABSOLUTE} %5p %c{1}:%L - %m%n\r\n" + 
 				"\r\n" + 
+				"log4j.rootLogger=warn\r\n" +
+				"\r\n" + 
 				"log4j.logger.com.predic8=debug, stdout", log4jproperties);
 	}
 
