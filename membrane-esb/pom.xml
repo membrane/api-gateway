@@ -200,6 +200,18 @@
 				<version>10.8.2.2</version>
 				<scope>test</scope>
 			</dependency>
+			<dependency>
+				<groupId>com.sun.xml.ws</groupId>
+				<artifactId>jaxws-rt</artifactId>
+				<version>2.2.5</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>com.sun.xml.ws</groupId>
+				<artifactId>jaxws-tools</artifactId>
+				<version>2.2.5</version>
+				<scope>test</scope>
+			</dependency>
 
 			<dependency>
 				<groupId>org.eclipse.core</groupId>
