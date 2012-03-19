@@ -18,9 +18,12 @@ public class SSLTunnelToServerTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
 		File baseDir = getExampleDir("ssl-tunnel-to-server");
+		
+		AssertUtils.replaceInFile(new File(baseDir, "ssl-tunnel-to-server.proxies.xml"), "8080", "3023");
+		
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
-			AssertUtils.assertContains("<svn", getAndAssert200("http://localhost:8080/svn/membrane/monitor/"));
+			AssertUtils.assertContains("<svn", getAndAssert200("http://localhost:3023/svn/membrane/monitor/"));
 		} finally {
 			sl.killScript();
 		}

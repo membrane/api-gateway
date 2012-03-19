@@ -2,6 +2,7 @@ package com.predic8.membrane.examples;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -13,6 +14,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -133,7 +135,7 @@ public class AssertUtils {
 		return hc;
 	}
 	
-	public static void trustAnyHTTPSServer() throws NoSuchAlgorithmException, KeyManagementException {
+	public static void trustAnyHTTPSServer(int port) throws NoSuchAlgorithmException, KeyManagementException {
 		SSLContext context = SSLContext.getInstance("SSL");
 		context.init(null, new TrustManager[] { new X509TrustManager() {
 			@Override
@@ -154,10 +156,15 @@ public class AssertUtils {
 
 		SSLSocketFactory sslsf = new SSLSocketFactory(context);
 		sslsf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-		Scheme scheme = new Scheme("https", sslsf, 443);
+		Scheme scheme = new Scheme("https", sslsf, port);
 		if (hc == null)
 			hc = new DefaultHttpClient();
 		hc.getConnectionManager().getSchemeRegistry().register(scheme);
+	}
+
+	public static void replaceInFile(File file, String from, String to_) throws IOException {
+		FileUtils.writeStringToFile(file, FileUtils.readFileToString(file).replace(from, to_));
+		
 	}
 
 }

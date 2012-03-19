@@ -78,7 +78,7 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
 		File derbyJar = new File(classJar.split("!")[0].substring(6));
 
 		if (!derbyJar.exists())
-			throw new AssertionError("derby jar not found in classpath (it's either missing or the detection logic broken).");
+			throw new AssertionError("derby jar not found in classpath (it's either missing or the detection logic broken). classJar=" + classJar);
 
 		copyFileToDirectory(derbyJar, new File(getMembraneHome(), "lib"));
 	}

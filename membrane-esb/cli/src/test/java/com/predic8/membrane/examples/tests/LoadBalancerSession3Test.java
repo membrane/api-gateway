@@ -23,6 +23,10 @@ public class LoadBalancerSession3Test extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File base = getExampleDir("loadbalancer-session-3");
+		
+		AssertUtils.replaceInFile(new File(base, "lb-session.proxies.xml"), "8080", "3023");
+		AssertUtils.replaceInFile(new File(base, "src/com/predic8/chat/Client.java"), "8080", "3023");
+		
 		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
 		try {
 

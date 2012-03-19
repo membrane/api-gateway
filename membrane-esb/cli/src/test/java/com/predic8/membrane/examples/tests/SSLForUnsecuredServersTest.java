@@ -19,11 +19,14 @@ public class SSLForUnsecuredServersTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
 		File baseDir = getExampleDir("ssl-for-unsecured-servers");
+		
+		AssertUtils.replaceInFile(new File(baseDir, "unsecured-server.proxies.xml"), "443", "3023");
+		
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
-			AssertUtils.trustAnyHTTPSServer();
+			AssertUtils.trustAnyHTTPSServer(3023);
 			
-			assertContains("wsdl:documentation", getAndAssert200("https://localhost/axis2/services/BLZService?wsdl"));
+			assertContains("wsdl:documentation", getAndAssert200("https://localhost:3023/axis2/services/BLZService?wsdl"));
 		} finally {
 			sl.killScript();
 		}
