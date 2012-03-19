@@ -19,13 +19,4 @@ To run the example execute the following steps:
 
 2. Execute router.bat
 
-3. Open the URL http://localhost/svn/membrane/monitor/ in your browser.
-
-
-
-ON LINUX
-
-On Linux, you need to be root to open network ports <1024. Therefore, to start
-this example, you either need to start the membrane-esb as root, or specify
-a port >=1024, e.g. using '<serviceProxy port="8080">', in
-ssl-tunnel-to-server.proxies.xml .
+3. Open the URL http://localhost:8080/svn/membrane/monitor/ in your browser.

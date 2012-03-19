@@ -3,6 +3,15 @@ package com.predic8.membrane.examples;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
@@ -22,6 +31,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicCookieStore;
@@ -114,6 +125,33 @@ public class AssertUtils {
 		hc.setCredentialsProvider(bcp);
 		hc.setCookieStore(new BasicCookieStore());
 		return hc;
+	}
+	
+	public static void trustAnyHTTPSServer() throws NoSuchAlgorithmException, KeyManagementException {
+		SSLContext context = SSLContext.getInstance("SSL");
+		context.init(null, new TrustManager[] { new X509TrustManager() {
+			@Override
+			public X509Certificate[] getAcceptedIssuers() {
+				return null;
+			}
+
+			@Override
+			public void checkServerTrusted(X509Certificate[] arg0, String arg1)
+					throws CertificateException {
+			}
+
+			@Override
+			public void checkClientTrusted(X509Certificate[] arg0, String arg1)
+					throws CertificateException {
+			}
+		} }, new SecureRandom());
+
+		SSLSocketFactory sslsf = new SSLSocketFactory(context);
+		sslsf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+		Scheme scheme = new Scheme("https", sslsf, 443);
+		if (hc == null)
+			hc = new DefaultHttpClient();
+		hc.getConnectionManager().getSchemeRegistry().register(scheme);
 	}
 
 }
