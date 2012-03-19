@@ -38,7 +38,6 @@ public class ResourceResolver {
 	    } 
 	    
 		if (uri.startsWith("classpath:")) {
-			log.debug("loading resource from classpath: " + uri);
 			return getClass().getResourceAsStream(uri.substring(10));
 		}
 		
@@ -59,12 +58,9 @@ public class ResourceResolver {
 	protected File getRealFile(String uri, boolean useMembraneHome) {
 
 		if (useMembraneHome && !new File(uri).isAbsolute()) {
-			log.debug("loading resource relative to MEMBRANE_HOME: " + uri);
-			log.debug("MEMBRANE_HOME: " + System.getenv("MEMBRANE_HOME"));
 			return new File(System.getenv("MEMBRANE_HOME"), uri);
 		}
 
-		log.debug("loading resource from file system relative to cwd: " + uri);
 		return new File(uri);
 	}
 	
