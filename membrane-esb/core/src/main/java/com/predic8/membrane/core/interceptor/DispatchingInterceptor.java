@@ -49,9 +49,9 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 			return p.getTargetURL();
 		}
 		
-		URL url = new URL("http", p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri());
+		String url = new URL("http", p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
 		log.debug("destination: " + url);
-		return ""+url; 
+		return url; 
 	}
 
 }
