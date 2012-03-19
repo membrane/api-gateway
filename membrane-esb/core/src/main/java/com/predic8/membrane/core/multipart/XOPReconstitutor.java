@@ -69,6 +69,8 @@ public class XOPReconstitutor {
 	 */
 	private InputStream getSOAPStreamInternal(Message message) throws ParseException, MalformedStreamException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
 		ContentType contentType = message.getHeader().getContentTypeObject();
+		if (contentType == null || contentType.getPrimaryType() == null)
+			return null;
 		if (!contentType.getPrimaryType().equals("multipart")
 			|| !contentType.getSubType().equals("related"))
 			return null;

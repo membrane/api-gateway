@@ -22,12 +22,14 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
 
 public class XSLTInterceptor extends AbstractInterceptor {
 
 	private String xslt;
 	private int concurrency = 0; // number of parallel transformers to use. 0 = 2xCPUs
 	private volatile XSLTTransformer xsltTransformer;
+	private XOPReconstitutor xopr = new XOPReconstitutor();
 
 	public XSLTInterceptor() {
 		name = "XSLT Transformer";
@@ -49,7 +51,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		if (msg.isBodyEmpty())
 			return;
 		msg.setBodyContent(getTransformer().transform(
-				new StreamSource(msg.getBodyAsStream())));
+				new StreamSource(xopr.reconstituteIfNecessary(msg))));
 	}
 	
 	// http://en.wikipedia.org/wiki/Double-checked_locking
