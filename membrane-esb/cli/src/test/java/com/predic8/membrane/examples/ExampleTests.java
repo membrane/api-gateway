@@ -21,10 +21,24 @@ import com.predic8.membrane.examples.tests.ACLTest;
 import com.predic8.membrane.examples.tests.BasicAuthTest;
 import com.predic8.membrane.examples.tests.CBRTest;
 import com.predic8.membrane.examples.tests.CustomInterceptorTest;
+import com.predic8.membrane.examples.tests.FileExchangeStoreTest;
 import com.predic8.membrane.examples.tests.GroovyTest;
+import com.predic8.membrane.examples.tests.LoadBalancerBasic1Test;
+import com.predic8.membrane.examples.tests.LoadBalancerClient2Test;
+import com.predic8.membrane.examples.tests.LoadBalancerMultiple4Test;
+import com.predic8.membrane.examples.tests.LoadBalancerSession3Test;
+import com.predic8.membrane.examples.tests.LoadBalancerStaticTest;
+import com.predic8.membrane.examples.tests.LoggingCSVTest;
+import com.predic8.membrane.examples.tests.LoggingJDBCTest;
 import com.predic8.membrane.examples.tests.LoggingTest;
 import com.predic8.membrane.examples.tests.QuickstartRESTTest;
 import com.predic8.membrane.examples.tests.QuickstartSOAPTest;
+import com.predic8.membrane.examples.tests.REST2SOAPJSONTest;
+import com.predic8.membrane.examples.tests.REST2SOAPTest;
+import com.predic8.membrane.examples.tests.RewriterTest;
+import com.predic8.membrane.examples.tests.SSLForUnsecuredServersTest;
+import com.predic8.membrane.examples.tests.SSLTunnelToServerTest;
+import com.predic8.membrane.examples.tests.ThrottleTest;
 import com.predic8.membrane.examples.tests.XSLTTest;
 
 @RunWith(Suite.class)
@@ -33,10 +47,24 @@ import com.predic8.membrane.examples.tests.XSLTTest;
 	BasicAuthTest.class,
 	CBRTest.class,
 	CustomInterceptorTest.class,
+	FileExchangeStoreTest.class,
 	GroovyTest.class,
+	LoadBalancerBasic1Test.class,
+	LoadBalancerClient2Test.class,
+	LoadBalancerMultiple4Test.class,
+	LoadBalancerSession3Test.class,
+	LoadBalancerStaticTest.class,
+	LoggingCSVTest.class,
+	LoggingJDBCTest.class,
 	LoggingTest.class,
 	QuickstartRESTTest.class,
 	QuickstartSOAPTest.class,
+	REST2SOAPTest.class,
+	REST2SOAPJSONTest.class,
+	RewriterTest.class,
+	SSLForUnsecuredServersTest.class,
+	SSLTunnelToServerTest.class,
+	ThrottleTest.class,
 	XSLTTest.class
 })
 public class ExampleTests {}
