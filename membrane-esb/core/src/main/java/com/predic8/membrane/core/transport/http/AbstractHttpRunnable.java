@@ -44,13 +44,16 @@ public abstract class AbstractHttpRunnable implements Runnable {
 	protected boolean stop = false;
 	
 	protected void invokeInterceptors(Flow f, List<Interceptor> list, int start, int end, int step) throws Exception {
+		boolean logDebug = log.isDebugEnabled();
+		
 		for (int j = start; j != transport.getInterceptors().size(); j+=step) {
 			Interceptor i = transport.getInterceptors().get(j);
 			
 			if (i.getFlow() != Flow.REQUEST_RESPONSE && 
 				i.getFlow() != f) continue;
 			
-			log.debug("Flow: "+f+". Invoking: " + i.getDisplayName() + " on exchange: " + exchange);
+			if (logDebug)
+				log.debug("Flow: "+f+". Invoking: " + i.getDisplayName() + " on exchange: " + exchange);
 			
 			Outcome outcome;
 			if (f == Flow.REQUEST) {
@@ -65,13 +68,17 @@ public abstract class AbstractHttpRunnable implements Runnable {
 		} 		
 	}
 	protected void invokeRequestHandlers() throws Exception {
+		boolean logDebug = log.isDebugEnabled();
+
 		for (Interceptor i : transport.getInterceptors()) {
 			
-			log.debug("Handler flow: "+i.getDisplayName()+":"+i.getFlow());
+			if (logDebug)
+				log.debug("Handler flow: "+i.getDisplayName()+":"+i.getFlow());
 			
 			if (i.getFlow() == Flow.RESPONSE) continue;
 			
-			log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exchange);
+			if (logDebug)
+				log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exchange);
 			
 			if (i.handleRequest(exchange) == Outcome.ABORT) {
 				throw new AbortException();
@@ -80,16 +87,19 @@ public abstract class AbstractHttpRunnable implements Runnable {
 	}
 
 	protected void invokeResponseHandlers(Exchange exc) throws Exception {
+		boolean logDebug = log.isDebugEnabled();
 		
 		for (int j = transport.getInterceptors().size()-1; j >= 0; j--) {
 			
 			Interceptor i = transport.getInterceptors().get(j);
 
-			log.debug("Handler flow: "+i.getDisplayName()+":"+i.getFlow());
+			if (logDebug)
+				log.debug("Handler flow: "+i.getDisplayName()+":"+i.getFlow());
 			
 			if (i.getFlow() == Flow.REQUEST) continue;
 			
-			log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exc);
+			if (logDebug)
+				log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exc);
 			
 			if (i.handleResponse(exc) == Outcome.ABORT) {
 				throw new AbortException();
