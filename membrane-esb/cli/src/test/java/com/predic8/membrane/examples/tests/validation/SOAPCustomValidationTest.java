@@ -12,7 +12,6 @@ import org.junit.Test;
 import com.predic8.membrane.examples.AbstractConsoleWatcher;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.util.ConsoleLogger;
 
 public class SOAPCustomValidationTest extends DistributionExtractingTestcase {
 	
@@ -21,51 +20,36 @@ public class SOAPCustomValidationTest extends DistributionExtractingTestcase {
 		File baseDir = getExampleDir("validation" + File.separator + "soap-custom");
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
-			final boolean[] exception = new boolean[1];
-			Process2 ant = new Process2.Builder().
-					in(baseDir).
-					executable("ant run").
-					withWatcher(new AbstractConsoleWatcher() {
-						@Override
-						public void outputLine(boolean error, String line) {
-							if (line.contains("ClientTransportException"))
-								exception[0] = true;
-						}
-					}).
-					start();
-			try {
-				ant.waitFor(30000);
-			} finally {
-				ant.killScript();
-			}
-			Assert.assertTrue(exception[0]);
+			assertAntRunProducesException(baseDir, true);
 			
 			File source = new File(baseDir, "src" + File.separator + "ArticleClient.java");
 			FileUtils.writeStringToFile(source, readFileToString(source).replace("//aType", "aType"));
 			
-			exception[0] = false;
-			ant = new Process2.Builder().
-					in(baseDir).
-					executable("ant run").
-					withWatcher(new AbstractConsoleWatcher() {
-						@Override
-						public void outputLine(boolean error, String line) {
-							if (line.contains("ClientTransportException"))
-								exception[0] = true;
-						}
-					}).
-					start();
-			try {
-				ant.waitFor(30000);
-			} finally {
-				ant.killScript();
-			}
-			Assert.assertFalse(exception[0]);
-
+			assertAntRunProducesException(baseDir, false);
 		} finally {
 			sl.killScript();
 		}
 	}
 
+	private void assertAntRunProducesException(File baseDir, boolean expectException) throws IOException, InterruptedException {
+		final boolean[] exception = new boolean[1];
+		Process2 ant = new Process2.Builder().
+				in(baseDir).
+				executable("ant run").
+				withWatcher(new AbstractConsoleWatcher() {
+					@Override
+					public void outputLine(boolean error, String line) {
+						if (line.contains("ClientTransportException"))
+							exception[0] = true;
+					}
+				}).
+				start();
+		try {
+			ant.waitFor(30000);
+		} finally {
+			ant.killScript();
+		}
+		Assert.assertEquals(expectException, exception[0]);
+	}
 
 }
