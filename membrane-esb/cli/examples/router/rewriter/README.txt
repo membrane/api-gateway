@@ -1,6 +1,6 @@
 REGEX URL REWRITE INTERCEPTOR
 
-With the RegExURLRewriteInterceptor you can rewrite URLs by regular expressions. 
+With the RewriteInterceptor you can rewrite URLs by regular expressions. 
 
 
 

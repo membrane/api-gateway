@@ -1,6 +1,7 @@
 package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.examples.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.examples.tests.LoadBalancerUtil.assertNodeStatus;
 import static org.apache.commons.io.FileUtils.readFileToString;
 import static org.apache.commons.io.FileUtils.writeStringToFile;
 import static org.junit.Assert.assertEquals;
@@ -30,8 +31,9 @@ public class LoadBalancerClient2Test extends DistributionExtractingTestcase {
 			
 			Thread.sleep(1000);
 			
-			AssertUtils.assertContains("localhost:4000", 
-					getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"));
+			assertNodeStatus(
+					getAndAssert200("http://localhost:9000/admin/clusters/show?cluster=Default"),
+					"localhost", 4000, "UP");
 
 			addNodeViaScript(base, "localhost", 4001);
 			addNodeViaScript(base, "localhost", 4002);

@@ -1,5 +1,6 @@
 package com.predic8.membrane.examples.tests;
 
+import static com.predic8.membrane.examples.AssertUtils.assertContains;
 import static com.predic8.membrane.examples.AssertUtils.assertStatusCode;
 import static com.predic8.membrane.examples.AssertUtils.getAndAssert200;
 
@@ -36,5 +37,17 @@ public class LoadBalancerUtil {
 		post.setEntity(new UrlEncodedFormEntity(params));
 		assertStatusCode(302, post);
 	}
+	
+	public static void assertNodeStatus(String adminPageHTML, String nodeHost, int nodePort,
+			String expectedNodeStatus) {
+		for (String row : adminPageHTML.split("<tr>")) {
+			if (row.contains(nodeHost + ":" + nodePort)) {
+				assertContains(expectedNodeStatus, row);
+				return;
+			}
+		}
+		throw new AssertionError("Node " + nodeHost + ":" + nodePort + " not found in " + adminPageHTML);
+	}
+
 
 }
