@@ -67,7 +67,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 		Rule rule = router.getRuleManager().getMatchingRule(key);
 		if (rule != null) {
-			log.debug("Matching Rule found for RuleKey " + key);
+			if (log.isDebugEnabled())
+				log.debug("Matching Rule found for RuleKey " + key);
 			return rule;
 		}
 
@@ -80,7 +81,8 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 				continue;
 
 			if (rule.getKey().getPort() == exc.getServerThread().getSourceSocket().getLocalPort()) {
-				log.debug("proxy rule found: " + rule);
+				if (log.isDebugEnabled())
+					log.debug("proxy rule found: " + rule);
 				return rule;
 			}
 		}
