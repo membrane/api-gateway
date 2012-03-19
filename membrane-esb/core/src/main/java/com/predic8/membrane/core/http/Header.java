@@ -61,12 +61,12 @@ public class Header {
 
 	public static final String CHUNKED = "chunked";
 
-	Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
-	Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
+	private static final Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
+	private static final Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
 
 	private static final Log log = LogFactory.getLog(Header.class.getName());
 
-	private Vector<HeaderField> fields = new Vector<HeaderField>();
+	private final ArrayList<HeaderField> fields = new ArrayList<HeaderField>();
 
 	public Header() {
 	}
