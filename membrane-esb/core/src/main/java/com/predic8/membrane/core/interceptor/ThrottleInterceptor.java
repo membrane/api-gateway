@@ -11,7 +11,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
 public class ThrottleInterceptor extends AbstractInterceptor {
-	private Log log = LogFactory.getLog(ThrottleInterceptor.class.getName());
+	private static Log log = LogFactory.getLog(ThrottleInterceptor.class.getName());
 	
 	private long delay = 0;
 	private int maxThreads = 0;

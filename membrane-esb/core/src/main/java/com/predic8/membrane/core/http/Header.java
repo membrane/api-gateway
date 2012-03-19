@@ -64,7 +64,7 @@ public class Header {
 	Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
 	Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
 
-	private Log log = LogFactory.getLog(Header.class.getName());
+	private static final Log log = LogFactory.getLog(Header.class.getName());
 
 	private Vector<HeaderField> fields = new Vector<HeaderField>();
 

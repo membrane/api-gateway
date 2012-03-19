@@ -25,7 +25,7 @@ import com.predic8.membrane.core.util.ByteUtil;
 
 public class Body extends AbstractBody {
 
-	private Log log = LogFactory.getLog(Body.class.getName());
+	private static Log log = LogFactory.getLog(Body.class.getName());
 	
 	public Body(InputStream in, int length) throws IOException {
 		this.inputStream = in;

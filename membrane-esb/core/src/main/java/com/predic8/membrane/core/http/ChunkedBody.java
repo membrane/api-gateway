@@ -27,7 +27,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class ChunkedBody extends AbstractBody {
 
-	private Log log = LogFactory.getLog(ChunkedBody.class.getName());
+	private static Log log = LogFactory.getLog(ChunkedBody.class.getName());
 
 	public ChunkedBody(InputStream in) {
 		log.debug("Chunked Body constructor");

@@ -28,7 +28,7 @@ public class TunnelThread extends Thread {
 	
 	private OutputStream out;
 	
-	private Log log = LogFactory.getLog(TunnelThread.class.getName());
+	private static Log log = LogFactory.getLog(TunnelThread.class.getName());
 	
 	public TunnelThread(InputStream inStr, OutputStream outStr, String name) {
 		setName(name);
