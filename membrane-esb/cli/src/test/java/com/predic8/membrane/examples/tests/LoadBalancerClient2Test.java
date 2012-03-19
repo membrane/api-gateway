@@ -94,7 +94,11 @@ public class LoadBalancerClient2Test extends DistributionExtractingTestcase {
 		Process2 lbclient = new Process2.Builder().in(base).
 				executable("cmd /c lbclient.bat " + command + " " + nodeHost + " " + nodePort).
 				start();
-		Assert.assertEquals(expectedReturnCode, lbclient.waitFor(30000));
+		try {
+			Assert.assertEquals(expectedReturnCode, lbclient.waitFor(30000));
+		} finally {
+			lbclient.killScript();
+		}
 	}
 
 }

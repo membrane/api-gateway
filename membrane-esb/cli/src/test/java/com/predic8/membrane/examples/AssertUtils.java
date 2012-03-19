@@ -84,9 +84,15 @@ public class AssertUtils {
 	}
 
 	public static String postAndAssert(int expectedHttpStatusCode, String url, String body) throws ClientProtocolException, IOException {
+		return postAndAssert(expectedHttpStatusCode, url, new String[0], body);
+	}
+	
+	public static String postAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws ClientProtocolException, IOException {
 		if (hc == null)
 			hc = new DefaultHttpClient();
 		HttpPost post = new HttpPost(url);
+		for (int i = 0; i < headers.length; i+=2)
+			post.setHeader(headers[i], headers[i+1]);
 		post.setEntity(new StringEntity(body));
 		HttpResponse res = hc.execute(post);
 		assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
