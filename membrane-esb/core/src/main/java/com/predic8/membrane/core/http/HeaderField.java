@@ -19,12 +19,12 @@ import com.predic8.membrane.core.Constants;
 
 public class HeaderField {
 
-	HeaderName headerName;
-	String value="";
+	private HeaderName headerName;
+	private String value;
 	
 	public HeaderField(HeaderName headerName,String value) {
 		this.headerName = headerName;
-		this.value=value;
+		this.value = value;
 	}
 	
 	public HeaderField(String line) {
@@ -46,7 +46,7 @@ public class HeaderField {
 	
 	public HeaderField(HeaderField element) {
 		headerName = new HeaderName(element.headerName);
-		value=element.value;
+		value = element.value;
 	}
 	public String getValue() {
 		return value;
@@ -63,7 +63,7 @@ public class HeaderField {
 	
 	public String toString(){
 		StringBuffer buf = new StringBuffer();
-		buf.append(headerName.name);
+		buf.append(headerName.toString());
 		buf.append(": ");
 		buf.append(value);
 		buf.append(Constants.CRLF);

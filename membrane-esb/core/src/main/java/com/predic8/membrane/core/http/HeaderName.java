@@ -26,17 +26,14 @@ package com.predic8.membrane.core.http;
  */
 public class HeaderName{
 	
-	String name;
+	private final String name;
 	
 	public HeaderName(String name) {
 		this.name = name;
 	}
 	
-	/**
-	 * @param headerName
-	 */
 	public HeaderName(HeaderName headerName) {
-		name=headerName.name;
+		name = headerName.name;
 	}
 
 	public boolean equals(Object obj) {
@@ -44,6 +41,14 @@ public class HeaderName{
 			return false;
 		
 		return name.equalsIgnoreCase(obj.toString());
+	}
+
+	public boolean equals(HeaderName other) {
+		return name.equalsIgnoreCase(other.name);
+	}
+
+	public boolean equals(String s) {
+		return name.equalsIgnoreCase(s);
 	}
 	
 	public int hashCode() {

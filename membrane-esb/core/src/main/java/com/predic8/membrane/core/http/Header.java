@@ -105,7 +105,7 @@ public class Header {
 	public void removeFields(String name) {
 		List<HeaderField> deleteValues = new ArrayList<HeaderField>();
 		for (HeaderField field : fields) {
-			if (field.getHeaderName().equals(new HeaderName(name)))
+			if (field.getHeaderName().equals(name))
 				deleteValues.add(field);
 		}
 		fields.removeAll(deleteValues);
@@ -121,9 +121,8 @@ public class Header {
 	}
 
 	public String getFirstValue(String name) {
-		HeaderName nameToFind = new HeaderName(name);
 		for (HeaderField field : fields) {
-			if (field.getHeaderName().equals(nameToFind))
+			if (field.getHeaderName().equals(name))
 				return field.getValue();
 		}
 		return null;
@@ -144,16 +143,14 @@ public class Header {
 		out.write(buffer.toString().getBytes());
 	}
 
-	// Only change the header by once.
 	public HeaderField setValue(String name, String value) {
-		HeaderName headerName = new HeaderName(name);
 		for (HeaderField field : fields) {
-			if (field.getHeaderName().equals(headerName)) {
+			if (field.getHeaderName().equals(name)) {
 				field.setValue(value);
 				return field;
 			}
 		}
-		HeaderField newField = new HeaderField(headerName, value);
+		HeaderField newField = new HeaderField(name, value);
 		fields.add(newField);
 		return newField;
 	}
