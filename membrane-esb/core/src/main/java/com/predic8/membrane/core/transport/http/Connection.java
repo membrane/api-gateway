@@ -59,7 +59,7 @@ public class Connection {
 				con.socket = new Socket(host, port, InetAddress.getByName(localHost), 0);
 		}
 		
-		log.debug("Opened connection on localPort: " + port);
+		log.debug("Opened connection on localPort: " + con.socket.getLocalPort());
 		//Creating output stream before input stream is suggested. 
 		con.out = new BufferedOutputStream(con.socket.getOutputStream(), 2048);
 		con.in = new BufferedInputStream(con.socket.getInputStream(), 2048);
