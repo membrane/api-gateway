@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core;
 
-import org.apache.commons.cli.ParseException;
-
 import com.predic8.membrane.core.transport.PortOccupiedException;
 
 public class RouterCLI {
@@ -52,7 +50,7 @@ public class RouterCLI {
 		try {
 			wait();
 		} catch (InterruptedException e) {
-			
+			// do nothing
 		}
 	}
 	

@@ -58,8 +58,12 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome deny(Exchange exc) {
+		String date;
+		synchronized (HttpUtil.GMT_DATE_FORMAT) {
+			date = HttpUtil.GMT_DATE_FORMAT.format(new Date());
+		}
 		exc.setResponse(Response.unauthorized("").
-				header("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date())).
+				header("Date", date).
 				header("Server", "Membrane-Monitor " + Constants.VERSION).
 				header("WWW-Authenticate", "Basic realm=\"Membrane Authentication\"").
 				header("Connection", "close").build());
@@ -70,9 +74,12 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		return exc.getRequest().getHeader().getFirstValue("Authorization")==null;
 	}
 	
+	/**
+	 * The "Basic" authentication scheme defined in RFC 2617 does not properly define how to treat non-ASCII characters.
+	 */
 	private String getAuthorizationHeaderDecoded(Exchange exc) throws Exception {
 		String value = exc.getRequest().getHeader().getFirstValue("Authorization");
-		return new String(Base64.decodeBase64(value.substring(6).getBytes("UTF-8")));
+		return new String(Base64.decodeBase64(value.substring(6).getBytes(Constants.UTF_8_CHARSET)), Constants.UTF_8_CHARSET);
 	}
 
 	public Map<String, String> getUsers() {

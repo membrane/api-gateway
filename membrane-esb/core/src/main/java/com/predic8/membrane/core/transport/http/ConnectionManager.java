@@ -53,7 +53,7 @@ public class ConnectionManager {
 	
 	private static final long CLOSE_AFTER_MILLISECONDS = 30 * 1000; 
 	
-	private class ConnectionKey {
+	private static class ConnectionKey {
 		public final InetAddress host;
 		public final int port;
 		
@@ -69,12 +69,14 @@ public class ConnectionManager {
 		
 		@Override
 		public boolean equals(Object obj) {
+			if (!(obj instanceof ConnectionKey) || obj == null)
+				return false;
 			ConnectionKey other = (ConnectionKey)obj;
 			return host.equals(other.host) && port == other.port;
 		}
 	}
 	
-	private class OldConnection {
+	private static class OldConnection {
 		public final Connection connection;
 		public final long lastUse;
 		

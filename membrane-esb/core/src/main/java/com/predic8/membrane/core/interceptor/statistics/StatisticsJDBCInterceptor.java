@@ -109,17 +109,20 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 			return;
 
 		Statement st = con.createStatement();
-		
-		if (JDBCUtil.isOracleDatabase(con.getMetaData())) {
-			st.execute(JDBCUtil.getCreateTableStatementForOracle());
-			st.execute(JDBCUtil.CREATE_SEQUENCE);
-			st.execute(JDBCUtil.CREATE_TRIGGER);
-		} else if (JDBCUtil.isMySQLDatabase(con.getMetaData())) {
-			st.execute(JDBCUtil.getCreateTableStatementForMySQL());
-		} else if (JDBCUtil.isDerbyDatabase(con.getMetaData())) {
-			st.execute(JDBCUtil.getCreateTableStatementForDerby());
-		} else {
-			st.execute(JDBCUtil.getCreateTableStatementForOther());
+		try {
+			if (JDBCUtil.isOracleDatabase(con.getMetaData())) {
+				st.execute(JDBCUtil.getCreateTableStatementForOracle());
+				st.execute(JDBCUtil.CREATE_SEQUENCE);
+				st.execute(JDBCUtil.CREATE_TRIGGER);
+			} else if (JDBCUtil.isMySQLDatabase(con.getMetaData())) {
+				st.execute(JDBCUtil.getCreateTableStatementForMySQL());
+			} else if (JDBCUtil.isDerbyDatabase(con.getMetaData())) {
+				st.execute(JDBCUtil.getCreateTableStatementForDerby());
+			} else {
+				st.execute(JDBCUtil.getCreateTableStatementForOther());
+			}
+		} finally {
+			st.close();
 		}
 	}
 

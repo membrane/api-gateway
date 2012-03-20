@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.LogFactory;
 
@@ -127,7 +129,7 @@ public class LogInterceptor extends AbstractInterceptor {
 			log("================");
 			return;
 		}
-		log(new String(MessageUtil.getContent(msg)));
+		log(new String(MessageUtil.getContent(msg), msg.getCharset()));
 		log("================");
 	}
 

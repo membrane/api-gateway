@@ -25,6 +25,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.http.*;
@@ -106,7 +107,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE;
 
 		if (log.isDebugEnabled())
-			log.debug("response: " + getTransformer(null).transform(getBodySource(exc)));
+			log.debug("response: " + new String(getTransformer(null).transform(getBodySource(exc)), Constants.UTF_8_CHARSET));
 
 		byte[] transformedResp = getTransformer(getRESTURL(exc).responseXSLT).
 				transform(getBodySource(exc));
@@ -204,7 +205,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 			throws Exception {
 		byte[] soapEnv = getTransformer(ss).transform(src);
 		if (log.isDebugEnabled())
-			log.debug("soap-env: " + new String(soapEnv));
+			log.debug("soap-env: " + new String(soapEnv, Constants.UTF_8_CHARSET));
 		msg.setBodyContent(soapEnv);
 	}
 

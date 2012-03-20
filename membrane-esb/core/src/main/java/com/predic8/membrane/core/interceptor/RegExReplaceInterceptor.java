@@ -56,7 +56,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		
 		res.readBody();
 		byte[] content = MessageUtil.getContent(res);
-		res.setBodyContent(new String(content).replaceAll(pattern, replacement).getBytes());
+		res.setBodyContent(new String(content, res.getCharset()).replaceAll(pattern, replacement).getBytes(res.getCharset()));
 		res.getHeader().removeFields("Content-Encoding");
 	}
 

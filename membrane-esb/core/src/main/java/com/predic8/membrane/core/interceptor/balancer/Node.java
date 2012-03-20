@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.xml.stream.*;
 
+import com.google.common.base.Objects;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.StatisticCollector;
@@ -40,6 +41,11 @@ public class Node extends AbstractXmlElement {
 		return obj!=null && obj instanceof Node &&
 			   host.equals(((Node)obj).getHost()) &&
 			   port == ((Node)obj).getPort();
+	}
+	
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(host, port);
 	}
 	
 	public int getLost() {

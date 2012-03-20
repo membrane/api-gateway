@@ -23,6 +23,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.HttpUtil;
 
 
 public abstract class Message {
@@ -156,8 +157,13 @@ public abstract class Message {
 		out.flush();
 	}
 	
+	/**
+	 * The start line supposedly only contains ASCII characters. But since
+	 * {@link HttpUtil#readLine(InputStream)} converts the input byte-by-byte
+	 * to char-by-char, we use ISO-8859-1 for output.  
+	 */
 	public void writeStartLine(OutputStream out) throws IOException {
-		out.write(getStartLine().getBytes());
+		out.write(getStartLine().getBytes(Constants.ISO_8859_1_CHARSET));
 	}
 
 	public abstract String getStartLine();

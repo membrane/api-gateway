@@ -30,23 +30,17 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class Request extends Message {
 
-	protected static Log log = LogFactory.getLog(Request.class.getName());
+	private static final Log LOG = LogFactory.getLog(Request.class.getName());
+	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
 
 	public static final String METHOD_GET = "GET";
-
 	public static final String METHOD_POST = "POST";
-
 	public static final String METHOD_HEAD = "HEAD";
-
 	public static final String METHOD_DELETE = "DELETE";
-
 	public static final String METHOD_PUT = "PUT";
-
 	public static final String METHOD_TRACE = "TRACE";
-
 	public static final String METHOD_CONNECT = "CONNECT";
 
-	private static Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
 
 	String method;
 	String uri;
@@ -96,10 +90,10 @@ public class Request extends Message {
 	}
 
 	protected void createBody(InputStream in) throws IOException {
-		log.debug("createBody");
+		LOG.debug("createBody");
 
 		if (isBodyEmpty()) {
-			log.debug("empty body created");
+			LOG.debug("empty body created");
 			body = new EmptyBody();
 			return;
 		}

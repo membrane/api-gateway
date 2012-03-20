@@ -16,9 +16,7 @@ public class URLParamUtil {
 		if (q == null) {
 			if (hasNoFormParams(exc))
 				return new HashMap<String, String>();
-			q = new String(exc.getRequest().getBody().getRaw());// TODO
-																// getBody().toString()
-																// doesn't work.
+			q = new String(exc.getRequest().getBody().getRaw(), exc.getRequest().getCharset());
 		}
 
 		return parseQueryString(q);

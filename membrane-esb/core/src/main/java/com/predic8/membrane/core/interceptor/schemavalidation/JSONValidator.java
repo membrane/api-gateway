@@ -52,14 +52,14 @@ public class JSONValidator implements IValidator {
 	}
 	
 	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
-		return validateMessage(exc, msg.getBodyAsStream());
+		return validateMessage(exc, msg.getBodyAsStream(), Charset.forName(msg.getCharset()));
 	}
 	
-	public Outcome validateMessage(Exchange exc, InputStream body) throws Exception {
+	public Outcome validateMessage(Exchange exc, InputStream body, Charset charset) throws Exception {
 		List<String> errors;
 		boolean success = true;
 		try {
-			JsonNode node = JsonLoader.fromReader(new InputStreamReader(body));
+			JsonNode node = JsonLoader.fromReader(new InputStreamReader(body, charset));
 			JsonValidator validator = validators.take();
 			ValidationReport report;
 			try {

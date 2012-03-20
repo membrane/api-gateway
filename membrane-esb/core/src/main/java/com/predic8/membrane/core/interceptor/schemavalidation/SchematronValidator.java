@@ -1,8 +1,9 @@
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
+import static com.predic8.membrane.core.Constants.UTF_8_CHARSET;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.nio.charset.Charset;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -27,6 +28,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
@@ -34,7 +36,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 
 public class SchematronValidator implements IValidator {
 
-	private static final Charset UTF8 = Charset.forName("UTF-8");
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final XMLInputFactory xmlInputFactory;
 	private final ValidatorInterceptor.FailureHandler failureHandler;
@@ -106,7 +107,7 @@ public class SchematronValidator implements IValidator {
 				if (event.isStartElement()) {
 					StartElement startElement = (StartElement)event;
 					if (startElement.getName().getLocalPart().equals("failed-assert")) {
-						setErrorMessage(exc, new String(result, UTF8), false);
+						setErrorMessage(exc, new String(result, UTF_8_CHARSET), false);
 						invalid.incrementAndGet();
 						return Outcome.ABORT;
 					}
@@ -135,9 +136,9 @@ public class SchematronValidator implements IValidator {
 
 		if (failureHandler != null) {
 			failureHandler.handleFailure(message, exc);
-			exc.setResponse(Response.badRequest().contentType("text/xml;charset=utf-8").body((MSG_HEADER + MSG_FOOTER).getBytes()).build());
+			exc.setResponse(Response.badRequest().contentType(MimeType.TEXT_XML_UTF8).body((MSG_HEADER + MSG_FOOTER).getBytes(UTF_8_CHARSET)).build());
 		} else {
-			exc.setResponse(Response.badRequest().contentType("text/xml;charset=utf-8").body(message.getBytes(UTF8)).build());
+			exc.setResponse(Response.badRequest().contentType(MimeType.TEXT_XML_UTF8).body(message.getBytes(UTF_8_CHARSET)).build());
 		}
 	}
 	
@@ -151,7 +152,7 @@ public class SchematronValidator implements IValidator {
 		return invalid.get();
 	}
 
-	private final class NullErrorListener implements ErrorListener {
+	private static final class NullErrorListener implements ErrorListener {
 		@Override
 		public void warning(TransformerException exception)
 				throws TransformerException {

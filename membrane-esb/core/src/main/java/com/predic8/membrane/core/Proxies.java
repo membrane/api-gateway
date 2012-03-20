@@ -14,13 +14,26 @@
 
 package com.predic8.membrane.core;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Collection;
 
-import javax.xml.stream.*;
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.config.AbstractConfigElement;
+import com.predic8.membrane.core.config.Global;
+import com.predic8.membrane.core.config.ProxyConfiguration;
+import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class Proxies extends AbstractConfigElement {
@@ -129,11 +142,16 @@ public class Proxies extends AbstractConfigElement {
 	}
 
 	public void write(String path) throws Exception {
-		FileWriter out = new FileWriter(path);
-		out.write(TextUtil.formatXML(new InputStreamReader(
+		FileOutputStream fos = new FileOutputStream(path);
+		try {
+			OutputStreamWriter out = new OutputStreamWriter(fos, Constants.UTF_8_CHARSET);
+			out.write(TextUtil.formatXML(new InputStreamReader(
 				new ByteArrayInputStream(toBytes()), Constants.UTF_8)));
-		out.flush();
-		out.close();
+			out.flush();
+			out.close();
+		} finally {
+			fos.close();
+		}
 
 	}
 

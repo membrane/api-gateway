@@ -390,7 +390,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 	public Rule getDeepCopy() throws Exception {
 		String xml = serialize();
 
-		XMLStreamReader r = getStreamReaderFor(xml.getBytes());
+		XMLStreamReader r = getStreamReaderFor(xml.getBytes(Constants.UTF_8_CHARSET));
 		AbstractProxy newObject = (AbstractProxy) getNewInstance().parse(r);
 		newObject.setRouter(Router.getInstance());
 		return newObject;
@@ -413,7 +413,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			throws XMLStreamException {
 		XMLInputFactory factory = XMLInputFactory.newInstance();
 		ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
-		return new FixedStreamReader(factory.createXMLStreamReader(stream));
+		return new FixedStreamReader(factory.createXMLStreamReader(stream, Constants.UTF_8));
 	}
 
 	protected abstract AbstractProxy getNewInstance();

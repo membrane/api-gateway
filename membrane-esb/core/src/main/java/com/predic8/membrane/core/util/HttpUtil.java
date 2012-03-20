@@ -147,7 +147,9 @@ public class HttpUtil {
 	public static Header createHeaders(String contentType, String... headers) {
 		Header header = new Header();
 		if (contentType != null ) header.setContentType(contentType);
-		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
+		synchronized (GMT_DATE_FORMAT) {
+			header.add("Date", GMT_DATE_FORMAT.format(new Date()));
+		}
 		header.add("Server", "Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
 		header.add("Connection", "close");
 		for (int i = 0; i<headers.length; i+=2) {

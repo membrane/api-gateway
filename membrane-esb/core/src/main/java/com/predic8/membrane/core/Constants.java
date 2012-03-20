@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core;
 
+import java.nio.charset.Charset;
+
 public class Constants {
 
 	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
@@ -29,8 +31,10 @@ public class Constants {
 	public static final String XML_VERSION = "1.0";
 
 	public static final String UTF_8 = "UTF-8";
+	public static final Charset UTF_8_CHARSET = Charset.forName(UTF_8);
 
 	public static final String ISO_8859_1 = "ISO-8859-1";
+	public static final Charset ISO_8859_1_CHARSET = Charset.forName(ISO_8859_1);
 
 	public static final String UNKNOWN = "unknown";
 

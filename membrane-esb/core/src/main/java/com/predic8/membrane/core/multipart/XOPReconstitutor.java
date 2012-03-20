@@ -24,6 +24,7 @@ import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -103,10 +104,10 @@ public class XOPReconstitutor {
 			throws IOException, EndOfStreamException, MalformedStreamException {
 		HashMap<String, Part> parts = new HashMap<String, Part>();
 		
-		MultipartStream multipartStream = new MultipartStream(message.getBodyAsStream(), boundary.getBytes());
+		MultipartStream multipartStream = new MultipartStream(message.getBodyAsStream(), boundary.getBytes(Constants.UTF_8_CHARSET));
 		boolean nextPart = multipartStream.skipPreamble();
 		while(nextPart) {
-			Header header = new Header(new ByteArrayInputStream(multipartStream.readHeaders().getBytes()));
+			Header header = new Header(multipartStream.readHeaders());
 			ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
 			multipartStream.readBodyData(baos);
 			

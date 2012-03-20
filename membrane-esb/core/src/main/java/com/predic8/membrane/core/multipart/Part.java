@@ -14,6 +14,7 @@ import javax.xml.stream.events.XMLEvent;
 
 import org.apache.commons.codec.binary.Base64;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Header;
 
 public class Part {
@@ -123,7 +124,7 @@ public class Part {
 
 			@Override
 			public String getData() {
-				return new String(Base64.encodeBase64(data));
+				return new String(Base64.encodeBase64(data), Constants.UTF_8_CHARSET);
 			}
 
 			@Override

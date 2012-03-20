@@ -28,10 +28,9 @@ import com.predic8.membrane.core.transport.SSLContext;
 
 public class HttpEndpointListener extends Thread {
 
-	protected static Log log = LogFactory.getLog(HttpEndpointListener.class.getName());
+	private static final Log log = LogFactory.getLog(HttpEndpointListener.class.getName());
 
 	private ServerSocket serverSocket;
-
 	private HttpTransport transport;
 
 	public HttpEndpointListener(int port, HttpTransport transport, SSLContext sslContext) throws IOException {

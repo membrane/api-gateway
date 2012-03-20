@@ -84,6 +84,12 @@ public class Header {
 		}
 	}
 
+	public Header(String header) throws IOException, EndOfStreamException {
+		for (String line : header.split("\r?\n"))
+			if (line.length() > 0)
+				add(new HeaderField(line));
+	}
+
 	public Header(Header header) {
 		for (HeaderField field : header.fields) {
 			fields.add(new HeaderField(field));
@@ -132,6 +138,10 @@ public class Header {
 		return fields.toArray(new HeaderField[fields.size()]);
 	}
 
+	/**
+	 * Since {@link HttpUtil#readLine(InputStream)} assembles the String byte-by-byte
+	 * converting it to char-by-char, we use ISO-8859-1 for output here.
+	 */
 	public void write(OutputStream out) throws IOException {
 		StringBuffer buffer = new StringBuffer();
 		for (HeaderField field : fields) {
@@ -140,7 +150,7 @@ public class Header {
 			buffer.append(name).append(": ").append(value)
 					.append(Constants.CRLF);
 		}
-		out.write(buffer.toString().getBytes());
+		out.write(buffer.toString().getBytes(Constants.ISO_8859_1_CHARSET));
 	}
 
 	public HeaderField setValue(String name, String value) {

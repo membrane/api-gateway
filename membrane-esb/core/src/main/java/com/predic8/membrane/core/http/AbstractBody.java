@@ -86,10 +86,10 @@ public abstract class AbstractBody {
 			return 0;
 		int length = getLength();
 		for (Chunk chunk : chunks) {
-			length += Long.toHexString(chunk.getLength()).getBytes().length;
+			length += Long.toHexString(chunk.getLength()).getBytes(Constants.UTF_8_CHARSET).length;
 			length += 2 * Constants.CRLF_BYTES.length;
 		}
-		length += "0".getBytes().length;
+		length += "0".getBytes(Constants.UTF_8_CHARSET).length;
 		length += 2 * Constants.CRLF_BYTES.length;
 		return length;
 	}
@@ -101,14 +101,17 @@ public abstract class AbstractBody {
 	
 	protected abstract byte[] getRawLocal() throws IOException;
 
-	
+	/**
+	 * Supposes UTF-8 encoding. Should therefore not be used
+	 * for primary functionality.
+	 */
 	@Override
 	public String toString() {
 		if (chunks.isEmpty()) {
 			return "";
 		}
 		try {
-			return new String(getRaw());
+			return new String(getRaw(), Constants.UTF_8_CHARSET);
 		} catch (IOException e) {
 			e.printStackTrace();
 			return "Error in body: " + e;

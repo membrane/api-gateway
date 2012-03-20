@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -29,16 +28,8 @@ public class LSInputImpl implements LSInput {
 	private static Log log = LogFactory.getLog(LSInputImpl.class.getName());
 	
 	private String publicId;
-
 	private String systemId;
-
 	private InputStream inputStream;
-	
-	public LSInputImpl(String publicId, String systemId, String input) {
-	    this.publicId = publicId;
-	    this.systemId = systemId;
-	    this.inputStream = new ByteArrayInputStream(input.getBytes());
-	}
 
 	public LSInputImpl(String publicId, String systemId, InputStream inputStream) {
 	    this.publicId = publicId;
@@ -97,7 +88,7 @@ public class LSInputImpl implements LSInput {
 	private String streamToString() throws IOException {
 		byte[] bytes = new byte[inputStream.available()];
 		inputStream.read(bytes);
-		return new String(bytes);
+		return new String(bytes, Constants.UTF_8_CHARSET);
 	}
 
 	@Override

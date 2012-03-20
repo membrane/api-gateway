@@ -79,7 +79,9 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 	private Header createHeader(String uri) {
 		Header header = new Header();
-		header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
+		synchronized (HttpUtil.GMT_DATE_FORMAT) {
+			header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
+		}
 		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
 		header.add("Connection", "close");
 		setContentType(header, uri);

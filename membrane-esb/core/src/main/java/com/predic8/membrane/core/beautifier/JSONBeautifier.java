@@ -2,8 +2,12 @@ package com.predic8.membrane.core.beautifier;
 
 import java.io.IOException;
 
-import org.codehaus.jackson.*;
-import org.codehaus.jackson.map.*;
+import org.codehaus.jackson.JsonGenerator;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.SerializationConfig;
 
 /* Copyright 2011 predic8 GmbH, www.predic8.com
 
@@ -31,8 +35,8 @@ public class JSONBeautifier {
 	
 	private boolean failOnUnknownProperties = true;
 	
-	public String beautify(byte[] content) throws IOException {
-	    JsonNode tree = objectMapper.readTree(new String(content));
+	public String beautify(String content) throws IOException {
+	    JsonNode tree = objectMapper.readTree(content);
 	    return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tree);
 	}
 

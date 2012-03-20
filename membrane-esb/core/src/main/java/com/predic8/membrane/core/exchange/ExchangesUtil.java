@@ -2,16 +2,14 @@ package com.predic8.membrane.core.exchange;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class ExchangesUtil {
 
-	public static final NumberFormat FORMATTER = NumberFormat.getInstance();
 	public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
 	
 	public static String getServer(AbstractExchange exc) {
@@ -52,7 +50,9 @@ public class ExchangesUtil {
 	public static String getTime(AbstractExchange exc) {
 		if (exc.getTime() == null)
 			return Constants.UNKNOWN;
-		return DATE_FORMATTER.format(exc.getTime().getTime());
+		synchronized(DATE_FORMATTER) {
+			return DATE_FORMATTER.format(exc.getTime().getTime());
+		}
 	}
 	
 	public static String getRequestContentLength(AbstractExchange exc) {

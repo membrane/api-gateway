@@ -27,8 +27,9 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class ChunkedBody extends AbstractBody {
 
-	private static Log log = LogFactory.getLog(ChunkedBody.class.getName());
-
+	private static final Log log = LogFactory.getLog(ChunkedBody.class.getName());
+	private static final byte[] ZERO = "0".getBytes(Constants.UTF_8_CHARSET);
+	
 	public ChunkedBody(InputStream in) {
 		log.debug("Chunked Body constructor");
 		inputStream = in;
@@ -47,9 +48,9 @@ public class ChunkedBody extends AbstractBody {
 		for (Chunk chunk : chunks) {
 			chunk.write(out);
 		}
-		out.write("0".getBytes());
-		out.write(Constants.CRLF.getBytes());
-		out.write(Constants.CRLF.getBytes());
+		out.write(ZERO);
+		out.write(Constants.CRLF_BYTES);
+		out.write(Constants.CRLF_BYTES);
 	}
 	
 	protected void writeNotRead(OutputStream out) throws IOException {
@@ -71,13 +72,13 @@ public class ChunkedBody extends AbstractBody {
 	}
 	
 	private void writeLastChunk(OutputStream out) throws IOException {
-		out.write("0".getBytes());
+		out.write(ZERO);
 		out.write(Constants.CRLF_BYTES);
 		out.write(Constants.CRLF_BYTES);
 	}
 
 	private void writeChunkSize(OutputStream out, int chunkSize) throws IOException {
-		out.write(Integer.toHexString(chunkSize).getBytes());
+		out.write(Integer.toHexString(chunkSize).getBytes(Constants.UTF_8_CHARSET));
 		out.write(Constants.CRLF_BYTES);
 	}
 	
@@ -104,8 +105,8 @@ public class ChunkedBody extends AbstractBody {
 	}
 	
 	private int copyLastChunk(byte[] raw, int destPos) {
-		System.arraycopy("0".getBytes(), 0, raw, destPos, "0".getBytes().length);
-		destPos += "0".getBytes().length;
+		System.arraycopy(ZERO, 0, raw, destPos, ZERO.length);
+		destPos += ZERO.length;
 		destPos = copyCRLF(raw, destPos);
 		return destPos;
 	}

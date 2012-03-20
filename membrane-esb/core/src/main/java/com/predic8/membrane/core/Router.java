@@ -27,22 +27,16 @@ import com.predic8.membrane.core.util.*;
 
 public class Router {
 
-	protected static Log log = LogFactory.getLog(Router.class.getName());
+	private static final Log log = LogFactory.getLog(Router.class.getName());
+
+	static Router router;
+	static AbstractApplicationContext beanFactory;
 
 	protected RuleManager ruleManager = new RuleManager();
-
 	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
-
 	protected Transport transport;
-
 	protected ConfigurationManager configurationManager = new ConfigurationManager();
-
 	protected ResourceResolver resourceResolver = new ResourceResolver();
-
-	protected static Router router;
-
-	protected static AbstractApplicationContext beanFactory;
-
 	protected DNSCache dnsCache = new DNSCache();
 
 	public Router() {
@@ -109,13 +103,10 @@ public class Router {
 	}
 
 	public Collection<Interceptor> getInterceptors() {
-		Map<String, Interceptor> map = beanFactory
-				.getBeansOfType(Interceptor.class);
-		Set<String> keys = map.keySet();
-		for (String id : keys) {
-			Interceptor i = map.get(id);
-			i.setId(id);
-			i.setRouter(this);
+		Map<String, Interceptor> map = beanFactory.getBeansOfType(Interceptor.class);
+		for (Map.Entry<String, Interceptor> entry : map.entrySet()) {
+			entry.getValue().setId(entry.getKey());
+			entry.getValue().setRouter(this);
 		}
 		return map.values();
 	}

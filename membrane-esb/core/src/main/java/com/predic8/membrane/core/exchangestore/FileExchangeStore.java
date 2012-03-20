@@ -34,6 +34,9 @@ import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.util.TextUtil;
 
+/**
+ * The output file is UTF-8 encoded.
+ */
 public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static Log log = LogFactory.getLog(FileExchangeStore.class
@@ -122,7 +125,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			if (raw || !saveBodyOnly) {
 				msg.writeStartLine(os);
 				msg.getHeader().write(os);
-				os.write((Constants.CRLF).getBytes());
+				os.write(Constants.CRLF_BYTES);
 			}
 
 			if (msg.isBodyEmpty())
@@ -135,7 +138,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 					os.write(TextUtil.formatXML(
 							new InputStreamReader(msg.getBodyAsStream(), msg
 									.getHeader().getCharset()))
-							.getBytes());
+							.getBytes(Constants.UTF_8));
 				else
 					os.write(msg.getBody().getContent());
 			}

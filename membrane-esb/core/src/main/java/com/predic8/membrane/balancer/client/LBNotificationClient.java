@@ -95,7 +95,12 @@ public class LBNotificationClient {
 
 		if (prop != null && new File(propertiesFile).exists()) {
 			Properties props = new Properties();
-			props.load(new FileInputStream(propertiesFile));
+			InputStream is = new FileInputStream(propertiesFile);
+			try {
+				props.load(is);
+			} finally {
+				is.close();
+			}
 			if (props.containsKey(prop)) {
 				return props.getProperty(prop);
 			}

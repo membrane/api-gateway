@@ -44,15 +44,16 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 	public Node dispatch(LoadBalancingInterceptor interceptor) {
 		for (int j = 0; j < 5; j++) {
 			for (Node ep : interceptor.getEndpoints()) {
-				if (!endpointCount.containsKey(getHostColonPort(ep))) {
-					endpointCount.put(getHostColonPort(ep), 1);
+				String hostColonPort = getHostColonPort(ep);
+				if (!endpointCount.containsKey(hostColonPort)) {
+					endpointCount.put(hostColonPort, 1);
 					return ep;
 				}
 
-				Integer counter = endpointCount.get(ep);
+				Integer counter = endpointCount.get(hostColonPort);
 				if (counter < maxNumberOfThreadsPerEndpoint) {
 					counter++;
-					endpointCount.put(getHostColonPort(ep), counter);
+					endpointCount.put(hostColonPort, counter);
 					return ep;
 				} else {
 					continue;

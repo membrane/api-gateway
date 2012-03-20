@@ -14,6 +14,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.schema.Schema;
@@ -52,8 +53,8 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	protected Response createErrorResponse(String message) {
 		return Response.
 				badRequest().
-				contentType("text/xml").
-				body(("<error>" + StringEscapeUtils.escapeXml(message) + "</error>").getBytes()).
+				contentType(MimeType.TEXT_XML_UTF8).
+				body(("<error>" + StringEscapeUtils.escapeXml(message) + "</error>").getBytes(Constants.UTF_8_CHARSET)).
 				build();
 	}
 

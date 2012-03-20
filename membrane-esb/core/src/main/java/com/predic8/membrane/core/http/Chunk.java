@@ -28,8 +28,11 @@ public class Chunk {
 		this.content = content;
 	}
 
+	/**
+	 * Supposes UTF-8 encoding.
+	 */
 	public Chunk(String stringContent) {
-		content = stringContent.getBytes();
+		content = stringContent.getBytes(Constants.UTF_8_CHARSET);
 	}
 	
 	public byte[] getContent() {
@@ -52,31 +55,35 @@ public class Chunk {
 			return;
 		
 		out.write(getLengthBytes());
-		out.write(Constants.CRLF.getBytes());
+		out.write(Constants.CRLF_BYTES);
 		out.write(getContent(), 0, getLength());
-		out.write(Constants.CRLF.getBytes());
+		out.write(Constants.CRLF_BYTES);
 		out.flush();
 	}
 
+	/**
+	 * Supposes UTF-8 encoding. Should therefore not be used
+	 * for primary functionality.
+	 */
 	@Override
 	public String toString() {
 		if (content == null)
 			return "";
-		return new String(content);
+		return new String(content, Constants.UTF_8_CHARSET);
 	}
 
 	public int copyChunk(byte[] raw, int destPos) {
 		System.arraycopy(content, 0, raw, destPos, getLength());
-		return destPos += getLength();
+		return destPos + getLength();
 	}
 
 	public int copyChunkLength(byte[] raw, int destPos, AbstractBody body) {
 		System.arraycopy(getLengthBytes(), 0, raw, destPos, getLengthBytes().length);
-		return destPos += getLengthBytes().length;
+		return destPos + getLengthBytes().length;
 	}
 
 	private byte[] getLengthBytes() {
-		return Long.toHexString(getLength()).getBytes();
+		return Long.toHexString(getLength()).getBytes(Constants.UTF_8_CHARSET);
 	}
 	
 }

@@ -30,13 +30,12 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class Response extends Message {
 
-	protected static Log log = LogFactory.getLog(Response.class.getName());
+	private static final Log LOG = LogFactory.getLog(Response.class.getName());
+	private static final Pattern pattern = Pattern.compile("HTTP/(.+?) (.+?) (.+?)$");
 
 	private int statusCode;
-
 	private String statusMessage;
 
-	private static Pattern pattern = Pattern.compile("HTTP/(.+?) (.+?) (.+?)$");
 
 	public static class ResponseBuilder {
 		private Response res = new Response();
@@ -256,7 +255,7 @@ public class Response extends Message {
 			return;
 
 		if (isBodyEmpty()) {
-			log.debug("empty body created");
+			LOG.debug("empty body created");
 			body = new EmptyBody();
 			return;
 		}

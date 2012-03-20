@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 
@@ -26,7 +24,6 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -36,7 +33,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
 
 public class AccessControlInterceptor extends AbstractInterceptor {
 
-	protected static Log log = LogFactory.getLog(AccessControlInterceptor.class.getName());
+	private static final Log log = LogFactory.getLog(AccessControlInterceptor.class.getName());
 	
 	private String aclFilename;
 
@@ -102,8 +99,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	    	log.error("Error initializing accessControl.", e);
 	    	e.printStackTrace();
 	    	System.err.println("Error initializing accessControl: terminating.");
-	    	System.exit(1);
-	    	throw e; // is never reached
+	    	throw new RuntimeException(e);
 	    }
 	}
 	

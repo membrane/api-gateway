@@ -21,6 +21,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLSocket;
 
@@ -38,14 +39,13 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 	private static Log log = LogFactory.getLog(HttpServerRunnable.class
 			.getName());
 
-	public static int counter = 0;
+	private static final AtomicInteger counter = new AtomicInteger();
 
 	public HttpServerRunnable(Socket socket, HttpTransport transport)
 			throws IOException {
 		this.exchange = new Exchange();
 		exchange.setServerThread(this);
-		counter++;
-		log.debug("New ServerThread created. " + counter);
+		log.debug("New ServerThread created. " + counter.incrementAndGet());
 		this.sourceSocket = socket;
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);

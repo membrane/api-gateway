@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core.http;
 
+/**
+ * Use javax.mail.internet.ContentType to parse a mime type.
+ */
 public class MimeType {
 	
 	public static final String APPLICATION_SOAP = "application/soap+xml";
@@ -25,9 +28,5 @@ public class MimeType {
 	public static final String TEXT_XML_UTF8 = TEXT_XML + ";charset=UTF-8";
 
 	public static final String JSON = "application/json;charset=utf-8";
-	
-	public String type;
-	
-	public String subType;
 
 }

@@ -19,11 +19,11 @@ import java.text.SimpleDateFormat;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
@@ -75,7 +75,9 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 
 		appendToBuffer(buffer, STATUS_CODE, Integer.toString(exc.getResponse().getStatusCode()));
 		
-		appendToBuffer(buffer, TIME, exc.getTime() == null ? Constants.UNKNOWN : DATE_FORMATTER.format(exc.getTime().getTime()));
+		synchronized(DATE_FORMATTER) {
+			appendToBuffer(buffer, TIME, exc.getTime() == null ? Constants.UNKNOWN : DATE_FORMATTER.format(exc.getTime().getTime()));
+		}
 		
 		appendToBuffer(buffer, RULE, exc.getRule().toString());
 		
@@ -113,10 +115,8 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		exchange.getRequest().getHeader().setHost(((ServiceProxy) exchange.getRule()).getTargetHost() + ":" + ((ServiceProxy) exchange.getRule()).getTargetPort());
 		
 		try {
-			Response resp = client.call(exchange);
-			if (resp != null) {
-				
-			}
+			client.call(exchange);
+			// TODO
 				
 		} catch (Exception e1) {
 			e1.printStackTrace();
@@ -132,10 +132,10 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		request.setUri("http://" + targetHost + ":" + targetPort + "/membrane/1");
 		Header header = new Header();
 		header.setAccept("application/json");
-		header.setContentType("application/json");
+		header.setContentType(MimeType.JSON);
 		
 		request.setHeader(header);
-		request.setBodyContent(buffer.toString().getBytes());
+		request.setBodyContent(buffer.toString().getBytes(Constants.UTF_8_CHARSET));
 		return request;
 	}
 	

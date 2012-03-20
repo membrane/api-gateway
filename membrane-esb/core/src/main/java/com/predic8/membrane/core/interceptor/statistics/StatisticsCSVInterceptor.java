@@ -19,9 +19,13 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.*;
 import com.predic8.membrane.core.interceptor.*;
 
+/**
+ * The output file is UTF-8 encoded.
+ */
 public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(StatisticsCSVInterceptor.class
@@ -43,23 +47,26 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	}
 
 	private void writeExchange(Exchange exc) throws Exception {
-		FileWriter w = new FileWriter(fileName, true);
+		FileOutputStream fos = new FileOutputStream(fileName, true);
+		try {
+			OutputStreamWriter w = new OutputStreamWriter(fos, Constants.UTF_8_CHARSET);
 
-		writeCSV(ExchangesUtil.getStatusCode(exc), w);
-		writeCSV(ExchangesUtil.getTime(exc), w);
-		writeCSV(exc.getRule().toString(), w);
-		writeCSV(exc.getRequest().getMethod(), w);
-		writeCSV(exc.getRequest().getUri(), w);
-		writeCSV(exc.getSourceHostname(), w);
-		writeCSV(exc.getServer(), w);
-		writeCSV(exc.getRequestContentType(), w);
-		writeCSV(ExchangesUtil.getRequestContentLength(exc), w);
-		writeCSV(ExchangesUtil.getResponseContentType(exc), w);
-		writeCSV(ExchangesUtil.getResponseContentLength(exc), w);
-		writeCSV(ExchangesUtil.getTimeDifference(exc), w);
-		writeNewLine(w);
-
-		w.close();
+			writeCSV(ExchangesUtil.getStatusCode(exc), w);
+			writeCSV(ExchangesUtil.getTime(exc), w);
+			writeCSV(exc.getRule().toString(), w);
+			writeCSV(exc.getRequest().getMethod(), w);
+			writeCSV(exc.getRequest().getUri(), w);
+			writeCSV(exc.getSourceHostname(), w);
+			writeCSV(exc.getServer(), w);
+			writeCSV(exc.getRequestContentType(), w);
+			writeCSV(ExchangesUtil.getRequestContentLength(exc), w);
+			writeCSV(ExchangesUtil.getResponseContentType(exc), w);
+			writeCSV(ExchangesUtil.getResponseContentLength(exc), w);
+			writeCSV(ExchangesUtil.getTimeDifference(exc), w);
+			writeNewLine(w);
+		} finally {
+			fos.close();
+		}
 	}
 
 	public void setFileName(String fileName) throws Exception {
@@ -87,32 +94,35 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 		return new File(fileName).getName();
 	}
 
-	private void writeCSV(String value, FileWriter w) throws IOException {
+	private void writeCSV(String value, OutputStreamWriter w) throws IOException {
 		w.append(value + ";");
 	}
 
-	private void writeNewLine(FileWriter w) throws IOException {
+	private void writeNewLine(OutputStreamWriter w) throws IOException {
 		w.append(System.getProperty("line.separator"));
 	}
 
 	private void writeHeaders() throws Exception {
-		FileWriter w = new FileWriter(fileName, true);
+		FileOutputStream fos = new FileOutputStream(fileName, true);
+		try {
+			OutputStreamWriter w = new OutputStreamWriter(fos, Constants.UTF_8_CHARSET);
 
-		writeCSV("Status Code", w);
-		writeCSV("Time", w);
-		writeCSV("Rule", w);
-		writeCSV("Method", w);
-		writeCSV("Path", w);
-		writeCSV("Client", w);
-		writeCSV("Server", w);
-		writeCSV("Request Content-Type", w);
-		writeCSV("Request Content Length", w);
-		writeCSV("Response Content-Type", w);
-		writeCSV("Response Content Length", w);
-		writeCSV("Duration", w);
-		writeNewLine(w);
-
-		w.close();
+			writeCSV("Status Code", w);
+			writeCSV("Time", w);
+			writeCSV("Rule", w);
+			writeCSV("Method", w);
+			writeCSV("Path", w);
+			writeCSV("Client", w);
+			writeCSV("Server", w);
+			writeCSV("Request Content-Type", w);
+			writeCSV("Request Content Length", w);
+			writeCSV("Response Content-Type", w);
+			writeCSV("Response Content Length", w);
+			writeCSV("Duration", w);
+			writeNewLine(w);
+		} finally {
+			fos.close();
+		}
 	}
 
 	@Override
