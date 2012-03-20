@@ -75,7 +75,7 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
 
 	private void copyDerbyJarToMembraneLib() throws IOException {
 		String classJar = getClass().getResource("/" + "org.apache.derby.jdbc.EmbeddedDriver".replace('.', '/') + ".class").getPath();
-		File derbyJar = new File(classJar.split("!")[0].substring(6));
+		File derbyJar = new File(classJar.split("!")[0].substring(Process2.isWindows() ? 6 : 5));
 
 		if (!derbyJar.exists())
 			throw new AssertionError("derby jar not found in classpath (it's either missing or the detection logic broken). classJar=" + classJar);

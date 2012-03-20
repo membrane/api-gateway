@@ -26,6 +26,7 @@ public class LoadBalancerSession3Test extends DistributionExtractingTestcase {
 		
 		AssertUtils.replaceInFile(new File(base, "lb-session.proxies.xml"), "8080", "3023");
 		AssertUtils.replaceInFile(new File(base, "src/com/predic8/chat/Client.java"), "8080", "3023");
+		AssertUtils.replaceInFile(new File(base, "data/ChatService.wsdl"), "8080", "3023");
 		
 		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
 		try {
@@ -49,6 +50,18 @@ public class LoadBalancerSession3Test extends DistributionExtractingTestcase {
 					"-s",
 					source.getAbsolutePath()
 			}));
+			
+			// call "ant compile" now so that both antNodeX processes do call it at the same time
+			BufferLogger loggerCompile = new BufferLogger();
+			Process2 antCompile = new Process2.Builder().in(base).withWatcher(loggerCompile).executable("ant compile").start();
+			try {
+				int result = antCompile.waitFor(60000);
+				if (result != 0)
+					throw new AssertionError("'ant compile' returned non-zero " + result + ":\r\n" + loggerCompile.toString());
+			} finally {
+				antCompile.killScript();
+			}
+			
 
 			BufferLogger loggerNode1 = new BufferLogger();
 			BufferLogger loggerNode2 = new BufferLogger();
