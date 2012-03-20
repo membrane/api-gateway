@@ -1,6 +1,10 @@
 package com.predic8.membrane.core.util;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.net.URL;
 
 import org.apache.commons.httpclient.HttpClient;
@@ -8,7 +12,6 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.URI;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
-import org.apache.commons.logging.*;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
@@ -17,9 +20,6 @@ import com.predic8.xml.util.ExternalResolver;
 import com.predic8.xml.util.ResourceDownloadException;
 
 public class ResourceResolver {
-	static private Log log = LogFactory
-			.getLog(ResourceResolver.class.getName());
-
 	public InputStream resolve(String uri) throws FileNotFoundException {
 		return resolve(uri, false);
 	}

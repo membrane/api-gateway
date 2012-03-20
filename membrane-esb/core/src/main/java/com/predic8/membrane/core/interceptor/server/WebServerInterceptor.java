@@ -13,18 +13,24 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.server;
 
-import java.io.*;
-import java.util.Date;
+import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
 
-import javax.xml.stream.*;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
-import org.apache.commons.logging.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Constants;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.ByteUtil;
+import com.predic8.membrane.core.util.HttpUtil;
 
 public class WebServerInterceptor extends AbstractInterceptor {
 
@@ -56,8 +62,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	}
 
 	private Response createResponse(String uri) throws Exception {
-		Response response = Response.ok().build();
-		response.setHeader(createHeader(uri));
+		Response response = Response.ok().header(createHeaders(getContentType(uri))).build();
 
 		String resPath = docBase + uri;
 		
@@ -69,23 +74,12 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		return response;
 	}
 
-	private void setContentType(Header h, String uri) {
-		if (uri.endsWith(".css")) {
-			h.setContentType("text/css");
-		} else if (uri.endsWith(".js")) {
-			h.setContentType("application/x-javascript");
-		}
-	}
-
-	private Header createHeader(String uri) {
-		Header header = new Header();
-		synchronized (HttpUtil.GMT_DATE_FORMAT) {
-			header.add("Date", HttpUtil.GMT_DATE_FORMAT.format(new Date()));
-		}
-		header.add("Server", "Membrane-Monitor " + Constants.VERSION);
-		header.add("Connection", "close");
-		setContentType(header, uri);
-		return header;
+	private String getContentType(String uri) {
+		if (uri.endsWith(".css"))
+			return "text/css";
+		if (uri.endsWith(".js"))
+			return "application/x-javascript";
+		return null;
 	}
 
 	public String getDocBase() {

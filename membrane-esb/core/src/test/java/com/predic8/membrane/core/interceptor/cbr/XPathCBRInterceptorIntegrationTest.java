@@ -14,18 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.cbr;
 
-import java.io.*;
-
 import junit.framework.TestCase;
 
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.methods.*;
-import org.junit.*;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 
 public class XPathCBRInterceptorIntegrationTest extends TestCase {
 		
@@ -56,14 +56,4 @@ public class XPathCBRInterceptorIntegrationTest extends TestCase {
 		post.setRequestHeader(Header.SOAP_ACTION, "");
 		return post;
 	}
-
-	private void printBodyContent(Exchange exc) throws Exception {
-		InputStream i = exc.getRequest().getBodyAsStream();
-		int read = 0;
-		byte[] buf = new byte[4096];
-		while ((read = i.read(buf)) != -1) {
-			System.out.write(buf, 0, read);
-		}
-	}
-	
 }

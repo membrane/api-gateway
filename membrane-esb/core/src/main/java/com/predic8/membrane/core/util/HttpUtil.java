@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,11 +37,13 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.ErrorReadingStartLineException;
 
 public class HttpUtil {
+	
+	private static DateFormat GMT_DATE_FORMAT = createGMTDateFormat();
 
-	public static final SimpleDateFormat GMT_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-
-	static {
+	public static DateFormat createGMTDateFormat() {
+		SimpleDateFormat GMT_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 		GMT_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
+		return GMT_DATE_FORMAT;
 	}
 
 	public static String readLine(InputStream in) throws IOException, EndOfStreamException {

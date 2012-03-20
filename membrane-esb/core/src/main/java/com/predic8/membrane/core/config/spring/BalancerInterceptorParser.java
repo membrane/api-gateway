@@ -1,10 +1,6 @@
 package com.predic8.membrane.core.config.spring;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -64,14 +60,6 @@ public class BalancerInterceptorParser extends AbstractParser {
 		ext.setLocalName(e.getAttribute("localName"));
 		ext.setNamespace(e.getAttribute("namespace"));
 		b.addPropertyValue("sessionIdExtractor", ext);
-	}
-
-	private void parserEndpoints(BeanDefinitionBuilder b, Element e) {
-		List<String> m = new ArrayList<String>();
-		for (Element node : DomUtils.getChildElementsByTagName(e, "node")) {
-			m.add(node.getAttribute("host") + ":" + node.getAttribute("port"));
-		}
-		b.addPropertyValue("endpoints", m);
 	}
 
 	private void parserByThreadStrategy(BeanDefinitionBuilder b, Element e) {

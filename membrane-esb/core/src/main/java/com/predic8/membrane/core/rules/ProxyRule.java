@@ -6,7 +6,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 
 

@@ -16,10 +16,13 @@ package com.predic8.membrane.core.interceptor.cbr;
 
 import static com.predic8.membrane.core.util.ByteUtil.getByteArrayData;
 
-import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import junit.framework.*;
+import junit.framework.Assert;
+import junit.framework.TestCase;
 
 import org.junit.Test;
 
@@ -84,14 +87,4 @@ public class XPathCBRInterceptorTest extends TestCase {
 		}
 		return map;
 	}
-	
-	private void printBodyContent() throws Exception {
-		InputStream i = exc.getRequest().getBodyAsStream();
-		int read = 0;
-		byte[] buf = new byte[4096];
-		while ((read = i.read(buf)) != -1) {
-			System.out.write(buf, 0, read);
-		}
-	}
-	
 }

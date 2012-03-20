@@ -40,7 +40,7 @@ public class WADLInterceptorTest {
 		}
 
 		// Dummy implementation - not used!
-		public Iterator getPrefixes(String val) {
+		public Iterator<?> getPrefixes(String val) {
 			return null;
 		}
 

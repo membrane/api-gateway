@@ -6,13 +6,11 @@ import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.Map;
 
 import javax.net.ssl.SSLHandshakeException;
 
 import junit.framework.Assert;
 
-import org.joda.time.DateMidnight.Property;
 import org.junit.Before;
 import org.junit.Test;
 

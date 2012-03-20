@@ -34,6 +34,7 @@ import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 
+@SuppressWarnings("unused")
 public class CustomSpringConfigurationTest {
 
 	private Router router;

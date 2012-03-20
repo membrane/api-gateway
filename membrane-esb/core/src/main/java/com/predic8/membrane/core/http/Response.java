@@ -73,6 +73,11 @@ public class Response extends Message {
 			res.setBody(new Body(is, -1));
 			return this;
 		}
+		
+		public ResponseBuilder header(Header header) {
+			res.setHeader(header);
+			return this;
+		}
 
 		public ResponseBuilder header(String k, String v) {
 			res.getHeader().add(k, v);

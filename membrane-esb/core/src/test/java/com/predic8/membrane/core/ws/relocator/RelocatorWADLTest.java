@@ -36,7 +36,7 @@ public class RelocatorWADLTest extends TestCase {
 		}
 
 		// Dummy implementation - not used!
-		public Iterator getPrefixes(String val) {
+		public Iterator<?> getPrefixes(String val) {
 			return null;
 		}
 

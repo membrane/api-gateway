@@ -58,15 +58,9 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome deny(Exchange exc) {
-		String date;
-		synchronized (HttpUtil.GMT_DATE_FORMAT) {
-			date = HttpUtil.GMT_DATE_FORMAT.format(new Date());
-		}
 		exc.setResponse(Response.unauthorized("").
-				header("Date", date).
-				header("Server", "Membrane-Monitor " + Constants.VERSION).
-				header("WWW-Authenticate", "Basic realm=\"Membrane Authentication\"").
-				header("Connection", "close").build());
+				header(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"Membrane Authentication\"")).
+				build());
 		return Outcome.ABORT;
 	}
 

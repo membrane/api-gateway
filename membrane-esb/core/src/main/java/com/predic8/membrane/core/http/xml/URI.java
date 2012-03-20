@@ -18,9 +18,10 @@ import static com.predic8.membrane.core.util.URLParamUtil.parseQueryString;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class URI extends AbstractXmlElement {
