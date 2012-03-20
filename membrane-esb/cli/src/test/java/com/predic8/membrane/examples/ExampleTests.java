@@ -40,6 +40,12 @@ import com.predic8.membrane.examples.tests.SSLForUnsecuredServersTest;
 import com.predic8.membrane.examples.tests.SSLTunnelToServerTest;
 import com.predic8.membrane.examples.tests.ThrottleTest;
 import com.predic8.membrane.examples.tests.XSLTTest;
+import com.predic8.membrane.examples.tests.validation.FormValidationTest;
+import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
+import com.predic8.membrane.examples.tests.validation.SOAPCustomValidationTest;
+import com.predic8.membrane.examples.tests.validation.SOAPValidationTest;
+import com.predic8.membrane.examples.tests.validation.SchematronValidationTest;
+import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({ 
@@ -65,6 +71,13 @@ import com.predic8.membrane.examples.tests.XSLTTest;
 	SSLForUnsecuredServersTest.class,
 	SSLTunnelToServerTest.class,
 	ThrottleTest.class,
-	XSLTTest.class
+	XSLTTest.class,
+	
+	FormValidationTest.class,
+	JSONSchemaValidationTest.class,
+	SchematronValidationTest.class,
+	SOAPCustomValidationTest.class,
+	SOAPValidationTest.class,
+	XMLValidationTest.class
 })
 public class ExampleTests {}
