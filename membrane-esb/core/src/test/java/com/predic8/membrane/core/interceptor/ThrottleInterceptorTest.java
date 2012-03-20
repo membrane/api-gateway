@@ -1,4 +1,4 @@
-/* Copyright 2010 predic8 GmbH, www.predic8.com
+/* Copyright 2010, 2011 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
