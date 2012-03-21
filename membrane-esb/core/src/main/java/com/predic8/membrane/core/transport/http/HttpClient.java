@@ -126,7 +126,10 @@ public class HttpClient {
 				target = init(exc, dest);
 				con = conMgr.getConnection(InetAddress.getByName(target.host), target.port, exc.getRule().getLocalHost(), getOutboundSSLContext(exc));
 				exc.setTargetConnection(con);
-				return doCall(exc, con);
+				Response response = doCall(exc, con);
+				boolean retry = 500 <= response.getStatusCode() && response.getStatusCode() < 600; 
+				if (!retry || counter == maxRetries-1)
+					return response;
 				// java.net.SocketException: Software caused connection abort: socket write error
 			} catch (ConnectException e) {
 				exception = e;
@@ -154,7 +157,8 @@ public class HttpClient {
 				exception = e;
 			}
 			counter++;
-			Thread.sleep(timeBetweenTries);
+			if (exc.getDestinations().size() == 1)
+				Thread.sleep(timeBetweenTries);
 		}
 		throw exception;
 	}

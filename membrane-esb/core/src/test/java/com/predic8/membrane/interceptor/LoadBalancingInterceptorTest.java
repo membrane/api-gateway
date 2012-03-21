@@ -30,6 +30,9 @@ import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
 import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
 import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
@@ -184,7 +187,7 @@ public class LoadBalancingInterceptorTest {
 	}
 
 	@Test
-	public void testFailOver() throws Exception {
+	public void testFailOverOnConnectionRefused() throws Exception {
 		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
 
 		HttpClient client = new HttpClient();
@@ -203,6 +206,39 @@ public class LoadBalancingInterceptorTest {
 
 		// TODO may be close connection
 		Thread.sleep(32000);
+
+		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(1, mockInterceptor1.counter);
+		assertEquals(2, mockInterceptor2.counter);
+
+		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(3, mockInterceptor2.counter);
+
+	}
+
+	@Test
+	public void testFailOverOnStatus500() throws Exception {
+		balancingInterceptor.setDispatchingStrategy(roundRobinStrategy);
+
+		HttpClient client = new HttpClient();
+		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION,
+				HttpVersion.HTTP_1_1);
+
+		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(1, mockInterceptor1.counter);
+		assertEquals(0, mockInterceptor2.counter);
+
+		assertEquals(200, client.executeMethod(getPostMethod()));
+		assertEquals(1, mockInterceptor1.counter);
+		assertEquals(1, mockInterceptor2.counter);
+
+		((ServiceProxy)service1.getRuleManager().getRules().get(0)).getInterceptors().add(0, new AbstractInterceptor(){
+			@Override
+			public Outcome handleRequest(Exchange exc) throws Exception {
+				exc.setResponse(Response.interalServerError().build());
+				return Outcome.ABORT;
+			}
+		});
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
 		assertEquals(1, mockInterceptor1.counter);
