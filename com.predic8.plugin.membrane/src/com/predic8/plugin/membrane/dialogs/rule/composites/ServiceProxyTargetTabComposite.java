@@ -21,15 +21,13 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.plugin.membrane.components.ServiceProxyTargetGroup;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
-public class ServiceProxyTargetTabComposite extends SecurityTabComposite {
+public class ServiceProxyTargetTabComposite extends AbstractProxyFeatureComposite {
 
 	private ServiceProxyTargetGroup targetGroup;
 	
 	public ServiceProxyTargetTabComposite(Composite parent) {
-		super(parent, true);
+		super(parent);
 		setLayout(SWTUtil.createGridLayout(1, 20));
-		
-		createSecurityGroup(this);
 		
 		targetGroup = new ServiceProxyTargetGroup(this, SWT.NONE);
 	}
@@ -44,7 +42,6 @@ public class ServiceProxyTargetTabComposite extends SecurityTabComposite {
 		ServiceProxy fRule = (ServiceProxy)rule;
 		targetGroup.setTargetHost(fRule.getTargetHost());
 		targetGroup.setTargetPort(fRule.getTargetPort());
-		securityGroup.getSecureConnectionButton().setSelection(rule.isOutboundTLS());
 	}
 	
 	@Override
@@ -59,8 +56,6 @@ public class ServiceProxyTargetTabComposite extends SecurityTabComposite {
 		
 		((ServiceProxy) rule).setTargetHost(targetGroup.getTargetHost());
 		((ServiceProxy) rule).setTargetPort(Integer.parseInt(targetGroup.getTargetPort()));
-		rule.setOutboundTLS(securityGroup.getSecureConnection());
-		rule.setInboundTLS(securityGroup.getSecureConnection());
 	}
 	
 	@Override

@@ -61,7 +61,7 @@ public class ProxyRuleConfigurationPage extends AbstractPortConfigurationPage {
 			return false;
 		}
 
-		getRuleManager().addRuleIfNew(new ProxyRule(key));
+		getRuleManager().addProxyIfNew(new ProxyRule(key));
 		return true;
 	}
 

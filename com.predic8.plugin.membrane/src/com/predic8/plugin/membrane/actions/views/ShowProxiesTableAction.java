@@ -25,8 +25,6 @@ import com.predic8.plugin.membrane.views.ProxyTableView;
 
 public class ShowProxiesTableAction implements IWorkbenchWindowActionDelegate {
 
-	private IWorkbenchWindow window;
-
 	public ShowProxiesTableAction() {
 
 	}
@@ -36,7 +34,6 @@ public class ShowProxiesTableAction implements IWorkbenchWindowActionDelegate {
 	}
 
 	public void init(IWorkbenchWindow window) {
-		this.window = window;
 	}
 
 	public void run(IAction action) {

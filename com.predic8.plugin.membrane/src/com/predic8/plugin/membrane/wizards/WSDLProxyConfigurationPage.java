@@ -210,7 +210,7 @@ public class WSDLProxyConfigurationPage extends AbstractProxyWizardPage {
 	@Override
 	boolean performFinish(AddProxyWizard wizard) throws IOException {
 		Port p = (Port)tableViewer.getCheckedElements()[0];
-		getRuleManager().addRuleIfNew(createServiceProxy(p));
+		getRuleManager().addProxyIfNew(createServiceProxy(p));
 		return true;
 	}
 	

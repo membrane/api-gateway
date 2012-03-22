@@ -19,22 +19,20 @@ import java.net.ServerSocket;
 
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionAdapter;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.widgets.Composite;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.plugin.membrane.components.RuleKeyGroup;
 
-public class AdvancedProxyConfigurationPage extends SecurityWizardPage {
+public class AdvancedProxyConfigurationPage extends AbstractProxyWizardPage {
 
 	public static final String PAGE_NAME = "Advanced Proxy Configuration";
 	
 	RuleKeyGroup ruleKeyGroup;
 	
 	protected AdvancedProxyConfigurationPage() {
-		super(PAGE_NAME, false);
+		super(PAGE_NAME);
 		setTitle("Advanced Proxy");
 		setDescription("Specify all proxy configuration parameters");
 	}
@@ -42,24 +40,11 @@ public class AdvancedProxyConfigurationPage extends SecurityWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 1);
 		
-		createSecurityGroup(composite);
-		
 		ruleKeyGroup = new RuleKeyGroup(composite, SWT.NONE);
 		
 		setControl(composite);
 	}
 	
-	@Override
-	protected void addListenersToSecureConnectionButton() {
-		getSecurityGroup().getSecureConnectionButton().addSelectionListener(new SelectionAdapter() {
-			@Override
-			public void widgetSelected(SelectionEvent e) {
-				if (getSecurityGroup().getSecureConnectionButton().getSelection())
-					ruleKeyGroup.getTextListenPort().setText("443");
-			}
-		});
-	}
-
 	public String getListenPort() {
 		return ruleKeyGroup.getTextListenPort().getText();
 	}

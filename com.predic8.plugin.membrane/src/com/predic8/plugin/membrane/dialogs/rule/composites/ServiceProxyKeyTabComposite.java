@@ -21,16 +21,14 @@ import com.predic8.membrane.core.rules.*;
 import com.predic8.plugin.membrane.components.RuleKeyGroup;
 import com.predic8.plugin.membrane.util.SWTUtil;
 
-public class ServiceProxyKeyTabComposite extends SecurityTabComposite {
+public class ServiceProxyKeyTabComposite extends AbstractProxyFeatureComposite {
 
 	private RuleKeyGroup ruleKeyGroup;
 	
 	public ServiceProxyKeyTabComposite(Composite parent) {
-		super(parent, false);
+		super(parent);
 		setLayout(SWTUtil.createGridLayout(1, 12));
 	
-		createSecurityGroup(this);
-		
 		ruleKeyGroup = new RuleKeyGroup(this, SWT.NONE);
 		
 	}
@@ -39,7 +37,6 @@ public class ServiceProxyKeyTabComposite extends SecurityTabComposite {
 	public void setRule(Rule rule) {
 		super.setRule(rule);
 		ruleKeyGroup.setInput(rule.getKey());
-		securityGroup.getSecureConnectionButton().setSelection(rule.isInboundTLS());
 	}
 	
 	public ServiceProxyKey getUserInput() {

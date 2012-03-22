@@ -23,7 +23,7 @@ import org.eclipse.swt.widgets.*;
 
 import com.predic8.plugin.membrane.components.ServiceProxyTargetGroup;
 
-public class TargetConfigurationPage extends SecurityWizardPage {
+public class TargetConfigurationPage extends AbstractProxyWizardPage {
 
 	public static final String PAGE_NAME = "Target Configuration";
 
@@ -32,7 +32,7 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 	ServiceProxyTargetGroup ruleTargetGroup;
 	
 	protected TargetConfigurationPage() {
-		super(PAGE_NAME, true);
+		super(PAGE_NAME);
 		setTitle("Simple Rule");
 		setDescription("Specify Target Host and Port");
 	}
@@ -40,8 +40,6 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 	public void createControl(Composite parent) {
 		Composite composite = createComposite(parent, 1);
 		
-		createSecurityGroup(composite);
-
 		ruleTargetGroup = new ServiceProxyTargetGroup(composite, SWT.NONE);
 		
 		ruleTargetGroup.getTextTargetHost().addModifyListener(new ModifyListener() {
@@ -130,11 +128,6 @@ public class TargetConfigurationPage extends SecurityWizardPage {
 			wizard.addProxy();
 		}
 		return true;
-	}
-
-	@Override
-	protected void addListenersToSecureConnectionButton() {
-		// do nothing
 	}
 	
 }

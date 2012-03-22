@@ -37,7 +37,7 @@ public class JSONTabComposite extends BodyTextTabComposite {
 
 	@Override
 	public void beautify(byte[] content, String encoding) throws IOException {
-	    bodyText.setText(beautifier.beautify(content));
+	    bodyText.setText(beautifier.beautify(new String(content, encoding)));
 	    bodyText.redraw();
 	}
 	

@@ -137,7 +137,7 @@ public abstract class AbstractProxyConfigurationEditDialog extends Dialog {
 	
 	private void replaceRule(Rule oldRule, Rule newRule) throws Exception {
 		getRuleManager().removeRule(oldRule);
-		getRuleManager().addRuleIfNew(newRule);
+		getRuleManager().addProxyIfNew(newRule);
 	}
 	
 	protected abstract Rule parseRule(XMLStreamReader reader) throws Exception;
