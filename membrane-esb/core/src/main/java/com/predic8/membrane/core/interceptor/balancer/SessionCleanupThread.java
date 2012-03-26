@@ -52,7 +52,6 @@ public class SessionCleanupThread extends Thread {
 		
 		while (!interrupted()) {
 			synchronized (this) {
-				log.debug("cleanup started");
 				
 				long time = System.currentTimeMillis();
 				int size = 0;
@@ -63,7 +62,8 @@ public class SessionCleanupThread extends Thread {
 						cleaned = cleanupSessions(c);									
 					}
 				}
-				log.debug(""+ cleaned +" sessions removed of "+ size +" in " +(System.currentTimeMillis()-time)+"ms");
+				if (cleaned != 0)
+					log.debug(""+ cleaned +" sessions removed of "+ size +" in " +(System.currentTimeMillis()-time)+"ms");
 			}
 			
 			try {
