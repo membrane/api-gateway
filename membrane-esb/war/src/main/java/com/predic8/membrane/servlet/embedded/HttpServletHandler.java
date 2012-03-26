@@ -87,6 +87,16 @@ class HttpServletHandler extends AbstractHttpHandler {
 			writeResponse(exchange.getResponse());
 			exchange.setCompleted();
 			
+			boolean canKeepConnectionAlive = srcReq.isKeepAlive() && exchange.getResponse().isKeepAlive(); 
+			if (exchange.getTargetConnection() != null) {
+				if (canKeepConnectionAlive) {
+					exchange.getTargetConnection().release();
+				} else {
+					exchange.getTargetConnection().close();
+				}
+				exchange.setTargetConnection(null); // detach Connection from Exchange
+			}
+			
 		} catch (EndOfStreamException e) {
 			log.info("stream closed");
 		} catch (ErrorReadingStartLineException e) {
