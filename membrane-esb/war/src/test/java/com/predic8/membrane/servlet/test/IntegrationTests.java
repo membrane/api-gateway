@@ -21,7 +21,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses({ 
 	Basic.class,
-	Embedded.class,
+	Embedded.class
 })
 public class IntegrationTests {
 
