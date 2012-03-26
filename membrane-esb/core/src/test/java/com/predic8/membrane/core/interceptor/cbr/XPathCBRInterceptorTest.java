@@ -31,11 +31,11 @@ import com.predic8.membrane.core.http.Request;
 
 public class XPathCBRInterceptorTest extends TestCase {
 		
-	Exchange exc = new Exchange();
+	Exchange exc = new Exchange(null);
 	
 	@Test
 	public void testRouting() throws Exception {
-		exc = new Exchange();
+		exc = new Exchange(null);
 		Request res = new Request();		
 		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream("/customerFromBonn.xml")));
 		exc.setRequest(res);
@@ -53,7 +53,7 @@ public class XPathCBRInterceptorTest extends TestCase {
 
 	@Test
 	public void testRoutingNSAware() throws Exception {
-		exc = new Exchange();
+		exc = new Exchange(null);
 		Request res = new Request();		
 		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream("/customerFromBonnWithNS.xml")));
 		exc.setRequest(res);

@@ -45,7 +45,7 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 	
 	@Override
 	protected void setUp() throws Exception {
-		exc = new Exchange();
+		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("http://localhost/axis2/services/BLZService?wsdl"));
 		exc.getRequest().setUri("http://localhost:3011/manager/person?vorname=jim&nachname=panse");
 		exc.getRequest().setMethod("POST");

@@ -31,7 +31,7 @@ public class SimpleURLRewriteInterceptorTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		exc = new Exchange();
+		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("/service?wsdl"));
 	}
 

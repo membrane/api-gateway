@@ -38,7 +38,7 @@ public class XMLProtectionInterceptorTest {
 
 	@Before
 	public void setUp() throws Exception {
-		exc = new Exchange();
+		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService"));
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
 		exc.setRule(getRule());

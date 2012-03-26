@@ -30,7 +30,7 @@ public class RewriteInterceptorTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		exc = new Exchange();
+		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
 	}
 

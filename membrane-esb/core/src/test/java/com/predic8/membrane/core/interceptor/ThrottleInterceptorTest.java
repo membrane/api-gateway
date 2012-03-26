@@ -25,7 +25,7 @@ public class ThrottleInterceptorTest {
 	@Test
 	public void testProtocolSet() throws Exception {
 		final ThrottleInterceptor i = new ThrottleInterceptor();
-		final Exchange exc = new Exchange();
+		final Exchange exc = new Exchange(null);
 		
 		long t = System.currentTimeMillis();
 		i.handleRequest(exc);

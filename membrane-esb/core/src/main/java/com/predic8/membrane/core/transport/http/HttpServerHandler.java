@@ -50,8 +50,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	public HttpServerHandler(Socket socket, HttpTransport transport) throws IOException {
 		super(transport);
 		this.sourceSocket = socket;
-		this.exchange = new Exchange();
-		exchange.setHandler(this);
+		this.exchange = new Exchange(this);
 		log.debug("New ServerThread created. " + counter.incrementAndGet());
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
@@ -98,9 +97,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 				if (exchange.getResponse().isRedirect()) {
 					break;
 				}
-				exchange = new Exchange();
-				exchange.setHandler(this);
-
+				exchange = new Exchange(this);
 			}
 		} catch (SocketTimeoutException e) {
 			log.debug("Socket of thread " + counter + " timed out");

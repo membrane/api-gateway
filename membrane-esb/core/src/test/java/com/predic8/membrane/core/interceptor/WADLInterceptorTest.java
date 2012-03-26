@@ -114,7 +114,7 @@ public class WADLInterceptorTest {
 	}
 
 	private Exchange getExchange() throws IOException {
-		Exchange exc = new Exchange();
+		Exchange exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("/search?wadl"));
 		InputStream resourceAsStream = this.getClass().getResourceAsStream(
 				"/wadls/search.wadl");

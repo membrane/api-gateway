@@ -48,7 +48,7 @@ public class CouchDBTest extends TestCase {
 	@Test
 	public void testCreateTable() throws Exception {
 		
-		Exchange exchange = new Exchange();
+		Exchange exchange = new Exchange(null);
 		exchange.setRule(getRule());
 		exchange.setRequest(createRequest("http://" + targetHost + ":" + targetPort + "/tblmembrane/", null));
 		
@@ -68,7 +68,7 @@ public class CouchDBTest extends TestCase {
 	@Test
 	public void testPutDocument() throws Exception {
 		
-		Exchange exchange = new Exchange();
+		Exchange exchange = new Exchange(null);
 		exchange.setRule(getRule());
 		exchange.setRequest(createRequest("http://" + targetHost + ":" + targetPort + "/tblmembrane/" + currentId, "{\"alpha\":\"thomas\"}"));
 		

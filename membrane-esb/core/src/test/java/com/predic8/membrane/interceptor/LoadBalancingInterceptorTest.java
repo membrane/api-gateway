@@ -114,7 +114,7 @@ public class LoadBalancingInterceptorTest {
 
 	private void doTestGetDestinationURL(String requestUri, String expectedUri)
 			throws MalformedURLException {
-		Exchange exc = new Exchange();
+		Exchange exc = new Exchange(null);
 		exc.setOriginalRequestUri(requestUri);
 		assertEquals(expectedUri, new Node("thomas-bayer.com", 80).getDestinationURL(exc));
 	}

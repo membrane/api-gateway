@@ -77,7 +77,7 @@ public class ReverseProxyingInterceptorTest {
 	 * Creates a fake exchange which simulates a received redirect by the server. 
 	 */
 	private Exchange createExchange(String requestHostHeader, int port, String requestURI, String redirectionURI) {
-		Exchange exc = new Exchange();
+		Exchange exc = new Exchange(null);
 		exc.setRule(new AbstractProxy(new AbstractRuleKey(port) {}){
 			@Override
 			protected void parseKeyAttributes(XMLStreamReader token) {

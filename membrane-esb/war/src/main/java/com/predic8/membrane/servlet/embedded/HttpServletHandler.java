@@ -49,8 +49,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 		this.request = request;
 		this.response = response;
 		this.remoteAddr = InetAddress.getByName(request.getRemoteAddr());
-		this.exchange = new Exchange();
-		exchange.setHandler(this);
+		this.exchange = new Exchange(this);
 	}
 	
 	public void run() {

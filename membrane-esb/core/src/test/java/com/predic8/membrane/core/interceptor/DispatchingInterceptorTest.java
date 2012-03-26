@@ -35,7 +35,7 @@ public class DispatchingInterceptorTest {
 	@Before
 	public void setUp() throws Exception {
 		dispatcher = new DispatchingInterceptor();
-		exc = new Exchange();
+		exc = new Exchange(null);
 	}
 	
 	@Test

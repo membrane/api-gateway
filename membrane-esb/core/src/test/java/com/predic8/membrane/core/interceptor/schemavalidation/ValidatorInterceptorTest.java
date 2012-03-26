@@ -49,7 +49,7 @@ public class ValidatorInterceptorTest {
 	public void setUp() throws Exception {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
 		requestXService = MessageUtil.getPostRequest("http://ws.xwebservices.com");
-		exc = new Exchange();
+		exc = new Exchange(null);
 	}
 	
 	@Test

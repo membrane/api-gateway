@@ -106,7 +106,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		URL url = new URL(uri);
 		Request req = MessageUtil.getGetRequest(getCompletePath(url));
 		req.getHeader().setHost(url.getHost());
-		Exchange exc = new Exchange();
+		Exchange exc = new Exchange(null);
 		exc.setRequest(req);
 		exc.getDestinations().add(uri);
 		return exc;

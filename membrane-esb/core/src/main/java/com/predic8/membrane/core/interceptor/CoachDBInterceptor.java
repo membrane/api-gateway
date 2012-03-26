@@ -106,7 +106,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		
 		//doCall(buffer.toString());
 		
-		Exchange exchange = new Exchange();
+		Exchange exchange = new Exchange(null);
 		exchange.setRule(getRule());
 		exchange.setRequest(createRequest(buffer));
 		

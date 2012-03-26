@@ -130,7 +130,7 @@ public class ClusterBalancerTest extends TestCase {
 	}
 
 	private Exchange getExchangeWithSession() throws IOException {
-		Exchange exc = new Exchange();
+		Exchange exc = new Exchange(null);
 		Request res = new Request();
 		res.setHeader(getHeader());
 		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(
@@ -141,7 +141,7 @@ public class ClusterBalancerTest extends TestCase {
 	}
 
 	private Exchange getExchangeWithOutSession() throws IOException {
-		Exchange exc = new Exchange();
+		Exchange exc = new Exchange(null);
 		Request res = new Request();
 		res.setHeader(getHeader());
 		res.setBodyContent(getByteArrayData(getClass().getResourceAsStream(

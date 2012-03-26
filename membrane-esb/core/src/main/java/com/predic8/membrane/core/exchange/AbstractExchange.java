@@ -196,7 +196,6 @@ public abstract class AbstractExchange {
 			status = ExchangeState.FAILED;
 			forceToStop = true;
 		}
-		close();
 
 		if (request != null)
 			request.release();
@@ -206,10 +205,6 @@ public abstract class AbstractExchange {
 		if (refresh) {
 			notifyExchangeFinished();
 		}
-	}
-
-	public void close() {
-		
 	}
 
 	public boolean isForcedToStop() {

@@ -25,7 +25,7 @@ public class GroovyInterceptorTest extends TestCase {
 		
 	@Test
 	public void testRequest() throws Exception {
-		Exchange exc = new Exchange();
+		Exchange exc = new Exchange(null);
 		exc.setRequest(new Request());
 		
 		GroovyInterceptor i = new GroovyInterceptor();

@@ -32,13 +32,14 @@ public class Exchange extends AbstractExchange {
 
 	private static Log log = LogFactory.getLog(Exchange.class.getName());
 
-	private AbstractHttpHandler handler;
+	private final AbstractHttpHandler handler;
 
 	private String originalHostHeader = "";
 
 	private Connection targetConnection;
 
-	public Exchange() {
+	public Exchange(AbstractHttpHandler handler) {
+		this.handler = handler;
 
 	}
 
@@ -47,22 +48,14 @@ public class Exchange extends AbstractExchange {
 	 * 
 	 * @param original
 	 */
-	public Exchange(Exchange original) {
+	public Exchange(Exchange original, AbstractHttpHandler handler) {
 		super(original);
+		this.handler = handler;
 		originalHostHeader = original.originalHostHeader;
-	}
-
-	@Override
-	public void close() {
-
 	}
 
 	public AbstractHttpHandler getHandler() {
 		return handler;
-	}
-
-	public void setHandler(AbstractHttpHandler serverThread) {
-		this.handler = serverThread;
 	}
 
 	public String getOriginalHostHeaderHost() {

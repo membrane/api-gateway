@@ -25,8 +25,7 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 
 	public HttpResendHandler(Exchange exc, HttpTransport transport) {
 		super(transport);
-		exchange = new Exchange(exc);
-		exchange.setHandler(this);
+		exchange = new Exchange(exc, this);
 		
 		srcReq = exc.getRequest();
 	}

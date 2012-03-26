@@ -30,12 +30,12 @@ import com.predic8.membrane.core.http.Response;
 
 public class XSLTInterceptorTest extends TestCase {
 
-	Exchange exc = new Exchange();
+	Exchange exc = new Exchange(null);
 	XPath xpath = XPathFactory.newInstance().newXPath();
 
 	@Test
 	public void testRequest() throws Exception {
-		exc = new Exchange();
+		exc = new Exchange(null);
 		exc.setResponse(Response.ok().body(getClass().getResourceAsStream(
 				"/customer.xml")).build());
 

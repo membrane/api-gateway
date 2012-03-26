@@ -59,7 +59,7 @@ public class FormValidationInterceptorTest {
 	}
 	
 	private Exchange getExchange(String uri) {
-		Exchange exc = new Exchange();
+		Exchange exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest(uri));
 		return exc;
 	}

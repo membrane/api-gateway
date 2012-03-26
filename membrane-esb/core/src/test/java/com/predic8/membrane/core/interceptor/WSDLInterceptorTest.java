@@ -45,7 +45,7 @@ public class WSDLInterceptorTest {
 
 	@Before
 	public void setUp() throws Exception {
-		exc = new Exchange();
+		exc = new Exchange(null);
 		exc.setRequest(MessageUtil
 				.getGetRequest("/axis2/services/BLZService?wsdl"));
 		InputStream resourceAsStream = this.getClass().getResourceAsStream(
