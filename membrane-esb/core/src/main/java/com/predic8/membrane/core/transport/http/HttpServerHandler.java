@@ -17,6 +17,8 @@ package com.predic8.membrane.core.transport.http;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -33,27 +35,34 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.Util;
 
-public class HttpServerRunnable extends AbstractHttpRunnable {
+public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
-	private static Log log = LogFactory.getLog(HttpServerRunnable.class
-			.getName());
-
+	private static final Log log = LogFactory.getLog(HttpServerHandler.class);
 	private static final AtomicInteger counter = new AtomicInteger();
+	
+	private final Socket sourceSocket;
+	private final InputStream srcIn;
+	private final OutputStream srcOut;
 
-	public HttpServerRunnable(Socket socket, HttpTransport transport)
-			throws IOException {
-		this.exchange = new Exchange();
-		exchange.setServerThread(this);
-		log.debug("New ServerThread created. " + counter.incrementAndGet());
+
+	public HttpServerHandler(Socket socket, HttpTransport transport) throws IOException {
+		super(transport);
 		this.sourceSocket = socket;
+		this.exchange = new Exchange();
+		exchange.setHandler(this);
+		log.debug("New ServerThread created. " + counter.incrementAndGet());
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
 		sourceSocket.setSoTimeout(transport.getSocketTimeout());
 		sourceSocket.setTcpNoDelay(transport.isTcpNoDelay());
-		this.transport = transport;
 	}
 
+	public HttpTransport getTransport() {
+		return (HttpTransport)super.getTransport();
+	}
+	
 	public void run() {
 		try {
 			updateThreadName(true);
@@ -90,7 +99,7 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 					break;
 				}
 				exchange = new Exchange();
-				exchange.setServerThread(this);
+				exchange.setHandler(this);
 
 			}
 		} catch (SocketTimeoutException e) {
@@ -142,25 +151,21 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 	private void process() throws Exception {
 		try {
 
-			exchange.setSourceHostname(transport.getRouter().getDnsCache()
+			exchange.setSourceHostname(getTransport().getRouter().getDnsCache()
 					.getHostName(sourceSocket.getInetAddress()));
-			exchange.setSourceIp(transport.getRouter().getDnsCache()
+			exchange.setSourceIp(getTransport().getRouter().getDnsCache()
 					.getHostAddress(sourceSocket.getInetAddress()));
 
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
 			
-			if (transport.isAutoContinue100Expected() && exchange.getRequest().getHeader().is100ContinueExpected())
+			if (getTransport().isAutoContinue100Expected() && exchange.getRequest().getHeader().is100ContinueExpected())
 				tellClientToContinueWithBody();
 
 			invokeRequestHandlers();
-
-			// client call was here
 			invokeResponseHandlers(exchange);
 			
 			exchange.blockResponseIfNeeded();
-			 
-
 		} catch (AbortException e) {
 			log.debug("Aborted");
 			exchange.finishExchange(true, exchange.getErrorMessage());
@@ -198,4 +203,35 @@ public class HttpServerRunnable extends AbstractHttpRunnable {
 			Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
 		}
 	}
+	
+	protected void writeResponse(Response res) throws Exception{
+		res.write(srcOut);
+		srcOut.flush();
+		exchange.setTimeResSent(System.currentTimeMillis());
+		exchange.collectStatistics();
+	}
+	
+	@Override
+	public void shutdownInput() throws IOException {
+		Util.shutdownInput(sourceSocket);	
+	}
+	
+	@Override
+	public InetAddress getRemoteAddress() throws IOException {
+		return sourceSocket.getInetAddress();
+	}
+	
+	@Override
+	public int getLocalPort() {
+		return sourceSocket.getLocalPort();
+	}
+	
+	public InputStream getSrcIn() {
+		return srcIn;
+	}
+
+	public OutputStream getSrcOut() {
+		return srcOut;
+	}
+
 }

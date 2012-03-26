@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.acl;
 
 import java.io.IOException;
-import java.net.InetAddress;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -53,7 +52,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 
-		if (!resource.checkAccess(getInetAddress(exc))) {
+		if (!resource.checkAccess(exc.getHandler().getRemoteAddress())) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
@@ -64,10 +63,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	private void setResponseToAccessDenied(Exchange exc) throws IOException {
 		exc.getRequest().getBody().read();
 		exc.setResponse(Response.forbidden("Access denied: you are not authorized to access this service.").build());
-	}
-
-	private InetAddress getInetAddress(Exchange exc) {
-		return exc.getServerThread().getSourceSocket().getInetAddress();
 	}
 
 	public void setAclFilename(String aclFilename) {

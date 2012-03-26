@@ -15,17 +15,18 @@
 package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 
-public class HttpResendRunnable extends AbstractHttpRunnable {
+public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 
-	public HttpResendRunnable(Exchange exc, HttpTransport transport) {
-		this.transport = transport;
+	public HttpResendHandler(Exchange exc, HttpTransport transport) {
+		super(transport);
 		exchange = new Exchange(exc);
-		exchange.setServerThread(this);
+		exchange.setHandler(this);
 		
 		srcReq = exc.getRequest();
 	}
@@ -33,29 +34,14 @@ public class HttpResendRunnable extends AbstractHttpRunnable {
 	public void run() {
 		try {
 			exchange.setRequest(srcReq);
-	
-			invokeRequestHandlers();
-			
-			/*synchronized (exchange.getRequest()) {
-				if (exchange.getRule().isBlockRequest()) {
-					exchange.setStopped();
-					block(exchange.getRequest());
-				}
-			}*/
-			
-			//makeClientCall();
-						
-			invokeResponseHandlers(exchange);
-
-			/*synchronized (exchange.getResponse()) {
-				if (exchange.getRule().isBlockResponse()) {
-					exchange.setStopped();
-					block(exchange.getResponse());
-				}
-			}*/
-			
+			try {
+				invokeRequestHandlers();
+				invokeResponseHandlers(exchange);
+			} catch (AbortException e) {
+				exchange.finishExchange(true, exchange.getErrorMessage());
+				return;
+			}
 			exchange.setCompleted();
-
 			return;
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -65,6 +51,21 @@ public class HttpResendRunnable extends AbstractHttpRunnable {
 			ex.printStackTrace();
 		}
 
+	}
+	
+	@Override
+	public void shutdownInput() {
+		// do nothing
+	}
+	
+	@Override
+	public InetAddress getRemoteAddress() throws IOException {
+		return null;
+	}
+	
+	@Override
+	public int getLocalPort() {
+		return 0;
 	}
 
 }

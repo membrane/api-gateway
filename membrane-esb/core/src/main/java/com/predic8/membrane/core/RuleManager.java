@@ -31,7 +31,6 @@ import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.AbstractProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class RuleManager {
 
@@ -94,7 +93,7 @@ public class RuleManager {
 		if (exists(rule.getKey()))
 			return;
 
-		((HttpTransport) router.getTransport()).openPort(rule.getKey().getPort(), rule.getSslInboundContext());
+		router.getTransport().openPort(rule.getKey().getPort(), rule.getSslInboundContext());
 
 		((AbstractProxy) rule).setRouter(router);
 		rules.add(rule);

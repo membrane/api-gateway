@@ -1,4 +1,4 @@
-/* Copyright 2009, 2011 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2011, 2012 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -28,8 +28,8 @@ public class Transport {
 	protected Set<IPortChangeListener> menuListeners = new HashSet<IPortChangeListener>();
 	
 	private List<Interceptor> interceptors = new Vector<Interceptor>();
-
 	private Router router;
+	private int httpClientRetries = 5;
 	
 	private void setRouterForInterceptors() {	
 		for (Interceptor interceptor : interceptors) {
@@ -54,7 +54,14 @@ public class Transport {
 		return router;
 	}
 	
-	public void closeAll() throws IOException {
-		
+	public int getHttpClientRetries() {
+		return httpClientRetries;
 	}
+
+	public void setHttpClientRetries(int httpClientRetries) {
+		this.httpClientRetries = httpClientRetries;
+	}
+	
+	public void closeAll() throws IOException {}
+	public void openPort(int port, SSLContext sslContext) throws IOException {}
 }

@@ -61,7 +61,7 @@ public class HttpClient {
 	public HttpClient(Router router) {
 		Proxies cfg = router.getConfigurationManager().getProxies();
 		adjustHostHeader = cfg.getAdjustHostHeader();
-		maxRetries = ((HttpTransport)router.getTransport()).getHttpClientRetries();
+		maxRetries = router.getTransport().getHttpClientRetries();
 		proxy = cfg.getProxyConfiguration();
 	}
 	
@@ -207,12 +207,15 @@ public class HttpClient {
 			log.debug("Status code response on CONNECT request: " + response.getStatusCode());
 		}
 		exc.getRequest().setUri(Constants.N_A);
-		new TunnelThread(con.in, exc.getServerThread().getSrcOut(), "Onward Thread").start();
-		new TunnelThread(exc.getServerThread().getSrcIn(), con.out, "Backward Thread").start();
+		HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
+		new TunnelThread(con.in, hsr.getSrcOut(), "Onward Thread").start();
+		new TunnelThread(hsr.getSrcIn(), con.out, "Backward Thread").start();
 	}
 
 	private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
-		response.write(exc.getServerThread().srcOut);
+		AbstractHttpHandler ahr = exc.getHandler();
+		if (ahr instanceof HttpServerHandler)
+			response.write(((HttpServerHandler)ahr).getSrcOut());
 		exc.getRequest().readBody();
 		exc.getRequest().getBody().write(con.out);
 		con.out.flush();
@@ -220,7 +223,7 @@ public class HttpClient {
 	}
 
 	private void shutDownRequestInputOutput(Exchange exc, Connection con) throws IOException {
-		Util.shutdownInput(exc.getServerThread().sourceSocket);
+		exc.getHandler().shutdownInput();
 		Util.shutdownOutput(con.socket);
 	}
 }

@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.config.spring;
 
+import org.springframework.beans.factory.xml.BeanDefinitionParser;
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
 public class NamespaceHandler extends NamespaceHandlerSupport {
@@ -71,5 +72,13 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
 				new ReverseProxyingInterceptorParser());
 		registerBeanDefinitionParser("xmlProtection",
 				new XmlProtectionInterceptorParser());
+		try {
+			registerBeanDefinitionParser("servletTransport", 
+					(BeanDefinitionParser) Class.forName("com.predic8.membrane.servlet.embedded.ServletTransportParser").newInstance());
+		} catch (ClassNotFoundException e) {
+			// do nothing
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

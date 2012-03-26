@@ -21,53 +21,61 @@
 			</xsd:complexContent>
 		</xsd:complexType>
 	</xsd:element>
+	
+	<xsd:complexType name="transportType">
+		<xsd:complexContent>
+			<xsd:extension base="beans:identifiedType">
+				<xsd:sequence minOccurs="0" maxOccurs="unbounded">
+					<xsd:choice>
+						<xsd:element name="ruleMatching" type="EmptyElementType" />
+						<xsd:element name="dispatching" type="EmptyElementType" />
+						<xsd:element name="userFeature" type="EmptyElementType" />
+						<xsd:element name="reverseProxying" type="EmptyElementType" />
+						<xsd:element name="httpClient" type="EmptyElementType" />
+						<xsd:element name="log" type="EmptyElementType" />
+						<xsd:element ref="exchangeStore" />
+						<xsd:element ref="transform" />
+						<xsd:element ref="validator" />
+						<xsd:element ref="rewriter" />
+						<xsd:element ref="adminConsole" />
+						<xsd:element ref="webServer" />
+						<xsd:element ref="balancer" />
+						<xsd:element ref="clusterNotification" />
+						<xsd:element ref="basicAuthentication" />
+						<xsd:element ref="accessControl" />
+						<xsd:element ref="wsdlRewriter" />
+						<xsd:element ref="wadlRewriter" />
+						<xsd:element ref="statisticsCSV" />
+						<xsd:element ref="statisticsJDBC" />
+						<xsd:element ref="rest2Soap" />
+						<xsd:element ref="switch" />
+						<xsd:element ref="regExReplacer" />
+						<xsd:element ref="counter" />
+						<xsd:element ref="groovy" />
+						<xsd:element ref="throttle" />
+						<xsd:element ref="formValidation" />
+						<xsd:element ref="log" />
+						<xsd:element ref="xmlProtection" />
+					</xsd:choice>
+				</xsd:sequence>
+				<xsd:attribute name="httpClientRetries" default="5" type="xsd:int" />
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 
 	<xsd:element name="transport">
 		<xsd:complexType>
 			<xsd:complexContent>
-				<xsd:extension base="beans:identifiedType">
-					<xsd:sequence minOccurs="0" maxOccurs="unbounded">
-						<xsd:choice>
-							<xsd:element name="ruleMatching" type="EmptyElementType" />
-							<xsd:element name="dispatching" type="EmptyElementType" />
-							<xsd:element name="userFeature" type="EmptyElementType" />
-							<xsd:element name="reverseProxying" type="EmptyElementType" />
-							<xsd:element name="httpClient" type="EmptyElementType" />
-							<xsd:element name="log" type="EmptyElementType" />
-							<xsd:element ref="exchangeStore" />
-							<xsd:element ref="transform" />
-							<xsd:element ref="validator" />
-							<xsd:element ref="rewriter" />
-							<xsd:element ref="adminConsole" />
-							<xsd:element ref="webServer" />
-							<xsd:element ref="balancer" />
-							<xsd:element ref="clusterNotification" />
-							<xsd:element ref="basicAuthentication" />
-							<xsd:element ref="accessControl" />
-							<xsd:element ref="wsdlRewriter" />
-							<xsd:element ref="wadlRewriter" />
-							<xsd:element ref="statisticsCSV" />
-							<xsd:element ref="statisticsJDBC" />
-							<xsd:element ref="rest2Soap" />
-							<xsd:element ref="switch" />
-							<xsd:element ref="regExReplacer" />
-							<xsd:element ref="counter" />
-							<xsd:element ref="groovy" />
-							<xsd:element ref="throttle" />
-							<xsd:element ref="formValidation" />
-							<xsd:element ref="log" />
-							<xsd:element ref="xmlProtection" />
-						</xsd:choice>
-					</xsd:sequence>
+				<xsd:extension base="transportType">
 					<xsd:attribute name="coreThreadPoolSize" default="20" type="xsd:int" />
 					<xsd:attribute name="socketTimeout" default="30000" type="xsd:int" />
 					<xsd:attribute name="tcpNoDelay" default="true" type="xsd:boolean" />
-					<xsd:attribute name="httpClientRetries" default="5" type="xsd:int" />
 					<xsd:attribute name="autoContinue100Expected" default="true" type="xsd:boolean" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>
 	</xsd:element>
+	<xsd:element name="servletTransport" type="transportType" />
 
 	<xsd:element name="exchangeStore">
 		<xsd:complexType>

@@ -58,7 +58,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private void handleNoRuleFound(Exchange exc) throws IOException {
 		exc.getRequest().readBody();
-		exc.getServerThread().getSourceSocket().shutdownInput();
+		exc.getHandler().shutdownInput();
 		exc.setResponse(Response.interalServerError("This request was not accepted by Membrane Monitor. Please correct the request and try again.").build());
 	}
 
@@ -80,7 +80,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			if (!(rule instanceof ProxyRule))
 				continue;
 
-			if (rule.getKey().getPort() == exc.getServerThread().getSourceSocket().getLocalPort()) {
+			if (rule.getKey().getPort() == exc.getHandler().getLocalPort()) {
 				if (log.isDebugEnabled())
 					log.debug("proxy rule found: " + rule);
 				return rule;

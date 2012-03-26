@@ -54,7 +54,7 @@ public class HttpKeepAliveTest {
 			public Outcome handleRequest(Exchange exc) throws Exception {
 				exc.getRequest().readBody();
 				exc.setResponse(Response.ok("OK.").build());
-				set.add(exc.getServerThread().srcOut.hashCode());
+				set.add(((HttpServerHandler)exc.getHandler()).getSrcOut().hashCode());
 				return Outcome.ABORT;
 			}
 		});

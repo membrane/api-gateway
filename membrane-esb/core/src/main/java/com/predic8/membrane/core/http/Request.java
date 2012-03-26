@@ -76,6 +76,19 @@ public class Request extends Message {
 	public void setUri(String uri) {
 		this.uri = uri;
 	}
+	
+	public void create(String method, String uri, String protocol, Header header, InputStream in) throws IOException {
+		this.method = method;
+		this.uri = uri;
+		if (!protocol.startsWith("HTTP/"))
+			throw new RuntimeException("Unknown protocol '" + protocol + "'");
+		this.version = protocol.substring(5);
+		
+		this.header = header;
+		
+		createBody(in);
+	}
+
 
 	@Override
 	public String getStartLine() {

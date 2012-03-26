@@ -1,4 +1,4 @@
-/* Copyright 2009, 2011 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2011, 2012 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -17,22 +17,28 @@ package com.predic8.membrane.core;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
+import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
+import com.predic8.membrane.core.interceptor.UserFeatureInterceptor;
 import com.predic8.membrane.core.io.ConfigurationFileStore;
+import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class HttpRouter extends Router {
 
 	public HttpRouter() {
-		ruleManager = new RuleManager();
-		ruleManager.setRouter(this);
-		exchangeStore = new ForgetfulExchangeStore();
-		transport = new HttpTransport();
-		transport.setRouter(this);
-		configurationManager = new ConfigurationManager();
 		configurationManager.setConfigurationStore(new ConfigurationFileStore());
-		configurationManager.setRouter(this);
+		transport = createTransport();
+	}
+	
+	/**
+	 * Same as the default config from monitor-beans.xml
+	 */
+	public Transport createTransport() {
+		Transport transport = new HttpTransport();
+		transport.setRouter(this);
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
 		interceptors.add(new RuleMatchingInterceptor());		
 		interceptors.add(new DispatchingInterceptor());
@@ -42,6 +48,7 @@ public class HttpRouter extends Router {
 			i.setRouter(this);
 		}
 		transport.setInterceptors(interceptors);
+		return transport;
 	}
 	
 	@Override

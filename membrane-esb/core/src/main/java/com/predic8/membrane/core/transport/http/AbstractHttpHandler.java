@@ -14,34 +14,32 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.*;
-import java.net.Socket;
+import java.io.IOException;
+import java.net.InetAddress;
 import java.util.List;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.transport.Transport;
 
-public abstract class AbstractHttpRunnable implements Runnable {
+public abstract class AbstractHttpHandler  {
 
-	private static Log log = LogFactory.getLog(AbstractHttpRunnable.class.getName());
+	private static Log log = LogFactory.getLog(AbstractHttpHandler.class.getName());
 	
 	protected Exchange exchange;
-	
 	protected Request srcReq;
-	
-	protected Socket sourceSocket;
-	
-	protected InputStream srcIn;
-	
-	protected OutputStream srcOut;
 		
-	protected HttpTransport transport;
+	private final Transport transport;
 	
-	protected boolean stop = false;
+	public AbstractHttpHandler(Transport transport) {
+		this.transport = transport;
+	}
 	
 	protected void invokeInterceptors(Flow f, List<Interceptor> list, int start, int end, int step) throws Exception {
 		boolean logDebug = log.isDebugEnabled();
@@ -106,45 +104,13 @@ public abstract class AbstractHttpRunnable implements Runnable {
 			}
 		}
 	}
-	
-	public void stopThread() {
-		stop = true;
-	}
 
-	public Socket getSourceSocket() {
-		return sourceSocket;
-	}
-
-	public void setSourceSocket(Socket sourceSocket) {
-		this.sourceSocket = sourceSocket;
-	}
-
-	public InputStream getSrcIn() {
-		return srcIn;
-	}
-
-	public void setSrcIn(InputStream srcIn) {
-		this.srcIn = srcIn;
-	}
-
-	public OutputStream getSrcOut() {
-		return srcOut;
-	}
-
-	public void setSrcOut(OutputStream srcOut) {
-		this.srcOut = srcOut;
-	}
-
-	public HttpTransport getTransport() {
+	public Transport getTransport() {
 		return transport;
 	}
 
-	protected void writeResponse(Response res) throws Exception{
-		res.write(srcOut);
-		srcOut.flush();
-		exchange.setTimeResSent(System.currentTimeMillis());
-		exchange.collectStatistics();
-	}
-
+	public abstract void shutdownInput() throws IOException;
+	public abstract InetAddress getRemoteAddress() throws IOException;
+	public abstract int getLocalPort();
 
 }

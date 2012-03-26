@@ -22,7 +22,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
-import com.predic8.membrane.core.transport.http.AbstractHttpRunnable;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 
 /**
  * {@link StatisticCollector} counts {@link Exchange} objects, tracks the time they took
@@ -47,7 +47,7 @@ public class StatisticCollector {
 
 	/**
 	 * @param countErrorExchanges whether to count failed Exchange objects. Since
-	 * {@link AbstractHttpRunnable} counts Exchanges before their state is set to completed 
+	 * {@link AbstractHttpHandler} counts Exchanges before their state is set to completed 
 	 * (and {@link Exchange#getStatus()} still returns {@link ExchangeState#FAILED},
 	 * we need to be able to count them as successful (and track their statistics). On the
 	 * other hand {@link MemoryExchangeStore} needs to count failures as failures,

@@ -46,7 +46,7 @@ public class HttpTransportParser extends
 		bean.addPropertyValue("interceptors", parseInterceptors(e));
 	}
 
-	private List<BeanDefinition> parseInterceptors(Element e) {
+	protected List<BeanDefinition> parseInterceptors(Element e) {
 		
 		List<BeanDefinition> l = new ManagedList<BeanDefinition>();
 		NodeList nL = e.getChildNodes();

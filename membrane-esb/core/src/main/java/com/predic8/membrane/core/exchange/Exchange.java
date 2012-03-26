@@ -24,7 +24,7 @@ import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.transport.http.AbstractHttpRunnable;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.util.HttpUtil;
 
@@ -32,7 +32,7 @@ public class Exchange extends AbstractExchange {
 
 	private static Log log = LogFactory.getLog(Exchange.class.getName());
 
-	private AbstractHttpRunnable serverThread;
+	private AbstractHttpHandler handler;
 
 	private String originalHostHeader = "";
 
@@ -57,12 +57,12 @@ public class Exchange extends AbstractExchange {
 
 	}
 
-	public AbstractHttpRunnable getServerThread() {
-		return serverThread;
+	public AbstractHttpHandler getHandler() {
+		return handler;
 	}
 
-	public void setServerThread(AbstractHttpRunnable serverThread) {
-		this.serverThread = serverThread;
+	public void setHandler(AbstractHttpHandler serverThread) {
+		this.handler = serverThread;
 	}
 
 	public String getOriginalHostHeaderHost() {
@@ -115,8 +115,7 @@ public class Exchange extends AbstractExchange {
 
 	public ServiceProxyKey getServiceProxyKey() {
 		return new ServiceProxyKey(request.getHeader().getHost(),
-				request.getMethod(), request.getUri(), serverThread
-						.getSourceSocket().getLocalPort());
+				request.getMethod(), request.getUri(), handler.getLocalPort());
 	}
 
 	public Connection getTargetConnection() {
