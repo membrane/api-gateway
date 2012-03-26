@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.examples;
+package com.predic8.membrane.core;
 
 import static org.junit.Assert.assertEquals;
 

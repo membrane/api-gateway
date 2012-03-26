@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.examples.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.core.AssertUtils.getAndAssert200;
 import static org.apache.commons.io.FileUtils.copyFileToDirectory;
 
 import java.io.File;

@@ -14,10 +14,10 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.examples.AssertUtils.disableHTTPAuthentication;
-import static com.predic8.membrane.examples.AssertUtils.getAndAssert;
-import static com.predic8.membrane.examples.AssertUtils.getAndAssert200;
-import static com.predic8.membrane.examples.AssertUtils.setupHTTPAuthentication;
+import static com.predic8.membrane.core.AssertUtils.disableHTTPAuthentication;
+import static com.predic8.membrane.core.AssertUtils.getAndAssert;
+import static com.predic8.membrane.core.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.core.AssertUtils.setupHTTPAuthentication;
 
 import java.io.File;
 import java.io.IOException;

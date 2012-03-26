@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.examples.AssertUtils.assertContains;
-import static com.predic8.membrane.examples.AssertUtils.assertStatusCode;
-import static com.predic8.membrane.examples.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.core.AssertUtils.assertContains;
+import static com.predic8.membrane.core.AssertUtils.assertStatusCode;
+import static com.predic8.membrane.core.AssertUtils.getAndAssert200;
 
 import java.io.IOException;
 import java.util.ArrayList;
