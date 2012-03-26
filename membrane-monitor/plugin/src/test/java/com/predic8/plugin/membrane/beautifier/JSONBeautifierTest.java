@@ -20,7 +20,7 @@ public class JSONBeautifierTest {
 
 	@Test
 	public void testBeautify() throws Exception {
-		System.out.println(beautifier.beautify(sample));
+		System.out.println(beautifier.beautify(new String(sample, "UTF-8")));
 	}
 
 	@After

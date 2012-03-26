@@ -1,0 +1,61 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.predic8</groupId>
+	<artifactId>membrane-monitor</artifactId>
+	<version>3.3.2-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>plugin</module>
+	</modules>
+
+    <properties>
+        <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
+        <javac.source>1.6</javac.source>
+        <javac.target>1.6</javac.target>
+    </properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.predic8</groupId>
+				<artifactId>membrane-esb-osgi</artifactId>
+				<version>3.3.2-SNAPSHOT</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<repositories>
+		<repository>
+			<id>predic8-releases</id>
+			<url>http://repository.membrane-soa.org/content/groups/public</url>
+		</repository>
+	</repositories>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<distributionManagement>
+		<repository>
+			<id>predic8-releases</id>
+			<url>http://repository.membrane-soa.org/content/repositories/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>predic8-snapshots</id>
+			<url>http://repository.membrane-soa.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+</project>
