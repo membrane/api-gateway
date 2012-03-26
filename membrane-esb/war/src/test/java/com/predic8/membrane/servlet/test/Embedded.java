@@ -14,15 +14,28 @@
 
 package com.predic8.membrane.servlet.test;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+import static com.predic8.membrane.core.AssertUtils.getAndAssert200;
 
-@RunWith(Suite.class)
-@SuiteClasses({ 
-	Basic.class,
-	Embedded.class,
-})
-public class IntegrationTests {
+import java.io.IOException;
 
+import org.apache.http.client.ClientProtocolException;
+import org.junit.Test;
+
+import com.predic8.membrane.core.AssertUtils;
+
+public class Embedded {
+
+	// integration test settings (corresponding to those in pom.xml)
+	private static final String HOST = "localhost";
+	private static final int PORT = 3021;
+	
+	@Test
+	public void testReachable() throws ClientProtocolException, IOException {
+		AssertUtils.assertContains("predic8", getAndAssert200(getBaseURL()));
+	}
+
+	private String getBaseURL() {
+		return "http://" + HOST + ":" + PORT + "/";
+	}
+	
 }

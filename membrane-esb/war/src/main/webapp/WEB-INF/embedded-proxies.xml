@@ -13,7 +13,7 @@
 	-->
       	 
 	<serviceProxy>
-		<target host="www.thomas-bayer.com" />
+		<target host="www.predic8.com" />
 	</serviceProxy>	
 
 </proxies>
