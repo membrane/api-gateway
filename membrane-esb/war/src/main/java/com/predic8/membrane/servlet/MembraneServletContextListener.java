@@ -14,17 +14,17 @@
 
 package com.predic8.membrane.servlet;
 
-import javax.servlet.*;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 
-import org.apache.commons.logging.*;
-import org.springframework.web.context.support.XmlWebApplicationContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Router;
 
 public class MembraneServletContextListener implements ServletContextListener {
 
-	private static Log log = LogFactory
-			.getLog(MembraneServletContextListener.class.getName());
+	private static Log log = LogFactory.getLog(MembraneServletContextListener.class);
 
 	private Router router;
 
@@ -32,16 +32,11 @@ public class MembraneServletContextListener implements ServletContextListener {
 		try {
 			log.info("Starting Router...");
 
-			log.debug("loading beans configuration from: "
-					+ getContextConfigLocation(sce));
-			router = loadRouter(sce.getServletContext());
+			log.debug("loading beans configuration from: " + getContextConfigLocation(sce));
+			router = RouterUtil.loadRouter(sce.getServletContext(), getContextConfigLocation(sce));
 
-			router.setResourceResolver(getResolver(sce));
-
-			log.debug("loading proxies configuration from: "
-					+ getProxiesXmlLocation(sce));
-			router.getConfigurationManager().loadConfiguration(
-					getProxiesXmlLocation(sce));
+			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(sce));
+			router.getConfigurationManager().loadConfiguration(getProxiesXmlLocation(sce));
 
 			log.info("Router running...");
 		} catch (Exception ex) {
@@ -59,34 +54,11 @@ public class MembraneServletContextListener implements ServletContextListener {
 		}
 	}
 
-	private Router loadRouter(ServletContext ctx) {
-		log.debug("loading spring config from servlet.");
-
-		XmlWebApplicationContext appCtx= new XmlWebApplicationContext();
-		Router.setBeanFactory(appCtx);
-		
-		appCtx.setServletContext(ctx);
-		appCtx.setConfigLocation(ctx.getInitParameter("contextConfigLocation"));
-		
-		appCtx.refresh();
-
-		return (Router) appCtx.getBean("router");
-	}
-	
-	
 	private String getContextConfigLocation(ServletContextEvent sce) {
-		return sce.getServletContext()
-				.getInitParameter("contextConfigLocation");
+		return sce.getServletContext().getInitParameter("contextConfigLocation");
 	}
 
 	private String getProxiesXmlLocation(ServletContextEvent sce) {
 		return sce.getServletContext().getInitParameter("proxiesXml");
 	}
-
-	private WebAppResolver getResolver(ServletContextEvent sce) {
-		WebAppResolver r = new WebAppResolver();
-		r.setCtx(sce.getServletContext());
-		return r;
-	}
-
 }

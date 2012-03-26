@@ -24,9 +24,13 @@ import com.predic8.membrane.core.util.ResourceResolver;
 
 public class WebAppResolver extends ResourceResolver {
 
-	static private Log log = LogFactory.getLog(WebAppResolver.class.getName());
+	private static final Log log = LogFactory.getLog(WebAppResolver.class.getName());
 
-	private ServletContext ctx;
+	private final ServletContext ctx;
+	
+	public WebAppResolver(ServletContext ctx) {
+		this.ctx = ctx;
+	}
 
 	@Override
 	protected InputStream resolveFile(String uri, boolean useMembraneHome)
@@ -37,10 +41,6 @@ public class WebAppResolver extends ResourceResolver {
 
 	public ServletContext getCtx() {
 		return ctx;
-	}
-
-	public void setCtx(ServletContext ctx) {
-		this.ctx = ctx;
 	}
 
 }
