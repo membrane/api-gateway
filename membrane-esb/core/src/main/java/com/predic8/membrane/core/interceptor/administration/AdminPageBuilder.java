@@ -89,16 +89,16 @@ public class AdminPageBuilder extends Html {
 	protected void createHead() {
 		head();
 		    title().text(getTitle()).end();
-			style().attr("type", "text/css").text("@import '/datatables/css/demo_table_jui.css';\n" +
-												  "@import '/jquery-ui/css/custom-theme/jquery-ui-1.8.13.custom.css';"+
-					                              "@import '/css/membrane.css';").end();	
-			link().rel("stylesheet").href("/formValidator/validationEngine.jquery.css").type("text/css");
-			script().src("/jquery/jquery-1.6.1.js").end();
-			script().src("/datatables/js/jquery.dataTables.min.js").end();
-			script().src("/jquery-ui/js/jquery-ui-1.8.13.custom.min.js").end();
-			script().src("/formValidator/jquery.validationEngine-en.js").end();
-			script().src("/formValidator/jquery.validationEngine.js").end();
-			script().src("/js/membrane.js").end();
+			style().attr("type", "text/css").text("@import '/admin/datatables/css/demo_table_jui.css';\n" +
+												  "@import '/admin/jquery-ui/css/custom-theme/jquery-ui-1.8.13.custom.css';"+
+					                              "@import '/admin/css/membrane.css';").end();	
+			link().rel("stylesheet").href("/admin/formValidator/validationEngine.jquery.css").type("text/css");
+			script().src("/admin/jquery/jquery-1.6.1.js").end();
+			script().src("/admin/datatables/js/jquery.dataTables.min.js").end();
+			script().src("/admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js").end();
+			script().src("/admin/formValidator/jquery.validationEngine-en.js").end();
+			script().src("/admin/formValidator/jquery.validationEngine.js").end();
+			script().src("/admin/js/membrane.js").end();
 			createMetaElements();
 		  end();
 	}
@@ -619,11 +619,11 @@ public class AdminPageBuilder extends Html {
 				end();
 			end();
 			tr();
-				td().style("padding:0px;background:url(\"/images/spv-top.png\");background-repeat:repeat-y;height:14px;").colspan("2");
+				td().style("padding:0px;background:url(\"/admin/images/spv-top.png\");background-repeat:repeat-y;height:14px;").colspan("2");
 				end();
 			end();
 			for (int i = 0; i < leftStack.size() - 1; i++) {
-				tr().style("background:url(\"/images/spv-middle.png\");background-repeat:repeat-y;");
+				tr().style("background:url(\"/admin/images/spv-middle.png\");background-repeat:repeat-y;");
 					if (leftStack.get(i) == rightStack.get(i)) {
 						createInterceptorVisualization(leftStack.get(i), 2, "spv_l" + i);
 					} else {
@@ -632,7 +632,7 @@ public class AdminPageBuilder extends Html {
 					}
 				end();
 			}
-			tr().style("background:url(\"/images/spv-bottom.png\");background-repeat:repeat-y;height:14px;");
+			tr().style("background:url(\"/admin/images/spv-bottom.png\");background-repeat:repeat-y;height:14px;");
 				td().style("padding:0px;").colspan("2");
 				end();
 			end();
