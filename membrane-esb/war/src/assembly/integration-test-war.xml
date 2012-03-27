@@ -22,6 +22,10 @@
   		<directory>target/classes</directory>
   		<outputDirectory>/WEB-INF/classes</outputDirectory>
   	</fileSet>
+  	<fileSet>
+  		<directory>target/test-classes</directory>
+  		<outputDirectory>/WEB-INF/classes</outputDirectory>
+  	</fileSet>
   </fileSets>
   <files>
   </files>

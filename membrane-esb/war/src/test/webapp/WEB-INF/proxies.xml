@@ -23,9 +23,7 @@
 	
 	<!-- Echo service for testing. -->
 	<serviceProxy port="3025">
-		<groovy>
-			exc.echo()
-		</groovy>
+		<echo />
 	</serviceProxy>
 
 </proxies>
