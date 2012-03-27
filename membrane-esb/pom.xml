@@ -12,6 +12,7 @@
 		<module>osgi</module>
 		<module>war</module>
 		<module>sar</module>
+		<module>test</module>
 	</modules>
 
     <properties>
@@ -31,6 +32,11 @@
 			<dependency>
 				<groupId>com.predic8</groupId>
 				<artifactId>membrane-esb-cli</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.predic8</groupId>
+				<artifactId>membrane-esb-test</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 		
@@ -180,37 +186,31 @@
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
 				<version>4.5</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
 				<version>4.0</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>xmlunit</groupId>
 				<artifactId>xmlunit</artifactId>
 				<version>1.3</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.derby</groupId>
 				<artifactId>derbynet</artifactId>
 				<version>10.8.2.2</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>com.sun.xml.ws</groupId>
 				<artifactId>jaxws-rt</artifactId>
 				<version>2.2.5</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>com.sun.xml.ws</groupId>
 				<artifactId>jaxws-tools</artifactId>
 				<version>2.2.5</version>
-				<scope>test</scope>
 			</dependency>
 
 			<dependency>

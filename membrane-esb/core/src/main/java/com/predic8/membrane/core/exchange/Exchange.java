@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.exchange;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -21,8 +22,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.TerminateException;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.Response.ResponseBuilder;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.Connection;
@@ -129,4 +134,15 @@ public class Exchange extends AbstractExchange {
 		return getOriginalRequestUri();
 	}
 
+	public Outcome echo() throws IOException {
+		ResponseBuilder builder = Response.ok();
+		byte[] content = getRequest().getBody().getContent();
+		builder.body(content);
+		builder.header(Header.CONTENT_LENGTH, "" + content.length);
+		String contentType = getRequest().getHeader().getContentType();
+		if (contentType != null)
+			builder.header(Header.CONTENT_TYPE, contentType);
+		setResponse(builder.build());
+		return Outcome.ABORT;
+	}
 }

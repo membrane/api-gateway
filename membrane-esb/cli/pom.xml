@@ -18,8 +18,8 @@
 			<artifactId>membrane-esb-core</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>com.predic8</groupId>
+			<artifactId>membrane-esb-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -28,8 +28,8 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

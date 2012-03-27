@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.examples.tests.validation;
 
-import static com.predic8.membrane.core.AssertUtils.postAndAssert;
+import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;

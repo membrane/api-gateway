@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.servlet.test;
 
-import static com.predic8.membrane.core.AssertUtils.assertContains;
-import static com.predic8.membrane.core.AssertUtils.getAndAssert200;
-import static com.predic8.membrane.core.AssertUtils.setupHTTPAuthentication;
+import static com.predic8.membrane.test.AssertUtils.assertContains;
+import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.test.AssertUtils.setupHTTPAuthentication;
 
 import java.io.IOException;
 import java.util.Arrays;

@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import com.predic8.membrane.core.AssertUtils;
+import com.predic8.membrane.test.AssertUtils;
 
 @RunWith(Parameterized.class)
 public class ForwardingTest {

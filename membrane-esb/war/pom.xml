@@ -30,8 +30,8 @@
 		</dependency>
 		
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>com.predic8</groupId>
+			<artifactId>membrane-esb-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -39,6 +39,12 @@
 			<artifactId>httpclient</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		
 	</dependencies>
 
 	<build>

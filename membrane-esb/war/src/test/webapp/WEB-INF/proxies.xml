@@ -24,8 +24,7 @@
 	<!-- Echo service for testing. -->
 	<serviceProxy port="3025">
 		<groovy>
-			exc.setResponse(Response.ok().header("Connection", "close").body(exc.getRequest().getBody()).build());
-			ABORT
+			exc.echo()
 		</groovy>
 	</serviceProxy>
 

@@ -14,15 +14,15 @@
 
 package com.predic8.membrane.examples.tests;
 
-import static com.predic8.membrane.core.AssertUtils.assertContains;
-import static com.predic8.membrane.core.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.test.AssertUtils.assertContains;
+import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.junit.Test;
 
-import com.predic8.membrane.core.AssertUtils;
+import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.ProxiesXmlUtil;
 import com.predic8.membrane.examples.Process2;

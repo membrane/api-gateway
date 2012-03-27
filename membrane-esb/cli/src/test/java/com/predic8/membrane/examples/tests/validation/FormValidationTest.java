@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.examples.tests.validation;
 
-import static com.predic8.membrane.core.AssertUtils.getAndAssert;
+import static com.predic8.membrane.test.AssertUtils.getAndAssert;
 
 import java.io.File;
 import java.io.IOException;
