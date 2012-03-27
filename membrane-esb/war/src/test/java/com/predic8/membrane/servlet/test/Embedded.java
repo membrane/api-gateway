@@ -14,11 +14,16 @@
 
 package com.predic8.membrane.servlet.test;
 
-import static com.predic8.membrane.core.AssertUtils.getAndAssert200;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 
+import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 
 import com.predic8.membrane.core.AssertUtils;
@@ -31,7 +36,11 @@ public class Embedded {
 	
 	@Test
 	public void testReachable() throws ClientProtocolException, IOException {
-		AssertUtils.assertContains("predic8", getAndAssert200(getBaseURL()));
+		HttpClient hc = new DefaultHttpClient();
+		HttpResponse res = hc.execute(new HttpGet(getBaseURL()));
+		assertEquals(200, res.getStatusLine().getStatusCode());
+
+		AssertUtils.assertContains("predic8", EntityUtils.toString(res.getEntity()));
 	}
 
 	private String getBaseURL() {

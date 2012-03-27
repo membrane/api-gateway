@@ -1,0 +1,28 @@
+<!--
+	Routing Configuration
+	
+	Here you can configure routing rules for Membrane Monitor and Router. It contains some rules to show how to setup routing. Please make sure to remove these rules before you put the router into production. More sample configurations you can find in the examples directory.  
+-->
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+      	 
+	<!-- Sets up the Administration Web Interface on port 3027. -->
+	<serviceProxy name="Console" port="3027">
+		<basicAuthentication>
+			<user name="admin" password="membrane" />
+		</basicAuthentication>	
+		<adminConsole />
+	</serviceProxy>	
+	
+	
+	<serviceProxy name="Console" port="3026">
+		<target host="localhost" port="3025" />
+	</serviceProxy>	
+	
+	
+	<!-- Echo service for testing. -->
+	<serviceProxy port="3025">
+	</serviceProxy>
+
+</proxies>

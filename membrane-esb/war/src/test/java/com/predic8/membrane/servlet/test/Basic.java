@@ -27,7 +27,7 @@ public class Basic {
 
 	// integration test settings (corresponding to those in proxies.xml)
 	private static final String MEMBRANE_ADMIN_HOST = "localhost";
-	private static final int MEMBRANE_ADMIN_PORT = 9000;
+	private static final int MEMBRANE_ADMIN_PORT = 3027;
 	private static final String BASIC_AUTH_USER = "admin";
 	private static final String BASIC_AUTH_PASSWORD = "membrane";
 	
