@@ -20,8 +20,8 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
 @SuiteClasses({ 
-	Basic.class,
-	Embedded.class
+	AdminConsoleTest.class,
+	ForwardingTest.class
 })
 public class IntegrationTests {
 

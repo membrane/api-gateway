@@ -65,6 +65,14 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.11</version>
+				<configuration>
+					<failIfNoTests>false</failIfNoTests>
+					<test>**/UnitTests.java</test>
+				</configuration>
+			</plugin>
+			<plugin>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>2.11</version>
 				<executions>
@@ -85,6 +93,7 @@
 				<configuration>
 					<war>${basedir}/target/${project.artifactId}-${project.version}-integration-test.war</war>
 					<scanIntervalSeconds>10</scanIntervalSeconds>
+					<contextPath>/</contextPath>
 					<connectors>
 						<connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
 							<port>3021</port>

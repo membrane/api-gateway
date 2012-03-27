@@ -12,6 +12,14 @@
 		It uses the web server's connectors (see configuration of the web server) and configured paths (see web.xml).
 	-->
       	 
+    <serviceProxy>
+    	<path isRegExp="true">^/admin.*</path>
+    	<basicAuthentication>
+			<user name="admin" password="membrane" />
+		</basicAuthentication>	
+		<adminConsole />
+    </serviceProxy>
+
 	<serviceProxy>
 		<target host="localhost" port="3025" />
 	</serviceProxy>	

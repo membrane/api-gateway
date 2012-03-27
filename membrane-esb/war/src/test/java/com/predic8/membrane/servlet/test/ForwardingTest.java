@@ -17,34 +17,54 @@ package com.predic8.membrane.servlet.test;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import com.predic8.membrane.core.AssertUtils;
 
-public class Embedded {
+@RunWith(Parameterized.class)
+public class ForwardingTest {
+	
+	@Parameters
+	public static List<Object[]> getPorts() {
+		return Arrays.asList(new Object[][] { 
+				{ 3021 }, // jetty port embedding membrane
+				{ 3026 }, // membrane port
+				});
+	}
 
-	// integration test settings (corresponding to those in pom.xml)
-	private static final String HOST = "localhost";
-	private static final int PORT = 3021;
+	private final int port;
+	
+	public ForwardingTest(int port) {
+		this.port = port;
+	}
 	
 	@Test
 	public void testReachable() throws ClientProtocolException, IOException {
+		String secret = "secret452363763";
 		HttpClient hc = new DefaultHttpClient();
-		HttpResponse res = hc.execute(new HttpGet(getBaseURL()));
+		HttpPost post = new HttpPost(getBaseURL());
+		post.setEntity(new StringEntity(secret));
+		HttpResponse res = hc.execute(post);
 		assertEquals(200, res.getStatusLine().getStatusCode());
 
-		AssertUtils.assertContains("predic8", EntityUtils.toString(res.getEntity()));
+		AssertUtils.assertContains(secret, EntityUtils.toString(res.getEntity()));
 	}
 
 	private String getBaseURL() {
-		return "http://" + HOST + ":" + PORT + "/";
+		return "http://localhost:" + port + "/";
 	}
 	
 }

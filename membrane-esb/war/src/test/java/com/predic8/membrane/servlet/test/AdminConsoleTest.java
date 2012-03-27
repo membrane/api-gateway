@@ -19,32 +19,49 @@ import static com.predic8.membrane.core.AssertUtils.getAndAssert200;
 import static com.predic8.membrane.core.AssertUtils.setupHTTPAuthentication;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.http.client.ClientProtocolException;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
-public class Basic {
+@RunWith(Parameterized.class)
+public class AdminConsoleTest {
 
-	// integration test settings (corresponding to those in proxies.xml)
-	private static final String MEMBRANE_ADMIN_HOST = "localhost";
-	private static final int MEMBRANE_ADMIN_PORT = 3027;
+	@Parameters
+	public static List<Object[]> getPorts() {
+		return Arrays.asList(new Object[][] { 
+				{ 3021 }, // jetty port embedding membrane
+				{ 3027 }, // membrane admin console port
+				});
+	}
+
 	private static final String BASIC_AUTH_USER = "admin";
 	private static final String BASIC_AUTH_PASSWORD = "membrane";
 	
+	private final int port;
+	
+	public AdminConsoleTest(int port) {
+		this.port = port;
+	}
+	
 	@Test
 	public void testAdminConsoleReachable() throws ClientProtocolException, IOException {
-		setupHTTPAuthentication(MEMBRANE_ADMIN_HOST, MEMBRANE_ADMIN_PORT, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
+		setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
 		assertContains("ServiceProxies", getAndAssert200(getBaseURL() + "admin/"));
 	}
 
 	@Test
 	public void testAdminConsoleJavascriptDownloadable() throws ClientProtocolException, IOException {
-		setupHTTPAuthentication(MEMBRANE_ADMIN_HOST, MEMBRANE_ADMIN_PORT, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
-		assertContains("jQuery", getAndAssert200(getBaseURL() + "jquery-ui/js/jquery-ui-1.8.13.custom.min.js"));
+		setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
+		assertContains("jQuery", getAndAssert200(getBaseURL() + "admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js"));
 	}
 
 	private String getBaseURL() {
-		return "http://" + MEMBRANE_ADMIN_HOST + ":" + MEMBRANE_ADMIN_PORT + "/";
+		return "http://localhost:" + port + "/";
 	}
 	
 }
