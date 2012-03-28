@@ -24,36 +24,34 @@ import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import com.predic8.membrane.core.Constants;
+
 @SuppressWarnings("unused")
 public class BodyTest {
 
-	private static byte[] msg0 = new byte[] { 'd', 'd', 13, 10, 13, 10 };
-	private static byte[] msg1 = new byte[] { 'd', 'd', 13, 10, 13, 10, 'f',
-			'r' };
-	private static byte[] msg2 = new byte[10000];
-	private static byte[] msg3 = new byte[] { 'd', 'd', 13, 13, 10 };
+	private byte[] msg0 = new byte[] { 'd', 'd', 13, 10, 13, 10 };
+	private byte[] msg1 = new byte[] { 'd', 'd', 13, 10, 13, 10, 'f', 'r' };
+	private byte[] msg2 = new byte[10000];
+	private byte[] msg3 = new byte[] { 'd', 'd', 13, 13, 10 };
 
-	private static String chunk = "1aa\r\n<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'><soapenv:Body><ns1:getBankResponse xmlns:ns1='http://thomas-bayer.com/blz/'><ns1:details><ns1:bezeichnung>Deutsche Bank Privat und Geschaeftskunden</ns1:bezeichnung><ns1:bic>DEUTDEDB380</ns1:bic><ns1:ort>Bonn</ns1:ort><ns1:plz>53004</ns1:plz></ns1:details></ns1:getBankResponse></soapenv:Body></soapenv:Envelope>\r\n0\r\n";
+	private String chunk = "1aa\r\n<?xml version='1.0' encoding='utf-8'?><soapenv:Envelope xmlns:soapenv='http://schemas.xmlsoap.org/soap/envelope/'><soapenv:Body><ns1:getBankResponse xmlns:ns1='http://thomas-bayer.com/blz/'><ns1:details><ns1:bezeichnung>Deutsche Bank Privat und Geschaeftskunden</ns1:bezeichnung><ns1:bic>DEUTDEDB380</ns1:bic><ns1:ort>Bonn</ns1:ort><ns1:plz>53004</ns1:plz></ns1:details></ns1:getBankResponse></soapenv:Body></soapenv:Envelope>\r\n0\r\n";
 
-	private static String chunk1 = "7\r\naaaaaaa\r\n0\r\n";
-	private static String chunk1Body = "aaaaaaa";
+	private String chunk1 = "7\r\naaaaaaa\r\n0\r\n";
+	private String chunk1Body = "aaaaaaa";
 
-	private static String chunk2 = "2\r\naa\r\n3\r\nbbb\r\n0\r\n";
-	private static String chunk2Body = "aabbb";
+	private String chunk2 = "2\r\naa\r\n3\r\nbbb\r\n0\r\n";
+	private String chunk2Body = "aabbb";
 
-	private static AbstractBody unchunkedBody;
+	private AbstractBody unchunkedBody;
+	private AbstractBody unchunkedBody2;
 	
-	private static AbstractBody chunkedBody;
-	
-	private static AbstractBody unchunkedBody2;
 
 	@Before
 	public void setUp() throws Exception {
 		Arrays.fill(msg2, (byte) 20);
 		unchunkedBody = new Body(new ByteArrayInputStream(msg1), msg1.length);
 		unchunkedBody2 = new Body(new ByteArrayInputStream(msg2), msg2.length);
-		
-		chunkedBody = new ChunkedBody(new ByteArrayInputStream(msg1));
 	}
 
 	@Test
@@ -76,21 +74,21 @@ public class BodyTest {
 
 	@Test
 	public void testChunkedBodyContent() throws Exception {
-		AbstractBody body = new ChunkedBody(new ByteArrayInputStream(chunk.getBytes()));
+		AbstractBody body = new ChunkedInOutBody(new ByteArrayInputStream(chunk.getBytes()));
 		assertEquals(426, body.getContent().length);
 		assertEquals(426, body.getLength());
 	}
 	
 	@Test
 	public void testChunkedBodyContent2() throws Exception {
-		AbstractBody body = new ChunkedBody( new ByteArrayInputStream(chunk1.getBytes()));
+		AbstractBody body = new ChunkedInOutBody( new ByteArrayInputStream(chunk1.getBytes()));
 		assertTrue(Arrays.equals(body.getContent(), chunk1Body.getBytes()));
 
 	}
 	
 	@Test
 	public void testChunkedBodyConten3() throws Exception {
-		AbstractBody body = new ChunkedBody(new ByteArrayInputStream(chunk2.getBytes()));
+		AbstractBody body = new ChunkedInOutBody(new ByteArrayInputStream(chunk2.getBytes()));
 		StringBuffer buf = new StringBuffer();
 		for (int i = 0; i < body.getContent().length; i ++) {
 			buf.append((char)body.getContent()[i]);
@@ -100,9 +98,33 @@ public class BodyTest {
 	
 	@Test
 	public void testStringConstructor() throws Exception {
-		AbstractBody body = new Body("mmebrane Monitor is Cool");
+		AbstractBody body = new Body("mmebrane Monitor is Cool".getBytes(Constants.UTF_8_CHARSET));
 		assertEquals(24, body.getContent().length);
 		assertEquals(24, body.getLength());
+	}
+	
+	@Test
+	public void testPlainToChunked() throws Exception {
+		ChunkedOutBody chunked = new ChunkedOutBody(new ByteArrayInputStream(msg1));
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		chunked.write(baos);
+		
+		ChunkedInOutBody ciob = new ChunkedInOutBody(new ByteArrayInputStream(baos.toByteArray()));
+		assertTrue(Arrays.equals(ciob.getContent(), msg1));
+	}
+
+	@Test
+	public void testReChunked() throws Exception {
+		byte[] content = chunk.getBytes(Constants.UTF_8_CHARSET);
+		ChunkedInOutBody ciob = new ChunkedInOutBody(new ByteArrayInputStream(content));
+
+		ChunkedOutBody chunked = new ChunkedOutBody(new ByteArrayInputStream(ciob.getContent()));
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		chunked.write(baos);
+
+		ChunkedInOutBody ciob2 = new ChunkedInOutBody(new ByteArrayInputStream(baos.toByteArray()));
+		
+		assertTrue(Arrays.equals(ciob2.getContent(), ciob.getContent()));
 	}
 
 }

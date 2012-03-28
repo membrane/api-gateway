@@ -29,6 +29,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Body;
 
@@ -47,7 +48,7 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		nor.appendChild(getPassword(doc, header));		
 
 		header.getParentNode().removeChild(header);		
-		exchange.getRequest().setBody(new Body(DOM2String(doc)));
+		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(exchange.getRequest().getCharset())));
 		return Outcome.CONTINUE;
 	}
 

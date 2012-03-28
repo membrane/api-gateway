@@ -22,25 +22,14 @@ import com.predic8.membrane.core.Constants;
 
 public class Chunk {
 
-	private byte[] content;
+	private final byte[] content;
 	
 	public Chunk(byte[] content) {
 		this.content = content;
 	}
 
-	/**
-	 * Supposes UTF-8 encoding.
-	 */
-	public Chunk(String stringContent) {
-		content = stringContent.getBytes(Constants.UTF_8_CHARSET);
-	}
-	
 	public byte[] getContent() {
 		return content;
-	}
-	
-	public void setContent(byte[] content) {
-		this.content = content;
 	}
 	
 	public int getLength() {

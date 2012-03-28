@@ -29,10 +29,6 @@ public abstract class AbstractBody {
 	
 	protected List<Chunk> chunks = new ArrayList<Chunk>();
 
-	protected InputStream inputStream;
-
-	protected int length;
-
 	public void read() throws IOException {
 		if (read)
 			return;

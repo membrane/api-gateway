@@ -22,8 +22,8 @@ public class ErrorResponse extends Response {
 	public ErrorResponse(int statusCode, String statusMessage, String msg) {
 		setStatusCode(statusCode);
 		setStatusMessage(statusMessage);
-		setBody(new Body(getErrorPage(msg)));
-		setHeader(HttpUtil.createHeaders(MimeType.TEXT_HTML));
+		setBody(new Body(getErrorPage(msg).getBytes(Constants.UTF_8_CHARSET)));
+		setHeader(HttpUtil.createHeaders(MimeType.TEXT_HTML_UTF8));
 	}
 	
 	private String getErrorPage(String msg) {

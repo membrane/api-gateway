@@ -149,7 +149,7 @@ public class Request extends Message {
 			if (header.hasContentLength())
 				return header.getContentLength() == 0;
 
-			if (getBody() instanceof ChunkedBody) {
+			if (getBody() instanceof ChunkedInOutBody) {
 				return false;
 			}
 			return true;

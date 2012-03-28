@@ -28,6 +28,8 @@ import org.apache.commons.logging.LogFactory;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 
 public class CountInterceptor extends AbstractInterceptor {
@@ -43,7 +45,7 @@ public class CountInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log.info(""+ (++counter) +". request received.");
-		exc.setResponse(Response.ok().entity(getPage()).build());
+		exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_HTML_UTF8).body(getPage()).build());
 		return Outcome.ABORT;
 	}
 

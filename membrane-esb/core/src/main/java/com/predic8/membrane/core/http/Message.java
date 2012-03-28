@@ -99,7 +99,7 @@ public abstract class Message {
 		}
 		
 		if (header.isChunked()) {
-			body = new ChunkedBody(in);
+			body = new ChunkedInOutBody(in);
 			return;
 		}
 		

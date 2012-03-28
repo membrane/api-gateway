@@ -93,7 +93,10 @@ public class HttpUtil {
 
 		response.setHeader(createHeaders(MimeType.TEXT_XML_UTF8));
 
-		response.setBody(new Body("<html><head><title>Page Not Found</title></head><body>" + "The requested page could't be found!" + "</body></html>"));
+		response.setBody(new Body((
+				"<html><head><title>Page Not Found</title></head><body>" +
+				"The requested page could't be found!" + 
+				"</body></html>").getBytes(Constants.UTF_8_CHARSET)));
 		return response;
 	}
 
@@ -102,9 +105,9 @@ public class HttpUtil {
 		response.setStatusCode(400);
 		response.setStatusMessage("Bad request");
 
-		response.setHeader(createHeaders("text/xml;charset=utf-8"));
+		response.setHeader(createHeaders(MimeType.TEXT_XML_UTF8));
 
-		Body body = new Body(getFaultSOAPBody(message));
+		Body body = new Body(getFaultSOAPBody(message).getBytes(Constants.UTF_8_CHARSET));
 
 		response.setBody(body);
 		return response;
@@ -143,7 +146,7 @@ public class HttpUtil {
 		res.setStatusMessage(msg);
 		res.setHeader(createHeaders(contentType, headers));
 
-		if (body != null) res.setBody(new Body(body));
+		if (body != null) res.setBody(new Body(body.getBytes(Constants.UTF_8_CHARSET)));
 		return res;		
 	}
 	

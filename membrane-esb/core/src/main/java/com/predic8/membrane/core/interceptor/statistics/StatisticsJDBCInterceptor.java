@@ -15,6 +15,8 @@ package com.predic8.membrane.core.interceptor.statistics;
 
 import java.sql.*;
 
+import javax.mail.internet.ContentType;
+import javax.mail.internet.ParseException;
 import javax.sql.DataSource;
 import javax.xml.stream.*;
 
@@ -85,11 +87,18 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		JDBCUtil.setData(exc, stat, idGenerated);
 		stat.executeUpdate();	
 	}
-
+	
 	private boolean ignoreNotSoap(Exchange exc) {
-		return soapOnly && 
-			 !MimeType.APPLICATION_SOAP.equals(exc.getRequestContentType()) &&
-			 !MimeType.TEXT_XML.equals(exc.getRequestContentType());
+		ContentType ct;
+		try {
+			ct = exc.getRequest().getHeader().getContentTypeObject();
+		} catch (ParseException e) {
+			return false;
+		}
+		return soapOnly &&
+				ct != null &&
+				!ct.getBaseType().equalsIgnoreCase(MimeType.APPLICATION_SOAP) &&
+				!ct.getBaseType().equalsIgnoreCase(MimeType.TEXT_XML);
 	}
 
 	private boolean ignoreGetMethod(Exchange exc) {

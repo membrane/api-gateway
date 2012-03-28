@@ -23,29 +23,30 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.util.ByteUtil;
 
+/**
+ * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
+ * "Transfer-Encoding: chunked" is set on either in- or output.
+ * 
+ * The caller is responsible to adjust the header accordingly,
+ * e.g. the fields Transfer-Encoding and Content-Length.
+ */
 public class Body extends AbstractBody {
 
 	private static Log log = LogFactory.getLog(Body.class.getName());
+	private final InputStream inputStream;
+	private final int length;
 	
 	public Body(InputStream in, int length) throws IOException {
 		this.inputStream = in;
 		this.length = length;
 	}
 	
-	public Body(String body) {
-		chunks.add(new Chunk(body));
-		read = true; // because we do not have something to read
-		length = body.length();
-	}
-	
-	/**
-	 * the caller of this constructor is responsible to adjust the header accordingly
-	 * e.g. the fields Transfer-Encoding and Content-Length
-	 */
 	public Body(byte[] content) {
+		this.inputStream = null;
+		this.length = content.length;
+		this.read = true; // because we do not have something to read
 		chunks.clear();
 		chunks.add(new Chunk(content));
-		read = true;
 	}
 
 	@Override
@@ -70,6 +71,9 @@ public class Body extends AbstractBody {
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
 			out.write(buffer, 0, length);
+			// TODO: for improved performance and memory usage, do not retain a copy of
+			// the chunk, if not executing the monitor. Throw an exception in
+			// handleResponse(), if read() is called but was already called from the HttpClient
 			byte[] chunk = new byte[length];
 			System.arraycopy(buffer, 0, chunk, 0, length);
 			chunks.add(new Chunk(chunk));

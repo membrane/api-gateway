@@ -28,6 +28,7 @@ import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
@@ -509,11 +510,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	private Response respond(String page) throws Exception {
-		return createResponse(200, "OK", page, "text/html;charset=utf-8");
+		return createResponse(200, "OK", page, MimeType.TEXT_HTML_UTF8);
 	}
 
 	private Response redirect(String ctrl, String action, String query) throws Exception {
-		return createResponse(302, "Found", null, "text/html;charset=utf-8",
+		return createResponse(302, "Found", null, MimeType.TEXT_HTML_UTF8,
 				Header.LOCATION, AdminPageBuilder.createHRef(ctrl, action, query));
 	}
 
