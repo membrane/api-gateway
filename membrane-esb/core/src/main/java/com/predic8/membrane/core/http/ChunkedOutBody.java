@@ -18,11 +18,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.util.ByteUtil;
 
 /**
  * Reads a normal input steam (no chunking) and writes chunks ("Transfer-Encoding: chunked").
@@ -39,7 +39,7 @@ public class ChunkedOutBody extends ChunkedBody {
 
 	@Override
 	protected void readLocal() throws IOException {
-		chunks.add(new Chunk(IOUtils.toByteArray(inputStream)));
+		chunks.add(new Chunk(ByteUtil.getByteArrayData(inputStream)));
 	}
 
 	protected void writeNotRead(OutputStream out) throws IOException {
