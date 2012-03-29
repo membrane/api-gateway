@@ -7,7 +7,7 @@
 	<packaging>pom</packaging>
 
 	<modules>
-		<module>mebrane-esb</module>
+		<module>membrane-esb</module>
 		<module>membrane-monitor</module>
 	</modules>
 

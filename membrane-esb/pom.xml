@@ -6,6 +6,13 @@
 	<version>3.3.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
+    <parent>
+        <groupId>com.predic8</groupId>
+        <artifactId>membrane</artifactId>
+        <relativePath>../pom.xml</relativePath>
+        <version>3.3.2-SNAPSHOT</version>
+    </parent>
+
 	<modules>
 		<module>core</module>
 		<module>cli</module>
