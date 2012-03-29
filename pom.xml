@@ -1,0 +1,24 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.predic8</groupId>
+	<artifactId>membrane</artifactId>
+	<version>3.3.2-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<modules>
+		<module>mebrane-esb</module>
+		<module>membrane-monitor</module>
+	</modules>
+
+	<distributionManagement>
+		<repository>
+			<id>predic8-releases</id>
+			<url>http://repository.membrane-soa.org/content/repositories/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>predic8-snapshots</id>
+			<url>http://repository.membrane-soa.org/content/repositories/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+</project>
