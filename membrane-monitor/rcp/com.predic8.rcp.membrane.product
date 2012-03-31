@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Membrane Monitor" uid="membrane-win32" id="com.predic8.rcp.membrane.product" application="com.predic8.rcp.membrane.application" version="3.3.2.qualifier" useFeatures="false" includeLaunchers="true">
+<product name="Membrane Monitor" uid="membrane-win64" id="com.predic8.rcp.membrane.product" application="com.predic8.rcp.membrane.application" version="3.3.2.qualifier" useFeatures="false" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/com.predic8.rcp.membrane/icons/logo128.png"/>
@@ -263,6 +263,8 @@
       <plugin id="org.eclipse.core.runtime.compatibility.registry" fragment="true"/>
       <plugin id="org.eclipse.equinox.app"/>
       <plugin id="org.eclipse.equinox.common"/>
+      <plugin id="org.eclipse.equinox.launcher"/>
+      <plugin id="org.eclipse.equinox.launcher.cocoa.macosx.x86_64" fragment="true" os="macosx" ws="cocoa" arch="x86_64"/>
       <plugin id="org.eclipse.equinox.preferences"/>
       <plugin id="org.eclipse.equinox.registry"/>
       <plugin id="org.eclipse.help"/>
@@ -270,8 +272,14 @@
       <plugin id="org.eclipse.jface.databinding"/>
       <plugin id="org.eclipse.osgi"/>
       <plugin id="org.eclipse.swt"/>
-      <plugin id="org.eclipse.swt.win32.win32.x86" fragment="true"/>
+      <plugin id="org.eclipse.swt.gtk.linux.x86" fragment="true" os="linux" ws="gtk" arch="x86"/>
+      <plugin id="org.eclipse.swt.gtk.linux.x86_64" fragment="true" os="linux" ws="gtk" arch="x86_64"/>
+      <plugin id="org.eclipse.swt.cocoa.macosx.x86_64" fragment="true" os="macosx" ws="cocoa" arch="x86_64"/>
+      <plugin id="org.eclipse.swt.win32.win32.x86" fragment="true" os="win32" ws="win32" arch="x86"/>
+      <plugin id="org.eclipse.swt.win32.win32.x86_64" fragment="true" os="win32" ws="win32" arch="x86_64"/>
       <plugin id="org.eclipse.ui"/>
+      <plugin id="org.eclipse.ui.cocoa" fragment="true" os="macosx" ws="cocoa" arch="x86_64"/>
+      <plugin id="org.eclipse.ui.forms"/>
       <plugin id="org.eclipse.ui.workbench"/>
    </plugins>
 

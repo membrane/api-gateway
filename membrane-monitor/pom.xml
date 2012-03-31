@@ -9,11 +9,6 @@
 	<modules>
 		<module>plugin</module>
 		<module>rcp</module>
-		<module>platform-win32-x86</module>
-		<module>platform-win32-x86_64</module>
-		<module>platform-linux-x86</module>
-		<module>platform-linux-x86_64</module>
-		<module>platform-macosx-x86_64</module>
 	</modules>
 
     <properties>
@@ -69,6 +64,33 @@
 				<version>${tycho-version}</version>
 				<configuration>
 					<pomDependencies>consider</pomDependencies>
+					<environments>
+						<environment>
+							<os>linux</os>
+							<ws>gtk</ws>
+							<arch>x86</arch>
+						</environment>
+						<environment>
+							<os>linux</os>
+							<ws>gtk</ws>
+							<arch>x86_64</arch>
+						</environment>
+						<environment>
+							<os>win32</os>
+							<ws>win32</ws>
+							<arch>x86</arch>
+						</environment>
+						<environment>
+							<os>win32</os>
+							<ws>win32</ws>
+							<arch>x86_64</arch>
+						</environment>
+						<environment>
+							<os>macosx</os>
+							<ws>cocoa</ws>
+							<arch>x86_64</arch>
+						</environment>
+					</environments>
 				</configuration>
 			</plugin>
 		</plugins>
