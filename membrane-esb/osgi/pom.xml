@@ -80,15 +80,18 @@
 							org.apache.commons.logging,
 							org.apache.log4j
 						</_exportcontents>
+						<Bundle-ClassPath>{maven-dependencies}</Bundle-ClassPath>
+						<_failok>true</_failok>
+						<_nouses>true</_nouses>
 						<Bundle-Activator>com.predic8.membrane.osgi.CoreActivator</Bundle-Activator>
-						<Bundle-SymbolicName>com.predic8.membrane.core</Bundle-SymbolicName>
 
 						<Bundle-Vendor>predic8 GmbH</Bundle-Vendor>
 						<Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
-						<Require-Bundle>org.eclipse.core.runtime;bundle-version="3.5.0";visibility:=reexport</Require-Bundle>
+						<Require-Bundle>org.eclipse.core.runtime;bundle-version="3.7.0";visibility:=reexport</Require-Bundle>
 						<Eclipse-RegisterBuddy>org.apache.log4j</Eclipse-RegisterBuddy>
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
 						<Eclipse-BuddyPolicy>registered</Eclipse-BuddyPolicy>
+						<Import-Package></Import-Package>
 					</instructions>
 				</configuration>
 			</plugin>
