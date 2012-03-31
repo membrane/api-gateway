@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>membrane-monitor-rcp</artifactId>
+    <artifactId>com.predic8.rcp.membrane</artifactId>
     <packaging>eclipse-plugin</packaging>
 
     <parent>
@@ -15,7 +15,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.predic8</groupId>
-			<artifactId>membrane-monitor-plugin</artifactId>
+			<artifactId>com.predic8.plugin.membrane</artifactId>
 			<version>3.3.2-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
