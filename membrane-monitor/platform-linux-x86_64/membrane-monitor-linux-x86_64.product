@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="membrane-monitor" id="com.predic8.rcp.membrane.linux_product" application="com.predic8.rcp.membrane.application" version="3.2.2" useFeatures="false" includeLaunchers="true">
+<product name="membrane-monitor" uid="membrane-linux-x86_64" id="com.predic8.rcp.membrane.linux_product" application="com.predic8.rcp.membrane.application" version="3.3.2.qualifier" useFeatures="false" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/com.predic8.rcp.membrane/icons/logo32.png"/>
@@ -35,7 +35,6 @@
          <bmp/>
       </win>
    </launcher>
-
 
    <vm>
    </vm>
@@ -249,9 +248,10 @@
 
    <plugins>
       <plugin id="com.ibm.icu"/>
-      <plugin id="com.predic8.membrane.core"/>
+      <plugin id="com.predic8.membrane-esb-osgi"/>
       <plugin id="com.predic8.plugin.membrane"/>
       <plugin id="com.predic8.rcp.membrane"/>
+      <plugin id="javax.transaction" fragment="true"/>
       <plugin id="org.eclipse.core.commands"/>
       <plugin id="org.eclipse.core.contenttype"/>
       <plugin id="org.eclipse.core.databinding"/>
@@ -270,7 +270,7 @@
       <plugin id="org.eclipse.jface.databinding"/>
       <plugin id="org.eclipse.osgi"/>
       <plugin id="org.eclipse.swt"/>
-      <plugin id="org.eclipse.swt.gtk.linux.x86" fragment="true"/>
+      <plugin id="org.eclipse.swt.gtk.linux.x86_64" fragment="true"/>
       <plugin id="org.eclipse.ui"/>
       <plugin id="org.eclipse.ui.workbench"/>
    </plugins>

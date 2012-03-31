@@ -9,6 +9,11 @@
 	<modules>
 		<module>plugin</module>
 		<module>rcp</module>
+		<module>platform-win32-x86</module>
+		<module>platform-win32-x86_64</module>
+		<module>platform-linux-x86</module>
+		<module>platform-linux-x86_64</module>
+		<module>platform-macosx-x86_64</module>
 	</modules>
 
     <properties>
