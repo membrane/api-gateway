@@ -2,7 +2,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>membrane-esb-osgi</artifactId>
+    <artifactId>com.predic8.membrane.osgi</artifactId>
     <packaging>bundle</packaging>
 
     <parent>
@@ -80,10 +80,11 @@
 							org.apache.commons.logging,
 							org.apache.log4j
 						</_exportcontents>
-						<Bundle-ClassPath>{maven-dependencies}</Bundle-ClassPath>
+						<Bundle-ClassPath>.,{maven-dependencies}</Bundle-ClassPath>
 						<_failok>true</_failok>
 						<_nouses>true</_nouses>
 						<Bundle-Activator>com.predic8.membrane.osgi.CoreActivator</Bundle-Activator>
+						<Bundle-SymbolicName>com.predic8.membrane.osgi</Bundle-SymbolicName>
 
 						<Bundle-Vendor>predic8 GmbH</Bundle-Vendor>
 						<Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>

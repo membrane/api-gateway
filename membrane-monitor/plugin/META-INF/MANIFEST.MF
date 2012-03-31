@@ -6,7 +6,7 @@ Bundle-Version: 3.3.2.qualifier
 Bundle-Activator: com.predic8.plugin.membrane.MembraneUIPlugin
 Bundle-Vendor: predic8 GmbH
 Require-Bundle: org.eclipse.ui;bundle-version="3.7.0";visibility:=reexport,
- com.predic8.membrane-esb-osgi;bundle-version="3.3.2"
+ com.predic8.membrane.osgi;bundle-version="3.3.2"
 Bundle-ActivationPolicy: lazy
 Export-Package: com.predic8.plugin.membrane;uses:="org.eclipse.jface.resource,org.eclipse.ui.plugin,org.osgi.framework",
  com.predic8.plugin.membrane.actions,

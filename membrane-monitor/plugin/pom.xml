@@ -15,7 +15,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.predic8</groupId>
-			<artifactId>membrane-esb-osgi</artifactId>
+			<artifactId>com.predic8.membrane.osgi</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
