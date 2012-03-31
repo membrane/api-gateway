@@ -6,7 +6,7 @@ Bundle-Version: 3.2.2
 Bundle-Activator: com.predic8.plugin.membrane.MembraneUIPlugin
 Bundle-Vendor: predic8 GmbH
 Require-Bundle: org.eclipse.ui;bundle-version="3.6.0";visibility:=reexport,
- com.predic8.membrane.core;bundle-version="3.2.2";visibility:=reexport
+ com.predic8.membrane.core;visibility:=reexport
 Bundle-ActivationPolicy: lazy
 Export-Package: com.predic8.plugin.membrane;uses:="org.eclipse.jface.resource,org.eclipse.ui.plugin,org.osgi.framework",
  com.predic8.plugin.membrane.actions,

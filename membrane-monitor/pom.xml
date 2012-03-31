@@ -1,15 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.predic8</groupId>
 	<artifactId>membrane-monitor</artifactId>
+	<version>3.3.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
-
-    <parent>
-        <groupId>com.predic8</groupId>
-        <artifactId>membrane</artifactId>
-        <relativePath>../pom.xml</relativePath>
-        <version>3.3.2-SNAPSHOT</version>
-    </parent>
 
 	<modules>
 		<module>plugin</module>
@@ -21,6 +16,7 @@
         <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
         <javac.source>1.6</javac.source>
         <javac.target>1.6</javac.target>
+		<tycho-version>0.14.1</tycho-version>
     </properties>
 
 	<dependencyManagement>
@@ -38,6 +34,11 @@
 			<id>predic8-releases</id>
 			<url>http://repository.membrane-soa.org/content/groups/public</url>
 		</repository>
+		<repository>
+			<id>eclipse-indigo</id>
+			<layout>p2</layout>
+			<url>http://download.eclipse.org/releases/indigo</url>
+		</repository>
 	</repositories>
 
 	<build>
@@ -49,6 +50,20 @@
 				<configuration>
 					<source>1.6</source>
 					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>tycho-maven-plugin</artifactId>
+				<version>${tycho-version}</version>
+				<extensions>true</extensions>
+			</plugin>
+			<plugin>
+				<groupId>org.eclipse.tycho</groupId>
+				<artifactId>target-platform-configuration</artifactId>
+				<version>${tycho-version}</version>
+				<configuration>
+					<pomDependencies>consider</pomDependencies>
 				</configuration>
 			</plugin>
 		</plugins>
