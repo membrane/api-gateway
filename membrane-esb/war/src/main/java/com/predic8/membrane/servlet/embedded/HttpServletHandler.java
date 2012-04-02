@@ -117,9 +117,14 @@ class HttpServletHandler extends AbstractHttpHandler {
 
 	private Request createRequest() throws IOException {
 		Request srcReq = new Request();
+		String pathQuery = request.getRequestURI();
+		// remove context-path from path
+		String contextPath = request.getContextPath();
+		if (contextPath.length() > 0 && pathQuery.startsWith(contextPath))
+			pathQuery = pathQuery.substring(contextPath.length());
 		srcReq.create(
 				request.getMethod(), 
-				request.getRequestURI(), 
+				pathQuery, 
 				request.getProtocol(), 
 				createHeader(), 
 				request.getInputStream());
