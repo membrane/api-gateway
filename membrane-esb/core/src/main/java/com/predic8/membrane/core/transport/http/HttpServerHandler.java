@@ -69,7 +69,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
 
-				exchange.setTimeReqReceived(System.currentTimeMillis());
+				exchange.received();
 
 				if (srcReq.getHeader().getProxyConnection() != null) {
 					srcReq.getHeader().add(Header.CONNECTION,

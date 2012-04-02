@@ -54,21 +54,9 @@ class HttpServletHandler extends AbstractHttpHandler {
 	
 	public void run() {
 		try {
-			srcReq = new Request();
-			srcReq.create(
-					request.getMethod(), 
-					request.getRequestURI(), 
-					request.getProtocol(), 
-					createHeader(), 
-					request.getInputStream());
+			srcReq = createRequest();
 
-			exchange.setTimeReqReceived(System.currentTimeMillis());
-			
-			if (srcReq.getHeader().getProxyConnection() != null) {
-				srcReq.getHeader().add(Header.CONNECTION,
-						srcReq.getHeader().getProxyConnection());
-				srcReq.getHeader().removeFields(Header.PROXY_CONNECTION);
-			}
+			exchange.received();
 
 			try {
 				exchange.setSourceHostname(getTransport().getRouter().getDnsCache().getHostName(remoteAddr));
@@ -87,9 +75,8 @@ class HttpServletHandler extends AbstractHttpHandler {
 			writeResponse(exchange.getResponse());
 			exchange.setCompleted();
 			
-			boolean canKeepConnectionAlive = srcReq.isKeepAlive() && exchange.getResponse().isKeepAlive(); 
 			if (exchange.getTargetConnection() != null) {
-				if (canKeepConnectionAlive) {
+				if (canKeepConnectionAlive(srcReq)) {
 					exchange.getTargetConnection().release();
 				} else {
 					exchange.getTargetConnection().close();
@@ -108,6 +95,10 @@ class HttpServletHandler extends AbstractHttpHandler {
 		
 	}
 	
+	private boolean canKeepConnectionAlive(Request srcReq) {
+		return srcReq.isKeepAlive() && exchange.getResponse().isKeepAlive();
+	}
+	
 	@SuppressWarnings("deprecation")
 	protected void writeResponse(Response res) throws Exception {
 		response.setStatus(res.getStatusCode(), res.getStatusMessage());
@@ -124,6 +115,16 @@ class HttpServletHandler extends AbstractHttpHandler {
 		exchange.collectStatistics();
 	}
 
+	private Request createRequest() throws IOException {
+		Request srcReq = new Request();
+		srcReq.create(
+				request.getMethod(), 
+				request.getRequestURI(), 
+				request.getProtocol(), 
+				createHeader(), 
+				request.getInputStream());
+		return srcReq;
+	}
 
 	private Header createHeader() {
 		Header header = new Header();

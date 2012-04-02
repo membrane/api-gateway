@@ -256,6 +256,10 @@ public abstract class AbstractExchange {
 	public void setTimeReqReceived(long tReqReceived) {
 		this.tReqReceived = tReqReceived;
 	}
+	
+	public void received() {
+		setTimeReqReceived(System.currentTimeMillis());
+	}
 
 	public long getTimeResSent() {
 		return tResSent;

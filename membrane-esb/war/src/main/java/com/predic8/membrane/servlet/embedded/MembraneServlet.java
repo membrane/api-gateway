@@ -59,11 +59,6 @@ public class MembraneServlet extends HttpServlet {
 		return config.getInitParameter("proxiesXml");
 	}
 
-	
-	@Override
-	public void destroy() {
-	}
-	
 	@Override
 	protected void service(HttpServletRequest req, HttpServletResponse resp)
 			throws ServletException, IOException {
