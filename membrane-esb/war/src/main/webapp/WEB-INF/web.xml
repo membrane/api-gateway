@@ -18,6 +18,13 @@
     </listener>
     
     <!-- Method 2: embed Membrane as a servlet and map a path to it -->
+    <!-- 
+    	Note that it is advised to deploy this web application with a context path of "/", using
+    	virtual hosts, if necessary. Elsewise problems with forwarded web applications or services
+    	might occur, since the request path differs. If this servlet is deployed using a different
+    	context path, the context path prefix will be removed from any incoming request URIs before
+    	any further processing takes place.  
+    -->
     <servlet>
     	<servlet-name>membrane</servlet-name>
     	<servlet-class>com.predic8.membrane.servlet.embedded.MembraneServlet</servlet-class>
