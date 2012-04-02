@@ -44,19 +44,42 @@ import com.predic8.membrane.core.rules.StatisticCollector;
 
 public class AdminPageBuilder extends Html {
 	
-	Router router;
-	Map<String, String> params;
-	private StringWriter writer;
+	private final Router router;
+	private final Map<String, String> params;
+	private final StringWriter writer;
+	private final String relativeRootPath;
 
 	static public String createHRef(String ctrl, String action, String query) {
 		return "/admin/"+ctrl+(action!=null?"/"+action:"")+(query!=null?"?"+query:"");
 	}
 	
-	public AdminPageBuilder(StringWriter writer, Router router, Map<String, String> params) {
+	public AdminPageBuilder(StringWriter writer, Router router, String relativeRootPath, Map<String, String> params) {
 		super(writer);
 		this.router = router;
 		this.params = params;
 		this.writer = writer;
+		this.relativeRootPath = relativeRootPath;
+	}
+	
+	private String makeRelative(String path) {
+		if (path.startsWith("/"))
+			return relativeRootPath + path;
+		return path;
+	}
+	
+	@Override
+	public Html action(String value) {
+		return super.action(makeRelative(value));
+	}
+	
+	@Override
+	public Html src(String value) {
+		return super.src(makeRelative(value));
+	}
+	
+	@Override
+	public Html href(String value) {
+		return super.href(makeRelative(value));
 	}
 
 	public String createPage() throws Exception {
@@ -89,9 +112,9 @@ public class AdminPageBuilder extends Html {
 	protected void createHead() {
 		head();
 		    title().text(getTitle()).end();
-			style().attr("type", "text/css").text("@import '/admin/datatables/css/demo_table_jui.css';\n" +
-												  "@import '/admin/jquery-ui/css/custom-theme/jquery-ui-1.8.13.custom.css';"+
-					                              "@import '/admin/css/membrane.css';").end();	
+			style().attr("type", "text/css").text("@import '" + relativeRootPath + "/admin/datatables/css/demo_table_jui.css';\n" +
+												  "@import '" + relativeRootPath + "/admin/jquery-ui/css/custom-theme/jquery-ui-1.8.13.custom.css';"+
+					                              "@import '" + relativeRootPath + "/admin/css/membrane.css';").end();	
 			link().rel("stylesheet").href("/admin/formValidator/validationEngine.jquery.css").type("text/css");
 			script().src("/admin/jquery/jquery-1.6.1.js").end();
 			script().src("/admin/datatables/js/jquery.dataTables.min.js").end();
@@ -566,7 +589,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 	
-	protected void createServiceProxyVisualization(ServiceProxy proxy) {
+	protected void createServiceProxyVisualization(ServiceProxy proxy, String relativeRootPath) {
 		List<Interceptor> leftStack = new ArrayList<Interceptor>(), rightStack = new ArrayList<Interceptor>();
 		List<Interceptor> list = new ArrayList<Interceptor>(proxy.getInterceptors());
 		list.add(new AbstractInterceptor() { // fake interceptor so that both stacks end with the same size
@@ -619,11 +642,12 @@ public class AdminPageBuilder extends Html {
 				end();
 			end();
 			tr();
-				td().style("padding:0px;background:url(\"/admin/images/spv-top.png\");background-repeat:repeat-y;height:14px;").colspan("2");
+				td().style("padding:0px;background:url(\""+relativeRootPath+"/admin/images/spv-top.png\");"+
+					"background-repeat:repeat-y;height:14px;").colspan("2");
 				end();
 			end();
 			for (int i = 0; i < leftStack.size() - 1; i++) {
-				tr().style("background:url(\"/admin/images/spv-middle.png\");background-repeat:repeat-y;");
+				tr().style("background:url(\""+relativeRootPath+"/admin/images/spv-middle.png\");background-repeat:repeat-y;");
 					if (leftStack.get(i) == rightStack.get(i)) {
 						createInterceptorVisualization(leftStack.get(i), 2, "spv_l" + i);
 					} else {
@@ -632,7 +656,7 @@ public class AdminPageBuilder extends Html {
 					}
 				end();
 			}
-			tr().style("background:url(\"/admin/images/spv-bottom.png\");background-repeat:repeat-y;height:14px;");
+			tr().style("background:url(\""+relativeRootPath+"/admin/images/spv-bottom.png\");background-repeat:repeat-y;height:14px;");
 				td().style("padding:0px;").colspan("2");
 				end();
 			end();

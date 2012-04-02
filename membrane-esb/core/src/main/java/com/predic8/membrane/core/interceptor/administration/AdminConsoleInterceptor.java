@@ -19,22 +19,31 @@ import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.httpclient.util.URIUtil;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
 import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
 import com.predic8.membrane.core.interceptor.balancer.Node;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.rules.ProxyRuleKey;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 
@@ -58,23 +67,23 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/?(\\?.*)?")
-	public Response handleHomeRequest(Map<String, String> params) throws Exception {
-		return respond(getServiceProxyPage(params));
+	public Response handleHomeRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/proxy/?(\\?.*)?")
-	public Response handleProxyRequest(Map<String, String> params) throws Exception {
-		return respond(getProxyPage(params));
+	public Response handleProxyRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getProxyPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/service-proxy/show/?(\\?.*)?")
-	public Response handleServiceProxyShowRequest(final Map<String, String> params)
+	public Response handleServiceProxyShowRequest(final Map<String, String> params, final String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
 		
 		final ServiceProxy rule = (ServiceProxy) RuleUtil.findRuleByIdentifier(router,params.get("name"));
 		
-		return respond(new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 0;
@@ -92,7 +101,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 				createStatusCodesTable(rule.getStatisticsByStatusCodes());
 				h2().text("Configuration").end();
 				h3().text("Visualization").end();
-				createServiceProxyVisualization(rule);
+				createServiceProxyVisualization(rule, relativeRootPath);
 				h3().text("XML").end();
 				String xml = "";
 				try {
@@ -108,13 +117,13 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/proxy/show/?(\\?.*)?")
-	public Response handlePruleShowRequest(final Map<String, String> params)
+	public Response handlePruleShowRequest(final Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
 
 		final ProxyRule rule = (ProxyRule) RuleUtil.findRuleByIdentifier(router,params.get("name"));
 		
-		return respond(new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 1;
@@ -141,7 +150,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/service-proxy/save/?(\\?.*)?")
-	public Response handleFruleSaveRequest(Map<String, String> params) throws Exception {
+	public Response handleFruleSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		logAddFwdRuleParams(params);
 		
 		Rule r = new ServiceProxy(new ServiceProxyKey("*",
@@ -150,11 +159,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		r.setName(params.get("name"));
 		router.getRuleManager().addProxyIfNew(r);
 		
-		return respond(getServiceProxyPage(params));
+		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 	
 	@Mapping("/admin/proxy/save/?(\\?.*)?")
-	public Response handlePruleSaveRequest(Map<String, String> params) throws Exception {
+	public Response handlePruleSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		log.debug("adding proxy rule");
 		log.debug("name: " + params.get("name"));
 		log.debug("port: " + params.get("port"));
@@ -162,30 +171,30 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		Rule r = new ProxyRule(new ProxyRuleKey(Integer.parseInt(params.get("port"))));
 		r.setName(params.get("name"));
 		router.getRuleManager().addProxyIfNew(r);
-		return respond(getProxyPage(params));
+		return respond(getProxyPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/service-proxy/delete/?(\\?.*)?")
-	public Response handleServiceProxyDeleteRequest(Map<String, String> params)
+	public Response handleServiceProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 			router.getRuleManager().removeRule(
 					RuleUtil.findRuleByIdentifier(router, params.get("name")));
-			return respond(getServiceProxyPage(params));
+			return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/proxy/delete/?(\\?.*)?")
-	public Response handleProxyDeleteRequest(Map<String, String> params)
+	public Response handleProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 			router.getRuleManager().removeRule(
 					RuleUtil.findRuleByIdentifier(router, params.get("name")));
-			return respond(getProxyPage(params));
+			return respond(getProxyPage(params, relativeRootPath));
 	}
 	
 	@Mapping("/admin/transport/?(\\?.*)?")
-	public Response handleTransportRequest(Map<String, String> params)
+	public Response handleTransportRequest(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return respond(new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 2;
@@ -203,10 +212,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/system/?(\\?.*)?")
-	public Response handleSystemRequest(final Map<String, String> params)
+	public Response handleSystemRequest(final Map<String, String> params, String relativeRootPath)
    	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return respond(new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 3;
@@ -225,36 +234,36 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/balancers/?(\\?.*)?")
-	public Response handleBalancersRequest(Map<String, String> params) throws Exception {
-		return respond(getBalancersPage(params));
+	public Response handleBalancersRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getBalancersPage(params, relativeRootPath));
 	}
 	
 	@Mapping("/admin/clusters/?(\\?.*)?")
-	public Response handleClustersRequest(Map<String, String> params) throws Exception {
-		return respond(getClustersPage(params));
+	public Response handleClustersRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getClustersPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/clusters/show/?(\\?.*)?")
-	public Response handleClustersShowRequest(Map<String, String> params) throws Exception {
-		return respond(getClusterPage(params));
+	public Response handleClustersShowRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getClusterPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/clusters/save/?(\\?.*)?")
-	public Response handleClustersSaveRequest(Map<String, String> params) throws Exception {
+	public Response handleClustersSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		log.debug("adding cluster");
 		log.debug("balancer: " + getBalancerParam(params));
 		log.debug("name: " + params.get("name"));
 		
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).addCluster(params.get("name"));
 		
-		return respond(getClustersPage(params));
+		return respond(getClustersPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/node/show/?(\\?.*)?")
-	public Response handleNodeShowRequest(final Map<String, String> params)
+	public Response handleNodeShowRequest(final Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return respond(new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 4;
@@ -285,10 +294,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/node/sessions/?(\\?.*)?")
-	public Response handleNodeSessionsRequest(final Map<String, String> params)
+	public Response handleNodeSessionsRequest(final Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return respond(new AdminPageBuilder(writer, router, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 4;
@@ -307,7 +316,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 	
 	@Mapping("/admin/node/save/?(\\?.*)?")
-	public Response handleNodeSaveRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		log.debug("adding node");
 		log.debug("balancer: " + getBalancerParam(params));
 		log.debug("cluster: " + params.get("cluster"));
@@ -318,61 +327,61 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 				params.get("cluster"),
 				params.get("host"), 
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster", params.get("cluster")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster", params.get("cluster")), relativeRootPath);
 	}
 
 	@Mapping("/admin/node/up/?(\\?.*)?")
-	public Response handleNodeUpRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeUpRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).up(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
 	}
 
 	@Mapping("/admin/node/takeout/?(\\?.*)?")
-	public Response handleNodeTakeoutRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeTakeoutRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).takeout(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
 	}
 
 	@Mapping("/admin/node/down/?(\\?.*)?")
-	public Response handleNodeDownRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeDownRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).down(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
 	}
 
 	@Mapping("/admin/node/delete/?(\\?.*)?")
-	public Response handleNodeDeleteRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeDeleteRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).removeNode(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
-		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")));
+		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
 	}	
 
 	@Mapping("/admin/node/reset/?(\\?.*)?")
-	public Response handleNodeResetRequest(Map<String, String> params) throws Exception {
+	public Response handleNodeResetRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).getNode(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port"))).clearCounter();
 		return redirect("node","show",createQueryString("balancer", getBalancerParam(params),
 														"cluster",params.get("cluster"),
 														"host",params.get("host"),
-														"port",params.get("port")));
+														"port",params.get("port")), relativeRootPath);
 	}	
 	
 	@Mapping("/admin/statistics")
-	public Response handleStatisticsRequest(Map<String, String> params) throws Exception {
-		return respond(getStatisticsPage(params));
+	public Response handleStatisticsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getStatisticsPage(params, relativeRootPath));
 	}
 	
-	private String getServiceProxyPage(Map<String, String> params)
+	private String getServiceProxyPage(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 0;
@@ -388,10 +397,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getProxyPage(Map<String, String> params)
+	private String getProxyPage(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 1;
@@ -407,10 +416,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getClusterPage(final Map<String, String> params)
+	private String getClusterPage(final Map<String, String> params, String relativeRootPath)
   	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			protected void createMetaElements() {
 				createMeta("refresh", "5");				
 			};
@@ -431,10 +440,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 	
-	private String getClustersPage(final Map<String, String> params)
+	private String getClustersPage(final Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
 		
 			@Override
 			protected int getSelectedTab() {
@@ -457,10 +466,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getBalancersPage(final Map<String, String> params)
+	private String getBalancersPage(final Map<String, String> params, String relativeRootPath)
 			  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
 				
 			@Override
 			protected int getSelectedTab() {
@@ -476,10 +485,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getStatisticsPage(Map<String, String> params)
+	private String getStatisticsPage(Map<String, String> params, String relativeRootPath)
 			  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
 			@Override
 			protected int getSelectedTab() {
 				return 5;
@@ -495,10 +504,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome dipatchRequest(Exchange exc) throws Exception {
+		String pathQuery = URIUtil.getPathQuery(exc.getDestinations().get(0));
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
-			if ( a != null && Pattern.matches(a.value(), exc.getOriginalRequestUri())) {
-				exc.setResponse((Response)m.invoke(this, new Object[] {getParams(exc)}));
+			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
+				exc.setResponse((Response)m.invoke(this, new Object[] { getParams(exc), getRelativeRootPath(pathQuery) }));
 				return Outcome.ABORT;
 			}
 		}
@@ -508,14 +518,40 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	private Map<String, String> getParams(Exchange exc) throws Exception {
 		return URLParamUtil.getParams(exc);
 	}
+	
+	/**
+	 * For example, returns "../.." for the input "/admin/clusters/".
+	 */
+	private String getRelativeRootPath(String pathQuery) throws MalformedURLException {
+		String path = URIUtil.getPath(pathQuery);
+		// count '/'s
+		int depth = 0;
+		for (int i = 0; i < path.length(); i++)
+			if (path.charAt(i) == '/')
+				depth++;
+		// remove leading '/'
+		if (depth > 0)
+			depth--;
+		// build relative path for depth
+		StringBuilder relativeRootPath = new StringBuilder();
+		if (depth == 0)
+			relativeRootPath.append(".");
+		else
+			for (; depth>0; depth--)
+				if (depth == 1)
+					relativeRootPath.append("..");
+				else
+					relativeRootPath.append("../");
+		return relativeRootPath.toString();
+	}
 
 	private Response respond(String page) throws Exception {
 		return createResponse(200, "OK", page, MimeType.TEXT_HTML_UTF8);
 	}
 
-	private Response redirect(String ctrl, String action, String query) throws Exception {
+	private Response redirect(String ctrl, String action, String query, String relativeRootPath) throws Exception {
 		return createResponse(302, "Found", null, MimeType.TEXT_HTML_UTF8,
-				Header.LOCATION, AdminPageBuilder.createHRef(ctrl, action, query));
+				Header.LOCATION, relativeRootPath + AdminPageBuilder.createHRef(ctrl, action, query));
 	}
 
 	private int getPortParam(Map<String, String> params) {
