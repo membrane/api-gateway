@@ -4,7 +4,7 @@
 <product name="Membrane Monitor" uid="membrane-win64" id="com.predic8.rcp.membrane.product" application="com.predic8.rcp.membrane.application" version="3.3.2.qualifier" useFeatures="false" includeLaunchers="true">
 
    <aboutInfo>
-      <image path="/com.predic8.rcp.membrane/icons/logo128.png"/>
+      <image path="rcp/icons/logo128.png"/>
       <text>
          Membrane Monitor Version 3.2.2
   Copyright @  2004-2011 by predic8 GmbH
@@ -23,15 +23,15 @@
       <vmArgsMac>-XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts</vmArgsMac>
    </launcherArgs>
 
-   <windowImages i32="/com.predic8.rcp.membrane/icons/logo32.png"/>
+   <windowImages i32="rcp/icons/logo32.png"/>
 
    <splash
       location="com.predic8.rcp.membrane" />
    <launcher name="membrane-monitor">
-      <linux icon="/com.predic8.rcp.membrane/icons/alt_launcher.xpm"/>
+      <linux icon="rcp/icons/alt_launcher.xpm"/>
       <solaris/>
       <win useIco="true">
-         <ico path="/com.predic8.rcp.membrane/icons/alt_launcher.ico"/>
+         <ico path="rcp/icons/alt_launcher.ico"/>
          <bmp/>
       </win>
    </launcher>
