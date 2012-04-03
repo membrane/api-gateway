@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Membrane Monitor" uid="membrane-win64" id="com.predic8.rcp.membrane.product" application="com.predic8.rcp.membrane.application" version="3.3.2.qualifier" useFeatures="false" includeLaunchers="true">
+<product name="Membrane Monitor" uid="membrane-win64" id="com.predic8.rcp.membrane.product" application="com.predic8.rcp.membrane.application" version="3.3.3.qualifier" useFeatures="false" includeLaunchers="true">
 
    <aboutInfo>
       <image path="rcp/icons/logo128.png"/>
