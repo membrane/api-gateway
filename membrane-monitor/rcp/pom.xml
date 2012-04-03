@@ -11,6 +11,10 @@
         <relativePath>../pom.xml</relativePath>
         <version>3.3.2-SNAPSHOT</version>
     </parent>
+
+	<properties>
+		<generatedBuildProperties>build.properties</generatedBuildProperties>
+	</properties>
     
 	<dependencies>
 		<dependency>
