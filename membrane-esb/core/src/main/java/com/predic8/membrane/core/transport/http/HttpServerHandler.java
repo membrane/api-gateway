@@ -63,9 +63,16 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	}
 	
 	public void run() {
+		Connection boundConnection = null; // see Request.isBindTargetConnectionToIncoming()
 		try {
 			updateThreadName(true);
 			while (true) {
+				boolean rebindConnection = false;
+				if (boundConnection != null) {
+					exchange.setTargetConnection(boundConnection);
+					rebindConnection = true;
+					boundConnection = null;
+				}
 				srcReq = new Request();
 				srcReq.read(srcIn, true);
 
@@ -86,7 +93,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 				boolean canKeepConnectionAlive = srcReq.isKeepAlive() && exchange.getResponse().isKeepAlive(); 
 				if (exchange.getTargetConnection() != null) {
 					if (canKeepConnectionAlive) {
-						exchange.getTargetConnection().release();
+						if (rebindConnection || srcReq.isBindTargetConnectionToIncoming())
+							boundConnection = exchange.getTargetConnection();
+						else
+							exchange.getTargetConnection().release();
 					} else {
 						exchange.getTargetConnection().close();
 					}
@@ -119,6 +129,13 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		}
 
 		finally {
+			if (boundConnection != null)
+				try {
+					boundConnection.close();
+				} catch (IOException e) {
+					log.debug("Closing bound connection.", e);
+				}
+			
 			if (srcReq.isCONNECTRequest())
 				return;
 

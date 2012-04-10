@@ -72,7 +72,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	 * The "Basic" authentication scheme defined in RFC 2617 does not properly define how to treat non-ASCII characters.
 	 */
 	private String getAuthorizationHeaderDecoded(Exchange exc) throws Exception {
-		String value = exc.getRequest().getHeader().getFirstValue("Authorization");
+		String value = exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION);
 		return new String(Base64.decodeBase64(value.substring(6).getBytes(Constants.UTF_8_CHARSET)), Constants.UTF_8_CHARSET);
 	}
 

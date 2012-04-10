@@ -124,8 +124,16 @@ public class HttpClient {
 			try {
 				log.debug("try # " + counter + " to " + dest);
 				target = init(exc, dest);
-				con = conMgr.getConnection(InetAddress.getByName(target.host), target.port, exc.getRule().getLocalHost(), getOutboundSSLContext(exc));
-				exc.setTargetConnection(con);
+				InetAddress targetAddr = InetAddress.getByName(target.host);
+				if (counter == 0) {
+					con = exc.getTargetConnection();
+					if (con != null && !con.isSame(targetAddr, target.port))
+						con = null;
+				}
+				if (con == null) {
+					con = conMgr.getConnection(targetAddr, target.port, exc.getRule().getLocalHost(), getOutboundSSLContext(exc));
+					exc.setTargetConnection(con);
+				}
 				Response response = doCall(exc, con);
 				boolean retry = 500 <= response.getStatusCode() && response.getStatusCode() < 600; 
 				if (!retry || counter == maxRetries-1)

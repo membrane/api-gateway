@@ -57,6 +57,8 @@ public class Header {
 
 	public static final String LOCATION = "Location";
 
+	public static final String AUTHORIZATION = "Authorization";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";

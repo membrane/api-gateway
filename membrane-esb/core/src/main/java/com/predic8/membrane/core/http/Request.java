@@ -158,4 +158,14 @@ public class Request extends Message {
 		return super.isBodyEmpty();
 	}
 
+	/**
+	 * NTLM and SPNEGO authentication schemes authorize HTTP connections, not single requests.
+	 * 
+	 * We therefore have to "bind" the targetConnection to the incoming connection to ensure
+	 * the same targetConnection is used again for further requests.
+	 */
+	public boolean isBindTargetConnectionToIncoming() {
+		String auth = header.getFirstValue(Header.AUTHORIZATION);
+		return auth != null && (auth.startsWith("NTLM") || auth.startsWith("Negotiate"));
+	}
 }
