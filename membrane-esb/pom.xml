@@ -11,6 +11,7 @@
 		<module>cli</module>
 		<module>osgi</module>
 		<module>osgi-extender</module>
+		<module>karaf-deployer</module>
 		<module>war</module>
 		<module>sar</module>
 		<module>test</module>
