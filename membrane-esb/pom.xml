@@ -10,6 +10,7 @@
 		<module>core</module>
 		<module>cli</module>
 		<module>osgi</module>
+		<module>osgi-extender</module>
 		<module>war</module>
 		<module>sar</module>
 		<module>test</module>

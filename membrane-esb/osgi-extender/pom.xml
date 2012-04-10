@@ -1,0 +1,83 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>com.predic8.membrane.osgi.extender</artifactId>
+    <name>Membrane OSGi Extender</name>
+	<packaging>bundle</packaging>
+
+    <parent>
+        <groupId>com.predic8</groupId>
+        <artifactId>membrane-esb</artifactId>
+        <relativePath>../pom.xml</relativePath>
+        <version>3.3.5-SNAPSHOT</version>
+    </parent>
+
+	<dependencies>  
+		<dependency>
+			<groupId>org.apache.felix</groupId>
+			<artifactId>org.osgi.compendium</artifactId>
+			<version>1.0.1</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.predic8</groupId>
+			<artifactId>membrane-esb-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+		</dependency>
+	</dependencies>
+	  
+	<build>
+        <pluginManagement>
+    	    <plugins>
+				<plugin>
+					<groupId>org.apache.felix</groupId>
+					<artifactId>maven-bundle-plugin</artifactId>
+					<extensions>true</extensions>
+				</plugin>
+	        </plugins>
+        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <configuration>
+                    <instructions>
+                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+                        <Bundle-Activator>com.predic8.membrane.osgi.extender.Activator</Bundle-Activator>
+						<Embed-Transitive>true</Embed-Transitive>
+						<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+						<_exportcontents>
+							!com.predic8.membrane.core.interceptor.administration.docBase.*,
+							com.googlecode.jatl,com.predic8.*,
+						</_exportcontents>
+						<Bundle-ClassPath>.,{maven-dependencies}</Bundle-ClassPath>
+						<_failok>true</_failok>
+						<_nouses>true</_nouses>
+                        <Import-Package>
+                            org.apache.felix.service.command;version=0.10.0;status=provisional;mandatory:=status,
+                            org.osgi.framework,
+                            org.slf4j,
+                            org.xml.*,
+                            !javax.ejb,
+                            !javax.faces.*,
+                            !javax.inject,
+                            !javax.interceptor,
+                            !javax.persistence.spi,
+                            !javax.portlet,
+                            !javax.validation,
+                            !javax.validation.*,
+                            !javax.xml.rpc,
+                            !javax.xml.rpc.*,
+                            javax.*,
+                            org.w3c.*
+                        </Import-Package>
+						<Bundle-Vendor>predic8 GmbH</Bundle-Vendor>
+					</instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+	</build>
+	
+</project>
