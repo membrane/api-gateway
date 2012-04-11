@@ -1,0 +1,51 @@
+
+  Membrane Builing Instructions
+==================================================================
+1. Install JDK 1.6 or higher.
+2. Install Maven 3.
+3. Run "mvn install" in \membrane-esb\ .
+4. Run "mvn install" in \membrane-monitor\ .
+
+(Putting both Maven modules into one reactor build is not possible
+because maven-bundle-plugin and tycho-maven-plugin are incompatible
+with project references between projects using them.)
+
+
+
+
+  Release Instructions
+==================================================================
+
+Also see https://predic8.com/svn/membrane/monitor/branches/3.2.X/com.predic8.membrane.core/doc/building-a-distribution.txt .
+The detailed test instructions, publication and homepage changes are to be integrated.
+
+0. Ensure that your ~/.m2/settings.xml authorizes you to push 
+   packages into the Maven repository at
+   http://repository.membrane-soa.org . 
+
+1. Run all tests locally ("mvn integration-test" in both
+   membrane-esb and membrane-monitor).
+   
+2. Increment Version, for example from 3.3.5-SNAPSHOT to 3.3.5:
+
+   a. In all pom.xml files:
+      In every pom.xml exactly one <version>-Element is to be
+      changed: in the two root pom.xml files (membrane-esb\pom.xml
+      and membrane-monitor\pom.xml) //project/version is to be
+      changed; in all other pom.xml files //project/parent/version
+      is to be changed.
+   
+   b. In all membrane-monitor/*/META-INF/MANIFEST.MF files,
+      change "Bundle-Version". Note that the "-SNAPSHOT" suffix of
+      the Maven version translates into the suffix ".qualifier"
+      here.
+
+3. Run "mvn deploy -DskipTests" first in \membrane-esb\, then in
+   \membrane-monitor\ . (Note that this deployment can only
+   be done once for non-SNAPSHOT releases.)   
+
+4. Increment Version again (repeat step 2), now for example from
+   3.3.5 to 3.3.6-SNAPSHOT.
+
+5. Check in your changes to the pom.xml and MANIFEST.MF files.
+ 
