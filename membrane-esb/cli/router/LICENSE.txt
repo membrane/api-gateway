@@ -1,4 +1,119 @@
 
+Membrane ESB
+---------------------------------------------------------------------------
+Membrane ESB is covered by the Apache License Version 2.0. The
+license agreement can be found on
+http://www.apache.org/licenses/LICENSE-2.0.html
+and is also included below.
+
+Dependencies
+---------------------------------------------------------------------------
+
+Common Development and Distribution License (CDDL) Version 1.0
+-------------------------------------------------
+JavaBeans(TM) Activation Framework Specification
+JavaMail(TM) API Design Specification
+Java Common Annotations API
+SAAJ API
+SAAJ Standard Implementation
+javax.annotation API
+JSR181 Web Services Metadata
+XML Stream Buffer
+StAX API
+Sun Typed XML Writer
+Sun istack
+Glassfish gmbal
+JAXB (JSR 222) reference implementation - Schema compiler
+
+
+Common Development and Distribution License (CDDL) Version 1.1
+-------------------------------------------------
+JAX-WS API
+JAX-B API
+
+Dual Licensing: Common Development and Distribution License
+(CDDL) Version 1.1 or GNU General Public License version 2
+-------------------------------------------------
+JAX-WS Reference Implementation
+JAX-B Reference Implementation
+StAX-Ex
+Mimepull
+Sun WS-Policy
+
+Apache License, Version 2.0
+-------------------------------------------------
+Apache Commons CLI
+Apache Jakarta Commons Codec
+Apache Commons DBCP
+Apache Jakarta HttpClient
+Apache HttpClient
+Apache Commons Lang
+Apache Commons Logging
+Apache Commons Pool
+Apache Commons IO
+Codehaus Groovy
+Jackson JSON Processor
+Apache Log4J
+Spring libraries
+Java Anti-Template Language
+Google libphonenumber
+Joda Time
+Parboiled
+Predic8 SOA Model
+Predic8 XML Beautifier
+Google Guava
+Apache Commons FileUpload
+Apache Derby
+Woodstox
+Apache XML Resolver
+
+Apache Software License, Version 1.1
+-------------------------------------------------
+Apache Commons Discovery
+
+BSD License
+-------------------------------------------------
+ANTLR
+ASM
+JUnit
+XML Unit
+StAX2 API
+
+New BSD License
+-------------------------------------------------
+JSR305 Reference Implementation
+
+
+see JSR223-LICENSE.txt within Groovy distribution
+-------------------------------------------------
+JSR223 in Groovy
+
+Public Domain
+-------------------------------------------------
+AOP Alliance Library
+
+GNU Lesser General Public License Version 3
+-------------------------------------------------
+JSON Schema Validator org.eel.kitchen
+
+Dual Licensing: Eclipse Public License 1.0
+or GNU Lesser General Public License version 2.1
+-------------------------------------------------
+QOS Logback
+
+MIT License
+-------------------------------------------------
+SLF4J
+
+Mozilla Public License
+-------------------------------------------------
+Mozilla Rhino
+
+
+
+
+
+---------------------------------------------------------------------------
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/

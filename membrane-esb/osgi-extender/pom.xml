@@ -75,7 +75,7 @@
 						<_failok>true</_failok>
 						<_nouses>true</_nouses>
                         <Import-Package>
-                            org.apache.felix.service.command;version=0.10.0;status=provisional;mandatory:=status,
+                            org.apache.felix.service.command;version=0.10.0;status=provisional,
                             org.osgi.framework,
                             org.slf4j,
                             org.xml.*,
