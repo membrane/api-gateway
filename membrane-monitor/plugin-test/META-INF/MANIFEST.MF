@@ -5,6 +5,7 @@ Bundle-SymbolicName: com.predic8.plugin.membrane.tests
 Bundle-Version: 3.3.5.qualifier
 Bundle-Activator: com.predic8.plugin.membrane.tests.Activator
 Bundle-Vendor: predic8 GmbH
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0
 Require-Bundle: org.junit,
  com.predic8.plugin.membrane,
  org.eclipse.core.runtime;bundle-version="3.7.0",

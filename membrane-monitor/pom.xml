@@ -1,10 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+   Copyright 2012, predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+ -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.predic8</groupId>
 	<artifactId>membrane-monitor</artifactId>
 	<version>3.3.5-SNAPSHOT</version>
 	<packaging>pom</packaging>
+
+    <developers>
+    	<developer>
+    		<organization>predic8 GmbH</organization>
+    		<organizationUrl>http://predic8.com/</organizationUrl>
+    		<email>info@predic8.de</email>
+    	</developer>
+    </developers>
+    
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    
+	<scm>
+		<connection>scm:svn:https://predic8.com/svn/membrane/monitor/</connection>
+		<tag>HEAD</tag>
+	</scm>
+	
+	<mailingLists>
+		<mailingList>
+			<name>membrane-monitor</name>
+			<subscribe>http://groups.google.com/group/membrane-monitor</subscribe>
+		</mailingList>
+	</mailingLists>
 
 	<modules>
 		<module>plugin</module>
