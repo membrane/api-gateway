@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.predic8</groupId>
 	<artifactId>membrane-monitor</artifactId>
-	<version>3.3.3-SNAPSHOT</version>
+	<version>3.3.5-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<modules>
@@ -25,7 +25,12 @@
 			<dependency>
 				<groupId>com.predic8</groupId>
 				<artifactId>com.predic8.membrane.osgi</artifactId>
-				<version>3.3.3-SNAPSHOT</version>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.predic8</groupId>
+				<artifactId>com.predic8.plugin.membrane</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

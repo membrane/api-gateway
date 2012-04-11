@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Membrane Plugin
 Bundle-SymbolicName: com.predic8.plugin.membrane;singleton:=true
-Bundle-Version: 3.3.3.qualifier
+Bundle-Version: 3.3.5.qualifier
 Bundle-Activator: com.predic8.plugin.membrane.MembraneUIPlugin
 Bundle-Vendor: predic8 GmbH
 Require-Bundle: org.eclipse.ui;bundle-version="3.7.0";visibility:=reexport,

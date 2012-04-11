@@ -28,12 +28,8 @@ The detailed test instructions, publication and homepage changes are to be integ
    
 2. Increment Version, for example from 3.3.5-SNAPSHOT to 3.3.5:
 
-   a. In all pom.xml files:
-      In every pom.xml exactly one <version>-Element is to be
-      changed: in the two root pom.xml files (membrane-esb\pom.xml
-      and membrane-monitor\pom.xml) //project/version is to be
-      changed; in all other pom.xml files //project/parent/version
-      is to be changed.
+   a. In all pom.xml files: This affects either //project/version
+      or //project/parent/version (which ever exists).
    
    b. In all membrane-monitor/*/META-INF/MANIFEST.MF files,
       change "Bundle-Version". Note that the "-SNAPSHOT" suffix of
