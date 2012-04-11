@@ -8,6 +8,7 @@
 
 	<modules>
 		<module>plugin</module>
+		<module>plugin-test</module>
 		<module>rcp</module>
 	</modules>
 

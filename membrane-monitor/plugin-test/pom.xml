@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>com.predic8.plugin.membrane.tests</artifactId>
+    <packaging>eclipse-plugin</packaging>
+
+    <parent>
+        <groupId>com.predic8</groupId>
+        <artifactId>membrane-monitor</artifactId>
+        <relativePath>../pom.xml</relativePath>
+        <version>3.3.3-SNAPSHOT</version>
+    </parent>
+    
+	<dependencies>
+		<dependency>
+			<groupId>com.predic8</groupId>
+			<artifactId>com.predic8.membrane.osgi</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.5</version>
+			<scope>test</scope>
+		</dependency>
+		
+	</dependencies>
+
+</project>
