@@ -18,6 +18,7 @@ import static org.apache.commons.io.FileUtils.readFileToString;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -35,6 +36,26 @@ public class SOAPCustomValidationTest extends DistributionExtractingTestcase {
 		File baseDir = getExampleDir("validation" + File.separator + "soap-custom");
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
+			File buildXML = new File(baseDir, "build.xml");
+
+			// remove <exec...</exec> from build.xml
+			String s = Pattern.compile("<exec.*</exec>", Pattern.DOTALL).matcher(FileUtils.readFileToString(buildXML)).replaceAll("");
+			FileUtils.writeStringToFile(buildXML, s);
+
+			File classes = new File(baseDir, "build" + File.separator + "classes");
+			classes.mkdirs();
+			File sources = new File(baseDir, "src");
+			sources.mkdirs();
+
+			// run "wsimport" generating java sources
+			Assert.assertTrue(new com.sun.tools.ws.wscompile.WsimportTool(System.out).run(new String[] {
+					"-quiet",
+					"-Xnocompile",
+					"http://www.predic8.com:8080/material/ArticleService?wsdl",
+					"-s",
+					sources.getAbsolutePath()
+			}));
+			
 			assertAntRunProducesException(baseDir, true);
 			
 			File source = new File(baseDir, "src" + File.separator + "ArticleClient.java");
