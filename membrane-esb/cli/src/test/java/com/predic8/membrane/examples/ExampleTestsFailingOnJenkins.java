@@ -32,6 +32,6 @@ import com.predic8.membrane.examples.tests.validation.SOAPCustomValidationTest;
 	QuickstartRESTTest.class,
 	REST2SOAPJSONTest.class,
 
-	SOAPCustomValidationTest.class,
+	SOAPCustomValidationTest.class
 })
 public class ExampleTestsFailingOnJenkins {}
