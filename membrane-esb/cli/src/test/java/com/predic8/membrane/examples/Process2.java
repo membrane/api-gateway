@@ -148,8 +148,8 @@ public class Process2 {
 			errorReader.start();
 		}
 		
-		public int waitFor() throws InterruptedException {
-			int res = p.waitFor();
+		public int waitFor(long timeout) throws InterruptedException {
+			int res = Process2.waitFor(p, timeout);
 			inputReader.interrupt();
 			errorReader.interrupt();
 			return res;
@@ -283,17 +283,17 @@ public class Process2 {
 		Process killer = pb.start();
 		ProcessStuff killerStuff = new ProcessStuff(killer);
 		killerStuff.startOutputWatchers();
-		killerStuff.waitFor();
+		killerStuff.waitFor(60000);
 		
 		// wait for membrane to terminate
-		ps.waitFor();
+		ps.waitFor(60000);
 	}
 	
-	public int waitFor(long timeout) {
+	private static int waitFor(Process p, long timeout) {
 		long start = System.currentTimeMillis();
 		while (true) {
 			try {
-				return stuff.p.exitValue();
+				return p.exitValue();
 			} catch (IllegalThreadStateException e) {
 				// continue waiting
 			}
@@ -306,6 +306,10 @@ public class Process2 {
 				Thread.currentThread().interrupt();
 			}
 		}
+	}
+	
+	public int waitFor(long timeout) {
+		return waitFor(stuff.p, timeout);
 	}
 
 }
