@@ -109,9 +109,13 @@ public class LoadBalancerClient2Test extends DistributionExtractingTestcase {
 	}
 	
 	private void controlNodeViaScript(int expectedReturnCode, File base, String command, String nodeHost, int nodePort) throws IOException, InterruptedException {
-		Process2 lbclient = new Process2.Builder().in(base).
-				executable("cmd /c lbclient.bat " + command + " " + nodeHost + " " + nodePort).
-				start();
+		String line;
+		if (Process2.isWindows())
+			line = "cmd /c lbclient.bat " + command + " " + nodeHost + " " + nodePort;
+		else
+			line = "bash lbclient.sh " + command + " " + nodeHost + " " + nodePort;
+		
+		Process2 lbclient = new Process2.Builder().in(base).executable(line).start();
 		try {
 			Assert.assertEquals(expectedReturnCode, lbclient.waitFor(30000));
 		} finally {
