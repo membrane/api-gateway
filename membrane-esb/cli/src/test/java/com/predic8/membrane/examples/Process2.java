@@ -24,8 +24,10 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
+import com.predic8.membrane.examples.util.ConsoleLogger;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
 /**
@@ -158,16 +160,23 @@ public class Process2 {
 	
 	private ProcessStuff stuff;
 	
+	private static Random random = new Random(System.currentTimeMillis());
+	
 	private Process2(File exampleDir, String id, String startCommand, List<AbstractConsoleWatcher> consoleWatchers, String waitAfterStartFor) throws IOException, InterruptedException {
 		if (!exampleDir.exists())
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 
+		String pidFile;
+		synchronized(random) {
+			pidFile = id + "-" + random.nextInt() + ".pid";
+		}
+		
 		ArrayList<String> command = new ArrayList<String>();
 		Charset charset;
 		if (isWindows()) {
 			File ps1 = new File(exampleDir, id + ".ps1");
 			FileWriter fw = new FileWriter(ps1);
-			fw.write("\"\" + [System.Diagnostics.Process]::GetCurrentProcess().Id > \""+id+".pid\"\r\n" +
+			fw.write("\"\" + [System.Diagnostics.Process]::GetCurrentProcess().Id > \""+pidFile+"\"\r\n" +
 					startCommand+"\r\n"+
 					"exit $LASTEXITCODE");
 			fw.close();
@@ -179,7 +188,7 @@ public class Process2 {
 			File ps1 = new File(exampleDir, id + "_launcher.sh");
 			FileWriter fw = new FileWriter(ps1);
 			fw.write("#!/bin/bash\n"+
-					"echo $$ > \""+id+".pid\"\n" +
+					"echo $$ > \""+pidFile+"\"\n" +
 					startCommand);
 			fw.close();
 			ps1.setExecutable(true);
@@ -220,7 +229,7 @@ public class Process2 {
 			if (i == 1000)
 				throw new RuntimeException("could not read PID file");
 			Thread.sleep(100);
-			File f = new File(exampleDir, id + ".pid");
+			File f = new File(exampleDir, pidFile);
 			if (!f.exists())
 				continue;
 			FileInputStream fr = new FileInputStream(f);
@@ -279,9 +288,11 @@ public class Process2 {
 		ProcessBuilder pb = new ProcessBuilder(command);
 		//pb.redirectInput(Redirect.PIPE).redirectError(Redirect.PIPE).redirectOutput(Redirect.PIPE);
 
+		//System.out.println("Killing process " + ps.pid);
 		// wait for killer to complete
 		Process killer = pb.start();
 		ProcessStuff killerStuff = new ProcessStuff(killer);
+		//killerStuff.watchers.add(new ConsoleLogger());
 		killerStuff.startOutputWatchers();
 		killerStuff.waitFor(60000);
 		
