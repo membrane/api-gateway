@@ -34,10 +34,10 @@ public class LoggingCSVTest extends DistributionExtractingTestcase {
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
 			getAndAssert200("http://localhost:2000/");
-			assertContains("text/html", readFileToString(new File(baseDir, "log.csv")));
 		} finally {
 			sl.killScript();
 		}
+		assertContains("text/html", readFileToString(new File(baseDir, "log.csv")));
 	}
 
 
