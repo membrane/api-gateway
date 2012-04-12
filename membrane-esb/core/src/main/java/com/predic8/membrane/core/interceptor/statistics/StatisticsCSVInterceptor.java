@@ -64,6 +64,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 			writeCSV(ExchangesUtil.getResponseContentLength(exc), w);
 			writeCSV(ExchangesUtil.getTimeDifference(exc), w);
 			writeNewLine(w);
+			w.flush();
 		} finally {
 			fos.close();
 		}
@@ -120,6 +121,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 			writeCSV("Response Content Length", w);
 			writeCSV("Duration", w);
 			writeNewLine(w);
+			w.flush();
 		} finally {
 			fos.close();
 		}
