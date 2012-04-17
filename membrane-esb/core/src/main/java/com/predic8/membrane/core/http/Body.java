@@ -24,7 +24,7 @@ import com.predic8.membrane.core.util.ByteUtil;
 
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
- * "Transfer-Encoding: chunked" is set on either in- or output.
+ * "Transfer-Encoding: chunked" is set on the input.
  * 
  * The caller is responsible to adjust the header accordingly,
  * e.g. the fields Transfer-Encoding and Content-Length.
@@ -35,6 +35,11 @@ public class Body extends AbstractBody {
 	private final InputStream inputStream;
 	private final int length;
 	
+
+	public Body(InputStream in) throws IOException {
+		this(in, -1);
+	}
+		
 	public Body(InputStream in, int length) throws IOException {
 		this.inputStream = in;
 		this.length = length;

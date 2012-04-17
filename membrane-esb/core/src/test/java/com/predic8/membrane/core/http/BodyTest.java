@@ -74,21 +74,21 @@ public class BodyTest {
 
 	@Test
 	public void testChunkedBodyContent() throws Exception {
-		AbstractBody body = new ChunkedInOutBody(new ByteArrayInputStream(chunk.getBytes()));
+		AbstractBody body = new ChunkedBody(new ByteArrayInputStream(chunk.getBytes()));
 		assertEquals(426, body.getContent().length);
 		assertEquals(426, body.getLength());
 	}
 	
 	@Test
 	public void testChunkedBodyContent2() throws Exception {
-		AbstractBody body = new ChunkedInOutBody( new ByteArrayInputStream(chunk1.getBytes()));
+		AbstractBody body = new ChunkedBody( new ByteArrayInputStream(chunk1.getBytes()));
 		assertTrue(Arrays.equals(body.getContent(), chunk1Body.getBytes()));
 
 	}
 	
 	@Test
 	public void testChunkedBodyConten3() throws Exception {
-		AbstractBody body = new ChunkedInOutBody(new ByteArrayInputStream(chunk2.getBytes()));
+		AbstractBody body = new ChunkedBody(new ByteArrayInputStream(chunk2.getBytes()));
 		StringBuffer buf = new StringBuffer();
 		for (int i = 0; i < body.getContent().length; i ++) {
 			buf.append((char)body.getContent()[i]);
@@ -105,24 +105,24 @@ public class BodyTest {
 	
 	@Test
 	public void testPlainToChunked() throws Exception {
-		ChunkedOutBody chunked = new ChunkedOutBody(new ByteArrayInputStream(msg1));
+		Body chunked = new Body(new ByteArrayInputStream(msg1));
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		chunked.write(new ChunkedBodyWriter(baos));
 		
-		ChunkedInOutBody ciob = new ChunkedInOutBody(new ByteArrayInputStream(baos.toByteArray()));
+		ChunkedBody ciob = new ChunkedBody(new ByteArrayInputStream(baos.toByteArray()));
 		assertTrue(Arrays.equals(ciob.getContent(), msg1));
 	}
 
 	@Test
 	public void testReChunked() throws Exception {
 		byte[] content = chunk.getBytes(Constants.UTF_8_CHARSET);
-		ChunkedInOutBody ciob = new ChunkedInOutBody(new ByteArrayInputStream(content));
+		ChunkedBody ciob = new ChunkedBody(new ByteArrayInputStream(content));
 
-		ChunkedOutBody chunked = new ChunkedOutBody(new ByteArrayInputStream(ciob.getContent()));
+		Body chunked = new Body(new ByteArrayInputStream(ciob.getContent()));
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		chunked.write(new ChunkedBodyWriter(baos));
 
-		ChunkedInOutBody ciob2 = new ChunkedInOutBody(new ByteArrayInputStream(baos.toByteArray()));
+		ChunkedBody ciob2 = new ChunkedBody(new ByteArrayInputStream(baos.toByteArray()));
 		
 		assertTrue(Arrays.equals(ciob2.getContent(), ciob.getContent()));
 	}

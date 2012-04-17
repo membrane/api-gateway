@@ -99,7 +99,7 @@ public abstract class Message {
 		}
 		
 		if (header.isChunked()) {
-			body = new ChunkedInOutBody(in);
+			body = new ChunkedBody(in);
 			return;
 		}
 		
@@ -116,7 +116,7 @@ public abstract class Message {
 		// Message is HTTP 1.1 but the header has no information about the content length.
 		// An assumption is made that after the body the server will send EOF. So the body is read till end of the stream
 		// See http://www.ietf.org/rfc/rfc2145.txt
-		body = new Body(in, -1); 
+		body = new Body(in); 
 	}
 
 	abstract protected void parseStartLine(InputStream in) throws IOException, EndOfStreamException;

@@ -65,7 +65,7 @@ public class Response extends Message {
 		public ResponseBuilder body(InputStream is) throws IOException {
 			// use chunking, since Content-Length is not known
 			res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
-			res.setBody(new ChunkedOutBody(is));
+			res.setBody(new Body(is));
 			return this;
 		}
 		
