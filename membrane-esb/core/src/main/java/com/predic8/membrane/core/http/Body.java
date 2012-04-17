@@ -26,6 +26,9 @@ import com.predic8.membrane.core.util.ByteUtil;
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
  * "Transfer-Encoding: chunked" is set on the input.
  * 
+ * The "Transfer-Encoding" of the output is not determined by this class hierarchy, but by
+ * {@link AbstractBodyTransferrer} and its subclasses.
+ * 
  * The caller is responsible to adjust the header accordingly,
  * e.g. the fields Transfer-Encoding and Content-Length.
  */
@@ -59,15 +62,15 @@ public class Body extends AbstractBody {
 	}
 	
 	@Override
-	protected void writeAlreadyRead(AbstractBodyWriter out) throws IOException {
+	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
 		if (getLength() == 0)
 			return;
 		
 		out.write(getContent(), 0, getLength());
-		out.writeLastChunk();
+		out.finish();
 	}
 	
-	protected void writeNotRead(AbstractBodyWriter out) throws IOException {
+	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
 		byte[] buffer = new byte[8192];
 
 		int totalLength = 0;
@@ -84,7 +87,7 @@ public class Body extends AbstractBody {
 			chunks.add(new Chunk(chunk));
 		}
 		read = true;
-		out.writeLastChunk();
+		out.finish();
 	}
 
 	@Override

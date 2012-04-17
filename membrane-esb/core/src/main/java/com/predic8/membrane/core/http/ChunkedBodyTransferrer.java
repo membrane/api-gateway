@@ -16,21 +16,38 @@ package com.predic8.membrane.core.http;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class BodyWriter extends AbstractBodyWriter {
+import com.predic8.membrane.core.Constants;
+
+public class ChunkedBodyTransferrer extends AbstractBodyTransferrer {
 	OutputStream out;
 	
-	public BodyWriter(OutputStream out) {
+	public ChunkedBodyTransferrer(OutputStream out) {
 		this.out = out;
 	}
 	
 	public void write(byte[] content, int i, int length) throws IOException {
+		writeChunkSize(out, length);
 		out.write(content, i, length);
+		out.write(Constants.CRLF_BYTES);
+		out.flush();
 	}
 
 	public void write(Chunk chunk) throws IOException {
-		out.write(chunk.getContent());
+		chunk.write(out);
 	}
 
-	public void writeLastChunk() throws IOException {
+	public void finish() throws IOException {
+		out.write(ZERO);
+		out.write(Constants.CRLF_BYTES);
+		out.write(Constants.CRLF_BYTES);
 	}
+
+
+	protected static final byte[] ZERO = "0".getBytes(Constants.UTF_8_CHARSET);
+
+	protected static void writeChunkSize(OutputStream out, int chunkSize) throws IOException {
+		out.write(Integer.toHexString(chunkSize).getBytes(Constants.UTF_8_CHARSET));
+		out.write(Constants.CRLF_BYTES);
+	}
+
 }

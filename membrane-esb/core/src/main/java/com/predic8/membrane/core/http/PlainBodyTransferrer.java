@@ -14,11 +14,23 @@
 package com.predic8.membrane.core.http;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
-public abstract class AbstractBodyWriter {
+public class PlainBodyTransferrer extends AbstractBodyTransferrer {
+	OutputStream out;
+	
+	public PlainBodyTransferrer(OutputStream out) {
+		this.out = out;
+	}
+	
+	public void write(byte[] content, int i, int length) throws IOException {
+		out.write(content, i, length);
+	}
 
-	public abstract void write(byte[] content, int i, int length) throws IOException;
-	public abstract void write(Chunk chunk) throws IOException;
-	public abstract void writeLastChunk() throws IOException;
+	public void write(Chunk chunk) throws IOException {
+		out.write(chunk.getContent());
+	}
 
+	public void finish() throws IOException {
+	}
 }

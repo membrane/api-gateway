@@ -53,7 +53,7 @@ public abstract class AbstractBody {
 		return new ByteArrayInputStream(getContent());
 	}
 
-	public void write(AbstractBodyWriter out) throws IOException {
+	public void write(AbstractBodyTransferrer out) throws IOException {
 		if (!read) {
 			writeNotRead(out);
 			return;
@@ -62,9 +62,9 @@ public abstract class AbstractBody {
 		writeAlreadyRead(out);
 	}
 
-	protected abstract void writeAlreadyRead(AbstractBodyWriter out) throws IOException;
+	protected abstract void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException;
 
-	protected abstract void writeNotRead(AbstractBodyWriter out) throws IOException;
+	protected abstract void writeNotRead(AbstractBodyTransferrer out) throws IOException;
 	
 	public int getLength() throws IOException {
 		read();

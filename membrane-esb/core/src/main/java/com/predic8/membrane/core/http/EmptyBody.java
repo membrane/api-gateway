@@ -34,12 +34,12 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	protected void writeAlreadyRead(AbstractBodyWriter out) throws IOException {
+	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
 		//ignore
 	}
 
 	@Override
-	protected void writeNotRead(AbstractBodyWriter out) throws IOException {
+	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
 		//ignore
 	}
 
@@ -49,7 +49,7 @@ public class EmptyBody extends AbstractBody {
 	}
 	
 	@Override
-	public void write(AbstractBodyWriter out) throws IOException {
+	public void write(AbstractBodyTransferrer out) throws IOException {
 		
 	}
 	

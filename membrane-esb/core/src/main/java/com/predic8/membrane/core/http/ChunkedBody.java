@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.http;
 
-import static com.predic8.membrane.core.http.ChunkedBodyWriter.ZERO;
+import static com.predic8.membrane.core.http.ChunkedBodyTransferrer.ZERO;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +29,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 /**
  * Reads the body with "Transfer-Encoding: chunked".
  * 
- * See {@link ChunkedBodyWriter} for writing a body with chunks. 
+ * See {@link ChunkedBodyTransferrer} for writing a body using chunks. 
  */
 public class ChunkedBody extends AbstractBody {
 
@@ -46,7 +46,7 @@ public class ChunkedBody extends AbstractBody {
 		chunks.addAll(HttpUtil.readChunks(inputStream));
 	}
 
-	protected void writeNotRead(AbstractBodyWriter out) throws IOException {
+	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
 		log.debug("writeNotReadChunked");
 		int chunkSize;
 		while ((chunkSize = HttpUtil.readChunkSize(inputStream)) > 0) {
@@ -58,7 +58,7 @@ public class ChunkedBody extends AbstractBody {
 		}
 		inputStream.read(); // CR
 		inputStream.read(); // LF-
-		out.writeLastChunk();
+		out.finish();
 		read = true;
 	}
 	
@@ -90,14 +90,14 @@ public class ChunkedBody extends AbstractBody {
 	}
 	
 	@Override
-	protected void writeAlreadyRead(AbstractBodyWriter out) throws IOException {
+	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
 		if (getLength() == 0)
 			return;
 
 		for (Chunk chunk : chunks) {
 			out.write(chunk);
 		}
-		out.writeLastChunk();
+		out.finish();
 	}
 
 }

@@ -151,7 +151,7 @@ public abstract class Message {
 			return;
 		}
 			
-		body.write(getHeader().isChunked() ? new ChunkedBodyWriter(out) : new BodyWriter(out));
+		body.write(getHeader().isChunked() ? new ChunkedBodyTransferrer(out) : new PlainBodyTransferrer(out));
 		
 		out.flush();
 	}
