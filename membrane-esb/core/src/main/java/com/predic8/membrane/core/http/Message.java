@@ -110,8 +110,7 @@ public abstract class Message {
 		
 		
 		if (log.isDebugEnabled()) {
-			log.error("Message has no content length");
-			this.write(System.out);
+			log.error("Message has no content length: " + toString());
 		}
 		
 		// Message is HTTP 1.1 but the header has no information about the content length.
@@ -152,7 +151,7 @@ public abstract class Message {
 			return;
 		}
 			
-		body.write(out);
+		body.write(getHeader().isChunked() ? new ChunkedBodyWriter(out) : new BodyWriter(out));
 		
 		out.flush();
 	}

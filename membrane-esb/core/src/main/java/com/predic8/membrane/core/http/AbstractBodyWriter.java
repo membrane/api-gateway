@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2012 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -11,24 +11,14 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.membrane.core.http;
 
 import java.io.IOException;
 
-/**
- * See subclasses {@link ChunkedInOutBody} and {@link ChunkedOutBody}.
- */
-public abstract class ChunkedBody extends AbstractBody {
+public abstract class AbstractBodyWriter {
 
-	@Override
-	protected void writeAlreadyRead(AbstractBodyWriter out) throws IOException {
-		if (getLength() == 0)
-			return;
+	public abstract void write(byte[] content, int i, int length) throws IOException;
+	public abstract void write(Chunk chunk) throws IOException;
+	public abstract void writeLastChunk() throws IOException;
 
-		for (Chunk chunk : chunks) {
-			out.write(chunk);
-		}
-		out.writeLastChunk();
-	}
 }

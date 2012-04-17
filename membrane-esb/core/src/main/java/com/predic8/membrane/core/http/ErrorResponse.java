@@ -27,7 +27,7 @@ public class ErrorResponse extends Response {
 	}
 	
 	private String getErrorPage(String msg) {
-		StringBuffer buf = new StringBuffer();
+		StringBuffer buf = new StringBuffer(256);
 		buf.append("<html>");
 		
 			buf.append("<head>");

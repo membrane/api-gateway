@@ -16,12 +16,10 @@ package com.predic8.membrane.core.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.ByteUtil;
 
 /**
@@ -42,7 +40,7 @@ public class ChunkedOutBody extends ChunkedBody {
 		chunks.add(new Chunk(ByteUtil.getByteArrayData(inputStream)));
 	}
 
-	protected void writeNotRead(OutputStream out) throws IOException {
+	protected void writeNotRead(AbstractBodyWriter out) throws IOException {
 		log.debug("writeNotReadChunkedOut");
 		
 		byte[] buffer = new byte[8192];
@@ -52,18 +50,17 @@ public class ChunkedOutBody extends ChunkedBody {
 		while ((length = inputStream.read(buffer)) > 0) {
 			byte[] chunk = new byte[length];
 			System.arraycopy(buffer, 0, chunk, 0, length);
-			chunks.add(new Chunk(chunk));
+			Chunk c = new Chunk(chunk);
+			chunks.add(c);
 
-			writeChunkSize(out, length);
-			out.write(chunk);			
-			out.write(Constants.CRLF_BYTES);
+			out.write(c);
 			
 			inputStream.read(); // CR
 			inputStream.read(); // LF
 		}
 		inputStream.read(); // CR
 		inputStream.read(); // LF-
-		writeLastChunk(out);
+		out.writeLastChunk();
 		read = true;
 	}
 	

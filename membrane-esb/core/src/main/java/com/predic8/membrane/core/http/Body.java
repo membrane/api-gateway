@@ -16,7 +16,6 @@ package com.predic8.membrane.core.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -55,14 +54,15 @@ public class Body extends AbstractBody {
 	}
 	
 	@Override
-	protected void writeAlreadyRead(OutputStream out) throws IOException {
+	protected void writeAlreadyRead(AbstractBodyWriter out) throws IOException {
 		if (getLength() == 0)
 			return;
 		
 		out.write(getContent(), 0, getLength());
+		out.writeLastChunk();
 	}
 	
-	protected void writeNotRead(OutputStream out) throws IOException {
+	protected void writeNotRead(AbstractBodyWriter out) throws IOException {
 		byte[] buffer = new byte[8192];
 
 		int totalLength = 0;
@@ -79,6 +79,7 @@ public class Body extends AbstractBody {
 			chunks.add(new Chunk(chunk));
 		}
 		read = true;
+		out.writeLastChunk();
 	}
 
 	@Override

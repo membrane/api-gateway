@@ -25,7 +25,7 @@ public class DummyWebServiceInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(DummyWebServiceInterceptor.class.getName());
 
-	public long counter;
+	public volatile long counter;
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {

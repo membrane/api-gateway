@@ -14,9 +14,10 @@
 
 package com.predic8.membrane.core.http;
 
+import static com.predic8.membrane.core.http.ChunkedBodyWriter.ZERO;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -43,21 +44,19 @@ public class ChunkedInOutBody extends ChunkedBody {
 		chunks.addAll(HttpUtil.readChunks(inputStream));
 	}
 
-	protected void writeNotRead(OutputStream out) throws IOException {
+	protected void writeNotRead(AbstractBodyWriter out) throws IOException {
 		log.debug("writeNotReadChunked");
 		int chunkSize;
 		while ((chunkSize = HttpUtil.readChunkSize(inputStream)) > 0) {
-			writeChunkSize(out, chunkSize);
-			byte[] chunk = ByteUtil.readByteArray(inputStream, chunkSize);
+			Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
 			out.write(chunk);
-			chunks.add(new Chunk(chunk));
-			out.write(Constants.CRLF_BYTES);
+			chunks.add(chunk);
 			inputStream.read(); // CR
 			inputStream.read(); // LF
 		}
 		inputStream.read(); // CR
 		inputStream.read(); // LF-
-		writeLastChunk(out);
+		out.writeLastChunk();
 		read = true;
 	}
 	

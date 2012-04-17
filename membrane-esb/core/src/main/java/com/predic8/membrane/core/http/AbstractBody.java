@@ -17,7 +17,6 @@ package com.predic8.membrane.core.http;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,7 +53,7 @@ public abstract class AbstractBody {
 		return new ByteArrayInputStream(getContent());
 	}
 
-	public void write(OutputStream out) throws IOException {
+	public void write(AbstractBodyWriter out) throws IOException {
 		if (!read) {
 			writeNotRead(out);
 			return;
@@ -63,9 +62,9 @@ public abstract class AbstractBody {
 		writeAlreadyRead(out);
 	}
 
-	protected abstract void writeAlreadyRead(OutputStream out) throws IOException;
+	protected abstract void writeAlreadyRead(AbstractBodyWriter out) throws IOException;
 
-	protected abstract void writeNotRead(OutputStream out) throws IOException;
+	protected abstract void writeNotRead(AbstractBodyWriter out) throws IOException;
 	
 	public int getLength() throws IOException {
 		read();

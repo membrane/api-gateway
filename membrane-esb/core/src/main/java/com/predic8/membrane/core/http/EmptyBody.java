@@ -15,7 +15,6 @@
 package com.predic8.membrane.core.http;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 public class EmptyBody extends AbstractBody {
 
@@ -35,12 +34,12 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
-	protected void writeAlreadyRead(OutputStream out) throws IOException {
+	protected void writeAlreadyRead(AbstractBodyWriter out) throws IOException {
 		//ignore
 	}
 
 	@Override
-	protected void writeNotRead(OutputStream out) throws IOException {
+	protected void writeNotRead(AbstractBodyWriter out) throws IOException {
 		//ignore
 	}
 
@@ -50,7 +49,7 @@ public class EmptyBody extends AbstractBody {
 	}
 	
 	@Override
-	public void write(OutputStream out) throws IOException {
+	public void write(AbstractBodyWriter out) throws IOException {
 		
 	}
 	
