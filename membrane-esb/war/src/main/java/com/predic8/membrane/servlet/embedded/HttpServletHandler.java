@@ -26,6 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.BodyWriter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Request;
@@ -102,11 +103,14 @@ class HttpServletHandler extends AbstractHttpHandler {
 	@SuppressWarnings("deprecation")
 	protected void writeResponse(Response res) throws Exception {
 		response.setStatus(res.getStatusCode(), res.getStatusMessage());
-		for (HeaderField header : res.getHeader().getAllHeaderFields())
+		for (HeaderField header : res.getHeader().getAllHeaderFields()) {
+			if (header.getHeaderName().equals(Header.TRANSFER_ENCODING))
+				continue;
 			response.addHeader(header.getHeaderName().toString(), header.getValue());
+		}
 		
 		ServletOutputStream out = response.getOutputStream();
-		res.getBody().write(out);
+		res.getBody().write(new BodyWriter(out));
 		out.flush();
 		
 		response.flushBuffer();
