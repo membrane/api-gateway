@@ -26,7 +26,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.BodyWriter;
+import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Request;
@@ -110,7 +110,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 		}
 		
 		ServletOutputStream out = response.getOutputStream();
-		res.getBody().write(new BodyWriter(out));
+		res.getBody().write(new PlainBodyTransferrer(out));
 		out.flush();
 		
 		response.flushBuffer();
