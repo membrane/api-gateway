@@ -1,28 +1,24 @@
 <!--
 	Routing Configuration
 	
-	Here you can configure routing rules for Membrane Monitor and ESB. It contains some rules to show how to setup routing. Please make sure to remove these rules before you put the router into production. More sample configurations you can find in the examples directory.
+	Here you can configure routing rules for Membrane Monitor and ESB. It
+	contains some rules to show how to setup routing. Please make sure to
+	remove these rules before you put the router into production. More sample
+	configurations you can find in the examples directory.
 
-	Have a look at http://membrane-soa.org/esb-doc/configuration/proxy-configuration.htm for documentation and a reference explaining what XML elements can be used how and where.
+	Have a look at
+	http://membrane-soa.org/esb-doc/current/configuration/proxy-configuration.htm for
+	documentation and a reference explaining what XML elements can be used
+	how and where.
 	
-	See the *.proxies.xml files in the /examples/* directories in the ESB distribution for several examples of how to configure different ESB features within this file.
+	See the *.proxies.xml files in the /examples/* directories in the ESB
+	distribution for several examples of how to configure different ESB
+	features within this file.
 -->
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
       	 
-	<!-- Sets up the Administration Web Interface on port 9000-->
-	<serviceProxy name="Console" port="9000">
-		<basicAuthentication>
-			<user name="admin" password="membrane" />
-		</basicAuthentication>	
-		<accessControl file="conf/acl.xml" />
-		<adminConsole />
-	</serviceProxy>	
-
-	<!-- Startup an HTTP proxy on port 3128. -->
-	<proxy name="HTTP Proxy" port="3128" />
-
 	<!-- Forwards HTTP requests on port 2000 to the Web server on host thomas-bayer.com -->
 	<serviceProxy name="thomas-bayer.com" port="2000">
 		<target host="thomas-bayer.com" port="80"/>
@@ -33,9 +29,13 @@
 		<target host="localhost" port="8080"/>
 	</serviceProxy>
 
-	<!-- Global configuration options -->
-	<global>
-		<!-- Sets the HTTP header field Host to the name of the target host. This is necessary if the target host hosts several web sites. -->
-		<router adjustHostHeader="true" />
-	</global>
+	<!-- Sets up the Administration Web Interface on port 9000-->
+	<serviceProxy name="Console" port="9000">
+		<basicAuthentication>
+			<user name="admin" password="membrane" />
+		</basicAuthentication>	
+		<accessControl file="conf/acl.xml" />
+		<adminConsole />
+	</serviceProxy>	
+
 </proxies>

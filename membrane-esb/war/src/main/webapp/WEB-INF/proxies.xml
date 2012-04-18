@@ -7,27 +7,34 @@
 	configurations you can find in the examples directory.
 	
 	A quick start guide is available at 
-	http://membrane-soa.org/esb-doc/3.3/overview/ .
+	http://membrane-soa.org/esb-doc/current/overview/ .
 	
 	The reference is available at
-	http://membrane-soa.org/esb-doc/3.3/configuration/reference/ .
+	http://membrane-soa.org/esb-doc/current/configuration/reference/ .  
 -->
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
       	 
-	<!-- Sets up the Administration Web Interface on port 9000-->
-	<serviceProxy name="Console" port="9000">
-		<basicAuthentication>
+	<!--
+		Do not specify port=".." here. This is the configuration using web
+		server embedding (see web.xml). It uses the web server's connectors
+		(see configuration of the web server) and configured paths (see
+		web.xml).
+	-->
+
+	<!-- Sets up the Administration Web Interface below "/admin". -->
+    <serviceProxy>
+    	<path isRegExp="true">^/admin.*</path>
+    	<basicAuthentication>
 			<user name="admin" password="membrane" />
 		</basicAuthentication>	
 		<adminConsole />
-	</serviceProxy>	
-	
-	<!-- Simply forwards requests to www.predic8.com on port 2000. --> 
-	<serviceProxy name="predic8.com" port="2000">
+    </serviceProxy>
+      	
+    <!-- Forwards all other requests to www.predic8.com. --> 
+	<serviceProxy>
 		<target host="www.predic8.com" />
 	</serviceProxy>	
-	
 
 </proxies>

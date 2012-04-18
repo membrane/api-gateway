@@ -18,12 +18,12 @@
 
 	<router hotDeploy="false"/>
 
-	<transport>
+	<servletTransport>
 		<ruleMatching />
 		<dispatching />
 		<userFeature />
 		<httpClient />
-	</transport>
+	</servletTransport>
 
 </spring:beans>
 

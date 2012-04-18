@@ -39,7 +39,10 @@ public class RouterParser extends
 		
 		ConfigurationManager cm = new ConfigurationManager();
 		cm.setHotDeploy(Boolean.parseBoolean(e.getAttribute("hotDeploy")));
-		cm.getProxies().setAdjustHostHeader(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_HOST_HEADER)));
+		if (e.hasAttribute(Global.ATTRIBUTE_ADJ_HOST_HEADER))
+			cm.getProxies().setAdjustHostHeader(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_HOST_HEADER)));
+		else
+			cm.getProxies().setAdjustHostHeader(true);
 		cm.getProxies().setIndentMessage(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_INDENT_MSG)));
 		cm.getProxies().setAdjustContentLength(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_CONTENT_LENGTH)));
 		cm.getProxies().setTrackExchange(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_AUTO_TRACK)));
