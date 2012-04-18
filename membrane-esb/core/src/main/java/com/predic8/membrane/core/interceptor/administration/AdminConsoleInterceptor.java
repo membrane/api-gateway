@@ -137,9 +137,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 			@Override
 			protected void createTabContent() throws Exception {
 				h1().text(rule.toString()+" Proxy").end();
-				table();					
-					createTr("Listen Port",""+rule.getKey().getPort());
-				end();
+				if (rule.getKey().getPort() != -1) {
+					table();					
+						createTr("Listen Port",""+rule.getKey().getPort());
+					end();
+				}
 				h2().text("Status Codes").end();
 				createStatusCodesTable(rule.getStatisticsByStatusCodes());
 				h2().text("Interceptors").end();

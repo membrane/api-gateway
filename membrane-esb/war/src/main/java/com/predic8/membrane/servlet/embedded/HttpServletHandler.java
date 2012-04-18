@@ -165,10 +165,6 @@ class HttpServletHandler extends AbstractHttpHandler {
 	
 	@Override
 	public int getLocalPort() {
-		return 80; // this is not true, of course. We just always return 80.
-		// This matches the default port 80, which is used in embedded-proxies.xml
-		// by not specifying any port there. The port 80 is not actually
-		// opened by ServletTransport, but will match the default 80 in
-		// the ServiceProxyKey.
+		return request.getLocalPort();
 	}
 }

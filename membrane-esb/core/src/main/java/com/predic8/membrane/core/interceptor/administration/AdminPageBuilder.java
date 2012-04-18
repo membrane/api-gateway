@@ -204,7 +204,7 @@ public class AdminPageBuilder extends Html {
 						td();
 							createLink(rule.toString(), "service-proxy", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
 						end();
-						createTds(""+rule.getKey().getPort(),
+						createTds(rule.getKey().getPort() == -1 ? "" : ""+rule.getKey().getPort(),
 						             rule.getKey().getHost(),
 						             rule.getKey().getMethod(),
 						             rule.getKey().getPath(),
@@ -231,7 +231,7 @@ public class AdminPageBuilder extends Html {
 						td();
 							createLink(rule.toString(), "proxy", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
 						end();
-						createTds(""+rule.getKey().getPort(),
+						createTds(rule.getKey().getPort() == -1 ? "" : ""+rule.getKey().getPort(),
 								  ""+rule.getCount());
 						td().a().href("/admin/proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
 					end();
@@ -631,8 +631,10 @@ public class AdminPageBuilder extends Html {
 							small();
 								text("Host: " + proxy.getKey().getHost());
 								br();
-								text("Port: " + proxy.getKey().getPort());
-								br();
+								if (proxy.getKey().getPort() != -1) {
+									text("Port: " + proxy.getKey().getPort());
+									br();
+								}
 								text("Path: " + proxy.getKey().getPath());
 								br();
 								text("Method: " + proxy.getKey().getMethod());

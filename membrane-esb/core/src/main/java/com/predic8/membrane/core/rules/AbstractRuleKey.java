@@ -21,6 +21,10 @@ public abstract class AbstractRuleKey implements RuleKey {
 
 	private static Log log = LogFactory.getLog(AbstractRuleKey.class.getName());
 
+	/**
+	 * -1 is used as a wildcard. It is used by HttpServletHandler, since its port
+	 * is determined by the webserver and not by the proxies.xml
+	 */
 	protected int port;
 
 	private String path;

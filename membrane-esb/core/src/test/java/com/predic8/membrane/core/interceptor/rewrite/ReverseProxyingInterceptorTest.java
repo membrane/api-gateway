@@ -28,6 +28,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.AbstractProxy;
 import com.predic8.membrane.core.rules.AbstractRuleKey;
+import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 
 public class ReverseProxyingInterceptorTest {
 	ReverseProxyingInterceptor rp = new ReverseProxyingInterceptor();
@@ -77,7 +78,7 @@ public class ReverseProxyingInterceptorTest {
 	 * Creates a fake exchange which simulates a received redirect by the server. 
 	 */
 	private Exchange createExchange(String requestHostHeader, int port, String requestURI, String redirectionURI) {
-		Exchange exc = new Exchange(null);
+		Exchange exc = new Exchange(new FakeHttpHandler(port));
 		exc.setRule(new AbstractProxy(new AbstractRuleKey(port) {}){
 			@Override
 			protected void parseKeyAttributes(XMLStreamReader token) {

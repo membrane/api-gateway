@@ -75,7 +75,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	}
 	
 	int getPort(Exchange exc) {
-		return exc.getRule().getKey().getPort();
+		return exc.getHandler().getLocalPort();
 	}
 	
 	private String getProtocol(Exchange exc) {

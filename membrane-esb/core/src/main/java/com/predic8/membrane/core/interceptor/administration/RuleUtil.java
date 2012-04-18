@@ -21,8 +21,7 @@ import com.predic8.membrane.core.rules.Rule;
 
 public class RuleUtil {
 	public static String getRuleIdentifier(Rule rule) {
-		return rule.toString() + ":"
-				+ rule.getKey().getPort();
+		return rule.toString() + (rule.getKey().getPort() == -1 ? "" : ":" + rule.getKey().getPort());
 	}
 	
 	public static Rule findRuleByIdentifier(Router router, String name) throws Exception {

@@ -123,7 +123,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 	protected void writeRule(XMLStreamWriter out) throws XMLStreamException {
 		if (this.name != null)
 			out.writeAttribute("name", this.name);
-		out.writeAttribute("port", "" + key.getPort());
+		if (key.getPort() != -1)
+			out.writeAttribute("port", "" + key.getPort());
 		writeAttrIfTrue(out, blockRequest, "blockRequest", blockRequest);
 		writeAttrIfTrue(out, blockResponse, "blockResponse", blockResponse);
 

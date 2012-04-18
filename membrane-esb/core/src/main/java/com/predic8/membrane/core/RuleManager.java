@@ -165,7 +165,7 @@ public class RuleManager {
 					continue;
 			}
 
-			if (rule.getKey().getPort() != keyFromReq.getPort())
+			if (rule.getKey().getPort() != -1 && keyFromReq.getPort() != -1 && rule.getKey().getPort() != keyFromReq.getPort())
 				continue;
 			if (!rule.getKey().getMethod().equals(keyFromReq.getMethod()) && !rule.getKey().isMethodWildcard())
 				continue;
