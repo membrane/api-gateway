@@ -92,6 +92,9 @@ public class HttpTransport extends Transport {
 			return;
 		}
 
+		if (port == -1)
+			throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
+		
 		HttpEndpointListener portListenerThread = new HttpEndpointListener(
 				port, this, sslContext);
 		portListenerMapping.put(port, portListenerThread);

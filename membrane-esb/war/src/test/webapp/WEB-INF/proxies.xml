@@ -15,12 +15,23 @@
 		<adminConsole />
 	</serviceProxy>	
 	
+
+	<serviceProxy port="3026">
+    	<path isRegExp="true">.*wsdl</path>
+    	<wsdlRewriter/>
+		<target host="localhost" port="3025" />
+	</serviceProxy>	
 	
 	<serviceProxy port="3026">
 		<target host="localhost" port="3025" />
 	</serviceProxy>	
 	
 	
+	<serviceProxy port="3025">
+    	<path isRegExp="true">.*wsdl</path>
+    	<webServer docBase="/WEB-INF/" />
+    </serviceProxy>
+
 	<!-- Echo service for testing. -->
 	<serviceProxy port="3025">
 		<echo />

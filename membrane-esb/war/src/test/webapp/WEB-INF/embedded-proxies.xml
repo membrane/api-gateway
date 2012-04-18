@@ -20,6 +20,12 @@
 		<adminConsole />
     </serviceProxy>
 
+    <serviceProxy>
+    	<path isRegExp="true">.*wsdl</path>
+    	<wsdlRewriter/>
+    	<target host="localhost" port="3025" />
+    </serviceProxy>
+
 	<serviceProxy>
 		<target host="localhost" port="3025" />
 	</serviceProxy>	

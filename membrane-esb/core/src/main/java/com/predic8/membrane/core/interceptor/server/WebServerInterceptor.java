@@ -80,6 +80,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			return "text/css";
 		if (uri.endsWith(".js"))
 			return "application/x-javascript";
+		if (uri.endsWith(".wsdl"))
+			return "text/xml";
 		return null;
 	}
 
