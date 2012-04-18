@@ -40,6 +40,7 @@ public class Request extends Message {
 	public static final String METHOD_PUT = "PUT";
 	public static final String METHOD_TRACE = "TRACE";
 	public static final String METHOD_CONNECT = "CONNECT";
+	public static final String METHOD_OPTIONS = "OPTIONS";
 
 
 	String method;
@@ -132,6 +133,10 @@ public class Request extends Message {
 
 	public boolean isCONNECTRequest() {
 		return METHOD_CONNECT.equals(method);
+	}
+	
+	public boolean isOPTIONSRequest() {
+		return METHOD_OPTIONS.equals(method);
 	}
 
 	@Override

@@ -113,6 +113,13 @@ public abstract class Message {
 			log.error("Message has no content length: " + toString());
 		}
 		
+		if (this instanceof Request && ((Request)this).isOPTIONSRequest()) {
+			// OPTIONS without Transfer-Encoding and Content-Length has no body,
+			// see http://www.ietf.org/rfc/rfc2616.txt section 9.2
+			body = new EmptyBody();
+			return;
+		}
+		
 		// Message is HTTP 1.1 but the header has no information about the content length.
 		// An assumption is made that after the body the server will send EOF. So the body is read till end of the stream
 		// See http://www.ietf.org/rfc/rfc2145.txt
