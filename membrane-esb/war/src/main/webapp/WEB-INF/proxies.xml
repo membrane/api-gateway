@@ -1,7 +1,16 @@
 <!--
 	Routing Configuration
 	
-	Here you can configure routing rules for Membrane Monitor and Router. It contains some rules to show how to setup routing. Please make sure to remove these rules before you put the router into production. More sample configurations you can find in the examples directory.  
+	Here you can configure routing rules for Membrane Monitor and Router. It
+	contains some rules to show how to setup routing. Please make sure to
+	remove these rules before you put the router into production. More sample
+	configurations you can find in the examples directory.
+	
+	A quick start guide is available at 
+	http://membrane-soa.org/esb-doc/3.3/overview/ .
+	
+	The reference is available at
+	http://membrane-soa.org/esb-doc/3.3/configuration/reference/ .
 -->
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -14,5 +23,11 @@
 		</basicAuthentication>	
 		<adminConsole />
 	</serviceProxy>	
+	
+	<!-- Simply forwards requests to www.predic8.com on port 2000. --> 
+	<serviceProxy name="predic8.com" port="2000">
+		<target host="www.predic8.com" />
+	</serviceProxy>	
+	
 
 </proxies>
