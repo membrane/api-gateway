@@ -15,18 +15,24 @@ package com.predic8.membrane.core.interceptor;
 
 import static junit.framework.Assert.assertEquals;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Iterator;
 
 import javax.xml.namespace.NamespaceContext;
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathFactory;
 
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 import com.predic8.membrane.core.util.MessageUtil;
 
 public class WADLInterceptorTest {
@@ -114,7 +120,7 @@ public class WADLInterceptorTest {
 	}
 
 	private Exchange getExchange() throws IOException {
-		Exchange exc = new Exchange(null);
+		Exchange exc = new Exchange(new FakeHttpHandler(3011));
 		exc.setRequest(MessageUtil.getGetRequest("/search?wadl"));
 		InputStream resourceAsStream = this.getClass().getResourceAsStream(
 				"/wadls/search.wadl");

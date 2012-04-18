@@ -87,7 +87,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 		if (port != null)
 			return Integer.parseInt(port);
 
-		return exc.getRule().getKey().getPort();
+		return exc.getHandler().getLocalPort();
 	}
 
 	protected String getLocationHost(Exchange exc) {

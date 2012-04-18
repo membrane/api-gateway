@@ -13,22 +13,34 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import static com.predic8.membrane.core.Constants.*;
-import static junit.framework.Assert.*;
+import static com.predic8.membrane.core.Constants.WSDL_HTTP_NS;
+import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
+import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
 
-import java.io.*;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
 
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 import com.predic8.membrane.core.util.MessageUtil;
 
 public class WSDLInterceptorTest {
@@ -45,7 +57,7 @@ public class WSDLInterceptorTest {
 
 	@Before
 	public void setUp() throws Exception {
-		exc = new Exchange(null);
+		exc = new Exchange(new FakeHttpHandler(3011));
 		exc.setRequest(MessageUtil
 				.getGetRequest("/axis2/services/BLZService?wsdl"));
 		InputStream resourceAsStream = this.getClass().getResourceAsStream(

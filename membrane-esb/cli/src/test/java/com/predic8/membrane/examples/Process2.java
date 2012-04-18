@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
-import com.predic8.membrane.examples.util.ConsoleLogger;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
 /**
