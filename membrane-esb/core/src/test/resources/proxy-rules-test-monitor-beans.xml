@@ -17,7 +17,10 @@
 		</property>
 		<property name="transport" ref="transport" />
 		<property name="exchangeStore" ref="exchangeStore" />
-		<property name="configurationManager" ref="configurationManager" />
+		<property name="configurationManager.proxies.adjustHostHeader" value="true" />
+		<property name="configurationManager.proxies.indentMessage" value="true" />
+		<property name="configurationManager.proxies.adjustContentLength" value="true" />
+		<property name="configurationManager.proxies.trackExchange" value="false" />
 	</bean>
 
 	<bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
@@ -124,22 +127,6 @@
 
 	<bean id="exchangeStore"
 		class="com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore" />
-
-
-	<bean id="configurationManager" class="com.predic8.membrane.core.ConfigurationManager">
-		<property name="configurationStore">
-			<bean class="com.predic8.membrane.core.io.ConfigurationFileStore" />
-		</property>
-
-		<property name="proxies">
-			<bean class="com.predic8.membrane.core.Proxies">
-				<property name="adjustHostHeader" value="true" />
-				<property name="indentMessage" value="true" />
-				<property name="adjustContentLength" value="true" />
-				<property name="trackExchange" value="false" />
-			</bean>
-		</property>
-	</bean>
 
 	<bean id="roundRobinBalancer"
 		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
