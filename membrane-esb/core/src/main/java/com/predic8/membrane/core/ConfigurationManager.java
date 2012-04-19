@@ -31,7 +31,12 @@ public class ConfigurationManager {
 	private boolean hotDeploy = true;
 	private ConfigurationStore configurationStore = new ConfigurationFileStore();
 
-	private Router router;
+	private final Router router;
+	
+	public ConfigurationManager(Router router) {
+		this.router = router;
+		configurationStore.setRouter(router);
+	}
 
 	public void saveConfiguration(String fileName) throws Exception {
 		getProxies().setRules(router.getRuleManager().getRules());
@@ -86,12 +91,6 @@ public class ConfigurationManager {
 
 	public Router getRouter() {
 		return router;
-	}
-
-	public void setRouter(Router router) {
-		this.router = router;
-		configurationStore.setRouter(router);
-		getProxies().setRouter(router);
 	}
 
 	public boolean isHotDeploy() {

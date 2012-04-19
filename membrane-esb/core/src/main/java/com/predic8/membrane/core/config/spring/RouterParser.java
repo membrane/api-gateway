@@ -18,7 +18,6 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.w3c.dom.Element;
 
-import com.predic8.membrane.core.ConfigurationManager;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Global;
 
@@ -37,15 +36,15 @@ public class RouterParser extends
 			bean.addPropertyReference("exchangeStore", e.getAttribute("exchangeStore"));
 		}
 		
-		ConfigurationManager cm = new ConfigurationManager();
-		cm.setHotDeploy(Boolean.parseBoolean(e.getAttribute("hotDeploy")));
-		if (e.hasAttribute(Global.ATTRIBUTE_ADJ_HOST_HEADER))
-			cm.getProxies().setAdjustHostHeader(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_HOST_HEADER)));
-		else
-			cm.getProxies().setAdjustHostHeader(true);
-		cm.getProxies().setIndentMessage(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_INDENT_MSG)));
-		cm.getProxies().setAdjustContentLength(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_CONTENT_LENGTH)));
-		cm.getProxies().setTrackExchange(Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_AUTO_TRACK)));
-		bean.addPropertyValue("configurationManager", cm);
+		bean.addPropertyValue("configurationManager.hotDeploy", Boolean.parseBoolean(e.getAttribute("hotDeploy")));
+		bean.addPropertyValue("configurationManager.proxies.adjustHostHeader", 
+				e.hasAttribute(Global.ATTRIBUTE_ADJ_HOST_HEADER) ?
+						Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_HOST_HEADER)) : true);
+		bean.addPropertyValue("configurationManager.proxies.indentMessage", 
+				Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_INDENT_MSG)));
+		bean.addPropertyValue("configurationManager.proxies.adjustContentLength", 
+				Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_CONTENT_LENGTH)));
+		bean.addPropertyValue("configurationManager.proxies.trackExchange",
+				Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_AUTO_TRACK)));
 	}
 }

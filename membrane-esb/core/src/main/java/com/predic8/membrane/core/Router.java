@@ -35,12 +35,11 @@ public class Router {
 	protected RuleManager ruleManager = new RuleManager();
 	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
 	protected Transport transport;
-	protected ConfigurationManager configurationManager = new ConfigurationManager();
+	protected final ConfigurationManager configurationManager = new ConfigurationManager(this);
 	protected ResourceResolver resourceResolver = new ResourceResolver();
 	protected DNSCache dnsCache = new DNSCache();
 
 	public Router() {
-		configurationManager.setRouter(this);
 		ruleManager.setRouter(this);
 	}
 
@@ -94,12 +93,6 @@ public class Router {
 
 	public ConfigurationManager getConfigurationManager() {
 		return configurationManager;
-	}
-
-	public void setConfigurationManager(
-			ConfigurationManager configurationManager) {
-		this.configurationManager = configurationManager;
-		configurationManager.setRouter(this);
 	}
 
 	public Collection<Interceptor> getInterceptors() {
