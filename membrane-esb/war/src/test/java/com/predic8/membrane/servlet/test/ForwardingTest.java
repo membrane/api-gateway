@@ -75,7 +75,7 @@ public class ForwardingTest {
 	
 	@Test
 	public void testParam1() throws ClientProtocolException, IOException {
-		testQueryParam("wsdl");
+		testQueryParam("a");
 	}
 	
 	@Test
