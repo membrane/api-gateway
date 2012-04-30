@@ -423,6 +423,17 @@
 		</xsd:complexType>
 	</xsd:element>
 
+	<xsd:element name="xmlContentFilter">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="xPath" type="xsd:string" use="required" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
 	<xsd:element name="xmlProtection">
 		<xsd:complexType>
 			<xsd:complexContent>

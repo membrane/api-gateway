@@ -70,6 +70,8 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
 				new HttpClientInterceptorParser());
 		registerBeanDefinitionParser("reverseProxying",
 				new ReverseProxyingInterceptorParser());
+		registerBeanDefinitionParser("xmlContentFilter",
+				new XmlContentFilterInterceptorParser());
 		registerBeanDefinitionParser("xmlProtection",
 				new XmlProtectionInterceptorParser());
 		try {

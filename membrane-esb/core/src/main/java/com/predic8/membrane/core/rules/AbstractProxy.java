@@ -39,6 +39,7 @@ import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
+import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterInterceptor;
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptor;
 import com.predic8.membrane.core.transport.SSLContext;
@@ -233,6 +234,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			i = new LogInterceptor();
 		} else if ("formValidation".equals(name)) {
 			i = new FormValidationInterceptor();
+		} else if ("xmlContentFilter".equals(name)) {
+			i = new XMLContentFilterInterceptor();
 		} else if ("xmlProtection".equals(name)) {
 			i = new XMLProtectionInterceptor();
 		} else {
