@@ -28,7 +28,10 @@ import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
+import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathAnalyzerTest;
+import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParserTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterTest;
+import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLElementFinderTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
@@ -64,7 +67,8 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 		HttpKeepAliveTest.class, ReverseProxyingInterceptorTest.class,
 		SSLContextTest.class, RelocatorWADLTest.class,
 		WADLInterceptorTest.class, ReassembleTest.class,
-		XMLContentFilterTest.class })
+		XMLContentFilterTest.class, XMLElementFinderTest.class,
+		SimpleXPathAnalyzerTest.class, SimpleXPathParserTest.class })
 public class UnitTests {
 	/*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =
