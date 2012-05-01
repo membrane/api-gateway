@@ -28,6 +28,7 @@ import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.*;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
+import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterTest;
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
@@ -62,7 +63,8 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 		FormValidationInterceptorTest.class, ServiceInvocationTest.class,
 		HttpKeepAliveTest.class, ReverseProxyingInterceptorTest.class,
 		SSLContextTest.class, RelocatorWADLTest.class,
-		WADLInterceptorTest.class, ReassembleTest.class })
+		WADLInterceptorTest.class, ReassembleTest.class,
+		XMLContentFilterTest.class })
 public class UnitTests {
 	/*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

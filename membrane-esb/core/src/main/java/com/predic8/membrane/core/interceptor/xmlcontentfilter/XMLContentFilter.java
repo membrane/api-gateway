@@ -13,16 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.concurrent.ThreadSafe;
+import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -34,18 +44,31 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.EndOfStreamException;
 
 /**
- * Takes action on XML documents based on an XPath 2.0 expression. The only action
+ * Takes action on XML documents based on an XPath expression. The only action
  * as of writing is {@link #removeMatchingElements(Message)}.
+ * 
+ * As even Java 7 only supports XPath 1.0, this is what this class supports.
  */
+@ThreadSafe
 public class XMLContentFilter {
 
-	private final XPathExpression xpe;
+	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<XPathExpression>();
+	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<DocumentBuilder>();
+	private final ThreadLocal<Transformer> t = new ThreadLocal<Transformer>();
+	private final XOPReconstitutor xopReconstitutor = new XOPReconstitutor();
 
+	/**
+	 * The XPath expression.
+	 */
+	private final String xPath;
+	
 	/** 
 	 * The elementFinder is only used for improved performance: It can make
 	 * a first decision whether the XPath expression has any chance of succeeding
@@ -57,13 +80,11 @@ public class XMLContentFilter {
 	private final XMLElementFinder elementFinder;
 
 	/**
-	 * @param xPath XPath 2.0 expression
+	 * @param xPath XPath 1.0 expression
 	 */
 	public XMLContentFilter(String xPath) throws XPathExpressionException {
-		XPathFactory xpf = XPathFactory.newInstance();
-		XPath xp = xpf.newXPath();
-		xpe = xp.compile(xPath);
-		
+		this.xPath = xPath;
+		createXPathExpression(); // to throw XPathExpressionException early
 		elementFinder = createElementFinder(xPath);
 	}
 
@@ -78,7 +99,7 @@ public class XMLContentFilter {
 	 * @return the xmlElementFinder as described above, or null if the XPath
 	 *         expression is too complex.
 	 */
-	private XMLElementFinder createElementFinder(String xPath) {
+	static XMLElementFinder createElementFinder(String xPath) {
 		SimpleXPathAnalyzer a = new SimpleXPathAnalyzer();
 		List<ContainerNode> intersectExceptExprs = a
 				.getIntersectExceptExprs(xPath);
@@ -93,7 +114,39 @@ public class XMLContentFilter {
 		}
 		return new XMLElementFinder(rootElements);
 	}
-
+	
+	private XPathExpression createXPathExpression() throws XPathExpressionException {
+		XPathExpression res = xpe.get();
+		if (res != null)
+			return res;
+		XPathFactory xpf = XPathFactory.newInstance();
+		XPath xp = xpf.newXPath();
+		res = xp.compile(xPath);
+		xpe.set(res);
+		return res;
+	}
+	
+	private DocumentBuilder createDocumentBuilder() throws ParserConfigurationException {
+		DocumentBuilder res = db.get();
+		if (res != null)
+			return res;
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		dbf.setNamespaceAware(true);
+		dbf.setExpandEntityReferences(false);
+		res = dbf.newDocumentBuilder();
+		db.set(res);
+		return res;
+	}
+	
+	private Transformer createTransformer() throws TransformerConfigurationException, TransformerFactoryConfigurationError {
+		Transformer res = t.get();
+		if (res != null)
+			return res;
+		res = TransformerFactory.newInstance().newTransformer();
+		t.set(res);
+		return res;
+	}
+	
 	/**
 	 * Removes parts of an XML document based on an XPath expression.
 	 * 
@@ -101,26 +154,45 @@ public class XMLContentFilter {
 	 */
 	public void removeMatchingElements(Message message) {
 		try {
-			if (elementFinder != null) {
-				if (!elementFinder.matches(new XOPReconstitutor()
-					.reconstituteIfNecessary(message)))
+			Message xop = null;
+			try {
+				xop = xopReconstitutor.getReconstitutedMessage(message);
+			} catch (ParseException e) {
+			} catch (EndOfStreamException e) {
+			} catch (FactoryConfigurationError e) {
+			}
+			
+			if (elementFinder != null &&
+				!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStream())) {
+				System.out.println("elementFinder did not match");
 					return;
 			}
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			dbf.setNamespaceAware(true);
-			dbf.setExpandEntityReferences(false);
-			DocumentBuilder db = dbf.newDocumentBuilder();
-			Document d = db.parse(new XOPReconstitutor().reconstituteIfNecessary(message));
-			NodeList nl = (NodeList) xpe.evaluate(
-					new DOMSource(d.getDocumentElement()),
+			DocumentBuilder db = createDocumentBuilder();
+			Document d;
+			try {
+				d = db.parse(xop != null ? xop.getBodyAsStream() : message.getBodyAsStream());
+			} finally {
+				db.reset();
+			}
+			NodeList nl = (NodeList) createXPathExpression().evaluate(d,
 					XPathConstants.NODESET);
 			if (nl.getLength() > 0) {
 				// change is necessary
-				// TODO: if the message was XOP-reconstituted, adjust content type
+				message.getHeader().removeFields(Header.CONTENT_ENCODING);
+				if (xop != null) {
+					message.getHeader().removeFields(Header.CONTENT_TYPE);
+					if (xop.getHeader().getContentType() != null)
+						message.getHeader().setContentType(xop.getHeader().getContentType());
+				}
+
 				for (int i = 0; i < nl.getLength(); i++) {
 					Node n = nl.item(i);
 					n.getParentNode().removeChild(n);
 				}
+				
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				createTransformer().transform(new DOMSource(d), new StreamResult(baos));
+				message.setBodyContent(baos.toByteArray());
 			}
 		} catch (SAXException e) {
 			return;
@@ -131,6 +203,12 @@ public class XMLContentFilter {
 		} catch (ParserConfigurationException e) {
 			throw new RuntimeException(e);
 		} catch (XPathExpressionException e) {
+			throw new RuntimeException(e);
+		} catch (TransformerConfigurationException e) {
+			throw new RuntimeException(e);
+		} catch (TransformerException e) {
+			throw new RuntimeException(e);
+		} catch (TransformerFactoryConfigurationError e) {
 			throw new RuntimeException(e);
 		}
 	}

@@ -14,12 +14,12 @@
 
 package com.predic8.membrane.core.multipart;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 
+import javax.annotation.concurrent.ThreadSafe;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 import javax.xml.namespace.QName;
@@ -39,6 +39,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -49,6 +50,7 @@ import com.predic8.membrane.core.util.EndOfStreamException;
  * http://www.w3.org/TR/xop10/ ) into one stream (that can be used for schema
  * validation, for example).
  */
+@ThreadSafe
 public class XOPReconstitutor {
 	private static Log log = LogFactory.getLog(XOPReconstitutor.class.getName());
 	private static final String XOP_NAMESPACE_URI = "http://www.w3.org/2004/08/xop/include";
@@ -63,7 +65,7 @@ public class XOPReconstitutor {
 	
 	public InputStream reconstituteIfNecessary(Message message) throws XMLStreamException {
 		try {
-			InputStream result = getSOAPStreamInternal(message);
+			InputStream result = getReconstitutedMessage(message).getBodyAsStream();
 			if (result != null)
 				return result;
 		} catch (Exception e) {
@@ -80,9 +82,9 @@ public class XOPReconstitutor {
 	}
 	
 	/**
-	 * @return reassembled SOAP stream or null if message is not SOAP or not multipart
+	 * @return reassembled SOAP message or null if message is not SOAP or not multipart
 	 */
-	private InputStream getSOAPStreamInternal(Message message) throws ParseException, MalformedStreamException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
+	public Message getReconstitutedMessage(Message message) throws ParseException, MalformedStreamException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
 		ContentType contentType = message.getHeader().getContentTypeObject();
 		if (contentType == null || contentType.getPrimaryType() == null)
 			return null;
@@ -110,7 +112,28 @@ public class XOPReconstitutor {
 			|| !innerContentType.getSubType().equals("xop+xml"))
 			return null;
 					
-		return fillInXOPParts(startPart.getInputStream(), parts);
+		byte[] body = fillInXOPParts(startPart.getInputStream(), parts);
+		
+		Message m = new Message(){
+			@Override
+			protected void parseStartLine(InputStream in) throws IOException,
+					EndOfStreamException {
+				throw new RuntimeException("not implemented.");
+			}
+
+			@Override
+			public String getStartLine() {
+				throw new RuntimeException("not implemented.");
+			}
+		};
+		m.setBody(new Body(body));
+		m.getHeader().setContentLength(body.length);
+		
+		String reconstitutedContentType = innerContentType.getParameter("type");
+		if (reconstitutedContentType != null)
+			m.getHeader().add(Header.CONTENT_TYPE, reconstitutedContentType);
+		
+		return m;
 	}
 
 	@SuppressWarnings("deprecation")
@@ -145,7 +168,7 @@ public class XOPReconstitutor {
 		return parts;
 	}
 
-	private InputStream fillInXOPParts(InputStream inputStream,
+	private byte[] fillInXOPParts(InputStream inputStream,
 			HashMap<String, Part> parts) throws XMLStreamException, FactoryConfigurationError {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(baos);
@@ -192,7 +215,7 @@ public class XOPReconstitutor {
 			log.warn("Received not-wellformed XML.");
 			return null;
 		}
-		return new ByteArrayInputStream(baos.toByteArray());
+		return baos.toByteArray();
 	}
 
 }

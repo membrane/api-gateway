@@ -16,15 +16,25 @@ package com.predic8.membrane.core.multipart;
 
 import java.io.IOException;
 
+import javax.mail.internet.ParseException;
+import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.xpath.XPathExpressionException;
 
+import junit.framework.Assert;
+
+import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.custommonkey.xmlunit.XMLAssert;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilter;
+import com.predic8.membrane.core.util.EndOfStreamException;
 
 public class ReassembleTest {
 
@@ -50,6 +60,26 @@ public class ReassembleTest {
 			throw new AssertionError("Response was not reassembled: " + actual);
 		
 		XMLAssert.assertXMLEqual(expected, actual);
+	}
+	
+	@Test
+	public void checkContentType() throws ParseException, MalformedStreamException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
+		Assert.assertEquals("text/xml",
+				new XOPReconstitutor().getReconstitutedMessage(getResponse()).getHeader().getContentType());
+	}
+	
+	private void testXMLContentFilter(String xpath, int expectedNumberOfRemainingElements) throws IOException, XPathExpressionException {
+		XMLContentFilter cf = new XMLContentFilter(xpath);
+		Message m = getResponse();
+		cf.removeMatchingElements(m);
+		Assert.assertEquals("text/xml", m.getHeader().getContentType());
+		Assert.assertEquals(expectedNumberOfRemainingElements+1, StringUtils.countMatches(m.getBody().toString(), "<"));
+	}
+	
+	@Test
+	public void inCombinationWithXMLContentFilterTest() throws XPathExpressionException, IOException {
+		testXMLContentFilter("//*[local-name()='Body']", 1);
+		testXMLContentFilter("//*[local-name()='Body' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']", 1);
 	}
 
 }

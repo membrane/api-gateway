@@ -69,14 +69,21 @@ public class SimpleXPathAnalyzer {
 			return null;
 		skipWhitespace(m);
 		String elementName = getName(m);
-		if (elementName == null)
-			return null;
+		if (elementName == null) {
+			if (m.s.codePointAt(m.p) != '*')
+				return null;
+			elementName = "*";
+			m.p++;
+		}
+		if (elementName.contains(":"))
+			throw new RuntimeException("Namespace prefixes are not allowed in XPath expressions here, since they are not declared. Use '//*[local-name()='foo' and namespace-uri()='http://bar.com/'] instead");
 		skipWhitespace(m);
 		// if '[' + expr + ']' follows
 		if (m.isAtEnd() &&
 			intersectExceptExpr.nodes.length > 1 &&
 			intersectExceptExpr.nodes[1] instanceof SquareBracketNode) {
 			ContainerNode predicate = ((SquareBracketNode)intersectExceptExpr.nodes[1]).node;
+			// expr matches "local-name() = 'foo'"
 			if (predicate.nodes.length == 4 &&
 				predicate.nodes[0] instanceof UnparsedStringNode &&
 				predicate.nodes[1] instanceof RoundBracketNode &&
@@ -84,13 +91,49 @@ public class SimpleXPathAnalyzer {
 				predicate.nodes[2] instanceof UnparsedStringNode &&
 				predicate.nodes[3] instanceof StringNode) {
 				Marker m2 = new Marker(((UnparsedStringNode)predicate.nodes[0]).s);	
+				String string1 = ((StringNode)predicate.nodes[3]).s;
 				skipWhitespace(m2);
-				if ("namespace-uri".equals(getName(m2)) && m2.isAtEnd()) {
-					return new QName(((StringNode)predicate.nodes[3]).s, elementName);
+				String function = getName(m2);
+				if (m2.isAtEnd()) {
+					if ("namespace-uri".equals(function))
+						return new QName(string1, elementName);
+					if ("local-name".equals(function) && elementName.equals("*"))
+						return new QName(string1);
+				}
+			}
+			// expr matches "local-name() = 'foo' and namespace-uri
+			if ("*".equals(elementName) &&
+					predicate.nodes.length == 8 &&
+					predicate.nodes[0] instanceof UnparsedStringNode &&
+					predicate.nodes[1] instanceof RoundBracketNode &&
+					((RoundBracketNode)predicate.nodes[1]).node.nodes.length == 0 &&
+					predicate.nodes[2] instanceof UnparsedStringNode &&
+					predicate.nodes[3] instanceof StringNode &&
+					predicate.nodes[4] instanceof UnparsedStringNode &&
+					predicate.nodes[5] instanceof RoundBracketNode &&
+					((RoundBracketNode)predicate.nodes[5]).node.nodes.length == 0 &&
+					predicate.nodes[6] instanceof UnparsedStringNode &&
+					predicate.nodes[7] instanceof StringNode) {
+				Marker m2 = new Marker(((UnparsedStringNode)predicate.nodes[0]).s);	
+				String string1 = ((StringNode)predicate.nodes[3]).s;
+				skipWhitespace(m2);
+				String function = getName(m2);
+				if (m2.isAtEnd() && "local-name".equals(function)) {
+					Marker m3 = new Marker(((UnparsedStringNode)predicate.nodes[4]).s);	
+					String string2 = ((StringNode)predicate.nodes[7]).s;
+					skipWhitespace(m3);
+					String and = getName(m3);
+					if ("and".equals(and)) {
+						skipWhitespace(m3);
+						String function2 = getName(m3);
+						if (m3.isAtEnd() && "namespace-uri".equals(function2)) {
+							return new QName(string2, string1);
+						}
+					}
 				}
 			}
 		}
-		return new QName(elementName);
+		return "*".equals(elementName) ? null : new QName(elementName);
 	}
 	
 	private String getName(Marker m) {
@@ -99,8 +142,11 @@ public class SimpleXPathAnalyzer {
 			int c = eatChar(m);
 			if (isNameChar(c))
 				sb.appendCodePoint(c);
-			else
+			else {
+				if (c != 0)
+					m.p--;
 				break;
+			}
 		}
 		return sb.length() == 0 ? null : sb.toString();
 	}
@@ -184,6 +230,29 @@ public class SimpleXPathAnalyzer {
 	
 	/** Ensure that any occurrence of op is not part of a name, if op itself is a name */
 	private int indexOfOperand(String xpath, String op) {
+		if ("*".equals(op)) {
+			// "*" needs special treatment: an exact distinction between MultiplicativeExpr and Wildcard
+			// cannot be made without completely parsing the grammar. Therefore we just check
+			// whether "*" is prefixed by any of "+", "-", "/", "//", "::", "@" or occurs at the start of
+			// the string, in which case it is a Wildcard. The othercases cannot be easily distinguished,
+			// in those we return it as being an operand.
+			int p = -1;
+			OUTER:
+			while (true) {
+				p = xpath.indexOf(op, p+1);
+				if (p == -1)
+					return -1;
+				int q = p; // 'q' is used to find first non-whitespace before 'p'
+				do {
+					if (--q == -1)
+						continue OUTER;
+				} while (isWhiteSpace(xpath.codePointAt(q)));
+				int c = xpath.codePointAt(q);
+				if (c == '+' || c == '-' || c == '/' || c == ':' || c == '@')
+					continue;
+				return p;
+			}
+		}
 		// 'letter' here refers to a character that can be part of a name
 		int p = -1;
 		while (true) {
