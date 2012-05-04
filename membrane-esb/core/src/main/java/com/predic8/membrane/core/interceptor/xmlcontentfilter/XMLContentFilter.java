@@ -164,8 +164,7 @@ public class XMLContentFilter {
 			
 			if (elementFinder != null &&
 				!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStream())) {
-				System.out.println("elementFinder did not match");
-					return;
+				return;
 			}
 			DocumentBuilder db = createDocumentBuilder();
 			Document d;
@@ -174,26 +173,7 @@ public class XMLContentFilter {
 			} finally {
 				db.reset();
 			}
-			NodeList nl = (NodeList) createXPathExpression().evaluate(d,
-					XPathConstants.NODESET);
-			if (nl.getLength() > 0) {
-				// change is necessary
-				message.getHeader().removeFields(Header.CONTENT_ENCODING);
-				if (xop != null) {
-					message.getHeader().removeFields(Header.CONTENT_TYPE);
-					if (xop.getHeader().getContentType() != null)
-						message.getHeader().setContentType(xop.getHeader().getContentType());
-				}
-
-				for (int i = 0; i < nl.getLength(); i++) {
-					Node n = nl.item(i);
-					n.getParentNode().removeChild(n);
-				}
-				
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				createTransformer().transform(new DOMSource(d), new StreamResult(baos));
-				message.setBodyContent(baos.toByteArray());
-			}
+			removeElementsIfNecessary(message, xop, d);
 		} catch (SAXException e) {
 			return;
 		} catch (IOException e) {
@@ -210,6 +190,42 @@ public class XMLContentFilter {
 			throw new RuntimeException(e);
 		} catch (TransformerFactoryConfigurationError e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * @param originalMessage
+	 * @param xopDecodedMessage
+	 * @param doc
+	 * @throws XPathExpressionException
+	 * @throws TransformerException
+	 * @throws TransformerConfigurationException
+	 * @throws TransformerFactoryConfigurationError
+	 */
+	private void removeElementsIfNecessary(Message originalMessage,
+			Message xopDecodedMessage, Document doc)
+			throws XPathExpressionException, TransformerException,
+			TransformerConfigurationException,
+			TransformerFactoryConfigurationError {
+		NodeList toBeDeleted = (NodeList) createXPathExpression().evaluate(doc,
+				XPathConstants.NODESET);
+		if (toBeDeleted.getLength() > 0) {
+			// change is necessary
+			originalMessage.getHeader().removeFields(Header.CONTENT_ENCODING);
+			if (xopDecodedMessage != null) {
+				originalMessage.getHeader().removeFields(Header.CONTENT_TYPE);
+				if (xopDecodedMessage.getHeader().getContentType() != null)
+					originalMessage.getHeader().setContentType(xopDecodedMessage.getHeader().getContentType());
+			}
+
+			for (int i = 0; i < toBeDeleted.getLength(); i++) {
+				Node n = toBeDeleted.item(i);
+				n.getParentNode().removeChild(n);
+			}
+			
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			createTransformer().transform(new DOMSource(doc), new StreamResult(baos));
+			originalMessage.setBodyContent(baos.toByteArray());
 		}
 	}
 
