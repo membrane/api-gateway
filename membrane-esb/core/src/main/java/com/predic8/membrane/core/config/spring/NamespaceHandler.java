@@ -74,6 +74,8 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
 				new XmlContentFilterInterceptorParser());
 		registerBeanDefinitionParser("xmlProtection",
 				new XmlProtectionInterceptorParser());
+		registerBeanDefinitionParser("soapStackTraceFilter",
+				new SOAPStackTraceFilterInterceptorParser());
 		try {
 			registerBeanDefinitionParser("servletTransport", 
 					(BeanDefinitionParser) Class.forName("com.predic8.membrane.servlet.embedded.ServletTransportParser").newInstance());

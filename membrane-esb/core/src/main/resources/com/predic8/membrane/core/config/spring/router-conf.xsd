@@ -434,6 +434,16 @@
 		</xsd:complexType>
 	</xsd:element>
 
+	<xsd:element name="soapStackTraceFilter">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
 	<xsd:element name="xmlProtection">
 		<xsd:complexType>
 			<xsd:complexContent>

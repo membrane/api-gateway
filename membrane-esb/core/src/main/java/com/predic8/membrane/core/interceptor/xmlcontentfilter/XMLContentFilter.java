@@ -39,6 +39,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -58,6 +59,8 @@ import com.predic8.membrane.core.util.EndOfStreamException;
  */
 @ThreadSafe
 public class XMLContentFilter {
+
+	private static final Logger LOG = Logger.getLogger(XMLContentFilter.class);
 
 	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<XPathExpression>();
 	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<DocumentBuilder>();
@@ -86,6 +89,8 @@ public class XMLContentFilter {
 		this.xPath = xPath;
 		createXPathExpression(); // to throw XPathExpressionException early
 		elementFinder = createElementFinder(xPath);
+		if (elementFinder == null)
+			LOG.warn("The XPath expression \"" + xPath + "\" could not be optimized to use a StAX parser as a first check. This means that for every SOAP message, a DOM tree has to be built to execute the XPath expression. This might degrade performance significantly.");
 	}
 
 	/**
