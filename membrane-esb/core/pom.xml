@@ -150,6 +150,11 @@
 			<artifactId>xmlunit</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.predic8</groupId>
+			<artifactId>membrane-esb-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>

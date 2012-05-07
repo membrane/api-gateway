@@ -29,9 +29,9 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 	
 	private static final Logger LOG = Logger.getLogger(SOAPStackTraceFilterInterceptor.class);
 	private static final String XPATH = ""
-			+ "//*[local-name()='Fault' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']//*[local-name()='stackTrace' and namespace-uri()='http://jax-ws.dev.java.net/'] | "
-			+ "//*[local-name()='Fault' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']//*[local-name()='stacktrace'] | "
-			+ "//*[local-name()='Fault' and namespace-uri()='http://www.w3.org/2003/05/soap-envelope']//*[local-name()='stackTrace' and namespace-uri()='http://jax-ws.dev.java.net/']";
+			+ "//*[local-name()='Fault' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']//*[local-name()='stackTrace' or local-name()='stacktrace'] | "
+			+ "//*[local-name()='Fault' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']//*[local-name()='faultstring' and contains(., '.java:')] | "
+			+ "//*[local-name()='Fault' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message";
 	
 	private final XMLContentFilter xmlContentFilter;
 	
