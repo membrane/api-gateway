@@ -65,9 +65,9 @@ public class XOPReconstitutor {
 	
 	public InputStream reconstituteIfNecessary(Message message) throws XMLStreamException {
 		try {
-			InputStream result = getReconstitutedMessage(message).getBodyAsStream();
-			if (result != null)
-				return result;
+			Message reconstitutedMessage = getReconstitutedMessage(message);
+			if (reconstitutedMessage != null)
+				return reconstitutedMessage.getBodyAsStream();
 		} catch (Exception e) {
 			log.warn(e);
 			e.printStackTrace();
