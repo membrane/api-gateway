@@ -105,15 +105,17 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 				h3().text("Visualization").end();
 				createServiceProxyVisualization(rule, relativeRootPath);
 				h3().text("XML").end();
+				div().classAttr("proxy-config");
 				String xml = "";
 				try {
 					xml = rule.toXml();
-					xml = TextUtil.formatXML(new StringReader(xml));
-					pre().text(xml).end();
+					xml = TextUtil.formatXML(new StringReader(xml), true);
+					raw(xml);
 				} catch (Exception e) {
 					log.error(xml);
 					e.printStackTrace();
 				}
+				end();
 			}
 		}.createPage());
 	}

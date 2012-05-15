@@ -6,3 +6,25 @@
 	margin-top: 10px;
 	margin-bottom: 10px;
 }
+
+.proxy-config {
+	white-space: pre;
+	font-family: "Consolas", "Courier New", Courier, monospace;
+	font-size: 9pt;
+}
+
+.proxy-config .e {
+	color: #3f7f7f;
+}
+
+.proxy-config .a {
+	color: #7f007f;
+}
+
+.proxy-config .v {
+	color: #2a3af0;
+}
+
+.proxy-config .c {
+	color: #3f5fbf;
+}

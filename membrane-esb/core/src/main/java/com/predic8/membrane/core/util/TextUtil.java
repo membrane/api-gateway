@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringWriter;
 
+import com.predic8.beautifier.HtmlBeautifierFormatter;
 import com.predic8.beautifier.PlainBeautifierFormatter;
 import com.predic8.beautifier.XMLBeautifier;
 import com.predic8.beautifier.XMLBeautifierFormatter;
@@ -35,11 +36,16 @@ public class TextUtil {
 		replace = new String[] { ".*",   ".",  "\\.",  "\\\\",   "\\(",   "\\)",   "\\+",   "\\|",  "\\^",   "\\$",    "\\%",   "\\@"   };
 	}
 	
+
 	public static String formatXML(Reader reader) {
+		return formatXML(reader, false);
+	}
+
+	public static String formatXML(Reader reader, boolean asHTML) {
 		StringWriter out = new StringWriter();
 		
 		try {      
-			XMLBeautifierFormatter formatter = new PlainBeautifierFormatter(out, 0);
+			XMLBeautifierFormatter formatter = asHTML ? new HtmlBeautifierFormatter(out, 0) : new PlainBeautifierFormatter(out, 0);
 			XMLBeautifier beautifier = new XMLBeautifier(formatter);
 			beautifier.parse(reader);
 		}
