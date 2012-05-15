@@ -539,7 +539,7 @@ public class AdminPageBuilder extends Html {
 		if (columnSpan > 1)
 			colspan(""+columnSpan);
 		if (i == null) {
-			div().style("padding:2px 5px; margin: 10px;");
+			div().style("padding:2px 5px; margin: 10px; width: 298px;");
 			raw("&nbsp;");
 			end();
 		} else {
