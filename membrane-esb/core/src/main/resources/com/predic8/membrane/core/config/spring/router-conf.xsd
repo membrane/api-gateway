@@ -213,7 +213,12 @@
 		</xsd:complexType>
 	</xsd:element>
 
-	<xsd:element name="adminConsole" type="EmptyElementType" />
+	<xsd:element name="adminConsole">
+		<xsd:complexType>
+			<xsd:sequence />
+			<xsd:attribute name="readOnly" type="xsd:boolean" default="false"/>
+		</xsd:complexType>
+	</xsd:element>
 
 	<xsd:element name="clusterNotification">
 		<xsd:complexType>

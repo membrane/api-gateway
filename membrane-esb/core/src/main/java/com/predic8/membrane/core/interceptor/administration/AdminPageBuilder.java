@@ -48,17 +48,19 @@ public class AdminPageBuilder extends Html {
 	private final Map<String, String> params;
 	private final StringWriter writer;
 	private final String relativeRootPath;
+	private final boolean readOnly;
 
 	static public String createHRef(String ctrl, String action, String query) {
 		return "/admin/"+ctrl+(action!=null?"/"+action:"")+(query!=null?"?"+query:"");
 	}
 	
-	public AdminPageBuilder(StringWriter writer, Router router, String relativeRootPath, Map<String, String> params) {
+	public AdminPageBuilder(StringWriter writer, Router router, String relativeRootPath, Map<String, String> params, boolean readOnly) {
 		super(writer);
 		this.router = router;
 		this.params = params;
 		this.writer = writer;
 		this.relativeRootPath = relativeRootPath;
+		this.readOnly = readOnly;
 	}
 	
 	private String makeRelative(String path) {
@@ -152,6 +154,9 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createAddFwdRuleForm() {
+		if (readOnly)
+			return;
+		
 		form().id("addFwdRuleForm").action("/admin/service-proxy/save").method("POST");
 			div()
 				.span().text("Name").end()
@@ -180,6 +185,9 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createAddProxyRuleForm() {
+		if (readOnly)
+			return;
+		
 		form().id("addProxyRuleForm").action("/admin/proxy/save").method("POST");
 			div()
 				.span().text("Name").end()
@@ -211,7 +219,10 @@ public class AdminPageBuilder extends Html {
 						             rule.getTargetHost(),
 						             ""+rule.getTargetPort(),
 						             ""+rule.getCount());
-						td().a().href("/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
+						if (!readOnly)
+							td().a().href("/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
+						else
+							td().end();
 					end();
 				}
 			end();
@@ -233,7 +244,8 @@ public class AdminPageBuilder extends Html {
 						end();
 						createTds(rule.getKey().getPort() == -1 ? "" : ""+rule.getKey().getPort(),
 								  ""+rule.getCount());
-						td().a().href("/admin/proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
+						if (!readOnly)
+							td().a().href("/admin/proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
 					end();
 				}
 			end();
@@ -266,6 +278,9 @@ public class AdminPageBuilder extends Html {
 	}
 	
 	protected void createAddClusterForm(String balancerName) {
+		if (readOnly)
+			return;
+		
 		form().id("addClusterForm").action("/admin/clusters/save").method("POST");
 			input().type("hidden").name("balancer").value(balancerName).end();
 			div()
@@ -325,6 +340,9 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createAddNodeForm(String balancerName) {
+		if (readOnly)
+			return;
+		
 		form().id("addNodeForm").action("/admin/node/save").method("POST");
 			input().type("hidden").name("balancer").value(balancerName).end();
 			input().type("hidden").name("cluster").value(params.get("cluster")).end();
@@ -433,7 +451,8 @@ public class AdminPageBuilder extends Html {
 							createIcon("ui-icon-eject", "node", "takeout", "takeout", createQuery4Node(n));
 							createIcon("ui-icon-circle-arrow-n", "node", "up", "up", createQuery4Node(n));
 							createIcon("ui-icon-circle-arrow-s", "node", "down", "down", createQuery4Node(n));
-							createIcon("ui-icon-trash", "node", "delete", "delete", createQuery4Node(n));
+							if (!readOnly)
+								createIcon("ui-icon-trash", "node", "delete", "delete", createQuery4Node(n));
 						end();
 					end();
 				}

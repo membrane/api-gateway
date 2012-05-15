@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.httpclient.util.URIUtil;
@@ -49,8 +50,9 @@ import com.predic8.membrane.core.util.URLParamUtil;
 
 public class AdminConsoleInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(AdminConsoleInterceptor.class
-			.getName());
+	private static Log log = LogFactory.getLog(AdminConsoleInterceptor.class.getName());
+	
+	private boolean readOnly;
 
 	public AdminConsoleInterceptor() {
 		name = "Administration";
@@ -83,7 +85,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		
 		final ServiceProxy rule = (ServiceProxy) RuleUtil.findRuleByIdentifier(router,params.get("name"));
 		
-		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return 0;
@@ -123,7 +125,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 		final ProxyRule rule = (ProxyRule) RuleUtil.findRuleByIdentifier(router,params.get("name"));
 		
-		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return 1;
@@ -153,6 +155,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	@Mapping("/admin/service-proxy/save/?(\\?.*)?")
 	public Response handleFruleSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		
 		logAddFwdRuleParams(params);
 		
 		Rule r = new ServiceProxy(new ServiceProxyKey("*",
@@ -166,6 +171,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	
 	@Mapping("/admin/proxy/save/?(\\?.*)?")
 	public Response handlePruleSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		
 		log.debug("adding proxy rule");
 		log.debug("name: " + params.get("name"));
 		log.debug("port: " + params.get("port"));
@@ -179,24 +187,30 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	@Mapping("/admin/service-proxy/delete/?(\\?.*)?")
 	public Response handleServiceProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
-			router.getRuleManager().removeRule(
-					RuleUtil.findRuleByIdentifier(router, params.get("name")));
-			return respond(getServiceProxyPage(params, relativeRootPath));
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		
+		router.getRuleManager().removeRule(
+				RuleUtil.findRuleByIdentifier(router, params.get("name")));
+		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/proxy/delete/?(\\?.*)?")
 	public Response handleProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
-			router.getRuleManager().removeRule(
-					RuleUtil.findRuleByIdentifier(router, params.get("name")));
-			return respond(getProxyPage(params, relativeRootPath));
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		
+		router.getRuleManager().removeRule(
+				RuleUtil.findRuleByIdentifier(router, params.get("name")));
+		return respond(getProxyPage(params, relativeRootPath));
 	}
 	
 	@Mapping("/admin/transport/?(\\?.*)?")
 	public Response handleTransportRequest(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return 2;
@@ -217,7 +231,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public Response handleSystemRequest(final Map<String, String> params, String relativeRootPath)
    	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return 3;
@@ -252,6 +266,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	@Mapping("/admin/clusters/save/?(\\?.*)?")
 	public Response handleClustersSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		
 		log.debug("adding cluster");
 		log.debug("balancer: " + getBalancerParam(params));
 		log.debug("name: " + params.get("name"));
@@ -265,7 +282,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public Response handleNodeShowRequest(final Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return 4;
@@ -299,7 +316,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public Response handleNodeSessionsRequest(final Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return 4;
@@ -319,6 +336,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	
 	@Mapping("/admin/node/save/?(\\?.*)?")
 	public Response handleNodeSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		
 		log.debug("adding node");
 		log.debug("balancer: " + getBalancerParam(params));
 		log.debug("cluster: " + params.get("cluster"));
@@ -358,6 +378,9 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	@Mapping("/admin/node/delete/?(\\?.*)?")
 	public Response handleNodeDeleteRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).removeNode(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
@@ -383,7 +406,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	private String getServiceProxyPage(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return 0;
@@ -402,7 +425,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	private String getProxyPage(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return 1;
@@ -421,7 +444,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	private String getClusterPage(final Map<String, String> params, String relativeRootPath)
   	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			protected void createMetaElements() {
 				createMeta("refresh", "5");				
 			};
@@ -445,7 +468,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	private String getClustersPage(final Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 		
 			@Override
 			protected int getSelectedTab() {
@@ -471,7 +494,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	private String getBalancersPage(final Map<String, String> params, String relativeRootPath)
 			  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 				
 			@Override
 			protected int getSelectedTab() {
@@ -490,7 +513,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	private String getStatisticsPage(Map<String, String> params, String relativeRootPath)
 			  throws Exception {
 		StringWriter writer = new StringWriter();
-		return new AdminPageBuilder(writer, router, relativeRootPath, params) {
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return 5;
@@ -579,8 +602,20 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
 		
-		out.writeStartElement("adminConsole");		
+		out.writeStartElement("adminConsole");
+		if (readOnly)
+			out.writeAttribute("readOnly", "true");
 		out.writeEndElement();
+	}
+	
+	@Override
+	protected void parseAttributes(XMLStreamReader token) {
+		if ( token.getAttributeValue("", "readOnly") != null ) {
+			String v = token.getAttributeValue("", "readOnly");
+			readOnly = Boolean.parseBoolean(v) || "1".equals(v);
+		} else {
+			readOnly = false;
+		}
 	}
 	
 	public static String getBalancerParam(Map<String, String> params) {
@@ -590,4 +625,16 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		return balancerName;
 	}
 
+	public Response createReadOnlyErrorResponse() {
+		return Response.forbidden("The admin console is configured to be readOnly.").build();
+	}
+	
+	public boolean isReadOnly() {
+		return readOnly;
+	}
+	
+	public void setReadOnly(boolean readOnly) {
+		this.readOnly = readOnly;
+	}
+	
 }

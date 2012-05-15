@@ -28,6 +28,14 @@ public class AdminConsoleInterceptorParser extends AbstractParser {
 	@Override
 	protected void doParse(Element element, BeanDefinitionBuilder builder) {
 		setIdIfNeeded(element, "adminConsole");
+		
+		setPropertyIfSet("readOnly", element, builder);
 	}
-	
+
+	private void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder) {
+		if (e.hasAttribute(prop)) {
+			builder.addPropertyValue(prop, e.getAttribute(prop));
+		}
+	}
+
 }

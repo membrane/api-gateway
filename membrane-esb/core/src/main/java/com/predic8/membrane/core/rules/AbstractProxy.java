@@ -153,8 +153,9 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			((AbstractXmlElement) i).doAfterParsing(); // TODO move to right
 														// place
 		} else if ("adminConsole".equals(child)) {
-			super.parseChildren(token, child); // ignores element
-			return addAdminAndWebServerInterceptor(token);
+			i = addAdminAndWebServerInterceptor(token);
+			i.parse(token);
+			return i;
 		} else {
 			i = getInlinedInterceptor(token, child);
 		}
