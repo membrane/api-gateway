@@ -99,22 +99,35 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 			@Override
 			protected void createTabContent() throws Exception {
 				h1().text(rule.toString()+" ServiceProxy").end();
-				h2().text("Status Codes").end();
-				createStatusCodesTable(rule.getStatisticsByStatusCodes());
-				h2().text("Configuration").end();
-				h3().text("Visualization").end();
-				createServiceProxyVisualization(rule, relativeRootPath);
-				h3().text("XML").end();
-				div().classAttr("proxy-config");
-				String xml = "";
-				try {
-					xml = rule.toXml();
-					xml = TextUtil.formatXML(new StringReader(xml), true);
-					raw(xml);
-				} catch (Exception e) {
-					log.error(xml);
-					e.printStackTrace();
-				}
+				script().raw("$(function() {\r\n" + 
+						"					$( \"#subtab\" ).tabs();\r\n" + 
+						"				});").end();
+				
+				div().id("subtab");
+					ul();
+						li().a().href("#tab1").text("Status Code Statistics").end(2);
+						li().a().href("#tab2").text("Visualization").end(2);
+						li().a().href("#tab3").text("XML Configuration").end(2);
+					end();
+					div().id("tab1");
+						createStatusCodesTable(rule.getStatisticsByStatusCodes());
+					end();
+					div().id("tab2");
+						createServiceProxyVisualization(rule, relativeRootPath);
+					end();
+					div().id("tab3");
+						div().classAttr("proxy-config");
+						String xml = "";
+						try {
+							xml = rule.toXml();
+							xml = TextUtil.formatXML(new StringReader(xml), true);
+							raw(xml);
+						} catch (Exception e) {
+							log.error(xml);
+							e.printStackTrace();
+						}
+						end();
+					end();
 				end();
 			}
 		}.createPage());
