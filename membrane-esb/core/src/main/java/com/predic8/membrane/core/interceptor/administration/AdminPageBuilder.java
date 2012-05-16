@@ -473,7 +473,7 @@ public class AdminPageBuilder extends Html {
 	}
 
 	private String createQuery4Node(Node n) throws UnsupportedEncodingException {
-		return createQueryString("balancer", AdminConsoleInterceptor.getBalancerParam(params), 
+		return createQueryString("balancer", DynamicAdminPageInterceptor.getBalancerParam(params), 
 				"cluster", params.get("cluster"),"host", n.getHost(), "port", ""+n.getPort());
 	}
 

@@ -152,33 +152,11 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			i = getInterceptorBId(readInterceptor(token).getId());
 			((AbstractXmlElement) i).doAfterParsing(); // TODO move to right
 														// place
-		} else if ("adminConsole".equals(child)) {
-			i = addAdminAndWebServerInterceptor(token);
-			i.parse(token);
-			return i;
 		} else {
 			i = getInlinedInterceptor(token, child);
 		}
 		interceptors.add(i);
 		return i;
-	}
-
-	private Interceptor addAdminAndWebServerInterceptor(XMLStreamReader token) {
-
-		RewriteInterceptor r = new RewriteInterceptor();
-		r.getMappings().add(
-				new RewriteInterceptor.Mapping("^/?$", "/admin", "redirect"));
-		interceptors.add(r);
-
-		Interceptor a = new AdminConsoleInterceptor();
-		a.setRouter(router);
-		interceptors.add(a);
-
-		WebServerInterceptor i = new WebServerInterceptor();
-		i.setDocBase("classpath:/com/predic8/membrane/core/interceptor/administration/docBase");
-		i.setRouter(router);
-		interceptors.add(i);
-		return a;
 	}
 
 	private AbstractInterceptor readInterceptor(XMLStreamReader token)
@@ -194,7 +172,9 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 	private Interceptor getInlinedInterceptor(XMLStreamReader token, String name)
 			throws Exception {
 		AbstractInterceptor i = null;
-		if ("transform".equals(name)) {
+		if ("adminConsole".equals(name)) {
+			i = new AdminConsoleInterceptor();
+		} else if ("transform".equals(name)) {
 			i = new XSLTInterceptor();
 		} else if ("counter".equals(name)) {
 			i = new CountInterceptor();
