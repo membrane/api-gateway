@@ -173,7 +173,32 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public String getShortDescription() {
-		return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages are invalid.";
+		return validator.getInvalid() + " of " + (validator.getValid() + validator.getInvalid()) + " messages have been invalid.";
+	}
+	
+	@Override
+	public String getLongDescription() {
+		StringBuffer sb = new StringBuffer(getShortDescription());
+		sb.deleteCharAt(sb.length()-1);
+		sb.append(" according to ");
+		if (wsdl != null) {
+			sb.append("the WSDL at ");
+			sb.append(wsdl);
+		}
+		if (schema != null) {
+			sb.append("the XML Schema at ");
+			sb.append(schema);
+		}
+		if (jsonSchema != null) {
+			sb.append("the JSON Schema at ");
+			sb.append(jsonSchema);
+		}
+		if (schematron != null) {
+			sb.append("the Schematron at ");
+			sb.append(schematron);
+		}
+		sb.append(" .");
+		return sb.toString();
 	}
 	
 	public static interface FailureHandler {

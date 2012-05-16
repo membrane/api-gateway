@@ -31,7 +31,6 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
 import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
 import com.predic8.membrane.core.interceptor.balancer.Cluster;
@@ -564,42 +563,57 @@ public class AdminPageBuilder extends Html {
 			raw("&nbsp;");
 			end();
 		} else {
+			String shortDescription = i.getShortDescription();
+			String longDescription = i.getLongDescription();
+
 			String did = "d" + id;
 			div().id(did).style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + 
 					(columnSpan == 1 ? "width: 298px;" : "width: 630px;"));
 
-			createHelpIcon(i, id, did);
+			String iid = "i" + id;
+			div().id("i"+id);
+				createHelpIcon(i, id);
+				if (shortDescription.length() > 0 && !longDescription.equals(shortDescription)) {
+					createExpandIcon(i, id);
+				}
+			end();
+			createShowIconsScript(did, iid);
 			
 			div();
 			text(i.getDisplayName());
 			end();
-			String shortDescription = i.getShortDescription();
-			String longDescription = i.getLongDescription();
 			if (shortDescription.length() > 0) {
 				div().style("padding-top: 4px;");
 				String sid = "s" + id;
 				small().id(sid);
 				text(i.getShortDescription());
 				if (!longDescription.equals(shortDescription)) {
-					a().href("#").text("Details").end();
-					String tid = "l" + id;
+					String lid = "l" + id;
+					String eid = "e" + id;
+					String cid = "c" + id;
 					end();
-					small().id(tid).style("margin: 0px; cursor: pointer;");
+					small().id(lid).style("margin: 0px; cursor: pointer;");
 					text(longDescription);
 					end();
 					script();
 					raw("jQuery(document).ready(function() {\r\n" +
-						"  jQuery(\"#"+tid+"\").hide();\r\n" +
-						"  jQuery(\"#"+sid+"\").css('cursor', 'pointer');\r\n" +
-						"  jQuery(\"#"+sid+"\").click(function()\r\n" +
+						"  jQuery(\"#"+eid+"\").css('cursor', 'pointer');\r\n" +
+						"  jQuery(\"#"+cid+"\").css('cursor', 'pointer');\r\n" +
+						"  jQuery(\"#"+lid+"\").hide();\r\n" +
+						"  jQuery(\"#"+cid+"\").hide();\r\n" +
+						"  jQuery(\"#"+eid+"\").click(function()\r\n" +
 						"  {\r\n" +
 						"    jQuery(\"#"+sid+"\").hide();\r\n" +
-						"    jQuery(\"#"+tid+"\").slideToggle(500);\r\n" +
+						"    jQuery(\"#"+lid+"\").slideToggle(500);\r\n" +
+						"    jQuery(\"#"+eid+"\").hide();\r\n" +
+						"    jQuery(\"#"+cid+"\").show();\r\n" +
 						"  });\r\n" +
-						"  jQuery(\"#"+tid+"\").click(function()\r\n" +
+						"  jQuery(\"#"+cid+"\").click(function()\r\n" +
 						"  {\r\n" +
 						"    jQuery(\"#"+sid+"\").show();\r\n" +
-						"    jQuery(\"#"+tid+"\").slideToggle(500);\r\n" +
+						"    jQuery(\"#"+lid+"\").slideToggle(500);\r\n" +
+						"    jQuery(\"#"+cid+"\").hide();\r\n" +
+						"    jQuery(\"#"+eid+"\").show();\r\n" +
 						"  });\r\n" +
 						"});\r\n" + 
 						"</script>\r\n" + 
@@ -613,30 +627,41 @@ public class AdminPageBuilder extends Html {
 		}
 		end();
 	}
-	
-	private void createHelpIcon(Interceptor i, String id, String did) {
+
+	private void createExpandIcon(Interceptor i, String id) {
+		div().style("float:right;");
+			span().id("e" + id).classAttr("ui-icon ui-icon-triangle-1-w").title("expand").end();
+		end();
+		div().style("float:right;");
+			span().id("c" + id).classAttr("ui-icon ui-icon-triangle-1-s").title("collapse").end();
+		end();
+	}
+
+	private void createHelpIcon(Interceptor i, String id) {
 		String helpId = i.getHelpId();
 		if (helpId != null) {
-			String hid = "h"+id;
-			div().style("float:right;").id(hid);
+			div().style("float:right;");
 				a().href("http://membrane-soa.org/esb-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm");
-					span().classAttr("ui-icon ui-icon-help").end();
+					span().classAttr("ui-icon ui-icon-help").title("help").end();
 				end();
 			end();
-			script();
-			raw("jQuery(document).ready(function() {\r\n" +
-					"  jQuery(\"#"+hid+"\").hide();\r\n" +
-					"  jQuery(\"#"+did+"\").hover(function()\r\n" +
-					"  {\r\n" +
-					"    jQuery(\"#"+hid+"\").show();\r\n" +
-					"  }, function()\r\n" +
-					"  {\r\n" +
-					"    jQuery(\"#"+hid+"\").hide();\r\n" +
-					"  });\r\n" +
-					"});\r\n" + 
-					"");
-			end();
 		}
+	}
+	
+	private void createShowIconsScript(String did, String iid) {
+		script();
+		raw("jQuery(document).ready(function() {\r\n" +
+				"  jQuery(\"#"+iid+"\").hide();\r\n" +
+				"  jQuery(\"#"+did+"\").hover(function()\r\n" +
+				"  {\r\n" +
+				"    jQuery(\"#"+iid+"\").show();\r\n" +
+				"  }, function()\r\n" +
+				"  {\r\n" +
+				"    jQuery(\"#"+iid+"\").hide();\r\n" +
+				"  });\r\n" +
+				"});\r\n" + 
+				"");
+		end();
 	}
 
 	/**
