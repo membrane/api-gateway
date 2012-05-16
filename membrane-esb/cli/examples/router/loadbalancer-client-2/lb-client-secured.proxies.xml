@@ -2,8 +2,8 @@
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
 	<serviceProxy name="Balancer" port="8080">
-		<balancer />
 		<path>/service</path>
+		<balancer />
 	</serviceProxy>
 	<serviceProxy name="Up/Down Push Interface" port="9010">
 		<clusterNotification validateSignature="true"

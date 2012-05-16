@@ -2,6 +2,7 @@
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
 	<serviceProxy name="Balancer 1" port="8080">
+		<path>/service</path>
 		<balancer name="balancer1">
 			<clusters>
 				<cluster name="Default">
@@ -10,7 +11,6 @@
 				</cluster>
 			</clusters>
 		</balancer>
-		<path>/service</path>
 	</serviceProxy>
 	<serviceProxy name="Balancer 2" port="8081">
 		<balancer name="balancer2">

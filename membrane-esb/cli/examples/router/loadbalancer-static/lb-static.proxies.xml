@@ -3,6 +3,7 @@
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
 
 	<serviceProxy name="Balancer" port="8080">
+		<path>/service</path>
 		<balancer>
 			<clusters>
 				<cluster name="Default"> 
@@ -13,7 +14,6 @@
 				</cluster>
 			</clusters>
 		</balancer>
-		<path>/service</path>
 	</serviceProxy>
 	
 	<!-- The mock nodes are only for testing. You can remove them in production. -->
