@@ -19,6 +19,7 @@ import java.util.*;
 import javax.xml.stream.*;
 
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.GenericComplexElement;
@@ -112,6 +113,26 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		} else {
 			super.parseChildren(token, child);
 		}
+	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Authenticates incoming requests based on a fixed user list.";
+	}
+	
+	@Override
+	public String getLongDescription() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getShortDescription());
+		sb.append("<br/>");
+		sb.append("Users: ");
+		for (String user : users.keySet()) {
+			sb.append(HtmlUtils.htmlEscape(user));
+			sb.append(", ");
+		}
+		sb.delete(sb.length()-2, sb.length());
+		sb.append("<br/>Passwords are not shown.");
+		return sb.toString();
 	}
 	
 	@Override

@@ -16,16 +16,23 @@ package com.predic8.membrane.core.interceptor.groovy;
 
 import javax.xml.stream.*;
 
+import org.springframework.web.util.HtmlUtils;
+
 import groovy.lang.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.util.TextUtil;
 
 public class GroovyInterceptor extends AbstractInterceptor {
 	
 	private String src = "";
 
+	public GroovyInterceptor() {
+		name = "Groovy";
+	}
+	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return runScript(exc);
@@ -86,6 +93,21 @@ public class GroovyInterceptor extends AbstractInterceptor {
 
 	public void setSrc(String src) {
 		this.src = src;
+	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Executes a groovy script.";
+	}
+	
+	@Override
+	public String getLongDescription() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(TextUtil.removeFinalChar(getShortDescription()));
+		sb.append(":<br/><pre style=\"overflow-x:auto\">");
+		sb.append(HtmlUtils.htmlEscape(TextUtil.removeCommonLeadingIndentation(src)));
+		sb.append("</pre>");
+		return sb.toString();
 	}
 	
 	@Override

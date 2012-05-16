@@ -26,6 +26,7 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.XMLEvent;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.beautifier.HtmlBeautifierFormatter;
@@ -155,6 +156,32 @@ public class TextUtil {
 			return "<a href=\"" + url + "\">" + url + "</a>";  
 		}
 		return HtmlUtils.htmlEscape(url);
+	}
+
+	public static Object removeFinalChar(String s) {
+		StringBuilder sb = new StringBuilder(s);
+		if (sb.length() > 0)
+			sb.deleteCharAt(sb.length()-1);
+		return sb.toString();
+	}
+
+	public static String removeCommonLeadingIndentation(String src) {
+		// TODO: only handles tabs at the moment
+		String lines[] = src.split("\n");
+		int indent = Integer.MAX_VALUE;
+		for (String line : lines) {
+			if (StringUtils.strip(line).length() == 0)
+				continue;
+			int i = 0;
+			while (i < line.length() && line.charAt(i) == '\t')
+				i++;
+			indent = Math.min(indent, i);
+		}
+		if (indent == 0 || indent == Integer.MAX_VALUE)
+			return src;
+		for (int i = 0; i < lines.length; i++)
+			lines[i] = lines[i].length() > indent ? lines[i].substring(indent) : "";
+		return StringUtils.join(lines, '\n');
 	}
 	
 }

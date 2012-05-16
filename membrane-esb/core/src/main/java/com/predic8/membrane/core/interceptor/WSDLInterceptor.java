@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,16 +35,15 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
-import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
 public class WSDLInterceptor extends RelocatingInterceptor {
@@ -193,19 +193,45 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	
 	@Override
 	public String getLongDescription() {
-		StringBuffer sb = new StringBuffer(getShortDescription());
+		StringBuffer sb = new StringBuffer();
+		sb.append(getShortDescription());
+		sb.append("<br/>");
+		sb.append("The protocol, host and port of the incoming request will be used for the substitution");
+		
 		if (protocol != null || port != null || host != null) {
-			sb.append("\nThe ");
-			sb.append(TextUtil.toEnglishList("and",
-					protocol != null ? "protocol": null, 					
-					host != null ? "host": null, 
-					port != null ? "port" : null));
-			sb.append(" of the URLs are changed to ");
-			sb.append(TextUtil.toEnglishList("and",
-					protocol != null ? "\"" + StringEscapeUtils.escapeJava(protocol) + "\"" : null,
-					host != null ? "\"" + StringEscapeUtils.escapeJava(host) + "\"" : null,
-					port!= null ? StringEscapeUtils.escapeJava(port) : null));
-			sb.append(".");
+			sb.append(" except the following fixed values:");
+			StringWriter sw = new StringWriter();
+			new Html(sw){{
+				table();
+					thead();
+						tr();
+							th().text("Part").end();
+							th().text("Value").end();
+						end();
+					end();
+					tbody();
+					if (protocol != null) {
+						tr();
+							td().text("Protocol").end();
+							td().text(protocol).end();
+						end();
+					}
+					if (host != null) {
+						tr();
+							td().text("Host").end();
+							td().text(host).end();
+						end();
+					}
+					if (port != null) {
+						tr();
+							td().text("Port").end();
+							td().text(port).end();
+						end();
+					}
+					end();
+				end();
+			}};
+			sb.append(sw.toString());
 		}
 		return sb.toString();
 	}

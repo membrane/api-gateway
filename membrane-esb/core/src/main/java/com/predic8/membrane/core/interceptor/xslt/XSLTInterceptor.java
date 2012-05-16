@@ -23,6 +23,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
+import com.predic8.membrane.core.util.TextUtil;
 
 public class XSLTInterceptor extends AbstractInterceptor {
 
@@ -106,6 +107,21 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		concurrency = concurrencyString == null ? 0 : Integer.parseInt(concurrencyString);
 	}
 
+	@Override
+	public String getShortDescription() {
+		return "Applies an XSLT transformation.";
+	}
+	
+	@Override
+	public String getLongDescription() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(TextUtil.removeFinalChar(getShortDescription()));
+		sb.append(" using the stylesheet at ");
+		sb.append(TextUtil.linkURL(xslt));
+		sb.append(" .");
+		return sb.toString();
+	}
+	
 	@Override
 	public String getHelpId() {
 		return "transform";

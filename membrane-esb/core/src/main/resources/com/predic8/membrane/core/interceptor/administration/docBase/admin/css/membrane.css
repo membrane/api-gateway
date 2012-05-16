@@ -40,9 +40,12 @@
 .spv table {
 	font-size: 8pt;
 	border-collapse: collapse;
+	margin-top: 5pt;
 }
 .spv table td, table th {
 	border: 1px solid black;
+	padding-left: 3pt;
+	padding-right: 3pt;
 }
 .spv table tr:first-child th {
 	border-top: 0;
