@@ -26,6 +26,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -168,6 +169,11 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		setFileName(token.getAttributeValue("", "file"));
+	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Logs access statistics into the CSV-based file " + HtmlUtils.htmlEscape(fileName) + " .";
 	}
 	
 	@Override

@@ -66,6 +66,12 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
+	public String getShortDescription() {
+		return "Logs all exchanges (requests and responses) into an exchange store "+
+				"that can be inspected using <a href=\"http://www.membrane-soa.org/soap-monitor/\">Membrane Monitor</a>.";
+	}
+	
+	@Override
 	public String getHelpId() {
 		return "exchangeStore";
 	}

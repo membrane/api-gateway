@@ -607,7 +607,7 @@ public class AdminPageBuilder extends Html {
 					String cid = "c" + id;
 					a().id(aid).href("#").text("...").end();
 					end();
-					div().id(lid).style("margin: 0px; cursor: pointer;");
+					div().id(lid).style("margin: 0px;");
 					raw(longDescription);
 					end();
 					script();

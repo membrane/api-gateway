@@ -268,5 +268,10 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public String getHelpId() {
 		return "balancer";
 	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Performs load-balancing between <a href=\"/admin/balancers\">several nodes</a>.";
+	}
 
 }

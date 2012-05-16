@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.cbr;
 
 import static com.predic8.membrane.core.util.SynchronizedXPathFactory.newXPath;
 
+import java.io.StringWriter;
 import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
@@ -27,10 +28,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.xml.sax.InputSource;
 
+import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.TextUtil;
 
 public class XPathCBRInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(XPathCBRInterceptor.class.getName());
@@ -113,6 +116,40 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		} else {
 			super.parseChildren(token, child);
 		}	
+	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Routes incoming requests based on XPath expressions.";
+	}
+	
+	@Override
+	public String getLongDescription() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(getShortDescription());
+		sb.append("<br/>");
+		StringWriter sw = new StringWriter();
+		new Html(sw){{
+			text("The requests are routed based on the following rules:");
+			table();
+				thead();
+					tr();
+						th().text("XPath").end();
+						th().text("URL").end();
+					end();
+				end();
+				tbody();
+				for (Case c : routeProvider.getRoutes()) {
+					tr();
+						td().text(c.getxPath()).end();
+						td().raw(TextUtil.linkURL(c.getUrl())).end();
+					end();
+				}
+				end();
+			end();
+		}};
+		sb.append(sw.toString());
+		return sb.toString();
 	}
 	
 	@Override

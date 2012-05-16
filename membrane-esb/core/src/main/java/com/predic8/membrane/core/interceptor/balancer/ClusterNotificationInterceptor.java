@@ -168,8 +168,9 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		
 		out.writeStartElement("clusterNotification");
 		
-		out.writeAttribute("keyHex", keyHex);		
-		out.writeAttribute("validateSignature", ""+validateSignature);		
+		if (keyHex != null)
+			out.writeAttribute("keyHex", keyHex);
+		out.writeAttribute("validateSignature", ""+validateSignature);
 		out.writeAttribute("timeout", ""+timeout);		
 		
 		out.writeEndElement();
@@ -186,6 +187,11 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 
 		if ( token.getAttributeValue("", "timeout") != null ) 
 			timeout = Integer.parseInt(token.getAttributeValue("", "timeout"));
+	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Sets the status of load-balancer nodes to UP or DOWN, based on the request attributes.";
 	}
 	
 	@Override

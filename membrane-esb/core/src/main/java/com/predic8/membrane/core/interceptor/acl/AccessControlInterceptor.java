@@ -22,6 +22,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -40,6 +41,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 
 	public AccessControlInterceptor() {
 		setDisplayName("Access Control");
+		setFlow(Flow.REQUEST);
 	}
 	
 	@Override
@@ -115,6 +117,11 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	@Override
 	public void doAfterParsing() throws Exception {
 		init();
+	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Authenticates incoming requests based on the file " + HtmlUtils.htmlEscape(aclFilename) + " .";
 	}
 	
 	@Override
