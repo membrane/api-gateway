@@ -56,7 +56,6 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	public AdminConsoleInterceptor() {
 		name = "Administration";
-		setFlow(Flow.REQUEST);
 	}
 
 	@Override

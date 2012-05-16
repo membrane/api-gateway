@@ -43,7 +43,6 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 	public WebServerInterceptor() {
 		name = "Web Server";
-		setFlow(Flow.REQUEST);
 	}
 
 	@Override

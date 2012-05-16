@@ -557,7 +557,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}	
 	
-	private void createInterceptorVisualization(Interceptor i, int columnSpan, String id) {
+	private void createInterceptorVisualization(Interceptor i, int columnSpan, String id, boolean noMarginTop) {
 		td().style("padding:0px;");
 		if (columnSpan > 1)
 			colspan(""+columnSpan);
@@ -581,7 +581,7 @@ public class AdminPageBuilder extends Html {
 
 			String did = "d" + id;
 			div().id(did).style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + 
-					(columnSpan == 1 ? "width: 298px;" : "width: 630px;"));
+					(columnSpan == 1 ? "width: 298px;" : "width: 630px;") + (noMarginTop ? "margin-top: 0px;" : ""));
 
 			String iid = "i" + id;
 			div().id("i"+id);
@@ -700,6 +700,32 @@ public class AdminPageBuilder extends Html {
 		return v.substring(0, p);
 	}
 
+	private void createListenerRow(ServiceProxy proxy) {
+		tr();
+			td().style("padding:0px;").colspan("2");
+				div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 
+						"width: 630px;");
+					div().classAttr("name");
+						b();
+							text("Listener");
+						end();
+					end();
+					div().style("padding-top: 4px;");
+						text("Virtual Host: " + proxy.getKey().getHost());
+						br();
+						if (proxy.getKey().getPort() != -1) {
+							text("Port: " + proxy.getKey().getPort());
+							br();
+						}
+						text("Path: " + proxy.getKey().getPath());
+						br();
+						text("Method: " + proxy.getKey().getMethod());
+					end();
+				end();
+			end();
+		end();
+	}
+	
 	public void createServiceProxyVisualization(ServiceProxy proxy, String relativeRootPath) {
 		List<Interceptor> leftStack = new ArrayList<Interceptor>(), rightStack = new ArrayList<Interceptor>();
 		List<Interceptor> list = new ArrayList<Interceptor>(proxy.getInterceptors());
@@ -727,68 +753,70 @@ public class AdminPageBuilder extends Html {
 				rightStack.add(i);
 			}
 		}
+		
+		boolean noTarget = proxy.getTargetURL() == null && proxy.getTargetHost() == null;
 
 		table().cellspacing("0px").cellpadding("0px").classAttr("spv");
-			tr();
-				td().style("padding:0px;").colspan("2");
-					div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 
-							"width: 630px;");
-						div().classAttr("name");
-							b();
-								text("Listener");
-							end();
-						end();
-						div().style("padding-top: 4px;");
-							text("Virtual Host: " + proxy.getKey().getHost());
-							br();
-							if (proxy.getKey().getPort() != -1) {
-								text("Port: " + proxy.getKey().getPort());
-								br();
-							}
-							text("Path: " + proxy.getKey().getPath());
-							br();
-							text("Method: " + proxy.getKey().getMethod());
-						end();
-					end();
-				end();
-			end();
-			tr();
-				td().style("padding:0px;background:url(\""+relativeRootPath+"/admin/images/spv-top.png\");"+
-					"background-repeat:repeat-y;height:14px;").colspan("2");
-				end();
-			end();
-			for (int i = 0; i < leftStack.size() - 1; i++) {
+			createListenerRow(proxy);
+			createBeginArrowsRow();
+			for (int i = 0; i < leftStack.size() - 1 - (noTarget ? 1 : 0); i++) {
 				tr().style("background:url(\""+relativeRootPath+"/admin/images/spv-middle.png\");background-repeat:repeat-y;");
-					if (leftStack.get(i) == rightStack.get(i)) {
-						createInterceptorVisualization(leftStack.get(i), 2, "spv_l" + i);
-					} else {
-						createInterceptorVisualization(leftStack.get(i), 1, "spv_l" + i);
-						createInterceptorVisualization(rightStack.get(i), 1, "spv_r" + i);
-					}
+					createInterceptorRow(leftStack, rightStack, i, false);
 				end();
 			}
-			tr().style("background:url(\""+relativeRootPath+"/admin/images/spv-bottom.png\");background-repeat:repeat-y;height:14px;");
-				td().style("padding:0px;").colspan("2");
+			createEndArrowsRow();
+			if (noTarget) {
+				tr();
+				 	createInterceptorRow(leftStack, rightStack, leftStack.size()-2, true);
 				end();
+			} else {
+				createTargetRow(proxy);
+			}
+		end();
+	}
+	
+	private void createInterceptorRow(List<Interceptor> leftStack, List<Interceptor> rightStack, int i, boolean noMarginTop) {
+		if (leftStack.get(i) == rightStack.get(i)) {
+			createInterceptorVisualization(leftStack.get(i), 2, "spv_l" + i, noMarginTop);
+		} else {
+			createInterceptorVisualization(leftStack.get(i), 1, "spv_l" + i, noMarginTop);
+			createInterceptorVisualization(rightStack.get(i), 1, "spv_r" + i, noMarginTop);
+		}
+	}
+
+	private void createBeginArrowsRow() {
+		tr();
+			td().style("padding:0px;background:url(\""+relativeRootPath+"/admin/images/spv-top.png\");"+
+					"background-repeat:repeat-y;height:14px;").colspan("2");
 			end();
-			tr();
-				td().style("padding:0px;").colspan("2");
-					div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 
-							"width: 630px;");
-						div().classAttr("name");
-							b();
-								text("Target");
-							end();
+		end();
+	}
+	
+	private void createEndArrowsRow() {
+		tr().style("background:url(\""+relativeRootPath+"/admin/images/spv-bottom.png\");background-repeat:repeat-y;height:14px;");
+			td().style("padding:0px;").colspan("2");
+			end();
+		end();
+	}
+
+	private void createTargetRow(ServiceProxy proxy) {
+		tr();
+			td().style("padding:0px;").colspan("2");
+				div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 
+						"width: 630px;");
+					div().classAttr("name");
+						b();
+							text("Target");
 						end();
-						div().style("padding-top: 4px;");
-							if (proxy.getTargetURL() == null) {
-								text("Host: " + proxy.getTargetHost());
-								br();
-								text("Port: " + proxy.getTargetPort());
-							} else {
-								text("URL: " + proxy.getTargetURL());
-							}
-						end();
+					end();
+					div().style("padding-top: 4px;");
+						if (proxy.getTargetURL() == null) {
+							text("Host: " + proxy.getTargetHost());
+							br();
+							text("Port: " + proxy.getTargetPort());
+						} else {
+							text("URL: " + proxy.getTargetURL());
+						}
 					end();
 				end();
 			end();
