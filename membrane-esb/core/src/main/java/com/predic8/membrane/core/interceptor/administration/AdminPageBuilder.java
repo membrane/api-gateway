@@ -720,6 +720,10 @@ public class AdminPageBuilder extends Html {
 						text("Path: " + proxy.getKey().getPath());
 						br();
 						text("Method: " + proxy.getKey().getMethod());
+						if (proxy.getSslInboundContext() != null) {
+							br();
+							text("SSL: yes");
+						}
 					end();
 				end();
 			end();
@@ -816,6 +820,10 @@ public class AdminPageBuilder extends Html {
 							text("Port: " + proxy.getTargetPort());
 						} else {
 							text("URL: " + proxy.getTargetURL());
+						}
+						if (proxy.getSslOutboundContext() != null) {
+							br();
+							text("SSL: yes");
 						}
 					end();
 				end();
