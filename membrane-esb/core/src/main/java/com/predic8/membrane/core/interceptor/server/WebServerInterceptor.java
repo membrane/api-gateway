@@ -32,6 +32,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.TextUtil;
 
 public class WebServerInterceptor extends AbstractInterceptor {
 
@@ -110,6 +111,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		docBase = token.getAttributeValue("", "docBase");
 	}
 
+	@Override
+	public String getShortDescription() {
+		return "Serves static files from<br/>" + TextUtil.linkURL(docBase) + " .";
+	}
+	
 	@Override
 	public String getHelpId() {
 		return "web-server";

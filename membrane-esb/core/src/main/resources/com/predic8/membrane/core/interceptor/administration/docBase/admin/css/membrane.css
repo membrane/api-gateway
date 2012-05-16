@@ -28,3 +28,33 @@
 .proxy-config .c {
 	color: #3f5fbf;
 }
+
+.spv {
+	font-size: 9pt;
+}
+
+.spv .name {
+	font-size: 13pt;
+}
+
+.spv table {
+	font-size: 8pt;
+	border-collapse: collapse;
+}
+.spv table td, table th {
+	border: 1px solid black;
+}
+.spv table tr:first-child th {
+	border-top: 0;
+}
+.spv table tr:last-child td {
+	border-bottom: 0;
+}
+.spv table tr td:first-child,
+.spv table tr th:first-child {
+	border-left: 0;
+}
+.spv table tr td:last-child,
+.spv table tr th:last-child {
+	border-right: 0;
+}

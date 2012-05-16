@@ -13,7 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rewrite;
 
+import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.regex.Pattern;
@@ -27,11 +29,13 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.util.TextUtil;
 
 public class RewriteInterceptor extends AbstractInterceptor {
 
@@ -186,6 +190,52 @@ public class RewriteInterceptor extends AbstractInterceptor {
 	@Override
 	public String getHelpId() {
 		return "rewriter";
+	}
+	
+	@Override
+	public String getShortDescription() {
+		EnumSet<Type> s = EnumSet.noneOf(Type.class);
+		for (Mapping m : mappings)
+			s.add(m.do_);
+		
+		StringBuilder sb = new StringBuilder();
+		sb.append(TextUtil.capitalize(TextUtil.toEnglishList("or", 
+				s.contains(Type.REDIRECT_PERMANENT) || s.contains(Type.REDIRECT_TEMPORARY) ?
+						TextUtil.toEnglishList("or", 
+								s.contains(Type.REDIRECT_PERMANENT) ? "permanently" : null, 
+								s.contains(Type.REDIRECT_TEMPORARY) ? "temporarily" : null) + 
+						" redirects" : null,
+				s.contains(Type.REWRITE) ? "rewrites" : null)));
+		sb.append(" URLs.");
+		return sb.toString();
+	}
+	
+	@Override
+	public String getLongDescription() {
+		StringWriter sw = new StringWriter();
+		new Html(sw) {{
+			text(getShortDescription());
+			
+			table().style("margin-top: 5pt;");
+			thead();
+				tr();
+					th().text("From").end();
+					th().text("To").end();
+					th().text("Action").end();
+				end();
+			end();
+			tbody();
+			for (Mapping m : mappings) {
+				tr();
+					td().text(m.from).end();
+					td().text(m.to).end();
+					td().text(m.do_.toString()).end();
+				end();
+			}
+			end();
+			end();
+		}};
+		return sw.toString();
 	}
 
 }

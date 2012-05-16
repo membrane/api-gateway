@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.springframework.web.util.HtmlUtils;
+
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
@@ -42,6 +44,7 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.util.TextUtil;
 
 public class AdminPageBuilder extends Html {
 	
@@ -565,6 +568,16 @@ public class AdminPageBuilder extends Html {
 		} else {
 			String shortDescription = i.getShortDescription();
 			String longDescription = i.getLongDescription();
+			boolean same = longDescription.equals(shortDescription);
+			
+			if (!TextUtil.isValidXMLSnippet(shortDescription)) {
+				shortDescription = HtmlUtils.htmlEscape(shortDescription).replace("\n", "<br/>");
+				if (same)
+					longDescription = shortDescription;
+			}
+			if (!same && !TextUtil.isValidXMLSnippet(longDescription)) {
+				longDescription = HtmlUtils.htmlEscape(longDescription).replace("\n", "<br/>");
+			}
 
 			String did = "d" + id;
 			div().id(did).style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + 
@@ -579,21 +592,23 @@ public class AdminPageBuilder extends Html {
 			end();
 			createShowIconsScript(did, iid);
 			
-			div();
+			div().classAttr("name");
 			text(i.getDisplayName());
 			end();
 			if (shortDescription.length() > 0) {
 				div().style("padding-top: 4px;");
 				String sid = "s" + id;
-				small().id(sid);
-				text(i.getShortDescription());
+				div().id(sid);
+				raw(shortDescription);
 				if (!longDescription.equals(shortDescription)) {
+					String aid = "a" + id;
 					String lid = "l" + id;
 					String eid = "e" + id;
 					String cid = "c" + id;
+					a().id(aid).href("#").text("...").end();
 					end();
-					small().id(lid).style("margin: 0px; cursor: pointer;");
-					text(longDescription);
+					div().id(lid).style("margin: 0px; cursor: pointer;");
+					raw(longDescription);
 					end();
 					script();
 					raw("jQuery(document).ready(function() {\r\n" +
@@ -602,6 +617,13 @@ public class AdminPageBuilder extends Html {
 						"  jQuery(\"#"+lid+"\").hide();\r\n" +
 						"  jQuery(\"#"+cid+"\").hide();\r\n" +
 						"  jQuery(\"#"+eid+"\").click(function()\r\n" +
+						"  {\r\n" +
+						"    jQuery(\"#"+sid+"\").hide();\r\n" +
+						"    jQuery(\"#"+lid+"\").slideToggle(500);\r\n" +
+						"    jQuery(\"#"+eid+"\").hide();\r\n" +
+						"    jQuery(\"#"+cid+"\").show();\r\n" +
+						"  });\r\n" +
+						"  jQuery(\"#"+aid+"\").click(function()\r\n" +
 						"  {\r\n" +
 						"    jQuery(\"#"+sid+"\").hide();\r\n" +
 						"    jQuery(\"#"+lid+"\").slideToggle(500);\r\n" +
@@ -706,28 +728,26 @@ public class AdminPageBuilder extends Html {
 			}
 		}
 
-		table().cellspacing("0px").cellpadding("0px");
+		table().cellspacing("0px").cellpadding("0px").classAttr("spv");
 			tr();
 				td().style("padding:0px;").colspan("2");
 					div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 
 							"width: 630px;");
-						div();
+						div().classAttr("name");
 							b();
 								text("Listener");
 							end();
 						end();
 						div().style("padding-top: 4px;");
-							small();
-								text("Virtual Host: " + proxy.getKey().getHost());
+							text("Virtual Host: " + proxy.getKey().getHost());
+							br();
+							if (proxy.getKey().getPort() != -1) {
+								text("Port: " + proxy.getKey().getPort());
 								br();
-								if (proxy.getKey().getPort() != -1) {
-									text("Port: " + proxy.getKey().getPort());
-									br();
-								}
-								text("Path: " + proxy.getKey().getPath());
-								br();
-								text("Method: " + proxy.getKey().getMethod());
-							end();
+							}
+							text("Path: " + proxy.getKey().getPath());
+							br();
+							text("Method: " + proxy.getKey().getMethod());
 						end();
 					end();
 				end();
@@ -755,21 +775,19 @@ public class AdminPageBuilder extends Html {
 				td().style("padding:0px;").colspan("2");
 					div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 
 							"width: 630px;");
-						div();
+						div().classAttr("name");
 							b();
 								text("Target");
 							end();
 						end();
 						div().style("padding-top: 4px;");
-							small();
-								if (proxy.getTargetURL() == null) {
-									text("Host: " + proxy.getTargetHost());
-									br();
-									text("Port: " + proxy.getTargetPort());
-								} else {
-									text("URL: " + proxy.getTargetURL());
-								}
-							end();
+							if (proxy.getTargetURL() == null) {
+								text("Host: " + proxy.getTargetHost());
+								br();
+								text("Port: " + proxy.getTargetPort());
+							} else {
+								text("URL: " + proxy.getTargetURL());
+							}
 						end();
 					end();
 				end();

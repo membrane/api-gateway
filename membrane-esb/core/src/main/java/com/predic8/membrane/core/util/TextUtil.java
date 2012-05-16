@@ -18,7 +18,15 @@ package com.predic8.membrane.core.util;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
+
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.events.XMLEvent;
+
+import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.beautifier.HtmlBeautifierFormatter;
 import com.predic8.beautifier.PlainBeautifierFormatter;
@@ -86,4 +94,67 @@ public class TextUtil {
 		}
 		buf.append(c);
 	}
+	
+	public static String toEnglishList(String conjuction, String... args) {
+		ArrayList<String> l = new ArrayList<String>();
+		for (String arg : args)
+			if (arg != null && arg.length() > 0)
+				l.add(arg);
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < l.size(); i++) {
+			sb.append(l.get(i));
+			if (i == l.size() - 2) {
+				sb.append(" ");
+				sb.append(conjuction);
+				sb.append(" ");
+			}
+			if (i < l.size() - 2)
+				sb.append(", ");
+		}
+		return sb.toString();
+	}
+
+	public static Object capitalize(String english) {
+		if (english.length() == 0)
+			return "";
+		return Character.toString(Character.toUpperCase(english.charAt(0))) + english.substring(1);
+	}
+
+	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	
+	static {
+		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
+		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+	}
+
+	/**
+	 * Checks whether s is a valid (well-formed and balanced) XML snippet.
+	 * 
+	 * Note that attributes escaped by single quotes are accepted (which is illegal by spec).
+	 */
+	public static boolean isValidXMLSnippet(String s) {
+		try {
+			XMLEventReader parser;
+			synchronized (xmlInputFactory) {
+				parser = xmlInputFactory.createXMLEventReader(new StringReader("<a>" + s + "</a>"));
+			}
+			XMLEvent event = null;
+			while (parser.hasNext()) {
+			    event = (XMLEvent) parser.next();
+			}
+			return event != null && event.isEndDocument();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
+	public static String linkURL(String url) {
+		if (url.startsWith("http://") || url.startsWith("https://")) {
+			url = HtmlUtils.htmlEscape(url);
+			return "<a href=\"" + url + "\">" + url + "</a>";  
+		}
+		return HtmlUtils.htmlEscape(url);
+	}
+	
 }

@@ -26,6 +26,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ResourceResolver;
+import com.predic8.membrane.core.util.TextUtil;
 
 /**
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
@@ -182,20 +183,20 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		sb.deleteCharAt(sb.length()-1);
 		sb.append(" according to ");
 		if (wsdl != null) {
-			sb.append("the WSDL at ");
-			sb.append(wsdl);
+			sb.append("the WSDL at <br/>");
+			sb.append(TextUtil.linkURL(wsdl));
 		}
 		if (schema != null) {
-			sb.append("the XML Schema at ");
-			sb.append(schema);
+			sb.append("the XML Schema at <br/>");
+			sb.append(TextUtil.linkURL(schema));
 		}
 		if (jsonSchema != null) {
-			sb.append("the JSON Schema at ");
-			sb.append(jsonSchema);
+			sb.append("the JSON Schema at <br/>");
+			sb.append(TextUtil.linkURL(jsonSchema));
 		}
 		if (schematron != null) {
-			sb.append("the Schematron at ");
-			sb.append(schematron);
+			sb.append("the Schematron at <br/>");
+			sb.append(TextUtil.linkURL(schematron));
 		}
 		sb.append(" .");
 		return sb.toString();

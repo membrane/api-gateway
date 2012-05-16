@@ -651,6 +651,16 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public void setReadOnly(boolean readOnly) {
 		this.readOnly = readOnly;
 	}
+
+	@Override
+	public String getShortDescription() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Displays the ");
+		if (readOnly)
+			sb.append("read-only ");
+		sb.append("admin console at /admin .");
+		return sb.toString();
+	}
 	
 	@Override
 	public String getHelpId() {

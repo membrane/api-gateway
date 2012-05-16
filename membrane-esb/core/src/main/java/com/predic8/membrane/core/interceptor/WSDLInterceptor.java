@@ -14,20 +14,36 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import static com.predic8.membrane.core.Constants.*;
+import static com.predic8.membrane.core.Constants.WSDL_HTTP_NS;
+import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
+import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
+import static com.predic8.membrane.core.Constants.XSD_NS;
 
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLDecoder;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
+import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
 public class WSDLInterceptor extends RelocatingInterceptor {
@@ -173,6 +189,25 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	@Override
 	public String getShortDescription() {
 		return "Rewrites SOAP endpoint addresses and XML Schema locations in WSDL and XSD documents.";
+	}
+	
+	@Override
+	public String getLongDescription() {
+		StringBuffer sb = new StringBuffer(getShortDescription());
+		if (protocol != null || port != null || host != null) {
+			sb.append("\nThe ");
+			sb.append(TextUtil.toEnglishList("and",
+					protocol != null ? "protocol": null, 					
+					host != null ? "host": null, 
+					port != null ? "port" : null));
+			sb.append(" of the URLs are changed to ");
+			sb.append(TextUtil.toEnglishList("and",
+					protocol != null ? "\"" + StringEscapeUtils.escapeJava(protocol) + "\"" : null,
+					host != null ? "\"" + StringEscapeUtils.escapeJava(host) + "\"" : null,
+					port!= null ? StringEscapeUtils.escapeJava(port) : null));
+			sb.append(".");
+		}
+		return sb.toString();
 	}
 	
 	@Override
