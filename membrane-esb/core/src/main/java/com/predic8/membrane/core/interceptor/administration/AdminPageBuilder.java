@@ -204,7 +204,7 @@ public class AdminPageBuilder extends Html {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
-					createThs("Name", "Listen Port", "Client Host", "Method","Path","Target Host","Target Port","Count","Actions");
+					createThs("Name", "Listen Port", "Virtual Host", "Method","Path","Target Host","Target Port","Count","Actions");
 			    end();
 			end();
 			tbody();
@@ -718,7 +718,7 @@ public class AdminPageBuilder extends Html {
 						end();
 						div().style("padding-top: 4px;");
 							small();
-								text("Host: " + proxy.getKey().getHost());
+								text("Virtual Host: " + proxy.getKey().getHost());
 								br();
 								if (proxy.getKey().getPort() != -1) {
 									text("Port: " + proxy.getKey().getPort());
