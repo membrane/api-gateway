@@ -149,7 +149,7 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/interceptor/@refid", "counter");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/interceptor/@name", "Counter 2");
+				"/proxies/serviceProxy/interceptor/@name", "Counter: Counter 2");
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@headerOnly",
 				"true");
