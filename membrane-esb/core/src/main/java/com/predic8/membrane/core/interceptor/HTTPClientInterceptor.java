@@ -70,5 +70,11 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 					httpClient = result = new HttpClient(router);
 			}
 		return result;
-	}	
+	}
+	
+	@Override
+	public String getHelpId() {
+		return "http-client";
+	}
+
 }

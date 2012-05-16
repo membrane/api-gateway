@@ -47,4 +47,10 @@ public interface Interceptor extends XMLElement {
 	public String getShortDescription();
 	public String getLongDescription();
 	
+	/**
+	 * @return "access-control" if http://membrane-soa.org/esb-doc/current/configuration/reference/access-control.htm is the documentation page
+	 * for this interceptor, or null if there is no such page.
+	 */
+	public String getHelpId();
+	
 }

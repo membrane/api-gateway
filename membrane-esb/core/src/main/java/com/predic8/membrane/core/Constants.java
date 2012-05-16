@@ -15,6 +15,7 @@
 package com.predic8.membrane.core;
 
 import java.nio.charset.Charset;
+import java.util.Properties;
 
 public class Constants {
 
@@ -26,7 +27,18 @@ public class Constants {
 
 	public static final byte[] CRLF_BYTES = { 13, 10 };
 
-	public static final String VERSION = "3.2.2";
+	public static final String VERSION;
+	
+	static {
+		String version = "3.3"; // fallback
+		try {
+			Properties p = new Properties();
+			p.load(Constants.class.getResourceAsStream("/META-INF/maven/com.predic8/membrane-esb-core/pom.properties"));
+			version = p.getProperty("version");
+		} catch (Exception e) {
+		}
+		VERSION = version;
+	}
 
 	public static final String XML_VERSION = "1.0";
 

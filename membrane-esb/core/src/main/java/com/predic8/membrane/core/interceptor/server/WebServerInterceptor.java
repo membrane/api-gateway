@@ -110,4 +110,9 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		docBase = token.getAttributeValue("", "docBase");
 	}
 
+	@Override
+	public String getHelpId() {
+		return "web-server";
+	}
+
 }

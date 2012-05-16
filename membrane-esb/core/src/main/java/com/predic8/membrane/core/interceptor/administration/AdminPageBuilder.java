@@ -27,9 +27,11 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
 import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
 import com.predic8.membrane.core.interceptor.balancer.Cluster;
@@ -562,8 +564,12 @@ public class AdminPageBuilder extends Html {
 			raw("&nbsp;");
 			end();
 		} else {
-			div().style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + 
+			String did = "d" + id;
+			div().id(did).style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + 
 					(columnSpan == 1 ? "width: 298px;" : "width: 630px;"));
+
+			createHelpIcon(i, id, did);
+			
 			div();
 			text(i.getDisplayName());
 			end();
@@ -608,7 +614,46 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 	
-	protected void createServiceProxyVisualization(ServiceProxy proxy, String relativeRootPath) {
+	private void createHelpIcon(Interceptor i, String id, String did) {
+		String helpId = i.getHelpId();
+		if (helpId != null) {
+			String hid = "h"+id;
+			div().style("float:right;").id(hid);
+				a().href("http://membrane-soa.org/esb-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm");
+					span().classAttr("ui-icon ui-icon-help").end();
+				end();
+			end();
+			script();
+			raw("jQuery(document).ready(function() {\r\n" +
+					"  jQuery(\"#"+hid+"\").hide();\r\n" +
+					"  jQuery(\"#"+did+"\").hover(function()\r\n" +
+					"  {\r\n" +
+					"    jQuery(\"#"+hid+"\").show();\r\n" +
+					"  }, function()\r\n" +
+					"  {\r\n" +
+					"    jQuery(\"#"+hid+"\").hide();\r\n" +
+					"  });\r\n" +
+					"});\r\n" + 
+					"");
+			end();
+		}
+	}
+
+	/**
+	 * @return The major and minor part of the version, e.g. "3.4"; or "current" if the version could not be parsed.
+	 */
+	private String getVersion() {
+		String v = Constants.VERSION;
+		int p = v.indexOf('.');
+		if (p == -1)
+			return "current";
+		p = v.indexOf('.', p+1);
+		if (p == -1)
+			return "current";
+		return v.substring(0, p);
+	}
+
+	public void createServiceProxyVisualization(ServiceProxy proxy, String relativeRootPath) {
 		List<Interceptor> leftStack = new ArrayList<Interceptor>(), rightStack = new ArrayList<Interceptor>();
 		List<Interceptor> list = new ArrayList<Interceptor>(proxy.getInterceptors());
 		list.add(new AbstractInterceptor() { // fake interceptor so that both stacks end with the same size
@@ -706,5 +751,5 @@ public class AdminPageBuilder extends Html {
 			end();
 		end();
 	}
-	
+
 }

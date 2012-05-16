@@ -118,4 +118,9 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		this.xForwardedForEnabled = xForwardedForEnabled;
 	}
 
+	@Override
+	public String getHelpId() {
+		return "rule-matching";
+	}
+
 }

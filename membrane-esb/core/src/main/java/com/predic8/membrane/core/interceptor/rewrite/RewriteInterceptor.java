@@ -182,4 +182,10 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			super.parseChildren(token, child);
 		}
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "rewriter";
+	}
+
 }

@@ -114,4 +114,10 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 			super.parseChildren(token, child);
 		}	
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "switch";
+	}
+
 }

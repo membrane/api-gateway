@@ -106,4 +106,9 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		concurrency = concurrencyString == null ? 0 : Integer.parseInt(concurrencyString);
 	}
 
+	@Override
+	public String getHelpId() {
+		return "transform";
+	}
+
 }

@@ -142,5 +142,11 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Protects agains XML attacks.";
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "xml-protection";
+	}
+
 }
 

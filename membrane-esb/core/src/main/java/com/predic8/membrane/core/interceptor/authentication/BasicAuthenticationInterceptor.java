@@ -113,4 +113,10 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 			super.parseChildren(token, child);
 		}
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "basic-authentication";
+	}
+
 }

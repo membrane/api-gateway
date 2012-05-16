@@ -198,4 +198,9 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		throw new IllegalArgumentException("Unknown failureHandler type: " + failureHandler);
 	}
 	
+	@Override
+	public String getHelpId() {
+		return "validator";
+	}
+
 }

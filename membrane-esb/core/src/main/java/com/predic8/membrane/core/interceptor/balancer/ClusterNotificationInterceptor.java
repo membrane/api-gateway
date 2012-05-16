@@ -186,5 +186,11 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 
 		if ( token.getAttributeValue("", "timeout") != null ) 
 			timeout = Integer.parseInt(token.getAttributeValue("", "timeout"));
-	}	
+	}
+	
+	@Override
+	public String getHelpId() {
+		return "cluster-notification";
+	}
+
 }

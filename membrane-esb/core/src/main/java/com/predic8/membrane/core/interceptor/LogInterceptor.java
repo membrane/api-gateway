@@ -170,5 +170,10 @@ public class LogInterceptor extends AbstractInterceptor {
 		return "Logs the " + (headerOnly ? "headers of " : "") + "requests and responses" + 
 				" using Log4J's " + level.toString() + " level.";
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "log";
+	}
 
 }

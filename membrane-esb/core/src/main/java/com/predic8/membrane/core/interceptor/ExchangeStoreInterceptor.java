@@ -63,5 +63,11 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	protected void parseAttributes(XMLStreamReader token) {
 		exchangeStoreBeanId = token.getAttributeValue("", "name");
 		store = router.getBean(exchangeStoreBeanId, ExchangeStore.class);
-	}	
+	}
+	
+	@Override
+	public String getHelpId() {
+		return "exchangeStore";
+	}
+
 }

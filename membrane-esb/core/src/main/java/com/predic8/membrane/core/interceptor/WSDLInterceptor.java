@@ -169,4 +169,15 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		registryWSDLRegisterURL = token.getAttributeValue("",
 				"registryWSDLRegisterURL");
 	}
+	
+	@Override
+	public String getShortDescription() {
+		return "Rewrites SOAP endpoint addresses and XML Schema locations in WSDL and XSD documents.";
+	}
+	
+	@Override
+	public String getHelpId() {
+		return "wsdl-rewriter";
+	}
+
 }

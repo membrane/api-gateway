@@ -199,4 +199,9 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		log.debug("statString: "+statString);
 	}
 	
+	@Override
+	public String getHelpId() {
+		return "statistics-jdbc";
+	}
+
 }

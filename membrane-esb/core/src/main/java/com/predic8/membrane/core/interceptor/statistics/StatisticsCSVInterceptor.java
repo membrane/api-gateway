@@ -169,4 +169,10 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		setFileName(token.getAttributeValue("", "file"));
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "statistics-csv";
+	}
+
 }

@@ -148,4 +148,10 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 			super.parseChildren(token, child);
 		}
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "form-validation";
+	}
+
 }

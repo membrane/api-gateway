@@ -119,4 +119,10 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 			return null;
 		return stack.pop();
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "user-feature";
+	}
+
 }

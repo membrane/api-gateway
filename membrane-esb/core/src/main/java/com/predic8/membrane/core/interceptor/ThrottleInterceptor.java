@@ -147,4 +147,9 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		return sb.toString();
 	}
 	
+	@Override
+	public String getHelpId() {
+		return "throttle";
+	}
+
 }

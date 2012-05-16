@@ -53,5 +53,10 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		log.debug("destination: " + url);
 		return url; 
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "dispatching";
+	}
 
 }

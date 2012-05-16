@@ -81,7 +81,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	@Mapping("/admin/service-proxy/show/?(\\?.*)?")
 	public Response handleServiceProxyShowRequest(final Map<String, String> params, final String relativeRootPath)
 	  throws Exception {
-		StringWriter writer = new StringWriter();
+		final StringWriter writer = new StringWriter();
 		
 		final ServiceProxy rule = (ServiceProxy) RuleUtil.findRuleByIdentifier(router,params.get("name"));
 		
@@ -105,15 +105,15 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 				
 				div().id("subtab");
 					ul();
-						li().a().href("#tab1").text("Status Code Statistics").end(2);
-						li().a().href("#tab2").text("Visualization").end(2);
+						li().a().href("#tab1").text("Visualization").end(2);
+						li().a().href("#tab2").text("Status Code Statistics").end(2);
 						li().a().href("#tab3").text("XML Configuration").end(2);
 					end();
 					div().id("tab1");
-						createStatusCodesTable(rule.getStatisticsByStatusCodes());
+						createServiceProxyVisualization(rule, relativeRootPath);
 					end();
 					div().id("tab2");
-						createServiceProxyVisualization(rule, relativeRootPath);
+						createStatusCodesTable(rule.getStatisticsByStatusCodes());
 					end();
 					div().id("tab3");
 						div().classAttr("proxy-config");
@@ -650,6 +650,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	
 	public void setReadOnly(boolean readOnly) {
 		this.readOnly = readOnly;
+	}
+	
+	@Override
+	public String getHelpId() {
+		return "admin-console";
 	}
 	
 }

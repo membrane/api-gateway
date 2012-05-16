@@ -98,4 +98,10 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		pattern = token.getAttributeValue("", "regex");
 		replacement = token.getAttributeValue("", "replace");
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "regex-replacer";
+	}
+
 }

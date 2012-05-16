@@ -83,4 +83,10 @@ public class CountInterceptor extends AbstractInterceptor {
 		
 		name = token.getAttributeValue("", "name");
 	}	
+	
+	@Override
+	public String getHelpId() {
+		return "counter";
+	}
+
 }

@@ -117,5 +117,9 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		init();
 	}
 	
+	@Override
+	public String getHelpId() {
+		return "access-control";
+	}
 	
 }

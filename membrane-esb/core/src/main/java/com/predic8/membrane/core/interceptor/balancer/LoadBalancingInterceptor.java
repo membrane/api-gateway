@@ -264,4 +264,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		strategy = rrStrat;
 	}
 
+	@Override
+	public String getHelpId() {
+		return "balancer";
+	}
+
 }

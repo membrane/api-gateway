@@ -115,4 +115,8 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 		return getShortDescription();
 	}
 
+	@Override
+	public String getHelpId() {
+		return null;
+	}
 }

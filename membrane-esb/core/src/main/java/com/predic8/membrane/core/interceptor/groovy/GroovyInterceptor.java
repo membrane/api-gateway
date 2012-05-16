@@ -88,7 +88,9 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		this.src = src;
 	}
 	
-
-
+	@Override
+	public String getHelpId() {
+		return "groovy";
+	}
 	
 }
