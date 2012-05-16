@@ -134,6 +134,7 @@
 							</connectors>
 							<stopPort>3022</stopPort>
 							<stopKey>STOP</stopKey>
+							<jvmArgs>-Xmx512m -XX:MaxPermSize=265m</jvmArgs>
 						</configuration>
 						<executions>
 							<execution>
