@@ -16,7 +16,6 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
