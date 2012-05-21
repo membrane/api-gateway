@@ -97,6 +97,7 @@ public class AdminPageBuilder extends Html {
 			  	div().classAttr("ui-tabs-panel ui-widget-content ui-corner-bottom");
 			  		createTabContent();
 			  	end();
+			  	p().style("margin-bottom:0; color:#AAAAAA; padding:1em 1.4em; font-size:10pt;").text("Copyright ©2009-2012 predic8 GmbH. All Rights Reserved").end();
 		  	end();
 		endAll(); 
 		done();	
@@ -141,16 +142,17 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createInterceptorTable(List<Interceptor> interceptors) {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().id("interceptortable").attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
 			thead();
 				tr();
-					createThs("Name");
+					createThs("Order", "Name");
 			    end();
 			end();
 			tbody();
+				int j = 0;
 				for (Interceptor i : interceptors) {
 					tr();
-						createTds(i.getDisplayName());								  
+						createTds("" + ++j, i.getDisplayName());								  
 					end();
 				}
 			end();
