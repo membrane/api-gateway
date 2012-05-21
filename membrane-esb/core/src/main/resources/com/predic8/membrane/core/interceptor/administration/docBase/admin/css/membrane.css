@@ -61,3 +61,15 @@
 .spv table tr th:last-child {
 	border-right: 0;
 }
+
+.footer {
+	margin-bottom:0; color:#AAAAAA; padding:1em 1.4em; font-size:10pt;
+}
+
+.footer a {
+	color:#AAAAAA;
+	text-decoration: none;
+}
+
+.footer a:hover {
+	text-decoration: underline;

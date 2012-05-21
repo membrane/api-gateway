@@ -97,7 +97,13 @@ public class AdminPageBuilder extends Html {
 			  	div().classAttr("ui-tabs-panel ui-widget-content ui-corner-bottom");
 			  		createTabContent();
 			  	end();
-			  	p().style("margin-bottom:0; color:#AAAAAA; padding:1em 1.4em; font-size:10pt;").text("Copyright ©2009-2012 predic8 GmbH. All Rights Reserved").end();
+			  	p().classAttr("footer");
+			  		text("Copyright ©2009-2012 ");
+			  		raw("<a href=\"http://predic8.com/\">predic8 GmbH</a>");
+			  		text(". All Rights Reserved. See ");
+			  		raw("<a href=\"http://membrane-soa.org/esb/\">http://membrane-soa.org/esb/</a>");
+			  		text(" for documentation and updates.");
+			  	end();
 		  	end();
 		endAll(); 
 		done();	
