@@ -112,7 +112,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 			if (mapping.do_ == Type.REDIRECT_PERMANENT || mapping.do_ == Type.REDIRECT_TEMPORARY) {
 				exc.setResponse(Response.redirect(newDest, mapping.do_ == Type.REDIRECT_PERMANENT).build());
-				return Outcome.ABORT;
+				return Outcome.RETURN;
 			}
 
 			if (!newDest.contains("://")) {

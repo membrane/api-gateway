@@ -55,11 +55,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 		try {
 			exc.setResponse(createResponse(uri));
+			return Outcome.RETURN;
 		} catch (FileNotFoundException e) {
 			exc.setResponse(HttpUtil.createNotFoundResponse());
+			return Outcome.ABORT;
 		}
-
-		return Outcome.ABORT;
 	}
 
 	private Response createResponse(String uri) throws Exception {

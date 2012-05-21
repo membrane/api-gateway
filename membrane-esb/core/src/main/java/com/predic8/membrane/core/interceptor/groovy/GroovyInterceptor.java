@@ -57,7 +57,7 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		
 		if (res instanceof Response) {
 			exc.setResponse((Response)res);
-			return Outcome.ABORT;
+			return Outcome.RETURN;
 		}
 		
 		if (res instanceof Request) {

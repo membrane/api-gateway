@@ -143,6 +143,6 @@ public class Exchange extends AbstractExchange {
 		if (contentType != null)
 			builder.header(Header.CONTENT_TYPE, contentType);
 		setResponse(builder.build());
-		return Outcome.ABORT;
+		return Outcome.RETURN;
 	}
 }

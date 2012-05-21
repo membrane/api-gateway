@@ -55,7 +55,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log.debug("request: " + exc.getOriginalRequestUri());
 
-		return dipatchRequest(exc);
+		return dispatchRequest(exc);
 	}
 
 	@Mapping("/admin/?(\\?.*)?")
@@ -533,13 +533,13 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private Outcome dipatchRequest(Exchange exc) throws Exception {
+	private Outcome dispatchRequest(Exchange exc) throws Exception {
 		String pathQuery = URIUtil.getPathQuery(exc.getDestinations().get(0));
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
 				exc.setResponse((Response)m.invoke(this, new Object[] { getParams(exc), getRelativeRootPath(pathQuery) }));
-				return Outcome.ABORT;
+				return Outcome.RETURN;
 			}
 		}
 		return Outcome.CONTINUE;

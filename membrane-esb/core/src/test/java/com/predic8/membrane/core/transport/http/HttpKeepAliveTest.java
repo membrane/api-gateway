@@ -55,7 +55,7 @@ public class HttpKeepAliveTest {
 				exc.getRequest().readBody();
 				exc.setResponse(Response.ok("OK.").build());
 				set.add(((HttpServerHandler)exc.getHandler()).getSrcOut().hashCode());
-				return Outcome.ABORT;
+				return Outcome.RETURN;
 			}
 		});
 		service1.getRuleManager().addProxyIfNew(sp1);

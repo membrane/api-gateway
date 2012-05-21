@@ -41,7 +41,7 @@ public class RewriteInterceptorTest {
 		mappings.add( new Mapping("/buy/(.*)/(.*)", "/buy?item=$1&amount=$2", null));
 		interceptor.setMappings(mappings);
 
-		assertEquals(Outcome.ABORT, interceptor.handleRequest(exc));
+		assertEquals(Outcome.RETURN, interceptor.handleRequest(exc));
 		assertEquals("/buy?item=banana&amount=3", exc.getRequest().getUri());
 	}
 	

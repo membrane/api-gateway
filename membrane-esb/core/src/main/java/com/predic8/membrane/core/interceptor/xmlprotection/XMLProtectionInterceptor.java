@@ -30,7 +30,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ProxyRule;
 
 public class XMLProtectionInterceptor extends AbstractInterceptor {
 
@@ -48,9 +47,6 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		if ( exc.getRule() instanceof ProxyRule ) 
-			return Outcome.ABORT;
-
 		if (!exc.getRequest().isXML()) {
 			log.debug("request discarded by xmlProtection because it is not XML");
 			setFailResponse(exc);

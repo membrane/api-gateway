@@ -33,7 +33,7 @@ public class DummyWebServiceInterceptor extends AbstractInterceptor {
 		exc.setResponse(Response.ok().contentType("text/html").body("<aaa></aaa>".getBytes()).build());
 		counter ++;
 		log.debug("handle request "+counter);
-		return Outcome.ABORT;
+		return Outcome.RETURN;
 	}
 	
 }

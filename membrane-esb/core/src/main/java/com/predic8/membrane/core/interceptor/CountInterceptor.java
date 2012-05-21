@@ -46,7 +46,7 @@ public class CountInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log.info(""+ (++counter) +". request received.");
 		exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_HTML_UTF8).body(getPage()).build());
-		return Outcome.ABORT;
+		return Outcome.RETURN;
 	}
 
 	private String getPage() throws UnknownHostException {

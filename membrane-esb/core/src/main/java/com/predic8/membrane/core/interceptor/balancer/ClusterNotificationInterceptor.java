@@ -77,7 +77,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		updateClusterManager(m, params);
 		
 		exc.setResponse(Response.noContent().build());
-		return Outcome.ABORT;
+		return Outcome.RETURN;
 	}
 
 	private void updateClusterManager(Matcher m, Map<String, String> params)

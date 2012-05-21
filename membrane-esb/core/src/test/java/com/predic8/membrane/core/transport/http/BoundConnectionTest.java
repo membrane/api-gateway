@@ -54,7 +54,7 @@ public class BoundConnectionTest {
 				exc.getRequest().readBody();
 				exc.setResponse(Response.ok("OK.").build());
 				connectionHash = ((HttpServerHandler)exc.getHandler()).getSrcOut().hashCode();
-				return Outcome.ABORT;
+				return Outcome.RETURN;
 			}
 		});
 		router.getRuleManager().addProxyIfNew(sp2);
