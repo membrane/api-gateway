@@ -43,9 +43,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		for (Interceptor i : interceptors)
-			if (i.handleRequest(exc) == Outcome.ABORT)
-				return Outcome.ABORT;
+		for (Interceptor i : interceptors) {
+			Outcome o = i.handleRequest(exc);
+			if (o != Outcome.CONTINUE)
+				return o;
+		}
 		return Outcome.CONTINUE;
 	}
 
