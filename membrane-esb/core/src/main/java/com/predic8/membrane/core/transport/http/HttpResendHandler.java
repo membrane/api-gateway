@@ -34,8 +34,7 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 		try {
 			exchange.setRequest(srcReq);
 			try {
-				invokeRequestHandlers();
-				invokeResponseHandlers(exchange);
+				invokeHandlers();
 			} catch (AbortException e) {
 				exchange.finishExchange(true, exchange.getErrorMessage());
 				return;

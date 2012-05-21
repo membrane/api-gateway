@@ -65,8 +65,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 				exchange.setRequest(srcReq);
 				exchange.setOriginalRequestUri(srcReq.getUri());
 
-				invokeRequestHandlers();
-				invokeResponseHandlers(exchange);
+				invokeHandlers();
 			} catch (AbortException e) {
 				exchange.finishExchange(true, exchange.getErrorMessage());
 				writeResponse(exchange.getResponse());

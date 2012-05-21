@@ -176,8 +176,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			if (getTransport().isAutoContinue100Expected() && exchange.getRequest().getHeader().is100ContinueExpected())
 				tellClientToContinueWithBody();
 
-			invokeRequestHandlers();
-			invokeResponseHandlers(exchange);
+			invokeHandlers();
 			
 			exchange.blockResponseIfNeeded();
 		} catch (AbortException e) {

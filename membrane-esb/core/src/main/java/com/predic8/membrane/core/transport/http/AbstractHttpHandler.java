@@ -41,34 +41,14 @@ public abstract class AbstractHttpHandler  {
 		this.transport = transport;
 	}
 	
-	protected void invokeInterceptors(Flow f, List<Interceptor> list, int start, int end, int step) throws Exception {
-		boolean logDebug = log.isDebugEnabled();
-		
-		for (int j = start; j != transport.getInterceptors().size(); j+=step) {
-			Interceptor i = transport.getInterceptors().get(j);
-			
-			if (i.getFlow() != Flow.REQUEST_RESPONSE && 
-				i.getFlow() != f) continue;
-			
-			if (logDebug)
-				log.debug("Flow: "+f+". Invoking: " + i.getDisplayName() + " on exchange: " + exchange);
-			
-			Outcome outcome;
-			if (f == Flow.REQUEST) {
-				outcome = i.handleRequest(exchange);
-			} else {
-				outcome = i.handleResponse(exchange);
-			}
-			
-			if ( outcome == Outcome.ABORT) {
-				throw new AbortException();
-			}
-		} 		
-	}
-	protected void invokeRequestHandlers() throws Exception {
+	
+	protected void invokeHandlers() throws Exception {
 		boolean logDebug = log.isDebugEnabled();
 
-		for (Interceptor i : transport.getInterceptors()) {
+		int j = 0;
+outer:  for (;j < transport.getInterceptors().size(); j++) {
+			
+			Interceptor i = transport.getInterceptors().get(j);
 			
 			if (logDebug)
 				log.debug("Handler flow: "+i.getDisplayName()+":"+i.getFlow());
@@ -78,16 +58,21 @@ public abstract class AbstractHttpHandler  {
 			if (logDebug)
 				log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exchange);
 			
-			if (i.handleRequest(exchange) == Outcome.ABORT) {
-				throw new AbortException();
+			switch (i.handleRequest(exchange)) {
+				case ABORT:
+					throw new AbortException();
+				case RETURN:
+					break outer;
 			}
-		} 
+		}
+		invokeResponseHandlers(j-1);
+		
 	}
 
-	protected void invokeResponseHandlers(Exchange exc) throws Exception {
+	private void invokeResponseHandlers(int start) throws Exception {
 		boolean logDebug = log.isDebugEnabled();
 		
-		for (int j = transport.getInterceptors().size()-1; j >= 0; j--) {
+		for (int j = start; j >= 0; j--) {
 			
 			Interceptor i = transport.getInterceptors().get(j);
 
@@ -97,9 +82,9 @@ public abstract class AbstractHttpHandler  {
 			if (i.getFlow() == Flow.REQUEST) continue;
 			
 			if (logDebug)
-				log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exc);
+				log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exchange);
 			
-			if (i.handleResponse(exc) == Outcome.ABORT) {
+			if (i.handleResponse(exchange) == Outcome.ABORT) {
 				throw new AbortException();
 			}
 		}
