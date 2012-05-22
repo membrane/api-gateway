@@ -2,40 +2,40 @@
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
 
-	<serviceProxy name="FullChain0" port="2001">
+	<serviceProxy name="FullChain0" port="3028">
 		<interceptor refid="Mock1" />
 		<interceptor refid="Mock2" />
 		<target url="service:FullChain1" />
 	</serviceProxy>
 
-	<serviceProxy name="FullChain1" port="2001">
+	<serviceProxy name="FullChain1" port="3028">
 		<interceptor refid="Mock3" />
 		<interceptor refid="Mock4" />
 		<target url="service:FullChain2" />
 	</serviceProxy>
 
-	<serviceProxy name="FullChain2" port="2001">
+	<serviceProxy name="FullChain2" port="3028">
 		<interceptor refid="Mock5" />
 		<interceptor refid="Mock6" />
 		<target host="predic8.de" />
 	</serviceProxy>
 
-	<serviceProxy name="ReturnedChain0" port="2002">
+	<serviceProxy name="ReturnedChain0" port="3029">
 		<interceptor refid="Mock1" />
 		<interceptor refid="Mock2" />
-		<target url="service:FullChain1" />
+		<target url="service:ReturnedChain1" />
 	</serviceProxy>
 
-	<serviceProxy name="ReturnedChain1" port="2002">
+	<serviceProxy name="ReturnedChain1" port="3029">
 		<interceptor refid="Mock3" />
 		<groovy>
-			RETURN
+			exc.echo()
 		</groovy>		
 		<interceptor refid="Mock4" />
-		<target url="service:FullChain2" />
+		<target url="service:ReturnedChain2" />
 	</serviceProxy>
 
-	<serviceProxy name="ReturnedChain2" port="2002">
+	<serviceProxy name="ReturnedChain2" port="3029">
 		<interceptor refid="Mock5" />
 		<interceptor refid="Mock6" />
 		<target host="predic8.de" />

@@ -39,7 +39,7 @@ public class InternalInvocationTest {
 
 	@Test
 	public void testFullChain() throws Exception {
-		callService(2001);
+		callService(3028);
 		assertRequest(new String[] {"Mock1",
 			"Mock2", "Mock3", "Mock4", "Mock5", "Mock6"});
 		
@@ -49,7 +49,7 @@ public class InternalInvocationTest {
 
 	@Test
 	public void testReturnedChain() throws Exception {
-		callService(2002);
+		callService(3029);
 		assertRequest(new String[] {"Mock1",
 			"Mock2", "Mock3"});
 		
