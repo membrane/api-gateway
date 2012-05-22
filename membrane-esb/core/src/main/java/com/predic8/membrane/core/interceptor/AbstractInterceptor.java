@@ -47,6 +47,10 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		return Outcome.CONTINUE;
 	}
+	
+	public void handleAbort(Exchange exchange) {
+		// do nothing
+	}
 
 	public String getDisplayName() {
 		return name;

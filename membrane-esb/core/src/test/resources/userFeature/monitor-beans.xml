@@ -56,6 +56,36 @@
 			<spring:value>Mock7</spring:value>
 		</spring:constructor-arg>
 	</spring:bean>
+	<spring:bean id="Mock8FailsInRequest" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock8</spring:value>
+		</spring:constructor-arg>
+		<spring:constructor-arg>
+			<spring:array value-type="java.lang.String" >
+				<spring:value>request</spring:value>
+			</spring:array>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock9FailsInResponse" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock9</spring:value>
+		</spring:constructor-arg>
+		<spring:constructor-arg>
+			<spring:array value-type="java.lang.String" >
+				<spring:value>response</spring:value>
+			</spring:array>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock10FailsInAbort" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock10</spring:value>
+		</spring:constructor-arg>
+		<spring:constructor-arg>
+			<spring:array value-type="java.lang.String" >
+				<spring:value>abort</spring:value>
+			</spring:array>
+		</spring:constructor-arg>
+	</spring:bean>
 
 </spring:beans>
 

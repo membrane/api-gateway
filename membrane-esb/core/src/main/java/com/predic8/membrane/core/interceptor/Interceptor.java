@@ -25,23 +25,28 @@ public interface Interceptor extends XMLElement {
 	}
 	
 	public Outcome handleRequest(Exchange exc) throws Exception;
-	
 	public Outcome handleResponse(Exchange exc) throws Exception;
 	
-	public String getDisplayName();
+	/**
+	 * Called when any {@link #handleRequest(Exchange)} or
+	 * {@link #handleResponse(Exchange)} later in the chain returned
+	 * {@link Outcome#ABORT} or threw an exception.
+	 * 
+	 * handleAbort is called in the reverse order of the chain (as
+	 * handleResponse is).
+	 */
+	public void handleAbort(Exchange exchange);
 	
+	public String getDisplayName();
 	public void setDisplayName(String name);
 	
 	public String getId();
-	
 	public void setId(String id);
 	
 	public void setRouter(Router router);
-	
 	public Router getRouter();
 
 	public void setFlow(Flow flow);	
-	
 	public Flow getFlow();
 	
 	public String getShortDescription();

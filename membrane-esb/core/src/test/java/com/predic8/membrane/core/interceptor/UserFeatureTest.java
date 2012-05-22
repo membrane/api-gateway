@@ -31,11 +31,7 @@ public class UserFeatureTest {
 
 	private Router router;
 
-	List<String> requestLabels = Arrays.asList(new String[] { "Mock1", "Mock3",
-			"Mock4", "Mock7" });
-
-	List<String> responseLabels = Arrays.asList(new String[] { "Mock7",
-			"Mock6", "Mock5", "Mock4", "Mock2", "Mock1" });
+	List<String> labels, inverseLabels; 
 
 	@Before
 	public void setUp() throws Exception {
@@ -43,13 +39,9 @@ public class UserFeatureTest {
 		router.getConfigurationManager().loadConfiguration(
 				"src/test/resources/userFeature/proxies.xml");
 		MockInterceptor.clear();
-	}
-
-	@Test
-	public void testInvokation() throws Exception {
-		callService();
 		
-		MockInterceptor.assertContent(requestLabels, responseLabels, new ArrayList<String>());
+		labels = new ArrayList<String>(Arrays.asList(new String[] { "Mock1", "Mock3", "Mock4", "Mock7" }));
+		inverseLabels = new ArrayList<String>(Arrays.asList(new String[] { "Mock7", "Mock6", "Mock5", "Mock4", "Mock2", "Mock1" }));
 	}
 
 	@After
@@ -57,8 +49,47 @@ public class UserFeatureTest {
 		router.getTransport().closeAll();
 	}
 
-	private void callService() throws HttpException, IOException {
-		new HttpClient().executeMethod(new GetMethod("http://localhost:2001"));
+	private void callService(String s) throws HttpException, IOException {
+		new HttpClient().executeMethod(new GetMethod("http://localhost:3030/" + s + "/"));
 	}
+	
+	
+	@Test
+	public void testInvocation() throws Exception {
+		callService("ok");
+		MockInterceptor.assertContent(labels, inverseLabels, new ArrayList<String>());
+	}
+
+	@Test
+	public void testAbort() throws Exception {
+		callService("abort");
+		MockInterceptor.assertContent(labels, new ArrayList<String>(), inverseLabels);
+	}
+
+	@Test
+	public void testFailInRequest() throws Exception {
+		labels.add("Mock8");
+		
+		callService("failinrequest");
+		MockInterceptor.assertContent(labels, new ArrayList<String>(), inverseLabels);
+	}
+
+	@Test
+	public void testFailInResponse() throws Exception {
+		labels.add("Mock9");
+
+		callService("failinresponse");
+		MockInterceptor.assertContent(labels, Arrays.asList("Mock9"), inverseLabels);
+	}
+	
+	@Test
+	public void testFailInAbort() throws Exception {
+		labels.add("Mock10");
+		inverseLabels.add(0, "Mock10");
+		
+		callService("failinabort");
+		MockInterceptor.assertContent(labels, new ArrayList<String>(), inverseLabels);
+	}
+
 
 }

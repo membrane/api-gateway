@@ -63,6 +63,12 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		log.debug("thread count decreased: "+threads);
 		return Outcome.CONTINUE;
 	}
+	
+	@Override
+	public void handleAbort(Exchange exchange) {
+		decreaseThreads();
+		log.debug("thread count decreased: "+threads);
+	}
 
 
 	private synchronized void decreaseThreads() {

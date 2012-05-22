@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.transport.http.AbortException;
 
 /**
@@ -44,10 +45,8 @@ import com.predic8.membrane.core.transport.http.AbortException;
  * interceptor on it.
  * 
  * When {@link Outcome#ABORT} is hit, handling is aborted: An
- * {@link AbortException} is thrown and the stack is not unwound. (Note that
- * this is subject to change: In some future implementation, the stack is to be
- * unwound in this case and a new method handleAbort(Exchange) is to be called
- * for every interceptor on it.)
+ * {@link AbortException} is thrown. The stack is unwound calling
+ * {@link Interceptor#handleAbort(Exchange)} on each interceptor on it.
  */
 public class InterceptorFlowController {
 	
@@ -57,15 +56,20 @@ public class InterceptorFlowController {
 	 * Runs both the request and response handlers: This executes the main interceptor chain.
 	 */
 	public void invokeHandlers(Exchange exchange, List<Interceptor> interceptors) throws Exception {
-		switch (invokeRequestHandlers(exchange, interceptors)) {
-		case CONTINUE:
-			throw new Exception("The last interceptor in the main chain may not return CONTINUE. Change it to RETURN.");
-		case RETURN:
-			break;
-		case ABORT:
-			throw new AbortException();
+		try {
+			switch (invokeRequestHandlers(exchange, interceptors)) {
+			case CONTINUE:
+				throw new Exception("The last interceptor in the main chain may not return CONTINUE. Change it to RETURN.");
+			case RETURN:
+				break;
+			case ABORT:
+				throw new AbortException();
+			}
+			invokeResponseHandlers(exchange);
+		} catch (Exception e) {
+			invokeAbortionHandlers(exchange);
+			throw e;
 		}
-		invokeResponseHandlers(exchange);
 	}
 	
 	/**
@@ -78,31 +82,21 @@ public class InterceptorFlowController {
 		boolean logDebug = log.isDebugEnabled();
 
 		for (Interceptor i : interceptors) {
-			if (logDebug)
-				log.debug("Handler flow: " + i.getDisplayName() + ":" + i.getFlow());
-
-			switch (i.getFlow()) {
-			case REQUEST:
-				break;
-			case RESPONSE:
+			Flow f = i.getFlow();
+			if (f == Flow.RESPONSE) {
 				exchange.pushInterceptorToStack(i);
 				continue;
-			case REQUEST_RESPONSE:
-				exchange.pushInterceptorToStack(i);
-				break;
 			}
 
 			if (logDebug)
 				log.debug("Invoking request handler: " + i.getDisplayName() + " on exchange: " + exchange);
 
-			switch (i.handleRequest(exchange)) {
-			case CONTINUE:
-				break;
-			case ABORT:
-				return Outcome.ABORT;
-			case RETURN:
-				return Outcome.RETURN;
-			}
+			Outcome o = i.handleRequest(exchange);
+			if (o != Outcome.CONTINUE)
+				return o;
+				
+			if (f == Flow.REQUEST_RESPONSE)
+				exchange.pushInterceptorToStack(i);
 		}
 		return Outcome.CONTINUE;
 	}
@@ -117,13 +111,30 @@ public class InterceptorFlowController {
 		Interceptor i;
 		while ((i = exchange.popInterceptorFromStack()) != null) {
 			if (logDebug)
-				log.debug("Handler flow: "+i.getDisplayName()+":"+i.getFlow());
-			
-			if (logDebug)
 				log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exchange);
 			
 			if (i.handleResponse(exchange) == Outcome.ABORT) {
 				throw new AbortException();
+			}
+		}
+	}
+	
+	/**
+	 * Runs all abortion handlers for interceptors that have been collected on
+	 * the exchange's stack so far.
+	 */
+	private void invokeAbortionHandlers(Exchange exchange) {
+		boolean logDebug = log.isDebugEnabled();
+
+		Interceptor i;
+		while ((i = exchange.popInterceptorFromStack()) != null) {
+			try {
+				if (logDebug)
+					log.debug("Invoking abortion handler: " + i.getDisplayName() + " on exchange: " + exchange);
+
+				i.handleAbort(exchange);
+			} catch (Exception e) {
+				log.warn(i.getDisplayName() + " handleAbort() threw an exception (ignoring it):", e);
 			}
 		}
 	}

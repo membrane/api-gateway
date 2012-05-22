@@ -1,7 +1,8 @@
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
-	<serviceProxy name="Service Proxy" port="2001">
+	<serviceProxy name="Service Proxy" port="3030">
+		<path>/ok/</path>
 		<interceptor refid="Mock1" />
 		<response>
 			<interceptor refid="Mock2" />	
@@ -17,4 +18,99 @@
 		<interceptor refid="Mock7" />
 		<target host="predic8.de" />
 	</serviceProxy>
+	
+	<serviceProxy name="Service Proxy" port="3030">
+		<path>/abort/</path>
+		<interceptor refid="Mock1" />
+		<response>
+			<interceptor refid="Mock2" />	
+		</response>
+		<request>
+			<interceptor refid="Mock3" />
+		</request>
+		<interceptor refid="Mock4" />
+		<response>
+			<interceptor refid="Mock5" />
+			<interceptor refid="Mock6" />			
+		</response>
+		<interceptor refid="Mock7" />
+		<groovy>
+			exc.echo();
+			ABORT
+		</groovy>
+		<target host="predic8.de" />
+	</serviceProxy>
+
+	<serviceProxy name="Service Proxy" port="3030">
+		<path>/failinrequest/</path>
+		<groovy>
+			exc.echo();
+			CONTINUE
+		</groovy>
+		<interceptor refid="Mock1" />
+		<response>
+			<interceptor refid="Mock2" />	
+		</response>
+		<request>
+			<interceptor refid="Mock3" />
+		</request>
+		<interceptor refid="Mock4" />
+		<response>
+			<interceptor refid="Mock5" />
+			<interceptor refid="Mock6" />			
+		</response>
+		<interceptor refid="Mock7" />
+		<interceptor refid="Mock8FailsInRequest"/>
+		<target host="predic8.de" />
+	</serviceProxy>
+
+	<serviceProxy name="Service Proxy" port="3030">
+		<path>/failinresponse/</path>
+		<groovy>
+			exc.echo();
+			CONTINUE
+		</groovy>
+		<interceptor refid="Mock1" />
+		<response>
+			<interceptor refid="Mock2" />	
+		</response>
+		<request>
+			<interceptor refid="Mock3" />
+		</request>
+		<interceptor refid="Mock4" />
+		<response>
+			<interceptor refid="Mock5" />
+			<interceptor refid="Mock6" />			
+		</response>
+		<interceptor refid="Mock7" />
+		<interceptor refid="Mock9FailsInResponse"/>
+		<target host="predic8.de" />
+	</serviceProxy>
+
+	<serviceProxy name="Service Proxy" port="3030">
+		<path>/failinabort/</path>
+		<groovy>
+			exc.echo();
+			CONTINUE
+		</groovy>
+		<interceptor refid="Mock1" />
+		<response>
+			<interceptor refid="Mock2" />	
+		</response>
+		<request>
+			<interceptor refid="Mock3" />
+		</request>
+		<interceptor refid="Mock4" />
+		<response>
+			<interceptor refid="Mock5" />
+			<interceptor refid="Mock6" />			
+		</response>
+		<interceptor refid="Mock7" />
+		<interceptor refid="Mock10FailsInAbort"/>
+		<groovy>
+			ABORT
+		</groovy>
+		<target host="predic8.de" />
+	</serviceProxy>
+	
 </proxies>
