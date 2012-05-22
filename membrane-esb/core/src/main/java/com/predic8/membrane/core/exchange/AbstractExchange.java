@@ -28,6 +28,7 @@ import java.util.Set;
 
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.model.IExchangeViewerListener;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -68,6 +69,7 @@ public abstract class AbstractExchange {
 	
 	private String sourceIp;
 	
+	private final ArrayList<Interceptor> interceptorStack = new ArrayList<Interceptor>(10);
 	
 	public AbstractExchange() {
 		
@@ -368,5 +370,13 @@ public abstract class AbstractExchange {
 		return "[time:"+DateFormat.getDateInstance().format(time.getTime())+",requestURI:"+request.getUri()+"]";
 	}
 	
+	public void pushInterceptorToStack(Interceptor i) {
+		interceptorStack.add(i);
+	}
+	
+	public Interceptor popInterceptorFromStack() {
+		int s = interceptorStack.size();
+		return s == 0 ? null : interceptorStack.remove(s-1);
+	}
 	
 }
