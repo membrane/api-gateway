@@ -14,8 +14,6 @@
 package com.predic8.membrane.core.transport.http;
 
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,8 +51,7 @@ public class InterceptorInvocationTest {
 	@Before
 	public void setUp() throws Exception {
 		
-		MockInterceptor.reqLabels.clear();
-		MockInterceptor.respLabels.clear();
+		MockInterceptor.clear();
 		
 		ruleInterceptorNames = Arrays.asList(new String[] {"Rule 1", "Rule 2", "Rule 3"});
 		
@@ -74,10 +71,11 @@ public class InterceptorInvocationTest {
 	@Test
 	public void testInterceptorSequence() throws Exception {
 		callService();
-		
-		assertEquals(MockInterceptor.reqLabels.size(), MockInterceptor.respLabels.size());
-		assertEquals(interceptorSequence, MockInterceptor.reqLabels);
-		assertEquals(getReverseList(interceptorSequence), MockInterceptor.respLabels);
+
+		MockInterceptor.assertContent(
+				interceptorSequence, 
+				getReverseList(interceptorSequence),
+				Arrays.<String>asList());
 	}
 
 	private ServiceProxy createServiceProxy() {
@@ -101,8 +99,9 @@ public class InterceptorInvocationTest {
 	}
 	
 	private List<String> getReverseList(List<String> list) {
-		Collections.reverse(list);
-		return list;
+		List<String> res = new ArrayList<String>(list);
+		Collections.reverse(res);
+		return res;
 	}
 	
 	private List<String> createInterceptorSequence() {

@@ -14,21 +14,23 @@
 package com.predic8.membrane.core.transport.http;
 
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
-import java.util.Arrays;
 
-import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.*;
-import org.junit.*;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
+import org.apache.commons.httpclient.methods.PostMethod;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.MockInterceptor;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class ServiceInvocationTest {
 
@@ -37,16 +39,17 @@ public class ServiceInvocationTest {
 	@Before
 	public void setUp() throws Exception {		
 		router = createRouter();
-		MockInterceptor.reqLabels.clear();
-		MockInterceptor.respLabels.clear();
+		MockInterceptor.clear();
 	}
 
 	@Test
 	public void testInterceptorSequence() throws Exception {
 		callService();
 		
-		assertEquals(Arrays.asList(new String[] {"process", "log", "transport-log" }), MockInterceptor.reqLabels);
-		assertEquals(Arrays.asList(new String[] {"transport-log", "log", "process"  }), MockInterceptor.respLabels);
+		MockInterceptor.assertContent(
+				new String[] {"process", "log", "transport-log" },
+				new String[] {"transport-log", "log", "process" },
+				new String[] {});
 	}
 
 

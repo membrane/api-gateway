@@ -13,14 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
-import java.util.*;
 
-import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.Router;
 
@@ -33,28 +33,27 @@ public class InternalInvocationTest {
 		router = Router.init("src/test/resources/userFeature/monitor-beans.xml");
 		router.getConfigurationManager().loadConfiguration(
 				"src/test/resources/internal-invocation/proxies.xml");
-		MockInterceptor.reqLabels.clear();
-		MockInterceptor.respLabels.clear();		
+		MockInterceptor.clear();
 	}
 
 	@Test
 	public void testFullChain() throws Exception {
 		callService(3028);
-		assertRequest(new String[] {"Mock1",
-			"Mock2", "Mock3", "Mock4", "Mock5", "Mock6"});
-		
-		assertResponse(new String[] { "Mock6",
-				"Mock5", "Mock4", "Mock3", "Mock2", "Mock1" });
+
+		MockInterceptor.assertContent(
+				new String[] { "Mock1", "Mock2", "Mock3", "Mock4", "Mock5", "Mock6"},
+				new String[] { "Mock6", "Mock5", "Mock4", "Mock3", "Mock2", "Mock1" },
+				new String[] { });
 	}
 
 	@Test
 	public void testReturnedChain() throws Exception {
 		callService(3029);
-		assertRequest(new String[] {"Mock1",
-			"Mock2", "Mock3"});
 		
-		assertResponse(new String[] { "Mock3",
-				"Mock2", "Mock1" });
+		MockInterceptor.assertContent(
+				new String[] { "Mock1", "Mock2", "Mock3"},
+				new String[] { "Mock3", "Mock2", "Mock1" },
+				new String[] { });
 	}
 
 	@After
@@ -62,14 +61,6 @@ public class InternalInvocationTest {
 		router.getTransport().closeAll();
 	}
 
-	private void assertResponse(String[] responseLabels) {
-		assertEquals(Arrays.asList(responseLabels), MockInterceptor.respLabels);		
-	}
-
-	private void assertRequest(String[] requestLabels) {
-		assertEquals(Arrays.asList(requestLabels), MockInterceptor.reqLabels);		
-	}
-			
 	private void callService(int port) throws HttpException, IOException {
 		new HttpClient().executeMethod(new GetMethod("http://localhost:"+port));
 	}

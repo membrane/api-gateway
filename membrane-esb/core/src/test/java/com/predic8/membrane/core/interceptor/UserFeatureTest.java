@@ -13,14 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.predic8.membrane.core.Router;
 
@@ -39,15 +42,14 @@ public class UserFeatureTest {
 		router = Router.init("src/test/resources/userFeature/monitor-beans.xml");
 		router.getConfigurationManager().loadConfiguration(
 				"src/test/resources/userFeature/proxies.xml");
-		MockInterceptor.reqLabels.clear();
-		MockInterceptor.respLabels.clear();
+		MockInterceptor.clear();
 	}
 
 	@Test
 	public void testInvokation() throws Exception {
 		callService();
-		assertEquals(requestLabels, MockInterceptor.reqLabels);
-		assertEquals(responseLabels, MockInterceptor.respLabels);
+		
+		MockInterceptor.assertContent(requestLabels, responseLabels, new ArrayList<String>());
 	}
 
 	@After
