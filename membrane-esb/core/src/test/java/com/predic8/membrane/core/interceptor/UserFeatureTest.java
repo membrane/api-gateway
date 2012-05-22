@@ -39,6 +39,8 @@ public class UserFeatureTest {
 		router = Router.init("src/test/resources/userFeature/monitor-beans.xml");
 		router.getConfigurationManager().loadConfiguration(
 				"src/test/resources/userFeature/proxies.xml");
+		MockInterceptor.reqLabels.clear();
+		MockInterceptor.respLabels.clear();
 	}
 
 	@Test
