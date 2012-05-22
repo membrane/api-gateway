@@ -22,8 +22,8 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.flow.FlowController;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
@@ -37,7 +37,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	// these are the interceptors this interceptor consists of
 	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] { r, dapi, wsi });
-	private final FlowController flowController = new FlowController();
+	private final InterceptorFlowController flowController = new InterceptorFlowController();
 	
 	public AdminConsoleInterceptor() {
 		name = "Administration";

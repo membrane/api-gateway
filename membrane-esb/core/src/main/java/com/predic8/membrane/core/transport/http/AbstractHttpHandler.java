@@ -18,15 +18,15 @@ import java.io.IOException;
 import java.net.InetAddress;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.flow.FlowController;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.transport.Transport;
 
 public abstract class AbstractHttpHandler  {
 
 	protected Exchange exchange;
 	protected Request srcReq;
-	private static final FlowController flowController = new FlowController();
+	private static final InterceptorFlowController flowController = new InterceptorFlowController();
 		
 	private final Transport transport;
 	

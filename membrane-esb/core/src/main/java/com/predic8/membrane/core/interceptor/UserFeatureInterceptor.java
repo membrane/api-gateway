@@ -19,14 +19,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.flow.FlowController;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	private static final Log log = LogFactory.getLog(UserFeatureInterceptor.class.getName());
-	private static final FlowController flowController = new FlowController();
+	private static final InterceptorFlowController flowController = new InterceptorFlowController();
 
 	public UserFeatureInterceptor() {
 		name = "User Feature";

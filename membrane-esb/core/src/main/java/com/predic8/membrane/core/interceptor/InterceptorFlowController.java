@@ -11,7 +11,7 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-package com.predic8.membrane.core.flow;
+package com.predic8.membrane.core.interceptor;
 
 import java.util.List;
 
@@ -19,13 +19,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.AbortException;
 
-public class FlowController {
+public class InterceptorFlowController {
 	
-	private static final Log log = LogFactory.getLog(FlowController.class);
+	private static final Log log = LogFactory.getLog(InterceptorFlowController.class);
 
 	public void invokeHandlers(Exchange exchange, List<Interceptor> interceptors) throws Exception {
 		switch (invokeRequestHandlers(exchange, interceptors)) {
@@ -39,7 +37,6 @@ public class FlowController {
 		}
 		invokeResponseHandlers(exchange);
 	}
-
 	
 	public Outcome invokeRequestHandlers(Exchange exchange, List<Interceptor> interceptors)
 			throws Exception {
