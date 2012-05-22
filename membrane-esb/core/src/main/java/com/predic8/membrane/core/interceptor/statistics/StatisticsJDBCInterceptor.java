@@ -32,18 +32,10 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	private DataSource dataSource;
 	
-	private PreparedStatement stat;
-	
 	private boolean postMethodOnly;
-	
 	private boolean soapOnly;
-	
 	private boolean idGenerated;
-	
 	private String statString;
-	
-	private Connection con;
-
 	private String dataSourceBeanId; 
 	
 	public StatisticsJDBCInterceptor() {
@@ -67,16 +59,13 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-
-		if (con == null || con.isClosed())
-			con = dataSource.getConnection();
-		
+		Connection con = dataSource.getConnection();
 		try {
-			createPreparedStatement(con);
 			saveExchange(con, exc);
 		} catch (Exception e) {
 			e.printStackTrace();
-			con.close();
+		} finally {
+			closeConnection(con);
 		}
 		return Outcome.CONTINUE;
 	}
@@ -84,6 +73,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	private void saveExchange(Connection con, Exchange exc) throws Exception {
 		if ( ignoreGetMethod(exc) ) return;
 		if ( ignoreNotSoap(exc) ) return;
+		PreparedStatement stat = con.prepareStatement(statString);
 		JDBCUtil.setData(exc, stat, idGenerated);
 		stat.executeUpdate();	
 	}
@@ -133,11 +123,6 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		} finally {
 			st.close();
 		}
-	}
-
-	private void createPreparedStatement(Connection con) throws Exception {
-		if (stat == null || stat.getConnection().isClosed() )
-			stat = con.prepareStatement(statString);
 	}
 	
 	public DataSource getDataSource() {
