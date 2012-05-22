@@ -570,7 +570,7 @@ public class AdminPageBuilder extends Html {
 		if (columnSpan > 1)
 			colspan(""+columnSpan);
 		if (i == null) {
-			div().style("padding:2px 5px; margin: 10px; width: 298px;");
+			div().style("padding:2px 5px; margin: 10px; width: 299px;");
 			raw("&nbsp;");
 			end();
 		} else {
@@ -589,7 +589,7 @@ public class AdminPageBuilder extends Html {
 
 			String did = "d" + id;
 			div().id(did).style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + 
-					(columnSpan == 1 ? "width: 298px;" : "width: 630px;") + (noMarginTop ? "margin-top: 0px;" : ""));
+					(columnSpan == 1 ? "width: 299px;" : "width: 630px;") + (noMarginTop ? "margin-top: 0px;" : ""));
 
 			String iid = "i" + id;
 			div().id("i"+id);
@@ -768,11 +768,11 @@ public class AdminPageBuilder extends Html {
 		
 		boolean noTarget = proxy.getTargetURL() == null && proxy.getTargetHost() == null;
 
-		table().cellspacing("0px").cellpadding("0px").classAttr("spv");
+		table().cellspacing("0px").cellpadding("0px").classAttr("spv").style("width:662px");
 			createListenerRow(proxy);
 			createBeginArrowsRow();
 			for (int i = 0; i < leftStack.size() - 1 - (noTarget ? 1 : 0); i++) {
-				tr().style("background:url(\""+relativeRootPath+"/admin/images/spv-middle.png\");background-repeat:repeat-y;");
+				tr().style("background:url(\""+relativeRootPath+"/admin/images/spv-middle.png\");background-repeat:repeat-y;display:inline-table");
 					createInterceptorRow(leftStack, rightStack, i, false);
 				end();
 			}
