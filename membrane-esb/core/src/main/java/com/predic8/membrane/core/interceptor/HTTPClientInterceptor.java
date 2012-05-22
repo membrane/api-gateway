@@ -43,7 +43,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
 		try {
 			targetRes = getClient().call(exc);
-			return Outcome.CONTINUE;
+			return Outcome.RETURN;
 		} catch (ConnectException e) {
 			targetRes = Response.interalServerError("Target " + getDestination(exc) + " is not reachable.").build();
 			log.warn("Target " + getDestination(exc) + " is not reachable. " + e);

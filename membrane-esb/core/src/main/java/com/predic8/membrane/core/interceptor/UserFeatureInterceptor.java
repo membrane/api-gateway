@@ -22,6 +22,12 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
+/**
+ * Handles features that are user-configured in proxies.xml .
+ * 
+ * Not that we do not implement handleResponse() as this will be
+ * automatically done by the stack-unwinding in {@link InterceptorFlowController}.
+ */
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	private static final Log log = LogFactory.getLog(UserFeatureInterceptor.class.getName());
@@ -29,6 +35,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	public UserFeatureInterceptor() {
 		name = "User Feature";
+		setFlow(Flow.REQUEST);
 	}
 
 	@Override
@@ -50,11 +57,6 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 		}
 		exc.setRule(predecessorRule);
 		return outcome;
-	}
-
-	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		return Outcome.CONTINUE;
 	}
 
 	private String getServiceProxyName(Exchange exc) {

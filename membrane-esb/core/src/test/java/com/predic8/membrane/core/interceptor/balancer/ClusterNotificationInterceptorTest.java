@@ -49,7 +49,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 		
 		interceptor = new ClusterNotificationInterceptor();
 		interceptor.setRouter(router);
-		router.getTransport().getInterceptors().add(interceptor);
+		router.addUserFeatureInterceptor(interceptor);
 		
 		lbi = new LoadBalancingInterceptor();
 		lbi.setRouter(router);

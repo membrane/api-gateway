@@ -132,7 +132,7 @@ public class AccessControlInterceptorIntegrationTest {
 		AccessControlInterceptor interceptor = new AccessControlInterceptor();
 		interceptor.setRouter(router);
 		interceptor.setAclFilename(fileName);
-		router.getTransport().getInterceptors().add(interceptor);
+		router.addUserFeatureInterceptor(interceptor);
 	}
 	
 	private PostMethod getBLZRequestMethod() {

@@ -45,7 +45,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 		mapping.put("admin", "admin");
 		interceptor.setUsers(mapping );
 		
-		router.getTransport().getInterceptors().add(interceptor);
+		router.addUserFeatureInterceptor(interceptor);
 
 		HttpClient client = new HttpClient();
 		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);

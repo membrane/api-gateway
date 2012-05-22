@@ -13,8 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+/**
+ * Also see {@link InterceptorFlowController}.
+ */
 public enum Outcome {
 
-	CONTINUE, ABORT, RETURN
+	/**
+	 * Continue with the interceptor chain.
+	 */
+	CONTINUE, 
+
+	/**
+	 * Do not continue the interceptor chain, but start normal response
+	 * handling:
+	 * 
+	 * All interceptors passed up to this point will be given a chance to handle
+	 * the response (in reverse order).
+	 */
+	RETURN,
+
+	/**
+	 * Abort the interceptor chain, start abortion handling.
+	 */
+	ABORT
 	
 }

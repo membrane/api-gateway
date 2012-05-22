@@ -34,7 +34,6 @@ import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.MockInterceptor;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
@@ -108,21 +107,21 @@ public class InterceptorInvocationTest {
 	
 	private List<String> createInterceptorSequence() {
 		List<String> sequense = new ArrayList<String>();
-		sequense.addAll(ruleInterceptorNames);
 		sequense.addAll(regularInterceptorNames);
+		sequense.addAll(ruleInterceptorNames);
 		return sequense;
 	}
 
 	private HttpRouter createRouter() throws IOException {
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addProxyIfNew(createServiceProxy());
-		addMockInterceptors(router.getTransport().getInterceptors(), regularInterceptorNames);
+		addMockInterceptors(router, regularInterceptorNames);
 		return router;
 	}
 
-	private void addMockInterceptors(List<Interceptor> list, List<String> labels) {
+	private void addMockInterceptors(HttpRouter router, List<String> labels) {
 		for (String label : labels) {
-			list.add(new MockInterceptor(label));
+			router.addUserFeatureInterceptor(new MockInterceptor(label));
 		}
 	}
 }

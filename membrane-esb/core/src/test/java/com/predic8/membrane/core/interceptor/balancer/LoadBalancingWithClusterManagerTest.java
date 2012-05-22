@@ -127,7 +127,7 @@ public class LoadBalancingWithClusterManagerTest {
 
 	private DummyWebServiceInterceptor startNode(HttpRouter node, int port) throws IOException {
 		DummyWebServiceInterceptor service1 = new DummyWebServiceInterceptor();
-		node.getTransport().getInterceptors().add(service1);
+		node.addUserFeatureInterceptor(service1);
 		node.getRuleManager().addProxyIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
 		return service1;
 	}

@@ -56,4 +56,9 @@ public class HttpRouter extends Router {
 		return (HttpTransport)transport;
 	}
 	
+	public void addUserFeatureInterceptor(Interceptor i) {
+		List<Interceptor> is = getTransport().getInterceptors();
+		is.add(is.size()-2, i);
+	}
+	
 }
