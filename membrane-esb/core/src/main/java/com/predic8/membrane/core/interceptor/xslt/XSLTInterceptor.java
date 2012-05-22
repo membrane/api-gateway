@@ -28,7 +28,6 @@ import com.predic8.membrane.core.util.TextUtil;
 public class XSLTInterceptor extends AbstractInterceptor {
 
 	private String xslt;
-	private int concurrency = 0; // number of parallel transformers to use. 0 = 2xCPUs
 	private volatile XSLTTransformer xsltTransformer;
 	private XOPReconstitutor xopr = new XOPReconstitutor();
 
@@ -62,9 +61,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 			synchronized(this) {
 				t = xsltTransformer;
 				if (t == null) {
-					int concurrency = this.concurrency;
-					if (concurrency <= 0)
-						concurrency = Runtime.getRuntime().availableProcessors() * 2;
+					int concurrency = Runtime.getRuntime().availableProcessors() * 2;
 					xsltTransformer = t = new XSLTTransformer(xslt, router.getResourceResolver(), concurrency);
 				}
 			}
@@ -81,30 +78,17 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		this.xsltTransformer = null;
 	}
 	
-	public int getConcurrency() {
-		return concurrency;
-	}
-	
-	public void setConcurrency(int concurrency) {
-		this.concurrency = concurrency;
-		this.xsltTransformer = null;
-	}
-
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
 		out.writeStartElement("transform");
 		out.writeAttribute("xslt", xslt);
-		if (concurrency != 0)
-			out.writeAttribute("concurrency", ""+concurrency);
 		out.writeEndElement();
 	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
 		xslt = token.getAttributeValue("", "xslt");
-		String concurrencyString = token.getAttributeValue("", "concurrency");
-		concurrency = concurrencyString == null ? 0 : Integer.parseInt(concurrencyString);
 	}
 
 	@Override

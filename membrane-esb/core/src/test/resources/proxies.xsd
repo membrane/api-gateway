@@ -83,7 +83,6 @@
 				<xsd:complexType>
 					<xsd:sequence />
 					<xsd:attribute name="xslt" type="xsd:string" />
-					<xsd:attribute name="concurrency" default="0" type="xsd:integer" />
 				</xsd:complexType>
 			</xsd:element>
 
