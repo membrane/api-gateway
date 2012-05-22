@@ -13,12 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
+import java.util.Arrays;
+import java.util.List;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.flow.FlowController;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -32,7 +36,8 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	private final WebServerInterceptor wsi = new WebServerInterceptor();
 
 	// these are the interceptors this interceptor consists of
-	private final Interceptor interceptors[] = new Interceptor[] { r, dapi, wsi };
+	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] { r, dapi, wsi });
+	private final FlowController flowController = new FlowController();
 	
 	public AdminConsoleInterceptor() {
 		name = "Administration";
@@ -43,12 +48,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		for (Interceptor i : interceptors) {
-			Outcome o = i.handleRequest(exc);
-			if (o != Outcome.CONTINUE)
-				return o;
-		}
-		return Outcome.CONTINUE;
+		return flowController.invokeRequestHandlers(exc, interceptors);
 	}
 
 	@Override

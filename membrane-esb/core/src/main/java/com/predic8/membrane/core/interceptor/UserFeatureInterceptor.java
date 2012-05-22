@@ -14,17 +14,19 @@
 package com.predic8.membrane.core.interceptor;
 
 import java.net.URL;
-import java.util.Stack;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.flow.FlowController;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(UserFeatureInterceptor.class
-			.getName());
+	private static final Log log = LogFactory.getLog(UserFeatureInterceptor.class.getName());
+	private static final FlowController flowController = new FlowController();
 
 	public UserFeatureInterceptor() {
 		name = "User Feature";
@@ -32,49 +34,35 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-
-		Stack<Interceptor> stack = new Stack<Interceptor>();
-
-		Outcome outcome = invokeInterceptors(exc, stack);
 		Rule predecessorRule = exc.getRule();
-		while (isTargetInternalAndNotAborted(exc, outcome)) {
+		Outcome outcome = flowController.invokeRequestHandlers(exc, predecessorRule.getInterceptors());
+		
+		while (isTargetInternalAndContinue(exc, outcome)) {
+			log.debug("routing to serviceProxy with name: " + getServiceProxyName(exc));
 
-			log.debug("routing to serviceProxy with name: "
-					+ getServiceProxyName(exc));
-
-			exc.setRule(getRuleByDest(exc.getDestinations().get(0)));
+			// rule matching
+			Rule newRule = getRuleByDest(exc.getDestinations().get(0));
+			exc.setRule(newRule);
+			// dispatching
 			exc.getDestinations().clear();
 			exc.getDestinations().add(getForwardingDestination(exc));
-			outcome = invokeInterceptors(exc, stack);
+			// user feature
+			outcome = flowController.invokeRequestHandlers(exc, newRule.getInterceptors());
 		}
 		exc.setRule(predecessorRule);
-		exc.setProperty("interceptorStack", stack);
 		return outcome;
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-
-		Interceptor i = getInterceptor(exc);
-		Outcome outcome = Outcome.CONTINUE;
-		while (i != null && outcome == Outcome.CONTINUE) {
-			if (i.getFlow() != Flow.REQUEST) {
-
-				log.debug("Invoking response handlers: " + i.getDisplayName()
-						+ " on exchange: " + exc);
-
-				outcome = i.handleResponse(exc);
-			}
-			i = getInterceptor(exc);
-		}
-		return outcome;
+		return Outcome.CONTINUE;
 	}
 
 	private String getServiceProxyName(Exchange exc) {
 		return exc.getDestinations().get(0).substring(8);
 	}
 
-	private boolean isTargetInternalAndNotAborted(Exchange exc, Outcome outcome) {
+	private boolean isTargetInternalAndContinue(Exchange exc, Outcome outcome) {
 		return outcome == Outcome.CONTINUE
 				&& exc.getDestinations().get(0).startsWith("service:");
 	}
@@ -96,30 +84,6 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 		return router.getRuleManager().getRuleByName(dest.substring(8));
 	}
 
-	private Outcome invokeInterceptors(Exchange exc, Stack<Interceptor> stack)
-			throws Exception {
-		for (Interceptor i : exc.getRule().getInterceptors()) {
-			stack.push(i);
-			if (i.getFlow() == Flow.RESPONSE)
-				continue;
-
-			log.debug("Invoking request handlers: " + i.getDisplayName()
-					+ " on exchange: " + exc);
-			Outcome o = i.handleRequest(exc);
-			if (o != Outcome.CONTINUE)
-				return o;
-		}
-		return Outcome.CONTINUE;
-	}
-
-	private Interceptor getInterceptor(Exchange exc) {
-		@SuppressWarnings("unchecked")
-		Stack<Interceptor> stack = (Stack<Interceptor>) exc.getProperty("interceptorStack");
-		if (stack.empty())
-			return null;
-		return stack.pop();
-	}
-	
 	@Override
 	public String getHelpId() {
 		return "user-feature";
