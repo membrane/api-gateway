@@ -42,6 +42,7 @@ public class XSLTInterceptorTest extends TestCase {
 		XSLTInterceptor i = new XSLTInterceptor();
 		i.setRouter(new HttpRouter());
 		i.setXslt("classpath:/customer2person.xsl");
+		i.doAfterParsing();
 		i.handleResponse(exc);
 
 		//printBodyContent();

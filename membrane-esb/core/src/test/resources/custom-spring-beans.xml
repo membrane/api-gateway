@@ -23,7 +23,7 @@
 		<exchangeStore name="forgetfulExchangeStore" />
 		<exchangeStore name="memoryExchangeStore" />
 		<exchangeStore name="fileExchangeStore" />
-		<transform xslt="strip.xslt"/>
+		<transform xslt="classpath:/strip-soap-envelope.xsl"/>
 		<rewriter>
 			<map from="^/bank/" to="/axis2/" />
 		</rewriter>
@@ -83,7 +83,7 @@
 		<field name="age" regex="\d+" />
 		<field name="name" regex="[a-z]+" />
 	</formValidation>
-	<transform xslt="strip.xslt" />
+	<transform xslt="classpath:/strip-soap-envelope.xsl" />
 	<rewriter>
 		<map from="^/bank/" to="/axis2/" />
 	</rewriter>

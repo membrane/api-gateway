@@ -27,7 +27,7 @@
 		<exchangeStore name="forgetfulExchangeStore" />
 		<!--<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource"/> -->
 		<statisticsCSV file="temp/stat.csv" />
-		<transform xslt="strip.xslt" />
+		<transform xslt="classpath:/strip-soap-envelope.xsl" />
 		<balancer>
 			<xmlSessionIdExtractor namespace="http://chat.predic8.com/"
 				localName="session" />
@@ -65,7 +65,7 @@
 		<target host="www.thomas-bayer.com" port="88" url="http://predic8.de/membrane.htm" />
 	</serviceProxy>
     <proxy name="HTTP Proxy" port="3128" >
-		<transform xslt="strip.xslt"/>
+		<transform xslt="classpath:/strip-soap-envelope.xsl"/>
 		<switch>
 			<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
 		</switch>	

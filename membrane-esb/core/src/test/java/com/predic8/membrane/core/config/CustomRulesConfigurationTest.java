@@ -55,7 +55,7 @@ public class CustomRulesConfigurationTest {
 				"http://predic8.de/membrane.htm");
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/transform/@xslt",
-				"strip.xslt");
+				"classpath:/strip-soap-envelope.xsl");
 
 		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/request/counter/@name", "Node 1");
@@ -245,7 +245,7 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(), "/proxies/proxy/@port", "3128");
 
 		assertAttribute(w.toString(), "/proxies/proxy/transform/@xslt",
-				"strip.xslt");
+				"classpath:/strip-soap-envelope.xsl");
 
 		assertAttribute(w.toString(), "/proxies/proxy/switch/case/@xPath",
 				"//convert");
