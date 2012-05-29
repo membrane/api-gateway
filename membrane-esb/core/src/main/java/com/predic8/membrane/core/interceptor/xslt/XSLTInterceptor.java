@@ -50,25 +50,16 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	private void transformMsg(Message msg, String ss) throws Exception {
 		if (msg.isBodyEmpty())
 			return;
-		msg.setBodyContent(getTransformer().transform(
+		msg.setBodyContent(xsltTransformer.transform(
 				new StreamSource(xopr.reconstituteIfNecessary(msg))));
 	}
 	
-	// http://en.wikipedia.org/wiki/Double-checked_locking
-	private XSLTTransformer getTransformer() throws Exception {
-		XSLTTransformer t = xsltTransformer;
-		if (t == null) {
-			synchronized(this) {
-				t = xsltTransformer;
-				if (t == null) {
-					int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-					xsltTransformer = t = new XSLTTransformer(xslt, router.getResourceResolver(), concurrency);
-				}
-			}
-		}
-		return t;
+	@Override
+	public void doAfterParsing() throws Exception {
+		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
+		xsltTransformer = new XSLTTransformer(xslt, router.getResourceResolver(), concurrency);
 	}
-
+	
 	public String getXslt() {
 		return xslt;
 	}
