@@ -126,7 +126,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 		
 		if (getTransport().isRemoveContextRoot()) {
 			String contextPath = request.getContextPath();
-			if (contextPath.length() > 0 && !"/".equals(contextPath) && pathQuery.startsWith(contextPath))
+			if (contextPath.length() > 0 && pathQuery.startsWith(contextPath))
 				pathQuery = pathQuery.substring(contextPath.length());
 		}
 		
