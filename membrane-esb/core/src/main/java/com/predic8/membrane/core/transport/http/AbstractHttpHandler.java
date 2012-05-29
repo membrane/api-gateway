@@ -15,10 +15,13 @@
 package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.InetAddress;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.transport.Transport;
 
@@ -44,7 +47,24 @@ public abstract class AbstractHttpHandler  {
 
 	
 	protected void invokeHandlers() throws Exception {
-		flowController.invokeHandlers(exchange, transport.getInterceptors());
+		try {
+			flowController.invokeHandlers(exchange, transport.getInterceptors());
+		} catch (Exception e) {
+			if (exchange.getResponse() == null) {
+				String msg;
+				if (transport.isPrintStackTrace()) {
+					StringWriter sw = new StringWriter();
+					e.printStackTrace(new PrintWriter(sw));
+					msg = sw.toString();
+				} else {
+					msg = e.toString();
+				}
+				exchange.setResponse(Response.interalServerError(msg).build());
+			}
+		} finally {
+			if (exchange.getResponse() == null)
+				exchange.setResponse(Response.interalServerError().build());
+		}
 	}
 
 }

@@ -30,6 +30,7 @@ public class Transport {
 	private List<Interceptor> interceptors = new Vector<Interceptor>();
 	private Router router;
 	private int httpClientRetries = 5;
+	private boolean printStackTrace = false;
 	
 	private void setRouterForInterceptors() {	
 		for (Interceptor interceptor : interceptors) {
@@ -60,6 +61,16 @@ public class Transport {
 
 	public void setHttpClientRetries(int httpClientRetries) {
 		this.httpClientRetries = httpClientRetries;
+	}
+	
+	public boolean isPrintStackTrace() {
+		System.out.println(this.hashCode() + " get = " + printStackTrace);
+		return printStackTrace;
+	}
+	
+	public void setPrintStackTrace(boolean printStackTrace) {
+		this.printStackTrace = printStackTrace;
+		System.out.println(this.hashCode() + " set to " + printStackTrace);
 	}
 	
 	public void closeAll() throws IOException {}
