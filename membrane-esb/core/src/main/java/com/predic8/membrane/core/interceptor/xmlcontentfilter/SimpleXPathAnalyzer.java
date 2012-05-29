@@ -137,7 +137,7 @@ public class SimpleXPathAnalyzer {
 	}
 	
 	private String getName(Marker m) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		while(true) {
 			int c = eatChar(m);
 			if (isNameChar(c))

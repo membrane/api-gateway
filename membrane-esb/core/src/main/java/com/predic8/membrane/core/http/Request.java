@@ -93,7 +93,7 @@ public class Request extends Message {
 
 	@Override
 	public String getStartLine() {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append(method);
 		buf.append(" ");
 		buf.append(uri);

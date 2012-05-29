@@ -100,7 +100,7 @@ public class ExchangeComparator implements Comparator<AbstractExchange> {
 			return "NONE";
 		if (accessors.size() == 1)
 			return accessors.get(0).getId();
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		
 		for (int i = 0; i < accessors.size() - 1; i++) {
 			buffer.append(accessors.get(i).getId() + " and ");

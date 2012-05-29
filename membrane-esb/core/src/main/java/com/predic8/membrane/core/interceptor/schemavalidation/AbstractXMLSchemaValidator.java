@@ -124,7 +124,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	}
 
 	private String getErrorMsg(List<Exception> excs) {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append("Validation failed: ");
 		for (Exception e : excs) {
 			buf.append(e);

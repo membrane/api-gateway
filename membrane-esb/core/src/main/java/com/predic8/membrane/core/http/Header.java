@@ -145,7 +145,7 @@ public class Header {
 	 * converting it to char-by-char, we use ISO-8859-1 for output here.
 	 */
 	public void write(OutputStream out) throws IOException {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		for (HeaderField field : fields) {
 			String name = field.getHeaderName().toString();
 			String value = field.getValue();
@@ -262,7 +262,7 @@ public class Header {
 
 	@Override
 	public String toString() {
-		StringBuffer res = new StringBuffer();
+		StringBuilder res = new StringBuilder();
 		for (HeaderField field : fields) {
 			res.append(field.toString());
 		}

@@ -188,7 +188,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public String getLongDescription() {
-		StringBuffer sb = new StringBuffer(getShortDescription());
+		StringBuilder sb = new StringBuilder(getShortDescription());
 		sb.deleteCharAt(sb.length()-1);
 		sb.append(" according to ");
 		if (wsdl != null) {

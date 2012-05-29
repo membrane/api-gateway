@@ -44,7 +44,7 @@ public class URLParamUtil {
 
 	
 	public static String createQueryString( String... params ) throws UnsupportedEncodingException {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		for (int i = 0; i < params.length; i+=2) {
 			if (i != 0) buf.append('&');
 			buf.append(URLEncoder.encode(params[i], "UTF-8"));

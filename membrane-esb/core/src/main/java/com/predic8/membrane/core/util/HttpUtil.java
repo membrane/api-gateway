@@ -49,7 +49,7 @@ public class HttpUtil {
 
 	public static String readLine(InputStream in) throws IOException, EndOfStreamException {
 
-		StringBuffer line = new StringBuffer();
+		StringBuilder line = new StringBuilder();
 
 		int b;
 		while ((b = in.read()) != -1) {
@@ -66,7 +66,7 @@ public class HttpUtil {
 
 	
 	public static int readChunkSize(InputStream in) throws IOException {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 
 		int c = 0;
 		while ((c = in.read()) != -1) {
@@ -109,7 +109,7 @@ public class HttpUtil {
 	}
 
 	private static String getHTMLErrorBody(String text, String comment) {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder(256);
 
 		buf.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \r\n" + 
 				"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\r\n" + 
@@ -147,7 +147,7 @@ public class HttpUtil {
 	}
 
 	private static String getFaultSOAPBody(String text) {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder(256);
 
 		buf.append("<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">");
 		buf.append(Constants.CRLF);

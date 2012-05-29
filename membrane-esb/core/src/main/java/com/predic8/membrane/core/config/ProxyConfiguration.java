@@ -124,7 +124,7 @@ public class ProxyConfiguration extends AbstractConfigElement {
 	 * The "Basic" authentication scheme defined in RFC 2617 does not properly define how to treat non-ASCII characters.
 	 */
 	public String getCredentials() {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append("Basic ");
 		byte[] base64UserPass = Base64
 				.encodeBase64((username + ":" + password).getBytes(Constants.UTF_8_CHARSET));

@@ -69,7 +69,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append("{");
 		
 
@@ -125,7 +125,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private Request createRequest(StringBuffer buffer) {
+	private Request createRequest(StringBuilder buffer) {
 		Request request = new Request();
 		request.setMethod(Request.METHOD_PUT);
 		request.setVersion("1.1");
@@ -139,7 +139,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 		return request;
 	}
 	
-	private void appendToBuffer(StringBuffer buffer, String key, String value) {
+	private void appendToBuffer(StringBuilder buffer, String key, String value) {
 		buffer.append(key);
 		buffer.append(":");
 		buffer.append(value);

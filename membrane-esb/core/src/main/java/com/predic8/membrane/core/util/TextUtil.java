@@ -77,7 +77,7 @@ public class TextUtil {
 	}
 	
 	public static String globToRegExp(String glob) {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append("^");
 		for(int i = 0; i < glob.length(); i ++) {
 			appendReplacement(glob.charAt(i), buf);
@@ -86,7 +86,7 @@ public class TextUtil {
 		return buf.toString();
 	}
 	
-	private static void appendReplacement(char c, StringBuffer buf) {
+	private static void appendReplacement(char c, StringBuilder buf) {
 		for (int j = 0; j < source.length; j++) {
 			if (c == source[j]) {
 				buf.append(replace[j]);

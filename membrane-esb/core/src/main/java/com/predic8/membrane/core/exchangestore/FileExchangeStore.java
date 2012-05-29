@@ -71,7 +71,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		Message msg = exc.getResponse() == null ? exc.getRequest() : exc
 				.getResponse();
 
-		StringBuffer buf = getDirectoryNameBuffer(exc);
+		StringBuilder buf = getDirectoryNameBuffer(exc);
 
 		directory = new File(buf.toString());
 		directory.mkdirs();
@@ -95,8 +95,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	}
 
-	private StringBuffer getDirectoryNameBuffer(AbstractExchange exc) {
-		StringBuffer buf = new StringBuffer();
+	private StringBuilder getDirectoryNameBuffer(AbstractExchange exc) {
+		StringBuilder buf = new StringBuilder();
 		buf.append(dir);
 		buf.append(separator);
 		buf.append(exc.getTime().get(Calendar.YEAR));

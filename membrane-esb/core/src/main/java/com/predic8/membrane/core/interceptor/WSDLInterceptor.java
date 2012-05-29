@@ -92,7 +92,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		if (registryWSDLRegisterURL == null)
 			return;
 
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append(registryWSDLRegisterURL);
 		buf.append("?wsdl=");
 
@@ -136,7 +136,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	}
 
 	private String getWSDLURL(Exchange exc) {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append(getLocationProtocol());
 		buf.append("://");
 		buf.append(getLocationHost(exc));
@@ -193,7 +193,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	
 	@Override
 	public String getLongDescription() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(getShortDescription());
 		sb.append("<br/>");
 		sb.append("The protocol, host and port of the incoming request will be used for the substitution");

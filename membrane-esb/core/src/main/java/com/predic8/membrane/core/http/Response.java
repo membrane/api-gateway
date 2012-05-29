@@ -193,7 +193,7 @@ public class Response extends Message {
 
 	@Override
 	public String getStartLine() {
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append("HTTP/");
 		buf.append(version);
 		buf.append(" ");

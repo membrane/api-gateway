@@ -62,7 +62,7 @@ public class HeaderField {
 	}
 	
 	public String toString(){
-		StringBuffer buf = new StringBuffer();
+		StringBuilder buf = new StringBuilder();
 		buf.append(headerName.toString());
 		buf.append(": ");
 		buf.append(value);
