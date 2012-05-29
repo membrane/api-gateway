@@ -21,6 +21,16 @@ import com.predic8.membrane.core.transport.Transport;
 
 public class ServletTransport extends Transport {
 
+	boolean removeContextRoot = true;
+	
+	public boolean isRemoveContextRoot() {
+		return removeContextRoot;
+	}
+
+	public void setRemoveContextRoot(boolean removeContextRoot) {
+		this.removeContextRoot = removeContextRoot;
+	}
+	
 	@Override
 	public void openPort(int port, SSLContext sslContext) throws IOException {
 		// do nothing

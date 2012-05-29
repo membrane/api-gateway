@@ -123,10 +123,13 @@ class HttpServletHandler extends AbstractHttpHandler {
 		String pathQuery = request.getRequestURI();
 		if (request.getQueryString() != null)
 			pathQuery += "?" + request.getQueryString();
-		// remove context-path from path
-		String contextPath = request.getContextPath();
-		if (contextPath.length() > 0 && pathQuery.startsWith(contextPath))
-			pathQuery = pathQuery.substring(contextPath.length());
+		
+		if (getTransport().isRemoveContextRoot()) {
+			String contextPath = request.getContextPath();
+			if (contextPath.length() > 0 && !"/".equals(contextPath) && pathQuery.startsWith(contextPath))
+				pathQuery = pathQuery.substring(contextPath.length());
+		}
+		
 		srcReq.create(
 				request.getMethod(), 
 				pathQuery, 
@@ -165,5 +168,10 @@ class HttpServletHandler extends AbstractHttpHandler {
 	@Override
 	public int getLocalPort() {
 		return request.getLocalPort();
+	}
+	
+	@Override
+	public ServletTransport getTransport() {
+		return (ServletTransport)super.getTransport();
 	}
 }

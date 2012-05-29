@@ -21,7 +21,8 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 @SuiteClasses({ 
 	AdminConsoleTest.class,
-	ForwardingTest.class
+	ForwardingTest.class,
+	WSDLRewritingTest.class
 })
 public class IntegrationTests {
 

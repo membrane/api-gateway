@@ -64,13 +64,11 @@ public class Transport {
 	}
 	
 	public boolean isPrintStackTrace() {
-		System.out.println(this.hashCode() + " get = " + printStackTrace);
 		return printStackTrace;
 	}
 	
 	public void setPrintStackTrace(boolean printStackTrace) {
 		this.printStackTrace = printStackTrace;
-		System.out.println(this.hashCode() + " set to " + printStackTrace);
 	}
 	
 	public void closeAll() throws IOException {}

@@ -30,7 +30,8 @@ public class ServletTransportParser extends
 		e.setAttribute("id", "transport");
 		
 		bean.addPropertyValue("httpClientRetries", e.getAttribute("httpClientRetries"));
-		bean.addPropertyValue("printStackTrace", e.getAttribute("printStackTrace"));
+		bean.addPropertyValue("printStackTrace", Boolean.parseBoolean(e.getAttribute("printStackTrace")));
+		bean.addPropertyValue("removeContextRoot", e.getAttribute("removeContextRoot").length() == 0 ? true : Boolean.parseBoolean(e.getAttribute("removeContextRoot")));
 		
 		bean.addPropertyValue("interceptors", parseInterceptors(e));
 	}
