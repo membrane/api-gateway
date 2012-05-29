@@ -19,13 +19,19 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
 public abstract class AbstractHttpHandler  {
+
+	private static Log log = LogFactory.getLog(AbstractHttpHandler.class.getName());
 
 	protected Exchange exchange;
 	protected Request srcReq;
@@ -46,7 +52,7 @@ public abstract class AbstractHttpHandler  {
 	public abstract int getLocalPort();
 
 	
-	protected void invokeHandlers() throws Exception {
+	protected void invokeHandlers() throws IOException, EndOfStreamException, AbortException, NoMoreRequestsException, ErrorReadingStartLineException {
 		try {
 			flowController.invokeHandlers(exchange, transport.getInterceptors());
 			if (exchange.getResponse() == null)
@@ -64,10 +70,22 @@ public abstract class AbstractHttpHandler  {
 				}
 				exchange.setResponse(HttpUtil.createHTMLErrorResponse(msg,
 					"Stack traces can be " + (printStackTrace ? "dis" : "en") + "abled by setting the "+
-					"@printStackTrace attribute on <a href=\"http://membrane-soa.org/esb-doc/current/configuration/reference/transport.htm\">transport</a>."
+					"@printStackTrace attribute on <a href=\"http://membrane-soa.org/esb-doc/current/configuration/reference/transport.htm\">transport</a>. " +
+					"More details might be found in the log."
 						));
 			}
-			throw e;
+			
+			if (e instanceof IOException)
+				throw (IOException)e;
+			if (e instanceof EndOfStreamException)
+				throw (EndOfStreamException)e;
+			if (e instanceof AbortException)
+				throw (AbortException)e; // TODO: migrate catch logic into this method
+			if (e instanceof NoMoreRequestsException)
+				throw (NoMoreRequestsException)e;
+			if (e instanceof ErrorReadingStartLineException)
+				throw (ErrorReadingStartLineException)e;
+			log.warn("An exception occured while handling a request: ", e);
 		}
 	}
 

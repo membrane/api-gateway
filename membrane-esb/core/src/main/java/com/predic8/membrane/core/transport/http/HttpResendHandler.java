@@ -45,10 +45,7 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 			e.printStackTrace();
 		} catch (EndOfStreamException e) {
 			e.printStackTrace();
-		} catch (Exception ex) {
-			ex.printStackTrace();
 		}
-
 	}
 	
 	@Override

@@ -176,6 +176,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			i = new AdminConsoleInterceptor();
 		} else if ("transform".equals(name)) {
 			i = new XSLTInterceptor();
+		} else if ("index".equals(name)) {
+			i = new IndexInterceptor();
 		} else if ("counter".equals(name)) {
 			i = new CountInterceptor();
 		} else if ("webServer".equals(name)) {

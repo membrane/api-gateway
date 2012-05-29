@@ -111,6 +111,16 @@
 		</xsd:complexType>
 	</xsd:element>
 
+	<xsd:element name="index">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
 	<xsd:element name="log">
 		<xsd:complexType>
 			<xsd:complexContent>
