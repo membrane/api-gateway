@@ -30,11 +30,13 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.transport.http.HttpServerHandler;
 
 public class IndexInterceptor extends AbstractInterceptor {
 	
 	private static class ServiceInfo {
-		public String name, url;
+		public String name, url, host, port, path;
+		public boolean ssl;
 	}
 
 	public List<ServiceInfo> getServices(Exchange exc) {
@@ -58,11 +60,10 @@ public class IndexInterceptor extends AbstractInterceptor {
 		if (!k.isMethodWildcard() && !"GET".equals(k.getMethod()))
 			return null;
 				
+		ServiceInfo ri = new ServiceInfo();
 		
-		String note = null;
-		
-		String protocol = sp.getSslInboundContext() != null ? "https" : "http";
-		// NOTE: when running as servlet, we have no idea what the protocol was
+		ri.ssl = sp.getSslInboundContext() != null;// NOTE: when running as servlet, we have no idea what the protocol was
+		String protocol = ri.ssl ? "https" : "http";
 		
 		String host = k.isHostWildcard() ? exc.getRequest().getHeader().getHost() : k.getHost();
 		if (host == null)
@@ -77,23 +78,16 @@ public class IndexInterceptor extends AbstractInterceptor {
 			path = "/";
 		} else if (k.isPathRegExp()) {
 			path = fullfillRegexp(k.getPath());
-			if (path == null)
-				note = "The path pattern <tt>" + HtmlUtils.htmlEscape(k.getPath())
-						+ "</tt> is too complex to give an URL example. (The ServiceProxyKey is \""
-						+ HtmlUtils.htmlEscape(k.toString()) + "\".)";
 		} else {
 			path = "/" + StringUtils.removeStart(k.getPath(), "/");
 		}
 		
-		ServiceInfo ri = new ServiceInfo();
 		ri.name = sp.getName();
-		if (note != null)
-			ri.url = note;
-		else {
+		if (path != null)
 			ri.url = protocol + "://" + host + ":" + port + path;
-			ri.url = HtmlUtils.htmlEscape(ri.url);
-			ri.url = "<a href=\"" + ri.url + "\">" + ri.url + "</a>";
-		}
+		ri.host = k.isHostWildcard() ? "" : HtmlUtils.htmlEscape(k.getHost());
+		ri.port = k.getPort() == -1 ? "" : "" + k.getPort();
+		ri.path = k.isUsePathPattern() ? "<tt>" + HtmlUtils.htmlEscape(k.getPath()) + "</tt>" + (k.isPathRegExp() ? " (regex)" : "") : ""; 
 		return ri;
 	}
 	
@@ -161,7 +155,8 @@ public class IndexInterceptor extends AbstractInterceptor {
 							"h1 { font-size: 24pt; }\r\n" +
 							"td, th { border: 1px solid black; padding: 0pt 10pt; }\r\n" +
 							"table { border-collapse: collapse; }\r\n" +
-							".footer { margin-top:20pt; color:#AAAAAA; padding:1em 0em; font-size:10pt; }\r\n" + 
+							".help { margin-top:20pt; color:#AAAAAA; padding:1em 0em 0em 0em; font-size:10pt; }\r\n" + 
+							".footer { color:#AAAAAA; padding:0em 0em; font-size:10pt; }\r\n" + 
 							".footer a { color:#AAAAAA; text-decoration: none; }\r\n" + 
 							".footer a:hover { text-decoration: underline; }\r\n" + 
 							"-->");
@@ -173,22 +168,37 @@ public class IndexInterceptor extends AbstractInterceptor {
 						if (services.size() == 0)
 							p().text("There are no services defined.").end();
 						else 
-							createIndexTable(services);
+							createIndexTable(services, exc.getHandler() instanceof HttpServerHandler);
+						p().classAttr("help").text("The hyperlinks might not work due to semantics which is not known to Membrane.").end();
 						p().classAttr("footer").raw(Constants.HTML_FOOTER).end();
 					end();
 				end();
 			}
 		
-			private void createIndexTable(List<ServiceInfo> services) {
+			private void createIndexTable(List<ServiceInfo> services, boolean showSSL) {
 				table().cellspacing("0").cellpadding("0");
 					tr();
 						th().text("Name").end();
-						th().text("URL").end();
+						th().text("Virtual Host").end();
+						th().text("Port").end();
+						th().text("Path").end();
+						if (showSSL)
+							th().text("SSL").end();
 					end();
 					for (ServiceInfo ri : services) {
 						tr();
-							td().text(ri.name).end();
-							td().raw(ri.url).end();
+							td();
+								if (ri.url != null)
+									a().href(ri.url);
+								text(ri.name);
+								if (ri.url != null)
+									end();
+							end();
+							td().raw(ri.host).end();
+							td().raw(ri.port).end();
+							td().raw(ri.path).end();
+							if (showSSL)
+								td().raw(ri.ssl ? "yes" : "").end();
 						end();
 					}
 				end();
