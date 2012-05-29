@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.ResourceResolver;
@@ -72,5 +73,8 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 				build();
 	}
 
-
+	@Override
+	protected boolean isFault(Message msg) {
+		return false;
+	}
 }

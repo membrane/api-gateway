@@ -133,6 +133,7 @@
 					<xsd:attribute name="jsonSchema" type="xsd:string" />
 					<xsd:attribute name="schematron" type="xsd:string" />
 					<xsd:attribute name="failureHandler" type="xsd:string" />
+					<xsd:attribute name="skipFaults" type="xsd:boolean" default="false" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>

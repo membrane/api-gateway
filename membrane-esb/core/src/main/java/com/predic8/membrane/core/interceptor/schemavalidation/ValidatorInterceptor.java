@@ -41,6 +41,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	private String jsonSchema;
 	private String schematron;
 	private String failureHandler;
+	private boolean skipFaults;
 	
 	private IValidator validator;
 	private ResourceResolver resourceResolver;
@@ -56,7 +57,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 			
 		if (wsdl != null) {
 			name="SOAP Validator";
-			setValidator(new WSDLValidator(resourceResolver, wsdl, createFailureHandler()));
+			setValidator(new WSDLValidator(resourceResolver, wsdl, createFailureHandler(), skipFaults));
 		}
 		if (schema != null) {
 			name="XML Schema Validator";
@@ -160,6 +161,14 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 
 	public void setSchematron(String schematron) {
 		this.schematron = schematron;
+	}
+	
+	public boolean isSkipFaults() {
+		return skipFaults;
+	}
+	
+	public void setSkipFaults(boolean skipFaults) {
+		this.skipFaults = skipFaults;
 	}
 	
 	@Override

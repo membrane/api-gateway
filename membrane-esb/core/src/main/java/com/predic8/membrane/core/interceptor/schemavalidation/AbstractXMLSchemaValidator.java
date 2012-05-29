@@ -43,18 +43,24 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	private static Log log = LogFactory.getLog(AbstractXMLSchemaValidator.class.getName());
 
 	private final ArrayBlockingQueue<List<Validator>> validators;
-	private final XOPReconstitutor xopr;
+	protected final XOPReconstitutor xopr;
 	protected final String location;
 	protected final ResourceResolver resourceResolver;
 	protected final ValidatorInterceptor.FailureHandler failureHandler;
+	private final boolean skipFaults;
 	
 	protected final AtomicLong valid = new AtomicLong();
 	protected final AtomicLong invalid = new AtomicLong();
 
 	public AbstractXMLSchemaValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+		this(resourceResolver, location, failureHandler, false);
+	}
+
+	public AbstractXMLSchemaValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
 		this.location = location;
 		this.resourceResolver = resourceResolver;
 		this.failureHandler = failureHandler;
+		this.skipFaults = skipFaults;
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
 		validators = new ArrayBlockingQueue<List<Validator>>(concurrency);
 		for (int i = 0; i < concurrency; i++)
@@ -84,6 +90,10 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 			exceptions.add(e);
 		} finally {
 			validators.put(vals);
+		}
+		if (skipFaults && isFault(msg)) {
+			valid.incrementAndGet();
+			return Outcome.CONTINUE;
 		}
 		if (failureHandler == FailureHandler.VOID) {
 			exc.setProperty("error", getErrorMsg(exceptions));
@@ -136,5 +146,6 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	protected abstract List<Schema> getSchemas();
 	protected abstract Source getMessageBody(InputStream input) throws Exception;
 	protected abstract Response createErrorResponse(String message);
+	protected abstract boolean isFault(Message msg);
 
 }

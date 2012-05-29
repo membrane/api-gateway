@@ -44,6 +44,11 @@ import org.apache.commons.logging.LogFactory;
  */
 public class XMLProtector {
 	private static Log log = LogFactory.getLog(XMLProtector.class.getName());
+	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	static {
+		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
+		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+	}
 	
 	private XMLEventWriter writer;
 	private final int maxAttibuteCount;
@@ -58,12 +63,11 @@ public class XMLProtector {
 	}
 	
 	public boolean protect(InputStreamReader isr) {
-		XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
-		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-
 		try {
-			XMLEventReader parser = xmlInputFactory.createXMLEventReader(isr);
+			XMLEventReader parser;
+			synchronized(xmlInputFactory) {
+				parser = xmlInputFactory.createXMLEventReader(isr);
+			}
 
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();

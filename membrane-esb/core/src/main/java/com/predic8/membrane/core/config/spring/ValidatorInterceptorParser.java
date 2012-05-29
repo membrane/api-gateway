@@ -44,6 +44,7 @@ public class ValidatorInterceptorParser extends AbstractParser {
 		if (e.hasAttribute("failureHandler")) {
 			builder.addPropertyValue("failureHandler", e.getAttribute("failureHandler"));
 		}
+		builder.addPropertyValue("skipFaults", e.getAttribute("skipFaults"));
 		
 		builder.addPropertyReference("router", "router");
 		
