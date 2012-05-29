@@ -119,6 +119,9 @@ public class HttpUtil {
 				"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n" +
 				"<style><!--\r\n" +
 				"body { font-family:sans-serif; } \r\n" +
+				".footer { margin-top:20pt; color:#AAAAAA; padding:1em 0em; font-size:10pt; }\r\n" + 
+				".footer a { color:#AAAAAA; text-decoration: none; }\r\n" + 
+				".footer a:hover { text-decoration: underline; }\r\n" + 
 				"--></style>" +
 				"</head>\r\n" + 
 				"<body><h1>Internal Server Error</h1>");
@@ -129,6 +132,9 @@ public class HttpUtil {
 		buf.append("<pre id=\"msg\">");
 		buf.append(HtmlUtils.htmlEscape(text));
 		buf.append("</pre>");
+		buf.append("<p class=\"footer\">");
+		buf.append(Constants.HTML_FOOTER);
+		buf.append("</p>");
 		buf.append("</body>");
 		return buf.toString();
 	}
