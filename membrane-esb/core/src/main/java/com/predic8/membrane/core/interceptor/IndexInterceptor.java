@@ -14,21 +14,186 @@
 package com.predic8.membrane.core.interceptor;
 
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.lang.StringUtils;
+import org.springframework.web.util.HtmlUtils;
+
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class IndexInterceptor extends AbstractInterceptor {
 	
+	private static class ServiceInfo {
+		public String name, url;
+	}
+
+	public List<ServiceInfo> getServices(Exchange exc) {
+		List<ServiceInfo> result = new ArrayList<ServiceInfo>();
+		for (Rule r : router.getRuleManager().getRules()) {
+			if (r instanceof ServiceProxy) {
+				ServiceInfo si = getServiceInfo(exc, (ServiceProxy)r);
+				if (si != null)
+					result.add(si);
+			}
+		}
+		return result;
+	}
+	
+	private ServiceInfo getServiceInfo(Exchange exc, ServiceProxy sp) {
+		if (sp.getInterceptors().size() == 1 && sp.getInterceptors().get(0) instanceof IndexInterceptor)
+			return null;
+		
+		ServiceProxyKey k = (ServiceProxyKey) sp.getKey();
+		
+		if (!k.isMethodWildcard() && !"GET".equals(k.getMethod()))
+			return null;
+				
+		
+		String note = null;
+		
+		String protocol = sp.getSslInboundContext() != null ? "https" : "http";
+		// NOTE: when running as servlet, we have no idea what the protocol was
+		
+		String host = k.isHostWildcard() ? exc.getRequest().getHeader().getHost() : k.getHost();
+		if (host == null)
+			host = "localhost"; // TODO: use local IP address (which is not exposed by the transport at the moment)
+		
+		int port = k.getPort();
+		if (port == -1)
+			port = exc.getHandler().getLocalPort();
+		
+		String path;
+		if (!k.isUsePathPattern()) {
+			path = "/";
+		} else if (k.isPathRegExp()) {
+			path = fullfillRegexp(k.getPath());
+			if (path == null)
+				note = "The path pattern <tt>" + HtmlUtils.htmlEscape(k.getPath())
+						+ "</tt> is too complex to give an URL example. (The ServiceProxyKey is \""
+						+ HtmlUtils.htmlEscape(k.toString()) + "\".)";
+		} else {
+			path = "/" + StringUtils.removeStart(k.getPath(), "/");
+		}
+		
+		ServiceInfo ri = new ServiceInfo();
+		ri.name = sp.getName();
+		if (note != null)
+			ri.url = note;
+		else {
+			ri.url = protocol + "://" + host + ":" + port + path;
+			ri.url = HtmlUtils.htmlEscape(ri.url);
+			ri.url = "<a href=\"" + ri.url + "\">" + ri.url + "</a>";
+		}
+		return ri;
+	}
+	
+	private String fullfillRegexp(String path) {
+		StringBuilder sb = new StringBuilder();
+		int p = 0;
+		while (p < path.length()) {
+			int c = path.codePointAt(p++);
+			switch (c) {
+			case '\\':
+			case '[':
+			case '?':
+			case '*':
+			case '+':
+			case '{':
+			case '(':
+				return null; // meaningful characters we do not unterstand
+			case '|':
+				break;
+			case '^':
+				if (p == 1)
+					break;
+				return null;
+			case '$':
+				if (p == path.length() || path.codePointAt(p) == '|')
+					break;
+				return null;
+			case '.':
+				int q; 
+				if (p != path.length() && isQuantifier(q = path.codePointAt(p))) {
+					if (++p != path.length() && isModifier(path.codePointAt(p)))
+						p++;
+					if (q == '+')
+						sb.append('a');
+				} else {
+					sb.append('a');
+				}
+				break;
+			default:
+				sb.appendCodePoint(c);
+				break;
+			}
+		}
+		return sb.toString();
+	}
+	
+	private boolean isQuantifier(int c) {
+		return c == '?' || c == '*' || c == '+';
+	}
+
+	private boolean isModifier(int c) {
+		return c == '?' || c == '+';
+	}
+
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
+	public Outcome handleRequest(final Exchange exc) throws Exception {
 		StringWriter sw = new StringWriter();
-		new Html(sw) {{
-		}};
+		new Html(sw) {
+			{
+				html();
+					head();
+						style();
+						raw("<!--\r\n" +
+							"body { font-family: sans-serif; }\r\n" +
+							"h1 { font-size: 24pt; }\r\n" +
+							"td, th { border: 1px solid black; padding: 0pt 10pt; }\r\n" +
+							"table { border-collapse: collapse; }\r\n" +
+							".footer { margin-top:20pt; color:#AAAAAA; padding:1em 0em; font-size:10pt; }\r\n" + 
+							".footer a { color:#AAAAAA; text-decoration: none; }\r\n" + 
+							".footer a:hover { text-decoration: underline; }\r\n" + 
+							"-->");
+						end();
+					end();
+					body();
+						h1().text("Services").end();
+						List<ServiceInfo> services = getServices(exc);
+						if (services.size() == 0)
+							p().text("There are no services defined.").end();
+						else 
+							createIndexTable(services);
+						p().classAttr("footer").raw(Constants.HTML_FOOTER).end();
+					end();
+				end();
+			}
+		
+			private void createIndexTable(List<ServiceInfo> services) {
+				table().cellspacing("0").cellpadding("0");
+					tr();
+						th().text("Name").end();
+						th().text("URL").end();
+					end();
+					for (ServiceInfo ri : services) {
+						tr();
+							td().text(ri.name).end();
+							td().raw(ri.url).end();
+						end();
+					}
+				end();
+			}
+		};
 		exc.setResponse(Response.ok(sw.toString()).build());
 		return Outcome.RETURN;
 	}
