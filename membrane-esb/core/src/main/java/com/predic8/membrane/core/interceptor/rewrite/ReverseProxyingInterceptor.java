@@ -34,6 +34,8 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
+		if (exc.getResponse() == null)
+			return Outcome.CONTINUE;
 		String location = exc.getResponse().getHeader().getFirstValue(Header.LOCATION);
 		if (location == null)
 			return Outcome.CONTINUE;

@@ -27,6 +27,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Body;
@@ -98,6 +99,38 @@ public class HttpUtil {
 				"The requested page could't be found!" + 
 				"</body></html>").getBytes(Constants.UTF_8_CHARSET)));
 		return response;
+	}
+
+	public static Response createHTMLErrorResponse(String message, String comment) {
+		Response response = Response.interalServerError().build();
+		response.setHeader(createHeaders(MimeType.TEXT_HTML_UTF8));
+		response.setBodyContent(getHTMLErrorBody(message, comment).getBytes(Constants.UTF_8_CHARSET));
+		return response;
+	}
+
+	private static String getHTMLErrorBody(String text, String comment) {
+		StringBuffer buf = new StringBuffer();
+
+		buf.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \r\n" + 
+				"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\r\n" + 
+				"<html xmlns=\"http://www.w3.org/1999/xhtml\">\r\n" + 
+				"<head>\r\n" + 
+				"<title>Internal Server Error</title>\r\n" + 
+				"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n" +
+				"<style><!--\r\n" +
+				"body { font-family:sans-serif; } \r\n" +
+				"--></style>" +
+				"</head>\r\n" + 
+				"<body><h1>Internal Server Error</h1>");
+		buf.append("<hr/>");
+		buf.append("<p>While processing your request, the following error was detected. ");
+		buf.append(comment);
+		buf.append("</p>\r\n");
+		buf.append("<pre id=\"msg\">");
+		buf.append(HtmlUtils.htmlEscape(text));
+		buf.append("</pre>");
+		buf.append("</body>");
+		return buf.toString();
 	}
 
 	public static Response createSOAPValidationErrorResponse(String message) {
