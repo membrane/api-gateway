@@ -140,7 +140,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 		
 		try {
 			String resource = null;
-			if (exc.getRequestURI().endsWith("?wsdl")) {
+			if (exc.getRequestURI().endsWith("?wsdl") || exc.getRequestURI().endsWith("?WSDL")) {
 				processDocuments(exc);
 				exc.setResponse(WebServerInterceptor.createResponse(router.getResourceResolver(), resource = wsdl));
 			}
