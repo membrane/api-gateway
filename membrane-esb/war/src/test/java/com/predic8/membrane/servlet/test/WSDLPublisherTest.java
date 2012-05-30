@@ -11,20 +11,24 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License. */
-
 package com.predic8.membrane.servlet.test;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+import java.io.IOException;
 
-@RunWith(Suite.class)
-@SuiteClasses({ 
-	AdminConsoleTest.class,
-	ForwardingTest.class,
-	WSDLRewritingTest.class,
-	WSDLPublisherTest.class
-})
-public class IntegrationTests {
+import javax.xml.stream.XMLStreamException;
+
+import junit.framework.Assert;
+
+import org.apache.http.ParseException;
+import org.junit.Test;
+
+import com.predic8.membrane.test.WSDLUtil;
+
+public class WSDLPublisherTest {
+	
+	@Test
+	public void doit() throws ParseException, IOException, XMLStreamException {
+		Assert.assertEquals(4, WSDLUtil.countWSDLandXSDs("http://localhost:3021/wsdlPublisher/?wsdl"));
+	}
 
 }

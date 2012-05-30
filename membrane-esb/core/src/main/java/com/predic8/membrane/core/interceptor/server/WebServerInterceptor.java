@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.server;
 import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 
 import javax.xml.stream.XMLStreamException;
@@ -32,6 +33,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class WebServerInterceptor extends AbstractInterceptor {
@@ -54,7 +56,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		log.debug("looking for file: " + uri);
 
 		try {
-			exc.setResponse(createResponse(uri));
+			exc.setResponse(createResponse(router.getResourceResolver(), docBase + uri));
 			return Outcome.RETURN;
 		} catch (FileNotFoundException e) {
 			exc.setResponse(HttpUtil.createNotFoundResponse());
@@ -62,12 +64,10 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		}
 	}
 
-	private Response createResponse(String uri) throws Exception {
-		Response response = Response.ok().header(createHeaders(getContentType(uri))).build();
-
-		String resPath = docBase + uri;
+	public static Response createResponse(ResourceResolver rr, String resPath) throws IOException {
+		Response response = Response.ok().header(createHeaders(getContentType(resPath))).build();
 		
-		InputStream in = router.getResourceResolver().resolve(resPath, true);
+		InputStream in = rr.resolve(resPath, true);
 		if (in == null)
 			throw new FileNotFoundException(resPath);
 		
@@ -75,12 +75,16 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		return response;
 	}
 
-	private String getContentType(String uri) {
+	private static String getContentType(String uri) {
 		if (uri.endsWith(".css"))
 			return "text/css";
 		if (uri.endsWith(".js"))
 			return "application/x-javascript";
 		if (uri.endsWith(".wsdl"))
+			return "text/xml";
+		if (uri.endsWith(".xml"))
+			return "text/xml";
+		if (uri.endsWith(".xsd"))
 			return "text/xml";
 		return null;
 	}

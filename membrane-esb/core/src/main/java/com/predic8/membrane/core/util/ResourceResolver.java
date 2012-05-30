@@ -44,7 +44,25 @@ public class ResourceResolver {
 
 		return getRealFile(uri, false).lastModified();
 	}
-
+	
+	public String combine(String parent, String relativeChild) {
+		if (parent.contains(":/")) {
+			try {
+				return new URI(new URI(parent, false), relativeChild, false).toString();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		} else if (parent.startsWith("/")) {
+			try {
+				return new URI(new URI("file:" + parent, false), relativeChild, false).toString().substring(5);
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		} else {
+			return new File(new File(parent).getParent(), relativeChild).getAbsolutePath();
+		}
+	}
+	
 	public InputStream resolve(String uri, boolean useMembraneHome)
 			throws FileNotFoundException {
 	    if(uri.startsWith("http:") || uri.startsWith("https:")) {

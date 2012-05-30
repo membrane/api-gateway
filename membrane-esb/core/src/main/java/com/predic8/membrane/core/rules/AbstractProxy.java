@@ -37,6 +37,7 @@ import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
+import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.*;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SOAPStackTraceFilterInterceptor;
@@ -190,6 +191,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			i = new RewriteInterceptor();
 		} else if ("validator".equals(name)) {
 			i = new ValidatorInterceptor();
+		} else if ("wsdlPublisher".equals(name)) {
+			i = new WSDLPublisherInterceptor();
 		} else if ("rest2Soap".equals(name)) {
 			i = new REST2SOAPInterceptor();
 		} else if ("basicAuthentication".equals(name)) {

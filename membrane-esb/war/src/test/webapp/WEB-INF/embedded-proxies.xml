@@ -19,6 +19,11 @@
 		</basicAuthentication>	
 		<adminConsole />
     </serviceProxy>
+    
+    <serviceProxy>
+    	<path isRegExp="true">/wsdlPublisher/.*</path>
+    	<wsdlPublisher wsdl="/WEB-INF/ArticleService.wsdl" />
+    </serviceProxy>
 
     <serviceProxy>
     	<path isRegExp="true">.*wsdl</path>

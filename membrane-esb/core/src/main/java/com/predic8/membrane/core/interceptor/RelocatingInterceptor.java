@@ -20,17 +20,16 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.ws.relocator.Relocator;
 
 abstract public class RelocatingInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(RelocatingInterceptor.class
-			.getName());
+	private static Log log = LogFactory.getLog(RelocatingInterceptor.class.getName());
 
 	protected String host;
-
 	protected String protocol;
-
 	protected String port;
+	protected Relocator.PathRewriter pathRewriter;
 
 	public Outcome handleResponse(Exchange exc) throws Exception {
 
@@ -138,4 +137,11 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 		this.port = port;
 	}
 
+	public Relocator.PathRewriter getPathRewriter() {
+		return pathRewriter;
+	}
+	
+	public void setPathRewriter(Relocator.PathRewriter pathRewriter) {
+		this.pathRewriter = pathRewriter;
+	}
 }

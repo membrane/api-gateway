@@ -66,7 +66,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
 		Relocator relocator = new Relocator(new OutputStreamWriter(stream,
 				getCharset(exc)), getLocationProtocol(), getLocationHost(exc),
-				getLocationPort(exc));
+				getLocationPort(exc), pathRewriter);
 
 		relocator.getRelocatingAttributes().put(
 				new QName(WSDL_SOAP11_NS, "address"), "location");

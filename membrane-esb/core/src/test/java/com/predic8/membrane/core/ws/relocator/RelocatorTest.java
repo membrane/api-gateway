@@ -31,7 +31,7 @@ public class RelocatorTest extends TestCase {
 	protected void setUp() throws Exception {
 		relocator = new Relocator(new OutputStreamWriter(
 				new NullOutputStream(), Constants.UTF_8), "http", "localhost",
-				3000);
+				3000, null);
 		super.setUp();
 	}
 

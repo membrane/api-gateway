@@ -14,32 +14,51 @@
 
 package com.predic8.membrane.core.ws.relocator;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import javax.xml.namespace.QName;
-import javax.xml.stream.*;
-import javax.xml.stream.events.*;
+import javax.xml.stream.XMLEventFactory;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLEventWriter;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.Attribute;
+import javax.xml.stream.events.StartElement;
+import javax.xml.stream.events.XMLEvent;
 
 import com.predic8.membrane.core.Constants;
 
+@NotThreadSafe
 public class Relocator {
-	XMLEventWriter writer;
+	private final XMLEventFactory fac = XMLEventFactory.newInstance();
+
+	private final String host;
+	private final int port;
+	private final String protocol;
+	private final XMLEventWriter writer;
+	private final PathRewriter pathRewriter;
 
 	private Map<QName, String> relocatingAttributes = new HashMap<QName, String>();
-
-	private String host;
-	private int port;
-	private String protocol;
+	
 	private boolean wsdlFound;
 
 	private class ReplaceIterator implements Iterator<Attribute> {
 
-		Iterator<Attribute> attrs;
-		String replace;
+		private final XMLEventFactory fac;
+		private final Iterator<Attribute> attrs;
+		private final String replace;
 
-		public ReplaceIterator(String replace, Iterator<Attribute> attrs) {
+		public ReplaceIterator(XMLEventFactory fac, String replace, Iterator<Attribute> attrs) {
+			this.fac = fac;
 			this.replace = replace;
 			this.attrs = attrs;
 		}
@@ -50,10 +69,16 @@ public class Relocator {
 
 		public Attribute next() {
 			Attribute atr = attrs.next();
-			if (atr.getName().equals(new QName(replace))
-					&& atr.getValue().startsWith("http")) {
-				return XMLEventFactory.newInstance().createAttribute(replace,
-						getNewLocation(atr.getValue(), protocol, host, port));
+			if (atr.getName().equals(new QName(replace))) {
+				String value = atr.getValue();
+				if (pathRewriter != null) {
+					value = pathRewriter.rewrite(value);
+					if (value.startsWith("http"))
+						return fac.createAttribute(replace, getNewLocation(value, protocol, host, port));
+					return fac.createAttribute(replace, value);
+				}
+				if (value.startsWith("http"))
+					return fac.createAttribute(replace, getNewLocation(value, protocol, host, port));
 			}
 			return atr;
 		}
@@ -61,23 +86,28 @@ public class Relocator {
 		public void remove() {
 			attrs.remove();
 		}
-
+	}
+	
+	public interface PathRewriter {
+		String rewrite(String path);
 	}
 
-	public Relocator(Writer w, String protocol, String host, int port)
+	public Relocator(Writer w, String protocol, String host, int port, PathRewriter pathRewriter)
 			throws Exception {
 		this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(w);
 		this.host = host;
 		this.port = port;
 		this.protocol = protocol;
+		this.pathRewriter = pathRewriter;
 	}
 
 	public Relocator(OutputStreamWriter osw, String protocol, String host,
-			int port) throws Exception {
+			int port, PathRewriter pathRewriter) throws Exception {
 		this.writer = XMLOutputFactory.newInstance().createXMLEventWriter(osw);
 		this.host = host;
 		this.port = port;
 		this.protocol = protocol;
+		this.pathRewriter = pathRewriter;
 	}
 
 	public void relocate(InputStreamReader isr) throws Exception {
@@ -132,10 +162,9 @@ public class Relocator {
 
 	@SuppressWarnings("unchecked")
 	private XMLEvent replace(XMLEvent event, String attribute) {
-		XMLEventFactory fac = XMLEventFactory.newInstance();
 		StartElement startElement = event.asStartElement();
 		return fac.createStartElement(startElement.getName(),
-				new ReplaceIterator(attribute, startElement.getAttributes()),
+				new ReplaceIterator(fac, attribute, startElement.getAttributes()),
 				startElement.getNamespaces());
 	}
 
