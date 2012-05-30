@@ -82,7 +82,12 @@ public class AssertUtils {
 		if (hc == null)
 			hc = new DefaultHttpClient();
 		HttpResponse res = hc.execute(new HttpGet(url));
-		assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
+		try {
+			assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
+		} catch (AssertionError e) {
+			System.err.println("Error while fetching " + url);
+			throw e;
+		}
 		HttpEntity entity = res.getEntity();
 		return entity == null ? "" : EntityUtils.toString(entity);
 	}
