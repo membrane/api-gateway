@@ -15,8 +15,11 @@ package com.predic8.membrane.core.interceptor.server;
 
 import java.io.FileNotFoundException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.Queue;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -34,6 +37,14 @@ import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
+	/**
+	 * Note that this class fulfills two purposes:
+	 * 
+	 * * During the initial processDocuments() run, the XSDs are enumerated.
+	 * 
+	 * * During later runs (as well as the initial run, but that's result is discarded),
+	 * the documents are rewritten.
+	 */
 	private final class RelativePathRewriter implements PathRewriter {
 		private final Exchange exc;
 		private final String resource;
@@ -56,6 +67,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 						int n = paths.size() + 1;
 						paths.put(n, path);
 						paths_reverse.put(path, n);
+						documents_to_process.add(path);
 						path = Integer.toString(n);
 					}
 				}
@@ -67,9 +79,30 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 		}
 	}
 
+	@GuardedBy("paths")
 	private final HashMap<Integer, String> paths = new HashMap<Integer, String>();
+	@GuardedBy("paths")
 	private final HashMap<String, Integer> paths_reverse = new HashMap<String, Integer>();
+	@GuardedBy("paths")
+	private final Queue<String> documents_to_process = new LinkedList<String>();
 	
+	private void processDocuments(Exchange exc) throws Exception {
+		// exc.response is only temporarily used so we can call the WSDLInterceptor
+		// exc.response is set to garbage and should be discarded after this method
+		synchronized (paths) {
+			while (true) {
+				String doc = documents_to_process.poll();
+				if (doc == null)
+					break;
+				System.out.println("processing " + doc);
+			
+				exc.setResponse(WebServerInterceptor.createResponse(router.getResourceResolver(), doc));
+				WSDLInterceptor wi = new WSDLInterceptor();
+				wi.setPathRewriter(new RelativePathRewriter(exc, doc));
+				wi.handleResponse(exc);
+			}
+		}
+	}
 	
 	private String wsdl;
 	
@@ -79,6 +112,12 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 	
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
+		synchronized(paths) {
+			paths.clear();
+			paths_reverse.clear();
+			documents_to_process.clear();
+			documents_to_process.add(wsdl);
+		}
 	}
 	
 	@Override
@@ -91,26 +130,32 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		wsdl = token.getAttributeValue("", "wsdl");
+		setWsdl(token.getAttributeValue("", "wsdl"));
 	}
 	
 	@Override
 	public Outcome handleRequest(final Exchange exc) throws Exception {
-		String resource = null;
+		if (!"GET".equals(exc.getRequest().getMethod()))
+			return Outcome.CONTINUE;
+		
 		try {
+			String resource = null;
 			if (exc.getRequestURI().endsWith("?wsdl")) {
+				processDocuments(exc);
 				exc.setResponse(WebServerInterceptor.createResponse(router.getResourceResolver(), resource = wsdl));
 			}
 			if (exc.getRequestURI().contains("?xsd=")) {
 				Map<String, String> params = URLParamUtil.getParams(exc);
 				if (params.containsKey("xsd")) {
-					String path = params.get("xsd");
+					int n = Integer.parseInt(params.get("xsd"));
+					String path;
+					processDocuments(exc);
 					synchronized(paths) {
-						if (!paths.containsKey(Integer.parseInt(path))) {
-							exc.setResponse(Response.forbidden("Please retrieve the WSDL first. You may only retrieve documents referenced by the WSDL.").build());
+						if (!paths.containsKey(n)) {
+							exc.setResponse(Response.forbidden("Unknown parameter. You may only retrieve documents referenced by the WSDL.").build());
 							return Outcome.ABORT;
 						}
-						path = paths.get(Integer.parseInt(path));
+						path = paths.get(n);
 					}
 					exc.setResponse(WebServerInterceptor.createResponse(router.getResourceResolver(), resource = path));
 				}
@@ -121,6 +166,9 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 				wi.handleResponse(exc);
 				return Outcome.RETURN;
 			}
+		} catch (NumberFormatException e) {
+			exc.setResponse(HttpUtil.createHTMLErrorResponse("Bad parameter format.", ""));
+			return Outcome.ABORT;
 		} catch (FileNotFoundException e) {
 			exc.setResponse(HttpUtil.createNotFoundResponse());
 			return Outcome.ABORT;

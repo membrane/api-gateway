@@ -109,7 +109,7 @@
     </wsdl:binding>
     <wsdl:service name="ArticleService">
         <wsdl:port name="ArticleServicePTPort" binding="tns:ArticleServicePTBinding">
-            <soap:address location="http://www.predic8.com:8080/material/ArticleService"/>
+            <soap:address location="http://localhost:3025/material/ArticleService"/>
         </wsdl:port>
     </wsdl:service>
 </definitions>
