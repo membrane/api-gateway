@@ -25,6 +25,8 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.httpclient.util.URIUtil;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -37,6 +39,8 @@ import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
+	private static Logger log = LogManager.getLogger(WSDLPublisherInterceptor.class);
+	
 	/**
 	 * Note that this class fulfills two purposes:
 	 * 
@@ -90,16 +94,20 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 		// exc.response is only temporarily used so we can call the WSDLInterceptor
 		// exc.response is set to garbage and should be discarded after this method
 		synchronized (paths) {
+			try {
 			while (true) {
 				String doc = documents_to_process.poll();
 				if (doc == null)
 					break;
-				System.out.println("processing " + doc);
+				log.debug("WSDLPublisherInterceptor: processing " + doc);
 			
 				exc.setResponse(WebServerInterceptor.createResponse(router.getResourceResolver(), doc));
 				WSDLInterceptor wi = new WSDLInterceptor();
 				wi.setPathRewriter(new RelativePathRewriter(exc, doc));
 				wi.handleResponse(exc);
+			}
+			} catch (FileNotFoundException e) {
+				log.error("Could not recursively load all documents referenced by '"+wsdl+"'.", e);
 			}
 		}
 	}

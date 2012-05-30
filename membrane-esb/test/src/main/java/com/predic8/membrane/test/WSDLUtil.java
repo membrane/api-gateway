@@ -46,7 +46,8 @@ public class WSDLUtil {
 		while (parser.hasNext()) {
 			XMLEvent event = parser.nextEvent();
 			if (event.isStartElement()) {
-				if (event.asStartElement().getName().getLocalPart().equals("import")) {
+				String name = event.asStartElement().getName().getLocalPart();
+				if (name.equals("import") || name.equals("include")) {
 					Attribute a = event.asStartElement().getAttributeByName(new QName("schemaLocation"));
 					if (a != null)
 						result.add(a.getValue());

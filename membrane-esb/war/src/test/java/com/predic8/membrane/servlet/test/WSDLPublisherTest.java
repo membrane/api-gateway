@@ -28,7 +28,7 @@ public class WSDLPublisherTest {
 	
 	@Test
 	public void doit() throws ParseException, IOException, XMLStreamException {
-		Assert.assertEquals(4, WSDLUtil.countWSDLandXSDs("http://localhost:3021/wsdlPublisher/?wsdl"));
+		Assert.assertEquals(5, WSDLUtil.countWSDLandXSDs("http://localhost:3021/wsdlPublisher/?wsdl"));
 	}
 
 }

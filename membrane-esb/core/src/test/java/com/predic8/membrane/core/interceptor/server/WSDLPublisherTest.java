@@ -73,8 +73,8 @@ public class WSDLPublisherTest {
 	
 	@Test
 	public void doit() throws ParseException, IOException, XMLStreamException {
-		// this recursively fetches 4 documents (1 WSDL + 3 XSD)
-		Assert.assertEquals(4, WSDLUtil.countWSDLandXSDs("http://localhost:" + port + "/articles/?wsdl"));
+		// this recursively fetches 5 documents (1 WSDL + 4 XSD)
+		Assert.assertEquals(5, WSDLUtil.countWSDLandXSDs("http://localhost:" + port + "/articles/?wsdl"));
 	}
 	
 	
