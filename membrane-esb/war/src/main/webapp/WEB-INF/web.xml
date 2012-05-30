@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+	<display-name>Membrane Servlet</display-name>
+	<description>
+		Membrane Servlet exposes the full Membrane functionality though any J2EE-conform web server.
+		See http://membrane-soa.org/esb-doc/ for more information.
+	</description>
     
     <!-- 
     	Note that it is advised to deploy this web application with a context path of "/", using
     	virtual hosts, if necessary. Elsewise problems with forwarded web applications or services
     	might occur, since the request path differs. If this servlet is deployed using a different
     	context path, the context path prefix will be removed from any incoming request URIs before
-    	any further processing takes place.  
+    	any further processing takes place (unless <servletTransport removeContextRoot="false"/> is
+    	used in monitor-beans.xml).
     -->
     <servlet>
     	<servlet-name>membrane</servlet-name>
