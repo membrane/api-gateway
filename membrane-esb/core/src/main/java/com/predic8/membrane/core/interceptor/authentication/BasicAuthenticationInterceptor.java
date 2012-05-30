@@ -60,7 +60,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	private Outcome deny(Exchange exc) {
 		exc.setResponse(Response.unauthorized("").
-				header(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"Membrane Authentication\"")).
+				header(HttpUtil.createHeaders(null, "WWW-Authenticate", "Basic realm=\"" + Constants.PRODUCT_NAME + " Authentication\"")).
 				build());
 		return Outcome.ABORT;
 	}

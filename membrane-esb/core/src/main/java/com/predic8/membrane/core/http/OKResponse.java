@@ -23,7 +23,7 @@ public class OKResponse extends Response {
 	public OKResponse() {
 		setStatusCode(200);
 		setStatusMessage("OK");
-		getHeader().add("Server", "Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
+		getHeader().add("Server", Constants.PRODUCT_NAME + " " + Constants.VERSION + ". See http://membrane-soa.org");
 	}
 	
 }

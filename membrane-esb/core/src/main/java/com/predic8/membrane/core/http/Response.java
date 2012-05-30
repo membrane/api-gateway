@@ -94,7 +94,7 @@ public class Response extends Message {
 		return ok().contentType(MimeType.TEXT_HTML_UTF8).body(msg);
 	}
 	
-	private static String SERVER_HEADER = "Membrane " + Constants.VERSION + ". See http://membrane-soa.org";
+	private static String SERVER_HEADER = Constants.PRODUCT_NAME + " " + Constants.VERSION + ". See http://membrane-soa.org";
 	
 	public static ResponseBuilder ok() {
 		return ResponseBuilder.newInstance().

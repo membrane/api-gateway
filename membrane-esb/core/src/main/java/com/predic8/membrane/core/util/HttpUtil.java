@@ -195,7 +195,7 @@ public class HttpUtil {
 		synchronized (GMT_DATE_FORMAT) {
 			header.add("Date", GMT_DATE_FORMAT.format(new Date()));
 		}
-		header.add("Server", "Membrane " + Constants.VERSION + ". See http://membrane-soa.org");
+		header.add("Server", Constants.PRODUCT_NAME + " " + Constants.VERSION + ". See http://membrane-soa.org");
 		header.add("Connection", "close");
 		for (int i = 0; i<headers.length; i+=2) {
 			header.add(headers[i],headers[i+1]);

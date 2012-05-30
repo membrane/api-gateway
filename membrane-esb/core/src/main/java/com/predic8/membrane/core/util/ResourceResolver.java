@@ -84,7 +84,7 @@ public class ResourceResolver {
 		    client.getHttpConnectionManager().getParams().setConnectionTimeout(10000);
 				      
 		    HttpMethod method = new GetMethod(url);
-		    method.getParams().setParameter(HttpMethodParams.USER_AGENT, "Membrane " + Constants.VERSION);
+		    method.getParams().setParameter(HttpMethodParams.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION);
 		    int status = client.executeMethod(method);
 		    if(status != 200) {
 		    	ResourceDownloadException rde = new ResourceDownloadException("could not get resource " + url + " by HTTP");

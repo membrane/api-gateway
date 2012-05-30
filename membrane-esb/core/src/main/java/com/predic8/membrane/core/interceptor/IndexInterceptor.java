@@ -149,6 +149,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 			{
 				html();
 					head();
+						title().text(Constants.PRODUCT_NAME + ": Service Proxies");
 						style();
 						raw("<!--\r\n" +
 							"body { font-family: sans-serif; }\r\n" +
@@ -163,13 +164,13 @@ public class IndexInterceptor extends AbstractInterceptor {
 						end();
 					end();
 					body();
-						h1().text("Services").end();
+						h1().text("Service Proxies").end();
 						List<ServiceInfo> services = getServices(exc);
 						if (services.size() == 0)
 							p().text("There are no services defined.").end();
 						else 
 							createIndexTable(services, exc.getHandler() instanceof HttpServerHandler);
-						p().classAttr("help").text("The hyperlinks might not work due to semantics which is not known to Membrane.").end();
+						p().classAttr("help").text("The hyperlinks might not work due to semantics which is not known to " + Constants.PRODUCT_NAME + ".").end();
 						p().classAttr("footer").raw(Constants.HTML_FOOTER).end();
 					end();
 				end();
@@ -210,7 +211,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getShortDescription() {
-		return "Lists services available through the Membrane proxy.";
+		return "Lists services available through the " + Constants.PRODUCT_NAME + " service proxies.";
 	}
 	
 	@Override

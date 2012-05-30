@@ -105,7 +105,7 @@ public class AdminPageBuilder extends Html {
 	}
 	
 	protected String getTitle() {
-		return "Membrane Administration";
+		return Constants.PRODUCT_NAME + " Administration";
 	}
 	
 	protected int getSelectedTab() {

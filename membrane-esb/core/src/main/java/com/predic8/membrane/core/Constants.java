@@ -71,6 +71,8 @@ public class Constants {
 
 	public static final String PROTOCOL_HTTP = "HTTP";
 
+	public static final String PRODUCT_NAME = "Membrane ESB";
+	
 	public static final String HTML_FOOTER = "Copyright ©2009-2012 " +
 			  		"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
 			  		". All Rights Reserved. See " +
