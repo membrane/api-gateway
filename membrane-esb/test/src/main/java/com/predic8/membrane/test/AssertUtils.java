@@ -85,8 +85,7 @@ public class AssertUtils {
 		try {
 			assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
 		} catch (AssertionError e) {
-			System.err.println("Error while fetching " + url);
-			throw e;
+			throw new AssertionError(e.getMessage() + " while fetching " + url);
 		}
 		HttpEntity entity = res.getEntity();
 		return entity == null ? "" : EntityUtils.toString(entity);
