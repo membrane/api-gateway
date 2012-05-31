@@ -40,7 +40,7 @@ public class WSDLPublisherTest {
 	@Parameters
 	public static List<Object[]> getPorts() {
 		return Arrays.asList(new Object[][] { 
-				{ "src\\test\\resources\\validation\\ArticleService.xml", 3024 },
+				{ "src/test/resources/validation/ArticleService.xml", 3024 },
 				{ "classpath:/validation/ArticleService.xml", 3025 },
 		});
 	}
