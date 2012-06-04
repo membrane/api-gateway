@@ -19,10 +19,20 @@ public class HttpServerThreadFactory implements ThreadFactory {
 
 	public static final String DEFAULT_THREAD_NAME = "RouterThread"; 
 	
+	public final String defaultThreadName; 
+	
+	public HttpServerThreadFactory() {
+		defaultThreadName = DEFAULT_THREAD_NAME;
+	}
+
+	public HttpServerThreadFactory(String threadName) {
+		defaultThreadName = threadName;
+	}
+	
 	@Override
 	public Thread newThread(Runnable r) {
 		Thread th = new Thread(r);
-		th.setName(DEFAULT_THREAD_NAME);
+		th.setName(defaultThreadName);
 		return th;
 	}
 

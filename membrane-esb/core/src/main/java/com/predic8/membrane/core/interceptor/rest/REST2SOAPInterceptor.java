@@ -139,7 +139,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		XSLTTransformer t = xsltTransformers.get(key);
 		if (t == null) {
 			int concurrency = 2 * Runtime.getRuntime().availableProcessors();
-			t = new XSLTTransformer(ss, router.getResourceResolver(), concurrency);
+			t = new XSLTTransformer(ss, router, concurrency);
 			XSLTTransformer t2 = xsltTransformers.putIfAbsent(key, t);
 			if (t2 != null)
 				return t2;

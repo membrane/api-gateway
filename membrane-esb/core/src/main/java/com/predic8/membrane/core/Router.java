@@ -17,6 +17,9 @@ package com.predic8.membrane.core;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.*;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.*;
 import org.springframework.context.support.*;
@@ -24,6 +27,7 @@ import org.springframework.context.support.*;
 import com.predic8.membrane.core.exchangestore.*;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.util.*;
 
 public class Router {
@@ -39,6 +43,8 @@ public class Router {
 	protected final ConfigurationManager configurationManager = new ConfigurationManager(this);
 	protected ResourceResolver resourceResolver = new ResourceResolver();
 	protected DNSCache dnsCache = new DNSCache();
+	protected ThreadPoolExecutor backgroundInitializator = new ThreadPoolExecutor(0, 1, 10L, TimeUnit.SECONDS,
+			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory("Router Background Initializator"));
 
 	public Router() {
 		ruleManager.setRouter(this);
@@ -142,6 +148,7 @@ public class Router {
 	 * When running as an embedded servlet, this has no effect.
 	 */
 	public void shutdown() throws IOException {
+		backgroundInitializator.shutdown();
 		getTransport().closeAll();
 	}
 	
@@ -152,4 +159,7 @@ public class Router {
 		getTransport().closeAll(false);
 	}
 	
+	public ThreadPoolExecutor getBackgroundInitializator() {
+		return backgroundInitializator;
+	}
 }

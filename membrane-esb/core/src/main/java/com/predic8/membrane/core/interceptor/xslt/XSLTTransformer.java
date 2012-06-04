@@ -16,10 +16,12 @@ package com.predic8.membrane.core.interceptor.xslt;
 import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -27,6 +29,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.util.ResourceResolver;
 
 public class XSLTTransformer {
@@ -36,18 +39,31 @@ public class XSLTTransformer {
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final String styleSheet;
 	
-	public XSLTTransformer(String styleSheet, ResourceResolver resolver, int concurrency) throws Exception {
+	public XSLTTransformer(String styleSheet, final Router router, final int concurrency) throws Exception {
 		this.styleSheet = styleSheet;
 		log.debug("using " + concurrency + " parallel transformer instances for " + styleSheet);
 		transformers = new ArrayBlockingQueue<Transformer>(concurrency);
-		for (int i = 0; i < concurrency; i++) {
-			Transformer t;
-			if (isNullOrEmpty(styleSheet))
-				t = fac.newTransformer();
-			else
-				t = fac.newTransformer(new StreamSource(resolver.resolve(styleSheet)));
-			transformers.put(t);
-		}
+		createOneTransformer(router.getResourceResolver());
+		router.getBackgroundInitializator().execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					for (int i = 1; i < concurrency; i++)
+						createOneTransformer(router.getResourceResolver());
+				} catch (Exception e) {
+					log.error("Error creating XSLT transformer:", e);
+				}
+			}
+		});
+	}
+	
+	private void createOneTransformer(ResourceResolver rr) throws TransformerConfigurationException, FileNotFoundException, InterruptedException {
+		Transformer t;
+		if (isNullOrEmpty(styleSheet))
+			t = fac.newTransformer();
+		else
+			t = fac.newTransformer(new StreamSource(rr.resolve(styleSheet)));
+		transformers.put(t);
 	}
 
 	public byte[] transform(Source xml)
