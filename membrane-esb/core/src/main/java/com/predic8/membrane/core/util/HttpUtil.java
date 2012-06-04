@@ -49,7 +49,7 @@ public class HttpUtil {
 
 	public static String readLine(InputStream in) throws IOException, EndOfStreamException {
 
-		StringBuilder line = new StringBuilder();
+		StringBuilder line = new StringBuilder(128);
 
 		int b;
 		while ((b = in.read()) != -1) {
