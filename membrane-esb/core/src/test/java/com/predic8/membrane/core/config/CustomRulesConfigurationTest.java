@@ -42,7 +42,6 @@ public class CustomRulesConfigurationTest {
 		StringWriter w = new StringWriter();
 		router.getConfigurationManager().getProxies()
 				.write(XMLOutputFactory.newInstance().createXMLStreamWriter(w));
-		System.out.println(w);
 		assertAttribute(w.toString(), "/proxies/serviceProxy/@name",
 				"Service Proxy");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/@port", "2001");

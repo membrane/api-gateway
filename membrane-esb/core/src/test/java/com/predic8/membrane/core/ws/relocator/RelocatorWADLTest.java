@@ -72,8 +72,6 @@ public class RelocatorWADLTest extends TestCase {
 
 		relocator.relocate(wadl);
 
-		System.out.println(writer.toString());
-
 		assertAttribute("//wadl:resources/@base",
 				"http://localhost:3000/search/V1/");
 
