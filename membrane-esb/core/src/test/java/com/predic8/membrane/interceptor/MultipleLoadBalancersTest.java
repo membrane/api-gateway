@@ -61,7 +61,7 @@ public class MultipleLoadBalancersTest {
 		}
 
 		public void close() throws IOException {
-			service1.getTransport().closeAll();
+			service1.shutdownNoWait();
 		}
 	}
 	
@@ -106,7 +106,7 @@ public class MultipleLoadBalancersTest {
 		service2.close();
 		service11.close();
 		service12.close();
-		balancer.getTransport().closeAll();
+		balancer.shutdownNoWait();
 	}
 
 	private void assertMockCounters(int n1, int n2, int n11, int n12) {

@@ -75,11 +75,24 @@ public class HttpTransport extends Transport {
 
 	}
 
-	public synchronized void closeAll() throws IOException {
-
+	public synchronized void closeAll(boolean waitForCompletion) throws IOException {
+		
+		log.debug("Closing all network server sockets.");
 		Enumeration<Integer> enumeration = getAllPorts();
 		while (enumeration.hasMoreElements()) {
 			closePort(enumeration.nextElement());
+		}
+		
+		if (waitForCompletion) {
+			log.debug("Waiting for running exchanges to finish.");
+			executorService.shutdown();
+			try {
+				while (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+					log.warn("Still waiting for running exchanges to finish.");
+				}
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
 		}
 	}
 

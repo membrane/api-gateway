@@ -46,7 +46,7 @@ public class UserFeatureTest {
 
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdown();
 	}
 
 	private void callService(String s) throws HttpException, IOException {

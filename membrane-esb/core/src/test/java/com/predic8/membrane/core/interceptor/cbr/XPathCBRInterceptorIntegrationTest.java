@@ -46,7 +46,7 @@ public class XPathCBRInterceptorIntegrationTest extends TestCase {
 
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdown();
 	}
 	
 	private PostMethod createPostMethod() {

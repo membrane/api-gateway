@@ -53,7 +53,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 	
 	    assertEquals(401, status);
 	    
-	    router.getTransport().closeAll();
+	    router.shutdown();
 	    //TODO Basic Authentication test
 	}
 	

@@ -287,7 +287,7 @@ public class CustomRulesConfigurationTest {
 
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdown();
 	}
 
 	private void assertAttribute(String xml, String xpathExpr, String expected)

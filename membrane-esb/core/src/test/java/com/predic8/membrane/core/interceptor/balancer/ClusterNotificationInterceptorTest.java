@@ -61,9 +61,7 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
-		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException 
-		Thread.sleep(100);
+		router.shutdownNoWait();
 	}
 	
 	@Test

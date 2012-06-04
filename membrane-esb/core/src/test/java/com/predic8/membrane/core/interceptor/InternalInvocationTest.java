@@ -58,7 +58,7 @@ public class InternalInvocationTest {
 
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdownNoWait();
 	}
 
 	private void callService(int port) throws HttpException, IOException {

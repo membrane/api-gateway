@@ -71,6 +71,10 @@ public class Transport {
 		this.printStackTrace = printStackTrace;
 	}
 	
-	public void closeAll() throws IOException {}
+	public void closeAll() throws IOException {
+		closeAll(true);
+	}
+	
+	public void closeAll(boolean waitForCompletion) throws IOException {}
 	public void openPort(int port, SSLContext sslContext) throws IOException {}
 }

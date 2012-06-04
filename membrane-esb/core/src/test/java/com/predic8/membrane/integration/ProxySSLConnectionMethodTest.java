@@ -41,7 +41,7 @@ public class ProxySSLConnectionMethodTest {
 	
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdown();
 	}
 	
 	@SuppressWarnings("deprecation")

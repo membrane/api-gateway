@@ -48,7 +48,7 @@ public class Http10Test {
 	
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdownNoWait();
 	}
 	
 	@Test

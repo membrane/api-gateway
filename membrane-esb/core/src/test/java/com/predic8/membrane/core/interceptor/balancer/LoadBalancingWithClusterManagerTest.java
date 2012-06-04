@@ -95,10 +95,10 @@ public class LoadBalancingWithClusterManagerTest {
 
 	@After
 	public void tearDown() throws Exception {
-		lb.getTransport().closeAll();
-		node1.getTransport().closeAll();
-		node2.getTransport().closeAll();
-		node3.getTransport().closeAll();
+		lb.shutdownNoWait();
+		node1.shutdownNoWait();
+		node2.shutdownNoWait();
+		node3.shutdownNoWait();
 	}
 	
 	private void startLB() throws Exception {

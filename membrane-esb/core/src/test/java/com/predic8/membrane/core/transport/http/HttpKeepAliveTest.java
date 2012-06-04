@@ -63,7 +63,7 @@ public class HttpKeepAliveTest {
 
 	@After
 	public void tearDown() throws Exception {
-		service1.getTransport().closeAll();
+		service1.shutdownNoWait();
 	}
 
 	private PostMethod getPostMethod() {

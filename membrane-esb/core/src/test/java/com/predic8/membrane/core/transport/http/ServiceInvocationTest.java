@@ -55,7 +55,7 @@ public class ServiceInvocationTest {
 
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdownNoWait();
 	}
 	
 	private ServiceProxy createFirstRule() {

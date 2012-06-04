@@ -68,7 +68,7 @@ public class WSDLPublisherTest {
 	
 	@After
 	public void after() throws IOException {
-		router.getTransport().closeAll();
+		router.shutdown();
 	}
 	
 	@Test

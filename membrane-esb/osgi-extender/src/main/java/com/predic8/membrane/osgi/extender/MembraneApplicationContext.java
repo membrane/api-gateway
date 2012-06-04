@@ -141,7 +141,7 @@ public class MembraneApplicationContext {
 		executor.execute(new Runnable() {
 			public void run() {
 				try {
-					initializingRouter2.get().getTransport().closeAll();
+					initializingRouter2.get().shutdown();
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();
 				} catch (ExecutionException e) {

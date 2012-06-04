@@ -61,7 +61,7 @@ public class RESTBLZServiceIntegrationTest {
 
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdown();
 	}
 
 	@Test

@@ -65,8 +65,7 @@ public class AccessControlInterceptorIntegrationTest {
 	
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
-		Thread.sleep(200);
+		router.shutdownNoWait();
 	}
 	
 	@Test

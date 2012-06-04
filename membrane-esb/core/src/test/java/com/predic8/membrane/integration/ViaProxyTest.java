@@ -76,7 +76,7 @@ public class ViaProxyTest {
 	
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
-		proxyRouter.getTransport().closeAll();
+		router.shutdownNoWait();
+		proxyRouter.shutdownNoWait();
 	}
 }

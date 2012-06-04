@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.*;
 
@@ -133,6 +134,22 @@ public class Router {
 
 	public static void setBeanFactory(AbstractApplicationContext beanFactory) {
 		Router.beanFactory = beanFactory;
+	}
+	
+	/**
+	 * Closes all ports (if any were opened) and waits for running exchanges to complete.
+	 * 
+	 * When running as an embedded servlet, this has no effect.
+	 */
+	public void shutdown() throws IOException {
+		getTransport().closeAll();
+	}
+	
+	/**
+	 * Closes all ports (if any were opened), but does not wait for running exchanges to complete.
+	 */
+	public void shutdownNoWait() throws IOException {
+		getTransport().closeAll(false);
 	}
 	
 }

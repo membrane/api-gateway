@@ -57,7 +57,7 @@ public class ClusterBalancerTest extends TestCase {
 	
 	@After
 	public void tearDown() throws Exception {
-		r.getTransport().closeAll();
+		r.shutdown();
 		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException 
 		Thread.sleep(400);
 	}

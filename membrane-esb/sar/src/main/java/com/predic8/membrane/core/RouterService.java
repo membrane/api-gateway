@@ -32,7 +32,7 @@ public class RouterService implements RouterServiceMBean {
     }
 
 	public void stop() throws Exception {
-        router.getTransport().closeAll();
+        router.shutdown();
         log.info("Router stopped");
     }
 

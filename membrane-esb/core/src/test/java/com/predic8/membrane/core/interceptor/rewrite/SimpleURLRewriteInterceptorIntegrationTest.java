@@ -55,7 +55,7 @@ public class SimpleURLRewriteInterceptorIntegrationTest {
 
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdownNoWait();
 	}
 
 	@Test

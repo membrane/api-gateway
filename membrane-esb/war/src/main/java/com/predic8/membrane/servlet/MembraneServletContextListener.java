@@ -48,7 +48,7 @@ public class MembraneServletContextListener implements ServletContextListener {
 	public void contextDestroyed(ServletContextEvent sce) {
 		try {
 			router.getConfigurationManager().stopHotDeployment();
-			router.getTransport().closeAll();
+			router.shutdown();
 		} catch (Exception ex) {
 			log.warn("Failed to shutdown router!", ex);
 		}

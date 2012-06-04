@@ -25,9 +25,10 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.Rule;
+
 public class AccessControlInterceptorTest {
 
 	private AccessControlInterceptor interceptor;
@@ -69,8 +70,7 @@ public class AccessControlInterceptorTest {
 	
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
-		Thread.sleep(200);
+		router.shutdownNoWait();
 	}
 	
 	private int callService(String uri) throws Exception {

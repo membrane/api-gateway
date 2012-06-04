@@ -128,7 +128,7 @@ public class ReadRulesConfigurationTest {
 	
 	@After
 	public void tearDown() throws Exception {
-		router.getTransport().closeAll();
+		router.shutdown();
 	}
 
 }

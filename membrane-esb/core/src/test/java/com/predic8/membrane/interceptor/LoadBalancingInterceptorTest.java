@@ -62,6 +62,13 @@ public class LoadBalancingInterceptorTest {
 		mockInterceptor1 = new DummyWebServiceInterceptor();
 		ServiceProxy sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"POST", ".*", 2000), "thomas-bayer.com", 80);
+		sp1.getInterceptors().add(new AbstractInterceptor(){
+			@Override
+			public Outcome handleResponse(Exchange exc) throws Exception {
+				exc.getResponse().getHeader().add("Connection", "close");
+				return Outcome.CONTINUE;
+			}
+		});
 		sp1.getInterceptors().add(mockInterceptor1);
 		service1.getRuleManager().addProxyIfNew(sp1);
 
@@ -69,6 +76,13 @@ public class LoadBalancingInterceptorTest {
 		mockInterceptor2 = new DummyWebServiceInterceptor();
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"POST", ".*", 3000), "thomas-bayer.com", 80);
+		sp2.getInterceptors().add(new AbstractInterceptor(){
+			@Override
+			public Outcome handleResponse(Exchange exc) throws Exception {
+				exc.getResponse().getHeader().add("Connection", "close");
+				return Outcome.CONTINUE;
+			}
+		});
 		sp2.getInterceptors().add(mockInterceptor2);
 		service2.getRuleManager().addProxyIfNew(sp2);
 
@@ -90,11 +104,9 @@ public class LoadBalancingInterceptorTest {
 
 	@After
 	public void tearDown() throws Exception {
-		service1.getTransport().closeAll();
-		service2.getTransport().closeAll();
-		balancer.getTransport().closeAll();
-		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException 
-		Thread.sleep(100);
+		service1.shutdownNoWait();
+		service2.shutdownNoWait();
+		balancer.shutdownNoWait();
 	}
 
 	@Test
@@ -202,10 +214,8 @@ public class LoadBalancingInterceptorTest {
 		assertEquals(1, mockInterceptor1.counter);
 		assertEquals(1, mockInterceptor2.counter);
 
-		service1.getTransport().closeAll();
-
-		// TODO may be close connection
-		Thread.sleep(32000);
+		service1.shutdownNoWait();
+		Thread.sleep(1000);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));
 		assertEquals(1, mockInterceptor1.counter);
