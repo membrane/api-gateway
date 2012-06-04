@@ -14,17 +14,17 @@
 
 package com.predic8.membrane.core;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.io.File;
+import javax.xml.stream.XMLStreamException;
+import org.apache.commons.logging.*;
 
 public class HotDeploymentThread extends Thread {
 
-	private static Log log = LogFactory.getLog(HotDeploymentThread.class
-			.getName());
+	private static Log log = LogFactory.getLog(HotDeploymentThread.class.getName());
 
 	private Router router;
-	private volatile String proxiesFile;
-	private volatile long lastModified;
+	private String proxiesFile;
+	private long lastModified;
 
 	public HotDeploymentThread(Router router) {
 		super("Membrane Hot Deployment Thread");
@@ -33,39 +33,37 @@ public class HotDeploymentThread extends Thread {
 
 	public void setProxiesFile(String proxiesFile) {
 		this.proxiesFile = proxiesFile;
-		lastModified = router.getResourceResolver().getTimestamp(proxiesFile);
+		lastModified = new File(proxiesFile).lastModified();
 	}
 
 	@Override
 	public void run() {
 		log.debug("Hot Deployment Thread started.");
-		while (true) {
+		while (!isInterrupted()) {
 			try {
-				while (!configurationChanged() && !isInterrupted()) {
+				while (!configurationChanged()) {
 					sleep(1000);
 				}
-				
-				if (isInterrupted())
-					break;
 
-				log.debug("configuration changed. Reloading from "
-						+ proxiesFile);
+				log.debug("configuration changed. Reloading from " + proxiesFile);
 
-				router.shutdown();
+				router.getTransport().closeAll();
 				router.getConfigurationManager().loadConfiguration(proxiesFile);
-				
-				sleep(1000);
-			} catch (InterruptedException e) {
-				break;
+				log.info(proxiesFile + " was reloaded.");
+			} catch (XMLStreamException e) {
+				log.error("Could not redeploy " + proxiesFile + ": " + e.getMessage());
+				lastModified = new File(proxiesFile).lastModified();
+			} catch (InterruptedException e) {				
 			} catch (Exception e) {
-				log.warn("Could not redeploy " + proxiesFile, e);
+				log.error("Could not redeploy " + proxiesFile, e);
+				lastModified = new File(proxiesFile).lastModified();
 			}
 		}
 		log.debug("Hot Deployment Thread interrupted.");
 	}
 
 	private boolean configurationChanged() {
-		return router.getResourceResolver().getTimestamp(proxiesFile) > lastModified;
+		return new File(proxiesFile).lastModified() > lastModified;
 	}
 
 }
