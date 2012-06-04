@@ -1,0 +1,9 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:con="http://predic8.com/contactService/v11">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <con:addContact>
+         <firstname>John</firstname>
+         <lastname>Doe</lastname>
+      </con:addContact>
+   </soapenv:Body>
+</soapenv:Envelope>

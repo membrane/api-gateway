@@ -46,6 +46,7 @@ import com.predic8.membrane.examples.tests.validation.SOAPCustomValidationTest;
 import com.predic8.membrane.examples.tests.validation.SOAPValidationTest;
 import com.predic8.membrane.examples.tests.validation.SchematronValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
+import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({ 
@@ -78,6 +79,8 @@ import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
 	SchematronValidationTest.class,
 	SOAPCustomValidationTest.class,
 	SOAPValidationTest.class,
-	XMLValidationTest.class
+	XMLValidationTest.class,
+	
+	RoutingTest.class
 })
 public class ExampleTests {}
