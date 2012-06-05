@@ -19,6 +19,7 @@
 	<router hotDeploy="false"/>
 
 	<servletTransport>
+		<reverseProxying />
 		<ruleMatching />
 		<dispatching />
 		<userFeature />

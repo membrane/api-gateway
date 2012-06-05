@@ -24,6 +24,7 @@
 			tcpNoDelay="true" 
 			httpClientRetries="5" 
 			autoContinue100Expected="true">
+		<reverseProxying />
 		<ruleMatching />
 		<dispatching />
 		<userFeature />
