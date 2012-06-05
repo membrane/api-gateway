@@ -37,6 +37,7 @@
 						<xsd:element ref="transform" />
 						<xsd:element ref="validator" />
 						<xsd:element ref="wsdlPublisher" />
+						<xsd:element ref="limit" />
 						<xsd:element ref="rewriter" />
 						<xsd:element ref="adminConsole" />
 						<xsd:element ref="webServer" />
@@ -157,6 +158,17 @@
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence />
 					<xsd:attribute name="wsdl" type="xsd:string" />
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="limit">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence />
+					<xsd:attribute name="wsdl" type="xsd:integer" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>

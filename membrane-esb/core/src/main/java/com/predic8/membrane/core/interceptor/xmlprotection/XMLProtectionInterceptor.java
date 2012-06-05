@@ -65,7 +65,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	}
 	
 	private void setFailResponse(Exchange exc) {
-		exc.setResponse(Response.badRequest().body("").build());
+		exc.setResponse(Response.badRequest("Invalid XML features used in request.").build());
 	}
 	
 	@Override

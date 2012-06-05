@@ -119,7 +119,7 @@ public class Response extends Message {
 				status(400, "Bad Request").
 				header("Server", SERVER_HEADER).
 				contentType(MimeType.TEXT_HTML_UTF8).
-				body(htmlMessage("Service Unavailable", message));
+				body(htmlMessage("Bad Request", message));
 	}
 
 	public static ResponseBuilder continue100() {
