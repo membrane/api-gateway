@@ -69,7 +69,7 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 		WADLInterceptorTest.class, ReassembleTest.class,
 		XMLContentFilterTest.class, XMLElementFinderTest.class,
 		SimpleXPathAnalyzerTest.class, SimpleXPathParserTest.class,
-		InternalInvocationTest.class })
+		InternalInvocationTest.class, HeaderFilterInterceptorTest.class })
 public class UnitTests {
 	/*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

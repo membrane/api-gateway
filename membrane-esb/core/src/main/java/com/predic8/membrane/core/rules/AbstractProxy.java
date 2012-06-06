@@ -227,6 +227,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			i = new XMLProtectionInterceptor();
 		} else if ("soapStackTraceFilter".equals(name)) {
 			i = new SOAPStackTraceFilterInterceptor();
+		} else if ("headerFilter".equals(name)) {
+			i = new HeaderFilterInterceptor();
 		} else {
 			for (Object bean : Router.getBeanFactory()
 					.getBeansWithAnnotation(ElementName.class).values()) {

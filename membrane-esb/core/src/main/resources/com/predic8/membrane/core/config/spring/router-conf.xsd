@@ -39,6 +39,7 @@
 						<xsd:element ref="wsdlPublisher" />
 						<xsd:element ref="limit" />
 						<xsd:element ref="rewriter" />
+						<xsd:element ref="headerFilter" />
 						<xsd:element ref="adminConsole" />
 						<xsd:element ref="webServer" />
 						<xsd:element ref="balancer" />
@@ -195,6 +196,21 @@
         						</xsd:attribute>
 							</xsd:complexType>
 						</xsd:element>
+					</xsd:sequence>
+				</xsd:extension>
+			</xsd:complexContent>
+		</xsd:complexType>
+	</xsd:element>
+
+	<xsd:element name="headerFilter">
+		<xsd:complexType>
+			<xsd:complexContent>
+				<xsd:extension base="beans:identifiedType">
+					<xsd:sequence maxOccurs="unbounded">
+						<xsd:choice>
+							<xsd:element name="include" type="xsd:string" />
+							<xsd:element name="exclude" type="xsd:string" />
+						</xsd:choice>
 					</xsd:sequence>
 				</xsd:extension>
 			</xsd:complexContent>
