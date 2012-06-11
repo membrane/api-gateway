@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.ConsoleLogger;
 
 public class RoutingTest extends DistributionExtractingTestcase {
 	@Test
@@ -39,9 +40,9 @@ public class RoutingTest extends DistributionExtractingTestcase {
 		replaceInFile(new File(base, "versioning-routing.proxies.xml"), "2000", "3025");
 		replaceInFile(new File(base, "src/com/predic8/contactservice/Launcher.java"), "8080", "3024");
 		
-		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(base).script("router").withWatcher(new ConsoleLogger()).waitForMembrane().start();
 		try {
-			Process2 antNode1 = new Process2.Builder().in(base).waitAfterStartFor("run:").executable("ant run").start();
+			Process2 antNode1 = new Process2.Builder().in(base).waitAfterStartFor("run:").executable("ant run").withWatcher(new ConsoleLogger()).start();
 			try {
 				Thread.sleep(1000); // wait for Endpoints to start
 				
