@@ -47,7 +47,7 @@ public class HotDeploymentThread extends Thread {
 
 				log.debug("configuration changed. Reloading from " + proxiesFile);
 
-				router.getTransport().closeAll();
+				router.getTransport().closeAll(false);
 				router.getConfigurationManager().loadConfiguration(proxiesFile);
 				log.info(proxiesFile + " was reloaded.");
 			} catch (XMLStreamException e) {
