@@ -43,7 +43,7 @@ public class Router {
 	protected final ConfigurationManager configurationManager = new ConfigurationManager(this);
 	protected ResourceResolver resourceResolver = new ResourceResolver();
 	protected DNSCache dnsCache = new DNSCache();
-	protected ThreadPoolExecutor backgroundInitializator = new ThreadPoolExecutor(0, 1, 10L, TimeUnit.SECONDS,
+	protected ThreadPoolExecutor backgroundInitializator = new ThreadPoolExecutor(1, 2, 10L, TimeUnit.SECONDS,
 			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory("Router Background Initializator"));
 
 	public Router() {
