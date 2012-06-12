@@ -55,7 +55,14 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log.debug("request: " + exc.getOriginalRequestUri());
 
-		return dispatchRequest(exc);
+		exc.setTimeReqSent(System.currentTimeMillis());
+		
+		Outcome o = dispatchRequest(exc);
+		
+		exc.setReceived();
+		exc.setTimeResReceived(System.currentTimeMillis());
+
+		return o;
 	}
 
 	@Mapping("/admin/?(\\?.*)?")

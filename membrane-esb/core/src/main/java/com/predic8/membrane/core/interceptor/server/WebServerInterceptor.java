@@ -56,7 +56,12 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		log.debug("looking for file: " + uri);
 
 		try {
+			exc.setTimeReqSent(System.currentTimeMillis());
+			
 			exc.setResponse(createResponse(router.getResourceResolver(), docBase + uri));
+
+			exc.setReceived();
+			exc.setTimeResReceived(System.currentTimeMillis());
 			return Outcome.RETURN;
 		} catch (FileNotFoundException e) {
 			exc.setResponse(HttpUtil.createNotFoundResponse());
