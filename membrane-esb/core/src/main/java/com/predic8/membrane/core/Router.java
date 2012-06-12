@@ -16,19 +16,23 @@ package com.predic8.membrane.core;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.*;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import org.apache.commons.logging.*;
-import org.springframework.context.support.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import com.predic8.membrane.core.exchangestore.*;
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
-import com.predic8.membrane.core.util.*;
+import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.ResourceResolver;
 
 public class Router {
 
@@ -43,8 +47,8 @@ public class Router {
 	protected final ConfigurationManager configurationManager = new ConfigurationManager(this);
 	protected ResourceResolver resourceResolver = new ResourceResolver();
 	protected DNSCache dnsCache = new DNSCache();
-	protected ThreadPoolExecutor backgroundInitializator = new ThreadPoolExecutor(1, 2, 10L, TimeUnit.SECONDS,
-			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory("Router Background Initializator"));
+	protected ExecutorService backgroundInitializator = 
+			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
 
 	public Router() {
 		ruleManager.setRouter(this);
@@ -159,7 +163,7 @@ public class Router {
 		getTransport().closeAll(false);
 	}
 	
-	public ThreadPoolExecutor getBackgroundInitializator() {
+	public ExecutorService getBackgroundInitializator() {
 		return backgroundInitializator;
 	}
 }
