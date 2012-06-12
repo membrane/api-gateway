@@ -75,7 +75,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 						path = Integer.toString(n);
 					}
 				}
-				path = URIUtil.getPath(exc.getDestinations().get(0)) + "?xsd=" + path;
+				path = "./" + URIUtil.getName(exc.getDestinations().get(0)) + "?xsd=" + path;
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
