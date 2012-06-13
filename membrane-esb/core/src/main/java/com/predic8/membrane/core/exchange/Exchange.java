@@ -35,6 +35,8 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class Exchange extends AbstractExchange {
 
+	public static final String HTTP_SERVLET_REQUEST = "HttpServletRequest";
+
 	private static Log log = LogFactory.getLog(Exchange.class.getName());
 
 	private final AbstractHttpHandler handler;
