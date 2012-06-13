@@ -33,6 +33,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.ResourceResolver;
+import com.predic8.membrane.core.util.SOAPUtil;
 import com.predic8.schema.Schema;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
@@ -79,61 +80,6 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 
 	@Override
 	protected boolean isFault(Message msg) {
-		int state = 0;
-		/*
-		0: waiting for "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">"
-		1: waiting for "<soapenv:Body>"   (skipping any "<soapenv:Header>")
-		2: waiting for "<soapenv:Fault>"
-		*/
-		try {
-			XMLEventReader parser;
-			synchronized(xmlInputFactory) {
-				parser = xmlInputFactory.createXMLEventReader(xopr.reconstituteIfNecessary(msg));
-			}
-
-			while (parser.hasNext()) {
-				XMLEvent event = parser.nextEvent();
-				if (event.isStartElement()) {
-					QName name = ((StartElement)event).getName();
-					if (!Constants.SOAP11_NS.equals(name.getNamespaceURI()) 
-							&& !Constants.SOAP12_NS.equals(name.getNamespaceURI()))
-						return false;
-					
-					if ("Header".equals(name.getLocalPart())) {
-						// skip header
-						int stack = 0;
-						while (parser.hasNext()) {
-							if (event.isStartElement())
-								stack++;
-							if (event.isEndElement())
-								if (stack == 0)
-									break;
-								else
-									stack--;
-						}
-					}
-					
-					String expected;
-					switch (state) {
-					case 0: expected = "Envelope"; break;
-					case 1: expected = "Body"; break;
-					case 2: expected = "Fault"; break;
-					default: return false;
-					}
-					if (expected.equals(name.getLocalPart())) {
-						if (state == 2)
-							return true;
-						else
-							state++;
-					} else
-						return false;
-				}
-				if (event.isEndElement())
-					return false;
-			}
-		} catch (Exception e) {
-			log.warn("Ignoring exception: ", e);
-		}
-		return false;
+		return SOAPUtil.isFault(xmlInputFactory, xopr, msg);
 	}
 }
