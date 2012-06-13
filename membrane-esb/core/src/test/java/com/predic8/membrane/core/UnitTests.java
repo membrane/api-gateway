@@ -27,6 +27,7 @@ import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterc
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.interceptor.schemavalidation.SOAPUtilTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathAnalyzerTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParserTest;
@@ -69,7 +70,8 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 		WADLInterceptorTest.class, ReassembleTest.class,
 		XMLContentFilterTest.class, XMLElementFinderTest.class,
 		SimpleXPathAnalyzerTest.class, SimpleXPathParserTest.class,
-		InternalInvocationTest.class, HeaderFilterInterceptorTest.class })
+		InternalInvocationTest.class, HeaderFilterInterceptorTest.class,
+		SOAPUtilTest.class})
 public class UnitTests {
 	/*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =
