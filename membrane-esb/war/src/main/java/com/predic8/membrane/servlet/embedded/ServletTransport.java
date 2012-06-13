@@ -16,6 +16,9 @@ package com.predic8.membrane.servlet.embedded;
 
 import java.io.IOException;
 
+import javax.servlet.http.HttpServletRequest;
+
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.Transport;
 
@@ -40,5 +43,11 @@ public class ServletTransport extends Transport {
 	public void closeAll() throws IOException {
 		// do nothing
 	}
+
+	@Override
+	public String getContextPath(Exchange exc) {
+		return ((HttpServletRequest)exc.getProperty(Exchange.HTTP_SERVLET_REQUEST)).getContextPath();
+	}
+	
 	
 }

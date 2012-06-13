@@ -49,12 +49,14 @@ class HttpServletHandler extends AbstractHttpHandler {
 		super(transport);
 		this.request = request;
 		this.response = response;
-		this.remoteAddr = InetAddress.getByName(request.getRemoteAddr());
-		this.exchange = new Exchange(this);
+		remoteAddr = InetAddress.getByName(request.getRemoteAddr());
+		exchange = new Exchange(this);
+		
+		exchange.setProperty(Exchange.HTTP_SERVLET_REQUEST, request);
 	}
 	
 	public void run() {
-		try {
+		try { 
 			srcReq = createRequest();
 
 			exchange.received();
@@ -120,6 +122,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 
 	private Request createRequest() throws IOException {
 		Request srcReq = new Request();
+		
 		String pathQuery = request.getRequestURI();
 		if (request.getQueryString() != null)
 			pathQuery += "?" + request.getQueryString();
