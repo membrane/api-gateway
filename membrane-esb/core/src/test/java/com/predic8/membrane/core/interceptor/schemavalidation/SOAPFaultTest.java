@@ -17,10 +17,15 @@ import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
 import static junit.framework.Assert.assertEquals;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
 import org.junit.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
 
@@ -30,7 +35,7 @@ public class SOAPFaultTest {
 	@Test
 	public void testValidateFaults() throws Exception {
 		ValidatorInterceptor i = createValidatorInterceptor(false);
-		Exchange exc = createExchange();
+		Exchange exc = createFaultExchange();
 		assertEquals(Outcome.ABORT, i.handleResponse(exc));
 		assertContainsNot("secret", exc.getResponse().toString());
 	}
@@ -38,9 +43,24 @@ public class SOAPFaultTest {
 	@Test
 	public void testSkipFaults() throws Exception {
 		ValidatorInterceptor i = createValidatorInterceptor(true);
-		Exchange exc = createExchange();
+		Exchange exc = createFaultExchange();
 		assertEquals(Outcome.CONTINUE, i.handleResponse(exc));
 		assertContains("secret", exc.getResponse().toString());
+	}
+
+	@Test
+	public void testSkipFault2() throws Exception {
+		ValidatorInterceptor i = createValidatorInterceptor(true);
+		Exchange exc = getExchangeCP("wsdlValidator/soapFaultCustom.xml");
+		
+		assertEquals(Outcome.CONTINUE, i.handleResponse(exc));
+	}
+
+	private Exchange getExchangeCP(String path) throws IOException,
+			FileNotFoundException {
+		Exchange exc = new Exchange(null);
+		exc.setResponse(Response.ok().contentType("text/xml").body(getClass().getClassLoader().getResourceAsStream(path)).build());
+		return exc;
 	}
 
 	private ValidatorInterceptor createValidatorInterceptor(boolean skipFaults) throws Exception {
@@ -52,7 +72,7 @@ public class SOAPFaultTest {
 		return i;
 	}
 
-	private Exchange createExchange() {
+	private Exchange createFaultExchange() {
 		Exchange exc = new Exchange(null);
 		exc.setResponse(HttpUtil.createSOAPValidationErrorResponse("secret"));
 		return exc;
