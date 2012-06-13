@@ -30,6 +30,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.transport.http.HostColonPort;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 
 public class IndexInterceptor extends AbstractInterceptor {
@@ -37,6 +38,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 	private static class ServiceInfo {
 		public String name, url, host, port, path;
 		public boolean ssl;
+		public String method;
 	}
 
 	public List<ServiceInfo> getServices(Exchange exc) {
@@ -57,15 +59,14 @@ public class IndexInterceptor extends AbstractInterceptor {
 		
 		ServiceProxyKey k = (ServiceProxyKey) sp.getKey();
 		
-		if (!k.isMethodWildcard() && !"GET".equals(k.getMethod()))
-			return null;
-				
 		ServiceInfo ri = new ServiceInfo();
+		
+		ri.method = k.getMethod();
 		
 		ri.ssl = sp.getSslInboundContext() != null;// NOTE: when running as servlet, we have no idea what the protocol was
 		String protocol = ri.ssl ? "https" : "http";
 		
-		String host = k.isHostWildcard() ? exc.getRequest().getHeader().getHost() : k.getHost();
+		String host = k.isHostWildcard() ? new HostColonPort(exc.getRequest().getHeader().getHost()).host : k.getHost();
 		if (host == null)
 			host = "localhost"; // TODO: use local IP address (which is not exposed by the transport at the moment)
 		
@@ -80,6 +81,10 @@ public class IndexInterceptor extends AbstractInterceptor {
 			path = fullfillRegexp(k.getPath());
 		} else {
 			path = "/" + StringUtils.removeStart(k.getPath(), "/");
+		}
+		
+		if (!"".equals(getRouter().getTransport().getContextPath(exc))) {
+			path = StringUtils.removeEnd(getRouter().getTransport().getContextPath(exc), "/")  + "/" + StringUtils.removeStart(path, "/");
 		}
 		
 		ri.name = sp.getName();
@@ -177,7 +182,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 			}
 		
 			private void createIndexTable(List<ServiceInfo> services, boolean showSSL) {
-				table().cellspacing("0").cellpadding("0");
+				table().cellspacing("0").cellpadding("0").border(""+1);
 					tr();
 						th().text("Name").end();
 						th().text("Virtual Host").end();
@@ -189,11 +194,13 @@ public class IndexInterceptor extends AbstractInterceptor {
 					for (ServiceInfo ri : services) {
 						tr();
 							td();
-								if (ri.url != null)
+								if (ri.url != null && !"POST".equals(ri.method)) {
 									a().href(ri.url);
-								text(ri.name);
-								if (ri.url != null)
+									text(ri.name);
 									end();
+								} else {
+									text(ri.name);									
+								}
 							end();
 							td().raw(ri.host).end();
 							td().raw(ri.port).end();
