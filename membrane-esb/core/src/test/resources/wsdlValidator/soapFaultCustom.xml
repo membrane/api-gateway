@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" 
+xmlns:p1="http://www.svi.de/xsd/leben/produktdaten/v1" 
+xmlns:f1="http://www.svi.de/xsd/leben/fehlermeldung/v1" 
+xmlns:v1="http://www.svi.de/xsd/leben/vertragsdaten/v1" 
+xmlns:e1="http://www.svi.de/xsd/leben/ergebnisdaten/v1">
+<soap:Body>
+<soap:Fault>
+        <soap:faultString/>
+        <soap:detail>
+                xsl:apply-templates select="node()" /&gt;
+        </soap:detail>'
+</soap:Fault></soap:Body></soap:Envelope>
