@@ -106,6 +106,9 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 			out.writeAttribute("schematron", schematron);
 		if (failureHandler != null)
 			out.writeAttribute("failureHandler", failureHandler);
+		if (skipFaults) {
+			out.writeAttribute("skipFaults", ""+skipFaults);
+		}
 		out.writeEndElement();
 	}
 	
@@ -116,6 +119,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		jsonSchema = token.getAttributeValue("", "jsonSchema");
 		schematron = token.getAttributeValue("", "schematron");
 		failureHandler = token.getAttributeValue("", "failureHandler");
+		skipFaults = Boolean.parseBoolean(token.getAttributeValue("", "skipFaults"));
 	}
 	
 	@Override
