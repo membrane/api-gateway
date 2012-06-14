@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xslt;
 
+import java.util.Map;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -37,21 +39,21 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		transformMsg(exc.getRequest(), xslt);
+		transformMsg(exc.getRequest(), xslt, exc.getPropertiesStartingWith("XSLT_"));
 		return Outcome.CONTINUE;
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		transformMsg(exc.getResponse(), xslt);
+		transformMsg(exc.getResponse(), xslt, exc.getPropertiesStartingWith("XSLT_"));
 		return Outcome.CONTINUE;
 	}
 
-	private void transformMsg(Message msg, String ss) throws Exception {
+	private void transformMsg(Message msg, String ss, Map<String, Object> parameter) throws Exception {
 		if (msg.isBodyEmpty())
 			return;
 		msg.setBodyContent(xsltTransformer.transform(
-				new StreamSource(xopr.reconstituteIfNecessary(msg))));
+				new StreamSource(xopr.reconstituteIfNecessary(msg)), parameter));
 	}
 	
 	@Override

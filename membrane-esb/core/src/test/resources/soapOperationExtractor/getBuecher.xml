@@ -1,0 +1,9 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:v1="http://predic8.de">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <v1:getBuecher>
+         <v1:Author>Dan Brown</v1:Author>
+         <v1:max>100</v1:max>
+      </v1:getBuecher>
+   </soapenv:Body>
+</soapenv:Envelope>

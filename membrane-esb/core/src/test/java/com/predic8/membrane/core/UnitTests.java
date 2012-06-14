@@ -14,21 +14,42 @@
 package com.predic8.membrane.core;
 
 import org.junit.runner.RunWith;
-import org.junit.runners.*;
+import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import com.predic8.membrane.core.config.*;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
-import com.predic8.membrane.core.interceptor.acl.*;
-import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.config.CustomRulesConfigurationTest;
+import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
+import com.predic8.membrane.core.config.ProxyTest;
+import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
+import com.predic8.membrane.core.config.ReadRulesWithInterceptorsConfigurationTest;
+import com.predic8.membrane.core.http.BodyTest;
+import com.predic8.membrane.core.http.HeaderTest;
+import com.predic8.membrane.core.http.RequestTest;
+import com.predic8.membrane.core.http.ResponseTest;
+import com.predic8.membrane.core.interceptor.DispatchingInterceptorTest;
+import com.predic8.membrane.core.interceptor.HeaderFilterInterceptorTest;
+import com.predic8.membrane.core.interceptor.InternalInvocationTest;
+import com.predic8.membrane.core.interceptor.ThrottleInterceptorTest;
+import com.predic8.membrane.core.interceptor.WADLInterceptorTest;
+import com.predic8.membrane.core.interceptor.WSDLInterceptorTest;
+import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptorTest;
+import com.predic8.membrane.core.interceptor.acl.AccessControlParserTest;
+import com.predic8.membrane.core.interceptor.balancer.ClusterBalancerTest;
+import com.predic8.membrane.core.interceptor.balancer.ClusterManagerTest;
+import com.predic8.membrane.core.interceptor.balancer.ClusterNotificationInterceptorTest;
+import com.predic8.membrane.core.interceptor.balancer.JSESSIONIDExtractorTest;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingWithClusterManagerAndNoSessionTest;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingWithClusterManagerTest;
+import com.predic8.membrane.core.interceptor.balancer.XMLSessionIdExtractorTest;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptorTest;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptorTest;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
-import com.predic8.membrane.core.interceptor.rewrite.*;
+import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptorTest;
+import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPUtilTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
+import com.predic8.membrane.core.interceptor.soap.SoapOperationExtractorTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathAnalyzerTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParserTest;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterTest;
@@ -36,11 +57,19 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLElementFinderTe
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.ProxyRuleTest;
+import com.predic8.membrane.core.rules.ServiceProxyKeyTest;
 import com.predic8.membrane.core.transport.SSLContextTest;
-import com.predic8.membrane.core.transport.http.*;
-import com.predic8.membrane.core.util.*;
-import com.predic8.membrane.core.ws.relocator.*;
+import com.predic8.membrane.core.transport.http.HostColonPortTest;
+import com.predic8.membrane.core.transport.http.HttpKeepAliveTest;
+import com.predic8.membrane.core.transport.http.ServiceInvocationTest;
+import com.predic8.membrane.core.util.ByteUtilTest;
+import com.predic8.membrane.core.util.DNSCacheTest;
+import com.predic8.membrane.core.util.HttpUtilTest;
+import com.predic8.membrane.core.util.TextUtilTest;
+import com.predic8.membrane.core.util.URLUtilTest;
+import com.predic8.membrane.core.ws.relocator.RelocatorTest;
+import com.predic8.membrane.core.ws.relocator.RelocatorWADLTest;
 import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 
 @RunWith(Suite.class)
@@ -71,7 +100,8 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 		XMLContentFilterTest.class, XMLElementFinderTest.class,
 		SimpleXPathAnalyzerTest.class, SimpleXPathParserTest.class,
 		InternalInvocationTest.class, HeaderFilterInterceptorTest.class,
-		SOAPUtilTest.class})
+		SOAPUtilTest.class,
+		SoapOperationExtractorTest.class})
 public class UnitTests {
 	/*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

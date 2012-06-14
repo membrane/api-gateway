@@ -53,6 +53,29 @@ public class XSLTInterceptorTest extends TestCase {
 		assertXPath("/person/address/city", "Omaha");
 	}
 
+	@Test
+	public void testXSLTParameter() throws Exception {
+		exc = new Exchange(null);
+		exc.setResponse(Response.ok().body(getClass().getResourceAsStream(
+				"/customer.xml")).build());
+		
+		exc.setProperty("XSLT_COMPANY", "predic8");
+		
+		XSLTInterceptor i = new XSLTInterceptor();
+		i.setRouter(new HttpRouter());
+		i.setXslt("classpath:/customer2personAddCompany.xsl");
+		i.doAfterParsing();
+		i.handleResponse(exc);
+
+		//printBodyContent();
+		assertXPath("/person/name/first", "Rick");
+		assertXPath("/person/name/last", "Cortés Ribotta");
+		assertXPath("/person/address/street",
+				"Calle Pública \"B\" 5240 Casa 121");
+		assertXPath("/person/address/city", "Omaha");
+		assertXPath("/person/company", "predic8");
+	}
+
 	@SuppressWarnings("unused")
 	private void printBodyContent() throws Exception {
 		InputStream i = exc.getResponse().getBodyAsStream();

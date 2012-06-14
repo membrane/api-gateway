@@ -26,7 +26,7 @@
         <groupId>com.predic8</groupId>
         <artifactId>membrane-esb</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>3.4.3-SNAPSHOT</version>
+        <version>3.4.3-COR2</version>
     </parent>
 
     <dependencies>

@@ -17,6 +17,8 @@ import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.xml.transform.Source;
@@ -66,12 +68,19 @@ public class XSLTTransformer {
 		transformers.put(t);
 	}
 
-	public byte[] transform(Source xml)
+	public byte[] transform(Source xml) throws Exception {
+		return transform(xml, new HashMap<String, Object>());
+	}
+	
+	public byte[] transform(Source xml, Map<String, Object> parameters)
 			throws Exception {
 		log.debug("applying transformation: " + styleSheet);
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		Transformer t = transformers.take();
+		Transformer t = transformers.take();	
+ 		for (Map.Entry<String, Object> e : parameters.entrySet()) {
+ 			t.setParameter(e.getKey(), e.getValue());
+ 		}
 		try {
 			t.transform(xml, new StreamResult(baos));
 		} finally {

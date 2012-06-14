@@ -17,6 +17,8 @@ package com.predic8.membrane.core.exchange;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -146,5 +148,16 @@ public class Exchange extends AbstractExchange {
 			builder.header(Header.CONTENT_TYPE, contentType);
 		setResponse(builder.build());
 		return Outcome.RETURN;
+	}
+
+	public Map<String, Object> getPropertiesStartingWith(String string) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		for (Map.Entry<String, Object> e : properties.entrySet()) {
+			if (e.getKey().startsWith(string)) {
+				map.put(e.getKey(), e.getValue());
+			}
+		}
+		return map;
 	}
 }
