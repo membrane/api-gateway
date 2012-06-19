@@ -27,6 +27,7 @@ import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
@@ -257,6 +258,8 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				long free = Runtime.getRuntime().freeMemory();
 				p().text("Availabe system memory: " + total).end();
 				p().text("Free system memory: " + free).end();
+				
+				p().text("Membrane version: " + Constants.VERSION).end();
 			}
 		}.createPage());
 	}
