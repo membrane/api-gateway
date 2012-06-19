@@ -104,7 +104,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				div().id("subtab");
 					ul();
 						li().a().href("#tab1").text("Visualization").end(2);
-						li().a().href("#tab2").text("Status Code Statistics").end(2);
+						li().a().href("#tab2").text("Call Statistics").end(2);
 						li().a().href("#tab3").text("XML Configuration").end(2);
 					end();
 					div().id("tab1");
