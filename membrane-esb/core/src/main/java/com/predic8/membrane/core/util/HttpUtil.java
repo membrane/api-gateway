@@ -153,9 +153,13 @@ public class HttpUtil {
 	}
 
 	private static String getFaultSOAPBody(String text) {
+		return getFaultSOAPBody("Message validation failed!", text);
+	}
+
+	public static String getFaultSOAPBody(String title, String text) {
 		StringBuilder buf = new StringBuilder(256);
 
-		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + Constants.SOAP11_NS + "/\">");
+		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + Constants.SOAP11_NS + "\">");
 		buf.append(Constants.CRLF);
 		buf.append("<soapenv:Body>");
 		buf.append(Constants.CRLF);
@@ -165,7 +169,9 @@ public class HttpUtil {
 
 		buf.append("<faultcode>soapenv:Server</faultcode>");
 		buf.append(Constants.CRLF);
-		buf.append("<faultstring>" + "Message validation failed!" + "</faultstring>");
+		buf.append("<faultstring>");
+		buf.append(StringEscapeUtils.escapeXml(title));
+		buf.append("</faultstring>");
 		buf.append(Constants.CRLF);
 
 		buf.append("<detail>" + StringEscapeUtils.escapeXml(text) + "</detail>");
