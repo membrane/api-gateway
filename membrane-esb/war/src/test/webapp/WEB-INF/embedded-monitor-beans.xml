@@ -19,6 +19,15 @@
 	<router hotDeploy="false"/>
 
 	<servletTransport>
+		<headerFilter>
+			<exclude>Connection</exclude>
+			<exclude>Content-Encoding</exclude>
+			<exclude>Content-Length</exclude>
+			<exclude>Content-MD5</exclude>
+			<exclude>Server</exclude>
+			<exclude>Transfer-Encoding</exclude>
+			<exclude>X-Powered-By</exclude>
+		</headerFilter>
 		<ruleMatching />
 		<dispatching />
 		<userFeature />
