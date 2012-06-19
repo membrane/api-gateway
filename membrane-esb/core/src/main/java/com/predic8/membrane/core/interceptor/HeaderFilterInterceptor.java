@@ -137,5 +137,10 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 		else
 			super.parseChildren(token, child);
 	}
+	
+	@Override
+	public String getHelpId() {
+		return "header-filter";
+	}
 
 }
