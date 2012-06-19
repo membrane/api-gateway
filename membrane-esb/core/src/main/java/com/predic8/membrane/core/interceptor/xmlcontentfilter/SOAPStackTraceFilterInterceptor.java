@@ -19,6 +19,7 @@ import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.log4j.Logger;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
@@ -29,9 +30,9 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 	
 	private static final Logger LOG = Logger.getLogger(SOAPStackTraceFilterInterceptor.class);
 	private static final String XPATH = ""
-			+ "//*[local-name()='Fault' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']//*[local-name()='stackTrace' or local-name()='stacktrace'] | "
-			+ "//*[local-name()='Fault' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']//*[local-name()='faultstring' and contains(., '.java:')] | "
-			+ "//*[local-name()='Fault' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message";
+			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='stackTrace' or local-name()='stacktrace'] | "
+			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='faultstring' and contains(., '.java:')] | "
+			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message";
 	
 	private final XMLContentFilter xmlContentFilter;
 	

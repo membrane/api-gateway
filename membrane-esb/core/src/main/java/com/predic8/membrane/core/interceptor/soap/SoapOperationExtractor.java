@@ -5,19 +5,23 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.log4j.Logger;
-
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
 
 public class SoapOperationExtractor extends AbstractInterceptor {
-
-	private static final Logger log = Logger.getLogger(SoapOperationExtractor.class);
-	
 	public static final String SOAP_OPERATION = "XSLT_SOAP_OPERATION";
 	public static final String SOAP_OPERATION_NS = "XSLT_SOAP_OPERATION_NS";
 	
+	private static final XOPReconstitutor xopr = new XOPReconstitutor();
+	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+	static {
+		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
+		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+	}
+
 	public SoapOperationExtractor() {
 		name = "SOAP Operation Extractor";		
 	}
@@ -54,12 +58,14 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 
 	private XMLStreamReader getReader(Exchange exc) throws XMLStreamException,
 			FactoryConfigurationError {
-		return XMLInputFactory.newInstance().createXMLStreamReader(exc.getRequest().getBodyAsStream());
+		synchronized (xmlInputFactory) {
+			return xmlInputFactory.createXMLStreamReader(xopr.reconstituteIfNecessary(exc.getRequest()));
+		}
 	}
 
 	private boolean isNotSoap(XMLStreamReader reader) throws Exception {
 		reader.nextTag();
-		return !("Envelope".equals(reader.getName().getLocalPart()) && "http://schemas.xmlsoap.org/soap/envelope/".equals(reader.getNamespaceURI()));
+		return !("Envelope".equals(reader.getName().getLocalPart()) && Constants.SOAP11_NS.equals(reader.getNamespaceURI()));
 	}
 
 	private void extractAndSaveNameAndNS(Exchange exc, XMLStreamReader reader)
@@ -80,7 +86,7 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 		return reader.hasNext() && 
 			   !( reader.isStartElement() &&
 			     "Body".equals(reader.getName().getLocalPart()) &&
-			     "http://schemas.xmlsoap.org/soap/envelope/".equals(reader.getNamespaceURI())
+			     Constants.SOAP11_NS.equals(reader.getNamespaceURI())
 			    );
 	}	
 }

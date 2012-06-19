@@ -64,6 +64,7 @@ import com.predic8.membrane.core.transport.http.HostColonPortTest;
 import com.predic8.membrane.core.transport.http.HttpKeepAliveTest;
 import com.predic8.membrane.core.transport.http.ServiceInvocationTest;
 import com.predic8.membrane.core.util.ByteUtilTest;
+import com.predic8.membrane.core.util.ContentTypeDetectorTest;
 import com.predic8.membrane.core.util.DNSCacheTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
 import com.predic8.membrane.core.util.TextUtilTest;
@@ -74,34 +75,35 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({ HeaderTest.class, BodyTest.class, ByteUtilTest.class,
-		HttpUtilTest.class, RequestTest.class, ResponseTest.class,
-		MagicTest.class, WSDLInterceptorTest.class,
-		AccessControlParserTest.class, AccessControlInterceptorTest.class,
-		DispatchingInterceptorTest.class,
-		SimpleURLRewriteInterceptorTest.class, HostColonPortTest.class,
-		HTTP2XMLInterceptorTest.class, ReadRulesConfigurationTest.class,
-		ReadRulesWithInterceptorsConfigurationTest.class,
-		RuleManagerTest.class, ProxyTest.class, ServiceProxyKeyTest.class,
-		ProxyRuleTest.class, TextUtilTest.class, RelocatorTest.class,
-		XSLTInterceptorTest.class, URLUtilTest.class, ClusterManagerTest.class,
-		ClusterNotificationInterceptorTest.class,
-		XMLSessionIdExtractorTest.class, ClusterBalancerTest.class,
-		LoadBalancingWithClusterManagerAndNoSessionTest.class,
-		LoadBalancingWithClusterManagerTest.class,
-		MultipleLoadBalancersTest.class, DNSCacheTest.class,
-		ValidatorInterceptorTest.class, XPathCBRInterceptorTest.class,
-		CustomRulesConfigurationTest.class,
-		CustomSpringConfigurationTest.class, JSESSIONIDExtractorTest.class,
-		ThrottleInterceptorTest.class, GroovyInterceptorTest.class,
-		FormValidationInterceptorTest.class, ServiceInvocationTest.class,
-		HttpKeepAliveTest.class, ReverseProxyingInterceptorTest.class,
-		SSLContextTest.class, RelocatorWADLTest.class,
-		WADLInterceptorTest.class, ReassembleTest.class,
-		XMLContentFilterTest.class, XMLElementFinderTest.class,
-		SimpleXPathAnalyzerTest.class, SimpleXPathParserTest.class,
-		InternalInvocationTest.class, HeaderFilterInterceptorTest.class,
-		SOAPUtilTest.class,
-		SoapOperationExtractorTest.class})
+	HttpUtilTest.class, RequestTest.class, ResponseTest.class,
+	MagicTest.class, WSDLInterceptorTest.class,
+	AccessControlParserTest.class, AccessControlInterceptorTest.class,
+	DispatchingInterceptorTest.class,
+	SimpleURLRewriteInterceptorTest.class, HostColonPortTest.class,
+	HTTP2XMLInterceptorTest.class, ReadRulesConfigurationTest.class,
+	ReadRulesWithInterceptorsConfigurationTest.class,
+	RuleManagerTest.class, ProxyTest.class, ServiceProxyKeyTest.class,
+	ProxyRuleTest.class, TextUtilTest.class, RelocatorTest.class,
+	XSLTInterceptorTest.class, URLUtilTest.class, ClusterManagerTest.class,
+	ClusterNotificationInterceptorTest.class,
+	XMLSessionIdExtractorTest.class, ClusterBalancerTest.class,
+	LoadBalancingWithClusterManagerAndNoSessionTest.class,
+	LoadBalancingWithClusterManagerTest.class,
+	MultipleLoadBalancersTest.class, DNSCacheTest.class,
+	ValidatorInterceptorTest.class, XPathCBRInterceptorTest.class,
+	CustomRulesConfigurationTest.class,
+	CustomSpringConfigurationTest.class, JSESSIONIDExtractorTest.class,
+	ThrottleInterceptorTest.class, GroovyInterceptorTest.class,
+	FormValidationInterceptorTest.class, ServiceInvocationTest.class,
+	HttpKeepAliveTest.class, ReverseProxyingInterceptorTest.class,
+	SSLContextTest.class, RelocatorWADLTest.class,
+	WADLInterceptorTest.class, ReassembleTest.class,
+	XMLContentFilterTest.class, XMLElementFinderTest.class,
+	SimpleXPathAnalyzerTest.class, SimpleXPathParserTest.class,
+	InternalInvocationTest.class, HeaderFilterInterceptorTest.class,
+	SOAPUtilTest.class,	SoapOperationExtractorTest.class,
+	ContentTypeDetectorTest.class 
+})
 public class UnitTests {
 	/*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =

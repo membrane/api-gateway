@@ -34,6 +34,8 @@ import org.xml.sax.SAXException;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilter;
+import com.predic8.membrane.core.util.ContentTypeDetector;
+import com.predic8.membrane.core.util.ContentTypeDetector.ContentType;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 public class ReassembleTest {
@@ -80,6 +82,11 @@ public class ReassembleTest {
 	public void inCombinationWithXMLContentFilterTest() throws XPathExpressionException, IOException {
 		testXMLContentFilter("//*[local-name()='Body']", 1);
 		testXMLContentFilter("//*[local-name()='Body' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']", 1);
+	}
+	
+	@Test
+	public void testContentTypeDetector() throws IOException {
+		Assert.assertEquals(ContentType.SOAP, ContentTypeDetector.detect(getResponse()).getEffectiveContentType()); 
 	}
 
 }

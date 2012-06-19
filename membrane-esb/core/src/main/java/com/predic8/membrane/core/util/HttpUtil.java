@@ -155,7 +155,7 @@ public class HttpUtil {
 	private static String getFaultSOAPBody(String text) {
 		StringBuilder buf = new StringBuilder(256);
 
-		buf.append("<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">");
+		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + Constants.SOAP11_NS + "/\">");
 		buf.append(Constants.CRLF);
 		buf.append("<soapenv:Body>");
 		buf.append(Constants.CRLF);

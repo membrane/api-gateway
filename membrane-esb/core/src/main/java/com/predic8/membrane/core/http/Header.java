@@ -193,6 +193,11 @@ public class Header {
 		return getFirstValue(CONTENT_TYPE);
 	}
 	
+	/**
+	 * @return An object describing the value of the "Content-Type" HTTP header.
+	 * 	Null, if the header is not present.
+	 * @throws ParseException if the value of the header could not be parsed.
+	 */
 	public ContentType getContentTypeObject() throws ParseException {
 		String contentType = getContentType();
 		return contentType == null ? null : new ContentType(contentType);

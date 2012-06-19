@@ -17,7 +17,6 @@ import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
 import static junit.framework.Assert.assertEquals;
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 

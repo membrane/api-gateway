@@ -35,10 +35,9 @@ public class SOAPUtil {
 	public static boolean isFault(XMLInputFactory xmlInputFactory, XOPReconstitutor xopr, Message msg) {
 		int state = 0;
 		/*
-		 * 0: waiting for
-		 * "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">"
-		 * 1: waiting for "<soapenv:Body>" (skipping any "<soapenv:Header>") 2:
-		 * waiting for "<soapenv:Fault>"
+		 * 0: waiting for "<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\">"
+		 * 1: waiting for "<soapenv:Body>" (skipping any "<soapenv:Header>")
+		 * 2: waiting for "<soapenv:Fault>"
 		 */
 		try {
 			XMLEventReader parser;
