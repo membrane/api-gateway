@@ -44,6 +44,18 @@ public class SoapOperationExtractorTest {
 		
 	}
 
+	@Test
+	public void nonEmptyHeader() throws Exception {
+		
+		Exchange exc = getExchange("soapOperationExtractor/getBuecherWithHeader.xml");
+		
+		extractor.handleRequest(exc);
+		
+		Assert.assertEquals("getBuecher", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION));
+		Assert.assertEquals("http://predic8.de", exc.getProperty(SoapOperationExtractor.SOAP_OPERATION_NS));
+		
+	}
+
 	private Exchange getExchange(String path) throws IOException {
 		Exchange exc = new Exchange(null);
 		Request req = new Request();
