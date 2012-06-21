@@ -5,8 +5,6 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.commons.io.input.XmlStreamReader;
-
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
