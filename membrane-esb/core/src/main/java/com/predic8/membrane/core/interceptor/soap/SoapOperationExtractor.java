@@ -5,6 +5,8 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import org.apache.commons.io.input.XmlStreamReader;
+
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -56,6 +58,15 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
+	private void moveToTag(XMLStreamReader reader) throws XMLStreamException {
+		while (reader.hasNext()) {
+			reader.next();
+			if (reader.isStartElement()) {
+				return;
+			}
+		}
+	}
+	
 	private XMLStreamReader getReader(Exchange exc) throws XMLStreamException,
 			FactoryConfigurationError {
 		synchronized (xmlInputFactory) {
@@ -63,21 +74,21 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 		}
 	}
 
-	private boolean isNotSoap(XMLStreamReader reader) throws Exception {
-		reader.nextTag();
+	private boolean isNotSoap(XMLStreamReader reader) throws XMLStreamException {
+		moveToTag(reader);
 		return !("Envelope".equals(reader.getName().getLocalPart()) && Constants.SOAP11_NS.equals(reader.getNamespaceURI()));
 	}
 
 	private void extractAndSaveNameAndNS(Exchange exc, XMLStreamReader reader)
 			throws XMLStreamException {
-		reader.nextTag();
+		moveToTag(reader);
 		exc.setProperty(SOAP_OPERATION, reader.getName().getLocalPart());
 		exc.setProperty(SOAP_OPERATION_NS, reader.getNamespaceURI());
 	}
 
 	private void moveToSoapBody(XMLStreamReader reader) throws XMLStreamException {
 		while (hasNextAndIsNotBody(reader) ) {
-			reader.nextTag();
+			moveToTag(reader);
 		}
 	}
 
