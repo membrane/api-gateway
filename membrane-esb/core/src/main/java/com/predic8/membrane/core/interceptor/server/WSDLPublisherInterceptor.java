@@ -41,6 +41,10 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LogManager.getLogger(WSDLPublisherInterceptor.class);
 	
+	public WSDLPublisherInterceptor() {
+		name = "WSDL Publisher";
+	}
+	
 	/**
 	 * Note that this class fulfills two purposes:
 	 * 
