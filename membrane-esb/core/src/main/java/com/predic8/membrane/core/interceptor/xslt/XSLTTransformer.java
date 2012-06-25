@@ -79,7 +79,11 @@ public class XSLTTransformer {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Transformer t = transformers.take();
 		try {
-			t.clearParameters();
+			try {
+				t.clearParameters();
+			} catch (NullPointerException e) {
+				// do nothing
+			}
 	 		for (Map.Entry<String, String> e : parameters.entrySet()) {
 	 			t.setParameter(e.getKey(), e.getValue());
 	 		}
