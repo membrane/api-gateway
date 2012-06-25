@@ -60,7 +60,10 @@ public class GroovyInterceptor extends AbstractInterceptor {
 
 	
 	private void createOneScript() throws InterruptedException {
-		Script s = shell.parse(srcWithImports());
+		Script s;
+		synchronized (shell) {
+			s = shell.parse(srcWithImports());
+		}
 		scripts.put(s);
 	}
 	
