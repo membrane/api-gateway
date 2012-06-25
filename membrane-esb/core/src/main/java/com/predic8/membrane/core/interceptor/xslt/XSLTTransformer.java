@@ -69,17 +69,18 @@ public class XSLTTransformer {
 	}
 
 	public byte[] transform(Source xml) throws Exception {
-		return transform(xml, new HashMap<String, Object>());
+		return transform(xml, new HashMap<String, String>());
 	}
 	
-	public byte[] transform(Source xml, Map<String, Object> parameters)
+	public byte[] transform(Source xml, Map<String, String> parameters)
 			throws Exception {
 		log.debug("applying transformation: " + styleSheet);
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		Transformer t = transformers.take();	
+		Transformer t = transformers.take();
 		try {
-	 		for (Map.Entry<String, Object> e : parameters.entrySet()) {
+			t.clearParameters();
+	 		for (Map.Entry<String, String> e : parameters.entrySet()) {
 	 			t.setParameter(e.getKey(), e.getValue());
 	 		}
 			t.transform(xml, new StreamResult(baos));
