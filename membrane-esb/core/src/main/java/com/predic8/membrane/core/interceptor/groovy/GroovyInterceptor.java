@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.web.util.HtmlUtils;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.XMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -67,9 +68,15 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		scripts.put(s);
 	}
 	
-	public void init() throws InterruptedException {
+	public void init() {
+		if (router == null)
+			return;
 		scripts = new ArrayBlockingQueue<Script>(20);
-		createOneScript();
+		try {
+			createOneScript();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 		router.getBackgroundInitializator().execute(new Runnable() {
 			@Override
 			public void run() {
@@ -137,7 +144,7 @@ public class GroovyInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
-	public void doAfterParsing() throws Exception {
+	public void doAfterParsing() {
 		init();
 	}
 
@@ -147,6 +154,13 @@ public class GroovyInterceptor extends AbstractInterceptor {
 
 	public void setSrc(String src) {
 		this.src = src;
+	}
+	
+	@Override
+	public void setRouter(Router router) {
+		super.setRouter(router);
+		if (! "".equals(src))
+			init();
 	}
 	
 	@Override

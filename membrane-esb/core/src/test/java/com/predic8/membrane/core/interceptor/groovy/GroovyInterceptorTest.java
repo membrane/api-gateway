@@ -17,6 +17,7 @@ import junit.framework.TestCase;
 
 import org.junit.Test;
 
+import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -25,11 +26,13 @@ public class GroovyInterceptorTest extends TestCase {
 		
 	@Test
 	public void testRequest() throws Exception {
+		HttpRouter r = new HttpRouter();
+		
 		Exchange exc = new Exchange(null);
 		exc.setRequest(new Request());
 		
 		GroovyInterceptor i = new GroovyInterceptor();
-		
+		i.setRouter(r);
 		i.setSrc("exc.setProperty('foo', 'bar')\n"+
 				 "CONTINUE");
 		i.init();
