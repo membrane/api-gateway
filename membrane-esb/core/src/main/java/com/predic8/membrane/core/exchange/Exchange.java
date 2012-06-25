@@ -150,12 +150,12 @@ public class Exchange extends AbstractExchange {
 		return Outcome.RETURN;
 	}
 
-	public Map<String, Object> getPropertiesStartingWith(String string) {
-		Map<String, Object> map = new HashMap<String, Object>();
+	public Map<String, String> getStringProperties() {
+		Map<String, String> map = new HashMap<String, String>();
 		
 		for (Map.Entry<String, Object> e : properties.entrySet()) {
-			if (e.getKey().startsWith(string)) {
-				map.put(e.getKey(), e.getValue());
+			if (e.getValue() instanceof String) {
+				map.put(e.getKey(), (String)e.getValue());				
 			}
 		}
 		return map;
