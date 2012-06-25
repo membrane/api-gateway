@@ -29,6 +29,7 @@ public class GroovyInterceptorParser extends AbstractParser {
 	protected void doParse(Element element, BeanDefinitionBuilder builder) {
 		setIdIfNeeded(element, "groovy");
 		builder.addPropertyValue("src",element.getTextContent());
+		builder.setInitMethodName("init");
 	}
 
 }

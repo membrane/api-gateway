@@ -32,6 +32,7 @@ public class GroovyInterceptorTest extends TestCase {
 		
 		i.setSrc("exc.setProperty('foo', 'bar')\n"+
 				 "CONTINUE");
+		i.init();
 		
 		assertEquals(Outcome.CONTINUE, i.handleRequest(exc));
 		

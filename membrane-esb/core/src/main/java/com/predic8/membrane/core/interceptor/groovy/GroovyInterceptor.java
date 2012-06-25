@@ -14,20 +14,35 @@
 
 package com.predic8.membrane.core.interceptor.groovy;
 
-import javax.xml.stream.*;
+import groovy.lang.Binding;
+import groovy.lang.GroovyShell;
+import groovy.lang.Script;
 
+import java.util.concurrent.ArrayBlockingQueue;
+
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.web.util.HtmlUtils;
 
-import groovy.lang.*;
-
+import com.predic8.membrane.core.config.XMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class GroovyInterceptor extends AbstractInterceptor {
-	
+	private static final Log log = LogFactory.getLog(GroovyInterceptor.class);
+	private static final GroovyShell shell = new GroovyShell();
+	private final int concurrency = Runtime.getRuntime().availableProcessors() * 2;
+
 	private String src = "";
+	private ArrayBlockingQueue<Script> scripts;
 
 	public GroovyInterceptor() {
 		name = "Groovy";
@@ -42,12 +57,40 @@ public class GroovyInterceptor extends AbstractInterceptor {
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		return runScript(exc);
 	}
+
 	
-	private Outcome runScript(Exchange exc) {
+	private void createOneScript() throws InterruptedException {
+		Script s = shell.parse(srcWithImports());
+		scripts.put(s);
+	}
+	
+	public void init() throws InterruptedException {
+		scripts = new ArrayBlockingQueue<Script>(20);
+		createOneScript();
+		router.getBackgroundInitializator().execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					for (int i = 1; i < concurrency; i++)
+						createOneScript();
+				} catch (Exception e) {
+					log.error("Error creating Groovy Script:", e);
+				}
+			}
+		});
+
+	}
+	
+	private Outcome runScript(Exchange exc) throws InterruptedException {
 		Binding b = new Binding();
 		b.setVariable("exc", exc);
-		GroovyShell shell = new GroovyShell(b);
-		return getOutcome(shell.evaluate(srcWithImports()), exc);
+		Script s = scripts.take();
+		try {
+			s.setBinding(b);
+			return getOutcome(s.run(), exc);
+		} finally {
+			scripts.put(s);
+		}
 	}
 
 	private Outcome getOutcome(Object res, Exchange exc) {
@@ -73,18 +116,26 @@ public class GroovyInterceptor extends AbstractInterceptor {
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
-		
 		out.writeStartElement("groovy");
-		
 		out.writeCharacters(src);		
-		
 		out.writeEndElement();
+	}
+	
+	@Override
+	public XMLElement parse(XMLStreamReader token) throws Exception {
+		src = "";
+		return super.parse(token);
 	}
 	
 	@Override
 	protected void parseCharacters(XMLStreamReader token)
 			throws XMLStreamException {
 		src += token.getText();
+	}
+	
+	@Override
+	public void doAfterParsing() throws Exception {
+		init();
 	}
 
 	public String getSrc() {
