@@ -1,0 +1,31 @@
+Membrane ESB Change Log
+=============================================================================
+
+* [release] 3.4.3
+
+* [usage improvement] servlet: port="..." is now ignored
+
+* [usage improvement] standalone: if port="..." is missing, port="80" is
+  used by default.
+
+* [usage] Exchange properties of type String can be used from XSLT
+  stylesheets
+
+* [improvement] Groovy scripts are parsed only once at startup; only one
+  instance of GroovyShell is used globally.
+
+* [bugfix] non-SOAP XML messages cause validation errors in the WSDL
+  validator
+
+* [update config] The default servlet monitor-beans.xml configuration now
+  removes HTTP headers which are managed by the web server ("Connection",
+  "Content-Length", etc.)
+
+* [usage improvement] The format of the error page for uncaught exceptions
+  thrown from interceptors now depends on the request: For SOAP messages,
+  SOAP faults are returned; for JSON requests, JSON error messages are
+  returned; for XML requests, an XML error elements are returned. 
+
+* [new] added SoapOperationExtractor interceptor 
+
+* [release] 3.4.2
