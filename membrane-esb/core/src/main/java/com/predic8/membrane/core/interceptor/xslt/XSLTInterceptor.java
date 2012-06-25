@@ -39,17 +39,17 @@ public class XSLTInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		transformMsg(exc.getRequest(), xslt, exc.getPropertiesStartingWith("XSLT_"));
+		transformMsg(exc.getRequest(), xslt, exc.getStringProperties());
 		return Outcome.CONTINUE;
 	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		transformMsg(exc.getResponse(), xslt, exc.getPropertiesStartingWith("XSLT_"));
+		transformMsg(exc.getResponse(), xslt, exc.getStringProperties());
 		return Outcome.CONTINUE;
 	}
 
-	private void transformMsg(Message msg, String ss, Map<String, Object> parameter) throws Exception {
+	private void transformMsg(Message msg, String ss, Map<String, String> parameter) throws Exception {
 		if (msg.isBodyEmpty())
 			return;
 		msg.setBodyContent(xsltTransformer.transform(
