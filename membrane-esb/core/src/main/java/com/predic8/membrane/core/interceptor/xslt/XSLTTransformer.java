@@ -78,10 +78,10 @@ public class XSLTTransformer {
 		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Transformer t = transformers.take();	
- 		for (Map.Entry<String, Object> e : parameters.entrySet()) {
- 			t.setParameter(e.getKey(), e.getValue());
- 		}
 		try {
+	 		for (Map.Entry<String, Object> e : parameters.entrySet()) {
+	 			t.setParameter(e.getKey(), e.getValue());
+	 		}
 			t.transform(xml, new StreamResult(baos));
 		} finally {
 			transformers.put(t);
