@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+<soap:Header>
+	<someHeader />
+</soap:Header>
 <soap:Body>
 <soap:Fault>
     <soap:faultString/>

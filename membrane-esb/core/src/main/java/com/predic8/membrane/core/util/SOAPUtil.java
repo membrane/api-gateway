@@ -81,6 +81,7 @@ public class SOAPUtil {
 						// skip header
 						int stack = 0;
 						while (parser.hasNext()) {
+							event = parser.nextEvent();
 							if (event.isStartElement())
 								stack++;
 							if (event.isEndElement())
@@ -89,6 +90,7 @@ public class SOAPUtil {
 								else
 									stack--;
 						}
+						continue;
 					}
 
 					String expected;
