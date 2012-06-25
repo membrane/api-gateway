@@ -117,7 +117,7 @@ public class Exchange extends AbstractExchange {
 
 	public ServiceProxyKey getServiceProxyKey() {
 		return new ServiceProxyKey(request.getHeader().getHost(),
-				request.getMethod(), request.getUri(), handler.getLocalPort());
+				request.getMethod(), request.getUri(), handler.isMatchLocalPort() ? handler.getLocalPort() : -1);
 	}
 
 	public Connection getTargetConnection() {

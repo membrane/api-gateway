@@ -177,4 +177,9 @@ class HttpServletHandler extends AbstractHttpHandler {
 	public ServletTransport getTransport() {
 		return (ServletTransport)super.getTransport();
 	}
+	
+	@Override
+	public boolean isMatchLocalPort() {
+		return false;
+	}
 }

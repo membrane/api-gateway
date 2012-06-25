@@ -141,4 +141,12 @@ public abstract class AbstractHttpHandler  {
 		return error;
 	}
 
+	/**
+	 * @return whether the {@link #getLocalPort()} of the handler has to match
+	 *         the rule's local port for the rule to apply.
+	 */
+	public boolean isMatchLocalPort() {
+		return true;
+	}
+
 }
