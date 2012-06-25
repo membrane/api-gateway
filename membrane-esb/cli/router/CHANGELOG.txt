@@ -12,9 +12,10 @@ Membrane ESB Change Log
   stylesheets
 
 * [improvement] Groovy scripts are parsed only once at startup; only one
-  instance of GroovyShell is used globally.
+  instance of GroovyShell is used globally (improved performance and
+  resource management)
 
-* [bugfix] non-SOAP XML messages cause validation errors in the WSDL
+* [bugfix] non-SOAP XML messages now cause validation errors in the WSDL
   validator
 
 * [update config] The default servlet monitor-beans.xml configuration now
@@ -24,8 +25,22 @@ Membrane ESB Change Log
 * [usage improvement] The format of the error page for uncaught exceptions
   thrown from interceptors now depends on the request: For SOAP messages,
   SOAP faults are returned; for JSON requests, JSON error messages are
-  returned; for XML requests, an XML error elements are returned. 
+  returned; for XML requests, an XML error elements are returned. (eased
+  parsing for clients)
 
 * [new] added SoapOperationExtractor interceptor 
 
 * [release] 3.4.2
+
+* [update config] <validator wsdl="..." skipFaults="true" /> can be used
+  to accept any SOAP Fault message body as valid (even if it is not valid
+  by the WSDL's XSD schemas).
+
+* [new] added wsdlPublisher interceptor (for backends that do not provide
+  WSDLs on their own)
+
+* [improvement] background initialization for XSLT transformers
+
+* [usage improvement] track processing times for adminConsole
+
+* [release] 3.4.1
