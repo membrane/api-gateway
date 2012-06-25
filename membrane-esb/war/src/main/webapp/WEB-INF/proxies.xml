@@ -17,10 +17,9 @@
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
       	 
 	<!--
-		Do not specify port=".." here. This is the configuration using web
-		server embedding (see web.xml). It uses the web server's connectors
-		(see configuration of the web server) and configured paths (see
-		web.xml).
+		This is the configuration using web server embedding (see web.xml).
+		It uses the web server's connectors (see configuration of the web
+		server) and configured paths (see web.xml).
 	-->
 
 	<!-- Sets up the Administration Web Interface below "/admin". -->
