@@ -30,7 +30,29 @@ import com.predic8.membrane.core.multipart.XOPReconstitutor;
 public class SOAPUtil {
 	private static final Log log = LogFactory
 			.getLog(SOAPUtil.class.getName());
-	
+
+	public static boolean isSOAP(XMLInputFactory xmlInputFactory, XOPReconstitutor xopr, Message msg) {
+		try {
+			XMLEventReader parser;
+			synchronized (xmlInputFactory) {
+				parser = xmlInputFactory.createXMLEventReader(xopr.reconstituteIfNecessary(msg));
+			}
+
+			while (parser.hasNext()) {
+				XMLEvent event = parser.nextEvent();
+				if (event.isStartElement()) {
+					QName name = ((StartElement) event).getName();
+					return (Constants.SOAP11_NS.equals(name.getNamespaceURI())
+							|| Constants.SOAP12_NS.equals(name.getNamespaceURI())) &&
+							"Envelope".equals(name.getLocalPart());
+				}
+			}
+		} catch (Exception e) {
+			log.warn("Ignoring exception: ", e);
+		}
+		return false;
+	}
+
 
 	public static boolean isFault(XMLInputFactory xmlInputFactory, XOPReconstitutor xopr, Message msg) {
 		int state = 0;

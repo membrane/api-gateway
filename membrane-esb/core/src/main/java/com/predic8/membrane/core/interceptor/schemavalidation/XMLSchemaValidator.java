@@ -31,6 +31,7 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.schema.Schema;
 
@@ -76,5 +77,10 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	@Override
 	protected boolean isFault(Message msg) {
 		return false;
+	}
+	
+	@Override
+	protected String getPreliminaryError(XOPReconstitutor xopr, Message msg) {
+		return null;
 	}
 }

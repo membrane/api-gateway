@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.ResourceResolver;
@@ -76,5 +77,12 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	@Override
 	protected boolean isFault(Message msg) {
 		return SOAPUtil.isFault(xmlInputFactory, xopr, msg);
+	}
+	
+	@Override
+	protected String getPreliminaryError(XOPReconstitutor xopr, Message msg) {
+		if (SOAPUtil.isSOAP(xmlInputFactory, xopr, msg))
+			return null;
+		return "Not a SOAP message.";
 	}
 }

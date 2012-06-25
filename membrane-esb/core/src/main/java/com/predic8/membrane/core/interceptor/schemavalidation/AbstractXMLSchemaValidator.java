@@ -70,26 +70,31 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	
 	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
 		List<Exception> exceptions = new ArrayList<Exception>();
-		List<Validator> vals = validators.take();
-		try {
-			// the message must be valid for one schema embedded into WSDL 
-			for (Validator validator: vals) {
-				SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
-				try {
-					validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
-					if (handler.noErrors()) {
-						valid.incrementAndGet();
-						return Outcome.CONTINUE;
+		String preliminaryError = getPreliminaryError(xopr, msg);
+		if (preliminaryError == null) {
+			List<Validator> vals = validators.take();
+			try {
+				// the message must be valid for one schema embedded into WSDL 
+				for (Validator validator: vals) {
+					SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
+					try {
+						validator.validate(getMessageBody(xopr.reconstituteIfNecessary(msg)));
+						if (handler.noErrors()) {
+							valid.incrementAndGet();
+							return Outcome.CONTINUE;
+						}
+						exceptions.add(handler.getException());
+					} finally {
+						handler.reset();
 					}
-					exceptions.add(handler.getException());
-				} finally {
-					handler.reset();
 				}
+			} catch (Exception e) {
+				exceptions.add(e);
+			} finally {
+				validators.put(vals);
 			}
-		} catch (Exception e) {
-			exceptions.add(e);
-		} finally {
-			validators.put(vals);
+		} else {
+			exceptions.add(new Exception(preliminaryError));
 		}
 		if (skipFaults && isFault(msg)) {
 			valid.incrementAndGet();
@@ -147,5 +152,6 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	protected abstract Source getMessageBody(InputStream input) throws Exception;
 	protected abstract Response createErrorResponse(String message);
 	protected abstract boolean isFault(Message msg);
+	protected abstract String getPreliminaryError(XOPReconstitutor xopr, Message msg);
 
 }

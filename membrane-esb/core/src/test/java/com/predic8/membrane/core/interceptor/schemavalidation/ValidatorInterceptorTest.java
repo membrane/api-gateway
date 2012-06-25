@@ -66,7 +66,12 @@ public class ValidatorInterceptorTest {
 	public void testHandleRequestValidArticleMessage() throws Exception {
 		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/articleRequest.xml"));
 	}
-	
+
+	@Test
+	public void testHandleNonSOAPXMLMessage() throws Exception {
+		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/customer.xml"));
+	}
+
 	@Test
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
 		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/articleRequestInvalid.xml"));
