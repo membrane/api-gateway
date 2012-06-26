@@ -241,10 +241,13 @@ public class HttpUtil {
 	}
 
 	public static int getPort(URL url) throws MalformedURLException {
-		if (url.getPort() == -1) {
-			return 80;
+		int port = url.getPort();
+		if (port == -1) {
+			port = url.getDefaultPort();
+			if (port == -1)
+				port = 80;
 		}
-		return url.getPort();
+		return port;
 	}
 
 	public static boolean isAbsoluteURI(String uri) {

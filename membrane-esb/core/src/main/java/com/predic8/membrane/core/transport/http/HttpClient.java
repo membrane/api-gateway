@@ -105,13 +105,7 @@ public class HttpClient {
 		
 		if (adjustHostHeader && exc.getRule() instanceof ServiceProxy) {
 			URL d = new URL(dest);
-			int port = d.getPort();
-			if (port == -1) {
-				port = d.getDefaultPort();
-				if (port == -1)
-					throw new IOException("Unknown port for protocol '" + d.getProtocol() + "'.");
-			}
-			exc.getRequest().getHeader().setHost(d.getHost() + ":" + port);
+			exc.getRequest().getHeader().setHost(d.getHost() + ":" + HttpUtil.getPort(d));
 		}
 		return target;
 	}
