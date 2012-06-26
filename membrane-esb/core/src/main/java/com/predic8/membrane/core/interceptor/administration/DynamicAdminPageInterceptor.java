@@ -167,7 +167,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	@Mapping("/admin/service-proxy/save/?(\\?.*)?")
-	public Response handleFruleSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleServiceProxySaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 		
@@ -183,7 +183,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 	
 	@Mapping("/admin/proxy/save/?(\\?.*)?")
-	public Response handlePruleSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+	public Response handleProxySaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 		
