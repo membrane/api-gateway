@@ -378,5 +378,9 @@ public abstract class AbstractExchange {
 		int s = interceptorStack.size();
 		return s == 0 ? null : interceptorStack.remove(s-1);
 	}
+
+	public int getSize() {		
+		return 500 + getRequestContentLength() + getResponseContentLength();
+	}
 	
 }
