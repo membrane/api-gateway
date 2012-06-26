@@ -24,7 +24,7 @@ import com.predic8.membrane.core.Constants;
 
 public abstract class AbstractBody {
 
-	private boolean read;
+	boolean read;
 	
 	protected List<Chunk> chunks = new ArrayList<Chunk>();
 	private List<MessageObserver> observers = new ArrayList<MessageObserver>(1);
