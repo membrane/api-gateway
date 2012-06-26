@@ -29,7 +29,7 @@ public abstract class AbstractRuleKey implements RuleKey {
 
 	private String path;
 
-	protected Pattern pathPattern;
+	protected volatile Pattern pathPattern;
 
 	protected boolean pathRegExp = true;
 
@@ -78,10 +78,12 @@ public abstract class AbstractRuleKey implements RuleKey {
 
 	public void setUsePathPattern(boolean usePathPattern) {
 		this.usePathPattern = usePathPattern;
+		pathPattern = null;
 	}
 
 	public void setPath(String path) {
 		this.path = path;
+		pathPattern = null;
 	}
 
 	public String getPath() {
@@ -101,8 +103,12 @@ public abstract class AbstractRuleKey implements RuleKey {
 	}
 
 	private Pattern getPathPattern() {
-		if (pathPattern == null)
-			pathPattern = Pattern.compile(path);
+		if (pathPattern == null) {
+			synchronized (this) {
+				if (pathPattern == null)
+					pathPattern = Pattern.compile(path);
+			}
+		}
 
 		return pathPattern;
 	}
