@@ -59,6 +59,7 @@
 						<xsd:element ref="formValidation" />
 						<xsd:element ref="log" />
 						<xsd:element ref="xmlProtection" />
+						<xsd:element ref="analyser" />
 					</xsd:choice>
 				</xsd:sequence>
 				<xsd:attribute name="httpClientRetries" default="5" type="xsd:int" />
@@ -66,6 +67,8 @@
 		</xsd:complexContent>
 	</xsd:complexType>
 
+	<xsd:element name="analyser" type="EmptyElementType" />
+	
 	<xsd:element name="transport">
 		<xsd:complexType>
 			<xsd:complexContent>
