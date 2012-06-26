@@ -154,7 +154,7 @@ public class ServiceProxy extends AbstractProxy {
 		}
 	}
 
-	private void writeTarget(XMLStreamWriter out) throws XMLStreamException {
+	protected void writeTarget(XMLStreamWriter out) throws XMLStreamException {
 		if (targetHost == null && targetPort == 0 && targetURL == null)
 			return;
 		
