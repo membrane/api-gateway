@@ -538,6 +538,8 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			protected void createTabContent() throws Exception {
 				h3().text("Statistics").end();
 				createStatisticsTable();
+				h3().text("Messages").end();
+				createMessageStatisticsTable();
 			}
 	
 		}.createPage();
