@@ -23,6 +23,7 @@
 				<field name="name" regex="[a-z]+" />
 			</formValidation>
 			<xmlProtection />
+			<analyser />
 		</request>
 		<exchangeStore name="forgetfulExchangeStore" />
 		<!--<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource"/> -->

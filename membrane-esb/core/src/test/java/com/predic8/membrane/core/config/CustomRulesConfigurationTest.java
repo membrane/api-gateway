@@ -224,6 +224,9 @@ public class CustomRulesConfigurationTest {
 				"/proxies/serviceProxy/request/formValidation/field[2]/@regex",
 				"[a-z]+");
 
+		assertElement(w.toString(),
+				"/proxies/serviceProxy/request/analyser");
+		
 		// assertAttribute(w.toString(),
 		// "/proxies/serviceProxy/statisticsJDBC/@postMethodOnly", "false");
 		// assertAttribute(w.toString(),

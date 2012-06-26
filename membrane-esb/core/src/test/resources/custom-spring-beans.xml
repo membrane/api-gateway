@@ -39,6 +39,7 @@
 			-->
 			<byThreadStrategy maxNumberOfThreadsPerEndpoint="10" retryTimeOnBusy="1000" />
 		</balancer>
+		<analyser />		
 		<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
 		<balancer>
 			<jSessionIdExtractor />
