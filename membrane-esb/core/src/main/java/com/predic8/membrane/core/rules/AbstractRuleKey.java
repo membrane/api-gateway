@@ -103,13 +103,14 @@ public abstract class AbstractRuleKey implements RuleKey {
 	}
 
 	private Pattern getPathPattern() {
-		if (pathPattern == null) {
+		Pattern p = pathPattern;
+		if (p == null) {
 			synchronized (this) {
 				if (pathPattern == null)
-					pathPattern = Pattern.compile(path);
+					p = pathPattern = Pattern.compile(path);
 			}
 		}
 
-		return pathPattern;
+		return p;
 	}
 }

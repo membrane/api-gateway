@@ -83,11 +83,11 @@ public class ServiceProxy extends AbstractProxy {
 		return defaultString(token.getAttributeValue("", "method"), "*");
 	}
 
-	private int parsePort(XMLStreamReader token) {
+	protected int parsePort(XMLStreamReader token) {
 		return Integer.parseInt(defaultString(token.getAttributeValue("", "port"),"80"));
 	}
 
-	private String parseHost(XMLStreamReader token) {
+	protected String parseHost(XMLStreamReader token) {
 		return defaultString(token.getAttributeValue("", "host"), "*");
 	}
 	
