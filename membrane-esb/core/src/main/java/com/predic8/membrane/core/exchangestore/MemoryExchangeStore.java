@@ -54,14 +54,6 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
-	private List<AbstractExchange> getKeyList(AbstractExchange exc) {
-		return exchangesMap.get(exc.getRule().getKey());
-	}
-
-	private boolean isKeyInStore(AbstractExchange exc) {
-		return exchangesMap.containsKey(exc.getRule().getKey());
-	}
-
 	public void remove(AbstractExchange exc) {
 		removeWithoutNotify(exc);
 		
@@ -70,20 +62,6 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 	
-	private void removeWithoutNotify(AbstractExchange exc) {
-		if (!isKeyInStore(exc)) {
-			return;
-		}
-
-		getKeyList(exc).remove(exc);
-		if (getKeyList(exc).isEmpty()) {
-			exchangesMap.remove(exc.getRule().getKey());
-		}
-		totals.remove(exc);
-		exc.informExchangeViewerOnRemoval();
-	}
-
-
 	public void removeAllExchanges(Rule rule) {
 		AbstractExchange[] exchanges = getExchanges(rule.getKey());
 		
@@ -144,4 +122,25 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 	
+	private List<AbstractExchange> getKeyList(AbstractExchange exc) {
+		return exchangesMap.get(exc.getRule().getKey());
+	}
+
+	private boolean isKeyInStore(AbstractExchange exc) {
+		return exchangesMap.containsKey(exc.getRule().getKey());
+	}
+
+	private void removeWithoutNotify(AbstractExchange exc) {
+		if (!isKeyInStore(exc)) {
+			return;
+		}
+
+		getKeyList(exc).remove(exc);
+		if (getKeyList(exc).isEmpty()) {
+			exchangesMap.remove(exc.getRule().getKey());
+		}
+		totals.remove(exc);
+		exc.informExchangeViewerOnRemoval();
+	}
+
 }
