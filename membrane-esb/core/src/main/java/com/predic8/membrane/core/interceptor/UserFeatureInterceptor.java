@@ -13,14 +13,11 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.net.URL;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
 
 /**
  * Handles features that are user-configured in proxies.xml .
@@ -51,7 +48,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 			exc.setRule(newRule);
 			// dispatching
 			exc.getDestinations().clear();
-			exc.getDestinations().add(getForwardingDestination(exc));
+			exc.getDestinations().add(DispatchingInterceptor.getForwardingDestination(exc));
 			// user feature
 			outcome = flowController.invokeRequestHandlers(exc, newRule.getInterceptors());
 		}
@@ -66,19 +63,6 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	private boolean isTargetInternalAndContinue(Exchange exc, Outcome outcome) {
 		return outcome == Outcome.CONTINUE
 				&& exc.getDestinations().get(0).startsWith("service:");
-	}
-
-	private String getForwardingDestination(Exchange exc) throws Exception {
-		ServiceProxy p = (ServiceProxy) exc.getRule();
-		if (p.getTargetURL() != null) {
-			log.debug("destination: " + p.getTargetURL());
-			return p.getTargetURL();
-		}
-
-		URL url = new URL("http", p.getTargetHost(), p.getTargetPort(), exc
-				.getRequest().getUri());
-		log.debug("destination: " + url);
-		return "" + url;
 	}
 
 	private Rule getRuleByDest(String dest) {

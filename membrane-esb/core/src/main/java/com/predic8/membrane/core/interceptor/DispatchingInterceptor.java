@@ -42,7 +42,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private String getForwardingDestination(Exchange exc) throws Exception {
+	public static String getForwardingDestination(Exchange exc) throws Exception {
 		ServiceProxy p = (ServiceProxy)exc.getRule();
 		if (p.getTargetURL()!=null) {
 			log.debug("destination: " + p.getTargetURL());
