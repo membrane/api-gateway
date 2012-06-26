@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.FileExchangeStore;
@@ -110,8 +111,8 @@ public class JDBCUtil {
 	
 	public static final String CREATE_SEQUENCE = "CREATE SEQUENCE " + SEQUENCE_STATISTIC;
 	public static final String CREATE_TRIGGER = "CREATE TRIGGER " + TRIGGER_STATISTIC + " BEFORE INSERT ON " + TABLE_NAME + " FOR EACH ROW BEGIN IF (:new.id IS NULL) THEN SELECT " + SEQUENCE_STATISTIC + ".nextval INTO :new.id FROM DUAL; END IF; END; ";
+	public static final String COUNT_ALL = "select count(*) from " +TABLE_NAME;
 	
-
 	public static String getPreparedInsertStatement(boolean idGenerated){
 		
 		return "INSERT INTO " + TABLE_NAME + " ( " + getPreparedInsertIntro(idGenerated) +
@@ -188,7 +189,7 @@ public class JDBCUtil {
 		prepSt.setString(++ startIndex, getFilePath(exc));
 	}
 	
-	private static String getFilePath(AbstractExchange exc) {
+	public static String getFilePath(AbstractExchange exc) {
 		if (exc.getProperty(FileExchangeStore.MESSAGE_FILE_PATH) != null)
 			return (String)exc.getProperty(FileExchangeStore.MESSAGE_FILE_PATH);
 		
