@@ -22,30 +22,37 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
+import com.predic8.wsdl.AbstractBinding;
+import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.Port;
 import com.predic8.wsdl.Service;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.xml.util.ResourceDownloadException;
 
-public class SOAPServiceProxy extends ServiceProxy {
-	
-	public static final String ELEMENT_NAME = "soapServiceProxy";
+public class SOAPProxy extends ServiceProxy {
+	private static final Log log = LogFactory.getLog(SOAPProxy.class.getName());
+	public static final String ELEMENT_NAME = "soapProxy";
 
 	protected String wsdl;
 	
-	public SOAPServiceProxy() {
+	public SOAPProxy() {
 	}
 	
-	public SOAPServiceProxy(Router router) {
+	public SOAPProxy(Router router) {
 		super(router);
 	}
 	
 	@Override
 	protected AbstractProxy getNewInstance() {
-		return new SOAPServiceProxy();
+		return new SOAPProxy();
 	}
 	
 	@Override
@@ -58,7 +65,7 @@ public class SOAPServiceProxy extends ServiceProxy {
 		key = new ServiceProxyKey(parseHost(token), "*", ".*", parsePort(token));
 		wsdl = token.getAttributeValue("", "wsdl");
 		if (token.getAttributeValue("", "method") != null)
-			throw new RuntimeException("Attribute 'method' is not allowed on <soapServiceProxy />.");
+			throw new RuntimeException("Attribute 'method' is not allowed on <soapProxy />.");
 		
 		parseWSDL();
 	}
@@ -66,9 +73,11 @@ public class SOAPServiceProxy extends ServiceProxy {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {		
 		if ("target".equals(child)) {
-			throw new Exception("Child element <target> is not allowed on <soapServiceProxy />.");
+			// TODO: overwrite location extracted from WSDL
+			throw new Exception("Child element <target> is not allowed on <soapProxy />.");
 		} else if (Path.ELEMENT_NAME.equals(child)) {
-			throw new Exception("Child element <path> is not allowed on <soapServiceProxy />.");
+			// TODO: overwrite path extracted from WSDL (rewriting?)
+			throw new Exception("Child element <path> is not allowed on <soapProxy />.");
 		} else {
 			super.parseChildren(token, child);
 		}
@@ -87,9 +96,10 @@ public class SOAPServiceProxy extends ServiceProxy {
 
 	@Override
 	public void setRouter(Router router) {
+		Router old = router;
 		super.setRouter(router);
-		
-		parseWSDL();
+		if (old != router)
+			parseWSDL();
 	}
 	
 	private void parseWSDL() {
@@ -101,13 +111,24 @@ public class SOAPServiceProxy extends ServiceProxy {
 		try {
 			WSDLParser wsdlParser = new WSDLParser();
 			wsdlParser.setResourceResolver(router.getResourceResolver().toExternalResolver());
-			List<Service> services = wsdlParser.parse(ctx).getServices();
+			
+			Definitions definitions = wsdlParser.parse(ctx);
+			
+			if (StringUtils.isEmpty(name))
+				name = definitions.getName();
+				
+			List<Service> services = definitions.getServices();
 			if (services.size() != 1)
-				throw new IllegalArgumentException("There are " + services.size() + " services defined in the WSDL, but exactly 1 is required for soapServiceProxy.");
+				throw new IllegalArgumentException("There are " + services.size() + " services defined in the WSDL, but exactly 1 is required for soapProxy.");
 			List<Port> ports = services.get(0).getPorts();
-			if (ports.size() != 1)
-				throw new IllegalArgumentException("There are " + ports.size() + " ports defined in the WSDL, but exactly 1 is required for soapServiceProxy.");
-			String location = ports.get(0).getAddress().getLocation();
+
+			Port port = getPortByNamespace(ports, Constants.WSDL_SOAP11_NS);
+			if (port == null)
+				port = getPortByNamespace(ports, Constants.WSDL_SOAP12_NS);
+			if (port == null)
+				throw new IllegalArgumentException("No SOAP/1.1 or SOAP/1.2 ports found in WSDL.");
+			
+			String location = port.getAddress().getLocation();
 			if (location == null)
 				throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
 			try {
@@ -122,6 +143,26 @@ public class SOAPServiceProxy extends ServiceProxy {
 		} catch (ResourceDownloadException e) {
 			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.");
 		}
+	}
+	
+	private Port getPortByNamespace(List<Port> ports, String namespace) {
+		for (Port port : ports) {
+			try {
+				if (port.getBinding() == null)
+					continue;
+				if (port.getBinding().getBinding() == null)
+					continue;
+				AbstractBinding binding = port.getBinding().getBinding();
+				if (!"http://schemas.xmlsoap.org/soap/http".equals(binding.getProperty("transport")))
+					continue;
+				if (!namespace.equals(binding.getElementName().getNamespaceURI()))
+					continue;
+				return port;
+			} catch (Exception e) {
+				log.warn("Error inspecting WSDL port binding.", e);
+			}
+		}
+		return null;
 	}
 
 }

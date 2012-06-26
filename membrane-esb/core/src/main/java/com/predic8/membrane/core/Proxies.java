@@ -33,7 +33,7 @@ import com.predic8.membrane.core.config.Global;
 import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.SOAPServiceProxy;
+import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.util.TextUtil;
 
@@ -108,8 +108,8 @@ public class Proxies extends AbstractConfigElement {
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if ("serviceProxy".equals(child)) {
 			rules.add((ServiceProxy) new ServiceProxy(router).parse(token));
-		} else if ("soapServiceProxy".equals(child)) {
-			rules.add((ServiceProxy) new SOAPServiceProxy(router).parse(token));
+		} else if ("soapProxy".equals(child)) {
+			rules.add((ServiceProxy) new SOAPProxy(router).parse(token));
 		} else if ("proxy".equals(child)) {
 			rules.add((ProxyRule) new ProxyRule(router).parse(token));
 		} else if ("global".equals(child)) {
