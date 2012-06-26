@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.rules;
 
+import static org.apache.commons.lang.StringUtils.defaultString;
+
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
@@ -78,22 +80,15 @@ public class ServiceProxy extends AbstractProxy {
 	}
 
 	private String parseMethod(XMLStreamReader token) {
-		return defaultTo(token.getAttributeValue("", "method"), "*");
+		return defaultString(token.getAttributeValue("", "method"), "*");
 	}
 
 	private int parsePort(XMLStreamReader token) {
-		return Integer.parseInt(defaultTo(token.getAttributeValue("", "port"),"80"));
+		return Integer.parseInt(defaultString(token.getAttributeValue("", "port"),"80"));
 	}
 
 	private String parseHost(XMLStreamReader token) {
-		return defaultTo(token.getAttributeValue("", "host"), "*");
-	}
-	
-	private String defaultTo(String value, String default_) {
-		if (value == null)
-			return default_;
-		
-		return value;
+		return defaultString(token.getAttributeValue("", "host"), "*");
 	}
 	
 	@Override
