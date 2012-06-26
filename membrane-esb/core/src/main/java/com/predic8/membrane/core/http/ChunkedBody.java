@@ -59,7 +59,7 @@ public class ChunkedBody extends AbstractBody {
 		inputStream.read(); // CR
 		inputStream.read(); // LF-
 		out.finish();
-		read = true;
+		markAsRead();
 	}
 	
 	@Override

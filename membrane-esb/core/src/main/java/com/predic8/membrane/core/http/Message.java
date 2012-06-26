@@ -227,7 +227,7 @@ public abstract class Message {
 			return header.getContentLength() == 0;
 		
 		
-		if (getBody().read)
+		if (getBody().isRead())
 			return getBody().getLength() == 0;
 		
 		return false;
@@ -280,6 +280,10 @@ public abstract class Message {
 	
 	public String getCharset() {
 		return header.getCharset();
+	}
+	
+	public void addObserver(MessageObserver observer) {
+		body.addObserver(observer);
 	}
 	
 }

@@ -18,6 +18,8 @@ import javax.xml.stream.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.http.AbstractBody;
+import com.predic8.membrane.core.http.MessageObserver;
 
 public class ExchangeStoreInterceptor extends AbstractInterceptor {
 
@@ -29,14 +31,22 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		store.add(exc);
+	public Outcome handleRequest(final Exchange exc) throws Exception {
+		exc.getResponse().addObserver(new MessageObserver() {
+			public void bodyComplete(AbstractBody body) {
+				store.add(exc);
+			}
+		});
 		return Outcome.CONTINUE;
 	}
 
 	@Override
-	public Outcome handleResponse(Exchange exc) throws Exception {
-		store.add(exc);
+	public Outcome handleResponse(final Exchange exc) throws Exception {
+		exc.getResponse().addObserver(new MessageObserver() {
+			public void bodyComplete(AbstractBody body) {
+				store.add(exc);
+			}
+		});
 		return Outcome.CONTINUE;
 	}
 	

@@ -24,9 +24,10 @@ import com.predic8.membrane.core.Constants;
 
 public abstract class AbstractBody {
 
-	boolean read;
+	private boolean read;
 	
 	protected List<Chunk> chunks = new ArrayList<Chunk>();
+	private List<MessageObserver> observers = new ArrayList<MessageObserver>(1);
 
 	public void read() throws IOException {
 		if (read)
@@ -34,7 +35,15 @@ public abstract class AbstractBody {
 		
 		chunks.clear();
 		readLocal();
+		markAsRead();
+	}
+	
+	protected void markAsRead() {
+		if (read)
+			return;
 		read = true;
+		for (MessageObserver observer : observers)
+			observer.bodyComplete(this);
 	}
 	
 	protected abstract void readLocal() throws IOException;
@@ -117,4 +126,9 @@ public abstract class AbstractBody {
 		return read;
 	}
 	
+	void addObserver(MessageObserver observer) {
+		observers.add(observer);
+		if (read)
+			observer.bodyComplete(this);
+	}
 }

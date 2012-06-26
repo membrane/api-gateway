@@ -51,9 +51,9 @@ public class Body extends AbstractBody {
 	public Body(byte[] content) {
 		this.inputStream = null;
 		this.length = content.length;
-		this.read = true; // because we do not have something to read
 		chunks.clear();
 		chunks.add(new Chunk(content));
+		markAsRead(); // because we do not have something to read
 	}
 
 	@Override
@@ -86,8 +86,8 @@ public class Body extends AbstractBody {
 			System.arraycopy(buffer, 0, chunk, 0, length);
 			chunks.add(new Chunk(chunk));
 		}
-		read = true;
 		out.finish();
+		markAsRead();
 	}
 
 	@Override
