@@ -14,36 +14,13 @@
 
 package com.predic8.membrane.core.exchange;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class ExchangesUtil {
 
 	public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
-	
-	public static String getServer(AbstractExchange exc) {
-		if (exc.getRule() instanceof ProxyRule) {
-			try {
-				if (exc.getRequest().isCONNECTRequest()) {
-					return exc.getRequest().getHeader().getHost();
-				}
-				
-				return new URL(exc.getOriginalRequestUri()).getHost();
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			}
-			return exc.getOriginalRequestUri();
-		}
-		if (exc.getRule() instanceof ServiceProxy) {
-			return ((ServiceProxy) exc.getRule()).getTargetHost();
-		}
-		return "";
-	}
 	
 	public static String extractContentTypeValue(String contentType) {
 		if (contentType == null)
