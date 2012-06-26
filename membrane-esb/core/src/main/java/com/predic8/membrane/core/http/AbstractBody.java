@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -59,7 +58,8 @@ public abstract class AbstractBody {
 	}
 
 	public InputStream getBodyAsStream() throws IOException {
-		return new ByteArrayInputStream(getContent());
+		read();
+		return new BodyInputStream(chunks);
 	}
 
 	public void write(AbstractBodyTransferrer out) throws IOException {
