@@ -71,7 +71,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 			host = "localhost"; // TODO: use local IP address (which is not exposed by the transport at the moment)
 		
 		int port = k.getPort();
-		if (port == -1)
+		if (port == -1 || !exc.getHandler().isMatchLocalPort())
 			port = exc.getHandler().getLocalPort();
 		
 		String path;
