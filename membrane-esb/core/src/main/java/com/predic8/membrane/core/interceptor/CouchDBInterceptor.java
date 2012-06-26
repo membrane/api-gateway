@@ -27,7 +27,7 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
-public class CoachDBInterceptor extends AbstractInterceptor {
+public class CouchDBInterceptor extends AbstractInterceptor {
 	
 	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
 	
@@ -62,7 +62,7 @@ public class CoachDBInterceptor extends AbstractInterceptor {
 	private Rule rule;
 	
 
-	public CoachDBInterceptor() {
+	public CouchDBInterceptor() {
 		
 	}
 	
