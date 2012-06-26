@@ -36,6 +36,15 @@ public class URLParamUtil {
 		return parseQueryString(q);
 	}
 
+	public static String getStringParam(Exchange exc, String name) throws Exception {
+		return getParams(exc).get(name);
+	}
+
+	public static int getIntParam(Exchange exc, String name) throws Exception {
+		return Integer.parseInt(getParams(exc).get(name));
+	}
+
+	
 	private static boolean hasNoFormParams(Exchange exc) throws IOException {
 		return !"application/x-www-form-urlencoded".equals(exc.getRequest()
 				.getHeader().getContentType())
