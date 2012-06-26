@@ -59,11 +59,12 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		Connection con = dataSource.getConnection();
+		Connection con = null;
 		try {
+			con = dataSource.getConnection();
 			saveExchange(con, exc);
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.warn("Could not save statistics.", e);
 		} finally {
 			closeConnection(con);
 		}
@@ -95,14 +96,6 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		return postMethodOnly && !Request.METHOD_POST.equals(exc.getRequest().getMethod());
 	}
 	
-	private void closeConnection(Connection con) {
-		try {
-			con.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	private void createTableIfNecessary(Connection con) throws Exception {
 		if (JDBCUtil.tableExists(con, JDBCUtil.TABLE_NAME))
 			return;
@@ -121,7 +114,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 				st.execute(JDBCUtil.getCreateTableStatementForOther());
 			}
 		} finally {
-			st.close();
+			closeConnection(st);
 		}
 	}
 	
@@ -189,4 +182,20 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		return "statistics-jdbc";
 	}
 
+	private void closeConnection(Connection con) {
+		try {
+			if (con != null ) con.close();
+		} catch (Exception e) {
+			log.warn("Could not close JDBC connection", e);
+		}
+	}
+	
+	private void closeConnection(Statement con) {
+		try {
+			if (con != null ) con.close();
+		} catch (Exception e) {
+			log.warn("Could not close Statement", e);
+		}
+	}
+	
 }
