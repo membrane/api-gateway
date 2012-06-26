@@ -29,6 +29,7 @@ import com.predic8.membrane.core.http.ResponseTest;
 import com.predic8.membrane.core.interceptor.DispatchingInterceptorTest;
 import com.predic8.membrane.core.interceptor.HeaderFilterInterceptorTest;
 import com.predic8.membrane.core.interceptor.InternalInvocationTest;
+import com.predic8.membrane.core.interceptor.MessageAnalyserTest;
 import com.predic8.membrane.core.interceptor.ThrottleInterceptorTest;
 import com.predic8.membrane.core.interceptor.WADLInterceptorTest;
 import com.predic8.membrane.core.interceptor.WSDLInterceptorTest;
@@ -59,6 +60,7 @@ import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
 import com.predic8.membrane.core.rules.ProxyRuleTest;
 import com.predic8.membrane.core.rules.ServiceProxyKeyTest;
+import com.predic8.membrane.core.transport.ExchangeTest;
 import com.predic8.membrane.core.transport.SSLContextTest;
 import com.predic8.membrane.core.transport.http.HostColonPortTest;
 import com.predic8.membrane.core.transport.http.HttpKeepAliveTest;
@@ -102,7 +104,9 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	SimpleXPathAnalyzerTest.class, SimpleXPathParserTest.class,
 	InternalInvocationTest.class, HeaderFilterInterceptorTest.class,
 	SOAPUtilTest.class,	SoapOperationExtractorTest.class,
-	ContentTypeDetectorTest.class 
+	ContentTypeDetectorTest.class,
+	MessageAnalyserTest.class, ExchangeTest.class,
+	LimitedMemoryExchangeStoreTest.class
 })
 public class UnitTests {
 	/*
