@@ -70,7 +70,7 @@ public class AddProxyWizard extends Wizard {
 		rule.setTargetPort(Integer.parseInt(targetHostConfigPage.getTargetPort()));
 		rule.setKey(ruleKey);
 		
-		getRuleManager().addProxyIfNew(rule);
+		getRuleManager().addProxyAndOpenPortIfNew(rule);
 	}
 
 	@Override

@@ -45,11 +45,11 @@ public class LimitInterceptorTest {
 
 		WebServerInterceptor wi2 = new WebServerInterceptor();
 		wi2.setDocBase("classpath:");
-		wi2.setRouter(router);
-		wi2.doAfterParsing();
+		wi2.init();
 		sp2.getInterceptors().add(wi2);
 
-		router.getRuleManager().addProxyIfNew(sp2);
+		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
+		router.init();
 	}
 	
 	@After

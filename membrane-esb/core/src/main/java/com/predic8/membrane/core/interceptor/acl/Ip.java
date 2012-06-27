@@ -15,17 +15,11 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.InetAddress;
 
-import com.predic8.membrane.core.Router;
-
 
 
 public class Ip extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "ip";
-	
-	public Ip(Router router) {
-		super(router);
-	}
 
 	@Override
 	protected String getElementName() {

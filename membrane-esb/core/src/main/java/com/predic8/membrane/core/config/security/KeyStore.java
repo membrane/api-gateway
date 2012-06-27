@@ -18,8 +18,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Router;
-
 
 
 public class KeyStore extends Store {
@@ -28,10 +26,6 @@ public class KeyStore extends Store {
 
 	private String keyPassword;
 	private String keyAlias;
-
-	public KeyStore(Router router) {
-		super(router);
-	}
 
 	@Override
 	protected String getElementName() {

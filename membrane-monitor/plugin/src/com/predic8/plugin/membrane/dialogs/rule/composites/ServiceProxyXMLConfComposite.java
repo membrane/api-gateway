@@ -4,8 +4,8 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.eclipse.swt.widgets.Composite;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class ServiceProxyXMLConfComposite extends AbstractProxyXMLConfTabComposite {
 
@@ -15,7 +15,7 @@ public class ServiceProxyXMLConfComposite extends AbstractProxyXMLConfTabComposi
 
 	@Override
 	protected Rule parseRule(XMLStreamReader reader) throws Exception {
-		return (ServiceProxy)new ServiceProxy(Router.getInstance()).parse(reader);
+		return (ServiceProxy)new ServiceProxy().parse(reader);
 	}
 
 }

@@ -59,8 +59,6 @@ public class CustomSpringConfigurationTest {
 		assertFalse(router.getConfigurationManager().getProxies()
 				.getTrackExchange());
 		assertTrue(router == router.getConfigurationManager().getRouter());
-		assertTrue(router == router.getConfigurationManager().getProxies()
-				.getRouter());
 		assertTrue(router == router.getConfigurationManager()
 				.getConfigurationStore().getRouter());
 

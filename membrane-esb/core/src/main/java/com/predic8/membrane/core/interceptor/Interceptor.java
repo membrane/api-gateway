@@ -43,7 +43,6 @@ public interface Interceptor extends XMLElement {
 	public String getId();
 	public void setId(String id);
 	
-	public void setRouter(Router router);
 	public Router getRouter();
 
 	public void setFlow(Flow flow);	
@@ -58,4 +57,5 @@ public interface Interceptor extends XMLElement {
 	 */
 	public String getHelpId();
 	
+	public void init(Router router) throws Exception;
 }

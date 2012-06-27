@@ -70,7 +70,7 @@ public class LoadBalancingInterceptorTest {
 			}
 		});
 		sp1.getInterceptors().add(mockInterceptor1);
-		service1.getRuleManager().addProxyIfNew(sp1);
+		service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
 
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
@@ -84,16 +84,16 @@ public class LoadBalancingInterceptorTest {
 			}
 		});
 		sp2.getInterceptors().add(mockInterceptor2);
-		service2.getRuleManager().addProxyIfNew(sp2);
+		service2.getRuleManager().addProxyAndOpenPortIfNew(sp2);
 
 		balancer = new HttpRouter();
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"POST", ".*", 7000), "thomas-bayer.com", 80);
 		balancingInterceptor = new LoadBalancingInterceptor();
 		balancingInterceptor.setName("Default");
-		balancingInterceptor.setRouter(balancer);
 		sp3.getInterceptors().add(balancingInterceptor);
-		balancer.getRuleManager().addProxyIfNew(sp3);
+		balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
+		balancer.init();
 
 		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 2000);
 		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 3000);

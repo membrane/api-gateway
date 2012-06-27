@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
-import com.predic8.membrane.core.rules.AbstractProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 
@@ -89,20 +88,36 @@ public class RuleManager {
 		return false;
 	}
 
-	public synchronized void addProxyIfNew(Rule rule) throws IOException {
+	public synchronized void addProxyAndOpenPortIfNew(Rule rule) throws IOException {
 		if (exists(rule.getKey()))
 			return;
 
 		router.getTransport().openPort(rule.getKey().getPort(), rule.getSslInboundContext());
 
-		((AbstractProxy) rule).setRouter(router);
 		rules.add(rule);
 
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleAdded(rule);
 		}
-		
 	}
+	
+	public synchronized void addProxy(Rule rule) {
+		if (exists(rule.getKey()))
+			return;
+
+		rules.add(rule);
+
+		for (IRuleChangeListener listener : listeners) {
+			listener.ruleAdded(rule);
+		}
+	}
+	
+	public synchronized void openPorts() throws IOException {
+		for (Rule rule : rules) {
+			router.getTransport().openPort(rule.getKey().getPort(), rule.getSslInboundContext());
+		}
+	}
+
 
 	public boolean exists(RuleKey key) {
 		return getRule(key) != null;

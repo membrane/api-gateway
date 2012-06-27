@@ -164,11 +164,6 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		dataSource = router.getBean(dataSourceBeanId, DataSource.class);
 	}	
 	
-	@Override
-	public void doAfterParsing() throws Exception {
-		init();
-	}
-	
 	private void logDatabaseMetaData(DatabaseMetaData metaData) throws Exception {
 		log.debug("Database metadata:");
 		log.debug("Name: "+metaData.getDatabaseProductName());

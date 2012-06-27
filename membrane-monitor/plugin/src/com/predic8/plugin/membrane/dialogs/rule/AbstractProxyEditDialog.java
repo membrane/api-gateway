@@ -140,7 +140,7 @@ public abstract class AbstractProxyEditDialog extends Dialog {
 	
 	private void replaceRule() throws Exception {
 		getRuleManager().removeRule(originalRule);
-		getRuleManager().addProxyIfNew(workingCopy);
+		getRuleManager().addProxyAndOpenPortIfNew(workingCopy);
 	}
 	
 	protected RuleManager getRuleManager() {

@@ -32,12 +32,10 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	
 	protected String id;
 	
-	public AbstractInterceptor() {
-		super(null);
-	}
+	protected Router router;
 	
-	public AbstractInterceptor(Router router) {
-		super(router);
+	public AbstractInterceptor() {
+		super();
 	}
 	
 	public Outcome handleRequest(Exchange exc) throws Exception {
@@ -123,4 +121,29 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	public String getHelpId() {
 		return null;
 	}
+	
+	/**
+	 * Should not be overridden by subclasses. Override {@link #init()} instead.
+	 */
+	@Override
+	public final void doAfterParsing() throws Exception {
+		super.doAfterParsing();
+	}
+	
+	/**
+	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
+	 */
+	public void init() throws Exception {
+		// do nothing here - override in subclasses.
+	}
+	
+	public void init(Router router) throws Exception {
+		this.router = router;
+		init();
+	}
+	
+	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.		
+		return router;
+	}
+
 }

@@ -32,10 +32,4 @@ public class AdminConsoleInterceptorParser extends AbstractParser {
 		setPropertyIfSet("readOnly", element, builder);
 	}
 
-	private void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder) {
-		if (e.hasAttribute(prop)) {
-			builder.addPropertyValue(prop, e.getAttribute(prop));
-		}
-	}
-
 }

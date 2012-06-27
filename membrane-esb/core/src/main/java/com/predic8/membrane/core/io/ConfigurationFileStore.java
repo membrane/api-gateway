@@ -25,18 +25,8 @@ public class ConfigurationFileStore implements ConfigurationStore {
 
 	/**
 	 * Reads a configuration from the classpath or a file location
-	 * 
-	 * @param fileName
-	 *            Path to proxies.xml. Use classpath:<path> to load from the
-	 *            classpath.
 	 */
 	public Proxies read(String fileName) throws Exception {
-
-		/*
-		 * if (fileName.startsWith("classpath:")) return
-		 * read(getClass().getResourceAsStream(fileName.substring(10))); else
-		 * return read(new FileInputStream(fileName));
-		 */
 		InputStream is = router.getResourceResolver().resolve(fileName);
 		try {
 			return read(is);
@@ -49,7 +39,7 @@ public class ConfigurationFileStore implements ConfigurationStore {
 		XMLStreamReader reader = new FixedStreamReader(XMLInputFactory.newInstance()
 				.createXMLStreamReader(is, Constants.UTF_8));
 
-		return (Proxies) new Proxies(router).parse(reader);
+		return (Proxies) new Proxies().parse(reader);
 	}
 
 	public void setRouter(Router router) {

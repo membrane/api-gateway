@@ -53,4 +53,6 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		}
 	}
 		
+	public void init() {
+	}
 }

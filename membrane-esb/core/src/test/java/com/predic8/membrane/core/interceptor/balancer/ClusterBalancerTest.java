@@ -45,11 +45,11 @@ public class ClusterBalancerTest extends TestCase {
 		lb = new LoadBalancingInterceptor();
 		lb.setSessionIdExtractor(extracor);
 		lb.setName("Default");
-		lb.setRouter(r);
 		
 		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3011), "predic8.com", 80);
 		sp.getInterceptors().add(lb);
-		r.getRuleManager().addProxyIfNew(sp);
+		r.getRuleManager().addProxyAndOpenPortIfNew(sp);
+		r.init();
 
 		BalancerUtil.up(r, "Default", "Default", "localhost", 2000);
 		BalancerUtil.up(r, "Default", "Default", "localhost", 3000);

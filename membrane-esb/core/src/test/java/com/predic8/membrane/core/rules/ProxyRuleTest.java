@@ -71,7 +71,7 @@ public class ProxyRuleTest {
 	@Test
 	public void testReadRuleFromByteBuffer() throws Exception {
 		ProxyRule rule = new ProxyRule();
-		rule.setRouter(router);
+		rule.init(router);
 		
 		XMLInputFactory factory = XMLInputFactory.newInstance();
 		XMLStreamReader reader = factory.createXMLStreamReader((new ByteArrayInputStream(buffer)), Constants.UTF_8);

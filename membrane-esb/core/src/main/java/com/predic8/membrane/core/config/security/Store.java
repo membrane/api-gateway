@@ -13,9 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
 public abstract class Store extends AbstractConfigElement {
@@ -24,10 +25,6 @@ public abstract class Store extends AbstractConfigElement {
 	protected String password;
 	protected String type;
 	protected String provider;
-
-	public Store(Router router) {
-		super(router);
-	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {

@@ -43,14 +43,14 @@ public class RuleManagerTest {
 		manager = new RuleManager();
 		manager.setRouter(new MockRouter());
 		proxy3013 = new ProxyRule(new ProxyRuleKey(3013));
-		manager.addProxyIfNew(proxy3013);
+		manager.addProxyAndOpenPortIfNew(proxy3013);
 		
 		forwardBlz = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3014), "thomas-bayer.com", 80);
 		
 		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3015), "thomas-bayer.com", 80);
 		
-		manager.addProxyIfNew(forwardBlz);
-		manager.addProxyIfNew(forwardBlzPOST);
+		manager.addProxyAndOpenPortIfNew(forwardBlz);
+		manager.addProxyAndOpenPortIfNew(forwardBlzPOST);
 	}
 	
 	@Test

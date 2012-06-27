@@ -49,10 +49,6 @@ public class SOAPProxy extends ServiceProxy {
 	public SOAPProxy() {
 	}
 	
-	public SOAPProxy(Router router) {
-		super(router);
-	}
-	
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new SOAPProxy();
@@ -69,9 +65,6 @@ public class SOAPProxy extends ServiceProxy {
 		wsdl = token.getAttributeValue("", "wsdl");
 		if (token.getAttributeValue("", "method") != null)
 			throw new RuntimeException("Attribute 'method' is not allowed on <soapProxy />.");
-		
-		parseWSDL();
-		init();
 	}
 	
 	@Override
@@ -97,21 +90,8 @@ public class SOAPProxy extends ServiceProxy {
 	protected void writeTarget(XMLStreamWriter out) throws XMLStreamException {
 		// do nothing
 	}
-
-	@Override
-	public void setRouter(Router router) {
-		Router old = router;
-		super.setRouter(router);
-		if (old != router) {
-			parseWSDL();
-			init();
-		}
-	}
 	
-	private void parseWSDL() {
-		if (router == null || wsdl == null)
-			return;
-		
+	private void parseWSDL(Router router) {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(wsdl);
 		try {
@@ -172,8 +152,10 @@ public class SOAPProxy extends ServiceProxy {
 		return null;
 	}
 	
-	private void init() {
-		if (router == null || wsdl == null)
+	@Override
+	public void init(Router router) throws Exception {
+				
+		if (wsdl == null)
 			return;
 		if (inited) {
 			interceptors.remove(0);
@@ -181,21 +163,27 @@ public class SOAPProxy extends ServiceProxy {
 		}
 		inited = true;
 
+		parseWSDL(router);
+		
 		WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
 		wp.setWsdl(wsdl);
-		wp.setRouter(router);
 		interceptors.add(0, wp);
 
 		SOAPUIInterceptor sui = new SOAPUIInterceptor();
 		sui.setWsdl(wsdl);
-		sui.setRouter(router);
 		interceptors.add(1, sui);
+		
+		super.init(router);
 	}
 
 	protected void writeInterceptors(XMLStreamWriter out)
 			throws XMLStreamException {
 		if (interceptors.size() > 2)
 			writeInterceptors(out, interceptors.subList(2, interceptors.size()));
+	}
+
+	public String getWsdl() {
+		return wsdl;
 	}
 
 }

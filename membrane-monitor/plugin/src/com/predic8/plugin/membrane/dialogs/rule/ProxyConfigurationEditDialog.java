@@ -18,8 +18,8 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.eclipse.swt.widgets.Shell;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.*;
+import com.predic8.membrane.core.rules.ProxyRule;
+import com.predic8.membrane.core.rules.Rule;
 
 public class ProxyConfigurationEditDialog extends AbstractProxyConfigurationEditDialog {
 
@@ -34,7 +34,7 @@ public class ProxyConfigurationEditDialog extends AbstractProxyConfigurationEdit
 
 	@Override
 	protected Rule parseRule(XMLStreamReader reader) throws Exception {
-		return (ProxyRule)new ProxyRule(Router.getInstance()).parse(reader);
+		return (ProxyRule)new ProxyRule().parse(reader);
 	}
 
 }

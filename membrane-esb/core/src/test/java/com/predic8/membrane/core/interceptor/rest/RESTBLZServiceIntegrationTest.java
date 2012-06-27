@@ -38,7 +38,7 @@ public class RESTBLZServiceIntegrationTest {
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3005), "thomas-bayer.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyIfNew(rule);
+		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		
 		
 		HTTP2XMLInterceptor http2xml = new HTTP2XMLInterceptor();

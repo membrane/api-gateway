@@ -60,7 +60,7 @@ public class AccessControlInterceptorIntegrationTest {
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3008), "thomas-bayer.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyIfNew(rule);
+		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 	}
 	
 	@After
@@ -127,11 +127,11 @@ public class AccessControlInterceptorIntegrationTest {
 		assertEquals(200, getClient(FIXED_IP).executeMethod(getBLZRequestMethod()));
 	}*/
 	
-	private void setInterceptor(String fileName) {
+	private void setInterceptor(String fileName) throws Exception {
 		AccessControlInterceptor interceptor = new AccessControlInterceptor();
-		interceptor.setRouter(router);
 		interceptor.setAclFilename(fileName);
 		router.addUserFeatureInterceptor(interceptor);
+		router.init();
 	}
 	
 	private PostMethod getBLZRequestMethod() {

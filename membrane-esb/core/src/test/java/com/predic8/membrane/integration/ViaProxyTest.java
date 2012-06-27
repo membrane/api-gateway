@@ -20,17 +20,19 @@ import java.io.InputStream;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 
 public class ViaProxyTest {
@@ -42,14 +44,14 @@ public class ViaProxyTest {
 	public void setUp() throws Exception {
 		proxyRouter = new HttpRouter();
 		
-		proxyRouter.getRuleManager().addProxyIfNew(new ProxyRule(new ProxyRuleKey(3128)));
+		proxyRouter.getRuleManager().addProxyAndOpenPortIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 		
 		router = new HttpRouter();
-		router.getRuleManager().addProxyIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
+		router.getRuleManager().addProxyAndOpenPortIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
 		
-		Proxies config = new Proxies(proxyRouter);
+		Proxies config = new Proxies();
 		
-		ProxyConfiguration proxy = new ProxyConfiguration(proxyRouter);
+		ProxyConfiguration proxy = new ProxyConfiguration();
 		proxy.setUseProxy(true);
 		proxy.setProxyHost("localhost");
 		proxy.setProxyPort(3128);

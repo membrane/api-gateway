@@ -249,7 +249,7 @@ public class ProxyPreferencePage extends PreferencePage implements IWorkbenchPre
 
 	private void saveWidgetValues(boolean useProxy) {
 		Router router = Router.getInstance();
-		ProxyConfiguration proxy = new ProxyConfiguration(router);
+		ProxyConfiguration proxy = new ProxyConfiguration();
 		proxy.setUseProxy(useProxy);
 		proxy.setProxyHost(textHost.getText());
 		

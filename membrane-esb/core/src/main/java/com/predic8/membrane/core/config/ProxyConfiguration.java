@@ -21,7 +21,6 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.codec.binary.Base64;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
 
 public class ProxyConfiguration extends AbstractConfigElement {
 
@@ -40,10 +39,6 @@ public class ProxyConfiguration extends AbstractConfigElement {
 	private String username;
 
 	private String password;
-
-	public ProxyConfiguration(Router router) {
-		super(router);
-	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {

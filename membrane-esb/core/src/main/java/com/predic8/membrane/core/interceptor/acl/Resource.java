@@ -24,8 +24,8 @@ import javax.xml.stream.XMLStreamReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.config.AbstractConfigElement;
+import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class Resource extends AbstractConfigElement {
@@ -38,10 +38,6 @@ public class Resource extends AbstractConfigElement {
 	
 	protected Pattern pattern;
 	
-	public Resource(Router router) {
-		super(router);
-	}
-	
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
@@ -50,17 +46,15 @@ public class Resource extends AbstractConfigElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Ip.ELEMENT_NAME.equals(child)) {
-			clientAddresses.add(((Ip) (new Ip(router)).parse(token)));
+			clientAddresses.add(((Ip) (new Ip()).parse(token)));
 		} else if (Hostname.ELEMENT_NAME.equals(child)) {
-			clientAddresses.add(((Hostname) (new Hostname(router)).parse(token)));
+			clientAddresses.add(((Hostname) (new Hostname()).parse(token)));
 		} else if (Any.ELEMENT_NAME.equals(child)) {
-			clientAddresses.add(((Any) (new Any(router)).parse(token)));
+			clientAddresses.add(((Any) (new Any()).parse(token)));
 		} else if ("clients".equals(child)) {
 			new GenericComplexElement(this).parse(token);
 		}
 	}
-	
-	
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {

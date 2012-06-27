@@ -41,7 +41,7 @@ public class ConnectionTest {
 		
 		Rule rule2000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 2000), "predic8.com", 80);
 		router = new HttpRouter();
-		router.getRuleManager().addProxyIfNew(rule2000);
+		router.getRuleManager().addProxyAndOpenPortIfNew(rule2000);
 		
 		conLocalhost = Connection.open(InetAddress.getByName("localhost"), 2000, null, null);
 		con127_0_0_1 = Connection.open(InetAddress.getByAddress(LOCALHOST_IP), 2000, null, null);

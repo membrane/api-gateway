@@ -18,13 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Router;
-
 public class AdjustHostHeader extends AbstractConfigElement {
-
-	public AdjustHostHeader(Router router) {
-		super(router);
-	}
 
 	public static final String ELEMENT_NAME = "adjustHostHeader";
 	

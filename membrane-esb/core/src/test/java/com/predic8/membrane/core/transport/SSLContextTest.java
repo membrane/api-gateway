@@ -44,7 +44,7 @@ public class SSLContextTest {
 	}
 	
 	private class SSLContextBuilder {
-		private SSLParser sslParser = new SSLParser(router);
+		private SSLParser sslParser = new SSLParser();
 		
 		public SSLContext build() {
 			return new SSLContext(sslParser, router.getResourceResolver());
@@ -61,14 +61,14 @@ public class SSLContextTest {
 		}
 
 		private SSLContextBuilder withKeyStore(String keystore) {
-			sslParser.setKeyStore(new KeyStore(router));
+			sslParser.setKeyStore(new KeyStore());
 			sslParser.getKeyStore().setLocation(keystore);
 			sslParser.getKeyStore().setKeyPassword("secret");
 			return this;
 		}
 
 		private SSLContextBuilder withTrustStore(String keystore) {
-			sslParser.setTrustStore(new TrustStore(router));
+			sslParser.setTrustStore(new TrustStore());
 			sslParser.getTrustStore().setLocation(keystore);
 			sslParser.getTrustStore().setPassword("secret");
 			return this;

@@ -18,8 +18,6 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.MockRouter;
-
 
 public class ProxyTest {
 
@@ -27,7 +25,7 @@ public class ProxyTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		proxy = new ProxyConfiguration(new MockRouter());
+		proxy = new ProxyConfiguration();
 		proxy.setProxyUsername("predic8");
 		proxy.setProxyPassword("secret");
 	}

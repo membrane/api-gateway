@@ -100,7 +100,6 @@ public class Router {
 
 	public void setTransport(Transport transport) {
 		this.transport = transport;
-		transport.setRouter(this);
 	}
 
 	public ConfigurationManager getConfigurationManager() {
@@ -111,16 +110,8 @@ public class Router {
 		Map<String, Interceptor> map = beanFactory.getBeansOfType(Interceptor.class);
 		for (Map.Entry<String, Interceptor> entry : map.entrySet()) {
 			entry.getValue().setId(entry.getKey());
-			entry.getValue().setRouter(this);
 		}
 		return map.values();
-	}
-
-	public Interceptor getInterceptorFor(String id) {
-		Interceptor i = beanFactory.getBean(id, Interceptor.class);
-		i.setId(id); // very important, returned bean does not have id set
-		i.setRouter(this);
-		return i;
 	}
 
 	public <E> E getBean(String id, Class<E> clazz) {
@@ -177,4 +168,9 @@ public class Router {
 		throw new IllegalArgumentException("No parent proxy found for the given interceptor.");
 	}
 
+	public void init() throws Exception {
+		for (Rule rule : getRuleManager().getRules())
+			rule.init(this);
+		transport.init(this);
+	}
 }

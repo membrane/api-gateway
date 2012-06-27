@@ -64,10 +64,9 @@ public class SOAPFaultTest {
 
 	private ValidatorInterceptor createValidatorInterceptor(boolean skipFaults) throws Exception {
 		ValidatorInterceptor i = new ValidatorInterceptor();
-		i.setRouter(r);
 		i.setWsdl("src/test/resources/validation/ArticleService.xml");
 		i.setSkipFaults(skipFaults);
-		i.init();
+		i.init(r);
 		return i;
 	}
 

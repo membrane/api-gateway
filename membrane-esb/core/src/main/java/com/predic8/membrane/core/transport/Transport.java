@@ -32,12 +32,6 @@ public class Transport {
 	private Router router;
 	private int httpClientRetries = 5;
 	private boolean printStackTrace = false;
-	
-	private void setRouterForInterceptors() {	
-		for (Interceptor interceptor : interceptors) {
-			interceptor.setRouter(router);
-		}
-	}
 
 	public List<Interceptor> getInterceptors() {
 		return interceptors;
@@ -47,9 +41,11 @@ public class Transport {
 		this.interceptors = interceptors;
 	}
 
-	public void setRouter(Router router) {
+	public void init(Router router) throws Exception {
 		this.router = router;
-		setRouterForInterceptors();
+		for (Interceptor interceptor : interceptors) {
+			interceptor.init(router);
+		}
 	}
 	
 	public Router getRouter() {

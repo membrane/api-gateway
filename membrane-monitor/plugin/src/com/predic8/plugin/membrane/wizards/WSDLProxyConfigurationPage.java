@@ -210,12 +210,12 @@ public class WSDLProxyConfigurationPage extends AbstractProxyWizardPage {
 	@Override
 	boolean performFinish(AddProxyWizard wizard) throws IOException {
 		Port p = (Port)tableViewer.getCheckedElements()[0];
-		getRuleManager().addProxyIfNew(createServiceProxy(p));
+		getRuleManager().addProxyAndOpenPortIfNew(createServiceProxy(p));
 		return true;
 	}
 	
 	private ServiceProxy createServiceProxy(Port p) throws IOException {
-		ServiceProxy proxy = new ServiceProxy(Router.getInstance());
+		ServiceProxy proxy = new ServiceProxy();
 		ServiceProxyKey key = new ServiceProxyKey(80);
 		key.setMethod("*");
 		proxy.setKey(key);
@@ -249,14 +249,22 @@ public class WSDLProxyConfigurationPage extends AbstractProxyWizardPage {
 		if (!Constants.EMPTY_STRING.equals(textRewriteWSDLPort.getText().trim()))
 			interceptor.setPort(textRewriteWSDLPort.getText().trim());
 		
-		interceptor.setRouter(Router.getInstance());
+		try {
+			interceptor.init(Router.getInstance());
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		return interceptor;
 	}
 	
 	private Interceptor createValidatorInterceptor() {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
 		interceptor.setWsdl(wsdl);
-		interceptor.setRouter(Router.getInstance());
+		try {
+			interceptor.init(Router.getInstance());
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		return interceptor;
 	}
 	

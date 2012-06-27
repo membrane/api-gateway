@@ -32,10 +32,6 @@ public class WsdlPublisherInterceptorParser extends AbstractParser {
 		if (e.hasAttribute("wsdl")) {
 			builder.addPropertyValue("wsdl", e.getAttribute("wsdl"));			
 		}
-		
-		builder.addPropertyReference("router", "router");
-		
-		builder.setInitMethodName("init");
 	}
 
 }

@@ -83,7 +83,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		return accessControl;
 	}
 
-	private void init() throws Exception {
+	public void init() throws Exception {
 		accessControl = parse(aclFilename, router.getResourceResolver());
 	}
 
@@ -91,7 +91,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	    try {
 			XMLInputFactory factory = XMLInputFactory.newInstance();
 		    XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(resourceResolver.resolve(fileName)));
-		    return (AccessControl) new AccessControl(router).parse(reader);
+		    return (AccessControl) new AccessControl().parse(reader);
 	    } catch (Exception e) {
 	    	log.error("Error initializing accessControl.", e);
 	    	e.printStackTrace();
@@ -114,11 +114,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		aclFilename = token.getAttributeValue("", "file");	
 	}
 
-	@Override
-	public void doAfterParsing() throws Exception {
-		init();
-	}
-	
 	@Override
 	public String getShortDescription() {
 		return "Authenticates incoming requests based on the file " + HtmlUtils.htmlEscape(aclFilename) + " .";

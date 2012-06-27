@@ -34,10 +34,4 @@ public class ClusterNotificationInterceptorParser extends AbstractParser {
 		setPropertyIfSet("timeout", e, builder);				
 	}
 
-	private void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder) {
-		if (e.hasAttribute(prop)) {
-			builder.addPropertyValue(prop, e.getAttribute(prop));
-		}
-	}
-	
 }

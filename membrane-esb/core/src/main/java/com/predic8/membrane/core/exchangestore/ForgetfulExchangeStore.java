@@ -100,4 +100,7 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 		
 	}
 
+	@Override
+	public void init() throws Exception {
+	}
 }

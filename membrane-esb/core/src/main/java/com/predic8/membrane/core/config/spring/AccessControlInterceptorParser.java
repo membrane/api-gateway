@@ -30,8 +30,6 @@ public class AccessControlInterceptorParser extends AbstractParser {
 		setIdIfNeeded(element, "accessControl");
 		
 		builder.addPropertyValue("aclFilename", element.getAttribute("file"));
-		builder.addPropertyReference("router", "router");
-		builder.setInitMethodName("init");
 	}
 	
 }

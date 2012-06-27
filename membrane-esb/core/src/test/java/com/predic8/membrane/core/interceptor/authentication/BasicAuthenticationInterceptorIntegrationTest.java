@@ -38,7 +38,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 	public void testDeny() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
 		HttpRouter router = new HttpRouter();
-		router.getRuleManager().addProxyIfNew(rule);
+		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		
 		BasicAuthenticationInterceptor interceptor = new BasicAuthenticationInterceptor();
 		Map<String, String> mapping = new HashMap<String, String>();

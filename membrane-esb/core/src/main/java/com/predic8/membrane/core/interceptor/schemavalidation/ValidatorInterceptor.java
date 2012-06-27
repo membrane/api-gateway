@@ -25,6 +25,8 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.membrane.core.util.TextUtil;
 
@@ -72,8 +74,16 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 			setValidator(new SchematronValidator(resourceResolver, schematron, createFailureHandler(), router));
 		}
 		
-		if (validator == null)
-			throw new Exception("<validator> must have an attribute specifying the validator.");
+		if (validator == null) {
+			Rule parent = router.getParentProxy(this);
+			if (parent instanceof SOAPProxy) {
+				wsdl = ((SOAPProxy)parent).getWsdl();
+				name = "SOAP Validator";
+				setValidator(new WSDLValidator(resourceResolver, wsdl, createFailureHandler(), skipFaults));
+			}
+			if (validator == null)
+				throw new Exception("<validator> must have an attribute specifying the validator.");
+		}
 	}
 	
 	@Override
@@ -120,11 +130,6 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		schematron = token.getAttributeValue("", "schematron");
 		failureHandler = token.getAttributeValue("", "failureHandler");
 		skipFaults = Boolean.parseBoolean(token.getAttributeValue("", "skipFaults"));
-	}
-	
-	@Override
-	public void doAfterParsing() throws Exception {
-		init();
 	}
 
 	public void setWsdl(String wsdl) {
@@ -176,9 +181,9 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
-	public void setRouter(Router router) {
-		super.setRouter(router);
+	public void init(Router router) throws Exception {
 		resourceResolver = router.getResourceResolver();
+		super.init(router);
 	}
 	
 	public void setResourceResolver(ResourceResolver resourceResolver) {

@@ -20,18 +20,12 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.predic8.membrane.core.Router;
-
 
 public class ProxyRule extends AbstractProxy {
 
 	public static final String ELEMENT_NAME = "proxy";
 	
 	public ProxyRule() {}
-	
-	public ProxyRule(Router router) {
-		setRouter(router);
-	}
 	
 	public ProxyRule(ProxyRuleKey ruleKey) {
 		super(ruleKey);

@@ -13,9 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
 public class SSLParser extends AbstractConfigElement {
@@ -26,10 +27,6 @@ public class SSLParser extends AbstractConfigElement {
 	private String protocol;
 	private String ciphers;
 	private String clientAuth;
-
-	public SSLParser(Router router) {
-		super(router);
-	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
@@ -44,10 +41,10 @@ public class SSLParser extends AbstractConfigElement {
 	protected void parseChildren(XMLStreamReader token, String child)
 			throws Exception {
 		if (KeyStore.ELEMENT_NAME.equals(child)) {
-			keyStore = new KeyStore(router);
+			keyStore = new KeyStore();
 			keyStore.parse(token);
 		} else if (TrustStore.ELEMENT_NAME.equals(child)) {
-			trustStore = new TrustStore(router);
+			trustStore = new TrustStore();
 			trustStore.parse(token);
 		}
 	}

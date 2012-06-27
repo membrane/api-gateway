@@ -119,16 +119,15 @@ public class LoadBalancingWithClusterManagerTest {
 		cniRule.getInterceptors().add(cni);
 		
 		lb = new HttpRouter();
-		lbi.setRouter(lb);
-		cni.setRouter(lb);
-		lb.getRuleManager().addProxyIfNew(lbiRule);
-		lb.getRuleManager().addProxyIfNew(cniRule);
+		lb.getRuleManager().addProxyAndOpenPortIfNew(lbiRule);
+		lb.getRuleManager().addProxyAndOpenPortIfNew(cniRule);
+		lb.init();
 	}
 
 	private DummyWebServiceInterceptor startNode(HttpRouter node, int port) throws IOException {
 		DummyWebServiceInterceptor service1 = new DummyWebServiceInterceptor();
 		node.addUserFeatureInterceptor(service1);
-		node.getRuleManager().addProxyIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
+		node.getRuleManager().addProxyAndOpenPortIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
 		return service1;
 	}
 

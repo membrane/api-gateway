@@ -16,8 +16,6 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.InetAddress;
 
-import com.predic8.membrane.core.Router;
-
 public class Any extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "any";
@@ -27,10 +25,6 @@ public class Any extends AbstractClientAddress {
 		return ELEMENT_NAME;
 	}
 	
-	public Any(Router router) {
-		super(router);
-	}
-
 	@Override
 	public boolean matches(InetAddress str) {
 		return true;

@@ -15,24 +15,6 @@
 package com.predic8.membrane.core.config;
 
 
-import com.predic8.membrane.core.Router;
-
 public abstract class AbstractConfigElement extends AbstractXmlElement {
-
-	/**
-	 * Needed to resolve interceptor IDs into interceptor beans
-	 */	
-	protected Router router;
-	 
-	public AbstractConfigElement(Router router) {
-		this.router = router;
-	}
-	
-	public void setRouter(Router router) {
-		this.router = router;
-	}
-	
-	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.		
-		return router;
-	}		
+	// TODO: remove
 }

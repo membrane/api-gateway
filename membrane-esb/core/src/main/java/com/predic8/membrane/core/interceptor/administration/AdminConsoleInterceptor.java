@@ -52,11 +52,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	public void setRouter(Router router) {
-		super.setRouter(router);
-		r.setRouter(router);
-		dapi.setRouter(router);
-		wsi.setRouter(router);
+	public void init(Router router) throws Exception {
+		super.init(router);
+		r.init(router);
+		dapi.init(router);
+		wsi.init(router);
 	}
 
 	@Override

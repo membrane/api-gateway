@@ -36,13 +36,10 @@ public class ServiceProxy extends AbstractProxy {
 	private String targetHost;
 	private int targetPort;
 	private String targetURL;
+	private SSLParser sslInboundParser, sslOutboundParser;
 	private SSLContext sslInboundContext, sslOutboundContext;
 	
 	public ServiceProxy() {}
-
-	public ServiceProxy(Router router) {
-		setRouter(router);
-	}
 
 	public ServiceProxy(ServiceProxyKey ruleKey, String targetHost, int targetPort) {
 		this.key = ruleKey;
@@ -100,9 +97,8 @@ public class ServiceProxy extends AbstractProxy {
 				protected void parseChildren(XMLStreamReader token, String child)
 						throws Exception {
 					if ("ssl".equals(child)) {
-						SSLParser sslOutboundParser = new SSLParser(router);
+						SSLParser sslOutboundParser = new SSLParser();
 						sslOutboundParser.parse(token);
-						sslOutboundContext = new SSLContext(sslOutboundParser, router.getResourceResolver());
 					} else {
 						super.parseChildren(token, child);
 					}
@@ -116,13 +112,12 @@ public class ServiceProxy extends AbstractProxy {
 						target.getAttribute("url");
 		} else if (Path.ELEMENT_NAME.equals(child)) {
 			key.setUsePathPattern(true);
-			Path p = (Path)(new Path(router)).parse(token);
+			Path p = (Path)(new Path()).parse(token);
 			key.setPathRegExp(p.isRegExp());
 			key.setPath(p.getValue());
 		} else if ("ssl".equals(child)) {
-			SSLParser sslInboundParser = new SSLParser(router);
+			SSLParser sslInboundParser = new SSLParser();
 			sslInboundParser.parse(token);
-			sslInboundContext = new SSLContext(sslInboundParser, router.getResourceResolver());
 		} else {
 			super.parseChildren(token, child);
 		}
@@ -147,7 +142,7 @@ public class ServiceProxy extends AbstractProxy {
 		writeAttrIfTrue(out, !"*".equals(key.getMethod()), "method", key.getMethod());		
 
 		if (key.isUsePathPattern()) {
-			Path path = new Path(router);
+			Path path = new Path();
 			path.setValue(key.getPath());
 			path.setRegExp(key.isPathRegExp());
 			path.write(out);
@@ -195,5 +190,14 @@ public class ServiceProxy extends AbstractProxy {
 	@Override
 	public SSLContext getSslOutboundContext() {
 		return sslOutboundContext;
+	}
+	
+	@Override
+	public void init(Router router) throws Exception {
+		super.init(router);
+		if (sslInboundParser != null)
+			sslInboundContext = new SSLContext(sslInboundParser, router.getResourceResolver());
+		if (sslOutboundParser != null)
+			sslOutboundContext = new SSLContext(sslOutboundParser, router.getResourceResolver());
 	}
 }

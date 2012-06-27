@@ -50,8 +50,12 @@ public class ConfigurationManager {
 		router.getRuleManager().removeAllRules();
 
 		for (Rule rule : getProxies().getRules()) {
-			router.getRuleManager().addProxyIfNew(rule);
+			router.getRuleManager().addProxy(rule);
 		}
+		
+		router.init();
+		
+		router.getRuleManager().openPorts();
 
 		if (!fileName.startsWith("classpath:") && hotDeploy) {
 			if (deploymentThread == null) {
@@ -66,13 +70,12 @@ public class ConfigurationManager {
 
 	public Proxies getProxies() {
 		if (proxies == null)
-			proxies = new Proxies(router);
+			proxies = new Proxies();
 		return proxies;
 	}
 
 	public void setProxies(Proxies configuration) {
 		this.proxies = configuration;
-		configuration.setRouter(router);
 	}
 
 	public ConfigurationStore getConfigurationStore() {

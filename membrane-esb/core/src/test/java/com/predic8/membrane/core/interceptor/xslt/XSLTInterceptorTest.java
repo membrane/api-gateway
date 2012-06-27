@@ -40,9 +40,8 @@ public class XSLTInterceptorTest extends TestCase {
 				"/customer.xml")).build());
 
 		XSLTInterceptor i = new XSLTInterceptor();
-		i.setRouter(new HttpRouter());
 		i.setXslt("classpath:/customer2person.xsl");
-		i.doAfterParsing();
+		i.init(new HttpRouter());
 		i.handleResponse(exc);
 
 		//printBodyContent();
@@ -62,9 +61,8 @@ public class XSLTInterceptorTest extends TestCase {
 		exc.setProperty("XSLT_COMPANY", "predic8");
 		
 		XSLTInterceptor i = new XSLTInterceptor();
-		i.setRouter(new HttpRouter());
 		i.setXslt("classpath:/customer2personAddCompany.xsl");
-		i.doAfterParsing();
+		i.init(new HttpRouter());
 		i.handleResponse(exc);
 
 		//printBodyContent();

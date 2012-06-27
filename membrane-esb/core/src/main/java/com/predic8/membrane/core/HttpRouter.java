@@ -38,16 +38,17 @@ public class HttpRouter extends Router {
 	 */
 	public Transport createTransport() {
 		Transport transport = new HttpTransport();
-		transport.setRouter(this);
 		List<Interceptor> interceptors = new ArrayList<Interceptor>();
 		interceptors.add(new RuleMatchingInterceptor());		
 		interceptors.add(new DispatchingInterceptor());
 		interceptors.add(new UserFeatureInterceptor());
 		interceptors.add(new HTTPClientInterceptor());
-		for (Interceptor i : interceptors) {
-			i.setRouter(this);
-		}
 		transport.setInterceptors(interceptors);
+		try {
+			transport.init(this);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 		return transport;
 	}
 	

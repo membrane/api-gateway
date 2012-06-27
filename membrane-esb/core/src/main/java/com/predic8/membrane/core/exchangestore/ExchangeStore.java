@@ -54,5 +54,5 @@ public interface ExchangeStore {
 	
 	public List<AbstractExchange> getAllExchangesAsList();
 	
-	
+	public void init() throws Exception;
 }

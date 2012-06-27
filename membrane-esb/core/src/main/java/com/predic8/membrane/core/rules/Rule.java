@@ -19,6 +19,7 @@ import java.util.Map;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.SSLContext;
@@ -63,4 +64,5 @@ public interface Rule {
 
 	public SSLContext getSslOutboundContext();
 	
+	public void init(Router router) throws Exception;
 }

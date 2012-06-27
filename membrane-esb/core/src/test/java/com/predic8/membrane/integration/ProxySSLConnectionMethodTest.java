@@ -36,7 +36,7 @@ public class ProxySSLConnectionMethodTest {
 	public void setUp() throws Exception {
 		router = new HttpRouter();
 		router.setExchangeStore(new MemoryExchangeStore());
-		router.getRuleManager().addProxyIfNew(new ProxyRule(new ProxyRuleKey(3128)));
+		router.getRuleManager().addProxyAndOpenPortIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 	}
 	
 	@After

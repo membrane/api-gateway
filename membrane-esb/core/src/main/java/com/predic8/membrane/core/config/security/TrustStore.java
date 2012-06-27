@@ -17,17 +17,11 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Router;
-
 public class TrustStore extends Store {
 
 	public static final String ELEMENT_NAME = "truststore";
 
 	protected String algorithm;
-	
-	public TrustStore(Router router) {
-		super(router);
-	}
 
 	@Override
 	protected String getElementName() {

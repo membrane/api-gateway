@@ -13,24 +13,52 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
-import javax.xml.stream.*;
+import javax.xml.stream.FactoryConfigurationError;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.*;
-import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.FixedStreamReader;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.AbstractConfigElement;
+import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.config.ElementName;
+import com.predic8.membrane.core.config.LocalHost;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.CountInterceptor;
+import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
+import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor;
+import com.predic8.membrane.core.interceptor.IndexInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.interceptor.LogInterceptor;
+import com.predic8.membrane.core.interceptor.MessageAnalyser;
+import com.predic8.membrane.core.interceptor.RegExReplaceInterceptor;
+import com.predic8.membrane.core.interceptor.ThrottleInterceptor;
+import com.predic8.membrane.core.interceptor.WADLInterceptor;
+import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
 import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor;
-import com.predic8.membrane.core.interceptor.balancer.*;
+import com.predic8.membrane.core.interceptor.balancer.ClusterNotificationInterceptor;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.cbr.XPathCBRInterceptor;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor;
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
@@ -39,7 +67,10 @@ import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
-import com.predic8.membrane.core.interceptor.statistics.*;
+import com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor;
+import com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor;
+import com.predic8.membrane.core.interceptor.statistics.StatisticsMemoryProvider;
+import com.predic8.membrane.core.interceptor.statistics.StatisticsProvider;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SOAPStackTraceFilterInterceptor;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterInterceptor;
 import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor;
@@ -90,11 +121,9 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 	}
 
 	public AbstractProxy() {
-		super(null);
 	}
 
 	public AbstractProxy(RuleKey ruleKey) {
-		super(null);
 		this.key = ruleKey;
 	}
 
@@ -150,9 +179,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			throws Exception {
 		Interceptor i = null;
 		if ("interceptor".equals(child)) {
-			i = getInterceptorBId(readInterceptor(token).getId());
-			((AbstractXmlElement) i).doAfterParsing(); // TODO move to right
-														// place
+			i = getInterceptorFor(readInterceptor(token).getId());
 		} else {
 			i = getInlinedInterceptor(token, child);
 		}
@@ -162,14 +189,15 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 
 	private AbstractInterceptor readInterceptor(XMLStreamReader token)
 			throws Exception {
-		return (AbstractInterceptor) (new AbstractInterceptor(router))
-				.parse(token);
+		return (AbstractInterceptor) (new AbstractInterceptor()).parse(token);
 	}
 
-	private Interceptor getInterceptorBId(String id) {
-		return router.getInterceptorFor(id);
+	private Interceptor getInterceptorFor(String id) {
+		Interceptor i = Router.getBeanFactory().getBean(id, Interceptor.class);
+		i.setId(id); // returned bean does not have id set
+		return i;
 	}
-
+	
 	private Interceptor getInlinedInterceptor(XMLStreamReader token, String name)
 			throws Exception {
 		AbstractInterceptor i = null;
@@ -252,7 +280,6 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			if (i == null)
 				throw new Exception("Unknown interceptor found: " + name);
 		}
-		i.setRouter(router);
 		i.parse(token);
 		return i;
 	}
@@ -398,7 +425,6 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 
 		XMLStreamReader r = getStreamReaderFor(xml.getBytes(Constants.UTF_8_CHARSET));
 		AbstractProxy newObject = (AbstractProxy) getNewInstance().parse(r);
-		newObject.setRouter(Router.getInstance());
 		return newObject;
 	}
 
@@ -432,5 +458,29 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 	@Override
 	public SSLContext getSslOutboundContext() {
 		return null;
+	}
+	
+	/**
+	 * Should not be overridden by subclasses. Override {@link #init()} instead.
+	 */
+	@Override
+	public final void doAfterParsing() throws Exception {
+		super.doAfterParsing();
+	}
+	
+	/**
+	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
+	 */
+	public void init(Router router) throws Exception {
+		init();
+		for (Interceptor i : interceptors)
+			i.init(router);
+	}
+	
+	public void init() throws Exception {
+	}
+	
+	public AbstractProxy parse(XMLStreamReader token) throws Exception {
+		return (AbstractProxy) super.parse(token); // we know it's covariant
 	}
 }

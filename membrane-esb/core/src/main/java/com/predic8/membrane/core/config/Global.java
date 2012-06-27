@@ -21,8 +21,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Router;
-
 public class Global extends AbstractConfigElement {
 
 	public static final String INDENT_MSG = "indent_message";
@@ -47,8 +45,7 @@ public class Global extends AbstractConfigElement {
 
 	private ProxyConfiguration proxyConfiguration;
 
-	public Global(Router router) {
-		super(router);
+	public Global() {
 		setIndentMessage(true);
 		setAdjustHostHeader(true);
 		setTrackExchange(false);
@@ -70,8 +67,7 @@ public class Global extends AbstractConfigElement {
 			values.put(TRACK_EXCHANGE, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_AUTO_TRACK)));
 			values.put(INDENT_MSG, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_INDENT_MSG)));
 		} else if ("proxyConfiguration".equals(child)) {
-			proxyConfiguration = (ProxyConfiguration) new ProxyConfiguration(
-					router).parse(token);
+			proxyConfiguration = (ProxyConfiguration) new ProxyConfiguration().parse(token);
 		}
 	}
 

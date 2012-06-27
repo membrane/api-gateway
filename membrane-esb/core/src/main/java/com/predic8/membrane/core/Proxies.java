@@ -43,17 +43,7 @@ public class Proxies extends AbstractConfigElement {
 	private Global global;
 
 	public Proxies() {
-		this(null);
-	}
-
-	public Proxies(Router router) {
-		super(router);
-		global = new Global(router);
-	}
-
-	public void setRouter(Router router) {
-		global.setRouter(router);
-		super.setRouter(router);
+		global = new Global();
 	}
 
 	public Collection<Rule> getRules() {
@@ -107,11 +97,11 @@ public class Proxies extends AbstractConfigElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if ("serviceProxy".equals(child)) {
-			rules.add((ServiceProxy) new ServiceProxy(router).parse(token));
+			rules.add(new ServiceProxy().parse(token));
 		} else if ("soapProxy".equals(child)) {
-			rules.add((ServiceProxy) new SOAPProxy(router).parse(token));
+			rules.add(new SOAPProxy().parse(token));
 		} else if ("proxy".equals(child)) {
-			rules.add((ProxyRule) new ProxyRule(router).parse(token));
+			rules.add(new ProxyRule().parse(token));
 		} else if ("global".equals(child)) {
 			global.parse(token);
 		}

@@ -94,7 +94,7 @@ public class ExceptionHandlingTest {
 				throw new Exception("secret");
 			}
 		});
-		router.getRuleManager().addProxyIfNew(sp2);
+		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
 	}
 
 	@After

@@ -60,10 +60,9 @@ public class WSDLPublisherTest {
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", port), "", -1);
 		WSDLPublisherInterceptor wi = new WSDLPublisherInterceptor();
 		wi.setWsdl(wsdlLocation);
-		wi.setRouter(router);
-		wi.doAfterParsing();
+		wi.init(router);
 		sp2.getInterceptors().add(wi);
-		router.getRuleManager().addProxyIfNew(sp2);
+		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
 	}
 	
 	@After
