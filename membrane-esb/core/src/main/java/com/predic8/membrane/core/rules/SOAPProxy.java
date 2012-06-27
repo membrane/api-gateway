@@ -29,6 +29,8 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
+import com.predic8.membrane.core.interceptor.soap.SOAPUIInterceptor;
 import com.predic8.wsdl.AbstractBinding;
 import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.Port;
@@ -42,6 +44,7 @@ public class SOAPProxy extends ServiceProxy {
 	public static final String ELEMENT_NAME = "soapProxy";
 
 	protected String wsdl;
+	private boolean inited;
 	
 	public SOAPProxy() {
 	}
@@ -68,6 +71,7 @@ public class SOAPProxy extends ServiceProxy {
 			throw new RuntimeException("Attribute 'method' is not allowed on <soapProxy />.");
 		
 		parseWSDL();
+		init();
 	}
 	
 	@Override
@@ -98,8 +102,10 @@ public class SOAPProxy extends ServiceProxy {
 	public void setRouter(Router router) {
 		Router old = router;
 		super.setRouter(router);
-		if (old != router)
+		if (old != router) {
 			parseWSDL();
+			init();
+		}
 	}
 	
 	private void parseWSDL() {
@@ -134,8 +140,9 @@ public class SOAPProxy extends ServiceProxy {
 			try {
 				URL url = new URL(location);
 				setTargetURL(location);
+				key.setUsePathPattern(true);
 				key.setPathRegExp(true);
-				key.setPath(Pattern.quote(url.getPath()) + "(|\\?wsdl|\\?WSDL|\\?xsd.*)");
+				key.setPath(Pattern.quote(url.getPath()) + "(|\\?[wW][sS][dD][lL]|\\?xsd.*)");
 				((ServiceProxyKey)key).setMethod("*");
 			} catch (MalformedURLException e) {
 				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.");
@@ -163,6 +170,32 @@ public class SOAPProxy extends ServiceProxy {
 			}
 		}
 		return null;
+	}
+	
+	private void init() {
+		if (router == null || wsdl == null)
+			return;
+		if (inited) {
+			interceptors.remove(0);
+			interceptors.remove(1);
+		}
+		inited = true;
+
+		WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
+		wp.setWsdl(wsdl);
+		wp.setRouter(router);
+		interceptors.add(0, wp);
+
+		SOAPUIInterceptor sui = new SOAPUIInterceptor();
+		sui.setWsdl(wsdl);
+		sui.setRouter(router);
+		interceptors.add(1, sui);
+	}
+
+	protected void writeInterceptors(XMLStreamWriter out)
+			throws XMLStreamException {
+		if (interceptors.size() > 2)
+			writeInterceptors(out, interceptors.subList(2, interceptors.size()));
 	}
 
 }

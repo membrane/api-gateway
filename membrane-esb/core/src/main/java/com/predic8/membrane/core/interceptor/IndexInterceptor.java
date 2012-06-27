@@ -154,7 +154,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 			{
 				html();
 					head();
-						title().text(Constants.PRODUCT_NAME + ": Service Proxies");
+						title().text(Constants.PRODUCT_NAME + ": Service Proxies").end();
 						style();
 						raw("<!--\r\n" +
 							"body { font-family: sans-serif; }\r\n" +

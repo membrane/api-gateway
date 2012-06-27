@@ -29,6 +29,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.util.DNSCache;
@@ -166,4 +167,14 @@ public class Router {
 	public ExecutorService getBackgroundInitializator() {
 		return backgroundInitializator;
 	}
+	
+	public Rule getParentProxy(Interceptor interceptor) {
+		for (Rule r : getRuleManager().getRules()) {
+			for (Interceptor i : r.getInterceptors())
+				if (i == interceptor)
+					return r;
+		}
+		throw new IllegalArgumentException("No parent proxy found for the given interceptor.");
+	}
+
 }

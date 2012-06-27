@@ -262,7 +262,12 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 		blockResponse = getBoolean(token, "blockResponse");
 	}
 
-	private void writeInterceptors(XMLStreamWriter out)
+	protected void writeInterceptors(XMLStreamWriter out)
+			throws XMLStreamException {
+		writeInterceptors(out, interceptors);
+	}
+	
+	protected void writeInterceptors(XMLStreamWriter out, List<Interceptor> interceptors)
 			throws XMLStreamException {
 		Flow lastFlow = Flow.REQUEST_RESPONSE;
 		for (Interceptor i : interceptors) {
