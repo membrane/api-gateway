@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 
@@ -33,10 +34,11 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	private final RewriteInterceptor r = new RewriteInterceptor();
 	private final DynamicAdminPageInterceptor dapi = new DynamicAdminPageInterceptor();
+	private final RESTInterceptor rai = new AdminRESTInterceptor();
 	private final WebServerInterceptor wsi = new WebServerInterceptor();
 
 	// these are the interceptors this interceptor consists of
-	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] { r, dapi, wsi });
+	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] { r, rai, dapi, wsi });
 	private final InterceptorFlowController flowController = new InterceptorFlowController();
 	
 	public AdminConsoleInterceptor() {
@@ -55,6 +57,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public void init(Router router) throws Exception {
 		super.init(router);
 		r.init(router);
+		rai.init(router);
 		dapi.init(router);
 		wsi.init(router);
 	}
@@ -84,6 +87,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	}
 	
 	public void setReadOnly(boolean readOnly) {
+		rai.setReadOnly(readOnly);
 		dapi.setReadOnly(readOnly);
 	}
 
