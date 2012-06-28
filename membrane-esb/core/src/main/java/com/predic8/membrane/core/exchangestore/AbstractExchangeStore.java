@@ -52,6 +52,10 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 			listener.removeExchange(exchange);
 		}
 	}
+	
+	public AbstractExchange getExchangeById(int id) {
+		throw new UnsupportedOperationException("getExchangeById must be implemented in the sub class.");
+	}
 		
 	public void init() {
 	}
