@@ -143,7 +143,7 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createInterceptorTable(List<Interceptor> interceptors) {
-		table().id("interceptortable").attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().id("interceptortable").attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "interceptor-table");
 			thead();
 				tr();
 					createThs("Order", "Name");
@@ -207,37 +207,19 @@ public class AdminPageBuilder extends Html {
 	}
 	
 	protected void createFwdRulesTable() throws UnsupportedEncodingException {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "fwdrules-table");
 			thead();
 				tr();
 					createThs("Name", "Listen Port", "Virtual Host", "Method","Path","Target Host","Target Port","Count","Actions");
 			    end();
 			end();
 			tbody();
-				for (ServiceProxy rule : getServiceProxies()) {
-					tr();
-						td();
-							createLink(rule.toString(), "service-proxy", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
-						end();
-						createTds(rule.getKey().getPort() == -1 ? "" : ""+rule.getKey().getPort(),
-						             rule.getKey().getHost(),
-						             rule.getKey().getMethod(),
-						             rule.getKey().getPath(),
-						             rule.getTargetHost(),
-						             ""+rule.getTargetPort(),
-						             ""+rule.getCount());
-						if (!readOnly)
-							td().a().href("/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
-						else
-							td().end();
-					end();
-				}
 			end();
 		end();
 	}
 
 	protected void createProxyRulesTable() throws UnsupportedEncodingException {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "proxy-rules-table");
 			thead();
 				tr();
 					createThs("Name", "Listen Port", "Count", "Actions");
@@ -281,6 +263,9 @@ public class AdminPageBuilder extends Html {
 			li().classAttr(getSelectedTabStyle(5, selected));
 				createLink("Statistics", "statistics", null, null);
 			end();
+			li().classAttr(getSelectedTabStyle(6, selected));
+			createLink("Calls", "calls", null, null);
+		end();
 		end();
 	}
 	
@@ -381,7 +366,7 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createStatusCodesTable(Map<Integer, StatisticCollector> statusCodes) throws Exception {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "statuscode-table");
 			thead();
 				tr();
 					createThs("Status Code", "Count", "Minimum Time", "Maximum Time", "Average Time", 
@@ -409,7 +394,7 @@ public class AdminPageBuilder extends Html {
 	}
 	
 	protected void createStatisticsTable() throws UnsupportedEncodingException {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "statistics-table");
 			thead();
 				tr();
 					createThs("Name", "Count", "Minimum Time", "Maximum Time", "Average Time", 
@@ -834,22 +819,64 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
+	protected void creatExchangeMetaTable(String id)
+			throws UnsupportedEncodingException {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
+				"class", "display", "id", id);
+			thead();
+				tr();
+					createThs("Property", "Value");
+				end();
+			end();
+			tbody();
+			end();
+		end();
+	}
+
+	protected void creatHeaderTable(String id)
+			throws UnsupportedEncodingException {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
+				"class", "display", "id", id);
+			thead();
+				tr();
+					createThs("Header", "Value");
+				end();
+			end();
+			tbody();
+			end();
+		end();
+	}
+
 	protected void createMessageStatisticsTable()
 			throws UnsupportedEncodingException {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
 				"class", "display", "id", "message-stat-table");
-		thead();
-		tr();
-		createThs("Status Code", "Time", "Proxy", "Method", "Path", "Client",
-				"Server", "ReqContentType", "ReqContentLenght",
-				"RespContentType", "RespContentLenght", "Duration");
-		end();
-		end();
-		tbody();
-		end();
+			thead();
+				tr();
+					createThs("Time", "Status Code", "Proxy", "Method", "Path", "Client",
+							"Server", "ReqContentType", "ReqContentLenght",
+							"RespContentType", "RespContentLenght", "Duration");
+				end();
+			end();
+			tbody();
+			end();
 		end();
 	}
-
+	
+	protected void createProxyCallsTable()  {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
+				"class", "display", "id", "proxy-calls-table");
+			thead();
+				tr();
+					createThs("Time", "Status Code", "Method", "Path", "Client",
+							"Server", "ReqContentType", "ReqContentLenght",
+							"RespContentType", "RespContentLenght", "Duration");
+				end();
+			end();
+			tbody();
+			end();
+		end();
+	}
 	
 }
 
