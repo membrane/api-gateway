@@ -177,6 +177,13 @@ public class Response extends Message {
 				body(htmlMessage("Forbidden", ""));
 	}
 
+	public static ResponseBuilder notFound() {
+		return ResponseBuilder.newInstance().
+				status(404, "Not Found").
+				contentType(MimeType.TEXT_HTML_UTF8).
+				body(htmlMessage("404 Page Not Found", ""));
+	}
+
 	public static ResponseBuilder forbidden(String message) {
 		return ResponseBuilder.newInstance().
 				status(403, "Forbidden").
