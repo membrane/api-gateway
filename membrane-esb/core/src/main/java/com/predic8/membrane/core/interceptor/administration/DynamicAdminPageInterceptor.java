@@ -89,6 +89,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				return 0;
 			}
 					
+			
 			@Override
 			protected String getTitle() {
 				return super.getTitle()+" "+rule.toString()+" ServiceProxy";
@@ -99,13 +100,15 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				h1().text(rule.toString()+" ServiceProxy").end();
 				script().raw("$(function() {\r\n" + 
 						"					$( \"#subtab\" ).tabs();\r\n" + 
+						"membrane.loadProxyCallsTable('"+rule.toString()+"');\r\n"+
 						"				});").end();
 				
 				div().id("subtab");
 					ul();
 						li().a().href("#tab1").text("Visualization").end(2);
-						li().a().href("#tab2").text("Call Statistics").end(2);
-						li().a().href("#tab3").text("XML Configuration").end(2);
+						li().a().href("#tab2").text("Statistics").end(2);
+						li().a().href("#tab3").text("Calls").end(2);
+						li().a().href("#tab4").text("XML Configuration").end(2);
 					end();
 					div().id("tab1");
 						createServiceProxyVisualization(rule, relativeRootPath);
@@ -114,6 +117,9 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 						createStatusCodesTable(rule.getStatisticsByStatusCodes());
 					end();
 					div().id("tab3");
+						createProxyCallsTable();
+					end();
+					div().id("tab4");
 						div().classAttr("proxy-config");
 						String xml = "";
 						try {
@@ -418,6 +424,16 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getStatisticsPage(params, relativeRootPath));
 	}
 	
+	@Mapping("/admin/calls")
+	public Response handleCallsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getCallsPage(params, relativeRootPath));
+	}
+
+	@Mapping("/admin/call/?(\\?.*)?")
+	public Response handleCallRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getCallPage(params, relativeRootPath));
+	}
+
 	private String getServiceProxyPage(Map<String, String> params, String relativeRootPath)
 	  throws Exception {
 		StringWriter writer = new StringWriter();
@@ -538,8 +554,93 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			protected void createTabContent() throws Exception {
 				h3().text("Statistics").end();
 				createStatisticsTable();
+			}
+	
+		}.createPage();
+	}
+
+	private String getCallsPage(Map<String, String> params, String relativeRootPath)
+			  throws Exception {
+		StringWriter writer = new StringWriter();
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
+			@Override
+			protected int getSelectedTab() {
+				return 6;
+			}
+		
+			@Override
+			protected void createTabContent() throws Exception {
 				h3().text("Messages").end();
 				createMessageStatisticsTable();
+			}
+	
+		}.createPage();
+	}
+
+	private String getCallPage(final Map<String, String> params, String relativeRootPath)
+			  throws Exception {
+		StringWriter writer = new StringWriter();
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
+			@Override
+			protected int getSelectedTab() {
+				return 6;
+			}
+					
+			@Override
+			protected void createTabContent() throws Exception {
+				script().raw("$(function() {\r\n" + 
+						"					$( \"#exchangeTab\" ).tabs();\r\n" +
+						"					$( \"#requestContentTab\" ).tabs();\r\n" +
+						"					$( \"#responseContentTab\" ).tabs();\r\n" +
+						"                   membrane.loadExchange("+params.get("id")+");\r\n"+
+						"				});").end();
+				
+				div().id("exchangeTab");
+					ul();
+						li().a().href("#tab1").text("Request").end(2);
+						li().a().href("#tab2").text("Response").end(2);
+					end();
+					div().id("tab1");
+						creatExchangeMetaTable("request-meta");
+						h3().text("Content").end();
+						div().id("requestContentTab");
+							ul();
+								li().a().href("#requestRawTab").text("Raw").end(2);
+								li().a().href("#requestHeadersTab").text("Headers").end(2);
+								li().a().href("#requestBodyTab").text("Body").end(2);
+							end();
+							div().id("requestRawTab");
+								div().id("request-raw").classAttr("proxy-config").end();
+							end();
+							div().id("requestHeadersTab");
+								creatHeaderTable("request-headers");
+							end();
+							div().id("requestBodyTab");
+								div().id("request-body").classAttr("proxy-config").end();
+							end();
+						end();
+					end();
+					div().id("tab2");
+						creatExchangeMetaTable("response-meta");					
+						h3().text("Content").end();
+						div().id("responseContentTab");
+							ul();
+								li().a().href("#responseRawTab").text("Raw").end(2);
+								li().a().href("#responseHeadersTab").text("Headers").end(2);
+								li().a().href("#responseBodyTab").text("Body").end(2);
+							end();
+							div().id("responseRawTab");
+								div().id("response-raw").classAttr("proxy-config").end();
+							end();
+							div().id("responseHeadersTab");
+								creatHeaderTable("response-headers");
+							end();
+							div().id("responseBodyTab");
+								div().id("response-body").classAttr("proxy-config").end();
+							end();
+						end();
+					end();
+				end();
 			}
 	
 		}.createPage();
