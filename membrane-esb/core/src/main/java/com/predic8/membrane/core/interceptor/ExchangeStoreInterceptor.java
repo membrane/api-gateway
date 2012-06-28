@@ -32,7 +32,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(final Exchange exc) throws Exception {
-		exc.getResponse().addObserver(new MessageObserver() {
+		exc.getRequest().addObserver(new MessageObserver() {
 			public void bodyComplete(AbstractBody body) {
 				store.add(exc);
 			}
