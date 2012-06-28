@@ -92,6 +92,16 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		exchanges.removeAll(Arrays.asList(candidates));
 	}
 	
+	
+	public synchronized AbstractExchange getExchangeById(int id) {
+		for (AbstractExchange exc : getAllExchangesAsList()) {
+			if (exc.hashCode() == id) {
+				return exc;
+			}
+		}
+		return null;
+	}
+
 	private void makeSpaceIfNeeded(AbstractExchange exc) {
 		while (!hasEnoughSpace(exc)) {
 			currentSize -= exchanges.poll().getSize();

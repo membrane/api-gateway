@@ -53,6 +53,8 @@ public interface ExchangeStore {
 	public Object[] getAllExchanges();
 	
 	public List<AbstractExchange> getAllExchangesAsList();
+
+	public AbstractExchange getExchangeById(int id);
 	
 	public void init() throws Exception;
 }

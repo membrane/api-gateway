@@ -100,6 +100,10 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 		
 	}
 
+	public AbstractExchange getExchangeById(int intParam) {
+		return null;
+	}
+
 	@Override
 	public void init() throws Exception {
 	}
