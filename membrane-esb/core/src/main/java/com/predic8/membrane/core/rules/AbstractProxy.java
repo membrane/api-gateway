@@ -261,8 +261,6 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			i = new MessageAnalyser();
 		} else if ("statisticsProvider".equals(name)) {
 			i = new StatisticsProvider();
-		} else if ("statisticsMemoryProvider".equals(name)) {
-			i = new StatisticsMemoryProvider();
 		} else {
 			for (Object bean : Router.getBeanFactory()
 					.getBeansWithAnnotation(ElementName.class).values()) {
