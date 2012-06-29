@@ -69,7 +69,6 @@ import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.StatisticsCSVInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.StatisticsJDBCInterceptor;
-import com.predic8.membrane.core.interceptor.statistics.StatisticsMemoryProvider;
 import com.predic8.membrane.core.interceptor.statistics.StatisticsProvider;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SOAPStackTraceFilterInterceptor;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLContentFilterInterceptor;
