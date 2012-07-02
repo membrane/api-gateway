@@ -29,7 +29,7 @@ import com.predic8.membrane.core.rules.StatisticCollector;
 
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
-	private int maxSize = 10*1000*1000;
+	private int maxSize = 1000000;
 	private int currentSize;
 	
 	private final Queue<AbstractExchange> exchanges = new LinkedList<AbstractExchange>();
