@@ -14,34 +14,39 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import javax.xml.stream.*;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.MessageObserver;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class ExchangeStoreInterceptor extends AbstractInterceptor {
 
 	private ExchangeStore store;
 	private String exchangeStoreBeanId;
 	
+	private Set<ServiceProxy> serviceProxiesContainingAdminConsole = new HashSet<ServiceProxy>();
+	
 	public ExchangeStoreInterceptor() {
 		name = "Exchange Store Interceptor";
 	}
 	
 	@Override
-	public Outcome handleRequest(final Exchange exc) throws Exception {
-		exc.getRequest().addObserver(new MessageObserver() {
-			public void bodyComplete(AbstractBody body) {
-				store.add(exc);
-			}
-		});
-		return Outcome.CONTINUE;
-	}
-
-	@Override
 	public Outcome handleResponse(final Exchange exc) throws Exception {
+		
+		if (serviceProxiesContainingAdminConsole.contains(exc.getRule())) {
+			return Outcome.CONTINUE;
+		}
+		
 		exc.getResponse().addObserver(new MessageObserver() {
 			public void bodyComplete(AbstractBody body) {
 				store.add(exc);
@@ -77,6 +82,20 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	public void init() throws Exception {
 		if (exchangeStoreBeanId != null)
 			store = router.getBean(exchangeStoreBeanId, ExchangeStore.class);
+		
+		searchAdminConsole();
+	}
+	
+	private void searchAdminConsole() {
+		for (Rule r : router.getRuleManager().getRules()) {
+			if (!(r instanceof ServiceProxy)) continue;
+			
+			for (Interceptor i : r.getInterceptors()) {
+				if (i instanceof AdminConsoleInterceptor) {
+					serviceProxiesContainingAdminConsole.add((ServiceProxy)r);
+				}
+			}
+		}			
 	}
 	
 	@Override
