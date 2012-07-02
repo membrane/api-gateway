@@ -264,8 +264,14 @@ public class AdminPageBuilder extends Html {
 				createLink("Statistics", "statistics", null, null);
 			end();
 			li().classAttr(getSelectedTabStyle(6, selected));
-			createLink("Calls", "calls", null, null);
-		end();
+				createLink("Calls", "calls", null, null);
+			end();
+			li().classAttr(getSelectedTabStyle(7, selected));
+				createLink("Clients", "clients", null, null);
+			end();
+			li().style("float: right;").classAttr(getSelectedTabStyle(8, selected));
+				createLink("About", "about", null, null);
+			end();
 		end();
 	}
 	
@@ -513,13 +519,8 @@ public class AdminPageBuilder extends Html {
 		return res;
 	}
 
-	private List<ServiceProxy> getServiceProxies() {
-		List<ServiceProxy> rules = new LinkedList<ServiceProxy>();
-		for (Rule r : router.getRuleManager().getRules()) {
-			if (!(r instanceof ServiceProxy)) continue;
-			rules.add((ServiceProxy) r);
-		}			
-		return rules;
+	protected void createButton(String label, String ctrl, String action, String query) throws UnsupportedEncodingException {								
+		a().classAttr("mb-button").href(createHRef(ctrl, action, query)).text(label).end();
 	}
 
 	protected void createLink(String label, String ctrl, String action, String query) throws UnsupportedEncodingException {								
@@ -839,7 +840,21 @@ public class AdminPageBuilder extends Html {
 				"class", "display", "id", id);
 			thead();
 				tr();
-					createThs("Header", "Value");
+					createThs("Header Field", "Value");
+				end();
+			end();
+			tbody();
+			end();
+		end();
+	}
+
+	protected void createClientsStatisticsTable()
+			throws UnsupportedEncodingException {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
+				"class", "display", "id", "clients-table");
+			thead();
+				tr();
+					createThs("Client", "Exchanges", "Min", "Max", "Avg");
 				end();
 			end();
 			tbody();
@@ -854,29 +869,14 @@ public class AdminPageBuilder extends Html {
 			thead();
 				tr();
 					createThs("Time", "Status Code", "Proxy", "Method", "Path", "Client",
-							"Server", "ReqContentType", "ReqContentLenght",
-							"RespContentType", "RespContentLenght", "Duration");
+							"Server", "Request Content-Type", "Request Content-Length",
+							"Response Content-Type", "Response Content-Length", "Duration");
 				end();
 			end();
 			tbody();
 			end();
 		end();
 	}
-	
-	protected void createProxyCallsTable()  {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0",
-				"class", "display", "id", "proxy-calls-table");
-			thead();
-				tr();
-					createThs("Time", "Status Code", "Method", "Path", "Client",
-							"Server", "ReqContentType", "ReqContentLenght",
-							"RespContentType", "RespContentLenght", "Duration");
-				end();
-			end();
-			tbody();
-			end();
-		end();
-	}
-	
+
 }
 
