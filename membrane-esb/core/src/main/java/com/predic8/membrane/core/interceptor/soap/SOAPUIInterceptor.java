@@ -50,6 +50,7 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 	private static Log log = LogFactory.getLog(SOAPUIInterceptor.class.getName());
 	
 	private String wsdl;
+	private String portName;
 	
 	public SOAPUIInterceptor() {
 		name = "SOAP UI";
@@ -70,6 +71,14 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
 		this.parsedWSDL = null;
+	}
+	
+	public String getPortName() {
+		return portName;
+	}
+	
+	public void setPortName(String portName) {
+		this.portName = portName;
 	}
 	
 	private volatile Definitions parsedWSDL;
@@ -126,7 +135,7 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 			
 			final Definitions w = getParsedWSDL();
 			final Service service = getService(w);
-			final Port port = SOAPProxy.selectPort(service.getPorts());
+			final Port port = SOAPProxy.selectPort(service.getPorts(), portName);
 			final List<Port> ports = getPortsByLocation(service, port);
 			
 			StringWriter sw = new StringWriter();

@@ -44,6 +44,7 @@ public class SOAPProxy extends ServiceProxy {
 	public static final String ELEMENT_NAME = "soapProxy";
 
 	protected String wsdl;
+	protected String portName;
 	private boolean inited;
 	
 	public SOAPProxy() {
@@ -63,6 +64,7 @@ public class SOAPProxy extends ServiceProxy {
 	protected void parseKeyAttributes(XMLStreamReader token) {
 		key = new ServiceProxyKey(parseHost(token), "*", ".*", parsePort(token));
 		wsdl = token.getAttributeValue("", "wsdl");
+		portName = token.getAttributeValue("", "portName");
 		if (token.getAttributeValue("", "method") != null)
 			throw new RuntimeException("Attribute 'method' is not allowed on <soapProxy />.");
 	}
@@ -84,6 +86,8 @@ public class SOAPProxy extends ServiceProxy {
 	protected void writeExtension(XMLStreamWriter out) throws XMLStreamException {
 		writeAttrIfTrue(out, !"*".equals(key.getHost()), "host", key.getHost());
 		out.writeAttribute("wsdl", wsdl);
+		if (portName != null)
+			out.writeAttribute("portName", portName);
 	}
 	
 	@Override
@@ -112,7 +116,7 @@ public class SOAPProxy extends ServiceProxy {
 				name = service.getName();
 			
 			List<Port> ports = service.getPorts();
-			Port port = selectPort(ports);
+			Port port = selectPort(ports, portName);
 			
 			String location = port.getAddress().getLocation();
 			if (location == null)
@@ -134,7 +138,13 @@ public class SOAPProxy extends ServiceProxy {
 		}
 	}
 	
-	public static Port selectPort(List<Port> ports) {
+	public static Port selectPort(List<Port> ports, String portName) {
+		if (portName != null) {
+			for (Port port : ports)
+				if (portName.equals(port.getName()))
+					return port;
+			throw new IllegalArgumentException("No port with name '" + portName + "' found.");
+		}
 		Port port = getPortByNamespace(ports, Constants.WSDL_SOAP11_NS);
 		if (port == null)
 			port = getPortByNamespace(ports, Constants.WSDL_SOAP12_NS);
@@ -182,6 +192,7 @@ public class SOAPProxy extends ServiceProxy {
 
 		SOAPUIInterceptor sui = new SOAPUIInterceptor();
 		sui.setWsdl(wsdl);
+		sui.setPortName(portName);
 		interceptors.add(1, sui);
 		
 		super.init(router);
