@@ -1,6 +1,13 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [new] added <soapProxy wsdl="..."> to avoid having to configure
+  a "/services/service(|\?wsdl|\?xsd=.*)"-style regex on a
+  SOAP <serviceProxy>.
+
+* [bugfix] links on services index page use wrong port when running as
+  servlet 
+
 * [release] 3.4.3
 
 * [usage improvement] servlet: port="..." is now ignored
