@@ -4,6 +4,7 @@ import java.util.Comparator;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
+import com.predic8.membrane.core.exchangestore.ClientStatistics;
 import com.predic8.membrane.core.interceptor.statistics.PropertyComparator;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
@@ -16,7 +17,7 @@ public class ComparatorFactory {
 					return exc.getResponse().getStatusCode();
 				}
 			});			
-		} else if ("rule".equals(propName)) {
+		} else if ("proxy".equals(propName)) {
 			return new PropertyComparator<AbstractExchange, String>(order, new PropertyComparator.ValueResolver<AbstractExchange, String>() {
 				public String get(AbstractExchange exc) {
 					return exc.getRule().toString();
@@ -52,7 +53,7 @@ public class ComparatorFactory {
 					return exc.getRequestContentType();
 				}
 			});			
-		} else if ("reqContentLenght".equals(propName)) {
+		} else if ("reqContentLength".equals(propName)) {
 			return new PropertyComparator<AbstractExchange, Integer>(order, new PropertyComparator.ValueResolver<AbstractExchange, Integer>() {
 				public Integer get(AbstractExchange exc) {
 					return exc.getRequestContentLength();
@@ -64,7 +65,7 @@ public class ComparatorFactory {
 					return exc.getResponseContentType();
 				}
 			});			
-		} else if ("respContentLenght".equals(propName)) {
+		} else if ("respContentLength".equals(propName)) {
 			return new PropertyComparator<AbstractExchange, Integer>(order, new PropertyComparator.ValueResolver<AbstractExchange, Integer>() {
 				public Integer get(AbstractExchange exc) {
 					return exc.getResponseContentLength();
@@ -82,12 +83,15 @@ public class ComparatorFactory {
 					return exc.getRequest().getMethod();
 				}
 			});			
+		} else if ("time".equals(propName)) {
+			return new PropertyComparator<AbstractExchange, String>(order, new PropertyComparator.ValueResolver<AbstractExchange, String>() {
+				public String get(AbstractExchange exc) {
+					return ExchangesUtil.getTime(exc);	
+				}
+			});			
 		}
-		return new PropertyComparator<AbstractExchange, String>(order, new PropertyComparator.ValueResolver<AbstractExchange, String>() {
-			public String get(AbstractExchange exc) {
-				return ExchangesUtil.getTime(exc);	
-			}
-		});			
+		
+		throw new IllegalArgumentException("AbstractExchange can't be compared using property ["+propName+"]");
 	}
 
 	public static Comparator<ServiceProxy> getServiceProxyComparator(final String propName, String order) {
@@ -133,12 +137,53 @@ public class ComparatorFactory {
 					return p.getCount();
 				}
 			});			
+		} else if ("name".equals(propName)) {
+			return new PropertyComparator<ServiceProxy, String>(order, new PropertyComparator.ValueResolver<ServiceProxy, String>() {
+				public String get(ServiceProxy p) {
+					return p.toString();
+				}
+			});			
 		}
-		return new PropertyComparator<ServiceProxy, String>(order, new PropertyComparator.ValueResolver<ServiceProxy, String>() {
-			public String get(ServiceProxy p) {
-				return p.toString();
-			}
-		});
+		
+		throw new IllegalArgumentException("ServiceProxy can't be compared using property ["+propName+"]");
+		
+	}
+
+	public static Comparator<ClientStatistics> getClientStatisticsComparator(String propName,
+			String order) {
+		if ("name".equals(propName)) {
+			return new PropertyComparator<ClientStatistics, String>(order, new PropertyComparator.ValueResolver<ClientStatistics, String>() {
+				public String get(ClientStatistics c) {
+					return c.getClient();
+				}
+			});			
+		} else if ("count".equals(propName)) {
+			return new PropertyComparator<ClientStatistics, Integer>(order, new PropertyComparator.ValueResolver<ClientStatistics, Integer>() {
+				public Integer get(ClientStatistics c) {
+					return c.getCount();
+				}
+			});			
+		} else if ("min".equals(propName)) {
+			return new PropertyComparator<ClientStatistics, Long>(order, new PropertyComparator.ValueResolver<ClientStatistics, Long>() {
+				public Long get(ClientStatistics c) {
+					return c.getMinDuration();
+				}
+			});			
+		} else if ("max".equals(propName)) {
+			return new PropertyComparator<ClientStatistics, Long>(order, new PropertyComparator.ValueResolver<ClientStatistics, Long>() {
+				public Long get(ClientStatistics c) {
+					return c.getMaxDuration();
+				}
+			});			
+		} else if ("avg".equals(propName)) {
+			return new PropertyComparator<ClientStatistics, Long>(order, new PropertyComparator.ValueResolver<ClientStatistics, Long>() {
+				public Long get(ClientStatistics c) {
+					return c.getAvgDuration();
+				}
+			});			
+		}
+		
+		throw new IllegalArgumentException("ClientsStatistics can't be compared using property ["+propName+"]");
 	}
 	
 }
