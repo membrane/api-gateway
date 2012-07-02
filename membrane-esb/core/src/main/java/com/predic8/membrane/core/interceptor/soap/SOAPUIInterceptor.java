@@ -129,7 +129,7 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 	}
 	
 	@Mapping("(?!.*operation)([^?]*)")
-	public Response createSOAPUIResponse(QueryParameter params, String relativeRootPath) throws Exception {
+	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath) throws Exception {
 		try {
 			final String myPath = params.getGroup(1);
 			
@@ -147,6 +147,9 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 						text("Service Name: " + service.getName());
 						br().end();
 						text("Target Namespace: " + w.getTargetNamespace());
+						br().end();
+						String wsdlLink = relativeRootPath +  myPath + "?wsdl";
+						text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
 					end();
 					
 					for (Port port : ports) {
@@ -181,7 +184,7 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 						end();
 						for (Operation o : bindingOperations) {
 							tr();
-								String link = myPath + "/operation/" + portType.getName() + "/" + o.getName() + "/" + binding.getName(); 
+								String link = relativeRootPath + myPath + "/operation/" + portType.getName() + "/" + o.getName() + "/" + binding.getName(); 
 								td().a().href(link).text(o.getName()).end().end();
 								td();
 									for (Part p : o.getInput().getMessage().getParts())
