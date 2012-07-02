@@ -227,6 +227,7 @@ $(function() {
 		  "sAjaxSource": '/admin/rest/proxies',
 		  "sAjaxDataProp": "proxies",
 		  "aoColumns": [
+		                { "mDataProp": "order" },
 		                { "mDataProp": "name" },
 		                { "mDataProp": "listenPort" },
 		                { "mDataProp": "virtualHost" },
@@ -242,7 +243,7 @@ $(function() {
 	               "fnRender": function ( o, v ) {
 	            	   return membrane.createLink('/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
 	               },
-	               "aTargets": [ 0 ]
+	               "aTargets": [ 1 ]
 	           },
 	           {
 	               "fnRender": function ( o, v ) {
@@ -251,7 +252,7 @@ $(function() {
 	            	   }
 	                   return '';
 	               },
-	               "aTargets": [ 8 ]
+	               "aTargets": [ 9 ]
 	           }
 		  ],
          "fnServerData": function ( sSource, aoData, fnCallback ) {

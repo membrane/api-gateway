@@ -21,7 +21,6 @@ import java.sql.SQLException;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
-import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.FileExchangeStore;

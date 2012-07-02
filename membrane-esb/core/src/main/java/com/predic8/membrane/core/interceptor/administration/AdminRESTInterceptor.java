@@ -65,15 +65,20 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	}
 	
 	@Mapping("/admin/rest/proxies(/?\\?.*)?")
-	public Response getProxies(QueryParameter params, String relativeRootPath) throws Exception {
+	public Response getProxies(final QueryParameter params, String relativeRootPath) throws Exception {
 		final List<ServiceProxy> proxies = getServiceProxies();
 
-		Collections.sort(
-				proxies,
-				ComparatorFactory.getServiceProxyComparator(params.getString("sort", "name"),
-						params.getString("order", "asc")));
+		if (params.getString("sort").equals("order")) {
+			if (params.getString("order", "asc").equals("desc"))
+				Collections.reverse(proxies);
+		} else {
+			Collections.sort(
+					proxies,
+					ComparatorFactory.getServiceProxyComparator(params.getString("sort", "name"),
+							params.getString("order", "asc")));
+		}
 
-		int offset = params.getInt("offset", 0);
+		final int offset = params.getInt("offset", 0);
 		int max = params.getInt("max", proxies.size());
 
 		final List<ServiceProxy> paginated = proxies.subList(offset,
@@ -83,8 +88,12 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			public void write(JsonGenerator gen) throws Exception {
 				gen.writeStartObject();
 				gen.writeArrayFieldStart("proxies");
+					int i = offset;
+					if (params.getString("order", "asc").equals("desc"))
+						i = proxies.size() - i + 1;
 					for (ServiceProxy p : paginated) {
 						gen.writeStartObject();
+						gen.writeNumberField("order", i += params.getString("order", "asc").equals("desc") ? -1 : 1);
 						gen.writeStringField("name", p.toString());
 						gen.writeNumberField("listenPort", p.getKey().getPort());
 						gen.writeStringField("virtualHost", p.getKey().getHost());
