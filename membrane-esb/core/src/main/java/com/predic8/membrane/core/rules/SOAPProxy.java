@@ -106,23 +106,25 @@ public class SOAPProxy extends ServiceProxy {
 			List<Service> services = definitions.getServices();
 			if (services.size() != 1)
 				throw new IllegalArgumentException("There are " + services.size() + " services defined in the WSDL, but exactly 1 is required for soapProxy.");
-			List<Port> ports = services.get(0).getPorts();
-
-			Port port = getPortByNamespace(ports, Constants.WSDL_SOAP11_NS);
-			if (port == null)
-				port = getPortByNamespace(ports, Constants.WSDL_SOAP12_NS);
-			if (port == null)
-				throw new IllegalArgumentException("No SOAP/1.1 or SOAP/1.2 ports found in WSDL.");
+			Service service = services.get(0);
+			
+			if (!StringUtils.isEmpty(service.getName()))
+				name = service.getName();
+			
+			List<Port> ports = service.getPorts();
+			Port port = selectPort(ports);
 			
 			String location = port.getAddress().getLocation();
 			if (location == null)
 				throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
 			try {
 				URL url = new URL(location);
-				setTargetURL(location);
+				setTargetHost(url.getHost());
+				if (url.getPort() != -1)
+					setTargetPort(url.getPort());
 				key.setUsePathPattern(true);
 				key.setPathRegExp(true);
-				key.setPath(Pattern.quote(url.getPath()) + "(|\\?[wW][sS][dD][lL]|\\?xsd.*)");
+				key.setPath(Pattern.quote(url.getPath()) + ".*");
 				((ServiceProxyKey)key).setMethod("*");
 			} catch (MalformedURLException e) {
 				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.");
@@ -132,7 +134,16 @@ public class SOAPProxy extends ServiceProxy {
 		}
 	}
 	
-	private Port getPortByNamespace(List<Port> ports, String namespace) {
+	public static Port selectPort(List<Port> ports) {
+		Port port = getPortByNamespace(ports, Constants.WSDL_SOAP11_NS);
+		if (port == null)
+			port = getPortByNamespace(ports, Constants.WSDL_SOAP12_NS);
+		if (port == null)
+			throw new IllegalArgumentException("No SOAP/1.1 or SOAP/1.2 ports found in WSDL.");
+		return port;
+	}
+	
+	private static Port getPortByNamespace(List<Port> ports, String namespace) {
 		for (Port port : ports) {
 			try {
 				if (port.getBinding() == null)
