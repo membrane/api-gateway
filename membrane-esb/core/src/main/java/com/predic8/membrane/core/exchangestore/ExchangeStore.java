@@ -57,4 +57,8 @@ public interface ExchangeStore {
 	public AbstractExchange getExchangeById(int id);
 	
 	public void init() throws Exception;
+	
+	public List<? extends ClientStatistics> getClientStatistics();
+	
+	public void collect(ExchangeCollector col);
 }
