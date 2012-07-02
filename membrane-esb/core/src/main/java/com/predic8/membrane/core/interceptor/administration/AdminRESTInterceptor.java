@@ -68,7 +68,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	public Response getProxies(final QueryParameter params, String relativeRootPath) throws Exception {
 		final List<ServiceProxy> proxies = getServiceProxies();
 
-		if (params.getString("sort").equals("order")) {
+		if ("order".equals(params.getString("sort"))) {
 			if (params.getString("order", "asc").equals("desc"))
 				Collections.reverse(proxies);
 		} else {
@@ -214,8 +214,11 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	@Mapping("/admin/rest/exchanges(/?\\?.*)?")
 	public Response getExchanges(QueryParameter params, String relativeRootPath) throws Exception {
 		
-		List<AbstractExchange> exchanges = new ArrayList<AbstractExchange>(
-				getRouter().getExchangeStore().getAllExchangesAsList());
+		List<AbstractExchange> exchanges;		
+		synchronized (getRouter().getExchangeStore().getAllExchangesAsList()) {
+			exchanges = new ArrayList<AbstractExchange>(
+					getRouter().getExchangeStore().getAllExchangesAsList());			
+		}
 		
 		exchanges = filter(params, exchanges);
 		
