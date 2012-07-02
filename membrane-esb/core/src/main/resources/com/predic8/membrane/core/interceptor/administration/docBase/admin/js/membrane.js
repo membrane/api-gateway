@@ -1,6 +1,24 @@
 var membrane = function() {
-				
-	function loadExchange (exchangeId) {	
+			
+	function createLink(href, content, params) {
+		var i,
+		    url = encodeURI(href);
+		
+		if (params) {
+			for (i = 0; i < params.length; i++) {
+				if (i == 0) {
+					url += "?";
+				} else {
+					url += "&";
+				}
+				url += params[i][0]+"="+encodeURIComponent(params[i][1]);
+			}			
+		}
+		
+		return '<a href="'+url+'">'+content+'</a>';
+	}
+	
+	function loadExchange(exchangeId) {	
 		var exchangeUrl = '/admin/rest/exchanges/'+exchangeId,
 
 			responseBodyUrl = exchangeUrl+'/response/body',
@@ -76,6 +94,9 @@ var membrane = function() {
 			}, 'text');				
 		}
 		
+		$('#request-download-button').button({icons: {primary:'ui-icon-circle-arrow-s'}}).attr('href', requestBodyUrl);
+		$('#response-download-button').button({icons: {primary:'ui-icon-circle-arrow-s'}}).attr('href', responseBodyUrl);
+
 		$.get(exchangeUrl, function(exc) {
 			if (exc.respContentType == 'text/xml') {
 				$.get(responseBodyBeautifiedUrl, function(resp) {
@@ -94,14 +115,16 @@ var membrane = function() {
 			}			
 		}, 'json');
 
-		$('#request-meta').dataTable(getMetaTableConfiguration(function(data) { return [
+		$('#request-meta').dataTable(getMetaTableConfiguration(function(data) {
+			var fullPath = "http://"+data.server+":"+data.serverPort+data.path;
+		return [
 		   ["Time", data.time],
 		   ["Method", data.method],
-   		   ["Path", data.path],
-		   ["Proxy", data.rule],
-		   ["Client", data.client],
+   		   ["Path", data.method=="GET"?createLink(fullPath, data.path):data.path],
+		   ["Proxy", createLink('/admin/service-proxy/show', data.proxy, [['name',data.proxy+':'+data.listenPort]])],
+		   ["Client", createLink('/admin/calls',  data.client, [['client', data.client]])],
 		   ["Content Type", data.reqContentType],
-		   ["Length", data.reqContentLenght],
+		   ["Length", data.reqContentLength],
 		];}));
 		$('#request-headers').dataTable(getHeaderTableConfiguration(requestHeaderUrl));
 		loadText('#request-raw', requestRawUrl);
@@ -110,75 +133,16 @@ var membrane = function() {
 		   ["Status Code", data.statusCode],
 		   ["Server", data.server],
 		   ["Content Type", data.respContentType],
-		   ["Length", data.respContentLenght],
+		   ["Length", data.respContentLength],
 		   ["Duration", data.duration],
 		];}));
 		$('#response-headers').dataTable(getHeaderTableConfiguration(responseHeaderUrl));	
 		loadText('#response-raw', responseRawUrl);
 	}
 	
-
-	function loadProxyCallsTable(proxyName) {
-		$('#proxy-calls-table').dataTable({
-			  'bJQueryUI': true,
-			  'sPaginationType': 'full_numbers',
-			  "bProcessing": true,
-			  "bServerSide": true,
-			  "bDestroy":true,
-			  "sAjaxSource": '/admin/rest/exchanges',
-			  "sAjaxDataProp": "exchanges",
-			  "aoColumnDefs": [ 
-		           {
-		               "fnRender": function ( o, v ) {
-		                   return '<a href="/admin/call?id='+o.aData.id+'">'+v+'</a>';
-		               },
-		               "aTargets": [ 0 ]
-		           }
-			  ],
-			  "aoColumns": [
-			                { "mDataProp": "time" },
-			                { "mDataProp": "statusCode" },
-			                { "mDataProp": "method" },
-			                { "mDataProp": "path" },
-			                { "mDataProp": "client" },
-			                { "mDataProp": "server" },
-			                { "mDataProp": "reqContentType" },
-			                { "mDataProp": "reqContentLenght" },
-			                { "mDataProp": "respContentType" },
-			                { "mDataProp": "respContentLenght" },
-			                { "mDataProp": "duration" }
-			              ],
-	      "fnServerData": function ( sSource, aoData, fnCallback ) {
-	    	  function getParam(name) {
-	    		  function byName(it) {
-	    			  return it.name == name;
-	    		  }
-	    		  return $.grep(aoData, byName)[0].value;
-	    	  }
-	    	  
-	          $.ajax( {            	  
-	            "dataType": 'json', 
-	            "type": "GET", 
-	            "url": sSource, 
-	            "data": [{name:'proxy', value:proxyName},
-	                     {name:'offset', value:getParam('iDisplayStart')}, 
-	                     {name:'max', value:getParam('iDisplayLength')},
-	                     {name:'sort', value:getParam('mDataProp_'+getParam('iSortCol_0'))},
-	                     {name:'order', value:getParam('sSortDir_0')}], 
-	            "success": function(data) {   
-	            	data.sEcho = aoData.sEcho;
-	            	data.iTotalRecords = data.total;
-	            	data.iTotalDisplayRecords = data.total;
-	            	fnCallback(data);
-	            }
-	          } );
-	        }		              
-		});		
-	}
-	
 	return {
-		loadExchange:loadExchange,
-		loadProxyCallsTable:loadProxyCallsTable
+		createLink:createLink,
+		loadExchange:loadExchange
 	}
 }();
 
@@ -188,6 +152,71 @@ $(function() {
 	  'bJQueryUI': true,
 	  'sPaginationType': 'full_numbers'
 	});
+	
+	$('#clients-table').dataTable({		
+		  'bJQueryUI': true,
+		  "bFilter": false,
+		  "bInfo": false,
+		  "bServerSide": true,
+		  "sAjaxSource": '/admin/rest/clients',
+		  "sAjaxDataProp": "clients",
+		  "aoColumns": [
+		                { "mDataProp": "name" },
+		                { "mDataProp": "count" },
+		                { "mDataProp": "min" },
+		                { "mDataProp": "max" },
+		                { "mDataProp": "avg" },
+		              ],
+		  "aoColumnDefs": [ 
+		           {
+		               "fnRender": function ( o, v ) {
+		                   return membrane.createLink('/admin/calls', v, [['client', v]]);
+		               },
+		               "aTargets": [ 0 ]
+		           },
+		           {
+		               "fnRender": function ( o, v ) {
+		                   return v+" ms";
+		               },
+		               "aTargets": [ 2 ]
+		           },
+		           {
+		               "fnRender": function ( o, v ) {
+		                   return v+" ms";
+		               },
+		               "aTargets": [ 3 ]
+		           },
+		           {
+		               "fnRender": function ( o, v ) {
+		                   return v+" ms";
+		               },
+		               "aTargets": [ 4 ]
+		           }],
+			"fnServerData": function ( sSource, aoData, fnCallback ) {
+		      	  function getParam(name) {
+		      		  function byName(it) {
+		      			  return it.name == name;
+		      		  }
+		      		  return $.grep(aoData, byName)[0].value;
+		      	  }
+				
+			    $.ajax( {            	  
+			      "dataType": 'json', 
+			      "type": "GET", 
+			      "url": sSource, 
+	              "data": [{name:'offset', value:getParam('iDisplayStart')},
+	                       {name:'max', value:getParam('iDisplayLength')},
+	                       {name:'sort', value:getParam('mDataProp_'+getParam('iSortCol_0'))},
+	                       {name:'order', value:getParam('sSortDir_0')}], 
+			      "success": function(data) {   
+			      	data.sEcho = aoData.sEcho;
+			      	data.iTotalRecords = data.clients.length;
+			      	data.iTotalDisplayRecords = data.clients.length;
+			      	fnCallback(data);
+			      }
+			    } );
+			  }		              
+  	});
 	
 	$('#fwdrules-table').dataTable({
 		  'bJQueryUI': true,
@@ -211,7 +240,7 @@ $(function() {
 		  "aoColumnDefs": [ 
 	           {
 	               "fnRender": function ( o, v ) {
-	                   return '<a href="'+o.aData.details+'">'+v+'</a>';
+	            	   return membrane.createLink('/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
 	               },
 	               "aTargets": [ 0 ]
 	           },
@@ -237,7 +266,7 @@ $(function() {
               "dataType": 'json', 
               "type": "GET", 
               "url": sSource, 
-              "data": [{name:'offset', value:getParam('iDisplayStart')}, 
+              "data": [{name:'offset', value:getParam('iDisplayStart')},
                        {name:'max', value:getParam('iDisplayLength')},
                        {name:'sort', value:getParam('mDataProp_'+getParam('iSortCol_0'))},
                        {name:'order', value:getParam('sSortDir_0')}], 
@@ -251,7 +280,9 @@ $(function() {
           }		              
 	});
 
-	$('#message-stat-table').dataTable({
+	membrane.messageTable = $('#message-stat-table').dataTable({
+		  "aaSorting": [[0,'desc']],
+		  "bFilter": false,		  
 		  'bJQueryUI': true,
 		  'sPaginationType': 'full_numbers',
 		  "bProcessing": true,
@@ -262,26 +293,49 @@ $(function() {
 		  "aoColumnDefs": [ 
 	           {
 	               "fnRender": function ( o, v ) {
-	                   return '<a href="/admin/call?id='+o.aData.id+'">'+v+'</a>';
+	            	   return membrane.createLink('/admin/call', v, [['id',o.aData.id]]);
 	               },
 	               "aTargets": [ 0 ]
+	           },
+	           {
+	               "fnRender": function ( o, v ) {
+	            	   return membrane.createLink('/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
+	               },
+	               "aTargets": [ 2 ]
+	           },
+	           {
+	               "fnRender": function ( o, v ) {
+	            	   return membrane.createLink('/admin/client', v, [['id',v]]);
+	               },
+	               "aTargets": [ 5 ]
 	           }
 		  ],
 		  "aoColumns": [
 		                { "mDataProp": "time" },
 		                { "mDataProp": "statusCode" },
-		                { "mDataProp": "rule" },
+		                { "mDataProp": "proxy" },
 		                { "mDataProp": "method" },
 		                { "mDataProp": "path" },
 		                { "mDataProp": "client" },
 		                { "mDataProp": "server" },
 		                { "mDataProp": "reqContentType" },
-		                { "mDataProp": "reqContentLenght" },
+		                { "mDataProp": "reqContentLength" },
 		                { "mDataProp": "respContentType" },
-		                { "mDataProp": "respContentLenght" },
+		                { "mDataProp": "respContentLength" },
 		                { "mDataProp": "duration" }
 		              ],
           "fnServerData": function ( sSource, aoData, fnCallback ) {
+        	  var queryData = [{name:'offset', value:getParam('iDisplayStart')}, 
+                          {name:'max', value:getParam('iDisplayLength')},
+                          {name:'sort', value:getParam('mDataProp_'+getParam('iSortCol_0'))},
+                          {name:'order', value:getParam('sSortDir_0')}];
+        	  
+        	  function addFilterProps(name) {
+        		  if ($("#message-filter-"+name).val()!='*') {
+        			  queryData.push({name:name, value:$("#message-filter-"+name).val()});
+        		  }
+        	  }
+        	  
         	  function getParam(name) {
         		  function byName(it) {
         			  return it.name == name;
@@ -289,14 +343,19 @@ $(function() {
         		  return $.grep(aoData, byName)[0].value;
         	  }
         	  
+        	  addFilterProps('statuscode');
+        	  addFilterProps('method');
+        	  addFilterProps('proxy');
+        	  addFilterProps('client');
+        	  addFilterProps('server');
+        	  addFilterProps('reqcontenttype');
+        	  addFilterProps('respcontenttype');
+        	  
               $.ajax( {            	  
                 "dataType": 'json', 
                 "type": "GET", 
                 "url": sSource, 
-                "data": [{name:'offset', value:getParam('iDisplayStart')}, 
-                         {name:'max', value:getParam('iDisplayLength')},
-                         {name:'sort', value:getParam('mDataProp_'+getParam('iSortCol_0'))},
-                         {name:'order', value:getParam('sSortDir_0')}], 
+                "data": queryData, 
                 "success": function(data) {   
                 	data.sEcho = aoData.sEcho;
                 	data.iTotalRecords = data.total;
