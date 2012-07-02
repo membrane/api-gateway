@@ -19,6 +19,13 @@ public class QueryParameter {
 		return def;
 	}
 	
+	public String getString(String name, String def) {
+		if (params.containsKey(name)) {
+			return getString(name);
+		}
+		return def;
+	}
+
 	public int getInt(String name) {
 		return Integer.parseInt(params.get(name));
 	}
@@ -33,6 +40,10 @@ public class QueryParameter {
 	
 	public String getGroup(int i) {
 		return matcher.group(i);
+	}
+
+	public boolean has(String name) {
+		return params.containsKey(name);
 	}
 	
 }
