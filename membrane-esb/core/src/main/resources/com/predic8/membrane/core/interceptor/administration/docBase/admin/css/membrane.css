@@ -74,3 +74,8 @@
 .footer a:hover {
 	text-decoration: underline;
 }
+
+table {
+	font-size: small;
+}
+
