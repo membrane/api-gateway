@@ -96,9 +96,9 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 	@Mapping("[^?]*/operation/([^/?]+)/([^/?]+)/([^/?]+)")
 	public Response createOperationResponse(QueryParameter params, String relativeRootPath) throws Exception {
 		try {
-			final String portName = params.getGroup(1);
-			final String operationName = params.getGroup(2);
-			final String bindingName = params.getGroup(3);
+			final String bindingName = params.getGroup(1);
+			final String portName = params.getGroup(2);
+			final String operationName = params.getGroup(3);
 
 			final Definitions w = getParsedWSDL();
 			final Service service = getService(w);
@@ -184,7 +184,7 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 						end();
 						for (Operation o : bindingOperations) {
 							tr();
-								String link = relativeRootPath + myPath + "/operation/" + portType.getName() + "/" + o.getName() + "/" + binding.getName(); 
+								String link = relativeRootPath + myPath + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName(); 
 								td().a().href(link).text(o.getName()).end().end();
 								td();
 									for (Part p : o.getInput().getMessage().getParts())
