@@ -100,26 +100,23 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				h1().text(rule.toString()+" ServiceProxy").end();
 				script().raw("$(function() {\r\n" + 
 						"					$( \"#subtab\" ).tabs();\r\n" + 
-						"membrane.loadProxyCallsTable('"+rule.toString()+"');\r\n"+
 						"				});").end();
 				
 				div().id("subtab");
 					ul();
 						li().a().href("#tab1").text("Visualization").end(2);
 						li().a().href("#tab2").text("Statistics").end(2);
-						li().a().href("#tab3").text("Calls").end(2);
-						li().a().href("#tab4").text("XML Configuration").end(2);
+						li().a().href("#tab3").text("XML Configuration").end(2);
 					end();
 					div().id("tab1");
 						createServiceProxyVisualization(rule, relativeRootPath);
 					end();
 					div().id("tab2");
 						createStatusCodesTable(rule.getStatisticsByStatusCodes());
+						br();
+						createButton("View Messages", "calls", null, createQueryString("proxy", rule.toString()));
 					end();
 					div().id("tab3");
-						createProxyCallsTable();
-					end();
-					div().id("tab4");
 						div().classAttr("proxy-config");
 						String xml = "";
 						try {
@@ -424,7 +421,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(getStatisticsPage(params, relativeRootPath));
 	}
 	
-	@Mapping("/admin/calls")
+	@Mapping("/admin/calls(/?\\?.*)?")
 	public Response handleCallsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getCallsPage(params, relativeRootPath));
 	}
@@ -432,6 +429,16 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	@Mapping("/admin/call/?(\\?.*)?")
 	public Response handleCallRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getCallPage(params, relativeRootPath));
+	}
+
+	@Mapping("/admin/clients")
+	public Response handleClientsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getClientsPage(params, relativeRootPath));
+	}
+
+	@Mapping("/admin/about")
+	public Response getAbout(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getAboutPage(params, relativeRootPath));
 	}
 
 	private String getServiceProxyPage(Map<String, String> params, String relativeRootPath)
@@ -559,7 +566,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
-	private String getCallsPage(Map<String, String> params, String relativeRootPath)
+	private String getCallsPage(final Map<String, String> params, String relativeRootPath)
 			  throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
@@ -570,6 +577,73 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		
 			@Override
 			protected void createTabContent() throws Exception {
+				PropertyValueCollector propertyValues = new PropertyValueCollector();
+				
+				router.getExchangeStore().collect(propertyValues);
+				h3().text("Filter").end();
+				form();
+					div();
+						span().text("Method").end()
+						.select().id("message-filter-method")
+						.onchange("membrane.messageTable.fnDraw();");
+							option("*", "*", true);	
+							for (String s : propertyValues.getMethods()) {
+								option(s, s, false);	
+							}						
+						end();
+						span().text("Status Code").end()
+						.select().id("message-filter-statuscode")
+						.onchange("membrane.messageTable.fnDraw();");
+							option("*", "*", true);	
+							for (Integer i : propertyValues.statusCodes) {
+								option(i.toString(), i.toString(), false);	
+							}
+					end(2);					
+					div();
+						span().text("Proxy").end()
+						.select().id("message-filter-proxy")
+						.onchange("membrane.messageTable.fnDraw();");
+							option("*", "*", !params.containsKey("proxy"));	
+							for (String s : propertyValues.getProxies()) {
+								option(s, s, s.equals(params.get("proxy")));	
+							}
+						end();
+	 					span().text("Client").end()
+	 					.select().id("message-filter-client")
+	 					.onchange("membrane.messageTable.fnDraw();");
+	 						option("*", "*", !params.containsKey("client"));	
+	 						for (String s : propertyValues.getClients()) {
+	 							option(s, s, s.equals(params.get("client")));	
+	 						}
+	 					end();
+ 						span().text("Server").end()
+ 						.select().id("message-filter-server")
+ 						.onchange("membrane.messageTable.fnDraw();");
+ 							option("*", "*", true);	
+ 							for (String s : propertyValues.getServers()) {
+ 								option(s==null?"undefined":s, s==null?"":s, false);	
+ 							}						
+					end(2);					
+					div();
+						span().text("Request Content-Type").end()
+						.select().id("message-filter-reqcontenttype")
+						.onchange("membrane.messageTable.fnDraw();");
+							option("*", "*", true);	
+							for (String s : propertyValues.getReqContentTypes()) {
+								option(s.isEmpty()?"undefined":s, s, false);	
+							}						
+						end();					
+						span().text("Response Content-Type").end()
+						.select().id("message-filter-respcontenttype")
+						.onchange("membrane.messageTable.fnDraw();");
+							option("*", "*", true);	
+							for (String s : propertyValues.getRespContentTypes()) {
+								option(s.isEmpty()?"undefined":s, s, false);	
+							}						
+					end(2);	
+					br();
+					createButton("Reset Filter", "calls", null, null);
+				end();
 				h3().text("Messages").end();
 				createMessageStatisticsTable();
 			}
@@ -603,6 +677,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					div().id("tab1");
 						creatExchangeMetaTable("request-meta");
 						h3().text("Content").end();
+						div().align("right").a().id("request-download-button").text("Download").end().end();
 						div().id("requestContentTab");
 							ul();
 								li().a().href("#requestRawTab").text("Raw").end(2);
@@ -623,6 +698,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					div().id("tab2");
 						creatExchangeMetaTable("response-meta");					
 						h3().text("Content").end();
+						div().align("right").a().id("response-download-button").text("Download").end().end();
 						div().id("responseContentTab");
 							ul();
 								li().a().href("#responseRawTab").text("Raw").end(2);
@@ -646,6 +722,42 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
+	private String getClientsPage(Map<String, String> params, String relativeRootPath)
+			  throws Exception {
+		StringWriter writer = new StringWriter();
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
+			@Override
+			protected int getSelectedTab() {
+				return 7;
+			}
+		
+			@Override
+			protected void createTabContent() throws Exception {
+				h3().text("Statistics").end();
+				createClientsStatisticsTable();
+			}
+	
+		}.createPage();
+	}
+
+	private String getAboutPage(final Map<String, String> params, String relativeRootPath)
+			  throws Exception {
+		StringWriter writer = new StringWriter();
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
+			@Override
+			protected int getSelectedTab() {
+				return 8;
+			}
+		
+			@Override
+			protected void createTabContent() throws Exception {
+				h3().text("Impressum").end();
+				p().text("predic8 GmbH").br().text("Moltkestr. 40").br().br().text("53173 Bonn").end();
+			}
+	
+		}.createPage();
+	}
+	
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
 		String pathQuery = URIUtil.getPathQuery(exc.getDestinations().get(0));
 		for (Method m : getClass().getMethods() ) {
