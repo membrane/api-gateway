@@ -29,6 +29,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
@@ -644,8 +645,15 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					br();
 					createButton("Reset Filter", "calls", null, null);
 				end();
-				h3().text("Messages").end();
+				h3().text(getMessagesText()).end();
 				createMessageStatisticsTable();
+			}
+
+			private String getMessagesText() {
+				if (router.getExchangeStore() instanceof LimitedMemoryExchangeStore) {
+					return "Messages" + String.format(" (limited to last %.2f MB)", ((LimitedMemoryExchangeStore)router.getExchangeStore()).getMaxSize()/1000000.);
+				}
+				return "Messages";
 			}
 	
 		}.createPage();
