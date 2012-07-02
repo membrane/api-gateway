@@ -107,4 +107,11 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	@Override
 	public void init() throws Exception {
 	}
+
+	public List<? extends ClientStatistics> getClientStatistics() {
+		return null;
+	}
+	
+	public void collect(ExchangeCollector collector) {}
+	
 }

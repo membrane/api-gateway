@@ -16,8 +16,10 @@ package com.predic8.membrane.core.exchangestore;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -68,14 +70,14 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return getExchangeList(ruleKey).size();
 	}
 
-	public StatisticCollector getStatistics(RuleKey key) {
+	public synchronized StatisticCollector getStatistics(RuleKey key) {
 		StatisticCollector statistics = new StatisticCollector(false);
 		List<AbstractExchange> exchangesList = getExchangeList(key);
 		if (exchangesList == null || exchangesList.isEmpty())
 			return statistics;
 
 		for (int i = 0; i < exchangesList.size(); i++)
-			statistics.collectFrom(exchangesList.get(i));
+			statistics.collectFrom(exchangesList.get(i));			
 		
 		return statistics;
 	}
@@ -100,6 +102,18 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			}
 		}
 		return null;
+	}
+	
+	public synchronized List<? extends ClientStatistics> getClientStatistics() {
+		Map<String, ClientStatisticsCollector> clients = new HashMap<String, ClientStatisticsCollector>();
+
+		for (AbstractExchange exc : getAllExchangesAsList()) {
+			if (!clients.containsKey(exc.getSourceHostname())) {
+				clients.put(exc.getSourceHostname(), new ClientStatisticsCollector(exc.getSourceHostname()));
+			}
+			clients.get(exc.getSourceHostname()).collect(exc);
+		}
+		return new ArrayList<ClientStatistics>(clients.values());
 	}
 
 	private void makeSpaceIfNeeded(AbstractExchange exc) {
