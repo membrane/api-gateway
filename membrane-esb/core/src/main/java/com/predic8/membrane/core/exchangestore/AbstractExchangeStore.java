@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.exchangestore;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -57,6 +58,20 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		throw new UnsupportedOperationException("getExchangeById must be implemented in the sub class.");
 	}
 		
+	
+	public List<? extends ClientStatistics> getClientStatistics() {
+		throw new UnsupportedOperationException("getClientStatistics must be implemented in the sub class.");
+	}
+	
 	public void init() {
 	}
+
+	public synchronized void collect(ExchangeCollector collector) {
+		for (AbstractExchange exc: getAllExchangesAsList()) {
+			collector.collect(exc);
+		}	
+	}
+	
+	
+	
 }
