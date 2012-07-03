@@ -103,6 +103,33 @@ public class IndexInterceptor extends AbstractInterceptor {
 			int c = path.codePointAt(p++);
 			switch (c) {
 			case '\\':
+				if (p == path.length())
+					return null; // illegal
+				c = path.codePointAt(p++);
+				if (Character.isDigit(c))
+					return null; // backreferences are not supported
+				if (c == 'Q') {
+					while (true) {
+						if (p == path.length())
+							return null; // 'end of regex' within quote
+						c = path.codePointAt(p++);
+						if (c == '\\') {
+							if (p == path.length())
+								return null; // 'end of regex' within quote
+							c = path.codePointAt(p++);
+							if (c == 'E')
+								break;
+							sb.append('\\');
+						}
+						sb.appendCodePoint(c);
+					}
+					break;
+				}
+				if (c == 'E') {
+					return null; // 'end of quote' without begin
+				}
+				sb.appendCodePoint(c);
+				break;
 			case '[':
 			case '?':
 			case '*':
