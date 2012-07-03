@@ -29,6 +29,8 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
 import com.predic8.membrane.core.interceptor.soap.SOAPUIInterceptor;
 import com.predic8.wsdl.AbstractBinding;
@@ -45,7 +47,6 @@ public class SOAPProxy extends ServiceProxy {
 
 	protected String wsdl;
 	protected String portName;
-	private boolean inited;
 	
 	public SOAPProxy() {
 	}
@@ -172,36 +173,55 @@ public class SOAPProxy extends ServiceProxy {
 		}
 		return null;
 	}
-	
+
+	private int automaticallyAddedInterceptorCount;
+
 	@Override
 	public void init(Router router) throws Exception {
-				
 		if (wsdl == null)
 			return;
-		if (inited) {
+
+		// remove previously added interceptors
+		for(; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
 			interceptors.remove(0);
-			interceptors.remove(1);
-		}
-		inited = true;
 
 		parseWSDL(router);
-		
-		WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
-		wp.setWsdl(wsdl);
-		interceptors.add(0, wp);
 
+		// add interceptors (in reverse order) to position 0.
+		
 		SOAPUIInterceptor sui = new SOAPUIInterceptor();
 		sui.setWsdl(wsdl);
 		sui.setPortName(portName);
-		interceptors.add(1, sui);
+		interceptors.add(0, sui);
+		automaticallyAddedInterceptorCount++;
+
+		if (!containsInterceptorOfType(WSDLPublisherInterceptor.class)) {
+			WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
+			wp.setWsdl(wsdl);
+			interceptors.add(0, wp);
+			automaticallyAddedInterceptorCount++;
+		}
+
+		if (!containsInterceptorOfType(WSDLInterceptor.class)) {
+			WSDLInterceptor wp = new WSDLInterceptor();
+			interceptors.add(0, wp);
+			automaticallyAddedInterceptorCount++;
+		}
 		
 		super.init(router);
 	}
 
+	private boolean containsInterceptorOfType(Class<? extends Interceptor> class1) {
+		for (Interceptor i : interceptors)
+			if (class1.isInstance(i))
+				return true;
+		return false;
+	}
+
 	protected void writeInterceptors(XMLStreamWriter out)
 			throws XMLStreamException {
-		if (interceptors.size() > 2)
-			writeInterceptors(out, interceptors.subList(2, interceptors.size()));
+		if (interceptors.size() > automaticallyAddedInterceptorCount)
+			writeInterceptors(out, interceptors.subList(automaticallyAddedInterceptorCount, interceptors.size()));
 	}
 
 	public String getWsdl() {

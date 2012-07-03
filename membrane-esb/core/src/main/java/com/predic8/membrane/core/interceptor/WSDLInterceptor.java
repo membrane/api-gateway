@@ -51,6 +51,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	private static Log log = LogFactory.getLog(WSDLInterceptor.class.getName());
 
 	private String registryWSDLRegisterURL;
+	private boolean rewriteEndpoint = true;
 
 	public WSDLInterceptor() {
 		name = "WSDL Rewriting Interceptor";
@@ -68,12 +69,14 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 				getCharset(exc)), getLocationProtocol(), getLocationHost(exc),
 				getLocationPort(exc), pathRewriter);
 
-		relocator.getRelocatingAttributes().put(
-				new QName(WSDL_SOAP11_NS, "address"), "location");
-		relocator.getRelocatingAttributes().put(
-				new QName(WSDL_SOAP12_NS, "address"), "location");
-		relocator.getRelocatingAttributes().put(
-				new QName(WSDL_HTTP_NS, "address"), "location");
+		if (rewriteEndpoint) {
+			relocator.getRelocatingAttributes().put(
+					new QName(WSDL_SOAP11_NS, "address"), "location");
+			relocator.getRelocatingAttributes().put(
+					new QName(WSDL_SOAP12_NS, "address"), "location");
+			relocator.getRelocatingAttributes().put(
+					new QName(WSDL_HTTP_NS, "address"), "location");
+		}
 		relocator.getRelocatingAttributes().put(new QName(XSD_NS, "import"),
 				"schemaLocation");
 		relocator.getRelocatingAttributes().put(new QName(XSD_NS, "include"),
@@ -232,6 +235,8 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 				end();
 			}};
 			sb.append(sw.toString());
+		} else {
+			sb.append(".");
 		}
 		return sb.toString();
 	}
@@ -241,4 +246,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		return "wsdl-rewriter";
 	}
 
+	public void setRewriteEndpoint(boolean rewriteEndpoint) {
+		this.rewriteEndpoint = rewriteEndpoint;
+	}
 }

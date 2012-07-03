@@ -19,6 +19,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.administration.Mapping;
@@ -59,9 +61,16 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest().getMethod().equals("GET"))
-			return super.handleRequest(exc);
+			if (!isWSDLRequest(exc.getRequest()))
+				return super.handleRequest(exc);
 
 		return Outcome.CONTINUE;
+	}
+
+	private static final Pattern wsdlRequest = Pattern.compile(".*\\?(wsdl|xsd=.*)", Pattern.CASE_INSENSITIVE);
+	
+	private boolean isWSDLRequest(Request request) {
+		return wsdlRequest.matcher(request.getUri()).matches();
 	}
 
 	public String getWsdl() {
