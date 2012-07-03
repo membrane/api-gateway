@@ -16,16 +16,37 @@
   	<fileSet>
   		<directory>examples/router</directory>
   		<outputDirectory>/examples</outputDirectory>
-  		<excludes><exclude>**/build/</exclude></excludes>
+  		<excludes><exclude>**/build/</exclude><exclude>**/*.sh</exclude></excludes>
+  		<fileMode>0644</fileMode>
+  		<directoryMode>0755</directoryMode>
+  	</fileSet>
+  	<fileSet>
+  		<directory>examples/router</directory>
+  		<outputDirectory>/examples</outputDirectory>
+  		<includes><include>**/*.sh</include></includes>
+  		<fileMode>0755</fileMode>
+  		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
   		<directory>examples/router</directory>
   		<outputDirectory>/examples</outputDirectory>
   		<includes><include>custom-interceptor/build/**/*</include></includes>
+  		<fileMode>0644</fileMode>
+  		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
   		<directory>router</directory>
   		<outputDirectory>/</outputDirectory>
+  		<excludes><exclude>memrouter.sh</exclude></excludes>
+  		<fileMode>0644</fileMode>
+  		<directoryMode>0755</directoryMode>
+  	</fileSet>
+  	<fileSet>
+  		<directory>router</directory>
+  		<outputDirectory>/</outputDirectory>
+  		<includes><include>memrouter.sh</include></includes>
+  		<fileMode>0755</fileMode>
+  		<directoryMode>0755</directoryMode>
   	</fileSet>
   </fileSets>
   <files>

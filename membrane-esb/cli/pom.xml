@@ -70,6 +70,11 @@
 					<descriptors>
 						<descriptor>src/assembly/distribution.xml</descriptor>
 					</descriptors>
+					<archiverConfig>
+						<fileMode>420</fileMode>
+        				<directoryMode>493</directoryMode>
+        				<defaultDirectoryMode>493</defaultDirectoryMode>
+					</archiverConfig>
 				</configuration>
 				<executions>
 					<execution>
