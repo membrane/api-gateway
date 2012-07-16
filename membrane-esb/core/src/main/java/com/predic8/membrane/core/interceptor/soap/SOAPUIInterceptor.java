@@ -44,6 +44,7 @@ import com.predic8.wsdl.PortType;
 import com.predic8.wsdl.Service;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
+import com.predic8.wsdl.http.HTTPBinding;
 import com.predic8.wstool.creator.RequestTemplateCreator;
 import com.predic8.wstool.creator.SOARequestCreator;
 
@@ -113,7 +114,7 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 			final Service service = getService(w);
 			
 			StringWriter sw = new StringWriter();
-			new StandardPage(sw) {
+			new StandardPage(sw, null) {
 				@Override
 				protected void createContent() {
 					h1().text("Service Proxy for " + service.getName());
@@ -148,53 +149,57 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 			final List<Port> ports = getPortsByLocation(service, port);
 			
 			StringWriter sw = new StringWriter();
-			new StandardPage(sw) {
+			new StandardPage(sw, service.getName()) {
 				@Override
 				protected void createContent() {
-					h1().text("Service Proxy").end();
+					h1().text("Service Proxy: " + service.getName()).end();
 					p();
-						text("Service Name: " + service.getName());
-						br().end();
 						text("Target Namespace: " + w.getTargetNamespace());
 						br().end();
 						String wsdlLink = relativeRootPath +  myPath + "?wsdl";
 						text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
 					end();
 					
-					for (Port port : ports) {
-						h2().text("Port: " + port.getName()).end();
-						p();
-							text("Port Type: " + getPortType(port));
-							br().end();
-							
-							Binding binding = port.getBinding();
-							PortType portType = binding.getPortType();
-							Documentation d = portType.getDocumentation();
-							if (d != null)
-								text("Documentation: " + d.toString());
-						end();
-						h3().text("Operations").end();
-						
-						List<Operation> bindingOperations = getOperationsByBinding(w, binding);
-						
-						if (bindingOperations.size() == 0)
-							p().text("There are no operations defined.").end();
-						else 
-							createOperationsTable(w, bindingOperations, binding, portType);
+					for (PortType pt : w.getPortTypes()) {
+						h2().text("Port Type: " + pt.getName()).end();
+						Documentation d = pt.getDocumentation();
+						if (d != null) {
+							p().text("Documentation: " + d.toString()).end();
+						}
 					}
+						
+					Binding binding = port.getBinding();
+					PortType portType = binding.getPortType();
+					List<Operation> bindingOperations = getOperationsByBinding(w, binding);
+					if (bindingOperations.size() == 0)
+						p().text("There are no operations defined.").end();
+					else 
+						createOperationsTable(w, bindingOperations, binding, portType);
+					
+					h2().text("Endpoints").end();
+					if (service.getPorts().size() == 0)
+						p().text("There are no endpoints defined.").end();
+					else
+						createEndpointTable(service.getPorts(), ports);
 				}
 
 				private void createOperationsTable(Definitions w, List<Operation> bindingOperations, Binding binding, PortType portType) {
 					table().cellspacing("0").cellpadding("0").border(""+1);
 						tr();
-							th().text("Name").end();
+							th().text("Operation").end();
 							th().text("Input").end();
 							th().text("Output").end();
 						end();
 						for (Operation o : bindingOperations) {
 							tr();
-								String link = relativeRootPath + myPath + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName(); 
-								td().a().href(link).text(o.getName()).end().end();
+								td();
+								if ("HTTP".equals(getProtocolVersion(binding))) {
+									text(o.getName());
+								} else {
+									String link = relativeRootPath + myPath + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName(); 
+									a().href(link).text(o.getName()).end();
+								}
+								end();
 								td();
 									for (Part p : o.getInput().getMessage().getParts())
 										text(p.getElement());
@@ -208,7 +213,29 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 						}
 					end();
 				}
-	
+
+				private void createEndpointTable(List<Port> ports, List<Port> matchingPorts) {
+					table().cellspacing("0").cellpadding("0").border(""+1);
+						tr();
+							th().text("Port Name").end();
+							th().text("Protocol").end();
+							th().text("URL").end();
+						end();
+						for (Port p : ports) {
+							tr();
+								td().text(p.getName()).end();
+								td().text(getProtocolVersion(p.getBinding())).end();
+								td().text(p.getAddress().getLocation()).end();
+								td();
+									if (matchingPorts.contains(p))
+										text("*");
+								end();
+							end();
+						}
+					end();
+					p().small().text("* available through this proxy").end().end();
+				}
+
 			};
 			return Response.ok(sw.toString()).build();
 		} catch (IllegalArgumentException e) {
@@ -219,12 +246,12 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 
 	private abstract class StandardPage extends Html {
 
-		public StandardPage(Writer writer) {
+		public StandardPage(Writer writer, String title) {
 			super(writer);
 			
 			html();
 				head();
-					title().text(Constants.PRODUCT_NAME + ": Service Proxies").end();
+					title().text(Constants.PRODUCT_NAME + (title == null ? "" : ": " + title)).end();
 					style();
 					raw("<!--\r\n" +
 						"body { font-family: sans-serif; }\r\n" +
@@ -270,12 +297,14 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 		return ports;
 	}
 	
-	private String getPortType(Port port) {
-		String transport = (String) port.getBinding().getBinding().getElementName().getNamespaceURI();
+	private String getProtocolVersion(Binding binding) {
+		String transport = (String) binding.getBinding().getElementName().getNamespaceURI();
 		if (Constants.WSDL_SOAP11_NS.equals(transport))
 			transport = "SOAP 1.1";
 		if (Constants.WSDL_SOAP12_NS.equals(transport))
 			transport = "SOAP 1.2";
+		if (Constants.WSDL_HTTP_NS.equals(transport))
+			transport = "HTTP";
 		return transport;
 	}
 
