@@ -1,6 +1,9 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [new] tab "calls" in the admin console showing the last few requests with
+  all their headers and bodys. storage is limited by default to 1MB.
+
 * [bugfix] correctly handle repeated (background) init of GroovyInterceptor
 
 * [new] added <soapProxy wsdl="..."> to avoid having to configure
