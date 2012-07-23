@@ -43,7 +43,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE; // local redirect (illegal by spec)
 		// do not rewrite, if the server did a redirect to some other hostname/port
 		// (in which case we have to hope the hostname/port is valid on the client)
-		if (!isSameHost(exc.getRequest().getUri(), location))
+		if (!isSameHost(exc.getDestinations().get(0), location))
 			return Outcome.CONTINUE;
 		// if we cannot determine the hostname we have been reached with (e.g. HTTP/1.0)
 		if (exc.getOriginalHostHeaderHost() == null) {

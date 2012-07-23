@@ -98,6 +98,7 @@ public class ReverseProxyingInterceptorTest {
 		exc.setRequest(req);
 		Response res = Response.redirect(redirectionURI, false).build();
 		exc.setResponse(res);
+		exc.getDestinations().add(requestURI);
 		return exc;
 	}
 
