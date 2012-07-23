@@ -112,7 +112,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		} catch (SocketTimeoutException e) {
 			log.debug("Socket of thread " + counter + " timed out");
 		} catch (SocketException se) {
-			log.info("client socket closed");
+			log.debug("client socket closed");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (EndOfStreamException e) {
