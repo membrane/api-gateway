@@ -62,6 +62,8 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	private boolean isSameHost(String location2, String location)
 			throws MalformedURLException {
 		try {
+			if (location.startsWith("/"))
+				return false; // no host info available
 			URL loc2 = new URL(location2);
 			URL loc1 = new URL(location);
 			if (loc2.getHost() != null && !loc2.getHost().equals(loc1.getHost()))
