@@ -161,7 +161,7 @@ public class HttpClient {
 					break; 
 				}
 			} catch (ErrorReadingStartLineException e) {
-				log.info("Server connection to " + dest + " terminated before line was read. Line so far: " + e.getStartLine());
+				log.debug("Server connection to " + dest + " terminated before line was read. Line so far: " + e.getStartLine());
 				exception = e;
 			} catch (Exception e) {
 				logException(exc, counter, e);
