@@ -155,8 +155,9 @@ $(function() {
 	
 	$('#clients-table').dataTable({		
 		  'bJQueryUI': true,
+		  "sPaginationType": 'full_numbers',
 		  "bFilter": false,
-		  "bInfo": false,
+		  "bInfo": true,
 		  "bServerSide": true,
 		  "sAjaxSource": '/admin/rest/clients',
 		  "sAjaxDataProp": "clients",
