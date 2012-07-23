@@ -20,7 +20,11 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.httpclient.util.URIUtil;
@@ -588,7 +592,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 						.select().id("message-filter-method")
 						.onchange("membrane.messageTable.fnDraw();");
 							option("*", "*", true);	
-							for (String s : propertyValues.getMethods()) {
+							for (String s : sort(propertyValues.getMethods())) {
 								option(s, s, false);	
 							}						
 						end();
@@ -596,7 +600,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 						.select().id("message-filter-statuscode")
 						.onchange("membrane.messageTable.fnDraw();");
 							option("*", "*", true);	
-							for (Integer i : propertyValues.statusCodes) {
+							for (Integer i : sort(propertyValues.statusCodes)) {
 								option(i.toString(), i.toString(), false);	
 							}
 					end(2);					
@@ -605,7 +609,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 						.select().id("message-filter-proxy")
 						.onchange("membrane.messageTable.fnDraw();");
 							option("*", "*", !params.containsKey("proxy"));	
-							for (String s : propertyValues.getProxies()) {
+							for (String s : sort(propertyValues.getProxies())) {
 								option(s, s, s.equals(params.get("proxy")));	
 							}
 						end();
@@ -613,7 +617,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	 					.select().id("message-filter-client")
 	 					.onchange("membrane.messageTable.fnDraw();");
 	 						option("*", "*", !params.containsKey("client"));	
-	 						for (String s : propertyValues.getClients()) {
+	 						for (String s : sort(propertyValues.getClients())) {
 	 							option(s, s, s.equals(params.get("client")));	
 	 						}
 	 					end();
@@ -621,7 +625,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
  						.select().id("message-filter-server")
  						.onchange("membrane.messageTable.fnDraw();");
  							option("*", "*", true);	
- 							for (String s : propertyValues.getServers()) {
+ 							for (String s : sort(propertyValues.getServers())) {
  								option(s==null?"undefined":s, s==null?"":s, false);	
  							}						
 					end(2);					
@@ -630,7 +634,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 						.select().id("message-filter-reqcontenttype")
 						.onchange("membrane.messageTable.fnDraw();");
 							option("*", "*", true);	
-							for (String s : propertyValues.getReqContentTypes()) {
+							for (String s : sort(propertyValues.getReqContentTypes())) {
 								option(s.isEmpty()?"undefined":s, s, false);	
 							}						
 						end();					
@@ -638,7 +642,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 						.select().id("message-filter-respcontenttype")
 						.onchange("membrane.messageTable.fnDraw();");
 							option("*", "*", true);	
-							for (String s : propertyValues.getRespContentTypes()) {
+							for (String s : sort(propertyValues.getRespContentTypes())) {
 								option(s.isEmpty()?"undefined":s, s, false);	
 							}						
 					end(2);	
@@ -657,6 +661,20 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			}
 	
 		}.createPage();
+	}
+	
+	private <T extends Comparable<? super T>> List<T> sort(Set<T> data) {
+		int nulls = 0;
+		ArrayList<T> res = new ArrayList<T>(data.size());
+		for (T t : data)
+			if (t == null)
+				nulls++;
+			else
+				res.add(t);
+		Collections.sort(res);
+		while (nulls-- > 0)
+			res.add(0, null);
+		return res;
 	}
 
 	private String getCallPage(final Map<String, String> params, String relativeRootPath)
