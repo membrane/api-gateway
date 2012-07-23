@@ -29,7 +29,7 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class CouchDBInterceptor extends AbstractInterceptor {
 	
-	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd hh:mm:ss");
+	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
 	
 	public static final String STATUS_CODE = "status-code";
 	
