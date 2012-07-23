@@ -870,7 +870,7 @@ public class AdminPageBuilder extends Html {
 				tr();
 					createThs("Time", "Status Code", "Proxy", "Method", "Path", "Client",
 							"Server", "Request Content-Type", "Request Content-Length",
-							"Response Content-Type", "Response Content-Length", "Duration");
+							"Response Content-Type", "Response Content-Length", "Duration ms");
 				end();
 			end();
 			tbody();
