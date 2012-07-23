@@ -29,7 +29,7 @@ import com.predic8.plugin.membrane.resources.ImageKeys;
 public class ExchangesViewLabelProvider extends LabelProvider implements ITableLabelProvider {
 
 	private static final NumberFormat FORMATTER = NumberFormat.getInstance();
-	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd H:mm:ss");
+	private static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
 
 	private Image imgPending;
 
