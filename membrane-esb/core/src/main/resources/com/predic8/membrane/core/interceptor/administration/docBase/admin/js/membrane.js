@@ -304,12 +304,6 @@ $(function() {
 	            	   return membrane.createLink('/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
 	               },
 	               "aTargets": [ 2 ]
-	           },
-	           {
-	               "fnRender": function ( o, v ) {
-	            	   return membrane.createLink('/admin/client', v, [['id',v]]);
-	               },
-	               "aTargets": [ 5 ]
 	           }
 		  ],
 		  "aoColumns": [
