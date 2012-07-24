@@ -32,7 +32,8 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 	private static final String XPATH = ""
 			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='stackTrace' or local-name()='stacktrace'] | "
 			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='faultstring' and contains(., '.java:')] | "
-			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message";
+			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message |"
+			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//detail/Exception";
 	
 	private final XMLContentFilter xmlContentFilter;
 	
