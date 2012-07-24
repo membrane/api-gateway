@@ -97,7 +97,7 @@ public class ServiceProxy extends AbstractProxy {
 				protected void parseChildren(XMLStreamReader token, String child)
 						throws Exception {
 					if ("ssl".equals(child)) {
-						SSLParser sslOutboundParser = new SSLParser();
+						sslOutboundParser = new SSLParser();
 						sslOutboundParser.parse(token);
 					} else {
 						super.parseChildren(token, child);
@@ -116,7 +116,7 @@ public class ServiceProxy extends AbstractProxy {
 			key.setPathRegExp(p.isRegExp());
 			key.setPath(p.getValue());
 		} else if ("ssl".equals(child)) {
-			SSLParser sslInboundParser = new SSLParser();
+			sslInboundParser = new SSLParser();
 			sslInboundParser.parse(token);
 		} else {
 			super.parseChildren(token, child);
@@ -195,6 +195,7 @@ public class ServiceProxy extends AbstractProxy {
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
+		System.out.println("sslInboundParser = " + sslInboundParser);
 		if (sslInboundParser != null)
 			sslInboundContext = new SSLContext(sslInboundParser, router.getResourceResolver());
 		if (sslOutboundParser != null)
