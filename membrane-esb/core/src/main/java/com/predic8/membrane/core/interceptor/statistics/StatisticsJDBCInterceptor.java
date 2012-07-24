@@ -13,18 +13,26 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.statistics;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.Statement;
 
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 import javax.sql.DataSource;
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 
 public class StatisticsJDBCInterceptor extends AbstractInterceptor {
@@ -43,6 +51,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	}
 	
 	public void init() {
+		dataSource = router.getBean(dataSourceBeanId, DataSource.class);
 		Connection con = null;
 		try {
 			con = dataSource.getConnection();
@@ -157,12 +166,10 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		
 		postMethodOnly = Boolean.parseBoolean(token.getAttributeValue("", "postMethodOnly"));
 		soapOnly = Boolean.parseBoolean(token.getAttributeValue("", "soapOnly"));
 		dataSourceBeanId = token.getAttributeValue("", "dataSource");
-		dataSource = router.getBean(dataSourceBeanId, DataSource.class);
-	}	
+	}
 	
 	private void logDatabaseMetaData(DatabaseMetaData metaData) throws Exception {
 		log.debug("Database metadata:");
