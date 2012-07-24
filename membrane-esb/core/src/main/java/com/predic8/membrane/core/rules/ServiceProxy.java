@@ -195,7 +195,6 @@ public class ServiceProxy extends AbstractProxy {
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-		System.out.println("sslInboundParser = " + sslInboundParser);
 		if (sslInboundParser != null)
 			sslInboundContext = new SSLContext(sslInboundParser, router.getResourceResolver());
 		if (sslOutboundParser != null)
