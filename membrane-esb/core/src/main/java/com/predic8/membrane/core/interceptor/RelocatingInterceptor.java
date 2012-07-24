@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import javax.xml.stream.XMLStreamException;
+
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.Constants;
@@ -53,7 +55,11 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE;
 		}
 
-		rewrite(exc);
+		try {
+			rewrite(exc);
+		} catch (XMLStreamException e) {
+			throw new Exception("while rewriting " + exc.getRequestURI(), e);
+		}
 		return Outcome.CONTINUE;
 	}
 
