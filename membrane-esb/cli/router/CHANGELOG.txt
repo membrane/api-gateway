@@ -1,6 +1,15 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [bugfix] fixed regressions in logging-jdbc and SSL-* examples introduced
+  in 3.5.0
+
+* [release] 3.5.0
+
+* [development] split parsing from initialization for all ServiceProxy and
+  Interceptors objects. The back-reference to router is not known during
+  parsing anymore.
+
 * [new] tab "calls" in the admin console showing the last few requests with
   all their headers and bodys. storage is limited by default to 1MB.
 
