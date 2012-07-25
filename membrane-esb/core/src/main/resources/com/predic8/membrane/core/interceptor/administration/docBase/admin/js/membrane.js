@@ -222,6 +222,7 @@ $(function() {
 	$('#fwdrules-table').dataTable({
 		  'bJQueryUI': true,
 		  'sPaginationType': 'full_numbers',
+		  'iDisplayLength' : 25,
 		  "bProcessing": true,
 		  "bServerSide": true,
 		  "bDestroy":true,
@@ -287,6 +288,7 @@ $(function() {
 		  "bFilter": false,		  
 		  'bJQueryUI': true,
 		  'sPaginationType': 'full_numbers',
+		  'iDisplayLength' : 25,
 		  "bProcessing": true,
 		  "bServerSide": true,
 		  "bDestroy":true,
