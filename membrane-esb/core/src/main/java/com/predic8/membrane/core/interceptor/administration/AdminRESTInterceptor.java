@@ -42,7 +42,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		int offset = params.getInt("offset", 0);
 		int max = params.getInt("max", clients.size());
 
-		final int total = clients.size();		
+		final int total = clients.size();
 		final List<? extends ClientStatistics> paginated = clients.subList(offset,
 				Math.min(offset + max, clients.size()));
 

@@ -47,6 +47,7 @@ import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.util.DateUtil;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 
@@ -655,7 +656,17 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 			private String getMessagesText() {
 				if (router.getExchangeStore() instanceof LimitedMemoryExchangeStore) {
-					return "Messages" + String.format(" (limited to last %.2f MB)", ((LimitedMemoryExchangeStore)router.getExchangeStore()).getMaxSize()/1000000.);
+					LimitedMemoryExchangeStore lmes = (LimitedMemoryExchangeStore)router.getExchangeStore();
+					float usage = lmes.getCurrentSize() / lmes.getMaxSize();
+					Long oldestTimeResSent = lmes.getOldestTimeResSent();
+					String usageStr =
+							oldestTimeResSent == null ? "" :
+								String.format("; usage %.0f%%; the last %s", usage,
+										DateUtil.prettyPrintTimeSpan(System.currentTimeMillis() - oldestTimeResSent));
+					return "Messages" + String.format(
+							" (limited to last %.2f MB%s)",
+							lmes.getMaxSize()/1000000., 
+							usageStr);
 				}
 				return "Messages";
 			}

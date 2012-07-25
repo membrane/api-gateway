@@ -115,6 +115,15 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		}
 		return new ArrayList<ClientStatistics>(clients.values());
 	}
+	
+	public synchronized int getCurrentSize() {
+		return currentSize;
+	}
+	
+	public synchronized Long getOldestTimeResSent() {
+		AbstractExchange exc = exchanges.peek();
+		return exc == null ? null : exc.getTimeResSent();
+	}
 
 	private void makeSpaceIfNeeded(AbstractExchange exc) {
 		while (!hasEnoughSpace(exc)) {
