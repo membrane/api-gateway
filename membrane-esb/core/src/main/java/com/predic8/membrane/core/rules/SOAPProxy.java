@@ -16,23 +16,28 @@ package com.predic8.membrane.core.rules;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.google.common.collect.Lists;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
 import com.predic8.membrane.core.interceptor.soap.SOAPUIInterceptor;
+import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 import com.predic8.wsdl.AbstractBinding;
 import com.predic8.wsdl.Definitions;
 import com.predic8.wsdl.Port;
@@ -44,9 +49,11 @@ import com.predic8.xml.util.ResourceDownloadException;
 public class SOAPProxy extends ServiceProxy {
 	private static final Log log = LogFactory.getLog(SOAPProxy.class.getName());
 	public static final String ELEMENT_NAME = "soapProxy";
+	private static final Pattern relativePathPattern = Pattern.compile("^./[^/?]*\\?");
 
 	protected String wsdl;
 	protected String portName;
+	protected String path, targetPath;
 	
 	public SOAPProxy() {
 	}
@@ -76,8 +83,13 @@ public class SOAPProxy extends ServiceProxy {
 			// TODO: overwrite location extracted from WSDL
 			throw new Exception("Child element <target> is not allowed on <soapProxy />.");
 		} else if (Path.ELEMENT_NAME.equals(child)) {
-			// TODO: overwrite path extracted from WSDL (rewriting?)
-			throw new Exception("Child element <path> is not allowed on <soapProxy />.");
+			key.setUsePathPattern(true);
+			Path p = (Path)(new Path()).parse(token);
+			key.setPathRegExp(false);
+			key.setPath(p.getValue());
+			path = p.getValue();
+			if (p.isRegExp())
+				throw new Exception("A <path> element with a parent of <soapProxy> must not have @isRegExp='true'.");
 		} else {
 			super.parseChildren(token, child);
 		}
@@ -89,6 +101,13 @@ public class SOAPProxy extends ServiceProxy {
 		out.writeAttribute("wsdl", wsdl);
 		if (portName != null)
 			out.writeAttribute("portName", portName);
+		
+		if (path != null) {
+			Path path = new Path();
+			path.setValue(this.path);
+			path.setRegExp(false);
+			path.write(out);
+		}
 	}
 	
 	@Override
@@ -127,9 +146,13 @@ public class SOAPProxy extends ServiceProxy {
 				setTargetHost(url.getHost());
 				if (url.getPort() != -1)
 					setTargetPort(url.getPort());
-				key.setUsePathPattern(true);
-				key.setPathRegExp(true);
-				key.setPath(Pattern.quote(url.getPath()) + ".*");
+				if (path == null) {
+					key.setUsePathPattern(true);
+					key.setPathRegExp(true);
+					key.setPath(Pattern.quote(url.getPath()) + ".*");
+				} else {
+					targetPath = url.getPath();
+				}
 				((ServiceProxyKey)key).setMethod("*");
 			} catch (MalformedURLException e) {
 				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.");
@@ -204,7 +227,31 @@ public class SOAPProxy extends ServiceProxy {
 
 		if (!containsInterceptorOfType(WSDLInterceptor.class)) {
 			WSDLInterceptor wp = new WSDLInterceptor();
+			if (path != null) {
+				wp.setPathRewriter(new PathRewriter() {
+					@Override
+					public String rewrite(String path2) {
+						try {
+							if (path2.contains("://")) {
+								path2 = new URL(new URL(path2), path).toString();
+							} else {
+								Matcher m = relativePathPattern.matcher(path2);
+								path2 = m.replaceAll("./" + URIUtil.getName(path) + "?");
+							}
+						} catch (MalformedURLException e) {
+						}
+						return path2;
+					}
+				});
+			}
 			interceptors.add(0, wp);
+			automaticallyAddedInterceptorCount++;
+		}
+		
+		if (path != null) {
+			RewriteInterceptor ri = new RewriteInterceptor();
+			ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(path), Matcher.quoteReplacement(targetPath), "rewrite")));
+			interceptors.add(0, ri);
 			automaticallyAddedInterceptorCount++;
 		}
 		
