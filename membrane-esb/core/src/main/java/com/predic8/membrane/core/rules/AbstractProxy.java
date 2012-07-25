@@ -52,6 +52,7 @@ import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.MessageAnalyser;
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptor;
 import com.predic8.membrane.core.interceptor.ThrottleInterceptor;
+import com.predic8.membrane.core.interceptor.URLNormalizerInterceptor;
 import com.predic8.membrane.core.interceptor.WADLInterceptor;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
@@ -260,6 +261,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			i = new MessageAnalyser();
 		} else if ("statisticsProvider".equals(name)) {
 			i = new StatisticsProvider();
+		} else if ("urlNormalizer".equals(name)) {
+			i = new URLNormalizerInterceptor();
 		} else {
 			for (Object bean : Router.getBeanFactory()
 					.getBeansWithAnnotation(ElementName.class).values()) {
