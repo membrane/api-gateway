@@ -50,7 +50,8 @@ public class EmptyBody extends AbstractBody {
 	
 	@Override
 	public void write(AbstractBodyTransferrer out) throws IOException {
-		
+		out.finish();
+		markAsRead();
 	}
 	
 	@Override
