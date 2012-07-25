@@ -44,7 +44,7 @@ public class RoutingTest extends DistributionExtractingTestcase {
 		try {
 			Process2 antNode1 = new Process2.Builder().in(base).waitAfterStartFor("run:").executable("ant run").withWatcher(new ConsoleLogger()).start();
 			try {
-				Thread.sleep(1000); // wait for Endpoints to start
+				Thread.sleep(2000); // wait for Endpoints to start
 				
 				// directly talk to versioned endpoints
 				assertContains("1.1", postAndAssert(200, "http://localhost:3024/ContactService/v11", header, request_v11));

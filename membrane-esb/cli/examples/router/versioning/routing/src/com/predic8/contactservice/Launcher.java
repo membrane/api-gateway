@@ -9,5 +9,6 @@ public class Launcher {
     public static void main(String[] args) {
           Endpoint.publish("http://localhost:8080/ContactService/v11", new ContactService11());
           Endpoint.publish("http://localhost:8080/ContactService/v20", new ContactService20());
+          System.out.println("ContactService v11 and v20 up.");
     }
 }
