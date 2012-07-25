@@ -93,7 +93,7 @@ public abstract class AbstractRuleKey implements RuleKey {
 	public boolean matchesPath(String path) {
 		if (isPathRegExp())
 			return matchesPathPattern(path);
-		return path.indexOf(getPath()) >= 0;
+		return path.startsWith(getPath());
 	}
 
 	private boolean matchesPathPattern(String path) {
