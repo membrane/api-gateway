@@ -130,7 +130,7 @@ public class ResourceResolver {
 					String publicId, String systemId, String baseURI) {
 				try {
 					if (!systemId.contains("://"))
-						systemId = new URI(new URI(baseURI, false), systemId, false).getPath();
+						systemId = new URI(new URI(baseURI, false), systemId, false).toString();
 					return new LSInputImpl(publicId, systemId, resolve(systemId));
 				} catch (Exception e) {
 					throw new RuntimeException(e);

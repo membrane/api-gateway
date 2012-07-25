@@ -310,10 +310,7 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 	private String generateSampleRequest(final String portName, final String operationName,
 			final String bindingName, final Definitions w) {
 		StringWriter writer = new StringWriter();
-	    SOARequestCreator creator = new SOARequestCreator();
-	    creator.setBuilder(new MarkupBuilder(writer));
-	    creator.setDefinitions(w);
-	    creator.setCreator(new RequestTemplateCreator());
+	    SOARequestCreator creator = new SOARequestCreator(w, new RequestTemplateCreator(), new MarkupBuilder(writer));
 	    creator.createRequest(portName, operationName, bindingName);
 		return writer.toString();
 	}

@@ -42,7 +42,7 @@ public class URLNormalizerInterceptor extends AbstractInterceptor {
 					break OUTER;
 				case '/':
 					sb.appendCodePoint(c);
-					if (i < uri.length() - 2 && uri.codePointAt(i+1) == '.' && uri.codePointAt(i+2) == '/')
+					while (i < uri.length() - 2 && uri.codePointAt(i+1) == '.' && uri.codePointAt(i+2) == '/')
 						i += 2;
 					break;
 				default:

@@ -111,7 +111,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.predic8</groupId>
-			<artifactId>soa-model</artifactId>
+			<artifactId>soa-model-core</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.predic8</groupId>
