@@ -1,7 +1,12 @@
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
-	<serviceProxy name="BLZ" port="2000">
-		<target host="www.thomas-bayer.com" port="80" />
+	
+	<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+	</soapProxy>
+	
+	<serviceProxy port="9000">
+		<adminConsole />
 	</serviceProxy>
+	
 </proxies>
