@@ -751,19 +751,21 @@ public class AdminPageBuilder extends Html {
 
 		table().cellspacing("0px").cellpadding("0px").classAttr("spv").style("width:662px");
 			createListenerRow(proxy);
-			createBeginArrowsRow();
-			for (int i = 0; i < leftStack.size() - 1 - (noTarget ? 1 : 0); i++) {
-				tr().style("background:url(\""+relativeRootPath+"/admin/images/spv-middle.png\");background-repeat:repeat-y;display:inline-table");
+			if (leftStack.size() > 1 || !noTarget) {
+				createBeginArrowsRow();
+				for (int i = 0; i < leftStack.size() - 1 - (noTarget ? 1 : 0); i++) {
+					tr().style("background:url(\""+relativeRootPath+"/admin/images/spv-middle.png\");background-repeat:repeat-y;display:inline-table");
 					createInterceptorRow(leftStack, rightStack, i, false);
-				end();
-			}
-			createEndArrowsRow();
-			if (noTarget) {
-				tr();
-				 	createInterceptorRow(leftStack, rightStack, leftStack.size()-2, true);
-				end();
-			} else {
-				createTargetRow(proxy);
+					end();
+				}
+				createEndArrowsRow();
+				if (noTarget) {
+					tr();
+					createInterceptorRow(leftStack, rightStack, leftStack.size()-2, true);
+					end();
+				} else {
+					createTargetRow(proxy);
+				}
 			}
 		end();
 	}
