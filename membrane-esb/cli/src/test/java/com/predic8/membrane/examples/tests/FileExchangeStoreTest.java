@@ -34,6 +34,8 @@ public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 		try {
 			getAndAssert200("http://localhost:2000/");
 			
+			Thread.sleep(1000);
+			
 			File exchangesDir = new File(baseDir, "exchanges");
 			if (!containsRecursively(exchangesDir, new FilenameFilter() {
 				@Override
