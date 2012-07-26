@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.rest;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
+import java.security.InvalidParameterException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,7 +70,18 @@ public class RESTInterceptor extends AbstractInterceptor {
 			if (a==null) continue;
 			Matcher matcher = Pattern.compile(a.value()).matcher(pathQuery);
 			if (matcher.matches()) {
-				exc.setResponse((Response)m.invoke(this, new Object[] { new QueryParameter(URLParamUtil.getParams(exc), matcher), getRelativeRootPath(pathQuery) }));
+				Object[] parameters;
+				switch (m.getParameterTypes().length) {
+				case 2:
+					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(exc), matcher), getRelativeRootPath(pathQuery) };
+					break;
+				case 3:
+					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(exc), matcher), getRelativeRootPath(pathQuery), exc };
+					break;
+				default:
+					throw new InvalidParameterException("@Mapping is supposed to annotate a 2-parameter method.");
+				}
+				exc.setResponse((Response)m.invoke(this, parameters));
 				return Outcome.RETURN;
 			}
 		}
@@ -79,7 +91,7 @@ public class RESTInterceptor extends AbstractInterceptor {
 	/**
 	 * For example, returns "../.." for the input "/admin/clusters/".
 	 */
-	private String getRelativeRootPath(String pathQuery) throws MalformedURLException {
+	protected String getRelativeRootPath(String pathQuery) throws MalformedURLException {
 		String path = URIUtil.getPath(pathQuery);
 		// count '/'s
 		int depth = 0;

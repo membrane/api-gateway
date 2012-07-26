@@ -17,6 +17,7 @@ import groovy.xml.MarkupBuilder;
 
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -138,9 +139,9 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 	}
 	
 	@Mapping("(?!.*operation)([^?]*)")
-	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath) throws Exception {
+	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath, Exchange exc) throws Exception {
 		try {
-			final String myPath = params.getGroup(1);
+			final String myPath = new URI(exc.getRequestURI()).getPath();
 			
 			final Definitions w = getParsedWSDL();
 			final Service service = getService(w);
@@ -155,7 +156,7 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 					p();
 						text("Target Namespace: " + w.getTargetNamespace());
 						br().end();
-						String wsdlLink = relativeRootPath +  myPath + "?wsdl";
+						String wsdlLink = myPath + "?wsdl";
 						text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
 					end();
 					
@@ -195,7 +196,7 @@ public class SOAPUIInterceptor extends RESTInterceptor {
 								if ("HTTP".equals(getProtocolVersion(binding))) {
 									text(o.getName());
 								} else {
-									String link = relativeRootPath + myPath + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName(); 
+									String link = myPath + "/operation/" + binding.getName() + "/" + portType.getName() + "/" + o.getName(); 
 									a().href(link).text(o.getName()).end();
 								}
 								end();
