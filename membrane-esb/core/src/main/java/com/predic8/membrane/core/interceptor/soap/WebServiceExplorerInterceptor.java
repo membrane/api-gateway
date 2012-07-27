@@ -17,7 +17,9 @@ import groovy.xml.MarkupBuilder;
 
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -137,9 +139,27 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			throw new IllegalArgumentException("WSDL needs to have exactly one service for SOAPUIInterceptor to work.");
 		return d.getServices().get(0);
 	}
+
+	private String getClientURL(Exchange exc) {
+		// TODO: move this to some central location
+		try {
+			String uri = exc.getRequestURI();
+			String host = exc.getRequest().getHeader().getHost();
+			if (host != null) {
+				if (host.contains(":"))
+					host = host.substring(0, host.indexOf(":"));
+				boolean https = exc.getRule().getSslInboundContext() != null;
+				uri = new URL(https ? "https" : "http", host, exc.getHandler().getLocalPort(), uri).toString();
+			}
+			return uri;
+		} catch (MalformedURLException e) {
+			log.debug("Malformed URL", e);
+			return exc.getRequest().getUri();
+		}
+	}
 	
 	@Mapping("(?!.*operation)([^?]*)")
-	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath, Exchange exc) throws Exception {
+	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath, final Exchange exc) throws Exception {
 		try {
 			final String myPath = new URI(exc.getRequestURI()).getPath();
 			
@@ -156,7 +176,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 					p();
 						text("Target Namespace: " + w.getTargetNamespace());
 						br().end();
-						String wsdlLink = myPath + "?wsdl";
+						String wsdlLink = getClientURL(exc) + "?wsdl";
 						text("WSDL: ").a().href(wsdlLink).text(wsdlLink).end();
 					end();
 					
@@ -176,7 +196,10 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 					else 
 						createOperationsTable(w, bindingOperations, binding, portType);
 					
-					h2().text("Endpoints").end();
+					h2().text("Virtual Endpoint").end();
+					p().a().href(getClientURL(exc)).text(getClientURL(exc)).end().end();
+					
+					h2().text("Target Endpoints").end();
 					if (service.getPorts().size() == 0)
 						p().text("There are no endpoints defined.").end();
 					else
