@@ -310,21 +310,30 @@ public class Header {
 	private Map<String, String> getMediaTypeParameters() {
 		Matcher m = mediaTypePattern.matcher(getContentType());
 		m.matches();
-		log.debug("type: " + m.group(1));
-		log.debug("subtype: " + m.group(2));
-		log.debug("parameters: " + m.group(3));
+		boolean logDebug = log.isDebugEnabled();
+		if (logDebug) {
+			log.debug("type: " + m.group(1));
+			log.debug("subtype: " + m.group(2));
+			log.debug("parameters: " + m.group(3));
+		}
 
 		Map<String, String> map = new HashMap<String, String>();
 		if (m.group(3) == null)
 			return map;
 
 		for (String param : m.group(3).substring(1).split("\\s*;\\s*")) {
-			log.debug("parsing parameter: " + param);
+			if (logDebug)
+				log.debug("parsing parameter: " + param);
 			Matcher paramMat = parameterPattern.matcher(param);
-			paramMat.matches();
-			log.debug("parameter: " + paramMat.group(1) + "="
-					+ paramMat.group(2));
-			map.put(paramMat.group(1).trim(), paramMat.group(2));
+			if (paramMat.matches()) {
+				if (logDebug)
+					log.debug("parameter: " + paramMat.group(1) + "="
+							+ paramMat.group(2));
+				map.put(paramMat.group(1).trim(), paramMat.group(2));
+			} else {
+				if (logDebug)
+					log.debug("parameter did not match " + parameterPattern.toString());
+			}
 		}
 		return map;
 	}
