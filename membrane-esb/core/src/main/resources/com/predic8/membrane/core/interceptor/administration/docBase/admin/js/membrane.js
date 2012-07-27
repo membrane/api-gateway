@@ -174,24 +174,6 @@ $(function() {
 		                   return membrane.createLink('/admin/calls', v, [['client', v]]);
 		               },
 		               "aTargets": [ 0 ]
-		           },
-		           {
-		               "fnRender": function ( o, v ) {
-		                   return v+" ms";
-		               },
-		               "aTargets": [ 2 ]
-		           },
-		           {
-		               "fnRender": function ( o, v ) {
-		                   return v+" ms";
-		               },
-		               "aTargets": [ 3 ]
-		           },
-		           {
-		               "fnRender": function ( o, v ) {
-		                   return v+" ms";
-		               },
-		               "aTargets": [ 4 ]
 		           }],
 			"fnServerData": function ( sSource, aoData, fnCallback ) {
 		      	  function getParam(name) {

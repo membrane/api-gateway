@@ -856,7 +856,7 @@ public class AdminPageBuilder extends Html {
 				"class", "display", "id", "clients-table");
 			thead();
 				tr();
-					createThs("Client", "Exchanges", "Min", "Max", "Avg");
+					createThs("Client", "Exchanges", "Min ms", "Max ms", "Avg ms");
 				end();
 			end();
 			tbody();
