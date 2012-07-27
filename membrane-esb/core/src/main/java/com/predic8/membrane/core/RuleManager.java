@@ -172,7 +172,10 @@ public class RuleManager {
 
 			if (!rule.getKey().isHostWildcard()) {
 				String ruleHost = rule.getKey().getHost().split(":")[0];
-				String requestHost = keyFromReq.getHost().split(":")[0];
+				String requestHost = keyFromReq.getHost();
+				if (requestHost == null)
+					continue;
+				requestHost = requestHost.split(":")[0];
 
 				log.debug("Rule host: " + ruleHost + ";  Request host: " + requestHost);
 
