@@ -3,7 +3,6 @@
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
 	
 	<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
-		<path>/MyBLZService</path>
 	</soapProxy>
 	
 	<serviceProxy port="9000">

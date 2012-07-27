@@ -1,0 +1,1 @@
+Please follow http://membrane-soa.org/esb-doc/current/soap-quickstart.htm .
