@@ -36,6 +36,22 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 		File baseDir = getExampleDir("quickstart-soap");
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
+			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "quickstart-soap.proxies.xml"));
+			pxu.updateWith(
+					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
+					"	\r\n" + 
+					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
+					"		<path>/MyBLZService</path>\r\n" + 
+					"	</soapProxy>\r\n" + 
+					"	\r\n" + 
+					"	<serviceProxy port=\"9000\">\r\n" + 
+					"		<adminConsole />\r\n" + 
+					"	</serviceProxy>\r\n" + 
+					"	\r\n" + 
+					"</proxies>", sl);
+			
 			String endpoint = "http://localhost:2000/MyBLZService";
 			String result = getAndAssert200(endpoint + "?wsdl");
 			assertContains("wsdl:documentation", result);
@@ -69,7 +85,6 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 			result = postAndAssert(500, endpoint, invalidRequest);
 			assertContains(".java:", result);
 
-			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "quickstart-soap.proxies.xml"));
 			pxu.updateWith(
 					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
 					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
