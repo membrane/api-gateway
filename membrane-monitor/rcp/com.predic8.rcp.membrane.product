@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Membrane Monitor" uid="membrane-win64" id="com.predic8.rcp.membrane.product" application="com.predic8.rcp.membrane.application" version="3.3.3.qualifier" useFeatures="false" includeLaunchers="true">
+<product name="Membrane Monitor" uid="membrane-win64" id="com.predic8.rcp.membrane.product" application="com.predic8.rcp.membrane.application" version="3.5.1.qualifier" useFeatures="false" includeLaunchers="true">
 
    <aboutInfo>
       <image path="rcp/icons/logo128.png"/>
       <text>
-         Membrane Monitor Version 3.2.2
-  Copyright @  2004-2011 by predic8 GmbH
+         Membrane Monitor Version 3.5.1
+  Copyright @  2004-2012 by predic8 GmbH
   Moltkestr. 40  53173 Bonn Germany 
   www.predic8.com 
   Phone: +49 (0)228/555 25 76-0

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Tests
 Bundle-SymbolicName: com.predic8.plugin.membrane.tests
-Bundle-Version: 3.5.0.qualifier
+Bundle-Version: 3.5.1.qualifier
 Bundle-Activator: com.predic8.plugin.membrane.tests.Activator
 Bundle-Vendor: predic8 GmbH
 Bundle-License: http://www.apache.org/licenses/LICENSE-2.0
