@@ -15,17 +15,19 @@
 package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.test.AssertUtils.assertContains;
+import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.junit.Test;
 
-import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.ProxiesXmlUtil;
 import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.ProxiesXmlUtil;
+import com.predic8.membrane.test.AssertUtils;
 
 public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 
@@ -34,72 +36,112 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 		File baseDir = getExampleDir("quickstart-soap");
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
-			String result = getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
+			String endpoint = "http://localhost:2000/MyBLZService";
+			String result = getAndAssert200(endpoint + "?wsdl");
 			assertContains("wsdl:documentation", result);
-			assertContains("www.thomas-bayer.com:80", result);  // assert that rewriting did not take place
+			assertContains("localhost:2000/MyBLZService", result);  // assert that rewriting did take place
+
+			result = AssertUtils.postAndAssert200(endpoint, 
+					"<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:blz=\"http://thomas-bayer.com/blz/\">\r\n" + 
+					"   <soapenv:Header/>\r\n" + 
+					"   <soapenv:Body>\r\n" + 
+					"      <blz:getBank>\r\n" + 
+					"         <blz:blz>37050198</blz:blz>\r\n" + 
+					"      </blz:getBank>\r\n" + 
+					"   </soapenv:Body>\r\n" + 
+					"</soapenv:Envelope>");
+			assertContains("Sparkasse", result);
+
+			result = getAndAssert200("http://localhost:9000/admin/");
+			result.contains("BLZService");
+			
+			String invalidRequest = 
+					"<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:blz=\"http://thomas-bayer.com/blz/\">\r\n" + 
+					"   <soapenv:Header/>\r\n" + 
+					"   <soapenv:Body>\r\n" + 
+					"      <blz:getBank>\r\n" + 
+					"         <blz:blz>37050198</blz:blz>\r\n" +
+					"         <foo />\r\n" + 
+					"      </blz:getBank>\r\n" + 
+					"   </soapenv:Body>\r\n" + 
+					"</soapenv:Envelope>";
+			
+			result = postAndAssert(500, endpoint, invalidRequest);
+			assertContains(".java:", result);
 
 			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "quickstart-soap.proxies.xml"));
 			pxu.updateWith(
-					"<proxies>\r\n" + 
-					"  <serviceProxy name=\"BLZ\" port=\"2000\">\r\n" + 
-					"    <wsdlRewriter />\r\n" + 
-					"    <target host=\"www.thomas-bayer.com\" port=\"80\" />\r\n" + 
-					"  </serviceProxy>\r\n" + 
-					"\r\n" + 
-					"  <serviceProxy name=\"Console\" port=\"9000\">\r\n" + 
-					"    <adminConsole />\r\n" + 
-					"  </serviceProxy>	\r\n" + 
+					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
+					"	\r\n" + 
+					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
+					"		<path>/MyBLZService</path>\r\n" + 
+					"		<soapStackTraceFilter/>\r\n" + 
+					"	</soapProxy>\r\n" + 
+					"	\r\n" + 
+					"	<serviceProxy port=\"9000\">\r\n" + 
+					"		<adminConsole />\r\n" + 
+					"	</serviceProxy>\r\n" + 
+					"	\r\n" + 
 					"</proxies>", sl);
-
-			result = getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
-			assertContains("localhost:2000", result); // assert that rewriting took place
+			
+			result = postAndAssert(500, endpoint, invalidRequest);
+			assertContainsNot(".java:", result);
+			
+			pxu.updateWith(
+					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
+					"	\r\n" + 
+					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
+					"		<path>/MyBLZService</path>\r\n" + 
+					"		<soapStackTraceFilter/>\r\n" + 
+					"		<validator/>\r\n" +
+					"	</soapProxy>\r\n" + 
+					"	\r\n" + 
+					"	<serviceProxy port=\"9000\">\r\n" + 
+					"		<adminConsole />\r\n" + 
+					"	</serviceProxy>\r\n" + 
+					"	\r\n" + 
+					"</proxies>", sl);
+			
+			result = postAndAssert(400, endpoint, invalidRequest);
+			assertContains("Validation failed", result);
+			
+			result = getAndAssert200("http://localhost:9000/admin/service-proxy/show?name=BLZService%3A2000");
+			result.contains("1 of 1 messages have been invalid");
+			
+			result = getAndAssert200(endpoint);
+			assertContains("Target Namespace", result);
+			
+			result = getAndAssert200(endpoint + "/operation/BLZServiceSOAP11Binding/BLZServicePortType/getBank");
+			assertContains("blz&gt;?XXX?", result);
 
 			pxu.updateWith(
-					"<proxies>\r\n" + 
-					"  <serviceProxy name=\"BLZ\" port=\"2000\">\r\n" + 
-					"    <rest2Soap>\r\n" + 
-					"      <mapping regex=\"/bank/.*\" soapAction=\"\"\r\n" + 
-					"        soapURI=\"/axis2/services/BLZService\" \r\n" + 
-					"        requestXSLT=\"get2soap.xsl\"\r\n" + 
-					"        responseXSLT=\"strip-env.xsl\" />\r\n" + 
-					"    </rest2Soap>\r\n" + 
-					"    <validator wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\" />\r\n" +
-					"    <wsdlRewriter />\r\n" + 
-					"    <target host=\"www.thomas-bayer.com\" port=\"80\" />\r\n" + 
-					"  </serviceProxy>\r\n" + 
-					"\r\n" + 
-					"  <serviceProxy name=\"Console\" port=\"9000\">\r\n" + 
-					"    <adminConsole />\r\n" + 
-					"  </serviceProxy>	\r\n" + 
+					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
+					"	\r\n" + 
+					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
+					"		<path>/MyBLZService</path>\r\n" + 
+					"		<soapStackTraceFilter/>\r\n" + 
+					"		<validator/>\r\n" +
+					"	</soapProxy>\r\n" + 
+					"	\r\n" + 
+					"	<serviceProxy port=\"9000\">\r\n" + 
+					"		<adminConsole />\r\n" + 
+					"	</serviceProxy>\r\n" + 
+					"	\r\n" + 
+					"	<serviceProxy port=\"2000\">\r\n" + 
+					"		<index />\r\n" + 
+					"	</serviceProxy>\r\n" + 
+					"	\r\n" + 
 					"</proxies>", sl);
-			
-			result = getAndAssert200("http://localhost:2000/bank/37050198");
-			assertContains("plz>50667", result);
-			
-			result = AssertUtils.postAndAssert200("http://localhost:2000/axis2/services/BLZService", 
-					"<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" \r\n" + 
-					"      xmlns:blz=\"http://thomas-bayer.com/blz/\">\r\n" + 
-					"   <soapenv:Header/>\r\n" + 
-					"   <soapenv:Body>\r\n" + 
-					"      <blz:getBank>\r\n" + 
-					"   <blz:blz>37050198</blz:blz>\r\n" + 
-					"      </blz:getBank>\r\n" + 
-					"   </soapenv:Body>\r\n" + 
-					"</soapenv:Envelope>");
-			assertContains("plz>50667", result);
-			
-			result = AssertUtils.postAndAssert(400, "http://localhost:2000/axis2/services/BLZService", 
-					"<soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" \r\n" + 
-					"		  xmlns:blz=\"http://thomas-bayer.com/blz/\">\r\n" + 
-					"   <soapenv:Header/>\r\n" + 
-					"   <soapenv:Body>\r\n" + 
-					"      <blz:getBank>\r\n" + 
-					"	 <blz:blz>37050198</blz:blz>\r\n" + 
-					"	    <foo/>\r\n" + // <- invalid message 
-					"      </blz:getBank>\r\n" + 
-					"   </soapenv:Body>\r\n" + 
-					"</soapenv:Envelope>");
-			assertContains("failed", result);
+
+			result = getAndAssert200("http://localhost:2000");
+			assertContains("/MyBLZService", result);
+
 		} finally {
 			sl.killScript();
 		}
