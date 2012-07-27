@@ -36,7 +36,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
-import com.predic8.membrane.core.interceptor.soap.SOAPUIInterceptor;
+import com.predic8.membrane.core.interceptor.soap.WebServiceExplorerInterceptor;
 import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 import com.predic8.wsdl.AbstractBinding;
 import com.predic8.wsdl.Definitions;
@@ -212,7 +212,7 @@ public class SOAPProxy extends ServiceProxy {
 
 		// add interceptors (in reverse order) to position 0.
 		
-		SOAPUIInterceptor sui = new SOAPUIInterceptor();
+		WebServiceExplorerInterceptor sui = new WebServiceExplorerInterceptor();
 		sui.setWsdl(wsdl);
 		sui.setPortName(portName);
 		interceptors.add(0, sui);

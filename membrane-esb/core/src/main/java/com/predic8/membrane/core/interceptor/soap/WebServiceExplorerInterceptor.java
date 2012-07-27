@@ -48,15 +48,15 @@ import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.wstool.creator.RequestTemplateCreator;
 import com.predic8.wstool.creator.SOARequestCreator;
 
-public class SOAPUIInterceptor extends RESTInterceptor {
+public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	
-	private static Log log = LogFactory.getLog(SOAPUIInterceptor.class.getName());
+	private static Log log = LogFactory.getLog(WebServiceExplorerInterceptor.class.getName());
 	
 	private String wsdl;
 	private String portName;
 	
-	public SOAPUIInterceptor() {
-		name = "SOAP UI";
+	public WebServiceExplorerInterceptor() {
+		name = "Web Service Explorer";
 	}
 	
 	@Override
