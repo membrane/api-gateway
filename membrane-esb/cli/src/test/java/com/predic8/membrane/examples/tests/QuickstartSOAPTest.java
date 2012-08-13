@@ -71,7 +71,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"</soapenv:Envelope>");
 			assertContains("Sparkasse", result);
 
-			AssertUtils.setupHTTPAuthentication("localhost", 2000, "admin", "membrane");
+			AssertUtils.setupHTTPAuthentication("localhost", 9000, "admin", "membrane");
 			result = getAndAssert200("http://localhost:9000/admin/");
 			result.contains("BLZService");
 			
