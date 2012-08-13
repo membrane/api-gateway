@@ -57,7 +57,7 @@ Execute the following steps:
 
 7. Return to the console. Run both:
      curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:2000/ContactService
-     curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:2000/ContactService
+     curl --header "Content-Type: text/xml" -d @request_v20.xml http://localhost:2000/ContactService
 
   Observe that both requests, 1.1 and 2.0, get a response from their respective service, although
   the endpoint used is the same.
