@@ -47,6 +47,9 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"	</soapProxy>\r\n" + 
 					"	\r\n" + 
 					"	<serviceProxy port=\"9000\">\r\n" + 
+					"		<basicAuthentication>\r\n" + 
+					"			<user name=\"admin\" password=\"membrane\" />\r\n" + 
+					"		</basicAuthentication>	\r\n" + 
 					"		<adminConsole />\r\n" + 
 					"	</serviceProxy>\r\n" + 
 					"	\r\n" + 
@@ -68,6 +71,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"</soapenv:Envelope>");
 			assertContains("Sparkasse", result);
 
+			AssertUtils.setupHTTPAuthentication("localhost", 2000, "admin", "membrane");
 			result = getAndAssert200("http://localhost:9000/admin/");
 			result.contains("BLZService");
 			
@@ -96,6 +100,9 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"	</soapProxy>\r\n" + 
 					"	\r\n" + 
 					"	<serviceProxy port=\"9000\">\r\n" + 
+					"		<basicAuthentication>\r\n" + 
+					"			<user name=\"admin\" password=\"membrane\" />\r\n" + 
+					"		</basicAuthentication>	\r\n" + 
 					"		<adminConsole />\r\n" + 
 					"	</serviceProxy>\r\n" + 
 					"	\r\n" + 
@@ -116,6 +123,9 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"	</soapProxy>\r\n" + 
 					"	\r\n" + 
 					"	<serviceProxy port=\"9000\">\r\n" + 
+					"		<basicAuthentication>\r\n" + 
+					"			<user name=\"admin\" password=\"membrane\" />\r\n" + 
+					"		</basicAuthentication>	\r\n" + 
 					"		<adminConsole />\r\n" + 
 					"	</serviceProxy>\r\n" + 
 					"	\r\n" + 
@@ -145,6 +155,9 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"	</soapProxy>\r\n" + 
 					"	\r\n" + 
 					"	<serviceProxy port=\"9000\">\r\n" + 
+					"		<basicAuthentication>\r\n" + 
+					"			<user name=\"admin\" password=\"membrane\" />\r\n" + 
+					"		</basicAuthentication>	\r\n" + 
 					"		<adminConsole />\r\n" + 
 					"	</serviceProxy>\r\n" + 
 					"	\r\n" + 
