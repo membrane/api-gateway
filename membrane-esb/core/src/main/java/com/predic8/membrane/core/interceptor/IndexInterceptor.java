@@ -190,8 +190,8 @@ public class IndexInterceptor extends AbstractInterceptor {
 							"table { border-collapse: collapse; }\r\n" +
 							".help { margin-top:20pt; color:#AAAAAA; padding:1em 0em 0em 0em; font-size:10pt; }\r\n" + 
 							".footer { color:#AAAAAA; padding:0em 0em; font-size:10pt; }\r\n" + 
-							".footer a { color:#AAAAAA; text-decoration: none; }\r\n" + 
-							".footer a:hover { text-decoration: underline; }\r\n" + 
+							".footer a { color:#AAAAAA; }\r\n" + 
+							".footer a:hover { color:#000000; }\r\n" + 
 							"-->");
 						end();
 					end();

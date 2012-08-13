@@ -120,8 +120,8 @@ public class HttpUtil {
 				"<style><!--\r\n" +
 				"body { font-family:sans-serif; } \r\n" +
 				".footer { margin-top:20pt; color:#AAAAAA; padding:1em 0em; font-size:10pt; }\r\n" + 
-				".footer a { color:#AAAAAA; text-decoration: none; }\r\n" + 
-				".footer a:hover { text-decoration: underline; }\r\n" + 
+				".footer a { color:#AAAAAA; }\r\n" + 
+				".footer a:hover { color:#000000; }\r\n" + 
 				"--></style>" +
 				"</head>\r\n" + 
 				"<body><h1>Internal Server Error</h1>");
