@@ -32,7 +32,7 @@ HOW IT IS DONE
 
 The following part describes the example in detail.  
 
-First take a look at the acl.proxies.xml file.
+First take a look at the proxies.xml file.
 
 <proxies>
 	<serviceProxy name="predic8.com" port="2000">

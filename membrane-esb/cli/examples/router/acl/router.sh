@@ -5,7 +5,7 @@ homeSet() {
  CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
  export CLASSPATH
  echo Membrane Router running...
- java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c acl.proxies.xml -b ../../conf/monitor-beans.xml
+ java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter -c proxies.xml -b ../../conf/monitor-beans.xml
  
 }
 

@@ -35,8 +35,8 @@ public class LoadBalancerMultiple4Test extends DistributionExtractingTestcase {
 		
 		File base = getExampleDir("loadbalancer-multiple-4");
 		
-		AssertUtils.replaceInFile(new File(base, "lb-multiple.proxies.xml"), "8080", "3023");
-		AssertUtils.replaceInFile(new File(base, "lb-multiple.proxies.xml"), "8081", "3024");
+		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8080", "3023");
+		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8081", "3024");
 		
 		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
 		try {

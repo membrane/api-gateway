@@ -15,4 +15,4 @@ set "CLASSPATH=%MEMBRANE_HOME%"
 set "CLASSPATH=%MEMBRANE_HOME%/conf"
 set "CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar"
 echo Membrane Router running...
-java  -classpath "%CLASSPATH%" com.predic8.membrane.core.Starter -c rest2Soap.proxies.xml -b ..\..\conf\monitor-beans.xml
+java  -classpath "%CLASSPATH%" com.predic8.membrane.core.Starter -c proxies.xml -b ..\..\conf\monitor-beans.xml

@@ -34,7 +34,7 @@ public class SSLForUnsecuredServersTest extends DistributionExtractingTestcase {
 	public void test() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
 		File baseDir = getExampleDir("ssl-for-unsecured-servers");
 		
-		AssertUtils.replaceInFile(new File(baseDir, "unsecured-server.proxies.xml"), "443", "3023");
+		AssertUtils.replaceInFile(new File(baseDir, "proxies.xml"), "443", "3023");
 		
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {

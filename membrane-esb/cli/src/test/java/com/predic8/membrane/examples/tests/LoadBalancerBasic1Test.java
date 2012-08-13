@@ -34,7 +34,7 @@ public class LoadBalancerBasic1Test extends DistributionExtractingTestcase {
 	public void test() throws IOException, InterruptedException {
 		File base = getExampleDir("loadbalancer-basic-1");
 		
-		AssertUtils.replaceInFile(new File(base, "lb-basic.proxies.xml"), "8080", "3023");
+		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8080", "3023");
 		
 		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
 		try {

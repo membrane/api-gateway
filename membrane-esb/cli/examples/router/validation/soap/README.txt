@@ -3,7 +3,7 @@ SOAP Message Validation
 To run this example you should install Curl from http://curl.haxx.se/download.html , if
 you have not done so already. Let us assume it is in your PATH.
 
-As the URL of a WSDL is specified in soap-validation.proxies.xml ,
+As the URL of a WSDL is specified in proxies.xml ,
 the ESB retrieves all corresponding schemas and tries to validate the message body using them.
 
 

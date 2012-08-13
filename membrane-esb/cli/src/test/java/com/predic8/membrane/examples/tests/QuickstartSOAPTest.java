@@ -36,7 +36,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 		File baseDir = getExampleDir("quickstart-soap");
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
-			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "quickstart-soap.proxies.xml"));
+			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "proxies.xml"));
 			pxu.updateWith(
 					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
 					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 

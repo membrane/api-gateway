@@ -36,8 +36,8 @@ public class RoutingTest extends DistributionExtractingTestcase {
 		String request_v11 = FileUtils.readFileToString(new File(base, "request_v11.xml"));
 		String request_v20 = FileUtils.readFileToString(new File(base, "request_v20.xml"));
 		
-		replaceInFile(new File(base, "versioning-routing.proxies.xml"), "8080", "3024");
-		replaceInFile(new File(base, "versioning-routing.proxies.xml"), "2000", "3025");
+		replaceInFile(new File(base, "proxies.xml"), "8080", "3024");
+		replaceInFile(new File(base, "proxies.xml"), "2000", "3025");
 		replaceInFile(new File(base, "src/com/predic8/contactservice/Launcher.java"), "8080", "3024");
 		
 		Process2 sl = new Process2.Builder().in(base).script("router").withWatcher(new ConsoleLogger()).waitForMembrane().start();

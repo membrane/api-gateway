@@ -11,7 +11,7 @@
 	documentation and a reference explaining what XML elements can be used
 	how and where.
 	
-	See the *.proxies.xml files in the /examples/* directories in the ESB
+	See the proxies.xml files in the /examples/* directories in the ESB
 	distribution for several examples of how to configure different ESB
 	features within this file.
 -->

@@ -32,7 +32,7 @@ HOW IT IS DONE
 
 The following part describes the example in detail.  
 
-First take a look at the basic-auth.proxies.xml file.
+First take a look at the proxies.xml file.
 
 
 <proxies>

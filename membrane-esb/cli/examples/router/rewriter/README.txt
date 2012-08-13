@@ -24,7 +24,7 @@ HOW IT IS DONE
 
 This section describes the example in detail.  
 
-First take a look at the rewriter.proxies.xml file.
+First take a look at the proxies.xml file.
 
 <proxies>
 	<serviceProxy port="2000">

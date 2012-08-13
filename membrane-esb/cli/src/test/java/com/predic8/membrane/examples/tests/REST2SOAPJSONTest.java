@@ -32,7 +32,7 @@ public class REST2SOAPJSONTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("rest2soap-json");
-		AssertUtils.replaceInFile(new File(baseDir, "rest2Soap-json.proxies.xml"), "2000", "2043");
+		AssertUtils.replaceInFile(new File(baseDir, "proxies.xml"), "2000", "2043");
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().withWatcher(new ConsoleLogger()).start();
 		try {
 			assertContains("\"ns1:bic\":\"COLSDE33XXX\"", getAndAssert200("http://localhost:2043/bank/37050198"));

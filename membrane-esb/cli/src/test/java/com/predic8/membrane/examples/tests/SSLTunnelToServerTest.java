@@ -33,7 +33,7 @@ public class SSLTunnelToServerTest extends DistributionExtractingTestcase {
 	public void test() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
 		File baseDir = getExampleDir("ssl-tunnel-to-server");
 		
-		AssertUtils.replaceInFile(new File(baseDir, "ssl-tunnel-to-server.proxies.xml"), "8080", "3023");
+		AssertUtils.replaceInFile(new File(baseDir, "proxies.xml"), "8080", "3023");
 		
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {

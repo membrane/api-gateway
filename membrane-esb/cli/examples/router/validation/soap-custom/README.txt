@@ -37,7 +37,7 @@ HOW IT IS DONE
 
 The following part describes the example in detail.  
 
-First take a look at the soap-schema-validation.proxies.xml file.
+First take a look at the proxies.xml file.
 
 
 

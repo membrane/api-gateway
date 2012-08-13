@@ -39,7 +39,7 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 			String result = getAndAssert200("http://localhost:2000/restnames/name.groovy?name=Pia");
 			assertContains("Italy", result);
 
-			new ProxiesXmlUtil(new File(baseDir, "quickstart-rest.proxies.xml")).updateWith(
+			new ProxiesXmlUtil(new File(baseDir, "proxies.xml")).updateWith(
 					"     <proxies>\r\n" + 
 					"       <serviceProxy name=\"names\" port=\"2000\">\r\n" + 
 					"         <request>\r\n" + 
