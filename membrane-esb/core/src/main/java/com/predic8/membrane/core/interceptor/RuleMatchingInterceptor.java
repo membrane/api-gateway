@@ -19,6 +19,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -59,7 +60,12 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private void handleNoRuleFound(Exchange exc) throws IOException {
 		exc.getRequest().readBody();
 		exc.getHandler().shutdownInput();
-		exc.setResponse(Response.interalServerError("This request was not accepted by Membrane Monitor. Please correct the request and try again.").build());
+		exc.setResponse(
+				Response.badRequest(
+						"This request was not accepted by " + 
+								"<a href=\"http://www.membrane-soa.org/esb-doc/\">" + Constants.PRODUCT_NAME + "</a>" + 
+								". Please correct the request and try again.",
+						false).build());
 	}
 
 	private Rule getRule(Exchange exc) {

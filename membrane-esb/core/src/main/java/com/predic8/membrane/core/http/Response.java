@@ -122,6 +122,14 @@ public class Response extends Message {
 				body(htmlMessage("Bad Request", message));
 	}
 
+	public static ResponseBuilder badRequest(String message, boolean escape) {
+		return ResponseBuilder.newInstance().
+				status(400, "Bad Request").
+				header("Server", SERVER_HEADER).
+				contentType(MimeType.TEXT_HTML_UTF8).
+				body(escape ? htmlMessage("Bad Request", message) : unescapedHtmlMessage("Bad Request", message));
+	}
+
 	public static ResponseBuilder continue100() {
 		return ResponseBuilder.newInstance().
 				status(100, "Continue");
