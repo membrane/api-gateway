@@ -29,6 +29,7 @@ public class Request extends AbstractXmlElement {
 
 	private URI uri;
 	private Headers headers;
+	private AbstractXmlElement body;
 	
 	public Request(com.predic8.membrane.core.http.Request req) throws Exception {
 		setMethod(req.getMethod());
@@ -37,6 +38,12 @@ public class Request extends AbstractXmlElement {
 		setUri(new URI(req.getUri()));
 
 		setHeaders(new Headers(req.getHeader()));
+		
+		if (req.isXML()) {
+			body = new XMLBody(req.getBody());
+		} else if (req.isJSON()) {
+			// TODO
+		}
 	}
 
 	public Request() {}
@@ -66,6 +73,11 @@ public class Request extends AbstractXmlElement {
 		
 		uri.write(out);
 		writeIfNotNull(headers, out);
+		if (body != null) {
+			out.writeStartElement("body");
+			body.write(out);
+			out.writeEndElement();
+		}
 		
 		out.writeEndElement();		
 	}
