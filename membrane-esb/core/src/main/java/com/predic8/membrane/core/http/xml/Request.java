@@ -42,7 +42,7 @@ public class Request extends AbstractXmlElement {
 		if (req.isXML()) {
 			body = new XMLBody(req.getBody());
 		} else if (req.isJSON()) {
-			// TODO
+			body = new JSONBody(req.getBody());
 		}
 	}
 

@@ -24,7 +24,7 @@ import javax.xml.stream.events.XMLEvent;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.http.AbstractBody;
 
-public class XMLBody extends AbstractXmlElement {
+class XMLBody extends AbstractXmlElement {
 
 	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
@@ -40,6 +40,7 @@ public class XMLBody extends AbstractXmlElement {
 
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
+		out.writeAttribute("type", "xml");
 
 		try {
 			XMLStreamReader parser;
