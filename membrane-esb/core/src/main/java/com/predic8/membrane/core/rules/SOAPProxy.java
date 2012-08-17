@@ -71,6 +71,7 @@ public class SOAPProxy extends ServiceProxy {
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
 		key = new ServiceProxyKey(parseHost(token), "*", ".*", parsePort(token));
+		name = token.getAttributeValue("", "name");
 		wsdl = token.getAttributeValue("", "wsdl");
 		portName = token.getAttributeValue("", "portName");
 		if (token.getAttributeValue("", "method") != null)
@@ -99,6 +100,8 @@ public class SOAPProxy extends ServiceProxy {
 	protected void writeExtension(XMLStreamWriter out) throws XMLStreamException {
 		writeAttrIfTrue(out, !"*".equals(key.getHost()), "host", key.getHost());
 		out.writeAttribute("wsdl", wsdl);
+		if (name != null)
+			out.writeAttribute("name", name);
 		if (portName != null)
 			out.writeAttribute("portName", portName);
 		
@@ -124,16 +127,13 @@ public class SOAPProxy extends ServiceProxy {
 			
 			Definitions definitions = wsdlParser.parse(ctx);
 			
-			if (StringUtils.isEmpty(name))
-				name = definitions.getName();
-				
 			List<Service> services = definitions.getServices();
 			if (services.size() != 1)
 				throw new IllegalArgumentException("There are " + services.size() + " services defined in the WSDL, but exactly 1 is required for soapProxy.");
 			Service service = services.get(0);
 			
-			if (!StringUtils.isEmpty(service.getName()))
-				name = service.getName();
+			if (StringUtils.isEmpty(name))
+				name = StringUtils.isEmpty(service.getName()) ? definitions.getName() : service.getName();
 			
 			List<Port> ports = service.getPorts();
 			Port port = selectPort(ports, portName);

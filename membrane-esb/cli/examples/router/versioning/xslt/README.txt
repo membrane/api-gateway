@@ -43,7 +43,7 @@ Execute the following steps:
 3. Open yet another console window and run
      cd versioning\xslt
      curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:8080/ContactService/v11
-   You should see a response containing "Hello ... version 1.1".
+   You should see a response containing "<h1>404 Not Found</h1>", "No context found for request".
 
 4. Now run
      curl --header "Content-Type: text/xml" -d @request_v20.xml http://localhost:8080/ContactService/v20

@@ -44,7 +44,10 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 			log.debug("routing to serviceProxy with name: " + getServiceProxyName(exc));
 
 			// rule matching
-			Rule newRule = getRuleByDest(exc.getDestinations().get(0));
+			String destination = exc.getDestinations().get(0);
+			Rule newRule = getRuleByDest(destination);
+			if (newRule == null)
+				throw new Exception("No proxy found for destination " + destination);
 			exc.setRule(newRule);
 			// dispatching
 			exc.getDestinations().clear();
