@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.http.xml;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,14 +27,14 @@ import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonToken;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.http.AbstractBody;
+import com.predic8.membrane.core.http.Message;
 
 class JSONBody extends AbstractXmlElement {
 
-	private final AbstractBody body;
+	private final Message msg;
 
-	public JSONBody(AbstractBody body) {
-		this.body = body;
+	public JSONBody(Message msg) {
+		this.msg = msg;
 	}
 
 	@Override
@@ -43,7 +44,7 @@ class JSONBody extends AbstractXmlElement {
 		try {
 		
 			final JsonFactory jsonFactory = new JsonFactory();
-			final JsonParser jp = jsonFactory.createJsonParser(body.getBodyAsStream());
+			final JsonParser jp = jsonFactory.createJsonParser(new InputStreamReader(msg.getBodyAsStream(), msg.getCharset()));
 			final List<String> stack = new ArrayList<String>();
 			String name = "root";
 			OUTER:

@@ -40,9 +40,11 @@ public class Request extends AbstractXmlElement {
 		setHeaders(new Headers(req.getHeader()));
 		
 		if (req.isXML()) {
-			body = new XMLBody(req.getBody());
+			body = new XMLBody(req);
 		} else if (req.isJSON()) {
-			body = new JSONBody(req.getBody());
+			body = new JSONBody(req);
+		} else {
+			body = new PlainBody(req);
 		}
 	}
 
