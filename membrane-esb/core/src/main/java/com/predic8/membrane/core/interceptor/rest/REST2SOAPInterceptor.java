@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.rest;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.xml.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -110,23 +112,30 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		log.debug("restURL: " + getRESTURL(exc));
+		Mapping mapping = getRESTURL(exc);
+		log.debug("restURL: " + mapping);
 		if (getRESTURL(exc) == null)
 			return Outcome.CONTINUE;
 
 		if (log.isDebugEnabled())
 			log.debug("response: " + new String(getTransformer(null).transform(getBodySource(exc)), Constants.UTF_8_CHARSET));
 
-		byte[] transformedResp = getTransformer(getRESTURL(exc).responseXSLT).
-				transform(getBodySource(exc));
+		exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).
+				transform(getBodySource(exc)));
 		setContentType(exc.getResponse().getHeader());
 
-		if ("json".equals(getRESTURL(exc).responseType)) {
-			transformedResp = xml2json(transformedResp);
-			setJSONContentType(exc.getResponse().getHeader());
-		}
-		exc.getResponse().setBodyContent(transformedResp);
+		XML2HTTP.unwrapResponseIfNecessary(exc.getResponse());
+		convertResponseToJSONIfNecessary(mapping, exc.getResponse());
+		
 		return Outcome.CONTINUE;
+	}
+
+	private void convertResponseToJSONIfNecessary(Mapping mapping, Response response) throws IOException, Exception {
+		if (MimeType.TEXT_XML_UTF8.equals(response.getHeader().getContentType()) && 
+				"json".equals(mapping.responseType)) {
+			response.setBodyContent(xml2json(response.getBody().getContent()));
+			setJSONContentType(response.getHeader());
+		}
 	}
 
 	private byte[] xml2json(byte[] xmlResp) throws Exception {

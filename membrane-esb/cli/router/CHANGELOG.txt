@@ -1,6 +1,35 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [documentation] For a more verbose explanation of the new rest2soap
+  functionality see  
+  http://httprouter.wordpress.com/2012/08/30/converting-json-rest-requests-to-soap/ .
+
+* [update config] the rest2soap interceptor now uses the namespace
+  http://membrane-soa.org/schemas/http/v1/ to identify the root element
+  of the in-between XML document (called "<request>").
+  (To upgrade from the usage of the old rest2soap interceptor, this means
+  that you cannot use the XPath "/request" anymore in your XSLT documents:
+  E.g. use "/*[local-name()='request']" instead. See blog post for example.)
+    
+* [new] the rest2soap interceptor integrates HTTP message bodies into the
+  in-between XML document (the input for the request XSLT transformation).
+  If the HTTP message body is XML formatted, the document is appended
+  to the <body> node. If the message body is JSON formatted, it is first
+  converted into XML and then appended.
+  Also see the blog post mentioned above.
+  
+* [new] the rest2soap interceptor now allows to set response status code,
+  message and headers from the XSLT document: if the response XSL
+  transformation yields an XML document with a root element named "response"
+  and with a namespace of http://membrane-soa.org/schemas/http/v1/ , this
+  document will be processed and "unwrapped" to fill the response. See the
+  response XSLT document in the blog post mentioned above for a sample 
+  response XSLT using this new feature.
+
+* [new example] versioning/xslt shows how SOAP Web Service versioning can
+  be implemented using XSLT.
+
 * [bugfix] fixed regressions in logging-jdbc and SSL-* examples introduced
   in 3.5.0
 

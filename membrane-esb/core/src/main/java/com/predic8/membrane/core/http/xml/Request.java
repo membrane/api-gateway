@@ -18,6 +18,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class Request extends AbstractXmlElement {
@@ -68,7 +69,9 @@ public class Request extends AbstractXmlElement {
 	 
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(ELEMENT_NAME);
+		out.writeStartElement("http", ELEMENT_NAME, Constants.HTTP_NS);
+		
+		out.writeNamespace("http", Constants.HTTP_NS);
 
 		out.writeAttribute("method", method);
 		out.writeAttribute("http-version", httpVersion);

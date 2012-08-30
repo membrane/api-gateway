@@ -147,7 +147,7 @@ public class ConnectionManager {
 	private int closeOldConnections() {
 		ArrayList<ConnectionKey> toRemove = new ArrayList<ConnectionKey>();
 		long deathPoint = System.currentTimeMillis() - CLOSE_AFTER_MILLISECONDS;
-		log.debug("closing old connections");
+		//log.debug("closing old connections");
 		int closed = 0, remaining;
 		synchronized(this) {
 			// close connections older than CLOSE_AFTER_MILLISECONDS 

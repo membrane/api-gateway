@@ -17,6 +17,9 @@ package com.predic8.membrane.core;
 import java.nio.charset.Charset;
 import java.util.Properties;
 
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
+
 public class Constants {
 
 	public static final String MEMBRANE_HOME = "MEMBRANE_HOME";
@@ -81,4 +84,9 @@ public class Constants {
 			  		"<a href=\"http://membrane-soa.org/esb/\">http://membrane-soa.org/esb/</a>" +
 			  		" for documentation and updates.";
 
+	/**
+	 * Used for {@link Request}-to-XML and XML-to-{@link Response} conversions.
+	 * See {@link REST2SOAPInterceptor}.
+	 */
+	public static final String HTTP_NS = "http://membrane-soa.org/schemas/http/v1/";
 }
