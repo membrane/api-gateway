@@ -1,6 +1,8 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [release] 3.5.2
+
 * [documentation] For a more verbose explanation of the new rest2soap
   functionality see  
   http://httprouter.wordpress.com/2012/08/30/converting-json-rest-requests-to-soap/ .
@@ -29,6 +31,22 @@ Membrane ESB Change Log
 
 * [new example] versioning/xslt shows how SOAP Web Service versioning can
   be implemented using XSLT.
+
+* [release] 3.5.1
+
+* [documentation] new SOAP quick start guide uses <soapProxy>
+
+* [update config] <path isRegExp="false">abc</path> in proxies.xml now means
+  path.startsWith("abc") instead of path.contains("abc") - change it to
+  <path isRegExp="true">.*\Qabc\E.*</path> if you actually want it to
+  mean the latter.
+
+* [bugfix] admin calls tab: also track responses without bodies
+
+* [improvement] lots of small things in the admin interface
+
+* [new] <urlNormalizer> interceptor can remove "/abc/../" parts from the
+  URL path (caused by old HTTP clients not normalizing themselves)
 
 * [bugfix] fixed regressions in logging-jdbc and SSL-* examples introduced
   in 3.5.0
