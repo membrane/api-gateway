@@ -1,6 +1,6 @@
-REST 2 SOAP INTERCEPTOR
+REST 2 SOAP CONVERSION
 
-With the REST2SOAPInterceptor you can make a SOAP Web Service as a REST resource accessible. In contrast to the rest2soap example here the response will be a JSON object. 
+With the REST2SOAP converter you can make a SOAP Web Service as a REST resource accessible. In contrast to the rest2soap example here the response will be a JSON object. 
 
 
 
