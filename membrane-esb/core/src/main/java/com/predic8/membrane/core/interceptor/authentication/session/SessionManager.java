@@ -13,7 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,6 +43,39 @@ public class SessionManager extends AbstractXmlElement {
 	public void init(Router router) {
 		sessionCookieName = StringUtils.defaultIfEmpty(sessionCookieName, "SESSIONID");
 		sessionTimeout = sessionTimeout == 0 ? 300000 : sessionTimeout;
+		
+		new SessionCleanupThread(this).start();
+	}
+	
+	private static class SessionCleanupThread extends Thread {
+		private final WeakReference<SessionManager> sessionManager;
+		
+		public SessionCleanupThread(SessionManager sm) {
+			sessionManager = new WeakReference<SessionManager>(sm);
+		}
+		
+		@Override
+		public void run() {
+			while (!interrupted()) {
+				try {
+					Thread.sleep(60 * 1000);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				}
+				SessionManager sm = sessionManager.get();
+				if (sm == null)
+					return;
+				long death = System.currentTimeMillis() - sm.sessionTimeout;
+				List<String> removeUs = new ArrayList<String>();
+				synchronized (sm.sessions) {
+					for (Map.Entry<String, Session> e : sm.sessions.entrySet())
+						if (e.getValue().getLastUse() < death)
+							removeUs.add(e.getKey());
+					for (String sessionId : removeUs)
+						sm.sessions.remove(sessionId);
+				}
+			}
+		}
 	}
 	
 	public static class Session {
@@ -74,6 +110,10 @@ public class SessionManager extends AbstractXmlElement {
 		
 		public synchronized void touch() {
 			lastUse = System.currentTimeMillis();
+		}
+		
+		public synchronized long getLastUse() {
+			return lastUse;
 		}
 	}
 	
