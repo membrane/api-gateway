@@ -28,6 +28,7 @@ import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonFactory;
@@ -50,11 +51,15 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	}
 
 	protected void sendSMS(String text, String recipientNumber) {
+		// tries to send the SMS. if failing, tries once again with a new auth token
 		try {
 			synchronized(this) {
 				if (smsAuthorToken == null)
 					smsAuthorToken = getAuthToken(user, password, hc);
 				try {
+					sendSMS(hc, smsAuthorToken, recipientNumber, text);
+				} catch (InvalidAuthTokenException e) {
+					smsAuthorToken = getAuthToken(user, password, hc);
 					sendSMS(hc, smsAuthorToken, recipientNumber, text);
 				} catch (Exception e) {
 					log.error(e);
@@ -67,22 +72,31 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		}
 	}
 
-	private static void sendSMS(HttpClient hc, String token, String recipientNumber, String text) throws IOException, Exception {
-		PostMethod p = new PostMethod("https://gateway.developer.telekom.com/p3gw-mod-odg-sms/rest/production/sms");
-		p.addRequestHeader("Authorization", "TAuth realm=\"https://odg.t-online.de\",tauth_token=\"" + token + "\"");
-		p.addRequestHeader("Accept", "application/json");
-		p.addRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-		
-		p.setRequestBody(new NameValuePair[] {
-				new NameValuePair("number", recipientNumber),
-				new NameValuePair("message", text)
-		});
-		int statusCode = hc.executeMethod(p);
-		
-		if (statusCode != 200)
-			throw new Exception("Sending SMS failed: " + p.getResponseBodyAsString());
-		
-		log.info("sent SMS to " + recipientNumber);
+	private static void sendSMS(HttpClient hc, String token, String recipientNumber, String text) throws InvalidAuthTokenException {
+		try {
+			PostMethod p = new PostMethod("https://gateway.developer.telekom.com/p3gw-mod-odg-sms/rest/production/sms");
+			p.addRequestHeader("Authorization", "TAuth realm=\"https://odg.t-online.de\",tauth_token=\"" + token + "\"");
+			p.addRequestHeader("Accept", "application/json");
+			p.addRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+			p.setRequestBody(new NameValuePair[] {
+					new NameValuePair("number", recipientNumber),
+					new NameValuePair("message", text)
+			});
+			int statusCode = hc.executeMethod(p);
+
+			if (statusCode != 200) {
+				String body = StringUtils.defaultString(p.getResponseBodyAsString());
+				// statusCode 0090 "Token is invalid."
+				if (body.contains("\"statusCode\":\"0090\""))
+					throw new InvalidAuthTokenException();
+				throw new RuntimeException("Sending SMS failed: " + body);
+			}
+
+			log.info("sent SMS to " + recipientNumber);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -130,4 +144,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return values;
 	}
 
+	private static class InvalidAuthTokenException extends Exception {
+		private static final long serialVersionUID = 1L;
+	}
 }
