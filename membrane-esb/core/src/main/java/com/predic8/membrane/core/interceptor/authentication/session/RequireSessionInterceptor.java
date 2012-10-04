@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import java.util.Map;
+
 import javax.xml.stream.XMLStreamReader;
 
 import com.predic8.membrane.core.Router;
@@ -46,6 +48,9 @@ public class RequireSessionInterceptor extends AbstractInterceptor {
 		if (child.equals("staticUserDataProvider")) {
 			userDataProvider = new StaticUserDataProvider();
 			((StaticUserDataProvider) userDataProvider).parse(token);
+		} else if (child.equals("ldapUserDataProvider")) {
+			userDataProvider = new LDAPUserDataProvider();
+			((LDAPUserDataProvider) userDataProvider).parse(token);
 		} else if (child.equals("totpTokenProvider")) {
 			tokenProvider = new TOTPTokenProvider();
 			new AbstractXmlElement() {}.parse(token);
@@ -90,7 +95,19 @@ public class RequireSessionInterceptor extends AbstractInterceptor {
 		if (s == null || !s.isAuthorized()) {
 			return loginDialog.redirectToLogin(exc);
 		}
+		
+		applyBackendAuthorization(exc, s);
 		return super.handleRequest(exc);
+	}
+
+	private void applyBackendAuthorization(Exchange exc, Session s) {
+		Header h = exc.getRequest().getHeader();
+		for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
+			if (e.getKey().startsWith("header")) {
+				String headerName = e.getKey().substring(6);
+				h.removeFields(headerName);
+				h.add(headerName, e.getValue());
+			}
 	}
 	
 	@Override
