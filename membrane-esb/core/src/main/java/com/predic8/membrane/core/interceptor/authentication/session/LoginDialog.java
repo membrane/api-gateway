@@ -47,14 +47,22 @@ public class LoginDialog {
 	private final UserDataProvider userDataProvider;
 	private final TokenProvider tokenProvider;
 	private final SessionManager sessionManager;
+	private final AccountBlocker accountBlocker;
 	
 	private final WebServerInterceptor wsi;
 	
-	public LoginDialog(UserDataProvider userDataProvider, TokenProvider tokenProvider, SessionManager sessionManager, String loginDir, String loginPath) {
+	public LoginDialog(
+			UserDataProvider userDataProvider,
+			TokenProvider tokenProvider,
+			SessionManager sessionManager,
+			AccountBlocker accountBlocker,
+			String loginDir,
+			String loginPath) {
 		this.loginPath = loginPath;
 		this.userDataProvider = userDataProvider;
 		this.tokenProvider = tokenProvider;
 		this.sessionManager = sessionManager;
+		this.accountBlocker = accountBlocker;
 		
 		wsi = new WebServerInterceptor();
 		wsi.setDocBase(loginDir);
@@ -117,9 +125,21 @@ public class LoginDialog {
 			if (s == null || !s.isPreAuthorized()) {
 				if (exc.getRequest().getMethod().equals("POST")) {
 					Map<String, String> userAttributes;
+					Map<String, String> params = URLParamUtil.getParams(exc);
+					String username = params.get("username");
+					if (username == null) {
+						showPage(exc, 0, "error", "INVALID_PASSWORD");
+						return;
+					}
+					if (accountBlocker != null && accountBlocker.isBlocked(username)) {
+						showPage(exc, 0, "error", "ACCOUNT_BLOCKED");
+						return;
+					}
 					try {
-						userAttributes = userDataProvider.verify(URLParamUtil.getParams(exc));
+						userAttributes = userDataProvider.verify(params);
 					} catch (NoSuchElementException e) {
+						if (accountBlocker != null)
+							accountBlocker.fail(username);
 						showPage(exc, 0, "error", "INVALID_PASSWORD");
 						return;
 					} catch (Exception e) {
@@ -128,17 +148,23 @@ public class LoginDialog {
 						return;
 					}
 					showPage(exc, 1);
-					sessionManager.createSession(exc).preAuthorize(userAttributes);
+					sessionManager.createSession(exc).preAuthorize(username, userAttributes);
 					tokenProvider.requestToken(userAttributes);
 				} else {
 					showPage(exc, 0);
 				}
 			} else {
+				if (accountBlocker != null && accountBlocker.isBlocked(s.getUserName())) {
+					showPage(exc, 0, "error", "ACCOUNT_BLOCKED");
+					return;
+				}
 				if (exc.getRequest().getMethod().equals("POST")) {
 					String token = URLParamUtil.getParams(exc).get("token");
 					try {
 						tokenProvider.verifyToken(s.getUserAttributes(), token);
 					} catch (NoSuchElementException e) {
+						if (accountBlocker != null)
+							accountBlocker.fail(s.getUserName());
 						s.clear();
 						showPage(exc, 0, "error", "INVALID_TOKEN");
 						return;
@@ -148,6 +174,8 @@ public class LoginDialog {
 						showPage(exc, 0, "error", "INTERNAL_SERVER_ERROR");
 						return;
 					}
+					if (accountBlocker != null)
+						accountBlocker.unblock(s.getUserName());
 					String target = URLParamUtil.getParams(exc).get("target");
 					if (StringUtils.isEmpty(target))
 						target = "/";

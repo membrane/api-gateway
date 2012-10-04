@@ -177,10 +177,16 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {
+		String username = postData.get("username");
+		String password = postData.get("password");
+		if (username == null || password == null)
+			throw new NoSuchElementException();
 		try {
-			return auth(postData.get("username"), postData.get("password"));
+			return auth(username, password);
+		} catch (AuthenticationException e) {
+			throw new NoSuchElementException();
 		} catch (Exception e) {
-			return null;
+			throw new RuntimeException(e);
 		}
 	}
 

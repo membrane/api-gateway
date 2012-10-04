@@ -34,6 +34,7 @@ public class RequireSessionInterceptor extends AbstractInterceptor {
 	private UserDataProvider userDataProvider;
 	private TokenProvider tokenProvider;
 	private SessionManager sessionManager;
+	private AccountBlocker accountBlocker;
 	private LoginDialog loginDialog;
 	
 	@Override
@@ -51,6 +52,9 @@ public class RequireSessionInterceptor extends AbstractInterceptor {
 		} else if (child.equals("ldapUserDataProvider")) {
 			userDataProvider = new LDAPUserDataProvider();
 			((LDAPUserDataProvider) userDataProvider).parse(token);
+		} else if (child.equals("accountBlocker")) {
+			accountBlocker = new AccountBlocker();
+			accountBlocker.parse(token);
 		} else if (child.equals("totpTokenProvider")) {
 			tokenProvider = new TOTPTokenProvider();
 			new AbstractXmlElement() {}.parse(token);
@@ -76,13 +80,14 @@ public class RequireSessionInterceptor extends AbstractInterceptor {
 			throw new Exception("No tokenProvider configured. - Cannot work without one.");
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
-		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, loginDir, loginPath);
+		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, loginDir, loginPath);
 	}
 
 	public void init(Router router) throws Exception {
 		super.init(router);
 		loginDialog.init(router);
 		sessionManager.init(router);
+		new CleanupThread(sessionManager, accountBlocker).start();
 	}
 
 	@Override

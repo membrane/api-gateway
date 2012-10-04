@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,12 +27,14 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
 
-public class SessionManager extends AbstractXmlElement {
+public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String sessionCookieName;
-	private long sessionTimeout;
+	long sessionTimeout;
 	
-	private HashMap<String, Session> sessions = new HashMap<String, SessionManager.Session>();
+	// TODO: bind session also to remote IP (for public Membrane release)
+	HashMap<String, Session> sessions = new HashMap<String, SessionManager.Session>();
 	
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		sessionCookieName = token.getAttributeValue("", "cookieName");
@@ -43,45 +44,13 @@ public class SessionManager extends AbstractXmlElement {
 	public void init(Router router) {
 		sessionCookieName = StringUtils.defaultIfEmpty(sessionCookieName, "SESSIONID");
 		sessionTimeout = sessionTimeout == 0 ? 300000 : sessionTimeout;
-		
-		new SessionCleanupThread(this).start();
-	}
-	
-	private static class SessionCleanupThread extends Thread {
-		private final WeakReference<SessionManager> sessionManager;
-		
-		public SessionCleanupThread(SessionManager sm) {
-			sessionManager = new WeakReference<SessionManager>(sm);
-		}
-		
-		@Override
-		public void run() {
-			while (!interrupted()) {
-				try {
-					Thread.sleep(60 * 1000);
-				} catch (InterruptedException e) {
-					Thread.currentThread().interrupt();
-				}
-				SessionManager sm = sessionManager.get();
-				if (sm == null)
-					return;
-				long death = System.currentTimeMillis() - sm.sessionTimeout;
-				List<String> removeUs = new ArrayList<String>();
-				synchronized (sm.sessions) {
-					for (Map.Entry<String, Session> e : sm.sessions.entrySet())
-						if (e.getValue().getLastUse() < death)
-							removeUs.add(e.getKey());
-					for (String sessionId : removeUs)
-						sm.sessions.remove(sessionId);
-				}
-			}
-		}
 	}
 	
 	public static class Session {
 		private Map<String, String> userAttributes;
 		private int level = 0;
 		private long lastUse;
+		private String userName;
 		
 		public synchronized boolean isAuthorized() {
 			return level == 2;
@@ -99,7 +68,8 @@ public class SessionManager extends AbstractXmlElement {
 			userAttributes = null;
 		}
 		
-		public synchronized void preAuthorize(Map<String, String> userAttributes) {
+		public synchronized void preAuthorize(String userName, Map<String, String> userAttributes) {
+			this.userName = userName;
 			this.userAttributes = userAttributes;
 			level = 1;
 		}
@@ -114,6 +84,10 @@ public class SessionManager extends AbstractXmlElement {
 		
 		public synchronized long getLastUse() {
 			return lastUse;
+		}
+		
+		public synchronized String getUserName() {
+			return userName;
 		}
 	}
 	
@@ -144,5 +118,17 @@ public class SessionManager extends AbstractXmlElement {
 		}
 		exc.getResponse().getHeader().addCookieSession(sessionCookieName, id + "; Path=/");
 		return s;
+	}
+	
+	public void cleanup() {
+		long death = System.currentTimeMillis() - sessionTimeout;
+		List<String> removeUs = new ArrayList<String>();
+		synchronized (sessions) {
+			for (Map.Entry<String, Session> e : sessions.entrySet())
+				if (e.getValue().getLastUse() < death)
+					removeUs.add(e.getKey());
+			for (String sessionId : removeUs)
+				sessions.remove(sessionId);
+		}
 	}
 }
