@@ -28,6 +28,9 @@ import org.springframework.util.ClassUtils;
  * implementations.
  * 
  * Currently we can detect Equinox, Knopflerfish and Felix platforms.
+ *
+ * Source: http://www.springsource.org/
+ * License: ASL 2.0
  * 
  * @author Adrian Colyer
  * @author Costin Leau

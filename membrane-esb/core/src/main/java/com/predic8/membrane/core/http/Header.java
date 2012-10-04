@@ -25,6 +25,9 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.http.cookie.Cookies;
+import com.predic8.membrane.core.http.cookie.MimeHeaders;
+import com.predic8.membrane.core.http.cookie.ServerCookie;
 import com.predic8.membrane.core.util.*;
 
 public class Header {
@@ -58,6 +61,10 @@ public class Header {
 	public static final String LOCATION = "Location";
 
 	public static final String AUTHORIZATION = "Authorization";
+	
+	public static final String SET_COOKIE = "Set-Cookie";
+	
+	public static final String COOKIE = "Cookie";
 
 	// Header field values
 
@@ -336,6 +343,20 @@ public class Header {
 			}
 		}
 		return map;
+	}
+	
+	public void addCookieSession(String cookieName, String value) {
+		add(SET_COOKIE, cookieName + "=" + value);
+	}
+	
+	public String getFirstCookie(String cookieName) {
+		Cookies c = new Cookies(new MimeHeaders(this));
+		for (int i = 0; i < c.getCookieCount(); i++) {
+			ServerCookie sc = c.getCookie(i);
+			if (sc.getName().equals(cookieName))
+				return sc.getValue().toString();
+		}
+		return null;
 	}
 
 }

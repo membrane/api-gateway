@@ -23,10 +23,6 @@ import java.util.Map;
  * See InetAddress Caching of InetAddress class
  * 
  * Java 1.5 implementation of InetAddress Caching differs from Java 1.6 one.  
- * 
- * 
- * @author predic8
- *
  */
 public class DNSCache {
 

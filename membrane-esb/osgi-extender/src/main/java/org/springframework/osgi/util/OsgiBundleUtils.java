@@ -34,6 +34,9 @@ import org.springframework.util.ReflectionUtils.FieldFilter;
  * Utility class for OSGi {@link Bundle}s. Provides convenience methods for
  * interacting with a Bundle object.
  * 
+ * Source: http://www.springsource.org/
+ * License: ASL 2.0
+ * 
  * @author Adrian Colyer
  * @author Costin Leau
  * @see OsgiStringUtils

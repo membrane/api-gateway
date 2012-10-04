@@ -18,11 +18,7 @@ import java.lang.reflect.Method;
 import java.net.URLClassLoader;
 
 /**
- * 
- * Main class for memrouter.bat file
- * 
- * @author predic8
- * 
+ * Main class for memrouter.bat file.
  */
 public class Starter {
 

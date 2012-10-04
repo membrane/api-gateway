@@ -129,6 +129,10 @@
         	<groupId>commons-fileupload</groupId>
         	<artifactId>commons-fileupload</artifactId>
         </dependency>
+		<dependency>
+			<groupId>com.floreysoft</groupId>
+			<artifactId>jmte</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>junit</groupId>

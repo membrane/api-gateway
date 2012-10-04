@@ -24,6 +24,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.httpclient.util.URIUtil;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -41,7 +42,10 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(WebServerInterceptor.class
 			.getName());
 
+	private static String[] EMPTY = new String[0];
+	
 	String docBase = "docBase";
+	String[] index = EMPTY;
 
 	public WebServerInterceptor() {
 		name = "Web Server";
@@ -64,6 +68,17 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			exc.setTimeResReceived(System.currentTimeMillis());
 			return Outcome.RETURN;
 		} catch (FileNotFoundException e) {
+			for (String i : index) {
+				try {
+					exc.setResponse(createResponse(router.getResourceResolver(), docBase + uri + i));
+
+					exc.setReceived();
+					exc.setTimeResReceived(System.currentTimeMillis());
+					return Outcome.RETURN;
+				} catch (FileNotFoundException e2) {
+				}
+			}
+			
 			exc.setResponse(HttpUtil.createNotFoundResponse());
 			return Outcome.ABORT;
 		}
@@ -109,6 +124,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		out.writeStartElement("webServer");
 
 		out.writeAttribute("docBase", docBase);
+		if (index.length > 0)
+			out.writeAttribute("index", StringUtils.join(index, ","));
 
 		out.writeEndElement();
 	}
@@ -117,6 +134,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	protected void parseAttributes(XMLStreamReader token) {
 
 		docBase = token.getAttributeValue("", "docBase");
+		String i = token.getAttributeValue("", "index");
+		if (i == null)
+			index = EMPTY;
+		else
+			index = i.split(",");
 	}
 
 	@Override

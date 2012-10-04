@@ -143,6 +143,18 @@ public class Response extends Message {
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body(unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
 	}
+
+	public static ResponseBuilder redirectWithout300(String uri, boolean permanent) {
+		String escaped = StringEscapeUtils.escapeXml(uri);
+		return ResponseBuilder.newInstance().
+				status(200, "OK").
+				header("Location", uri).
+				contentType(MimeType.TEXT_HTML_UTF8).
+				body("<html><head><meta http-equiv=\"refresh\" content=\"0;URL='"+escaped+"'\" /></head>" +
+				"<body>" +
+				" This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>." +
+				"</body>");
+	}
 	
 	private static String unescapedHtmlMessage(String caption, String text) {
 		return "<html><head><title>" + caption

@@ -26,12 +26,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.Constants;
 import static junit.framework.Assert.assertEquals;
-/**
- * @author course
- * 
- *         TODO To change the template for this generated type comment go to
- *         Window - Preferences - Java - Code Style - Code Templates
- */
+
 public class HttpUtilTest {
 
 	private static String s1 = "foo" + Constants.CRLF + "bar" + Constants.CRLF

@@ -15,16 +15,11 @@
 package com.predic8.membrane.core.http;
 
 /**
- * @author Ryan
- *
- *This class is used by the Header class as a key for header fields.
- *The hashCode method is overridden so the keys are not case sensitive
- *as in HTTP.
- *The toString method of this class overrides Object.toString and 
- *returns the name of the header field as a string
- * 
+ * This class is used by {@link Header} a key for header fields.
+ * The {@link #hashCode()} method is overridden so the keys are
+ * not case sensitive (as per the HTTP spec).
  */
-public class HeaderName{
+public class HeaderName {
 	
 	private final String name;
 	
