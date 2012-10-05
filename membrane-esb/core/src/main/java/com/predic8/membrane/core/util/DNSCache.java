@@ -27,7 +27,7 @@ import java.util.Map;
 public class DNSCache {
 
 	private Map<InetAddress, String> hostNames = new Hashtable<InetAddress, String>();
-	
+	private Map<InetAddress, String> canonicalHostNames = new Hashtable<InetAddress, String>();
 	private Map<InetAddress, String> hostAddresses = new Hashtable<InetAddress, String>();
 	
 	public String getHostName(InetAddress address) {
@@ -38,7 +38,16 @@ public class DNSCache {
 		hostNames.put(address, hostName);
 		return hostName;
 	}
-	
+
+	public String getCanonicalHostName(InetAddress address) {
+		if (canonicalHostNames.containsKey(address))
+			return canonicalHostNames.get(address);
+		
+		String canonicalHostName = address.getCanonicalHostName();
+		canonicalHostNames.put(address, canonicalHostName);
+		return canonicalHostName;
+	}
+
 	public String getHostAddress(InetAddress address) {
 		if (hostAddresses.containsKey(address))
 			return hostAddresses.get(address);
@@ -50,6 +59,10 @@ public class DNSCache {
 	
 	public Collection<String> getCachedHostNames() {
 		return hostNames.values();
+	}
+
+	public Collection<String> getCachedCanonicalHostNames() {
+		return canonicalHostNames.values();
 	}
 	
 	public Collection<String> getCachedHostAddresses() {
