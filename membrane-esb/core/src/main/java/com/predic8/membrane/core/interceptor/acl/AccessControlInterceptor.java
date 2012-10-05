@@ -48,7 +48,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Resource resource;
 		try {
-			resource = getAccessControl().getResourceFor(exc.getOriginalRequestUri());
+			resource = accessControl.getResourceFor(exc.getOriginalRequestUri());
 		} catch (Exception e) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
@@ -75,14 +75,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		return aclFilename;
 	}
 
-	public AccessControl getAccessControl() throws Exception {
-		if (accessControl == null) {
-			init();
-		}
-
-		return accessControl;
-	}
-
 	public void init() throws Exception {
 		accessControl = parse(aclFilename, router.getResourceResolver());
 	}
@@ -91,7 +83,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	    try {
 			XMLInputFactory factory = XMLInputFactory.newInstance();
 		    XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(resourceResolver.resolve(fileName)));
-		    return (AccessControl) new AccessControl().parse(reader);
+		    return (AccessControl) new AccessControl(router).parse(reader);
 	    } catch (Exception e) {
 	    	log.error("Error initializing accessControl.", e);
 	    	e.printStackTrace();

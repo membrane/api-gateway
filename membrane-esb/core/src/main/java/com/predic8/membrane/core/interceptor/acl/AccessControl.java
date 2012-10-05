@@ -18,13 +18,19 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
 public class AccessControl extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "accessControl";
 		
+	private Router router;
 	private List<Resource> resources = new ArrayList<Resource>();
+	
+	public AccessControl(Router router) {
+		this.router = router;
+	}
 	
 	@Override
 	protected String getElementName() {
@@ -34,7 +40,7 @@ public class AccessControl extends AbstractConfigElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Resource.ELEMENT_NAME.equals(child)) {
-			resources.add((Resource) (new Resource()).parse(token));
+			resources.add((Resource) (new Resource(router)).parse(token));
 		} 
 	}
 

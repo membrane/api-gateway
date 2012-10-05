@@ -24,6 +24,7 @@ import javax.xml.stream.XMLStreamReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.util.TextUtil;
@@ -34,9 +35,14 @@ public class Resource extends AbstractConfigElement {
 	
 	public static final String ELEMENT_NAME = "resource";
 	
+	private Router router;
 	private List<AbstractClientAddress> clientAddresses = new ArrayList<AbstractClientAddress>();
 	
 	protected Pattern pattern;
+	
+	public Resource(Router router) {
+		this.router = router;
+	}
 	
 	@Override
 	protected String getElementName() {
@@ -46,11 +52,11 @@ public class Resource extends AbstractConfigElement {
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Ip.ELEMENT_NAME.equals(child)) {
-			clientAddresses.add(((Ip) (new Ip()).parse(token)));
+			clientAddresses.add(((Ip) (new Ip(router)).parse(token)));
 		} else if (Hostname.ELEMENT_NAME.equals(child)) {
-			clientAddresses.add(((Hostname) (new Hostname()).parse(token)));
+			clientAddresses.add(((Hostname) (new Hostname(router)).parse(token)));
 		} else if (Any.ELEMENT_NAME.equals(child)) {
-			clientAddresses.add(((Any) (new Any()).parse(token)));
+			clientAddresses.add(((Any) (new Any(router)).parse(token)));
 		} else if ("clients".equals(child)) {
 			new GenericComplexElement(this).parse(token);
 		}
@@ -62,9 +68,12 @@ public class Resource extends AbstractConfigElement {
 	}
 	
 	public boolean checkAccess(InetAddress inetAddress) {
-		log.debug("Hostname: " + inetAddress.getHostName());
-		log.debug("Canonical Hostname: " + inetAddress.getCanonicalHostName());
-		log.debug("Hostaddress: " + inetAddress.getHostAddress());
+		if (log.isInfoEnabled()) {
+			log.info("Hostname: " + router.getDnsCache().getHostName(inetAddress));
+			log.info("Canonical Hostname: " + router.getDnsCache().getCanonicalHostName(inetAddress));
+		}
+		if (log.isDebugEnabled())
+			log.debug("Hostaddress: " + inetAddress.getHostAddress());
 		
 		for (AbstractClientAddress cAdd : clientAddresses) {
 			if (cAdd.matches(inetAddress))

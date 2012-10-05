@@ -15,11 +15,17 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.InetAddress;
 
+import com.predic8.membrane.core.Router;
+
 
 
 public class Hostname extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "hostname";
+
+	public Hostname(Router router) {
+		super(router);
+	}
 
 	@Override
 	protected String getElementName() {
@@ -28,7 +34,7 @@ public class Hostname extends AbstractClientAddress {
 
 	@Override
 	public boolean matches(InetAddress ia) {
-		return pattern.matcher(ia.getCanonicalHostName()).matches();
+		return pattern.matcher(router.getDnsCache().getCanonicalHostName(ia)).matches();
 	}
 	
 }

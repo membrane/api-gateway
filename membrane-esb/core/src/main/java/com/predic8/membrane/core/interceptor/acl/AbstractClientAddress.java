@@ -19,15 +19,18 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.util.TextUtil;
 
 public abstract class AbstractClientAddress extends AbstractConfigElement {
 
+	protected Router router;
 	protected Pattern pattern;
 	
-	public AbstractClientAddress() {
+	public AbstractClientAddress(Router router) {
 		super();
+		this.router = router;
 	}
 	
 	public abstract boolean matches(InetAddress str);

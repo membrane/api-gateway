@@ -16,9 +16,15 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.InetAddress;
 
+import com.predic8.membrane.core.Router;
+
 public class Any extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "any";
+	
+	public Any(Router router) {
+		super(router);
+	}
 	
 	@Override
 	protected String getElementName() {
