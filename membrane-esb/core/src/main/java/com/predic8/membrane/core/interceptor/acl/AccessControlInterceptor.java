@@ -78,6 +78,10 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	public void init() throws Exception {
 		accessControl = parse(aclFilename, router.getResourceResolver());
 	}
+	
+	public AccessControl getAccessControl() {
+		return accessControl;
+	}
 
 	protected AccessControl parse(String fileName, ResourceResolver resourceResolver) throws Exception {
 	    try {
