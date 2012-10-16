@@ -58,8 +58,6 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private void handleNoRuleFound(Exchange exc) throws IOException {
-		exc.getRequest().readBody();
-		exc.getHandler().shutdownInput();
 		exc.setResponse(
 				Response.badRequest(
 						"This request was not accepted by " + 

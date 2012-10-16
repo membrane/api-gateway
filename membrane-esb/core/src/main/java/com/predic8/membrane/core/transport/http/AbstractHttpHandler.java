@@ -55,6 +55,9 @@ public abstract class AbstractHttpHandler  {
 		return transport;
 	}
 
+	/**
+	 * Only use for HTTP/1.0 requests. (see {@link HttpClient})
+	 */
 	public abstract void shutdownInput() throws IOException;
 	public abstract InetAddress getRemoteAddress() throws IOException;
 	public abstract int getLocalPort();

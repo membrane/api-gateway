@@ -63,7 +63,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	private void setResponseToAccessDenied(Exchange exc) throws IOException {
-		exc.getRequest().getBody().read();
 		exc.setResponse(Response.forbidden("Access denied: you are not authorized to access this service.").build());
 	}
 

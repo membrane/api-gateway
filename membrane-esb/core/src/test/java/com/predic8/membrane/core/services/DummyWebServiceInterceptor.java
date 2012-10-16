@@ -29,7 +29,6 @@ public class DummyWebServiceInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		exc.getRequest().readBody();
 		exc.setResponse(Response.ok().contentType("text/html").body("<aaa></aaa>".getBytes()).build());
 		counter ++;
 		log.debug("handle request "+counter);

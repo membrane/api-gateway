@@ -182,12 +182,15 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		} catch (AbortException e) {
 			log.debug("Aborted");
 			exchange.finishExchange(true, exchange.getErrorMessage());
+			
+			exchange.getRequest().readBody(); // read if not alread read
 			writeResponse(exchange.getResponse());
 
 			log.debug("exchange set aborted");
 			return;
 		}
 
+		exchange.getRequest().readBody(); // read if not alread read
 		writeResponse(exchange.getResponse());
 		exchange.setCompleted();
 		log.debug("exchange set completed");
