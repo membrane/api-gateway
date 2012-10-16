@@ -67,11 +67,11 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 			new AbstractXmlElement() {
 				protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 					if (child.equals("attribute")) {
-						String ldap = token.getAttributeValue("", "ldap");
-						String target = token.getAttributeValue("", "to");
-						if (ldap == null || target == null)
-							throw new Exception("ldapUserDataProvider/map/attribute requires @ldap and @target attributes.");
-						attributeMap.put(ldap, target);
+						String from = token.getAttributeValue("", "from");
+						String to = token.getAttributeValue("", "to");
+						if (from == null || to == null)
+							throw new Exception("ldapUserDataProvider/map/attribute requires @from and @to attributes.");
+						attributeMap.put(from, to);
 						new AbstractXmlElement() {}.parse(token);
 					} else {
 						super.parseChildren(token, child);
