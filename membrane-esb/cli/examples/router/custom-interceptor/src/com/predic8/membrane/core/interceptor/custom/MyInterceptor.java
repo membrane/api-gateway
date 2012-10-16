@@ -15,13 +15,19 @@
 package com.predic8.membrane.core.interceptor.custom;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.interceptor.*;
 
 public class MyInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		System.out.println("MyInterceptor invoked");
+		System.out.println("MyInterceptor invoked.");
+		
+		System.out.println("Request headers:");
+		for (HeaderField headerField : exc.getRequest().getHeader().getAllHeaderFields())
+			System.out.print(headerField.getHeaderName() + ": " + headerField.getValue());
+		
 		return Outcome.CONTINUE;
 	}
 
