@@ -14,6 +14,10 @@
 	See the proxies.xml files in the /examples/* directories in the ESB
 	distribution for several examples of how to configure different ESB
 	features within this file.
+	
+	Changes to this file will be picked up almost instantly if Membrane is
+	running	once this file has been saved. Any dynamic configuration changes
+	made (for example, via the adminConsole) will be forgotten.
 -->
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
