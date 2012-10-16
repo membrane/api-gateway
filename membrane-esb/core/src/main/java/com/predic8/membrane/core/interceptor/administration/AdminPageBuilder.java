@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 
 import com.googlecode.jatl.Html;
@@ -129,6 +131,7 @@ public class AdminPageBuilder extends Html {
 			script().src("/admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js").end();
 			script().src("/admin/formValidator/jquery.validationEngine-en.js").end();
 			script().src("/admin/formValidator/jquery.validationEngine.js").end();
+			script().raw("var relativeRootPath=\"" + StringEscapeUtils.escapeJavaScript(relativeRootPath) + "\";").end();
 			script().src("/admin/js/membrane.js").end();
 			createMetaElements();
 		  end();

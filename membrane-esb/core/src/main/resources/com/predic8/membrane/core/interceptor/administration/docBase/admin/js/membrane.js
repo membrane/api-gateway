@@ -19,16 +19,16 @@ var membrane = function() {
 	}
 	
 	function loadExchange(exchangeId) {	
-		var exchangeUrl = '/admin/rest/exchanges/'+exchangeId,
+		var exchangeUrl = relativeRootPath + '/admin/rest/exchanges/'+exchangeId,
 
 			responseBodyUrl = exchangeUrl+'/response/body',
 			responseRawUrl = exchangeUrl+'/response/raw',
-			responseBodyBeautifiedUrl = '/admin/web/exchanges/'+exchangeId+'/response/body',
+			responseBodyBeautifiedUrl = relativeRootPath + '/admin/web/exchanges/'+exchangeId+'/response/body',
 			responseHeaderUrl = exchangeUrl+'/response/header',
 	
 			requestBodyUrl = exchangeUrl+'/request/body',
 			requestRawUrl = exchangeUrl+'/request/raw',
-			requestBodyBeautifiedUrl = '/admin/web/exchanges/'+exchangeId+'/request/body',
+			requestBodyBeautifiedUrl = relativeRootPath + '/admin/web/exchanges/'+exchangeId+'/request/body',
 			requestHeaderUrl = exchangeUrl+'/request/header';
 
 		function getHeaderTableConfiguration(url) {		
@@ -121,8 +121,8 @@ var membrane = function() {
 		   ["Time", data.time],
 		   ["Method", data.method],
    		   ["Path", data.method=="GET"?createLink(fullPath, data.path):data.path],
-		   ["Proxy", createLink('/admin/service-proxy/show', data.proxy, [['name',data.proxy+':'+data.listenPort]])],
-		   ["Client", createLink('/admin/calls',  data.client, [['client', data.client]])],
+		   ["Proxy", createLink(relativeRootPath + '/admin/service-proxy/show', data.proxy, [['name',data.proxy+':'+data.listenPort]])],
+		   ["Client", createLink(relativeRootPath + '/admin/calls',  data.client, [['client', data.client]])],
 		   ["Content Type", data.reqContentType],
 		   ["Length", data.reqContentLength],
 		];}));
@@ -159,7 +159,7 @@ $(function() {
 		  "bFilter": false,
 		  "bInfo": true,
 		  "bServerSide": true,
-		  "sAjaxSource": '/admin/rest/clients',
+		  "sAjaxSource": relativeRootPath + '/admin/rest/clients',
 		  "sAjaxDataProp": "clients",
 		  "aoColumns": [
 		                { "mDataProp": "name" },
@@ -171,7 +171,7 @@ $(function() {
 		  "aoColumnDefs": [ 
 		           {
 		               "fnRender": function ( o, v ) {
-		                   return membrane.createLink('/admin/calls', v, [['client', v]]);
+		                   return membrane.createLink(relativeRootPath + '/admin/calls', v, [['client', v]]);
 		               },
 		               "aTargets": [ 0 ]
 		           }],
@@ -208,7 +208,7 @@ $(function() {
 		  "bProcessing": true,
 		  "bServerSide": true,
 		  "bDestroy":true,
-		  "sAjaxSource": '/admin/rest/proxies',
+		  "sAjaxSource": relativeRootPath + '/admin/rest/proxies',
 		  "sAjaxDataProp": "proxies",
 		  "aoColumns": [
 		                { "mDataProp": "order" },
@@ -225,7 +225,7 @@ $(function() {
 		  "aoColumnDefs": [ 
 	           {
 	               "fnRender": function ( o, v ) {
-	            	   return membrane.createLink('/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
+	            	   return membrane.createLink(relativeRootPath + '/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
 	               },
 	               "aTargets": [ 1 ]
 	           },
@@ -274,18 +274,18 @@ $(function() {
 		  "bProcessing": true,
 		  "bServerSide": true,
 		  "bDestroy":true,
-		  "sAjaxSource": '/admin/rest/exchanges',
+		  "sAjaxSource": relativeRootPath + '/admin/rest/exchanges',
 		  "sAjaxDataProp": "exchanges",
 		  "aoColumnDefs": [ 
 	           {
 	               "fnRender": function ( o, v ) {
-	            	   return membrane.createLink('/admin/call', v, [['id',o.aData.id]]);
+	            	   return membrane.createLink(relativeRootPath + '/admin/call', v, [['id',o.aData.id]]);
 	               },
 	               "aTargets": [ 0 ]
 	           },
 	           {
 	               "fnRender": function ( o, v ) {
-	            	   return membrane.createLink('/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
+	            	   return membrane.createLink(relativeRootPath + '/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
 	               },
 	               "aTargets": [ 2 ]
 	           }
