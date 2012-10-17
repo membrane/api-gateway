@@ -1,6 +1,20 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [release] 3.5.3
+
+* [documentation] improved proxies.xml doc and custom-interceptor example
+
+* [bugfix] in adminConsole: fixed access to RESTful resources when deployed
+  in a J2EE container with a context path other than '/'
+  
+* [development improvement] automatically read message body from incoming
+  HTTP connections before sending a response (this removes the requirement
+  from terminating interceptors to do so)
+
+* [improvement] accessControl: avoid unnecessary DNS lookups and use the
+  DNSCache class for remaining ones
+
 * [release] 3.5.2
 
 * [documentation] For a more verbose explanation of the new rest2soap
