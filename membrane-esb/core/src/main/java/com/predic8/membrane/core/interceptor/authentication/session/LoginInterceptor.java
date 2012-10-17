@@ -26,10 +26,10 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 
-@ElementName("requireSession")
-public class RequireSessionInterceptor extends AbstractInterceptor {
+@ElementName("login")
+public class LoginInterceptor extends AbstractInterceptor {
 	
-	private String loginDir, loginPath;
+	private String location, path;
 	
 	private UserDataProvider userDataProvider;
 	private TokenProvider tokenProvider;
@@ -40,8 +40,8 @@ public class RequireSessionInterceptor extends AbstractInterceptor {
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		super.parseAttributes(token);
-		loginDir = token.getAttributeValue("", "loginDir");
-		loginPath = token.getAttributeValue("", "loginPath");
+		location = token.getAttributeValue("", "location");
+		path = token.getAttributeValue("", "path");
 	}
 	
 	@Override
@@ -80,7 +80,7 @@ public class RequireSessionInterceptor extends AbstractInterceptor {
 			throw new Exception("No tokenProvider configured. - Cannot work without one.");
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
-		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, loginDir, loginPath);
+		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path);
 	}
 
 	public void init(Router router) throws Exception {

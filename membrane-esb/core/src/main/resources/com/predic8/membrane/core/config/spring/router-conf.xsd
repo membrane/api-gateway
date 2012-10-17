@@ -61,6 +61,7 @@
 						<xsd:element ref="log" />
 						<xsd:element ref="xmlProtection" />
 						<xsd:element ref="analyser" />
+						<xsd:element ref="login" />
 					</xsd:choice>
 				</xsd:sequence>
 				<xsd:attribute name="httpClientRetries" default="5" type="xsd:int" />
@@ -383,6 +384,7 @@
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence />
 					<xsd:attribute name="docBase" type="xsd:string" use="required"/>
+					<xsd:attribute name="index" type="xsd:string" default="" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>
@@ -535,5 +537,98 @@
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>
+	
+	<xsd:element name="login">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:choice> <!-- one user data provider -->
+					<xsd:element name="staticUserDataProvider">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="user" minOccurs="0" maxOccurs="unbounded">
+									<xsd:complexType>
+										<xsd:sequence />
+										<xsd:attribute name="username" type="xsd:string" />
+										<xsd:attribute name="password" type="xsd:string" />
+										<xsd:attribute name="sms" type="xsd:string" />
+										<xsd:attribute name="secret" type="xsd:string" />
+										<xsd:anyAttribute processContents="skip" />
+									</xsd:complexType>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="ldapUserDataProvider">
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="map">
+									<xsd:complexType>
+										<xsd:sequence>
+											<xsd:element name="attribute" minOccurs="0" maxOccurs="unbounded">
+												<xsd:complexType>
+													<xsd:sequence />
+													<xsd:attribute name="from" type="xsd:string" use="required" />
+													<xsd:attribute name="to" type="xsd:string" use="required" />
+												</xsd:complexType>
+											</xsd:element>
+										</xsd:sequence>
+									</xsd:complexType>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:attribute name="url" type="xsd:string" use="required" />
+							<xsd:attribute name="base" type="xsd:string" use="required" />
+							<xsd:attribute name="binddn" type="xsd:string" />
+							<xsd:attribute name="bindpw" type="xsd:string" />
+							<xsd:attribute name="searchPattern" type="xsd:string" use="required" />
+							<xsd:attribute name="searchScope" type="xsd:string" default="subtree" />
+							<xsd:attribute name="timeout" type="xsd:string" default="1000" />
+							<xsd:attribute name="connectTimeout" type="xsd:string" default="1000" />
+							<xsd:attribute name="readAttributesAsSelf" type="xsd:boolean" default="true" />
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:choice>
+				
+				<xsd:element minOccurs="0" name="sessionManager">
+					<xsd:complexType>
+						<xsd:sequence />
+						<xsd:attribute name="cookieName" type="xsd:string" default="SESSIONID" />
+						<xsd:attribute name="timeout" type="xsd:long" default="300000"/>
+					</xsd:complexType>
+						</xsd:element>
+
+						<xsd:element minOccurs="0" name="accountBlocker">
+							<xsd:complexType>
+								<xsd:sequence />
+								<xsd:attribute name="afterFailedLogins" type="xsd:int" default="5" />
+								<xsd:attribute name="afterFailedLoginsWithin" type="xsd:long" default="9223372036854775807"/>
+								<xsd:attribute name="blockFor" type="xsd:long" default="3600000"/>
+								<xsd:attribute name="blockWholeSystemAfter" type="xsd:int" default="1000000"/>
+							</xsd:complexType>
+						</xsd:element>
+						
+						<xsd:choice> <!-- one of the token providers -->
+						
+							<xsd:element name="emptyTokenProvider" />
+							
+							<xsd:element name="totpTokenProvider" />
+							
+							<xsd:element name="telekomSMSTokenProvider">
+								<xsd:complexType>
+									<xsd:sequence />
+									<xsd:attribute name="user" type="xsd:string" use="required" />
+									<xsd:attribute name="password" type="xsd:string" use="required" />
+									<xsd:attribute name="simulate" type="xsd:boolean" default="false" />
+									<xsd:attribute name="prefixText" type="xsd:string" default="Token: " />
+									<xsd:attribute name="normalizeTelephoneNumber" type="xsd:boolean" default="false"/>
+								</xsd:complexType>
+							</xsd:element>
+							
+						</xsd:choice>
+					</xsd:sequence>
+					<xsd:attribute name="path" type="xsd:string" use="required" />
+					<xsd:attribute name="location" type="xsd:string" use="required" />
+				</xsd:complexType>
+			</xsd:element>
+
 
 </xsd:schema>

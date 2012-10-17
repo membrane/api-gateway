@@ -42,7 +42,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 public class LoginDialog {
 	private static Log log = LogFactory.getLog(LoginDialog.class.getName());
 
-	private String loginPath;
+	private String path;
 
 	private final UserDataProvider userDataProvider;
 	private final TokenProvider tokenProvider;
@@ -56,16 +56,16 @@ public class LoginDialog {
 			TokenProvider tokenProvider,
 			SessionManager sessionManager,
 			AccountBlocker accountBlocker,
-			String loginDir,
-			String loginPath) {
-		this.loginPath = loginPath;
+			String dialogLocation,
+			String path) {
+		this.path = path;
 		this.userDataProvider = userDataProvider;
 		this.tokenProvider = tokenProvider;
 		this.sessionManager = sessionManager;
 		this.accountBlocker = accountBlocker;
 		
 		wsi = new WebServerInterceptor();
-		wsi.setDocBase(loginDir);
+		wsi.setDocBase(dialogLocation);
 	}
 
 	public void init(Router router) throws Exception {
@@ -74,7 +74,7 @@ public class LoginDialog {
 	
 	public boolean isLoginRequest(Exchange exc) {
 		URI uri = URI.create(exc.getRequest().getUri());
-		return uri.getPath().startsWith(loginPath);
+		return uri.getPath().startsWith(path);
 	}
 
 	private void showPage(Exchange exc, int page, Object... params) throws Exception {
@@ -99,7 +99,7 @@ public class LoginDialog {
 			}
 		});
 		Map<String, Object> model = new HashMap<String, Object>();
-		model.put("action", StringEscapeUtils.escapeXml(loginPath));
+		model.put("action", StringEscapeUtils.escapeXml(path));
 		model.put("target", StringEscapeUtils.escapeXml(target));
 		if (page == 1)
 			model.put("token", true);
@@ -112,7 +112,7 @@ public class LoginDialog {
 	public void handleLoginRequest(Exchange exc) throws Exception {
 		Session s = sessionManager.getSession(exc.getRequest());
 		
-		String uri = exc.getRequest().getUri().substring(loginPath.length()-1);
+		String uri = exc.getRequest().getUri().substring(path.length()-1);
 		if (uri.indexOf('?') >= 0)
 			uri = uri.substring(0, uri.indexOf('?'));
 		exc.getDestinations().set(0, uri);
@@ -120,7 +120,7 @@ public class LoginDialog {
 		if (uri.equals("/logout")) {
 			if (s != null)
 				s.clear();
-			exc.setResponse(Response.redirect(loginPath, false).build());
+			exc.setResponse(Response.redirect(path, false).build());
 		} else if (uri.equals("/")) { 
 			if (s == null || !s.isPreAuthorized()) {
 				if (exc.getRequest().getMethod().equals("POST")) {
@@ -192,7 +192,7 @@ public class LoginDialog {
 	
 	public Outcome redirectToLogin(Exchange exc) throws MalformedURLException, UnsupportedEncodingException {
 		exc.setResponse(Response.
-				redirect(loginPath + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), "UTF-8"), false).
+				redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), "UTF-8"), false).
 				header("Pragma", "no-cache").
 				header("Cache-Control", "no-cache").
 				build());

@@ -30,6 +30,8 @@ public class WebServerInterceptorParser extends AbstractParser {
 		setIdIfNeeded(element, "webServer");
 		
 		builder.addPropertyValue("docBase", element.getAttribute("docBase"));
+		if (element.hasAttribute("index"))
+			builder.addPropertyValue("index", element.getAttribute("index"));
 	}
 	
 }
