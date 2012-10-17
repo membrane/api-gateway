@@ -58,14 +58,15 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 
 		interceptor.handleRequest(exc);
 		
-		assertXPath("/request/@method", "POST");
-		assertXPath("/request/@http-version", "1.1");
-		assertXPath("/request/uri/@value", "http://localhost:3011/manager/person?vorname=jim&nachname=panse");
-		assertXPath("/request/uri/path/component[1]", "manager");
-		assertXPath("/request/uri/path/component[2]", "person");
-		assertXPath("/request/uri/query/param[@name='vorname']", "jim");
-		assertXPath("/request/uri/query/param[@name='nachname']", "panse");
-		assertXPath("/request/headers/header[@name='Host']", "localhost:3011");
+		assertXPath("local-name(/*)", "request");
+		assertXPath("/*/@method", "POST");
+		assertXPath("/*/@http-version", "1.1");
+		assertXPath("/*/uri/@value", "http://localhost:3011/manager/person?vorname=jim&nachname=panse");
+		assertXPath("/*/uri/path/component[1]", "manager");
+		assertXPath("/*/uri/path/component[2]", "person");
+		assertXPath("/*/uri/query/param[@name='vorname']", "jim");
+		assertXPath("/*/uri/query/param[@name='nachname']", "panse");
+		assertXPath("/*/headers/header[@name='Host']", "localhost:3011");
 	}
 
 	@Test
