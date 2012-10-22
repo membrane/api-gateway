@@ -3,14 +3,7 @@
 ==================================================================
 1. Install JDK 1.6 or higher.
 2. Install Maven 3.
-3. Run "mvn install" in \membrane-esb\ .
-4. Run "mvn install" in \membrane-monitor\ .
-
-(Putting both Maven modules into one reactor build is not possible
-because maven-bundle-plugin and tycho-maven-plugin are incompatible
-with project references between projects using them.)
-
-
+3. Run "mvn install" in this directory.
 
 
   Release Instructions
