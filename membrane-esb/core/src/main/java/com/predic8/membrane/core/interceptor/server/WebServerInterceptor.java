@@ -125,16 +125,22 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 		out.writeAttribute("docBase", docBase);
 		if (index.length > 0)
-			out.writeAttribute("index", StringUtils.join(index, ","));
+			out.writeAttribute("index", getIndex());
 
 		out.writeEndElement();
 	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-
 		docBase = token.getAttributeValue("", "docBase");
-		String i = token.getAttributeValue("", "index");
+		setIndex(token.getAttributeValue("", "index"));
+	}
+	
+	public String getIndex() {
+		return StringUtils.join(index, ",");
+	}
+	
+	public void setIndex(String i) {
 		if (i == null)
 			index = EMPTY;
 		else
