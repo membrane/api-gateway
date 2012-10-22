@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 
 import com.googlecode.jatl.Html;
@@ -465,8 +464,9 @@ public class AdminPageBuilder extends Html {
 		switch (n.getStatus()) { 
 			case TAKEOUT:
 				return "In take out";
+			default:
+				return ""+n.getStatus();
 		}
-		return ""+n.getStatus();
 	}
 
 	private String createQuery4Node(Node n) throws UnsupportedEncodingException {

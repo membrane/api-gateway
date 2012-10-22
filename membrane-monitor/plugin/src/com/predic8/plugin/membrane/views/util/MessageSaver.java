@@ -77,6 +77,7 @@ public class MessageSaver {
 				PrintWriter printer = new PrintWriter(os);
 				printer.write(message.getHeader().toString());
 				printer.flush();
+				printer.close();
 			} else {
 				os.write(message.getBody().getContent());
 				os.flush();

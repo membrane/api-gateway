@@ -41,6 +41,7 @@ public class MembraneDeploymentListenerTest extends TestCase {
             InputStream is = new FileInputStream(f);
             JarInputStream jar = new JarInputStream(is);
             jar.getManifest().write(System.err);
+            jar.close();
             is.close();
         } finally {
             f.delete();

@@ -138,6 +138,8 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 				case VALUE_STRING:
 					values.put(name, jp.getText());
 					break;
+				default:
+					break;
 				}
 			}
 		}
