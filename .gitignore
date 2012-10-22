@@ -1,0 +1,98 @@
+# /
+/.metadata
+/WebServiceMonitoring
+/.settings
+/.project
+
+# /membrane-esb/
+/membrane-esb/target
+/membrane-esb/membrane.log
+/membrane-esb/.settings
+/membrane-esb/.project
+
+# /membrane-esb/cli/
+/membrane-esb/cli/.classpath
+/membrane-esb/cli/.project
+/membrane-esb/cli/.settings
+/membrane-esb/cli/target
+/membrane-esb/cli/conf
+
+# /membrane-esb/cli/examples/router/custom-interceptor/
+/membrane-esb/cli/examples/router/custom-interceptor/dist
+
+# /membrane-esb/cli/examples/router/loadbalancer-session-3/
+/membrane-esb/cli/examples/router/loadbalancer-session-3/build
+
+# /membrane-esb/cli/examples/router/versioning/routing/
+/membrane-esb/cli/examples/router/versioning/routing/build
+
+# /membrane-esb/cli/examples/router/versioning/xslt/
+/membrane-esb/cli/examples/router/versioning/xslt/build
+
+# /membrane-esb/core/
+/membrane-esb/core/.classpath
+/membrane-esb/core/.project
+/membrane-esb/core/target
+/membrane-esb/core/.settings
+/membrane-esb/core/temp
+
+# /membrane-esb/karaf-deployer/
+/membrane-esb/karaf-deployer/.project
+/membrane-esb/karaf-deployer/.classpath
+/membrane-esb/karaf-deployer/target
+/membrane-esb/karaf-deployer/.settings
+/membrane-esb/karaf-deployer/.settings
+
+# /membrane-esb/osgi/
+/membrane-esb/osgi/.classpath
+/membrane-esb/osgi/.project
+/membrane-esb/osgi/target
+/membrane-esb/osgi/.settings
+
+# /membrane-esb/osgi-extender/
+/membrane-esb/osgi-extender/.settings
+/membrane-esb/osgi-extender/.classpath
+/membrane-esb/osgi-extender/target
+/membrane-esb/osgi-extender/.project
+/membrane-esb/osgi-extender/.settings
+
+# /membrane-esb/sar/
+/membrane-esb/sar/.settings
+/membrane-esb/sar/.classpath
+/membrane-esb/sar/.project
+/membrane-esb/sar/target
+
+# /membrane-esb/test/
+/membrane-esb/test/.settings
+/membrane-esb/test/.project
+/membrane-esb/test/.classpath
+/membrane-esb/test/target
+
+# /membrane-esb/war/
+/membrane-esb/war/.classpath
+/membrane-esb/war/.project
+/membrane-esb/war/target
+/membrane-esb/war/.settings
+
+# /membrane-monitor/
+/membrane-monitor/.project
+/membrane-monitor/.settings
+/membrane-monitor/workspace
+
+# /membrane-monitor/plugin/
+/membrane-monitor/plugin/.classpath
+/membrane-monitor/plugin/.project
+/membrane-monitor/plugin/.settings
+/membrane-monitor/plugin/target
+
+# /membrane-monitor/plugin-test/
+/membrane-monitor/plugin-test/target
+/membrane-monitor/plugin-test/.settings
+/membrane-monitor/plugin-test/.classpath
+/membrane-monitor/plugin-test/.project
+
+# /membrane-monitor/rcp/
+/membrane-monitor/rcp/.classpath
+/membrane-monitor/rcp/.project
+/membrane-monitor/rcp/.settings
+/membrane-monitor/rcp/target
