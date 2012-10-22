@@ -1,5 +1,5 @@
-Membrane ESB and Membrane Monitor
-=================================
+Membrane ESB
+============
 
 Check the [Repository at GitHub](https://github.com/membrane/service-proxy) for the latest source code.
 
