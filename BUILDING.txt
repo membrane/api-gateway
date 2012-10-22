@@ -1,12 +1,10 @@
-
-  Membrane Builing Instructions
+Membrane Builing Instructions
 ==================================================================
 1. Install JDK 1.6 or higher.
 2. Install Maven 3.
 3. Run "mvn install" in this directory.
 
-
-  Release Instructions
+Release Instructions
 ==================================================================
 
 Also see https://predic8.com/svn/membrane/monitor/branches/3.2.X/com.predic8.membrane.core/doc/building-a-distribution.txt .
