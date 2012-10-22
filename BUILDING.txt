@@ -1,4 +1,3 @@
-
 Membrane Builing Instructions
 ==================================================================
 1. Install JDK 1.6 or higher.
@@ -9,7 +8,6 @@ Membrane Builing Instructions
 (Putting both Maven modules into one reactor build is not possible
 because maven-bundle-plugin and tycho-maven-plugin are incompatible
 with project references between projects using them.)
-
 
 
 
