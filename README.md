@@ -43,3 +43,11 @@ By default SOAP proxies configure themselves from WSDL:
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
 </soapProxy>
 ```
+
+Add features as you like:
+```xml
+<soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
+	<validator />
+	<log />
+</soapProxy>
+```
