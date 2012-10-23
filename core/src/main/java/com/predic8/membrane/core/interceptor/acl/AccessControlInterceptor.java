@@ -50,6 +50,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		try {
 			resource = accessControl.getResourceFor(exc.getOriginalRequestUri());
 		} catch (Exception e) {
+			log.error(e);
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
