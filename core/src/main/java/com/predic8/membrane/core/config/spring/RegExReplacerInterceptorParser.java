@@ -30,6 +30,8 @@ public class RegExReplacerInterceptorParser extends AbstractParser {
 		setIdIfNeeded(element, "regExReplacer");
 		builder.addPropertyValue("pattern",element.getAttribute("regex"));
 		builder.addPropertyValue("replacement",element.getAttribute("replace"));
+		if (element.hasAttribute("target"))
+			builder.addPropertyValue("target",element.getAttribute("target"));
 	}
 
 }

@@ -20,9 +20,15 @@ import javax.xml.stream.*;
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.MessageUtil;
 
+/**
+ * Runs a regular-expression-replacement on either the message body (default) or
+ * all header values.
+ */
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(RegExReplaceInterceptor.class.getName());
@@ -31,21 +37,34 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	
 	private String replacement;
 	
+	private String target;
+	
 	public RegExReplaceInterceptor() {
 		name="Regex Replacer";
 	}
-	
+
+	@Override
+	public Outcome handleRequest(Exchange exc) throws Exception {
+		if (isTargetHeader())
+			replaceHeader(exc.getRequest().getHeader());
+		else
+			replaceBody(exc.getRequest());
+
+		return Outcome.CONTINUE;
+	}
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		replaceBody(exc.getResponse());
+		if (isTargetHeader())
+			replaceHeader(exc.getResponse().getHeader());
+		else
+			replaceBody(exc.getResponse());
 		return Outcome.CONTINUE;
 	}
 	
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-		replaceBody(exc.getRequest());
-
-		return Outcome.CONTINUE;
+	private void replaceHeader(Header header) {
+		for (HeaderField hf : header.getAllHeaderFields())
+			hf.setValue(hf.getValue().replaceAll(pattern, replacement));
 	}
 
 	private void replaceBody(Message res) throws IOException, Exception {
@@ -88,20 +107,34 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 
 		out.writeAttribute("regex", pattern);
 		out.writeAttribute("replace", replacement);
+		if (isTargetHeader())
+			out.writeAttribute("target", "header");
 
 		out.writeEndElement();
 	}
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		
 		pattern = token.getAttributeValue("", "regex");
 		replacement = token.getAttributeValue("", "replace");
+		target = token.getAttributeValue("", "target");
 	}
 	
 	@Override
 	public String getHelpId() {
 		return "regex-replacer";
+	}
+	
+	public String getTarget() {
+		return target;
+	}
+	
+	public void setTarget(String target) {
+		this.target = target;
+	}
+	
+	private boolean isTargetHeader() {
+		return "header".equals(target);
 	}
 
 }

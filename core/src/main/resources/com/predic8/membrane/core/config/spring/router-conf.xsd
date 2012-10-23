@@ -360,6 +360,14 @@
 					<xsd:sequence />
 					<xsd:attribute name="regex" type="xsd:string" use="required"/>
 					<xsd:attribute name="replace" type="xsd:string" use="required"/>
+					<xsd:attribute name="target" use="optional" default="body">
+						<xsd:simpleType>
+							<xsd:restriction base="xsd:string">
+								<xsd:enumeration value="body" />
+								<xsd:enumeration value="header" />
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:attribute>
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>
