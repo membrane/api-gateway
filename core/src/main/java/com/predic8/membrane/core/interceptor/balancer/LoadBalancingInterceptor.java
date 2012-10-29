@@ -92,8 +92,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	private void setFailOverNodes(Exchange exc, Node dispatchedNode)
-			throws MalformedURLException {
+	private void setFailOverNodes(Exchange exc, Node dispatchedNode) {
 		if (!failOver)
 			return;
 

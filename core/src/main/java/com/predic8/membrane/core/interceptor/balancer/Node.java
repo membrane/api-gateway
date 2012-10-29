@@ -202,8 +202,7 @@ public class Node extends AbstractXmlElement {
 		port = Integer.parseInt(token.getAttributeValue("", "port")!=null?token.getAttributeValue("", "port"):"80");
 	}
 	
-	public String getDestinationURL(Exchange exc)
-			throws MalformedURLException {
+	public String getDestinationURL(Exchange exc) {
 		return "http://" + getHost() + ":" + getPort() + exc.getRequestURI();
 	}
 
