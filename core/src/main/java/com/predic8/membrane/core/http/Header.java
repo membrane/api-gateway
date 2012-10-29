@@ -358,5 +358,12 @@ public class Header {
 		}
 		return null;
 	}
+	
+	public int estimateHeapSize() {
+		int size = 10;
+		for (HeaderField hf : fields)
+			size += 4 + hf.estimateHeapSize();
+		return size;
+	}
 
 }

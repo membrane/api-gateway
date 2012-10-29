@@ -657,7 +657,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			private String getMessagesText() {
 				if (router.getExchangeStore() instanceof LimitedMemoryExchangeStore) {
 					LimitedMemoryExchangeStore lmes = (LimitedMemoryExchangeStore)router.getExchangeStore();
-					float usage = lmes.getCurrentSize() / lmes.getMaxSize();
+					float usage = 100.0f * lmes.getCurrentSize() / lmes.getMaxSize();
 					Long oldestTimeResSent = lmes.getOldestTimeResSent();
 					String usageStr =
 							oldestTimeResSent == null ? "" :

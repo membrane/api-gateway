@@ -70,7 +70,9 @@ public abstract class AbstractExchange {
 	private String sourceIp;
 	
 	private final ArrayList<Interceptor> interceptorStack = new ArrayList<Interceptor>(10);
-	
+
+	private int estimatedHeapSize = -1;
+
 	public AbstractExchange() {
 		
 	}
@@ -378,9 +380,24 @@ public abstract class AbstractExchange {
 		int s = interceptorStack.size();
 		return s == 0 ? null : interceptorStack.remove(s-1);
 	}
-
-	public int getSize() {		
-		return 500 + getRequestContentLength() + getResponseContentLength();
+	
+	public int getHeapSizeEstimation() {
+		if (estimatedHeapSize == -1)
+			estimatedHeapSize = estimateHeapSize();
+		return estimatedHeapSize;
 	}
+
+	protected int estimateHeapSize() {
+		return 2000 + 
+				(originalRequestUri != null ? originalRequestUri.length() : 0) + 
+				(request != null ? request.estimateHeapSize() : 0) +
+				(response != null ? response.estimateHeapSize() : 0);
+	}
+	
+	public void clearProperties() {
+		properties.clear();
+	}
+	
+	
 	
 }

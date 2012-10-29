@@ -35,13 +35,13 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	private final Queue<AbstractExchange> exchanges = new LinkedList<AbstractExchange>();
 	
 	public synchronized void add(AbstractExchange exc) {
-		if (exc.getResponse() == null || exc.getSize() > maxSize)
+		if (exc.getResponse() == null || exc.getHeapSizeEstimation() > maxSize)
 			return;
 
 		makeSpaceIfNeeded(exc);
 
 		exchanges.offer(exc);
-		currentSize += exc.getSize();
+		currentSize += exc.getHeapSizeEstimation();
 	}
 
 	public synchronized void remove(AbstractExchange exc) {
@@ -127,12 +127,12 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private void makeSpaceIfNeeded(AbstractExchange exc) {
 		while (!hasEnoughSpace(exc)) {
-			currentSize -= exchanges.poll().getSize();
+			currentSize -= exchanges.poll().getHeapSizeEstimation();
 		}
 	}
 
 	private boolean hasEnoughSpace(AbstractExchange exc) {
-		return exc.getSize()+currentSize <= maxSize;
+		return exc.getHeapSizeEstimation()+currentSize <= maxSize;
 	}
 
 	public int getMaxSize() {

@@ -340,4 +340,10 @@ public class Response extends Message {
 		return super.isKeepAlive();
 	}
 
+	@Override
+	public int estimateHeapSize() {
+		return super.estimateHeapSize() + 
+				12 +
+				(statusMessage != null ? 2*statusMessage.length() : 0);
+	}
 }

@@ -93,6 +93,8 @@ class HttpServletHandler extends AbstractHttpHandler {
 					+ e.getStartLine() + ")");
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
+			exchange.clearProperties();
 		}
 		
 	}

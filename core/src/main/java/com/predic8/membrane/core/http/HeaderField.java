@@ -69,4 +69,8 @@ public class HeaderField {
 		buf.append(Constants.CRLF);
 		return buf.toString();
 	}
+	
+	public int estimateHeapSize() {
+		return 2*(4 + headerName.toString().length() + value.length());
+	}
 }

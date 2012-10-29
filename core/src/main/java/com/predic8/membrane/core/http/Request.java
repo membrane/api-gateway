@@ -173,4 +173,12 @@ public class Request extends Message {
 		String auth = header.getFirstValue(Header.AUTHORIZATION);
 		return auth != null && (auth.startsWith("NTLM") || auth.startsWith("Negotiate"));
 	}
+	
+	@Override
+	public int estimateHeapSize() {
+		return super.estimateHeapSize() + 
+				12 +
+				(method != null ? 2*method.length() : 0) +
+				(uri != null ? 2*uri.length() : 0);
+	}
 }
