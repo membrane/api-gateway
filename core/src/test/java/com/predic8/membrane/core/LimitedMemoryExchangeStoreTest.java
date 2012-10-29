@@ -39,7 +39,7 @@ public class LimitedMemoryExchangeStoreTest {
 	@Test
 	public void testStore() throws Exception {
 		
-		store.setMaxSize(1024);
+		store.setMaxSize(5000);
 		
 		store.add(getExchange("0"));
 		Exchange exc = getExchange("1");
@@ -48,6 +48,8 @@ public class LimitedMemoryExchangeStoreTest {
 		Assert.assertEquals(2, store.getAllExchangesAsList().size());
 		assertStore(0, "0");
 		assertStore(1, "1");
+
+		store.setMaxSize(store.getCurrentSize() + 1);
 		
 		store.add(getExchange("2"));
 		
