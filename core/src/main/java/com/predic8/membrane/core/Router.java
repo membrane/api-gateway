@@ -24,7 +24,6 @@ import java.util.concurrent.Executors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
@@ -64,8 +63,7 @@ public class Router {
 	public static Router init(String resource, ClassLoader classLoader) {
 		log.debug("loading spring config: " + resource);
 
-		beanFactory = new FileSystemXmlApplicationContext(
-				new String[] { resource }, false);
+		beanFactory = new TrackingFileSystemXmlApplicationContext(new String[] { resource }, false);
 		beanFactory.setClassLoader(classLoader);
 		beanFactory.refresh();
 
