@@ -570,6 +570,9 @@ public class AdminPageBuilder extends Html {
 			if (!same && !TextUtil.isValidXMLSnippet(longDescription)) {
 				longDescription = HtmlUtils.htmlEscape(longDescription).replace("\n", "<br/>");
 			}
+			
+			shortDescription = shortDescription.replaceAll("\"/admin", "\"" + relativeRootPath + "/admin");
+			longDescription = longDescription.replaceAll("\"/admin", "\"" + relativeRootPath + "/admin");
 
 			String did = "d" + id;
 			div().id(did).style("border: 1px solid black; padding:8px 5px; margin: 10px;overflow-x: auto; background-color: #FFC04F;" + 

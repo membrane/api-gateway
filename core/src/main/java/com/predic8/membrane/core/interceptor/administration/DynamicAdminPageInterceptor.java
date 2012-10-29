@@ -814,7 +814,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	/**
 	 * For example, returns "../.." for the input "/admin/clusters/".
 	 */
-	private String getRelativeRootPath(String pathQuery) throws MalformedURLException {
+	public static String getRelativeRootPath(String pathQuery) throws MalformedURLException {
 		String path = URIUtil.getPath(pathQuery);
 		// count '/'s
 		int depth = 0;
