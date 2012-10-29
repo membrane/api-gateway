@@ -74,6 +74,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 				return;
 			}
 
+			exchange.getRequest().readBody(); // read if not alread read
 			writeResponse(exchange.getResponse());
 			exchange.setCompleted();
 			
