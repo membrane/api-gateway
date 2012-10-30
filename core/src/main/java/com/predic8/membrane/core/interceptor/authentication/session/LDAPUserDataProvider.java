@@ -32,10 +32,13 @@ import javax.naming.directory.SearchResult;
 import javax.xml.stream.XMLStreamReader;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class LDAPUserDataProvider extends AbstractXmlElement implements UserDataProvider {
+	private static Log log = LogFactory.getLog(LDAPUserDataProvider.class.getName());
 
 	String url; // the LDAP server
 	String base; // the base DN
@@ -43,6 +46,7 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 	String bindpw; // binddn's password, if binddn != null
 	String searchPattern; // search expression to find user
 	int searchScope; // search scope to find user
+	String passwordAttribute; // attribute containing the user's password, bind-to-authenticate to the user's node if null
 	String timeout; // timeout in milliseconds
 	String connectTimeout;
 	boolean readAttributesAsSelf; // whether reading the user's attributes requires authentication
@@ -56,9 +60,13 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		bindpw = token.getAttributeValue("", "bindpw");
 		searchPattern = token.getAttributeValue("", "searchPattern");
 		searchScope = searchScopeFromString(token.getAttributeValue("", "searchScope"));
+		passwordAttribute = token.getAttributeValue("", "passwordAttribute");
 		timeout = StringUtils.defaultIfEmpty(token.getAttributeValue("", "timeout"), "1000");
 		connectTimeout = StringUtils.defaultIfEmpty(token.getAttributeValue("", "connectTimeout"), timeout);
 		readAttributesAsSelf = Boolean.parseBoolean(StringUtils.defaultIfEmpty(token.getAttributeValue("", "readAttributesAsSelf"), "true"));
+		
+		if (passwordAttribute != null && readAttributesAsSelf)
+			throw new Exception("@passwordAttribute is not compatible with @readAttributesAsSelf.");
 	}
 	
 	@Override
@@ -80,6 +88,9 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 			}.parse(token);
 		} else {
 			super.parseChildren(token, child);
+		}
+		if (passwordAttribute != null) {
+			attributeMap.put(passwordAttribute, "_pass");
 		}
 	}
 	
@@ -111,15 +122,28 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 			ctx.close();
 		}
 
-		env.put(Context.SECURITY_AUTHENTICATION, "simple");
-		env.put(Context.SECURITY_PRINCIPAL, uid + "," + base);
-		env.put(Context.SECURITY_CREDENTIALS, password);
-		DirContext ctx2 = new InitialDirContext(env);
-		try {
-			if (readAttributesAsSelf)
-				searchUser(login, userAttrs, ctx2);
-		} finally {
-			ctx2.close();
+		if (passwordAttribute != null) {
+			if (!userAttrs.containsKey("_pass"))
+				throw new NoSuchElementException();
+			String pass = userAttrs.get("_pass");
+			if (pass == null || !pass.startsWith("{x-plain}"))
+				throw new NoSuchElementException();
+			log.debug("found password");
+			pass = pass.substring(9);
+			if (!pass.equals(password))
+				throw new NoSuchElementException();
+			userAttrs.remove("_pass");
+		} else {
+			env.put(Context.SECURITY_AUTHENTICATION, "simple");
+			env.put(Context.SECURITY_PRINCIPAL, uid + "," + base);
+			env.put(Context.SECURITY_CREDENTIALS, password);
+			DirContext ctx2 = new InitialDirContext(env);
+			try {
+				if (readAttributesAsSelf)
+					searchUser(login, userAttrs, ctx2);
+			} finally {
+				ctx2.close();
+			}
 		}
 		return userAttrs;
 	}
@@ -131,13 +155,16 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		ctls.setReturningObjFlag(true);
 		ctls.setSearchScope(searchScope);
 		String search = searchPattern.replaceAll(Pattern.quote("%LOGIN%"), escapeLDAPSearchFilter(login));
+		log.debug("Searching LDAP for " + search);
 		NamingEnumeration<SearchResult> answer = ctx.search(base, search, ctls);
 		try {
 			if (!answer.hasMore())
 				throw new NoSuchElementException();
+			log.debug("LDAP returned >=1 record.");
 			SearchResult result = answer.next();
 			uid = result.getName();
 			for (Map.Entry<String, String> e : attributeMap.entrySet()) {
+				log.debug("found LDAP attribute: " + e.getKey());
 				Attribute a = result.getAttributes().get(e.getKey());
 				if (a != null)
 					userAttrs.put(e.getValue(), a.get().toString());
@@ -184,6 +211,7 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		try {
 			return auth(username, password);
 		} catch (AuthenticationException e) {
+			log.debug(e);
 			throw new NoSuchElementException();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
