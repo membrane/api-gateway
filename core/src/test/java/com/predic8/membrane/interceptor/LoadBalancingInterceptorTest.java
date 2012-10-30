@@ -124,8 +124,7 @@ public class LoadBalancingInterceptorTest {
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 	}
 
-	private void doTestGetDestinationURL(String requestUri, String expectedUri)
-			throws MalformedURLException {
+	private void doTestGetDestinationURL(String requestUri, String expectedUri) {
 		Exchange exc = new Exchange(null);
 		exc.setOriginalRequestUri(requestUri);
 		assertEquals(expectedUri, new Node("thomas-bayer.com", 80).getDestinationURL(exc));

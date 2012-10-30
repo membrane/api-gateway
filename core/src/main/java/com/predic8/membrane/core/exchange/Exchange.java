@@ -117,7 +117,8 @@ public class Exchange extends AbstractExchange {
 
 	public ServiceProxyKey getServiceProxyKey() {
 		return new ServiceProxyKey(request.getHeader().getHost(),
-				request.getMethod(), request.getUri(), handler.isMatchLocalPort() ? handler.getLocalPort() : -1);
+				request.getMethod(), request.getUri(),
+				handler.isMatchLocalPort() ? handler.getLocalPort() : -1);
 	}
 
 	public Connection getTargetConnection() {
@@ -131,10 +132,16 @@ public class Exchange extends AbstractExchange {
 	public void collectStatistics() {
 		rule.collectStatisticsFrom(this);
 	}
-	
-	public String getRequestURI() throws MalformedURLException {
-		if (HttpUtil.isAbsoluteURI(getOriginalRequestUri())) 
-			return new URL(getOriginalRequestUri()).getFile();
+
+	public String getRequestURI() {
+		if (HttpUtil.isAbsoluteURI(getOriginalRequestUri())) {
+			try {
+				return new URL(getOriginalRequestUri()).getFile();
+			} catch (MalformedURLException e) {
+				throw new RuntimeException("Request has a malformed URI: "
+						+ getOriginalRequestUri(), e);
+			}
+		}
 		return getOriginalRequestUri();
 	}
 
@@ -152,10 +159,10 @@ public class Exchange extends AbstractExchange {
 
 	public Map<String, String> getStringProperties() {
 		Map<String, String> map = new HashMap<String, String>();
-		
+
 		for (Map.Entry<String, Object> e : properties.entrySet()) {
 			if (e.getValue() instanceof String) {
-				map.put(e.getKey(), (String)e.getValue());				
+				map.put(e.getKey(), (String) e.getValue());
 			}
 		}
 		return map;
