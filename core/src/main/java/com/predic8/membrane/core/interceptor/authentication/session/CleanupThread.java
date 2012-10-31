@@ -36,16 +36,19 @@ class CleanupThread extends Thread {
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
+			ArrayList<WeakReference<Cleaner>> removeUs = new ArrayList<WeakReference<Cleaner>>();
 			for (WeakReference<Cleaner> wr : cleaners) {
 				Cleaner c = wr.get();
 				if (c == null) {
-					cleaners.remove(wr);
-					if (cleaners.size() == 0)
-						return;
+					removeUs.add(wr);
 					continue;
 				}
 				c.cleanup();
 			}
+			for (WeakReference<Cleaner> wr : removeUs)
+				cleaners.remove(wr);
+			if (cleaners.size() == 0)
+				return;
 		}
 	}
 }

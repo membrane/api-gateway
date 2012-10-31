@@ -52,6 +52,9 @@ public class LoginInterceptor extends AbstractInterceptor {
 		} else if (child.equals("ldapUserDataProvider")) {
 			userDataProvider = new LDAPUserDataProvider();
 			((LDAPUserDataProvider) userDataProvider).parse(token);
+		} else if (child.equals("unifyingUserDataProvider")) {
+			userDataProvider = new UnifyingUserDataProvider();
+			((UnifyingUserDataProvider) userDataProvider).parse(token);
 		} else if (child.equals("accountBlocker")) {
 			accountBlocker = new AccountBlocker();
 			accountBlocker.parse(token);
