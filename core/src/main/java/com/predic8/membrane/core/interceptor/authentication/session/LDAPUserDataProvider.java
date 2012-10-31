@@ -38,6 +38,7 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class LDAPUserDataProvider extends AbstractXmlElement implements UserDataProvider {
+
 	private static Log log = LogFactory.getLog(LDAPUserDataProvider.class.getName());
 
 	String url; // the LDAP server
@@ -45,11 +46,11 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 	String binddn; // the DN to bind to the server, or null to bind anonymously
 	String bindpw; // binddn's password, if binddn != null
 	String searchPattern; // search expression to find user
-	int searchScope; // search scope to find user
+	int searchScope = SearchControls.SUBTREE_SCOPE; // search scope to find user
 	String passwordAttribute; // attribute containing the user's password, bind-to-authenticate to the user's node if null
-	String timeout; // timeout in milliseconds
-	String connectTimeout;
-	boolean readAttributesAsSelf; // whether reading the user's attributes requires authentication
+	String timeout = "1000"; // timeout in milliseconds
+	String connectTimeout = "1000";
+	boolean readAttributesAsSelf = true; // whether reading the user's attributes requires authentication
 	HashMap<String, String> attributeMap = new HashMap<String, String>(); // maps LDAP attributes to TokenGenerator attributes
 
 	@Override
@@ -235,5 +236,93 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		}
 	}
 	*/
+
+	public String getUrl() {
+		return url;
+	}
+
+	public void setUrl(String url) {
+		this.url = url;
+	}
+
+	public String getBase() {
+		return base;
+	}
+
+	public void setBase(String base) {
+		this.base = base;
+	}
+
+	public String getBinddn() {
+		return binddn;
+	}
+
+	public void setBinddn(String binddn) {
+		this.binddn = binddn;
+	}
+
+	public String getBindpw() {
+		return bindpw;
+	}
+
+	public void setBindpw(String bindpw) {
+		this.bindpw = bindpw;
+	}
+
+	public String getSearchPattern() {
+		return searchPattern;
+	}
+
+	public void setSearchPattern(String searchPattern) {
+		this.searchPattern = searchPattern;
+	}
+
+	public int getSearchScope() {
+		return searchScope;
+	}
+
+	public void setSearchScope(int searchScope) {
+		this.searchScope = searchScope;
+	}
+
+	public String getPasswordAttribute() {
+		return passwordAttribute;
+	}
+
+	public void setPasswordAttribute(String passwordAttribute) {
+		this.passwordAttribute = passwordAttribute;
+	}
+
+	public String getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(String timeout) {
+		this.timeout = timeout;
+	}
+
+	public String getConnectTimeout() {
+		return connectTimeout;
+	}
+
+	public void setConnectTimeout(String connectTimeout) {
+		this.connectTimeout = connectTimeout;
+	}
+
+	public boolean isReadAttributesAsSelf() {
+		return readAttributesAsSelf;
+	}
+
+	public void setReadAttributesAsSelf(boolean readAttributesAsSelf) {
+		this.readAttributesAsSelf = readAttributesAsSelf;
+	}
+
+	public HashMap<String, String> getAttributeMap() {
+		return attributeMap;
+	}
+
+	public void setAttributeMap(HashMap<String, String> attributeMap) {
+		this.attributeMap = attributeMap;
+	}
 
 }

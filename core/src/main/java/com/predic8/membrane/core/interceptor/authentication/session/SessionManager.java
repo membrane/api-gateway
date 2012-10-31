@@ -30,20 +30,20 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
 
 public class SessionManager extends AbstractXmlElement implements Cleaner {
-	private String sessionCookieName;
-	long sessionTimeout;
+	private String cookieName;
+	long timeout;
 	
 	// TODO: bind session also to remote IP (for public Membrane release)
 	HashMap<String, Session> sessions = new HashMap<String, SessionManager.Session>();
 	
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		sessionCookieName = token.getAttributeValue("", "cookieName");
-		sessionTimeout = Long.parseLong(StringUtils.defaultIfEmpty(token.getAttributeValue("", "timeout"), "300000"));
+		cookieName = token.getAttributeValue("", "cookieName");
+		timeout = Long.parseLong(StringUtils.defaultIfEmpty(token.getAttributeValue("", "timeout"), "300000"));
 	}
 	
 	public void init(Router router) {
-		sessionCookieName = StringUtils.defaultIfEmpty(sessionCookieName, "SESSIONID");
-		sessionTimeout = sessionTimeout == 0 ? 300000 : sessionTimeout;
+		cookieName = StringUtils.defaultIfEmpty(cookieName, "SESSIONID");
+		timeout = timeout == 0 ? 300000 : timeout;
 	}
 	
 	public static class Session {
@@ -96,7 +96,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	}
 	
 	public Session getSession(Request request) {
-		String id = request.getHeader().getFirstCookie(sessionCookieName);
+		String id = request.getHeader().getFirstCookie(cookieName);
 		if (id == null) {
 			return null;
 		}
@@ -116,12 +116,12 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		synchronized (sessions) {
 			sessions.put(id, s);
 		}
-		exc.getResponse().getHeader().addCookieSession(sessionCookieName, id + "; Path=/");
+		exc.getResponse().getHeader().addCookieSession(cookieName, id + "; Path=/");
 		return s;
 	}
 	
 	public void cleanup() {
-		long death = System.currentTimeMillis() - sessionTimeout;
+		long death = System.currentTimeMillis() - timeout;
 		List<String> removeUs = new ArrayList<String>();
 		synchronized (sessions) {
 			for (Map.Entry<String, Session> e : sessions.entrySet())
@@ -131,4 +131,21 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 				sessions.remove(sessionId);
 		}
 	}
+
+	public String getCookieName() {
+		return cookieName;
+	}
+
+	public void setCookieName(String cookieName) {
+		this.cookieName = cookieName;
+	}
+
+	public long getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(long timeout) {
+		this.timeout = timeout;
+	}
+
 }

@@ -100,7 +100,7 @@ public class HttpTransport extends Transport {
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 		}
-		portListenerMapping.remove(port);
+		portListenerMapping.remove(p);
 
 		for (IPortChangeListener listener : menuListeners) {
 			listener.removePort(port);

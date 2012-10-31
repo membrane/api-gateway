@@ -30,7 +30,7 @@ public abstract class SMSTokenProvider extends AbstractXmlElement implements Tok
 	private static Log log = LogFactory.getLog(SMSTokenProvider.class.getName());
 
 	private final SecureRandom r = new SecureRandom();
-	protected String prefixText;
+	protected String prefixText = "Token: ";
 	private boolean simulate;
 	private boolean normalizeTelephoneNumber;
 	
@@ -89,6 +89,36 @@ public abstract class SMSTokenProvider extends AbstractXmlElement implements Tok
 		}
 		if (t1 == null || !t1.equals(token))
 			throw new NoSuchElementException();
+	}
+
+
+	public String getPrefixText() {
+		return prefixText;
+	}
+
+
+	public void setPrefixText(String prefixText) {
+		this.prefixText = prefixText;
+	}
+
+
+	public boolean isSimulate() {
+		return simulate;
+	}
+
+
+	public void setSimulate(boolean simulate) {
+		this.simulate = simulate;
+	}
+
+
+	public boolean isNormalizeTelephoneNumber() {
+		return normalizeTelephoneNumber;
+	}
+
+
+	public void setNormalizeTelephoneNumber(boolean normalizeTelephoneNumber) {
+		this.normalizeTelephoneNumber = normalizeTelephoneNumber;
 	}
 
 

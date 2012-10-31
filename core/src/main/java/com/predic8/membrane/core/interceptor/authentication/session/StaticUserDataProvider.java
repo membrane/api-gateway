@@ -62,5 +62,13 @@ public class StaticUserDataProvider extends AbstractXmlElement implements UserDa
 			super.parseChildren(token, child);
 		}
 	}
+	
+	public Map<String, Map<String, String>> getUsers() {
+		return users;
+	}
+	
+	public void setUsers(Map<String, Map<String, String>> users) {
+		this.users = users;
+	}
 
 }

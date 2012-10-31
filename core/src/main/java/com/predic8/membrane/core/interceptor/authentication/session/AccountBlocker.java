@@ -33,10 +33,10 @@ import com.predic8.membrane.core.interceptor.authentication.session.CleanupThrea
 public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 	private static Log log = LogFactory.getLog(AccountBlocker.class.getName());
 
-	private int blockWholeSystemAfter;
-	private int afterFailedLogins;
-	private long afterFailedLoginsWithin;
-	private long blockFor;
+	private int blockWholeSystemAfter = 1000000;
+	private int afterFailedLogins = 5;
+	private long afterFailedLoginsWithin = Long.MAX_VALUE;
+	private long blockFor = 3600000;
 
 	private HashMap<String, Info> users = new HashMap<String, Info>();
 	
@@ -121,5 +121,37 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 			for (String username : removeUs)
 				users.remove(username);
 		}
+	}
+
+	public int getBlockWholeSystemAfter() {
+		return blockWholeSystemAfter;
+	}
+
+	public void setBlockWholeSystemAfter(int blockWholeSystemAfter) {
+		this.blockWholeSystemAfter = blockWholeSystemAfter;
+	}
+
+	public int getAfterFailedLogins() {
+		return afterFailedLogins;
+	}
+
+	public void setAfterFailedLogins(int afterFailedLogins) {
+		this.afterFailedLogins = afterFailedLogins;
+	}
+
+	public long getAfterFailedLoginsWithin() {
+		return afterFailedLoginsWithin;
+	}
+
+	public void setAfterFailedLoginsWithin(long afterFailedLoginsWithin) {
+		this.afterFailedLoginsWithin = afterFailedLoginsWithin;
+	}
+
+	public long getBlockFor() {
+		return blockFor;
+	}
+
+	public void setBlockFor(long blockFor) {
+		this.blockFor = blockFor;
 	}
 }

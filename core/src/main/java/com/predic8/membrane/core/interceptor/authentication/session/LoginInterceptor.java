@@ -130,4 +130,52 @@ public class LoginInterceptor extends AbstractInterceptor {
 		return super.handleResponse(exc);
 	}
 
+	public String getLocation() {
+		return location;
+	}
+
+	public void setLocation(String location) {
+		this.location = location;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
+
+	public UserDataProvider getUserDataProvider() {
+		return userDataProvider;
+	}
+
+	public void setUserDataProvider(UserDataProvider userDataProvider) {
+		this.userDataProvider = userDataProvider;
+	}
+
+	public TokenProvider getTokenProvider() {
+		return tokenProvider;
+	}
+
+	public void setTokenProvider(TokenProvider tokenProvider) {
+		this.tokenProvider = tokenProvider;
+	}
+
+	public SessionManager getSessionManager() {
+		return sessionManager;
+	}
+
+	public void setSessionManager(SessionManager sessionManager) {
+		this.sessionManager = sessionManager;
+	}
+
+	public AccountBlocker getAccountBlocker() {
+		return accountBlocker;
+	}
+
+	public void setAccountBlocker(AccountBlocker accountBlocker) {
+		this.accountBlocker = accountBlocker;
+	}
+
 }
