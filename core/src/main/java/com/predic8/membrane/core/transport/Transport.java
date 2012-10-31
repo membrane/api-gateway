@@ -73,7 +73,7 @@ public class Transport {
 	}
 	
 	public void closeAll(boolean waitForCompletion) throws IOException {}
-	public void openPort(int port, SSLContext sslContext) throws IOException {}
+	public void openPort(String ip, int port, SSLContext sslContext) throws IOException {}
 
 	public String getContextPath(Exchange exc) {
 		return "";

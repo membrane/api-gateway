@@ -133,7 +133,7 @@ public class SSLContextTest {
 
 	private void testCombination(SSLContext server, final SSLContext client)
 			throws IOException, InterruptedException, Exception {
-		ServerSocket ss = server.createServerSocket(3020);
+		ServerSocket ss = server.createServerSocket(3020, 50, null);
 		
 		final Exception ex[] = new Exception[1];
 		

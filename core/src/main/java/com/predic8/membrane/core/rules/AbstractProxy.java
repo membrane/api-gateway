@@ -97,6 +97,11 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 	 * Used to determine the IP address for outgoing connections
 	 */
 	protected String localHost;
+	
+	/**
+	 * IP address to bind to, or null to bind to 0.0.0.0 (=any local address).
+	 */
+	protected String ip;
 
 	/**
 	 * Map<Status Code, StatisticCollector>
@@ -336,6 +341,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
 		name = token.getAttributeValue("", "name");
+		ip = token.getAttributeValue("", "ip");
 		parseKeyAttributes(token);
 		parseBlocking(token);
 	}
@@ -485,5 +491,9 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 	
 	public AbstractProxy parse(XMLStreamReader token) throws Exception {
 		return (AbstractProxy) super.parse(token); // we know it's covariant
+	}
+	
+	public String getIp() {
+		return ip;
 	}
 }

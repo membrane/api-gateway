@@ -41,23 +41,56 @@ public class HttpTransport extends Transport {
 	private boolean tcpNoDelay = true;
 	private boolean autoContinue100Expected = true;
 
-	public Hashtable<Integer, HttpEndpointListener> portListenerMapping = new Hashtable<Integer, HttpEndpointListener>();
+	public Hashtable<Port, HttpEndpointListener> portListenerMapping = new Hashtable<Port, HttpEndpointListener>();
+	
+	private static class Port {
+		public String ip;
+		public int port;
+
+		public Port(String ip, int port) {
+			this.ip = ip;
+			this.port = port;
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof Port))
+				return false;
+			Port other = (Port)obj;
+			if (other.port != port)
+				return false;
+			if (ip == null)
+				return other.ip == null;
+			return ip.equals(other.ip);
+		}
+		
+		@Override
+		public int hashCode() {
+			return 5 * port + (ip != null ? 3 * ip.hashCode() : 0);
+		}
+		
+		@Override
+		public String toString() {
+			return "port=" + port + " ip=" + ip;
+		}
+	}
 
 	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(0,
 			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
 			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory());
 
-	public boolean isAnyThreadListeningAt(int port) {
-		return portListenerMapping.get(port) != null;
+	public boolean isAnyThreadListeningAt(String ip, int port) {
+		return portListenerMapping.get(new Port(ip, port)) != null;
 	}
 
-	public Enumeration<Integer> getAllPorts() {
+	public Enumeration<Port> getAllPorts() {
 		return portListenerMapping.keys();
 	}
 
-	public synchronized void closePort(int port) throws IOException {
-		log.debug("Closing server port: " + port);
-		HttpEndpointListener plt = portListenerMapping.get(port);
+	public synchronized void closePort(String ip, int port) throws IOException {
+		Port p = new Port(ip, port);
+		log.debug("Closing server port: " + p);
+		HttpEndpointListener plt = portListenerMapping.get(p);
 		if (plt == null)
 			return;
 
@@ -78,9 +111,10 @@ public class HttpTransport extends Transport {
 	public synchronized void closeAll(boolean waitForCompletion) throws IOException {
 		
 		log.debug("Closing all network server sockets.");
-		Enumeration<Integer> enumeration = getAllPorts();
+		Enumeration<Port> enumeration = getAllPorts();
 		while (enumeration.hasMoreElements()) {
-			closePort(enumeration.nextElement());
+			Port p = enumeration.nextElement();
+			closePort(p.ip, p.port);
 		}
 		
 		if (waitForCompletion) {
@@ -100,8 +134,9 @@ public class HttpTransport extends Transport {
 	 * @param port
 	 * @throws IOException
 	 */
-	public synchronized void openPort(int port, SSLContext sslContext) throws IOException {
-		if (isAnyThreadListeningAt(port)) {
+	@Override
+	public synchronized void openPort(String ip, int port, SSLContext sslContext) throws IOException {
+		if (isAnyThreadListeningAt(ip, port)) {
 			return;
 		}
 
@@ -109,8 +144,8 @@ public class HttpTransport extends Transport {
 			throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
 		
 		HttpEndpointListener portListenerThread = new HttpEndpointListener(
-				port, this, sslContext);
-		portListenerMapping.put(port, portListenerThread);
+				ip, port, this, sslContext);
+		portListenerMapping.put(new Port(ip, port), portListenerThread);
 		portListenerThread.start();
 
 		for (IPortChangeListener listener : menuListeners) {

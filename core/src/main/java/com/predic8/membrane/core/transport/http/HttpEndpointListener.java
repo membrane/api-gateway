@@ -16,6 +16,7 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.SocketException;
 import java.util.concurrent.RejectedExecutionException;
@@ -33,14 +34,14 @@ public class HttpEndpointListener extends Thread {
 	private ServerSocket serverSocket;
 	private HttpTransport transport;
 
-	public HttpEndpointListener(int port, HttpTransport transport, SSLContext sslContext) throws IOException {
+	public HttpEndpointListener(String ip, int port, HttpTransport transport, SSLContext sslContext) throws IOException {
 		this.transport = transport;
 
 		try {
 			if (sslContext != null)
-				serverSocket = sslContext.createServerSocket(port);
+				serverSocket = sslContext.createServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
 			else
-				serverSocket = new ServerSocket(port);
+				serverSocket = new ServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
 			
 			log.debug("listening at port "+port);
 		} catch (BindException e) {

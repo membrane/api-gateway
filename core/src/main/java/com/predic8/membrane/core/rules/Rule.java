@@ -65,4 +65,6 @@ public interface Rule {
 	public SSLContext getSslOutboundContext();
 	
 	public void init(Router router) throws Exception;
+	
+	public String getIp();
 }

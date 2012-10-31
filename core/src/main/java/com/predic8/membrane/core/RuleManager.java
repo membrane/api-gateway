@@ -92,7 +92,7 @@ public class RuleManager {
 		if (exists(rule.getKey()))
 			return;
 
-		router.getTransport().openPort(rule.getKey().getPort(), rule.getSslInboundContext());
+		router.getTransport().openPort(rule.getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
 
 		rules.add(rule);
 
@@ -114,7 +114,7 @@ public class RuleManager {
 	
 	public synchronized void openPorts() throws IOException {
 		for (Rule rule : rules) {
-			router.getTransport().openPort(rule.getKey().getPort(), rule.getSslInboundContext());
+			router.getTransport().openPort(rule.getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
 		}
 	}
 

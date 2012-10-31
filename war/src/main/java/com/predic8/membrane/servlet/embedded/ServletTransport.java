@@ -35,7 +35,7 @@ public class ServletTransport extends Transport {
 	}
 	
 	@Override
-	public void openPort(int port, SSLContext sslContext) throws IOException {
+	public void openPort(String ip, int port, SSLContext sslContext) throws IOException {
 		// do nothing
 	}
 	
