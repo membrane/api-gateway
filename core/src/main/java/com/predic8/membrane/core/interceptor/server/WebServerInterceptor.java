@@ -106,6 +106,12 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			return "text/xml";
 		if (uri.endsWith(".xsd"))
 			return "text/xml";
+		if (uri.endsWith(".html"))
+			return "text/html";
+		if (uri.endsWith(".jpg"))
+			return "image/jpeg";
+		if (uri.endsWith(".png"))
+			return "image/png";
 		return null;
 	}
 
