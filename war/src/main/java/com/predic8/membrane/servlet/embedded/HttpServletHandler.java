@@ -172,7 +172,6 @@ class HttpServletHandler extends AbstractHttpHandler {
 		return remoteAddr;
 	}
 	
-	@Override
 	public InetAddress getLocalAddress() {
 		return localAddr;
 	}
