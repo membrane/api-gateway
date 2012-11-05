@@ -211,6 +211,8 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 			throw new NoSuchElementException();
 		try {
 			return auth(username, password);
+		} catch (NoSuchElementException e) {
+			throw e;
 		} catch (AuthenticationException e) {
 			log.debug(e);
 			throw new NoSuchElementException();
