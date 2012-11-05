@@ -601,6 +601,7 @@
 						<xsd:sequence />
 						<xsd:attribute name="cookieName" type="xsd:string" default="SESSIONID" />
 						<xsd:attribute name="timeout" type="xsd:long" default="300000"/>
+						<xsd:attribute name="domain" type="xsd:string" />
 					</xsd:complexType>
 						</xsd:element>
 

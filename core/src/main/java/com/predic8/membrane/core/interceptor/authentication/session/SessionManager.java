@@ -31,7 +31,8 @@ import com.predic8.membrane.core.interceptor.authentication.session.CleanupThrea
 
 public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;
-	long timeout;
+	private long timeout;
+	private String domain;
 	
 	// TODO: bind session also to remote IP (for public Membrane release)
 	HashMap<String, Session> sessions = new HashMap<String, SessionManager.Session>();
@@ -39,6 +40,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		cookieName = token.getAttributeValue("", "cookieName");
 		timeout = Long.parseLong(StringUtils.defaultIfEmpty(token.getAttributeValue("", "timeout"), "300000"));
+		domain = token.getAttributeValue("", "domain");
 	}
 	
 	public void init(Router router) {
@@ -116,7 +118,10 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		synchronized (sessions) {
 			sessions.put(id, s);
 		}
-		exc.getResponse().getHeader().addCookieSession(cookieName, id + "; Path=/");
+		exc.getResponse().getHeader().addCookieSession(cookieName, id + "; "+
+				(domain != null ? "Domain=" + domain + "; " : "") +
+				"Path=/" +
+				(exc.getRule().getSslInboundContext() != null ? "; Secure" : ""));
 		return s;
 	}
 	
@@ -148,4 +153,11 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		this.timeout = timeout;
 	}
 
+	public String getDomain() {
+		return domain;
+	}
+	
+	public void setDomain(String domain) {
+		this.domain = domain;
+	}
 }
