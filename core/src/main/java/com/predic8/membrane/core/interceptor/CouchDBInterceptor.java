@@ -156,7 +156,7 @@ public class CouchDBInterceptor extends AbstractInterceptor {
 		
 	private Rule getRule() {
 		if (rule == null) {
-			rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, ".*", 4100), targetHost, targetPort);
+			rule = new ServiceProxy(new ServiceProxyKey("localhost", Request.METHOD_POST, ".*", 4100, null), targetHost, targetPort);
 		}
 		return rule;
 	}

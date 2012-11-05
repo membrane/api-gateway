@@ -92,7 +92,7 @@ public class RuleManager {
 		if (exists(rule.getKey()))
 			return;
 
-		router.getTransport().openPort(rule.getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
+		router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
 
 		rules.add(rule);
 
@@ -114,7 +114,7 @@ public class RuleManager {
 	
 	public synchronized void openPorts() throws IOException {
 		for (Rule rule : rules) {
-			router.getTransport().openPort(rule.getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
+			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
 		}
 	}
 
@@ -169,6 +169,10 @@ public class RuleManager {
 		for (Rule rule : rules) {
 
 			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + keyFromReq.getHost());
+			
+			if (rule.getKey().getIp() != null)
+				if (!rule.getKey().getIp().equals(keyFromReq.getIp()))
+					continue;
 
 			if (!rule.getKey().isHostWildcard()) {
 				String ruleHost = rule.getKey().getHost().split(":")[0];

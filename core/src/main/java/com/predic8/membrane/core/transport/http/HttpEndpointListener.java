@@ -43,7 +43,7 @@ public class HttpEndpointListener extends Thread {
 			else
 				serverSocket = new ServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
 			
-			log.debug("listening at port "+port);
+			log.debug("listening at port "+port + (ip != null ? " ip " + ip : ""));
 		} catch (BindException e) {
 			throw new PortOccupiedException(port);
 		}

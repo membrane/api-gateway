@@ -14,12 +14,13 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.net.MalformedURLException;
-import java.util.*;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 import com.google.common.base.Objects;
 import com.predic8.membrane.core.config.AbstractXmlElement;

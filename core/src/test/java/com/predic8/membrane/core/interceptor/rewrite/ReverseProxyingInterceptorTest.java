@@ -79,7 +79,7 @@ public class ReverseProxyingInterceptorTest {
 	 */
 	private Exchange createExchange(String requestHostHeader, int port, String requestURI, String redirectionURI) {
 		Exchange exc = new Exchange(new FakeHttpHandler(port));
-		exc.setRule(new AbstractProxy(new AbstractRuleKey(port) {}){
+		exc.setRule(new AbstractProxy(new AbstractRuleKey(port, null) {}){
 			@Override
 			protected void parseKeyAttributes(XMLStreamReader token) {
 				throw new NotImplementedException();

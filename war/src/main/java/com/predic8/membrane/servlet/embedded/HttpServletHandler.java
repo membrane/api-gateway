@@ -42,7 +42,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 	
 	private final HttpServletRequest request;
 	private final HttpServletResponse response;
-	private final InetAddress remoteAddr;
+	private final InetAddress remoteAddr, localAddr;
 	
 	public HttpServletHandler(HttpServletRequest request, HttpServletResponse response, 
 			Transport transport) throws IOException {
@@ -50,6 +50,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 		this.request = request;
 		this.response = response;
 		remoteAddr = InetAddress.getByName(request.getRemoteAddr());
+		localAddr = InetAddress.getByName(request.getLocalAddr());
 		exchange = new Exchange(this);
 		
 		exchange.setProperty(Exchange.HTTP_SERVLET_REQUEST, request);
@@ -167,8 +168,13 @@ class HttpServletHandler extends AbstractHttpHandler {
 	}
 	
 	@Override
-	public InetAddress getRemoteAddress() throws IOException {
+	public InetAddress getRemoteAddress() {
 		return remoteAddr;
+	}
+	
+	@Override
+	public InetAddress getLocalAddress() {
+		return localAddr;
 	}
 	
 	@Override

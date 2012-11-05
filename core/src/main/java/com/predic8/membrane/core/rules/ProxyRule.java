@@ -33,9 +33,13 @@ public class ProxyRule extends AbstractProxy {
 	
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
-		key = new ProxyRuleKey(Integer.parseInt(token.getAttributeValue("", "port")));
+		key = new ProxyRuleKey(Integer.parseInt(token.getAttributeValue("", "port")), parseIp(token));
 	}
-	
+
+	protected String parseIp(XMLStreamReader token) {
+		return token.getAttributeValue("", "ip");
+	}
+
 	@Override
 	public void write(XMLStreamWriter out)
 			throws XMLStreamException {

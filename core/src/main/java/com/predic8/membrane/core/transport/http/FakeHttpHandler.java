@@ -30,7 +30,12 @@ public class FakeHttpHandler extends AbstractHttpHandler {
 	}
 
 	@Override
-	public InetAddress getRemoteAddress() throws IOException {
+	public InetAddress getRemoteAddress() {
+		return null;
+	}
+
+	@Override
+	public InetAddress getLocalAddress() {
 		return null;
 	}
 

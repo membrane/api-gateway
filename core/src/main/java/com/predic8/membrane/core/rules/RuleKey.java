@@ -84,4 +84,11 @@ public interface RuleKey {
 	public void setPath(String path);
 	
 	public boolean matchesPath(String path); 
+	
+	/**
+	 * IP address to bind to, or null to bind to 0.0.0.0 (=any local address).
+	 */
+	public String getIp();
+	
+	public void setIp(String ip);
 }

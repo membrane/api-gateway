@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.net.MalformedURLException;
 import java.util.List;
 
 import javax.xml.stream.XMLStreamException;

@@ -70,7 +70,7 @@ public class SOAPProxy extends ServiceProxy {
 
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
-		key = new ServiceProxyKey(parseHost(token), "*", ".*", parsePort(token));
+		key = new ServiceProxyKey(parseHost(token), "*", ".*", parsePort(token), parseIp(token));
 		name = token.getAttributeValue("", "name");
 		wsdl = token.getAttributeValue("", "wsdl");
 		portName = token.getAttributeValue("", "portName");

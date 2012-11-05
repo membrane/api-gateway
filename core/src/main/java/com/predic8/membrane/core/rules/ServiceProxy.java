@@ -73,7 +73,7 @@ public class ServiceProxy extends AbstractProxy {
 
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
-		key = new ServiceProxyKey(parseHost(token), parseMethod(token), ".*", parsePort(token));
+		key = new ServiceProxyKey(parseHost(token), parseMethod(token), ".*", parsePort(token), parseIp(token));
 	}
 
 	private String parseMethod(XMLStreamReader token) {
@@ -88,6 +88,10 @@ public class ServiceProxy extends AbstractProxy {
 		return defaultString(token.getAttributeValue("", "host"), "*");
 	}
 	
+	protected String parseIp(XMLStreamReader token) {
+		return token.getAttributeValue("", "ip");
+	}
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {		
 		if ("target".equals(child)) {

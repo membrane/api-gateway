@@ -20,11 +20,19 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	String host = "*";
 
 	public ServiceProxyKey(int port) {
-		super(port);
+		this(port, null);
+	}
+
+	public ServiceProxyKey(int port, String ip) {
+		super(port, ip);
 	}
 	
 	public ServiceProxyKey(String host, String method, String path, int port) {
-		super(port);
+		this(host, method, path, port, null);
+	}
+
+	public ServiceProxyKey(String host, String method, String path, int port, String ip) {
+		super(port, ip);
 		this.host = host;
 		setPath(path);
 		this.method = method;

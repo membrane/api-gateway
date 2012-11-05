@@ -14,9 +14,13 @@
 package com.predic8.membrane.core.rules;
 
 public class ProxyRuleKey extends AbstractRuleKey {
-	
+
 	public ProxyRuleKey(int port) {
-		super(port);
+		super(port, null);
+	}
+
+	public ProxyRuleKey(int port, String ip) {
+		super(port, ip);
 	}
 
 	@Override

@@ -30,4 +30,5 @@ public class NullRule extends AbstractProxy {
 	protected AbstractProxy getNewInstance() {
 		return new NullRule();
 	}
+	
 }

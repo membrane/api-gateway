@@ -236,10 +236,15 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	}
 	
 	@Override
-	public InetAddress getRemoteAddress() throws IOException {
+	public InetAddress getRemoteAddress() {
 		return sourceSocket.getInetAddress();
 	}
-	
+
+	@Override
+	public InetAddress getLocalAddress() {
+		return sourceSocket.getLocalAddress();
+	}
+
 	@Override
 	public int getLocalPort() {
 		return sourceSocket.getLocalPort();

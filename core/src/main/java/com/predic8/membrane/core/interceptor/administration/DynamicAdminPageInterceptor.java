@@ -183,7 +183,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		logAddFwdRuleParams(params);
 		
 		Rule r = new ServiceProxy(new ServiceProxyKey("*",
-				params.get("method"), ".*", getPortParam(params)),
+				params.get("method"), ".*", getPortParam(params), null),
 				params.get("targetHost"), getTargetPortParam(params));
 		r.setName(params.get("name"));
 		router.getRuleManager().addProxyAndOpenPortIfNew(r);
@@ -200,7 +200,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		log.debug("name: " + params.get("name"));
 		log.debug("port: " + params.get("port"));
 		
-		Rule r = new ProxyRule(new ProxyRuleKey(Integer.parseInt(params.get("port"))));
+		Rule r = new ProxyRule(new ProxyRuleKey(Integer.parseInt(params.get("port")), null));
 		r.setName(params.get("name"));
 		router.getRuleManager().addProxyAndOpenPortIfNew(r);
 		return respond(getProxyPage(params, relativeRootPath));

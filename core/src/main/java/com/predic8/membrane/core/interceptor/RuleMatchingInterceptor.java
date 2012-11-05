@@ -84,6 +84,11 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			if (!(rule instanceof ProxyRule))
 				continue;
 
+			if (rule.getKey().getIp() != null)
+				if (!rule.getKey().getIp().equals(exc.getHandler().getLocalAddress().toString()))
+					continue;
+
+			
 			if (rule.getKey().getPort() == -1 || exc.getHandler().getLocalPort() == -1 || rule.getKey().getPort() == exc.getHandler().getLocalPort()) {
 				if (log.isDebugEnabled())
 					log.debug("proxy rule found: " + rule);
