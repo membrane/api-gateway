@@ -41,7 +41,7 @@ public class Exchange extends AbstractExchange {
 
 	private static Log log = LogFactory.getLog(Exchange.class.getName());
 
-	private final AbstractHttpHandler handler;
+	private AbstractHttpHandler handler;
 
 	private String originalHostHeader = "";
 
@@ -167,5 +167,11 @@ public class Exchange extends AbstractExchange {
 			}
 		}
 		return map;
+	}
+	
+	@Override
+	public void detach() {
+		super.detach();
+		handler = null;
 	}
 }

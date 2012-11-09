@@ -96,7 +96,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			exchange.clearProperties();
+			exchange.detach();
 		}
 		
 	}

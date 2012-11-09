@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -394,10 +395,11 @@ public abstract class AbstractExchange {
 				(response != null ? response.estimateHeapSize() : 0);
 	}
 	
-	public void clearProperties() {
+	/**
+	 * Prepares for long-term storage (for example, in-memory {@link ExchangeStore}s).
+	 */
+	public void detach() {
 		properties.clear();
 	}
-	
-	
 	
 }

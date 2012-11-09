@@ -107,7 +107,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 				if (exchange.getResponse().isRedirect()) {
 					break;
 				}
-				exchange.clearProperties();
+				exchange.detach();
 				exchange = new Exchange(this);
 			}
 		} catch (SocketTimeoutException e) {
@@ -142,7 +142,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 			closeConnections();
 			
-			exchange.clearProperties();
+			exchange.detach();
 			
 			updateThreadName(false);
 		}
