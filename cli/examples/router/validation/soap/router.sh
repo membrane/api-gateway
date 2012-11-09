@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 homeSet() {
  echo "MEMBRANE_HOME variable is now set"
  CLASSPATH="$MEMBRANE_HOME/conf"
