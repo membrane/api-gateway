@@ -24,7 +24,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.model.IPortChangeListener;
 
-public class Transport {
+public abstract class Transport {
 
 	protected Set<IPortChangeListener> menuListeners = new HashSet<IPortChangeListener>();
 	
@@ -78,4 +78,6 @@ public class Transport {
 	public String getContextPath(Exchange exc) {
 		return "";
 	}
+
+	public abstract boolean isOpeningPorts();
 }

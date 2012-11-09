@@ -49,5 +49,9 @@ public class ServletTransport extends Transport {
 		return ((HttpServletRequest)exc.getProperty(Exchange.HTTP_SERVLET_REQUEST)).getContextPath();
 	}
 	
+	@Override
+	public boolean isOpeningPorts() {
+		return false;
+	}
 	
 }

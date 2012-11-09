@@ -165,6 +165,14 @@ public class AdminPageBuilder extends Html {
 	protected void createAddFwdRuleForm() {
 		if (readOnly)
 			return;
+		if (!router.getTransport().isOpeningPorts())
+			/*
+			 * Of course, he could just hide the "port" field here, but as
+			 * dynamically adding proxies without setting the @path is quite
+			 * pointless with web application deployment, we just disable that
+			 * feature.
+			 */
+			return;
 		
 		form().id("addFwdRuleForm").action("/admin/service-proxy/save").method("POST");
 			div()

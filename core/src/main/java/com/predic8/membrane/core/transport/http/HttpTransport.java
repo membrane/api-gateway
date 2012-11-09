@@ -188,4 +188,9 @@ public class HttpTransport extends Transport {
 	public void setAutoContinue100Expected(boolean autoContinue100Expected) {
 		this.autoContinue100Expected = autoContinue100Expected;
 	}
+	
+	@Override
+	public boolean isOpeningPorts() {
+		return true;
+	}
 }
