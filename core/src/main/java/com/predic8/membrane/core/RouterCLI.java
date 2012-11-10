@@ -66,7 +66,7 @@ public class RouterCLI {
 		if (line.hasMonitorBeans()) {
 			return "file:" + line.getMonitorBeans();
 		}
-		return System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf"  + System.getProperty("file.separator") + "monitor-beans.xml";
+		return "file:" + System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf"  + System.getProperty("file.separator") + "monitor-beans.xml";
 	}
 
 }
