@@ -27,6 +27,7 @@ import org.apache.commons.codec.binary.*;
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
 import com.predic8.membrane.core.interceptor.balancer.Cluster;
@@ -73,7 +74,9 @@ public class LBNotificationClient {
 	private Response notifiyClusterManager() throws Exception {
 		HttpClient client = new HttpClient();
 		Exchange exc = new Exchange(null);
-		exc.setRequest(MessageUtil.getPostRequest(getRequestURL()));
+		Request r = MessageUtil.getPostRequest(getRequestURL());
+		r.setBodyContent(new byte[0]);
+		exc.setRequest(r);
 		exc.getDestinations().add(getRequestURL());
 		exc.setRule(new ServiceProxy());
 		Response res = client.call(exc);
