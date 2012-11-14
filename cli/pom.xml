@@ -107,6 +107,13 @@
 					<test>**/ExampleTests.java</test>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>com.predic8.membrane.core.IDEStarter</mainClass>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
     
