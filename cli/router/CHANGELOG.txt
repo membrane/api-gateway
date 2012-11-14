@@ -1,6 +1,40 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [release] 3.5.4
+
+* [improvement] adminConsole and .war deployment (add-serviceProxy form)
+
+* [bugfix] absolute MEMBRANE_HOME on Linux
+
+* [bugfix] fixed shebang lines in Linux startup scripts
+
+* [new] added serviceProxy/@ip to bind a socket only on a specific IP
+  (for hosts with multiple IPs)
+
+* [bugfix] keep-alive and custom interceptors: always read the request body
+  before answering the request
+
+* [bugfix] reduced memory leakage of any in-memory exchange store.
+
+* [new] these previously mentioned changes allow Membrane to be used as a
+  WebDAV (e.g. Subversion) proxy
+
+* [update config] reverseProxying now rewrites an request "Destination"
+  headers (see RFC 2518 section 9.3; also used by WebDAV). This requires
+  the reverseProxying interceptor to be declared between the "dispatching"
+  and "userFeature" interceptors in monitor-beans.xml, as is demonstrated
+  by the sample config files.
+
+* [bugfix] reverseProxying interceptor and HTTPS
+
+* [new] regExReplacer can now also be used to change message headers using
+  target="header"
+
+* [new] LoginInterceptor authenticates users agains some UserDataProvider
+  implementation (e.g. LDAP), verifies a token (for example sent via a text
+  messaging service) and forwards authenticated requests to the backend.
+
 * [release] 3.5.3
 
 * [documentation] improved proxies.xml doc and custom-interceptor example
