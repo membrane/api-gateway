@@ -34,6 +34,39 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		setFlow(Flow.RESPONSE);
 	}
 	
+	/**
+	 * handles "Destination" header (see RFC 2518 section 9.3; also used by WebDAV)
+	 */
+	@Override
+	public Outcome handleRequest(Exchange exc) throws Exception {
+		if (exc.getRequest() == null)
+			return Outcome.CONTINUE;
+		String destination = exc.getRequest().getHeader().getFirstValue(Header.DESTINATION);
+		if (destination == null)
+			return Outcome.CONTINUE;
+		if (!destination.contains("://"))
+			return Outcome.CONTINUE; // local redirect (illegal by spec)
+		// do not rewrite, if the client does not refer to the same host
+		if (!isSameHost(getProtocol(exc) + "://" + exc.getRequest().getHeader().getHost(), destination))
+			return Outcome.CONTINUE;
+		// if we cannot determine the target hostname
+		if (exc.getDestinations().size() == 0) {
+			// just remove the schema/hostname/port. this is illegal (by the spec),
+			// but most clients understand it
+			exc.getRequest().getHeader().setValue(Header.DESTINATION, new URL(destination).getFile());
+			return Outcome.CONTINUE;
+		}
+		URL target = new URL(exc.getDestinations().get(0));
+		// rewrite to our schema, host and port
+		exc.getRequest().getHeader().setValue(Header.DESTINATION, 
+				Relocator.getNewLocation(destination, target.getProtocol(), 
+						target.getHost(), target.getPort() == -1 ? target.getDefaultPort() : target.getPort()));
+		return Outcome.CONTINUE;
+	}
+	
+	/**
+	 * Handles "Location" header.
+	 */
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		if (exc.getResponse() == null)

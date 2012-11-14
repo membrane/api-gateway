@@ -28,10 +28,10 @@
 			<exclude>Transfer-Encoding</exclude>
 			<exclude>X-Powered-By</exclude>
 		</headerFilter>
-		<reverseProxying />
 		<ruleMatching />
 		<exchangeStore name="memoryExchangeStore" />
 		<dispatching />
+		<reverseProxying />
 		<userFeature />
 		<httpClient />
 	</servletTransport>

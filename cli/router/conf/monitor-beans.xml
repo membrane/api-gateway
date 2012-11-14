@@ -24,10 +24,10 @@
 			tcpNoDelay="true" 
 			httpClientRetries="5" 
 			autoContinue100Expected="true">
-		<reverseProxying />
 		<ruleMatching />
 		<exchangeStore name="memoryExchangeStore" />
 		<dispatching />
+		<reverseProxying />
 		<userFeature />
 		<httpClient />
 	</transport>

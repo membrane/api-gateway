@@ -66,6 +66,8 @@ public class Header {
 	
 	public static final String COOKIE = "Cookie";
 
+	public static final String DESTINATION = "Destination";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";

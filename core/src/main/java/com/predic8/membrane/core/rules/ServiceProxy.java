@@ -51,6 +51,10 @@ public class ServiceProxy extends AbstractProxy {
 		return targetHost;
 	}
 
+	public String getTargetScheme() {
+		return sslOutboundContext != null ? "https" : "http";
+	}
+
 	public void setTargetHost(String targetHost) {
 		this.targetHost = targetHost;
 	}
