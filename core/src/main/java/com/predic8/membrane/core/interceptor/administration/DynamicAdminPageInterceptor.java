@@ -47,6 +47,7 @@ import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.transport.PortOccupiedException;
 import com.predic8.membrane.core.util.DateUtil;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
@@ -186,7 +187,13 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				params.get("method"), ".*", getPortParam(params), null),
 				params.get("targetHost"), getTargetPortParam(params));
 		r.setName(params.get("name"));
-		router.getRuleManager().addProxyAndOpenPortIfNew(r);
+		try {
+			router.getRuleManager().addProxyAndOpenPortIfNew(r);
+		} catch (PortOccupiedException e) {
+			return Response.interalServerError(
+					"The port could not be opened: Either it is occupied or Membrane does " +
+					"not have enough privileges to do so.").build();
+		}
 		
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
