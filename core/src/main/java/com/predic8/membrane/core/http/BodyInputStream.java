@@ -67,7 +67,7 @@ public class BodyInputStream extends InputStream {
 	public int read() throws IOException {
 		if (!advanceToNextPosition())
 			return -1;
-		return currentChunkData[positionWithinChunk];
+		return currentChunkData[positionWithinChunk] & 0xFF;
 	}
 	
 	@Override
