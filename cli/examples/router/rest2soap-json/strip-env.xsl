@@ -12,4 +12,14 @@
 		</xsl:copy>
 	</xsl:template>	
 	
+	<!-- Get rid of the namespace prefixes in json. So
+	  
+	     ns1:getBank will be just getBank   
+	-->
+	<xsl:template match="*">
+		<xsl:element name="{local-name()}">
+			<xsl:apply-templates/>
+		</xsl:element>
+	</xsl:template>
+	
 </xsl:stylesheet>
