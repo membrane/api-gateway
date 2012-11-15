@@ -193,8 +193,8 @@ $(function() {
 	                       {name:'order', value:getParam('sSortDir_0')}], 
 			      "success": function(data) {   
 			      	data.sEcho = aoData.sEcho;
-			      	data.iTotalRecords = data.clients.length;
-			      	data.iTotalDisplayRecords = data.clients.length;
+			      	data.iTotalRecords = data.total;
+			      	data.iTotalDisplayRecords = data.total;
 			      	fnCallback(data);
 			      }
 			    } );

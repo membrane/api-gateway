@@ -10,6 +10,7 @@
 /cli/.settings
 /cli/target
 /cli/conf
+/cli/memrouter.log
 
 # /cli/examples/router/custom-interceptor/
 /cli/examples/router/custom-interceptor/dist
