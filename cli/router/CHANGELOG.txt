@@ -1,6 +1,11 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [release] 3.5.5
+
+* [bugfix] getBodyAsStream() now returns correct data for chunked
+  transfer-encoding
+
 * [release] 3.5.4
 
 * [improvement] adminConsole and .war deployment (add-serviceProxy form)
