@@ -38,6 +38,7 @@ import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.config.ConfigurationException;
 import com.predic8.membrane.core.config.ElementName;
 import com.predic8.membrane.core.config.LocalHost;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -281,7 +282,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 				}
 			}
 			if (i == null)
-				throw new Exception("Unknown interceptor found: " + name);
+				throw new ConfigurationException("Unknown interceptor found \"" + name + "\". Check the documentation at http://membrane-soa.org/esb-doc/current/configuration/reference/index.htm .");
 		}
 		i.parse(token);
 		return i;

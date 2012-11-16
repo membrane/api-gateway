@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.config.ConfigurationException;
 import com.predic8.membrane.core.transport.PortOccupiedException;
 
 public class RouterCLI {
@@ -34,6 +35,9 @@ public class RouterCLI {
 			e.printStackTrace();
 			
 		} catch (PortOccupiedException e) { 
+			System.err.println(e.getMessage());
+			System.exit(1);
+		} catch (ConfigurationException e) {
 			System.err.println(e.getMessage());
 			System.exit(1);
 		} catch (Exception ex) {

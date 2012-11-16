@@ -18,6 +18,8 @@ import java.io.File;
 import javax.xml.stream.XMLStreamException;
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.core.config.ConfigurationException;
+
 public class HotDeploymentThread extends Thread {
 
 	private static Log log = LogFactory.getLog(HotDeploymentThread.class.getName());
@@ -50,6 +52,9 @@ public class HotDeploymentThread extends Thread {
 				router.shutdownNoWait();
 				router.getConfigurationManager().loadConfiguration(proxiesFile);
 				log.info(proxiesFile + " was reloaded.");
+			} catch (ConfigurationException e) {
+				log.error("Could not redeploy " + proxiesFile + ": " + e.getMessage());
+				lastModified = new File(proxiesFile).lastModified();
 			} catch (XMLStreamException e) {
 				log.error("Could not redeploy " + proxiesFile + ": " + e.getMessage());
 				lastModified = new File(proxiesFile).lastModified();
