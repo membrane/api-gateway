@@ -29,6 +29,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.http.MediaType;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
@@ -52,7 +53,6 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		public String soapURI;
 		public String requestXSLT;
 		public String responseXSLT;
-		public String responseType = "xml";
 
 		@Override
 		protected void parseAttributes(XMLStreamReader token) throws Exception {
@@ -61,10 +61,6 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 			soapURI = token.getAttributeValue("", "soapURI");
 			requestXSLT = token.getAttributeValue("", "requestXSLT");
 			responseXSLT = token.getAttributeValue("", "responseXSLT");
-			if (token.getAttributeValue("", "responseType") != null) {
-				responseType = token.getAttributeValue("", "responseType");
-			}
-
 		}
 
 		@Override
@@ -76,9 +72,6 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 			out.writeAttribute("soapURI", soapURI);
 			out.writeAttribute("requestXSLT", requestXSLT);
 			out.writeAttribute("responseXSLT", responseXSLT);
-			if (!"xml".equals(responseType)) {
-				out.writeAttribute("responseType", responseType);
-			}
 			out.writeEndElement();
 		}
 	}
@@ -125,14 +118,17 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		setContentType(exc.getResponse().getHeader());
 
 		XML2HTTP.unwrapResponseIfNecessary(exc.getResponse());
-		convertResponseToJSONIfNecessary(mapping, exc.getResponse());
+		convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), mapping, exc.getResponse());
 		
 		return Outcome.CONTINUE;
 	}
 
-	private void convertResponseToJSONIfNecessary(Mapping mapping, Response response) throws IOException, Exception {
-		if (MimeType.TEXT_XML_UTF8.equals(response.getHeader().getContentType()) && 
-				"json".equals(mapping.responseType)) {
+	private static MediaType[] supportedTypes = Header.convertStringsToMediaType(new String[] { MimeType.TEXT_XML, MimeType.APPLICATION_JSON_UTF8 });
+	
+	private void convertResponseToJSONIfNecessary(Header requestHeader, Mapping mapping, Response response) throws IOException, Exception {
+		boolean inputIsXml = MimeType.TEXT_XML_UTF8.equals(response.getHeader().getContentType());
+		int wantedType = requestHeader.getBestAcceptedType(supportedTypes);
+		if (inputIsXml && wantedType >= 1) {
 			response.setBodyContent(xml2json(response.getBody().getContent()));
 			setJSONContentType(response.getHeader());
 		}
@@ -198,7 +194,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 	private void setJSONContentType(Header header) {
 		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType(MimeType.JSON);
+		header.setContentType(MimeType.APPLICATION_JSON_UTF8);
 	}
 
 	private void setServiceEndpoint(AbstractExchange exc, Mapping mapping) {

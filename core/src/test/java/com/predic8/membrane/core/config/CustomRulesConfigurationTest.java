@@ -113,8 +113,6 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/rest2Soap/mapping/@responseXSLT",
 				"response.xsl");
-		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/rest2Soap/mapping/@responseType", "json");
 
 		assertAttribute(
 				w.toString(),

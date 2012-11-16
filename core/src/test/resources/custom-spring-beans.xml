@@ -58,8 +58,7 @@
 					 soapAction=""
 					 soapURI="/axis2/services/BLZService"
 					 requestXSLT="request.xsl" 
-					 responseXSLT="response.xsl"
-					 responseType="json" />
+					 responseXSLT="response.xsl" />
 		</rest2Soap>			
    		<validator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
 		<switch>

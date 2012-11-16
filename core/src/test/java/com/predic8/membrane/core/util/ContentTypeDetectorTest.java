@@ -25,7 +25,7 @@ public class ContentTypeDetectorTest {
 	
 	@Test
 	public void testJSON() {
-		Assert.assertEquals(ContentType.JSON, ContentTypeDetector.detect(Response.ok().contentType(MimeType.JSON).build()).getEffectiveContentType());
+		Assert.assertEquals(ContentType.JSON, ContentTypeDetector.detect(Response.ok().contentType(MimeType.APPLICATION_JSON_UTF8).build()).getEffectiveContentType());
 	}
 
 	@Test

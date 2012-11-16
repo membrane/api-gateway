@@ -128,7 +128,7 @@ public abstract class AbstractHttpHandler  {
 	        }
 
 			error = Response.interalServerError().
-					header(HttpUtil.createHeaders(MimeType.JSON)).
+					header(HttpUtil.createHeaders(MimeType.APPLICATION_JSON_UTF8)).
 					body(baos.toByteArray()).
 					build();
 			break;

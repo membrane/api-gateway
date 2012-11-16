@@ -29,6 +29,6 @@ public class MimeType {
 	
 	public static final String TEXT_XML_UTF8 = TEXT_XML + ";charset=UTF-8";
 
-	public static final String JSON = "application/json;charset=utf-8";
+	public static final String APPLICATION_JSON_UTF8 = "application/json;charset=utf-8";
 
 }

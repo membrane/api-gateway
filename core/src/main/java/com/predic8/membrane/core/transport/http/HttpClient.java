@@ -56,11 +56,15 @@ public class HttpClient {
 	private final boolean failOverOn5XX;
 	
 	public HttpClient() {
+		this(true);
+	}
+	
+	public HttpClient(boolean failOverOn5XX) {
 		conMgr = new ConnectionManager(30000);
 		proxy = null;
 		maxRetries = 5;
 		adjustHostHeader = false;
-		failOverOn5XX = true;
+		this.failOverOn5XX = failOverOn5XX;
 	}
 	
 	public HttpClient(Router router, boolean failOverOn5XX, long keepAliveTimeout) {

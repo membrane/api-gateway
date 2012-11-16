@@ -23,6 +23,7 @@ import javax.mail.internet.ParseException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.*;
+import org.springframework.http.MediaType;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.cookie.Cookies;
@@ -366,6 +367,34 @@ public class Header {
 		for (HeaderField hf : fields)
 			size += 4 + hf.estimateHeapSize();
 		return size;
+	}
+
+	/**
+	 * Tries to determines the index of the best content type.
+	 */
+	public int getBestAcceptedType(MediaType[] supported) {
+		String accept = getFirstValue(ACCEPT);
+		if (accept == null)
+			return -1;
+		List<MediaType> m;
+		try {
+			m = MediaType.parseMediaTypes(accept);
+		} catch (IllegalArgumentException e) {
+			return -1;
+		}
+		MediaType.sortByQualityValue(m);
+		for (MediaType t : m)
+			for (int i = 0; i < supported.length; i++)
+				if (t.includes(supported[i]))
+					return i;
+		return -1;
+	}
+	
+	public static MediaType[] convertStringsToMediaType(String[] mediaTypes) {
+		MediaType[] m = new MediaType[mediaTypes.length];
+		for (int i = 0; i < mediaTypes.length; i++)
+			m[i] = MediaType.parseMediaType(mediaTypes[i]);
+		return m;
 	}
 
 }

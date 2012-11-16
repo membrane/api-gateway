@@ -132,7 +132,7 @@ public class CouchDBInterceptor extends AbstractInterceptor {
 		request.setUri("http://" + targetHost + ":" + targetPort + "/membrane/1");
 		Header header = new Header();
 		header.setAccept("application/json");
-		header.setContentType(MimeType.JSON);
+		header.setContentType(MimeType.APPLICATION_JSON_UTF8);
 		
 		request.setHeader(header);
 		request.setBodyContent(buffer.toString().getBytes(Constants.UTF_8_CHARSET));

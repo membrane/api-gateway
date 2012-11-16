@@ -127,7 +127,7 @@ public class ExceptionHandlingTest {
 		switch (contentType) {
 		case JSON:
 			get = new HttpGet(url);
-			get.addHeader(Header.CONTENT_TYPE, MimeType.JSON);
+			get.addHeader(Header.CONTENT_TYPE, MimeType.APPLICATION_JSON_UTF8);
 			break;
 		case XML:
 			get = new HttpPost(url);

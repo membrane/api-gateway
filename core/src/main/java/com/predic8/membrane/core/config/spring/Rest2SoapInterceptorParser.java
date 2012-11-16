@@ -44,7 +44,6 @@ public class Rest2SoapInterceptorParser extends AbstractParser {
 			m.soapURI = mapping.getAttribute("soapURI");
 			m.requestXSLT = mapping.getAttribute("requestXSLT");
 			m.responseXSLT = mapping.getAttribute("responseXSLT");
-			m.responseType = mapping.getAttribute("responseType");
 			mappings.add(m);
 		}
 		return mappings;
