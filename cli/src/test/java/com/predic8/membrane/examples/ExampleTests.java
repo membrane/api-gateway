@@ -36,8 +36,8 @@ import com.predic8.membrane.examples.tests.QuickstartSOAPTest;
 import com.predic8.membrane.examples.tests.REST2SOAPJSONTest;
 import com.predic8.membrane.examples.tests.REST2SOAPTest;
 import com.predic8.membrane.examples.tests.RewriterTest;
-import com.predic8.membrane.examples.tests.SSLForUnsecuredServersTest;
-import com.predic8.membrane.examples.tests.SSLTunnelToServerTest;
+import com.predic8.membrane.examples.tests.SSLServer;
+import com.predic8.membrane.examples.tests.SSLClient;
 import com.predic8.membrane.examples.tests.ThrottleTest;
 import com.predic8.membrane.examples.tests.XSLTTest;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
@@ -69,8 +69,8 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 	REST2SOAPTest.class,
 	REST2SOAPJSONTest.class,
 	RewriterTest.class,
-	SSLForUnsecuredServersTest.class,
-	SSLTunnelToServerTest.class,
+	SSLServer.class,
+	SSLClient.class,
 	ThrottleTest.class,
 	XSLTTest.class,
 	
