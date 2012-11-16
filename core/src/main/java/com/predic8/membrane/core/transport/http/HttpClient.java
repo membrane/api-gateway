@@ -48,23 +48,28 @@ public class HttpClient {
 
 	private static Log log = LogFactory.getLog(HttpClient.class.getName());
 
-	private final ConnectionManager conMgr = new ConnectionManager();
+	private final ConnectionManager conMgr;
 	private final ProxyConfiguration proxy;
 	private final int timeBetweenTries = 250;
 	private final int maxRetries;
 	private final boolean adjustHostHeader;
+	private final boolean failOverOn5XX;
 	
 	public HttpClient() {
+		conMgr = new ConnectionManager(30000);
 		proxy = null;
 		maxRetries = 5;
 		adjustHostHeader = false;
+		failOverOn5XX = true;
 	}
 	
-	public HttpClient(Router router) {
+	public HttpClient(Router router, boolean failOverOn5XX, long keepAliveTimeout) {
+		conMgr = new ConnectionManager(keepAliveTimeout);
 		Proxies cfg = router.getConfigurationManager().getProxies();
 		adjustHostHeader = cfg.getAdjustHostHeader();
 		maxRetries = router.getTransport().getHttpClientRetries();
 		proxy = cfg.getProxyConfiguration();
+		this.failOverOn5XX = failOverOn5XX;
 	}
 	
 	@Override
@@ -138,8 +143,8 @@ public class HttpClient {
 					exc.setTargetConnection(con);
 				}
 				Response response = doCall(exc, con);
-				boolean retry = 500 <= response.getStatusCode() && response.getStatusCode() < 600; 
-				if (!retry || counter == maxRetries-1) {
+				boolean is5XX = 500 <= response.getStatusCode() && response.getStatusCode() < 600; 
+				if (!failOverOn5XX || !is5XX || counter == maxRetries-1) {
 					exc.getDestinations().clear();
 					exc.getDestinations().add(dest);
 					return response;

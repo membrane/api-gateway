@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.config.spring;
 
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.w3c.dom.Element;
 
 import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
@@ -24,4 +25,16 @@ public class HttpClientInterceptorParser extends AbstractParser {
 		return HTTPClientInterceptor.class;
 	}
 
+	@Override
+	protected void doParse(Element element, BeanDefinitionBuilder builder) {
+		setIdIfNeeded(element, "httpClient");
+	
+		if (element.hasAttribute("failOverOn5XX"))
+			builder.addPropertyValue("failOverOn5XX", element.getAttribute("failOverOn5XX"));
+		if (element.hasAttribute("keepAliveTimeout"))
+			builder.addPropertyValue("keepAliveTimeout", element.getAttribute("keepAliveTimeout"));
+	}
+
+	
+	
 }
