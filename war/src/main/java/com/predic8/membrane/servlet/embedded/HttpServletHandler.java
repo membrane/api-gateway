@@ -34,7 +34,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.AbortException;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
-import com.predic8.membrane.core.transport.http.ErrorReadingStartLineException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 class HttpServletHandler extends AbstractHttpHandler {
@@ -90,9 +90,9 @@ class HttpServletHandler extends AbstractHttpHandler {
 			
 		} catch (EndOfStreamException e) {
 			log.debug("stream closed");
-		} catch (ErrorReadingStartLineException e) {
+		} catch (EOFWhileReadingFirstLineException e) {
 			log.debug("Client connection terminated before line was read. Line so far: ("
-					+ e.getStartLine() + ")");
+					+ e.getLineSoFar() + ")");
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {

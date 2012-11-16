@@ -23,7 +23,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.transport.http.ErrorReadingStartLineException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -51,14 +52,14 @@ public class Request extends Message {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
 			if (!matcher.find())
-				throw new ErrorReadingStartLineException(firstLine);
+				throw new EOFWhileReadingFirstLineException(firstLine);
 			method = matcher.group(1);
 			uri = matcher.group(2);
 			version = matcher.group(3);
-		} catch (ErrorReadingStartLineException e) {
-			if (e.getStartLine().length() == 0)
+		} catch (EOFWhileReadingLineException e) {
+			if (e.getLineSoFar().length() == 0)
 				throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
-			throw e;
+			throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
 		}
 	}
 

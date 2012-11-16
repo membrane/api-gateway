@@ -35,7 +35,7 @@ import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.transport.http.ErrorReadingStartLineException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 
 public class HttpUtil {
 	
@@ -61,7 +61,7 @@ public class HttpUtil {
 			line.append((char) b);
 		}
 		
-		throw new ErrorReadingStartLineException(line.toString());
+		throw new EOFWhileReadingLineException(line.toString());
 	}
 
 	

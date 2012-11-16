@@ -64,7 +64,7 @@ public abstract class AbstractHttpHandler  {
 	public abstract int getLocalPort();
 
 	
-	protected void invokeHandlers() throws IOException, EndOfStreamException, AbortException, NoMoreRequestsException, ErrorReadingStartLineException {
+	protected void invokeHandlers() throws IOException, EndOfStreamException, AbortException, NoMoreRequestsException, EOFWhileReadingFirstLineException {
 		try {
 			flowController.invokeHandlers(exchange, transport.getInterceptors());
 			if (exchange.getResponse() == null)
@@ -81,8 +81,8 @@ public abstract class AbstractHttpHandler  {
 				throw (AbortException)e; // TODO: migrate catch logic into this method
 			if (e instanceof NoMoreRequestsException)
 				throw (NoMoreRequestsException)e;
-			if (e instanceof ErrorReadingStartLineException)
-				throw (ErrorReadingStartLineException)e;
+			if (e instanceof EOFWhileReadingFirstLineException)
+				throw (EOFWhileReadingFirstLineException)e;
 			log.warn("An exception occured while handling a request: ", e);
 		}
 	}

@@ -122,9 +122,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("exchange aborted.");
 		} catch (NoMoreRequestsException e) {
 			// happens at the end of a keep-alive connection
-		} catch (ErrorReadingStartLineException e) {
+		} catch (EOFWhileReadingFirstLineException e) {
 			log.debug("Client connection terminated before line was read. Line so far: ("
-					+ e.getStartLine() + ")");
+					+ e.getLineSoFar() + ")");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

@@ -168,8 +168,8 @@ public class HttpClient {
 				if (exc.getDestinations().size() < 2) {
 					break; 
 				}
-			} catch (ErrorReadingStartLineException e) {
-				log.debug("Server connection to " + dest + " terminated before line was read. Line so far: " + e.getStartLine());
+			} catch (EOFWhileReadingFirstLineException e) {
+				log.debug("Server connection to " + dest + " terminated before line was read. Line so far: " + e.getLineSoFar());
 				exception = e;
 			} catch (Exception e) {
 				logException(exc, counter, e);
