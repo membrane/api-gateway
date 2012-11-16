@@ -28,12 +28,12 @@ public class RouterService implements RouterServiceMBean {
     public void start() throws Exception {
     	router = Router.init(monitorBeansXml);
 		router.getConfigurationManager().loadConfiguration(rulesXml);
-        log.info("Router started");
+        log.info(Constants.PRODUCT_NAME + " started");
     }
 
 	public void stop() throws Exception {
         router.shutdown();
-        log.info("Router stopped");
+        log.info(Constants.PRODUCT_NAME + " stopped");
     }
 
 	public String getMonitorBeansXml() {

@@ -68,12 +68,11 @@ public class Resource extends AbstractConfigElement {
 	}
 	
 	public boolean checkAccess(InetAddress inetAddress) {
-		if (log.isInfoEnabled()) {
-			log.info("Hostname: " + router.getDnsCache().getHostName(inetAddress));
-			log.info("Canonical Hostname: " + router.getDnsCache().getCanonicalHostName(inetAddress));
+		if (log.isDebugEnabled()) {
+			log.debug("Hostname: " + router.getDnsCache().getHostName(inetAddress));
+			log.debug("Canonical Hostname: " + router.getDnsCache().getCanonicalHostName(inetAddress));
+			log.debug("Hostaddress: " + inetAddress.getHostAddress()); // slow
 		}
-		if (log.isDebugEnabled())
-			log.debug("Hostaddress: " + inetAddress.getHostAddress());
 		
 		for (AbstractClientAddress cAdd : clientAddresses) {
 			if (cAdd.matches(inetAddress))

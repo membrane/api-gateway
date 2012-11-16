@@ -49,7 +49,7 @@ public class HotDeploymentThread extends Thread {
 
 				router.shutdownNoWait();
 				router.getConfigurationManager().loadConfiguration(proxiesFile);
-				log.warn(proxiesFile + " was reloaded.");
+				log.info(proxiesFile + " was reloaded.");
 			} catch (XMLStreamException e) {
 				log.error("Could not redeploy " + proxiesFile + ": " + e.getMessage());
 				lastModified = new File(proxiesFile).lastModified();

@@ -32,7 +32,7 @@ public class LogInterceptor extends AbstractInterceptor {
 
 	private boolean headerOnly = false;
 	private String category = LogInterceptor.class.getName();
-	private Level level = Level.WARN;
+	private Level level = Level.INFO;
 
 	public LogInterceptor() {
 		name = "Log";

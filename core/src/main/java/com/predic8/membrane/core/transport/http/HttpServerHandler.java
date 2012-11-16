@@ -117,9 +117,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (EndOfStreamException e) {
-			log.info("stream closed");
+			log.debug("stream closed");
 		} catch (AbortException e) {
-			log.info("exchange aborted.");
+			log.debug("exchange aborted.");
 		} catch (NoMoreRequestsException e) {
 			// happens at the end of a keep-alive connection
 		} catch (ErrorReadingStartLineException e) {

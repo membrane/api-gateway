@@ -155,15 +155,15 @@ public class HttpClient {
 				log.info("Connection to " + (target == null ? dest : target ) + " refused.");
 			} catch(SocketException e){
 				if ( e.getMessage().contains("Software caused connection abort")) {
-					log.info("Connection to " + dest + "was aborted externally. Maybe by the server or the OS Membrane is running on.");
+					log.info("Connection to " + dest + " was aborted externally. Maybe by the server or the OS Membrane is running on.");
 				} else if (e.getMessage().contains("Connection reset") ) {
-					log.info("Connection to " + dest + "was reset externally. Maybe by the server or the OS Membrane is running on.");
+					log.info("Connection to " + dest + " was reset externally. Maybe by the server or the OS Membrane is running on.");
  				} else {
  					logException(exc, counter, e);
  				}
 				exception = e;
 			} catch (UnknownHostException e) {
-				log.info("Unknown host: " + (target == null ? dest : target ));
+				log.warn("Unknown host: " + (target == null ? dest : target ));
 				exception = e;
 				if (exc.getDestinations().size() < 2) {
 					break; 

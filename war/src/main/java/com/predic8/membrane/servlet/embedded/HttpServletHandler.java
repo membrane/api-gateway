@@ -89,7 +89,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 			}
 			
 		} catch (EndOfStreamException e) {
-			log.info("stream closed");
+			log.debug("stream closed");
 		} catch (ErrorReadingStartLineException e) {
 			log.debug("Client connection terminated before line was read. Line so far: ("
 					+ e.getStartLine() + ")");

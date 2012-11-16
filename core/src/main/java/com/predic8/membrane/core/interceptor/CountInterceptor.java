@@ -44,7 +44,7 @@ public class CountInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		log.info(""+ (++counter) +". request received.");
+		log.debug(""+ (++counter) +". request received.");
 		exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_HTML_UTF8).body(getPage()).build());
 		return Outcome.RETURN;
 	}

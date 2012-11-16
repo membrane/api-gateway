@@ -51,7 +51,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
 		sf.setResourceResolver(resourceResolver.toLSResourceResolver());
 		List<Validator> validators = new ArrayList<Validator>();
-		log.info("Creating validator for schema: " + location);
+		log.debug("Creating validator for schema: " + location);
 		StreamSource ss = new StreamSource(resourceResolver.resolve(location));
 		ss.setSystemId(location);
 		Validator validator = sf.newSchema(ss).newValidator();

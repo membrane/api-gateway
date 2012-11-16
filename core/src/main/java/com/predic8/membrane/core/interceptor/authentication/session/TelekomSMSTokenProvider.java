@@ -93,7 +93,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 				throw new RuntimeException("Sending SMS failed: " + body);
 			}
 
-			log.info("sent SMS to " + recipientNumber);
+			log.debug("sent SMS to " + recipientNumber);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

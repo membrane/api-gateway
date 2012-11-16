@@ -116,7 +116,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
 		List<Validator> validators = new ArrayList<Validator>();
 		for (Schema schema : getSchemas()) {
-			log.info("Creating validator for schema: " + schema);
+			log.debug("Creating validator for schema: " + schema);
 			StreamSource ss = new StreamSource(new StringReader(schema.getAsString()));
 			ss.setSystemId(location);
 			sf.setResourceResolver(resourceResolver.toLSResourceResolver());

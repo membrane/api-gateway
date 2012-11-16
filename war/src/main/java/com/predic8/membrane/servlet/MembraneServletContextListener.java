@@ -20,6 +20,7 @@ import javax.servlet.ServletContextListener;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 
 public class MembraneServletContextListener implements ServletContextListener {
@@ -30,7 +31,7 @@ public class MembraneServletContextListener implements ServletContextListener {
 
 	public void contextInitialized(ServletContextEvent sce) {
 		try {
-			log.info("Starting Router...");
+			log.info(Constants.PRODUCT_NAME + " starting...");
 
 			log.debug("loading beans configuration from: " + getContextConfigLocation(sce));
 			router = RouterUtil.loadRouter(sce.getServletContext(), getContextConfigLocation(sce));
@@ -38,7 +39,7 @@ public class MembraneServletContextListener implements ServletContextListener {
 			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(sce));
 			router.getConfigurationManager().loadConfiguration(getProxiesXmlLocation(sce));
 
-			log.info("Router running...");
+			log.info(Constants.PRODUCT_NAME + " running.");
 		} catch (Exception ex) {
 			log.error("Router not started!", ex);
 			throw new RuntimeException("Router not started!", ex);
