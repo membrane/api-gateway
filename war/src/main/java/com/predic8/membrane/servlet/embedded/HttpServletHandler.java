@@ -190,4 +190,10 @@ class HttpServletHandler extends AbstractHttpHandler {
 	public boolean isMatchLocalPort() {
 		return false;
 	}
+	
+	@Override
+	public String getContextPath(Exchange exc) {
+		return ((HttpServletRequest)exc.getProperty(Exchange.HTTP_SERVLET_REQUEST)).getContextPath();
+	}
+	
 }

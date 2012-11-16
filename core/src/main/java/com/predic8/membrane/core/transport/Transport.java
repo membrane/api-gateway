@@ -20,7 +20,6 @@ import java.util.Set;
 import java.util.Vector;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.model.IPortChangeListener;
 
@@ -74,10 +73,6 @@ public abstract class Transport {
 	
 	public void closeAll(boolean waitForCompletion) throws IOException {}
 	public void openPort(String ip, int port, SSLContext sslContext) throws IOException {}
-
-	public String getContextPath(Exchange exc) {
-		return "";
-	}
 
 	public abstract boolean isOpeningPorts();
 }

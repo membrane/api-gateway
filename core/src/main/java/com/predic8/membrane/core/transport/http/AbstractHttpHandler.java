@@ -153,4 +153,8 @@ public abstract class AbstractHttpHandler  {
 		return true;
 	}
 
+	public String getContextPath(Exchange exc) {
+		return "";
+	}
+
 }

@@ -83,8 +83,8 @@ public class IndexInterceptor extends AbstractInterceptor {
 			path = "/" + StringUtils.removeStart(k.getPath(), "/");
 		}
 		
-		if (!"".equals(getRouter().getTransport().getContextPath(exc))) {
-			path = StringUtils.removeEnd(getRouter().getTransport().getContextPath(exc), "/")  + "/" + StringUtils.removeStart(path, "/");
+		if (!"".equals(exc.getHandler().getContextPath(exc))) {
+			path = StringUtils.removeEnd(exc.getHandler().getContextPath(exc), "/")  + "/" + StringUtils.removeStart(path, "/");
 		}
 		
 		ri.name = sp.getName();
