@@ -12,12 +12,21 @@ In this example we will call a SOAP Web Service by using a simple HTTP GET reque
 
 http://www.thomas-bayer.com/axis2/services/BLZService?wsdl
 
+To test the router we will use the command line tool curl that can transfer data with URL syntax. You can download it form the following location:
+   
+     
+   http://curl.haxx.se/download.html
 
 
 To run the example execute the following steps:
 
 1. Execute router.bat.
 
-3. Open the URL http://localhost:2000/bank/37050198 in your browser.
+2. Open a new console and execute
 
-4. Try it again with a different banking code e.g. http://localhost:2000/bank/66762332.
+   curl --header "Accept: application/json" http://localhost:2000/bank/37050198
+
+4. Try it again with a different banking code e.g. 
+
+   curl --header "Accept: application/json" http://localhost:2000/bank/66762332
+

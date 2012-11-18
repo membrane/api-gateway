@@ -78,10 +78,22 @@ public class AssertUtils {
 		return getAndAssert(200, url);
 	}
 	
+	public static String getAndAssert200(String url, String[] header) throws ParseException, IOException {
+		return getAndAssert(200, url, header);
+	}
+	
 	public static String getAndAssert(int expectedHttpStatusCode, String url) throws ParseException, IOException {
+		return getAndAssert(expectedHttpStatusCode, url, null);
+	}
+	
+	public static String getAndAssert(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
 		if (hc == null)
 			hc = new DefaultHttpClient();
-		HttpResponse res = hc.execute(new HttpGet(url));
+		HttpGet get = new HttpGet(url);
+		if (header != null)
+			for (int i = 0; i < header.length; i += 2)
+				get.addHeader(header[i], header[i+1]);
+		HttpResponse res = hc.execute(get);
 		try {
 			assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
 		} catch (AssertionError e) {
