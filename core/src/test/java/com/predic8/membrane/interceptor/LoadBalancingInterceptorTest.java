@@ -16,6 +16,7 @@ package com.predic8.membrane.interceptor;
 import static junit.framework.Assert.assertEquals;
 
 import java.net.MalformedURLException;
+import java.util.List;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpVersion;
@@ -32,9 +33,11 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
 import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
+import com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy;
 import com.predic8.membrane.core.interceptor.balancer.DispatchingStrategy;
 import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.Node;
@@ -93,6 +96,7 @@ public class LoadBalancingInterceptorTest {
 		balancingInterceptor.setName("Default");
 		sp3.getInterceptors().add(balancingInterceptor);
 		balancer.getRuleManager().addProxyAndOpenPortIfNew(sp3);
+		enableFailOverOn5XX(balancer);
 		balancer.init();
 
 		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", 2000);
@@ -100,6 +104,11 @@ public class LoadBalancingInterceptorTest {
 
 		roundRobinStrategy = new RoundRobinStrategy();
 		byThreadStrategy = new ByThreadStrategy();
+	}
+
+	private void enableFailOverOn5XX(HttpRouter balancer2) {
+		List<Interceptor> l = balancer.getTransport().getInterceptors();
+		((HTTPClientInterceptor)l.get(l.size()-1)).setFailOverOn5XX(true);
 	}
 
 	@After

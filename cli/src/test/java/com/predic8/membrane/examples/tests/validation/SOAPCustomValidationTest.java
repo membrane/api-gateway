@@ -27,7 +27,6 @@ import org.junit.Test;
 import com.predic8.membrane.examples.AbstractConsoleWatcher;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.util.ConsoleLogger;
 
 public class SOAPCustomValidationTest extends DistributionExtractingTestcase {
 	
@@ -72,7 +71,6 @@ public class SOAPCustomValidationTest extends DistributionExtractingTestcase {
 		Process2 ant = new Process2.Builder().
 				in(baseDir).
 				executable("ant run").
-				withWatcher(new ConsoleLogger()).
 				withWatcher(new AbstractConsoleWatcher() {
 					@Override
 					public void outputLine(boolean error, String line) {

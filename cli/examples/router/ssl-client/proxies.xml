@@ -4,7 +4,7 @@
 	<serviceProxy port="8080">
 		<path>/svn</path>
 		<target host="predic8.com" port="443">
-			<ssl />
+			<ssl ignoreTimestampCheckFailure="true" />
 		</target>
 	</serviceProxy>
 </proxies>
