@@ -32,6 +32,7 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import com.google.common.collect.Sets;
@@ -75,6 +76,10 @@ public class SSLContext {
 				tmf.init(ks);
 			}
 			
+			TrustManager[] tms = tmf != null ? tmf.getTrustManagers() : null /* trust anyone: new TrustManager[] { new NullTrustManager() } */;
+			if (sslParser.isIgnoreTimestampCheckFailure())
+				tms = new TrustManager[] { new TrustManagerWrapper(tms, true) };
+			
 			if (sslParser.getProtocol() != null)
 				sslc = javax.net.ssl.SSLContext.getInstance(sslParser.getProtocol());
 			else
@@ -82,7 +87,7 @@ public class SSLContext {
 			
 			sslc.init(
 					kmf != null ? kmf.getKeyManagers() : null, 
-					tmf != null ? tmf.getTrustManagers() : null /* trust anyone: new TrustManager[] { new NullTrustManager() } */, 
+					tms, 
 					null);
 			
 			if (sslParser.getCiphers() != null) {

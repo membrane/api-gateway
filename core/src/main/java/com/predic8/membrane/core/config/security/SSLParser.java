@@ -27,6 +27,7 @@ public class SSLParser extends AbstractConfigElement {
 	private String protocol;
 	private String ciphers;
 	private String clientAuth;
+	private boolean ignoreTimestampCheckFailure;
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
@@ -34,6 +35,7 @@ public class SSLParser extends AbstractConfigElement {
 		protocol = token.getAttributeValue("", "protocol");
 		ciphers = token.getAttributeValue("", "ciphers");
 		clientAuth = token.getAttributeValue("", "clientAuth");
+		ignoreTimestampCheckFailure = Boolean.parseBoolean(token.getAttributeValue("", "ignoreTimestampCheckFailure"));
 		super.parseAttributes(token);
 	}
 	
@@ -60,6 +62,8 @@ public class SSLParser extends AbstractConfigElement {
 			out.writeAttribute("ciphers", ciphers);
 		if (clientAuth != null)
 			out.writeAttribute("clientAuth", clientAuth);
+		if (ignoreTimestampCheckFailure)
+			out.writeAttribute("ignoreTimestampCheckFailure", "true");
 		
 
 		if (keyStore != null)
@@ -116,6 +120,14 @@ public class SSLParser extends AbstractConfigElement {
 	
 	public void setClientAuth(String clientAuth) {
 		this.clientAuth = clientAuth;
+	}
+
+	public boolean isIgnoreTimestampCheckFailure() {
+		return ignoreTimestampCheckFailure;
+	}
+	
+	public void setIgnoreTimestampCheckFailure(boolean ignoreTimestampCheckFailure) {
+		this.ignoreTimestampCheckFailure = ignoreTimestampCheckFailure;
 	}
 
 }
