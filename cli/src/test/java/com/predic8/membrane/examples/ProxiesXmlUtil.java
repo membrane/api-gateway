@@ -15,11 +15,12 @@
 package com.predic8.membrane.examples;
 
 import java.io.File;
+import java.io.IOException;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.parboiled.common.FileUtils;
+import org.apache.commons.io.FileUtils;
 
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
@@ -39,9 +40,9 @@ public class ProxiesXmlUtil {
 			throw new IllegalArgumentException("File " + file + " does not exist.");
 	}
 	
-	public void updateWith(String proxiesXmlContent, Process2 sl) {
+	public void updateWith(String proxiesXmlContent, Process2 sl) throws IOException {
 		SubstringWaitableConsoleEvent reloaded = new SubstringWaitableConsoleEvent(sl, "listening at port " + getLastPort(proxiesXmlContent));
-		FileUtils.writeAllText(proxiesXmlContent, proxiesXml);
+		FileUtils.writeStringToFile(proxiesXml, proxiesXmlContent);
 		reloaded.waitFor(10000);
 	}
 	

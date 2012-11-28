@@ -21,7 +21,7 @@
         <groupId>com.predic8</groupId>
         <artifactId>membrane-esb</artifactId>
         <relativePath>../pom.xml</relativePath>
-        <version>3.5.6-SNAPSHOT</version>
+        <version>4.0.0-SNAPSHOT</version>
     </parent>
 
 	<dependencies>
@@ -32,11 +32,6 @@
 		<dependency>
 			<groupId>com.predic8</groupId>
 			<artifactId>membrane-esb-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

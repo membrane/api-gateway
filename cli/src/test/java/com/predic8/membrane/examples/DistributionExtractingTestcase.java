@@ -25,9 +25,9 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.parboiled.common.FileUtils;
 
 /**
  * Extracts the .zip distribution built by Maven.
@@ -81,12 +81,13 @@ public class DistributionExtractingTestcase {
 		System.out.println("running test...");
 	}
 	
-	private void replaceLog4JConfig() {
+	private void replaceLog4JConfig() throws IOException {
 		File log4jproperties = new File(membraneHome, "conf" + File.separator + "log4j.properties");
 		if (!log4jproperties.exists())
 			throw new RuntimeException("log4j.properties does not exits.");
 		
-		FileUtils.writeAllText( 
+		FileUtils.writeStringToFile(
+				log4jproperties,
 				"log4j.appender.stdout=org.apache.log4j.ConsoleAppender\r\n" + 
 				"log4j.appender.stdout.Target=System.out\r\n" + 
 				"log4j.appender.stdout.layout=org.apache.log4j.PatternLayout\r\n" + 
@@ -94,7 +95,7 @@ public class DistributionExtractingTestcase {
 				"\r\n" + 
 				"log4j.rootLogger=warn\r\n" +
 				"\r\n" + 
-				"log4j.logger.com.predic8=debug, stdout", log4jproperties);
+				"log4j.logger.com.predic8=debug, stdout");
 	}
 
 	public File getExampleDir(String name) {

@@ -21,22 +21,17 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.eel.kitchen.jsonschema.main.JsonValidationFailureException;
-import org.eel.kitchen.jsonschema.main.JsonValidator;
-import org.eel.kitchen.jsonschema.main.ValidationConfig;
-import org.eel.kitchen.jsonschema.main.ValidationReport;
-import org.eel.kitchen.util.JsonLoader;
+import org.eel.kitchen.jsonschema.main.JsonSchema;
+import org.eel.kitchen.jsonschema.main.JsonSchemaFactory;
+import org.eel.kitchen.jsonschema.report.ValidationReport;
+import org.eel.kitchen.jsonschema.util.JsonLoader;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
@@ -45,12 +40,9 @@ import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorIntercept
 import com.predic8.membrane.core.util.ResourceResolver;
 
 public class JSONValidator implements IValidator {
-	private static final Log log = LogFactory.getLog(JSONValidator.class.getName());
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
-	// Since JsonValidator is not thread-safe, we simply allocate 2*#CPU and use
-	// one exclusively for each validation request.
-	private ArrayBlockingQueue<JsonValidator> validators;
+	private JsonSchema schema;
 	private final ResourceResolver resourceResolver;
 	private final String jsonSchema;
 	private final ValidatorInterceptor.FailureHandler failureHandler;
@@ -58,7 +50,7 @@ public class JSONValidator implements IValidator {
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 	
-	public JSONValidator(ResourceResolver resourceResolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException, JsonValidationFailureException {
+	public JSONValidator(ResourceResolver resourceResolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException {
 		this.resourceResolver = resourceResolver;
 		this.jsonSchema = jsonSchema;
 		this.failureHandler = failureHandler;
@@ -74,13 +66,7 @@ public class JSONValidator implements IValidator {
 		boolean success = true;
 		try {
 			JsonNode node = JsonLoader.fromReader(new InputStreamReader(body, charset));
-			JsonValidator validator = validators.take();
-			ValidationReport report;
-			try {
-				report = validator.validate(node);
-			} finally {
-				validators.put(validator);
-			}
+			ValidationReport report = schema.validate(node);
 			success = report.isSuccess();
 			errors = report.getMessages();
 		} catch (JsonParseException e) {
@@ -132,20 +118,10 @@ public class JSONValidator implements IValidator {
 	}
 
 	
-	private void createValidators() throws IOException, JsonValidationFailureException {
-		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-		validators = new ArrayBlockingQueue<JsonValidator>(concurrency);
-		for (int i = 0; i < concurrency; i++) {
-			JsonNode schemaNode = new ObjectMapper().readTree(resourceResolver.resolve(jsonSchema));
-			ValidationConfig cfg = new ValidationConfig();
-			JsonValidator validator = new JsonValidator(cfg, schemaNode);
-			if (i == 0) {
-				ValidationReport report = validator.validateSchema();
-				for (String message : report.getMessages())
-					log.error(message);
-			}
-			validators.add(validator);
-		}
+	private void createValidators() throws IOException {
+		JsonSchemaFactory factory = JsonSchemaFactory.defaultFactory();
+		JsonNode schemaNode = JsonLoader.fromReader(new InputStreamReader(resourceResolver.resolve(jsonSchema)));
+		schema = factory.fromSchema(schemaNode);
 	}
 
 	@Override

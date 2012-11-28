@@ -21,8 +21,8 @@ import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
-import org.parboiled.common.FileUtils;
 
 import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
@@ -68,7 +68,7 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 			assertContains("Italy, Spain", result);
 			assertContainsNot(",<", result);
 			
-			String csvLog = FileUtils.readAllText(new File(baseDir, "log.csv"));
+			String csvLog = FileUtils.readFileToString(new File(baseDir, "log.csv"));
 			assertContains("Pia", csvLog);
 			
 			AssertUtils.setupHTTPAuthentication("localhost", 9000, "alice", "membrane");
