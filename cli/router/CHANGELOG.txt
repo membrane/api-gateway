@@ -1,6 +1,25 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [release] 3.5.6
+
+* [new] The <ssl> element in proxies.xml now has a new optional attribute
+  (and default value) ignoreTimestampCheckFailure="false".
+
+* [changed behavior] The rest2soap interceptor now ignores the "responseType"
+  attribute to choose the response type (XML or JSON). Instead the HTTP
+  "Accept" header is used: If "Accept: application/json" is set, JSON is
+  produced.
+
+* [improvement] the default log level is now INFO.
+
+* [new] The <httpClient> element in conf/monitor-beans.xml has now two new 
+  valid attributes (with default values): failOverOn5XX="false" and
+  keepAliveTimeout="30000" 
+
+* [update config] examples/rest2soap-json/strip-env.xsl was updated to remove
+  the XML namespace prefixes (the JSON key 'ns1:getBank' is now 'getBank')
+
 * [release] 3.5.5
 
 * [bugfix] getBodyAsStream() now returns correct data for chunked
