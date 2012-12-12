@@ -15,3 +15,15 @@ To run the example execute the following steps:
 3. Open the URL http://localhost:2000/ in your browser.
 
 4. Take a look at the output of the console.
+
+
+Troubleshooting:
+
+If Membrane does not generate any ouput after loading an URL, it is possible that your browser has already cached the ressource. 
+
+Shortcuts for the different browsers:
+
+Safari: ALT + click reload or CMD + SHIFT + R while using a mac
+Firefox: SHIFT + click reload
+Chrome: SHIFT + F5 or CONTROL + F5
+IE: CONTROL + F5
