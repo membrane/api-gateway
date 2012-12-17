@@ -143,7 +143,7 @@ public class HttpClient {
 						con = null;
 				}
 				if (con == null) {
-					con = conMgr.getConnection(targetAddr, target.port, exc.getRule().getLocalHost(), getOutboundSSLContext(exc));
+					con = conMgr.getConnection(targetAddr, target.port, exc.getRule() == null ? null : exc.getRule().getLocalHost(), getOutboundSSLContext(exc));
 					exc.setTargetConnection(con);
 				}
 				Response response = doCall(exc, con);
