@@ -1,6 +1,6 @@
 STATISTICS JDBC INTERCEPTOR
 
-Using the StatisticsJDBCInterceptor, Membrane Monitor and Router can log metadata about service invocation to any database that can be accessed via JDBC.
+Using the StatisticsJDBCInterceptor, Membrane Monitor and ESB can log metadata about service invocation to any database that can be accessed via JDBC.
     
 RUNNING THE EXAMPLE
 

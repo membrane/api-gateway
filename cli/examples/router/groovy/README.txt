@@ -16,4 +16,4 @@ Execute the following steps:
 
 2. Open the URL http://localhost:2000 in your browser.
 
-3. Take a look at the output of the console where the Router is running.
+3. Take a look at the output of the console where Membrane ESB is running.
