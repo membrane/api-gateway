@@ -120,7 +120,7 @@ public class HttpClient {
 	}
 
 	private SSLContext getOutboundSSLContext(Exchange exc) {
-		return exc.getRule().getSslOutboundContext();
+		return exc.getRule() == null ? null : exc.getRule().getSslOutboundContext();
 	}
 
 	public Response call(Exchange exc) throws Exception {
