@@ -31,6 +31,7 @@ import com.predic8.membrane.examples.tests.LoadBalancerStaticTest;
 import com.predic8.membrane.examples.tests.LoggingCSVTest;
 import com.predic8.membrane.examples.tests.LoggingJDBCTest;
 import com.predic8.membrane.examples.tests.LoggingTest;
+import com.predic8.membrane.examples.tests.LoginTest;
 import com.predic8.membrane.examples.tests.QuickstartRESTTest;
 import com.predic8.membrane.examples.tests.QuickstartSOAPTest;
 import com.predic8.membrane.examples.tests.REST2SOAPJSONTest;
@@ -64,6 +65,7 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 	LoggingCSVTest.class,
 	LoggingJDBCTest.class,
 	LoggingTest.class,
+	LoginTest.class,
 	QuickstartRESTTest.class,
 	QuickstartSOAPTest.class,
 	REST2SOAPTest.class,

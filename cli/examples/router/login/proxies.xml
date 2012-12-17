@@ -1,0 +1,17 @@
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+
+	<serviceProxy name="predic8.com" port="2000">
+
+		<login path="/login/" location="examples/login/dialog">
+			<staticUserDataProvider>
+				<user username="john" password="password" secret="abcdefghijklmnop" />
+			</staticUserDataProvider>
+			<totpTokenProvider />
+		</login>
+		
+		<target host="membrane-soa.org" port="80" />
+	</serviceProxy> 
+
+</proxies>
