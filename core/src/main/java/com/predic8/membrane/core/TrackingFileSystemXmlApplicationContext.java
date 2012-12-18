@@ -88,6 +88,10 @@ class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationCo
 			public String getDescription() {
 				return r2.getDescription();
 			}
+			
+			public long contentLength() throws IOException {
+				return r2.contentLength();
+			}
 		};
 	}
 	
