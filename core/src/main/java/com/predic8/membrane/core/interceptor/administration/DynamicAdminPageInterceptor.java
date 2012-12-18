@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.administration;
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 
+import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
@@ -29,6 +30,9 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -276,6 +280,8 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				p().text("Free system memory: " + free).end();
 				
 				p().text("Membrane version: " + Constants.VERSION).end();
+				
+				createLogConfigurationEditor();
 			}
 		}.createPage());
 	}
@@ -889,6 +895,23 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	public Response createReadOnlyErrorResponse() {
 		return Response.forbidden("The admin console is configured to be readOnly.").build();
+	}
+
+	@Mapping("/admin/log/level")
+	public Response handleChangeLogLevelRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		Logger.getRootLogger().setLevel(Level.toLevel(Integer.parseInt(params.get("loglevel"))));
+		return handleSystemRequest(params, relativeRootPath);
+	}
+
+	@Mapping("/admin/log/config")
+	public Response handleReplaceLogConfigurationRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		String config = params.get("logconfig");
+		PropertyConfigurator.configure(new ByteArrayInputStream(config.getBytes()));
+		return handleSystemRequest(params, relativeRootPath);
 	}
 
 }

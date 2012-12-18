@@ -17,6 +17,14 @@ package com.predic8.membrane.core.interceptor.administration;
 
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import static org.apache.commons.lang.time.DurationFormatUtils.formatDurationHMS;
+import static org.apache.log4j.Level.ALL;
+import static org.apache.log4j.Level.DEBUG;
+import static org.apache.log4j.Level.ERROR;
+import static org.apache.log4j.Level.FATAL;
+import static org.apache.log4j.Level.INFO;
+import static org.apache.log4j.Level.OFF;
+import static org.apache.log4j.Level.TRACE;
+import static org.apache.log4j.Level.WARN;
 
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -28,6 +36,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.springframework.web.util.HtmlUtils;
 
 import com.googlecode.jatl.Html;
@@ -894,5 +904,34 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
+	protected void createLogConfigurationEditor() {
+		Logger root = Logger.getRootLogger();
+		Level rootLevel = root.getLevel();
+		
+		if (readOnly) {
+			p().text("The current root log level is " + rootLevel.toString() + ".").end();
+			return;
+		}
+		
+		form().id("changeRootLogLevelForm").action("/admin/log/level").method("POST");
+			text("Change the root log level to: ");
+			select().name("loglevel").onchange("this.form.submit()");
+			for (Level l : new Level[] { OFF, FATAL, ERROR, WARN, INFO, DEBUG, TRACE, ALL }) {
+				option().value("" + l.toInt());
+				if (rootLevel.equals(l))
+					selected("true");
+				text(l.toString());
+				end();
+			}
+			end();
+		end();
+
+		form().id("replaceLogConfigurationForm").action("/admin/log/config").method("POST");
+			text("");
+			textarea().style("font-family:monospace;").name("logconfig").cols("120").rows("20").text("Paste new Log4j config here.").end();
+			br();
+			input().type("submit").value("Change log4j config");
+		end();
+	}
 }
 
