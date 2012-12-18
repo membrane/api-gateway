@@ -150,8 +150,7 @@ public class AssertUtils {
 					AuthScope authScope = new AuthScope(targetHost.getHostName(), targetHost.getPort());
 					Credentials creds = credsProvider.getCredentials(authScope);
 					if (creds != null) {
-						authState.setAuthScheme(new BasicScheme());
-						authState.setCredentials(creds);
+						authState.update(new BasicScheme(), creds);
 					}
 				}
 			}    
@@ -184,9 +183,8 @@ public class AssertUtils {
 			}
 		} }, new SecureRandom());
 
-		SSLSocketFactory sslsf = new SSLSocketFactory(context);
-		sslsf.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-		Scheme scheme = new Scheme("https", sslsf, port);
+		SSLSocketFactory sslsf = new SSLSocketFactory(context, SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+		Scheme scheme = new Scheme("https", port, sslsf);
 		if (hc == null)
 			hc = new DefaultHttpClient();
 		hc.getConnectionManager().getSchemeRegistry().register(scheme);
