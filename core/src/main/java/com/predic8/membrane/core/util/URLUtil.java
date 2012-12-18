@@ -15,7 +15,8 @@ public class URLUtil {
 	public static String getPathQuery(String uri) {
 		try {
 			URI u = new URI(uri);
-			return u.getPath() + u.getQuery();
+			String query = u.getQuery();
+			return u.getPath() + (query == null ? "" : "?" + query);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
