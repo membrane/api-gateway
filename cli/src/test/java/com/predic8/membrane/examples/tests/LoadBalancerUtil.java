@@ -49,7 +49,11 @@ public class LoadBalancerUtil {
 		params.add(new BasicNameValuePair("host", nodeHost));
 		params.add(new BasicNameValuePair("port", "" + nodePort));
 		post.setEntity(new UrlEncodedFormEntity(params));
-		assertStatusCode(302, post);
+		try {
+			assertStatusCode(302, post);
+		} finally {
+			post.releaseConnection();
+		}
 	}
 	
 	public static void assertNodeStatus(String adminPageHTML, String nodeHost, int nodePort,

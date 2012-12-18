@@ -77,8 +77,8 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	}
 
 	private static void sendSMS(HttpClient hc, String token, String recipientNumber, String text) throws InvalidAuthTokenException {
+		HttpPost p = new HttpPost("https://gateway.developer.telekom.com/p3gw-mod-odg-sms/rest/production/sms");
 		try {
-			HttpPost p = new HttpPost("https://gateway.developer.telekom.com/p3gw-mod-odg-sms/rest/production/sms");
 			p.addHeader("Authorization", "TAuth realm=\"https://odg.t-online.de\",tauth_token=\"" + token + "\"");
 			p.addHeader("Accept", "application/json");
 			p.addHeader("Content-Type", "application/x-www-form-urlencoded");
@@ -100,6 +100,8 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 			log.debug("sent SMS to " + recipientNumber);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
+		} finally {
+			p.releaseConnection();
 		}
 	}
 

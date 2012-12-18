@@ -90,17 +90,21 @@ public class AssertUtils {
 		if (hc == null)
 			hc = new DefaultHttpClient();
 		HttpGet get = new HttpGet(url);
-		if (header != null)
-			for (int i = 0; i < header.length; i += 2)
-				get.addHeader(header[i], header[i+1]);
-		HttpResponse res = hc.execute(get);
 		try {
-			assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
-		} catch (AssertionError e) {
-			throw new AssertionError(e.getMessage() + " while fetching " + url);
+			if (header != null)
+				for (int i = 0; i < header.length; i += 2)
+					get.addHeader(header[i], header[i+1]);
+			HttpResponse res = hc.execute(get);
+			try {
+				assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
+			} catch (AssertionError e) {
+				throw new AssertionError(e.getMessage() + " while fetching " + url);
+			}
+			HttpEntity entity = res.getEntity();
+			return entity == null ? "" : EntityUtils.toString(entity);
+		} finally {
+			get.releaseConnection();
 		}
-		HttpEntity entity = res.getEntity();
-		return entity == null ? "" : EntityUtils.toString(entity);
 	}
 
 	public static String postAndAssert200(String url, String body) throws ClientProtocolException, IOException {
@@ -126,9 +130,13 @@ public class AssertUtils {
 		for (int i = 0; i < headers.length; i+=2)
 			post.setHeader(headers[i], headers[i+1]);
 		post.setEntity(new StringEntity(body));
-		HttpResponse res = hc.execute(post);
-		assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
-		return EntityUtils.toString(res.getEntity());
+		try {
+			HttpResponse res = hc.execute(post);
+			assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());
+			return EntityUtils.toString(res.getEntity());
+		} finally {
+			post.releaseConnection();
+		}
 	}
 	
 	public static void disableHTTPAuthentication() {

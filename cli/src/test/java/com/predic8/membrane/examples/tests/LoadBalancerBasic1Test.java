@@ -14,9 +14,9 @@
 
 package com.predic8.membrane.examples.tests;
 
+import static com.predic8.membrane.examples.tests.LoadBalancerUtil.addLBNodeViaHTML;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert;
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
-import static com.predic8.membrane.examples.tests.LoadBalancerUtil.addLBNodeViaHTML;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
@@ -24,9 +24,9 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.test.AssertUtils;
 
 public class LoadBalancerBasic1Test extends DistributionExtractingTestcase {
 	
