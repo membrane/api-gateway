@@ -19,13 +19,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URI;
 import java.net.URL;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.URI;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.util.EntityUtils;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
@@ -48,13 +50,13 @@ public class ResourceResolver {
 	public String combine(String parent, String relativeChild) {
 		if (parent.contains(":/")) {
 			try {
-				return new URI(new URI(parent, false), relativeChild, false).toString();
+				return new URI(parent).resolve(relativeChild).toString();
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 		} else if (parent.startsWith("/")) {
 			try {
-				return new URI(new URI("file:" + parent, false), relativeChild, false).toString().substring(5);
+				return new URI("file:" + parent).resolve(relativeChild).toString().substring(5);
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -95,25 +97,35 @@ public class ResourceResolver {
 
 		return new File(uri);
 	}
+
+	private HttpClient httpClient;
+	
+	private synchronized HttpClient getHttpClient() {
+		if (httpClient == null) {
+			httpClient = new DefaultHttpClient();
+		    HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 10000);
+		}
+		return httpClient;
+	}
 	
 	protected InputStream resolveViaHttp(String url) {
 		try{
-		    HttpClient client = new HttpClient();
-		    client.getHttpConnectionManager().getParams().setConnectionTimeout(10000);
-				      
-		    HttpMethod method = new GetMethod(url);
-		    method.getParams().setParameter(HttpMethodParams.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION);
-		    int status = client.executeMethod(method);
-		    if(status != 200) {
-		    	ResourceDownloadException rde = new ResourceDownloadException("could not get resource " + url + " by HTTP");
-		    	rde.setStatus(status);
-		    	rde.setUrl(url);
+		    HttpGet method = new HttpGet(url);
+		    method.setHeader("User-Agent", Constants.PRODUCT_NAME + " " + Constants.VERSION);
+		    HttpResponse response = getHttpClient().execute(method);
+		    try {
+		    	if(response.getStatusLine().getStatusCode() != 200) {
+		    		ResourceDownloadException rde = new ResourceDownloadException("could not get resource " + url + " by HTTP");
+		    		rde.setStatus(response.getStatusLine().getStatusCode());
+		    		rde.setUrl(url);
+		    		throw rde;
+		    	}
+		    	return new ByteArrayInputStream(EntityUtils.toByteArray(response.getEntity()));
+		    } finally {
 		    	method.releaseConnection();
-		    	throw rde;
 		    }
-		    InputStream is = new ByteArrayInputStream(method.getResponseBody());
-		    method.releaseConnection();
-		    return is;
+		} catch (ResourceDownloadException e) {
+			throw e;
 		} catch (Exception e) {
 			ResourceDownloadException rde = new ResourceDownloadException();
 			rde.setRootCause(e);
@@ -130,7 +142,7 @@ public class ResourceResolver {
 					String publicId, String systemId, String baseURI) {
 				try {
 					if (!systemId.contains("://"))
-						systemId = new URI(new URI(baseURI, false), systemId, false).toString();
+						systemId = new URI(baseURI).resolve(systemId).toString();
 					return new LSInputImpl(publicId, systemId, resolve(systemId));
 				} catch (Exception e) {
 					throw new RuntimeException(e);

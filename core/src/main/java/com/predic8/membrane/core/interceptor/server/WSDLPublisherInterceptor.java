@@ -24,7 +24,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -38,6 +37,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
@@ -81,7 +81,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 						path = Integer.toString(n);
 					}
 				}
-				path = "./" + URIUtil.getName(exc.getDestinations().get(0)) + "?xsd=" + path;
+				path = "./" + URLUtil.getName(exc.getDestinations().get(0)) + "?xsd=" + path;
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}

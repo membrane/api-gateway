@@ -24,7 +24,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,6 +35,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
+import com.predic8.membrane.core.util.URLUtil;
 
 public class RewriteInterceptor extends AbstractInterceptor {
 
@@ -93,7 +93,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		while ( it.hasNext() ) {
 			String dest = it.next();
 			
-			String pathQuery = URIUtil.getPathQuery(dest);
+			String pathQuery = URLUtil.getPathQuery(dest);
 			int pathBegin = dest.lastIndexOf(pathQuery);
 			String schemaHostPort = pathBegin == -1 ? dest : dest.substring(0, pathBegin); // TODO check -1 case
 			

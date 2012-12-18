@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -51,6 +50,7 @@ import com.predic8.membrane.core.transport.PortOccupiedException;
 import com.predic8.membrane.core.util.DateUtil;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.URLUtil;
 
 /**
  * Handles the dynamic part of the admin console (= requests starting with "/admin/"). 
@@ -803,7 +803,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 	
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
-		String pathQuery = URIUtil.getPathQuery(exc.getDestinations().get(0));
+		String pathQuery = URLUtil.getPathQuery(exc.getDestinations().get(0));
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
@@ -822,7 +822,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	 * For example, returns "../.." for the input "/admin/clusters/".
 	 */
 	public static String getRelativeRootPath(String pathQuery) throws MalformedURLException {
-		String path = URIUtil.getPath(pathQuery);
+		String path = URLUtil.getPath(pathQuery);
 		// count '/'s
 		int depth = 0;
 		for (int i = 0; i < path.length(); i++)

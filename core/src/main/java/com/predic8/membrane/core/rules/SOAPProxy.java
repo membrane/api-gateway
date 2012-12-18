@@ -23,7 +23,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,6 +36,7 @@ import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
 import com.predic8.membrane.core.interceptor.soap.WebServiceExplorerInterceptor;
+import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 import com.predic8.wsdl.AbstractBinding;
 import com.predic8.wsdl.Definitions;
@@ -236,7 +236,7 @@ public class SOAPProxy extends ServiceProxy {
 								path2 = new URL(new URL(path2), path).toString();
 							} else {
 								Matcher m = relativePathPattern.matcher(path2);
-								path2 = m.replaceAll("./" + URIUtil.getName(path) + "?");
+								path2 = m.replaceAll("./" + URLUtil.getName(path) + "?");
 							}
 						} catch (MalformedURLException e) {
 						}

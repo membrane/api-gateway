@@ -20,7 +20,6 @@ import java.security.InvalidParameterException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonFactory;
@@ -32,6 +31,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.administration.Mapping;
 import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.URLUtil;
 
 public class RESTInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(RESTInterceptor.class.getName());
@@ -64,7 +64,7 @@ public class RESTInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
-		String pathQuery = URIUtil.getPathQuery(exc.getDestinations().get(0));
+		String pathQuery = URLUtil.getPathQuery(exc.getDestinations().get(0));
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if (a==null) continue;
@@ -92,7 +92,7 @@ public class RESTInterceptor extends AbstractInterceptor {
 	 * For example, returns "../.." for the input "/admin/clusters/".
 	 */
 	protected String getRelativeRootPath(String pathQuery) throws MalformedURLException {
-		String path = URIUtil.getPath(pathQuery);
+		String path = URLUtil.getPath(pathQuery);
 		// count '/'s
 		int depth = 0;
 		for (int i = 0; i < path.length(); i++)

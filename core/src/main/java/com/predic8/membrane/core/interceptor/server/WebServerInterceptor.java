@@ -23,7 +23,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.httpclient.util.URIUtil;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,6 +35,7 @@ import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.membrane.core.util.TextUtil;
+import com.predic8.membrane.core.util.URLUtil;
 
 public class WebServerInterceptor extends AbstractInterceptor {
 
@@ -53,7 +53,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		String uri = URIUtil.getPath(exc.getDestinations().get(0));
+		String uri = URLUtil.getPath(exc.getDestinations().get(0));
 
 		log.debug("request: " + uri);
 
