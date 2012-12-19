@@ -62,16 +62,9 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	private boolean saveBodyOnly = false;
 
 	public void add(AbstractExchange exc) {
-		int fileNumber;
-		if (exc.getResponse() == null)
-			fileNumber = counter.incrementAndGet();
-		else
-			fileNumber = counter.get();
+		int fileNumber = counter.incrementAndGet();
 
-		Message msg = exc.getResponse() == null ? exc.getRequest() : exc
-				.getResponse();
-
-		StringBuilder buf = getDirectoryNameBuffer(exc);
+		StringBuilder buf = getDirectoryNameBuffer(exc.getTime());
 
 		directory = new File(buf.toString());
 		directory.mkdirs();
@@ -82,10 +75,13 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			buf.append(fileNumber);
 			exc.setProperty(MESSAGE_FILE_PATH, buf.toString());
 			buf.append("-");
-			buf.append(exc.getResponse() == null ? "Request" : "Response");
-			buf.append(".msg");
+			StringBuilder buf2 = new StringBuilder(buf);
+			buf.append("Request.msg");
+			buf2.append("Response.msg");
 			try {
-				writeFile(msg, buf.toString());
+				writeFile(exc.getRequest(), buf.toString());
+				if (exc.getResponse() != null)
+					writeFile(exc.getResponse(), buf2.toString());
 			} catch (Exception e) {
 				log.error(e, e);
 			}
@@ -95,15 +91,15 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	}
 
-	private StringBuilder getDirectoryNameBuffer(AbstractExchange exc) {
+	private StringBuilder getDirectoryNameBuffer(Calendar time) {
 		StringBuilder buf = new StringBuilder();
 		buf.append(dir);
 		buf.append(separator);
-		buf.append(exc.getTime().get(Calendar.YEAR));
+		buf.append(time.get(Calendar.YEAR));
 		buf.append(separator);
-		buf.append((exc.getTime().get(Calendar.MONTH) + 1));
+		buf.append((time.get(Calendar.MONTH) + 1));
 		buf.append(separator);
-		buf.append(exc.getTime().get(Calendar.DAY_OF_MONTH));
+		buf.append(time.get(Calendar.DAY_OF_MONTH));
 		return buf;
 	}
 	

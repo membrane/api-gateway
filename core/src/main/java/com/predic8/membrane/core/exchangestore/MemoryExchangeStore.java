@@ -26,6 +26,9 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
 
+/**
+ * TODO: thread-safety
+ */
 public class MemoryExchangeStore extends AbstractExchangeStore {
 
 	private Map<RuleKey, List<AbstractExchange>> exchangesMap = new HashMap<RuleKey, List<AbstractExchange>>();

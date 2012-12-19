@@ -36,6 +36,9 @@ public interface ExchangeStore {
 	
 	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange);
 		
+	/**
+	 * Adds both the exchange's request and response to the store.
+	 */
 	public void add(AbstractExchange exchange);
 	
 	public void remove(AbstractExchange exchange);
