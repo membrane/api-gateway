@@ -32,11 +32,6 @@
 		</dependency>
 	
 		<dependency>
-			<groupId>xalan</groupId>
-			<artifactId>xalan</artifactId>
-		</dependency>
-		
-		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
@@ -55,6 +50,21 @@
 				<artifactId>jboss-packaging-maven-plugin</artifactId>
 				<version>2.2</version>
 				<extensions>true</extensions>
+				<configuration>
+					<!-- These dependencies have been modeled in META-INF/jboss-deployment-structure.xml -->
+					<excludes>
+						<exclude>javax.activation:activation</exclude>
+						<exclude>commons-cli:commons-cli</exclude>
+						<exclude>commons-codec:commons-codec</exclude>
+						<exclude>commons-lang:commons-lang</exclude>
+						<exclude>org.apache.httpcomponents:httpclient</exclude>
+						<exclude>commons-logging:commons-logging</exclude>
+						<exclude>log4j:log4j</exclude>
+						<exclude>antlr:antlr</exclude>
+						<exclude>com.google.guava:guava</exclude>
+						<exclude>javax.mail:mailapi</exclude>
+					</excludes>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

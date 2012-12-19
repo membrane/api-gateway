@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <jboss-deployment-structure>
 	<deployment>
 		<dependencies>
@@ -15,21 +16,6 @@
 			<module name="org.apache.xalan" />
 		</dependencies>
 		<resources>
-			<!--
-			Libraries that are not required anymore because they
-			can be modeled as module dependencies (see above):
-			
-			Apache HTTP Client 4
-			<resource-root path="lib/activation-1.1.jar" />
-			<resource-root path="lib/commons-logging-1.1.1.jar" />
-			<resource-root path="lib/log4j-1.2.17.jar" />
-			<resource-root path="lib/antlr-2.7.7.jar" />
-			<resource-root path="lib/guava-13.0.1.jar" />
-			<resource-root path="lib/commons-cli-1.2.jar" />
-			<resource-root path="lib/commons-codec-1.7.jar" />
-			<resource-root path="lib/mailapi-1.4.3.jar" />
-			<resource-root path="lib/commons-lang-2.6.jar" />
-			 -->
 			<resource-root path="lib/aopalliance-1.0.jar" />
 			<resource-root path="lib/asm-4.0.jar" />
 			<resource-root path="lib/asm-analysis-4.0.jar" />
