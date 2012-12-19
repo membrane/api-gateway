@@ -39,6 +39,14 @@
 		</basicAuthentication>	
 		<accessControl file="conf/acl.xml" />
 		<adminConsole />
-	</serviceProxy>	
+	</serviceProxy>
+	
+	
+	<!-- This would tell Membrane to use a proxy for outgoing connections.
+	<global>
+		<proxyConfiguration host="proxy.mycompany.example" port="3128" />
+	</global>
+	 -->
+	
 
 </proxies>
