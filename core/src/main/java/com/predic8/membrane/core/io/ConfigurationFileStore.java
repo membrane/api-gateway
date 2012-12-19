@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.io;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 import javax.xml.stream.*;
@@ -28,6 +29,8 @@ public class ConfigurationFileStore implements ConfigurationStore {
 	 */
 	public Proxies read(String fileName) throws Exception {
 		InputStream is = router.getResourceResolver().resolve(fileName);
+		if (is == null)
+			throw new FileNotFoundException("proxies configuration file " + fileName);
 		try {
 			return read(is);
 		} finally {
