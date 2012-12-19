@@ -1,10 +1,10 @@
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
-	<serviceProxy port="2000">
-		<validator
-			wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
-		<target host="predic8.com" port="8080" />
-	</serviceProxy>
+	
+	<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+		<validator />
+	</soapProxy>
+	
 </proxies>
 
