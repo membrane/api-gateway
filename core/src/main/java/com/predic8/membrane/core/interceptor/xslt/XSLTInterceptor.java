@@ -28,7 +28,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.TextUtil;
 
-@MCInterceptor(xsd="	<xsd:element name=\"transform\">\r\n" + 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"transform\">\r\n" + 
 		"		<xsd:complexType>\r\n" + 
 		"			<xsd:complexContent>\r\n" + 
 		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 

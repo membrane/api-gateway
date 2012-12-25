@@ -29,7 +29,8 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 
-@MCInterceptor(xsd="	<xsd:element name=\"headerFilter\">\r\n" + 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"headerFilter\">\r\n" + 
 		"		<xsd:complexType>\r\n" + 
 		"			<xsd:complexContent>\r\n" + 
 		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 

@@ -31,6 +31,8 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 @MCInterceptor(xsd="" +
 		"	<xsd:element name=\"login\">\r\n" + 
 		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
 		"			<xsd:sequence>\r\n" + 
 		"				<xsd:choice> <!-- one user data provider -->\r\n" + 
 		"					<xsd:element name=\"staticUserDataProvider\">\r\n" + 
@@ -119,6 +121,8 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 		"			</xsd:sequence>\r\n" + 
 		"			<xsd:attribute name=\"path\" type=\"xsd:string\" use=\"required\" />\r\n" + 
 		"			<xsd:attribute name=\"location\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
 		"		</xsd:complexType>\r\n" + 
 		"	</xsd:element>\r\n" + 
 		"")

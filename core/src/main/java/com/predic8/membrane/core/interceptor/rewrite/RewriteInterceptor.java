@@ -38,7 +38,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
-@MCInterceptor(xsd="	<xsd:element name=\"rewriter\">\r\n" + 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"rewriter\">\r\n" + 
 		"		<xsd:complexType>\r\n" + 
 		"			<xsd:complexContent>\r\n" + 
 		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 

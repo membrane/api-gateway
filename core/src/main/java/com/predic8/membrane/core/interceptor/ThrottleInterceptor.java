@@ -25,7 +25,8 @@ import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
-@MCInterceptor(xsd="	<xsd:element name=\"throttle\">\r\n" + 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"throttle\">\r\n" + 
 		"		<xsd:complexType>\r\n" + 
 		"			<xsd:complexContent>\r\n" + 
 		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 

@@ -34,8 +34,12 @@ import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 @MCInterceptor(xsd="" +
 		"	<xsd:element name=\"adminConsole\">\r\n" + 
 		"		<xsd:complexType>\r\n" + 
-		"			<xsd:sequence />\r\n" + 
-		"			<xsd:attribute name=\"readOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"readOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
 		"		</xsd:complexType>\r\n" + 
 		"	</xsd:element>\r\n" + 
 		"")

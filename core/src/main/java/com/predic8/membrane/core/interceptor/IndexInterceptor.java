@@ -34,7 +34,8 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HostColonPort;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 
-@MCInterceptor(xsd="	<xsd:element name=\"index\">\r\n" + 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"index\">\r\n" + 
 		"		<xsd:complexType>\r\n" + 
 		"			<xsd:complexContent>\r\n" + 
 		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
