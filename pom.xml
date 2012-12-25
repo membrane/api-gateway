@@ -41,6 +41,7 @@
 	</mailingLists>
 
 	<modules>
+		<module>annot</module>
 		<module>core</module>
 		<module>cli</module>
 		<module>osgi</module>

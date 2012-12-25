@@ -4,6 +4,12 @@
 /.settings
 /.project
 
+# /annot/
+/annot/.classpath
+/annot/.project
+/annot/.settings
+/annot/target
+
 # /cli/
 /cli/.classpath
 /cli/.project

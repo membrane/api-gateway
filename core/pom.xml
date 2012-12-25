@@ -26,6 +26,13 @@
     
 	<dependencies>
 		<dependency>
+			<groupId>com.predic8</groupId>
+			<artifactId>membrane-esb-annot</artifactId>
+			<version>${project.version}</version>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>javax.activation</groupId>
 			<artifactId>activation</artifactId>
 		</dependency>
@@ -167,6 +174,18 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${javac.source}</source>
+					<target>${javac.target}</target>
+					<annotationProcessors>
+						<annotationProcessor>com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessor</annotationProcessor>
+					</annotationProcessors>
+				</configuration>
+			</plugin>
+			
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.11</version>
