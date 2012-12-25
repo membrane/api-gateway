@@ -27,11 +27,24 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"counter\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class CountInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(CountInterceptor.class.getName());

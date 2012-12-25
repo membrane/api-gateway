@@ -27,6 +27,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -37,6 +38,19 @@ import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"webServer\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"docBase\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"					<xsd:attribute name=\"index\" type=\"xsd:string\" default=\"\" />\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class WebServerInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(WebServerInterceptor.class

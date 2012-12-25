@@ -39,6 +39,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -46,6 +47,21 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"wsdlRewriter\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"registryWSDLRegisterURL\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
+		"					<xsd:attribute name=\"protocol\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class WSDLInterceptor extends RelocatingInterceptor {
 
 	private static Log log = LogFactory.getLog(WSDLInterceptor.class.getName());

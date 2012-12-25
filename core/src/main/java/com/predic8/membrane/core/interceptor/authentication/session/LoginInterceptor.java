@@ -17,6 +17,7 @@ import java.util.Map;
 
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.ElementName;
@@ -27,6 +28,100 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 
 @ElementName("login")
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"login\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:sequence>\r\n" + 
+		"				<xsd:choice> <!-- one user data provider -->\r\n" + 
+		"					<xsd:element name=\"staticUserDataProvider\">\r\n" + 
+		"						<xsd:complexType>\r\n" + 
+		"							<xsd:sequence>\r\n" + 
+		"								<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+		"									<xsd:complexType>\r\n" + 
+		"										<xsd:sequence />\r\n" + 
+		"										<xsd:attribute name=\"username\" type=\"xsd:string\" />\r\n" + 
+		"										<xsd:attribute name=\"password\" type=\"xsd:string\" />\r\n" + 
+		"										<xsd:attribute name=\"sms\" type=\"xsd:string\" />\r\n" + 
+		"										<xsd:attribute name=\"secret\" type=\"xsd:string\" />\r\n" + 
+		"										<xsd:anyAttribute processContents=\"skip\" />\r\n" + 
+		"									</xsd:complexType>\r\n" + 
+		"								</xsd:element>\r\n" + 
+		"							</xsd:sequence>\r\n" + 
+		"						</xsd:complexType>\r\n" + 
+		"					</xsd:element>\r\n" + 
+		"					<xsd:element name=\"ldapUserDataProvider\">\r\n" + 
+		"						<xsd:complexType>\r\n" + 
+		"							<xsd:sequence>\r\n" + 
+		"								<xsd:element name=\"map\">\r\n" + 
+		"									<xsd:complexType>\r\n" + 
+		"										<xsd:sequence>\r\n" + 
+		"											<xsd:element name=\"attribute\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+		"												<xsd:complexType>\r\n" + 
+		"													<xsd:sequence />\r\n" + 
+		"													<xsd:attribute name=\"from\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"													<xsd:attribute name=\"to\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"												</xsd:complexType>\r\n" + 
+		"											</xsd:element>\r\n" + 
+		"										</xsd:sequence>\r\n" + 
+		"									</xsd:complexType>\r\n" + 
+		"								</xsd:element>\r\n" + 
+		"							</xsd:sequence>\r\n" + 
+		"							<xsd:attribute name=\"url\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"							<xsd:attribute name=\"base\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"							<xsd:attribute name=\"binddn\" type=\"xsd:string\" />\r\n" + 
+		"							<xsd:attribute name=\"bindpw\" type=\"xsd:string\" />\r\n" + 
+		"							<xsd:attribute name=\"searchPattern\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"							<xsd:attribute name=\"searchScope\" type=\"xsd:string\" default=\"subtree\" />\r\n" + 
+		"							<xsd:attribute name=\"timeout\" type=\"xsd:string\" default=\"1000\" />\r\n" + 
+		"							<xsd:attribute name=\"connectTimeout\" type=\"xsd:string\" default=\"1000\" />\r\n" + 
+		"							<xsd:attribute name=\"readAttributesAsSelf\" type=\"xsd:boolean\" default=\"true\" />\r\n" + 
+		"						</xsd:complexType>\r\n" + 
+		"					</xsd:element>\r\n" + 
+		"				</xsd:choice>\r\n" + 
+		"				\r\n" + 
+		"				<xsd:element minOccurs=\"0\" name=\"sessionManager\">\r\n" + 
+		"					<xsd:complexType>\r\n" + 
+		"						<xsd:sequence />\r\n" + 
+		"						<xsd:attribute name=\"cookieName\" type=\"xsd:string\" default=\"SESSIONID\" />\r\n" + 
+		"						<xsd:attribute name=\"timeout\" type=\"xsd:long\" default=\"300000\"/>\r\n" + 
+		"						<xsd:attribute name=\"domain\" type=\"xsd:string\" />\r\n" + 
+		"					</xsd:complexType>\r\n" + 
+		"				</xsd:element>\r\n" + 
+		"\r\n" + 
+		"				<xsd:element minOccurs=\"0\" name=\"accountBlocker\">\r\n" + 
+		"					<xsd:complexType>\r\n" + 
+		"						<xsd:sequence />\r\n" + 
+		"						<xsd:attribute name=\"afterFailedLogins\" type=\"xsd:int\" default=\"5\" />\r\n" + 
+		"						<xsd:attribute name=\"afterFailedLoginsWithin\" type=\"xsd:long\" default=\"9223372036854775807\"/>\r\n" + 
+		"						<xsd:attribute name=\"blockFor\" type=\"xsd:long\" default=\"3600000\"/>\r\n" + 
+		"						<xsd:attribute name=\"blockWholeSystemAfter\" type=\"xsd:int\" default=\"1000000\"/>\r\n" + 
+		"					</xsd:complexType>\r\n" + 
+		"				</xsd:element>\r\n" + 
+		"				\r\n" + 
+		"				<xsd:choice> <!-- one of the token providers -->\r\n" + 
+		"				\r\n" + 
+		"					<xsd:element name=\"emptyTokenProvider\" />\r\n" + 
+		"					\r\n" + 
+		"					<xsd:element name=\"totpTokenProvider\" />\r\n" + 
+		"					\r\n" + 
+		"					<xsd:element name=\"telekomSMSTokenProvider\">\r\n" + 
+		"						<xsd:complexType>\r\n" + 
+		"							<xsd:sequence />\r\n" + 
+		"							<xsd:attribute name=\"user\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"							<xsd:attribute name=\"password\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"							<xsd:attribute name=\"simulate\" type=\"xsd:boolean\" default=\"false\" />\r\n" + 
+		"							<xsd:attribute name=\"prefixText\" type=\"xsd:string\" default=\"Token: \" />\r\n" + 
+		"							<xsd:attribute name=\"normalizeTelephoneNumber\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
+		"						</xsd:complexType>\r\n" + 
+		"					</xsd:element>\r\n" + 
+		"					\r\n" + 
+		"				</xsd:choice>\r\n" + 
+		"			</xsd:sequence>\r\n" + 
+		"			<xsd:attribute name=\"path\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"			<xsd:attribute name=\"location\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class LoginInterceptor extends AbstractInterceptor {
 	
 	private String location, path;

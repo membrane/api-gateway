@@ -21,6 +21,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -35,6 +36,23 @@ import com.predic8.membrane.core.util.TextUtil;
  * {@link JSONValidator} and {@link SchematronValidator} depending on the
  * attributes.
  */
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"validator\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"wsdl\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"schema\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"jsonSchema\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"schematron\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"failureHandler\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"skipFaults\" type=\"xsd:boolean\" default=\"false\" />\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class ValidatorInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(ValidatorInterceptor.class.getName());
 

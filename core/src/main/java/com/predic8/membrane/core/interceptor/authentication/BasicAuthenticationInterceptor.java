@@ -21,6 +21,7 @@ import javax.xml.stream.*;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.web.util.HtmlUtils;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -28,6 +29,25 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.HttpUtil;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"basicAuthentication\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence>\r\n" + 
+		"						<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+		"							<xsd:complexType>\r\n" + 
+		"								<xsd:sequence />\r\n" + 
+		"								<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								<xsd:attribute name=\"password\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"							</xsd:complexType>\r\n" + 
+		"						</xsd:element>\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	private Map<String, String> users = new HashMap<String, String>();

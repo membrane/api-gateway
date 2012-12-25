@@ -22,6 +22,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
@@ -32,6 +33,50 @@ import com.predic8.membrane.core.interceptor.Outcome;
 /**
  * May only be used as interceptor in a ServiceProxy.
  */
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"balancer\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence>\r\n" + 
+		"						<xsd:choice minOccurs=\"0\">\r\n" + 
+		"							<xsd:element name=\"xmlSessionIdExtractor\">\r\n" + 
+		"								<xsd:complexType>\r\n" + 
+		"									<xsd:attribute name=\"namespace\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"									<xsd:attribute name=\"localName\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								</xsd:complexType>\r\n" + 
+		"							</xsd:element>\r\n" + 
+		"							<xsd:element name=\"jSessionIdExtractor\" type=\"EmptyElementType\" />							\r\n" + 
+		"						</xsd:choice>\r\n" + 
+		"						<xsd:element name=\"nodes\" minOccurs=\"0\">\r\n" + 
+		"							<xsd:complexType>\r\n" + 
+		"								<xsd:sequence>\r\n" + 
+		"									<xsd:element name=\"node\">\r\n" + 
+		"										<xsd:complexType>\r\n" + 
+		"											<xsd:attribute name=\"host\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"											<xsd:attribute name=\"port\" type=\"xsd:int\" default=\"8080\"/>\r\n" + 
+		"										</xsd:complexType>\r\n" + 
+		"									</xsd:element>\r\n" + 
+		"								</xsd:sequence>								\r\n" + 
+		"							</xsd:complexType>\r\n" + 
+		"						</xsd:element>\r\n" + 
+		"						<xsd:choice minOccurs=\"0\">\r\n" + 
+		"							<xsd:element name=\"roundRobinStrategy\" type=\"EmptyElementType\" />\r\n" + 
+		"							<xsd:element name=\"byThreadStrategy\" >\r\n" + 
+		"								<xsd:complexType>\r\n" + 
+		"									<xsd:attribute name=\"maxNumberOfThreadsPerEndpoint\" type=\"xsd:int\" default=\"5\"/>\r\n" + 
+		"									<xsd:attribute name=\"retryTimeOnBusy\" type=\"xsd:int\" default=\"1000\"/>\r\n" + 
+		"								</xsd:complexType>\r\n" + 
+		"							</xsd:element>\r\n" + 
+		"						</xsd:choice>						\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"					<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"sessionTimeout\" type=\"xsd:int\" default=\"3600000\"/>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(LoadBalancingInterceptor.class

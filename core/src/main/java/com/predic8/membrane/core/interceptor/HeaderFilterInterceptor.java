@@ -23,11 +23,27 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.log4j.Logger;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 
+@MCInterceptor(xsd="	<xsd:element name=\"headerFilter\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence maxOccurs=\"unbounded\">\r\n" + 
+		"						<xsd:choice>\r\n" + 
+		"							<xsd:element name=\"include\" type=\"xsd:string\" />\r\n" + 
+		"							<xsd:element name=\"exclude\" type=\"xsd:string\" />\r\n" + 
+		"						</xsd:choice>\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class HeaderFilterInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = Logger.getLogger(HeaderFilterInterceptor.class);

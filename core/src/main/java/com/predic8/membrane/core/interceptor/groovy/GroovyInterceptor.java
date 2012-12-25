@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.web.util.HtmlUtils;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.config.XMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -36,6 +37,17 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"groovy\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent mixed=\"true\">\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class GroovyInterceptor extends AbstractInterceptor {
 	private static final Log log = LogFactory.getLog(GroovyInterceptor.class);
 	private static final GroovyShell shell = new GroovyShell();

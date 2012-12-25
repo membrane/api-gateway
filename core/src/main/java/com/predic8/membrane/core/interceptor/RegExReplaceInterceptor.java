@@ -19,6 +19,7 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
@@ -29,6 +30,27 @@ import com.predic8.membrane.core.util.MessageUtil;
  * Runs a regular-expression-replacement on either the message body (default) or
  * all header values.
  */
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"regExReplacer\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"regex\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"					<xsd:attribute name=\"replace\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"					<xsd:attribute name=\"target\" use=\"optional\" default=\"body\">\r\n" + 
+		"						<xsd:simpleType>\r\n" + 
+		"							<xsd:restriction base=\"xsd:string\">\r\n" + 
+		"								<xsd:enumeration value=\"body\" />\r\n" + 
+		"								<xsd:enumeration value=\"header\" />\r\n" + 
+		"							</xsd:restriction>\r\n" + 
+		"						</xsd:simpleType>\r\n" + 
+		"					</xsd:attribute>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(RegExReplaceInterceptor.class.getName());

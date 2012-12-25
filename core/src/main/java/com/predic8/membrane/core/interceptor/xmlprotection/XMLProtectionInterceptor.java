@@ -25,12 +25,27 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"xmlProtection\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"removeDTD\" type=\"xsd:boolean\" default=\"true\"/>\r\n" + 
+		"					<xsd:attribute name=\"maxElementNameLength\" type=\"xsd:int\" default=\"1000\" />\r\n" + 
+		"					<xsd:attribute name=\"maxAttibuteCount\" type=\"xsd:int\" default=\"1000\" />\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(XMLProtectionInterceptor.class.getName());

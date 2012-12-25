@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.AbstractApplicationContext;
 
+import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -34,6 +35,136 @@ import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.ResourceResolver;
 
+@MCMain(
+		outputPackage="com.predic8.membrane.core.config.spring",
+		outputName="router-conf.xsd",
+		prefixXSD="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
+				"<xsd:schema xmlns=\"http://membrane-soa.org/router/beans/1/\"\r\n" + 
+				"	xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:beans=\"http://www.springframework.org/schema/beans\"\r\n" + 
+				"	targetNamespace=\"http://membrane-soa.org/router/beans/1/\"\r\n" + 
+				"	elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\r\n" + 
+				"\r\n" + 
+				"	<xsd:import namespace=\"http://www.springframework.org/schema/beans\" />\r\n" + 
+				"\r\n" + 
+				"	<xsd:element name=\"router\">\r\n" + 
+				"		<xsd:complexType>\r\n" + 
+				"			<xsd:complexContent>\r\n" + 
+				"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+				"					<xsd:sequence />\r\n" + 
+				"					<xsd:attribute name=\"exchangeStore\" type=\"xsd:string\"/>\r\n" + 
+				"					<xsd:attribute name=\"adjustHostHeader\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
+				"					<xsd:attribute name=\"indentMessage\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
+				"					<xsd:attribute name=\"adjustContentLength\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
+				"					<xsd:attribute name=\"trackExchange\" default=\"false\" type=\"xsd:boolean\" />\r\n" + 
+				"					<xsd:attribute name=\"hotDeploy\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
+				"				</xsd:extension> \r\n" + 
+				"			</xsd:complexContent>\r\n" + 
+				"		</xsd:complexType>\r\n" + 
+				"	</xsd:element>\r\n" + 
+				"	\r\n" + 
+				"	<xsd:complexType name=\"transportType\">\r\n" + 
+				"		<xsd:complexContent>\r\n" + 
+				"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+				"				<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"					<xsd:choice>\r\n" + 
+				"						<xsd:element name=\"ruleMatching\" type=\"EmptyElementType\" />\r\n" + 
+				"						<xsd:element name=\"dispatching\" type=\"EmptyElementType\" />\r\n" + 
+				"						<xsd:element name=\"userFeature\" type=\"EmptyElementType\" />\r\n" + 
+				"						<xsd:element name=\"urlNormalizer\" type=\"EmptyElementType\" />\r\n" + 
+				"						<xsd:element name=\"reverseProxying\" type=\"EmptyElementType\" />\r\n" + 
+				"						<xsd:element name=\"httpClient\" type=\"EmptyElementType\" />\r\n" + 
+				"						<xsd:element name=\"log\" type=\"EmptyElementType\" />\r\n" + 
+				"						<xsd:element ref=\"exchangeStore\" />\r\n" + 
+				"						<xsd:element ref=\"transform\" />\r\n" + 
+				"						<xsd:element ref=\"validator\" />\r\n" + 
+				"						<xsd:element ref=\"wsdlPublisher\" />\r\n" + 
+				"						<xsd:element ref=\"limit\" />\r\n" + 
+				"						<xsd:element ref=\"rewriter\" />\r\n" + 
+				"						<xsd:element ref=\"headerFilter\" />\r\n" + 
+				"						<xsd:element ref=\"adminConsole\" />\r\n" + 
+				"						<xsd:element ref=\"webServer\" />\r\n" + 
+				"						<xsd:element ref=\"balancer\" />\r\n" + 
+				"						<xsd:element ref=\"clusterNotification\" />\r\n" + 
+				"						<xsd:element ref=\"basicAuthentication\" />\r\n" + 
+				"						<xsd:element ref=\"accessControl\" />\r\n" + 
+				"						<xsd:element ref=\"wsdlRewriter\" />\r\n" + 
+				"						<xsd:element ref=\"wadlRewriter\" />\r\n" + 
+				"						<xsd:element ref=\"statisticsCSV\" />\r\n" + 
+				"						<xsd:element ref=\"statisticsJDBC\" />\r\n" + 
+				"						<xsd:element ref=\"rest2Soap\" />\r\n" + 
+				"						<xsd:element ref=\"switch\" />\r\n" + 
+				"						<xsd:element ref=\"regExReplacer\" />\r\n" + 
+				"						<xsd:element ref=\"counter\" />\r\n" + 
+				"						<xsd:element ref=\"groovy\" />\r\n" + 
+				"						<xsd:element ref=\"throttle\" />\r\n" + 
+				"						<xsd:element ref=\"formValidation\" />\r\n" + 
+				"						<xsd:element ref=\"log\" />\r\n" + 
+				"						<xsd:element ref=\"xmlProtection\" />\r\n" + 
+				"						<xsd:element ref=\"analyser\" />\r\n" + 
+				"						<xsd:element ref=\"login\" />\r\n" + 
+				"					</xsd:choice>\r\n" + 
+				"				</xsd:sequence>\r\n" + 
+				"				<xsd:attribute name=\"httpClientRetries\" default=\"5\" type=\"xsd:int\" />\r\n" + 
+				"			</xsd:extension>\r\n" + 
+				"		</xsd:complexContent>\r\n" + 
+				"	</xsd:complexType>\r\n" + 
+				"\r\n" + 
+				"	\r\n" + 
+				"	<xsd:element name=\"transport\">\r\n" + 
+				"		<xsd:complexType>\r\n" + 
+				"			<xsd:complexContent>\r\n" + 
+				"				<xsd:extension base=\"transportType\">\r\n" + 
+				"					<xsd:attribute name=\"coreThreadPoolSize\" default=\"20\" type=\"xsd:int\" />\r\n" + 
+				"					<xsd:attribute name=\"socketTimeout\" default=\"30000\" type=\"xsd:int\" />\r\n" + 
+				"					<xsd:attribute name=\"tcpNoDelay\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
+				"					<xsd:attribute name=\"autoContinue100Expected\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
+				"					<xsd:attribute name=\"printStackTrace\" default=\"false\" type=\"xsd:boolean\" />\r\n" + 
+				"				</xsd:extension>\r\n" + 
+				"			</xsd:complexContent>\r\n" + 
+				"		</xsd:complexType>\r\n" + 
+				"	</xsd:element>\r\n" + 
+				"\r\n" + 
+				"	<xsd:element name=\"servletTransport\">\r\n" + 
+				"		<xsd:complexType>\r\n" + 
+				"			<xsd:complexContent>\r\n" + 
+				"				<xsd:extension base=\"transportType\">\r\n" + 
+				"					<xsd:attribute name=\"printStackTrace\" default=\"false\" type=\"xsd:boolean\" />\r\n" + 
+				"					<xsd:attribute name=\"removeContextRoot\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
+				"				</xsd:extension>\r\n" + 
+				"			</xsd:complexContent>\r\n" + 
+				"		</xsd:complexType>\r\n" + 
+				"	</xsd:element>\r\n" + 
+				"",
+		postfixXSD="	<xsd:element name=\"memoryExchangeStore\" type=\"EmptyElementType\" />\r\n" + 
+				"	<xsd:element name=\"forgetfulExchangeStore\" type=\"EmptyElementType\" />\r\n" + 
+				"\r\n" + 
+				"	<xsd:element name=\"fileExchangeStore\">\r\n" + 
+				"		<xsd:complexType>\r\n" + 
+				"			<xsd:complexContent>\r\n" + 
+				"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+				"					<xsd:sequence />\r\n" + 
+				"					<xsd:attribute name=\"raw\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
+				"					<xsd:attribute name=\"saveBodyOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
+				"					<xsd:attribute name=\"dir\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+				"				</xsd:extension>\r\n" + 
+				"			</xsd:complexContent>\r\n" + 
+				"		</xsd:complexType>\r\n" + 
+				"	</xsd:element>\r\n" + 
+				"\r\n" + 
+				"\r\n" + 
+				"\r\n" + 
+				"	\r\n" + 
+				"	<xsd:complexType name=\"EmptyElementType\">\r\n" + 
+				"		<xsd:complexContent>\r\n" + 
+				"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+				"				<xsd:sequence />\r\n" + 
+				"			</xsd:extension>\r\n" + 
+				"		</xsd:complexContent>\r\n" + 
+				"	</xsd:complexType>\r\n" + 
+				"	\r\n" + 
+				"\r\n" + 
+				"\r\n" + 
+				"</xsd:schema>")
 public class Router {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());

@@ -29,12 +29,32 @@ import org.apache.commons.logging.LogFactory;
 import org.xml.sax.InputSource;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"switch\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence>\r\n" + 
+		"						<xsd:element name=\"case\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
+		"							<xsd:complexType>\r\n" + 
+		"								<xsd:sequence />\r\n" + 
+		"								<xsd:attribute name=\"xPath\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								<xsd:attribute name=\"url\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"							</xsd:complexType>\r\n" + 
+		"						</xsd:element>\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class XPathCBRInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(XPathCBRInterceptor.class.getName());
 	

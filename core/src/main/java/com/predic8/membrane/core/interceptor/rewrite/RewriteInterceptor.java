@@ -29,6 +29,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -37,6 +38,33 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
+@MCInterceptor(xsd="	<xsd:element name=\"rewriter\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence>\r\n" + 
+		"						<xsd:element name=\"map\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
+		"							<xsd:complexType>\r\n" + 
+		"								<xsd:sequence />\r\n" + 
+		"								<xsd:attribute name=\"from\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								<xsd:attribute name=\"to\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								<xsd:attribute name=\"do\">\r\n" + 
+		"									<xsd:simpleType>\r\n" + 
+		"										<xsd:restriction base=\"xsd:string\">\r\n" + 
+		"											<xsd:enumeration value=\"rewrite\" />\r\n" + 
+		"											<xsd:enumeration value=\"redirect-permanent\" />\r\n" + 
+		"											<xsd:enumeration value=\"redirect-temporary\" />\r\n" + 
+		"										</xsd:restriction>\r\n" + 
+		"									</xsd:simpleType>\r\n" + 
+		"        						</xsd:attribute>\r\n" + 
+		"							</xsd:complexType>\r\n" + 
+		"						</xsd:element>\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class RewriteInterceptor extends AbstractInterceptor {
 
 	public enum Type {

@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.web.util.HtmlUtils;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
@@ -37,6 +38,18 @@ import com.predic8.membrane.core.interceptor.Outcome;
 /**
  * The output file is UTF-8 encoded.
  */
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"statisticsCSV\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"file\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(StatisticsCSVInterceptor.class

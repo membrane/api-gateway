@@ -32,11 +32,26 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"clusterNotification\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"timeout\" type=\"xsd:long\" />\r\n" + 
+		"					<xsd:attribute name=\"validateSignature\" type=\"xsd:boolean\" />\r\n" + 
+		"					<xsd:attribute name=\"keyHex\" type=\"xsd:string\" />\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory
 			.getLog(ClusterNotificationInterceptor.class.getName());

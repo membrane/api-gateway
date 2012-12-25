@@ -25,12 +25,33 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URLParamUtil;
+
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"formValidation\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence>\r\n" + 
+		"						<xsd:element name=\"field\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
+		"							<xsd:complexType>\r\n" + 
+		"								<xsd:sequence />\r\n" + 
+		"								<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								<xsd:attribute name=\"regex\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"							</xsd:complexType>\r\n" + 
+		"						</xsd:element>\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class FormValidationInterceptor extends AbstractInterceptor {
 
 	public static class Field extends AbstractXmlElement {

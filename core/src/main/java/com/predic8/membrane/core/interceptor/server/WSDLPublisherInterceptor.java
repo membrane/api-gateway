@@ -27,6 +27,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
@@ -40,6 +41,18 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"wsdlPublisher\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"wsdl\" type=\"xsd:string\" />\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LogManager.getLogger(WSDLPublisherInterceptor.class);

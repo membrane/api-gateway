@@ -31,6 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.http.MediaType;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -45,6 +46,28 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"rest2Soap\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence>\r\n" + 
+		"						<xsd:element name=\"mapping\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
+		"							<xsd:complexType>\r\n" + 
+		"								<xsd:sequence />\r\n" + 
+		"								<xsd:attribute name=\"regex\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								<xsd:attribute name=\"soapAction\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								<xsd:attribute name=\"soapURI\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								<xsd:attribute name=\"requestXSLT\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"								<xsd:attribute name=\"responseXSLT\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"							</xsd:complexType>\r\n" + 
+		"						</xsd:element>\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 	public static class Mapping extends AbstractXmlElement {

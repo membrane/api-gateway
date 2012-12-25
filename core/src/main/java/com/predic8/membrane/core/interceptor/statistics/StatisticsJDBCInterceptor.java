@@ -28,6 +28,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
@@ -35,6 +36,20 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"statisticsJDBC\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:complexContent>\r\n" + 
+		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"postMethodOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
+		"					<xsd:attribute name=\"soapOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
+		"					<xsd:attribute name=\"dataSource\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"				</xsd:extension>\r\n" + 
+		"			</xsd:complexContent>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(StatisticsJDBCInterceptor.class.getName());
 	

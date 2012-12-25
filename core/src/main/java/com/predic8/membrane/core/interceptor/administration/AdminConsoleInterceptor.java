@@ -20,16 +20,25 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"adminConsole\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:sequence />\r\n" + 
+		"			<xsd:attribute name=\"readOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	private final RewriteInterceptor r = new RewriteInterceptor();
