@@ -21,11 +21,15 @@ import javax.xml.stream.XMLStreamReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.HttpUtil;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"httpClient\" type=\"EmptyElementType\" />\r\n" + 
+		"")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(HTTPClientInterceptor.class.getName());

@@ -5,12 +5,16 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"soapOperationExtractor\" type=\"EmptyElementType\" />\r\n" + 
+		"")
 public class SoapOperationExtractor extends AbstractInterceptor {
 	public static final String SOAP_OPERATION = "XSLT_SOAP_OPERATION";
 	public static final String SOAP_OPERATION_NS = "XSLT_SOAP_OPERATION_NS";

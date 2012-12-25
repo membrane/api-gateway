@@ -47,7 +47,6 @@ import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterc
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptorTest;
-import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPUtilTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
 import com.predic8.membrane.core.interceptor.soap.SoapOperationExtractorTest;
@@ -81,7 +80,7 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	MagicTest.class, WSDLInterceptorTest.class,
 	AccessControlParserTest.class, AccessControlInterceptorTest.class,
 	DispatchingInterceptorTest.class,
-	SimpleURLRewriteInterceptorTest.class, HostColonPortTest.class,
+	HostColonPortTest.class,
 	HTTP2XMLInterceptorTest.class, ReadRulesConfigurationTest.class,
 	ReadRulesWithInterceptorsConfigurationTest.class,
 	RuleManagerTest.class, ProxyTest.class, ServiceProxyKeyTest.class,

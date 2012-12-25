@@ -28,6 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -50,6 +51,15 @@ import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.wstool.creator.RequestTemplateCreator;
 import com.predic8.wstool.creator.SOARequestCreator;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"webServiceExplorer\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:sequence />\r\n" + 
+		"			<xsd:attribute name=\"wsdl\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"			<xsd:attribute name=\"portName\" type=\"xsd:string\" />\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"")
 public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	
 	private static Log log = LogFactory.getLog(WebServiceExplorerInterceptor.class.getName());

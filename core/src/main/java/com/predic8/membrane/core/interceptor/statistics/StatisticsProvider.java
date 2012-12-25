@@ -32,6 +32,7 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
 
 import com.google.common.collect.ImmutableMap;
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -39,6 +40,14 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 
+@MCInterceptor(xsd="" +
+		"			<xsd:element name=\"statisticsProvider\">\r\n" + 
+		"				<xsd:complexType>\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"dataSourceBeanId\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"				</xsd:complexType>\r\n" + 
+		"			</xsd:element>\r\n" + 
+		"")
 public class StatisticsProvider extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(StatisticsProvider.class
 			.getName());
@@ -185,6 +194,15 @@ public class StatisticsProvider extends AbstractInterceptor {
 
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
+	}
+	
+	public String getDataSourceBeanId() {
+		return dataSourceBeanId;
+	}
+	
+	public void setDataSourceBeanId(String dataSourceBeanId) {
+		this.dataSourceBeanId = dataSourceBeanId;
+		dataSource = router.getBean(dataSourceBeanId, DataSource.class);
 	}
 
 	private void closeConnection(Connection con) {

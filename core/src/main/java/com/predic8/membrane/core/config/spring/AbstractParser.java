@@ -37,7 +37,11 @@ public class AbstractParser extends AbstractSingleBeanDefinitionParser {
 	protected boolean isInlined() {		
 		return inlined ;
 	}	
-	
+
+	protected void setProperty(String prop, Element e, BeanDefinitionBuilder builder) {
+		builder.addPropertyValue(prop, e.getAttribute(prop));
+	}
+
 	protected void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder) {
 		if (e.hasAttribute(prop)) {
 			builder.addPropertyValue(prop, e.getAttribute(prop));

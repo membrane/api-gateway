@@ -149,27 +149,6 @@
 		</property>
 	</bean>
 
-	<bean id="urlRewriter"
-		class="com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor">
-		<property name="displayName" value="Simple URL Rewriter" />
-		<property name="mapping">
-			<map>
-				<entry>
-					<key>
-						<value>/blz-service</value>
-					</key>
-					<value>/axis2/services/BLZService</value>
-				</entry>
-				<entry>
-					<key>
-						<value>/blz-service?wsdl</value>
-					</key>
-					<value>/axis2/services/BLZService?wsdl</value>
-				</entry>
-			</map>
-		</property>
-	</bean>
-
 	<!-- 
 		Interceptor for access control. Only authorized clients can access 
 		services. Mapping of public available services and clients is specified in 

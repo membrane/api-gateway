@@ -23,7 +23,6 @@ import com.predic8.membrane.core.interceptor.LimitInterceptorTest;
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
-import com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherTest;
 import com.predic8.membrane.core.transport.ExceptionHandlingTest;
 import com.predic8.membrane.core.transport.http.BoundConnectionTest;
@@ -40,7 +39,6 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 		Http10Test.class, Http11Test.class,
 		AccessControlInterceptorIntegrationTest.class,
 		LoadBalancingInterceptorTest.class,
-		SimpleURLRewriteInterceptorIntegrationTest.class,
 		REST2SOAPInterceptorIntegrationTest.class,
 		InterceptorInvocationTest.class,
 		BasicAuthenticationInterceptorIntegrationTest.class,

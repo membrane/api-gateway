@@ -19,6 +19,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -29,6 +30,9 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
+@MCInterceptor(xsd="" +
+		"	<xsd:element name=\"ruleMatching\" type=\"EmptyElementType\" />\r\n" + 
+		"")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(RuleMatchingInterceptor.class.getName());

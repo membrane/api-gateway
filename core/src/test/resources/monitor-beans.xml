@@ -71,27 +71,6 @@
 		</property>
 	</bean>
 
-	<bean id="urlRewriter"
-		class="com.predic8.membrane.core.interceptor.rewrite.SimpleURLRewriteInterceptor">
-		<property name="displayName" value="Simple URL Rewriter" />
-		<property name="mapping">
-			<map>
-				<entry>
-					<key>
-						<value>/blz-service</value>
-					</key>
-					<value>/axis2/services/BLZService</value>
-				</entry>
-				<entry>
-					<key>
-						<value>/blz-service?wsdl</value>
-					</key>
-					<value>/axis2/services/BLZService?wsdl</value>
-				</entry>
-			</map>
-		</property>
-	</bean>
-
 	<bean id="accessControlInterceptor"
 		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
 		<property name="displayName" value="Access Control List Interceptor" />

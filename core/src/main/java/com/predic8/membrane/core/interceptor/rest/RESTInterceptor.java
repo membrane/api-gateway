@@ -33,7 +33,7 @@ import com.predic8.membrane.core.interceptor.administration.Mapping;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
-public class RESTInterceptor extends AbstractInterceptor {
+public abstract class RESTInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(RESTInterceptor.class.getName());
 	private boolean readOnly;
 

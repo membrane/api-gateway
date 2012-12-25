@@ -67,13 +67,12 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
 				"				<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
 				"					<xsd:choice>\r\n" + 
-				"						<xsd:element name=\"ruleMatching\" type=\"EmptyElementType\" />\r\n" + 
-				"						<xsd:element name=\"dispatching\" type=\"EmptyElementType\" />\r\n" + 
-				"						<xsd:element name=\"userFeature\" type=\"EmptyElementType\" />\r\n" + 
-				"						<xsd:element name=\"urlNormalizer\" type=\"EmptyElementType\" />\r\n" + 
-				"						<xsd:element name=\"reverseProxying\" type=\"EmptyElementType\" />\r\n" + 
-				"						<xsd:element name=\"httpClient\" type=\"EmptyElementType\" />\r\n" + 
-				"						<xsd:element name=\"log\" type=\"EmptyElementType\" />\r\n" + 
+				"						<xsd:element ref=\"ruleMatching\" />\r\n" + 
+				"						<xsd:element ref=\"dispatching\" />\r\n" + 
+				"						<xsd:element ref=\"userFeature\" />\r\n" + 
+				"						<xsd:element ref=\"urlNormalizer\" />\r\n" + 
+				"						<xsd:element ref=\"reverseProxying\" />\r\n" + 
+				"						<xsd:element ref=\"httpClient\" />\r\n" + 
 				"						<xsd:element ref=\"exchangeStore\" />\r\n" + 
 				"						<xsd:element ref=\"transform\" />\r\n" + 
 				"						<xsd:element ref=\"validator\" />\r\n" + 

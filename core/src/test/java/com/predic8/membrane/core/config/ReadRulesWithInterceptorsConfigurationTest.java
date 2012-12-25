@@ -49,7 +49,7 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 	@Test
 	public void testRuleInterceptorSize() throws Exception {
 	 	Rule rule = rules.get(0);
-	 	assertEquals(2, rule.getInterceptors().size());
+	 	assertEquals(1, rule.getInterceptors().size());
 	}
 	
 	@Test
@@ -64,14 +64,12 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 	public void testRuleInterceptorIDs() throws Exception {
 		List<Interceptor> interceptors = rules.get(0).getInterceptors();
 		assertEquals("roundRobinBalancer", interceptors.get(0).getId());
-		assertEquals("urlRewriter", interceptors.get(1).getId());
 	}
 	
 	@Test
 	public void testRuleInterceptorDisplayNames() throws Exception {
 		List<Interceptor> interceptors = rules.get(0).getInterceptors();
 		assertEquals("roundRobinBalancer", interceptors.get(0).getDisplayName());
-		assertEquals("Simple URL Rewriter", interceptors.get(1).getDisplayName());
 	}
 	
 	@After
