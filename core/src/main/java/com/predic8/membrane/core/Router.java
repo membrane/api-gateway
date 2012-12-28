@@ -68,40 +68,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
 				"				<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
 				"					<xsd:choice>\r\n" + 
-				"						<xsd:element ref=\"ruleMatching\" />\r\n" + 
-				"						<xsd:element ref=\"dispatching\" />\r\n" + 
-				"						<xsd:element ref=\"userFeature\" />\r\n" + 
-				"						<xsd:element ref=\"urlNormalizer\" />\r\n" + 
-				"						<xsd:element ref=\"reverseProxying\" />\r\n" + 
-				"						<xsd:element ref=\"httpClient\" />\r\n" + 
-				"						<xsd:element ref=\"exchangeStore\" />\r\n" + 
-				"						<xsd:element ref=\"transform\" />\r\n" + 
-				"						<xsd:element ref=\"validator\" />\r\n" + 
-				"						<xsd:element ref=\"wsdlPublisher\" />\r\n" + 
-				"						<xsd:element ref=\"limit\" />\r\n" + 
-				"						<xsd:element ref=\"rewriter\" />\r\n" + 
-				"						<xsd:element ref=\"headerFilter\" />\r\n" + 
-				"						<xsd:element ref=\"adminConsole\" />\r\n" + 
-				"						<xsd:element ref=\"webServer\" />\r\n" + 
-				"						<xsd:element ref=\"balancer\" />\r\n" + 
-				"						<xsd:element ref=\"clusterNotification\" />\r\n" + 
-				"						<xsd:element ref=\"basicAuthentication\" />\r\n" + 
-				"						<xsd:element ref=\"accessControl\" />\r\n" + 
-				"						<xsd:element ref=\"wsdlRewriter\" />\r\n" + 
-				"						<xsd:element ref=\"wadlRewriter\" />\r\n" + 
-				"						<xsd:element ref=\"statisticsCSV\" />\r\n" + 
-				"						<xsd:element ref=\"statisticsJDBC\" />\r\n" + 
-				"						<xsd:element ref=\"rest2Soap\" />\r\n" + 
-				"						<xsd:element ref=\"switch\" />\r\n" + 
-				"						<xsd:element ref=\"regExReplacer\" />\r\n" + 
-				"						<xsd:element ref=\"counter\" />\r\n" + 
-				"						<xsd:element ref=\"groovy\" />\r\n" + 
-				"						<xsd:element ref=\"throttle\" />\r\n" + 
-				"						<xsd:element ref=\"formValidation\" />\r\n" + 
-				"						<xsd:element ref=\"log\" />\r\n" + 
-				"						<xsd:element ref=\"xmlProtection\" />\r\n" + 
-				"						<xsd:element ref=\"analyser\" />\r\n" + 
-				"						<xsd:element ref=\"login\" />\r\n" + 
+				"						${interceptorReferences}\r\n" +
 				"					</xsd:choice>\r\n" + 
 				"				</xsd:sequence>\r\n" + 
 				"				<xsd:attribute name=\"httpClientRetries\" default=\"5\" type=\"xsd:int\" />\r\n" + 

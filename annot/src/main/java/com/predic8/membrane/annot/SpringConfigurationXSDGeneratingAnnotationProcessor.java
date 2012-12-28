@@ -78,7 +78,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	private void assembleXSD(MCMain mcmain, List<MCInterceptor> mcinterceptors, BufferedWriter bw) throws IOException {
 		bw.append(
 				mcmain.xsd()
-				.replace("${interceptorDeclarations}", assembleInterceptorDeclarations(mcinterceptors)));
+				.replace("${interceptorDeclarations}", assembleInterceptorDeclarations(mcinterceptors))
+				.replace("${interceptorReferences}", assembleInterceptorReferences(mcinterceptors)));
 	}
 
 	private String assembleInterceptorDeclarations(List<MCInterceptor> mcinterceptors) {
@@ -102,5 +103,13 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			}
 		}
 		return interceptorDeclarations.toString();
+	}
+
+	private String assembleInterceptorReferences(List<MCInterceptor> mcinterceptors) {
+		StringWriter interceptorReferences = new StringWriter();
+		for (MCInterceptor i : mcinterceptors) {
+			interceptorReferences.append("<xsd:element ref=\"" + i.name() + "\" />\r\n");
+		}
+		return interceptorReferences.toString();
 	}
 }
