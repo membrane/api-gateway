@@ -21,9 +21,7 @@ import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"dispatching\" type=\"EmptyElementType\" />\r\n" + 
-		"")
+@MCInterceptor(name="dispatching")
 public class DispatchingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(DispatchingInterceptor.class.getName());

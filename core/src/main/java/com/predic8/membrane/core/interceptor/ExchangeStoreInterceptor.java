@@ -30,17 +30,9 @@ import com.predic8.membrane.core.interceptor.administration.AdminConsoleIntercep
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"exchangeStore\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="exchangeStore", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class ExchangeStoreInterceptor extends AbstractInterceptor {
 

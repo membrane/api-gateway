@@ -2,6 +2,7 @@ package com.predic8.membrane.annot;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -55,10 +56,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						mcmain.outputPackage(), mcmain.outputName(), sources.toArray(new Element[0]));
 				BufferedWriter bw = new BufferedWriter(o.openWriter());
 				try {
-					bw.append(mcmain.prefixXSD());
-					for (MCInterceptor i : mcinterceptors)
-						bw.append(i.xsd());
-					bw.append(mcmain.postfixXSD());
+					assembleXSD(mcmain, mcinterceptors, bw);
 				} finally {
 					bw.close();
 				}
@@ -75,5 +73,34 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private void assembleXSD(MCMain mcmain, List<MCInterceptor> mcinterceptors, BufferedWriter bw) throws IOException {
+		bw.append(
+				mcmain.xsd()
+				.replace("${interceptorDeclarations}", assembleInterceptorDeclarations(mcinterceptors)));
+	}
+
+	private String assembleInterceptorDeclarations(List<MCInterceptor> mcinterceptors) {
+		StringWriter interceptorDeclarations = new StringWriter();
+		for (MCInterceptor i : mcinterceptors) {
+			if (i.xsd().length() == 0) {
+				if (i.mixed())
+					throw new RuntimeException("@MCInterceptor(..., mixed=true) also requires (..., mixed=true, xsd=\"...\").");
+				interceptorDeclarations.append("<xsd:element name=\""+ i.name() + "\" type=\"EmptyElementType\" />\r\n");
+			} else {
+				interceptorDeclarations.append(
+						"<xsd:element name=\""+ i.name() +"\">\r\n" + 
+						"	<xsd:complexType>\r\n" + 
+						"		<xsd:complexContent " + (i.mixed() ? "mixed=\"true\"" : "") + ">\r\n" + 
+						"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+						i.xsd() +
+						"			</xsd:extension>\r\n" + 
+						"		</xsd:complexContent>\r\n" + 
+						"	</xsd:complexType>\r\n" + 
+						"</xsd:element>\r\n");
+			}
+		}
+		return interceptorDeclarations.toString();
 	}
 }

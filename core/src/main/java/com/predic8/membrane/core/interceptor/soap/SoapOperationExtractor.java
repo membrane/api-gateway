@@ -12,9 +12,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"soapOperationExtractor\" type=\"EmptyElementType\" />\r\n" + 
-		"")
+@MCInterceptor(name="soapOperationExtractor")
 public class SoapOperationExtractor extends AbstractInterceptor {
 	public static final String SOAP_OPERATION = "XSLT_SOAP_OPERATION";
 	public static final String SOAP_OPERATION_NS = "XSLT_SOAP_OPERATION_NS";

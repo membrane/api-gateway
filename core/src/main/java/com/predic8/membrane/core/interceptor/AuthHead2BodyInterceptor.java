@@ -33,9 +33,7 @@ import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Body;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"authHead2Body\" type=\"EmptyElementType\" />\r\n" + 
-		"")
+@MCInterceptor(name="authHead2Body")
 public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String COM_NS  = "test";
 	static final String NOR_NS  = "http://cooreo.com.br/normandes-EnviaSMS";

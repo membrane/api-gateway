@@ -46,11 +46,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"rest2Soap\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="rest2Soap", xsd="" +
 		"					<xsd:sequence>\r\n" + 
 		"						<xsd:element name=\"mapping\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
 		"							<xsd:complexType>\r\n" + 
@@ -63,10 +59,6 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 		"							</xsd:complexType>\r\n" + 
 		"						</xsd:element>\r\n" + 
 		"					</xsd:sequence>\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class REST2SOAPInterceptor extends AbstractInterceptor {
 

@@ -33,11 +33,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 /**
  * May only be used as interceptor in a ServiceProxy.
  */
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"balancer\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="balancer", xsd="" +
 		"					<xsd:sequence>\r\n" + 
 		"						<xsd:choice minOccurs=\"0\">\r\n" + 
 		"							<xsd:element name=\"xmlSessionIdExtractor\">\r\n" + 
@@ -72,10 +68,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
 		"					</xsd:sequence>\r\n" + 
 		"					<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
 		"					<xsd:attribute name=\"sessionTimeout\" type=\"xsd:int\" default=\"3600000\"/>\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 

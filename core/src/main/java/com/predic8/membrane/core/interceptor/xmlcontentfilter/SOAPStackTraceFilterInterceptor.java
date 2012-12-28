@@ -27,17 +27,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"soapStackTraceFilter\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
-		"					<xsd:sequence />\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
-		"")
+@MCInterceptor(name="soapStackTraceFilter")
 public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 	
 	private static final Logger LOG = Logger.getLogger(SOAPStackTraceFilterInterceptor.class);

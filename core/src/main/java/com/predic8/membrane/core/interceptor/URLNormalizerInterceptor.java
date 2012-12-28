@@ -27,9 +27,7 @@ import com.predic8.membrane.core.exchange.Exchange;
  * This URI is sent to Membrane's new soapProxy which has configured a
  * serviceProxy-path of "\Q/material/ArticleService\E.*" which does not match.
  */
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"urlNormalizer\" type=\"EmptyElementType\" />\r\n" + 
-		"")
+@MCInterceptor(name="urlNormalizer")
 public class URLNormalizerInterceptor extends AbstractInterceptor {
 	
 	@Override

@@ -38,7 +38,8 @@ import com.predic8.membrane.core.util.ResourceResolver;
 @MCMain(
 		outputPackage="com.predic8.membrane.core.config.spring",
 		outputName="router-conf.xsd",
-		prefixXSD="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
+		xsd="" +
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
 				"<xsd:schema xmlns=\"http://membrane-soa.org/router/beans/1/\"\r\n" + 
 				"	xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:beans=\"http://www.springframework.org/schema/beans\"\r\n" + 
 				"	targetNamespace=\"http://membrane-soa.org/router/beans/1/\"\r\n" + 
@@ -133,8 +134,10 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"			</xsd:complexContent>\r\n" + 
 				"		</xsd:complexType>\r\n" + 
 				"	</xsd:element>\r\n" + 
-				"",
-		postfixXSD="	<xsd:element name=\"memoryExchangeStore\" type=\"EmptyElementType\" />\r\n" + 
+				"\r\n" +
+				"${interceptorDeclarations}\r\n" +
+				"\r\n" +
+				"	<xsd:element name=\"memoryExchangeStore\" type=\"EmptyElementType\" />\r\n" + 
 				"	<xsd:element name=\"forgetfulExchangeStore\" type=\"EmptyElementType\" />\r\n" + 
 				"\r\n" + 
 				"	<xsd:element name=\"fileExchangeStore\">\r\n" + 

@@ -25,19 +25,11 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.MessageUtil;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"log\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="log", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"headerOnly\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
 		"					<xsd:attribute name=\"category\" default=\"com.predic8.membrane.core.interceptor.LogInterceptor\" type=\"xsd:string\" />\r\n" + 
 		"					<xsd:attribute name=\"level\" default=\"INFO\" type=\"xsd:string\" />\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class LogInterceptor extends AbstractInterceptor {
 

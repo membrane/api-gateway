@@ -27,19 +27,11 @@ import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"wadlRewriter\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="wadlRewriter", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
 		"					<xsd:attribute name=\"protocol\" type=\"xsd:string\" />\r\n" + 
 		"					<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class WADLInterceptor extends RelocatingInterceptor {
 

@@ -32,17 +32,9 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ResourceResolver;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"accessControl\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="accessControl", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"file\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class AccessControlInterceptor extends AbstractInterceptor {
 

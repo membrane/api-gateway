@@ -25,19 +25,11 @@ import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"throttle\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="throttle", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"delay\" type=\"xsd:long\" default=\"0\"/>\r\n" + 
 		"					<xsd:attribute name=\"maxThreads\" type=\"xsd:int\" default=\"0\"/>\r\n" + 
 		"					<xsd:attribute name=\"busyDelay\" type=\"xsd:int\" default=\"0\"/>\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class ThrottleInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(ThrottleInterceptor.class.getName());

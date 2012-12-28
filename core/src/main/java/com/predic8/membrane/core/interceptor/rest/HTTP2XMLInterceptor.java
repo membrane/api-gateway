@@ -22,9 +22,7 @@ import com.predic8.membrane.core.http.xml.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"http2xml\" type=\"EmptyElementType\" />\r\n" + 
-		"")
+@MCInterceptor(name="http2xml")
 public class HTTP2XMLInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(HTTP2XMLInterceptor.class.getName());

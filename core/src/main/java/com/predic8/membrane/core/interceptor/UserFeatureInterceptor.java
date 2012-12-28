@@ -26,9 +26,7 @@ import com.predic8.membrane.core.rules.Rule;
  * Not that we do not implement handleResponse() as this will be
  * automatically done by the stack-unwinding in {@link InterceptorFlowController}.
  */
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"userFeature\" type=\"EmptyElementType\" />\r\n" + 
-		"")
+@MCInterceptor(name="userFeature")
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	private static final Log log = LogFactory.getLog(UserFeatureInterceptor.class.getName());

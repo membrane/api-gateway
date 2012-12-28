@@ -31,17 +31,9 @@ import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"adminConsole\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="adminConsole", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"readOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class AdminConsoleInterceptor extends AbstractInterceptor {
 

@@ -7,6 +7,5 @@ import java.lang.annotation.*;
 public @interface MCMain {
 	String outputPackage();
 	String outputName();
-	String prefixXSD();
-	String postfixXSD();
+	String xsd();
 }

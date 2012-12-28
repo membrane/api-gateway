@@ -40,17 +40,9 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"statisticsProvider\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="statisticsProvider", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"dataSourceBeanId\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class StatisticsProvider extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(StatisticsProvider.class

@@ -29,9 +29,7 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
 /**
  * Rewrites the "Location" header in responses.
  */
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"reverseProxying\" type=\"EmptyElementType\" />\r\n" + 
-		"")
+@MCInterceptor(name="reverseProxying")
 public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	public ReverseProxyingInterceptor() {
 		name = "Reverse Proxy";

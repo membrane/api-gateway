@@ -51,18 +51,10 @@ import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.wstool.creator.RequestTemplateCreator;
 import com.predic8.wstool.creator.SOARequestCreator;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"webServiceExplorer\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="webServiceExplorer", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"wsdl\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
 		"					<xsd:attribute name=\"portName\" type=\"xsd:string\" />\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	

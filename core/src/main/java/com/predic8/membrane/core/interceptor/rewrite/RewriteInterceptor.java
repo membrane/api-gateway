@@ -38,11 +38,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"rewriter\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="rewriter", xsd="" +
 		"					<xsd:sequence>\r\n" + 
 		"						<xsd:element name=\"map\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
 		"							<xsd:complexType>\r\n" + 
@@ -61,10 +57,6 @@ import com.predic8.membrane.core.util.URLUtil;
 		"							</xsd:complexType>\r\n" + 
 		"						</xsd:element>\r\n" + 
 		"					</xsd:sequence>\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class RewriteInterceptor extends AbstractInterceptor {
 

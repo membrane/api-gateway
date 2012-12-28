@@ -29,11 +29,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.HttpUtil;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"basicAuthentication\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="basicAuthentication", xsd="" +
 		"					<xsd:sequence>\r\n" + 
 		"						<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
 		"							<xsd:complexType>\r\n" + 
@@ -43,10 +39,6 @@ import com.predic8.membrane.core.util.HttpUtil;
 		"							</xsd:complexType>\r\n" + 
 		"						</xsd:element>\r\n" + 
 		"					</xsd:sequence>\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 

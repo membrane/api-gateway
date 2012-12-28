@@ -8,5 +8,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
 public @interface MCInterceptor {
-	String xsd();
+	String name();
+	boolean mixed() default false;
+	String xsd() default "";
 }

@@ -30,9 +30,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"ruleMatching\" type=\"EmptyElementType\" />\r\n" + 
-		"")
+@MCInterceptor(name="ruleMatching")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(RuleMatchingInterceptor.class.getName());

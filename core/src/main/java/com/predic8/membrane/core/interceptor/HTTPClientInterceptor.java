@@ -27,9 +27,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.HttpUtil;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"httpClient\" type=\"EmptyElementType\" />\r\n" + 
-		"")
+@MCInterceptor(name="httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(HTTPClientInterceptor.class.getName());

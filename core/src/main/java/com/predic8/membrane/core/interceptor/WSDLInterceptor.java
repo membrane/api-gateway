@@ -47,20 +47,12 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"wsdlRewriter\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="wsdlRewriter", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"registryWSDLRegisterURL\" type=\"xsd:string\" />\r\n" + 
 		"					<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
 		"					<xsd:attribute name=\"protocol\" type=\"xsd:string\" />\r\n" + 
 		"					<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class WSDLInterceptor extends RelocatingInterceptor {
 

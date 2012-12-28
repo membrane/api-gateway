@@ -33,11 +33,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-@MCInterceptor(xsd="" +
-		"	<xsd:element name=\"formValidation\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:complexContent>\r\n" + 
-		"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+@MCInterceptor(name="formValidation", xsd="" +
 		"					<xsd:sequence>\r\n" + 
 		"						<xsd:element name=\"field\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
 		"							<xsd:complexType>\r\n" + 
@@ -47,10 +43,6 @@ import com.predic8.membrane.core.util.URLParamUtil;
 		"							</xsd:complexType>\r\n" + 
 		"						</xsd:element>\r\n" + 
 		"					</xsd:sequence>\r\n" + 
-		"				</xsd:extension>\r\n" + 
-		"			</xsd:complexContent>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
 		"")
 public class FormValidationInterceptor extends AbstractInterceptor {
 
