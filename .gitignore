@@ -32,6 +32,7 @@
 /cli/examples/router/versioning/xslt/build
 
 # /core/
+/core/.apt_generated
 /core/.classpath
 /core/.project
 /core/target

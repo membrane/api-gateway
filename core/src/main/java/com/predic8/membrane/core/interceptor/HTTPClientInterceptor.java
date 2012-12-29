@@ -27,7 +27,11 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.HttpUtil;
 
-@MCInterceptor(name="httpClient")
+@MCInterceptor(name="httpClient", xsd="" +
+			"					<xsd:sequence />\r\n" + 
+			"					<xsd:attribute name=\"failOverOn5XX\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
+			"					<xsd:attribute name=\"keepAliveTimeout\" type=\"xsd:integer\" default=\"30000\"/>\r\n" + 
+			"")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(HTTPClientInterceptor.class.getName());
