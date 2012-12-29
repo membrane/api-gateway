@@ -40,7 +40,7 @@ public class AccessControlInterceptorTest {
 		router = new HttpRouter();
 		
 		interceptor = new AccessControlInterceptor();
-		interceptor.setAclFilename("classpath:/acl/acl.xml");
+		interceptor.setFile("classpath:/acl/acl.xml");
 		
 		Rule rule4000 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "oio.de", 80);
 		router = new HttpRouter();

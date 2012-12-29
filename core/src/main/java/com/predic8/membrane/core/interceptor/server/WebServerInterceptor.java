@@ -26,7 +26,9 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -38,11 +40,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
-@MCInterceptor(name="webServer", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"docBase\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"					<xsd:attribute name=\"index\" type=\"xsd:string\" default=\"\" />\r\n" + 
-		"")
+@MCInterceptor(name="webServer")
 public class WebServerInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(WebServerInterceptor.class
@@ -125,6 +123,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		return docBase;
 	}
 
+	@Required
+	@MCAttribute
 	public void setDocBase(String docBase) {
 		this.docBase = docBase;
 	}
@@ -152,6 +152,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		return StringUtils.join(index, ",");
 	}
 	
+	@MCAttribute
 	public void setIndex(String i) {
 		if (i == null)
 			index = EMPTY;

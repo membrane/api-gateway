@@ -23,16 +23,12 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
-@MCInterceptor(name="wadlRewriter", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
-		"					<xsd:attribute name=\"protocol\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
-		"")
+@MCInterceptor(name="wadlRewriter")
 public class WADLInterceptor extends RelocatingInterceptor {
 
 	private static Log log = LogFactory.getLog(WADLInterceptor.class.getName());
@@ -85,5 +81,23 @@ public class WADLInterceptor extends RelocatingInterceptor {
 		port = token.getAttributeValue("", "port");
 		host = token.getAttributeValue("", "host");
 		protocol = token.getAttributeValue("", "protocol");
+	}
+	
+	@MCAttribute
+	@Override
+	public void setProtocol(String protocol) {
+		super.setProtocol(protocol);
+	}
+	
+	@MCAttribute
+	@Override
+	public void setHost(String host) {
+		super.setHost(host);
+	}
+	
+	@MCAttribute
+	@Override
+	public void setPort(String port) {
+		super.setPort(port);
 	}
 }

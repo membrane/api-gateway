@@ -21,17 +21,14 @@ import javax.xml.stream.XMLStreamReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.HttpUtil;
 
-@MCInterceptor(name="httpClient", xsd="" +
-			"					<xsd:sequence />\r\n" + 
-			"					<xsd:attribute name=\"failOverOn5XX\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
-			"					<xsd:attribute name=\"keepAliveTimeout\" type=\"xsd:integer\" default=\"30000\"/>\r\n" + 
-			"")
+@MCInterceptor(name="httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(HTTPClientInterceptor.class.getName());
@@ -100,6 +97,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		return failOverOn5XX;
 	}
 	
+	@MCAttribute
 	public void setFailOverOn5XX(boolean failOverOn5XX) {
 		this.failOverOn5XX = failOverOn5XX;
 	}
@@ -108,6 +106,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		return keepAliveTimeout;
 	}
 	
+	@MCAttribute
 	public void setKeepAliveTimeout(long keepAliveTimeout) {
 		this.keepAliveTimeout = keepAliveTimeout;
 	}

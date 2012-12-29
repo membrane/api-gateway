@@ -32,18 +32,19 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCInterceptor(name="clusterNotification", xsd="" +
+@MCInterceptor(name="clusterNotification" /*, xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"timeout\" type=\"xsd:long\" />\r\n" + 
 		"					<xsd:attribute name=\"validateSignature\" type=\"xsd:boolean\" />\r\n" + 
 		"					<xsd:attribute name=\"keyHex\" type=\"xsd:string\" />\r\n" + 
-		"")
+		""*/)
 public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory
 			.getLog(ClusterNotificationInterceptor.class.getName());
@@ -149,6 +150,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		return validateSignature;
 	}
 
+	@MCAttribute
 	public void setValidateSignature(boolean validateSignature) {
 		this.validateSignature = validateSignature;
 	}
@@ -157,6 +159,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		return timeout;
 	}
 
+	@MCAttribute
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
 	}
@@ -165,6 +168,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		return keyHex;
 	}
 
+	@MCAttribute
 	public void setKeyHex(String keyHex) {
 		this.keyHex = keyHex;
 	}

@@ -20,6 +20,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.stream.StreamSource;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
@@ -28,11 +29,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.TextUtil;
 
-@MCInterceptor(name="transform", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"xslt\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"concurrency\" default=\"0\" type=\"xsd:integer\" />\r\n" + 
-		"")
+@MCInterceptor(name="transform")
 public class XSLTInterceptor extends AbstractInterceptor {
 
 	private String xslt;
@@ -72,6 +69,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		return xslt;
 	}
 
+	@MCAttribute
 	public void setXslt(String xslt) {
 		this.xslt = xslt;
 		this.xsltTransformer = null;

@@ -21,16 +21,12 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
-@MCInterceptor(name="throttle", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"delay\" type=\"xsd:long\" default=\"0\"/>\r\n" + 
-		"					<xsd:attribute name=\"maxThreads\" type=\"xsd:int\" default=\"0\"/>\r\n" + 
-		"					<xsd:attribute name=\"busyDelay\" type=\"xsd:int\" default=\"0\"/>\r\n" + 
-		"")
+@MCInterceptor(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(ThrottleInterceptor.class.getName());
 	
@@ -90,6 +86,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		return delay;
 	}
 
+	@MCAttribute
 	public void setDelay(long delay) {
 		this.delay = delay;
 	}
@@ -98,6 +95,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		return maxThreads;
 	}
 
+	@MCAttribute
 	public void setMaxThreads(int maxThreads) {
 		this.maxThreads = maxThreads;
 	}
@@ -106,6 +104,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		return busyDelay;
 	}
 
+	@MCAttribute
 	public void setBusyDelay(int busyDelay) {
 		this.busyDelay = busyDelay;
 	}

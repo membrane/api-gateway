@@ -23,16 +23,14 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 
-@MCInterceptor(name="limit", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"maxBodyLength\" type=\"xsd:integer\" />\r\n" + 
-		"")
+@MCInterceptor(name="limit")
 public class LimitInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LogManager.getLogger(LimitInterceptor.class);
@@ -67,6 +65,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 		return maxBodyLength;
 	}
 	
+	@MCAttribute
 	public void setMaxBodyLength(long maxBodyLength) {
 		this.maxBodyLength = maxBodyLength;
 	}

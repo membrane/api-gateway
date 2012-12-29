@@ -19,7 +19,9 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
@@ -27,10 +29,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCInterceptor(name="xmlContentFilter", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"xPath\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"")
+@MCInterceptor(name="xmlContentFilter")
 public class XMLContentFilterInterceptor extends AbstractInterceptor {
 	
 	private static final Logger LOG = Logger.getLogger(XMLContentFilterInterceptor.class);
@@ -46,6 +45,8 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 		return xPath;
 	}
 	
+	@Required
+	@MCAttribute
 	public void setXPath(String xPath) {
 		this.xPath = xPath;
 		try {

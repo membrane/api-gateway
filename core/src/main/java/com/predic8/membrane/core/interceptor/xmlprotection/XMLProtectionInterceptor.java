@@ -25,6 +25,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -32,12 +33,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCInterceptor(name="xmlProtection", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"removeDTD\" type=\"xsd:boolean\" default=\"true\"/>\r\n" + 
-		"					<xsd:attribute name=\"maxElementNameLength\" type=\"xsd:int\" default=\"1000\" />\r\n" + 
-		"					<xsd:attribute name=\"maxAttibuteCount\" type=\"xsd:int\" default=\"1000\" />\r\n" + 
-		"")
+@MCInterceptor(name="xmlProtection")
 public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(XMLProtectionInterceptor.class.getName());
@@ -129,14 +125,17 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		return charset;
 	}
 
+	@MCAttribute
 	public void setMaxAttibuteCount(int maxAttibuteCount) {
 		this.maxAttibuteCount = maxAttibuteCount;
 	}
 
+	@MCAttribute
 	public void setMaxElementNameLength(int maxElementNameLength) {
 		this.maxElementNameLength = maxElementNameLength;
 	}
 
+	@MCAttribute
 	public void setRemoveDTD(boolean removeDTD) {
 		this.removeDTD = removeDTD;
 	}

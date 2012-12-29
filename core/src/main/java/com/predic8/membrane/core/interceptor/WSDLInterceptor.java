@@ -39,6 +39,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -47,13 +48,7 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
-@MCInterceptor(name="wsdlRewriter", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"registryWSDLRegisterURL\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
-		"					<xsd:attribute name=\"protocol\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
-		"")
+@MCInterceptor(name="wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
 
 	private static Log log = LogFactory.getLog(WSDLInterceptor.class.getName());
@@ -160,6 +155,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		return buf.toString();
 	}
 
+	@MCAttribute
 	public void setRegistryWSDLRegisterURL(String registryWSDLRegisterURL) {
 		this.registryWSDLRegisterURL = registryWSDLRegisterURL;
 	}
@@ -256,5 +252,23 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
 	public void setRewriteEndpoint(boolean rewriteEndpoint) {
 		this.rewriteEndpoint = rewriteEndpoint;
+	}
+
+	@MCAttribute
+	@Override
+	public void setProtocol(String protocol) {
+		super.setProtocol(protocol);
+	}
+	
+	@MCAttribute
+	@Override
+	public void setHost(String host) {
+		super.setHost(host);
+	}
+	
+	@MCAttribute
+	@Override
+	public void setPort(String port) {
+		super.setPort(port);
 	}
 }

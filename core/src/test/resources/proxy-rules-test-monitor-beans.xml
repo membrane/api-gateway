@@ -157,7 +157,7 @@
 	<bean id="accessControlInterceptor"
 		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
 		<property name="displayName" value="Access Control List Interceptor" />
-		<property name="aclFilename" value="classpath:/acl/acl.xml" />
+		<property name="file" value="classpath:/acl/acl.xml" />
 	</bean>
 
 	<bean id="administratorInterceptor"

@@ -83,29 +83,29 @@
 		<field name="age" regex="\d+" />
 		<field name="name" regex="[a-z]+" />
 	</formValidation>
-	<transform xslt="classpath:/strip-soap-envelope.xsl" />
+	<transform id="transform" xslt="classpath:/strip-soap-envelope.xsl" />
 	<rewriter>
 		<map from="^/bank/" to="/axis2/" />
 	</rewriter>
-	<adminConsole />
-	<webServer docBase="docBase" />
+	<adminConsole id="adminConsole" />
+	<webServer id="webServer" docBase="docBase" />
 	<balancer >
 		<roundRobinStrategy />
 	</balancer>
 	<balancer id="balancer2">
 		<jSessionIdExtractor />
 	</balancer>
-	<clusterNotification validateSignature="true"
+	<clusterNotification id="clusterNotification" validateSignature="true"
 		keyHex="2324920293" timeout="5000" />
 	<basicAuthentication>
 		<user name="jim" password="password" />
 	</basicAuthentication>
-	<accessControl file="src/test/resources/acl/acl.xml"/>
-	<wsdlRewriter />
-	<wadlRewriter />
+	<accessControl id="accessControl" file="src/test/resources/acl/acl.xml"/>
+	<wsdlRewriter id="wsdlRewriter" />
+	<wadlRewriter id="wadlRewriter" />
 	<statisticsCSV file="target/temp/stat.csv" />
 	<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
-	<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
+	<throttle id="throttle" delay="1000" maxThreads="5" busyDelay="3000"/>		
 	<log headerOnly="true" category="membrane" level="INFO"/>
 <!-- 
 	<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />

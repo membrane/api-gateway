@@ -22,8 +22,10 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.util.HtmlUtils;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCInterceptor;
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -32,15 +34,15 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ResourceResolver;
 
-@MCInterceptor(name="accessControl", xsd="" +
+@MCInterceptor(name="accessControl" /*, xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"file\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"")
+		""*/)
 public class AccessControlInterceptor extends AbstractInterceptor {
 
 	private static final Log log = LogFactory.getLog(AccessControlInterceptor.class.getName());
 	
-	private String aclFilename;
+	private String file;
 
 	private AccessControl accessControl;
 
@@ -72,16 +74,18 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		exc.setResponse(Response.forbidden("Access denied: you are not authorized to access this service.").build());
 	}
 
-	public void setAclFilename(String aclFilename) {
-		this.aclFilename = aclFilename;
+	@Required
+	@MCAttribute
+	public void setFile(String file) {
+		this.file = file;
 	}
 
-	public String getAclFilename() {
-		return aclFilename;
+	public String getFile() {
+		return file;
 	}
 
 	public void init() throws Exception {
-		accessControl = parse(aclFilename, router.getResourceResolver());
+		accessControl = parse(file, router.getResourceResolver());
 	}
 	
 	public AccessControl getAccessControl() {
@@ -105,19 +109,19 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	protected void writeInterceptor(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement("accessControl");
 		
-		out.writeAttribute("file", aclFilename);
+		out.writeAttribute("file", file);
 		
 		out.writeEndElement();
 	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {		
-		aclFilename = token.getAttributeValue("", "file");	
+		file = token.getAttributeValue("", "file");	
 	}
 
 	@Override
 	public String getShortDescription() {
-		return "Authenticates incoming requests based on the file " + HtmlUtils.htmlEscape(aclFilename) + " .";
+		return "Authenticates incoming requests based on the file " + HtmlUtils.htmlEscape(file) + " .";
 	}
 	
 	@Override

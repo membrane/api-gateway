@@ -129,7 +129,7 @@ public class AccessControlInterceptorIntegrationTest {
 	
 	private void setInterceptor(String fileName) throws Exception {
 		AccessControlInterceptor interceptor = new AccessControlInterceptor();
-		interceptor.setAclFilename(fileName);
+		interceptor.setFile(fileName);
 		router.addUserFeatureInterceptor(interceptor);
 		router.init();
 	}

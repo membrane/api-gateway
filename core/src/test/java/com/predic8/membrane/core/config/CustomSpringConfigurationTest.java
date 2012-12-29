@@ -182,7 +182,7 @@ public class CustomSpringConfigurationTest {
 	}
 
 	private void assertAccessControlInterceptor(AccessControlInterceptor i) {
-		assertEquals("src/test/resources/acl/acl.xml", i.getAclFilename());
+		assertEquals("src/test/resources/acl/acl.xml", i.getFile());
 	}
 
 	private void assertWebServerInterceptor(WebServerInterceptor i) {
