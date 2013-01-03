@@ -72,6 +72,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		MCMain mainAnnotation;
 		
 		List<InterceptorInfo> iis = new ArrayList<InterceptorInfo>();
+		List<MCRaw> raws = new ArrayList<MCRaw>();
 		
 		List<Element> getInterceptorElements() {
 			ArrayList<Element> res = new ArrayList<Element>(iis.size());
@@ -134,6 +135,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				if (mcmains.size() == 0) {
 					processingEnv.getMessager().printMessage(Kind.ERROR, "@MCMain but no @MCInterceptor found.", mcmains.iterator().next());
 					return true;
+				}
+				
+				for (Element e : roundEnv.getElementsAnnotatedWith(MCRaw.class)) {
+					m.raws.add(e.getAnnotation(MCRaw.class));
 				}
 				
 
@@ -284,7 +289,16 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		bw.append(
 				m.mainAnnotation.xsd()
 				.replace("${interceptorDeclarations}", assembleInterceptorDeclarations(m))
-				.replace("${interceptorReferences}", assembleInterceptorReferences(m)));
+				.replace("${interceptorReferences}", assembleInterceptorReferences(m))
+				.replace("${raw}", assembleRaw(m)));
+	}
+
+	private String assembleRaw(Model m) {
+		StringWriter raws = new StringWriter();
+		for (MCRaw raw : m.raws) {
+			raws.append(raw.xsd());
+		}
+		return raws.toString();
 	}
 
 	private String assembleInterceptorDeclarations(Model m) throws ProcessingException {

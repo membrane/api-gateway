@@ -48,6 +48,10 @@ public class ConfigurationManager {
 		setProxies(configurationStore.read(fileName));
 
 		router.getRuleManager().removeAllRules();
+		
+		if (router.DEBUG_rules != null)
+			for (Rule rule : router.DEBUG_rules)
+				router.getRuleManager().addProxy(rule);
 
 		for (Rule rule : getProxies().getRules()) {
 			router.getRuleManager().addProxy(rule);

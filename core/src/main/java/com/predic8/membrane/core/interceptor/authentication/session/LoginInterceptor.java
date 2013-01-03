@@ -18,6 +18,7 @@ import java.util.Map;
 import javax.xml.stream.XMLStreamReader;
 
 import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCRaw;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.ElementName;
@@ -28,54 +29,67 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 
 @ElementName("login")
+@MCRaw(xsd="" +
+		"	<xsd:group name=\"TokenProviderGroup\">\r\n" + 
+		"		<xsd:choice>\r\n" + 
+		"			<xsd:element name=\"staticUserDataProvider\">\r\n" + 
+		"				<xsd:complexType>\r\n" + 
+		"					<xsd:sequence>\r\n" + 
+		"						<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+		"							<xsd:complexType>\r\n" + 
+		"								<xsd:sequence />\r\n" + 
+		"								<xsd:attribute name=\"username\" type=\"xsd:string\" />\r\n" + 
+		"								<xsd:attribute name=\"password\" type=\"xsd:string\" />\r\n" + 
+		"								<xsd:attribute name=\"sms\" type=\"xsd:string\" />\r\n" + 
+		"								<xsd:attribute name=\"secret\" type=\"xsd:string\" />\r\n" + 
+		"								<xsd:anyAttribute processContents=\"skip\" />\r\n" + 
+		"							</xsd:complexType>\r\n" + 
+		"						</xsd:element>\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"				</xsd:complexType>\r\n" + 
+		"			</xsd:element>\r\n" + 
+		"			<xsd:element name=\"ldapUserDataProvider\">\r\n" + 
+		"				<xsd:complexType>\r\n" + 
+		"					<xsd:sequence>\r\n" + 
+		"						<xsd:element name=\"map\">\r\n" + 
+		"							<xsd:complexType>\r\n" + 
+		"								<xsd:sequence>\r\n" + 
+		"									<xsd:element name=\"attribute\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+		"										<xsd:complexType>\r\n" + 
+		"											<xsd:sequence />\r\n" + 
+		"											<xsd:attribute name=\"from\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"											<xsd:attribute name=\"to\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"										</xsd:complexType>\r\n" + 
+		"									</xsd:element>\r\n" + 
+		"								</xsd:sequence>\r\n" + 
+		"							</xsd:complexType>\r\n" + 
+		"						</xsd:element>\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"					<xsd:attribute name=\"url\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"					<xsd:attribute name=\"base\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"					<xsd:attribute name=\"binddn\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"bindpw\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"searchPattern\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+		"					<xsd:attribute name=\"searchScope\" type=\"xsd:string\" default=\"subtree\" />\r\n" + 
+		"					<xsd:attribute name=\"timeout\" type=\"xsd:string\" default=\"1000\" />\r\n" + 
+		"					<xsd:attribute name=\"connectTimeout\" type=\"xsd:string\" default=\"1000\" />\r\n" + 
+		"					<xsd:attribute name=\"readAttributesAsSelf\" type=\"xsd:boolean\" default=\"true\" />\r\n" + 
+		"					<xsd:attribute name=\"passwordAttribute\" type=\"xsd:string\" />\r\n" + 
+		"				</xsd:complexType>\r\n" + 
+		"			</xsd:element>\r\n" + 
+		"			<xsd:element name=\"unifyingUserDataProvider\">\r\n" + 
+		"				<xsd:complexType>\r\n" + 
+		"					<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+		"						<xsd:group ref=\"TokenProviderGroup\" />\r\n" + 
+		"					</xsd:sequence>\r\n" + 
+		"				</xsd:complexType>\r\n" + 
+		"			</xsd:element>\r\n" + 
+		"		</xsd:choice>\r\n" + 
+		"	</xsd:group>\r\n" + 
+		"")
 @MCInterceptor(name="login", xsd="" +
 		"			<xsd:sequence>\r\n" + 
-		"				<xsd:choice> <!-- one user data provider -->\r\n" + 
-		"					<xsd:element name=\"staticUserDataProvider\">\r\n" + 
-		"						<xsd:complexType>\r\n" + 
-		"							<xsd:sequence>\r\n" + 
-		"								<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-		"									<xsd:complexType>\r\n" + 
-		"										<xsd:sequence />\r\n" + 
-		"										<xsd:attribute name=\"username\" type=\"xsd:string\" />\r\n" + 
-		"										<xsd:attribute name=\"password\" type=\"xsd:string\" />\r\n" + 
-		"										<xsd:attribute name=\"sms\" type=\"xsd:string\" />\r\n" + 
-		"										<xsd:attribute name=\"secret\" type=\"xsd:string\" />\r\n" + 
-		"										<xsd:anyAttribute processContents=\"skip\" />\r\n" + 
-		"									</xsd:complexType>\r\n" + 
-		"								</xsd:element>\r\n" + 
-		"							</xsd:sequence>\r\n" + 
-		"						</xsd:complexType>\r\n" + 
-		"					</xsd:element>\r\n" + 
-		"					<xsd:element name=\"ldapUserDataProvider\">\r\n" + 
-		"						<xsd:complexType>\r\n" + 
-		"							<xsd:sequence>\r\n" + 
-		"								<xsd:element name=\"map\">\r\n" + 
-		"									<xsd:complexType>\r\n" + 
-		"										<xsd:sequence>\r\n" + 
-		"											<xsd:element name=\"attribute\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-		"												<xsd:complexType>\r\n" + 
-		"													<xsd:sequence />\r\n" + 
-		"													<xsd:attribute name=\"from\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"													<xsd:attribute name=\"to\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"												</xsd:complexType>\r\n" + 
-		"											</xsd:element>\r\n" + 
-		"										</xsd:sequence>\r\n" + 
-		"									</xsd:complexType>\r\n" + 
-		"								</xsd:element>\r\n" + 
-		"							</xsd:sequence>\r\n" + 
-		"							<xsd:attribute name=\"url\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"							<xsd:attribute name=\"base\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"							<xsd:attribute name=\"binddn\" type=\"xsd:string\" />\r\n" + 
-		"							<xsd:attribute name=\"bindpw\" type=\"xsd:string\" />\r\n" + 
-		"							<xsd:attribute name=\"searchPattern\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"							<xsd:attribute name=\"searchScope\" type=\"xsd:string\" default=\"subtree\" />\r\n" + 
-		"							<xsd:attribute name=\"timeout\" type=\"xsd:string\" default=\"1000\" />\r\n" + 
-		"							<xsd:attribute name=\"connectTimeout\" type=\"xsd:string\" default=\"1000\" />\r\n" + 
-		"							<xsd:attribute name=\"readAttributesAsSelf\" type=\"xsd:boolean\" default=\"true\" />\r\n" + 
-		"						</xsd:complexType>\r\n" + 
-		"					</xsd:element>\r\n" + 
-		"				</xsd:choice>\r\n" + 
+		"				<xsd:group ref=\"TokenProviderGroup\" />\r\n" + 
 		"				\r\n" + 
 		"				<xsd:element minOccurs=\"0\" name=\"sessionManager\">\r\n" + 
 		"					<xsd:complexType>\r\n" + 

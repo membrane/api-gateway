@@ -18,14 +18,17 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.AbstractApplicationContext;
 
 import com.predic8.membrane.annot.MCMain;
+import com.predic8.membrane.annot.MCRaw;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -67,15 +70,18 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"		<xsd:complexContent>\r\n" + 
 				"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
 				"				<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"					<xsd:choice>\r\n" + 
-				"						${interceptorReferences}\r\n" +
-				"					</xsd:choice>\r\n" + 
+				"					<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
 				"				</xsd:sequence>\r\n" + 
 				"				<xsd:attribute name=\"httpClientRetries\" default=\"5\" type=\"xsd:int\" />\r\n" + 
 				"			</xsd:extension>\r\n" + 
 				"		</xsd:complexContent>\r\n" + 
 				"	</xsd:complexType>\r\n" + 
 				"\r\n" + 
+				"	<xsd:group name=\"InterceptorGroup\">\r\n" + 
+				"		<xsd:choice>\r\n" + 
+				"			${interceptorReferences}\r\n" +
+				"		</xsd:choice>\r\n" + 
+				"	</xsd:group>\r\n" + 
 				"	\r\n" + 
 				"	<xsd:element name=\"transport\">\r\n" + 
 				"		<xsd:complexType>\r\n" + 
@@ -104,6 +110,8 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"\r\n" +
 				"${interceptorDeclarations}\r\n" +
 				"\r\n" +
+				"${raw}\r\n" +
+				"\r\n" +
 				"	<xsd:element name=\"memoryExchangeStore\" type=\"EmptyElementType\" />\r\n" + 
 				"	<xsd:element name=\"forgetfulExchangeStore\" type=\"EmptyElementType\" />\r\n" + 
 				"\r\n" + 
@@ -131,9 +139,207 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"		</xsd:complexContent>\r\n" + 
 				"	</xsd:complexType>\r\n" + 
 				"	\r\n" + 
+				"	<xsd:complexType name=\"KeyStoreType\">\r\n" + 
+				"		<xsd:sequence />\r\n" + 
+				"		<xsd:attribute name=\"location\" type=\"xsd:string\" />\r\n" + 
+				"		<xsd:attribute name=\"password\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
+				"		<xsd:attribute name=\"type\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
+				"		<xsd:attribute name=\"provider\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
+				"	</xsd:complexType>\r\n" + 
 				"\r\n" + 
-				"\r\n" + 
+				"	<xsd:complexType name=\"SSLType\">\r\n" + 
+				"		<xsd:sequence>\r\n" + 
+				"			<xsd:element name=\"keystore\" minOccurs=\"0\">\r\n" + 
+				"				<xsd:complexType>\r\n" + 
+				"					<xsd:complexContent>\r\n" + 
+				"						<xsd:extension base=\"KeyStoreType\">\r\n" + 
+				"							<xsd:attribute name=\"keyAlias\" type=\"xsd:string\"\r\n" + 
+				"								use=\"optional\" />\r\n" + 
+				"							<xsd:attribute name=\"keyPassword\" type=\"xsd:string\"\r\n" + 
+				"								use=\"optional\" />\r\n" + 
+				"						</xsd:extension>\r\n" + 
+				"					</xsd:complexContent>\r\n" + 
+				"				</xsd:complexType>\r\n" + 
+				"			</xsd:element>\r\n" + 
+				"			<xsd:element name=\"truststore\" minOccurs=\"0\">\r\n" + 
+				"				<xsd:complexType>\r\n" + 
+				"					<xsd:complexContent>\r\n" + 
+				"						<xsd:extension base=\"KeyStoreType\">\r\n" + 
+				"							<xsd:attribute name=\"algorithm\" type=\"xsd:string\"\r\n" + 
+				"								use=\"optional\" />\r\n" + 
+				"						</xsd:extension>\r\n" + 
+				"					</xsd:complexContent>\r\n" + 
+				"				</xsd:complexType>\r\n" + 
+				"			</xsd:element>\r\n" + 
+				"		</xsd:sequence>\r\n" + 
+				"		<xsd:attribute name=\"algorithm\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
+				"		<xsd:attribute name=\"protocol\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
+				"		<xsd:attribute name=\"ciphers\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
+				"		<xsd:attribute name=\"clientAuth\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
+				"		<xsd:attribute name=\"ignoreTimestampCheckFailure\" type=\"xsd:string\" />\r\n" + 
+				"	</xsd:complexType>\r\n" +
+				"" +
+				"			<xsd:element name=\"serviceProxy\">\r\n" + 
+				"				<xsd:complexType>\r\n" + 
+				"					<xsd:complexContent> \r\n" + 
+				"						<xsd:extension base=\"beans:identifiedType\"> \r\n" + 
+				"							<xsd:sequence>\r\n" + 
+				"								<xsd:element name=\"path\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"									<xsd:complexType>\r\n" + 
+				"										<xsd:simpleContent>\r\n" + 
+				"											<xsd:extension base=\"xsd:string\">\r\n" + 
+				"												<xsd:attribute name=\"isRegExp\" type=\"xsd:boolean\"\r\n" + 
+				"													use=\"optional\" />\r\n" + 
+				"											</xsd:extension>\r\n" + 
+				"										</xsd:simpleContent>\r\n" + 
+				"									</xsd:complexType>\r\n" + 
+				"								</xsd:element>\r\n" + 
+				"								<xsd:element name=\"ssl\" minOccurs=\"0\" maxOccurs=\"1\"\r\n" + 
+				"									type=\"SSLType\" />\r\n" + 
+				"								<xsd:choice minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"									<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"									<xsd:element name=\"request\">\r\n" + 
+				"										<xsd:complexType>\r\n" + 
+				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"											</xsd:sequence>\r\n" + 
+				"										</xsd:complexType>\r\n" + 
+				"									</xsd:element>\r\n" + 
+				"									<xsd:element name=\"response\">\r\n" + 
+				"										<xsd:complexType>\r\n" + 
+				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"											</xsd:sequence>\r\n" + 
+				"										</xsd:complexType>\r\n" + 
+				"									</xsd:element>\r\n" + 
+				"								</xsd:choice>\r\n" + 
+				"								<xsd:element name=\"target\" minOccurs=\"0\">\r\n" + 
+				"									<xsd:complexType>\r\n" + 
+				"										<xsd:sequence>\r\n" + 
+				"											<xsd:element name=\"ssl\" minOccurs=\"0\" maxOccurs=\"1\"\r\n" + 
+				"												type=\"SSLType\" />\r\n" + 
+				"										</xsd:sequence>\r\n" + 
+				"										<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
+				"										<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
+				"										<xsd:attribute name=\"url\" type=\"xsd:string\" />\r\n" + 
+				"									</xsd:complexType>\r\n" + 
+				"								</xsd:element>\r\n" + 
+				"							</xsd:sequence>\r\n" + 
+				"							<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
+				"							<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
+				"							<xsd:attribute name=\"blockResponse\" type=\"xsd:boolean\" />\r\n" + 
+				"							<xsd:attribute name=\"blockRequest\" type=\"xsd:boolean\" />\r\n" + 
+				"							<xsd:attribute name=\"host\" type=\"xsd:int\" />\r\n" + 
+				"							<xsd:attribute name=\"method\" type=\"xsd:string\" />\r\n" + 
+				"							<xsd:attribute name=\"ip\" type=\"xsd:string\" />\r\n" + 
+				"						</xsd:extension>\r\n" + 
+				"					</xsd:complexContent>\r\n" + 
+				"				</xsd:complexType>\r\n" + 
+				"			</xsd:element>\r\n" + 
+				"			<xsd:element name=\"soapProxy\">\r\n" + 
+				"				<xsd:complexType>\r\n" + 
+				"					<xsd:complexContent> \r\n" + 
+				"						<xsd:extension base=\"beans:identifiedType\"> \r\n" + 
+				"							<xsd:sequence>\r\n" + 
+				"								<xsd:element name=\"path\" minOccurs=\"0\" maxOccurs=\"1\" type=\"xsd:string\" />\r\n" + 
+				"								<xsd:element name=\"ssl\" minOccurs=\"0\" maxOccurs=\"1\"\r\n" + 
+				"									type=\"SSLType\" />\r\n" + 
+				"								<xsd:choice minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"									<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"									<xsd:element name=\"request\">\r\n" + 
+				"										<xsd:complexType>\r\n" + 
+				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"											</xsd:sequence>\r\n" + 
+				"										</xsd:complexType>\r\n" + 
+				"									</xsd:element>\r\n" + 
+				"									<xsd:element name=\"response\">\r\n" + 
+				"										<xsd:complexType>\r\n" + 
+				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"											</xsd:sequence>\r\n" + 
+				"										</xsd:complexType>\r\n" + 
+				"									</xsd:element>\r\n" + 
+				"								</xsd:choice>\r\n" + 
+				"							</xsd:sequence>\r\n" + 
+				"							<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
+				"							<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
+				"							<xsd:attribute name=\"blockResponse\" type=\"xsd:boolean\" />\r\n" + 
+				"							<xsd:attribute name=\"blockRequest\" type=\"xsd:boolean\" />\r\n" + 
+				"							<xsd:attribute name=\"host\" type=\"xsd:int\" />\r\n" + 
+				"							<xsd:attribute name=\"wsdl\" type=\"xsd:string\" use=\"required\" />\r\n" + 
+				"							<xsd:attribute name=\"portName\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
+				"							<xsd:attribute name=\"ip\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
+				"						</xsd:extension>\r\n" + 
+				"					</xsd:complexContent>\r\n" + 
+				"				</xsd:complexType>\r\n" + 
+				"			</xsd:element>\r\n" + 
+				"			<xsd:element name=\"proxy\">\r\n" + 
+				"				<xsd:complexType>\r\n" + 
+				"					<xsd:complexContent>\r\n" + 
+				"						<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+				"							<xsd:sequence>\r\n" + 
+				"								<xsd:choice minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"									<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"									<xsd:element name=\"request\">\r\n" + 
+				"										<xsd:complexType>\r\n" + 
+				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"											</xsd:sequence>\r\n" + 
+				"										</xsd:complexType>\r\n" + 
+				"									</xsd:element>\r\n" + 
+				"									<xsd:element name=\"response\">\r\n" + 
+				"										<xsd:complexType>\r\n" + 
+				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"											</xsd:sequence>\r\n" + 
+				"										</xsd:complexType>\r\n" + 
+				"									</xsd:element>\r\n" + 
+				"								</xsd:choice>\r\n" + 
+				"							</xsd:sequence>\r\n" + 
+				"							<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
+				"							<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
+				"							<xsd:attribute name=\"blockResponse\" type=\"xsd:boolean\" />\r\n" + 
+				"							<xsd:attribute name=\"blockRequest\" type=\"xsd:boolean\" />\r\n" + 
+				"						</xsd:extension>\r\n" + 
+				"					</xsd:complexContent>\r\n" + 
+				"				</xsd:complexType>\r\n" + 
+				"			</xsd:element>\r\n" + 
+				"" +
+				"" +
 				"</xsd:schema>")
+@MCRaw(xsd="" + // TODO: this is legacy config (doesn't even get parsed) should be expressed differently
+		"<xsd:element name=\"global\" >\r\n" + 
+		"	<xsd:complexType>\r\n" + 
+		"		<xsd:sequence>\r\n" + 
+		"			<xsd:element name=\"router\" minOccurs=\"0\">\r\n" + 
+		"				<xsd:complexType>\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"adjustHostHeader\" type=\"xsd:boolean\" />\r\n" + 
+		"				</xsd:complexType>\r\n" + 
+		"			</xsd:element>\r\n" + 
+		"			<xsd:element name=\"monitor-gui\" minOccurs=\"0\">\r\n" + 
+		"				<xsd:complexType>\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"autoTrack\" type=\"xsd:boolean\" />\r\n" + 
+		"					<xsd:attribute name=\"indentMessage\" type=\"xsd:boolean\" />\r\n" + 
+		"				</xsd:complexType>\r\n" + 
+		"			</xsd:element>\r\n" + 
+		"			<xsd:element name=\"proxyConfiguration\" minOccurs=\"0\">\r\n" + 
+		"				<xsd:complexType>\r\n" + 
+		"					<xsd:sequence />\r\n" + 
+		"					<xsd:attribute name=\"active\" type=\"xsd:boolean\" />\r\n" + 
+		"					<xsd:attribute name=\"authentication\" type=\"xsd:boolean\" />\r\n" + 
+		"					<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"port\" type=\"xsd:integer\" />\r\n" + 
+		"					<xsd:attribute name=\"username\" type=\"xsd:string\" />\r\n" + 
+		"					<xsd:attribute name=\"password\" type=\"xsd:string\" />\r\n" + 
+		"				</xsd:complexType>\r\n" + 
+		"			</xsd:element>\r\n" + 
+		"		</xsd:sequence>\r\n" + 
+		"	</xsd:complexType>\r\n" + 
+		"</xsd:element>\r\n" + 
+		"")
 public class Router {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());
@@ -152,6 +358,15 @@ public class Router {
 
 	public Router() {
 		ruleManager.setRouter(this);
+	}
+	
+	public Set<Rule> DEBUG_rules;
+	
+	@Autowired(required=false)
+	public void setServiceProxies(Set<Rule> proxies) {
+		// TODO: replace autowiring by custom logic in RouterParser
+		// TODO: change implementation ;)
+		DEBUG_rules = proxies;
 	}
 
 	public static Router init(String configFileName)
