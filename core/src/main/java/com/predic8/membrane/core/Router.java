@@ -80,6 +80,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"	<xsd:group name=\"InterceptorGroup\">\r\n" + 
 				"		<xsd:choice>\r\n" + 
 				"			${interceptorReferences}\r\n" +
+				"			<xsd:any namespace=\"##other\" processContents=\"strict\" />" +
 				"		</xsd:choice>\r\n" + 
 				"	</xsd:group>\r\n" + 
 				"	\r\n" + 
@@ -229,7 +230,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"							<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
 				"							<xsd:attribute name=\"blockResponse\" type=\"xsd:boolean\" />\r\n" + 
 				"							<xsd:attribute name=\"blockRequest\" type=\"xsd:boolean\" />\r\n" + 
-				"							<xsd:attribute name=\"host\" type=\"xsd:int\" />\r\n" + 
+				"							<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
 				"							<xsd:attribute name=\"method\" type=\"xsd:string\" />\r\n" + 
 				"							<xsd:attribute name=\"ip\" type=\"xsd:string\" />\r\n" + 
 				"						</xsd:extension>\r\n" + 
@@ -266,7 +267,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"							<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
 				"							<xsd:attribute name=\"blockResponse\" type=\"xsd:boolean\" />\r\n" + 
 				"							<xsd:attribute name=\"blockRequest\" type=\"xsd:boolean\" />\r\n" + 
-				"							<xsd:attribute name=\"host\" type=\"xsd:int\" />\r\n" + 
+				"							<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
 				"							<xsd:attribute name=\"wsdl\" type=\"xsd:string\" use=\"required\" />\r\n" + 
 				"							<xsd:attribute name=\"portName\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
 				"							<xsd:attribute name=\"ip\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
