@@ -24,12 +24,13 @@ import org.junit.Test;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.ConsoleLogger;
 
-public class SOAPValidationTest extends DistributionExtractingTestcase {
+public class SOAPProxyValidationTest extends DistributionExtractingTestcase {
 	
 	@Test
 	public void test() throws IOException, InterruptedException {
-		File baseDir = getExampleDir("validation" + File.separator + "soap");
+		File baseDir = getExampleDir("validation" + File.separator + "soap-Proxy");
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
 			String url = "http://localhost:2000/axis2/services/BLZService/getBankResponse";

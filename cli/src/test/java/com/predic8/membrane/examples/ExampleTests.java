@@ -37,14 +37,13 @@ import com.predic8.membrane.examples.tests.QuickstartSOAPTest;
 import com.predic8.membrane.examples.tests.REST2SOAPJSONTest;
 import com.predic8.membrane.examples.tests.REST2SOAPTest;
 import com.predic8.membrane.examples.tests.RewriterTest;
-import com.predic8.membrane.examples.tests.SSLServer;
 import com.predic8.membrane.examples.tests.SSLClient;
+import com.predic8.membrane.examples.tests.SSLServer;
 import com.predic8.membrane.examples.tests.ThrottleTest;
 import com.predic8.membrane.examples.tests.XSLTTest;
 import com.predic8.membrane.examples.tests.validation.FormValidationTest;
 import com.predic8.membrane.examples.tests.validation.JSONSchemaValidationTest;
-import com.predic8.membrane.examples.tests.validation.SOAPCustomValidationTest;
-import com.predic8.membrane.examples.tests.validation.SOAPValidationTest;
+import com.predic8.membrane.examples.tests.validation.SOAPProxyValidationTest;
 import com.predic8.membrane.examples.tests.validation.SchematronValidationTest;
 import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
@@ -79,8 +78,7 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 	FormValidationTest.class,
 	JSONSchemaValidationTest.class,
 	SchematronValidationTest.class,
-	SOAPCustomValidationTest.class,
-	SOAPValidationTest.class,
+	SOAPProxyValidationTest.class,
 	XMLValidationTest.class,
 	
 	RoutingTest.class
