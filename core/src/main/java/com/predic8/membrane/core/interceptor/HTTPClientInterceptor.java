@@ -22,13 +22,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.HttpUtil;
 
-@MCInterceptor(name="httpClient")
+@MCElement(name="httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(HTTPClientInterceptor.class.getName());

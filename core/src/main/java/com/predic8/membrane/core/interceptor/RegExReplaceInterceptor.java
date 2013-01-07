@@ -19,7 +19,7 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
@@ -30,7 +30,7 @@ import com.predic8.membrane.core.util.MessageUtil;
  * Runs a regular-expression-replacement on either the message body (default) or
  * all header values.
  */
-@MCInterceptor(name="regExReplacer", xsd="" +
+@MCElement(name="regExReplacer", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"regex\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
 		"					<xsd:attribute name=\"replace\" type=\"xsd:string\" use=\"required\"/>\r\n" + 

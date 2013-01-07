@@ -22,14 +22,14 @@ import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCInterceptor(name="xmlContentFilter")
+@MCElement(name="xmlContentFilter")
 public class XMLContentFilterInterceptor extends AbstractInterceptor {
 	
 	private static final Logger LOG = Logger.getLogger(XMLContentFilterInterceptor.class);

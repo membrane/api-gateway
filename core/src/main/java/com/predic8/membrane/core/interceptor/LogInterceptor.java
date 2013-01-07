@@ -20,12 +20,12 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.MessageUtil;
 
-@MCInterceptor(name="log", xsd="" +
+@MCElement(name="log", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"headerOnly\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
 		"					<xsd:attribute name=\"category\" default=\"com.predic8.membrane.core.interceptor.LogInterceptor\" type=\"xsd:string\" />\r\n" + 

@@ -18,6 +18,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.annot.MCAttribute;
+
 
 
 public class KeyStore extends Store {
@@ -53,6 +55,7 @@ public class KeyStore extends Store {
 		return keyPassword;
 	}
 	
+	@MCAttribute
 	public void setKeyPassword(String keyPassword) {
 		this.keyPassword = keyPassword;
 	}
@@ -61,6 +64,7 @@ public class KeyStore extends Store {
 		return keyAlias;
 	}
 	
+	@MCAttribute
 	public void setKeyAlias(String keyAlias) {
 		this.keyAlias = keyAlias;
 	}

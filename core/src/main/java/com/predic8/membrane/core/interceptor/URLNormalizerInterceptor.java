@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
 /**
@@ -27,7 +27,7 @@ import com.predic8.membrane.core.exchange.Exchange;
  * This URI is sent to Membrane's new soapProxy which has configured a
  * serviceProxy-path of "\Q/material/ArticleService\E.*" which does not match.
  */
-@MCInterceptor(name="urlNormalizer")
+@MCElement(name="urlNormalizer")
 public class URLNormalizerInterceptor extends AbstractInterceptor {
 	
 	@Override

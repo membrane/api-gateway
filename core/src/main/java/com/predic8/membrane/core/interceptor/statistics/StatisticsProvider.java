@@ -32,7 +32,7 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
 
 import com.google.common.collect.ImmutableMap;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -40,7 +40,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-@MCInterceptor(name="statisticsProvider", xsd="" +
+@MCElement(name="statisticsProvider", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"dataSourceBeanId\" type=\"xsd:string\" use=\"required\" />\r\n" + 
 		"")

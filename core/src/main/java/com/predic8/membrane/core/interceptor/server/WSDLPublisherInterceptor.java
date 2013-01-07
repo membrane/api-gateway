@@ -28,7 +28,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
@@ -42,7 +42,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 
-@MCInterceptor(name="wsdlPublisher")
+@MCElement(name="wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LogManager.getLogger(WSDLPublisherInterceptor.class);

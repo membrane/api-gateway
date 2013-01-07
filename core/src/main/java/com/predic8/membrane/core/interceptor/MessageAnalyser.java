@@ -6,13 +6,13 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 
-@MCInterceptor(name="analyser")
+@MCElement(name="analyser")
 public class MessageAnalyser extends AbstractInterceptor {
 	public static final String REQUEST_ROOT_ELEMENT_NAME = "MEMRequestRootElementName";
 	public static final String REQUEST_ROOT_ELEMENT_NS = "MEMRequestRootElementNS";

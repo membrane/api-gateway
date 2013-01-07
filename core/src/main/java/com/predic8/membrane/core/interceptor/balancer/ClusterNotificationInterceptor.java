@@ -33,13 +33,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCInterceptor(name="clusterNotification" /*, xsd="" +
+@MCElement(name="clusterNotification" /*, xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"timeout\" type=\"xsd:long\" />\r\n" + 
 		"					<xsd:attribute name=\"validateSignature\" type=\"xsd:boolean\" />\r\n" + 

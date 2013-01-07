@@ -21,7 +21,7 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -32,7 +32,7 @@ import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 
-@MCInterceptor(name="adminConsole"/*, xsd="" +
+@MCElement(name="adminConsole"/*, xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"readOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
 		""*/)

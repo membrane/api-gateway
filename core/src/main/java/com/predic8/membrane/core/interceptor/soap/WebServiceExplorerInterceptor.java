@@ -30,7 +30,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -53,7 +53,7 @@ import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.wstool.creator.RequestTemplateCreator;
 import com.predic8.wstool.creator.SOARequestCreator;
 
-@MCInterceptor(name="webServiceExplorer")
+@MCElement(name="webServiceExplorer")
 public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	
 	private static Log log = LogFactory.getLog(WebServiceExplorerInterceptor.class.getName());

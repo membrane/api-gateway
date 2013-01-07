@@ -23,13 +23,13 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.log4j.Logger;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 
-@MCInterceptor(name="headerFilter", xsd="" +
+@MCElement(name="headerFilter", xsd="" +
 		"					<xsd:sequence maxOccurs=\"unbounded\">\r\n" + 
 		"						<xsd:choice>\r\n" + 
 		"							<xsd:element name=\"include\" type=\"xsd:string\" />\r\n" + 

@@ -16,13 +16,13 @@ package com.predic8.membrane.core.interceptor.rest;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.xml.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCInterceptor(name="http2xml")
+@MCElement(name="http2xml")
 public class HTTP2XMLInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(HTTP2XMLInterceptor.class.getName());

@@ -17,6 +17,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
 public abstract class Store extends AbstractConfigElement {
@@ -55,6 +56,7 @@ public abstract class Store extends AbstractConfigElement {
 		return location;
 	}
 
+	@MCAttribute
 	public void setLocation(String location) {
 		this.location = location;
 	}
@@ -63,6 +65,7 @@ public abstract class Store extends AbstractConfigElement {
 		return password;
 	}
 
+	@MCAttribute
 	public void setPassword(String password) {
 		this.password = password;
 	}
@@ -71,6 +74,7 @@ public abstract class Store extends AbstractConfigElement {
 		return type;
 	}
 	
+	@MCAttribute
 	public void setType(String type) {
 		this.type = type;
 	}
@@ -79,6 +83,7 @@ public abstract class Store extends AbstractConfigElement {
 		return provider;
 	}
 
+	@MCAttribute
 	public void setProvider(String provider) {
 		this.provider = provider;
 	}

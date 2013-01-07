@@ -24,13 +24,13 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 
-@MCInterceptor(name="limit")
+@MCElement(name="limit")
 public class LimitInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LogManager.getLogger(LimitInterceptor.class);

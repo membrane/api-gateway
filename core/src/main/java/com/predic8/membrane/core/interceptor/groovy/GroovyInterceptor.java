@@ -28,7 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.web.util.HtmlUtils;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.XMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -37,7 +37,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 
-@MCInterceptor(name="groovy", mixed=true, xsd="" +
+@MCElement(name="groovy", mixed=true, xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"")
 public class GroovyInterceptor extends AbstractInterceptor {

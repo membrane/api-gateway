@@ -21,7 +21,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.http.AbstractBody;
@@ -30,7 +30,7 @@ import com.predic8.membrane.core.interceptor.administration.AdminConsoleIntercep
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
-@MCInterceptor(name="exchangeStore", xsd="" +
+@MCElement(name="exchangeStore", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
 		"")

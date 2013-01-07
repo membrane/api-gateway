@@ -17,7 +17,7 @@ package com.predic8.membrane.core.interceptor.rewrite;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -29,7 +29,7 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
 /**
  * Rewrites the "Location" header in responses.
  */
-@MCInterceptor(name="reverseProxying")
+@MCElement(name="reverseProxying")
 public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	public ReverseProxyingInterceptor() {
 		name = "Reverse Proxy";

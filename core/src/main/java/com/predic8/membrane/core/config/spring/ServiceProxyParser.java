@@ -40,9 +40,6 @@ public class ServiceProxyParser extends AbstractParser {
 		String path = ".*";
 
 		builder.addPropertyValue("key", new ServiceProxyKey(host, method, path, port, ip));
-
-		// TODO:
-		// ssl
 		
 		NodeList nl = element.getChildNodes();
 		for (int i = 0; i < nl.getLength(); i++) {
@@ -58,6 +55,17 @@ public class ServiceProxyParser extends AbstractParser {
 								ele.hasAttribute("service") ?
 										"service:" + ele.getAttribute("service") :
 											StringUtils.defaultIfEmpty(ele.getAttribute("url"), null));
+						
+						NodeList nl2 = ele.getChildNodes();
+						for (int i2 = 0; i2 < nl2.getLength(); i2++) {
+							Node node2 = nl2.item(i2);
+							if (node2 instanceof Element) {
+								Element ele2 = (Element) node2;
+								
+								parseElementToProperty(ele2, parserContext, builder, "sslOutboundParser");
+							}
+						}
+
 						continue;
 					}
 					if (StringUtils.equals("path", ele.getLocalName())) {
@@ -66,6 +74,10 @@ public class ServiceProxyParser extends AbstractParser {
 						builder.addPropertyValue("key.pathRegExp", Boolean.parseBoolean(ele.getAttribute("isRegExp")));
 						builder.addPropertyValue("key.path", ele.getTextContent());
 						
+						continue;
+					}
+					if (StringUtils.equals("ssl", ele.getLocalName())) {
+						parseElementToProperty(ele, parserContext, builder, "sslInboundParser");
 						continue;
 					}
 				} 
@@ -83,6 +95,18 @@ public class ServiceProxyParser extends AbstractParser {
 			builder.addPropertyValue("blockResponse", blockResponse);
 	}
 	
+	private void parseElementToProperty(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, String property) {
+		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
+
+		if (delegate.isDefaultNamespace(ele)) {
+			Object o = delegate.parsePropertySubElement(ele, builder.getBeanDefinition());
+			builder.addPropertyValue(property, o);
+		} else {
+			BeanDefinition bd = delegate.parseCustomElement(ele);
+			builder.addPropertyValue(property, bd);
+		}
+	}
+
 	protected void parseInterceptor(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Flow flow) {
 		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
 

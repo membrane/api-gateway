@@ -19,7 +19,7 @@ import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.log4j.Logger;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
@@ -27,7 +27,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCInterceptor(name="soapStackTraceFilter")
+@MCElement(name="soapStackTraceFilter")
 public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 	
 	private static final Logger LOG = Logger.getLogger(SOAPStackTraceFilterInterceptor.class);

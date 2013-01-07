@@ -21,7 +21,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -36,7 +36,7 @@ import com.predic8.membrane.core.util.TextUtil;
  * {@link JSONValidator} and {@link SchematronValidator} depending on the
  * attributes.
  */
-@MCInterceptor(name="validator", xsd="" +
+@MCElement(name="validator", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"wsdl\" type=\"xsd:string\" />\r\n" + 
 		"					<xsd:attribute name=\"schema\" type=\"xsd:string\" />\r\n" + 

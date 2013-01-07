@@ -31,7 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.http.MediaType;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -46,7 +46,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
-@MCInterceptor(name="rest2Soap", xsd="" +
+@MCElement(name="rest2Soap", xsd="" +
 		"					<xsd:sequence>\r\n" + 
 		"						<xsd:element name=\"mapping\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
 		"							<xsd:complexType>\r\n" + 

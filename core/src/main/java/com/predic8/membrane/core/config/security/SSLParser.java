@@ -17,8 +17,12 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 
+@MCElement(name="ssl", group="ssl")
 public class SSLParser extends AbstractConfigElement {
 
 	private KeyStore keyStore;
@@ -78,6 +82,7 @@ public class SSLParser extends AbstractConfigElement {
 		return keyStore;
 	}
 
+	@MCChildElement
 	public void setKeyStore(KeyStore keyStore) {
 		this.keyStore = keyStore;
 	}
@@ -86,6 +91,7 @@ public class SSLParser extends AbstractConfigElement {
 		return trustStore;
 	}
 
+	@MCChildElement
 	public void setTrustStore(TrustStore trustStore) {
 		this.trustStore = trustStore;
 	}
@@ -94,6 +100,7 @@ public class SSLParser extends AbstractConfigElement {
 		return algorithm;
 	}
 	
+	@MCAttribute
 	public void setAlgorithm(String algorithm) {
 		this.algorithm = algorithm;
 	}
@@ -102,6 +109,7 @@ public class SSLParser extends AbstractConfigElement {
 		return protocol;
 	}
 	
+	@MCAttribute
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
 	}
@@ -110,6 +118,7 @@ public class SSLParser extends AbstractConfigElement {
 		return ciphers;
 	}
 	
+	@MCAttribute
 	public void setCiphers(String ciphers) {
 		this.ciphers = ciphers;
 	}
@@ -118,6 +127,7 @@ public class SSLParser extends AbstractConfigElement {
 		return clientAuth;
 	}
 	
+	@MCAttribute
 	public void setClientAuth(String clientAuth) {
 		this.clientAuth = clientAuth;
 	}
@@ -126,6 +136,7 @@ public class SSLParser extends AbstractConfigElement {
 		return ignoreTimestampCheckFailure;
 	}
 	
+	@MCAttribute
 	public void setIgnoreTimestampCheckFailure(boolean ignoreTimestampCheckFailure) {
 		this.ignoreTimestampCheckFailure = ignoreTimestampCheckFailure;
 	}

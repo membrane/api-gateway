@@ -24,7 +24,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 
 import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -34,7 +34,7 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HostColonPort;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 
-@MCInterceptor(name="index")
+@MCElement(name="index")
 public class IndexInterceptor extends AbstractInterceptor {
 	
 	private static class ServiceInfo {

@@ -28,7 +28,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
@@ -36,7 +36,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 
-@MCInterceptor(name="statisticsJDBC", xsd="" +
+@MCElement(name="statisticsJDBC", xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"postMethodOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
 		"					<xsd:attribute name=\"soapOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 

@@ -17,11 +17,11 @@ import java.net.URL;
 
 import org.apache.commons.logging.*;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
-@MCInterceptor(name="dispatching")
+@MCElement(name="dispatching")
 public class DispatchingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(DispatchingInterceptor.class.getName());

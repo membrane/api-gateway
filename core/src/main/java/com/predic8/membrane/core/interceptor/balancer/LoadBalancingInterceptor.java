@@ -22,7 +22,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
@@ -33,7 +33,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 /**
  * May only be used as interceptor in a ServiceProxy.
  */
-@MCInterceptor(name="balancer", xsd="" +
+@MCElement(name="balancer", xsd="" +
 		"					<xsd:sequence>\r\n" + 
 		"						<xsd:choice minOccurs=\"0\">\r\n" + 
 		"							<xsd:element name=\"xmlSessionIdExtractor\">\r\n" + 

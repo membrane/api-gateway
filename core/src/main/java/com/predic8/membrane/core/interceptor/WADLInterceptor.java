@@ -24,11 +24,11 @@ import javax.xml.stream.*;
 import org.apache.commons.logging.*;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
-@MCInterceptor(name="wadlRewriter")
+@MCElement(name="wadlRewriter")
 public class WADLInterceptor extends RelocatingInterceptor {
 
 	private static Log log = LogFactory.getLog(WADLInterceptor.class.getName());

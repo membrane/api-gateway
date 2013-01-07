@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -34,7 +34,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ResourceResolver;
 
-@MCInterceptor(name="accessControl" /*, xsd="" +
+@MCElement(name="accessControl" /*, xsd="" +
 		"					<xsd:sequence />\r\n" + 
 		"					<xsd:attribute name=\"file\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
 		""*/)

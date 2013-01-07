@@ -200,6 +200,14 @@ public class ServiceProxy extends AbstractProxy {
 		return sslOutboundContext;
 	}
 	
+	public void setSslInboundParser(SSLParser sslInboundParser) {
+		this.sslInboundParser = sslInboundParser;
+	}
+	
+	public void setSslOutboundParser(SSLParser sslOutboundParser) {
+		this.sslOutboundParser = sslOutboundParser;
+	}
+	
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);

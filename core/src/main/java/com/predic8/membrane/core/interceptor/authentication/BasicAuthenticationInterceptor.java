@@ -21,7 +21,7 @@ import javax.xml.stream.*;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.web.util.HtmlUtils;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -29,7 +29,7 @@ import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.HttpUtil;
 
-@MCInterceptor(name="basicAuthentication", xsd="" +
+@MCElement(name="basicAuthentication", xsd="" +
 		"					<xsd:sequence>\r\n" + 
 		"						<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
 		"							<xsd:complexType>\r\n" + 

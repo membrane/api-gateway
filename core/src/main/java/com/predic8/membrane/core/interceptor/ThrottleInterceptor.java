@@ -22,11 +22,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
-@MCInterceptor(name="throttle")
+@MCElement(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(ThrottleInterceptor.class.getName());
 	

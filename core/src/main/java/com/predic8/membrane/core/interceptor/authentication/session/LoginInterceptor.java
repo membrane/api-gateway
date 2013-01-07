@@ -17,7 +17,7 @@ import java.util.Map;
 
 import javax.xml.stream.XMLStreamReader;
 
-import com.predic8.membrane.annot.MCInterceptor;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCRaw;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
@@ -87,7 +87,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 		"		</xsd:choice>\r\n" + 
 		"	</xsd:group>\r\n" + 
 		"")
-@MCInterceptor(name="login", xsd="" +
+@MCElement(name="login", xsd="" +
 		"			<xsd:sequence>\r\n" + 
 		"				<xsd:group ref=\"TokenProviderGroup\" />\r\n" + 
 		"				\r\n" + 
