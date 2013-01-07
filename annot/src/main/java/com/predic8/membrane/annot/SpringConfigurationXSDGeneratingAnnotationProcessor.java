@@ -316,6 +316,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						"package com.predic8.membrane.core.config.spring;\r\n" + 
 						"\r\n" + 
 						"import org.w3c.dom.Element;\r\n" + 
+						"import org.apache.commons.lang.StringUtils;\r\n" + 
+						"import org.w3c.dom.Element;\r\n" + 
+						"import org.w3c.dom.Node;\r\n" + 
+						"import org.w3c.dom.NodeList;\r\n" + 
+						"import org.springframework.beans.factory.xml.ParserContext;\r\n" + 
+						"import org.springframework.beans.factory.support.BeanDefinitionBuilder;\r\n" + 
 						"\r\n" + 
 						"public class " + parserClassName + " extends AbstractParser {\r\n" + 
 						"\r\n" + 
@@ -324,9 +330,25 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						"	}\r\n");
 				if (ii.ais.size() > 0) {
 					bw.write("	@Override\r\n" + 
-							"	protected void doParse(Element element, org.springframework.beans.factory.support.BeanDefinitionBuilder builder) {\r\n");
+							"	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {\r\n");
 					for (AttributeInfo ai : ii.ais)
 						bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getName() + "\", element, builder);\r\n");
+					bw.write("		NodeList nl = element.getChildNodes();\r\n" + 
+							"		for (int i = 0; i < nl.getLength(); i++) {\r\n" + 
+							"			Node node = nl.item(i);\r\n" + 
+							"			if (node instanceof Element) {\r\n" + 
+							"				Element ele = (Element) node;\r\n" +
+							"				if (StringUtils.equals(MEMBRANE_NAMESPACE, ele.getNamespaceURI())) {\r\n");
+					for (ChildElementInfo cei : ii.ceis)
+						bw.write(
+								"					if (StringUtils.equals(\"" + cei.xsdName + "\", ele.getLocalName())) {\r\n" + 
+								"						parseElementToProperty(ele, parserContext, builder, \"" + cei.xsdName + "\");\r\n" + 
+								"					}\r\n");
+					bw.write(
+							"				}\r\n" + 
+							"			}\r\n" + 
+							"		}\r\n" + 
+							"");
 					bw.write(
 							"	}\r\n" + 
 							"");

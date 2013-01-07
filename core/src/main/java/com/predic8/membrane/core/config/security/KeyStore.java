@@ -20,8 +20,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.annot.MCAttribute;
 
-
-
 public class KeyStore extends Store {
 
 	public static final String ELEMENT_NAME = "keystore";

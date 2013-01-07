@@ -17,9 +17,13 @@ package com.predic8.membrane.core.config.spring;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
+import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
+import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
 public class AbstractParser extends AbstractSingleBeanDefinitionParser {
+
+	protected static final String MEMBRANE_NAMESPACE = "http://membrane-soa.org/router/beans/1/";
 
 	private boolean inlined = false;
 
@@ -45,6 +49,18 @@ public class AbstractParser extends AbstractSingleBeanDefinitionParser {
 	protected void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder) {
 		if (e.hasAttribute(prop)) {
 			builder.addPropertyValue(prop, e.getAttribute(prop));
+		}
+	}
+	
+	protected void parseElementToProperty(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, String property) {
+		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
+
+		if (delegate.isDefaultNamespace(ele)) {
+			Object o = delegate.parsePropertySubElement(ele, builder.getBeanDefinition());
+			builder.addPropertyValue(property, o);
+		} else {
+			BeanDefinition bd = delegate.parseCustomElement(ele);
+			builder.addPropertyValue(property, bd);
 		}
 	}
 

@@ -17,8 +17,6 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class ServiceProxyParser extends AbstractParser {
 
-	private static final String MEMBRANE_NAMESPACE = "http://membrane-soa.org/router/beans/1/";
-
 	@Override
 	protected Class<?> getBeanClass(Element element) {
 		return ServiceProxy.class;
@@ -95,18 +93,6 @@ public class ServiceProxyParser extends AbstractParser {
 			builder.addPropertyValue("blockResponse", blockResponse);
 	}
 	
-	private void parseElementToProperty(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, String property) {
-		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
-
-		if (delegate.isDefaultNamespace(ele)) {
-			Object o = delegate.parsePropertySubElement(ele, builder.getBeanDefinition());
-			builder.addPropertyValue(property, o);
-		} else {
-			BeanDefinition bd = delegate.parseCustomElement(ele);
-			builder.addPropertyValue(property, bd);
-		}
-	}
-
 	protected void parseInterceptor(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Flow flow) {
 		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
 
