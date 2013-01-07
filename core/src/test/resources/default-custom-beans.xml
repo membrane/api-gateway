@@ -20,7 +20,7 @@
 	</transport>
 
 	<counter name="Counter 2" />
-	<forgetfulExchangeStore />
+	<forgetfulExchangeStore id="forgetfulExchangeStore" />
 	
 <!-- 
   <spring:bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 

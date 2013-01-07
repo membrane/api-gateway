@@ -27,6 +27,8 @@ public class ServiceProxyParser extends AbstractParser {
 	@Override
 	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
 		super.doParse(element, parserContext, builder);
+		
+		setIdIfNeeded(element, "serviceProxy");
 
 		String name = StringUtils.defaultIfEmpty(element.getAttribute("name"), null);
 		int port = Integer.parseInt(StringUtils.defaultIfEmpty(element.getAttribute("port"), "80"));

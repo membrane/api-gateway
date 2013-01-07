@@ -19,7 +19,9 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 
+@MCElement(name="keystore", group="ssl")
 public class KeyStore extends Store {
 
 	public static final String ELEMENT_NAME = "keystore";

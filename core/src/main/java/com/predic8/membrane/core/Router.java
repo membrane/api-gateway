@@ -109,30 +109,12 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"		</xsd:complexType>\r\n" + 
 				"	</xsd:element>\r\n" + 
 				"\r\n" +
-				"${baseDeclarations}\r\n" +
 				"${interceptorDeclarations}\r\n" +
 				"${sslDeclarations}\r\n" +
 				"\r\n" +
 				"${raw}\r\n" +
 				"\r\n" +
-				"	<xsd:element name=\"memoryExchangeStore\" type=\"EmptyElementType\" />\r\n" + 
-				"	<xsd:element name=\"forgetfulExchangeStore\" type=\"EmptyElementType\" />\r\n" + 
-				"\r\n" + 
-				"	<xsd:element name=\"fileExchangeStore\">\r\n" + 
-				"		<xsd:complexType>\r\n" + 
-				"			<xsd:complexContent>\r\n" + 
-				"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
-				"					<xsd:sequence />\r\n" + 
-				"					<xsd:attribute name=\"raw\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
-				"					<xsd:attribute name=\"saveBodyOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
-				"					<xsd:attribute name=\"dir\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-				"				</xsd:extension>\r\n" + 
-				"			</xsd:complexContent>\r\n" + 
-				"		</xsd:complexType>\r\n" + 
-				"	</xsd:element>\r\n" + 
-				"\r\n" + 
-				"\r\n" + 
-				"\r\n" + 
+				"${exchangeStoreDeclarations}\r\n" +
 				"	\r\n" + 
 				"	<xsd:complexType name=\"EmptyElementType\">\r\n" + 
 				"		<xsd:complexContent>\r\n" + 

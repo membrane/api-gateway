@@ -25,7 +25,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.Message;
@@ -37,6 +40,7 @@ import com.predic8.membrane.core.util.TextUtil;
 /**
  * The output file is UTF-8 encoded.
  */
+@MCElement(name="fileExchangeStore", group="exchangeStore")
 public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static Log log = LogFactory.getLog(FileExchangeStore.class
@@ -167,6 +171,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return dir;
 	}
 
+	@Required
+	@MCAttribute
 	public void setDir(String dir) {
 		this.dir = dir;
 	}
@@ -175,6 +181,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return raw;
 	}
 
+	@MCAttribute
 	public void setRaw(boolean raw) {
 		this.raw = raw;
 	}
@@ -203,6 +210,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return saveBodyOnly;
 	}
 
+	@MCAttribute
 	public void setSaveBodyOnly(boolean saveBodyOnly) {
 		this.saveBodyOnly = saveBodyOnly;
 	}

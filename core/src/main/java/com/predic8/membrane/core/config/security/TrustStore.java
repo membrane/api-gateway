@@ -18,7 +18,9 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 
+@MCElement(name="truststore", group="ssl")
 public class TrustStore extends Store {
 
 	public static final String ELEMENT_NAME = "truststore";

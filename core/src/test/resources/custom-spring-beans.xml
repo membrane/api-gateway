@@ -124,8 +124,8 @@
 	<regExReplacer regex="Hallo" replace="Hello" />
 	<counter name="Node 1"/>
 	
-	<memoryExchangeStore />
-	<forgetfulExchangeStore />
+	<memoryExchangeStore id="memoryExchangeStore" />
+	<forgetfulExchangeStore id="forgetfulExchangeStore" />
 	<fileExchangeStore dir="target/temp" raw="false" saveBodyOnly="false"/>
 
 <!-- 
