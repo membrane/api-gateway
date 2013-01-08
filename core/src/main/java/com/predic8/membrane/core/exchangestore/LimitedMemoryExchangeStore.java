@@ -22,11 +22,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
 
+@MCElement(name="limitedMemoryExchangeStore", group="exchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private int maxSize = 1000000;
@@ -139,10 +142,9 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return maxSize;
 	}
 
+	@MCAttribute
 	public void setMaxSize(int maxSize) {
 		this.maxSize = maxSize;
 	}
-
-	
 	
 }

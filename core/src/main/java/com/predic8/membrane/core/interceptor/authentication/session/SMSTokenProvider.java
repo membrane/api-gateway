@@ -24,6 +24,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public abstract class SMSTokenProvider extends AbstractXmlElement implements TokenProvider {
@@ -91,35 +92,31 @@ public abstract class SMSTokenProvider extends AbstractXmlElement implements Tok
 			throw new NoSuchElementException();
 	}
 
-
 	public String getPrefixText() {
 		return prefixText;
 	}
 
-
+	@MCAttribute
 	public void setPrefixText(String prefixText) {
 		this.prefixText = prefixText;
 	}
-
 
 	public boolean isSimulate() {
 		return simulate;
 	}
 
-
+	@MCAttribute
 	public void setSimulate(boolean simulate) {
 		this.simulate = simulate;
 	}
-
 
 	public boolean isNormalizeTelephoneNumber() {
 		return normalizeTelephoneNumber;
 	}
 
-
+	@MCAttribute
 	public void setNormalizeTelephoneNumber(boolean normalizeTelephoneNumber) {
 		this.normalizeTelephoneNumber = normalizeTelephoneNumber;
 	}
-
 
 }

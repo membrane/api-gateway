@@ -23,12 +23,15 @@ import javax.xml.stream.XMLStreamReader;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
 
+@MCElement(name="sessionManager", group="sessionManager", global=false)
 public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;
 	private long timeout;
@@ -141,6 +144,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return cookieName;
 	}
 
+	@MCAttribute
 	public void setCookieName(String cookieName) {
 		this.cookieName = cookieName;
 	}
@@ -149,6 +153,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return timeout;
 	}
 
+	@MCAttribute
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
 	}
@@ -157,6 +162,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return domain;
 	}
 	
+	@MCAttribute
 	public void setDomain(String domain) {
 		this.domain = domain;
 	}

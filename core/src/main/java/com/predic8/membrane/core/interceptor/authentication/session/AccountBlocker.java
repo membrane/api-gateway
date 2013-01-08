@@ -24,12 +24,15 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
 
 /**
  * Keeps track of blocked user accounts (accounts become blocked after too many failed logins).
  */
+@MCElement(name="accountBlocker", group="accountBlocker")
 public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 	private static Log log = LogFactory.getLog(AccountBlocker.class.getName());
 
@@ -127,6 +130,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 		return blockWholeSystemAfter;
 	}
 
+	@MCAttribute
 	public void setBlockWholeSystemAfter(int blockWholeSystemAfter) {
 		this.blockWholeSystemAfter = blockWholeSystemAfter;
 	}
@@ -135,6 +139,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 		return afterFailedLogins;
 	}
 
+	@MCAttribute
 	public void setAfterFailedLogins(int afterFailedLogins) {
 		this.afterFailedLogins = afterFailedLogins;
 	}
@@ -143,6 +148,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 		return afterFailedLoginsWithin;
 	}
 
+	@MCAttribute
 	public void setAfterFailedLoginsWithin(long afterFailedLoginsWithin) {
 		this.afterFailedLoginsWithin = afterFailedLoginsWithin;
 	}
@@ -151,6 +157,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 		return blockFor;
 	}
 
+	@MCAttribute
 	public void setBlockFor(long blockFor) {
 		this.blockFor = blockFor;
 	}

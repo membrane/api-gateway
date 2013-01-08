@@ -5,7 +5,6 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -23,6 +22,7 @@ public class ServiceProxyParser extends AbstractParser {
 	}
 	
 	private int interceptorCount = 0;
+	private Flow flow = Flow.REQUEST_RESPONSE;
 
 	@Override
 	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
@@ -41,51 +41,7 @@ public class ServiceProxyParser extends AbstractParser {
 
 		builder.addPropertyValue("key", new ServiceProxyKey(host, method, path, port, ip));
 		
-		NodeList nl = element.getChildNodes();
-		for (int i = 0; i < nl.getLength(); i++) {
-			Node node = nl.item(i);
-			if (node instanceof Element) {
-				Element ele = (Element) node;
-				
-				if (StringUtils.equals(MEMBRANE_NAMESPACE, ele.getNamespaceURI())) {
-					if (StringUtils.equals("target", ele.getLocalName())) {
-						builder.addPropertyValue("targetHost", StringUtils.defaultIfEmpty(ele.getAttribute("host"), null));
-						builder.addPropertyValue("targetPort", Integer.parseInt(StringUtils.defaultIfEmpty(ele.getAttribute("port"), "80")));
-						builder.addPropertyValue("targetURL", 
-								ele.hasAttribute("service") ?
-										"service:" + ele.getAttribute("service") :
-											StringUtils.defaultIfEmpty(ele.getAttribute("url"), null));
-						
-						NodeList nl2 = ele.getChildNodes();
-						for (int i2 = 0; i2 < nl2.getLength(); i2++) {
-							Node node2 = nl2.item(i2);
-							if (node2 instanceof Element) {
-								Element ele2 = (Element) node2;
-								
-								parseElementToProperty(ele2, parserContext, builder, "sslOutboundParser");
-							}
-						}
-
-						continue;
-					}
-					if (StringUtils.equals("path", ele.getLocalName())) {
-						
-						builder.addPropertyValue("key.usePathPattern", true);
-						builder.addPropertyValue("key.pathRegExp", Boolean.parseBoolean(ele.getAttribute("isRegExp")));
-						builder.addPropertyValue("key.path", ele.getTextContent());
-						
-						continue;
-					}
-					if (StringUtils.equals("ssl", ele.getLocalName())) {
-						parseElementToProperty(ele, parserContext, builder, "sslInboundParser");
-						continue;
-					}
-				} 
-				
-				parseInterceptor(ele, parserContext, builder, Flow.REQUEST_RESPONSE);
-			}
-		}
-
+		parseChildren(element, parserContext, builder);
 		
 		if (name != null)
 			builder.addPropertyValue("name", name);
@@ -95,8 +51,41 @@ public class ServiceProxyParser extends AbstractParser {
 			builder.addPropertyValue("blockResponse", blockResponse);
 	}
 	
-	protected void parseInterceptor(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Flow flow) {
-		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
+	protected void handleChildElement(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder) {
+		if (StringUtils.equals(MEMBRANE_NAMESPACE, ele.getNamespaceURI())) {
+			if (StringUtils.equals("target", ele.getLocalName())) {
+				builder.addPropertyValue("targetHost", StringUtils.defaultIfEmpty(ele.getAttribute("host"), null));
+				builder.addPropertyValue("targetPort", Integer.parseInt(StringUtils.defaultIfEmpty(ele.getAttribute("port"), "80")));
+				builder.addPropertyValue("targetURL", 
+						ele.hasAttribute("service") ?
+								"service:" + ele.getAttribute("service") :
+									StringUtils.defaultIfEmpty(ele.getAttribute("url"), null));
+				
+				NodeList nl2 = ele.getChildNodes();
+				for (int i2 = 0; i2 < nl2.getLength(); i2++) {
+					Node node2 = nl2.item(i2);
+					if (node2 instanceof Element) {
+						Element ele2 = (Element) node2;
+						
+						parseElementToProperty(ele2, parserContext, builder, "sslOutboundParser");
+					}
+				}
+
+				return;
+			}
+			if (StringUtils.equals("path", ele.getLocalName())) {
+				
+				builder.addPropertyValue("key.usePathPattern", true);
+				builder.addPropertyValue("key.pathRegExp", Boolean.parseBoolean(ele.getAttribute("isRegExp")));
+				builder.addPropertyValue("key.path", ele.getTextContent());
+				
+				return;
+			}
+			if (StringUtils.equals("ssl", ele.getLocalName())) {
+				parseElementToProperty(ele, parserContext, builder, "sslInboundParser");
+				return;
+			}
+		} 
 
 		if (StringUtils.equals(MEMBRANE_NAMESPACE, ele.getNamespaceURI())) {
 			boolean request = StringUtils.equals("request", ele.getLocalName());
@@ -107,32 +96,33 @@ public class ServiceProxyParser extends AbstractParser {
 					Node node = nl.item(i);
 					if (node instanceof Element) {
 						Element ele2 = (Element) node;
-						parseInterceptor(ele2, parserContext, builder, request ? Flow.REQUEST : Flow.RESPONSE);
+						flow = request ? Flow.REQUEST : Flow.RESPONSE;
+						super.handleChildElement(ele2, parserContext, builder);
 					}
 				}
 				return;
 			}
 		}
-		if (delegate.isDefaultNamespace(ele)) {
-			Object o = delegate.parsePropertySubElement(ele, builder.getBeanDefinition());
-			if (flow != Flow.REQUEST_RESPONSE) {
-				if (o instanceof BeanDefinitionHolder) {
-					((BeanDefinitionHolder) o).getBeanDefinition().getPropertyValues().addPropertyValue("flow", flow);
-				} else if (o instanceof RuntimeBeanReference) {
-					parserContext.getRegistry().getBeanDefinition(((RuntimeBeanReference) o).getBeanName())
-							.getPropertyValues().addPropertyValue("flow", flow);
-				} else {
-					parserContext.getReaderContext().error("Don't know how to set flow on " + o.getClass(), ele);
-				}
-			}
-			builder.addPropertyValue("interceptors[" + interceptorCount++ + "]", o);
-		} else {
-			BeanDefinition bd = delegate.parseCustomElement(ele);
-			if (flow != Flow.REQUEST_RESPONSE)
-				bd.getPropertyValues().addPropertyValue("flow", flow);
-			builder.addPropertyValue("interceptors[" + interceptorCount++ + "]", bd);
-		}
+
+		flow = Flow.REQUEST_RESPONSE;
+		super.handleChildElement(ele, parserContext, builder);
 	}
 	
+	protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {
+		if (flow != Flow.REQUEST_RESPONSE) {
+			if (child instanceof BeanDefinitionHolder) {
+				((BeanDefinitionHolder) child).getBeanDefinition().getPropertyValues().addPropertyValue("flow", flow);
+			} else if (child instanceof RuntimeBeanReference) {
+				parserContext.getRegistry().getBeanDefinition(((RuntimeBeanReference) child).getBeanName())
+						.getPropertyValues().addPropertyValue("flow", flow);
+			} else if (child instanceof BeanDefinition) {
+				((BeanDefinition)child).getPropertyValues().addPropertyValue("flow", flow);
+			} else {
+				parserContext.getReaderContext().error("Don't know how to set flow on " + child.getClass(), ele);
+			}
+		}
+		
+		builder.addPropertyValue("interceptors[" + interceptorCount++ + "]", child);
+	}
 
 }

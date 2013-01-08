@@ -109,12 +109,9 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"		</xsd:complexType>\r\n" + 
 				"	</xsd:element>\r\n" + 
 				"\r\n" +
-				"${interceptorDeclarations}\r\n" +
-				"${sslDeclarations}\r\n" +
+				"${declarations}\r\n" +
 				"\r\n" +
 				"${raw}\r\n" +
-				"\r\n" +
-				"${exchangeStoreDeclarations}\r\n" +
 				"	\r\n" + 
 				"	<xsd:complexType name=\"EmptyElementType\">\r\n" + 
 				"		<xsd:complexContent>\r\n" + 

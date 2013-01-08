@@ -21,6 +21,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -36,15 +37,7 @@ import com.predic8.membrane.core.util.TextUtil;
  * {@link JSONValidator} and {@link SchematronValidator} depending on the
  * attributes.
  */
-@MCElement(name="validator", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"wsdl\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"schema\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"jsonSchema\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"schematron\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"failureHandler\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"skipFaults\" type=\"xsd:boolean\" default=\"false\" />\r\n" + 
-		"")
+@MCElement(name="validator")
 public class ValidatorInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(ValidatorInterceptor.class.getName());
 
@@ -142,6 +135,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		skipFaults = Boolean.parseBoolean(token.getAttributeValue("", "skipFaults"));
 	}
 
+	@MCAttribute
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
 	}
@@ -154,6 +148,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		return schema;
 	}
 
+	@MCAttribute
 	public void setSchema(String schema) {
 		this.schema = schema;
 	}
@@ -162,6 +157,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		return failureHandler;
 	}
 	
+	@MCAttribute
 	public void setFailureHandler(String failureHandler) {
 		this.failureHandler = failureHandler;
 	}
@@ -170,6 +166,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		return jsonSchema;
 	}
 
+	@MCAttribute
 	public void setJsonSchema(String jsonSchema) {
 		this.jsonSchema = jsonSchema;
 	}
@@ -178,6 +175,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		return schematron;
 	}
 
+	@MCAttribute
 	public void setSchematron(String schematron) {
 		this.schematron = schematron;
 	}
@@ -186,6 +184,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		return skipFaults;
 	}
 	
+	@MCAttribute
 	public void setSkipFaults(boolean skipFaults) {
 		this.skipFaults = skipFaults;
 	}

@@ -12,4 +12,5 @@ public @interface MCElement {
 	String group() default "interceptor";
 	boolean mixed() default false;
 	String xsd() default "";
+	boolean global() default true;
 }

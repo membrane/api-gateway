@@ -30,8 +30,10 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.collect.ImmutableMap;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -40,10 +42,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-@MCElement(name="statisticsProvider", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"dataSourceBeanId\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"")
+@MCElement(name="statisticsProvider")
 public class StatisticsProvider extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(StatisticsProvider.class
 			.getName());
@@ -196,6 +195,8 @@ public class StatisticsProvider extends AbstractInterceptor {
 		return dataSourceBeanId;
 	}
 	
+	@Required
+	@MCAttribute
 	public void setDataSourceBeanId(String dataSourceBeanId) {
 		this.dataSourceBeanId = dataSourceBeanId;
 		dataSource = router.getBean(dataSourceBeanId, DataSource.class);

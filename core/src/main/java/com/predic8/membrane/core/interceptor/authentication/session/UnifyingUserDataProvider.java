@@ -7,9 +7,14 @@ import java.util.NoSuchElementException;
 
 import javax.xml.stream.XMLStreamReader;
 
+import org.springframework.beans.factory.annotation.Required;
+
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.XMLElement;
 
+@MCElement(name="unifyingUserDataProvider", group="userDataProvider", global=false)
 public class UnifyingUserDataProvider extends AbstractXmlElement implements UserDataProvider {
 
 	private List<UserDataProvider> userDataProviders = new ArrayList<UserDataProvider>(); 
@@ -55,6 +60,8 @@ public class UnifyingUserDataProvider extends AbstractXmlElement implements User
 		return userDataProviders;
 	}
 	
+	@Required
+	@MCChildElement
 	public void setUserDataProviders(List<UserDataProvider> userDataProviders) {
 		this.userDataProviders = userDataProviders;
 	}

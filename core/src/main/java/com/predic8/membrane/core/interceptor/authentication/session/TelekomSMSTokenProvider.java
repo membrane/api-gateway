@@ -36,9 +36,13 @@ import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.collect.Lists;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 
+@MCElement(name="telekomSMSTokenProvider", group="tokenProvider", global=false)
 public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	private static Log log = LogFactory.getLog(TelekomSMSTokenProvider.class.getName());
 
@@ -160,6 +164,8 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return user;
 	}
 
+	@Required
+	@MCAttribute
 	public void setUser(String user) {
 		this.user = user;
 	}
@@ -168,6 +174,8 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return password;
 	}
 
+	@Required
+	@MCAttribute
 	public void setPassword(String password) {
 		this.password = password;
 	}

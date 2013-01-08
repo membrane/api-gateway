@@ -19,8 +19,22 @@ import java.util.NoSuchElementException;
 
 import javax.xml.stream.XMLStreamReader;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
+@MCElement(name="staticUserDataProvider", group="userDataProvider", global=false, xsd=
+			"<xsd:sequence>\r\n" +
+			"	<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+			"		<xsd:complexType>\r\n" + 
+			"			<xsd:sequence />\r\n" + 
+			"			<xsd:attribute name=\"username\" type=\"xsd:string\" />\r\n" + 
+			"			<xsd:attribute name=\"password\" type=\"xsd:string\" />\r\n" + 
+			"			<xsd:attribute name=\"sms\" type=\"xsd:string\" />\r\n" + 
+			"			<xsd:attribute name=\"secret\" type=\"xsd:string\" />\r\n" + 
+			"			<xsd:anyAttribute processContents=\"skip\" />\r\n" + 
+			"		</xsd:complexType>\r\n" + 
+			"	</xsd:element>\r\n" +
+			"</xsd:sequence>\r\n")
 public class StaticUserDataProvider extends AbstractXmlElement implements UserDataProvider {
 
 	private Map<String, Map<String, String>> users = new HashMap<String, Map<String,String>>();
@@ -70,5 +84,4 @@ public class StaticUserDataProvider extends AbstractXmlElement implements UserDa
 	public void setUsers(Map<String, Map<String, String>> users) {
 		this.users = users;
 	}
-
 }

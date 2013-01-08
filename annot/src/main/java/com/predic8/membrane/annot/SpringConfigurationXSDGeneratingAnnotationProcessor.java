@@ -4,6 +4,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
@@ -71,19 +73,35 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		List<ChildElementInfo> ceis = new ArrayList<ChildElementInfo>();
 	}
 	
-	private static class ChildElementInfo {
+	private static class ChildElementInfo implements Comparable<ChildElementInfo> {
 		ExecutableElement e;
 		TypeElement typeDeclaration;
+		MCChildElement annotation;
 		
 		String propertyName;
+		boolean list;
+		boolean required;
+		
+		@Override
+		public int compareTo(ChildElementInfo o) {
+			return annotation.order() - o.annotation.order();
+		}
 	}
 	
 	private static class ElementInfo extends AbstractElementInfo {
 		MCElement annotation;
+		boolean generateParserClass;
+
+		public String getParserClassSimpleName() {
+			if (annotation.group().equals("interceptor"))
+				return javaify(annotation.name() + "InterceptorParser");
+			else
+				return javaify(annotation.name() + "Parser");
+		}
 	}
 	
 	private static class ChildElementDeclarationInfo {
-		ElementInfo elementInfo;
+		List<ElementInfo> elementInfo = new ArrayList<ElementInfo>();
 	}
 	
 	private static class Model {
@@ -95,6 +113,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		List<MCRaw> raws = new ArrayList<MCRaw>();
 		Map<TypeElement, ChildElementDeclarationInfo> childElementDeclarations = new HashMap<TypeElement, ChildElementDeclarationInfo>();
 		Map<TypeElement, ElementInfo> elements = new HashMap<TypeElement, ElementInfo>();
+		Map<String, ElementInfo> globals = new HashMap<String, ElementInfo>();
 		
 		List<Element> getInterceptorElements() {
 			ArrayList<Element> res = new ArrayList<Element>(iis.size());
@@ -107,9 +126,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	private static class ProcessingException extends RuntimeException {
 		private static final long serialVersionUID = 1L;
 		
-		Element e;
+		Element[] e;
 		
-		public ProcessingException(String message, Element e) {
+		public ProcessingException(String message, Element... e) {
 			super(message);
 			this.e = e;
 		}
@@ -139,21 +158,33 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					ElementInfo ii = new ElementInfo();
 					ii.element = (TypeElement)e;
 					ii.annotation = e.getAnnotation(MCElement.class);
+					ii.generateParserClass = processingEnv.getElementUtils().getTypeElement("com.predic8.membrane.core.config.spring." + ii.getParserClassSimpleName()) == null;
 					m.iis.add(ii);
 					
 					if (!m.groups.containsKey(ii.annotation.group()))
 						m.groups.put(ii.annotation.group(), new ArrayList<ElementInfo>());
 					m.groups.get(ii.annotation.group()).add(ii);
 					m.elements.put(ii.element, ii);
+					if (m.globals.containsKey(ii.annotation.name()))
+						throw new ProcessingException("Duplicate global @MCElement name.", m.globals.get(ii.annotation.name()).element, ii.element);
 	
 					scan(m, ii);
 				}
 				
 				for (Map.Entry<TypeElement, ChildElementDeclarationInfo> f : m.childElementDeclarations.entrySet()) {
 					ChildElementDeclarationInfo cedi = f.getValue();
-					cedi.elementInfo = m.elements.get(f.getKey());
-					if (cedi.elementInfo == null) {
-						processingEnv.getMessager().printMessage(Kind.ERROR, "@MCChildElement references " + f.getKey().getQualifiedName() + ", but this class is no @MCElement.", f.getKey());
+					ElementInfo ei = m.elements.get(f.getKey());
+					
+					if (ei != null)
+						cedi.elementInfo.add(ei);
+					else {
+						for (Map.Entry<TypeElement, ElementInfo> e : m.elements.entrySet())
+							if (isAssignableFrom(f.getKey(), e.getKey()))
+								cedi.elementInfo.add(e.getValue());
+					}
+					
+					if (cedi.elementInfo.size() == 0) {
+						processingEnv.getMessager().printMessage(Kind.ERROR, "@MCChildElement references " + f.getKey().getQualifiedName() + ", but there is no @MCElement among it and its subclasses.", f.getKey());
 						return true;
 					}
 				}
@@ -178,9 +209,23 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		} catch (ProcessingException e1) {
-			processingEnv.getMessager().printMessage(Kind.ERROR, e1.getMessage(), e1.e);
+			for (int i = 0; i < e1.e.length; i++)
+				processingEnv.getMessager().printMessage(Kind.ERROR, i == 0 ? e1.getMessage() : "also here", e1.e[i]);
 			return true;
 		}
+	}
+
+	private boolean isAssignableFrom(TypeElement thiz, TypeElement clazz) {
+		if (clazz.equals(thiz))
+			return true;
+		TypeMirror tm = clazz.getSuperclass();
+		if (tm.getKind() == TypeKind.DECLARED)
+			if (isAssignableFrom(thiz, (TypeElement) ((DeclaredType) tm).asElement()))
+				return true;
+		for (TypeMirror tm2 : clazz.getInterfaces())
+			if (isAssignableFrom(thiz, (TypeElement) ((DeclaredType) tm2).asElement()))
+				return true;
+		return false;
 	}
 
 	private static final String REQUIRED = "org.springframework.beans.factory.annotation.Required";
@@ -205,10 +250,19 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			MCChildElement b = e2.getAnnotation(MCChildElement.class);
 			if (b != null) {
 				ChildElementInfo cei = new ChildElementInfo();
+				cei.annotation = b;
 				cei.e = (ExecutableElement) e2;
-				cei.typeDeclaration = (TypeElement) ((DeclaredType) cei.e.getParameters().get(0).asType()).asElement();
+				TypeMirror setterArgType = cei.e.getParameters().get(0).asType();
+				cei.typeDeclaration = (TypeElement) ((DeclaredType) setterArgType).asElement();
 				cei.propertyName = dejavaify(e2.getSimpleName().toString().substring(3));
+				cei.required = isRequired(e2);
 				ii.ceis.add(cei);
+				
+				// unwrap "java.util.List<?>"
+				if (cei.typeDeclaration.getQualifiedName().toString().startsWith("java.util.List")) {
+					cei.typeDeclaration = (TypeElement) ((DeclaredType) ((DeclaredType) setterArgType).getTypeArguments().get(0)).asElement();
+					cei.list = true;
+				}
 				
 				if (!m.childElementDeclarations.containsKey(cei.typeDeclaration)) {
 					ChildElementDeclarationInfo cedi = new ChildElementDeclarationInfo();
@@ -217,6 +271,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				}
 			}
 		}
+		Collections.sort(ii.ceis);
 	}
 
 	private boolean isRequired(Element e2) {
@@ -256,8 +311,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					"\r\n" + 
 					"	public static void registerBeanDefinitionParsers(NamespaceHandler nh) {\r\n");
 			for (ElementInfo i : m.iis) {
-				String parserClassName = javaify(i.annotation.name() + "InterceptorParser");
-				bw.write("		nh.registerBeanDefinitionParser2(\"" + i.annotation.name() + "\", new " + parserClassName + "());\r\n");
+				bw.write("		nh.registerBeanDefinitionParser2(\"" + i.annotation.name() + "\", new " + i.getParserClassSimpleName() + "());\r\n");
 			}
 			bw.write(
 					"	}\r\n" + 
@@ -286,7 +340,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	private void writeParsers(Model m) throws IOException {
 		for (ElementInfo ii : m.iis) {
 			
-			if (ii.annotation.xsd().length() != 0)
+			if (!ii.generateParserClass)
 				continue;
 			
 			List<Element> sources = new ArrayList<Element>();
@@ -294,9 +348,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			sources.add(ii.element);
 			
 			String interceptorClassName = ii.element.getQualifiedName().toString();
-			String parserClassName = javaify(ii.annotation.name() + "InterceptorParser");
 			
-			FileObject o = processingEnv.getFiler().createSourceFile(m.mainAnnotation.outputPackage() + "." + parserClassName,
+			FileObject o = processingEnv.getFiler().createSourceFile(m.mainAnnotation.outputPackage() + "." + ii.getParserClassSimpleName(),
 					sources.toArray(new Element[0]));
 			BufferedWriter bw = new BufferedWriter(o.openWriter());
 			try {
@@ -317,35 +370,65 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						"package com.predic8.membrane.core.config.spring;\r\n" + 
 						"\r\n" + 
 						"import org.w3c.dom.Element;\r\n" + 
-						"import org.apache.commons.lang.StringUtils;\r\n" + 
-						"import org.w3c.dom.Element;\r\n" + 
-						"import org.w3c.dom.Node;\r\n" + 
-						"import org.w3c.dom.NodeList;\r\n" + 
 						"import org.springframework.beans.factory.xml.ParserContext;\r\n" + 
 						"import org.springframework.beans.factory.support.BeanDefinitionBuilder;\r\n" + 
 						"\r\n" + 
-						"public class " + parserClassName + " extends AbstractParser {\r\n" + 
+						"public class " + ii.getParserClassSimpleName() + " extends AbstractParser {\r\n" + 
 						"\r\n" + 
-						"	protected Class<?> getBeanClass(Element element) {\r\n" + 
+						"	protected Class<?> getBeanClass(org.w3c.dom.Element element) {\r\n" + 
 						"		return " + interceptorClassName + ".class;\r\n" + 
 						"	}\r\n");
-				if (ii.ais.size() > 0) {
-					bw.write("	@Override\r\n" + 
-							"	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {\r\n");
+				bw.write("	@Override\r\n" + 
+						"	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {\r\n");
+				bw.write(
+						"		setIdIfNeeded(element, \"" + ii.annotation.name() + "\");\r\n");
+				for (AttributeInfo ai : ii.ais)
+					bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getName() + "\", element, builder);\r\n");
+				for (ChildElementInfo cei : ii.ceis)
+					if (cei.list)
+						bw.write("		builder.addPropertyValue(\"" + cei.propertyName + "\", new java.util.ArrayList<Object>());\r\n");
+				bw.write("		parseChildren(element, parserContext, builder);\r\n");
+				for (ChildElementInfo cei : ii.ceis)
+					if (cei.list && cei.required) {
+						bw.write("		if (builder.getBeanDefinition().getPropertyValues().getPropertyValue(\"" + cei.propertyName + "[0]\") == null)\r\n");
+						bw.write("			throw new RuntimeException(\"Property '" + cei.propertyName + "' is required, but none was defined (empty list).\");\r\n");
+					}
+				
+				bw.write(
+						"	}\r\n" + 
+						"");
+
+				for (ChildElementInfo cei : ii.ceis) {
+					if (cei.list)
+						bw.write("private int " + cei.propertyName + "Counter = 0;\r\n");
+				}
+
+				bw.write(
+						"@Override\r\n" +
+						"protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {\r\n");
+				for (ChildElementInfo cei : ii.ceis) {
 					bw.write(
-							"		setIdIfNeeded(element, \"" + ii.annotation.name() + "\");");
-					for (AttributeInfo ai : ii.ais)
-						bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getName() + "\", element, builder);\r\n");
-					bw.write("		NodeList nl = element.getChildNodes();\r\n" + 
+							"	if (" + cei.typeDeclaration.getQualifiedName() + ".class.isAssignableFrom(clazz)) {\r\n" + 
+							"		builder.addPropertyValue(\"" + cei.propertyName + "\"" + (cei.list ? "+\"[\"+ " + cei.propertyName + "Counter++ + \"]\" " : "") + ", child);\r\n" + 
+							"	} else \r\n");
+				}
+				bw.write(
+							"	{\r\n" +
+							"		throw new RuntimeException(\"Unknown child class \\\"\" + clazz + \"\\\".\");\r\n" +
+							"	}\r\n");
+				bw.write(
+						"}\r\n");
+					/*
+					bw.write("		org.w3c.dom.NodeList nl = element.getChildNodes();\r\n" + 
 							"		for (int i = 0; i < nl.getLength(); i++) {\r\n" + 
-							"			Node node = nl.item(i);\r\n" + 
-							"			if (node instanceof Element) {\r\n" + 
-							"				Element ele = (Element) node;\r\n" +
-							"				if (StringUtils.equals(MEMBRANE_NAMESPACE, ele.getNamespaceURI())) {\r\n");
+							"			org.w3c.dom.Node node = nl.item(i);\r\n" + 
+							"			if (node instanceof org.w3c.dom.Element) {\r\n" + 
+							"				org.w3c.dom.Element ele = (org.w3c.dom.Element) node;\r\n" +
+							"				if (org.apache.commons.lang.StringUtils.equals(MEMBRANE_NAMESPACE, ele.getNamespaceURI())) {\r\n");
 					for (ChildElementInfo cei : ii.ceis) {
 						String elementName = m.childElementDeclarations.get(cei.typeDeclaration).elementInfo.annotation.name();
 						bw.write(
-								"					if (StringUtils.equals(\"" + elementName + "\", ele.getLocalName())) {\r\n" + 
+								"					if (org.apache.commons.lang.StringUtils.equals(\"" + elementName + "\", ele.getLocalName())) {\r\n" + 
 								"						parseElementToProperty(ele, parserContext, builder, \"" + cei.propertyName + "\");\r\n" + 
 								"					} else \r\n");
 					}
@@ -358,10 +441,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 							"			}\r\n" + 
 							"		}\r\n" + 
 							"");
-					bw.write(
-							"	}\r\n" + 
-							"");
-				}
+							*/
+				
 				bw.write(
 						"}\r\n" + 
 						"");
@@ -372,7 +453,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 	}
 
-	private String javaify(String s) {
+	private static String javaify(String s) {
 		StringBuilder sb = new StringBuilder(s);
 		sb.replace(0, 1, "" + Character.toUpperCase(s.charAt(0)));
 		return sb.toString();
@@ -386,8 +467,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 	private void assembleXSD(Model m, BufferedWriter bw) throws IOException, ProcessingException {
 		String xsd = m.mainAnnotation.xsd(); 
+		xsd = xsd.replace("${declarations}", assembleDeclarations(m));
 		for (String group : m.groups.keySet()) {
-			xsd = xsd.replace("${" + group + "Declarations}", assembleInterceptorDeclarations(m, group));
+			xsd = xsd.replace("${" + group + "Declarations}", "");
 			xsd = xsd.replace("${" + group + "References}", assembleInterceptorReferences(m, group));
 		}
 		xsd = xsd.replace("${raw}", assembleRaw(m));
@@ -402,12 +484,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		return raws.toString();
 	}
 
-	private String assembleInterceptorDeclarations(Model m, String group) throws ProcessingException {
-		StringWriter interceptorDeclarations = new StringWriter();
-		for (ElementInfo i : m.groups.get(group)) {
-			interceptorDeclarations.append(assembleElementDeclaration(m, i));
+	private String assembleDeclarations(Model m) throws ProcessingException {
+		StringWriter declarations = new StringWriter();
+		for (ElementInfo i : m.elements.values()) {
+			declarations.append(assembleElementDeclaration(m, i));
 		}
-		return interceptorDeclarations.toString();
+		return declarations.toString();
 	}
 
 	private CharSequence assembleElementDeclaration(Model m, ElementInfo i) throws ProcessingException {
@@ -442,8 +524,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		StringBuilder xsd = new StringBuilder();
 		xsd.append("<xsd:sequence>\r\n");
 		for (ChildElementInfo cei : i.ceis) {
-			String elementName = m.childElementDeclarations.get(cei.typeDeclaration).elementInfo.annotation.name();
-			xsd.append("<xsd:element ref=\"" + elementName + "\" minOccurs=\"0\" />\r\n");
+			xsd.append("<xsd:choice" + (cei.required ? " minOccurs=\"1\"" : " minOccurs=\"0\"") + (cei.list ? " maxOccurs=\"unbounded\"" : "") + ">\r\n");
+			for (ElementInfo ei : m.childElementDeclarations.get(cei.typeDeclaration).elementInfo)
+				xsd.append("<xsd:element ref=\"" + ei.annotation.name() + "\" />\r\n");
+			xsd.append("</xsd:choice>\r\n");
 		}
 		xsd.append("</xsd:sequence>\r\n");
 		for (AttributeInfo ai : i.ais)

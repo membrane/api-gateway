@@ -16,8 +16,10 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
 
+@MCElement(name="totpTokenProvider", group="tokenProvider", global=false)
 public class TOTPTokenProvider implements TokenProvider {
 
 	@Override
