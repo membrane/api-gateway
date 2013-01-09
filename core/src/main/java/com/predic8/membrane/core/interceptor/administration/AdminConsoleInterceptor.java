@@ -32,10 +32,7 @@ import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 
-@MCElement(name="adminConsole"/*, xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"readOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
-		""*/)
+@MCElement(name="adminConsole")
 public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	private final RewriteInterceptor r = new RewriteInterceptor();

@@ -17,9 +17,12 @@ import java.util.*;
 
 import javax.xml.stream.*;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
+@MCElement(name="byThreadStrategy", group="dispatchingStrategy")
 public class ByThreadStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
 	private int maxNumberOfThreadsPerEndpoint = 5;
@@ -70,10 +73,12 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 		throw new RuntimeException("All available servers are busy.");
 	}
 
+	@MCAttribute
 	public void setMaxNumberOfThreadsPerEndpoint(int maxNumberOfThreadsPerEndpoint) {
 		this.maxNumberOfThreadsPerEndpoint = maxNumberOfThreadsPerEndpoint;
 	}
 
+	@MCAttribute
 	public void setRetryTimeOnBusy(int retryTimeOnBusy) {
 		this.retryTimeOnBusy = retryTimeOnBusy;
 	}

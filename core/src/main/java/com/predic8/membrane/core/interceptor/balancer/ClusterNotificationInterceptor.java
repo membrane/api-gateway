@@ -39,12 +39,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCElement(name="clusterNotification" /*, xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"timeout\" type=\"xsd:long\" />\r\n" + 
-		"					<xsd:attribute name=\"validateSignature\" type=\"xsd:boolean\" />\r\n" + 
-		"					<xsd:attribute name=\"keyHex\" type=\"xsd:string\" />\r\n" + 
-		""*/)
+@MCElement(name="clusterNotification")
 public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory
 			.getLog(ClusterNotificationInterceptor.class.getName());

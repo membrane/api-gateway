@@ -16,10 +16,14 @@ package com.predic8.membrane.core.interceptor.balancer;
 import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.http.Message;
 
+@MCElement(name="xmlSessionIdExtractor", group="sessionIdExtractor")
 public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
 	private static Log log = LogFactory.getLog(XMLElementSessionIdExtractor.class.getName());
@@ -62,6 +66,8 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 		return localName;
 	}
 
+	@Required
+	@MCAttribute
 	public void setLocalName(String localName) {
 		this.localName = localName;
 	}
@@ -70,6 +76,8 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 		return namespace;
 	}
 
+	@Required
+	@MCAttribute
 	public void setNamespace(String namespace) {
 		this.namespace = namespace;
 	}

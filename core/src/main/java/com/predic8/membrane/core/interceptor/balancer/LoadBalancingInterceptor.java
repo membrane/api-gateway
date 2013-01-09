@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.balancer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
@@ -22,6 +23,8 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -33,42 +36,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 /**
  * May only be used as interceptor in a ServiceProxy.
  */
-@MCElement(name="balancer", xsd="" +
-		"					<xsd:sequence>\r\n" + 
-		"						<xsd:choice minOccurs=\"0\">\r\n" + 
-		"							<xsd:element name=\"xmlSessionIdExtractor\">\r\n" + 
-		"								<xsd:complexType>\r\n" + 
-		"									<xsd:attribute name=\"namespace\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"									<xsd:attribute name=\"localName\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								</xsd:complexType>\r\n" + 
-		"							</xsd:element>\r\n" + 
-		"							<xsd:element name=\"jSessionIdExtractor\" type=\"EmptyElementType\" />							\r\n" + 
-		"						</xsd:choice>\r\n" + 
-		"						<xsd:element name=\"nodes\" minOccurs=\"0\">\r\n" + 
-		"							<xsd:complexType>\r\n" + 
-		"								<xsd:sequence>\r\n" + 
-		"									<xsd:element name=\"node\">\r\n" + 
-		"										<xsd:complexType>\r\n" + 
-		"											<xsd:attribute name=\"host\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"											<xsd:attribute name=\"port\" type=\"xsd:int\" default=\"8080\"/>\r\n" + 
-		"										</xsd:complexType>\r\n" + 
-		"									</xsd:element>\r\n" + 
-		"								</xsd:sequence>								\r\n" + 
-		"							</xsd:complexType>\r\n" + 
-		"						</xsd:element>\r\n" + 
-		"						<xsd:choice minOccurs=\"0\">\r\n" + 
-		"							<xsd:element name=\"roundRobinStrategy\" type=\"EmptyElementType\" />\r\n" + 
-		"							<xsd:element name=\"byThreadStrategy\" >\r\n" + 
-		"								<xsd:complexType>\r\n" + 
-		"									<xsd:attribute name=\"maxNumberOfThreadsPerEndpoint\" type=\"xsd:int\" default=\"5\"/>\r\n" + 
-		"									<xsd:attribute name=\"retryTimeOnBusy\" type=\"xsd:int\" default=\"1000\"/>\r\n" + 
-		"								</xsd:complexType>\r\n" + 
-		"							</xsd:element>\r\n" + 
-		"						</xsd:choice>						\r\n" + 
-		"					</xsd:sequence>\r\n" + 
-		"					<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"sessionTimeout\" type=\"xsd:int\" default=\"3600000\"/>\r\n" + 
-		"")
+@MCElement(name="balancer")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(LoadBalancingInterceptor.class
@@ -180,6 +148,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	 * This is *NOT* {@link #setDisplayName(String)}, but the balancer's name
 	 * set in the proxy configuration to identify this balancer.
 	 */
+	@MCAttribute
 	public void setName(String name) throws Exception {
 		balancer.setName(name);
 	}
@@ -197,6 +166,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return strategy;
 	}
 
+	@MCChildElement(order=3)
 	public void setDispatchingStrategy(DispatchingStrategy strategy) {
 		this.strategy = strategy;
 	}
@@ -209,6 +179,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return sessionIdExtractor;
 	}
 
+	@MCChildElement(order=1)
 	public void setSessionIdExtractor(
 			AbstractSessionIdExtractor sessionIdExtractor) {
 		this.sessionIdExtractor = sessionIdExtractor;
@@ -225,11 +196,20 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public Balancer getClusterManager() {
 		return balancer;
 	}
+	
+	@MCChildElement(order=2)
+	public void setClusterManager(List<Balancer> balancers) {
+		List<Cluster> clusters = new ArrayList<Cluster>();
+		for (Balancer balancer : balancers)
+			clusters.addAll(balancer.getClusters());
+		this.balancer.setClusters(clusters);
+	}
 
 	public long getSessionTimeout() {
 		return balancer.getSessionTimeout();
 	}
 
+	@MCAttribute
 	public void setSessionTimeout(long sessionTimeout) {
 		balancer.setSessionTimeout(sessionTimeout);
 	}

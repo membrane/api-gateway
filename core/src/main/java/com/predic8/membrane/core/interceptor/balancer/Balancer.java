@@ -19,9 +19,13 @@ import java.util.*;
 import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.*;
 
+@MCElement(name="clusters", group="loadBalancer", global=false)
 public class Balancer extends AbstractXmlElement {
 	public static final String DEFAULT_NAME = "Default";
 	private static Log log = LogFactory.getLog(Balancer.class.getName());
@@ -91,6 +95,14 @@ public class Balancer extends AbstractXmlElement {
 				+ name + "]");
 		clusters.put(name, new Cluster(name));
 		return true;
+	}
+	
+	@Required
+	@MCChildElement
+	public void setClusters(List<Cluster> clusters) {
+		clusters.clear();
+		for (Cluster cluster : clusters)
+			this.clusters.put(cluster.getName(), cluster);
 	}
 
 	public void up(String cName, String host, int port) {

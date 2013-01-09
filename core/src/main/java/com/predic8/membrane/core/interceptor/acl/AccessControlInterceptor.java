@@ -34,10 +34,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.ResourceResolver;
 
-@MCElement(name="accessControl" /*, xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"file\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		""*/)
+@MCElement(name="accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {
 
 	private static final Log log = LogFactory.getLog(AccessControlInterceptor.class.getName());

@@ -18,8 +18,12 @@ import java.util.*;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.interceptor.balancer.Node.Status;
 
+@MCElement(name="cluster", group="loadBalancer", global=false)
 public class Cluster {
 
 	private static Log log = LogFactory.getLog(Cluster.class.getName());
@@ -30,9 +34,13 @@ public class Cluster {
 	private List<Node> nodes = Collections.synchronizedList(new LinkedList<Node>());
 	private Map<String, Session> sessions = new Hashtable<String, Session>();
 
+	public Cluster() {
+	}
+
 	public Cluster(String name) {
 		this.name = name;
 	}
+	
 
 	public void nodeUp(Node n) {		
 		log.debug("node: " + n +" up");
@@ -90,11 +98,17 @@ public class Cluster {
 		nodes.add(new Node(ep.getHost(), ep.getPort()));
 		return getNode(ep);			
 	}
+	
+	@MCChildElement
+	public void setNodes(List<Node> nodes) {
+		nodes = Collections.synchronizedList(new LinkedList<Node>(nodes));
+	}
 
 	public String getName() {
 		return name;
 	}
 
+	@MCAttribute
 	public void setName(String name) {
 		this.name = name;
 	}

@@ -22,11 +22,16 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.springframework.beans.factory.annotation.Required;
+
 import com.google.common.base.Objects;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.StatisticCollector;
 
+@MCElement(name="node", group="loadBalancer", global=false)
 public class Node extends AbstractXmlElement {
 
 	public static enum Status {
@@ -96,6 +101,8 @@ public class Node extends AbstractXmlElement {
 		return host;
 	}
 
+	@Required
+	@MCAttribute
 	public void setHost(String host) {
 		this.host = host;
 	}
@@ -104,6 +111,7 @@ public class Node extends AbstractXmlElement {
 		return port;
 	}
 
+	@MCAttribute
 	public void setPort(int port) {
 		this.port = port;
 	}

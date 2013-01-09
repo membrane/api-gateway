@@ -19,8 +19,10 @@ import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.http.Message;
 
+@MCElement(name="jSessionIdExtractor", group="sessionIdExtractor")
 public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
 
 	private static Log log = LogFactory.getLog(JSESSIONIDExtractor.class.getName());
