@@ -398,18 +398,13 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						"	}\r\n" + 
 						"");
 
-				for (ChildElementInfo cei : ii.ceis) {
-					if (cei.list)
-						bw.write("private int " + cei.propertyName + "Counter = 0;\r\n");
-				}
-
 				bw.write(
 						"@Override\r\n" +
 						"protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {\r\n");
 				for (ChildElementInfo cei : ii.ceis) {
 					bw.write(
 							"	if (" + cei.typeDeclaration.getQualifiedName() + ".class.isAssignableFrom(clazz)) {\r\n" + 
-							"		builder.addPropertyValue(\"" + cei.propertyName + "\"" + (cei.list ? "+\"[\"+ " + cei.propertyName + "Counter++ + \"]\" " : "") + ", child);\r\n" + 
+							"		builder.addPropertyValue(\"" + cei.propertyName + "\"" + (cei.list ? "+\"[\"+ incrementCounter(builder, \"" + cei.propertyName + "\") + \"]\" " : "") + ", child);\r\n" + 
 							"	} else \r\n");
 				}
 				bw.write(
@@ -418,30 +413,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 							"	}\r\n");
 				bw.write(
 						"}\r\n");
-					/*
-					bw.write("		org.w3c.dom.NodeList nl = element.getChildNodes();\r\n" + 
-							"		for (int i = 0; i < nl.getLength(); i++) {\r\n" + 
-							"			org.w3c.dom.Node node = nl.item(i);\r\n" + 
-							"			if (node instanceof org.w3c.dom.Element) {\r\n" + 
-							"				org.w3c.dom.Element ele = (org.w3c.dom.Element) node;\r\n" +
-							"				if (org.apache.commons.lang.StringUtils.equals(MEMBRANE_NAMESPACE, ele.getNamespaceURI())) {\r\n");
-					for (ChildElementInfo cei : ii.ceis) {
-						String elementName = m.childElementDeclarations.get(cei.typeDeclaration).elementInfo.annotation.name();
-						bw.write(
-								"					if (org.apache.commons.lang.StringUtils.equals(\"" + elementName + "\", ele.getLocalName())) {\r\n" + 
-								"						parseElementToProperty(ele, parserContext, builder, \"" + cei.propertyName + "\");\r\n" + 
-								"					} else \r\n");
-					}
-					bw.write(
-								"					{\r\n" +
-								"						throw new RuntimeException(\"Unknown element \\\"\" + ele.getLocalName() + \"\\\".\");\r\n" +
-								"					}\r\n");
-					bw.write(
-							"				}\r\n" + 
-							"			}\r\n" + 
-							"		}\r\n" + 
-							"");
-							*/
 				
 				bw.write(
 						"}\r\n" + 

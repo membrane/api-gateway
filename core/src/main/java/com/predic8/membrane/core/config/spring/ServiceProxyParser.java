@@ -21,7 +21,6 @@ public class ServiceProxyParser extends AbstractParser {
 		return ServiceProxy.class;
 	}
 	
-	private int interceptorCount = 0;
 	private Flow flow = Flow.REQUEST_RESPONSE;
 
 	@Override
@@ -107,7 +106,7 @@ public class ServiceProxyParser extends AbstractParser {
 		flow = Flow.REQUEST_RESPONSE;
 		super.handleChildElement(ele, parserContext, builder);
 	}
-	
+
 	protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {
 		if (flow != Flow.REQUEST_RESPONSE) {
 			if (child instanceof BeanDefinitionHolder) {
@@ -122,7 +121,7 @@ public class ServiceProxyParser extends AbstractParser {
 			}
 		}
 		
-		builder.addPropertyValue("interceptors[" + interceptorCount++ + "]", child);
+		builder.addPropertyValue("interceptors[" + incrementCounter(builder, "interceptor") + "]", child);
 	}
 
 }

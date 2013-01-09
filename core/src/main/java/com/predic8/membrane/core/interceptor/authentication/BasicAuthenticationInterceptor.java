@@ -30,15 +30,15 @@ import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.util.HttpUtil;
 
 @MCElement(name="basicAuthentication", xsd="" +
-		"					<xsd:sequence>\r\n" + 
-		"						<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-		"							<xsd:complexType>\r\n" + 
-		"								<xsd:sequence />\r\n" + 
-		"								<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								<xsd:attribute name=\"password\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"							</xsd:complexType>\r\n" + 
-		"						</xsd:element>\r\n" + 
-		"					</xsd:sequence>\r\n" + 
+		"<xsd:sequence>\r\n" + 
+		"	<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+		"		<xsd:complexType>\r\n" + 
+		"			<xsd:sequence />\r\n" + 
+		"			<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"			<xsd:attribute name=\"password\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"		</xsd:complexType>\r\n" + 
+		"	</xsd:element>\r\n" + 
+		"</xsd:sequence>\r\n" + 
 		"")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 

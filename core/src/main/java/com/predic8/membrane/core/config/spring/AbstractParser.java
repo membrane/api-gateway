@@ -109,4 +109,12 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		}
 	}
 
+	protected int incrementCounter(BeanDefinitionBuilder builder, String counter) {
+		Integer i = (Integer) builder.getRawBeanDefinition().getAttribute(counter);
+		if (i == null)
+			i = 0;
+		builder.getRawBeanDefinition().setAttribute(counter, i+1);
+		return i;
+	}
+
 }
