@@ -25,10 +25,13 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.Transport;
 
+@MCElement(name="transport", group="transport")
 public class HttpTransport extends Transport {
 
 	private static Log log = LogFactory.getLog(HttpTransport.class.getName());
@@ -153,6 +156,7 @@ public class HttpTransport extends Transport {
 		}
 	}
 
+	@MCAttribute
 	public void setCoreThreadPoolSize(int corePoolSize) {
 		executorService.setCorePoolSize(corePoolSize);
 	}
@@ -169,6 +173,7 @@ public class HttpTransport extends Transport {
 		return socketTimeout;
 	}
 
+	@MCAttribute
 	public void setSocketTimeout(int timeout) {
 		this.socketTimeout = timeout;
 	}
@@ -177,6 +182,7 @@ public class HttpTransport extends Transport {
 		return tcpNoDelay;
 	}
 
+	@MCAttribute
 	public void setTcpNoDelay(boolean tcpNoDelay) {
 		this.tcpNoDelay = tcpNoDelay;
 	}
@@ -185,6 +191,7 @@ public class HttpTransport extends Transport {
 		return autoContinue100Expected;
 	}
 	
+	@MCAttribute
 	public void setAutoContinue100Expected(boolean autoContinue100Expected) {
 		this.autoContinue100Expected = autoContinue100Expected;
 	}

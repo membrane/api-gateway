@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.config.spring;
 
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
 import com.predic8.membrane.core.interceptor.*;
@@ -26,8 +27,8 @@ public class ExchangeStoreInterceptorParser extends AbstractParser {
 	}
 
 	@Override
-	protected void doParse(Element element, BeanDefinitionBuilder builder) {
-		setIdIfNeeded(element, "exchangeStore");
+	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
+		setIdIfNeeded(element, parserContext, "exchangeStore");
 		builder.addPropertyReference("exchangeStore", element.getAttribute("name"));
 		element.removeAttribute("name");
 	}

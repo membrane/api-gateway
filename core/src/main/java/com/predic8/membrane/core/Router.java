@@ -65,17 +65,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"			</xsd:complexContent>\r\n" + 
 				"		</xsd:complexType>\r\n" + 
 				"	</xsd:element>\r\n" + 
-				"	\r\n" + 
-				"	<xsd:complexType name=\"transportType\">\r\n" + 
-				"		<xsd:complexContent>\r\n" + 
-				"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
-				"				<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"					<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"				</xsd:sequence>\r\n" + 
-				"				<xsd:attribute name=\"httpClientRetries\" default=\"5\" type=\"xsd:int\" />\r\n" + 
-				"			</xsd:extension>\r\n" + 
-				"		</xsd:complexContent>\r\n" + 
-				"	</xsd:complexType>\r\n" + 
 				"\r\n" + 
 				"	<xsd:group name=\"InterceptorGroup\">\r\n" + 
 				"		<xsd:choice>\r\n" + 
@@ -84,24 +73,15 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"		</xsd:choice>\r\n" + 
 				"	</xsd:group>\r\n" + 
 				"	\r\n" + 
-				"	<xsd:element name=\"transport\">\r\n" + 
-				"		<xsd:complexType>\r\n" + 
-				"			<xsd:complexContent>\r\n" + 
-				"				<xsd:extension base=\"transportType\">\r\n" + 
-				"					<xsd:attribute name=\"coreThreadPoolSize\" default=\"20\" type=\"xsd:int\" />\r\n" + 
-				"					<xsd:attribute name=\"socketTimeout\" default=\"30000\" type=\"xsd:int\" />\r\n" + 
-				"					<xsd:attribute name=\"tcpNoDelay\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
-				"					<xsd:attribute name=\"autoContinue100Expected\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
-				"					<xsd:attribute name=\"printStackTrace\" default=\"false\" type=\"xsd:boolean\" />\r\n" + 
-				"				</xsd:extension>\r\n" + 
-				"			</xsd:complexContent>\r\n" + 
-				"		</xsd:complexType>\r\n" + 
-				"	</xsd:element>\r\n" + 
 				"\r\n" + 
 				"	<xsd:element name=\"servletTransport\">\r\n" + 
 				"		<xsd:complexType>\r\n" + 
 				"			<xsd:complexContent>\r\n" + 
-				"				<xsd:extension base=\"transportType\">\r\n" + 
+				"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+				"					<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+				"						<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
+				"					</xsd:sequence>\r\n" + 
+				"					<xsd:attribute name=\"httpClientRetries\" default=\"5\" type=\"xsd:int\" />\r\n" + 
 				"					<xsd:attribute name=\"printStackTrace\" default=\"false\" type=\"xsd:boolean\" />\r\n" + 
 				"					<xsd:attribute name=\"removeContextRoot\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
 				"				</xsd:extension>\r\n" + 

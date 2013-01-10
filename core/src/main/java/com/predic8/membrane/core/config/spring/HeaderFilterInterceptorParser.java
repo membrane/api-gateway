@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
@@ -32,8 +33,8 @@ public class HeaderFilterInterceptorParser extends AbstractParser {
 	}
 
 	@Override
-	protected void doParse(Element element, BeanDefinitionBuilder builder) {
-		setIdIfNeeded(element, "filterHeader");
+	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
+		setIdIfNeeded(element, parserContext, "filterHeader");
 		builder.addPropertyValue("rules", getRules(element));
 	}
 

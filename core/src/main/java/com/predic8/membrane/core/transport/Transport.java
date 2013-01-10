@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.model.IPortChangeListener;
@@ -36,6 +38,7 @@ public abstract class Transport {
 		return interceptors;
 	}
 
+	@MCChildElement
 	public void setInterceptors(List<Interceptor> interceptors) {
 		this.interceptors = interceptors;
 	}
@@ -55,6 +58,7 @@ public abstract class Transport {
 		return httpClientRetries;
 	}
 
+	@MCAttribute
 	public void setHttpClientRetries(int httpClientRetries) {
 		this.httpClientRetries = httpClientRetries;
 	}
@@ -63,6 +67,7 @@ public abstract class Transport {
 		return printStackTrace;
 	}
 	
+	@MCAttribute
 	public void setPrintStackTrace(boolean printStackTrace) {
 		this.printStackTrace = printStackTrace;
 	}

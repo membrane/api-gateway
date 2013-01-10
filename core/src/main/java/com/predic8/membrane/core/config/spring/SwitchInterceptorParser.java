@@ -17,6 +17,7 @@ package com.predic8.membrane.core.config.spring;
 import java.util.*;
 
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.xml.DomUtils;
 import org.w3c.dom.Element;
 
@@ -29,8 +30,8 @@ public class SwitchInterceptorParser extends AbstractParser {
 	}
 
 	@Override
-	protected void doParse(Element element, BeanDefinitionBuilder builder) {
-		setIdIfNeeded(element, "switch");
+	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
+		setIdIfNeeded(element, parserContext, "switch");
 		builder.addPropertyValue("routeProvider",getRouteProvider(element));
 	}
 

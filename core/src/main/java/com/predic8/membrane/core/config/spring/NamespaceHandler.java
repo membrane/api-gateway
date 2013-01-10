@@ -21,7 +21,6 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
 
 	public void init() {
 		registerBeanDefinitionParser("router", new RouterParser());
-		registerBeanDefinitionParser("transport", new HttpTransportParser());
 		registerBeanDefinitionParser("serviceProxy", new ServiceProxyParser());
 		
 		// If you get a compiler error in the following line, enable Annotation Processing

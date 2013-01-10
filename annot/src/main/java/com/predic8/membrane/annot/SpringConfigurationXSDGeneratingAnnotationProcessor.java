@@ -397,9 +397,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				bw.write("	@Override\r\n" + 
 						"	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {\r\n");
 				bw.write(
-						"		setIdIfNeeded(element, \"" + ii.annotation.name() + "\");\r\n");
-				for (AttributeInfo ai : ii.ais)
+						"		setIdIfNeeded(element, parserContext, \"" + ii.annotation.name() + "\");\r\n");
+				for (AttributeInfo ai : ii.ais) {
 					bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getName() + "\", element, builder);\r\n");
+					if (ai.getName().equals("name"))
+						bw.write("		element.removeAttribute(\"name\");");
+				}
 				for (ChildElementInfo cei : ii.ceis)
 					if (cei.list)
 						bw.write("		builder.addPropertyValue(\"" + cei.propertyName + "\", new java.util.ArrayList<Object>());\r\n");

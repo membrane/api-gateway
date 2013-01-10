@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.config.spring;
 
-import java.util.Random;
+import java.util.Set;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
@@ -26,6 +26,8 @@ import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.google.common.collect.Sets;
 
 public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser {
 
@@ -40,11 +42,17 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		return builder.getBeanDefinition();
 	}
 
-	// TODO: this is a bad workaround to avoid bean id collisions
-	static Random r = new Random(System.currentTimeMillis());
-	
-	protected void setIdIfNeeded(Element element, String defaultId) {
-		if ( !isInlined() && !element.hasAttribute("id") ) element.setAttribute("id", defaultId + "-" + r.nextInt());
+	protected void setIdIfNeeded(Element element, ParserContext parserContext, String defaultId) {
+		if ( !isInlined() && !element.hasAttribute("id") ) {
+			Set<String> names = Sets.newHashSet(parserContext.getRegistry().getBeanDefinitionNames());
+			for (int i = 0; ; i++) {
+				String id = defaultId + (i == 0 ? "" : i);
+				if (!names.contains(id)) {
+					element.setAttribute("id", id);
+					return;
+				}
+			}
+		}
 	}
 
 	protected boolean isInlined() {		

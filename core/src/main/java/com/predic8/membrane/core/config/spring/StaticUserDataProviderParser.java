@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -31,8 +32,8 @@ public class StaticUserDataProviderParser extends AbstractParser {
 	}
 
 	@Override
-	protected void doParse(Element element, BeanDefinitionBuilder builder) {
-		setIdIfNeeded(element, "staticUserDataProvider");
+	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
+		setIdIfNeeded(element, parserContext, "staticUserDataProvider");
 		builder.addPropertyValue("users", getUsers(element));
 	}
 
