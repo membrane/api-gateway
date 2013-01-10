@@ -31,6 +31,7 @@ public class ConfigurationManager {
 	private HotDeploymentThread deploymentThread;
 	private boolean hotDeploy = true;
 	private ConfigurationStore configurationStore = new ConfigurationFileStore();
+	private String filename;
 
 	private final Router router;
 	
@@ -45,7 +46,7 @@ public class ConfigurationManager {
 	}
 
 	public void loadConfiguration(String fileName) throws Exception {
-
+		this.filename = fileName;
 		setProxies(configurationStore.read(fileName));
 
 		router.getRuleManager().removeRulesFromSource(RuleDefinitionSource.PROXIES);
@@ -115,5 +116,9 @@ public class ConfigurationManager {
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 		}
+	}
+	
+	public String getFilename() {
+		return filename;
 	}
 }

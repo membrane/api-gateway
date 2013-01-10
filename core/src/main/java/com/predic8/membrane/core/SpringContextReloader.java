@@ -2,7 +2,9 @@ package com.predic8.membrane.core;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -103,9 +105,19 @@ public class SpringContextReloader implements Lifecycle, ApplicationContextAware
 
 					log.debug("spring configuration changed.");
 
+					// save proxies.xml filenames for all defined routers
+					Map<String, String> proxyXmlFiles = new HashMap<String, String>();
+					for (Map.Entry<String, Router> e : applicationContext.getBeansOfType(Router.class).entrySet())
+						proxyXmlFiles.put(e.getKey(), e.getValue().getConfigurationManager().getFilename());
+					
 					applicationContext.stop();
 					applicationContext.refresh();
 					applicationContext.start();
+					
+					// restore proxies.xml filenames for all routers which still exist
+					for (Map.Entry<String, Router> e : applicationContext.getBeansOfType(Router.class).entrySet())
+						if (proxyXmlFiles.containsKey(e.getKey()))
+							e.getValue().getConfigurationManager().loadConfiguration(proxyXmlFiles.get(e.getKey()));
 
 					updateLastModified();
 				} catch (InterruptedException e) {				
