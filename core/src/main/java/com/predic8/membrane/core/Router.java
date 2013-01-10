@@ -300,6 +300,8 @@ public class Router {
 		beanFactory = new TrackingFileSystemXmlApplicationContext(new String[] { resource }, false);
 		beanFactory.setClassLoader(classLoader);
 		beanFactory.refresh();
+		
+		beanFactory.start();
 
 		router = (Router) beanFactory.getBean("router");
 		return router;

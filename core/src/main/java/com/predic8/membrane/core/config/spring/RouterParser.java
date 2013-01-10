@@ -16,6 +16,7 @@ package com.predic8.membrane.core.config.spring;
 
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
+import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 
 import com.predic8.membrane.core.Router;
@@ -28,7 +29,7 @@ public class RouterParser extends
 		return Router.class;
 	}
 
-	protected void doParse(Element e, BeanDefinitionBuilder bean) {
+	protected void doParse(Element e, ParserContext parserContext, BeanDefinitionBuilder bean) {
 		e.setAttribute("id", "router");
 		bean.addPropertyReference("transport", "transport");
 
@@ -46,5 +47,6 @@ public class RouterParser extends
 				Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_ADJ_CONTENT_LENGTH)));
 		bean.addPropertyValue("configurationManager.proxies.trackExchange",
 				Boolean.parseBoolean(e.getAttribute(Global.ATTRIBUTE_AUTO_TRACK)));
+		
 	}
 }
