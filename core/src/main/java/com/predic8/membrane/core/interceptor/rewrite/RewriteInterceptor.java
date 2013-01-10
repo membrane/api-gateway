@@ -27,8 +27,11 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -38,26 +41,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
-@MCElement(name="rewriter", xsd="" +
-		"					<xsd:sequence>\r\n" + 
-		"						<xsd:element name=\"map\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
-		"							<xsd:complexType>\r\n" + 
-		"								<xsd:sequence />\r\n" + 
-		"								<xsd:attribute name=\"from\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								<xsd:attribute name=\"to\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								<xsd:attribute name=\"do\">\r\n" + 
-		"									<xsd:simpleType>\r\n" + 
-		"										<xsd:restriction base=\"xsd:string\">\r\n" + 
-		"											<xsd:enumeration value=\"rewrite\" />\r\n" + 
-		"											<xsd:enumeration value=\"redirect-permanent\" />\r\n" + 
-		"											<xsd:enumeration value=\"redirect-temporary\" />\r\n" + 
-		"										</xsd:restriction>\r\n" + 
-		"									</xsd:simpleType>\r\n" + 
-		"        						</xsd:attribute>\r\n" + 
-		"							</xsd:complexType>\r\n" + 
-		"						</xsd:element>\r\n" + 
-		"					</xsd:sequence>\r\n" + 
-		"")
+@MCElement(name="rewriter")
 public class RewriteInterceptor extends AbstractInterceptor {
 
 	public enum Type {
@@ -66,19 +50,23 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		REDIRECT_PERMANENT,
 	}
 	
+	@MCElement(name="map", group="rewriter", global=false)
 	public static class Mapping {
 		public String to;
 		public String from;
-		public final Type do_;
+		public Type do_;
 		
 		private Pattern pattern;
+		
+		public Mapping() {
+		}
 		
 		public Mapping(String from, String to, String do_) {
 			this.from = from;
 			this.to = to;
 			
 			if (StringUtils.isEmpty(do_))
-				this.do_ = to.contains("://") ? Type.REDIRECT_TEMPORARY : Type.REWRITE;
+				this.do_ = getDo();
 			else if (do_.equals("rewrite"))
 				this.do_ = Type.REWRITE;
 			else if (do_.equals("redirect") || do_.equals("redirect-temporary"))
@@ -94,6 +82,39 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		public boolean matches(String uri) {
 			return pattern.matcher(uri).find();
 		}
+		
+		public String getFrom() {
+			return from;
+		}
+		
+		@Required
+		@MCAttribute
+		public void setFrom(String from) {
+			this.from = from;
+		}
+		
+		public String getTo() {
+			return to;
+		}
+
+		@Required
+		@MCAttribute
+		public void setTo(String to) {
+			this.to = to;
+		}
+		
+		public Type getDo() {
+			if (do_ == null)
+				do_ = to.contains("://") ? Type.REDIRECT_TEMPORARY : Type.REWRITE;
+			return do_;
+		}
+		
+		@MCAttribute
+		public void setDo(Type do_) {
+			this.do_ = do_;
+		}
+		
+		
 	}
 
 	private static Log log = LogFactory.getLog(RewriteInterceptor.class.getName());
@@ -172,6 +193,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		return mappings;
 	}
 
+	@Required
+	@MCChildElement
 	public void setMappings(List<Mapping> mappings) {
 		this.mappings = mappings;
 	}
