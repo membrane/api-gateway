@@ -23,6 +23,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -198,11 +199,15 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 	
 	@MCChildElement(order=2)
-	public void setClusterManager(List<Balancer> balancers) {
+	public void setClustersFromSpring(List<Balancer> balancers) {
 		List<Cluster> clusters = new ArrayList<Cluster>();
 		for (Balancer balancer : balancers)
 			clusters.addAll(balancer.getClusters());
 		this.balancer.setClusters(clusters);
+	}
+	
+	public List<Balancer> getClustersFromSpring() {
+		return Lists.newArrayList(balancer);
 	}
 
 	public long getSessionTimeout() {
