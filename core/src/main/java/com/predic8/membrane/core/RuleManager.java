@@ -38,6 +38,7 @@ public class RuleManager {
 	private Router router;
 
 	private List<Rule> rules = new Vector<Rule>();
+	private List<RuleDefinitionSource> ruleSources = new ArrayList<RuleManager.RuleDefinitionSource>();
 	private Set<IRuleChangeListener> listeners = new HashSet<IRuleChangeListener>();
 
 	private String defaultTargetHost = "localhost";
@@ -46,6 +47,15 @@ public class RuleManager {
 	private int defaultTargetPort = 8080;
 	private String defaultPath = ".*";
 	private int defaultMethod = 4;
+	
+	public enum RuleDefinitionSource {
+		/** rule defined in the spring context that created the router */
+		SPRING,
+		/** rule defined in the Membrane 3 style proxies.xml configuration file */
+		PROXIES,
+		/** rule defined by admin web interface or through custom code */
+		MANUAL,
+	}
 
 	public int getDefaultListenPort() {
 		return defaultListenPort;
@@ -88,24 +98,30 @@ public class RuleManager {
 		return false;
 	}
 
-	public synchronized void addProxyAndOpenPortIfNew(Rule rule) throws IOException {
+	public void addProxyAndOpenPortIfNew(Rule rule) throws IOException {
+		addProxyAndOpenPortIfNew(rule, RuleDefinitionSource.MANUAL);
+	}
+	
+	public synchronized void addProxyAndOpenPortIfNew(Rule rule, RuleDefinitionSource source) throws IOException {
 		if (exists(rule.getKey()))
 			return;
 
 		router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
 
 		rules.add(rule);
+		ruleSources.add(source);
 
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleAdded(rule);
 		}
 	}
-	
-	public synchronized void addProxy(Rule rule) {
+
+	public synchronized void addProxy(Rule rule, RuleDefinitionSource source) {
 		if (exists(rule.getKey()))
 			return;
 
 		rules.add(rule);
+		ruleSources.add(source);
 
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleAdded(rule);
@@ -135,21 +151,23 @@ public class RuleManager {
 		return rules;
 	}
 
-	public void ruleUp(Rule rule) {
+	public synchronized void ruleUp(Rule rule) {
 		int index = rules.indexOf(rule);
 		if (index <= 0)
 			return;
 		Collections.swap(rules, index, index - 1);
+		Collections.swap(ruleSources, index, index - 1);
 		for (IRuleChangeListener listener : listeners) {
 			listener.rulePositionsChanged();
 		}
 	}
 
-	public void ruleDown(Rule rule) {
+	public synchronized void ruleDown(Rule rule) {
 		int index = rules.indexOf(rule);
 		if (index < 0 || index == (rules.size() - 1))
 			return;
 		Collections.swap(rules, index, index + 1);
+		Collections.swap(ruleSources, index, index + 1);
 		for (IRuleChangeListener listener : listeners) {
 			listener.rulePositionsChanged();
 		}
@@ -223,7 +241,10 @@ public class RuleManager {
 
 	public synchronized void removeRule(Rule rule) {
 		getExchangeStore().removeAllExchanges(rule);
-		rules.remove(rule);
+		
+		int i = rules.indexOf(rule);
+		rules.remove(i);
+		ruleSources.remove(i);
 
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleRemoved(rule, rules.size());
@@ -231,15 +252,15 @@ public class RuleManager {
 
 	}
 
+	public synchronized void removeRulesFromSource(RuleDefinitionSource source) {
+		for (int i = 0; i < rules.size(); i++)
+			if (ruleSources.get(i) == source)
+				removeRule(rules.get(i--));
+	}
+	
 	public synchronized void removeAllRules() {
-		if (rules.isEmpty())
-			return;
-
-		// Local variable is needed. Strange but true
-		List<Rule> rulesCopy = new ArrayList<Rule>(rules);
-		for (Rule rule : rulesCopy) {
-			removeRule(rule);
-		}
+		while (rules.size() > 0)
+			removeRule(rules.get(0));
 	}
 
 	public synchronized int getNumberOfRules() {

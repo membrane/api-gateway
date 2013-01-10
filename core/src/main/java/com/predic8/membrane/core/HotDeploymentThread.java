@@ -41,11 +41,15 @@ public class HotDeploymentThread extends Thread {
 	@Override
 	public void run() {
 		log.debug("Hot Deployment Thread started.");
+		OUTER:
 		while (!isInterrupted()) {
 			try {
 				while (!configurationChanged()) {
 					sleep(1000);
+					if (isInterrupted())
+						break OUTER;
 				}
+				
 
 				log.debug("configuration changed. Reloading from " + proxiesFile);
 

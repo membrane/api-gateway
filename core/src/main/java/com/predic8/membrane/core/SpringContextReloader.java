@@ -9,18 +9,17 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.LifecycleProcessor;
+import org.springframework.context.Lifecycle;
 import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 import com.predic8.membrane.annot.MCElement;
 
 @MCElement(name="springContextReloader", group="basic")
-public class SpringContextReloader implements LifecycleProcessor, ApplicationContextAware {
+public class SpringContextReloader implements Lifecycle, ApplicationContextAware {
 	
 	private HotDeploymentThread hdt;
 	
 	public SpringContextReloader() {
-		System.err.println("create");
 	}
 	
 	TrackingFileSystemXmlApplicationContext applicationContext;
@@ -39,7 +38,6 @@ public class SpringContextReloader implements LifecycleProcessor, ApplicationCon
 
 	@Override
 	public void start() {
-		System.err.println("start");
 		hdt = new HotDeploymentThread(applicationContext);
 		hdt.setFiles(applicationContext.getFiles());
 		hdt.start();
@@ -49,17 +47,6 @@ public class SpringContextReloader implements LifecycleProcessor, ApplicationCon
 	public void stop() {
 		hdt.interrupt();
 		hdt = null;
-		System.err.println("stop");
-	}
-
-	@Override
-	public void onClose() {
-		System.err.println("close");
-	}
-
-	@Override
-	public void onRefresh() {
-		System.err.println("refresh");
 	}
 
 	public static class HotDeploymentThread extends Thread {
@@ -104,14 +91,17 @@ public class SpringContextReloader implements LifecycleProcessor, ApplicationCon
 
 		@Override
 		public void run() {
-			log.debug("Hot Deployment Thread started.");
+			log.debug("Spring Hot Deployment Thread started.");
+			OUTER:
 			while (!isInterrupted()) {
 				try {
 					while (!configurationChanged()) {
 						sleep(1000);
+						if (isInterrupted())
+							break OUTER;
 					}
 
-					log.debug("configuration changed.");
+					log.debug("spring configuration changed.");
 
 					applicationContext.stop();
 					applicationContext.refresh();
@@ -124,7 +114,7 @@ public class SpringContextReloader implements LifecycleProcessor, ApplicationCon
 					updateLastModified();
 				}
 			}
-			log.debug("Hot Deployment Thread interrupted.");
+			log.debug("Spring Hot Deployment Thread interrupted.");
 		}
 	}
 

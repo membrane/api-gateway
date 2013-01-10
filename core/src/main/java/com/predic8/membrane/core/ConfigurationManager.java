@@ -17,6 +17,7 @@ package com.predic8.membrane.core;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.io.ConfigurationFileStore;
 import com.predic8.membrane.core.io.ConfigurationStore;
 import com.predic8.membrane.core.rules.Rule;
@@ -47,17 +48,14 @@ public class ConfigurationManager {
 
 		setProxies(configurationStore.read(fileName));
 
-		router.getRuleManager().removeAllRules();
-		
-		if (router.DEBUG_rules != null)
-			for (Rule rule : router.DEBUG_rules)
-				router.getRuleManager().addProxy(rule);
+		router.getRuleManager().removeRulesFromSource(RuleDefinitionSource.PROXIES);
 
 		for (Rule rule : getProxies().getRules()) {
-			router.getRuleManager().addProxy(rule);
+			router.getRuleManager().addProxy(rule, RuleDefinitionSource.PROXIES);
 		}
 		
-		router.init();
+		for (Rule rule : getProxies().getRules())
+			rule.init(router);
 		
 		router.getRuleManager().openPorts();
 

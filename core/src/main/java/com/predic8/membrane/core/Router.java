@@ -25,10 +25,12 @@ import java.util.concurrent.Executors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.Lifecycle;
 import org.springframework.context.support.AbstractApplicationContext;
 
 import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.annot.MCRaw;
+import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -259,11 +261,11 @@ import com.predic8.membrane.core.util.ResourceResolver;
 		"	</xsd:complexType>\r\n" + 
 		"</xsd:element>\r\n" + 
 		"")
-public class Router {
+public class Router implements Lifecycle {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());
 
-	static Router router;
+	// TODO: make non-static
 	static AbstractApplicationContext beanFactory;
 
 	protected RuleManager ruleManager = new RuleManager();
@@ -274,18 +276,18 @@ public class Router {
 	protected DNSCache dnsCache = new DNSCache();
 	protected ExecutorService backgroundInitializator = 
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
+	
+	private boolean running;
 
 	public Router() {
 		ruleManager.setRouter(this);
 	}
 	
-	public Set<Rule> DEBUG_rules;
-	
 	@Autowired(required=false)
 	public void setServiceProxies(Set<Rule> proxies) {
 		// TODO: replace autowiring by custom logic in RouterParser
-		// TODO: change implementation ;)
-		DEBUG_rules = proxies;
+		for (Rule rule : proxies)
+			getRuleManager().addProxy(rule, RuleDefinitionSource.SPRING);
 	}
 
 	public static Router init(String configFileName)
@@ -303,12 +305,7 @@ public class Router {
 		
 		beanFactory.start();
 
-		router = (Router) beanFactory.getBean("router");
-		return router;
-	}
-
-	public static Router getInstance() {
-		return router;
+		return (Router) beanFactory.getBean("router");
 	}
 
 	public RuleManager getRuleManager() {
@@ -406,5 +403,32 @@ public class Router {
 		for (Rule rule : getRuleManager().getRules())
 			rule.init(this);
 		transport.init(this);
+	}
+
+	@Override
+	public void start() {
+		try {
+			init();
+			getRuleManager().openPorts();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		running = true;
+	}
+
+	@Override
+	public void stop() {
+		try {
+			configurationManager.stopHotDeployment();
+			shutdown();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		running = false;
+	}
+
+	@Override
+	public boolean isRunning() {
+		return running;
 	}
 }
