@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.config.spring;
 
+import java.util.Random;
+
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -37,9 +39,12 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		doParse(e, builder);
 		return builder.getBeanDefinition();
 	}
+
+	// TODO: this is a bad workaround to avoid bean id collisions
+	static Random r = new Random(System.currentTimeMillis());
 	
 	protected void setIdIfNeeded(Element element, String defaultId) {
-		if ( !isInlined() && !element.hasAttribute("id") ) element.setAttribute("id", defaultId);
+		if ( !isInlined() && !element.hasAttribute("id") ) element.setAttribute("id", defaultId + "-" + r.nextInt());
 	}
 
 	protected boolean isInlined() {		

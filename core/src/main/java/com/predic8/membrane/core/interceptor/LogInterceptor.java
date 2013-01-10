@@ -20,24 +20,20 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.MessageUtil;
 
-@MCElement(name="log", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"headerOnly\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
-		"					<xsd:attribute name=\"category\" default=\"com.predic8.membrane.core.interceptor.LogInterceptor\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"level\" default=\"INFO\" type=\"xsd:string\" />\r\n" + 
-		"")
+@MCElement(name="log")
 public class LogInterceptor extends AbstractInterceptor {
 
 	public enum Level {
 		TRACE, DEBUG, INFO, WARN, ERROR, FATAL
 	}
 
-	private boolean headerOnly = false;
+	private boolean headerOnly = true;
 	private String category = LogInterceptor.class.getName();
 	private Level level = Level.INFO;
 
@@ -97,6 +93,7 @@ public class LogInterceptor extends AbstractInterceptor {
 		return headerOnly;
 	}
 
+	@MCAttribute
 	public void setHeaderOnly(boolean headerOnly) {
 		this.headerOnly = headerOnly;
 	}
@@ -105,6 +102,7 @@ public class LogInterceptor extends AbstractInterceptor {
 		return level;
 	}
 
+	@MCAttribute
 	public void setLevel(Level level) {
 		this.level = level;
 	}
@@ -168,6 +166,7 @@ public class LogInterceptor extends AbstractInterceptor {
 		return category;
 	}
 
+	@MCAttribute
 	public void setCategory(String category) {
 		this.category = category;
 	}

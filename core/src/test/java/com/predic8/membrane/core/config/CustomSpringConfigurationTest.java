@@ -112,8 +112,8 @@ public class CustomSpringConfigurationTest {
 	}
 
 	private void assertXPathCBRInterceptor(RegExReplaceInterceptor i) {
-		assertEquals("Hallo", i.getPattern());
-		assertEquals("Hello", i.getReplacement());
+		assertEquals("Hallo", i.getRegex());
+		assertEquals("Hello", i.getReplace());
 	}
 
 	private void assertXPathCBRInterceptor(XPathCBRInterceptor i) {

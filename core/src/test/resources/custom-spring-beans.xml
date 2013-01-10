@@ -126,7 +126,7 @@
 	
 	<memoryExchangeStore id="memoryExchangeStore" />
 	<forgetfulExchangeStore id="forgetfulExchangeStore" />
-	<fileExchangeStore dir="target/temp" raw="false" saveBodyOnly="false"/>
+	<fileExchangeStore id="fileExchangeStore" dir="target/temp" raw="false" saveBodyOnly="false"/>
 
 <!-- 
   <spring:bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"> 

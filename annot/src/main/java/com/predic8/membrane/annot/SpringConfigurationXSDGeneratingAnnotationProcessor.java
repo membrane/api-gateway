@@ -59,6 +59,22 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				TypeElement e = (TypeElement) processingEnv.getTypeUtils().asElement(ve.asType());
 				if (e.getQualifiedName().toString().equals("java.lang.String"))
 					return "xsd:string";
+				
+				if (e.getSuperclass().getKind() == TypeKind.DECLARED) {
+					TypeElement superClass = ((TypeElement)processingEnv.getTypeUtils().asElement(e.getSuperclass()));
+					if (superClass.getQualifiedName().toString().equals("java.lang.Enum"))
+						return "xsd:string"; // TODO: restriction
+					/*
+					 *	<xsd:attribute name=\"target\" use=\"optional\" default=\"body\">\r\n" + 
+					 *		<xsd:simpleType>\r\n" + 
+					 *			<xsd:restriction base=\"xsd:string\">\r\n" + 
+					 *				<xsd:enumeration value=\"body\" />\r\n" + 
+					 *				<xsd:enumeration value=\"header\" />\r\n" + 
+					 *			</xsd:restriction>\r\n" + 
+					 *		</xsd:simpleType>\r\n" + 
+					 *	</xsd:attribute>\r\n"
+					 */
+				}
 				throw new RuntimeException("Not implemented: XSD type for " + e.getQualifiedName());
 			default:
 				throw new RuntimeException("Not implemented: XSD type for " + ve.asType().getKind().toString());

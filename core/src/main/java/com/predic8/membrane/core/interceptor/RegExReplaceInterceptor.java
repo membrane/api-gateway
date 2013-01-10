@@ -18,7 +18,9 @@ import java.io.IOException;
 import javax.xml.stream.*;
 
 import org.apache.commons.logging.*;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -30,28 +32,21 @@ import com.predic8.membrane.core.util.MessageUtil;
  * Runs a regular-expression-replacement on either the message body (default) or
  * all header values.
  */
-@MCElement(name="regExReplacer", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"regex\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"					<xsd:attribute name=\"replace\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"					<xsd:attribute name=\"target\" use=\"optional\" default=\"body\">\r\n" + 
-		"						<xsd:simpleType>\r\n" + 
-		"							<xsd:restriction base=\"xsd:string\">\r\n" + 
-		"								<xsd:enumeration value=\"body\" />\r\n" + 
-		"								<xsd:enumeration value=\"header\" />\r\n" + 
-		"							</xsd:restriction>\r\n" + 
-		"						</xsd:simpleType>\r\n" + 
-		"					</xsd:attribute>\r\n" + 
-		"")
+@MCElement(name="regExReplacer")
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(RegExReplaceInterceptor.class.getName());
 
-	private String pattern;
+	private String regex;
 	
-	private String replacement;
+	private String replace;
 	
-	private String target;
+	private TargetType target = TargetType.BODY;
+	
+	public enum TargetType {
+		BODY,
+		HEADER
+	}
 	
 	public RegExReplaceInterceptor() {
 		name="Regex Replacer";
@@ -59,7 +54,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		if (isTargetHeader())
+		if (target == TargetType.HEADER)
 			replaceHeader(exc.getRequest().getHeader());
 		else
 			replaceBody(exc.getRequest());
@@ -69,7 +64,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		if (isTargetHeader())
+		if (target == TargetType.HEADER)
 			replaceHeader(exc.getResponse().getHeader());
 		else
 			replaceBody(exc.getResponse());
@@ -78,18 +73,18 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	
 	private void replaceHeader(Header header) {
 		for (HeaderField hf : header.getAllHeaderFields())
-			hf.setValue(hf.getValue().replaceAll(pattern, replacement));
+			hf.setValue(hf.getValue().replaceAll(regex, replace));
 	}
 
 	private void replaceBody(Message res) throws IOException, Exception {
 		if (hasNoTextContent(res) ) return; 
 		
-		log.debug("pattern: " +pattern);
-		log.debug("replacement: " +replacement);
+		log.debug("pattern: " +regex);
+		log.debug("replacement: " +replace);
 		
 		res.readBody();
 		byte[] content = MessageUtil.getContent(res);
-		res.setBodyContent(new String(content, res.getCharset()).replaceAll(pattern, replacement).getBytes(res.getCharset()));
+		res.setBodyContent(new String(content, res.getCharset()).replaceAll(regex, replace).getBytes(res.getCharset()));
 		res.getHeader().removeFields("Content-Encoding");
 	}
 
@@ -97,20 +92,24 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		return res.isBodyEmpty() || !res.isXML() && !res.isHTML();
 	}
 
-	public String getPattern() {
-		return pattern;
+	public String getRegex() {
+		return regex;
 	}
 
-	public void setPattern(String pattern) {
-		this.pattern = pattern;
+	@Required
+	@MCAttribute
+	public void setRegex(String regex) {
+		this.regex = regex;
 	}
 
-	public String getReplacement() {
-		return replacement;
+	public String getReplace() {
+		return replace;
 	}
 
-	public void setReplacement(String replacement) {
-		this.replacement = replacement;
+	@Required
+	@MCAttribute
+	public void setReplace(String replace) {
+		this.replace = replace;
 	}
 	
 	@Override
@@ -119,19 +118,20 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 
 		out.writeStartElement("regExReplacer");
 
-		out.writeAttribute("regex", pattern);
-		out.writeAttribute("replace", replacement);
-		if (isTargetHeader())
-			out.writeAttribute("target", "header");
+		out.writeAttribute("regex", regex);
+		out.writeAttribute("replace", replace);
+		if (target == TargetType.HEADER)
+			out.writeAttribute("target", "HEADER");
 
 		out.writeEndElement();
 	}
 	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		pattern = token.getAttributeValue("", "regex");
-		replacement = token.getAttributeValue("", "replace");
-		target = token.getAttributeValue("", "target");
+		regex = token.getAttributeValue("", "regex");
+		replace = token.getAttributeValue("", "replace");
+		String targetStr = token.getAttributeValue("", "target");
+		target = targetStr == null ? TargetType.BODY : TargetType.valueOf(targetStr);
 	}
 	
 	@Override
@@ -139,16 +139,13 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		return "regex-replacer";
 	}
 	
-	public String getTarget() {
+	public TargetType getTarget() {
 		return target;
 	}
 	
-	public void setTarget(String target) {
+	@MCAttribute
+	public void setTarget(TargetType target) {
 		this.target = target;
 	}
 	
-	private boolean isTargetHeader() {
-		return "header".equals(target);
-	}
-
 }

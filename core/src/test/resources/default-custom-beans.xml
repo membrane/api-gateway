@@ -19,7 +19,7 @@
 		<httpClient />
 	</transport>
 
-	<counter name="Counter 2" />
+	<counter id="counter" name="Counter 2" />
 	<forgetfulExchangeStore id="forgetfulExchangeStore" />
 	
 <!-- 

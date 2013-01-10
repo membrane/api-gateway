@@ -24,7 +24,10 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -33,19 +36,10 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-@MCElement(name="formValidation", xsd="" +
-		"					<xsd:sequence>\r\n" + 
-		"						<xsd:element name=\"field\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
-		"							<xsd:complexType>\r\n" + 
-		"								<xsd:sequence />\r\n" + 
-		"								<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								<xsd:attribute name=\"regex\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"							</xsd:complexType>\r\n" + 
-		"						</xsd:element>\r\n" + 
-		"					</xsd:sequence>\r\n" + 
-		"")
+@MCElement(name="formValidation")
 public class FormValidationInterceptor extends AbstractInterceptor {
 
+	@MCElement(name="field", group="", global=false)
 	public static class Field extends AbstractXmlElement {
 		public String name;
 		public String regex;
@@ -76,6 +70,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 			return name;
 		}
 
+		@Required
+		@MCAttribute
 		public void setName(String name) {
 			this.name = name;
 		}
@@ -84,6 +80,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 			return regex;
 		}
 
+		@Required
+		@MCAttribute
 		public void setRegex(String regex) {
 			this.regex = regex;
 			pattern = Pattern.compile(regex);
@@ -135,6 +133,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 		return fields;
 	}
 
+	@Required
+	@MCChildElement
 	public void setFields(List<Field> fields) {
 		this.fields = fields;
 	}
