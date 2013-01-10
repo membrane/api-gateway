@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -278,14 +277,15 @@ public class Router implements Lifecycle {
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
 	
 	private boolean running;
+	private boolean autowired;
 
 	public Router() {
 		ruleManager.setRouter(this);
 	}
 	
 	@Autowired(required=false)
-	public void setServiceProxies(Set<Rule> proxies) {
-		// TODO: replace autowiring by custom logic in RouterParser
+	public void setServiceProxies(Collection<Rule> proxies) {
+		autowired = true;
 		for (Rule rule : proxies)
 			getRuleManager().addProxy(rule, RuleDefinitionSource.SPRING);
 	}
@@ -408,6 +408,8 @@ public class Router implements Lifecycle {
 	@Override
 	public void start() {
 		try {
+			if (!autowired)
+				setServiceProxies(beanFactory.getBeansOfType(Rule.class).values());
 			init();
 			getRuleManager().openPorts();
 		} catch (Exception e) {
