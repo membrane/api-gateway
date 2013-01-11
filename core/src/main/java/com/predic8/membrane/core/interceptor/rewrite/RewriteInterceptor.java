@@ -54,7 +54,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 	public static class Mapping {
 		public String to;
 		public String from;
-		public Type do_;
+		private Type do_;
 		
 		private Pattern pattern;
 		
@@ -210,7 +210,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 			out.writeAttribute("from", m.from);
 			out.writeAttribute("to", m.to);
-			out.writeAttribute("do", m.do_.toString().toLowerCase().replace('_', '-'));
+			out.writeAttribute("do", m.getDo().toString().toLowerCase().replace('_', '-'));
 
 			out.writeEndElement();
 		}

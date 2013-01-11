@@ -18,10 +18,6 @@
 		</property>
 		<property name="transport" ref="transport" />
 		<property name="exchangeStore" ref="exchangeStore" />
-		<property name="configurationManager.proxies.adjustHostHeader" value="true" />
-		<property name="configurationManager.proxies.indentMessage" value="true" />
-		<property name="configurationManager.proxies.adjustContentLength" value="true" />
-		<property name="configurationManager.proxies.trackExchange" value="false" />
 	</bean>
 
 	<bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">
@@ -73,8 +69,9 @@
 
 	<bean id="accessControlInterceptor"
 		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
+		<property name="id" value="accessControlInterceptor" />
 		<property name="displayName" value="Access Control List Interceptor" />
-		<property name="file" value="C:\temp\acl.xml" />
+		<property name="file" value="src/test/resources/acl/acl.xml" />
 	</bean>
 
 	<bean id="administratorInterceptor"

@@ -143,11 +143,6 @@ public class CustomRulesConfigurationTest {
 		assertElement(w.toString(),
 				"/proxies/serviceProxy/balancer/jSessionIdExtractor");
 
-		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/interceptor/@refid", "counter");
-		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/interceptor/@name", "Counter: Counter 2");
-
 		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@headerOnly",
 				"true");
 		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@category",
@@ -193,10 +188,6 @@ public class CustomRulesConfigurationTest {
 		assertAttribute(w.toString(),
 				"/proxies/serviceProxy/request/accessControl/@file",
 				"src/test/resources/acl/acl.xml");
-
-		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/exchangeStore/@name",
-				"forgetfulExchangeStore");
 
 		assertAttribute(w.toString(), "/proxies/serviceProxy/groovy",
 				"exc.setProperty('foo', 'bar');CONTINUE");
@@ -251,38 +242,6 @@ public class CustomRulesConfigurationTest {
 				"//convert");
 		assertAttribute(w.toString(), "/proxies/proxy/switch/case/@url",
 				"http://www.thomas-bayer.com/axis2/");
-	}
-
-	@Test
-	public void testOtherConfigElements() throws Exception {
-		router.getConfigurationManager().loadConfiguration(
-				"src/test/resources/non-rule-configuration.xml");
-		StringWriter w = new StringWriter();
-		router.getConfigurationManager().getProxies()
-				.write(XMLOutputFactory.newInstance().createXMLStreamWriter(w));
-		assertElement(w.toString(),
-				"/proxies/*[1][local-name()='serviceProxy']");
-		assertElement(w.toString(), "/proxies/*[2][local-name()='proxy']");
-		assertElement(w.toString(), "/proxies/*[3][local-name()='global']");
-		assertAttribute(w.toString(),
-				"/proxies/global/router/@adjustHostHeader", "true");
-		assertAttribute(w.toString(), "/proxies/global/monitor-gui/@autoTrack",
-				"true");
-		assertAttribute(w.toString(),
-				"/proxies/global/monitor-gui/@indentMessage", "true");
-		assertAttribute(w.toString(),
-				"/proxies/global/proxyConfiguration/@active", "false");
-		assertAttribute(w.toString(),
-				"/proxies/global/proxyConfiguration/@authentication", "false");
-		assertAttribute(w.toString(),
-				"/proxies/global/proxyConfiguration/@host", "");
-		assertAttribute(w.toString(),
-				"/proxies/global/proxyConfiguration/@port", "0");
-		assertAttribute(w.toString(),
-				"/proxies/global/proxyConfiguration/@username", "");
-		assertAttribute(w.toString(),
-				"/proxies/global/proxyConfiguration/@password", "");
-
 	}
 
 	@After

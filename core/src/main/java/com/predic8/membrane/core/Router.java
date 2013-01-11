@@ -28,7 +28,6 @@ import org.springframework.context.Lifecycle;
 import org.springframework.context.support.AbstractApplicationContext;
 
 import com.predic8.membrane.annot.MCMain;
-import com.predic8.membrane.annot.MCRaw;
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
@@ -57,7 +56,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
 				"					<xsd:sequence />\r\n" + 
 				"					<xsd:attribute name=\"exchangeStore\" type=\"xsd:string\"/>\r\n" + 
-				"					<xsd:attribute name=\"adjustHostHeader\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
 				"					<xsd:attribute name=\"indentMessage\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
 				"					<xsd:attribute name=\"adjustContentLength\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
 				"					<xsd:attribute name=\"trackExchange\" default=\"false\" type=\"xsd:boolean\" />\r\n" + 
@@ -219,6 +217,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"							</xsd:sequence>\r\n" + 
 				"							<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
 				"							<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
+				"							<xsd:attribute name=\"ip\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
 				"							<xsd:attribute name=\"blockResponse\" type=\"xsd:boolean\" />\r\n" + 
 				"							<xsd:attribute name=\"blockRequest\" type=\"xsd:boolean\" />\r\n" + 
 				"						</xsd:extension>\r\n" + 
@@ -228,38 +227,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"" +
 				"" +
 				"</xsd:schema>")
-@MCRaw(xsd="" + // TODO: this is legacy config (doesn't even get parsed) should be expressed differently
-		"<xsd:element name=\"global\" >\r\n" + 
-		"	<xsd:complexType>\r\n" + 
-		"		<xsd:sequence>\r\n" + 
-		"			<xsd:element name=\"router\" minOccurs=\"0\">\r\n" + 
-		"				<xsd:complexType>\r\n" + 
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"adjustHostHeader\" type=\"xsd:boolean\" />\r\n" + 
-		"				</xsd:complexType>\r\n" + 
-		"			</xsd:element>\r\n" + 
-		"			<xsd:element name=\"monitor-gui\" minOccurs=\"0\">\r\n" + 
-		"				<xsd:complexType>\r\n" + 
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"autoTrack\" type=\"xsd:boolean\" />\r\n" + 
-		"					<xsd:attribute name=\"indentMessage\" type=\"xsd:boolean\" />\r\n" + 
-		"				</xsd:complexType>\r\n" + 
-		"			</xsd:element>\r\n" + 
-		"			<xsd:element name=\"proxyConfiguration\" minOccurs=\"0\">\r\n" + 
-		"				<xsd:complexType>\r\n" + 
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"active\" type=\"xsd:boolean\" />\r\n" + 
-		"					<xsd:attribute name=\"authentication\" type=\"xsd:boolean\" />\r\n" + 
-		"					<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"port\" type=\"xsd:integer\" />\r\n" + 
-		"					<xsd:attribute name=\"username\" type=\"xsd:string\" />\r\n" + 
-		"					<xsd:attribute name=\"password\" type=\"xsd:string\" />\r\n" + 
-		"				</xsd:complexType>\r\n" + 
-		"			</xsd:element>\r\n" + 
-		"		</xsd:sequence>\r\n" + 
-		"	</xsd:complexType>\r\n" + 
-		"</xsd:element>\r\n" + 
-		"")
 public class Router implements Lifecycle {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());

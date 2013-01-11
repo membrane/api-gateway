@@ -61,13 +61,23 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 	}	
 
 	protected void setProperty(String prop, Element e, BeanDefinitionBuilder builder) {
-		builder.addPropertyValue(prop, e.getAttribute(prop));
+		setProperty(prop, e, builder, false);
+	}
+	
+	protected void setProperty(String prop, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
+		String value = e.getAttribute(prop);
+		if (flexibleEnum)
+			value = value.toUpperCase();
+		builder.addPropertyValue(prop, value);
 	}
 
 	protected void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder) {
-		if (e.hasAttribute(prop)) {
-			builder.addPropertyValue(prop, e.getAttribute(prop));
-		}
+		setPropertyIfSet(prop, e, builder, false);
+	}
+
+	protected void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
+		if (e.hasAttribute(prop))
+			setProperty(prop, e, builder, flexibleEnum);
 	}
 	
 	protected void parseElementToProperty(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, String property) {

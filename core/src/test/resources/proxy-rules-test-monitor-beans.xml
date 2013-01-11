@@ -17,10 +17,6 @@
 		</property>
 		<property name="transport" ref="transport" />
 		<property name="exchangeStore" ref="exchangeStore" />
-		<property name="configurationManager.proxies.adjustHostHeader" value="true" />
-		<property name="configurationManager.proxies.indentMessage" value="true" />
-		<property name="configurationManager.proxies.adjustContentLength" value="true" />
-		<property name="configurationManager.proxies.trackExchange" value="false" />
 	</bean>
 
 	<bean id="transport" class="com.predic8.membrane.core.transport.http.HttpTransport">

@@ -74,7 +74,8 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 
 		out.writeStartElement("exchangeStore");
 
-		out.writeAttribute("name", exchangeStoreBeanId);
+		if (exchangeStoreBeanId != null)
+			out.writeAttribute("name", exchangeStoreBeanId);
 
 		out.writeEndElement();
 	}

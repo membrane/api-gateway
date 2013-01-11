@@ -25,8 +25,6 @@ public class Global extends AbstractConfigElement {
 
 	public static final String INDENT_MSG = "indent_message";
 	
-	public static final String ADJ_HOST_HEADER = "adjust_host_header_field";
-	
 	public static final String TRACK_EXCHANGE = "autotrack_new_exchanges";
 	
 	public static final String ADJ_CONT_LENGTH = "auto_adjust_content_length";
@@ -35,8 +33,6 @@ public class Global extends AbstractConfigElement {
 	public static final String ATTRIBUTE_INDENT_MSG = "indentMessage"; 
 	
 	public static final String ATTRIBUTE_AUTO_TRACK = "autoTrack"; 
-	
-	public static final String ATTRIBUTE_ADJ_HOST_HEADER = "adjustHostHeader"; 
 	
 	public static final String ATTRIBUTE_ADJ_CONTENT_LENGTH = "adjustContentLength"; 
 	
@@ -47,7 +43,6 @@ public class Global extends AbstractConfigElement {
 
 	public Global() {
 		setIndentMessage(true);
-		setAdjustHostHeader(true);
 		setTrackExchange(false);
 		setAdjustContentLength(true);
 	}
@@ -59,7 +54,6 @@ public class Global extends AbstractConfigElement {
 		if ("router".equals(child)) {
 			GenericComplexElement r = new GenericComplexElement();
 			r.parse(token);
-			values.put(ADJ_HOST_HEADER, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_ADJ_HOST_HEADER)));
 			values.put(ADJ_CONT_LENGTH, Boolean.parseBoolean(r.getAttribute(ATTRIBUTE_ADJ_CONTENT_LENGTH)));
 		} else if ("monitor-gui".equals(child)) {
 			GenericComplexElement r = new GenericComplexElement();
@@ -84,7 +78,6 @@ public class Global extends AbstractConfigElement {
 		out.writeStartElement("global");
 
 		out.writeStartElement("router");
-		out.writeAttribute(ATTRIBUTE_ADJ_HOST_HEADER, "" + values.get(ADJ_HOST_HEADER));
 		out.writeAttribute(ATTRIBUTE_ADJ_CONTENT_LENGTH, "" + values.get(ADJ_CONT_LENGTH));
 		out.writeEndElement();
 		out.writeStartElement("monitor-gui");
@@ -116,17 +109,6 @@ public class Global extends AbstractConfigElement {
 			return (Boolean)values.get(INDENT_MSG);
 		}
 		return false;
-	}
-	
-	public void setAdjustHostHeader(boolean status) {
-		values.put(ADJ_HOST_HEADER, status);
-	}
-	
-	public boolean getAdjustHostHeader() {
-		if (values.containsKey(ADJ_HOST_HEADER)) {
-			return (Boolean) values.get(ADJ_HOST_HEADER);
-		}
-		return true;
 	}
 	
 	public void setTrackExchange(boolean status) {

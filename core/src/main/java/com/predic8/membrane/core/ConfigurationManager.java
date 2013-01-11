@@ -73,16 +73,6 @@ public class ConfigurationManager {
 		router.getRuleManager().openPorts();
 	}
 
-	// TODO: replace. this is old global config
-	public Proxies getProxies() {
-		return new Proxies();
-	}
-
-	// TODO: replace. this is old global config
-	public void setProxies(Proxies config) {
-	}
-
-	
 	public String getDefaultConfigurationFile() {
 		return System.getProperty("user.home")
 				+ System.getProperty("file.separator") + ".membrane.xml";
@@ -132,5 +122,9 @@ public class ConfigurationManager {
 			
 			replaceProxiesRules(router, applicationContext);
 		}
+	}
+
+	public Proxies getProxies() {
+		return (Proxies) applicationContext.getBean("proxies");
 	}
 }

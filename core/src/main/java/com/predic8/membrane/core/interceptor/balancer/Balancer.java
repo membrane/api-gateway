@@ -77,8 +77,15 @@ public class Balancer extends AbstractXmlElement {
 		this.timeout = timeout;
 	}
 
-	public Collection<Cluster> getClusters() {
-		return clusters.values();
+	public List<Cluster> getClusters() {
+		return new ArrayList<Cluster>(clusters.values()) {
+			private static final long serialVersionUID = 1L;
+
+			public boolean add(Cluster e) {
+				Balancer.this.clusters.put(e.getName(), e);
+				return super.add(e);
+			}
+		};
 	}
 
 	private Cluster getCluster(String name) {
@@ -100,7 +107,7 @@ public class Balancer extends AbstractXmlElement {
 	@Required
 	@MCChildElement
 	public void setClusters(List<Cluster> clusters) {
-		clusters.clear();
+		this.clusters.clear();
 		for (Cluster cluster : clusters)
 			this.clusters.put(cluster.getName(), cluster);
 	}

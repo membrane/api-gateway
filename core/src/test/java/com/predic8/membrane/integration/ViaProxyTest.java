@@ -25,7 +25,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
@@ -42,23 +41,17 @@ public class ViaProxyTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		proxyRouter = new HttpRouter();
+		ProxyConfiguration proxy = new ProxyConfiguration();
+		proxy.setActive(true);
+		proxy.setHost("localhost");
+		proxy.setPort(3128);
+
+		proxyRouter = new HttpRouter(proxy);
 		
 		proxyRouter.getRuleManager().addProxyAndOpenPortIfNew(new ProxyRule(new ProxyRuleKey(3128)));
 		
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
-		
-		Proxies config = new Proxies();
-		
-		ProxyConfiguration proxy = new ProxyConfiguration();
-		proxy.setUseProxy(true);
-		proxy.setProxyHost("localhost");
-		proxy.setProxyPort(3128);
-		
-		config.setProxyConfiguration(proxy);
-		
-		router.getConfigurationManager().setProxies(config);
 	}
 	
 	@Test

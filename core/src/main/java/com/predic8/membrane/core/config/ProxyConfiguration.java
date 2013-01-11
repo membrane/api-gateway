@@ -20,21 +20,24 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.codec.binary.Base64;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 
+@MCElement(name="proxyConfiguration", group="httpClient", global=false)
 public class ProxyConfiguration extends AbstractConfigElement {
 
 	public static final String ATTRIBUTE_ACTIVE = "active";
 
 	public static final String ATTRIBUTE_AUTHENTICATION = "authentication";
 
-	private boolean useProxy;
+	private boolean active = true;
 
 	private String host;
 
 	private int port;
 
-	private boolean useAuthentication;
+	private boolean authentication;
 
 	private String username;
 
@@ -42,8 +45,8 @@ public class ProxyConfiguration extends AbstractConfigElement {
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		useProxy = getBoolean(token, ATTRIBUTE_ACTIVE);
-		useAuthentication = getBoolean(token, ATTRIBUTE_AUTHENTICATION);
+		active = getBoolean(token, ATTRIBUTE_ACTIVE);
+		authentication = getBoolean(token, ATTRIBUTE_AUTHENTICATION);
 		host = token.getAttributeValue("", "host");
 		port = Integer.parseInt(token.getAttributeValue("", "port"));
 		username = token.getAttributeValue("", "username");
@@ -55,9 +58,9 @@ public class ProxyConfiguration extends AbstractConfigElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement("proxyConfiguration");
 
-		out.writeAttribute(ATTRIBUTE_ACTIVE, "" + useProxy);
+		out.writeAttribute(ATTRIBUTE_ACTIVE, "" + active);
 
-		out.writeAttribute(ATTRIBUTE_AUTHENTICATION, "" + useAuthentication);
+		out.writeAttribute(ATTRIBUTE_AUTHENTICATION, "" + authentication);
 
 		out.writeAttribute("host", host);
 		out.writeAttribute("port", "" + port);
@@ -67,52 +70,57 @@ public class ProxyConfiguration extends AbstractConfigElement {
 		out.writeEndElement();
 	}
 
-	public String getProxyHost() {
+	public String getHost() {
 		return host;
 	}
 
-	public void setProxyHost(String proxyHost) {
-		this.host = proxyHost;
+	@MCAttribute
+	public void setHost(String host) {
+		this.host = host;
 	}
 
-	public int getProxyPort() {
+	public int getPort() {
 		return port;
 	}
 
-	public void setProxyPort(int proxyPort) {
+	public void setPort(int proxyPort) {
 		this.port = proxyPort;
 	}
 
-	public String getProxyPassword() {
+	public String getPassword() {
 		return password;
 	}
 
-	public void setProxyPassword(String proxyPassword) {
-		this.password = proxyPassword;
+	@MCAttribute
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
-	public boolean useProxy() {
-		return useProxy;
+	public boolean isActive() {
+		return active;
 	}
 
-	public void setUseProxy(boolean useProxy) {
-		this.useProxy = useProxy;
+	@MCAttribute
+	public void setActive(boolean active) {
+		this.active = active;
 	}
 
-	public String getProxyUsername() {
+	public String getUsername() {
 		return username;
 	}
 
-	public void setProxyUsername(String proxyUsername) {
-		this.username = proxyUsername;
+	@MCAttribute
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
-	public boolean isUseAuthentication() {
-		return useAuthentication;
+	public boolean isAuthentication() {
+		return authentication;
 	}
 
-	public void setUseAuthentication(boolean useAuthentication) {
-		this.useAuthentication = useAuthentication;
+	@MCAttribute
+	public void setAuthentication(boolean authentication) {
+		this.authentication = authentication;
 	}
 
 	/**

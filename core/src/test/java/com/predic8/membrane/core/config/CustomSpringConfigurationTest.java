@@ -50,14 +50,6 @@ public class CustomSpringConfigurationTest {
 		assertNotNull(router);
 		assertTrue(router.getExchangeStore().getClass().getName()
 				.endsWith("MemoryExchangeStore"));
-		assertTrue(router.getConfigurationManager().getProxies()
-				.getIndentMessage());
-		assertTrue(router.getConfigurationManager().getProxies()
-				.getAdjustContentLength());
-		assertTrue(router.getConfigurationManager().getProxies()
-				.getAdjustHostHeader());
-		assertFalse(router.getConfigurationManager().getProxies()
-				.getTrackExchange());
 		assertTrue(router == router.getConfigurationManager().getRouter());
 
 		List<Interceptor> inters = router.getTransport().getInterceptors();
@@ -103,6 +95,7 @@ public class CustomSpringConfigurationTest {
 
 		// assertBasicAuthenticationInterceptor((BasicAuthenticationInterceptor)
 		// backbones.get(1));
+		assertTrue(((HTTPClientInterceptor)inters.get(inters.size()-1)).isAdjustHostHeader());
 	}
 
 	private void assertCountInterceptor(CountInterceptor i) {

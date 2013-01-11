@@ -26,8 +26,8 @@ public class ProxyTest {
 	@Before
 	public void setUp() throws Exception {
 		proxy = new ProxyConfiguration();
-		proxy.setProxyUsername("predic8");
-		proxy.setProxyPassword("secret");
+		proxy.setUsername("predic8");
+		proxy.setPassword("secret");
 	}
 	
 	@Test

@@ -14,11 +14,14 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import javax.xml.stream.*;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.lang.NotImplementedException;
 
-import com.predic8.membrane.core.*;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
@@ -94,6 +97,7 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 		return id;
 	}
 
+	@MCAttribute
 	public void setId(String id) {
 		this.id = id;
 	}

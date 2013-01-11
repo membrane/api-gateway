@@ -113,7 +113,7 @@ public class ReadRulesConfigurationTest {
 	
 	@Test
 	public void testServiceProxyHostSet() throws Exception {
-		assertEquals("/abc/*", ((ServiceProxy)rules.get(2)).getKey().getHost());
+		assertEquals("localhost", ((ServiceProxy)rules.get(2)).getKey().getHost());
 	}
 	
 	@Test

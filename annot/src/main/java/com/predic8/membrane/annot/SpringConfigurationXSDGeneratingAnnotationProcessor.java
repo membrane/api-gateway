@@ -34,6 +34,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	private class AttributeInfo {
 		ExecutableElement e;
 		boolean required;
+
+		private String xsdType;
+		private boolean isEnum;
 		
 		public String getName() {
 			String s = e.getSimpleName().toString();
@@ -45,25 +48,44 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		}
 
 		public String getXSDType() {
+			analyze();
+			return xsdType;
+		}
+
+		public boolean isEnum() {
+			analyze();
+			return isEnum;
+		}
+
+		private void analyze() {
+			if (xsdType != null)
+				return;
+			
 			if (e.getParameters().size() != 1)
 				throw new ProcessingException("Setter is supposed to have 1 parameter.", e);
 			VariableElement ve = e.getParameters().get(0);
 			switch (ve.asType().getKind()) {
 			case INT:
-				return "xsd:int";
+				xsdType = "xsd:int";
+				return;
 			case LONG:
-				return "xsd:long";
+				xsdType = "xsd:long";
+				return;
 			case BOOLEAN:
-				return "xsd:boolean";
+				xsdType = "xsd:boolean";
+				return;
 			case DECLARED:
 				TypeElement e = (TypeElement) processingEnv.getTypeUtils().asElement(ve.asType());
-				if (e.getQualifiedName().toString().equals("java.lang.String"))
-					return "xsd:string";
+				if (e.getQualifiedName().toString().equals("java.lang.String")) {
+					xsdType = "xsd:string";
+					return;
+				}
 				
 				if (e.getSuperclass().getKind() == TypeKind.DECLARED) {
 					TypeElement superClass = ((TypeElement)processingEnv.getTypeUtils().asElement(e.getSuperclass()));
-					if (superClass.getQualifiedName().toString().equals("java.lang.Enum"))
-						return "xsd:string"; // TODO: restriction
+					if (superClass.getQualifiedName().toString().equals("java.lang.Enum")) {
+						isEnum = true;
+						xsdType = "xsd:string"; // TODO: restriction
 					/*
 					 *	<xsd:attribute name=\"target\" use=\"optional\" default=\"body\">\r\n" + 
 					 *		<xsd:simpleType>\r\n" + 
@@ -74,10 +96,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					 *		</xsd:simpleType>\r\n" + 
 					 *	</xsd:attribute>\r\n"
 					 */
+						return;
+					}
 				}
-				throw new RuntimeException("Not implemented: XSD type for " + e.getQualifiedName());
+				throw new ProcessingException("Not implemented: XSD type for " + e.getQualifiedName(), this.e);
 			default:
-				throw new RuntimeException("Not implemented: XSD type for " + ve.asType().getKind().toString());
+				throw new ProcessingException("Not implemented: XSD type for " + ve.asType().getKind().toString(), this.e);
 			}
 		}
 	}
@@ -400,7 +424,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				bw.write(
 						"		setIdIfNeeded(element, parserContext, \"" + ii.annotation.name() + "\");\r\n");
 				for (AttributeInfo ai : ii.ais) {
-					bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getName() + "\", element, builder);\r\n");
+					bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getName() + "\", element, builder" + (ai.isEnum() ? ", true" : "") + ");\r\n");
 					if (ai.getName().equals("name"))
 						bw.write("		element.removeAttribute(\"name\");");
 				}
@@ -522,7 +546,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		}
 		xsd.append("</xsd:sequence>\r\n");
 		for (AttributeInfo ai : i.ais)
-			xsd.append(assembleAttributeDeclaration(ai));
+			if (!ai.getName().equals("id"))
+				xsd.append(assembleAttributeDeclaration(ai));
 		return xsd.toString();
 	}
 

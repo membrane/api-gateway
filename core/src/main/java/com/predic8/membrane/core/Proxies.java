@@ -31,7 +31,6 @@ import javax.xml.stream.XMLStreamWriter;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.Global;
-import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
@@ -58,46 +57,6 @@ public class Proxies extends AbstractConfigElement {
 
 	public void setRules(Collection<Rule> rules) {
 		this.rules = rules;
-	}
-
-	public void setIndentMessage(boolean status) {
-		global.setIndentMessage(status);
-	}
-
-	public boolean getIndentMessage() {
-		return global.getIndentMessage();
-	}
-
-	public void setAdjustContentLength(boolean status) {
-		global.setAdjustContentLength(status);
-	}
-
-	public void setAdjustHostHeader(boolean status) {
-		global.setAdjustHostHeader(status);
-	}
-	
-	public boolean getAdjustHostHeader() {
-		return global.getAdjustHostHeader();
-	}
-
-	public boolean getAdjustContentLength() {
-		return global.getAdjustContentLength();
-	}
-
-	public void setTrackExchange(boolean status) {
-		global.setTrackExchange(status);
-	}
-
-	public boolean getTrackExchange() {
-		return global.getTrackExchange();
-	}
-
-	public void setProxyConfiguration(ProxyConfiguration proxy) {
-		global.setProxyConfiguration(proxy);
-	}
-
-	public ProxyConfiguration getProxyConfiguration() {
-		return global.getProxyConfiguration();
 	}
 
 	@Override

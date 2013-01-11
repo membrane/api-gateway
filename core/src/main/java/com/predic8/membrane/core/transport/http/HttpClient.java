@@ -26,13 +26,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Proxies;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.ChunkedBodyTransferrer;
 import com.predic8.membrane.core.http.OKResponse;
+import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -67,12 +66,11 @@ public class HttpClient {
 		this.failOverOn5XX = failOverOn5XX;
 	}
 	
-	public HttpClient(Router router, boolean failOverOn5XX, long keepAliveTimeout) {
+	public HttpClient(Router router, boolean failOverOn5XX, long keepAliveTimeout, boolean adjustHostHeader, ProxyConfiguration proxyConfiguration) {
 		conMgr = new ConnectionManager(keepAliveTimeout);
-		Proxies cfg = router.getConfigurationManager().getProxies();
-		adjustHostHeader = cfg.getAdjustHostHeader();
+		this.adjustHostHeader = adjustHostHeader;
 		maxRetries = router.getTransport().getHttpClientRetries();
-		proxy = cfg.getProxyConfiguration();
+		proxy = proxyConfiguration;
 		this.failOverOn5XX = failOverOn5XX;
 	}
 	
@@ -84,7 +82,7 @@ public class HttpClient {
 	private boolean useProxy() {
 		if (proxy == null)
 			return false;
-		return proxy.useProxy();
+		return proxy.isActive();
 	}
 	
 	private void setRequestURI(Request req, String dest) throws MalformedURLException {
@@ -96,7 +94,7 @@ public class HttpClient {
 	
 	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
 		if (useProxy())
-			return new HostColonPort(proxy.getProxyHost(), proxy.getProxyPort());
+			return new HostColonPort(proxy.getHost(), proxy.getPort());
 		
 		if (connect)
 			return new HostColonPort(dest);
@@ -108,7 +106,7 @@ public class HttpClient {
 		setRequestURI(exc.getRequest(), dest);
 		HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
 		
-		if (useProxy() && proxy.isUseAuthentication()) {
+		if (useProxy() && proxy.isAuthentication()) {
 			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
 		} 
 		

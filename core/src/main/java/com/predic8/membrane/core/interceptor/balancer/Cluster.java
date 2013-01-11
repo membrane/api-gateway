@@ -99,9 +99,22 @@ public class Cluster {
 		return getNode(ep);			
 	}
 	
+	public List<Node> getNodes() {
+		return new ArrayList<Node>(nodes) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean add(Node e) {
+				nodes.add(e);
+				return super.add(e);
+			}
+		};
+	}
+	
 	@MCChildElement
 	public void setNodes(List<Node> nodes) {
-		nodes = Collections.synchronizedList(new LinkedList<Node>(nodes));
+		this.nodes.clear();
+		this.nodes.addAll(nodes);
 	}
 
 	public String getName() {

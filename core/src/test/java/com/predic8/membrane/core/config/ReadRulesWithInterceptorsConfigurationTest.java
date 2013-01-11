@@ -63,13 +63,13 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 	@Test
 	public void testRuleInterceptorIDs() throws Exception {
 		List<Interceptor> interceptors = rules.get(0).getInterceptors();
-		assertEquals("roundRobinBalancer", interceptors.get(0).getId());
+		assertEquals("accessControlInterceptor", interceptors.get(0).getId());
 	}
 	
 	@Test
 	public void testRuleInterceptorDisplayNames() throws Exception {
 		List<Interceptor> interceptors = rules.get(0).getInterceptors();
-		assertEquals("roundRobinBalancer", interceptors.get(0).getDisplayName());
+		assertEquals("Access Control List Interceptor", interceptors.get(0).getDisplayName());
 	}
 	
 	@After

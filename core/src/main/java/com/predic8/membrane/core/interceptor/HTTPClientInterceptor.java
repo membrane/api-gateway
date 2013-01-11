@@ -22,7 +22,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -34,7 +36,9 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(HTTPClientInterceptor.class.getName());
 
 	private boolean failOverOn5XX;
+	private boolean adjustHostHeader = true;
 	private long keepAliveTimeout = 30000;
+	private ProxyConfiguration proxyConfiguration;
 	
 	private volatile HttpClient httpClient;
 	
@@ -83,7 +87,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			synchronized(this) {
 				result = httpClient;
 				if (result == null)
-					httpClient = result = new HttpClient(router, failOverOn5XX, keepAliveTimeout);
+					httpClient = result = new HttpClient(router, failOverOn5XX, keepAliveTimeout, adjustHostHeader, proxyConfiguration);
 			}
 		return result;
 	}
@@ -109,5 +113,23 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setKeepAliveTimeout(long keepAliveTimeout) {
 		this.keepAliveTimeout = keepAliveTimeout;
+	}
+	
+	public boolean isAdjustHostHeader() {
+		return adjustHostHeader;
+	}
+	
+	@MCAttribute
+	public void setAdjustHostHeader(boolean adjustHostHeader) {
+		this.adjustHostHeader = adjustHostHeader;
+	}
+	
+	public ProxyConfiguration getProxyConfiguration() {
+		return proxyConfiguration;
+	}
+	
+	@MCChildElement
+	public void setProxyConfiguration(ProxyConfiguration proxyConfiguration) {
+		this.proxyConfiguration = proxyConfiguration;
 	}
 }

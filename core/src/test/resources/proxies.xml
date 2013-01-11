@@ -9,11 +9,8 @@
 		<target host="thomas-bayer.com" port="80" />
 	</serviceProxy>
 	<serviceProxy name="localhost" port="2000"
-		method="GET" blockRequest="false" blockResponse="false">
+		method="GET" blockRequest="false" blockResponse="false" host="localhost">
 		<target host="localhost" port="3011" />
 	</serviceProxy>
-	<global>
-		<adjustHostHeader>true</adjustHostHeader>
-	</global>
 	
 </proxies>

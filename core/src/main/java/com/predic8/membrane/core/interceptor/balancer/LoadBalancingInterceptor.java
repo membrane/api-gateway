@@ -207,7 +207,21 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 	
 	public List<Balancer> getClustersFromSpring() {
-		return Lists.newArrayList(balancer);
+		return new ArrayList<Balancer>(Lists.newArrayList(balancer)) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean add(Balancer e) {
+				balancer.setClusters(e.getClusters());
+				return super.add(e);
+			}
+			
+			@Override
+			public Balancer set(int index, Balancer element) {
+				balancer.setClusters(element.getClusters());
+				return super.set(index, element);
+			}
+		};
 	}
 
 	public long getSessionTimeout() {

@@ -1,15 +1,12 @@
 <proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
-	<serviceProxy name="localhost" host="*" port="2000" path=".*"
+	<serviceProxy name="localhost" host="*" port="2000"
 		method="*">
-		<interceptor refid="roundRobinBalancer" name="Round Robin Balancer" />
+		<interceptor refid="accessControlInterceptor" name="Access Control Interceptor" />
 		<target host="localhost" port="3011" />
 	</serviceProxy>
 	<proxy name="proxy" port="2001">
-		<interceptor refid="roundRobinBalancer" name="Round Robin Balancer" />
+		<interceptor refid="accessControlInterceptor" name="Access Control Interceptor" />
 	</proxy>
-	<global>
-		<adjustHostHeader>true</adjustHostHeader>
-	</global>
 </proxies>
