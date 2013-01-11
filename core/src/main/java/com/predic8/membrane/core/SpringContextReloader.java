@@ -62,7 +62,7 @@ public class SpringContextReloader implements Lifecycle, ApplicationContextAware
 			public long lastModified;
 		}
 
-		private AbstractRefreshableApplicationContext applicationContext;
+		protected AbstractRefreshableApplicationContext applicationContext;
 
 		public HotDeploymentThread(AbstractRefreshableApplicationContext applicationContext) {
 			super("Membrane Hot Deployment Thread");
@@ -105,19 +105,7 @@ public class SpringContextReloader implements Lifecycle, ApplicationContextAware
 
 					log.debug("spring configuration changed.");
 
-					// save proxies.xml filenames for all defined routers
-					Map<String, String> proxyXmlFiles = new HashMap<String, String>();
-					for (Map.Entry<String, Router> e : applicationContext.getBeansOfType(Router.class).entrySet())
-						proxyXmlFiles.put(e.getKey(), e.getValue().getConfigurationManager().getFilename());
-					
-					applicationContext.stop();
-					applicationContext.refresh();
-					applicationContext.start();
-					
-					// restore proxies.xml filenames for all routers which still exist
-					for (Map.Entry<String, Router> e : applicationContext.getBeansOfType(Router.class).entrySet())
-						if (proxyXmlFiles.containsKey(e.getKey()))
-							e.getValue().getConfigurationManager().loadConfiguration(proxyXmlFiles.get(e.getKey()));
+					reload();
 
 					updateLastModified();
 				} catch (InterruptedException e) {				
@@ -127,6 +115,22 @@ public class SpringContextReloader implements Lifecycle, ApplicationContextAware
 				}
 			}
 			log.debug("Spring Hot Deployment Thread interrupted.");
+		}
+
+		protected void reload() throws Exception {
+			// save proxies.xml filenames for all defined routers
+			Map<String, String> proxyXmlFiles = new HashMap<String, String>();
+			for (Map.Entry<String, Router> e : applicationContext.getBeansOfType(Router.class).entrySet())
+				proxyXmlFiles.put(e.getKey(), e.getValue().getConfigurationManager().getFilename());
+			
+			applicationContext.stop();
+			applicationContext.refresh();
+			applicationContext.start();
+			
+			// restore proxies.xml filenames for all routers which still exist
+			for (Map.Entry<String, Router> e : applicationContext.getBeansOfType(Router.class).entrySet())
+				if (proxyXmlFiles.containsKey(e.getKey()))
+					e.getValue().getConfigurationManager().loadConfiguration(proxyXmlFiles.get(e.getKey()));
 		}
 	}
 
