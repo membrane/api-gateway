@@ -108,6 +108,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	
 	private static class AbstractElementInfo {
 		TypeElement element;
+		boolean hasIdField;
 		
 		List<AttributeInfo> ais = new ArrayList<AttributeInfo>();
 		List<ChildElementInfo> ceis = new ArrayList<ChildElementInfo>();
@@ -286,6 +287,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				ai.e = (ExecutableElement) e2;
 				ai.required = isRequired(e2);
 				ii.ais.add(ai);
+				ii.hasIdField = ii.hasIdField || ai.getName().equals("id");
 			}
 			MCChildElement b = e2.getAnnotation(MCChildElement.class);
 			if (b != null) {
@@ -421,9 +423,13 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						"	}\r\n");
 				bw.write("	@Override\r\n" + 
 						"	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {\r\n");
+				if (ii.hasIdField)
+					bw.write("		setPropertyIfSet(\"id\", element, builder);\r\n");
 				bw.write(
 						"		setIdIfNeeded(element, parserContext, \"" + ii.annotation.name() + "\");\r\n");
 				for (AttributeInfo ai : ii.ais) {
+					if (ai.getName().equals("id"))
+						continue;
 					bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getName() + "\", element, builder" + (ai.isEnum() ? ", true" : "") + ");\r\n");
 					if (ai.getName().equals("name"))
 						bw.write("		element.removeAttribute(\"name\");");
