@@ -1,1 +1,2 @@
 http\://membrane-soa.org/router/beans/1/=com.predic8.membrane.core.config.spring.NamespaceHandler
+http\://membrane-soa.org/schemas/proxies/v1/=com.predic8.membrane.core.config.spring.NamespaceHandler

@@ -32,6 +32,7 @@ import com.google.common.collect.Sets;
 public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser {
 
 	private static final String MEMBRANE_BEANS_NAMESPACE = "http://membrane-soa.org/router/beans/1/";
+	private static final String MEMBRANE_PROXIES_NAMESPACE = "http://membrane-soa.org/schemas/proxies/v1/";
 
 	private boolean inlined = false;
 
@@ -131,7 +132,8 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 	}
 	
 	protected boolean isMembraneNamespace(String namespace) {
-		return MEMBRANE_BEANS_NAMESPACE.equals(namespace);
+		return MEMBRANE_BEANS_NAMESPACE.equals(namespace) ||
+				MEMBRANE_PROXIES_NAMESPACE.equals(namespace);
 	}
 
 }

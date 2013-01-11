@@ -22,14 +22,12 @@ import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
 import com.predic8.membrane.core.interceptor.UserFeatureInterceptor;
-import com.predic8.membrane.core.io.ConfigurationFileStore;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
 public class HttpRouter extends Router {
 
 	public HttpRouter() {
-		configurationManager.setConfigurationStore(new ConfigurationFileStore());
 		transport = createTransport();
 	}
 	

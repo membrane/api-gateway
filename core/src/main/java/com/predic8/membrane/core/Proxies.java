@@ -28,6 +28,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.Global;
 import com.predic8.membrane.core.config.ProxyConfiguration;
@@ -37,6 +38,11 @@ import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.util.TextUtil;
 
+// TODO: remove MCElement declaration after proxies.xml has been removed
+@MCElement(name="proxies", group="basic", xsd="" +
+		"<xsd:sequence>\r\n" + 
+		"</xsd:sequence>\r\n" + 
+		"")
 public class Proxies extends AbstractConfigElement {
 	private Collection<Rule> rules = new ArrayList<Rule>();
 
