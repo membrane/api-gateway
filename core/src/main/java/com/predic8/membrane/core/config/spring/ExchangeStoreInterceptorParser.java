@@ -29,7 +29,9 @@ public class ExchangeStoreInterceptorParser extends AbstractParser {
 	@Override
 	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
 		setIdIfNeeded(element, parserContext, "exchangeStore");
-		builder.addPropertyReference("exchangeStore", element.getAttribute("name"));
-		element.removeAttribute("name");
+		if (element.hasAttribute("name")) {
+			builder.addPropertyReference("exchangeStore", element.getAttribute("name"));
+			element.removeAttribute("name");
+		}
 	}
 }

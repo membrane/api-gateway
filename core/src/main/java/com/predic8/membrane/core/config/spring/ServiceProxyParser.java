@@ -51,7 +51,7 @@ public class ServiceProxyParser extends AbstractParser {
 	}
 	
 	protected void handleChildElement(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder) {
-		if (StringUtils.equals(MEMBRANE_NAMESPACE, ele.getNamespaceURI())) {
+		if (isMembraneNamespace(ele.getNamespaceURI())) {
 			if (StringUtils.equals("target", ele.getLocalName())) {
 				builder.addPropertyValue("targetHost", StringUtils.defaultIfEmpty(ele.getAttribute("host"), null));
 				builder.addPropertyValue("targetPort", Integer.parseInt(StringUtils.defaultIfEmpty(ele.getAttribute("port"), "80")));
@@ -86,7 +86,7 @@ public class ServiceProxyParser extends AbstractParser {
 			}
 		} 
 
-		if (StringUtils.equals(MEMBRANE_NAMESPACE, ele.getNamespaceURI())) {
+		if (isMembraneNamespace(ele.getNamespaceURI())) {
 			boolean request = StringUtils.equals("request", ele.getLocalName());
 			boolean response = StringUtils.equals("response", ele.getLocalName());
 			if (request || response) {

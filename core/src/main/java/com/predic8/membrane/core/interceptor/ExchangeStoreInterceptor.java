@@ -32,7 +32,7 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 
 @MCElement(name="exchangeStore", xsd="" +
 		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
+		"					<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
 		"")
 public class ExchangeStoreInterceptor extends AbstractInterceptor {
 
@@ -87,6 +87,8 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	public void init() throws Exception {
 		if (exchangeStoreBeanId != null)
 			store = router.getBean(exchangeStoreBeanId, ExchangeStore.class);
+		else
+			store = router.getExchangeStore();
 		
 		searchAdminConsole();
 	}
