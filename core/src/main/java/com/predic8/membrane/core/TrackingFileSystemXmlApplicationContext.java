@@ -11,6 +11,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.core.io.Resource;
 
@@ -25,6 +26,10 @@ class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationCo
 	
 	TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh) throws BeansException {
 		super(configLocations, refresh);
+	}
+
+	TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh, ApplicationContext parent) throws BeansException {
+		super(configLocations, refresh, parent);
 	}
 
 	@Override

@@ -274,8 +274,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				cei.required = isRequired(e2);
 				ii.ceis.add(cei);
 				
-				// unwrap "java.util.List<?>"
-				if (cei.typeDeclaration.getQualifiedName().toString().startsWith("java.util.List")) {
+				// unwrap "java.util.List<?>" and "java.util.Collection<?>"
+				if (cei.typeDeclaration.getQualifiedName().toString().startsWith("java.util.List") ||
+						cei.typeDeclaration.getQualifiedName().toString().startsWith("java.util.Collection")) {
 					cei.typeDeclaration = (TypeElement) ((DeclaredType) ((DeclaredType) setterArgType).getTypeArguments().get(0)).asElement();
 					cei.list = true;
 				}

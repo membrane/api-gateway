@@ -1,4 +1,6 @@
-<membrane>
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
 	<serviceProxy name="localhost" host="*" port="2000" path=".*"
 		method="*">
 		<interceptor refid="roundRobinBalancer" name="Round Robin Balancer" />
@@ -10,4 +12,4 @@
 	<global>
 		<adjustHostHeader>true</adjustHostHeader>
 	</global>
-</membrane>
+</proxies>

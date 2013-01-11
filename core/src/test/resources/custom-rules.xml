@@ -49,8 +49,7 @@
 		<rest2Soap>
 			<mapping regex="/bank/.*" soapAction=""
 				soapURI="/axis2/services/BLZService" requestXSLT="request.xsl"
-				responseXSLT="response.xsl" 
-				responseType="json"/>
+				responseXSLT="response.xsl" />
 		</rest2Soap>
 
 		<interceptor refid="counter" name="Counter 2" />

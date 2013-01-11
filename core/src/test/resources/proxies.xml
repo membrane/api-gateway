@@ -1,15 +1,19 @@
-<membrane>
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+
 	<proxy name="HTTP proxy" port="3090" blockRequest="true"
 		blockResponse="false" />
-	<serviceProxy name="thomas-bayer.com" port="3000" path=".*"
+	<serviceProxy name="thomas-bayer.com" port="3000"
 		blockRequest="false" blockResponse="true">
 		<target host="thomas-bayer.com" port="80" />
 	</serviceProxy>
-	<serviceProxy name="localhost" port="2000" path=".*"
-		method="GET" host="/abc/*" blockRequest="false" blockResponse="false">
+	<serviceProxy name="localhost" port="2000"
+		method="GET" blockRequest="false" blockResponse="false">
 		<target host="localhost" port="3011" />
 	</serviceProxy>
 	<global>
 		<adjustHostHeader>true</adjustHostHeader>
 	</global>
-</membrane>
+	
+</proxies>

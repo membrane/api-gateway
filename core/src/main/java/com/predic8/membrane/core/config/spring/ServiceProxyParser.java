@@ -3,6 +3,7 @@ package com.predic8.membrane.core.config.spring;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
+import org.springframework.beans.factory.config.RuntimeBeanNameReference;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.ParserContext;
@@ -82,6 +83,16 @@ public class ServiceProxyParser extends AbstractParser {
 			}
 			if (StringUtils.equals("ssl", ele.getLocalName())) {
 				parseElementToProperty(ele, parserContext, builder, "sslInboundParser");
+				return;
+			}
+			// parse <interceptor> element for proxies.xml backward compatibility
+			if (StringUtils.equals("interceptor", ele.getLocalName())) {
+				String refid = ele.getAttribute("refid");
+				if (refid == null)
+					throw new RuntimeException("<interceptor> must have 'refid' attribute.");
+				RuntimeBeanNameReference ref = new RuntimeBeanNameReference(refid);
+				ref.setSource(parserContext.getReaderContext().extractSource(ele));
+				handleChildObject(ele, parserContext, builder, null, ref);
 				return;
 			}
 		} 
