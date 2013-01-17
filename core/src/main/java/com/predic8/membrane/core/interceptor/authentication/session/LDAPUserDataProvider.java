@@ -320,6 +320,9 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 
 	public void setPasswordAttribute(String passwordAttribute) {
 		this.passwordAttribute = passwordAttribute;
+		if (passwordAttribute != null) {
+			attributeMap.put(passwordAttribute, "_pass");
+		}
 	}
 
 	public String getTimeout() {
@@ -352,6 +355,9 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 
 	public void setAttributeMap(HashMap<String, String> attributeMap) {
 		this.attributeMap = attributeMap;
+		if (passwordAttribute != null) {
+			attributeMap.put(passwordAttribute, "_pass");
+		}
 	}
 
 }

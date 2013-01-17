@@ -1,6 +1,11 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [release] 3.5.7
+
+* [bugfix] handle LDAPUserDataProvider/@passwordAttribute in spring config
+  correctly
+
 * [release] 3.5.6
 
 * [new] The <ssl> element in proxies.xml now has a new optional attribute
