@@ -14,6 +14,10 @@
 package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Router;
 
@@ -21,10 +25,22 @@ import com.predic8.membrane.core.Router;
 
 public class Hostname extends AbstractClientAddress {
 
+	private static Log log = LogFactory.getLog(Hostname.class.getName());
+
 	public static final String ELEMENT_NAME = "hostname";
 
+	private static InetAddress localhostIp4;
+	private static InetAddress localhostIp6;
+
+	
 	public Hostname(Router router) {
 		super(router);
+		try {
+			localhostIp4 = InetAddress.getByName("127.0.0.1");
+			localhostIp6 = InetAddress.getByName("0:0:0:0:0:0:0:1");
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override
@@ -34,7 +50,13 @@ public class Hostname extends AbstractClientAddress {
 
 	@Override
 	public boolean matches(InetAddress ia) {
-		return pattern.matcher(router.getDnsCache().getCanonicalHostName(ia)).matches();
+		if(pattern.toString().equals("^localhost$") && (ia.equals(localhostIp4) || ia.equals(localhostIp6))){
+			log.debug("Address to be matched : " + ia + " is being matched to :" + pattern.toString());
+			return true;
+		}
+		String canonicalHostName = router.getDnsCache().getCanonicalHostName(ia);
+		log.debug("CanonicalHostname for " + ia.getHostAddress() + " is "  + canonicalHostName);
+		return pattern.matcher(canonicalHostName).matches();
 	}
-	
+
 }

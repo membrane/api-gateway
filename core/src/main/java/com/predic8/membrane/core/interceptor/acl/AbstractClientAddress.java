@@ -37,11 +37,16 @@ public abstract class AbstractClientAddress extends AbstractConfigElement {
 	
 	@Override
 	protected void parseCharacters(XMLStreamReader token) throws XMLStreamException {
-		pattern = Pattern.compile(TextUtil.globToRegExp(token.getText()));
+		setPattern(TextUtil.globToRegExp(token.getText()));
 	}
 	
 	@Override
 	public String toString() {
 		return pattern.pattern();
 	}
+	
+	public void setPattern(String pattern) {
+		this.pattern = Pattern.compile(pattern);
+	}
+	
 }
