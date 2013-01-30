@@ -307,5 +307,12 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Performs load-balancing between <a href=\"/admin/balancers\">several nodes</a>.";
 	}
+	
+	@Override
+	public void init() throws Exception {
+		for (Cluster c : balancer.getClusters())
+			for (Node n : c.getNodes())
+				c.nodeUp(n);
+	}
 
 }
