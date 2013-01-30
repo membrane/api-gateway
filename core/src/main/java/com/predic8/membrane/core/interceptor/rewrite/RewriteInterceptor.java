@@ -91,6 +91,10 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		@MCAttribute
 		public void setFrom(String from) {
 			this.from = from;
+			if (from == null)
+				pattern = null;
+			else
+				pattern = Pattern.compile(from);
 		}
 		
 		public String getTo() {
