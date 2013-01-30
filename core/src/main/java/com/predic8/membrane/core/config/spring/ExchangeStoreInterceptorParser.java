@@ -31,6 +31,7 @@ public class ExchangeStoreInterceptorParser extends AbstractParser {
 		setIdIfNeeded(element, parserContext, "exchangeStore");
 		if (element.hasAttribute("name")) {
 			builder.addPropertyReference("exchangeStore", element.getAttribute("name"));
+			builder.addPropertyValue("exchangeStoreBeanId", element.getAttribute("name"));
 			element.removeAttribute("name");
 		}
 	}

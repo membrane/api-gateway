@@ -68,6 +68,14 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 		store = exchangeStore;
 	}
 	
+	public String getExchangeStoreBeanId() {
+		return exchangeStoreBeanId;
+	}
+	
+	public void setExchangeStoreBeanId(String exchangeStoreBeanId) {
+		this.exchangeStoreBeanId = exchangeStoreBeanId;
+	}
+	
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out)
 			throws XMLStreamException {
