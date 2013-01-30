@@ -157,6 +157,14 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 	public void setSoapOnly(boolean soapOnly) {
 		this.soapOnly = soapOnly;
 	}
+	
+	public String getDataSourceBeanId() {
+		return dataSourceBeanId;
+	}
+	
+	public void setDataSourceBeanId(String dataSourceBeanId) {
+		this.dataSourceBeanId = dataSourceBeanId;
+	}
 
 	@Override
 	protected void writeInterceptor(XMLStreamWriter out)

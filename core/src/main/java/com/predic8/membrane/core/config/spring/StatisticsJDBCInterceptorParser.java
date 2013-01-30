@@ -33,6 +33,7 @@ public class StatisticsJDBCInterceptorParser extends AbstractParser {
 		builder.addPropertyValue("postMethodOnly", element.getAttribute("postMethodOnly"));
 		builder.addPropertyValue("soapOnly", element.getAttribute("soapOnly"));
 		builder.addPropertyReference("dataSource", element.getAttribute("dataSource"));
+		builder.addPropertyValue("dataSourceBeanId", element.getAttribute("dataSource"));
 	}
 
 }

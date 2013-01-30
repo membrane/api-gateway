@@ -13,6 +13,7 @@
 		</balancer>
 	</serviceProxy>
 	<serviceProxy name="Balancer 2" port="8081">
+		<path>/service</path>
 		<balancer name="balancer2">
 			<clusters>
 				<cluster name="Default">
@@ -21,7 +22,6 @@
 				</cluster>
 			</clusters>
 		</balancer>
-		<path>/service</path>
 	</serviceProxy>
 	<serviceProxy name="Up/Down Push Interface" port="9010">
 		<clusterNotification />
