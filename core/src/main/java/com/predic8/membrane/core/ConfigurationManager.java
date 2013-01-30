@@ -71,6 +71,8 @@ public class ConfigurationManager {
 			rule.init(router);
 		
 		router.getRuleManager().openPorts();
+		
+		log.debug("replaced " + RuleDefinitionSource.PROXIES + ".");
 	}
 
 	public String getDefaultConfigurationFile() {

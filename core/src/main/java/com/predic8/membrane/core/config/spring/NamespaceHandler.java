@@ -23,6 +23,7 @@ public class NamespaceHandler extends NamespaceHandlerSupport {
 		registerBeanDefinitionParser("router", new RouterParser());
 		registerBeanDefinitionParser("proxy", new ProxyParser());
 		registerBeanDefinitionParser("serviceProxy", new ServiceProxyParser());
+		registerBeanDefinitionParser("soapProxy", new SOAPProxyParser());
 		
 		// If you get a compiler error in the following line, enable Annotation Processing
 		// in your java compiler using the membrane-esb-annot module as annotation processor factory.

@@ -24,10 +24,10 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 
-import com.predic8.membrane.test.AssertUtils;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
-import com.predic8.membrane.examples.ProxiesXmlUtil;
 import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.ProxiesXmlUtil;
+import com.predic8.membrane.test.AssertUtils;
 
 public class QuickstartRESTTest extends DistributionExtractingTestcase {
 
@@ -40,8 +40,11 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 			assertContains("Italy", result);
 
 			new ProxiesXmlUtil(new File(baseDir, "proxies.xml")).updateWith(
-					"     <proxies>\r\n" + 
+					"     <proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
 					"       <serviceProxy name=\"names\" port=\"2000\">\r\n" + 
+					"         <path isRegExp=\"true\">/(rest)?names.*</path>\r\n" + 
 					"         <request>\r\n" + 
 					"           <rewriter>\r\n" + 
 					"             <map from=\"/names/(.*)\" to=\"/restnames/name\\.groovy\\?name=$1\" />\r\n" + 
@@ -52,7 +55,6 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 					"           <regExReplacer regex=\"\\s*,\\s*&lt;\" replace=\"&lt;\" />\r\n" + 
 					"           <transform xslt=\"restnames.xsl\" />\r\n" + 
 					"         </response>\r\n" + 
-					"         <path isRegExp=\"true\">/(rest)?names.*</path>\r\n" + 
 					"         <target host=\"thomas-bayer.com\" port=\"80\" />\r\n" + 
 					"       </serviceProxy>\r\n" + 
 					"     \r\n" + 

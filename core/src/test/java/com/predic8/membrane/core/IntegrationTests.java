@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
 import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherTest;
+import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;
 import com.predic8.membrane.core.transport.ExceptionHandlingTest;
 import com.predic8.membrane.core.transport.http.BoundConnectionTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
@@ -45,7 +46,8 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 		ViaProxyTest.class, ProxySSLConnectionMethodTest.class,
 		AdjustContentLengthIntegrationTest.class,
 		BoundConnectionTest.class, ExceptionHandlingTest.class,
-		WSDLPublisherTest.class, LimitInterceptorTest.class })
+		WSDLPublisherTest.class, LimitInterceptorTest.class,
+		SOAPProxyIntegrationTest.class })
 public class IntegrationTests {
 	/*
 	@BeforeClass

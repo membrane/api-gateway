@@ -53,7 +53,7 @@ public class SOAPProxy extends ServiceProxy {
 
 	protected String wsdl;
 	protected String portName;
-	protected String path, targetPath;
+	protected String targetPath;
 	
 	public SOAPProxy() {
 	}
@@ -88,7 +88,6 @@ public class SOAPProxy extends ServiceProxy {
 			Path p = (Path)(new Path()).parse(token);
 			key.setPathRegExp(false);
 			key.setPath(p.getValue());
-			path = p.getValue();
 			if (p.isRegExp())
 				throw new Exception("A <path> element with a parent of <soapProxy> must not have @isRegExp='true'.");
 		} else {
@@ -105,9 +104,9 @@ public class SOAPProxy extends ServiceProxy {
 		if (portName != null)
 			out.writeAttribute("portName", portName);
 		
-		if (path != null) {
+		if (key.getPath() != null) {
 			Path path = new Path();
-			path.setValue(this.path);
+			path.setValue(key.getPath());
 			path.setRegExp(false);
 			path.write(out);
 		}
@@ -146,7 +145,7 @@ public class SOAPProxy extends ServiceProxy {
 				setTargetHost(url.getHost());
 				if (url.getPort() != -1)
 					setTargetPort(url.getPort());
-				if (path == null) {
+				if (key.getPath() == null) {
 					key.setUsePathPattern(true);
 					key.setPathRegExp(true);
 					key.setPath(Pattern.quote(url.getPath()) + ".*");
@@ -227,16 +226,16 @@ public class SOAPProxy extends ServiceProxy {
 
 		if (!containsInterceptorOfType(WSDLInterceptor.class)) {
 			WSDLInterceptor wp = new WSDLInterceptor();
-			if (path != null) {
+			if (key.getPath() != null) {
 				wp.setPathRewriter(new PathRewriter() {
 					@Override
 					public String rewrite(String path2) {
 						try {
 							if (path2.contains("://")) {
-								path2 = new URL(new URL(path2), path).toString();
+								path2 = new URL(new URL(path2), key.getPath()).toString();
 							} else {
 								Matcher m = relativePathPattern.matcher(path2);
-								path2 = m.replaceAll("./" + URLUtil.getName(path) + "?");
+								path2 = m.replaceAll("./" + URLUtil.getName(key.getPath()) + "?");
 							}
 						} catch (MalformedURLException e) {
 						}
@@ -248,9 +247,9 @@ public class SOAPProxy extends ServiceProxy {
 			automaticallyAddedInterceptorCount++;
 		}
 		
-		if (path != null) {
+		if (key.getPath() != null) {
 			RewriteInterceptor ri = new RewriteInterceptor();
-			ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(path), Matcher.quoteReplacement(targetPath), "rewrite")));
+			ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
 			interceptors.add(0, ri);
 			automaticallyAddedInterceptorCount++;
 		}
@@ -273,6 +272,18 @@ public class SOAPProxy extends ServiceProxy {
 
 	public String getWsdl() {
 		return wsdl;
+	}
+	
+	public void setWsdl(String wsdl) {
+		this.wsdl = wsdl;
+	}
+	
+	public String getPortName() {
+		return portName;
+	}
+	
+	public void setPortName(String portName) {
+		this.portName = portName;
 	}
 
 }
