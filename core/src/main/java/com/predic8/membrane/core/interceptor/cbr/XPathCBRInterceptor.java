@@ -17,6 +17,8 @@ package com.predic8.membrane.core.interceptor.cbr;
 import static com.predic8.membrane.core.util.SynchronizedXPathFactory.newXPath;
 
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.stream.XMLStreamException;
@@ -26,9 +28,11 @@ import javax.xml.xpath.XPathConstants;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.xml.sax.InputSource;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -36,21 +40,11 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 
-@MCElement(name="switch", xsd="" +
-		"					<xsd:sequence>\r\n" + 
-		"						<xsd:element name=\"case\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
-		"							<xsd:complexType>\r\n" + 
-		"								<xsd:sequence />\r\n" + 
-		"								<xsd:attribute name=\"xPath\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								<xsd:attribute name=\"url\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"							</xsd:complexType>\r\n" + 
-		"						</xsd:element>\r\n" + 
-		"					</xsd:sequence>\r\n" + 
-		"")
+@MCElement(name="switch")
 public class XPathCBRInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(XPathCBRInterceptor.class.getName());
 	
-	private RouteProvider routeProvider = new DefaultRouteProvider();
+	private List<Case> cases = new ArrayList<Case>();
 	private Map<String, String> namespaces;
 	
 	public XPathCBRInterceptor() {
@@ -80,21 +74,13 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 	}
 
 	private Case findRoute(Request request) throws Exception {
-		for (Case r : routeProvider.getRoutes()) {
+		for (Case r : cases) {
 			//TODO getBodyAsStream creates ByteArray each call. That could be a performance issue. Using BufferedInputStream did't work, because stream got closed.
 			if ( (Boolean) newXPath(namespaces).evaluate(r.getxPath(), new InputSource(request.getBodyAsStream()), XPathConstants.BOOLEAN) ) 
 				return r;
 			log.debug("no match found for xpath {"+r.getxPath()+"}");
 		}			
 		return null;			
-	}
-
-	public RouteProvider getRouteProvider() {
-		return routeProvider;
-	}
-
-	public void setRouteProvider(RouteProvider routeProvider) {
-		this.routeProvider = routeProvider;
 	}
 
 	public Map<String, String> getNamespaces() {
@@ -111,7 +97,7 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		
 		out.writeStartElement("switch");
 		
-		for (Case r : routeProvider.getRoutes()) {
+		for (Case r : cases) {
 			r.write(out);
 		}
 		
@@ -124,10 +110,20 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		if (token.getLocalName().equals("case")) {
 			Case r = new Case();
 			r.parse(token);
-			routeProvider.getRoutes().add(r);
+			cases.add(r);
 		} else {
 			super.parseChildren(token, child);
 		}	
+	}
+	
+	@Required
+	@MCChildElement
+	public void setCases(List<Case> cases) {
+		this.cases = cases;
+	}
+	
+	public List<Case> getCases() {
+		return cases;
 	}
 	
 	@Override
@@ -151,7 +147,7 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 					end();
 				end();
 				tbody();
-				for (Case c : routeProvider.getRoutes()) {
+				for (Case c : cases) {
 					tr();
 						td().text(c.getxPath()).end();
 						td().raw(TextUtil.linkURL(c.getUrl())).end();

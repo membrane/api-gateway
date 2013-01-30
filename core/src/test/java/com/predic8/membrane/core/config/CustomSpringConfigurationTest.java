@@ -108,10 +108,9 @@ public class CustomSpringConfigurationTest {
 	}
 
 	private void assertXPathCBRInterceptor(XPathCBRInterceptor i) {
-		assertEquals("//convert", i.getRouteProvider().getRoutes().get(0)
+		assertEquals("//convert", i.getCases().get(0)
 				.getxPath());
-		assertEquals("http://www.thomas-bayer.com/axis2/", i.getRouteProvider()
-				.getRoutes().get(0).getUrl());
+		assertEquals("http://www.thomas-bayer.com/axis2/", i.getCases().get(0).getUrl());
 	}
 
 	private void assertSOAPMessageValidatorInterceptor(ValidatorInterceptor i) {

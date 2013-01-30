@@ -41,10 +41,8 @@ public class XPathCBRInterceptorTest extends TestCase {
 		exc.setRequest(res);
 
 		XPathCBRInterceptor i = new XPathCBRInterceptor();
-		DefaultRouteProvider rp = new DefaultRouteProvider();
-		rp.setRoutes(getRouteList("//CITY[text()='England']","http://www.host.uk/service",
-								  "//CITY[text()='Bonn']","http://www.host.de/service"));
-		i.setRouteProvider(rp);
+		i.setCases(getRouteList("//CITY[text()='England']","http://www.host.uk/service",
+							    "//CITY[text()='Bonn']","http://www.host.de/service"));
 		
 		i.handleRequest(exc);
 		Assert.assertEquals("http://www.host.de/service", exc.getDestinations().get(0));
@@ -60,11 +58,9 @@ public class XPathCBRInterceptorTest extends TestCase {
 
 		XPathCBRInterceptor i = new XPathCBRInterceptor();
 		
-		DefaultRouteProvider rp = new DefaultRouteProvider();
-		rp.setRoutes(getRouteList("//pre:CITY[text()='England']","http://www.host.uk/service",
-								  "//pre:CITY[text()='Bonn']","http://www.host.de/service"));
+		i.setCases(getRouteList("//pre:CITY[text()='England']","http://www.host.uk/service",
+								"//pre:CITY[text()='Bonn']","http://www.host.de/service"));
 		
-		i.setRouteProvider(rp);		
 		i.setNamespaces(getNamespaceMap("pre", "http://predic8.de/customer/1"));
 		
 		i.handleRequest(exc);

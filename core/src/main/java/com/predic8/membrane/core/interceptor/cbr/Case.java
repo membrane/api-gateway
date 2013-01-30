@@ -16,8 +16,13 @@ package com.predic8.membrane.core.interceptor.cbr;
 
 import javax.xml.stream.*;
 
+import org.springframework.beans.factory.annotation.Required;
+
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
+@MCElement(name="case", global=false)
 public class Case extends AbstractXmlElement {
 
 	private String url;
@@ -34,14 +39,28 @@ public class Case extends AbstractXmlElement {
 		return url;
 	}
 
+	@MCAttribute
 	public void setUrl(String url) {
 		this.url = url;
+	}
+	
+	public String getService() {
+		if (url.startsWith("service:"))
+			return url.substring(8);
+		return null;
+	}
+	
+	@MCAttribute
+	public void setService(String service) {
+		url = "service:" + service;
 	}
 
 	public String getxPath() {
 		return xPath;
 	}
 
+	@Required
+	@MCAttribute
 	public void setxPath(String xPath) {
 		this.xPath = xPath;
 	}
