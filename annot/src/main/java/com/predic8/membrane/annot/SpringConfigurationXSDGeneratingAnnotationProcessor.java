@@ -32,19 +32,26 @@ import javax.tools.StandardLocation;
 public class SpringConfigurationXSDGeneratingAnnotationProcessor extends AbstractProcessor {
 	
 	private class AttributeInfo {
+		MCAttribute annotation;
 		ExecutableElement e;
 		boolean required;
 
 		private String xsdType;
 		private boolean isEnum;
 		
-		public String getName() {
+		public String getXMLName() {
+			if (annotation.attributeName().length() == 0)
+				return getSpringName();
+			else
+				return annotation.attributeName();
+		}
+		
+		public String getSpringName() {
 			String s = e.getSimpleName().toString();
 			if (!s.substring(0, 3).equals("set"))
 				throw new ProcessingException("Setter method name is supposed to start with 'set'.", e);
 			s = s.substring(3);
-			s = Character.toLowerCase(s.charAt(0)) + s.substring(1);
-			return s;
+			return dejavaify(s);
 		}
 
 		public String getXSDType() {
@@ -284,10 +291,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			MCAttribute a = e2.getAnnotation(MCAttribute.class);
 			if (a != null) {
 				AttributeInfo ai = new AttributeInfo();
+				ai.annotation = a;
 				ai.e = (ExecutableElement) e2;
 				ai.required = isRequired(e2);
 				ii.ais.add(ai);
-				ii.hasIdField = ii.hasIdField || ai.getName().equals("id");
+				ii.hasIdField = ii.hasIdField || ai.getXMLName().equals("id");
 			}
 			MCChildElement b = e2.getAnnotation(MCChildElement.class);
 			if (b != null) {
@@ -428,10 +436,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				bw.write(
 						"		setIdIfNeeded(element, parserContext, \"" + ii.annotation.name() + "\");\r\n");
 				for (AttributeInfo ai : ii.ais) {
-					if (ai.getName().equals("id"))
+					if (ai.getXMLName().equals("id"))
 						continue;
-					bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getName() + "\", element, builder" + (ai.isEnum() ? ", true" : "") + ");\r\n");
-					if (ai.getName().equals("name"))
+					bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getXMLName() + "\", \"" + ai.getSpringName() + "\", element, builder" + (ai.isEnum() ? ", true" : "") + ");\r\n");
+					if (ai.getXMLName().equals("name"))
 						bw.write("		element.removeAttribute(\"name\");");
 				}
 				for (ChildElementInfo cei : ii.ceis)
@@ -552,14 +560,14 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		}
 		xsd.append("</xsd:sequence>\r\n");
 		for (AttributeInfo ai : i.ais)
-			if (!ai.getName().equals("id"))
+			if (!ai.getXMLName().equals("id"))
 				xsd.append(assembleAttributeDeclaration(ai));
 		return xsd.toString();
 	}
 
 	private String assembleAttributeDeclaration(AttributeInfo ai) {
 		// TODO: default value
-		return "<xsd:attribute name=\"" + ai.getName() + "\" type=\"" + ai.getXSDType() + "\" "
+		return "<xsd:attribute name=\"" + ai.getXMLName() + "\" type=\"" + ai.getXSDType() + "\" "
 				+ (ai.required ? "use=\"required\"" : "") + " />\r\n";
 	}
 
