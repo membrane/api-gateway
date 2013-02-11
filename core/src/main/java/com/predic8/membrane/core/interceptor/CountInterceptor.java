@@ -25,18 +25,17 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 
-@MCElement(name="counter", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"")
+@MCElement(name="counter")
 public class CountInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(CountInterceptor.class.getName());
@@ -97,6 +96,13 @@ public class CountInterceptor extends AbstractInterceptor {
 	@Override
 	public String getDisplayName() {
 		return "Counter: " + super.getDisplayName();
+	}
+	
+	@Required
+	@MCAttribute(attributeName="name")
+	@Override
+	public void setDisplayName(String name) {
+		super.setDisplayName(name);
 	}
 
 }

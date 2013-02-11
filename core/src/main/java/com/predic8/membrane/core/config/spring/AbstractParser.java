@@ -61,23 +61,39 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 	}	
 
 	protected void setProperty(String prop, Element e, BeanDefinitionBuilder builder) {
-		setProperty(prop, e, builder, false);
+		setProperty(prop, prop, e, builder);
 	}
 	
 	protected void setProperty(String prop, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
-		String value = e.getAttribute(prop);
+		setProperty(prop, prop, e, builder, flexibleEnum);
+	}
+
+	protected void setProperty(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder) {
+		setProperty(xmlPropertyName, e, builder, false);
+	}
+	
+	protected void setProperty(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
+		String value = e.getAttribute(xmlPropertyName);
 		if (flexibleEnum)
 			value = value.toUpperCase();
-		builder.addPropertyValue(prop, value);
+		builder.addPropertyValue(springPropertyName, value);
 	}
 
 	protected void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder) {
-		setPropertyIfSet(prop, e, builder, false);
+		setPropertyIfSet(prop, prop, e, builder);
 	}
 
 	protected void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
-		if (e.hasAttribute(prop))
-			setProperty(prop, e, builder, flexibleEnum);
+		setPropertyIfSet(prop, prop, e, builder, flexibleEnum);
+	}
+	
+	protected void setPropertyIfSet(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder) {
+		setPropertyIfSet(xmlPropertyName, springPropertyName, e, builder, false);
+	}
+
+	protected void setPropertyIfSet(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
+		if (e.hasAttribute(xmlPropertyName))
+			setProperty(xmlPropertyName, springPropertyName, e, builder, flexibleEnum);
 	}
 	
 	protected void parseElementToProperty(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, String property) {

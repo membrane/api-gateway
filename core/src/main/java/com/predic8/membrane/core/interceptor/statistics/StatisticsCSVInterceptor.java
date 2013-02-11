@@ -26,8 +26,10 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.util.HtmlUtils;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -38,10 +40,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 /**
  * The output file is UTF-8 encoded.
  */
-@MCElement(name="statisticsCSV", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"file\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"")
+@MCElement(name="statisticsCSV")
 public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(StatisticsCSVInterceptor.class
@@ -93,6 +92,8 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 		}
 	}
 
+	@Required
+	@MCAttribute(attributeName="file")
 	public void setFileName(String fileName) throws Exception {
 		synchronized(fileNames) {
 			String fn = fileNames.get(fileName);

@@ -38,6 +38,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 		private String xsdType;
 		private boolean isEnum;
+		private boolean isBeanReference;
 		
 		public String getXMLName() {
 			if (annotation.attributeName().length() == 0)
@@ -63,9 +64,14 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			analyze();
 			return isEnum;
 		}
+		
+		public boolean isBeanReference() {
+			analyze();
+			return isBeanReference;
+		}
 
 		private void analyze() {
-			if (xsdType != null)
+			if (xsdType != null) // already analyzed?
 				return;
 			
 			if (e.getParameters().size() != 1)
@@ -106,7 +112,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						return;
 					}
 				}
-				throw new ProcessingException("Not implemented: XSD type for " + e.getQualifiedName(), this.e);
+				
+				isBeanReference = true;
+				xsdType = "xsd:string";
+				return;
 			default:
 				throw new ProcessingException("Not implemented: XSD type for " + ve.asType().getKind().toString(), this.e);
 			}
@@ -438,9 +447,15 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				for (AttributeInfo ai : ii.ais) {
 					if (ai.getXMLName().equals("id"))
 						continue;
-					bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getXMLName() + "\", \"" + ai.getSpringName() + "\", element, builder" + (ai.isEnum() ? ", true" : "") + ");\r\n");
+					if (ai.isBeanReference()) {
+						if (!ai.required)
+							bw.write("		if (element.hasAttribute(\"" + ai.getXMLName() + "\"))\r\n");
+						bw.write("		builder.addPropertyReference(\"" + ai.getSpringName() + "\", element.getAttribute(\"" + ai.getXMLName() + "\"));\r\n");
+					} else {
+						bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getXMLName() + "\", \"" + ai.getSpringName() + "\", element, builder" + (ai.isEnum() ? ", true" : "") + ");\r\n");
+					}
 					if (ai.getXMLName().equals("name"))
-						bw.write("		element.removeAttribute(\"name\");");
+						bw.write("		element.removeAttribute(\"name\");\r\n");
 				}
 				for (ChildElementInfo cei : ii.ceis)
 					if (cei.list)

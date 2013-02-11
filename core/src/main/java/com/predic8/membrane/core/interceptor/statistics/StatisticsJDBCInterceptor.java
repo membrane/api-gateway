@@ -27,7 +27,12 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
@@ -36,29 +41,33 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 
-@MCElement(name="statisticsJDBC", xsd="" +
-		"					<xsd:sequence />\r\n" + 
-		"					<xsd:attribute name=\"postMethodOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
-		"					<xsd:attribute name=\"soapOnly\" type=\"xsd:boolean\" default=\"false\"/>\r\n" + 
-		"					<xsd:attribute name=\"dataSource\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"")
-public class StatisticsJDBCInterceptor extends AbstractInterceptor {
+@MCElement(name="statisticsJDBC")
+public class StatisticsJDBCInterceptor extends AbstractInterceptor implements ApplicationContextAware {
+	private static final String DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED = "datasource bean id attribute cannot be used";
+
 	private static Log log = LogFactory.getLog(StatisticsJDBCInterceptor.class.getName());
 	
+	private ApplicationContext applicationContext;
 	private DataSource dataSource;
 	
 	private boolean postMethodOnly;
 	private boolean soapOnly;
 	private boolean idGenerated;
 	private String statString;
-	private String dataSourceBeanId; 
+	private String dataSourceBeanId = DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED; 
 	
 	public StatisticsJDBCInterceptor() {
 		name = "JDBC Logging";
 	}
 	
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+	
 	public void init() {
-		dataSource = router.getBean(dataSourceBeanId, DataSource.class);
+		if (dataSourceBeanId != DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED)
+			dataSource = applicationContext.getBean(dataSourceBeanId, DataSource.class);
 		Connection con = null;
 		try {
 			con = dataSource.getConnection();
@@ -138,14 +147,18 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		return dataSource;
 	}
 	
+	@Required
+	@MCAttribute
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
+		dataSourceBeanId = DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED;
 	}
 
 	public boolean isPostMethodOnly() {
 		return postMethodOnly;
 	}
 
+	@MCAttribute
 	public void setPostMethodOnly(boolean postMethodOnly) {
 		this.postMethodOnly = postMethodOnly;
 	}
@@ -154,6 +167,7 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		return soapOnly;
 	}
 
+	@MCAttribute
 	public void setSoapOnly(boolean soapOnly) {
 		this.soapOnly = soapOnly;
 	}
@@ -162,6 +176,12 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 		return dataSourceBeanId;
 	}
 	
+	/**
+	 * @deprecated use {@link #setDataSource(DataSource)} instead: Using
+	 *             {@link #setDataSourceBeanId(String)} from Spring works,
+	 *             but does not create a Spring bean dependency.
+	 */
+	@Deprecated
 	public void setDataSourceBeanId(String dataSourceBeanId) {
 		this.dataSourceBeanId = dataSourceBeanId;
 	}
@@ -174,7 +194,10 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor {
 
 		out.writeAttribute("postMethodOnly", ""+postMethodOnly);
 		out.writeAttribute("soapOnly", ""+soapOnly);
-		out.writeAttribute("dataSourceBeanId", dataSourceBeanId);
+		if (DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED == dataSourceBeanId)
+			out.writeAttribute("error", DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED);
+		else
+			out.writeAttribute("dataSourceBeanId", dataSourceBeanId);
 		
 		out.writeEndElement();
 	}
