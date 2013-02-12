@@ -39,7 +39,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.ConfigurationException;
-import com.predic8.membrane.core.config.ElementName;
 import com.predic8.membrane.core.config.LocalHost;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -179,27 +178,11 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 
 	private Interceptor parseInterceptors(XMLStreamReader token, String child)
 			throws Exception {
-		Interceptor i = null;
-		if ("interceptor".equals(child)) {
-			i = getInterceptorFor(readInterceptor(token).getId());
-		} else {
-			i = getInlinedInterceptor(token, child);
-		}
+		Interceptor i = getInlinedInterceptor(token, child);
 		interceptors.add(i);
 		return i;
 	}
 
-	private AbstractInterceptor readInterceptor(XMLStreamReader token)
-			throws Exception {
-		return (AbstractInterceptor) (new AbstractInterceptor()).parse(token);
-	}
-
-	private Interceptor getInterceptorFor(String id) {
-		Interceptor i = Router.getBeanFactory().getBean(id, Interceptor.class);
-		i.setId(id); // returned bean does not have id set
-		return i;
-	}
-	
 	private Interceptor getInlinedInterceptor(XMLStreamReader token, String name)
 			throws Exception {
 		AbstractInterceptor i = null;
@@ -268,21 +251,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 		} else if ("login".equals(name)) {
 			i = new LoginInterceptor();
 		} else {
-			for (Object bean : Router.getBeanFactory()
-					.getBeansWithAnnotation(ElementName.class).values()) {
-				String beanName = bean.getClass()
-						.getAnnotation(ElementName.class).value();
-				if (beanName == null)
-					throw new Exception(
-							bean.getClass().getName()
-									+ " declared @ElementName(null), null is not allowed.");
-				if (beanName.equals(name)) {
-					i = (AbstractInterceptor) bean.getClass().newInstance();
-					break;
-				}
-			}
-			if (i == null)
-				throw new ConfigurationException("Unknown interceptor found \"" + name + "\". Check the documentation at http://membrane-soa.org/esb-doc/current/configuration/reference/index.htm .");
+			throw new ConfigurationException("Unknown interceptor found \"" + name + "\". Check the documentation at http://membrane-soa.org/esb-doc/current/configuration/reference/index.htm .");
 		}
 		i.parse(token);
 		return i;

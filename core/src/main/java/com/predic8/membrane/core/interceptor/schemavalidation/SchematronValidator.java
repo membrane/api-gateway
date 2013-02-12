@@ -37,6 +37,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.predic8.membrane.core.Router;
@@ -59,13 +60,13 @@ public class SchematronValidator implements IValidator {
 	private final AtomicLong invalid = new AtomicLong();
 	
 	
-	public SchematronValidator(ResourceResolver resourceResolver, String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router) throws Exception {
+	public SchematronValidator(ResourceResolver resourceResolver, String schematron, ValidatorInterceptor.FailureHandler failureHandler, Router router, BeanFactory beanFactory) throws Exception {
 		this.failureHandler = failureHandler;
 		
 		//works as standalone "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl"
 		TransformerFactory fac;
 		try {
-			fac = router.getBean("transformerFactory", TransformerFactory.class);
+			fac = beanFactory.getBean("transformerFactory", TransformerFactory.class);
 		} catch (NoSuchBeanDefinitionException e) {
 			throw new RuntimeException("Please define a bean called 'transformerFactory' in monitor-beans.xml, e.g. with " +
 					"<spring:bean id=\"transformerFactory\" class=\"com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl\" />", e);

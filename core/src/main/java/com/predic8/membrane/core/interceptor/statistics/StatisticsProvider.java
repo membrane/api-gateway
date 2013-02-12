@@ -30,7 +30,10 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
@@ -43,7 +46,7 @@ import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 @MCElement(name="statisticsProvider")
-public class StatisticsProvider extends AbstractInterceptor {
+public class StatisticsProvider extends AbstractInterceptor implements ApplicationContextAware {
 	private static Log log = LogFactory.getLog(StatisticsProvider.class
 			.getName());
 
@@ -52,6 +55,7 @@ public class StatisticsProvider extends AbstractInterceptor {
 																// configuration
 	private DataSource dataSource;
 	private String dataSourceBeanId;
+	private ApplicationContext applicationContext;
 
 	private static final ImmutableMap<String, String> sortNameColmnMapping =
 			   new ImmutableMap.Builder<String, String>()
@@ -63,6 +67,11 @@ public class StatisticsProvider extends AbstractInterceptor {
 
 	public StatisticsProvider() {
 		name = "Provides caller statistics as JSON";
+	}
+	
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
 	}
 
 	@Override
@@ -171,22 +180,25 @@ public class StatisticsProvider extends AbstractInterceptor {
 
 		out.writeStartElement("statisticsProvider");
 
-		out.writeAttribute("dataSourceBeanId", dataSourceBeanId);
+		if (dataSourceBeanId == null)
+			out.writeAttribute("error", "could not determine dataSource bean id");
+		else
+			out.writeAttribute("dataSourceBeanId", dataSourceBeanId);
 
 		out.writeEndElement();
 	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-
 		dataSourceBeanId = token.getAttributeValue("", "dataSource");
-		dataSource = router.getBean(dataSourceBeanId, DataSource.class);
 	}
 
 	public DataSource getDataSource() {
 		return dataSource;
 	}
 
+	@Required
+	@MCAttribute(attributeName="dataSourceBeanId")
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
@@ -195,11 +207,19 @@ public class StatisticsProvider extends AbstractInterceptor {
 		return dataSourceBeanId;
 	}
 	
-	@Required
-	@MCAttribute
+	/**
+	 * @deprecated use {@link #setDataSource(DataSource)} instead: Using
+	 *             {@link #setDataSourceBeanId(String)} from Spring works,
+	 *             but does not create a Spring bean dependency.
+	 */
 	public void setDataSourceBeanId(String dataSourceBeanId) {
 		this.dataSourceBeanId = dataSourceBeanId;
-		dataSource = router.getBean(dataSourceBeanId, DataSource.class);
+	}
+	
+	@Override
+	public void init() throws Exception {
+		if (dataSourceBeanId != null)
+			dataSource = applicationContext.getBean(dataSourceBeanId, DataSource.class);
 	}
 
 	private void closeConnection(Connection con) {

@@ -17,15 +17,16 @@ package com.predic8.membrane.core;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
-import org.springframework.context.support.AbstractApplicationContext;
 
 import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
@@ -227,12 +228,11 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"" +
 				"" +
 				"</xsd:schema>")
-public class Router implements Lifecycle {
+public class Router implements Lifecycle, ApplicationContextAware {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());
 
-	// TODO: make non-static
-	static AbstractApplicationContext beanFactory;
+	private ApplicationContext beanFactory;
 
 	protected RuleManager ruleManager = new RuleManager();
 	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
@@ -266,7 +266,8 @@ public class Router implements Lifecycle {
 	public static Router init(String resource, ClassLoader classLoader) {
 		log.debug("loading spring config: " + resource);
 
-		beanFactory = new TrackingFileSystemXmlApplicationContext(new String[] { resource }, false);
+		TrackingFileSystemXmlApplicationContext beanFactory = 
+				new TrackingFileSystemXmlApplicationContext(new String[] { resource }, false);
 		beanFactory.setClassLoader(classLoader);
 		beanFactory.refresh();
 		
@@ -275,6 +276,12 @@ public class Router implements Lifecycle {
 		return (Router) beanFactory.getBean("router");
 	}
 
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		beanFactory = applicationContext;
+		configurationManager.setApplicationContext(applicationContext); // hack until ConfigurationManager lifecycle is managed by Spring
+	}
+	
 	public RuleManager getRuleManager() {
 		return ruleManager;
 	}
@@ -304,18 +311,6 @@ public class Router implements Lifecycle {
 		return configurationManager;
 	}
 
-	public Collection<Interceptor> getInterceptors() {
-		Map<String, Interceptor> map = beanFactory.getBeansOfType(Interceptor.class);
-		for (Map.Entry<String, Interceptor> entry : map.entrySet()) {
-			entry.getValue().setId(entry.getKey());
-		}
-		return map.values();
-	}
-
-	public <E> E getBean(String id, Class<E> clazz) {
-		return beanFactory.getBean(id, clazz);
-	}
-
 	public DNSCache getDnsCache() {
 		return dnsCache;
 	}
@@ -328,14 +323,6 @@ public class Router implements Lifecycle {
 		this.resourceResolver = resourceResolver;
 	}
 
-	public static AbstractApplicationContext getBeanFactory() {
-		return beanFactory;
-	}
-
-	public static void setBeanFactory(AbstractApplicationContext beanFactory) {
-		Router.beanFactory = beanFactory;
-	}
-	
 	/**
 	 * Closes all ports (if any were opened) and waits for running exchanges to complete.
 	 * 

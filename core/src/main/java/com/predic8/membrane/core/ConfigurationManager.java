@@ -16,13 +16,15 @@ package com.predic8.membrane.core;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.rules.Rule;
 
-public class ConfigurationManager {
+public class ConfigurationManager implements ApplicationContextAware {
 
 	protected static Log log = LogFactory.getLog(ConfigurationManager.class
 			.getName());
@@ -33,17 +35,24 @@ public class ConfigurationManager {
 	private String filename;
 
 	private final Router router;
+
+	private ApplicationContext parentApplicationContext;
 	
 	public ConfigurationManager(Router router) {
 		this.router = router;
 	}
 
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		parentApplicationContext = applicationContext;
+	}
+	
 	public void loadConfiguration(String fileName) throws Exception {
 		this.filename = fileName;
 		
-		applicationContext = new TrackingFileSystemXmlApplicationContext(new String[] { fileName }, false, Router.getBeanFactory());
-		if (Router.getBeanFactory() != null)
-			applicationContext.setClassLoader(Router.getBeanFactory().getClassLoader());
+		applicationContext = new TrackingFileSystemXmlApplicationContext(new String[] { fileName }, false, parentApplicationContext);
+		if (parentApplicationContext != null)
+			applicationContext.setClassLoader(parentApplicationContext.getClassLoader());
 		applicationContext.refresh();
 		applicationContext.start();
 		

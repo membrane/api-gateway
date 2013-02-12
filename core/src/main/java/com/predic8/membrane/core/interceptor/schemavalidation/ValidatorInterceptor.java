@@ -20,6 +20,9 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -38,7 +41,7 @@ import com.predic8.membrane.core.util.TextUtil;
  * attributes.
  */
 @MCElement(name="validator")
-public class ValidatorInterceptor extends AbstractInterceptor {
+public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 	private static Log log = LogFactory.getLog(ValidatorInterceptor.class.getName());
 
 	private String wsdl;
@@ -50,11 +53,17 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 	
 	private IValidator validator;
 	private ResourceResolver resourceResolver;
+	private ApplicationContext applicationContext;
 	
 	private void setValidator(IValidator validator) throws Exception {
 		if (this.validator != null)
 			throw new Exception("<validator> cannot have more than one validator attribute.");
 		this.validator = validator;
+	}
+	
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
 	}
 	
 	public void init() throws Exception {
@@ -74,7 +83,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		}
 		if (schematron != null) {
 			name="Schematron Validator";
-			setValidator(new SchematronValidator(resourceResolver, schematron, createFailureHandler(), router));
+			setValidator(new SchematronValidator(resourceResolver, schematron, createFailureHandler(), router, applicationContext));
 		}
 		
 		if (validator == null) {
