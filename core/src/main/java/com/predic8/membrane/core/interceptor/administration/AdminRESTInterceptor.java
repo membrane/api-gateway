@@ -118,7 +118,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		});
 	}
 	
-	@Mapping("/admin/rest/exchanges/(\\d+)/(response|request)/raw")
+	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/raw")
 	public Response getRaw(QueryParameter params, String relativeRootPath) throws Exception {
 		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
 
@@ -134,7 +134,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		return Response.ok().contentType(MimeType.TEXT_PLAIN_UTF8).body(msg.toString()).build();//TODO uses body.toString that doesn't handle different encodings than utf-8
 	}
 	
-	@Mapping("/admin/web/exchanges/(\\d+)/(response|request)/body")
+	@Mapping("/admin/web/exchanges/(-?\\d+)/(response|request)/body")
 	public Response getBeautifiedBody(QueryParameter params, String relativeRootPath) throws Exception {
 		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
 
@@ -150,7 +150,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		return Response.ok().contentType(MimeType.TEXT_HTML_UTF8).body(TextUtil.formatXML(new InputStreamReader(msg.getBodyAsStream()), true)).build();
 	}
 
-	@Mapping("/admin/rest/exchanges/(\\d+)/(response|request)/body")
+	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/body")
 	public Response getRequestBody(QueryParameter params, String relativeRootPath) throws Exception {
 		AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
 
@@ -167,7 +167,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		return Response.ok().contentType(ct).body(new String(msg.getBody().getContent())).build();//TODO use right charset to create string
 	}
 
-	@Mapping("/admin/rest/exchanges/(\\d+)/(response|request)/header")
+	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/header")
 	public Response getRequestHeader(QueryParameter params, String relativeRootPath) throws Exception {
 		final AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
 
@@ -197,7 +197,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		});
 	}
 
-	@Mapping("/admin/rest/exchanges/(\\d+)")
+	@Mapping("/admin/rest/exchanges/(-?\\d+)")
 	public Response getExchange(QueryParameter params, String relativeRootPath) throws Exception {
 
 		final AbstractExchange exc = router.getExchangeStore().getExchangeById(params.getGroupInt(1));
