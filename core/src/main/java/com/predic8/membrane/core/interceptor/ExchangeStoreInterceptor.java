@@ -23,6 +23,9 @@ import org.springframework.context.ApplicationContextAware;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.http.AbstractBody;
@@ -36,6 +39,8 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 
 	private static final String BEAN_ID_ATTRIBUTE_CANNOT_BE_USED = "bean id attribute cannot be used";
 	private ApplicationContext applicationContext;
+	private static Log log = LogFactory.getLog(AbstractInterceptor.class.getName());
+	
 	private ExchangeStore store;
 	private String exchangeStoreBeanId;
 	
@@ -56,17 +61,30 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	}
 	
 	@Override
-	public Outcome handleResponse(final Exchange exc) throws Exception {
-		
+	public Outcome handleResponse(final Exchange exc) throws Exception {	
+		return handle(exc);
+	}
+	
+	@Override
+	public void handleAbort(final Exchange exc) {
+		handle(exc);	
+	}
+
+	protected Outcome handle(final Exchange exc) {
 		if (serviceProxiesContainingAdminConsole.contains(exc.getRule())) {
 			return Outcome.CONTINUE;
 		}
+			
+		try {
+			exc.getResponse().addObserver(new MessageObserver() {
+				public void bodyComplete(AbstractBody body) {
+					store.add(exc);
+				}
+			});
+		} catch (Exception e) {
+			log.info("Exchange has no probably no response due to a prior error in the response chain.");
+		}
 		
-		exc.getResponse().addObserver(new MessageObserver() {
-			public void bodyComplete(AbstractBody body) {
-				store.add(exc);
-			}
-		});
 		return Outcome.CONTINUE;
 	}
 	
