@@ -21,6 +21,9 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.http.AbstractBody;
@@ -31,6 +34,8 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class ExchangeStoreInterceptor extends AbstractInterceptor {
 
+	private static Log log = LogFactory.getLog(AbstractInterceptor.class.getName());
+	
 	private ExchangeStore store;
 	private String exchangeStoreBeanId;
 	
@@ -41,17 +46,30 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
-	public Outcome handleResponse(final Exchange exc) throws Exception {
-		
+	public Outcome handleResponse(final Exchange exc) throws Exception {	
+		return handle(exc);
+	}
+	
+	@Override
+	public void handleAbort(final Exchange exc) {
+		handle(exc);	
+	}
+
+	protected Outcome handle(final Exchange exc) {
 		if (serviceProxiesContainingAdminConsole.contains(exc.getRule())) {
 			return Outcome.CONTINUE;
 		}
+			
+		try {
+			exc.getResponse().addObserver(new MessageObserver() {
+				public void bodyComplete(AbstractBody body) {
+					store.add(exc);
+				}
+			});
+		} catch (Exception e) {
+			log.info("Exchange has no probably no response due to a prior error in the response chain.");
+		}
 		
-		exc.getResponse().addObserver(new MessageObserver() {
-			public void bodyComplete(AbstractBody body) {
-				store.add(exc);
-			}
-		});
 		return Outcome.CONTINUE;
 	}
 	
