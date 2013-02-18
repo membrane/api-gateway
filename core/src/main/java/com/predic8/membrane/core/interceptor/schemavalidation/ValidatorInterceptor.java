@@ -99,7 +99,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		if (exc.getRequest().isBodyEmpty()) 
 			return Outcome.CONTINUE;
 			
-		return validator.validateMessage(exc, exc.getRequest());
+		return validator.validateMessage(exc, exc.getRequest(), "request");
 	}
 	
 	@Override
@@ -107,7 +107,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		if (exc.getResponse().isBodyEmpty())
 			return Outcome.CONTINUE;
 		
-		return validator.validateMessage(exc, exc.getResponse());
+		return validator.validateMessage(exc, exc.getResponse(), "response");
 	}
 	
 	@MCAttribute

@@ -42,6 +42,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
@@ -99,7 +100,7 @@ public class SchematronValidator implements IValidator {
 	}
 
 	@Override
-	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
+	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		try {
@@ -122,7 +123,7 @@ public class SchematronValidator implements IValidator {
 				if (event.isStartElement()) {
 					StartElement startElement = (StartElement)event;
 					if (startElement.getName().getLocalPart().equals("failed-assert")) {
-						setErrorMessage(exc, new String(result, UTF_8_CHARSET), false);
+						setErrorMessage(exc, new String(result, UTF_8_CHARSET), false, source);
 						invalid.incrementAndGet();
 						return Outcome.ABORT;
 					}
@@ -130,12 +131,12 @@ public class SchematronValidator implements IValidator {
 			}
 
 		} catch (TransformerException e) {
-			setErrorMessage(exc, e.getMessage(), true);
+			setErrorMessage(exc, e.getMessage(), true, source);
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		} catch (Exception e) {
 			e.printStackTrace();
-			setErrorMessage(exc, "internal error", true);
+			setErrorMessage(exc, "internal error", true, source);
 			invalid.incrementAndGet();
 			return Outcome.ABORT;
 		}
@@ -143,8 +144,8 @@ public class SchematronValidator implements IValidator {
 		return Outcome.CONTINUE;
 	}
 	
-	private void setErrorMessage(Exchange exc, String message, boolean escape) {
-		String MSG_HEADER = "<?xml version=\"1.0\"?>\r\n<error>";
+	private void setErrorMessage(Exchange exc, String message, boolean escape, String source) {
+		String MSG_HEADER = "<?xml version=\"1.0\"?>\r\n<error" + (escape ? " source=\"" + StringEscapeUtils.escapeXml(source) + "\"" : "") + ">";
 		String MSG_FOOTER = "</error>";
 		if (escape)
 			message = MSG_HEADER + StringEscapeUtils.escapeXml(message) + MSG_FOOTER;
@@ -155,6 +156,8 @@ public class SchematronValidator implements IValidator {
 		} else {
 			exc.setResponse(Response.badRequest().contentType(MimeType.TEXT_XML_UTF8).body(message.getBytes(UTF_8_CHARSET)).build());
 		}
+		if (!escape)
+			exc.getResponse().getHeader().add(Header.VALIDATION_ERROR_SOURCE, source);
 	}
 	
 	@Override

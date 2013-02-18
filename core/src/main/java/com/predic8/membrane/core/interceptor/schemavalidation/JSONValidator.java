@@ -57,11 +57,11 @@ public class JSONValidator implements IValidator {
 		createValidators();
 	}
 	
-	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
-		return validateMessage(exc, msg.getBodyAsStream(), Charset.forName(msg.getCharset()));
+	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception {
+		return validateMessage(exc, msg.getBodyAsStream(), Charset.forName(msg.getCharset()), source);
 	}
 	
-	public Outcome validateMessage(Exchange exc, InputStream body, Charset charset) throws Exception {
+	public Outcome validateMessage(Exchange exc, InputStream body, Charset charset, String source) throws Exception {
 		List<String> errors;
 		boolean success = true;
 		try {
@@ -82,6 +82,8 @@ public class JSONValidator implements IValidator {
         
         if (failureHandler == FailureHandler.VOID) {
         	StringBuilder message = new StringBuilder();
+        	message.append(source);
+        	message.append(": ");
         	for (String error : errors) {
         		message.append(error);
         		message.append(";");
@@ -95,6 +97,7 @@ public class JSONValidator implements IValidator {
         JsonGenerator jg = new JsonFactory().createJsonGenerator(baos);
 
         jg.writeStartObject();
+        jg.writeStringField("source", source);
         jg.writeArrayFieldStart("errors");
         for (String message : errors)
         	jg.writeString(message);
