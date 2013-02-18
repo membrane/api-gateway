@@ -31,6 +31,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -68,7 +69,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 		xopr = new XOPReconstitutor();
 	}
 	
-	public Outcome validateMessage(Exchange exc, Message msg) throws Exception {
+	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception {
 		List<Exception> exceptions = new ArrayList<Exception>();
 		String preliminaryError = getPreliminaryError(xopr, msg);
 		if (preliminaryError == null) {
@@ -107,6 +108,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 			exc.setResponse(createErrorResponse("validation error"));
 		} else {
 			exc.setResponse(createErrorResponse(getErrorMsg(exceptions)));
+			exc.getResponse().getHeader().add(Header.VALIDATION_ERROR_SOURCE, source);
 		}
 		invalid.incrementAndGet();
 		return Outcome.ABORT;

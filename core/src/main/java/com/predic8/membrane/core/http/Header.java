@@ -69,6 +69,8 @@ public class Header {
 
 	public static final String DESTINATION = "Destination";
 
+	public static final String VALIDATION_ERROR_SOURCE = "X-Validation-Error-Source";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";

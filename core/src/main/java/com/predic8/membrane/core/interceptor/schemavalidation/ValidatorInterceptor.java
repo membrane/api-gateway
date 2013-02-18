@@ -91,7 +91,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		if (exc.getRequest().isBodyEmpty()) 
 			return Outcome.CONTINUE;
 			
-		return validator.validateMessage(exc, exc.getRequest());
+		return validator.validateMessage(exc, exc.getRequest(), "request");
 	}
 	
 	@Override
@@ -99,7 +99,7 @@ public class ValidatorInterceptor extends AbstractInterceptor {
 		if (exc.getResponse().isBodyEmpty())
 			return Outcome.CONTINUE;
 		
-		return validator.validateMessage(exc, exc.getResponse());
+		return validator.validateMessage(exc, exc.getResponse(), "response");
 	}
 	
 	@Override

@@ -19,7 +19,10 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Outcome;
 
 public interface IValidator {
-	public Outcome validateMessage(Exchange exc, Message msg) throws Exception;
+	/**
+	 * @param source "request" or "response"
+	 */
+	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception;
 	
 	public long getValid();
 	
