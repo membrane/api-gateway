@@ -146,7 +146,9 @@ public class AdminPageBuilder extends Html {
 		  end();
 	}
 
-	protected void createMetaElements() {}
+	protected void createMetaElements() {
+		meta().attr("http-equiv", "X-UA-Compatible", "content", "IE=Edge").end();
+	}
 
 	protected void createMeta(String... meta) {
 		for (int i = 0; i< meta.length; i+=2) {
