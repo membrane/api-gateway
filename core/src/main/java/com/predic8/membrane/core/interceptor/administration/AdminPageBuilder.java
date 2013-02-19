@@ -125,13 +125,13 @@ public class AdminPageBuilder extends Html {
 												  "@import '" + relativeRootPath + "/admin/jquery-ui/css/custom-theme/jquery-ui-1.8.13.custom.css';"+
 					                              "@import '" + relativeRootPath + "/admin/css/membrane.css';").end();	
 			link().rel("stylesheet").href("/admin/formValidator/validationEngine.jquery.css").type("text/css");
-			script().src("/admin/jquery/jquery-1.6.1.js").end();
-			script().src("/admin/datatables/js/jquery.dataTables.min.js").end();
-			script().src("/admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js").end();
-			script().src("/admin/formValidator/jquery.validationEngine-en.js").end();
-			script().src("/admin/formValidator/jquery.validationEngine.js").end();
-			script().raw("var relativeRootPath=\"" + StringEscapeUtils.escapeJavaScript(relativeRootPath) + "\";").end();
-			script().src("/admin/js/membrane.js").end();
+			script().attr("type","text/javascript").src("/admin/jquery/jquery-1.6.1.js").end();
+			script().attr("type","text/javascript").src("/admin/datatables/js/jquery.dataTables.min.js").end();
+			script().attr("type","text/javascript").src("/admin/jquery-ui/js/jquery-ui-1.8.13.custom.min.js").end();
+			script().attr("type","text/javascript").src("/admin/formValidator/jquery.validationEngine-en.js").end();
+			script().attr("type","text/javascript").src("/admin/formValidator/jquery.validationEngine.js").end();
+			script().attr("type","text/javascript").raw("var relativeRootPath=\"" + StringEscapeUtils.escapeJavaScript(relativeRootPath) + "\";").end();
+			script().attr("type","text/javascript").src("/admin/js/membrane.js").end();
 			createMetaElements();
 		  end();
 	}
