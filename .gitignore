@@ -3,6 +3,8 @@
 /membrane.log
 /.settings
 /.project
+/.metadata
+/.DS_Store
 
 # /cli/
 /cli/.classpath
@@ -31,6 +33,7 @@
 /core/target
 /core/.settings
 /core/temp
+/core/.DS_Store
 
 # /karaf-deployer/
 /karaf-deployer/.project
