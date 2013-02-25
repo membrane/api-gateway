@@ -52,7 +52,7 @@
 				responseXSLT="response.xsl" />
 		</rest2Soap>
 
-		<interceptor refid="counter" name="Counter 2" />
+		<interceptor refid="counter" />
 		<log headerOnly="true" category="membrane" level="INFO"/>
 		<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
 		<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		

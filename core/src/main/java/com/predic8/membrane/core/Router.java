@@ -28,6 +28,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
@@ -50,21 +52,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"	elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\r\n" + 
 				"\r\n" + 
 				"	<xsd:import namespace=\"http://www.springframework.org/schema/beans\" />\r\n" + 
-				"\r\n" + 
-				"	<xsd:element name=\"router\">\r\n" + 
-				"		<xsd:complexType>\r\n" + 
-				"			<xsd:complexContent>\r\n" + 
-				"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
-				"					<xsd:sequence />\r\n" + 
-				"					<xsd:attribute name=\"exchangeStore\" type=\"xsd:string\"/>\r\n" + 
-				"					<xsd:attribute name=\"indentMessage\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
-				"					<xsd:attribute name=\"adjustContentLength\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
-				"					<xsd:attribute name=\"trackExchange\" default=\"false\" type=\"xsd:boolean\" />\r\n" + 
-				"					<xsd:attribute name=\"hotDeploy\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
-				"				</xsd:extension> \r\n" + 
-				"			</xsd:complexContent>\r\n" + 
-				"		</xsd:complexType>\r\n" + 
-				"	</xsd:element>\r\n" + 
 				"\r\n" + 
 				"	<xsd:group name=\"InterceptorGroup\">\r\n" + 
 				"		<xsd:choice>\r\n" + 
@@ -228,6 +215,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"" +
 				"" +
 				"</xsd:schema>")
+@MCElement(name="router", group="basic")
 public class Router implements Lifecycle, ApplicationContextAware {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());
@@ -295,6 +283,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		return exchangeStore;
 	}
 
+	@MCAttribute
 	public void setExchangeStore(ExchangeStore exchangeStore) {
 		this.exchangeStore = exchangeStore;
 	}
@@ -303,6 +292,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		return transport;
 	}
 
+	@MCAttribute
 	public void setTransport(Transport transport) {
 		this.transport = transport;
 	}
@@ -386,5 +376,14 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	@Override
 	public boolean isRunning() {
 		return running;
+	}
+	
+	@MCAttribute
+	public void setHotDeploy(boolean hotDeploy) {
+		getConfigurationManager().setHotDeploy(hotDeploy);
+	}
+	
+	public boolean isHotDeploy() {
+		return getConfigurationManager().isHotDeploy();
 	}
 }

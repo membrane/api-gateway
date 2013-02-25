@@ -152,7 +152,6 @@
       <bean class="com.predic8.membrane.core.Configuration">
         <property name="adjustHostHeader" value="true" />
         <property name="indentMessage" value="true" />
-        <property name="adjustContentLength" value="true" />
         <property name="trackExchange" value="false" />
       </bean>
     </property>

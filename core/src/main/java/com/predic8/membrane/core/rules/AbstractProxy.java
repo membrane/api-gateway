@@ -41,7 +41,6 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.ConfigurationException;
 import com.predic8.membrane.core.config.LocalHost;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.CountInterceptor;
 import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
 import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor;
@@ -51,6 +50,7 @@ import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.MessageAnalyser;
 import com.predic8.membrane.core.interceptor.RegExReplaceInterceptor;
+import com.predic8.membrane.core.interceptor.SpringInterceptor;
 import com.predic8.membrane.core.interceptor.ThrottleInterceptor;
 import com.predic8.membrane.core.interceptor.URLNormalizerInterceptor;
 import com.predic8.membrane.core.interceptor.WADLInterceptor;
@@ -185,7 +185,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 
 	private Interceptor getInlinedInterceptor(XMLStreamReader token, String name)
 			throws Exception {
-		AbstractInterceptor i = null;
+		Interceptor i = null;
 		if ("adminConsole".equals(name)) {
 			i = new AdminConsoleInterceptor();
 		} else if ("transform".equals(name)) {
@@ -250,6 +250,8 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 			i = new URLNormalizerInterceptor();
 		} else if ("login".equals(name)) {
 			i = new LoginInterceptor();
+		} else if ("interceptor".equals(name)) {
+			i = new SpringInterceptor();
 		} else {
 			throw new ConfigurationException("Unknown interceptor found \"" + name + "\". Check the documentation at http://membrane-soa.org/esb-doc/current/configuration/reference/index.htm .");
 		}

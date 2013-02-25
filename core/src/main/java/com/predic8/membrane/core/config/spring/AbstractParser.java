@@ -69,7 +69,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 	}
 
 	protected void setProperty(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder) {
-		setProperty(xmlPropertyName, e, builder, false);
+		setProperty(xmlPropertyName, springPropertyName, e, builder, false);
 	}
 	
 	protected void setProperty(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {

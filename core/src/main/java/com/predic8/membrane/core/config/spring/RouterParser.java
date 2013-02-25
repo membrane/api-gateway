@@ -36,7 +36,7 @@ public class RouterParser extends
 			bean.addPropertyReference("exchangeStore", e.getAttribute("exchangeStore"));
 		}
 		
-		bean.addPropertyValue("configurationManager.hotDeploy", Boolean.parseBoolean(e.getAttribute("hotDeploy")));
+		bean.addPropertyValue("hotDeploy", Boolean.parseBoolean(e.getAttribute("hotDeploy")));
 		
 	}
 }

@@ -115,10 +115,10 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	}
 	
 	public void init() throws Exception {
-		if (exchangeStoreBeanId != null)
-			store = applicationContext.getBean(exchangeStoreBeanId, ExchangeStore.class);
-		else if (exchangeStoreBeanId == BEAN_ID_ATTRIBUTE_CANNOT_BE_USED)
+		if (exchangeStoreBeanId == BEAN_ID_ATTRIBUTE_CANNOT_BE_USED)
 			; // do nothing as "store" was already set via #setExchangeStore(ExchangeStore)
+		else if (exchangeStoreBeanId != null)
+			store = applicationContext.getBean(exchangeStoreBeanId, ExchangeStore.class);
 		else
 			store = router.getExchangeStore();
 		

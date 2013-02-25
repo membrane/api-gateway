@@ -30,7 +30,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractConfigElement;
-import com.predic8.membrane.core.config.Global;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
@@ -44,12 +43,6 @@ import com.predic8.membrane.core.util.TextUtil;
 		"")
 public class Proxies extends AbstractConfigElement {
 	private Collection<Rule> rules = new ArrayList<Rule>();
-
-	private Global global;
-
-	public Proxies() {
-		global = new Global();
-	}
 
 	public Collection<Rule> getRules() {
 		return rules;
@@ -67,8 +60,6 @@ public class Proxies extends AbstractConfigElement {
 			rules.add(new SOAPProxy().parse(token));
 		} else if ("proxy".equals(child)) {
 			rules.add(new ProxyRule().parse(token));
-		} else if ("global".equals(child)) {
-			global.parse(token);
 		}
 	}
 
@@ -80,8 +71,6 @@ public class Proxies extends AbstractConfigElement {
 		for (Rule rule : rules) {
 			rule.write(out);
 		}
-
-		global.write(out);
 
 		out.writeEndElement();
 		out.writeEndDocument();
