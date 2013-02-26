@@ -146,6 +146,8 @@ public class SOAPProxy extends ServiceProxy {
 				setTargetHost(url.getHost());
 				if (url.getPort() != -1)
 					setTargetPort(url.getPort());
+				else
+					setTargetPort(url.getDefaultPort());
 				if (path == null) {
 					key.setUsePathPattern(true);
 					key.setPathRegExp(true);
