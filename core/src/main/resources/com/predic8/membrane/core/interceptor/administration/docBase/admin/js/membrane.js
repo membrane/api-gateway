@@ -124,7 +124,7 @@ var membrane = function() {
 		   ["Proxy", createLink(relativeRootPath + '/admin/service-proxy/show', data.proxy, [['name',data.proxy+':'+data.listenPort]])],
 		   ["Client", createLink(relativeRootPath + '/admin/calls',  data.client, [['client', data.client]])],
 		   ["Content Type", data.reqContentType],
-		   ["Length", data.reqContentLength],
+		   ["Length", data.reqContentLength]
 		];}));
 		$('#request-headers').dataTable(getHeaderTableConfiguration(requestHeaderUrl));
 		loadText('#request-raw', requestRawUrl);
@@ -134,7 +134,7 @@ var membrane = function() {
 		   ["Server", data.server],
 		   ["Content Type", data.respContentType],
 		   ["Length", data.respContentLength],
-		   ["Duration", data.duration],
+		   ["Duration", data.duration]
 		];}));
 		$('#response-headers').dataTable(getHeaderTableConfiguration(responseHeaderUrl));	
 		loadText('#response-raw', responseRawUrl);
