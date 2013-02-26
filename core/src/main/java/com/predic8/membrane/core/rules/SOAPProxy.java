@@ -90,6 +90,8 @@ public class SOAPProxy extends AbstractServiceProxy {
 				target.setHost(url.getHost());
 				if (url.getPort() != -1)
 					target.setPort(url.getPort());
+				else
+					target.setPort(url.getDefaultPort());
 				if (key.getPath() == null) {
 					key.setUsePathPattern(true);
 					key.setPathRegExp(true);
