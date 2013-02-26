@@ -166,7 +166,7 @@ $(function() {
 		                { "mDataProp": "count" },
 		                { "mDataProp": "min" },
 		                { "mDataProp": "max" },
-		                { "mDataProp": "avg" },
+		                { "mDataProp": "avg" }
 		              ],
 		  "aoColumnDefs": [ 
 		           {
@@ -220,7 +220,7 @@ $(function() {
 		                { "mDataProp": "targetHost" },
 		                { "mDataProp": "targetPort" },
 		                { "mDataProp": "count" },
-		                { "mDataProp": "actions" },
+		                { "mDataProp": "actions" }
 		              ],
 		  "aoColumnDefs": [ 
 	           {
