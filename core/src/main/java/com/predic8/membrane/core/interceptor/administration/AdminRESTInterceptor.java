@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.interceptor.administration;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
@@ -26,6 +27,7 @@ import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.ComparatorFactory;
+import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class AdminRESTInterceptor extends RESTInterceptor {
@@ -147,7 +149,8 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg== null || msg.isBodyEmpty()) {
 			return Response.noContent().build();
 		}
-		return Response.ok().contentType(MimeType.TEXT_HTML_UTF8).body(TextUtil.formatXML(new InputStreamReader(msg.getBodyAsStream()), true)).build();
+		ByteArrayInputStream content = new ByteArrayInputStream(MessageUtil.getContent(msg));
+		return Response.ok().contentType(MimeType.TEXT_HTML_UTF8).body(TextUtil.formatXML(new InputStreamReader(content), true)).build();
 	}
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/body")
