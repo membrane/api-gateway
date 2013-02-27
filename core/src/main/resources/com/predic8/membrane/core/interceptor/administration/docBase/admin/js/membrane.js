@@ -90,8 +90,20 @@ var membrane = function() {
 
 		function loadText(selector, url) {			
 			$.get(url, function(resp) {
-				$(selector).text(resp);
+				if ($.browser.msie  && parseInt($.browser.version, 10) <= 8) {
+					document.getElementById(selector.substring(1)).innerText = resp;
+				} else {
+					$(selector).text(resp);
+				}
 			}, 'text');				
+		}
+		
+		function setHTML(selector, html) {
+				if ($.browser.msie  && parseInt($.browser.version, 10) <= 8) {
+					document.getElementById(selector.substring(1)).innerHTML = html.replace(/> /g, ">&nbsp;");
+				} else {
+			$(selector).html(html);
+			}
 		}
 		
 		$('#request-download-button').button({icons: {primary:'ui-icon-circle-arrow-s'}}).attr('href', requestBodyUrl);
@@ -100,7 +112,7 @@ var membrane = function() {
 		$.get(exchangeUrl, function(exc) {
 			if (exc.respContentType == 'text/xml') {
 				$.get(responseBodyBeautifiedUrl, function(resp) {
-					$('#response-body').html(resp);
+					setHTML('#response-body', resp);
 				});
 			} else {
 				loadText('#response-body', responseBodyUrl);
@@ -108,7 +120,7 @@ var membrane = function() {
 			
 			if (exc.reqContentType == 'text/xml') {
 				$.get(requestBodyBeautifiedUrl, function(resp) {
-					$('#request-body').html(resp);
+					setHTML('#request-body', resp);
 				});
 			} else {
 				loadText('#request-body', requestBodyUrl);
