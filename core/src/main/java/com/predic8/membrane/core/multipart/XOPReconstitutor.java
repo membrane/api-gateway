@@ -43,6 +43,7 @@ import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.MessageUtil;
 
 /**
  * Reassemble a multipart XOP message (see
@@ -63,7 +64,7 @@ public class XOPReconstitutor {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 	
-	public InputStream reconstituteIfNecessary(Message message) throws XMLStreamException {
+	public InputStream reconstituteIfNecessary(Message message) throws XMLStreamException, IOException {
 		try {
 			Message reconstitutedMessage = getReconstitutedMessage(message);
 			if (reconstitutedMessage != null)
@@ -72,7 +73,7 @@ public class XOPReconstitutor {
 			log.warn(e);
 			e.printStackTrace();
 		}
-		return message.getBodyAsStream();
+		return MessageUtil.getContentAsStream(message);
 	}
 	
 	private XMLEventReader createEventReaderFromStream(InputStream is) throws XMLStreamException {
@@ -141,7 +142,7 @@ public class XOPReconstitutor {
 			throws IOException, EndOfStreamException, MalformedStreamException {
 		HashMap<String, Part> parts = new HashMap<String, Part>();
 		
-		MultipartStream multipartStream = new MultipartStream(message.getBodyAsStream(), boundary.getBytes(Constants.UTF_8_CHARSET));
+		MultipartStream multipartStream = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(Constants.UTF_8_CHARSET));
 		boolean nextPart = multipartStream.skipPreamble();
 		while(nextPart) {
 			Header header = new Header(multipartStream.readHeaders());

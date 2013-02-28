@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
@@ -29,6 +31,15 @@ import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
 
 public class MessageUtil {
 
+	public static InputStream getContentAsStream(Message res) throws IOException {
+		if (res.isGzip()) {
+			return new GZIPInputStream(res.getBodyAsStream());
+		} else if (res.isDeflate()) {
+			return new ByteArrayInputStream(ByteUtil.getDecompressedData(res.getBody().getContent()));
+		}
+		return res.getBodyAsStream();
+	}
+	
 	public static byte[] getContent(Message res) throws Exception {
 		if (res.isGzip()) {
 			return ByteUtil.getByteArrayData(new GZIPInputStream(res.getBodyAsStream()));

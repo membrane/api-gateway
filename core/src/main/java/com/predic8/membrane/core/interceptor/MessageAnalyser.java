@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.interceptor;
 
+import java.io.IOException;
+
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -151,7 +153,7 @@ public class MessageAnalyser extends AbstractInterceptor {
 	}
 	
 	private XMLStreamReader getReader(Message msg) throws XMLStreamException,
-			FactoryConfigurationError {
+			FactoryConfigurationError, IOException {
 		synchronized (xmlInputFactory) {
 			return xmlInputFactory.createXMLStreamReader(xopr.reconstituteIfNecessary(msg));
 		}
