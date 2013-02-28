@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.interceptor.soap;
 
+import java.io.IOException;
+
 import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -68,7 +70,7 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 	}
 	
 	private XMLStreamReader getReader(Exchange exc) throws XMLStreamException,
-			FactoryConfigurationError {
+			FactoryConfigurationError, IOException {
 		synchronized (xmlInputFactory) {
 			return xmlInputFactory.createXMLStreamReader(xopr.reconstituteIfNecessary(exc.getRequest()));
 		}

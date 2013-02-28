@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 import org.apache.commons.logging.Log;
@@ -64,7 +65,7 @@ public class ByteUtil {
 		return bos.toByteArray();
 	}
 
-	public static byte[] getDecompressedData(byte[] compressedData) throws Exception {
+	public static byte[] getDecompressedData(byte[] compressedData) throws IOException {
 		Inflater decompressor = new Inflater(true);
 		decompressor.setInput(compressedData);
 
@@ -73,7 +74,12 @@ public class ByteUtil {
 		List<Chunk> chunks = new ArrayList<Chunk>();
 		
 		while (!decompressor.finished()) {
-			int count = decompressor.inflate(buf);
+			int count;
+			try {
+				count = decompressor.inflate(buf);
+			} catch (DataFormatException e) {
+				throw new IOException(e);
+			}
 			if (buf.length == count) {
 				Chunk chunk = new Chunk(buf);
 				chunks.add(chunk);

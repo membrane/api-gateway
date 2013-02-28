@@ -16,11 +16,16 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import static junit.framework.Assert.assertEquals;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.predic8.io.IOUtil;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -80,7 +85,14 @@ public class ValidatorInterceptorTest {
 	@Test
 	public void testHandleResponseValidArticleMessage() throws Exception {
 		exc.setRequest(requestTB);
-		exc.setResponse(Response.ok().body(getContent("/articleResponse.xml").getBytes()).build());
+		exc.setResponse(Response.ok().body(getContent("/articleResponse.xml")).build());
+		assertEquals(Outcome.CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
+	}
+
+	@Test
+	public void testHandleResponseValidArticleMessageGzipped() throws Exception {
+		exc.setRequest(requestTB);
+		exc.setResponse(Response.ok().body(getContent("/articleResponse.xml.gz")).header("Content-Encoding", "gzip").build());
 		assertEquals(Outcome.CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
 	}
 
@@ -111,13 +123,13 @@ public class ValidatorInterceptorTest {
 	}
 
 	private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {
-		request.setBodyContent(getContent(fileName).getBytes());
+		request.setBodyContent(getContent(fileName));
 		exc.setRequest(request);
 		return interceptor.handleRequest(exc);
 	}
 	
-	private String getContent(String fileName) {
-		return TextUtil.formatXML(new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
+	private byte[] getContent(String fileName) throws IOException {
+		return IOUtils.toByteArray(this.getClass().getResourceAsStream(fileName));
 	}
 	
 	private ValidatorInterceptor createSchemaValidatorInterceptor(String schema) throws Exception {
