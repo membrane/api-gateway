@@ -18,6 +18,7 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.w3c.dom.Element;
 
 import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 
 public class ExchangeStoreInterceptorParser extends AbstractParser {
 
@@ -28,5 +29,8 @@ public class ExchangeStoreInterceptorParser extends AbstractParser {
 	@Override
 	protected void doParse(Element element, BeanDefinitionBuilder builder) {
 		builder.addPropertyReference("exchangeStore", element.getAttribute("name"));
+		String flow = element.getAttribute("flow");
+		if (flow != null && flow.length() > 0)
+			builder.addPropertyValue("flow", Flow.valueOf(flow.toUpperCase()));
 	}
 }

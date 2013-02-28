@@ -102,6 +102,7 @@
 				<xsd:extension base="beans:identifiedType">
 					<xsd:sequence />
 					<xsd:attribute name="name" type="xsd:string" use="required"/>
+					<xsd:attribute name="flow" type="xsd:string" />
 				</xsd:extension>
 			</xsd:complexContent>
 		</xsd:complexType>
