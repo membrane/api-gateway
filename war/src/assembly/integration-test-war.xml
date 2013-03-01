@@ -21,6 +21,10 @@
   	<fileSet>
   		<directory>target/classes</directory>
   		<outputDirectory>/WEB-INF/classes</outputDirectory>
+			<excludes>
+				<exclude>META-INF/spring.schemas</exclude>
+				<exclude>META-INF/spring.handlers</exclude>
+			</excludes>
   	</fileSet>
   	<fileSet>
   		<directory>target/test-classes</directory>

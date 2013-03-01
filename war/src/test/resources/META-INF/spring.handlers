@@ -1,0 +1,2 @@
+http\://membrane-soa.org/war/1/=com.predic8.membrane.servlet.config.spring.NamespaceHandler
+http\://membrane-soa.org/war-test/1/=com.predic8.membrane.servlet.test.config.spring.NamespaceHandler

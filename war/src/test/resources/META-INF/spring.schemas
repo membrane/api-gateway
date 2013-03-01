@@ -1,0 +1,2 @@
+http\://membrane-soa.org/schemas/war-1.xsd=com/predic8/membrane/servlet/config/spring/router-conf.xsd
+http\://membrane-soa.org/schemas/war-test-1.xsd=com/predic8/membrane/servlet/test/config/spring/router-conf.xsd

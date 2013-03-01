@@ -5,9 +5,9 @@
 -->
 <proxies xmlns="http://membrane-soa.org/proxies/1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-		 xmlns:web="http\://membrane-soa.org/router/beans-web/1/"
+		 xmlns:webt="http://membrane-soa.org/war-test/1/"
       	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd
-      	 http://membrane-soa.org/war/1/ http://membrane-soa.org/schemas/war-1.xsd">
+      	 http://membrane-soa.org/war-test/1/ http://membrane-soa.org/schemas/war-test-1.xsd">
       	 
 	<!-- Sets up the Administration Web Interface on port 3027. -->
 	<serviceProxy port="3027">
@@ -36,7 +36,7 @@
 
 	<!-- Echo service for testing. -->
 	<serviceProxy port="3025">
-		<web:echo />
+		<webt:echo />
 	</serviceProxy>
 
 </proxies>
