@@ -60,21 +60,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"		</xsd:choice>\r\n" + 
 				"	</xsd:group>\r\n" + 
 				"	\r\n" + 
-				"\r\n" + 
-				"	<xsd:element name=\"servletTransport\">\r\n" + 
-				"		<xsd:complexType>\r\n" + 
-				"			<xsd:complexContent>\r\n" + 
-				"				<xsd:extension base=\"beans:identifiedType\">\r\n" + 
-				"					<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"						<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"					</xsd:sequence>\r\n" + 
-				"					<xsd:attribute name=\"httpClientRetries\" default=\"5\" type=\"xsd:int\" />\r\n" + 
-				"					<xsd:attribute name=\"printStackTrace\" default=\"false\" type=\"xsd:boolean\" />\r\n" + 
-				"					<xsd:attribute name=\"removeContextRoot\" default=\"true\" type=\"xsd:boolean\" />\r\n" + 
-				"				</xsd:extension>\r\n" + 
-				"			</xsd:complexContent>\r\n" + 
-				"		</xsd:complexType>\r\n" + 
-				"	</xsd:element>\r\n" + 
 				"\r\n" +
 				"${declarations}\r\n" +
 				"\r\n" +
@@ -225,7 +210,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	protected RuleManager ruleManager = new RuleManager();
 	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
 	protected Transport transport;
-	protected final ConfigurationManager configurationManager = new ConfigurationManager(this);
+	protected ConfigurationManager configurationManager = new ConfigurationManager(this);
 	protected ResourceResolver resourceResolver = new ResourceResolver();
 	protected DNSCache dnsCache = new DNSCache();
 	protected ExecutorService backgroundInitializator = 
@@ -268,6 +253,13 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		beanFactory = applicationContext;
 		configurationManager.setApplicationContext(applicationContext); // hack until ConfigurationManager lifecycle is managed by Spring
+	}
+	
+	public void setConfigurationManager(ConfigurationManager configurationManager) {
+		boolean hotDeploy = this.configurationManager.isHotDeploy();
+		this.configurationManager = configurationManager;
+		configurationManager.setApplicationContext(beanFactory);
+		configurationManager.setHotDeploy(hotDeploy);
 	}
 	
 	public RuleManager getRuleManager() {

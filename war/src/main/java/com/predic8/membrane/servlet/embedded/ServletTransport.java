@@ -16,9 +16,38 @@ package com.predic8.membrane.servlet.embedded;
 
 import java.io.IOException;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.Transport;
 
+@MCMain(
+		outputPackage="com.predic8.membrane.servlet.config.spring",
+		outputName="router-conf.xsd",
+		xsd="" +
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
+				"<xsd:schema xmlns=\"http://membrane-soa.org/router/beans-web/1/\"\r\n" + 
+				"	xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:beans=\"http://www.springframework.org/schema/beans\"\r\n" + 
+				"	targetNamespace=\"http://membrane-soa.org/router/beans-web/1/\"\r\n" + 
+				"	elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\r\n" + 
+				"\r\n" + 
+				"	<xsd:import namespace=\"http://www.springframework.org/schema/beans\" />\r\n" + 
+				"\r\n" + 
+				"${declarations}\r\n" +
+				"\r\n" +
+				"${raw}\r\n" +
+				"	\r\n" + 
+				"	<xsd:complexType name=\"EmptyElementType\">\r\n" + 
+				"		<xsd:complexContent>\r\n" + 
+				"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+				"				<xsd:sequence />\r\n" + 
+				"			</xsd:extension>\r\n" + 
+				"		</xsd:complexContent>\r\n" + 
+				"	</xsd:complexType>\r\n" + 
+				"	\r\n" + 
+				"</xsd:schema>")
+@MCElement(name="servletTransport", group="transport")
 public class ServletTransport extends Transport {
 
 	boolean removeContextRoot = true;
@@ -27,6 +56,7 @@ public class ServletTransport extends Transport {
 		return removeContextRoot;
 	}
 
+	@MCAttribute
 	public void setRemoveContextRoot(boolean removeContextRoot) {
 		this.removeContextRoot = removeContextRoot;
 	}

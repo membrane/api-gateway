@@ -72,7 +72,9 @@
 /test/target
 
 # /war/
+/war/.apt_generated
 /war/.classpath
 /war/.project
 /war/target
 /war/.settings
+/war/memrouter.log

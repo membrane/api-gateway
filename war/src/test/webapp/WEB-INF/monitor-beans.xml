@@ -24,8 +24,6 @@
 		<userFeature />
 		<httpClient />
 	</transport>
-	
-	<spring:bean id="echo" class="com.predic8.membrane.servlet.test.EchoInterceptor" />
 
 </spring:beans>
 

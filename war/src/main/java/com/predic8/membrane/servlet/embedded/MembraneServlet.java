@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.servlet.RouterUtil;
@@ -35,13 +36,16 @@ public class MembraneServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static final Log log = LogFactory.getLog(MembraneServlet.class);
 
+	private XmlWebApplicationContext appCtx;
 	private Router router;
 	
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		try {
+			appCtx = new XmlWebApplicationContext();
+			
 			log.debug("loading beans configuration from: " + getContextConfigLocation(config));
-			router = RouterUtil.loadRouter(config.getServletContext(), getContextConfigLocation(config));
+			router = RouterUtil.initializeRouterFromSpringWebContext(appCtx, config.getServletContext(), getContextConfigLocation(config));
 
 			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(config));
 			router.getConfigurationManager().loadConfiguration(getProxiesXmlLocation(config));
@@ -49,6 +53,11 @@ public class MembraneServlet extends HttpServlet {
 		} catch (Exception e) {
 			throw new ServletException(e);
 		}
+	}
+	
+	@Override
+	public void destroy() {
+		appCtx.stop();
 	}
 	
 	private String getContextConfigLocation(ServletConfig config) {

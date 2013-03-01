@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2012-2013 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -40,7 +40,8 @@ public class CoreActivator extends Plugin {
 	private static Log log = LogFactory.getLog(CoreActivator.class.getName());
 
 	// The shared instance
-	private static CoreActivator plugin;
+	private static CoreActivator plugin; // TODO: make non-static
+	private Router router;
 
 	private ILogListener logListener;
 	
@@ -59,7 +60,7 @@ public class CoreActivator extends Plugin {
 		
 		if (cl.hasMonitorBeans()) {
 			log.info("loading monitor beans from command line argument: "+cl.getMonitorBeans());
-			Router.init(new File(cl.getMonitorBeans()).getAbsolutePath(), 
+			router = Router.init(new File(cl.getMonitorBeans()).getAbsolutePath(), 
 						this.getClass().getClassLoader());
 		} else {		
 			try {
@@ -79,7 +80,7 @@ public class CoreActivator extends Plugin {
 		Executors.newSingleThreadExecutor().execute(new Runnable() {
 			public void run() {
 				try {
-					Router.getInstance().getConfigurationManager().loadConfiguration(getConfigurationFileName(cl));
+					router.getConfigurationManager().loadConfiguration(getConfigurationFileName(cl));
 				} catch (Exception e) {
 					log.warn("no configuration loaded", e);
 					// we ignore this exception because the monitor can start up
@@ -118,8 +119,8 @@ public class CoreActivator extends Plugin {
 		//issue at Spring forum:  http://forum.springframework.org/showthread.php?t=11141
 		Thread.currentThread().setContextClassLoader(externalClassloader);
 		
-		Router.init(getMonitorBeansFileName(), externalClassloader );
-		log.info("Router instance: " + Router.getInstance());
+		router = Router.init(getMonitorBeansFileName(), externalClassloader );
+		log.info("Router instance: " + router);
 	}
 
 	private void readBeanConfigWhenStartedInEclipse() throws MalformedURLException {
@@ -129,7 +130,7 @@ public class CoreActivator extends Plugin {
 		if (membraneHome == null)
 			throw new IllegalStateException("MEMBRANE_HOME not set"); 		
 		
-		Router.init("file:" + membraneHome + System.getProperty("file.separator") + "configuration" + System.getProperty("file.separator") + "monitor-beans.xml", this.getClass().getClassLoader());
+		router = Router.init("file:" + membraneHome + System.getProperty("file.separator") + "configuration" + System.getProperty("file.separator") + "monitor-beans.xml", this.getClass().getClassLoader());
 	}
 
 	private String getMonitorBeansFileName() throws IOException {

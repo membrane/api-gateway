@@ -19,6 +19,7 @@ import javax.servlet.ServletContextListener;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
@@ -28,13 +29,16 @@ public class MembraneServletContextListener implements ServletContextListener {
 	private static Log log = LogFactory.getLog(MembraneServletContextListener.class);
 
 	private Router router;
-
+	private XmlWebApplicationContext appCtx;
+	
 	public void contextInitialized(ServletContextEvent sce) {
 		try {
 			log.info(Constants.PRODUCT_NAME + " starting...");
 
 			log.debug("loading beans configuration from: " + getContextConfigLocation(sce));
-			router = RouterUtil.loadRouter(sce.getServletContext(), getContextConfigLocation(sce));
+			
+			appCtx = new XmlWebApplicationContext();
+			router = RouterUtil.initializeRouterFromSpringWebContext(appCtx, sce.getServletContext(), getContextConfigLocation(sce));
 
 			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(sce));
 			router.getConfigurationManager().loadConfiguration(getProxiesXmlLocation(sce));
@@ -48,8 +52,7 @@ public class MembraneServletContextListener implements ServletContextListener {
 
 	public void contextDestroyed(ServletContextEvent sce) {
 		try {
-			router.getConfigurationManager().stopHotDeployment();
-			router.shutdown();
+			appCtx.stop();
 		} catch (Exception ex) {
 			log.warn("Failed to shutdown router!", ex);
 		}

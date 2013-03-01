@@ -20,6 +20,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractRefreshableApplicationContext;
+import org.springframework.context.support.AbstractRefreshableConfigApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.rules.Rule;
@@ -29,7 +31,7 @@ public class ConfigurationManager implements ApplicationContextAware {
 	protected static Log log = LogFactory.getLog(ConfigurationManager.class
 			.getName());
 
-	private TrackingFileSystemXmlApplicationContext applicationContext;
+	private AbstractRefreshableConfigApplicationContext applicationContext;
 	private HotDeploymentThread deploymentThread;
 	private boolean hotDeploy = true;
 	private String filename;
@@ -47,24 +49,31 @@ public class ConfigurationManager implements ApplicationContextAware {
 		parentApplicationContext = applicationContext;
 	}
 	
+	protected AbstractRefreshableConfigApplicationContext createChildContext(String fileName, ApplicationContext parentApplicationContext) {
+		FileSystemXmlApplicationContext ac = new TrackingFileSystemXmlApplicationContext(new String[] { fileName }, false, parentApplicationContext);
+		if (parentApplicationContext != null)
+			ac.setClassLoader(parentApplicationContext.getClassLoader());
+		return ac;
+	}
+	
 	public void loadConfiguration(String fileName) throws Exception {
 		this.filename = fileName;
 		
-		applicationContext = new TrackingFileSystemXmlApplicationContext(new String[] { fileName }, false, parentApplicationContext);
-		if (parentApplicationContext != null)
-			applicationContext.setClassLoader(parentApplicationContext.getClassLoader());
+		applicationContext = createChildContext(fileName, parentApplicationContext);
 		applicationContext.refresh();
 		applicationContext.start();
 		
 		replaceProxiesRules(router, applicationContext);
 		
 		if (!fileName.startsWith("classpath:") && hotDeploy) {
+			if (!(applicationContext instanceof TrackingApplicationContext))
+				throw new RuntimeException("Cannot initialize hot-deployment on non-TrackingApplicationContext");
 			if (deploymentThread == null) {
 				deploymentThread = new HotDeploymentThread(router, applicationContext);
-				deploymentThread.setFiles(applicationContext.getFiles());
+				deploymentThread.setFiles(((TrackingApplicationContext)applicationContext).getFiles());
 				deploymentThread.start();
 			} else {
-				deploymentThread.setFiles(applicationContext.getFiles());
+				deploymentThread.setFiles(((TrackingApplicationContext)applicationContext).getFiles());
 			}
 		}
 	}
@@ -102,11 +111,12 @@ public class ConfigurationManager implements ApplicationContextAware {
 	}
 
 	public void stopHotDeployment() {
-		if (!hotDeploy)
+		if (!hotDeploy || deploymentThread == null)
 			return;
 		try {
 			deploymentThread.interrupt();
 			deploymentThread.join();
+			deploymentThread = null;
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 		}

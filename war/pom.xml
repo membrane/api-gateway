@@ -28,6 +28,11 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.predic8</groupId>
+			<artifactId>membrane-esb-annot</artifactId>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.predic8</groupId>
 			<artifactId>membrane-esb-core</artifactId>
 		</dependency>
 		
@@ -41,15 +46,22 @@
 			<groupId>xalan</groupId>
 			<artifactId>xalan</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-web</artifactId>
+		</dependency>
 		
 		<dependency>
 			<groupId>com.predic8</groupId>
 			<artifactId>membrane-esb-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -62,6 +74,17 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${javac.source}</source>
+					<target>${javac.target}</target>
+					<annotationProcessors>
+						<annotationProcessor>com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessor</annotationProcessor>
+					</annotationProcessors>
+				</configuration>
+			</plugin>
 			<plugin>
 				<artifactId>maven-war-plugin</artifactId>
 			</plugin>

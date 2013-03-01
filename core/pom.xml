@@ -28,7 +28,6 @@
 		<dependency>
 			<groupId>com.predic8</groupId>
 			<artifactId>membrane-esb-annot</artifactId>
-			<version>${project.version}</version>
 			<scope>compile</scope>
 		</dependency>
 

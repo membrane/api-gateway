@@ -1,13 +1,13 @@
 package com.predic8.membrane.servlet.test;
 
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.ElementName;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@ElementName("echo")
+@MCElement(name="echo")
 public class EchoInterceptor extends AbstractInterceptor {
 	
 	@Override

@@ -38,7 +38,7 @@ public abstract class Transport {
 		return interceptors;
 	}
 
-	@MCChildElement
+	@MCChildElement(allowForeign=true)
 	public void setInterceptors(List<Interceptor> interceptors) {
 		this.interceptors = interceptors;
 	}

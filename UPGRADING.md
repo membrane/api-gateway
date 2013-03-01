@@ -10,6 +10,7 @@
 * writing config (admin interface, monitor, etc)
 * rename @name (collides with spring)
 * remove deprecated set...BeanId methods
+* set @MCChildElement(allowForeign=true) by default
 
 ## Configuration
 
