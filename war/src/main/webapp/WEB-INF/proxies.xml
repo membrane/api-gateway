@@ -12,9 +12,9 @@
 	See the reference at:
 	http://membrane-soa.org/esb-doc/current/configuration/reference/ .  
 -->
-<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+<proxies xmlns="http://membrane-soa.org/proxies/1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
       	 
 	<!--
 		This is the configuration using Application Server embedding (see web.xml).

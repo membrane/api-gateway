@@ -70,7 +70,7 @@ public class MembraneApplicationContext {
 				String name = doc.getDocumentElement().getLocalName();
 				String uri  = doc.getDocumentElement().getNamespaceURI();
 				
-				if ("proxies".equals(name) && "http://membrane-soa.org/schemas/proxies/v1/".equals(uri))
+				if ("proxies".equals(name) && "http://membrane-soa.org/proxies/1/".equals(uri))
 					return new MembraneApplicationContext(context, url.toString());
 			} finally {
 				is.close();

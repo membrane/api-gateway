@@ -38,9 +38,9 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 		try {
 			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "proxies.xml"));
 			pxu.updateWith(
-					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"<proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
 					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
 					"	\r\n" + 
 					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
 					"		<path>/MyBLZService</path>\r\n" + 
@@ -90,9 +90,9 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 			assertContains(".java:", result);
 
 			pxu.updateWith(
-					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"<proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
 					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
 					"	\r\n" + 
 					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
 					"		<path>/MyBLZService</path>\r\n" + 
@@ -112,9 +112,9 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 			assertContainsNot(".java:", result);
 			
 			pxu.updateWith(
-					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"<proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
 					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
 					"	\r\n" + 
 					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
 					"		<path>/MyBLZService</path>\r\n" + 
@@ -144,9 +144,9 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 			assertContains("blz&gt;?XXX?", result);
 
 			pxu.updateWith(
-					"<proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"<proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
 					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
 					"	\r\n" + 
 					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
 					"		<path>/MyBLZService</path>\r\n" + 

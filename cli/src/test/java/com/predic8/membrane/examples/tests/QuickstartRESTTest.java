@@ -40,9 +40,9 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 			assertContains("Italy", result);
 
 			new ProxiesXmlUtil(new File(baseDir, "proxies.xml")).updateWith(
-					"     <proxies xmlns=\"http://membrane-soa.org/schemas/proxies/v1/\"\r\n" + 
+					"     <proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
 					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd\">\r\n" + 
+					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
 					"       <serviceProxy name=\"names\" port=\"2000\">\r\n" + 
 					"         <path isRegExp=\"true\">/(rest)?names.*</path>\r\n" + 
 					"         <request>\r\n" + 

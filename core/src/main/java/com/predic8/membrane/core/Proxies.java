@@ -39,6 +39,11 @@ import com.predic8.membrane.core.util.TextUtil;
 // TODO: remove MCElement declaration after proxies.xml has been removed
 @MCElement(name="proxies", group="basic", xsd="" +
 		"<xsd:sequence>\r\n" + 
+		"<xsd:choice minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
+		"<xsd:element name=\"serviceProxy\" />\r\n" + 
+		"<xsd:element name=\"soapProxy\" />\r\n" + 
+		"<xsd:element name=\"proxy\" />\r\n" + 
+		"</xsd:choice>\r\n" + 
 		"</xsd:sequence>\r\n" + 
 		"")
 public class Proxies extends AbstractConfigElement {

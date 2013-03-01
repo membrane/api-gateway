@@ -46,12 +46,12 @@ import com.predic8.membrane.core.util.ResourceResolver;
 		outputName="router-conf.xsd",
 		xsd="" +
 				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
-				"<xsd:schema xmlns=\"http://membrane-soa.org/router/beans/1/\"\r\n" + 
+				"<xsd:schema xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
 				"	xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:beans=\"http://www.springframework.org/schema/beans\"\r\n" + 
-				"	targetNamespace=\"http://membrane-soa.org/router/beans/1/\"\r\n" + 
+				"	targetNamespace=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
 				"	elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\r\n" + 
 				"\r\n" + 
-				"	<xsd:import namespace=\"http://www.springframework.org/schema/beans\" />\r\n" + 
+				"	<xsd:import namespace=\"http://www.springframework.org/schema/beans\" schemaLocation=\"http://www.springframework.org/schema/beans/spring-beans-3.1.xsd\" />\r\n" + 
 				"\r\n" + 
 				"	<xsd:group name=\"InterceptorGroup\">\r\n" + 
 				"		<xsd:choice>\r\n" + 

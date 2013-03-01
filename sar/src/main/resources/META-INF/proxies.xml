@@ -15,9 +15,9 @@
 	distribution for several examples of how to configure different ESB
 	features within this file.
 -->
-<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
+<proxies xmlns="http://membrane-soa.org/proxies/1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
       	 
 	<!-- Forwards SOAP requests for the BLZService on port 2000 to the Web server on host thomas-bayer.com -->
 	<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">

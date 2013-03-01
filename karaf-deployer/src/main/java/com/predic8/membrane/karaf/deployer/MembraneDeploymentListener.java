@@ -50,7 +50,7 @@ public class MembraneDeploymentListener implements ArtifactUrlTransformer {
                 String name = doc.getDocumentElement().getLocalName();
                 String uri  = doc.getDocumentElement().getNamespaceURI();
                 logger.warn(name + " " + uri);
-                if ("proxies".equals(name) && "http://membrane-soa.org/schemas/proxies/v1/".equals(uri)) {
+                if ("proxies".equals(name) && "http://membrane-soa.org/proxies/1/".equals(uri)) {
                     return true;
                 }
             }
