@@ -1,8 +1,12 @@
 SOAP Message Validation
 
-To run this example you should install Curl from http://curl.haxx.se/download.html , if you have not done so already. Let us assume it is in your PATH.
+To run this example execute the following steps
 
-As the URL of a WSDL is specified in proxies.xml , the ESB retrieves all corresponding schemas and tries to validate the message body using them.
+PREREQUISITES:
+
+- Install Curl from http://curl.haxx.se/download.html , if you have not done so already. Let us assume it is in your PATH.
+
+As the URL of a WSDL is specified in proxies.xml, the ESB retrieves all corresponding schemas and tries to validate the message body using them.
 
 As a SOAP-Proxy is a specialized version of the ServiceProxy, a SOAP-Proxy has a certain advantage if it is used for a SOAP Service. A SOAP-Proxy needs the WSDL's URL just once. Adding a Validator then needs less code, as you can see in the example below:
 
@@ -13,9 +17,9 @@ As a SOAP-Proxy is a specialized version of the ServiceProxy, a SOAP-Proxy has a
 
 Execute the following steps:
 
-1. Go to examples/validation/soap-Proxy .
+1. Go to examples/validation/soap-Proxy
 
-2. Start "router.bat" or "router.sh".
+2. Start router.bat or router.sh
 
 3. Navigate into the soap-Proxy folder and run the following command on the console. Observe a successful response.
 

@@ -15,8 +15,6 @@ https://predic8.com/svn/membrane/monitor/
 
 To run the example execute the following steps:
 
-1. Go to the examples/ssl-tunnel-to-server directory.
+1. Execute router.bat
 
-2. Execute router.bat
-
-3. Open the URL http://localhost:8080/svn/membrane/monitor/ in your browser.
+2. Open the URL http://localhost:8080/svn/membrane/monitor/ in your browser.

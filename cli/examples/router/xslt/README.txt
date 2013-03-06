@@ -19,7 +19,7 @@ Execute the following steps:
 
 1. Go to the examples/xslt directory.
 
-2. Execute router.bat
+2. Execute router.bat or router.sh
 
 2. Open the URL http://www.thomas-bayer.com/samples/sqlrest/CUSTOMER/7/ in your browser.
 
@@ -46,7 +46,7 @@ First take a look at the proxies.xml file.
 
 
 
-You will see that there is a serviceProxy that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the XSLTInterceptor is set for the rule. The interceptor will be called during the processing of each request and response.
+You will see that there is a serviceProxy that directs calls to the port 2000 to www.thomas-bayer.com. Additionally the XSLTInterceptor is set for the rule. The interceptor will be called while processing each request and response.
 
 Now take a closer look at the transform element.
 
@@ -54,7 +54,7 @@ Now take a closer look at the transform element.
 <transform xslt="examples/xslt/customer2person.xsl" />
 
 
-You can reference stylesheets that will be applied to the request and response with the xslt attribute. If you leave the attribute blanc or don't specifiy them at all, no transformation will be done. With the above element the interceptor will apply the specified XSLT stylesheet to the response and request. To limit the transformation only to the request or response use request or response elements to wrap the interceptor. In this example we wrapped the interceptor with an response element so that the transformation is only applied to the response. 
+You can reference stylesheets that will be applied to the request and response with the xslt attribute. If you leave the attribute blanc or do not specifiy them at all, no transformation will be done. With the element above the interceptor will apply the specified XSLT stylesheet to the response and request. To limit the transformation only to the request or response use request or response elements to wrap the interceptor. In this example we wrapped the interceptor with an response element so that the transformation is only applied to the response. 
 
 
 <response>

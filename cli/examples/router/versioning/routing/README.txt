@@ -36,7 +36,7 @@ Execute the following steps:
      set PATH=%PATH%;C:\work\apache-ant-1.8.2-bin\bin
 
 2. Open a new console window and execute:
-     cd versioning\routing
+     cd [MEMBRANE_HOME]\examples\versioning\routing
      ant run
 
 3. Open yet another console window and run

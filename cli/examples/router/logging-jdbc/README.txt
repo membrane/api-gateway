@@ -22,9 +22,9 @@ http://db.apache.org/derby/derby_downloads.html
 
 start DERBY_HOME/bin/startNetworkServer.bat
 
-6. Execute router.bat
+6. Execute router.bat or router.sh
 
-7. Open the URL http://localhost:2000/soap-monitor-doc/csv-logging.htm in your browser.
+7. Open the URL http://localhost:2000/ in your browser.
 
 8. Start the ij program to query the database:
 

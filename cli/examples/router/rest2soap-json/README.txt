@@ -1,6 +1,6 @@
 REST 2 SOAP CONVERSION
 
-With the REST2SOAP converter you can make a SOAP Web Service as a REST resource accessible. In contrast to the rest2soap example here the response will be a JSON object. 
+With the REST2SOAP converter you can make a SOAP Web Service accessible as a REST resource. In contrast to the rest2soap example here the response will be a JSON object. 
 
 
 
@@ -12,7 +12,7 @@ In this example we will call a SOAP Web Service by using a simple HTTP GET reque
 
 http://www.thomas-bayer.com/axis2/services/BLZService?wsdl
 
-To test the router we will use the command line tool curl that can transfer data with URL syntax. You can download it form the following location:
+To test the router we will use the command line tool curl that can transfer data with URL syntax. You can download it from the following location:
    
      
    http://curl.haxx.se/download.html
@@ -20,7 +20,7 @@ To test the router we will use the command line tool curl that can transfer data
 
 To run the example execute the following steps:
 
-1. Execute router.bat.
+1. Execute router.bat or router.sh.
 
 2. Open a new console and execute
 

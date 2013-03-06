@@ -3,11 +3,11 @@ JSON Schema Validation
 To run this example you should install Curl from http://curl.haxx.se/download.html , if
 you have not done so already.
 
-Execute the following steps:
+To run this example execute the following steps:
 
 1. Go to the directory examples/validation/json-schema.
 
-2. Start "router.bat" or "router.sh".
+2. Start router.bat or router.sh.
 
 3. Look at schema2000.json and compare the schema to good2000.json and bad2000.json .
 

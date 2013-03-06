@@ -1,13 +1,21 @@
-<proxies xmlns="http://membrane-soa.org/proxies/1/"
+<proxies xmlns="http://membrane-soa.org/schemas/proxies/v1/"
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+      	 xsi:schemaLocation="http://membrane-soa.org/schemas/proxies/v1/ http://membrane-soa.org/schemas/proxies/v1/proxies.xsd">
+	
 	<serviceProxy name="Balancer" port="8080">
 		<path>/service</path>
 		<balancer />
 	</serviceProxy>
+	
 	<serviceProxy name="Up/Down Push Interface" port="9010">
 		<clusterNotification />
 	</serviceProxy>
+
+	<!-- 
+
+	The Mocks below are providing the counters and emulating the services amongst which you want to devide the amount of users.
+
+	-->
 	<serviceProxy name="Mock Node 1" port="4000">
 		<counter name="Mock Node 1" />
 	</serviceProxy>
@@ -17,7 +25,9 @@
 	<serviceProxy name="Mock Node 3" port="4002">
 		<counter name="Mock Node 3" />
 	</serviceProxy>
+	
 	<serviceProxy name="Administration" port="9000">
 		<adminConsole />
 	</serviceProxy>
+
 </proxies>

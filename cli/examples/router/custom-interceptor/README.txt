@@ -10,14 +10,11 @@ To run the example execute the following steps:
 
 1. Goto the examples/custom-interceptor/ directory
 
-2. Compile the Java sources from src/ into build/classes/:
-	a. Install a Java Development Kit, at least version 1.6.
-	b. Install Ant from http://ant.apache.org/bindownload.cgi .
-	c. Execute "ant compile" in examples/custom-interceptor/ . 
+2. Compile the Java sources by executing "ant compile" in the examples/custom-interceptor/ folder.
 
 3. Copy the directory build/classes/com/ to [MEMBRANE_HOME]/classes
 
-4. Execute router.bat
+4. Execute router.bat or router.sh
 
 5. Open http://localhost:2000/
 

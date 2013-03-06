@@ -17,7 +17,7 @@ To run the example execute the following steps:
 
 1. Go to the examples/rest2soap directory.
 
-2. Execute router.bat
+2. Execute router.bat or router.sh
 
 3. Open the URL http://localhost:2000/bank/37050198 in your browser.
 
@@ -32,14 +32,17 @@ The following part describes the example in detail.
 First take a look at the proxies.xml file.
 
 
-<proxies>
+<proxies xmlns="http://membrane-soa.org/proxies/1/"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 	<serviceProxy port="2000">
-		<rest2Soap>
+		<rest2Soap>		
 			<mapping regex="/bank/.*" soapAction=""
-				soapURI="/axis2/services/BLZService" requestXSLT="blz-httpget2soap-request.xsl"
-				responseXSLT="strip-soap-envelope.xsl" />
+				soapURI="/axis2/services/BLZService" 
+				requestXSLT="get2soap.xsl"
+				responseXSLT="strip-env.xsl" />
 		</rest2Soap>
-		<target host="www.thomas-bayer.com" port="80" />
+		<target host="thomas-bayer.com" />
 	</serviceProxy>
 </proxies>
 
@@ -190,7 +193,7 @@ Date: Thu, 12 May 2011 15:05:17 GMT
 0
 
 
-The interceptor than applies another XSLT stylesheet to the body of the response to strip the soap envelope and soap body from the XML document. The stylesheet is referenced by the responseXSLT attribute. You will find a copy of the stylesheet below:
+The interceptor then applies another XSLT stylesheet to the body of the response to strip the soap envelope and soap body from the XML document. The stylesheet is referenced by the responseXSLT attribute. You will find a copy of the stylesheet below:
 
 
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"

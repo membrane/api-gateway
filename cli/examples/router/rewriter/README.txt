@@ -37,7 +37,7 @@ First take a look at the proxies.xml file.
 
 
 
-You will see that there is a serviceProxy that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the RewriteInterceptor is added the proxy. The interceptor will be called during the processing of each request and response.
+You will see that there is a serviceProxy that directs calls to the port 2000 to www.thomas-bayer.com:80. Additionally the RewriteInterceptor is added to the proxy. The interceptor will be called while processing each request and response.
 
 Now take a closer look at the <rewriter> element:
 
