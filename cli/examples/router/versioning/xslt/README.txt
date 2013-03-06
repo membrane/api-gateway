@@ -37,11 +37,11 @@ Execute the following steps:
      set PATH=%PATH%;C:\work\apache-ant-1.8.2-bin\bin
 
 2. Open a new console window and execute:
-     cd versioning\xslt
+     cd [MEMBRANE_HOME]\examples\versioning\xslt
      ant run
 
 3. Open yet another console window and run
-     cd versioning\xslt
+     cd [MEMBRANE_HOME]\examples\versioning\xslt
      curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:8080/ContactService/v11
    You should see a response containing "<h1>404 Not Found</h1>", "No context found for request".
 
