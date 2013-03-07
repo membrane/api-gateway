@@ -13,7 +13,6 @@ import java.util.Set;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -28,7 +27,6 @@ import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
 @SupportedAnnotationTypes(value = { "com.predic8.membrane.annot.*" })
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class SpringConfigurationXSDGeneratingAnnotationProcessor extends AbstractProcessor {
 	
 	private class AttributeInfo {
@@ -155,6 +153,17 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			else
 				return javaify(annotation.name() + "Parser");
 		}
+		
+		public MainInfo getMain(Model m) {
+			for (MainInfo main : m.mains)
+				if (main.annotation.outputPackage().equals(annotation.configPackage()))
+					return main;
+			return m.mains.get(0);
+		}
+
+		public String getClassName(Model m) {
+			return getMain(m).annotation.outputPackage() + "." + getParserClassSimpleName();
+		}
 	}
 	
 	private static class ChildElementDeclarationInfo {
@@ -162,13 +171,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		boolean raiseErrorWhenNoSpecimen;
 	}
 	
-	private static class Model {
-		TypeElement mainElement;
-		MCMain mainAnnotation;
+	private static class MainInfo {
+		TypeElement element;
+		MCMain annotation;
 		
 		List<ElementInfo> iis = new ArrayList<ElementInfo>();
 		Map<String, List<ElementInfo>> groups = new HashMap<String, List<ElementInfo>>();
-		List<MCRaw> raws = new ArrayList<MCRaw>();
 		Map<TypeElement, ChildElementDeclarationInfo> childElementDeclarations = new HashMap<TypeElement, ChildElementDeclarationInfo>();
 		Map<TypeElement, ElementInfo> elements = new HashMap<TypeElement, ElementInfo>();
 		Map<String, ElementInfo> globals = new HashMap<String, ElementInfo>();
@@ -179,6 +187,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				res.add(ii.element);
 			return res;
 		}
+	}
+	
+	private static class Model {
+		List<MainInfo> mains = new ArrayList<MainInfo>();
 	}
 	
 	private static class ProcessingException extends RuntimeException {
@@ -193,6 +205,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	}
 	
 	@Override
+	public SourceVersion getSupportedSourceVersion() {
+		return SourceVersion.latestSupported();
+	}
+	
+	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 		try {
 			if (annotations.size() > 0) { // somehow we get called twice in the javac run from Maven
@@ -204,46 +221,48 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					processingEnv.getMessager().printMessage(Kind.WARNING, "@MCMain was nowhere found.");
 					return true;
 				}
-				if (mcmains.size() > 1) {
-					for (Element e : mcmains)
-						processingEnv.getMessager().printMessage(Kind.ERROR, "@MCMain found in multiple locations.", e);
-					return true;
+				for (Element element : mcmains) {
+					MainInfo main = new MainInfo();
+					main.element = (TypeElement)element;
+					main.annotation = element.getAnnotation(MCMain.class);
+					m.mains.add(main);
 				}
-				m.mainElement = (TypeElement)mcmains.iterator().next();
-				m.mainAnnotation = m.mainElement.getAnnotation(MCMain.class);
 
 				for (Element e : roundEnv.getElementsAnnotatedWith(MCElement.class)) {
 					ElementInfo ii = new ElementInfo();
 					ii.element = (TypeElement)e;
 					ii.annotation = e.getAnnotation(MCElement.class);
-					ii.generateParserClass = processingEnv.getElementUtils().getTypeElement(m.mainAnnotation.outputPackage()+"." + ii.getParserClassSimpleName()) == null;
-					m.iis.add(ii);
+					ii.generateParserClass = processingEnv.getElementUtils().getTypeElement(ii.getClassName(m)) == null;
+					MainInfo main = ii.getMain(m);
+					main.iis.add(ii);
 					
-					if (!m.groups.containsKey(ii.annotation.group()))
-						m.groups.put(ii.annotation.group(), new ArrayList<ElementInfo>());
-					m.groups.get(ii.annotation.group()).add(ii);
-					m.elements.put(ii.element, ii);
-					if (m.globals.containsKey(ii.annotation.name()))
-						throw new ProcessingException("Duplicate global @MCElement name.", m.globals.get(ii.annotation.name()).element, ii.element);
+					if (!main.groups.containsKey(ii.annotation.group()))
+						main.groups.put(ii.annotation.group(), new ArrayList<ElementInfo>());
+					main.groups.get(ii.annotation.group()).add(ii);
+					main.elements.put(ii.element, ii);
+					if (main.globals.containsKey(ii.annotation.name()))
+						throw new ProcessingException("Duplicate global @MCElement name.", main.globals.get(ii.annotation.name()).element, ii.element);
 	
-					scan(m, ii);
+					scan(m, main, ii);
 				}
 				
-				for (Map.Entry<TypeElement, ChildElementDeclarationInfo> f : m.childElementDeclarations.entrySet()) {
-					ChildElementDeclarationInfo cedi = f.getValue();
-					ElementInfo ei = m.elements.get(f.getKey());
-					
-					if (ei != null)
-						cedi.elementInfo.add(ei);
-					else {
-						for (Map.Entry<TypeElement, ElementInfo> e : m.elements.entrySet())
-							if (processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()))
-								cedi.elementInfo.add(e.getValue());
-					}
-					
-					if (cedi.elementInfo.size() == 0 && cedi.raiseErrorWhenNoSpecimen) {
-						processingEnv.getMessager().printMessage(Kind.ERROR, "@MCChildElement references " + f.getKey().getQualifiedName() + ", but there is no @MCElement among it and its subclasses.", f.getKey());
-						return true;
+				for (MainInfo main : m.mains) {
+					for (Map.Entry<TypeElement, ChildElementDeclarationInfo> f : main.childElementDeclarations.entrySet()) {
+						ChildElementDeclarationInfo cedi = f.getValue();
+						ElementInfo ei = main.elements.get(f.getKey());
+
+						if (ei != null)
+							cedi.elementInfo.add(ei);
+						else {
+							for (Map.Entry<TypeElement, ElementInfo> e : main.elements.entrySet())
+								if (processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()))
+									cedi.elementInfo.add(e.getValue());
+						}
+
+						if (cedi.elementInfo.size() == 0 && cedi.raiseErrorWhenNoSpecimen) {
+							processingEnv.getMessager().printMessage(Kind.ERROR, "@MCChildElement references " + f.getKey().getQualifiedName() + ", but there is no @MCElement among it and its subclasses.", f.getKey());
+							return true;
+						}
 					}
 				}
 
@@ -252,11 +271,6 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					processingEnv.getMessager().printMessage(Kind.ERROR, "@MCMain but no @MCElement found.", mcmains.iterator().next());
 					return true;
 				}
-				
-				for (Element e : roundEnv.getElementsAnnotatedWith(MCRaw.class)) {
-					m.raws.add(e.getAnnotation(MCRaw.class));
-				}
-				
 
 				writeXSD(m);
 				writeParsers(m);
@@ -275,14 +289,14 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 	private static final String REQUIRED = "org.springframework.beans.factory.annotation.Required";
 	
-	private void scan(Model m, AbstractElementInfo ii) {
-		scan(m, ii, ii.element);
+	private void scan(Model m, MainInfo main, AbstractElementInfo ii) {
+		scan(m, main, ii, ii.element);
 	}
 	
-	private void scan(Model m, AbstractElementInfo ii, TypeElement te) {
+	private void scan(Model m, MainInfo main, AbstractElementInfo ii, TypeElement te) {
 		TypeMirror superclass = te.getSuperclass();
 		if (superclass instanceof DeclaredType)
-			scan(m, ii, (TypeElement) ((DeclaredType)superclass).asElement());
+			scan(m, main, ii, (TypeElement) ((DeclaredType)superclass).asElement());
 		
 		for (Element e2 : te.getEnclosedElements()) {
 			MCAttribute a = e2.getAnnotation(MCAttribute.class);
@@ -312,13 +326,13 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					cei.list = true;
 				}
 				
-				if (!m.childElementDeclarations.containsKey(cei.typeDeclaration)) {
+				if (!main.childElementDeclarations.containsKey(cei.typeDeclaration)) {
 					ChildElementDeclarationInfo cedi = new ChildElementDeclarationInfo();
 					cedi.raiseErrorWhenNoSpecimen = !cei.annotation.allowForeign();
 					
-					m.childElementDeclarations.put(cei.typeDeclaration, cedi);
+					main.childElementDeclarations.put(cei.typeDeclaration, cedi);
 				} else {
-					ChildElementDeclarationInfo cedi = m.childElementDeclarations.get(cei.typeDeclaration);
+					ChildElementDeclarationInfo cedi = main.childElementDeclarations.get(cei.typeDeclaration);
 					cedi.raiseErrorWhenNoSpecimen = cedi.raiseErrorWhenNoSpecimen || !cei.annotation.allowForeign();
 				}
 			}
@@ -334,78 +348,18 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	}
 
 	private void writeParserDefinitior(Model m) throws IOException {
-		List<Element> sources = new ArrayList<Element>();
-		sources.add(m.mainElement);
-		sources.addAll(m.getInterceptorElements());
 		
-		FileObject o = processingEnv.getFiler().createSourceFile(
-				m.mainAnnotation.outputPackage() + ".NamespaceHandlerAutoGenerated",
-				sources.toArray(new Element[0]));
-		BufferedWriter bw = new BufferedWriter(o.openWriter());
-		try {
-			bw.write("/* Copyright 2012,2013 predic8 GmbH, www.predic8.com\r\n" + 
-					"\r\n" + 
-					"   Licensed under the Apache License, Version 2.0 (the \"License\");\r\n" + 
-					"   you may not use this file except in compliance with the License.\r\n" + 
-					"   You may obtain a copy of the License at\r\n" + 
-					"\r\n" + 
-					"   http://www.apache.org/licenses/LICENSE-2.0\r\n" + 
-					"\r\n" + 
-					"   Unless required by applicable law or agreed to in writing, software\r\n" + 
-					"   distributed under the License is distributed on an \"AS IS\" BASIS,\r\n" + 
-					"   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\r\n" + 
-					"   See the License for the specific language governing permissions and\r\n" + 
-					"   limitations under the License. */\r\n" + 
-					"\r\n" + 
-					"package " + m.mainAnnotation.outputPackage() + ";\r\n" + 
-					"\r\n" + 
-					"public class NamespaceHandlerAutoGenerated {\r\n" + 
-					"\r\n" + 
-					"	public static void registerBeanDefinitionParsers(NamespaceHandler nh) {\r\n");
-			for (ElementInfo i : m.iis) {
-				bw.write("		nh.registerBeanDefinitionParser2(\"" + i.annotation.name() + "\", new " + i.getParserClassSimpleName() + "());\r\n");
-			}
-			bw.write(
-					"	}\r\n" + 
-					"}\r\n" + 
-					"");
-		} finally {
-			bw.close();
-		}
-	}
-
-	private void writeXSD(Model m) throws IOException, ProcessingException {
-		List<Element> sources = new ArrayList<Element>();
-		sources.add(m.mainElement);
-		sources.addAll(m.getInterceptorElements());
-
-		FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
-				m.mainAnnotation.outputPackage(), m.mainAnnotation.outputName(), sources.toArray(new Element[0]));
-		BufferedWriter bw = new BufferedWriter(o.openWriter());
-		try {
-			assembleXSD(m, bw);
-		} finally {
-			bw.close();
-		}
-	}
-
-	private void writeParsers(Model m) throws IOException {
-		for (ElementInfo ii : m.iis) {
-			
-			if (!ii.generateParserClass)
-				continue;
-			
+		for (MainInfo main : m.mains) {
 			List<Element> sources = new ArrayList<Element>();
-			sources.add(m.mainElement);
-			sources.add(ii.element);
-			
-			String interceptorClassName = ii.element.getQualifiedName().toString();
-			
-			FileObject o = processingEnv.getFiler().createSourceFile(m.mainAnnotation.outputPackage() + "." + ii.getParserClassSimpleName(),
+			sources.addAll(main.getInterceptorElements());
+			sources.add(main.element);
+
+			FileObject o = processingEnv.getFiler().createSourceFile(
+					main.annotation.outputPackage() + ".NamespaceHandlerAutoGenerated",
 					sources.toArray(new Element[0]));
 			BufferedWriter bw = new BufferedWriter(o.openWriter());
 			try {
-				bw.write("/* Copyright 2012 predic8 GmbH, www.predic8.com\r\n" + 
+				bw.write("/* Copyright 2012,2013 predic8 GmbH, www.predic8.com\r\n" + 
 						"\r\n" + 
 						"   Licensed under the Apache License, Version 2.0 (the \"License\");\r\n" + 
 						"   you may not use this file except in compliance with the License.\r\n" + 
@@ -419,74 +373,141 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						"   See the License for the specific language governing permissions and\r\n" + 
 						"   limitations under the License. */\r\n" + 
 						"\r\n" + 
-						"package " + m.mainAnnotation.outputPackage() + ";\r\n" + 
+						"package " + main.annotation.outputPackage() + ";\r\n" + 
 						"\r\n" + 
-						"import org.w3c.dom.Element;\r\n" + 
-						"import org.springframework.beans.factory.xml.ParserContext;\r\n" + 
-						"import org.springframework.beans.factory.support.BeanDefinitionBuilder;\r\n");
-				if (!m.mainAnnotation.outputPackage().equals("com.predic8.membrane.core.config.spring"))
-					bw.write("import com.predic8.membrane.core.config.spring.*;\r\n");
-				bw.write(
+						"public class NamespaceHandlerAutoGenerated {\r\n" + 
 						"\r\n" + 
-						"public class " + ii.getParserClassSimpleName() + " extends AbstractParser {\r\n" + 
-						"\r\n" + 
-						"	protected Class<?> getBeanClass(org.w3c.dom.Element element) {\r\n" + 
-						"		return " + interceptorClassName + ".class;\r\n" + 
-						"	}\r\n");
-				bw.write("	@Override\r\n" + 
-						"	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {\r\n");
-				if (ii.hasIdField)
-					bw.write("		setPropertyIfSet(\"id\", element, builder);\r\n");
-				bw.write(
-						"		setIdIfNeeded(element, parserContext, \"" + ii.annotation.name() + "\");\r\n");
-				for (AttributeInfo ai : ii.ais) {
-					if (ai.getXMLName().equals("id"))
-						continue;
-					if (ai.isBeanReference()) {
-						if (!ai.required)
-							bw.write("		if (element.hasAttribute(\"" + ai.getXMLName() + "\"))\r\n");
-						bw.write("		builder.addPropertyReference(\"" + ai.getSpringName() + "\", element.getAttribute(\"" + ai.getXMLName() + "\"));\r\n");
-					} else {
-						bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getXMLName() + "\", \"" + ai.getSpringName() + "\", element, builder" + (ai.isEnum() ? ", true" : "") + ");\r\n");
-					}
-					if (ai.getXMLName().equals("name"))
-						bw.write("		element.removeAttribute(\"name\");\r\n");
+						"	public static void registerBeanDefinitionParsers(NamespaceHandler nh) {\r\n");
+				for (ElementInfo i : main.iis) {
+					bw.write("		nh.registerBeanDefinitionParser2(\"" + i.annotation.name() + "\", new " + i.getParserClassSimpleName() + "());\r\n");
 				}
-				for (ChildElementInfo cei : ii.ceis)
-					if (cei.list)
-						bw.write("		builder.addPropertyValue(\"" + cei.propertyName + "\", new java.util.ArrayList<Object>());\r\n");
-				bw.write("		parseChildren(element, parserContext, builder);\r\n");
-				for (ChildElementInfo cei : ii.ceis)
-					if (cei.list && cei.required) {
-						bw.write("		if (builder.getBeanDefinition().getPropertyValues().getPropertyValue(\"" + cei.propertyName + "[0]\") == null)\r\n");
-						bw.write("			throw new RuntimeException(\"Property '" + cei.propertyName + "' is required, but none was defined (empty list).\");\r\n");
-					}
-				
 				bw.write(
 						"	}\r\n" + 
-						"");
-
-				bw.write(
-						"@Override\r\n" +
-						"protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {\r\n");
-				for (ChildElementInfo cei : ii.ceis) {
-					bw.write(
-							"	if (" + cei.typeDeclaration.getQualifiedName() + ".class.isAssignableFrom(clazz)) {\r\n" + 
-							"		builder.addPropertyValue(\"" + cei.propertyName + "\"" + (cei.list ? "+\"[\"+ incrementCounter(builder, \"" + cei.propertyName + "\") + \"]\" " : "") + ", child);\r\n" + 
-							"	} else \r\n");
-				}
-				bw.write(
-							"	{\r\n" +
-							"		throw new RuntimeException(\"Unknown child class \\\"\" + clazz + \"\\\".\");\r\n" +
-							"	}\r\n");
-				bw.write(
-						"}\r\n");
-				
-				bw.write(
 						"}\r\n" + 
 						"");
 			} finally {
 				bw.close();
+			}
+		}
+	}
+
+	private void writeXSD(Model m) throws IOException, ProcessingException {
+		for (MainInfo main : m.mains) {
+			List<Element> sources = new ArrayList<Element>();
+			sources.add(main.element);
+			sources.addAll(main.getInterceptorElements());
+
+			FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
+					main.annotation.outputPackage(), main.annotation.outputName(), sources.toArray(new Element[0]));
+			BufferedWriter bw = new BufferedWriter(o.openWriter());
+			try {
+				assembleXSD(m, main, bw);
+			} finally {
+				bw.close();
+			}
+		}
+	}
+
+	private void writeParsers(Model m) throws IOException {
+		for (MainInfo main : m.mains) {
+			for (ElementInfo ii : main.iis) {
+				
+				if (!ii.generateParserClass)
+					continue;
+				
+				List<Element> sources = new ArrayList<Element>();
+				sources.add(main.element);
+				sources.add(ii.element);
+				
+				String interceptorClassName = ii.element.getQualifiedName().toString();
+				
+				FileObject o = processingEnv.getFiler().createSourceFile(main.annotation.outputPackage() + "." + ii.getParserClassSimpleName(),
+						sources.toArray(new Element[0]));
+				BufferedWriter bw = new BufferedWriter(o.openWriter());
+				try {
+					bw.write("/* Copyright 2012 predic8 GmbH, www.predic8.com\r\n" + 
+							"\r\n" + 
+							"   Licensed under the Apache License, Version 2.0 (the \"License\");\r\n" + 
+							"   you may not use this file except in compliance with the License.\r\n" + 
+							"   You may obtain a copy of the License at\r\n" + 
+							"\r\n" + 
+							"   http://www.apache.org/licenses/LICENSE-2.0\r\n" + 
+							"\r\n" + 
+							"   Unless required by applicable law or agreed to in writing, software\r\n" + 
+							"   distributed under the License is distributed on an \"AS IS\" BASIS,\r\n" + 
+							"   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\r\n" + 
+							"   See the License for the specific language governing permissions and\r\n" + 
+							"   limitations under the License. */\r\n" + 
+							"\r\n" + 
+							"package " + main.annotation.outputPackage() + ";\r\n" + 
+							"\r\n" + 
+							"import org.w3c.dom.Element;\r\n" + 
+							"import org.springframework.beans.factory.xml.ParserContext;\r\n" + 
+							"import org.springframework.beans.factory.support.BeanDefinitionBuilder;\r\n");
+					if (!main.annotation.outputPackage().equals("com.predic8.membrane.core.config.spring"))
+						bw.write("import com.predic8.membrane.core.config.spring.*;\r\n");
+					bw.write(
+							"\r\n" + 
+							"public class " + ii.getParserClassSimpleName() + " extends AbstractParser {\r\n" + 
+							"\r\n" + 
+							"	protected Class<?> getBeanClass(org.w3c.dom.Element element) {\r\n" + 
+							"		return " + interceptorClassName + ".class;\r\n" + 
+							"	}\r\n");
+					bw.write("	@Override\r\n" + 
+							"	protected void doParse(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {\r\n");
+					if (ii.hasIdField)
+						bw.write("		setPropertyIfSet(\"id\", element, builder);\r\n");
+					bw.write(
+							"		setIdIfNeeded(element, parserContext, \"" + ii.annotation.name() + "\");\r\n");
+					for (AttributeInfo ai : ii.ais) {
+						if (ai.getXMLName().equals("id"))
+							continue;
+						if (ai.isBeanReference()) {
+							if (!ai.required)
+								bw.write("		if (element.hasAttribute(\"" + ai.getXMLName() + "\"))\r\n");
+							bw.write("		builder.addPropertyReference(\"" + ai.getSpringName() + "\", element.getAttribute(\"" + ai.getXMLName() + "\"));\r\n");
+						} else {
+							bw.write("		setProperty" + (ai.required ? "" : "IfSet") + "(\"" + ai.getXMLName() + "\", \"" + ai.getSpringName() + "\", element, builder" + (ai.isEnum() ? ", true" : "") + ");\r\n");
+						}
+						if (ai.getXMLName().equals("name"))
+							bw.write("		element.removeAttribute(\"name\");\r\n");
+					}
+					for (ChildElementInfo cei : ii.ceis)
+						if (cei.list)
+							bw.write("		builder.addPropertyValue(\"" + cei.propertyName + "\", new java.util.ArrayList<Object>());\r\n");
+					bw.write("		parseChildren(element, parserContext, builder);\r\n");
+					for (ChildElementInfo cei : ii.ceis)
+						if (cei.list && cei.required) {
+							bw.write("		if (builder.getBeanDefinition().getPropertyValues().getPropertyValue(\"" + cei.propertyName + "[0]\") == null)\r\n");
+							bw.write("			throw new RuntimeException(\"Property '" + cei.propertyName + "' is required, but none was defined (empty list).\");\r\n");
+						}
+					
+					bw.write(
+							"	}\r\n" + 
+							"");
+	
+					bw.write(
+							"@Override\r\n" +
+							"protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {\r\n");
+					for (ChildElementInfo cei : ii.ceis) {
+						bw.write(
+								"	if (" + cei.typeDeclaration.getQualifiedName() + ".class.isAssignableFrom(clazz)) {\r\n" + 
+								"		builder.addPropertyValue(\"" + cei.propertyName + "\"" + (cei.list ? "+\"[\"+ incrementCounter(builder, \"" + cei.propertyName + "\") + \"]\" " : "") + ", child);\r\n" + 
+								"	} else \r\n");
+					}
+					bw.write(
+								"	{\r\n" +
+								"		throw new RuntimeException(\"Unknown child class \\\"\" + clazz + \"\\\".\");\r\n" +
+								"	}\r\n");
+					bw.write(
+							"}\r\n");
+					
+					bw.write(
+							"}\r\n" + 
+							"");
+				} finally {
+					bw.close();
+				}
 			}
 		}
 
@@ -504,34 +525,25 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		return sb.toString();
 	}
 
-	private void assembleXSD(Model m, BufferedWriter bw) throws IOException, ProcessingException {
-		String xsd = m.mainAnnotation.xsd(); 
-		xsd = xsd.replace("${declarations}", assembleDeclarations(m));
-		for (String group : m.groups.keySet()) {
+	private void assembleXSD(Model m, MainInfo main, BufferedWriter bw) throws IOException, ProcessingException {
+		String xsd = main.annotation.xsd(); 
+		xsd = xsd.replace("${declarations}", assembleDeclarations(m, main));
+		for (String group : main.groups.keySet()) {
 			xsd = xsd.replace("${" + group + "Declarations}", "");
-			xsd = xsd.replace("${" + group + "References}", assembleInterceptorReferences(m, group));
+			xsd = xsd.replace("${" + group + "References}", assembleInterceptorReferences(m, main, group));
 		}
-		xsd = xsd.replace("${raw}", assembleRaw(m));
 		bw.append(xsd);
 	}
 
-	private String assembleRaw(Model m) {
-		StringWriter raws = new StringWriter();
-		for (MCRaw raw : m.raws) {
-			raws.append(raw.xsd());
-		}
-		return raws.toString();
-	}
-
-	private String assembleDeclarations(Model m) throws ProcessingException {
+	private String assembleDeclarations(Model m, MainInfo main) throws ProcessingException {
 		StringWriter declarations = new StringWriter();
-		for (ElementInfo i : m.elements.values()) {
-			declarations.append(assembleElementDeclaration(m, i));
+		for (ElementInfo i : main.elements.values()) {
+			declarations.append(assembleElementDeclaration(m, main, i));
 		}
 		return declarations.toString();
 	}
 
-	private CharSequence assembleElementDeclaration(Model m, ElementInfo i) throws ProcessingException {
+	private CharSequence assembleElementDeclaration(Model m, MainInfo main, ElementInfo i) throws ProcessingException {
 		String xsd;
 		if (i.annotation.xsd().length() == 0) {
 			if (i.annotation.mixed()) {
@@ -540,7 +552,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						i.element);
 			}
 			if (i.ais.size() > 0 || i.ceis.size() > 0) {
-				xsd = assembleElementInfo(m, i);
+				xsd = assembleElementInfo(m, main, i);
 			} else {
 				return "<xsd:element name=\""+ i.annotation.name() + "\" type=\"EmptyElementType\" />\r\n";
 			}
@@ -559,12 +571,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				"</xsd:element>\r\n";
 	}
 
-	private String assembleElementInfo(Model m, AbstractElementInfo i) {
+	private String assembleElementInfo(Model m, MainInfo main, AbstractElementInfo i) {
 		StringBuilder xsd = new StringBuilder();
 		xsd.append("<xsd:sequence>\r\n");
 		for (ChildElementInfo cei : i.ceis) {
 			xsd.append("<xsd:choice" + (cei.required ? " minOccurs=\"1\"" : " minOccurs=\"0\"") + (cei.list ? " maxOccurs=\"unbounded\"" : "") + ">\r\n");
-			for (ElementInfo ei : m.childElementDeclarations.get(cei.typeDeclaration).elementInfo)
+			for (ElementInfo ei : main.childElementDeclarations.get(cei.typeDeclaration).elementInfo)
 				xsd.append("<xsd:element ref=\"" + ei.annotation.name() + "\" />\r\n");
 			if (cei.annotation.allowForeign())
 				xsd.append("<xsd:any namespace=\"##other\" processContents=\"strict\" />\r\n");
@@ -583,9 +595,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				+ (ai.required ? "use=\"required\"" : "") + " />\r\n";
 	}
 
-	private String assembleInterceptorReferences(Model m, String group) {
+	private String assembleInterceptorReferences(Model m, MainInfo main, String group) {
 		StringWriter interceptorReferences = new StringWriter();
-		for (ElementInfo i : m.groups.get(group)) {
+		for (ElementInfo i : main.groups.get(group)) {
 			interceptorReferences.append("<xsd:element ref=\"" + i.annotation.name() + "\" />\r\n");
 		}
 		return interceptorReferences.toString();

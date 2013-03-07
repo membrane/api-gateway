@@ -47,7 +47,7 @@ import com.predic8.membrane.core.transport.Transport;
 				"	</xsd:complexType>\r\n" + 
 				"	\r\n" + 
 				"</xsd:schema>")
-@MCElement(name="servletTransport", group="transport")
+@MCElement(name="servletTransport", group="transport", configPackage="com.predic8.membrane.servlet.config.spring")
 public class ServletTransport extends Transport {
 
 	boolean removeContextRoot = true;

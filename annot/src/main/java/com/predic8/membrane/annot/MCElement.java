@@ -13,4 +13,5 @@ public @interface MCElement {
 	boolean mixed() default false;
 	String xsd() default "";
 	boolean global() default true;
+	String configPackage() default "";
 }

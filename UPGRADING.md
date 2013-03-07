@@ -4,6 +4,7 @@
 
 * documentation
 * configuration of "other" (=non-HttpClientInterceptor) httpClients
+* nice error message at startup if annotation processing is disabled
 
 ### Decisions to be made
 

@@ -33,7 +33,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 				"	</xsd:complexType>\r\n" + 
 				"	\r\n" + 
 				"</xsd:schema>")
-@MCElement(name="echo")
+@MCElement(name="echo", configPackage="com.predic8.membrane.servlet.test.config.spring")
 public class EchoInterceptor extends AbstractInterceptor {
 	
 	@Override
