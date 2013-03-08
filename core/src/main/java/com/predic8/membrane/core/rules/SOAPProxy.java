@@ -46,7 +46,7 @@ import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.xml.util.ResourceDownloadException;
 
-public class SOAPProxy extends ServiceProxy {
+public class SOAPProxy extends AbstractServiceProxy {
 	private static final Log log = LogFactory.getLog(SOAPProxy.class.getName());
 	public static final String ELEMENT_NAME = "soapProxy";
 	private static final Pattern relativePathPattern = Pattern.compile("^./[^/?]*\\?");

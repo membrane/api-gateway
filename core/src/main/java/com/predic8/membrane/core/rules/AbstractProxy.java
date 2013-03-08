@@ -33,6 +33,8 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.Router;
@@ -316,6 +318,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 		return interceptors;
 	}
 
+	@MCChildElement(allowForeign=true, order=100)
 	public void setInterceptors(List<Interceptor> interceptors) {
 		this.interceptors = interceptors;
 	}
@@ -336,6 +339,7 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 		return blockResponse;
 	}
 
+	@MCAttribute
 	public void setName(String name) {
 		if (name == null)
 			return;
@@ -347,10 +351,12 @@ public abstract class AbstractProxy extends AbstractConfigElement implements
 		this.key = ruleKey;
 	}
 
+	@MCAttribute
 	public void setBlockRequest(boolean blockStatus) {
 		this.blockRequest = blockStatus;
 	}
 
+	@MCAttribute
 	public void setBlockResponse(boolean blockStatus) {
 		this.blockResponse = blockStatus;
 	}

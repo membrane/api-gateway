@@ -20,12 +20,17 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.lang.StringUtils;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 
+@MCElement(name="proxy", group="rule")
 public class ProxyRule extends AbstractProxy {
 
 	public static final String ELEMENT_NAME = "proxy";
 	
-	public ProxyRule() {}
+	public ProxyRule() {
+		key = new ProxyRuleKey(80);
+	}
 	
 	public ProxyRule(ProxyRuleKey ruleKey) {
 		super(ruleKey);
@@ -64,5 +69,23 @@ public class ProxyRule extends AbstractProxy {
 	@Override
 	public String getName() {
 		return StringUtils.defaultIfEmpty(name, getKey().toString());
+	}
+	
+	public int getPort() {
+		return ((ProxyRuleKey)key).getPort();
+	}
+	
+	@MCAttribute
+	public void setPort(int port) {
+		((ProxyRuleKey)key).setPort(port);
+	}
+	
+	public String getIp() {
+		return ((ProxyRuleKey)key).getIp();
+	}
+	
+	@MCAttribute
+	public void setIp(String ip) {
+		((ProxyRuleKey)key).setIp(ip);
 	}
 }

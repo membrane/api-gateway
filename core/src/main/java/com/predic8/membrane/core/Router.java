@@ -62,8 +62,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"	\r\n" + 
 				"\r\n" +
 				"${declarations}\r\n" +
-				"\r\n" +
-				"${raw}\r\n" +
 				"	\r\n" + 
 				"	<xsd:complexType name=\"EmptyElementType\">\r\n" + 
 				"		<xsd:complexContent>\r\n" + 
@@ -161,38 +159,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"							<xsd:attribute name=\"wsdl\" type=\"xsd:string\" use=\"required\" />\r\n" + 
 				"							<xsd:attribute name=\"portName\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
 				"							<xsd:attribute name=\"ip\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
-				"						</xsd:extension>\r\n" + 
-				"					</xsd:complexContent>\r\n" + 
-				"				</xsd:complexType>\r\n" + 
-				"			</xsd:element>\r\n" + 
-				"			<xsd:element name=\"proxy\">\r\n" + 
-				"				<xsd:complexType>\r\n" + 
-				"					<xsd:complexContent>\r\n" + 
-				"						<xsd:extension base=\"beans:identifiedType\">\r\n" + 
-				"							<xsd:sequence>\r\n" + 
-				"								<xsd:choice minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"									<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"									<xsd:element name=\"request\">\r\n" + 
-				"										<xsd:complexType>\r\n" + 
-				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"											</xsd:sequence>\r\n" + 
-				"										</xsd:complexType>\r\n" + 
-				"									</xsd:element>\r\n" + 
-				"									<xsd:element name=\"response\">\r\n" + 
-				"										<xsd:complexType>\r\n" + 
-				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"											</xsd:sequence>\r\n" + 
-				"										</xsd:complexType>\r\n" + 
-				"									</xsd:element>\r\n" + 
-				"								</xsd:choice>\r\n" + 
-				"							</xsd:sequence>\r\n" + 
-				"							<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
-				"							<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
-				"							<xsd:attribute name=\"ip\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
-				"							<xsd:attribute name=\"blockResponse\" type=\"xsd:boolean\" />\r\n" + 
-				"							<xsd:attribute name=\"blockRequest\" type=\"xsd:boolean\" />\r\n" + 
 				"						</xsd:extension>\r\n" + 
 				"					</xsd:complexContent>\r\n" + 
 				"				</xsd:complexType>\r\n" + 

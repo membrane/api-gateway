@@ -20,8 +20,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.lang.StringUtils;
-
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
@@ -29,51 +27,20 @@ import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.transport.SSLContext;
 
-public class ServiceProxy extends AbstractProxy {
+public class ServiceProxy extends AbstractServiceProxy {
 
 	public static final String ELEMENT_NAME = "serviceProxy";
 	
-	private String targetHost;
-	private int targetPort;
-	private String targetURL;
-	private SSLParser sslInboundParser, sslOutboundParser;
-	private SSLContext sslInboundContext, sslOutboundContext;
+	private SSLParser sslOutboundParser;
 	
 	public ServiceProxy() {}
 
 	public ServiceProxy(ServiceProxyKey ruleKey, String targetHost, int targetPort) {
 		this.key = ruleKey;
-		this.targetHost = targetHost;
-		this.targetPort = targetPort;
+		setTargetHost(targetHost);
+		setTargetPort(targetPort);
 	}
 	
-	public String getTargetHost() {
-		return targetHost;
-	}
-
-	public String getTargetScheme() {
-		return sslOutboundContext != null ? "https" : "http";
-	}
-
-	public void setTargetHost(String targetHost) {
-		this.targetHost = targetHost;
-	}
-
-	public int getTargetPort() {
-		return targetPort;
-	}
-
-	public void setTargetPort(int targetPort) {
-		this.targetPort = targetPort;
-	}
-
-	public String getTargetURL() {
-		return targetURL;
-	}
-
-	public void setTargetURL(String targetURL) {
-		this.targetURL = targetURL;
-	}
 
 	@Override
 	protected void parseKeyAttributes(XMLStreamReader token) {
@@ -82,18 +49,6 @@ public class ServiceProxy extends AbstractProxy {
 
 	private String parseMethod(XMLStreamReader token) {
 		return defaultString(token.getAttributeValue("", "method"), "*");
-	}
-
-	protected int parsePort(XMLStreamReader token) {
-		return Integer.parseInt(defaultString(token.getAttributeValue("", "port"),"80"));
-	}
-
-	protected String parseHost(XMLStreamReader token) {
-		return defaultString(token.getAttributeValue("", "host"), "*");
-	}
-	
-	protected String parseIp(XMLStreamReader token) {
-		return token.getAttributeValue("", "ip");
 	}
 
 	@Override
@@ -113,36 +68,21 @@ public class ServiceProxy extends AbstractProxy {
 				}
 			});
 			target.parse(token);
-			targetHost = target.getAttribute("host");
-			targetPort = Integer.parseInt(target.getAttributeOrDefault("port","80"));			
-			targetURL = target.getAttribute("service")!=null?
+			setTargetHost(target.getAttribute("host"));
+			setTargetPort(Integer.parseInt(target.getAttributeOrDefault("port","80")));			
+			setTargetURL(target.getAttribute("service")!=null?
 						"service:"+target.getAttribute("service"):
-						target.getAttribute("url");
+						target.getAttribute("url"));
 		} else if (Path.ELEMENT_NAME.equals(child)) {
 			key.setUsePathPattern(true);
 			Path p = (Path)(new Path()).parse(token);
 			key.setPathRegExp(p.isRegExp());
 			key.setPath(p.getValue());
-		} else if ("ssl".equals(child)) {
-			sslInboundParser = new SSLParser();
-			sslInboundParser.parse(token);
 		} else {
 			super.parseChildren(token, child);
 		}
 	}
 	
-	
-	@Override
-	public void write(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement(getElementName());
-		
-		writeRule(out);
-		
-		writeTarget(out);
-		out.writeEndElement();
-	}
 
 	@Override
 	protected void writeExtension(XMLStreamWriter out) throws XMLStreamException {
@@ -158,19 +98,19 @@ public class ServiceProxy extends AbstractProxy {
 	}
 
 	protected void writeTarget(XMLStreamWriter out) throws XMLStreamException {
-		if (targetHost == null && targetPort == 0 && targetURL == null)
+		if (getTargetHost() == null && getTargetPort() == 0 && getTargetURL() == null)
 			return;
 		
 		out.writeStartElement("target");
 		
-		if (targetHost != null)
-			out.writeAttribute("host", targetHost);
+		if (getTargetHost() != null)
+			out.writeAttribute("host", getTargetHost());
 		
-		if (targetPort != 0 && targetPort != 80)
-			out.writeAttribute("port", "" + targetPort);
+		if (getTargetPort() != 0 && getTargetPort() != 80)
+			out.writeAttribute("port", "" + getTargetPort());
 		
-		if (targetURL != null)
-			out.writeAttribute("url", targetURL);
+		if (getTargetURL() != null)
+			out.writeAttribute("url", getTargetURL());
 
 		out.writeEndElement();
 	}
@@ -185,25 +125,6 @@ public class ServiceProxy extends AbstractProxy {
 		return new ServiceProxy();
 	}
 	
-	@Override
-	public String getName() {
-		return StringUtils.defaultIfEmpty(name, getKey().toString());
-	}
-
-	@Override
-	public SSLContext getSslInboundContext() {
-		return sslInboundContext;
-	}
-	
-	@Override
-	public SSLContext getSslOutboundContext() {
-		return sslOutboundContext;
-	}
-	
-	public void setSslInboundParser(SSLParser sslInboundParser) {
-		this.sslInboundParser = sslInboundParser;
-	}
-	
 	public void setSslOutboundParser(SSLParser sslOutboundParser) {
 		this.sslOutboundParser = sslOutboundParser;
 	}
@@ -211,9 +132,7 @@ public class ServiceProxy extends AbstractProxy {
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-		if (sslInboundParser != null)
-			sslInboundContext = new SSLContext(sslInboundParser, router.getResourceResolver());
 		if (sslOutboundParser != null)
-			sslOutboundContext = new SSLContext(sslOutboundParser, router.getResourceResolver());
+			setSslOutboundContext(new SSLContext(sslOutboundParser, router.getResourceResolver()));
 	}
 }
