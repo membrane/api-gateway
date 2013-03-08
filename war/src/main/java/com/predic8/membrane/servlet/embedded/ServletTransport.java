@@ -25,28 +25,7 @@ import com.predic8.membrane.core.transport.Transport;
 @MCMain(
 		outputPackage="com.predic8.membrane.servlet.config.spring",
 		outputName="router-conf.xsd",
-		xsd="" +
-				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
-				"<xsd:schema xmlns=\"http://membrane-soa.org/war/1/\"\r\n" + 
-				"	xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:beans=\"http://www.springframework.org/schema/beans\"\r\n" + 
-				"	targetNamespace=\"http://membrane-soa.org/war/1/\"\r\n" + 
-				"	elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\r\n" + 
-				"\r\n" + 
-				"	<xsd:import namespace=\"http://www.springframework.org/schema/beans\" schemaLocation=\"http://www.springframework.org/schema/beans/spring-beans-3.1.xsd\" />\r\n" + 
-				"\r\n" + 
-				"${declarations}\r\n" +
-				"\r\n" +
-				"${raw}\r\n" +
-				"	\r\n" + 
-				"	<xsd:complexType name=\"EmptyElementType\">\r\n" + 
-				"		<xsd:complexContent>\r\n" + 
-				"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
-				"				<xsd:sequence />\r\n" + 
-				"			</xsd:extension>\r\n" + 
-				"		</xsd:complexContent>\r\n" + 
-				"	</xsd:complexType>\r\n" + 
-				"	\r\n" + 
-				"</xsd:schema>")
+		targetNamespace="http://membrane-soa.org/war/1/")
 @MCElement(name="servletTransport", group="transport", configPackage="com.predic8.membrane.servlet.config.spring")
 public class ServletTransport extends Transport {
 

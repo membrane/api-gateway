@@ -7,5 +7,5 @@ import java.lang.annotation.*;
 public @interface MCMain {
 	String outputPackage();
 	String outputName();
-	String xsd();
+	String targetNamespace();
 }

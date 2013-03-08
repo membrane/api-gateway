@@ -546,8 +546,30 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		return sb.toString();
 	}
 
+	private String getXSDTemplate(String namespace) {
+		return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
+				"<xsd:schema xmlns=\"" + namespace + "\"\r\n" + 
+				"	xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:beans=\"http://www.springframework.org/schema/beans\"\r\n" + 
+				"	targetNamespace=\"" + namespace + "\"\r\n" + 
+				"	elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\r\n" + 
+				"\r\n" + 
+				"	<xsd:import namespace=\"http://www.springframework.org/schema/beans\" schemaLocation=\"http://www.springframework.org/schema/beans/spring-beans-3.1.xsd\" />\r\n" + 
+				"\r\n" + 
+				"${declarations}\r\n" +
+				"	\r\n" + 
+				"	<xsd:complexType name=\"EmptyElementType\">\r\n" + 
+				"		<xsd:complexContent>\r\n" + 
+				"			<xsd:extension base=\"beans:identifiedType\">\r\n" + 
+				"				<xsd:sequence />\r\n" + 
+				"			</xsd:extension>\r\n" + 
+				"		</xsd:complexContent>\r\n" + 
+				"	</xsd:complexType>\r\n" + 
+				"	\r\n" + 
+				"</xsd:schema>";
+	}
+	
 	private void assembleXSD(Model m, MainInfo main, BufferedWriter bw) throws IOException, ProcessingException {
-		String xsd = main.annotation.xsd(); 
+		String xsd = getXSDTemplate(main.annotation.targetNamespace()); 
 		xsd = xsd.replace("${declarations}", assembleDeclarations(m, main));
 		for (String group : main.groups.keySet()) {
 			xsd = xsd.replace("${" + group + "Declarations}", "");
