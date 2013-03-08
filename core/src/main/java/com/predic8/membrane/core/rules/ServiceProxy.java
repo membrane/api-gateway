@@ -20,20 +20,22 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import com.predic8.membrane.core.Router;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.transport.SSLContext;
 
+@MCElement(name="serviceProxy", group="rule")
 public class ServiceProxy extends AbstractServiceProxy {
 
 	public static final String ELEMENT_NAME = "serviceProxy";
 	
-	private SSLParser sslOutboundParser;
-	
-	public ServiceProxy() {}
+	public ServiceProxy() {
+		this.key = new ServiceProxyKey(80);
+	}
 
 	public ServiceProxy(ServiceProxyKey ruleKey, String targetHost, int targetPort) {
 		this.key = ruleKey;
@@ -60,8 +62,9 @@ public class ServiceProxy extends AbstractServiceProxy {
 				protected void parseChildren(XMLStreamReader token, String child)
 						throws Exception {
 					if ("ssl".equals(child)) {
-						sslOutboundParser = new SSLParser();
+						SSLParser sslOutboundParser = new SSLParser();
 						sslOutboundParser.parse(token);
+						ServiceProxy.this.target.setSslParser(sslOutboundParser);
 					} else {
 						super.parseChildren(token, child);
 					}
@@ -125,14 +128,46 @@ public class ServiceProxy extends AbstractServiceProxy {
 		return new ServiceProxy();
 	}
 	
-	public void setSslOutboundParser(SSLParser sslOutboundParser) {
-		this.sslOutboundParser = sslOutboundParser;
+	public String getMethod() {
+		return ((ServiceProxyKey)key).getMethod();
 	}
 	
-	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
-		if (sslOutboundParser != null)
-			setSslOutboundContext(new SSLContext(sslOutboundParser, router.getResourceResolver()));
+	@MCAttribute
+	public void setMethod(String method) {
+		((ServiceProxyKey)key).setMethod(method);
 	}
+
+	public Target getTarget() {
+		return target;
+	}
+
+	@MCChildElement(order=150)
+	public void setTarget(Target target) {
+		this.target = target;
+	}
+
+	public String getTargetHost() {
+		return target.getHost();
+	}
+
+	public void setTargetHost(String targetHost) {
+		this.target.setHost(targetHost);
+	}
+
+	public int getTargetPort() {
+		return target.getPort();
+	}
+
+	public void setTargetPort(int targetPort) {
+		this.target.setPort(targetPort);
+	}
+
+	public String getTargetURL() {
+		return target.getUrl();
+	}
+
+	public void setTargetURL(String targetURL) {
+		this.target.setUrl(targetURL);
+	}
+
 }

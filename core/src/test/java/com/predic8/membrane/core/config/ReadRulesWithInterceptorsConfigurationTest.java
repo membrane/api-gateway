@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.SpringInterceptor;
 import com.predic8.membrane.core.rules.Rule;
 
 public class ReadRulesWithInterceptorsConfigurationTest {
@@ -63,7 +64,7 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 	@Test
 	public void testRuleInterceptorIDs() throws Exception {
 		List<Interceptor> interceptors = rules.get(0).getInterceptors();
-		assertEquals("accessControlInterceptor", interceptors.get(0).getId());
+		assertEquals("accessControlInterceptor", ((SpringInterceptor) interceptors.get(0)).getRefId());
 	}
 	
 	@Test

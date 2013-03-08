@@ -52,14 +52,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"	elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\r\n" + 
 				"\r\n" + 
 				"	<xsd:import namespace=\"http://www.springframework.org/schema/beans\" schemaLocation=\"http://www.springframework.org/schema/beans/spring-beans-3.1.xsd\" />\r\n" + 
-				"\r\n" + 
-				"	<xsd:group name=\"InterceptorGroup\">\r\n" + 
-				"		<xsd:choice>\r\n" + 
-				"			${interceptorReferences}\r\n" +
-				"			<xsd:any namespace=\"##other\" processContents=\"strict\" />" +
-				"		</xsd:choice>\r\n" + 
-				"	</xsd:group>\r\n" + 
-				"	\r\n" + 
 				"\r\n" +
 				"${declarations}\r\n" +
 				"	\r\n" + 
@@ -71,100 +63,6 @@ import com.predic8.membrane.core.util.ResourceResolver;
 				"		</xsd:complexContent>\r\n" + 
 				"	</xsd:complexType>\r\n" + 
 				"	\r\n" + 
-				"			<xsd:element name=\"serviceProxy\">\r\n" + 
-				"				<xsd:complexType>\r\n" + 
-				"					<xsd:complexContent> \r\n" + 
-				"						<xsd:extension base=\"beans:identifiedType\"> \r\n" + 
-				"							<xsd:sequence>\r\n" + 
-				"								<xsd:element name=\"path\" minOccurs=\"0\" maxOccurs=\"1\">\r\n" + 
-				"									<xsd:complexType>\r\n" + 
-				"										<xsd:simpleContent>\r\n" + 
-				"											<xsd:extension base=\"xsd:string\">\r\n" + 
-				"												<xsd:attribute name=\"isRegExp\" type=\"xsd:boolean\"\r\n" + 
-				"													use=\"optional\" />\r\n" + 
-				"											</xsd:extension>\r\n" + 
-				"										</xsd:simpleContent>\r\n" + 
-				"									</xsd:complexType>\r\n" + 
-				"								</xsd:element>\r\n" + 
-				"								<xsd:element name=\"ssl\" minOccurs=\"0\" maxOccurs=\"1\" />\r\n" + 
-				"								<xsd:choice minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"									<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"									<xsd:element name=\"request\">\r\n" + 
-				"										<xsd:complexType>\r\n" + 
-				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"											</xsd:sequence>\r\n" + 
-				"										</xsd:complexType>\r\n" + 
-				"									</xsd:element>\r\n" + 
-				"									<xsd:element name=\"response\">\r\n" + 
-				"										<xsd:complexType>\r\n" + 
-				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"											</xsd:sequence>\r\n" + 
-				"										</xsd:complexType>\r\n" + 
-				"									</xsd:element>\r\n" + 
-				"								</xsd:choice>\r\n" + 
-				"								<xsd:element name=\"target\" minOccurs=\"0\">\r\n" + 
-				"									<xsd:complexType>\r\n" + 
-				"										<xsd:sequence>\r\n" + 
-				"											<xsd:element name=\"ssl\" minOccurs=\"0\" maxOccurs=\"1\" />\r\n" + 
-				"										</xsd:sequence>\r\n" + 
-				"										<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
-				"										<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
-				"										<xsd:attribute name=\"url\" type=\"xsd:string\" />\r\n" + 
-				"									</xsd:complexType>\r\n" + 
-				"								</xsd:element>\r\n" + 
-				"							</xsd:sequence>\r\n" + 
-				"							<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
-				"							<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
-				"							<xsd:attribute name=\"blockResponse\" type=\"xsd:boolean\" />\r\n" + 
-				"							<xsd:attribute name=\"blockRequest\" type=\"xsd:boolean\" />\r\n" + 
-				"							<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
-				"							<xsd:attribute name=\"method\" type=\"xsd:string\" />\r\n" + 
-				"							<xsd:attribute name=\"ip\" type=\"xsd:string\" />\r\n" + 
-				"						</xsd:extension>\r\n" + 
-				"					</xsd:complexContent>\r\n" + 
-				"				</xsd:complexType>\r\n" + 
-				"			</xsd:element>\r\n" + 
-				"			<xsd:element name=\"soapProxy\">\r\n" + 
-				"				<xsd:complexType>\r\n" + 
-				"					<xsd:complexContent> \r\n" + 
-				"						<xsd:extension base=\"beans:identifiedType\"> \r\n" + 
-				"							<xsd:sequence>\r\n" + 
-				"								<xsd:element name=\"path\" minOccurs=\"0\" maxOccurs=\"1\" type=\"xsd:string\" />\r\n" + 
-				"								<xsd:element name=\"ssl\" minOccurs=\"0\" maxOccurs=\"1\" />\r\n" + 
-				"								<xsd:choice minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"									<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"									<xsd:element name=\"request\">\r\n" + 
-				"										<xsd:complexType>\r\n" + 
-				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"											</xsd:sequence>\r\n" + 
-				"										</xsd:complexType>\r\n" + 
-				"									</xsd:element>\r\n" + 
-				"									<xsd:element name=\"response\">\r\n" + 
-				"										<xsd:complexType>\r\n" + 
-				"											<xsd:sequence minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-				"												<xsd:group ref=\"InterceptorGroup\" />\r\n" + 
-				"											</xsd:sequence>\r\n" + 
-				"										</xsd:complexType>\r\n" + 
-				"									</xsd:element>\r\n" + 
-				"								</xsd:choice>\r\n" + 
-				"							</xsd:sequence>\r\n" + 
-				"							<xsd:attribute name=\"name\" type=\"xsd:string\" />\r\n" + 
-				"							<xsd:attribute name=\"port\" type=\"xsd:int\" />\r\n" + 
-				"							<xsd:attribute name=\"blockResponse\" type=\"xsd:boolean\" />\r\n" + 
-				"							<xsd:attribute name=\"blockRequest\" type=\"xsd:boolean\" />\r\n" + 
-				"							<xsd:attribute name=\"host\" type=\"xsd:string\" />\r\n" + 
-				"							<xsd:attribute name=\"wsdl\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-				"							<xsd:attribute name=\"portName\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
-				"							<xsd:attribute name=\"ip\" type=\"xsd:string\" use=\"optional\" />\r\n" + 
-				"						</xsd:extension>\r\n" + 
-				"					</xsd:complexContent>\r\n" + 
-				"				</xsd:complexType>\r\n" + 
-				"			</xsd:element>\r\n" + 
-				"" +
-				"" +
 				"</xsd:schema>")
 @MCElement(name="router", group="basic")
 public class Router implements Lifecycle, ApplicationContextAware {

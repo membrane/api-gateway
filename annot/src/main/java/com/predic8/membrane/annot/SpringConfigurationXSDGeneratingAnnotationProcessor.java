@@ -124,8 +124,14 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		TypeElement element;
 		boolean hasIdField;
 		
+		TextContentInfo tci;
+		
 		List<AttributeInfo> ais = new ArrayList<AttributeInfo>();
 		List<ChildElementInfo> ceis = new ArrayList<ChildElementInfo>();
+	}
+	
+	private static class TextContentInfo {
+		String propertyName;
 	}
 	
 	private static class ChildElementInfo implements Comparable<ChildElementInfo> {
@@ -244,9 +250,15 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						throw new ProcessingException("Duplicate global @MCElement name.", main.globals.get(ii.annotation.name()).element, ii.element);
 	
 					scan(m, main, ii);
+					
+					if (ii.tci != null && !ii.annotation.mixed())
+						throw new ProcessingException("@MCTextContent requires @MCElement(..., mixed=true) on the class.", ii.element);
+					if (ii.tci == null && ii.annotation.mixed())
+						throw new ProcessingException("@MCElement(..., mixed=true) requires @MCTextContent on a property.", ii.element);
 				}
 				
 				for (MainInfo main : m.mains) {
+					
 					for (Map.Entry<TypeElement, ChildElementDeclarationInfo> f : main.childElementDeclarations.entrySet()) {
 						ChildElementDeclarationInfo cedi = f.getValue();
 						ElementInfo ei = main.elements.get(f.getKey());
@@ -335,6 +347,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					ChildElementDeclarationInfo cedi = main.childElementDeclarations.get(cei.typeDeclaration);
 					cedi.raiseErrorWhenNoSpecimen = cedi.raiseErrorWhenNoSpecimen || !cei.annotation.allowForeign();
 				}
+			}
+			MCTextContent c = e2.getAnnotation(MCTextContent.class);
+			if (c != null) {
+				TextContentInfo tci = new TextContentInfo();
+				tci.propertyName = dejavaify(e2.getSimpleName().toString().substring(3));
+				ii.tci = tci;
 			}
 		}
 		Collections.sort(ii.ceis);
@@ -475,7 +493,10 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					for (ChildElementInfo cei : ii.ceis)
 						if (cei.list)
 							bw.write("		builder.addPropertyValue(\"" + cei.propertyName + "\", new java.util.ArrayList<Object>());\r\n");
-					bw.write("		parseChildren(element, parserContext, builder);\r\n");
+					if (ii.tci != null)
+						bw.write("		builder.addPropertyValue(\"" + ii.tci.propertyName + "\", element.getTextContent());\r\n");
+					else
+						bw.write("		parseChildren(element, parserContext, builder);\r\n");
 					for (ChildElementInfo cei : ii.ceis)
 						if (cei.list && cei.required) {
 							bw.write("		if (builder.getBeanDefinition().getPropertyValues().getPropertyValue(\"" + cei.propertyName + "[0]\") == null)\r\n");
@@ -546,12 +567,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	private CharSequence assembleElementDeclaration(Model m, MainInfo main, ElementInfo i) throws ProcessingException {
 		String xsd;
 		if (i.annotation.xsd().length() == 0) {
-			if (i.annotation.mixed()) {
+			if (i.annotation.mixed() && i.ceis.size() > 0) {
 				throw new ProcessingException(
-						"@MCElement(..., mixed=true) also requires (..., mixed=true, xsd=\"...\").",
+						"@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
 						i.element);
 			}
-			if (i.ais.size() > 0 || i.ceis.size() > 0) {
+			if (i.ais.size() > 0 || i.ceis.size() > 0 || i.annotation.mixed()) {
 				xsd = assembleElementInfo(m, main, i);
 			} else {
 				return "<xsd:element name=\""+ i.annotation.name() + "\" type=\"EmptyElementType\" />\r\n";

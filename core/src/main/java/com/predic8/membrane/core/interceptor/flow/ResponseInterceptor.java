@@ -1,5 +1,8 @@
 package com.predic8.membrane.core.interceptor.flow;
 
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -24,6 +27,14 @@ public class ResponseInterceptor extends AbstractFlowInterceptor {
 				exc.pushInterceptorToStack(i);
 		}
 		return Outcome.CONTINUE;
+	}
+
+	@Override
+	protected void writeInterceptor(XMLStreamWriter out) throws XMLStreamException {
+		out.writeStartElement("response");
+		for (Interceptor i : getInterceptors())
+			i.write(out);
+		out.writeEndElement();
 	}
 
 }

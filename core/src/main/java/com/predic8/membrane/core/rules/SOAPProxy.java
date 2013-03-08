@@ -26,8 +26,11 @@ import javax.xml.stream.XMLStreamWriter;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.collect.Lists;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
@@ -46,6 +49,7 @@ import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 import com.predic8.xml.util.ResourceDownloadException;
 
+@MCElement(name="soapProxy", group="rule")
 public class SOAPProxy extends AbstractServiceProxy {
 	private static final Log log = LogFactory.getLog(SOAPProxy.class.getName());
 	public static final String ELEMENT_NAME = "soapProxy";
@@ -56,6 +60,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 	protected String targetPath;
 	
 	public SOAPProxy() {
+		this.key = new ServiceProxyKey(80);
 	}
 	
 	@Override
@@ -142,9 +147,9 @@ public class SOAPProxy extends AbstractServiceProxy {
 				throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
 			try {
 				URL url = new URL(location);
-				setTargetHost(url.getHost());
+				target.setHost(url.getHost());
 				if (url.getPort() != -1)
-					setTargetPort(url.getPort());
+					target.setPort(url.getPort());
 				if (key.getPath() == null) {
 					key.setUsePathPattern(true);
 					key.setPathRegExp(true);
@@ -247,7 +252,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 			automaticallyAddedInterceptorCount++;
 		}
 		
-		if (key.getPath() != null) {
+		if (targetPath != null) {
 			RewriteInterceptor ri = new RewriteInterceptor();
 			ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
 			interceptors.add(0, ri);
@@ -274,6 +279,8 @@ public class SOAPProxy extends AbstractServiceProxy {
 		return wsdl;
 	}
 	
+	@Required
+	@MCAttribute
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
 	}
@@ -282,6 +289,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 		return portName;
 	}
 	
+	@MCAttribute
 	public void setPortName(String portName) {
 		this.portName = portName;
 	}

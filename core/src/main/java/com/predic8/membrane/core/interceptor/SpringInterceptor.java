@@ -23,17 +23,18 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	
 	@Required
 	@MCAttribute(attributeName="refid")
-	public void setInnerInterceptor(Interceptor i) {
-		this.i = i;
+	public void setRefId(String refid) {
+		this.refid = refid;
 	}
 
-	public Interceptor getInnerInterceptor() {
-		return i;
+	public String getRefId() {
+		return refid;
 	}
 	
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		ac = applicationContext;
+		i = (Interceptor) ac.getBean(refid);
 	}
 
 	@Override

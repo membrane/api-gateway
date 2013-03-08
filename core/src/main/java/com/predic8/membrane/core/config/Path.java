@@ -18,14 +18,26 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.MCTextContent;
 
+@MCElement(name="path", global=false, mixed=true)
 public class Path extends AbstractConfigElement {
 
 	public static final String ELEMENT_NAME = "path";
 	
 	private String value;
 	
-	private Boolean regExp;
+	private boolean regExp;
+	
+	public Path() {
+	}
+	
+	public Path(boolean regExp, String value) {
+		this.regExp = regExp;
+		this.value = value;
+	}
 	
 	@Override
 	protected String getElementName() {
@@ -46,7 +58,7 @@ public class Path extends AbstractConfigElement {
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
-		out.writeAttribute("isRegExp", regExp.toString());
+		out.writeAttribute("isRegExp", "" + regExp);
 		out.writeCharacters(value);
 		out.writeEndElement();
 	}
@@ -55,6 +67,7 @@ public class Path extends AbstractConfigElement {
 		return regExp;
 	}
 
+	@MCAttribute
 	public void setRegExp(boolean regExp) {
 		this.regExp = regExp;
 	}
@@ -63,6 +76,7 @@ public class Path extends AbstractConfigElement {
 		return value;
 	}
 
+	@MCTextContent
 	public void setValue(String value) {
 		this.value = value;
 	}
