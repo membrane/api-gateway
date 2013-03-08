@@ -14,13 +14,6 @@
 
 	<router />
 
-	<transport>
-		<ruleMatching />
-		<dispatching />
-		<userFeature />
-		<httpClient />
-	</transport>
-
 	<spring:bean id="Mock1" class="com.predic8.membrane.core.interceptor.MockInterceptor">
 		<spring:constructor-arg>
 			<spring:value>Mock1</spring:value>

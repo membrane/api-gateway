@@ -282,4 +282,27 @@ public class RuleManager {
 		return null;
 	}
 
+	public synchronized List<Rule> getRulesBySource(final RuleDefinitionSource source) {
+		ArrayList<Rule> res = new ArrayList<Rule>() {
+			private static final long serialVersionUID = 1L;
+			{
+				for (int i = 0; i < rules.size(); i++)
+					if (ruleSources.get(i) == source)
+						add(rules.get(i));
+			}
+			public Rule set(int index, Rule element) {
+				throw new IllegalStateException("set(int, Rule) is not allowed");
+			}
+			public boolean add(Rule e) {
+				addProxy(e, source);
+				return super.add(e);
+			}
+			public void add(int index, Rule e) {
+				addProxy(e, source);
+				super.add(index, e);
+			}
+		};
+		return res;
+	}
+
 }

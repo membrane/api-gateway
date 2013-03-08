@@ -14,12 +14,5 @@
 
 	<router />
 
-	<transport>
-		<ruleMatching />
-		<dispatching />
-		<userFeature />
-		<httpClient />
-	</transport>
-
 </spring:beans>
 

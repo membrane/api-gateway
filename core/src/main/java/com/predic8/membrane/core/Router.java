@@ -23,21 +23,22 @@ import java.util.concurrent.Executors;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.exchangestore.ForgetfulExchangeStore;
+import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
+import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.ResourceResolver;
 
@@ -72,7 +73,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	private ApplicationContext beanFactory;
 
 	protected RuleManager ruleManager = new RuleManager();
-	protected ExchangeStore exchangeStore = new ForgetfulExchangeStore();
+	protected ExchangeStore exchangeStore;
 	protected Transport transport;
 	protected ConfigurationManager configurationManager = new ConfigurationManager(this);
 	protected ResourceResolver resourceResolver = new ResourceResolver();
@@ -81,15 +82,17 @@ public class Router implements Lifecycle, ApplicationContextAware {
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
 	
 	private boolean running;
-	private boolean autowired;
 
 	public Router() {
 		ruleManager.setRouter(this);
 	}
+
+	public Collection<Rule> getRules() {
+		return getRuleManager().getRulesBySource(RuleDefinitionSource.SPRING);
+	}
 	
-	@Autowired(required=false)
-	public void setServiceProxies(Collection<Rule> proxies) {
-		autowired = true;
+	@MCChildElement(order=3)
+	public void setRules(Collection<Rule> proxies) {
 		for (Rule rule : proxies)
 			getRuleManager().addProxy(rule, RuleDefinitionSource.SPRING);
 	}
@@ -148,7 +151,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		return transport;
 	}
 
-	@MCAttribute
+	@MCChildElement(order=1)
 	public void setTransport(Transport transport) {
 		this.transport = transport;
 	}
@@ -208,8 +211,14 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	@Override
 	public void start() {
 		try {
-			if (!autowired)
-				setServiceProxies(beanFactory.getBeansOfType(Rule.class).values());
+			if (beanFactory.getBeansOfType(Rule.class).values().size() > 0)
+				throw new RuntimeException("unclaimed rule detected. - please migrate to 4.0");
+			if (transport == null && beanFactory.getBeansOfType(Transport.class).values().size() > 0)
+				throw new RuntimeException("unclaimed transport detected. - please migrate to 4.0");
+			if (exchangeStore == null)
+				exchangeStore = new LimitedMemoryExchangeStore();
+			if (transport == null)
+				transport = new HttpTransport();
 			init();
 			getRuleManager().openPorts();
 		} catch (Exception e) {

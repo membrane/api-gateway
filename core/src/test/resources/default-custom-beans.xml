@@ -13,12 +13,6 @@
 
 	<router />
  
-	<transport coreThreadPoolSize="20">
-		<ruleMatching />
-		<dispatching />
-		<httpClient />
-	</transport>
-
 	<counter id="counter" name="Counter 2" />
 	<forgetfulExchangeStore id="forgetfulExchangeStore" />
 	
