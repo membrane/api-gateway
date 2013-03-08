@@ -49,6 +49,11 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 		name = "Exchange Store Interceptor";
 	}
 	
+	public ExchangeStoreInterceptor(ExchangeStore exchangeStore) {
+		this();
+		setExchangeStore(exchangeStore);
+	}
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;

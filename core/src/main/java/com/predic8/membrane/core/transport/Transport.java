@@ -22,7 +22,13 @@ import java.util.Vector;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
+import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
+import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.RuleMatchingInterceptor;
+import com.predic8.membrane.core.interceptor.UserFeatureInterceptor;
+import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptor;
 import com.predic8.membrane.core.model.IPortChangeListener;
 
 public abstract class Transport {
@@ -45,6 +51,16 @@ public abstract class Transport {
 
 	public void init(Router router) throws Exception {
 		this.router = router;
+		
+		if (interceptors.size() == 0) {
+			interceptors.add(new RuleMatchingInterceptor());
+			interceptors.add(new ExchangeStoreInterceptor(router.getExchangeStore()));
+			interceptors.add(new DispatchingInterceptor());
+			interceptors.add(new ReverseProxyingInterceptor());
+			interceptors.add(new UserFeatureInterceptor());
+			interceptors.add(new HTTPClientInterceptor());
+		}
+		
 		for (Interceptor interceptor : interceptors) {
 			interceptor.init(router);
 		}
