@@ -39,7 +39,7 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
 		copyDerbyJarToMembraneLib();
 		
 		File baseDir = getExampleDir("logging-jdbc");
-		File beansConfig = new File(baseDir, "jdbc-beans.xml");
+		File beansConfig = new File(baseDir, "proxies.xml");
 		FileUtils.writeStringToFile(beansConfig, FileUtils.readFileToString(beansConfig).
 				replace("org.apache.derby.jdbc.ClientDriver", "org.apache.derby.jdbc.EmbeddedDriver").
 				replace("jdbc:derby://localhost:1527/membranedb;create=true", "jdbc:derby:derbyDB;create=true")

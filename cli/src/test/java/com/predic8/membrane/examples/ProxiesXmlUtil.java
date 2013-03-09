@@ -38,7 +38,7 @@ public class ProxiesXmlUtil {
 	}
 	
 	public void updateWith(String proxiesXmlContent, Process2 sl) throws IOException {
-		SubstringWaitableConsoleEvent reloaded = new SubstringWaitableConsoleEvent(sl, "replaced PROXIES.");
+		SubstringWaitableConsoleEvent reloaded = new SubstringWaitableConsoleEvent(sl, "Spring Hot Deployment Thread started.");
 		FileUtils.writeStringToFile(proxiesXml, proxiesXmlContent);
 		reloaded.waitFor(10000);
 	}

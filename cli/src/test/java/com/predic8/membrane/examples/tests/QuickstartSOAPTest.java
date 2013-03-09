@@ -38,9 +38,13 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 		try {
 			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "proxies.xml"));
 			pxu.updateWith(
-					"<proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
-					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
+					"	xmlns:spring=\"http://www.springframework.org/schema/beans\"\r\n" + 
+					"	xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"	xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd\r\n" + 
+					"					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"\r\n" + 
+					"	<router>\r\n" +
 					"	\r\n" + 
 					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
 					"		<path>/MyBLZService</path>\r\n" + 
@@ -53,7 +57,8 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"		<adminConsole />\r\n" + 
 					"	</serviceProxy>\r\n" + 
 					"	\r\n" + 
-					"</proxies>", sl);
+					"	</router>\r\n" +
+					"</spring:beans>", sl);
 			
 			String endpoint = "http://localhost:2000/MyBLZService";
 			String result = getAndAssert200(endpoint + "?wsdl");
@@ -88,11 +93,17 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 			
 			result = postAndAssert(500, endpoint, invalidRequest);
 			assertContains(".java:", result);
+			
+			AssertUtils.closeConnections();
 
 			pxu.updateWith(
-					"<proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
-					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
+					"	xmlns:spring=\"http://www.springframework.org/schema/beans\"\r\n" + 
+					"	xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"	xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd\r\n" + 
+					"					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"\r\n" + 
+					"	<router>\r\n" +
 					"	\r\n" + 
 					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
 					"		<path>/MyBLZService</path>\r\n" + 
@@ -106,15 +117,22 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"		<adminConsole />\r\n" + 
 					"	</serviceProxy>\r\n" + 
 					"	\r\n" + 
-					"</proxies>", sl);
+					"	</router>\r\n" +
+					"</spring:beans>", sl);
 			
 			result = postAndAssert(500, endpoint, invalidRequest);
 			assertContainsNot(".java:", result);
 			
+			AssertUtils.closeConnections();
+			
 			pxu.updateWith(
-					"<proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
-					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
+					"	xmlns:spring=\"http://www.springframework.org/schema/beans\"\r\n" + 
+					"	xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"	xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd\r\n" + 
+					"					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"\r\n" + 
+					"	<router>\r\n" +
 					"	\r\n" + 
 					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
 					"		<path>/MyBLZService</path>\r\n" + 
@@ -129,7 +147,8 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"		<adminConsole />\r\n" + 
 					"	</serviceProxy>\r\n" + 
 					"	\r\n" + 
-					"</proxies>", sl);
+					"	</router>\r\n" +
+					"</spring:beans>", sl);
 			
 			result = postAndAssert(400, endpoint, invalidRequest);
 			assertContains("Validation failed", result);
@@ -142,11 +161,17 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 			
 			result = getAndAssert200(endpoint + "/operation/BLZServiceSOAP11Binding/BLZServicePortType/getBank");
 			assertContains("blz&gt;?XXX?", result);
+			
+			AssertUtils.closeConnections();
 
 			pxu.updateWith(
-					"<proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
-					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
+					"	xmlns:spring=\"http://www.springframework.org/schema/beans\"\r\n" + 
+					"	xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"	xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd\r\n" + 
+					"					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"\r\n" + 
+					"	<router>\r\n" +
 					"	\r\n" + 
 					"	<soapProxy port=\"2000\" wsdl=\"http://www.thomas-bayer.com/axis2/services/BLZService?wsdl\">\r\n" + 
 					"		<path>/MyBLZService</path>\r\n" + 
@@ -165,7 +190,8 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 					"		<index />\r\n" + 
 					"	</serviceProxy>\r\n" + 
 					"	\r\n" + 
-					"</proxies>", sl);
+					"	</router>\r\n" +
+					"</spring:beans>", sl);
 
 			result = getAndAssert200("http://localhost:2000");
 			assertContains("/MyBLZService", result);

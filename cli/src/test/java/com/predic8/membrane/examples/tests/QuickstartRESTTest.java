@@ -38,11 +38,17 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 		try {
 			String result = getAndAssert200("http://localhost:2000/restnames/name.groovy?name=Pia");
 			assertContains("Italy", result);
+			AssertUtils.closeConnections();
 
 			new ProxiesXmlUtil(new File(baseDir, "proxies.xml")).updateWith(
-					"     <proxies xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
-					"		 xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
-					"      	 xsi:schemaLocation=\"http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" + 
+					"	xmlns:spring=\"http://www.springframework.org/schema/beans\"\r\n" + 
+					"	xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" + 
+					"	xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd\r\n" + 
+					"					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" + 
+					"\r\n" + 
+					"	<router>\r\n" +
+					"\r\n" + 
 					"       <serviceProxy name=\"names\" port=\"2000\">\r\n" + 
 					"         <path isRegExp=\"true\">/(rest)?names.*</path>\r\n" + 
 					"         <request>\r\n" + 
@@ -64,7 +70,8 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 					"         </basicAuthentication>			\r\n" + 
 					"         <adminConsole />\r\n" + 
 					"       </serviceProxy>	\r\n" + 
-					"     </proxies>", sl);
+					"     </router>\r\n" +
+					"</spring:beans>", sl);
 			
 			result = getAndAssert200("http://localhost:2000/names/Pia");
 			assertContains("Italy, Spain", result);
