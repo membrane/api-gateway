@@ -27,7 +27,6 @@ import java.util.concurrent.Future;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,34 +98,15 @@ public class MembraneApplicationContext {
 		initializingRouter = executor.submit(new Callable<Router>() {
 			public Router call() throws Exception {
 				try {
-					String monitorBeansResource;
-					ClassLoader classLoader;
-
-					if (hasMonitorBeans(context.getBundle())) {
-						logger.warn("using provided monitor-beans.xml");
-						monitorBeansResource = "classpath:/META-INF/membrane/monitor-beans.xml";
-						classLoader = new OverlayClassLoader(new BundleClassLoader(context.getBundle()), getClass().getClassLoader());
-					} else {
-						logger.warn("using default monitor-beans.xml");
-						monitorBeansResource = "classpath:/com/predic8/membrane/osgi/extender/monitor-beans.xml";
-						classLoader = getClass().getClassLoader();
-					}
+					ClassLoader classLoader = new OverlayClassLoader(new BundleClassLoader(context.getBundle()), getClass().getClassLoader());
 					
-					Router router = Router.init(monitorBeansResource, classLoader);
+					Router router = Router.init(proxiesConfigurationURL, classLoader);
 					router.setResourceResolver(new BundleResolver());
-					router.getConfigurationManager().loadConfiguration(proxiesConfigurationURL);
 					return router;
 				} catch (Exception e) {
 					logger.error("loading proxies configuratio", e);
 					throw e;
 				}
-			}
-
-			private boolean hasMonitorBeans(Bundle bundle) {
-				Enumeration<?> e = bundle.findEntries(CONTEXT_DIR, "monitor-beans.xml", false);
-				if (e == null)
-					return false;
-				return e.hasMoreElements();
 			}
 		});
 	}

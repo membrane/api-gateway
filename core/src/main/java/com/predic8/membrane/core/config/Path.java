@@ -67,7 +67,7 @@ public class Path extends AbstractConfigElement {
 		return regExp;
 	}
 
-	@MCAttribute
+	@MCAttribute(attributeName="isRegExp")
 	public void setRegExp(boolean regExp) {
 		this.regExp = regExp;
 	}

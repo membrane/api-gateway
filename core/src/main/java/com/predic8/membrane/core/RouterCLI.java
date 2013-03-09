@@ -14,8 +14,6 @@
 
 package com.predic8.membrane.core;
 
-import com.predic8.membrane.core.config.ConfigurationException;
-import com.predic8.membrane.core.transport.PortOccupiedException;
 
 public class RouterCLI {
 
@@ -29,17 +27,7 @@ public class RouterCLI {
 				return;
 			}
 
-			Router.init(getConfigFile(cl), RouterCLI.class.getClassLoader()).getConfigurationManager().loadConfiguration(getRulesFile(cl));
-		} catch (ClassNotFoundException e) {
-		
-			e.printStackTrace();
-			
-		} catch (PortOccupiedException e) { 
-			System.err.println(e.getMessage());
-			System.exit(1);
-		} catch (ConfigurationException e) {
-			System.err.println(e.getMessage());
-			System.exit(1);
+			Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml exists");
@@ -64,13 +52,6 @@ public class RouterCLI {
 		} else {
 			return System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "proxies.xml";
 		}
-	}
-
-	private static String getConfigFile(MembraneCommandLine line) {
-		if (line.hasMonitorBeans()) {
-			return "file:" + line.getMonitorBeans();
-		}
-		return "file:" + System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf"  + System.getProperty("file.separator") + "monitor-beans.xml";
 	}
 
 }

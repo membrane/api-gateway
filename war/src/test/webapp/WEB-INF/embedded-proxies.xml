@@ -3,36 +3,61 @@
 	
 	Here you can configure routing rules for Membrane Monitor and Router. It contains some rules to show how to setup routing. Please make sure to remove these rules before you put the router into production. More sample configurations you can find in the examples directory.  
 -->
-<proxies xmlns="http://membrane-soa.org/proxies/1/"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:web="http://membrane-soa.org/war/1/"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd
+					    http://membrane-soa.org/war/1/ http://membrane-soa.org/schemas/war-1.xsd">
       	 
 	<!--
 		This is the configuration using web server embedding (see web.xml).
 		It uses the web server's connectors (see configuration of the web server) and configured paths (see web.xml).
 	-->
-      	 
-    <serviceProxy port="12345">
-    	<path isRegExp="true">^/admin.*</path>
-    	<basicAuthentication>
-			<user name="admin" password="membrane" />
-		</basicAuthentication>	
-		<adminConsole />
-    </serviceProxy>
-    
-    <serviceProxy>
-    	<path isRegExp="true">/wsdlPublisher/.*</path>
-    	<wsdlPublisher wsdl="/WEB-INF/ArticleService.wsdl" />
-    </serviceProxy>
+	
+	<router hotDeploy="false">
 
-    <serviceProxy>
-    	<path isRegExp="true">.*wsdl</path>
-    	<wsdlRewriter/>
-    	<target host="localhost" port="3025" />
-    </serviceProxy>
+		<web:servletTransport id="transport">
+			<headerFilter>
+				<exclude>Connection</exclude>
+				<exclude>Content-Encoding</exclude>
+				<exclude>Content-Length</exclude>
+				<exclude>Content-MD5</exclude>
+				<exclude>Server</exclude>
+				<exclude>Transfer-Encoding</exclude>
+				<exclude>X-Powered-By</exclude>
+			</headerFilter>
+			<ruleMatching />
+			<dispatching />
+			<userFeature />
+			<httpClient />
+		</web:servletTransport>
+		
+	      	 
+	    <serviceProxy port="12345">
+	    	<path isRegExp="true">^/admin.*</path>
+	    	<basicAuthentication>
+				<user name="admin" password="membrane" />
+			</basicAuthentication>	
+			<adminConsole />
+	    </serviceProxy>
+	    
+	    <serviceProxy>
+	    	<path isRegExp="true">/wsdlPublisher/.*</path>
+	    	<wsdlPublisher wsdl="/WEB-INF/ArticleService.wsdl" />
+	    </serviceProxy>
+	
+	    <serviceProxy>
+	    	<path isRegExp="true">.*wsdl</path>
+	    	<wsdlRewriter/>
+	    	<target host="localhost" port="3025" />
+	    </serviceProxy>
+	
+		<serviceProxy>
+			<target host="localhost" port="3025" />
+		</serviceProxy>
+		
+	</router>
 
-	<serviceProxy>
-		<target host="localhost" port="3025" />
-	</serviceProxy>	
-
-</proxies>
+</spring:beans>

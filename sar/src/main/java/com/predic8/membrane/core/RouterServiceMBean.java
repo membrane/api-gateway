@@ -19,6 +19,4 @@ public interface RouterServiceMBean {
     public void stop() throws Exception;
 	public void setProxiesXml(String proxiesXml);
 	public String getProxiesXml();
-	public void setMonitorBeansXml(String monitorBeansXml);
-	public String getMonitorBeansXml();
 }

@@ -14,37 +14,35 @@
 
 package com.predic8.membrane.servlet;
 
+import java.util.Collection;
+
 import javax.servlet.ServletContext;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.AbstractRefreshableConfigApplicationContext;
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
-import com.predic8.membrane.core.ConfigurationManager;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.servlet.embedded.ServletTransport;
 
 public class RouterUtil {
-	public static Router initializeRouterFromSpringWebContext(XmlWebApplicationContext appCtx, final ServletContext ctx, String configLocation) {
+	public static Router initializeRoutersFromSpringWebContext(XmlWebApplicationContext appCtx, final ServletContext ctx, String configLocation) {
 		appCtx.setServletContext(ctx);
 		appCtx.setConfigLocation(configLocation);
 		appCtx.refresh();
 
-		Router router = (Router) appCtx.getBean("router");
-		router.setResourceResolver(new WebAppResolver(ctx));
-		router.setConfigurationManager(new ConfigurationManager(router) {
-			@Override
-			protected AbstractRefreshableConfigApplicationContext createChildContext(String fileName,
-					ApplicationContext parentApplicationContext) {
-				XmlWebApplicationContext ac = new XmlWebApplicationContext();
-				ac.setServletContext(ctx);
-				ac.setParent(parentApplicationContext);
-				ac.setConfigLocation(fileName);
-				return ac;
+		Collection<Router> routers = appCtx.getBeansOfType(Router.class).values();
+		Router theOne = null;
+		for (Router r : routers) {
+			r.setResourceResolver(new WebAppResolver(ctx));
+			if (r.getTransport() instanceof ServletTransport) {
+				if (theOne != null)
+					throw new RuntimeException("Only one <router> may have a <servletTransport> defined.");
+				theOne = r;
 			}
-		});
+		}
 		
 		appCtx.start();
-		return router;
+		
+		return theOne;
 	}
 
 }

@@ -4,10 +4,6 @@
     <!-- This is the web.xml for the integration tests. Jetty is configured to use it with <overrideWebXml> in pom.xml . -->
     
     <context-param>
-        <param-name>contextConfigLocation</param-name>
-        <param-value>/WEB-INF/monitor-beans.xml</param-value>
-    </context-param>
-    <context-param>
         <param-name>proxiesXml</param-name>
         <param-value>/WEB-INF/proxies.xml</param-value>
     </context-param>
@@ -20,10 +16,6 @@
     <servlet>
     	<servlet-name>membrane</servlet-name>
     	<servlet-class>com.predic8.membrane.servlet.embedded.MembraneServlet</servlet-class>
-    	<init-param>
-    		<param-name>contextConfigLocation</param-name>
-    		<param-value>/WEB-INF/embedded-monitor-beans.xml</param-value>
-    	</init-param>
     	<init-param>
     		<param-name>proxiesXml</param-name>
     		<param-value>/WEB-INF/embedded-proxies.xml</param-value>

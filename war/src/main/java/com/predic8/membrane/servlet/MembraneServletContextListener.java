@@ -28,20 +28,18 @@ public class MembraneServletContextListener implements ServletContextListener {
 
 	private static Log log = LogFactory.getLog(MembraneServletContextListener.class);
 
-	private Router router;
 	private XmlWebApplicationContext appCtx;
 	
 	public void contextInitialized(ServletContextEvent sce) {
 		try {
 			log.info(Constants.PRODUCT_NAME + " starting...");
 
-			log.debug("loading beans configuration from: " + getContextConfigLocation(sce));
+			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(sce));
 			
 			appCtx = new XmlWebApplicationContext();
-			router = RouterUtil.initializeRouterFromSpringWebContext(appCtx, sce.getServletContext(), getContextConfigLocation(sce));
-
-			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(sce));
-			router.getConfigurationManager().loadConfiguration(getProxiesXmlLocation(sce));
+			Router router = RouterUtil.initializeRoutersFromSpringWebContext(appCtx, sce.getServletContext(), getProxiesXmlLocation(sce));
+			if (router != null)
+				throw new RuntimeException("A <router> with a <servletTransport> cannot be used with MembraneServletContextListener. Use MembraneServlet instead.");
 
 			log.info(Constants.PRODUCT_NAME + " running.");
 		} catch (Exception ex) {
@@ -56,10 +54,6 @@ public class MembraneServletContextListener implements ServletContextListener {
 		} catch (Exception ex) {
 			log.warn("Failed to shutdown router!", ex);
 		}
-	}
-
-	private String getContextConfigLocation(ServletContextEvent sce) {
-		return sce.getServletContext().getInitParameter("contextConfigLocation");
 	}
 
 	private String getProxiesXmlLocation(ServletContextEvent sce) {

@@ -12,9 +12,13 @@
 	See the reference at:
 	http://membrane-soa.org/esb-doc/current/configuration/reference/ .  
 -->
-<proxies xmlns="http://membrane-soa.org/proxies/1/"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:web="http://membrane-soa.org/war/1/"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd
+					    http://membrane-soa.org/war/1/ http://membrane-soa.org/schemas/war-1.xsd">
       	 
 	<!--
 		This is the configuration using Application Server embedding (see web.xml).
@@ -22,18 +26,41 @@
 		server) and configured paths (see web.xml).
 	-->
 
-	<!-- Sets up the Administration Web Interface below "/admin". -->
-    <serviceProxy>
-    	<path isRegExp="true">^/admin.*</path>
-    	<basicAuthentication>
-			<user name="admin" password="membrane" />
-		</basicAuthentication>	
-		<adminConsole />
-    </serviceProxy>
-      	
-    <!-- Forwards all other requests to www.predic8.com. --> 
-	<serviceProxy>
-		<target host="www.predic8.com" />
-	</serviceProxy>	
+	<router hotDeploy="false" exchangeStore="memoryExchangeStore">
 
-</proxies>
+		<web:servletTransport id="transport">
+			<headerFilter>
+				<exclude>Connection</exclude>
+				<exclude>Content-Encoding</exclude>
+				<exclude>Content-Length</exclude>
+				<exclude>Content-MD5</exclude>
+				<exclude>Server</exclude>
+				<exclude>Transfer-Encoding</exclude>
+				<exclude>X-Powered-By</exclude>
+			</headerFilter>
+			<ruleMatching />
+			<exchangeStore name="memoryExchangeStore" />
+			<dispatching />
+			<reverseProxying />
+			<userFeature />
+			<httpClient />
+		</web:servletTransport>
+	
+	
+		<!-- Sets up the Administration Web Interface below "/admin". -->
+	    <serviceProxy>
+	    	<path isRegExp="true">^/admin.*</path>
+	    	<basicAuthentication>
+				<user name="admin" password="membrane" />
+			</basicAuthentication>	
+			<adminConsole />
+	    </serviceProxy>
+	      	
+	    <!-- Forwards all other requests to www.predic8.com. --> 
+		<serviceProxy>
+			<target host="www.predic8.com" />
+		</serviceProxy>
+	
+	</router>
+
+</spring:beans>

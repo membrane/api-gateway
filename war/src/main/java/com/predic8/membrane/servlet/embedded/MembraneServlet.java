@@ -44,11 +44,10 @@ public class MembraneServlet extends HttpServlet {
 		try {
 			appCtx = new XmlWebApplicationContext();
 			
-			log.debug("loading beans configuration from: " + getContextConfigLocation(config));
-			router = RouterUtil.initializeRouterFromSpringWebContext(appCtx, config.getServletContext(), getContextConfigLocation(config));
-
-			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(config));
-			router.getConfigurationManager().loadConfiguration(getProxiesXmlLocation(config));
+			log.debug("loading beans configuration from: " + getProxiesXmlLocation(config));
+			router = RouterUtil.initializeRoutersFromSpringWebContext(appCtx, config.getServletContext(), getProxiesXmlLocation(config));
+			if (router == null)
+				throw new RuntimeException("No <router> with a <servletTransport> was found. To use <router> with <transport>, use MembraneServletContextListener instead of MembraneServlet.");
 
 		} catch (Exception e) {
 			throw new ServletException(e);
@@ -60,10 +59,6 @@ public class MembraneServlet extends HttpServlet {
 		appCtx.stop();
 	}
 	
-	private String getContextConfigLocation(ServletConfig config) {
-		return config.getInitParameter("contextConfigLocation");
-	}
-
 	private String getProxiesXmlLocation(ServletConfig config) {
 		return config.getInitParameter("proxiesXml");
 	}

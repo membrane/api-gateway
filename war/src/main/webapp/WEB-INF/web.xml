@@ -19,10 +19,6 @@
     	<servlet-name>membrane</servlet-name>
     	<servlet-class>com.predic8.membrane.servlet.embedded.MembraneServlet</servlet-class>
     	<init-param>
-    		<param-name>contextConfigLocation</param-name>
-    		<param-value>/WEB-INF/monitor-beans.xml</param-value>
-    	</init-param>
-    	<init-param>
     		<param-name>proxiesXml</param-name>
     		<param-value>/WEB-INF/proxies.xml</param-value>
     	</init-param>

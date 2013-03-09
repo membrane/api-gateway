@@ -1,46 +1,56 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License. */
-
 package com.predic8.membrane.core;
 
 import java.io.File;
-import javax.xml.stream.XMLStreamException;
-import org.apache.commons.logging.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.predic8.membrane.core.config.ConfigurationException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 public class HotDeploymentThread extends Thread {
 
 	private static Log log = LogFactory.getLog(HotDeploymentThread.class.getName());
 
-	private Router router;
-	private String proxiesFile;
-	private long lastModified;
-
-	public HotDeploymentThread(Router router) {
-		super("Membrane Hot Deployment Thread");
-		this.router = router;
+	private List<HotDeploymentThread.FileInfo> files = new ArrayList<HotDeploymentThread.FileInfo>();
+	
+	private static class FileInfo {
+		public String file;
+		public long lastModified;
 	}
 
-	public void setProxiesFile(String proxiesFile) {
-		this.proxiesFile = proxiesFile;
-		lastModified = new File(proxiesFile).lastModified();
+	protected AbstractRefreshableApplicationContext applicationContext;
+
+	public HotDeploymentThread(AbstractRefreshableApplicationContext applicationContext) {
+		super("Membrane Hot Deployment Thread");
+		this.applicationContext = applicationContext;
+	}
+
+	public void setFiles(List<File> files) {
+		this.files.clear();
+		for (File file : files) {
+			HotDeploymentThread.FileInfo fi = new FileInfo();
+			fi.file = file.getAbsolutePath();
+			this.files.add(fi);
+		}
+		updateLastModified();
+	}
+
+	private void updateLastModified() {
+		for (HotDeploymentThread.FileInfo fi : files)
+			fi.lastModified = new File(fi.file).lastModified();
+	}
+
+	private boolean configurationChanged() {
+		for (HotDeploymentThread.FileInfo fi : files)
+			if (new File(fi.file).lastModified() > fi.lastModified)
+				return true;
+		return false;
 	}
 
 	@Override
 	public void run() {
-		log.debug("Hot Deployment Thread started.");
+		log.debug("Spring Hot Deployment Thread started.");
 		OUTER:
 		while (!isInterrupted()) {
 			try {
@@ -49,30 +59,24 @@ public class HotDeploymentThread extends Thread {
 					if (isInterrupted())
 						break OUTER;
 				}
-				
 
-				log.debug("configuration changed. Reloading from " + proxiesFile);
+				log.debug("spring configuration changed.");
 
-				router.shutdownNoWait();
-				router.getConfigurationManager().loadConfiguration(proxiesFile);
-				log.info(proxiesFile + " was reloaded.");
-			} catch (ConfigurationException e) {
-				log.error("Could not redeploy " + proxiesFile + ": " + e.getMessage());
-				lastModified = new File(proxiesFile).lastModified();
-			} catch (XMLStreamException e) {
-				log.error("Could not redeploy " + proxiesFile + ": " + e.getMessage());
-				lastModified = new File(proxiesFile).lastModified();
+				reload();
+
+				updateLastModified();
 			} catch (InterruptedException e) {				
 			} catch (Exception e) {
-				log.error("Could not redeploy " + proxiesFile, e);
-				lastModified = new File(proxiesFile).lastModified();
+				log.error("Could not redeploy.", e);
+				updateLastModified();
 			}
 		}
-		log.debug("Hot Deployment Thread interrupted.");
+		log.debug("Spring Hot Deployment Thread interrupted.");
 	}
 
-	private boolean configurationChanged() {
-		return new File(proxiesFile).lastModified() > lastModified;
+	protected void reload() throws Exception {
+		applicationContext.stop();
+		applicationContext.refresh();
+		applicationContext.start();
 	}
-
 }

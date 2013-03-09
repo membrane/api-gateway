@@ -29,6 +29,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
+import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -60,12 +61,13 @@ public class Router extends AbstractConfigElement implements Lifecycle, Applicat
 	protected RuleManager ruleManager = new RuleManager();
 	protected ExchangeStore exchangeStore;
 	protected Transport transport;
-	protected ConfigurationManager configurationManager = new ConfigurationManager(this);
 	protected ResourceResolver resourceResolver = new ResourceResolver();
 	protected DNSCache dnsCache = new DNSCache();
 	protected ExecutorService backgroundInitializator = 
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
+	protected HotDeploymentThread hdt;
 	
+	private boolean hotDeploy = true;
 	private boolean running;
 
 	public Router() {
@@ -104,14 +106,6 @@ public class Router extends AbstractConfigElement implements Lifecycle, Applicat
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		beanFactory = applicationContext;
-		configurationManager.setApplicationContext(applicationContext); // hack until ConfigurationManager lifecycle is managed by Spring
-	}
-	
-	public void setConfigurationManager(ConfigurationManager configurationManager) {
-		boolean hotDeploy = this.configurationManager.isHotDeploy();
-		this.configurationManager = configurationManager;
-		configurationManager.setApplicationContext(beanFactory);
-		configurationManager.setHotDeploy(hotDeploy);
 	}
 	
 	public RuleManager getRuleManager() {
@@ -136,13 +130,9 @@ public class Router extends AbstractConfigElement implements Lifecycle, Applicat
 		return transport;
 	}
 
-	@MCChildElement(order=1)
+	@MCChildElement(order=1, allowForeign=true)
 	public void setTransport(Transport transport) {
 		this.transport = transport;
-	}
-
-	public ConfigurationManager getConfigurationManager() {
-		return configurationManager;
 	}
 
 	public DNSCache getDnsCache() {
@@ -171,6 +161,7 @@ public class Router extends AbstractConfigElement implements Lifecycle, Applicat
 	 * Closes all ports (if any were opened), but does not wait for running exchanges to complete.
 	 */
 	public void shutdownNoWait() throws IOException {
+		backgroundInitializator.shutdown();
 		getTransport().closeAll(false);
 	}
 	
@@ -209,16 +200,44 @@ public class Router extends AbstractConfigElement implements Lifecycle, Applicat
 				transport = new HttpTransport();
 			init();
 			getRuleManager().openPorts();
+
+			try {
+				if (hotDeploy)
+					startHotDeployment();
+			} catch (Exception e) {
+				shutdownNoWait();
+				throw e;
+			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 		running = true;
 	}
 
+	private void startHotDeployment() {
+		if (hdt != null)
+			throw new IllegalStateException("Hot deployment already started.");
+		if (!(beanFactory instanceof TrackingApplicationContext))
+			throw new RuntimeException("ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy=\"false\">.");
+		if (!(beanFactory instanceof AbstractRefreshableApplicationContext))
+			throw new RuntimeException("ApplicationContext is not a AbstractRefreshableApplicationContext. Please set <router hotDeploy=\"false\">.");
+		hdt = new HotDeploymentThread((AbstractRefreshableApplicationContext) beanFactory);
+		hdt.setFiles(((TrackingApplicationContext) beanFactory).getFiles());
+		hdt.start();
+	}
+
+	private void stopHotDeployment() {
+		if (hdt != null) {
+			hdt.interrupt();
+			hdt = null;
+		}
+	}
+	
 	@Override
 	public void stop() {
 		try {
-			configurationManager.stopHotDeployment();
+			if (hdt != null)
+				stopHotDeployment();
 			shutdown();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -233,11 +252,17 @@ public class Router extends AbstractConfigElement implements Lifecycle, Applicat
 	
 	@MCAttribute
 	public void setHotDeploy(boolean hotDeploy) {
-		getConfigurationManager().setHotDeploy(hotDeploy);
+		if (running) {
+			if (this.hotDeploy && !hotDeploy)
+				stopHotDeployment();
+			if (!this.hotDeploy && hotDeploy)
+				startHotDeployment();
+		}
+		this.hotDeploy = hotDeploy;
 	}
 	
 	public boolean isHotDeploy() {
-		return getConfigurationManager().isHotDeploy();
+		return hotDeploy;
 	}
 	
 	@Override

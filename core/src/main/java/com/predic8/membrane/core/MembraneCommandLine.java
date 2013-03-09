@@ -28,19 +28,10 @@ public class MembraneCommandLine {
 		System.out.println("-h Help content for router.");
 		System.out.println("--help 'Help content for router.");
 		System.out.println("-c 'configurationFileName'");
-		System.out.println("-b 'springConfigurationFileName'.");		
 	}
 	
 	public boolean needHelp() {
 		return cl.hasOption('h');
-	}
-
-	public boolean hasMonitorBeans() {
-		return cl.hasOption('b');
-	}
-
-	public String getMonitorBeans() {		
-		return cl.getOptionValue('b');
 	}
 
 	public boolean hasConfiguration() {
@@ -55,7 +46,6 @@ public class MembraneCommandLine {
 		Options options = new Options();
 		options.addOption("h", "help", false, "Help content for router.");
 		options.addOption("c", "config", true, "configuration file name.");
-		options.addOption("b", "beans", true, "spring configuration file name.");
 		return options;
 	}
 

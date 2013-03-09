@@ -22,12 +22,10 @@ public class RouterService implements RouterServiceMBean {
 
 	Router router;
 	
-	private String monitorBeansXml="classpath:/META-INF/monitor-beans.xml";
-	private String proxiesXml="classpath:/META-INF/proxies.xml";
+	private String proxiesXml = "classpath:/META-INF/proxies.xml";
 	
     public void start() throws Exception {
-    	router = Router.init(monitorBeansXml);
-		router.getConfigurationManager().loadConfiguration(proxiesXml);
+    	router = Router.init(proxiesXml);
         log.info(Constants.PRODUCT_NAME + " started");
     }
 
@@ -35,14 +33,6 @@ public class RouterService implements RouterServiceMBean {
         router.shutdown();
         log.info(Constants.PRODUCT_NAME + " stopped");
     }
-
-	public String getMonitorBeansXml() {
-		return monitorBeansXml;
-	}
-
-	public void setMonitorBeansXml(String monitorBeansXml) {
-		this.monitorBeansXml = monitorBeansXml;
-	}
 
 	public String getProxiesXml() {
 		return proxiesXml;

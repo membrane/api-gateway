@@ -50,7 +50,6 @@ public class CustomSpringConfigurationTest {
 		assertNotNull(router);
 		assertTrue(router.getExchangeStore().getClass().getName()
 				.endsWith("MemoryExchangeStore"));
-		assertTrue(router == router.getConfigurationManager().getRouter());
 
 		List<Interceptor> inters = router.getTransport().getInterceptors();
 
