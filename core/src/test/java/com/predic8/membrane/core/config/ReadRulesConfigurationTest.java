@@ -23,10 +23,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 
 public class ReadRulesConfigurationTest {
 
@@ -36,8 +35,7 @@ public class ReadRulesConfigurationTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		router = new HttpRouter();
-		router.getConfigurationManager().loadConfiguration("src/test/resources/proxies.xml");
+		router = Router.init("src/test/resources/proxies.xml");
 		rules = router.getRuleManager().getRules();
 	}
 	

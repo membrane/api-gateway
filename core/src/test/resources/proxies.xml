@@ -1,16 +1,20 @@
-<proxies xmlns="http://membrane-soa.org/proxies/1/"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-	<proxy name="HTTP proxy" port="3090" blockRequest="true"
-		blockResponse="false" />
-	<serviceProxy name="thomas-bayer.com" port="3000"
-		blockRequest="false" blockResponse="true">
-		<target host="thomas-bayer.com" port="80" />
-	</serviceProxy>
-	<serviceProxy name="localhost" port="2000"
-		method="GET" blockRequest="false" blockResponse="false" host="localhost">
-		<target host="localhost" port="3011" />
-	</serviceProxy>
-	
-</proxies>
+	<router>
+		<proxy name="HTTP proxy" port="3090" blockRequest="true"
+			blockResponse="false" />
+		<serviceProxy name="thomas-bayer.com" port="3000"
+			blockRequest="false" blockResponse="true">
+			<target host="thomas-bayer.com" port="80" />
+		</serviceProxy>
+		<serviceProxy name="localhost" port="2000"
+			method="GET" blockRequest="false" blockResponse="false" host="localhost">
+			<target host="localhost" port="3011" />
+		</serviceProxy>
+	</router>
+
+</spring:beans>

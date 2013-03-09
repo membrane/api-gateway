@@ -1,43 +1,113 @@
-<proxies xmlns="http://membrane-soa.org/proxies/1/"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-
-	<serviceProxy name="FullChain0" port="3028">
-		<interceptor refid="Mock1" />
-		<interceptor refid="Mock2" />
-		<target url="service:FullChain1" />
-	</serviceProxy>
-
-	<serviceProxy name="FullChain1" port="3028">
-		<interceptor refid="Mock3" />
-		<interceptor refid="Mock4" />
-		<target url="service:FullChain2" />
-	</serviceProxy>
-
-	<serviceProxy name="FullChain2" port="3028">
-		<interceptor refid="Mock5" />
-		<interceptor refid="Mock6" />
-		<target host="predic8.de" />
-	</serviceProxy>
-
-	<serviceProxy name="ReturnedChain0" port="3029">
-		<interceptor refid="Mock1" />
-		<interceptor refid="Mock2" />
-		<target url="service:ReturnedChain1" />
-	</serviceProxy>
-
-	<serviceProxy name="ReturnedChain1" port="3029">
-		<interceptor refid="Mock3" />
-		<groovy>
-			exc.echo()
-		</groovy>		
-		<interceptor refid="Mock4" />
-		<target url="service:ReturnedChain2" />
-	</serviceProxy>
-
-	<serviceProxy name="ReturnedChain2" port="3029">
-		<interceptor refid="Mock5" />
-		<interceptor refid="Mock6" />
-		<target host="predic8.de" />
-	</serviceProxy>
-</proxies>
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+      	 
+	<spring:bean id="Mock1" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock1</spring:value>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock2" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock2</spring:value>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock3" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock3</spring:value>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock4" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock4</spring:value>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock5" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock5</spring:value>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock6" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock6</spring:value>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock7" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock7</spring:value>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock8FailsInRequest" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock8</spring:value>
+		</spring:constructor-arg>
+		<spring:constructor-arg>
+			<spring:array value-type="java.lang.String" >
+				<spring:value>request</spring:value>
+			</spring:array>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock9FailsInResponse" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock9</spring:value>
+		</spring:constructor-arg>
+		<spring:constructor-arg>
+			<spring:array value-type="java.lang.String" >
+				<spring:value>response</spring:value>
+			</spring:array>
+		</spring:constructor-arg>
+	</spring:bean>
+	<spring:bean id="Mock10FailsInAbort" class="com.predic8.membrane.core.interceptor.MockInterceptor">
+		<spring:constructor-arg>
+			<spring:value>Mock10</spring:value>
+		</spring:constructor-arg>
+		<spring:constructor-arg>
+			<spring:array value-type="java.lang.String" >
+				<spring:value>abort</spring:value>
+			</spring:array>
+		</spring:constructor-arg>
+	</spring:bean>
+      	 
+	<router>
+		<serviceProxy name="FullChain0" port="3028">
+			<interceptor refid="Mock1" />
+			<interceptor refid="Mock2" />
+			<target url="service:FullChain1" />
+		</serviceProxy>
+	
+		<serviceProxy name="FullChain1" port="3028">
+			<interceptor refid="Mock3" />
+			<interceptor refid="Mock4" />
+			<target url="service:FullChain2" />
+		</serviceProxy>
+	
+		<serviceProxy name="FullChain2" port="3028">
+			<interceptor refid="Mock5" />
+			<interceptor refid="Mock6" />
+			<target host="predic8.de" />
+		</serviceProxy>
+	
+		<serviceProxy name="ReturnedChain0" port="3029">
+			<interceptor refid="Mock1" />
+			<interceptor refid="Mock2" />
+			<target url="service:ReturnedChain1" />
+		</serviceProxy>
+	
+		<serviceProxy name="ReturnedChain1" port="3029">
+			<interceptor refid="Mock3" />
+			<groovy>
+				exc.echo()
+			</groovy>		
+			<interceptor refid="Mock4" />
+			<target url="service:ReturnedChain2" />
+		</serviceProxy>
+	
+		<serviceProxy name="ReturnedChain2" port="3029">
+			<interceptor refid="Mock5" />
+			<interceptor refid="Mock6" />
+			<target host="predic8.de" />
+		</serviceProxy>
+	</router>
+</spring:beans>

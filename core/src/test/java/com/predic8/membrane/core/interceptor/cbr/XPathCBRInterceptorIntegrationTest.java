@@ -33,15 +33,16 @@ public class XPathCBRInterceptorIntegrationTest extends TestCase {
 	
 	@Before
 	public void setUp() throws Exception {		
-		router = Router.init("cbr-monitor-beans.xml");
-		router.getConfigurationManager().loadConfiguration("classpath:/cbr.proxies.xml");
+		router = Router.init("classpath:/cbr/cbr.proxies.xml");
 	}
 	
 	@Test
 	public void testRouting() throws Exception {
 		PostMethod post = createPostMethod();
-		new HttpClient().executeMethod(post);
+		HttpClient httpClient = new HttpClient();
+		httpClient.executeMethod(post);
 		System.out.println(post.getResponseBodyAsString());
+		httpClient.getHttpConnectionManager().closeIdleConnections(0);
 	}
 
 	@After
@@ -50,8 +51,8 @@ public class XPathCBRInterceptorIntegrationTest extends TestCase {
 	}
 	
 	private PostMethod createPostMethod() {
-		PostMethod post = new PostMethod("http://localhost:5000/");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/cbr.xml"))); 
+		PostMethod post = new PostMethod("http://localhost:3024/");
+		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/cbr/order.xml"))); 
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
 		return post;

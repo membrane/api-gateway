@@ -35,9 +35,7 @@ public class UserFeatureTest {
 
 	@Before
 	public void setUp() throws Exception {
-		router = Router.init("src/test/resources/userFeature/monitor-beans.xml");
-		router.getConfigurationManager().loadConfiguration(
-				"src/test/resources/userFeature/proxies.xml");
+		router = Router.init("classpath:/userFeature/proxies.xml");
 		MockInterceptor.clear();
 		
 		labels = new ArrayList<String>(Arrays.asList(new String[] { "Mock1", "Mock3", "Mock4", "Mock7" }));
@@ -50,7 +48,9 @@ public class UserFeatureTest {
 	}
 
 	private void callService(String s) throws HttpException, IOException {
-		new HttpClient().executeMethod(new GetMethod("http://localhost:3030/" + s + "/"));
+		HttpClient httpClient = new HttpClient();
+		httpClient.executeMethod(new GetMethod("http://localhost:3030/" + s + "/"));
+		httpClient.getHttpConnectionManager().closeIdleConnections(0);
 	}
 	
 	

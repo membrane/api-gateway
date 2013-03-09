@@ -30,9 +30,7 @@ public class InternalInvocationTest {
 
 	@Before
 	public void setUp() throws Exception {
-		router = Router.init("src/test/resources/userFeature/monitor-beans.xml");
-		router.getConfigurationManager().loadConfiguration(
-				"src/test/resources/internal-invocation/proxies.xml");
+		router = Router.init("classpath:/internal-invocation/proxies.xml");
 		MockInterceptor.clear();
 	}
 

@@ -37,8 +37,7 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		router = Router.init("src/test/resources/monitor-beans.xml");
-		router.getConfigurationManager().loadConfiguration("classpath:/ref.proxies.xml");
+		router = Router.init("src/test/resources/ref.proxies.xml");
 		rules = router.getRuleManager().getRules();
 	}
 

@@ -16,9 +16,7 @@ public class SOAPProxyIntegrationTest {
 
 	@Test
 	public void test() throws Exception {
-		Router router = Router.init("src/test/resources/test-monitor-beans.xml");
-		router.getConfigurationManager().loadConfiguration("src/test/resources/soap-proxy.xml");
-		router.init();
+		Router router = Router.init("classpath:/soap-proxy.xml");
 
 		HttpClient client = new HttpClient();
 		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);

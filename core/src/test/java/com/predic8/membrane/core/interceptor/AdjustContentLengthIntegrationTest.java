@@ -28,10 +28,7 @@ public class AdjustContentLengthIntegrationTest extends TestCase {
 
 	@Before
 	public void setUp() throws Exception {
-		router = Router
-				.init("classpath:/adjustContentLength/monitor-beans.xml");
-		router.getConfigurationManager().loadConfiguration(
-				"classpath:/adjustContentLength/xslt.proxies.xml");
+		router = Router.init("classpath:/adjustContentLength/xslt.proxies.xml");
 	}
 
 	@Test

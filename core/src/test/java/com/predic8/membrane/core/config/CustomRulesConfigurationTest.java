@@ -32,215 +32,212 @@ public class CustomRulesConfigurationTest {
 
 	@Before
 	public void setUp() throws Exception {
-		router = Router.init("src/test/resources/default-custom-beans.xml");
-		router.getConfigurationManager().loadConfiguration(
-				"src/test/resources/custom-rules.xml");
+		router = Router.init("src/test/resources/custom-rules.xml");
 	}
 
 	@Test
 	public void testRulesConfig() throws Exception {
 		StringWriter w = new StringWriter();
-		router.getConfigurationManager().getProxies()
-				.write(XMLOutputFactory.newInstance().createXMLStreamWriter(w));
-		assertAttribute(w.toString(), "/proxies/serviceProxy/@name",
+		router.write(XMLOutputFactory.newInstance().createXMLStreamWriter(w));
+		assertAttribute(w.toString(), "/router/serviceProxy/@name",
 				"Service Proxy");
-		assertAttribute(w.toString(), "/proxies/serviceProxy/@port", "2001");
+		assertAttribute(w.toString(), "/router/serviceProxy/@port", "2001");
 
-		assertAttribute(w.toString(), "/proxies/serviceProxy/target/@port",
+		assertAttribute(w.toString(), "/router/serviceProxy/target/@port",
 				"88");
-		assertAttribute(w.toString(), "/proxies/serviceProxy/target/@host",
+		assertAttribute(w.toString(), "/router/serviceProxy/target/@host",
 				"www.thomas-bayer.com");
-		assertAttribute(w.toString(), "/proxies/serviceProxy/target/@url",
+		assertAttribute(w.toString(), "/router/serviceProxy/target/@url",
 				"http://predic8.de/membrane.htm");
 
-		assertAttribute(w.toString(), "/proxies/serviceProxy/transform/@xslt",
+		assertAttribute(w.toString(), "/router/serviceProxy/transform/@xslt",
 				"classpath:/strip-soap-envelope.xsl");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/counter/@name", "Node 1");
+				"/router/serviceProxy/request/counter/@name", "Node 1");
 
 		/*
 		 * assertElement(w.toString(),
-		 * "/proxies/serviceProxy/request/adminConsole");
+		 * "/router/serviceProxy/request/adminConsole");
 		 */
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/webServer/@docBase", "docBase");
+				"/router/serviceProxy/request/webServer/@docBase", "docBase");
 
 		assertAttribute(
 				w.toString(),
-				"/proxies/serviceProxy/request/clusterNotification/@validateSignature",
+				"/router/serviceProxy/request/clusterNotification/@validateSignature",
 				"true");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/clusterNotification/@keyHex",
+				"/router/serviceProxy/request/clusterNotification/@keyHex",
 				"6f488a642b740fb70c5250987a284dc0");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/clusterNotification/@timeout",
+				"/router/serviceProxy/request/clusterNotification/@timeout",
 				"5000");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/basicAuthentication/user/@name",
+				"/router/serviceProxy/request/basicAuthentication/user/@name",
 				"admin");
 		assertAttribute(
 				w.toString(),
-				"/proxies/serviceProxy/request/basicAuthentication/user/@password",
+				"/router/serviceProxy/request/basicAuthentication/user/@password",
 				"adminadmin");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/rewriter/map/@from", "^/home");
+				"/router/serviceProxy/request/rewriter/map/@from", "^/home");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/rewriter/map/@to", "/index");
+				"/router/serviceProxy/request/rewriter/map/@to", "/index");
 
 		assertElement(w.toString(),
-				"/proxies/serviceProxy/request/xmlProtection");
+				"/router/serviceProxy/request/xmlProtection");
 
-		assertAttribute(w.toString(), "/proxies/serviceProxy/validator/@wsdl",
+		assertAttribute(w.toString(), "/router/serviceProxy/validator/@wsdl",
 				"http://www.predic8.com:8080/material/ArticleService?wsdl");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/validator/@schema",
+				"/router/serviceProxy/validator/@schema",
 				"http://www.predic8.com:8080/material/ArticleService?xsd=2");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/rest2Soap/mapping/@regex", "/bank/.*");
+				"/router/serviceProxy/rest2Soap/mapping/@regex", "/bank/.*");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/rest2Soap/mapping/@soapAction", "");
+				"/router/serviceProxy/rest2Soap/mapping/@soapAction", "");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/rest2Soap/mapping/@soapURI",
+				"/router/serviceProxy/rest2Soap/mapping/@soapURI",
 				"/axis2/services/BLZService");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/rest2Soap/mapping/@requestXSLT",
+				"/router/serviceProxy/rest2Soap/mapping/@requestXSLT",
 				"request.xsl");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/rest2Soap/mapping/@responseXSLT",
+				"/router/serviceProxy/rest2Soap/mapping/@responseXSLT",
 				"response.xsl");
 
 		assertAttribute(
 				w.toString(),
-				"/proxies/serviceProxy/balancer/xmlSessionIdExtractor/@namespace",
+				"/router/serviceProxy/balancer/xmlSessionIdExtractor/@namespace",
 				"http://chat.predic8.com/");
 		assertAttribute(
 				w.toString(),
-				"/proxies/serviceProxy/balancer/xmlSessionIdExtractor/@localName",
+				"/router/serviceProxy/balancer/xmlSessionIdExtractor/@localName",
 				"session");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/balancer/clusters/cluster/@name",
+				"/router/serviceProxy/balancer/clusters/cluster/@name",
 				"Default");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/balancer/clusters/cluster/node/@host",
+				"/router/serviceProxy/balancer/clusters/cluster/node/@host",
 				"localhost");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/balancer/clusters/cluster/node/@port",
+				"/router/serviceProxy/balancer/clusters/cluster/node/@port",
 				"3011");
 		assertAttribute(
 				w.toString(),
-				"/proxies/serviceProxy/balancer/byThreadStrategy/@maxNumberOfThreadsPerEndpoint",
+				"/router/serviceProxy/balancer/byThreadStrategy/@maxNumberOfThreadsPerEndpoint",
 				"10");
 		assertAttribute(
 				w.toString(),
-				"/proxies/serviceProxy/balancer/byThreadStrategy/@retryTimeOnBusy",
+				"/router/serviceProxy/balancer/byThreadStrategy/@retryTimeOnBusy",
 				"1000");
 
 		assertElement(w.toString(),
-				"/proxies/serviceProxy/balancer/jSessionIdExtractor");
+				"/router/serviceProxy/balancer/jSessionIdExtractor");
 
-		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@headerOnly",
+		assertAttribute(w.toString(), "/router/serviceProxy/log/@headerOnly",
 				"true");
-		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@category",
+		assertAttribute(w.toString(), "/router/serviceProxy/log/@category",
 				"membrane");
-		assertAttribute(w.toString(), "/proxies/serviceProxy/log/@level",
+		assertAttribute(w.toString(), "/router/serviceProxy/log/@level",
 				"INFO");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/response/regExReplacer/@regex", "Hallo");
+				"/router/serviceProxy/response/regExReplacer/@regex", "Hallo");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/response/regExReplacer/@replace",
+				"/router/serviceProxy/response/regExReplacer/@replace",
 				"Hello");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/switch/case/@xPath", "//convert");
+				"/router/serviceProxy/request/switch/case/@xPath", "//convert");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/switch/case/@url",
+				"/router/serviceProxy/request/switch/case/@url",
 				"http://www.thomas-bayer.com/axis2/");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/statisticsCSV/@file", "temp/stat.csv");
+				"/router/serviceProxy/statisticsCSV/@file", "temp/stat.csv");
 
 		assertAttribute(
 				w.toString(),
-				"/proxies/serviceProxy/response/wsdlRewriter/@registryWSDLRegisterURL",
+				"/router/serviceProxy/response/wsdlRewriter/@registryWSDLRegisterURL",
 				"http://predic8.de/register");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/response/wsdlRewriter/@protocol", "http");
+				"/router/serviceProxy/response/wsdlRewriter/@protocol", "http");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/response/wsdlRewriter/@port", "4000");
+				"/router/serviceProxy/response/wsdlRewriter/@port", "4000");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/response/wsdlRewriter/@host",
+				"/router/serviceProxy/response/wsdlRewriter/@host",
 				"localhost");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/response/wadlRewriter/@protocol",
+				"/router/serviceProxy/response/wadlRewriter/@protocol",
 				"https");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/response/wadlRewriter/@port", "443");
+				"/router/serviceProxy/response/wadlRewriter/@port", "443");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/response/wadlRewriter/@host", "abc.de");
+				"/router/serviceProxy/response/wadlRewriter/@host", "abc.de");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/accessControl/@file",
+				"/router/serviceProxy/request/accessControl/@file",
 				"src/test/resources/acl/acl.xml");
 
-		assertAttribute(w.toString(), "/proxies/serviceProxy/groovy",
+		assertAttribute(w.toString(), "/router/serviceProxy/groovy",
 				"exc.setProperty('foo', 'bar');CONTINUE");
 
-		assertAttribute(w.toString(), "/proxies/serviceProxy/throttle/@delay",
+		assertAttribute(w.toString(), "/router/serviceProxy/throttle/@delay",
 				"1000");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/throttle/@maxThreads", "5");
+				"/router/serviceProxy/throttle/@maxThreads", "5");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/throttle/@busyDelay", "3000");
+				"/router/serviceProxy/throttle/@busyDelay", "3000");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/formValidation/field[1]/@name",
+				"/router/serviceProxy/request/formValidation/field[1]/@name",
 				"age");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/formValidation/field[1]/@regex",
+				"/router/serviceProxy/request/formValidation/field[1]/@regex",
 				"\\d+");
 
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/formValidation/field[2]/@name",
+				"/router/serviceProxy/request/formValidation/field[2]/@name",
 				"name");
 		assertAttribute(w.toString(),
-				"/proxies/serviceProxy/request/formValidation/field[2]/@regex",
+				"/router/serviceProxy/request/formValidation/field[2]/@regex",
 				"[a-z]+");
 
 		assertElement(w.toString(),
-				"/proxies/serviceProxy/request/analyser");
+				"/router/serviceProxy/request/analyser");
 		
 		// assertAttribute(w.toString(),
-		// "/proxies/serviceProxy/statisticsJDBC/@postMethodOnly", "false");
+		// "/router/serviceProxy/statisticsJDBC/@postMethodOnly", "false");
 		// assertAttribute(w.toString(),
-		// "/proxies/serviceProxy/statisticsJDBC/@soapOnly", "true");
+		// "/router/serviceProxy/statisticsJDBC/@soapOnly", "true");
 		// assertAttribute(w.toString(),
-		// "/proxies/serviceProxy/statisticsJDBC/dataSource/@driverClassName",
+		// "/router/serviceProxy/statisticsJDBC/dataSource/@driverClassName",
 		// "com.mysql.jdbc.Driver");
 		// assertAttribute(w.toString(),
-		// "/proxies/serviceProxy/statisticsJDBC/dataSource/@url",
+		// "/router/serviceProxy/statisticsJDBC/dataSource/@url",
 		// "jdbc:mysql://localhost/proxies");
 		// assertAttribute(w.toString(),
-		// "/proxies/serviceProxy/statisticsJDBC/dataSource/@user", "root");
+		// "/router/serviceProxy/statisticsJDBC/dataSource/@user", "root");
 		// assertAttribute(w.toString(),
-		// "/proxies/serviceProxy/statisticsJDBC/dataSource/@password",
+		// "/router/serviceProxy/statisticsJDBC/dataSource/@password",
 		// "rootroot");
 
-		assertAttribute(w.toString(), "/proxies/proxy/@name", "HTTP Proxy");
-		assertAttribute(w.toString(), "/proxies/proxy/@port", "3128");
+		assertAttribute(w.toString(), "/router/proxy/@name", "HTTP Proxy");
+		assertAttribute(w.toString(), "/router/proxy/@port", "3128");
 
-		assertAttribute(w.toString(), "/proxies/proxy/transform/@xslt",
+		assertAttribute(w.toString(), "/router/proxy/transform/@xslt",
 				"classpath:/strip-soap-envelope.xsl");
 
-		assertAttribute(w.toString(), "/proxies/proxy/switch/case/@xPath",
+		assertAttribute(w.toString(), "/router/proxy/switch/case/@xPath",
 				"//convert");
-		assertAttribute(w.toString(), "/proxies/proxy/switch/case/@url",
+		assertAttribute(w.toString(), "/router/proxy/switch/case/@url",
 				"http://www.thomas-bayer.com/axis2/");
 	}
 

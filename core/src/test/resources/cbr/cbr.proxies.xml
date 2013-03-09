@@ -1,28 +1,35 @@
-<proxies>
-	<serviceProxy name="Router">
-		<switch>
-			<case xPath="//order[@express='yes']" service="Express" />
-			<case xPath="//order/items/item[@id='7']" service="ImportItems" />
-			<case xPath="//order" service="Order" />
-		</switch>
-	</serviceProxy>
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-	<serviceProxy name="ImportItems">
-		<groovy>
-			Response.ok("Order contains import items.").build()			
-		</groovy>
-	</serviceProxy>
-
-	<serviceProxy name="Order">
-		<groovy>
-			Response.ok("Normal order received.").build()						
-		</groovy>
-	</serviceProxy>
+	<router>
+		<serviceProxy name="Router" port="3024">
+			<switch>
+				<case xPath="//order[@express='yes']" service="Express" />
+				<case xPath="//order/items/item[@id='7']" service="ImportItems" />
+				<case xPath="//order" service="Order" />
+			</switch>
+		</serviceProxy>
 	
-	<serviceProxy name="Express">
-		<groovy>
-			Response.ok("Express order received.").build()			
-		</groovy>
-	</serviceProxy>
+		<serviceProxy name="ImportItems" port="3024">
+			<groovy>
+				Response.ok("Order contains import items.").build()			
+			</groovy>
+		</serviceProxy>
+	
+		<serviceProxy name="Order" port="3024">
+			<groovy>
+				Response.ok("Normal order received.").build()						
+			</groovy>
+		</serviceProxy>
+		
+		<serviceProxy name="Express" port="3024">
+			<groovy>
+				Response.ok("Express order received.").build()			
+			</groovy>
+		</serviceProxy>
+	</router>
 
-</proxies>
+</spring:beans>

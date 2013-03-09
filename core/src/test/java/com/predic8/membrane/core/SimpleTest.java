@@ -21,10 +21,7 @@ public class SimpleTest {
 
 	@Before
 	public void setUp() throws Exception {
-		String monitorBeansXml = "classpath:/test-monitor-beans.xml";
-		String rulesXml = "classpath:/test-proxies.xml";
-		router = Router.init(monitorBeansXml);
-		router.getConfigurationManager().loadConfiguration(rulesXml);
+		router = Router.init("classpath:/test-proxies.xml");
 	}
 
 	@Test

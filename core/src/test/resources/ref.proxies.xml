@@ -1,12 +1,53 @@
-<proxies xmlns="http://membrane-soa.org/proxies/1/"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-	<serviceProxy name="localhost" host="*" port="2000"
-		method="*">
-		<interceptor refid="accessControlInterceptor" />
-		<target host="localhost" port="3011" />
-	</serviceProxy>
-	<proxy name="proxy" port="2001">
-		<interceptor refid="accessControlInterceptor" />
-	</proxy>
-</proxies>
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+
+	<spring:bean id="roundRobinBalancer"
+		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
+		<spring:property name="displayName" value="roundRobinBalancer" />
+		<spring:property name="dispatchingStrategy">
+			<spring:bean
+				class="com.predic8.membrane.core.interceptor.balancer.RoundRobinStrategy" />
+		</spring:property>
+	</spring:bean>
+
+	<spring:bean id="byThreadBalancer"
+		class="com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor">
+		<spring:property name="displayName" value="byThreadBalancer" />
+		<spring:property name="dispatchingStrategy">
+			<spring:bean
+				class="com.predic8.membrane.core.interceptor.balancer.ByThreadStrategy">
+				<spring:property name="maxNumberOfThreadsPerEndpoint" value="10" />
+				<spring:property name="retryTimeOnBusy" value="1000" />
+			</spring:bean>
+		</spring:property>
+	</spring:bean>
+
+	<spring:bean id="accessControlInterceptor"
+		class="com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor">
+		<spring:property name="id" value="accessControlInterceptor" />
+		<spring:property name="displayName" value="Access Control List Interceptor" />
+		<spring:property name="file" value="src/test/resources/acl/acl.xml" />
+	</spring:bean>
+
+	<spring:bean id="administratorInterceptor"
+		class="com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor">
+		<spring:property name="displayName" value="Admistrator Interceptor" />
+	</spring:bean>
+
+
+	<router>
+		<serviceProxy name="localhost" host="*" port="2000"
+			method="*">
+			<interceptor refid="accessControlInterceptor" />
+			<target host="localhost" port="3011" />
+		</serviceProxy>
+		<proxy name="proxy" port="2001">
+			<interceptor refid="accessControlInterceptor" />
+		</proxy>
+	</router>
+	
+</spring:beans>

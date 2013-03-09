@@ -1,75 +1,84 @@
-<proxies xmlns="http://membrane-soa.org/proxies/1/"
-		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      	 xsi:schemaLocation="http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-	<serviceProxy name="Service Proxy" port="2001">
-		<request>
-			<basicAuthentication>
-				<user name="admin" password="adminadmin" />
-			</basicAuthentication>
-			<clusterNotification validateSignature="true"
-				keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
-			<counter name="Node 1" />
-			<rewriter>
-				<map from="^/home" to="/index" />
-			</rewriter>
-			<!-- <adminConsole />-->
-			<webServer docBase="docBase" />
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+      	 
+	<counter id="counter" name="Counter 2" />
+	<forgetfulExchangeStore id="forgetfulExchangeStore" />
+	
+	<router>    
+      	 
+		<serviceProxy name="Service Proxy" port="2001">
+			<request>
+				<basicAuthentication>
+					<user name="admin" password="adminadmin" />
+				</basicAuthentication>
+				<clusterNotification validateSignature="true"
+					keyHex="6f488a642b740fb70c5250987a284dc0" timeout="5000" />
+				<counter name="Node 1" />
+				<rewriter>
+					<map from="^/home" to="/index" />
+				</rewriter>
+				<!-- <adminConsole />-->
+				<webServer docBase="docBase" />
+				<switch>
+					<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
+				</switch>
+				<accessControl file="src/test/resources/acl/acl.xml" />
+				<formValidation>
+					<field name="age" regex="\d+" />
+					<field name="name" regex="[a-z]+" />
+				</formValidation>
+				<xmlProtection />
+				<analyser />
+			</request>
+			<exchangeStore name="forgetfulExchangeStore" />
+			<!--<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource"/> -->
+			<statisticsCSV file="temp/stat.csv" />
+			<transform xslt="classpath:/strip-soap-envelope.xsl" />
+			<balancer>
+				<xmlSessionIdExtractor namespace="http://chat.predic8.com/"
+					localName="session" />
+				<clusters>				
+					<cluster name="Default">
+						<node host="localhost" port="3011" />
+					</cluster>
+				</clusters>
+				<byThreadStrategy maxNumberOfThreadsPerEndpoint="10"
+					retryTimeOnBusy="1000" />
+			</balancer>
+			<balancer>
+				<jSessionIdExtractor />
+			</balancer>
+			<validator schema="http://www.predic8.com:8080/material/ArticleService?xsd=2" />
+			<validator
+				wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
+			<rest2Soap>
+				<mapping regex="/bank/.*" soapAction=""
+					soapURI="/axis2/services/BLZService" requestXSLT="request.xsl"
+					responseXSLT="response.xsl" />
+			</rest2Soap>
+	
+			<interceptor refid="counter" />
+			<log headerOnly="true" category="membrane" level="INFO"/>
+			<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
+			<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
+			<response>	
+				<regExReplacer regex="Hallo" replace="Hello" />
+				<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register"
+					port="4000" protocol="http" host="localhost" />
+				<wadlRewriter port="443" protocol="https" host="abc.de" />
+			</response>		
+			<target host="www.thomas-bayer.com" port="88" url="http://predic8.de/membrane.htm" />
+		</serviceProxy>
+	    <proxy name="HTTP Proxy" port="3128" >
+			<transform xslt="classpath:/strip-soap-envelope.xsl"/>
 			<switch>
 				<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
-			</switch>
-			<accessControl file="src/test/resources/acl/acl.xml" />
-			<formValidation>
-				<field name="age" regex="\d+" />
-				<field name="name" regex="[a-z]+" />
-			</formValidation>
-			<xmlProtection />
-			<analyser />
-		</request>
-		<exchangeStore name="forgetfulExchangeStore" />
-		<!--<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource"/> -->
-		<statisticsCSV file="temp/stat.csv" />
-		<transform xslt="classpath:/strip-soap-envelope.xsl" />
-		<balancer>
-			<xmlSessionIdExtractor namespace="http://chat.predic8.com/"
-				localName="session" />
-			<clusters>				
-				<cluster name="Default">
-					<node host="localhost" port="3011" />
-				</cluster>
-			</clusters>
-			<byThreadStrategy maxNumberOfThreadsPerEndpoint="10"
-				retryTimeOnBusy="1000" />
-		</balancer>
-		<balancer>
-			<jSessionIdExtractor />
-		</balancer>
-		<validator schema="http://www.predic8.com:8080/material/ArticleService?xsd=2" />
-		<validator
-			wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
-		<rest2Soap>
-			<mapping regex="/bank/.*" soapAction=""
-				soapURI="/axis2/services/BLZService" requestXSLT="request.xsl"
-				responseXSLT="response.xsl" />
-		</rest2Soap>
-
-		<interceptor refid="counter" />
-		<log headerOnly="true" category="membrane" level="INFO"/>
-		<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>
-		<throttle delay="1000" maxThreads="5" busyDelay="3000"/>		
-		<response>	
-			<regExReplacer regex="Hallo" replace="Hello" />
-			<wsdlRewriter registryWSDLRegisterURL="http://predic8.de/register"
-				port="4000" protocol="http" host="localhost" />
-			<wadlRewriter port="443" protocol="https" host="abc.de" />
-		</response>		
-		<target host="www.thomas-bayer.com" port="88" url="http://predic8.de/membrane.htm" />
-	</serviceProxy>
-    <proxy name="HTTP Proxy" port="3128" >
-		<transform xslt="classpath:/strip-soap-envelope.xsl"/>
-		<switch>
-			<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
-		</switch>	
-	</proxy>
+			</switch>	
+		</proxy>
 	
-</proxies>
-<!--</configuration> -->
+	</router>
+	
+</spring:beans>
