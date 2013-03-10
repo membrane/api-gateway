@@ -5,6 +5,7 @@
 * documentation
 * configuration of "other" (=non-HttpClientInterceptor) httpClients
 * nice error message at startup if annotation processing is disabled
+* 'transformerFactory' global bean: make local
 
 ### Decisions to be made
 

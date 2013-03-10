@@ -20,6 +20,7 @@ public class HotDeploymentThread extends Thread {
 	}
 
 	protected AbstractRefreshableApplicationContext applicationContext;
+	private boolean reloading;
 
 	public HotDeploymentThread(AbstractRefreshableApplicationContext applicationContext) {
 		super("Membrane Hot Deployment Thread");
@@ -63,8 +64,8 @@ public class HotDeploymentThread extends Thread {
 				log.debug("spring configuration changed.");
 
 				reload();
-
-				updateLastModified();
+				
+				break;
 			} catch (InterruptedException e) {				
 			} catch (Exception e) {
 				log.error("Could not redeploy.", e);
@@ -75,8 +76,19 @@ public class HotDeploymentThread extends Thread {
 	}
 
 	protected void reload() throws Exception {
+		synchronized(this) {
+			reloading = true;
+		}
 		applicationContext.stop();
 		applicationContext.refresh();
 		applicationContext.start();
+	}
+	
+	public void stopASAP() {
+		synchronized (this) {
+			if (reloading)
+				return;
+		}
+		interrupt();
 	}
 }

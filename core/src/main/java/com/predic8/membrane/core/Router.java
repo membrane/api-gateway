@@ -228,7 +228,7 @@ public class Router extends AbstractConfigElement implements Lifecycle, Applicat
 
 	private void stopHotDeployment() {
 		if (hdt != null) {
-			hdt.interrupt();
+			hdt.stopASAP();
 			hdt = null;
 		}
 	}

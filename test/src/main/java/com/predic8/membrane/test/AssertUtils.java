@@ -23,6 +23,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -144,6 +145,8 @@ public class AssertUtils {
 	}
 	
 	public static void setupHTTPAuthentication(String host, int port, String user, String pass) {
+		if (hc != null)
+			closeConnections();
 		hc = getAuthenticatingHttpClient(host, port, user, pass);
 	}
 	
@@ -201,6 +204,11 @@ public class AssertUtils {
 	public static void replaceInFile(File file, String from, String to_) throws IOException {
 		FileUtils.writeStringToFile(file, FileUtils.readFileToString(file).replace(from, to_));
 		
+	}
+	
+	public static void closeConnections() {
+		if (hc != null)
+			hc.getConnectionManager().closeIdleConnections(0, TimeUnit.SECONDS);
 	}
 
 }
