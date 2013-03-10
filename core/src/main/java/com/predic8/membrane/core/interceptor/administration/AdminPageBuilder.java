@@ -52,9 +52,9 @@ import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.interceptor.balancer.Session;
 import com.predic8.membrane.core.rules.AbstractProxy;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.util.TextUtil;
 
@@ -713,7 +713,7 @@ public class AdminPageBuilder extends Html {
 		return v.substring(0, p);
 	}
 
-	private void createListenerRow(ServiceProxy proxy) {
+	private void createListenerRow(AbstractServiceProxy proxy) {
 		tr();
 			td().style("padding:0px;").colspan("2");
 				div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 
@@ -743,7 +743,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 	
-	public void createServiceProxyVisualization(ServiceProxy proxy, String relativeRootPath) {
+	public void createServiceProxyVisualization(AbstractServiceProxy proxy, String relativeRootPath) {
 		List<Interceptor> leftStack = new ArrayList<Interceptor>(), rightStack = new ArrayList<Interceptor>();
 		List<Interceptor> list = new ArrayList<Interceptor>(proxy.getInterceptors());
 		list.add(new AbstractInterceptor() { // fake interceptor so that both stacks end with the same size
@@ -818,7 +818,7 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	private void createTargetRow(ServiceProxy proxy) {
+	private void createTargetRow(AbstractServiceProxy proxy) {
 		tr();
 			td().style("padding:0px;").colspan("2");
 				div().style("border: 1px solid black; padding:8px 5px; margin: 0px 10px; overflow-x: auto; background: #73b9d7;" + 

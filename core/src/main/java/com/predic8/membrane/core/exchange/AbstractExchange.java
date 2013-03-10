@@ -32,7 +32,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.model.IExchangeViewerListener;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 
@@ -303,8 +303,8 @@ public abstract class AbstractExchange {
 			}
 			return getOriginalRequestUri();
 		}
-		if (getRule() instanceof ServiceProxy) {
-			return ((ServiceProxy) getRule()).getTargetHost();
+		if (getRule() instanceof AbstractServiceProxy) {
+			return ((AbstractServiceProxy) getRule()).getTargetHost();
 		}
 		return "";
 	}

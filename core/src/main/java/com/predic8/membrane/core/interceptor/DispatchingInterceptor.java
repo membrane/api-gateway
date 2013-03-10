@@ -15,11 +15,12 @@ package com.predic8.membrane.core.interceptor;
 
 import java.net.URL;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 
 @MCElement(name="dispatching")
 public class DispatchingInterceptor extends AbstractInterceptor {
@@ -34,7 +35,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 	
-		if (exc.getRule() instanceof ServiceProxy) {
+		if (exc.getRule() instanceof AbstractServiceProxy) {
 			exc.getDestinations().add(getForwardingDestination(exc));	
 			return Outcome.CONTINUE;
 		}
@@ -45,7 +46,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	}
 
 	public static String getForwardingDestination(Exchange exc) throws Exception {
-		ServiceProxy p = (ServiceProxy)exc.getRule();
+		AbstractServiceProxy p = (AbstractServiceProxy)exc.getRule();
 		if (p.getTargetURL()!=null) {
 			log.debug("destination: " + p.getTargetURL());
 			return p.getTargetURL();

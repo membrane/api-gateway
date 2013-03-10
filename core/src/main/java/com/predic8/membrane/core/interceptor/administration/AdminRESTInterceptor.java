@@ -23,8 +23,8 @@ import com.predic8.membrane.core.interceptor.rest.JSONContent;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.util.ComparatorFactory;
 import com.predic8.membrane.core.util.TextUtil;
 
@@ -68,7 +68,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	
 	@Mapping("/admin/rest/proxies(/?\\?.*)?")
 	public Response getProxies(final QueryParameter params, String relativeRootPath) throws Exception {
-		final List<ServiceProxy> proxies = getServiceProxies();
+		final List<AbstractServiceProxy> proxies = getServiceProxies();
 
 		if ("order".equals(params.getString("sort"))) {
 			if (params.getString("order", "asc").equals("desc"))
@@ -76,14 +76,14 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		} else {
 			Collections.sort(
 					proxies,
-					ComparatorFactory.getServiceProxyComparator(params.getString("sort", "name"),
+					ComparatorFactory.getAbstractServiceProxyComparator(params.getString("sort", "name"),
 							params.getString("order", "asc")));
 		}
 
 		final int offset = params.getInt("offset", 0);
 		int max = params.getInt("max", proxies.size());
 
-		final List<ServiceProxy> paginated = proxies.subList(offset,
+		final List<AbstractServiceProxy> paginated = proxies.subList(offset,
 				Math.min(offset + max, proxies.size()));
 		
 		return json( new JSONContent() {
@@ -93,7 +93,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 					int i = offset;
 					if (params.getString("order", "asc").equals("desc"))
 						i = proxies.size() - i + 1;
-					for (ServiceProxy p : paginated) {
+					for (AbstractServiceProxy p : paginated) {
 						gen.writeStartObject();
 						gen.writeNumberField("order", i += params.getString("order", "asc").equals("desc") ? -1 : 1);
 						gen.writeStringField("name", p.toString());
@@ -305,14 +305,14 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	}
 
 	private int getServerPort(AbstractExchange exc) {
-		return exc.getRule()instanceof ServiceProxy?((ServiceProxy) exc.getRule()).getTargetPort():-1;
+		return exc.getRule()instanceof AbstractServiceProxy?((AbstractServiceProxy) exc.getRule()).getTargetPort():-1;
 	}
 
-	private List<ServiceProxy> getServiceProxies() {
-		List<ServiceProxy> rules = new LinkedList<ServiceProxy>();
+	private List<AbstractServiceProxy> getServiceProxies() {
+		List<AbstractServiceProxy> rules = new LinkedList<AbstractServiceProxy>();
 		for (Rule r : router.getRuleManager().getRules()) {
-			if (!(r instanceof ServiceProxy)) continue;
-			rules.add((ServiceProxy) r);
+			if (!(r instanceof AbstractServiceProxy)) continue;
+			rules.add((AbstractServiceProxy) r);
 		}			
 		return rules;
 	}

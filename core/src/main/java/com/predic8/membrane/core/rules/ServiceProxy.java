@@ -146,24 +146,12 @@ public class ServiceProxy extends AbstractServiceProxy {
 		this.target = target;
 	}
 
-	public String getTargetHost() {
-		return target.getHost();
-	}
-
 	public void setTargetHost(String targetHost) {
 		this.target.setHost(targetHost);
 	}
 
-	public int getTargetPort() {
-		return target.getPort();
-	}
-
 	public void setTargetPort(int targetPort) {
 		this.target.setPort(targetPort);
-	}
-
-	public String getTargetURL() {
-		return target.getUrl();
 	}
 
 	public void setTargetURL(String targetURL) {

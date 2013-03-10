@@ -45,6 +45,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
 import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
 import com.predic8.membrane.core.interceptor.balancer.Node;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
@@ -92,7 +93,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	  throws Exception {
 		final StringWriter writer = new StringWriter();
 		
-		final ServiceProxy rule = (ServiceProxy) RuleUtil.findRuleByIdentifier(router,params.get("name"));
+		final AbstractServiceProxy rule = (AbstractServiceProxy) RuleUtil.findRuleByIdentifier(router,params.get("name"));
 		
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override

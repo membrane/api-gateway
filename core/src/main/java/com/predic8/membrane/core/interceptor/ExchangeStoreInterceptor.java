@@ -32,8 +32,8 @@ import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
 
 @MCElement(name="exchangeStore")
 public class ExchangeStoreInterceptor extends AbstractInterceptor implements ApplicationContextAware {
@@ -43,7 +43,7 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	private ExchangeStore store;
 	private String exchangeStoreBeanId;
 	
-	private Set<ServiceProxy> serviceProxiesContainingAdminConsole = new HashSet<ServiceProxy>();
+	private Set<AbstractServiceProxy> serviceProxiesContainingAdminConsole = new HashSet<AbstractServiceProxy>();
 	
 	public ExchangeStoreInterceptor() {
 		name = "Exchange Store Interceptor";
@@ -132,11 +132,11 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	
 	private void searchAdminConsole() {
 		for (Rule r : router.getRuleManager().getRules()) {
-			if (!(r instanceof ServiceProxy)) continue;
+			if (!(r instanceof AbstractServiceProxy)) continue;
 			
 			for (Interceptor i : r.getInterceptors()) {
 				if (i instanceof AdminConsoleInterceptor) {
-					serviceProxiesContainingAdminConsole.add((ServiceProxy)r);
+					serviceProxiesContainingAdminConsole.add((AbstractServiceProxy)r);
 				}
 			}
 		}			

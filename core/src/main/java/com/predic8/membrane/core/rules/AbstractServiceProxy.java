@@ -194,4 +194,16 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		}
 	}
 	
+	public String getTargetHost() {
+		return target.getHost();
+	}
+
+	public int getTargetPort() {
+		return target.getPort();
+	}
+
+	public String getTargetURL() {
+		return target.getUrl();
+	}
+
 }

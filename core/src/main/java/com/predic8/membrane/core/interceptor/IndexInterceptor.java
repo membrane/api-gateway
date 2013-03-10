@@ -28,8 +28,8 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HostColonPort;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
@@ -46,8 +46,8 @@ public class IndexInterceptor extends AbstractInterceptor {
 	public List<ServiceInfo> getServices(Exchange exc) {
 		List<ServiceInfo> result = new ArrayList<ServiceInfo>();
 		for (Rule r : router.getRuleManager().getRules()) {
-			if (r instanceof ServiceProxy) {
-				ServiceInfo si = getServiceInfo(exc, (ServiceProxy)r);
+			if (r instanceof AbstractServiceProxy) {
+				ServiceInfo si = getServiceInfo(exc, (AbstractServiceProxy)r);
 				if (si != null)
 					result.add(si);
 			}
@@ -55,7 +55,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 		return result;
 	}
 	
-	private ServiceInfo getServiceInfo(Exchange exc, ServiceProxy sp) {
+	private ServiceInfo getServiceInfo(Exchange exc, AbstractServiceProxy sp) {
 		if (sp.getInterceptors().size() == 1 && sp.getInterceptors().get(0) instanceof IndexInterceptor)
 			return null;
 		

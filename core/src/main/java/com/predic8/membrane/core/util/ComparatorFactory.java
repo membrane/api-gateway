@@ -6,7 +6,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.ClientStatistics;
 import com.predic8.membrane.core.interceptor.statistics.PropertyComparator;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 
 public class ComparatorFactory {
 
@@ -94,58 +94,58 @@ public class ComparatorFactory {
 		throw new IllegalArgumentException("AbstractExchange can't be compared using property ["+propName+"]");
 	}
 
-	public static Comparator<ServiceProxy> getServiceProxyComparator(final String propName, String order) {
+	public static Comparator<AbstractServiceProxy> getAbstractServiceProxyComparator(final String propName, String order) {
 		if ("listenPort".equals(propName)) {
-			return new PropertyComparator<ServiceProxy, Integer>(order, new PropertyComparator.ValueResolver<ServiceProxy, Integer>() {
-				public Integer get(ServiceProxy p) {
+			return new PropertyComparator<AbstractServiceProxy, Integer>(order, new PropertyComparator.ValueResolver<AbstractServiceProxy, Integer>() {
+				public Integer get(AbstractServiceProxy p) {
 					return p.getKey().getPort();
 				}
 			});			
 		} else if ("virtualHost".equals(propName)) {
-			return new PropertyComparator<ServiceProxy, String>(order, new PropertyComparator.ValueResolver<ServiceProxy, String>() {
-				public String get(ServiceProxy p) {
+			return new PropertyComparator<AbstractServiceProxy, String>(order, new PropertyComparator.ValueResolver<AbstractServiceProxy, String>() {
+				public String get(AbstractServiceProxy p) {
 					return p.getKey().getHost();
 				}
 			});			
 		} else if ("method".equals(propName)) {
-			return new PropertyComparator<ServiceProxy, String>(order, new PropertyComparator.ValueResolver<ServiceProxy, String>() {
-				public String get(ServiceProxy p) {
+			return new PropertyComparator<AbstractServiceProxy, String>(order, new PropertyComparator.ValueResolver<AbstractServiceProxy, String>() {
+				public String get(AbstractServiceProxy p) {
 					return p.getKey().getMethod();
 				}
 			});			
 		} else if ("path".equals(propName)) {
-			return new PropertyComparator<ServiceProxy, String>(order, new PropertyComparator.ValueResolver<ServiceProxy, String>() {
-				public String get(ServiceProxy p) {
+			return new PropertyComparator<AbstractServiceProxy, String>(order, new PropertyComparator.ValueResolver<AbstractServiceProxy, String>() {
+				public String get(AbstractServiceProxy p) {
 					return p.getKey().getPath();
 				}
 			});			
 		} else if ("targetHost".equals(propName)) {
-			return new PropertyComparator<ServiceProxy, String>(order, new PropertyComparator.ValueResolver<ServiceProxy, String>() {
-				public String get(ServiceProxy p) {
+			return new PropertyComparator<AbstractServiceProxy, String>(order, new PropertyComparator.ValueResolver<AbstractServiceProxy, String>() {
+				public String get(AbstractServiceProxy p) {
 					return p.getTargetHost();
 				}
 			});			
 		} else if ("targetPort".equals(propName)) {
-			return new PropertyComparator<ServiceProxy, Integer>(order, new PropertyComparator.ValueResolver<ServiceProxy, Integer>() {
-				public Integer get(ServiceProxy p) {
+			return new PropertyComparator<AbstractServiceProxy, Integer>(order, new PropertyComparator.ValueResolver<AbstractServiceProxy, Integer>() {
+				public Integer get(AbstractServiceProxy p) {
 					return p.getTargetPort();
 				}
 			});			
 		} else if ("count".equals(propName)) {
-			return new PropertyComparator<ServiceProxy, Integer>(order, new PropertyComparator.ValueResolver<ServiceProxy, Integer>() {
-				public Integer get(ServiceProxy p) {
+			return new PropertyComparator<AbstractServiceProxy, Integer>(order, new PropertyComparator.ValueResolver<AbstractServiceProxy, Integer>() {
+				public Integer get(AbstractServiceProxy p) {
 					return p.getCount();
 				}
 			});			
 		} else if ("name".equals(propName)) {
-			return new PropertyComparator<ServiceProxy, String>(order, new PropertyComparator.ValueResolver<ServiceProxy, String>() {
-				public String get(ServiceProxy p) {
+			return new PropertyComparator<AbstractServiceProxy, String>(order, new PropertyComparator.ValueResolver<AbstractServiceProxy, String>() {
+				public String get(AbstractServiceProxy p) {
 					return p.toString();
 				}
 			});			
 		}
 		
-		throw new IllegalArgumentException("ServiceProxy can't be compared using property ["+propName+"]");
+		throw new IllegalArgumentException("AbstractServiceProxy can't be compared using property ["+propName+"]");
 		
 	}
 

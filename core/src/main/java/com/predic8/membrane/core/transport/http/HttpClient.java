@@ -34,7 +34,7 @@ import com.predic8.membrane.core.http.OKResponse;
 import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -110,7 +110,7 @@ public class HttpClient {
 			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
 		} 
 		
-		if (adjustHostHeader && exc.getRule() instanceof ServiceProxy) {
+		if (adjustHostHeader && exc.getRule() instanceof AbstractServiceProxy) {
 			URL d = new URL(dest);
 			exc.getRequest().getHeader().setHost(d.getHost() + ":" + HttpUtil.getPort(d));
 		}

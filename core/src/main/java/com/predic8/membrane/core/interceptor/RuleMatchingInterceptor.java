@@ -24,10 +24,10 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 @MCElement(name="ruleMatching")
@@ -53,7 +53,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 		
-		if (xForwardedForEnabled && (rule instanceof ServiceProxy))
+		if (xForwardedForEnabled && (rule instanceof AbstractServiceProxy))
 			insertXForwardedFor(exc);
 
 		return Outcome.CONTINUE;

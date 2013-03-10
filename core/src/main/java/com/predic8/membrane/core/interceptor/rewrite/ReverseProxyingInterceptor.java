@@ -22,8 +22,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
 /**
@@ -122,7 +122,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	
 	private String getProtocol(Exchange exc) {
 		Rule r = exc.getRule();
-		return r != null && r instanceof ServiceProxy && ((ServiceProxy)r).getSslInboundContext() != null ? "https" : "http";
+		return r != null && r instanceof AbstractServiceProxy && ((AbstractServiceProxy)r).getSslInboundContext() != null ? "https" : "http";
 	}
 
 }

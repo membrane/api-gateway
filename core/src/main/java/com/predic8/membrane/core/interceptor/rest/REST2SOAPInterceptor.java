@@ -44,7 +44,7 @@ import com.predic8.membrane.core.http.xml.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
-import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
 
 @MCElement(name="rest2Soap", xsd="" +
 		"					<xsd:sequence>\r\n" + 
@@ -224,8 +224,8 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	}
 
 	private String getNewDestination(AbstractExchange exc) {
-		return "http://" + ((ServiceProxy) exc.getRule()).getTargetHost() + ":"
-				+ ((ServiceProxy) exc.getRule()).getTargetPort()
+		return "http://" + ((AbstractServiceProxy) exc.getRule()).getTargetHost() + ":"
+				+ ((AbstractServiceProxy) exc.getRule()).getTargetPort()
 				+ exc.getRequest().getUri();
 	}
 
