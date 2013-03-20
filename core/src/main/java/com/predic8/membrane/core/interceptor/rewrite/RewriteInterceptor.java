@@ -244,7 +244,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		EnumSet<Type> s = EnumSet.noneOf(Type.class);
 		for (Mapping m : mappings)
-			s.add(m.do_);
+			s.add(m.getDo());
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append(TextUtil.capitalize(TextUtil.toEnglishList("or", 
