@@ -18,6 +18,9 @@ import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.util.Collections;
+import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -46,6 +49,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	
 	String docBase = "docBase";
 	String[] index = EMPTY;
+	boolean generateIndex;
 
 	public WebServerInterceptor() {
 		name = "Web Server";
@@ -58,6 +62,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		log.debug("request: " + uri);
 
 		log.debug("looking for file: " + uri);
+		
+		if (uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\")) {
+			exc.setResponse(Response.badRequest().body("").build());
+			return Outcome.ABORT;
+		}
 
 		try {
 			exc.setTimeReqSent(System.currentTimeMillis());
@@ -76,6 +85,30 @@ public class WebServerInterceptor extends AbstractInterceptor {
 					exc.setTimeResReceived(System.currentTimeMillis());
 					return Outcome.RETURN;
 				} catch (FileNotFoundException e2) {
+				}
+			}
+			
+			if (generateIndex) {
+				List<String> children = router.getResourceResolver().getChildren(docBase + uri, true);
+				if (children != null) {
+					Collections.sort(children);
+					StringBuilder sb = new StringBuilder();
+					sb.append("<html><body><tt>");
+					String base = uri;
+					if (base.endsWith("/"))
+						base = "";
+					else {
+						base = exc.getRequestURI();
+						int p = base.lastIndexOf('/');
+						if (p != -1)
+							base = base.substring(p+1);
+						base = base + "/";
+					}
+					for (String child : children)
+						sb.append("<a href=\"" + base + child + "\">" + child + "</a><br/>");
+					sb.append("</tt></body></html>");
+					exc.setResponse(Response.ok().contentType("text/html").body(sb.toString()).build());
+					return Outcome.RETURN;
 				}
 			}
 			
@@ -132,6 +165,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		out.writeAttribute("docBase", docBase);
 		if (index.length > 0)
 			out.writeAttribute("index", getIndex());
+		if (generateIndex)
+			out.writeAttribute("generateIndex", "true");
 
 		out.writeEndElement();
 	}
@@ -139,6 +174,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
 		docBase = token.getAttributeValue("", "docBase");
+		generateIndex = Boolean.parseBoolean(token.getAttributeValue("", "generateIndex"));
 		setIndex(token.getAttributeValue("", "index"));
 	}
 	

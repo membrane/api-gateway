@@ -20,6 +20,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
@@ -81,6 +83,31 @@ public class ResourceResolver {
 	    	}
 	    }
 	    return resolveFile(uri, useMembraneHome);
+	}
+	
+	public List<String> getChildren(String uri, boolean useMembraneHome) {
+	    if(uri.startsWith("http:") || uri.startsWith("https:")) {
+	        return null;
+	    } 
+	    
+		if (uri.startsWith("classpath:")) {
+			return null;
+		}
+		
+	    if(uri.startsWith("file:")) {
+	    	try {
+	    		uri = new URL(uri).getPath();
+	    	} catch (Exception e) {
+	    		throw new RuntimeException(e);
+	    	}
+	    }
+	    String[] children = getRealFile(uri, useMembraneHome).list();
+	    if (children == null)
+	    	return null;
+	    ArrayList<String> res = new ArrayList<String>(children.length);
+	    for (String child : children)
+	    	res.add(child);
+	    return res;
 	}
 
 	protected InputStream resolveFile(String uri, boolean useMembraneHome) throws FileNotFoundException {
