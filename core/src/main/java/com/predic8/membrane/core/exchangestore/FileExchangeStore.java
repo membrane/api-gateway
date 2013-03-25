@@ -48,7 +48,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static AtomicInteger counter = new AtomicInteger();
 
-	private static final String DATE_FORMAT = "'h'hh'm'mm's'ss'ms'ms"; 
+	private static final String DATE_FORMAT = "'h'HH'm'mm's'ss'ms'SSS"; 
 	
 	private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<DateFormat>();
 
