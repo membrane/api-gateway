@@ -18,6 +18,8 @@ import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -46,6 +48,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	
 	String docBase = "docBase";
 	String[] index = EMPTY;
+	boolean generateIndex;
 
 	public WebServerInterceptor() {
 		name = "Web Server";
@@ -58,6 +61,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		log.debug("request: " + uri);
 
 		log.debug("looking for file: " + uri);
+		
+		if (uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\")) {
+			exc.setResponse(Response.badRequest().body("").build());
+			return Outcome.ABORT;
+		}
 
 		try {
 			exc.setTimeReqSent(System.currentTimeMillis());
@@ -76,6 +84,30 @@ public class WebServerInterceptor extends AbstractInterceptor {
 					exc.setTimeResReceived(System.currentTimeMillis());
 					return Outcome.RETURN;
 				} catch (FileNotFoundException e2) {
+				}
+			}
+			
+			if (generateIndex) {
+				List<String> children = router.getResourceResolver().getChildren(docBase + uri, true);
+				if (children != null) {
+					Collections.sort(children);
+					StringBuilder sb = new StringBuilder();
+					sb.append("<html><body><tt>");
+					String base = uri;
+					if (base.endsWith("/"))
+						base = "";
+					else {
+						base = exc.getRequestURI();
+						int p = base.lastIndexOf('/');
+						if (p != -1)
+							base = base.substring(p+1);
+						base = base + "/";
+					}
+					for (String child : children)
+						sb.append("<a href=\"" + base + child + "\">" + child + "</a><br/>");
+					sb.append("</tt></body></html>");
+					exc.setResponse(Response.ok().contentType("text/html").body(sb.toString()).build());
+					return Outcome.RETURN;
 				}
 			}
 			
@@ -135,6 +167,15 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			index = EMPTY;
 		else
 			index = i.split(",");
+	}
+	
+	public boolean isGenerateIndex() {
+		return generateIndex;
+	}
+	
+	@MCAttribute
+	public void setGenerateIndex(boolean generateIndex) {
+		this.generateIndex = generateIndex;
 	}
 
 	@Override
