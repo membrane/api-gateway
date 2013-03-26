@@ -6,6 +6,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.processing.FilerException;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.tools.FileObject;
@@ -27,20 +28,26 @@ public class Schemas {
 		this.processingEnv = processingEnv;
 	}
 
-	public void writeXSD(Model m) throws IOException, ProcessingException {
-		for (MainInfo main : m.getMains()) {
-			List<Element> sources = new ArrayList<Element>();
-			sources.add(main.getElement());
-			sources.addAll(main.getInterceptorElements());
+	public void writeXSD(Model m) throws IOException {
+		try {
+			for (MainInfo main : m.getMains()) {
+				List<Element> sources = new ArrayList<Element>();
+				sources.add(main.getElement());
+				sources.addAll(main.getInterceptorElements());
 
-			FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
-					main.getAnnotation().outputPackage(), main.getAnnotation().outputName(), sources.toArray(new Element[0]));
-			BufferedWriter bw = new BufferedWriter(o.openWriter());
-			try {
-				assembleXSD(m, main, bw);
-			} finally {
-				bw.close();
+				FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
+						main.getAnnotation().outputPackage(), main.getAnnotation().outputName(), sources.toArray(new Element[0]));
+				BufferedWriter bw = new BufferedWriter(o.openWriter());
+				try {
+					assembleXSD(m, main, bw);
+				} finally {
+					bw.close();
+				}
 			}
+		} catch (FilerException e) {
+			if (e.getMessage().contains("Source file already created"))
+				return;
+			throw e;
 		}
 	}
 

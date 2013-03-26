@@ -34,7 +34,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 			"			<xsd:anyAttribute processContents=\"skip\" />\r\n" + 
 			"		</xsd:complexType>\r\n" + 
 			"	</xsd:element>\r\n" +
-			"</xsd:sequence>\r\n")
+			"</xsd:sequence>\r\n", generateParserClass=false)
 public class StaticUserDataProvider extends AbstractXmlElement implements UserDataProvider {
 
 	private Map<String, Map<String, String>> users = new HashMap<String, Map<String,String>>();

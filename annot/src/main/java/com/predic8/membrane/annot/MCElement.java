@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface MCElement {
 	String name();
 	String group() default "interceptor";
@@ -14,4 +14,5 @@ public @interface MCElement {
 	String xsd() default "";
 	boolean global() default true;
 	String configPackage() default "";
+	boolean generateParserClass() default true;
 }

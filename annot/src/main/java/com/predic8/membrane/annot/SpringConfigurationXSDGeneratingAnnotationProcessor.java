@@ -1,8 +1,14 @@
 package com.predic8.membrane.annot;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,6 +22,8 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 import javax.tools.Diagnostic.Kind;
 
 import com.predic8.membrane.annot.generator.Parsers;
@@ -31,20 +39,154 @@ import com.predic8.membrane.annot.model.TextContentInfo;
 
 @SupportedAnnotationTypes(value = { "com.predic8.membrane.annot.*" })
 public class SpringConfigurationXSDGeneratingAnnotationProcessor extends AbstractProcessor {
-	
+
 	@Override
 	public SourceVersion getSupportedSourceVersion() {
 		return SourceVersion.latestSupported();
 	}
+
+	private static final String CACHE_FILE_FORMAT_VERSION = "1";
+	
+	@SuppressWarnings("unchecked")
+	private void read() {
+		if (cache != null)
+			return;
+		
+		cache = new HashMap<Class<? extends Annotation>, HashSet<Element>>();
+		
+		try {
+			FileObject o = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", "META-INF/membrane.cache");
+			BufferedReader r = new BufferedReader(o.openReader(false));
+			try {
+				if (!CACHE_FILE_FORMAT_VERSION.equals(r.readLine()))
+					return;
+				HashSet<Element> currentSet = null;
+				Class<? extends Annotation> annotationClass = null;
+				while (true) {
+					String line = r.readLine();
+					if (line == null)
+						break;
+					if (line.startsWith(" ")) {
+						line = line.substring(1);
+						TypeElement element = null;
+						try {
+							element = processingEnv.getElementUtils().getTypeElement(line);
+						} catch (RuntimeException e) {
+							// do nothing (Eclipse)
+						}
+						if (element != null) {
+							if (element.getAnnotation(annotationClass) != null)
+								currentSet.add(element);
+						}
+					} else {
+						try {
+							annotationClass = (Class<? extends Annotation>) getClass().getClassLoader().loadClass(line);
+						} catch (ClassNotFoundException e) {
+							throw new RuntimeException(e);
+						}
+						currentSet = new HashSet<Element>();
+						cache.put(annotationClass, currentSet);
+					}
+				}
+			} finally {
+				r.close();
+			}
+		} catch (FileNotFoundException e) {
+			// do nothing (Maven)
+		} catch (IOException e) {
+			// do nothing (Eclipse)
+		}
+
+		for (Set<Element> e : cache.values()) {
+			String status = "read " + e.size();
+			processingEnv.getMessager().printMessage(Kind.NOTE, status);
+			System.out.println(status);
+		}
+
+	}
+	
+	private void write() {
+		try {
+			FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "META-INF/membrane.cache");
+			BufferedWriter bw = new BufferedWriter(o.openWriter());
+			try {
+				bw.write("1\n");
+
+				for (Map.Entry<Class<? extends Annotation>, HashSet<Element>> e : cache.entrySet()) {
+					bw.write(e.getKey().getName());
+					bw.write("\n");
+					for (Element f : e.getValue()) {
+						bw.write(" ");
+						bw.write(((TypeElement)f).getQualifiedName().toString());
+						bw.write("\n");
+					}
+				}
+			} finally {
+				bw.close();
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private HashMap<Class<? extends Annotation>, HashSet<Element>> cache;
+	
+	private Set<? extends Element> getCachedElementsAnnotatedWith(RoundEnvironment roundEnv, Class<? extends Annotation> annotation) {
+		//FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "META-INF", "membrane.cache");
+		if (cache == null)
+			read();
+		
+		HashSet<Element> result = cache.get(annotation);
+		if (result == null) {
+			// update cache
+			cache.put(annotation, result = new HashSet<Element>(roundEnv.getElementsAnnotatedWith(annotation)));
+		} else {
+			for (Element e : roundEnv.getElementsAnnotatedWith(annotation)) {
+				result.remove(e);
+				result.add(e);
+			}
+		}
+		
+		return result;
+	}
+	
+	boolean done;
 	
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+		// An instance is create per compiler call and not kept for the next incremental compilation.
+		//
+		// Use "roundEnv.getRootElements()" to get root elements (=classes) changed since last round.
+		// Use "processingEnv.getElementUtils().getTypeElement(className)" to get the TypeElement of any class (changed or not).
+		// "annotations.size()" equals the number of our annotations found in the "roundEnv.getRootElement()" classes.
+		//
+		// * rounds are repeated until nothing is filed (=created) any more
+		// * resources (and java files?) may only be filed in one round
+		// * in the last round, "roundEnv.processingOver()" is true
 		try {
-			if (annotations.size() > 0) { // somehow we get called twice in the javac run from Maven
+			
+			String status = "process() a=" + annotations.size() + 
+					" r=" + roundEnv.getRootElements().size() + 
+					" h=" + hashCode() +
+					(roundEnv.processingOver() ? " processing-over" : " ");
+			processingEnv.getMessager().printMessage(Kind.NOTE, status);
+			System.out.println(status);
+			
+			read();
+			if (roundEnv.processingOver())
+				write();
+			
+			if (annotations.size() > 0) { // a class with one of our annotation needs to be compiled
+				
+				status = "working with " + getCachedElementsAnnotatedWith(roundEnv, MCMain.class).size() + " and " + getCachedElementsAnnotatedWith(roundEnv, MCElement.class).size();
+				processingEnv.getMessager().printMessage(Kind.NOTE, status);
+				System.out.println(status);
 
+				
+				
 				Model m = new Model();
 				
-				Set<? extends Element> mcmains = roundEnv.getElementsAnnotatedWith(MCMain.class);
+				Set<? extends Element> mcmains = getCachedElementsAnnotatedWith(roundEnv, MCMain.class);
 				if (mcmains.size() == 0) {
 					processingEnv.getMessager().printMessage(Kind.WARNING, "@MCMain was nowhere found.");
 					return true;
@@ -56,11 +198,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					m.getMains().add(main);
 				}
 
-				for (Element e : roundEnv.getElementsAnnotatedWith(MCElement.class)) {
+				for (Element e : getCachedElementsAnnotatedWith(roundEnv, MCElement.class)) {
 					ElementInfo ii = new ElementInfo();
 					ii.setElement((TypeElement)e);
 					ii.setAnnotation(e.getAnnotation(MCElement.class));
-					ii.setGenerateParserClass(processingEnv.getElementUtils().getTypeElement(ii.getClassName(m)) == null);
+					ii.setGenerateParserClass(ii.getAnnotation().generateParserClass());
 					MainInfo main = ii.getMain(m);
 					main.getIis().add(ii);
 					

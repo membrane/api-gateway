@@ -59,7 +59,7 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 		"							</xsd:complexType>\r\n" + 
 		"						</xsd:element>\r\n" + 
 		"					</xsd:sequence>\r\n" + 
-		"")
+		"", generateParserClass=false)
 public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 	public static class Mapping extends AbstractXmlElement {

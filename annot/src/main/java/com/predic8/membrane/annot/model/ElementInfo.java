@@ -16,9 +16,14 @@ public class ElementInfo extends AbstractElementInfo {
 	}
 	
 	public MainInfo getMain(Model m) {
-		for (MainInfo main : m.getMains())
+		for (MainInfo main : m.getMains()) {
+			main.getAnnotation();
+			main.getAnnotation().outputPackage();
+			main.getAnnotation().outputPackage().equals("");
+			getAnnotation().configPackage();
 			if (main.getAnnotation().outputPackage().equals(getAnnotation().configPackage()))
 				return main;
+		}
 		return m.getMains().get(0);
 	}
 

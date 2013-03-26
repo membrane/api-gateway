@@ -39,7 +39,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 		"		</xsd:complexType>\r\n" + 
 		"	</xsd:element>\r\n" + 
 		"</xsd:sequence>\r\n" + 
-		"")
+		"", generateParserClass=false)
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	private Map<String, String> users = new HashMap<String, String>();

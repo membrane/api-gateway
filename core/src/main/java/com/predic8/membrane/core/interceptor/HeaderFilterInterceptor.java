@@ -36,7 +36,7 @@ import com.predic8.membrane.core.http.Message;
 		"							<xsd:element name=\"exclude\" type=\"xsd:string\" />\r\n" + 
 		"						</xsd:choice>\r\n" + 
 		"					</xsd:sequence>\r\n" + 
-		"")
+		"", generateParserClass=false)
 public class HeaderFilterInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = Logger.getLogger(HeaderFilterInterceptor.class);
