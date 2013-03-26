@@ -14,10 +14,6 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -109,33 +105,6 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		this.busyDelay = busyDelay;
 	}
 
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement("throttle");
-		
-		out.writeAttribute("maxThreads", ""+maxThreads);		
-		out.writeAttribute("delay", ""+delay);		
-		out.writeAttribute("busyDelay", ""+busyDelay);
-		
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		
-		if ( token.getAttributeValue("", "delay") != null )
-			delay = Long.parseLong(token.getAttributeValue("", "delay"));
-
-		if ( token.getAttributeValue("", "maxThreads") != null )
-			maxThreads = Integer.parseInt(token.getAttributeValue("", "maxThreads"));
-
-		if ( token.getAttributeValue("", "busyDelay") != null )
-			busyDelay = Integer.parseInt(token.getAttributeValue("", "busyDelay"));
-	}
-	
-	
 	@Override
 	public String getShortDescription() {
 		if (delay > 0 || maxThreads > 0)

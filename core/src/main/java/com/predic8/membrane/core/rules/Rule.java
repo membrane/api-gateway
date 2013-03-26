@@ -16,9 +16,6 @@ package com.predic8.membrane.core.rules;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -38,8 +35,6 @@ public interface Rule {
 	
 	public void setKey(RuleKey ruleKey);
 	
-	public void write(XMLStreamWriter out) throws XMLStreamException;
-	
 	public void setName(String name);
 	
 	public String getName();
@@ -57,8 +52,6 @@ public interface Rule {
 	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes();
 	
 	public int getCount();
-	
-	public Rule getDeepCopy() throws Exception;
 	
 	public SSLContext getSslInboundContext();
 

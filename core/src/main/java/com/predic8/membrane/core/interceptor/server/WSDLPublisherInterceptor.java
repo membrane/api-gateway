@@ -20,9 +20,6 @@ import java.util.Map;
 import java.util.Queue;
 
 import javax.annotation.concurrent.GuardedBy;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -137,19 +134,6 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 			documents_to_process.clear();
 			documents_to_process.add(wsdl);
 		}
-	}
-	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("wsdlPublisher");
-		out.writeAttribute("wsdl", wsdl);
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		setWsdl(token.getAttributeValue("", "wsdl"));
 	}
 	
 	@Override

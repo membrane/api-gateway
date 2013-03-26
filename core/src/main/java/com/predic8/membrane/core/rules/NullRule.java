@@ -13,18 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import javax.xml.stream.XMLStreamReader;
 
 public class NullRule extends AbstractProxy {
-
-	@Override
-	protected void parseKeyAttributes(XMLStreamReader token) {
-	}
-
-	@Override
-	protected String getElementName() {
-		return "Null Rule";
-	}
 
 	@Override
 	protected AbstractProxy getNewInstance() {

@@ -18,10 +18,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -69,37 +65,6 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	
 	private void setFailResponse(Exchange exc) {
 		exc.setResponse(Response.badRequest("Invalid XML features used in request.").build());
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		if (token.getAttributeValue("", "removeDTD") != null) {
-			removeDTD = Boolean.parseBoolean(token.getAttributeValue("", "removeDTD"));
-		} else {
-			removeDTD = true;
-		}
-		if (token.getAttributeValue("", "maxElementNameLength") != null) {
-			maxElementNameLength = Integer.parseInt(token.getAttributeValue("", "maxElementNameLength"));
-		} else {
-			maxElementNameLength = -1;
-		}
-		if (token.getAttributeValue("", "maxAttibuteCount") != null) {
-			maxAttibuteCount = Integer.parseInt(token.getAttributeValue("", "maxAttibuteCount"));
-		} else {
-			maxAttibuteCount = -1;
-		}
-	}
-
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("xmlProtection");
-
-		if (removeDTD == false) out.writeAttribute("removeDTD", "false");
-		if (maxElementNameLength != -1) out.writeAttribute("maxElementNameLength", "" + maxElementNameLength);
-		if (maxAttibuteCount != -1) out.writeAttribute("maxAttributeCount", "" + maxAttibuteCount);
-
-		out.writeEndElement();
 	}
 
 	private boolean protectXML(Exchange exc) throws Exception {

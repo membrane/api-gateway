@@ -250,29 +250,6 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("rest2Soap");
-
-		for (Mapping m : mappings) {
-			m.write(out);
-		}
-
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		if (token.getLocalName().equals("mapping")) {
-			mappings.add((Mapping) new Mapping().parse(token));
-		} else {
-			super.parseChildren(token, child);
-		}
-	}
-	
-	@Override
 	public String getShortDescription() {
 		return "Transforms REST requests into SOAP and responses vice versa.";
 	}

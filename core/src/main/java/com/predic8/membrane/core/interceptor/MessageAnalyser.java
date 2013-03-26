@@ -4,7 +4,6 @@ import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
@@ -112,13 +111,6 @@ public class MessageAnalyser extends AbstractInterceptor {
 		
 		return Outcome.CONTINUE;
 	}
-	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("analyser");
-		out.writeEndElement();
-	}	
 
 	private ExtractedData analyse(Message msg) throws Exception {
 		

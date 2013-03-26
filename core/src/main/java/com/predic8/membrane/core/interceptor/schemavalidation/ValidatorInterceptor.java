@@ -14,10 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -114,36 +110,6 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		return validator.validateMessage(exc, exc.getResponse());
 	}
 	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("validator");
-		if (schema != null)
-			out.writeAttribute("schema", schema);
-		if (wsdl != null)
-			out.writeAttribute("wsdl", wsdl);
-		if (jsonSchema != null)
-			out.writeAttribute("jsonSchema", jsonSchema);
-		if (schematron != null)
-			out.writeAttribute("schematron", schematron);
-		if (failureHandler != null)
-			out.writeAttribute("failureHandler", failureHandler);
-		if (skipFaults) {
-			out.writeAttribute("skipFaults", ""+skipFaults);
-		}
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		wsdl = token.getAttributeValue("", "wsdl");
-		schema = token.getAttributeValue("", "schema");
-		jsonSchema = token.getAttributeValue("", "jsonSchema");
-		schematron = token.getAttributeValue("", "schematron");
-		failureHandler = token.getAttributeValue("", "failureHandler");
-		skipFaults = Boolean.parseBoolean(token.getAttributeValue("", "skipFaults"));
-	}
-
 	@MCAttribute
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;

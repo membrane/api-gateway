@@ -15,10 +15,9 @@
 package com.predic8.membrane.core.interceptor;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.XMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
-public interface Interceptor extends XMLElement {
+public interface Interceptor {
 
 	public enum Flow {
 		REQUEST_RESPONSE, REQUEST, RESPONSE;

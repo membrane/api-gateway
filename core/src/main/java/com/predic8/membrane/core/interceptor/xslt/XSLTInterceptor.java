@@ -15,9 +15,6 @@ package com.predic8.membrane.core.interceptor.xslt;
 
 import java.util.Map;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 import javax.xml.transform.stream.StreamSource;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -75,19 +72,6 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		this.xsltTransformer = null;
 	}
 	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("transform");
-		out.writeAttribute("xslt", xslt);
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		xslt = token.getAttributeValue("", "xslt");
-	}
-
 	@Override
 	public String getShortDescription() {
 		return "Applies an XSLT transformation.";

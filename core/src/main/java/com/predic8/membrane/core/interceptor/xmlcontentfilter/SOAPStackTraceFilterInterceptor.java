@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.log4j.Logger;
@@ -54,14 +52,6 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		return handleMessage(exc, exc.getResponse());
 	}
-
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("soapStackTraceFilter");
-		out.writeEndElement();
-	}
-
 
 	private Outcome handleMessage(Exchange exc, Message message) {
 		try {

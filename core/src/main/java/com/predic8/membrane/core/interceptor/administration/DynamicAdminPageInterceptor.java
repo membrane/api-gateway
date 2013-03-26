@@ -17,7 +17,6 @@ import static com.predic8.membrane.core.util.HttpUtil.createResponse;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 
 import java.io.ByteArrayInputStream;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -53,7 +52,6 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.PortOccupiedException;
 import com.predic8.membrane.core.util.DateUtil;
-import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
@@ -127,19 +125,6 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 						createStatusCodesTable(rule.getStatisticsByStatusCodes());
 						br();
 						createButton("View Messages", "calls", null, createQueryString("proxy", rule.toString()));
-					end();
-					div().id("tab3");
-						div().classAttr("proxy-config");
-						String xml = "";
-						try {
-							xml = rule.toXml();
-							xml = TextUtil.formatXML(new StringReader(xml), true);
-							raw(xml);
-						} catch (Exception e) {
-							log.error(xml);
-							e.printStackTrace();
-						}
-						end();
 					end();
 				end();
 			}

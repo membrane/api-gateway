@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathConstants;
 
 import org.apache.commons.logging.Log;
@@ -91,31 +88,6 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		this.namespaces = namespaces;
 	}
 
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement("switch");
-		
-		for (Case r : cases) {
-			r.write(out);
-		}
-		
-		out.writeEndElement();
-	}
-		
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		if (token.getLocalName().equals("case")) {
-			Case r = new Case();
-			r.parse(token);
-			cases.add(r);
-		} else {
-			super.parseChildren(token, child);
-		}	
-	}
-	
 	@Required
 	@MCChildElement
 	public void setCases(List<Case> cases) {

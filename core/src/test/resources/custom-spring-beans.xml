@@ -57,7 +57,7 @@
 						 requestXSLT="request.xsl" 
 						 responseXSLT="response.xsl" />
 			</rest2Soap>			
-	   		<validator wsdl="http://www.predic8.com:8080/material/ArticleService?wsdl" />
+	   		<validator wsdl="http://www.predic8.com/material/ArticleService?wsdl" />
 			<switch>
 				<case xPath="//convert" url="http://www.thomas-bayer.com/axis2/" />
 			</switch>

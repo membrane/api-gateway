@@ -18,49 +18,32 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.acl.AccessControlInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.ProxyRuleKey;
-import com.predic8.membrane.core.rules.Rule;
 
 public class ProxyRuleTest {
 
 	private Router router;
+	private Rule rule;
 		
-	private static byte[] buffer;
-	
 	@Before
 	public void setUp() throws Exception {
 		router = Router.init("src/test/resources/proxy-rules-test-monitor-beans.xml");
-		Rule rule = new ProxyRule(new ProxyRuleKey(8888));
+		rule = new ProxyRule(new ProxyRuleKey(8888));
 		rule.setName("Rule 1");
 		// TODO: this is not possible anymore rule.setInboundTLS(true);
 		rule.setBlockResponse(true);
 		rule.setInterceptors(getInterceptors());
 		
-		ByteArrayOutputStream os = new ByteArrayOutputStream();
-		XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(os, Constants.UTF_8);
-		rule.write(writer);
-		writer.flush();
-		buffer = os.toByteArray();
 	}
 	
 	@After
@@ -69,16 +52,7 @@ public class ProxyRuleTest {
 	}
 		
 	@Test
-	public void testReadRuleFromByteBuffer() throws Exception {
-		ProxyRule rule = new ProxyRule();
-		rule.init(router);
-		
-		XMLInputFactory factory = XMLInputFactory.newInstance();
-		XMLStreamReader reader = factory.createXMLStreamReader((new ByteArrayInputStream(buffer)), Constants.UTF_8);
-		
-		while(reader.next() != XMLStreamReader.START_ELEMENT);
-		
-		rule.parse(reader);
+	public void testRule() throws Exception {
 		
 		assertEquals(8888, rule.getKey().getPort());
 		assertEquals("Rule 1", rule.getName());

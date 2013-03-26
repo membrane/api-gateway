@@ -23,9 +23,6 @@ import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
@@ -166,33 +163,6 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setKeyHex(String keyHex) {
 		this.keyHex = keyHex;
-	}
-	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement("clusterNotification");
-		
-		if (keyHex != null)
-			out.writeAttribute("keyHex", keyHex);
-		out.writeAttribute("validateSignature", ""+validateSignature);
-		out.writeAttribute("timeout", ""+timeout);		
-		
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-
-		if ( token.getAttributeValue("", "keyHex") != null ) 
-			keyHex = token.getAttributeValue("", "keyHex");
-		
-		if ( token.getAttributeValue("", "validateSignature") != null ) 
-			validateSignature = Boolean.parseBoolean(token.getAttributeValue("", "validateSignature"));
-
-		if ( token.getAttributeValue("", "timeout") != null ) 
-			timeout = Integer.parseInt(token.getAttributeValue("", "timeout"));
 	}
 	
 	@Override

@@ -17,10 +17,6 @@ package com.predic8.membrane.core.interceptor;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -96,27 +92,6 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	@Deprecated
 	public void setExchangeStoreBeanId(String exchangeStoreBeanId) {
 		this.exchangeStoreBeanId = exchangeStoreBeanId;
-	}
-	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("exchangeStore");
-
-		if (exchangeStoreBeanId != null) {
-			if (exchangeStoreBeanId == BEAN_ID_ATTRIBUTE_CANNOT_BE_USED)
-				out.writeAttribute("error", BEAN_ID_ATTRIBUTE_CANNOT_BE_USED);
-			else
-				out.writeAttribute("name", exchangeStoreBeanId);
-		}
-
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		exchangeStoreBeanId = token.getAttributeValue("", "name");
 	}
 	
 	public void init() throws Exception {

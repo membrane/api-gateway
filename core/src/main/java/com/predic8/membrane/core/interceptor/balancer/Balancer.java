@@ -14,16 +14,18 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
-import javax.xml.stream.*;
-
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.*;
+import com.predic8.membrane.core.config.AbstractXmlElement;
 
 @MCElement(name="clusters", group="loadBalancer", global=false)
 public class Balancer extends AbstractXmlElement {
@@ -150,50 +152,6 @@ public class Balancer extends AbstractXmlElement {
 
 	public List<Session> getSessionsByNode(String cName, Node node) {
 		return getCluster(cName).getSessionsByNode(node);
-	}
-
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		if (token.getLocalName().equals("cluster")) {
-			final GenericComplexElement c = new GenericComplexElement();
-			c.setChildParser(new AbstractXmlElement() {
-				@Override
-				protected void parseChildren(XMLStreamReader token, String child)
-						throws Exception {
-					if (token.getLocalName().equals("node")) {
-						GenericComplexElement n = new GenericComplexElement();
-						n.parse(token);
-						up(c.getAttributeOrDefault("name", Cluster.DEFAULT_NAME),
-								n.getAttribute("host"), Integer.parseInt(n
-										.getAttribute("port")));
-					} else {
-						super.parseChildren(token, child);
-					}
-				}
-			});
-			c.parse(token);
-		} else {
-			super.parseChildren(token, child);
-		}
-	}
-
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement("clusters");
-		for (Cluster c : clusters.values()) {
-			out.writeStartElement("cluster");
-			out.writeAttribute("name", c.getName());
-
-			for (Node n : c.getAllNodes(0)) {
-				out.writeStartElement("node");
-				out.writeAttribute("host", n.getHost());
-				out.writeAttribute("port", "" + n.getPort());
-				out.writeEndElement();
-			}
-			out.writeEndElement();
-		}
-		out.writeEndElement();
 	}
 
 	public String getName() {

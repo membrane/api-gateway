@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2012, 2013 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -13,44 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.config.AbstractConfigElement;
 
-public abstract class Store extends AbstractConfigElement {
+public abstract class Store {
 
 	protected String location;
 	protected String password;
 	protected String type;
 	protected String provider;
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		location = token.getAttributeValue("", "location");
-		password = token.getAttributeValue("", "password");
-		type = token.getAttributeValue("", "type");
-		provider = token.getAttributeValue("", "provider");
-		super.parseAttributes(token);
-	}
-
-	protected void writeAttributes(XMLStreamWriter out) throws XMLStreamException {
-		out.writeAttribute("location", location);
-		out.writeAttribute("password", password);
-		if (type != null)
-			out.writeAttribute("type", type);
-		if (provider != null)
-			out.writeAttribute("provider", provider);
-	}
-	
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(getElementName());
-		writeAttributes(out);
-		out.writeEndElement();
-	}
 
 	public String getLocation() {
 		return location;

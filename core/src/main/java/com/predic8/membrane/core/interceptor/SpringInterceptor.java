@@ -1,9 +1,5 @@
 package com.predic8.membrane.core.interceptor;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
@@ -35,22 +31,6 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		ac = applicationContext;
 		i = (Interceptor) ac.getBean(refid);
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		super.parseAttributes(token);
-		refid = token.getAttributeValue("", "refid");
-	}
-
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement("interceptor");
-		if (refid == null)
-			out.writeAttribute("error", "the SpringInterceptor created from a Spring context cannot be serialized");
-		else
-			out.writeAttribute("refid", refid);
-		out.writeEndElement();
 	}
 
 	@Override

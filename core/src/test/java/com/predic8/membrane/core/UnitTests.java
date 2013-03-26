@@ -17,7 +17,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import com.predic8.membrane.core.config.CustomRulesConfigurationTest;
 import com.predic8.membrane.core.config.CustomSpringConfigurationTest;
 import com.predic8.membrane.core.config.ProxyTest;
 import com.predic8.membrane.core.config.ReadRulesConfigurationTest;
@@ -92,7 +91,6 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	LoadBalancingWithClusterManagerTest.class,
 	MultipleLoadBalancersTest.class, DNSCacheTest.class,
 	ValidatorInterceptorTest.class, XPathCBRInterceptorTest.class,
-	CustomRulesConfigurationTest.class,
 	CustomSpringConfigurationTest.class, JSESSIONIDExtractorTest.class,
 	ThrottleInterceptorTest.class, GroovyInterceptorTest.class,
 	FormValidationInterceptorTest.class, ServiceInvocationTest.class,

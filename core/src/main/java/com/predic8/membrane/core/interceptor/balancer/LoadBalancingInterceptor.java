@@ -16,10 +16,6 @@ package com.predic8.membrane.core.interceptor.balancer;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -27,7 +23,6 @@ import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
@@ -231,71 +226,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setSessionTimeout(long sessionTimeout) {
 		balancer.setSessionTimeout(sessionTimeout);
-	}
-
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("balancer");
-
-		out.writeAttribute("name", balancer.getName());
-		if (getSessionTimeout() != SessionCleanupThread.DEFAULT_TIMEOUT)
-			out.writeAttribute("sessionTimeout", ""+getSessionTimeout());
-
-		if (sessionIdExtractor != null) {
-			sessionIdExtractor.write(out);
-		}
-
-		balancer.write(out);
-
-		((AbstractXmlElement) strategy).write(out);
-
-		out.writeEndElement();
-	}
-
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		if (token.getAttributeValue("", "name") != null)
-			setName(token.getAttributeValue("", "name"));
-		else
-			setName(Balancer.DEFAULT_NAME);
-		if (token.getAttributeValue("", "sessionTimeout") != null)
-			setSessionTimeout(Integer.parseInt(token.getAttributeValue("", "sessionTimeout")));
-	}
-
-	
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		
-		if (token.getLocalName().equals("xmlSessionIdExtractor")) {
-			sessionIdExtractor = new XMLElementSessionIdExtractor();
-			sessionIdExtractor.parse(token);
-		} else if (token.getLocalName().equals("jSessionIdExtractor")) {
-			sessionIdExtractor = new JSESSIONIDExtractor();
-			sessionIdExtractor.parse(token);
-		} else if (token.getLocalName().equals("clusters")) {
-			balancer.parse(token);
-		} else if (token.getLocalName().equals("byThreadStrategy")) {
-			parseByThreadStrategy(token);
-		} else if (token.getLocalName().equals("roundRobinStrategy")) {
-			parseRoundRobinStrategy(token);
-		} else {
-			super.parseChildren(token, child);
-		}
-	}
-
-	private void parseByThreadStrategy(XMLStreamReader token) throws Exception {
-		ByThreadStrategy byTStrat = new ByThreadStrategy();
-		byTStrat.parse(token);
-		strategy = byTStrat;
-	}
-
-	private void parseRoundRobinStrategy(XMLStreamReader token)
-			throws Exception {
-		RoundRobinStrategy rrStrat = new RoundRobinStrategy();
-		rrStrat.parse(token);
-		strategy = rrStrat;
 	}
 
 	@Override

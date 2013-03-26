@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.log4j.Logger;
@@ -120,31 +119,6 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 	
 	public void setRules(List<Rule> rules) {
 		this.rules = rules;
-	}
-	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("headerFilter");
-		for (Rule r : rules)
-			r.write(out);
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		rules.clear();
-	}
-
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		if (token.getLocalName().equals("include"))
-			rules.add(new Rule(token.getElementText(), Action.KEEP));
-		else if (token.getLocalName().equals("exclude"))
-			rules.add(new Rule(token.getElementText(), Action.REMOVE));
-		else
-			super.parseChildren(token, child);
 	}
 	
 	@Override

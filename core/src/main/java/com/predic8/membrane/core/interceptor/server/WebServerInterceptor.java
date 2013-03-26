@@ -19,10 +19,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -127,25 +123,6 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setDocBase(String docBase) {
 		this.docBase = docBase;
-	}
-
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("webServer");
-
-		out.writeAttribute("docBase", docBase);
-		if (index.length > 0)
-			out.writeAttribute("index", getIndex());
-
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		docBase = token.getAttributeValue("", "docBase");
-		setIndex(token.getAttributeValue("", "index"));
 	}
 	
 	public String getIndex() {

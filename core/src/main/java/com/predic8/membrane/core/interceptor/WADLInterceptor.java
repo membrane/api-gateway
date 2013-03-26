@@ -16,12 +16,16 @@ package com.predic8.membrane.core.interceptor;
 
 import static com.predic8.membrane.core.Constants.WADL_NS;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.*;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -59,30 +63,6 @@ public class WADLInterceptor extends RelocatingInterceptor {
 		exc.getResponse().setBodyContent(stream.toByteArray());
 	}
 
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("wadlRewriter");
-
-		if (port != null)
-			out.writeAttribute("port", port);
-		if (host != null)
-			out.writeAttribute("host", host);
-		if (protocol != null)
-			out.writeAttribute("protocol", protocol);
-
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-
-		port = token.getAttributeValue("", "port");
-		host = token.getAttributeValue("", "host");
-		protocol = token.getAttributeValue("", "protocol");
-	}
-	
 	@MCAttribute
 	@Override
 	public void setProtocol(String protocol) {

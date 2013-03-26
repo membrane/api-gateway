@@ -15,15 +15,12 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.util.Map;
 
-import javax.xml.stream.XMLStreamReader;
-
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -40,44 +37,6 @@ public class LoginInterceptor extends AbstractInterceptor {
 	private SessionManager sessionManager;
 	private AccountBlocker accountBlocker;
 	private LoginDialog loginDialog;
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		super.parseAttributes(token);
-		location = token.getAttributeValue("", "location");
-		path = token.getAttributeValue("", "path");
-	}
-	
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
-		if (child.equals("staticUserDataProvider")) {
-			userDataProvider = new StaticUserDataProvider();
-			((StaticUserDataProvider) userDataProvider).parse(token);
-		} else if (child.equals("ldapUserDataProvider")) {
-			userDataProvider = new LDAPUserDataProvider();
-			((LDAPUserDataProvider) userDataProvider).parse(token);
-		} else if (child.equals("unifyingUserDataProvider")) {
-			userDataProvider = new UnifyingUserDataProvider();
-			((UnifyingUserDataProvider) userDataProvider).parse(token);
-		} else if (child.equals("accountBlocker")) {
-			accountBlocker = new AccountBlocker();
-			accountBlocker.parse(token);
-		} else if (child.equals("totpTokenProvider")) {
-			tokenProvider = new TOTPTokenProvider();
-			new AbstractXmlElement() {}.parse(token);
-		} else if (child.equals("emptyTokenProvider")) {
-			tokenProvider = new EmptyTokenProvider();
-			new AbstractXmlElement() {}.parse(token);
-		} else if (child.equals("telekomSMSTokenProvider")) {
-			tokenProvider = new TelekomSMSTokenProvider();
-			((SMSTokenProvider)tokenProvider).parse(token);
-		} else if (child.equals("sessionManager")) {
-			sessionManager = new SessionManager();
-			((SessionManager)sessionManager).parse(token);
-		} else {
-			super.parseChildren(token, child);
-		}
-	}
 	
 	@Override
 	public void init() throws Exception {

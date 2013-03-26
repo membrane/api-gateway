@@ -20,17 +20,12 @@ import groovy.lang.Script;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
-import com.predic8.membrane.core.config.XMLElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -131,26 +126,6 @@ public class GroovyInterceptor extends AbstractInterceptor {
 	private String srcWithImports(String src) {
 		return "import static com.predic8.membrane.core.interceptor.Outcome.*\nimport com.predic8.membrane.core.http.*\n"+src;
 	}		
-	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("groovy");
-		out.writeCharacters(src);		
-		out.writeEndElement();
-	}
-	
-	@Override
-	public XMLElement parse(XMLStreamReader token) throws Exception {
-		src = "";
-		return super.parse(token);
-	}
-	
-	@Override
-	protected void parseCharacters(XMLStreamReader token)
-			throws XMLStreamException {
-		src += token.getText();
-	}
 	
 	public String getSrc() {
 		return src;

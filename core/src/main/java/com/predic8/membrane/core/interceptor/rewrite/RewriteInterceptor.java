@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.regex.Pattern;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,7 +29,6 @@ import com.googlecode.jatl.Html;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -201,38 +196,6 @@ public class RewriteInterceptor extends AbstractInterceptor {
 	@MCChildElement
 	public void setMappings(List<Mapping> mappings) {
 		this.mappings = mappings;
-	}
-
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("rewriter");
-
-		for (Mapping m : mappings) {
-			out.writeStartElement("map");
-
-			out.writeAttribute("from", m.from);
-			out.writeAttribute("to", m.to);
-			out.writeAttribute("do", m.getDo().toString().toLowerCase().replace('_', '-'));
-
-			out.writeEndElement();
-		}
-
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		if (token.getLocalName().equals("map")) {
-			GenericComplexElement mapping = new GenericComplexElement();
-			mapping.parse(token);
-			mappings.add(new RewriteInterceptor.Mapping(mapping
-					.getAttribute("from"), mapping.getAttribute("to"), mapping.getAttribute("do")));
-		} else {
-			super.parseChildren(token, child);
-		}
 	}
 	
 	@Override

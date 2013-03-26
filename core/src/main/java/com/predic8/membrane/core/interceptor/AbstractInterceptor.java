@@ -14,21 +14,12 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
-import org.apache.commons.lang.NotImplementedException;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
-public class AbstractInterceptor extends AbstractConfigElement implements Interceptor {
+public class AbstractInterceptor implements Interceptor {
  
-	public static final String ELEMENT_NAME = "interceptor";
-	
 	protected String name = this.getClass().getName();
 	
 	private Flow flow = Flow.REQUEST_RESPONSE;
@@ -59,38 +50,6 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 
 	public void setDisplayName(String name) {
 		this.name = name;
-	}
-
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		if (token.getAttributeValue("", "name") != null)
-			name = token.getAttributeValue("", "name");	
-		id = token.getAttributeValue("", "refid");	
-	}
-	
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		if ( getId() != null ) writeReferenz(out);
-		else writeInterceptor(out);
-	}
-
-	protected void writeInterceptor(XMLStreamWriter out) throws XMLStreamException {
-		throw new NotImplementedException();
-	}
-	
-	private void writeReferenz(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement(ELEMENT_NAME);
-
-		out.writeAttribute("refid", getId());
-		
-		out.writeAttribute("name", getDisplayName());
-		
-		out.writeEndElement();
 	}
 
 	public String getId() {
@@ -124,14 +83,6 @@ public class AbstractInterceptor extends AbstractConfigElement implements Interc
 	@Override
 	public String getHelpId() {
 		return null;
-	}
-	
-	/**
-	 * Should not be overridden by subclasses. Override {@link #init()} instead.
-	 */
-	@Override
-	public final void doAfterParsing() throws Exception {
-		super.doAfterParsing();
 	}
 	
 	/**

@@ -13,9 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.log4j.Logger;
@@ -66,20 +63,6 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 		return handleMessage(exc, exc.getResponse());
 	}
 	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		setXPath(token.getAttributeValue("", "xPath"));
-	}
-
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("xmlContentFilter");
-		out.writeAttribute("xPath", xPath);
-		out.writeEndElement();
-	}
-
-
 	private Outcome handleMessage(Exchange exc, Message message) {
 		try {
 			xmlContentFilter.removeMatchingElements(message);

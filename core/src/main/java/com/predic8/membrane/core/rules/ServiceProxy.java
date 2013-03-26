@@ -14,24 +14,12 @@
 
 package com.predic8.membrane.core.rules;
 
-import static org.apache.commons.lang.StringUtils.defaultString;
-
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.config.GenericComplexElement;
-import com.predic8.membrane.core.config.Path;
-import com.predic8.membrane.core.config.security.SSLParser;
 
 @MCElement(name="serviceProxy", group="rule")
 public class ServiceProxy extends AbstractServiceProxy {
-
-	public static final String ELEMENT_NAME = "serviceProxy";
 	
 	public ServiceProxy() {
 		this.key = new ServiceProxyKey(80);
@@ -44,85 +32,6 @@ public class ServiceProxy extends AbstractServiceProxy {
 	}
 	
 
-	@Override
-	protected void parseKeyAttributes(XMLStreamReader token) {
-		key = new ServiceProxyKey(parseHost(token), parseMethod(token), ".*", parsePort(token), parseIp(token));
-	}
-
-	private String parseMethod(XMLStreamReader token) {
-		return defaultString(token.getAttributeValue("", "method"), "*");
-	}
-
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {		
-		if ("target".equals(child)) {
-			GenericComplexElement target = new GenericComplexElement();
-			target.setChildParser(new AbstractXmlElement() {
-				@Override
-				protected void parseChildren(XMLStreamReader token, String child)
-						throws Exception {
-					if ("ssl".equals(child)) {
-						SSLParser sslOutboundParser = new SSLParser();
-						sslOutboundParser.parse(token);
-						ServiceProxy.this.target.setSslParser(sslOutboundParser);
-					} else {
-						super.parseChildren(token, child);
-					}
-				}
-			});
-			target.parse(token);
-			setTargetHost(target.getAttribute("host"));
-			setTargetPort(Integer.parseInt(target.getAttributeOrDefault("port","80")));			
-			setTargetURL(target.getAttribute("service")!=null?
-						"service:"+target.getAttribute("service"):
-						target.getAttribute("url"));
-		} else if (Path.ELEMENT_NAME.equals(child)) {
-			key.setUsePathPattern(true);
-			Path p = (Path)(new Path()).parse(token);
-			key.setPathRegExp(p.isRegExp());
-			key.setPath(p.getValue());
-		} else {
-			super.parseChildren(token, child);
-		}
-	}
-	
-
-	@Override
-	protected void writeExtension(XMLStreamWriter out) throws XMLStreamException {
-		writeAttrIfTrue(out, !"*".equals(key.getHost()), "host", key.getHost());		
-		writeAttrIfTrue(out, !"*".equals(key.getMethod()), "method", key.getMethod());		
-
-		if (key.isUsePathPattern()) {
-			Path path = new Path();
-			path.setValue(key.getPath());
-			path.setRegExp(key.isPathRegExp());
-			path.write(out);
-		}
-	}
-
-	protected void writeTarget(XMLStreamWriter out) throws XMLStreamException {
-		if (getTargetHost() == null && getTargetPort() == 0 && getTargetURL() == null)
-			return;
-		
-		out.writeStartElement("target");
-		
-		if (getTargetHost() != null)
-			out.writeAttribute("host", getTargetHost());
-		
-		if (getTargetPort() != 0 && getTargetPort() != 80)
-			out.writeAttribute("port", "" + getTargetPort());
-		
-		if (getTargetURL() != null)
-			out.writeAttribute("url", getTargetURL());
-
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
-	
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new ServiceProxy();

@@ -20,10 +20,6 @@ import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -162,21 +158,6 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 		}
 	}
 
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("statisticsCSV");
-		out.writeAttribute("file", fileName);
-
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		setFileName(token.getAttributeValue("", "file"));
-	}
-	
 	@Override
 	public String getShortDescription() {
 		return "Logs access statistics into the CSV-based file " + HtmlUtils.htmlEscape(fileName) + " .";

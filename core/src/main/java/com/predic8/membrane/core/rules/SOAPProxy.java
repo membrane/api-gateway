@@ -19,10 +19,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,7 +29,6 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
@@ -52,7 +47,6 @@ import com.predic8.xml.util.ResourceDownloadException;
 @MCElement(name="soapProxy", group="rule")
 public class SOAPProxy extends AbstractServiceProxy {
 	private static final Log log = LogFactory.getLog(SOAPProxy.class.getName());
-	public static final String ELEMENT_NAME = "soapProxy";
 	private static final Pattern relativePathPattern = Pattern.compile("^./[^/?]*\\?");
 
 	protected String wsdl;
@@ -66,60 +60,6 @@ public class SOAPProxy extends AbstractServiceProxy {
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new SOAPProxy();
-	}
-	
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
-
-	@Override
-	protected void parseKeyAttributes(XMLStreamReader token) {
-		key = new ServiceProxyKey(parseHost(token), "*", ".*", parsePort(token), parseIp(token));
-		name = token.getAttributeValue("", "name");
-		wsdl = token.getAttributeValue("", "wsdl");
-		portName = token.getAttributeValue("", "portName");
-		if (token.getAttributeValue("", "method") != null)
-			throw new RuntimeException("Attribute 'method' is not allowed on <soapProxy />.");
-	}
-	
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {		
-		if ("target".equals(child)) {
-			// TODO: overwrite location extracted from WSDL
-			throw new Exception("Child element <target> is not allowed on <soapProxy />.");
-		} else if (Path.ELEMENT_NAME.equals(child)) {
-			key.setUsePathPattern(true);
-			Path p = (Path)(new Path()).parse(token);
-			key.setPathRegExp(false);
-			key.setPath(p.getValue());
-			if (p.isRegExp())
-				throw new Exception("A <path> element with a parent of <soapProxy> must not have @isRegExp='true'.");
-		} else {
-			super.parseChildren(token, child);
-		}
-	}
-
-	@Override
-	protected void writeExtension(XMLStreamWriter out) throws XMLStreamException {
-		writeAttrIfTrue(out, !"*".equals(key.getHost()), "host", key.getHost());
-		out.writeAttribute("wsdl", wsdl);
-		if (name != null)
-			out.writeAttribute("name", name);
-		if (portName != null)
-			out.writeAttribute("portName", portName);
-		
-		if (key.getPath() != null) {
-			Path path = new Path();
-			path.setValue(key.getPath());
-			path.setRegExp(false);
-			path.write(out);
-		}
-	}
-	
-	@Override
-	protected void writeTarget(XMLStreamWriter out) throws XMLStreamException {
-		// do nothing
 	}
 	
 	private void parseWSDL(Router router) {
@@ -267,12 +207,6 @@ public class SOAPProxy extends AbstractServiceProxy {
 			if (class1.isInstance(i))
 				return true;
 		return false;
-	}
-
-	protected void writeInterceptors(XMLStreamWriter out)
-			throws XMLStreamException {
-		if (interceptors.size() > automaticallyAddedInterceptorCount)
-			writeInterceptors(out, interceptors.subList(automaticallyAddedInterceptorCount, interceptors.size()));
 	}
 
 	public String getWsdl() {

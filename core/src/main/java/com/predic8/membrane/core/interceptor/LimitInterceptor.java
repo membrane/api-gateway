@@ -16,10 +16,6 @@ package com.predic8.membrane.core.interceptor;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -70,21 +66,6 @@ public class LimitInterceptor extends AbstractInterceptor {
 		this.maxBodyLength = maxBodyLength;
 	}
 	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		String maxBodyLengthStr = token.getAttributeValue("", "maxBodyLength");
-		maxBodyLength = maxBodyLengthStr == null ? -1 : Long.parseLong(maxBodyLengthStr);
-	}
-	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("limit");
-		if (maxBodyLength != -1)
-			out.writeAttribute("maxBodyLength", ""+maxBodyLength);		
-		out.writeEndElement();
-	}
-
 	private Outcome handleMessage(Exchange exc, Message msg) throws IOException {
 		if (maxBodyLength == -1)
 			return Outcome.CONTINUE;

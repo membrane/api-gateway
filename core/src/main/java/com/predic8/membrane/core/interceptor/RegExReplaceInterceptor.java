@@ -15,9 +15,8 @@ package com.predic8.membrane.core.interceptor;
 
 import java.io.IOException;
 
-import javax.xml.stream.*;
-
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -110,28 +109,6 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setReplace(String replace) {
 		this.replace = replace;
-	}
-	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("regExReplacer");
-
-		out.writeAttribute("regex", regex);
-		out.writeAttribute("replace", replace);
-		if (target == TargetType.HEADER)
-			out.writeAttribute("target", "HEADER");
-
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		regex = token.getAttributeValue("", "regex");
-		replace = token.getAttributeValue("", "replace");
-		String targetStr = token.getAttributeValue("", "target");
-		target = targetStr == null ? TargetType.BODY : TargetType.valueOf(targetStr);
 	}
 	
 	@Override

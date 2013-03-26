@@ -16,8 +16,6 @@ package com.predic8.membrane.core.interceptor;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 
-import javax.xml.stream.XMLStreamReader;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -47,14 +45,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		setFlow(Flow.REQUEST);
 	}
 
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		super.parseAttributes(token);
-		failOverOn5XX = Boolean.parseBoolean(token.getAttributeValue("", "failOverOn5XX"));
-		if (token.getAttributeValue("", "keepAliveTimeout") != null)
-			keepAliveTimeout = Long.parseLong(token.getAttributeValue("", "keepAliveTimeout"));
-	}
-	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		exc.blockRequestIfNeeded();

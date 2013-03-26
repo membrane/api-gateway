@@ -16,9 +16,7 @@ package com.predic8.membrane.core.interceptor.acl;
 import java.io.IOException;
 
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -102,20 +100,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	    }
 	}
 	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement("accessControl");
-		
-		out.writeAttribute("file", file);
-		
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {		
-		file = token.getAttributeValue("", "file");	
-	}
-
 	@Override
 	public String getShortDescription() {
 		return "Authenticates incoming requests based on the file " + HtmlUtils.htmlEscape(file) + " .";

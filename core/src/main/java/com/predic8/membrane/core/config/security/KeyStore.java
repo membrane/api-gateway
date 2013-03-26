@@ -14,42 +14,14 @@
 
 package com.predic8.membrane.core.config.security;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
 @MCElement(name="keystore", group="ssl")
 public class KeyStore extends Store {
 
-	public static final String ELEMENT_NAME = "keystore";
-
 	private String keyPassword;
 	private String keyAlias;
-
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		super.parseAttributes(token);
-		keyPassword = token.getAttributeValue("", "keyPassword");
-		keyAlias = token.getAttributeValue("", "keyAlias");
-	}
-	
-	@Override
-	protected void writeAttributes(XMLStreamWriter out)
-			throws XMLStreamException {
-		super.writeAttributes(out);
-		if (keyPassword != null)
-			out.writeAttribute("keyPassword", keyPassword);
-		if (keyAlias != null)
-			out.writeAttribute("keyAlias", keyAlias);
-	}
 
 	public String getKeyPassword() {
 		return keyPassword;

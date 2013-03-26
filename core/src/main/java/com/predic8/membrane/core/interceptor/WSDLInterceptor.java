@@ -31,9 +31,6 @@ import java.net.URL;
 import java.net.URLDecoder;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -164,35 +161,6 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		return registryWSDLRegisterURL;
 	}
 
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("wsdlRewriter");
-
-		if (port != null)
-			out.writeAttribute("port", port);
-		if (host != null)
-			out.writeAttribute("host", host);
-		if (protocol != null)
-			out.writeAttribute("protocol", protocol);
-		if (registryWSDLRegisterURL != null)
-			out.writeAttribute("registryWSDLRegisterURL",
-					registryWSDLRegisterURL);
-
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-
-		port = token.getAttributeValue("", "port");
-		host = token.getAttributeValue("", "host");
-		protocol = token.getAttributeValue("", "protocol");
-		registryWSDLRegisterURL = token.getAttributeValue("",
-				"registryWSDLRegisterURL");
-	}
-	
 	@Override
 	public String getShortDescription() {
 		return "Rewrites SOAP endpoint addresses and XML Schema locations in WSDL and XSD documents.";

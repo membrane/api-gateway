@@ -14,19 +14,19 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import java.util.*;
-
-import javax.xml.stream.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.*;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
 
 @MCElement(name="basicAuthentication", xsd="" +
@@ -97,36 +97,6 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		this.users = users;
 	}
 
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement("basicAuthentication");
-		
-		for (Map.Entry<String, String> u : users.entrySet()) {
-			out.writeStartElement("user");
-			
-			out.writeAttribute("name", u.getKey());		
-			out.writeAttribute("password", u.getValue());		
-
-			out.writeEndElement();
-		}
-		
-		out.writeEndElement();
-	}
-		
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		if (token.getLocalName().equals("user")) {
-			GenericComplexElement user = new GenericComplexElement();
-			user.parse(token);
-			users.put(user.getAttribute("name"), user.getAttribute("password"));
-		} else {
-			super.parseChildren(token, child);
-		}
-	}
-	
 	@Override
 	public String getShortDescription() {
 		return "Authenticates incoming requests based on a fixed user list.";

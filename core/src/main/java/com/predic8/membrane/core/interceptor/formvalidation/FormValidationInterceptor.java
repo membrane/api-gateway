@@ -140,29 +140,6 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("formValidation");
-
-		for (Field m : fields) {
-			m.write(out);
-		}
-
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		if (token.getLocalName().equals("field")) {
-			fields.add((FormValidationInterceptor.Field)new FormValidationInterceptor.Field().parse(token));
-		} else {
-			super.parseChildren(token, child);
-		}
-	}
-	
-	@Override
 	public String getHelpId() {
 		return "form-validation";
 	}

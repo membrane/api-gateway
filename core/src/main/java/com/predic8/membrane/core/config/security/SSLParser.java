@@ -13,17 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.AbstractConfigElement;
 
 @MCElement(name="ssl", group="ssl")
-public class SSLParser extends AbstractConfigElement {
+public class SSLParser {
 
 	private KeyStore keyStore;
 	private TrustStore trustStore;
@@ -32,51 +27,6 @@ public class SSLParser extends AbstractConfigElement {
 	private String ciphers;
 	private String clientAuth;
 	private boolean ignoreTimestampCheckFailure;
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		algorithm = token.getAttributeValue("", "algorithm");
-		protocol = token.getAttributeValue("", "protocol");
-		ciphers = token.getAttributeValue("", "ciphers");
-		clientAuth = token.getAttributeValue("", "clientAuth");
-		ignoreTimestampCheckFailure = Boolean.parseBoolean(token.getAttributeValue("", "ignoreTimestampCheckFailure"));
-		super.parseAttributes(token);
-	}
-	
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child)
-			throws Exception {
-		if (KeyStore.ELEMENT_NAME.equals(child)) {
-			keyStore = new KeyStore();
-			keyStore.parse(token);
-		} else if (TrustStore.ELEMENT_NAME.equals(child)) {
-			trustStore = new TrustStore();
-			trustStore.parse(token);
-		}
-	}
-
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement("ssl");
-		if (algorithm != null)
-			out.writeAttribute("algorithm", algorithm);
-		if (protocol != null)
-			out.writeAttribute("protocol", protocol);
-		if (ciphers != null)
-			out.writeAttribute("ciphers", ciphers);
-		if (clientAuth != null)
-			out.writeAttribute("clientAuth", clientAuth);
-		if (ignoreTimestampCheckFailure)
-			out.writeAttribute("ignoreTimestampCheckFailure", "true");
-		
-
-		if (keyStore != null)
-			keyStore.write(out);
-		if (trustStore != null)
-			trustStore.write(out);
-
-		out.writeEndElement();
-	}
 
 	public KeyStore getKeyStore() {
 		return keyStore;

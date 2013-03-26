@@ -13,37 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
 @MCElement(name="truststore", group="ssl")
 public class TrustStore extends Store {
 
-	public static final String ELEMENT_NAME = "truststore";
-
 	protected String algorithm;
 
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		super.parseAttributes(token);
-		algorithm = token.getAttributeValue("", "algorithm");
-	}
-	
-	protected void writeAttributes(XMLStreamWriter out) throws XMLStreamException {
-		super.writeAttributes(out);
-		if (algorithm != null)
-			out.writeAttribute("algorithm", algorithm);
-	}
-	
 	public String getAlgorithm() {
 		return algorithm;
 	}

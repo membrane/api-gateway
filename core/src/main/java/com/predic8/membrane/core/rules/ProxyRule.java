@@ -14,10 +14,6 @@
 
 package com.predic8.membrane.core.rules;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.lang.StringUtils;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -34,31 +30,6 @@ public class ProxyRule extends AbstractProxy {
 	
 	public ProxyRule(ProxyRuleKey ruleKey) {
 		super(ruleKey);
-	}
-	
-	@Override
-	protected void parseKeyAttributes(XMLStreamReader token) {
-		key = new ProxyRuleKey(Integer.parseInt(token.getAttributeValue("", "port")), parseIp(token));
-	}
-
-	protected String parseIp(XMLStreamReader token) {
-		return token.getAttributeValue("", "ip");
-	}
-
-	@Override
-	public void write(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement(getElementName());
-		
-		writeRule(out);
-		
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected String getElementName() {
-		return ELEMENT_NAME;
 	}
 	
 	@Override

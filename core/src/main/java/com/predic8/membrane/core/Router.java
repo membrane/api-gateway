@@ -20,9 +20,6 @@ import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -36,7 +33,6 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
-import com.predic8.membrane.core.config.AbstractConfigElement;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -52,7 +48,7 @@ import com.predic8.membrane.core.util.ResourceResolver;
 		outputName="router-conf.xsd",
 		targetNamespace="http://membrane-soa.org/proxies/1/")
 @MCElement(name="router", group="basic")
-public class Router extends AbstractConfigElement implements Lifecycle, ApplicationContextAware {
+public class Router implements Lifecycle, ApplicationContextAware {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());
 
@@ -265,13 +261,4 @@ public class Router extends AbstractConfigElement implements Lifecycle, Applicat
 		return hotDeploy;
 	}
 	
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement("router");
-		
-		for (Rule rule : getRules())
-			rule.write(out);
-		
-		out.writeEndElement();
-	}
 }

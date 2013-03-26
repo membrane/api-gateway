@@ -14,10 +14,6 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -53,40 +49,6 @@ public class LogInterceptor extends AbstractInterceptor {
 		log("==== Response ===");
 		logMessage(exc.getResponse());
 		return Outcome.CONTINUE;
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-
-		if (token.getAttributeValue("", "headerOnly") != null) {
-			headerOnly = Boolean.parseBoolean(token.getAttributeValue("",
-					"headerOnly"));
-		}
-
-		if (token.getAttributeValue("", "category") != null) {
-			category = token.getAttributeValue("", "category");
-		}
-
-		if (token.getAttributeValue("", "level") != null) {
-			level = Level.valueOf(token.getAttributeValue("", "level"));
-		}
-	}
-
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		out.writeStartElement("log");
-
-		if (headerOnly)
-			out.writeAttribute("headerOnly", "" + headerOnly);
-
-		if (!LogInterceptor.class.getName().equals(category))
-			out.writeAttribute("category", category);
-
-		if (level != Level.WARN)
-			out.writeAttribute("level", "" + level);
-
-		out.writeEndElement();
 	}
 
 	public boolean isHeaderOnly() {

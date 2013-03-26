@@ -21,9 +21,6 @@ import java.sql.Statement;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 import javax.sql.DataSource;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -186,29 +183,6 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 		this.dataSourceBeanId = dataSourceBeanId;
 	}
 
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement("statisticsJDBC");
-
-		out.writeAttribute("postMethodOnly", ""+postMethodOnly);
-		out.writeAttribute("soapOnly", ""+soapOnly);
-		if (DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED == dataSourceBeanId)
-			out.writeAttribute("error", DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED);
-		else
-			out.writeAttribute("dataSourceBeanId", dataSourceBeanId);
-		
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		postMethodOnly = Boolean.parseBoolean(token.getAttributeValue("", "postMethodOnly"));
-		soapOnly = Boolean.parseBoolean(token.getAttributeValue("", "soapOnly"));
-		dataSourceBeanId = token.getAttributeValue("", "dataSource");
-	}
-	
 	private void logDatabaseMetaData(DatabaseMetaData metaData) throws Exception {
 		log.debug("Database metadata:");
 		log.debug("Name: "+metaData.getDatabaseProductName());

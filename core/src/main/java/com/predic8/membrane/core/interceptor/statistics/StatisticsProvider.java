@@ -21,9 +21,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import javax.sql.DataSource;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -172,25 +169,6 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 		jsonGen.writeStringField("msgFilePath",
 				r.getString(JDBCUtil.MSG_FILE_PATH));
 		jsonGen.writeEndObject();
-	}
-
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-
-		out.writeStartElement("statisticsProvider");
-
-		if (dataSourceBeanId == null)
-			out.writeAttribute("error", "could not determine dataSource bean id");
-		else
-			out.writeAttribute("dataSourceBeanId", dataSourceBeanId);
-
-		out.writeEndElement();
-	}
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		dataSourceBeanId = token.getAttributeValue("", "dataSource");
 	}
 
 	public DataSource getDataSource() {

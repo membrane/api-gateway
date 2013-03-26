@@ -16,8 +16,6 @@ package com.predic8.membrane.core.interceptor.rewrite;
 
 import java.net.URL;
 
-import javax.xml.stream.XMLStreamReader;
-
 import junit.framework.Assert;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -125,11 +123,6 @@ public class ReverseProxyingInterceptorTest {
 	private Exchange createExchange(String requestHostHeader, String requestDestinationHeader, int port, String requestURI, String redirectionURI) {
 		Exchange exc = new Exchange(new FakeHttpHandler(port));
 		exc.setRule(new AbstractProxy(new AbstractRuleKey(port, null) {}){
-			@Override
-			protected void parseKeyAttributes(XMLStreamReader token) {
-				throw new NotImplementedException();
-			}
-
 			@Override
 			protected AbstractProxy getNewInstance() {
 				throw new NotImplementedException();

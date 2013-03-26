@@ -14,10 +14,6 @@
 
 package com.predic8.membrane.core.config;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.codec.binary.Base64;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -25,7 +21,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 
 @MCElement(name="proxyConfiguration", group="httpClient", global=false)
-public class ProxyConfiguration extends AbstractConfigElement {
+public class ProxyConfiguration {
 
 	public static final String ATTRIBUTE_ACTIVE = "active";
 
@@ -43,33 +39,6 @@ public class ProxyConfiguration extends AbstractConfigElement {
 
 	private String password;
 
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		active = getBoolean(token, ATTRIBUTE_ACTIVE);
-		authentication = getBoolean(token, ATTRIBUTE_AUTHENTICATION);
-		host = token.getAttributeValue("", "host");
-		port = Integer.parseInt(token.getAttributeValue("", "port"));
-		username = token.getAttributeValue("", "username");
-		password = token.getAttributeValue("", "password");
-		super.parseAttributes(token);
-	}
-
-	@Override
-	public void write(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement("proxyConfiguration");
-
-		out.writeAttribute(ATTRIBUTE_ACTIVE, "" + active);
-
-		out.writeAttribute(ATTRIBUTE_AUTHENTICATION, "" + authentication);
-
-		out.writeAttribute("host", host);
-		out.writeAttribute("port", "" + port);
-		out.writeAttribute("password", password);
-		out.writeAttribute("username", username);
-
-		out.writeEndElement();
-	}
-
 	public String getHost() {
 		return host;
 	}
@@ -83,6 +52,7 @@ public class ProxyConfiguration extends AbstractConfigElement {
 		return port;
 	}
 
+	@MCAttribute
 	public void setPort(int proxyPort) {
 		this.port = proxyPort;
 	}

@@ -16,10 +16,6 @@ package com.predic8.membrane.core.interceptor.administration;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -65,26 +61,6 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		wsi.init(router);
 	}
 
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement("adminConsole");
-		if (dapi.isReadOnly())
-			out.writeAttribute("readOnly", "true");
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		if ( token.getAttributeValue("", "readOnly") != null ) {
-			String v = token.getAttributeValue("", "readOnly");
-			dapi.setReadOnly(Boolean.parseBoolean(v) || "1".equals(v));
-		} else {
-			dapi.setReadOnly(false);
-		}
-	}
-	
 	public boolean isReadOnly() {
 		return dapi.isReadOnly();
 	}

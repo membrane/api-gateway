@@ -19,10 +19,6 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -70,23 +66,6 @@ public class CountInterceptor extends AbstractInterceptor {
 		};
 		return writer.toString();
 	}
-	
-	@Override
-	protected void writeInterceptor(XMLStreamWriter out)
-			throws XMLStreamException {
-		
-		out.writeStartElement("counter");
-		
-		out.writeAttribute("name", name);		
-		
-		out.writeEndElement();
-	}
-	
-	@Override
-	protected void parseAttributes(XMLStreamReader token) {
-		
-		name = token.getAttributeValue("", "name");
-	}	
 	
 	@Override
 	public String getHelpId() {
