@@ -51,6 +51,16 @@ import com.predic8.membrane.core.transport.http.AbortException;
 public class InterceptorFlowController {
 	
 	private static final Log log = LogFactory.getLog(InterceptorFlowController.class);
+	
+	/**
+	 * Key into {@link Exchange#getProperty(String)} to find out the reason why some
+	 * interceptor returned ABORT.
+	 * 
+	 * This refers to the last interceptor that returned ABORT.
+	 * 
+	 * Note that this does not have to be set if ABORT was returned by the interceptor.
+	 */
+	public static final String ABORTION_REASON = "abortionReason";
 
 	/**
 	 * Runs both the request and response handlers: This executes the main interceptor chain.
@@ -67,6 +77,7 @@ public class InterceptorFlowController {
 			}
 			invokeResponseHandlers(exchange);
 		} catch (Exception e) {
+			exchange.setProperty(ABORTION_REASON, e);
 			invokeAbortionHandlers(exchange);
 			throw e;
 		}
