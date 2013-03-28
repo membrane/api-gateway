@@ -1,6 +1,29 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [release] 4.0.0 (early access)
+
+* [changed behavior] [update config] [development]
+  The monitor-beans.xml configuration file has been merged into proxies.xml .
+  The file proxies.xml is now a normal Spring context configuration file,
+  and Spring is used to parse this file and manage the lifecycle of Membrane
+  ESB's main objects defined in this file.
+  (Note that for proxies.xml hot deployment to work, the Spring context class
+  needs to implement com.predic8.membrane.core.TrackingApplicationContext, as
+  does, for example, the class TrackingFileSystemXmlApplicationContext. - This
+  class is automatically used by Membrane ESB's standalone distribution.)
+  
+  Annotations and a annotation processor (defined in the new module
+  membrane-esb-annot) are used to generate Membrane ESB's XML schema document
+  for the proxies.xml language as well as the Java source for the parser
+  classes required by Spring. The core language is defined in the namespace
+  http://membrane-soa.org/proxies/1/ described by the XML schema document
+  found at http://membrane-soa.org/schemas/proxies-1.xsd .
+  
+  Language extensions can easily be implemented using a new separate namespace
+  using the same annotations, as does, for example, the membrane-esb-war
+  module.
+
 * [release] 3.5.7
 
 * [bugfix] handle LDAPUserDataProvider/@passwordAttribute in spring config
