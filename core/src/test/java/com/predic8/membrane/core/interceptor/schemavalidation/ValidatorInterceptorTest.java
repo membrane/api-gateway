@@ -16,16 +16,12 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import static junit.framework.Assert.assertEquals;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.io.IOUtil;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -33,7 +29,6 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.ResourceResolver;
-import com.predic8.membrane.core.util.TextUtil;
 
 
 public class ValidatorInterceptorTest {

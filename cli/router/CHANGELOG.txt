@@ -1,6 +1,14 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [release] 4.0.1 (early access)
+
+* [bugfixes] merged patches from 3.4.X and 3.5.X: small fixes in the admin
+  console, several regarding IE8. Fixed fileExchangeStore file name pattern
+  and added the attribute <webServer docBase="..." generateIndex="true" />
+  which displays directory indexes when a directory is requested and docBase
+  points to an actual directory.
+
 * [release] 4.0.0 (early access)
 
 * [changed behavior] [update config] [development]
