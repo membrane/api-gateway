@@ -24,6 +24,10 @@ Membrane ESB Change Log
   using the same annotations, as does, for example, the membrane-esb-war
   module.
 
+* [release] 3.5.8
+
+* [enhancement] adminConsole: support old IE versions
+
 * [release] 3.5.7
 
 * [bugfix] handle LDAPUserDataProvider/@passwordAttribute in spring config
