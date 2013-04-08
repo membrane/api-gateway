@@ -34,7 +34,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	public UserFeatureInterceptor() {
 		name = "User Feature";
-		setFlow(Flow.REQUEST);
+		setFlow(Flow.Set.REQUEST);
 	}
 
 	@Override

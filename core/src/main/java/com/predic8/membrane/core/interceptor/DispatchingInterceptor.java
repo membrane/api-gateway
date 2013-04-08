@@ -29,7 +29,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 	
 	public DispatchingInterceptor() {		
 		name = "Dispatching Interceptor";		
-		setFlow(Flow.REQUEST);
+		setFlow(Flow.Set.REQUEST);
 	}
 	
 	@Override

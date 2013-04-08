@@ -40,7 +40,7 @@ public class LimitInterceptorTest {
 		
 		LimitInterceptor wi = new LimitInterceptor();
 		wi.setMaxBodyLength(10);
-		wi.setFlow(Flow.REQUEST);
+		wi.setFlow(Flow.Set.REQUEST);
 		sp2.getInterceptors().add(wi);
 
 		WebServerInterceptor wi2 = new WebServerInterceptor();

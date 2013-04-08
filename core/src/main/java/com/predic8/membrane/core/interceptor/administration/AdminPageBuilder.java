@@ -30,6 +30,7 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
 import com.predic8.membrane.core.interceptor.balancer.BalancerUtil;
 import com.predic8.membrane.core.interceptor.balancer.Cluster;
@@ -749,27 +751,29 @@ public class AdminPageBuilder extends Html {
 		List<Interceptor> leftStack = new ArrayList<Interceptor>(), rightStack = new ArrayList<Interceptor>();
 		List<Interceptor> list = new ArrayList<Interceptor>(proxy.getInterceptors());
 		list.add(new AbstractInterceptor() { // fake interceptor so that both stacks end with the same size
-			public Flow getFlow() {
-				return Flow.REQUEST_RESPONSE;
+			public EnumSet<Flow> getFlow() {
+				return Flow.Set.REQUEST_RESPONSE;
 		}});
 		// build left and right stacks
 		for (Interceptor i : list) {
-			switch (i.getFlow()) {
-			case REQUEST:	
-				leftStack.add(i);
-				break;
-			case RESPONSE:
-				rightStack.add(i);
-				break;
-			case REQUEST_RESPONSE:
-				// fill left and right to same height
-				while (leftStack.size() < rightStack.size())
-					leftStack.add(null);
-				while (rightStack.size() < leftStack.size())
-					rightStack.add(null);
-				// put i into both
-				leftStack.add(i);
-				rightStack.add(i);
+			EnumSet<Flow> f = i.getFlow();
+			if (f.contains(Flow.REQUEST)) {
+				if (f.contains(Flow.RESPONSE)) {
+					// fill left and right to same height
+					while (leftStack.size() < rightStack.size())
+						leftStack.add(null);
+					while (rightStack.size() < leftStack.size())
+						rightStack.add(null);
+					// put i into both
+					leftStack.add(i);
+					rightStack.add(i);
+				} else {
+					leftStack.add(i);
+				}
+			} else {
+				if (f.contains(Flow.RESPONSE)) {
+					rightStack.add(i);
+				}
 			}
 		}
 		

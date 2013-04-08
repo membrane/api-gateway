@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.interceptor.flow;
 
+import java.util.EnumSet;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -18,8 +20,8 @@ public class RequestInterceptor extends AbstractFlowInterceptor {
 		boolean logDebug = log.isDebugEnabled();
 
 		for (Interceptor i : getInterceptors()) {
-			Flow f = i.getFlow();
-			if (f == Flow.RESPONSE)
+			EnumSet<Flow> f = i.getFlow();
+			if (!f.contains(Flow.REQUEST))
 				continue;
 
 			if (logDebug)

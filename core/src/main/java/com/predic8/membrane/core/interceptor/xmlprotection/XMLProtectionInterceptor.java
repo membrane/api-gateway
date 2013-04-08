@@ -41,7 +41,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	
 	public XMLProtectionInterceptor() {
 		name = "XML Protection";
-		setFlow(Flow.REQUEST);
+		setFlow(Flow.Set.REQUEST);
 	}
 	
 	@Override

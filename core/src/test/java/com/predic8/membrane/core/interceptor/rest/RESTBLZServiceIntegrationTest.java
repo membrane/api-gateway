@@ -52,9 +52,9 @@ public class RESTBLZServiceIntegrationTest {
 		
 		XSLTInterceptor xslt = new XSLTInterceptor();
 		xslt.setXslt("classpath:/blz-httpget2soap-request.xsl");
-		xslt.setFlow(Flow.REQUEST);
+		xslt.setFlow(Flow.Set.REQUEST);
 		xslt.setXslt("classpath:/strip-soap-envelope.xsl");
-		xslt.setFlow(Flow.RESPONSE);
+		xslt.setFlow(Flow.Set.RESPONSE);
 		router.getTransport().getInterceptors().add(xslt);
 		
 	}

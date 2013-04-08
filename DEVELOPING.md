@@ -1,6 +1,6 @@
 Prequisites
 ===========
-* Java (1.6 for backwards-compatible development, above will do otherwise)
+* Java Development Kit (Membrane's source is Java 1.6 compatible. But it requires annotation processing features not supported by the Sun JDK 1.6 compiler: Use the Oracle JDK 1.7 instead, setting the target to 1.6, if necessary.)
 * Maven 3
 * Eclipse (3.7, 4.2, ...)
 	* m2e plugin
@@ -29,15 +29,26 @@ Building
 
 2. Now go to Files->import and select "Existing Maven projects".
 
-3. In the next step you will have to set the service-proxy\cli directory as root-directory. Hit Finish. Eclipse is now building the Workspace, this might take some time.
+3. In the next section you will have to set the service-proxy\cli directory as root-directory. Hit Finish. Eclipse is now building the Workspace, this might take some time. Some build errors will remain until you have completed the next steps.
 
-4. Copy cli/router/conf to cli/conf . (Won't be checked in.)
+4. The project membrane-esb-annot should be error-free. Right click it and run as "Maven install".
 
-5. Right click the membrane-esb-core and run as "Maven install".
+5. Enable annotation processing on membrane-esb-core and membrane-esb-war: For both projects,
+   a. Right-click the project.
+   b. Choose "Properties".
+   c. Expand "Java Compiler".
+   d. Select "Annotation Processing".
+   e. Check both
+      [X] Enable project specific settings
+      [X] Enable annotation processing
 
-6. Right click membrane-esb-cli and run as "Maven install".
+6. Copy cli/router/conf to cli/conf . (Won't be checked in.)
 
-7. After doing so membrane-esb-cli-x.x.x.zip should be in the \cli\target folder.
+7. Right click the membrane-esb-core and run as "Maven install".
+
+8. Right click membrane-esb-cli and run as "Maven install".
+
+9. After doing so membrane-esb-cli-x.x.x.zip should be in the \cli\target folder.
 
 
 Running Service Proxy in Eclipse

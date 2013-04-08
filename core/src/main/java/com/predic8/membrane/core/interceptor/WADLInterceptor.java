@@ -39,7 +39,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 
 	public WADLInterceptor() {
 		name = "WADL Rewriting Interceptor";
-		setFlow(Flow.RESPONSE);
+		setFlow(Flow.Set.RESPONSE);
 	}
 
 	protected void rewrite(Exchange exc) throws Exception, IOException {

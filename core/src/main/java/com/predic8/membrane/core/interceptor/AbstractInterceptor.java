@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import java.util.EnumSet;
+
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -22,7 +24,7 @@ public class AbstractInterceptor implements Interceptor {
  
 	protected String name = this.getClass().getName();
 	
-	private Flow flow = Flow.REQUEST_RESPONSE;
+	private EnumSet<Flow> flow = Flow.Set.REQUEST_RESPONSE;
 	
 	protected String id;
 	
@@ -61,12 +63,12 @@ public class AbstractInterceptor implements Interceptor {
 		this.id = id;
 	}
 	
-	public void setFlow(Flow flow) {
+	public void setFlow(EnumSet<Flow> flow) {
 		this.flow = flow;
 	}
 
 	
-	public Flow getFlow() {
+	public EnumSet<Flow> getFlow() {
 		return flow;
 	}
 

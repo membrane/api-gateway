@@ -97,7 +97,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	public FormValidationInterceptor() {
 		name = "FormValidation";
-		setFlow(Flow.REQUEST);
+		setFlow(Flow.Set.REQUEST);
 	}
 
 	@Override

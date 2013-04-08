@@ -14,13 +14,21 @@
 
 package com.predic8.membrane.core.interceptor;
 
+import java.util.EnumSet;
+
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 
 public interface Interceptor {
 
 	public enum Flow {
-		REQUEST_RESPONSE, REQUEST, RESPONSE;
+		REQUEST, RESPONSE, ABORT;
+		
+		public static class Set {
+			public static final EnumSet<Flow> REQUEST = EnumSet.of(Flow.REQUEST);
+			public static final EnumSet<Flow> RESPONSE = EnumSet.of(Flow.RESPONSE, Flow.ABORT);
+			public static final EnumSet<Flow> REQUEST_RESPONSE = EnumSet.of(Flow.REQUEST, Flow.RESPONSE, Flow.ABORT);
+		}
 	}
 	
 	public Outcome handleRequest(Exchange exc) throws Exception;
@@ -44,8 +52,8 @@ public interface Interceptor {
 	
 	public Router getRouter();
 
-	public void setFlow(Flow flow);	
-	public Flow getFlow();
+	public void setFlow(EnumSet<Flow> flow);	
+	public EnumSet<Flow> getFlow();
 	
 	public String getShortDescription();
 	public String getLongDescription();

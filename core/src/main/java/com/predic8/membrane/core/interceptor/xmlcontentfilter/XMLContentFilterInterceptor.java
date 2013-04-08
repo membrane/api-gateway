@@ -35,7 +35,7 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 	private XMLContentFilter xmlContentFilter;
 	
 	public XMLContentFilterInterceptor() {
-		setFlow(Flow.REQUEST_RESPONSE);
+		setFlow(Flow.Set.REQUEST_RESPONSE);
 	}
 	
 	public String getXPath() {

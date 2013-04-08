@@ -39,7 +39,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	public RuleMatchingInterceptor() {
 		name = "Rule Matching Interceptor";		
-		setFlow(Flow.REQUEST);
+		setFlow(Flow.Set.REQUEST);
 	}
 	
 	public Outcome handleRequest(Exchange exc) throws Exception {

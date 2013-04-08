@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -93,8 +94,8 @@ public class InterceptorFlowController {
 		boolean logDebug = log.isDebugEnabled();
 
 		for (Interceptor i : interceptors) {
-			Flow f = i.getFlow();
-			if (f == Flow.RESPONSE) {
+			EnumSet<Flow> f = i.getFlow();
+			if (f.contains(Flow.RESPONSE) && !f.contains(Flow.REQUEST)) {
 				exchange.pushInterceptorToStack(i);
 				continue;
 			}
@@ -106,7 +107,7 @@ public class InterceptorFlowController {
 			if (o != Outcome.CONTINUE)
 				return o;
 				
-			if (f == Flow.REQUEST_RESPONSE)
+			if (f.contains(Flow.RESPONSE))
 				exchange.pushInterceptorToStack(i);
 		}
 		return Outcome.CONTINUE;

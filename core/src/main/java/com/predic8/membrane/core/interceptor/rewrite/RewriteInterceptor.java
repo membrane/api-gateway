@@ -122,7 +122,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 	public RewriteInterceptor() {
 		name = "URL Rewriter";
-		setFlow(Flow.REQUEST);
+		setFlow(Flow.Set.REQUEST);
 	}
 
 	@Override

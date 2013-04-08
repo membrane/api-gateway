@@ -42,7 +42,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	
 	public HTTPClientInterceptor() {
 		name="HTTPClient";
-		setFlow(Flow.REQUEST);
+		setFlow(Flow.Set.REQUEST);
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.interceptor.flow;
 
+import java.util.EnumSet;
+
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -14,13 +16,9 @@ public class ResponseInterceptor extends AbstractFlowInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		for (Interceptor i : getInterceptors()) {
-			Flow f = i.getFlow();
-			if (f == Flow.RESPONSE) {
-				exc.pushInterceptorToStack(i);
-				continue;
-			}
-
-			if (f == Flow.REQUEST_RESPONSE)
+			EnumSet<Flow> f = i.getFlow();
+			
+			if (f.contains(Flow.RESPONSE))
 				exc.pushInterceptorToStack(i);
 		}
 		return Outcome.CONTINUE;
