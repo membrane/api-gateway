@@ -20,10 +20,10 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractConfigElement;
+import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.util.TextUtil;
 
-public abstract class AbstractClientAddress extends AbstractConfigElement {
+public abstract class AbstractClientAddress extends AbstractXmlElement {
 
 	protected Router router;
 	protected Pattern pattern;

@@ -25,11 +25,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.AbstractConfigElement;
+import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.GenericComplexElement;
 import com.predic8.membrane.core.util.TextUtil;
 
-public class Resource extends AbstractConfigElement {
+public class Resource extends AbstractXmlElement {
 
 	private static Log log = LogFactory.getLog(Resource.class.getName());
 	
