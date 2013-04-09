@@ -70,7 +70,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 		
 		String host = k.isHostWildcard() ? new HostColonPort(exc.getRequest().getHeader().getHost()).host : k.getHost();
 		if (host == null)
-			host = "localhost"; // TODO: use local IP address (which is not exposed by the transport at the moment)
+			host = exc.getHandler().getLocalAddress().getHostAddress().toString();
 		
 		int port = k.getPort();
 		if (port == -1 || !exc.getHandler().isMatchLocalPort())

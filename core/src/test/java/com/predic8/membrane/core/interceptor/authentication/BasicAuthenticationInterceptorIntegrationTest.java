@@ -14,30 +14,27 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import static junit.framework.Assert.assertEquals;
-
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.http.params.HttpProtocolParams;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.test.AssertUtils;
+
 public class BasicAuthenticationInterceptorIntegrationTest {
 
+	private HttpRouter router = new HttpRouter();
 
-	@Test
-	public void testDeny() throws Exception {
+	@Before
+	public void setup() throws IOException {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
-		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		
 		BasicAuthenticationInterceptor interceptor = new BasicAuthenticationInterceptor();
@@ -46,23 +43,23 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 		interceptor.setUsers(mapping );
 		
 		router.addUserFeatureInterceptor(interceptor);
-
-		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-		int status = client.executeMethod(getGetMethod());
-	
-	    assertEquals(401, status);
-	    
-	    router.shutdown();
-	    //TODO Basic Authentication test
-	}
-	
-	private GetMethod getGetMethod() {
-		GetMethod get = new GetMethod("http://localhost:3001/axis2/services/BLZService?wsdl");
-		get.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		get.setRequestHeader(Header.SOAP_ACTION, "");		
-		return get;
 	}
 
+	@Test
+	public void testDeny() throws Exception {
+		AssertUtils.getAndAssert(401, "http://localhost:3001/axis2/services/BLZService?wsdl");
+	}
+	
+	@Test
+	public void testAccept() throws Exception {
+		AssertUtils.setupHTTPAuthentication("localhost", 3001, "admin", "admin");
+		AssertUtils.getAndAssert200("http://localhost:3001/axis2/services/BLZService?wsdl");
+	}
+
+	@After
+	public void teardown() throws IOException {
+		AssertUtils.closeConnections();
+		router.shutdown();
+	}
 	
 }
