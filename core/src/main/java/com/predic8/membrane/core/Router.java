@@ -182,6 +182,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 
 	@Override
 	public void start() {
+		log.info("Starting " + Constants.PRODUCT_NAME + " " + Constants.VERSION);
 		try {
 			/* TODO 4.0 reenable after fixing multi-creation
 			for (Rule r : beanFactory.getBeansOfType(Rule.class).values())
