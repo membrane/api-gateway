@@ -1,11 +1,11 @@
-Membrane ESB
-============
+Membrane Service Proxy
+======================
 
 Check the [Repository at GitHub](https://github.com/membrane/service-proxy) for the latest source code. Read the [CHANGELOG](https://github.com/membrane/service-proxy/blob/master/cli/router/CHANGELOG.txt) for recent changes.
 
 What is Membrane?
 -----------------
-Membrane is an open-source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
+Membrane Service Proxy is an open-source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
 
 *   a Service Virtualization layer,
 *   an API Gateway,
