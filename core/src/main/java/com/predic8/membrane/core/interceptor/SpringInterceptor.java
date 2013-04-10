@@ -80,5 +80,9 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 			i = (Interceptor) ac.getBean(refid);
 		i.init(router);
 	}
+	
+	public Interceptor getInner() {
+		return i;
+	}
 
 }

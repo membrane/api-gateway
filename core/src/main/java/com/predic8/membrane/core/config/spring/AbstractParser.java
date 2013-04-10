@@ -18,6 +18,7 @@ import java.util.Set;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
+import org.springframework.beans.factory.config.RuntimeBeanNameReference;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
@@ -126,24 +127,20 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
 
 		try {
-			if (delegate.isDefaultNamespace(ele)) {
-				Object o = delegate.parsePropertySubElement(ele, builder.getBeanDefinition());
+			Object o = delegate.parsePropertySubElement(ele, builder.getBeanDefinition());
 
-				String clazz = null;
-				if (o instanceof BeanDefinitionHolder) {
-					clazz = ((BeanDefinitionHolder) o).getBeanDefinition().getBeanClassName();
-				} else if (o instanceof RuntimeBeanReference) {
-					clazz = parserContext.getRegistry().getBeanDefinition(((RuntimeBeanReference) o).getBeanName()).getBeanClassName();
-				} else {
-					parserContext.getReaderContext().error("Don't know how to get bean class from " + o.getClass(), ele);
-				}
-
-				handleChildObject(ele, parserContext, builder, Class.forName(clazz), o);
+			String clazz = null;
+			if (o instanceof BeanDefinitionHolder) {
+				clazz = ((BeanDefinitionHolder) o).getBeanDefinition().getBeanClassName();
+			} else if (o instanceof RuntimeBeanReference) {
+				clazz = parserContext.getRegistry().getBeanDefinition(((RuntimeBeanReference) o).getBeanName()).getBeanClassName();
+			} else if (o instanceof RuntimeBeanNameReference) {
+				clazz = parserContext.getRegistry().getBeanDefinition(((RuntimeBeanNameReference) o).getBeanName()).getBeanClassName();
 			} else {
-				BeanDefinition bd = delegate.parseCustomElement(ele);
-
-				handleChildObject(ele, parserContext, builder, Class.forName(bd.getBeanClassName()), bd);
+				parserContext.getReaderContext().error("Don't know how to get bean class from " + o.getClass(), ele);
 			}
+
+			handleChildObject(ele, parserContext, builder, Class.forName(clazz), o);
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
@@ -160,6 +157,13 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 	protected boolean isMembraneNamespace(String namespace) {
 		return MEMBRANE_BEANS_NAMESPACE.equals(namespace) ||
 				MEMBRANE_PROXIES_NAMESPACE.equals(namespace);
+	}
+	
+	protected void setProperty(BeanDefinitionBuilder builder, String propertyName, Object value) {
+		if (value instanceof RuntimeBeanNameReference)
+			builder.addPropertyReference(propertyName, ((RuntimeBeanNameReference)value).getBeanName());
+		else
+			builder.addPropertyValue(propertyName, value);
 	}
 
 }

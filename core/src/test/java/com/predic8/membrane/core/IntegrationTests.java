@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import com.predic8.membrane.core.config.SpringReferencesTest;
 import com.predic8.membrane.core.http.MethodTest;
 import com.predic8.membrane.core.interceptor.AdjustContentLengthIntegrationTest;
 import com.predic8.membrane.core.interceptor.LimitInterceptorTest;
@@ -47,7 +48,8 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 		AdjustContentLengthIntegrationTest.class,
 		BoundConnectionTest.class, ExceptionHandlingTest.class,
 		WSDLPublisherTest.class, LimitInterceptorTest.class,
-		SOAPProxyIntegrationTest.class })
+		SOAPProxyIntegrationTest.class,
+		SpringReferencesTest.class })
 public class IntegrationTests {
 	/*
 	@BeforeClass

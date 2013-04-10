@@ -162,7 +162,7 @@ public class Parsers {
 						for (ChildElementInfo cei : ii.getCeis()) {
 							bw.write(
 									"	if (" + cei.getTypeDeclaration().getQualifiedName() + ".class.isAssignableFrom(clazz)) {\r\n" + 
-											"		builder.addPropertyValue(\"" + cei.getPropertyName() + "\"" + (cei.isList() ? "+\"[\"+ incrementCounter(builder, \"" + cei.getPropertyName() + "\") + \"]\" " : "") + ", child);\r\n" + 
+											"		setProperty(builder, \"" + cei.getPropertyName() + "\"" + (cei.isList() ? "+\"[\"+ incrementCounter(builder, \"" + cei.getPropertyName() + "\") + \"]\" " : "") + ", child);\r\n" + 
 									"	} else \r\n");
 						}
 						bw.write(

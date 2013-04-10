@@ -184,11 +184,6 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public void start() {
 		log.info("Starting " + Constants.PRODUCT_NAME + " " + Constants.VERSION);
 		try {
-			/* TODO 4.0 reenable after fixing multi-creation
-			for (Rule r : beanFactory.getBeansOfType(Rule.class).values())
-				if (!getRules().contains(r))
-					throw new RuntimeException("unclaimed rule detected. - please migrate to 4.0");
-					*/
 			if (transport == null && beanFactory.getBeansOfType(Transport.class).values().size() > 0)
 				throw new RuntimeException("unclaimed transport detected. - please migrate to 4.0");
 			if (exchangeStore == null)
