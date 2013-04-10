@@ -38,13 +38,13 @@ Hosting virtual REST services is easy:
 </serviceProxy>
 ```
 
-By default SOAP proxies configure themselves from WSDL:
+SOAP proxies configure themselves by analysing WSDL:
 ```xml
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
 </soapProxy>
 ```
 
-Add features as you like:
+Add features like logging or XML Schema validation against a WSDL document:
 ```xml
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
 	<validator />
