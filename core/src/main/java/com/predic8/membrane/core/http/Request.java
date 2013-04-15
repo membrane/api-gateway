@@ -16,15 +16,17 @@ package com.predic8.membrane.core.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.google.common.collect.Sets;
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -42,6 +44,17 @@ public class Request extends Message {
 	public static final String METHOD_TRACE = "TRACE";
 	public static final String METHOD_CONNECT = "CONNECT";
 	public static final String METHOD_OPTIONS = "OPTIONS";
+	
+	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet("GET", "HEAD", "CONNECT");
+	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
+			"DELETE",
+			/* some WebDAV methods, see http://www.ietf.org/rfc/rfc2518.txt */
+			"PROPFIND",
+			"MKCOL", 
+			"COPY",
+			"MOVE",
+			"LOCK",
+			"UNLOCK");
 
 
 	String method;
@@ -135,7 +148,7 @@ public class Request extends Message {
 	public boolean isCONNECTRequest() {
 		return METHOD_CONNECT.equals(method);
 	}
-	
+
 	public boolean isOPTIONSRequest() {
 		return METHOD_OPTIONS.equals(method);
 	}
@@ -147,11 +160,10 @@ public class Request extends Message {
 
 	@Override
 	public boolean isBodyEmpty() throws IOException {
-
-		if (isGETRequest() || isHEADRequest() || isCONNECTRequest())
+		if (methodsWithoutBody.contains(method))
 			return true;
 
-		if (isDELETERequest()) {
+		if (methodsWithOptionalBody.contains(method)) {
 			if (header.hasContentLength())
 				return header.getContentLength() == 0;
 
