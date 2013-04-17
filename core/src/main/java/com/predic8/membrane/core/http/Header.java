@@ -31,6 +31,9 @@ import com.predic8.membrane.core.http.cookie.MimeHeaders;
 import com.predic8.membrane.core.http.cookie.ServerCookie;
 import com.predic8.membrane.core.util.*;
 
+/**
+ * The headers of a HTTP message.
+ */
 public class Header {
 
 	// Header field names

@@ -20,6 +20,14 @@ import java.io.OutputStream;
 
 import com.predic8.membrane.core.Constants;
 
+/**
+ * A chunk of a HTTP message body.
+ * 
+ * Also see http://en.wikipedia.org/wiki/Chunked_transfer_encoding .
+ * 
+ * Used (independently of whether "Transfer-Encoding: chunked" is actually
+ * present) to store the message body's data.
+ */
 public class Chunk {
 
 	private final byte[] content;

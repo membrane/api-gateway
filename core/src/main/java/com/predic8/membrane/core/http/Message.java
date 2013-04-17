@@ -25,7 +25,9 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
-
+/**
+ * A HTTP message (request or response).
+ */
 public abstract class Message {
 
 	private static Log log = LogFactory.getLog(Message.class.getName());

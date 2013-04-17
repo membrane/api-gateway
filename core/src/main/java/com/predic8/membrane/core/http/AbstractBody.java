@@ -21,6 +21,23 @@ import java.util.List;
 
 import com.predic8.membrane.core.Constants;
 
+/**
+ * A HTTP message body (request or response), as it is received or constructed
+ * internally by Membrane.
+ * 
+ * (Sending a body is handled by one of the {@link AbstractBodyTransferrer}s.)
+ * 
+ * To read a body, use the concrete implementation {@link ChunkedBody} (iff
+ * "Transfer-Encoding: chunked" is used) or {@link Body} (iff not). To construct
+ * a body within Membrane, {@link Body} is used by some helper method like
+ * {@link Response.ResponseBuilder#body(String)}.
+ * 
+ * This class supports "streaming" the body: If a HTTP message is directly
+ * forwarded by Membrane (without any component reading or changing the
+ * message's body), the incoming network stream's buffer is directly written to
+ * the output stream. This allows Membrane to perform very well in this
+ * situation.
+ */
 public abstract class AbstractBody {
 
 	boolean read;
@@ -47,6 +64,25 @@ public abstract class AbstractBody {
 	
 	protected abstract void readLocal() throws IOException;
 
+	/**
+	 * Returns the body's content as a byte[] represenatation.
+	 * 
+	 * For example, {@link #getContent()} might return a byte representation of
+	 * 
+	 * <pre>
+	 * Wikipedia in
+	 * 
+	 * chunks.
+	 * </pre>
+	 * 
+	 * The return value does not differ whether "Transfer-Encoding: chunked" is
+	 * used or not (see http://en.wikipedia.org/wiki/Chunked_transfer_encoding
+	 * ), the example above is taken from there.
+	 * 
+	 * Please note that a new array is allocated when calling 
+	 * {@link #getContent()}. If you do not need the body as one single byte[],
+	 * you should therefore use {@link #getBodyAsStream()} instead.
+	 */
 	public byte[] getContent() throws IOException {
 		read();
 		byte[] content = new byte[getLength()];
@@ -98,6 +134,25 @@ public abstract class AbstractBody {
 		return length;
 	}
 
+	/**
+	 * Returns a reconstruction of the over-the-wire byte sequence received.
+	 * 
+	 * When "Transfer-Encoding: chunked" is used (see
+	 * http://en.wikipedia.org/wiki/Chunked_transfer_encoding ), the return
+	 * value might be (to follow the example from Wikipedia) a byte representation of
+	 * 
+	 * <pre>
+	 * 4
+	 * Wiki
+	 * 5
+	 * pedia
+	 * E
+	 *  in 
+	 * 
+	 * chunks.
+	 * 0
+	 * </pre>
+	 */
 	public byte[] getRaw() throws IOException {
 		read();
 		return getRawLocal();
