@@ -1,11 +1,11 @@
-Membrane ESB
-============
+Membrane Service Proxy
+======================
 
 Check the [Repository at GitHub](https://github.com/membrane/service-proxy) for the latest source code. Read the [CHANGELOG](https://github.com/membrane/service-proxy/blob/master/cli/router/CHANGELOG.txt) for recent changes.
 
 What is Membrane?
 -----------------
-Membrane is an open-source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
+Membrane Service Proxy is an open-source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
 
 *   a Service Virtualization layer,
 *   an API Gateway,
@@ -25,7 +25,7 @@ Start `membrane.sh` or `membrane.bat`.
 
 Have a look at the main configuration file `proxies.xml`. Changes to this file are instantly deployed.
 
-Go to the [website](http://membrane-soa.org/esb/) for more documentation.
+Go to the [website](http://membrane-soa.org/service-proxy/) for more documentation.
 
 Samples
 -------
@@ -38,13 +38,13 @@ Hosting virtual REST services is easy:
 </serviceProxy>
 ```
 
-By default SOAP proxies configure themselves from WSDL:
+SOAP proxies configure themselves by analysing WSDL:
 ```xml
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
 </soapProxy>
 ```
 
-Add features as you like:
+Add features like logging or XML Schema validation against a WSDL document:
 ```xml
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
 	<validator />
