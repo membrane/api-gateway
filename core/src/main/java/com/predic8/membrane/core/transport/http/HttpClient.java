@@ -236,7 +236,6 @@ public class HttpClient {
 		AbstractHttpHandler ahr = exc.getHandler();
 		if (ahr instanceof HttpServerHandler)
 			response.write(((HttpServerHandler)ahr).getSrcOut());
-		exc.getRequest().readBody();
 		exc.getRequest().getBody().write(exc.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferrer(con.out) : new PlainBodyTransferrer(con.out));
 		con.out.flush();
 		response.read(con.in, !exc.getRequest().isHEADRequest());

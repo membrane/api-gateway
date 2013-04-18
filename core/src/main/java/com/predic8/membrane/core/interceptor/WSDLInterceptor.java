@@ -19,7 +19,6 @@ import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
 import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
 import static com.predic8.membrane.core.Constants.XSD_NS;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -66,7 +65,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
 		Relocator relocator = new Relocator(new OutputStreamWriter(stream,
-				getCharset(exc)), getLocationProtocol(), getLocationHost(exc),
+				exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc),
 				getLocationPort(exc), pathRewriter);
 
 		if (rewriteEndpoint) {
@@ -82,8 +81,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		relocator.getRelocatingAttributes().put(new QName(XSD_NS, "include"),
 				"schemaLocation");
 
-		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(exc
-				.getResponse().getBody().getContent()), getCharset(exc)));
+		relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
 
 		if (relocator.isWsdlFound()) {
 			registerWSDL(exc);

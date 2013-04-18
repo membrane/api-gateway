@@ -30,7 +30,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
@@ -87,20 +86,6 @@ public class HttpUtil {
 		return Integer.parseInt(buffer.toString().trim(), 16);
 	}
 
-	public static Response createNotFoundResponse() {
-		Response response = new Response();
-		response.setStatusCode(404);
-		response.setStatusMessage("Not Found");
-
-		response.setHeader(createHeaders(MimeType.TEXT_XML_UTF8));
-
-		response.setBody(new Body((
-				"<html><head><title>Page Not Found</title></head><body>" +
-				"The requested page could't be found!" + 
-				"</body></html>").getBytes(Constants.UTF_8_CHARSET)));
-		return response;
-	}
-
 	public static Response createHTMLErrorResponse(String message, String comment) {
 		Response response = Response.interalServerError().build();
 		response.setHeader(createHeaders(MimeType.TEXT_HTML_UTF8));
@@ -146,9 +131,7 @@ public class HttpUtil {
 
 		response.setHeader(createHeaders(MimeType.TEXT_XML_UTF8));
 
-		Body body = new Body(getFaultSOAPBody(message).getBytes(Constants.UTF_8_CHARSET));
-
-		response.setBody(body);
+		response.setBodyContent(getFaultSOAPBody(message).getBytes(Constants.UTF_8_CHARSET));
 		return response;
 	}
 
@@ -185,13 +168,13 @@ public class HttpUtil {
 		return buf.toString();
 	}
 
-	public static Response createResponse(int code, String msg, String body, String contentType, String... headers) {
+	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {
 		Response res = new Response();
 		res.setStatusCode(code);
 		res.setStatusMessage(msg);
 		res.setHeader(createHeaders(contentType, headers));
 
-		if (body != null) res.setBody(new Body(body.getBytes(Constants.UTF_8_CHARSET)));
+		if (body != null) res.setBodyContent(body);
 		return res;		
 	}
 	

@@ -837,7 +837,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private Response respond(String page) throws Exception {
-		return createResponse(200, "OK", page, MimeType.TEXT_HTML_UTF8);
+		return createResponse(200, "OK", page.getBytes(Constants.UTF_8_CHARSET), MimeType.TEXT_HTML_UTF8);
 	}
 
 	private Response redirect(String ctrl, String action, String query, String relativeRootPath) throws Exception {

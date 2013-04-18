@@ -25,7 +25,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.util.MessageUtil;
 
 /**
  * Runs a regular-expression-replacement on either the message body (default) or
@@ -81,9 +80,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		log.debug("pattern: " +regex);
 		log.debug("replacement: " +replace);
 		
-		res.readBody();
-		byte[] content = MessageUtil.getContent(res);
-		res.setBodyContent(new String(content, res.getCharset()).replaceAll(regex, replace).getBytes(res.getCharset()));
+		res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(res.getCharset()));
 		res.getHeader().removeFields("Content-Encoding");
 	}
 

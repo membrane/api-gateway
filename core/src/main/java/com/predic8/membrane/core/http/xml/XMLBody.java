@@ -42,7 +42,7 @@ class XMLBody extends AbstractXmlElement {
 
 		XMLStreamReader parser;
 		synchronized(xmlInputFactory) {
-			parser = xmlInputFactory.createXMLStreamReader(msg.getBodyAsStream(), msg.getCharset());
+			parser = xmlInputFactory.createXMLStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset());
 		}
 
 		boolean endDoc = false;

@@ -81,7 +81,7 @@ public abstract class AbstractBody {
 	 * 
 	 * Please note that a new array is allocated when calling 
 	 * {@link #getContent()}. If you do not need the body as one single byte[],
-	 * you should therefore use {@link #getBodyAsStream()} instead.
+	 * you should therefore use {@link #getContentAsStream()} instead.
 	 */
 	public byte[] getContent() throws IOException {
 		read();
@@ -93,7 +93,7 @@ public abstract class AbstractBody {
 		return content;
 	}
 
-	public InputStream getBodyAsStream() throws IOException {
+	public InputStream getContentAsStream() throws IOException {
 		read();
 		return new BodyInputStream(chunks);
 	}
@@ -111,6 +111,9 @@ public abstract class AbstractBody {
 
 	protected abstract void writeNotRead(AbstractBodyTransferrer out) throws IOException;
 	
+	/**
+	 * @return the length of the return value of {@link getContent()}
+	 */
 	public int getLength() throws IOException {
 		read();
 
@@ -118,19 +121,6 @@ public abstract class AbstractBody {
 		for (Chunk chunk : chunks) {
 			length += chunk.getLength();
 		}
-		return length;
-	}
-
-	protected int getRawLength() throws IOException {
-		if (chunks.size() == 0)
-			return 0;
-		int length = getLength();
-		for (Chunk chunk : chunks) {
-			length += Long.toHexString(chunk.getLength()).getBytes(Constants.UTF_8_CHARSET).length;
-			length += 2 * Constants.CRLF_BYTES.length;
-		}
-		length += "0".getBytes(Constants.UTF_8_CHARSET).length;
-		length += 2 * Constants.CRLF_BYTES.length;
 		return length;
 	}
 

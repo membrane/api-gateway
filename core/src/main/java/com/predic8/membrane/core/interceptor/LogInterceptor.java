@@ -20,7 +20,6 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.util.MessageUtil;
 
 @MCElement(name="log")
 public class LogInterceptor extends AbstractInterceptor {
@@ -96,7 +95,7 @@ public class LogInterceptor extends AbstractInterceptor {
 			log("================");
 			return;
 		}
-		log(new String(MessageUtil.getContent(msg), msg.getCharset()));
+		log(msg.getBodyAsStringDecoded());
 		log("================");
 	}
 

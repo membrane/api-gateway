@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor;
 
 import static com.predic8.membrane.core.Constants.WADL_NS;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -49,7 +48,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
 		Relocator relocator = new Relocator(new OutputStreamWriter(stream,
-				getCharset(exc)), getLocationProtocol(), getLocationHost(exc),
+				exc.getResponse().getCharset()), getLocationProtocol(), getLocationHost(exc),
 				getLocationPort(exc), pathRewriter);
 
 		relocator.getRelocatingAttributes().put(
@@ -57,8 +56,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 		relocator.getRelocatingAttributes().put(new QName(WADL_NS, "include"),
 				"href");
 
-		relocator.relocate(new InputStreamReader(new ByteArrayInputStream(exc
-				.getResponse().getBody().getContent()), getCharset(exc)));
+		relocator.relocate(new InputStreamReader(exc.getResponse().getBodyAsStreamDecoded(), exc.getResponse().getCharset()));
 
 		exc.getResponse().setBodyContent(stream.toByteArray());
 	}

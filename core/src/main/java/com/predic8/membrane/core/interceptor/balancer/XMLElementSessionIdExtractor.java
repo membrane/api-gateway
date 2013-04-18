@@ -42,7 +42,7 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 		log.debug("searching for sessionid");
 		
 		fac.setProperty("javax.xml.stream.isNamespaceAware", namespace != null);
-		XMLStreamReader reader = new FixedStreamReader(fac.createXMLStreamReader(msg.getBodyAsStream()));
+		XMLStreamReader reader = new FixedStreamReader(fac.createXMLStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
 		while ( reader.hasNext() ) {
 			reader.next();
 			if (isSessionIdElement(reader)) {

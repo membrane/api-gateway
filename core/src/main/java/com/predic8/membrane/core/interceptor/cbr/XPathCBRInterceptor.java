@@ -73,7 +73,9 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 	private Case findRoute(Request request) throws Exception {
 		for (Case r : cases) {
 			//TODO getBodyAsStream creates ByteArray each call. That could be a performance issue. Using BufferedInputStream did't work, because stream got closed.
-			if ( (Boolean) newXPath(namespaces).evaluate(r.getxPath(), new InputSource(request.getBodyAsStream()), XPathConstants.BOOLEAN) ) 
+			InputSource is = new InputSource(request.getBodyAsStreamDecoded());
+			is.setEncoding(request.getCharset());
+			if ( (Boolean) newXPath(namespaces).evaluate(r.getxPath(), is, XPathConstants.BOOLEAN) ) 
 				return r;
 			log.debug("no match found for xpath {"+r.getxPath()+"}");
 		}			
