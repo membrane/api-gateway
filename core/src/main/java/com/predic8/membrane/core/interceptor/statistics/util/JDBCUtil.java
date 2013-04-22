@@ -209,7 +209,7 @@ public class JDBCUtil {
 	
 	public static boolean tableExists(Connection con, String table) throws SQLException {
 		DatabaseMetaData meta = con.getMetaData();
-		ResultSet rs = meta.getTables("", null, table.toUpperCase(), null);
+		ResultSet rs = meta.getTables("", null, table, null);
 		return rs.next();
 	}
 	
