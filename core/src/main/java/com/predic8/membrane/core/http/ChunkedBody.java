@@ -61,7 +61,20 @@ public class ChunkedBody extends AbstractBody {
 		out.finish();
 		markAsRead();
 	}
-	
+
+	protected int getRawLength() throws IOException {
+		if (chunks.size() == 0)
+			return 0;
+		int length = getLength();
+		for (Chunk chunk : chunks) {
+			length += Long.toHexString(chunk.getLength()).getBytes(Constants.UTF_8_CHARSET).length;
+			length += 2 * Constants.CRLF_BYTES.length;
+		}
+		length += "0".getBytes(Constants.UTF_8_CHARSET).length;
+		length += 2 * Constants.CRLF_BYTES.length;
+		return length;
+	}
+
 	@Override
 	protected byte[] getRawLocal() throws IOException {
 		byte[] raw = new byte[getRawLength()];

@@ -30,7 +30,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ChunkedBodyTransferrer;
-import com.predic8.membrane.core.http.OKResponse;
 import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -198,7 +197,7 @@ public class HttpClient {
 	private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
 		if (exc.getRequest().isCONNECTRequest()) {
 			handleConnectRequest(exc, con);
-			return new OKResponse();
+			return Response.ok().build();
 		}
 		
 		exc.getRequest().write(con.out);
@@ -237,7 +236,6 @@ public class HttpClient {
 		AbstractHttpHandler ahr = exc.getHandler();
 		if (ahr instanceof HttpServerHandler)
 			response.write(((HttpServerHandler)ahr).getSrcOut());
-		exc.getRequest().readBody();
 		exc.getRequest().getBody().write(exc.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferrer(con.out) : new PlainBodyTransferrer(con.out));
 		con.out.flush();
 		response.read(con.in, !exc.getRequest().isHEADRequest());

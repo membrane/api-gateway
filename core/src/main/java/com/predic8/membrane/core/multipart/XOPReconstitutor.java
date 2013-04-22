@@ -39,7 +39,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -127,8 +126,7 @@ public class XOPReconstitutor {
 				throw new RuntimeException("not implemented.");
 			}
 		};
-		m.setBody(new Body(body));
-		m.getHeader().setContentLength(body.length);
+		m.setBodyContent(body);
 		
 		String reconstitutedContentType = innerContentType.getParameter("type");
 		if (reconstitutedContentType != null)

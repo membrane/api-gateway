@@ -58,7 +58,7 @@ public class JSONValidator implements IValidator {
 	}
 	
 	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception {
-		return validateMessage(exc, msg.getBodyAsStream(), Charset.forName(msg.getCharset()), source);
+		return validateMessage(exc, msg.getBodyAsStreamDecoded(), Charset.forName(msg.getCharset()), source);
 	}
 	
 	public Outcome validateMessage(Exchange exc, InputStream body, Charset charset, String source) throws Exception {

@@ -1,6 +1,5 @@
 package com.predic8.membrane.core.interceptor.administration;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
@@ -16,10 +15,12 @@ import org.codehaus.jackson.JsonGenerator;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.ClientStatistics;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.rest.JSONContent;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
@@ -27,7 +28,6 @@ import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.util.ComparatorFactory;
-import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class AdminRESTInterceptor extends RESTInterceptor {
@@ -149,8 +149,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg== null || msg.isBodyEmpty()) {
 			return Response.noContent().build();
 		}
-		ByteArrayInputStream content = new ByteArrayInputStream(MessageUtil.getContent(msg));
-		return Response.ok().contentType(MimeType.TEXT_HTML_UTF8).body(TextUtil.formatXML(new InputStreamReader(content), true)).build();
+		return Response.ok().contentType(MimeType.TEXT_HTML_UTF8).body(TextUtil.formatXML(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()), true)).build();
 	}
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/body")
@@ -167,7 +166,11 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg== null || msg.isBodyEmpty()) {
 			return Response.noContent().build();
 		}
-		return Response.ok().contentType(ct).body(new String(msg.getBody().getContent())).build();//TODO use right charset to create string
+		ResponseBuilder rb = Response.ok().contentType(ct).body(msg.getBodyAsStream());
+		String contentEncoding = msg.getHeader().getContentEncoding();
+		if (contentEncoding != null)
+			rb.header(Header.CONTENT_ENCODING, contentEncoding);
+		return rb.build();
 	}
 
 	@Mapping("/admin/rest/exchanges/(-?\\d+)/(response|request)/header")

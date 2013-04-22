@@ -40,7 +40,7 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String XSI_NS  = "http://www.w3.org/2001/XMLSchema-instance";
 	
 	public Outcome handleRequest(AbstractExchange exchange) throws Exception {
-		Document doc = getDocument(exchange.getRequest().getBodyAsStream());
+		Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), exchange.getRequest().getCharset());
 		Element header = getAuthorisationHeader(doc);
 		if (header == null) return Outcome.CONTINUE;
 		System.out.println(DOM2String(doc));
@@ -77,10 +77,12 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		return (Element)nl.item(0);
 	}
 	
-	private Document getDocument(InputStream xmlDocument) throws Exception {
+	private Document getDocument(InputStream xmlDocument, String encoding) throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		dbf.setNamespaceAware(true);
-		return dbf.newDocumentBuilder().parse(new InputSource(xmlDocument));		
+		InputSource is = new InputSource(xmlDocument);
+		is.setEncoding(encoding);
+		return dbf.newDocumentBuilder().parse(is);
 	}
 	
 	private String DOM2String(Document doc) throws Exception {

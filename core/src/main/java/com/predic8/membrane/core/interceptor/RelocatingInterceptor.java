@@ -16,9 +16,9 @@ package com.predic8.membrane.core.interceptor;
 
 import javax.xml.stream.XMLStreamException;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -64,17 +64,6 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 	}
 
 	abstract void rewrite(Exchange exc) throws Exception;
-
-	/**
-	 * if no charset is specified use standard XML charset UTF-8
-	 */
-	protected String getCharset(Exchange exc) {
-		String charset = exc.getResponse().getCharset();
-		if (charset == null)
-			return Constants.UTF_8;
-
-		return charset;
-	}
 
 	private boolean hasContent(Exchange exc) {
 		return exc.getResponse().getHeader().getContentType() != null;

@@ -1,6 +1,12 @@
 Membrane ESB Change Log
 =============================================================================
 
+* [release] 4.0.2 (early access)
+
+* [development] added message.getBodyAsStreamDecoded() which unapplies any
+  "Content-Encoding" or XOP (XML-binary Optimized Packaging): this method
+  should be used in most places instead of message.getBodyAsStream() .
+
 * [release] 4.0.1 (early access)
 
 * [bugfixes] merged patches from 3.4.X and 3.5.X: small fixes in the admin

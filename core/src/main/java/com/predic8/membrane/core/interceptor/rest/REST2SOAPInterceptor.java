@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -144,14 +144,14 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		boolean inputIsXml = MimeType.TEXT_XML_UTF8.equals(response.getHeader().getContentType());
 		int wantedType = requestHeader.getBestAcceptedType(supportedTypes);
 		if (inputIsXml && wantedType >= 1) {
-			response.setBodyContent(xml2json(response.getBody().getContent()));
+			response.setBodyContent(xml2json(response.getBodyAsStreamDecoded()));
 			setJSONContentType(response.getHeader());
 		}
 	}
 
-	private byte[] xml2json(byte[] xmlResp) throws Exception {
+	private byte[] xml2json(InputStream xmlResp) throws Exception {
 		return getTransformer("classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl").
-				transform(new StreamSource(new ByteArrayInputStream(xmlResp)));
+				transform(new StreamSource(xmlResp));
 	}
 
 	private XSLTTransformer getTransformer(String ss) throws Exception {
@@ -177,7 +177,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	}
 
 	private StreamSource getBodySource(Exchange exc) {
-		return new StreamSource(exc.getResponse().getBodyAsStream());
+		return new StreamSource(exc.getResponse().getBodyAsStreamDecoded());
 	}
 
 	private Mapping getRESTURL(Exchange exc) {

@@ -22,10 +22,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.MessageUtil;
 
-
+/**
+ * A HTTP message (request or response).
+ */
 public abstract class Message {
 
 	private static Log log = LogFactory.getLog(Message.class.getName());
@@ -73,11 +77,38 @@ public abstract class Message {
 	
 	public InputStream getBodyAsStream() {
 		try {
-			return body.getBodyAsStream();
+			return body.getContentAsStream();
 		} catch (IOException e) {
-			e.printStackTrace();
-			log.error("Could not get body as stream");
-			throw new RuntimeException("Could not get body as stream");
+			log.error("Could not get body as stream", e);
+			throw new RuntimeException("Could not get body as stream", e);
+		}
+	}
+	
+	private static XOPReconstitutor xopr = new com.predic8.membrane.core.multipart.XOPReconstitutor();
+	
+	public InputStream getBodyAsStreamDecoded() {
+		// TODO: this logic should be split up into configurable decoding modules
+		// TODO: decoding result should be cached
+		try {
+			Message m = xopr.getReconstitutedMessage(this);
+			if (m != null)
+				return m.getBodyAsStream(); // we know decoding is not necessary any more
+			return MessageUtil.getContentAsStream(this);
+		} catch (Exception e) {
+			log.error("Could not decode body stream", e);
+			throw new RuntimeException("Could not decode body stream", e);
+		}
+	}
+	
+	/**
+	 * As this method has bad performance, it should not be used in any critical component. 
+	 * @return the message's body as a Java String.
+	 */
+	public String getBodyAsStringDecoded() {
+		try {
+			return new String(MessageUtil.getContent(this), getCharset());
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -87,6 +118,7 @@ public abstract class Message {
 
 	public void setBodyContent(byte[] content) {
 		body = new Body(content);
+		header.removeFields(Header.CONTENT_ENCODING);
 		header.removeFields(Header.TRANSFER_ENCODING);
 		header.setContentLength(content.length);
 	}

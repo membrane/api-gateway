@@ -17,6 +17,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+/**
+ * An {@link InputStream} offering a <code>List&lt;Chunk&gt;</code> as one
+ * single stream.
+ * 
+ * Used by {@link AbstractBody} to offer an efficient way of reading a message's
+ * body.
+ */
 public class BodyInputStream extends InputStream {
 	
 	// the data

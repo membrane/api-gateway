@@ -150,10 +150,12 @@ public class Exchange extends AbstractExchange {
 		ResponseBuilder builder = Response.ok();
 		byte[] content = getRequest().getBody().getContent();
 		builder.body(content);
-		builder.header(Header.CONTENT_LENGTH, "" + content.length);
 		String contentType = getRequest().getHeader().getContentType();
 		if (contentType != null)
 			builder.header(Header.CONTENT_TYPE, contentType);
+		String contentEncoding = getRequest().getHeader().getContentEncoding();
+		if (contentEncoding != null)
+			builder.header(Header.CONTENT_ENCODING, contentEncoding);
 		setResponse(builder.build());
 		return Outcome.RETURN;
 	}

@@ -73,7 +73,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, getCharset(exc)), 
 				removeDTD, maxElementNameLength, maxAttibuteCount);
 		
-		if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStream(), getCharset(exc) )))
+		if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), getCharset(exc) )))
 			return false;
 		exc.getRequest().setBodyContent(stream.toByteArray());
 		return true;

@@ -59,7 +59,7 @@ public class XML2HTTP {
 			try {
 				XMLEventReader parser;
 				synchronized(xmlInputFactory) {
-					parser = xmlInputFactory.createXMLEventReader(response.getBodyAsStream(), response.getCharset());
+					parser = xmlInputFactory.createXMLEventReader(response.getBodyAsStreamDecoded(), response.getCharset());
 				}
 
 				/* States:

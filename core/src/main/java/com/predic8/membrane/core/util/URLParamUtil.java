@@ -30,7 +30,7 @@ public class URLParamUtil {
 		if (q == null) {
 			if (hasNoFormParams(exc))
 				return new HashMap<String, String>();
-			q = new String(exc.getRequest().getBody().getRaw(), exc.getRequest().getCharset());
+			q = new String(exc.getRequest().getBody().getContent(), exc.getRequest().getCharset());
 		}
 
 		return parseQueryString(q);
