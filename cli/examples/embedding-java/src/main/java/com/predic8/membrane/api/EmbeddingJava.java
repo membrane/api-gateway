@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.api;
 
-import com.predic8.membrane.api.AddMyHeaderInterceptor;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -52,7 +51,6 @@ public class EmbeddingJava {
         HttpRouter router = new HttpRouter();
 
         serviceProxy.getInterceptors().add(new AddMyHeaderInterceptor());
-        // router.getTransport().getInterceptors().add(new AddMyHeaderInterceptor());
         router.getRuleManager().addProxyAndOpenPortIfNew(serviceProxy);
     }
 }
