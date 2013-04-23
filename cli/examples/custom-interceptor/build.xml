@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="" name="custom-interceptor" default="install">
+
+	<target name="init">
+		<mkdir dir="build/classes" />
+		<mkdir dir="dist" />
+	</target>
+
+	<path id="classpath">
+		<fileset dir="../../lib">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	<target name="compile" depends="init">
+		<javac debug="true" classpathref="classpath" srcdir="src" destdir="build/classes" />
+	</target>
+
+	<target name="jar" depends="compile">
+		<jar destfile="dist/MyInterceptor.jar" basedir="build/classes" />
+	</target>
+
+	<target name="install" depends="jar">
+		<copy file="dist/MyInterceptor.jar" todir="../../lib" />
+	</target>
+
+	<target name="clean" description="clean up">
+		<delete dir="build/classes" />
+		<delete dir="dist" />
+	</target>
+
+</project>

@@ -1,0 +1,23 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<spring:bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+		<spring:property name="driverClassName" value="org.apache.derby.jdbc.ClientDriver" />
+		<spring:property name="url" value="jdbc:derby://localhost:1527/membranedb;create=true" />
+		<spring:property name="username" value="membrane" />
+		<spring:property name="password" value="membranemembrane" />
+	</spring:bean>
+
+	<router>
+
+		<serviceProxy name="predic8.com" port="2000">
+			<statisticsJDBC dataSource="dataSource" />
+			<target host="membrane-soa.org" port="80" />
+		</serviceProxy>
+		
+	</router>
+	
+</spring:beans>

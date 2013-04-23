@@ -1,0 +1,36 @@
+<!--
+	Routing Configuration
+	
+	Have a look at
+	http://membrane-soa.org/esb-doc/current/configuration/proxy-configuration.htm for
+	documentation and a reference explaining what XML elements can be used
+	how and where.
+	
+	Changes to this file will be picked up almost instantly if Membrane is
+	running	once this file has been saved. Any dynamic configuration changes
+	made (for example, via the adminConsole) will be forgotten.
+-->
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<spring:bean id="myInterceptor" class="com.predic8.membrane.core.interceptor.custom.MyInterceptor" />
+
+	<router>
+	
+		<serviceProxy port="2000">
+			<!--
+			For SOAP proxying, you probably want <wsdlRewriter /> . See also
+			http://www.membrane-soa.org/esb-doc/current/url-rewriting-wsdl.htm .
+			-->
+		
+			<interceptor refid="myInterceptor" />
+			
+			<target host="membrane-soa.org" />
+		</serviceProxy>
+		
+	</router>
+	
+</spring:beans>

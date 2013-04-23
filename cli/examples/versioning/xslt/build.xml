@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="" name="ContactService" default="run">
+
+	<target name="init">
+		<mkdir dir="build/classes" />
+	</target>
+
+	<path id="classpath">
+		<pathelement path="build/classes" />		
+	</path>
+
+	<target name="compile" depends="init" >
+		<javac debug="true" srcdir="src" destdir="build/classes" includeantruntime="false" />
+	</target>
+
+	<target name="run" depends="compile">
+		<java fork="true" classpathref="classpath" classname="com.predic8.contactservice.Launcher" logerror="true" />
+	</target>
+	
+	<target name="clean" description="clean up">
+		<delete dir="build" />
+	</target>
+
+</project>

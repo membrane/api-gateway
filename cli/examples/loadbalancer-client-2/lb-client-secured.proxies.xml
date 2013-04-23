@@ -1,0 +1,35 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+	
+		<serviceProxy name="Balancer" port="8080">
+			<path>/service</path>
+			<balancer />
+		</serviceProxy>
+		<serviceProxy name="Up/Down Push Interface" port="9010">
+			<clusterNotification validateSignature="true"
+				keyHex="6f488a642b740fb70c5250987a284dc0" />
+		</serviceProxy>
+		<serviceProxy name="Mock Node 1" port="4000">
+			<counter name="Mock Node 1" />
+		</serviceProxy>
+		<serviceProxy name="Mock Node 2" port="4001">
+			<counter name="Mock Node 2" />
+		</serviceProxy>
+		<serviceProxy name="Mock Node 3" port="4002">
+			<counter name="Mock Node 3" />
+		</serviceProxy>
+		<serviceProxy name="Administration" port="9000">
+			<basicAuthentication>
+				<user name="admin" password="admin" />
+			</basicAuthentication>
+			<adminConsole />
+		</serviceProxy>
+	
+	</router>
+	
+</spring:beans>
