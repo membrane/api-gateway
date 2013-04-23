@@ -47,10 +47,9 @@ public class EmbeddingJava {
         int targetPort = 80;
 
         Rule serviceProxy = new ServiceProxy(key, targetHost, targetPort);
+        serviceProxy.getInterceptors().add(new AddMyHeaderInterceptor());
 
         HttpRouter router = new HttpRouter();
-
-        serviceProxy.getInterceptors().add(new AddMyHeaderInterceptor());
         router.getRuleManager().addProxyAndOpenPortIfNew(serviceProxy);
     }
 }
