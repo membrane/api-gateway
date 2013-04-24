@@ -35,7 +35,7 @@ import java.io.IOException;
  * @author Oliver Weiler
  */
 public class EmbeddingJava {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         String hostname = "*";
         String method = "GET";
         String path = ".*";
@@ -46,10 +46,11 @@ public class EmbeddingJava {
         String targetHost = "predic8.com";
         int targetPort = 80;
 
-        Rule serviceProxy = new ServiceProxy(key, targetHost, targetPort);
+        ServiceProxy serviceProxy = new ServiceProxy(key, targetHost, targetPort);
         serviceProxy.getInterceptors().add(new AddMyHeaderInterceptor());
 
         HttpRouter router = new HttpRouter();
-        router.getRuleManager().addProxyAndOpenPortIfNew(serviceProxy);
+        router.addProxy(serviceProxy);
+        router.init();
     }
 }
