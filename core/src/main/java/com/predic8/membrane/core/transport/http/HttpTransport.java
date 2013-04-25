@@ -42,7 +42,6 @@ public class HttpTransport extends Transport {
 
 	private int socketTimeout = 30000;
 	private boolean tcpNoDelay = true;
-	private boolean autoContinue100Expected = true;
 
 	public Hashtable<Port, HttpEndpointListener> portListenerMapping = new Hashtable<Port, HttpEndpointListener>();
 	
@@ -187,15 +186,6 @@ public class HttpTransport extends Transport {
 		this.tcpNoDelay = tcpNoDelay;
 	}
 
-	public boolean isAutoContinue100Expected() {
-		return autoContinue100Expected;
-	}
-	
-	@MCAttribute
-	public void setAutoContinue100Expected(boolean autoContinue100Expected) {
-		this.autoContinue100Expected = autoContinue100Expected;
-	}
-	
 	@Override
 	public boolean isOpeningPorts() {
 		return true;

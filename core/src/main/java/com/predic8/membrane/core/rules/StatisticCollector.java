@@ -22,6 +22,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
+import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 
 /**
@@ -85,8 +86,10 @@ public class StatisticCollector {
 		totalTime += time;
 
 		try {
-			totalBytesSent += exc.getRequest().getBody().getLength();
-			totalBytesReceived += exc.getResponse().getBody().getLength();
+			AbstractBody requestBody = exc.getRequest().getBody();
+			totalBytesSent += requestBody.isRead() ? requestBody.getLength() : 0;
+			AbstractBody responseBody = exc.getResponse().getBody();
+			totalBytesReceived += responseBody.isRead() ? responseBody.getLength() : 0;
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

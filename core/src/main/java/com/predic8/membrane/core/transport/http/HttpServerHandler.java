@@ -31,7 +31,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -122,6 +124,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("exchange aborted.");
 		} catch (NoMoreRequestsException e) {
 			// happens at the end of a keep-alive connection
+		} catch (NoResponseException e) {
+			log.debug("No response received. Maybe increase the keep-alive timeout on the server.");
 		} catch (EOFWhileReadingFirstLineException e) {
 			log.debug("Client connection terminated before line was read. Line so far: ("
 					+ e.getLineSoFar() + ")");
@@ -176,8 +180,26 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
 			
-			if (getTransport().isAutoContinue100Expected() && exchange.getRequest().getHeader().is100ContinueExpected())
-				tellClientToContinueWithBody();
+			if (exchange.getRequest().getHeader().is100ContinueExpected()) {
+				final Request request = exchange.getRequest();
+				request.addObserver(new MessageObserver() {
+					public void bodyRequested(AbstractBody body) {
+						try {
+							if (request.getHeader().is100ContinueExpected()) {
+								// request body from client so that interceptors can handle it
+								Response.continue100().build().write(srcOut);
+								// remove "Expect: 100-continue" since we already sent "100 Continue"
+								request.getHeader().removeFields(Header.EXPECT);
+							}
+						} catch (Exception e) {
+							throw new RuntimeException(e);
+						}
+					}
+					
+					public void bodyComplete(AbstractBody body) {
+					}
+				});
+			}
 
 			invokeHandlers();
 			
@@ -186,27 +208,35 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("Aborted");
 			exchange.finishExchange(true, exchange.getErrorMessage());
 			
-			exchange.getRequest().readBody(); // read if not alread read
+			removeBodyFromBuffer();
 			writeResponse(exchange.getResponse());
 
 			log.debug("exchange set aborted");
 			return;
 		}
 
-		exchange.getRequest().readBody(); // read if not alread read
+		removeBodyFromBuffer();
 		writeResponse(exchange.getResponse());
 		exchange.setCompleted();
 		log.debug("exchange set completed");
-
 	}
 
-	private void tellClientToContinueWithBody() throws IOException {
-		// request body from client so that interceptors can handle it
-		Response.continue100().build().write(srcOut);
-		// remove "Expect: 100-continue" since we already sent "100 Continue"
-		exchange.getRequest().getHeader().removeFields(Header.EXPECT);
+	/**
+	 * Read the body from the client, if not already read.
+	 * 
+	 * If the body has not already been read, the header includes
+	 * "Expect: 100-continue" and the body has not already been sent by the
+	 * client, nothing will be done. (Allowing the HTTP connection state to skip
+	 * over the body transmission.)
+	 */
+	private void removeBodyFromBuffer() throws IOException {
+		if (!exchange.getRequest().getHeader().is100ContinueExpected() || srcIn.available() > 0) {
+			if (!exchange.getRequest().getBody().isRead())
+				System.out.println("HERE");
+			exchange.getRequest().readBody();
+		}
 	}
-	
+
 	private void updateThreadName(boolean fromConnection) {
 		if (fromConnection) {
 			StringBuilder sb = new StringBuilder();

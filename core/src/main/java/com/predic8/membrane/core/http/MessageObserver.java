@@ -31,4 +31,5 @@ import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
  */
 public interface MessageObserver {
 	public void bodyComplete(AbstractBody body);
+	public void bodyRequested(AbstractBody body);
 }

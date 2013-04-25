@@ -322,7 +322,7 @@ public abstract class Message {
 		try {
 			return 100 +
 					(header != null ? header.estimateHeapSize() : 0) + 
-					(body != null ? body.getLength() : 0) +
+					(body != null ? body.isRead() ? body.getLength() : 0 : 0) +
 					(errorMessage != null ? 2*errorMessage.length() : 0);
 		} catch (IOException e) {
 			throw new RuntimeException(e);

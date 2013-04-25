@@ -172,6 +172,8 @@ public class HttpClient {
 			} catch (EOFWhileReadingFirstLineException e) {
 				log.debug("Server connection to " + dest + " terminated before line was read. Line so far: " + e.getLineSoFar());
 				exception = e;
+			} catch (NoResponseException e) {
+				throw e;
 			} catch (Exception e) {
 				logException(exc, counter, e);
 				exception = e;
@@ -233,9 +235,6 @@ public class HttpClient {
 	}
 
 	private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
-		AbstractHttpHandler ahr = exc.getHandler();
-		if (ahr instanceof HttpServerHandler)
-			response.write(((HttpServerHandler)ahr).getSrcOut());
 		exc.getRequest().getBody().write(exc.getRequest().getHeader().isChunked() ? new ChunkedBodyTransferrer(con.out) : new PlainBodyTransferrer(con.out));
 		con.out.flush();
 		response.read(con.in, !exc.getRequest().isHEADRequest());

@@ -48,6 +48,9 @@ public abstract class AbstractBody {
 	public void read() throws IOException {
 		if (read)
 			return;
+
+		for (MessageObserver observer : observers)
+			observer.bodyRequested(this);
 		
 		chunks.clear();
 		readLocal();
@@ -100,6 +103,9 @@ public abstract class AbstractBody {
 
 	public void write(AbstractBodyTransferrer out) throws IOException {
 		if (!read) {
+			for (MessageObserver observer : observers)
+				observer.bodyRequested(this);
+			
 			writeNotRead(out);
 			return;
 		}
@@ -112,6 +118,9 @@ public abstract class AbstractBody {
 	protected abstract void writeNotRead(AbstractBodyTransferrer out) throws IOException;
 	
 	/**
+	 * Warning: Calling this method will trigger reading the body from the client, disabling "streaming".
+	 * Use {@link #isRead()} to determine wether the body already has been read, if necessary.
+	 * 
 	 * @return the length of the return value of {@link getContent()}
 	 */
 	public int getLength() throws IOException {
@@ -123,7 +132,7 @@ public abstract class AbstractBody {
 		}
 		return length;
 	}
-
+	
 	/**
 	 * Returns a reconstruction of the over-the-wire byte sequence received.
 	 * 

@@ -81,6 +81,8 @@ public abstract class AbstractHttpHandler  {
 				throw (AbortException)e; // TODO: migrate catch logic into this method
 			if (e instanceof NoMoreRequestsException)
 				throw (NoMoreRequestsException)e;
+			if (e instanceof NoResponseException)
+				throw (NoResponseException)e;
 			if (e instanceof EOFWhileReadingFirstLineException)
 				throw (EOFWhileReadingFirstLineException)e;
 			log.warn("An exception occured while handling a request: ", e);

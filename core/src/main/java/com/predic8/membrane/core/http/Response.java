@@ -24,6 +24,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
+import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
+import com.predic8.membrane.core.transport.http.NoResponseException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 
@@ -250,7 +253,16 @@ public class Response extends Message {
 	public void parseStartLine(InputStream in) throws IOException,
 			EndOfStreamException {
 
-		Matcher matcher = pattern.matcher(HttpUtil.readLine(in));
+		String line;
+		try {
+			line = HttpUtil.readLine(in);
+		} catch (EOFWhileReadingLineException e) {
+			if (e.getLineSoFar().length() == 0)
+				throw new NoResponseException();
+			throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
+		}
+		
+		Matcher matcher = pattern.matcher(line);
 		boolean find = matcher.find();
 
 		if (!find) {

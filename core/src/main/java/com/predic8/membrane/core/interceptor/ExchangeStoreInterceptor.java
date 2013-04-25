@@ -76,13 +76,16 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 		}
 			
 		try {
-			exc.getResponse().addObserver(new MessageObserver() {
-				public void bodyComplete(AbstractBody body) {
-					store.add(exc);
-				}
-			});
+			if (exc.getResponse() != null)
+				exc.getResponse().addObserver(new MessageObserver() {
+					public void bodyRequested(AbstractBody body) {
+					}
+					public void bodyComplete(AbstractBody body) {
+						store.add(exc);
+					}
+				});
 		} catch (Exception e) {
-			log.info("Exchange has no probably no response due to a prior error in the response chain.");
+			throw new RuntimeException(e);
 		}
 		
 		return Outcome.CONTINUE;
