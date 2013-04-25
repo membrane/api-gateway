@@ -51,8 +51,6 @@ public class RuleManager {
 	public enum RuleDefinitionSource {
 		/** rule defined in the spring context that created the router */
 		SPRING,
-		/** rule defined in the Membrane 3 style proxies.xml configuration file */
-		PROXIES,
 		/** rule defined by admin web interface or through custom code */
 		MANUAL,
 	}

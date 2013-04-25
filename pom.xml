@@ -206,7 +206,7 @@
 			<dependency>
 				<groupId>com.predic8</groupId>
 				<artifactId>soa-model-core</artifactId>
-				<version>1.2.1-SNAPSHOT</version>
+				<version>1.3.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>com.predic8</groupId>

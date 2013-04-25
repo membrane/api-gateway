@@ -29,6 +29,7 @@ import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.ResourceResolver;
+import com.predic8.membrane.core.util.ResourceResolver.DownloadException;
 import com.predic8.membrane.core.util.SOAPUtil;
 import com.predic8.schema.Schema;
 import com.predic8.wsdl.WSDLParser;
@@ -55,6 +56,8 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver());
 			return wsdlParser.parse(ctx).getTypes().getSchemas();
 		} catch (ResourceDownloadException e) {
+			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.");
+		} catch (DownloadException e) {
 			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.");
 		}
 	}
