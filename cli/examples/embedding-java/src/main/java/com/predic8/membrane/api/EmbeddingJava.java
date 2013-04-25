@@ -14,11 +14,10 @@
 package com.predic8.membrane.api;
 
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-
-import java.io.IOException;
 
 /**
  * A basic example on how to embed Membrane service proxy into Java programs.
@@ -46,11 +45,11 @@ public class EmbeddingJava {
         String targetHost = "predic8.com";
         int targetPort = 80;
 
-        ServiceProxy serviceProxy = new ServiceProxy(key, targetHost, targetPort);
-        serviceProxy.getInterceptors().add(new AddMyHeaderInterceptor());
+        ServiceProxy sp = new ServiceProxy(key, targetHost, targetPort);
+        sp.getInterceptors().add(new AddMyHeaderInterceptor());
 
         HttpRouter router = new HttpRouter();
-        router.addProxy(serviceProxy);
+        router.add(sp);
         router.init();
     }
 }

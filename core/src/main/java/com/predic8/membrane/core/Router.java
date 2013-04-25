@@ -175,7 +175,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		throw new IllegalArgumentException("No parent proxy found for the given interceptor.");
 	}
 
-    public void addProxy(ServiceProxy serviceProxy) throws IOException {
+    public void add(ServiceProxy serviceProxy) throws IOException {
         ruleManager.addProxyAndOpenPortIfNew(serviceProxy);
     }
 

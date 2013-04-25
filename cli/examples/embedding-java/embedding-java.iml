@@ -4,9 +4,9 @@
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
-      <sourceFolder url="file://$MODULE_DIR$/src/main/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/main/resources" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
@@ -20,6 +20,7 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="jquery-1.9.1" level="application" />
     <orderEntry type="module" module-name="membrane-esb-core" />
     <orderEntry type="module" module-name="membrane-esb-annot" />
     <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />
@@ -68,8 +69,6 @@
     <orderEntry type="library" name="Maven: commons-fileupload:commons-fileupload:1.2.2" level="project" />
     <orderEntry type="library" name="Maven: com.floreysoft:jmte:3.0-p8" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.findbugs:jsr305:2.0.1" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.5" level="project" />
-    <orderEntry type="library" name="jquery-1.9.1" level="application" />
   </component>
 </module>
 
