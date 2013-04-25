@@ -135,6 +135,38 @@ public class ResourceResolver {
 		return httpClient;
 	}
 	
+	public static class DownloadException extends RuntimeException {
+		private static final long serialVersionUID = 1L;
+
+		public DownloadException() {
+		}
+		
+		public DownloadException(String message) {
+			super(message);
+		}
+
+		public DownloadException(Exception e) {
+			super(e);
+		}
+		
+		private int status;
+		private String url;
+		
+		@Override
+		public String getMessage() {
+			return super.getMessage() + " " + status + " while downloading " + url;
+		}
+		
+		public void setUrl(String url) {
+			this.url = url;
+		}
+		
+		public void setStatus(int status) {
+			this.status = status;
+		}
+		
+	}
+	
 	protected InputStream resolveViaHttp(String url) {
 		try{
 		    HttpGet method = new HttpGet(url);
@@ -142,7 +174,7 @@ public class ResourceResolver {
 		    HttpResponse response = getHttpClient().execute(method);
 		    try {
 		    	if(response.getStatusLine().getStatusCode() != 200) {
-		    		ResourceDownloadException rde = new ResourceDownloadException("could not get resource " + url + " by HTTP");
+		    		DownloadException rde = new DownloadException("could not get resource " + url + " by HTTP");
 		    		rde.setStatus(response.getStatusLine().getStatusCode());
 		    		rde.setUrl(url);
 		    		throw rde;
@@ -154,8 +186,7 @@ public class ResourceResolver {
 		} catch (ResourceDownloadException e) {
 			throw e;
 		} catch (Exception e) {
-			ResourceDownloadException rde = new ResourceDownloadException();
-			rde.setRootCause(e);
+			DownloadException rde = new DownloadException(e);
 			rde.setUrl(url);
 			throw rde;
 		}
