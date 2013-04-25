@@ -1,0 +1,10 @@
+<car>
+	<manufacturer>Uncle Joe</manufacturer>
+	<color>violett</color>
+	<propeller />
+	
+	<owner>
+		<firstname>Cristina</firstname>
+		<lastname>Sharper</lastname>
+	</owner>
+</car>

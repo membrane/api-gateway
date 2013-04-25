@@ -25,7 +25,7 @@ Start `membrane.sh` or `membrane.bat`.
 
 Have a look at the main configuration file `proxies.xml`. Changes to this file are instantly deployed.
 
-Go to the [website](http://membrane-soa.org/service-proxy/) for more documentation.
+Run the samples in the examples folder or go to the [website](http://membrane-soa.org/service-proxy/) for more documentation.
 
 Samples
 -------

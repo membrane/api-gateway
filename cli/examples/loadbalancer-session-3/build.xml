@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." name="LB with Sessions Example">
+
+	<target name="init">
+		<mkdir dir="build/classes" />
+		
+	</target>
+
+	<path id="classpath">
+		<pathelement path="build/classes" />		
+	</path>
+
+	<target name="compile" depends="stubs">
+		<javac debug="true" classpathref="classpath" srcdir="src" destdir="build/classes">
+		</javac>
+	</target>
+
+	<target name="stubs" depends="init">
+		<exec executable="wsimport.bat" >
+			<arg value="data/ChatService.wsdl" />
+			<arg value="-d"/>
+			<arg value="build/classes"/>
+		</exec>
+	</target>
+
+	<target name="run-node1" depends="compile">
+		<java fork="true" classpathref="classpath" classname="com.predic8.chat.Server">
+			<arg line="Node1 4000"/>
+		</java>
+	</target>
+	
+	<target name="run-node2" depends="compile">
+		<java fork="true" classpathref="classpath" classname="com.predic8.chat.Server">
+			<arg line="Node2 4001"/>
+		</java>
+	</target>
+
+	<target name="run-client" depends="compile">
+		<java fork="true" classpathref="classpath" classname="com.predic8.chat.Client" >
+			<arg line="${login}"/>
+		</java>
+	</target>
+
+	<target name="clean" description="clean up">
+		<delete dir="build/classes" />
+	</target>
+
+
+
+</project>

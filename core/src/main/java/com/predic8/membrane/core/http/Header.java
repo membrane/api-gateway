@@ -74,6 +74,8 @@ public class Header {
 
 	public static final String VALIDATION_ERROR_SOURCE = "X-Validation-Error-Source";
 
+    public static final String USER_AGENT = "User-Agent";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
@@ -310,6 +312,10 @@ public class Header {
 	public String getContentEncoding() {
 		return getFirstValue(CONTENT_ENCODING);
 	}
+
+    public String getUserAgent() {
+        return getFirstValue(USER_AGENT);
+    }
 
 	// TODO header value is a complex unit
 	public String getCharset() {
