@@ -23,9 +23,6 @@ import org.springframework.context.ApplicationContextAware;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.http.AbstractBody;
@@ -39,7 +36,6 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 
 	private static final String BEAN_ID_ATTRIBUTE_CANNOT_BE_USED = "bean id attribute cannot be used";
 	private ApplicationContext applicationContext;
-	private static Log log = LogFactory.getLog(AbstractInterceptor.class.getName());
 	
 	private ExchangeStore store;
 	private String exchangeStoreBeanId;
