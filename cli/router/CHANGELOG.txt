@@ -1,5 +1,16 @@
-Membrane ESB Change Log
+Membrane Service Proxy Change Log
 =============================================================================
+
+* [release] 4.0.3 (early access)
+
+* renamed Maven modules
+  com.predic8:membrane-esb* to
+  org.membrane-soa.service-proxy.service-proxy*
+
+* [bugfix] changed "Expect: 100-continue" handling to request the body from
+  the client using "HTTP/1.1 100 Continue" only when needed. This allows
+  WebDAV/git to work, as msysgit seems to have a client bug treating the
+  status code 100 as the final code.
 
 * [release] 4.0.2 (early access)
 

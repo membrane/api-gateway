@@ -21,8 +21,8 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="jquery-1.9.1" level="application" />
-    <orderEntry type="module" module-name="membrane-esb-core" />
-    <orderEntry type="module" module-name="membrane-esb-annot" />
+    <orderEntry type="module" module-name="service-proxy-core" />
+    <orderEntry type="module" module-name="service-proxy-annot" />
     <orderEntry type="library" name="Maven: javax.activation:activation:1.1" level="project" />
     <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.2" level="project" />
     <orderEntry type="library" name="Maven: commons-codec:commons-codec:1.7" level="project" />
