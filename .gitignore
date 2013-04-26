@@ -17,7 +17,6 @@
 /cli/.project
 /cli/.settings
 /cli/target
-/cli/conf
 /cli/memrouter.log
 /cli/derby.log
 
