@@ -27,13 +27,13 @@ Building
 
 1. Checkout the source code from https://github.com/membrane/service-proxy .
 
-2. Now go to Files->import and select "Existing Maven projects".
+* Now go to Files->import and select "Existing Maven projects".
 
-3. In the next section you will have to set the service-proxy\cli directory as root-directory. Hit Finish. Eclipse is now building the Workspace, this might take some time. Some build errors will remain until you have completed the next steps.
+* In the next section you will have to set the service-proxy\cli directory as root-directory. Hit Finish. Eclipse is now building the Workspace, this might take some time. Some build errors will remain until you have completed the next steps.
 
-4. The project membrane-esb-annot should be error-free. Right click it and run as "Maven install".
+* The project membrane-esb-annot should be error-free. Right click it and run as "Maven install".
 
-5. Enable annotation processing on membrane-esb-core and membrane-esb-war: For both projects,
+* Enable annotation processing on membrane-esb-core and membrane-esb-war: For both projects,
    a. Right-click the project.
    b. Choose "Properties".
    c. Expand "Java Compiler".
@@ -42,13 +42,13 @@ Building
       [X] Enable project specific settings
       [X] Enable annotation processing
 
-6. Copy cli/router/conf to cli/conf . (Won't be checked in.)
+* Copy cli/router/conf to cli/conf . (Won't be checked in.)
 
-7. Right click the membrane-esb-core and run as "Maven install".
+* Right click the membrane-esb-core and run as "Maven install".
 
-8. Right click membrane-esb-cli and run as "Maven install".
+* Right click membrane-esb-cli and run as "Maven install".
 
-9. After doing so membrane-esb-cli-x.x.x.zip should be in the \cli\target folder.
+* After doing so membrane-esb-cli-x.x.x.zip should be in the \cli\target folder.
 
 
 Running Service Proxy in Eclipse
