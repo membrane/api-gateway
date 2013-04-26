@@ -7,7 +7,7 @@
   </formats>
   <dependencySets>
   	<dependencySet>
-  		<excludes><exclude>com.predic8:membrane-esb-cli</exclude></excludes>
+  		<excludes><exclude>org.membrane-soa.service-proxy:membrane-service-proxy</exclude></excludes>
   		<unpack>false</unpack>
   		<outputDirectory>/lib</outputDirectory>
   	</dependencySet>

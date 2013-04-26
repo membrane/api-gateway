@@ -46,11 +46,11 @@ public class DistributionExtractingTestcase {
 			File[] files = targetDir.listFiles(new FilenameFilter() {
 				@Override
 				public boolean accept(File dir, String name) {
-					return name.startsWith("membrane-esb") && name.endsWith(".zip");
+					return name.startsWith("membrane-service-proxy") && name.endsWith(".zip");
 				}
 			});
 			if (files.length > 1)
-				throw new RuntimeException("found more than one membrane-esb*.zip");
+				throw new RuntimeException("found more than one service-proxy*.zip");
 			if (files.length == 1)
 				zip = files[0];
 		}
@@ -72,7 +72,7 @@ public class DistributionExtractingTestcase {
 		membraneHome = unzipDir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
-				return name.startsWith("membrane-esb");
+				return name.startsWith("membrane-service-proxy");
 			}
 		})[0];
 		
