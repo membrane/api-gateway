@@ -18,8 +18,8 @@
     <packaging>jar</packaging>
 
     <parent>
-        <groupId>com.predic8</groupId>
-        <artifactId>membrane-esb</artifactId>
+        <groupId>org.membrane-soa.service-proxy</groupId>
+        <artifactId>service-proxy-parent</artifactId>
         <relativePath>../pom.xml</relativePath>
         <version>4.0.2</version>
     </parent>

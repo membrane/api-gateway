@@ -7,8 +7,8 @@
 	the specific language governing permissions and limitations under the License. --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.predic8</groupId>
-	<artifactId>membrane-esb</artifactId>
+	<groupId>org.membrane-soa.service-proxy</groupId>
+	<artifactId>service-proxy-parent</artifactId>
 	<version>4.0.2</version>
 	<packaging>pom</packaging>
 
@@ -32,6 +32,11 @@
 		<connection>scm:svn:https://predic8.com/svn/membrane/monitor/</connection>
 		<tag>HEAD</tag>
 	</scm>
+
+    <issueManagement>
+        <system>Github Issue Tracker</system>
+        <url>https://github.com/membrane/service-proxy/issues</url>
+    </issueManagement>
 
 	<mailingLists>
 		<mailingList>
@@ -206,7 +211,7 @@
 			<dependency>
 				<groupId>com.predic8</groupId>
 				<artifactId>soa-model-core</artifactId>
-				<version>1.3.0.1</version>
+				<version>1.3.0</version>
 			</dependency>
 			<dependency>
 				<groupId>com.predic8</groupId>
