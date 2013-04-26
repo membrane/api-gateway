@@ -42,13 +42,11 @@ Building
       [X] Enable project specific settings
       [X] Enable annotation processing
 
-6. Copy cli/router/conf to cli/conf . (Won't be checked in.)
+6. Right click the membrane-esb-core and run as "Maven install".
 
-7. Right click the membrane-esb-core and run as "Maven install".
+7. Right click membrane-esb-cli and run as "Maven install".
 
-8. Right click membrane-esb-cli and run as "Maven install".
-
-9. After doing so membrane-esb-cli-x.x.x.zip should be in the \cli\target folder.
+8. After doing so membrane-esb-cli-x.x.x.zip should be in the \cli\target folder.
 
 
 Running Service Proxy in Eclipse

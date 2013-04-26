@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.predic8.membrane.core.rules.ServiceProxy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -173,6 +174,10 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		}
 		throw new IllegalArgumentException("No parent proxy found for the given interceptor.");
 	}
+
+    public void add(ServiceProxy serviceProxy) throws IOException {
+        ruleManager.addProxyAndOpenPortIfNew(serviceProxy);
+    }
 
 	public void init() throws Exception {
 		for (Rule rule : getRuleManager().getRules())
