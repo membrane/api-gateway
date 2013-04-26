@@ -10,7 +10,7 @@
   	<dependencySet>
   		<unpack>false</unpack>
   		<outputDirectory>/WEB-INF/lib</outputDirectory>
-  		<excludes><exclude>com.predic8:membrane-esb-war</exclude></excludes>
+  		<excludes><exclude>org.membrane-soa.service-proxy:service-proxy-war</exclude></excludes>
   	</dependencySet>
   </dependencySets>
   <fileSets>

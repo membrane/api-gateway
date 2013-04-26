@@ -27,13 +27,13 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>com.predic8</groupId>
-			<artifactId>membrane-esb-annot</artifactId>
+			<groupId>org.membrane-soa.service-proxy</groupId>
+			<artifactId>service-proxy-annot</artifactId>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.predic8</groupId>
-			<artifactId>membrane-esb-core</artifactId>
+			<groupId>org.membrane-soa.service-proxy</groupId>
+			<artifactId>service-proxy-core</artifactId>
 		</dependency>
 		
 		<dependency>
@@ -60,8 +60,8 @@
 		</dependency>
 		
 		<dependency>
-			<groupId>com.predic8</groupId>
-			<artifactId>membrane-esb-test</artifactId>
+			<groupId>org.membrane-soa.service-proxy</groupId>
+			<artifactId>service-proxy-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

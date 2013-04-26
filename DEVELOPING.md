@@ -31,9 +31,9 @@ Building
 
 3. In the next section you will have to set the service-proxy\cli directory as root-directory. Hit Finish. Eclipse is now building the Workspace, this might take some time. Some build errors will remain until you have completed the next steps.
 
-4. The project membrane-esb-annot should be error-free. Right click it and run as "Maven install".
+4. The project service-proxy-annot should be error-free. Right click it and run as "Maven install".
 
-5. Enable annotation processing on membrane-esb-core and membrane-esb-war: For both projects,
+5. Enable annotation processing on service-proxy-core and service-proxy-war: For both projects,
    a. Right-click the project.
    b. Choose "Properties".
    c. Expand "Java Compiler".
@@ -42,11 +42,11 @@ Building
       [X] Enable project specific settings
       [X] Enable annotation processing
 
-6. Right click the membrane-esb-core and run as "Maven install".
+6. Right click the service-proxy-core and run as "Maven install".
 
-7. Right click membrane-esb-cli and run as "Maven install".
+7. Right click membrane-service-proxy and run as "Maven install".
 
-8. After doing so membrane-esb-cli-x.x.x.zip should be in the \cli\target folder.
+8. After doing so membrane-service-proxy-x.x.x.zip should be in the \cli\target folder.
 
 
 Running Service Proxy in Eclipse

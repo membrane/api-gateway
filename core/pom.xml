@@ -26,8 +26,8 @@
     
 	<dependencies>
 		<dependency>
-			<groupId>com.predic8</groupId>
-			<artifactId>membrane-esb-annot</artifactId>
+			<groupId>org.membrane-soa.service-proxy</groupId>
+			<artifactId>service-proxy-annot</artifactId>
 			<scope>compile</scope>
 		</dependency>
 
@@ -165,8 +165,8 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.predic8</groupId>
-			<artifactId>membrane-esb-test</artifactId>
+			<groupId>org.membrane-soa.service-proxy</groupId>
+			<artifactId>service-proxy-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

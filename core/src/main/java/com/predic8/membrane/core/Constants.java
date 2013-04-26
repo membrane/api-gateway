@@ -36,7 +36,7 @@ public class Constants {
 		String version = "3.3"; // fallback
 		try {
 			Properties p = new Properties();
-			p.load(Constants.class.getResourceAsStream("/META-INF/maven/com.predic8/membrane-esb-core/pom.properties"));
+			p.load(Constants.class.getResourceAsStream("/META-INF/maven/com.predic8/service-proxy-core/pom.properties"));
 			version = p.getProperty("version");
 		} catch (Exception e) {
 		}

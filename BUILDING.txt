@@ -15,7 +15,7 @@ The detailed test instructions, publication and homepage changes are to be integ
    http://repository.membrane-soa.org . 
 
 1. Run all tests locally ("mvn integration-test" in both
-   membrane-esb and membrane-monitor).
+   service-proxy and membrane-monitor).
    
 2. Increment Version, for example from 3.3.5-SNAPSHOT to 3.3.5:
 
@@ -27,7 +27,7 @@ The detailed test instructions, publication and homepage changes are to be integ
       the Maven version translates into the suffix ".qualifier"
       here.
 
-3. Run "mvn deploy -DskipTests" first in \membrane-esb\, then in
+3. Run "mvn deploy -DskipTests" first in \service-proxy\, then in
    \membrane-monitor\ . (Note that this deployment can only
    be done once for non-SNAPSHOT releases.)   
 
