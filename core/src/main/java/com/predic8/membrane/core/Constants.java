@@ -36,7 +36,7 @@ public class Constants {
 		String version = "3.3"; // fallback
 		try {
 			Properties p = new Properties();
-			p.load(Constants.class.getResourceAsStream("/META-INF/maven/com.predic8/service-proxy-core/pom.properties"));
+			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa.service-proxy/service-proxy-core/pom.properties"));
 			version = p.getProperty("version");
 		} catch (Exception e) {
 		}
@@ -76,7 +76,7 @@ public class Constants {
 
 	public static final String PROTOCOL_HTTP = "HTTP";
 
-	public static final String PRODUCT_NAME = "Membrane ESB";
+	public static final String PRODUCT_NAME = "Membrane Service Proxy";
 	
 	public static final String HTML_FOOTER = "Copyright ©2009-2012 " +
 			  		"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
