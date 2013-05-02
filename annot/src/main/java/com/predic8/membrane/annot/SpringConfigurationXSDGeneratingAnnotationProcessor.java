@@ -47,6 +47,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 	private static final String CACHE_FILE_FORMAT_VERSION = "1";
 	
+	private void log(String message) {
+		//processingEnv.getMessager().printMessage(Kind.NOTE, message);  // for Eclipse
+		//System.out.println(message); // for Maven command line
+	}
+	
 	@SuppressWarnings("unchecked")
 	private void read() {
 		if (cache != null)
@@ -99,8 +104,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 		for (Set<Element> e : cache.values()) {
 			String status = "read " + e.size();
-			processingEnv.getMessager().printMessage(Kind.NOTE, status);
-			System.out.println(status);
+			log(status);
 		}
 
 	}
@@ -169,8 +173,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					" r=" + roundEnv.getRootElements().size() + 
 					" h=" + hashCode() +
 					(roundEnv.processingOver() ? " processing-over" : " ");
-			processingEnv.getMessager().printMessage(Kind.NOTE, status);
-			System.out.println(status);
+			log(status);
 			
 			read();
 			if (roundEnv.processingOver())
@@ -179,8 +182,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			if (annotations.size() > 0) { // a class with one of our annotation needs to be compiled
 				
 				status = "working with " + getCachedElementsAnnotatedWith(roundEnv, MCMain.class).size() + " and " + getCachedElementsAnnotatedWith(roundEnv, MCElement.class).size();
-				processingEnv.getMessager().printMessage(Kind.NOTE, status);
-				System.out.println(status);
+				log(status);
 
 				
 				

@@ -88,14 +88,12 @@ public class LoginDialog {
 			
 			@Override
 			public void error(String arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
-				System.out.println(arg0);
-				
+				log.error(arg0);
 			}
 			
 			@Override
 			public void error(String arg0, Token arg1) throws ParseException {
-				System.out.println(arg0);
-				
+				log.error(arg0);
 			}
 		});
 		Map<String, Object> model = new HashMap<String, Object>();

@@ -43,7 +43,7 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), exchange.getRequest().getCharset());
 		Element header = getAuthorisationHeader(doc);
 		if (header == null) return Outcome.CONTINUE;
-		System.out.println(DOM2String(doc));
+		//System.out.println(DOM2String(doc));
 		Element nor = getNorElement(doc);
 		nor.appendChild(getUsername(doc, header));
 		nor.appendChild(getPassword(doc, header));		

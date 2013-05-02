@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.http;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -21,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -190,10 +192,20 @@ public class HttpClient {
 	}
 
 	private void logException(Exchange exc, int counter, Exception e) throws IOException {
-		log.debug("try # " + counter + " failed");
-		exc.getRequest().writeStartLine(System.out);
-		exc.getRequest().getHeader().write(System.out);
-		e.printStackTrace();
+		StringBuilder msg = new StringBuilder();
+		msg.append("try # ");
+		msg.append(counter);
+		msg.append(" failed\n");
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		exc.getRequest().writeStartLine(baos);
+		exc.getRequest().getHeader().write(baos);
+		msg.append(Constants.ISO_8859_1_CHARSET.decode(ByteBuffer.wrap(baos.toByteArray())));
+
+		if (e != null)
+			log.debug(msg, e);
+		else
+			log.debug(msg);
 	}
 
 	private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
