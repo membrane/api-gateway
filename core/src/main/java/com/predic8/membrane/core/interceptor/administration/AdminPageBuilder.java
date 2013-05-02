@@ -150,6 +150,13 @@ public class AdminPageBuilder extends Html {
 
 	protected void createMetaElements() {
 		meta().attr("http-equiv", "X-UA-Compatible", "content", "IE=Edge").end();
+		if (params.containsKey("refresh")) {
+			try {
+				createMeta("refresh", "" + Integer.parseInt(params.get("refresh")));
+			} catch (NumberFormatException e) {
+				// do nothing
+			}
+		}
 	}
 
 	protected void createMeta(String... meta) {
@@ -315,7 +322,7 @@ public class AdminPageBuilder extends Html {
 
 	protected void createBalancersTable()
 			throws UnsupportedEncodingException {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display balancersTable");
 			thead();
 				tr();
 					createThs("Name", "Failover", "Health");
@@ -339,7 +346,7 @@ public class AdminPageBuilder extends Html {
 
 	protected void createClustersTable(String balancerName)
 			throws UnsupportedEncodingException {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display clustersTable");
 			thead();
 				tr();
 					createThs("Name", "#Nodes", "Health");
@@ -379,7 +386,7 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createSessionsTable(List<Session> sessions) {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display sessionsTable");
 			thead();
 				tr();
 					createThs("Id", "Last Used");
@@ -451,7 +458,7 @@ public class AdminPageBuilder extends Html {
 
 
 	protected void createNodesTable(String balancerName) throws Exception {
-		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display");
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display nodesTable");
 			thead();
 				tr();
 					createThs("Node", "Status", "Count", "Errors", "Time since last up", "Sessions", "Current Threads", "Action");
@@ -480,6 +487,7 @@ public class AdminPageBuilder extends Html {
 				}
 			end();
 		end();
+		script().raw("$(document).ready(function() { $('.nodesTable').dataTable({'bJQueryUI': true, \"bPaginate\": false}); } );").end();
 	}
 	
 	private String getStatusString(Node n) {

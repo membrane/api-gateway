@@ -165,6 +165,8 @@ $(function() {
 	  'sPaginationType': 'full_numbers'
 	});
 	
+	$('.balancersTable, .clustersTable, .sessionsTable').dataTable({'bJQueryUI': true, 'bPaginate': false});
+	
 	$('#clients-table').dataTable({		
 		  'bJQueryUI': true,
 		  "sPaginationType": 'full_numbers',

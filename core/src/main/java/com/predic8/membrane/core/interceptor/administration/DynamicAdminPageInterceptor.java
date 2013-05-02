@@ -488,10 +488,6 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
   	  throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
-			protected void createMetaElements() {
-				createMeta("refresh", "5");				
-			};
-			
 			@Override
 			protected int getSelectedTab() {
 				return 4;
