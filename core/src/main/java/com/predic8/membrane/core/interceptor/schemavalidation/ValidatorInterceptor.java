@@ -64,7 +64,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	
 	public void init() throws Exception {
 		validator = null;
-			
+		
+		if (skipFaults && wsdl == null)
+			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
+		
 		if (wsdl != null) {
 			name="SOAP Validator";
 			setValidator(new WSDLValidator(resourceResolver, wsdl, createFailureHandler(), skipFaults));
