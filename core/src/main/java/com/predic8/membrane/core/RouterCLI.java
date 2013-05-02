@@ -48,9 +48,9 @@ public class RouterCLI {
 	
 	private static String getRulesFile(MembraneCommandLine line) {
 		if (line.hasConfiguration()) {
-			return line.getConfiguration();
+			return "file:" + line.getConfiguration();
 		} else {
-			return System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "proxies.xml";
+			return "file:" + System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "proxies.xml";
 		}
 	}
 
