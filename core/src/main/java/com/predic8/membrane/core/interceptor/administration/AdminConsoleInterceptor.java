@@ -20,6 +20,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
@@ -49,7 +50,12 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		return flowController.invokeRequestHandlers(exc, interceptors);
+		Outcome result = flowController.invokeRequestHandlers(exc, interceptors);
+
+		if (exc.getRequest().getHeader().getFirstValue(Header.X_REQUESTED_WITH) != null && exc.getResponse() != null)
+			exc.getResponse().getHeader().add(Header.EXPIRES, "-1");
+
+		return result;
 	}
 
 	@Override

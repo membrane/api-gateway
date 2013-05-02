@@ -75,6 +75,10 @@ public class Header {
 	public static final String VALIDATION_ERROR_SOURCE = "X-Validation-Error-Source";
 
     public static final String USER_AGENT = "User-Agent";
+    
+    public static final String X_REQUESTED_WITH = "X-Requested-With";
+
+    public static final String EXPIRES = "Expires";
 
 	// Header field values
 
