@@ -33,7 +33,6 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
 public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	public ReverseProxyingInterceptor() {
 		name = "Reverse Proxy";
-		setFlow(Flow.Set.RESPONSE);
 	}
 	
 	/**
