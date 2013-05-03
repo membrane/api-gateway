@@ -55,7 +55,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			targetRes = getClient().call(exc);
 			return Outcome.RETURN;
 		} catch (ConnectException e) {
-			targetRes = Response.interalServerError("Target " + getDestination(exc) + " is not reachable.").build();
+			targetRes = Response.badGateway("Target " + getDestination(exc) + " is not reachable.").build();
 			log.warn("Target " + getDestination(exc) + " is not reachable. " + e);
 			return Outcome.ABORT;
 		} catch (UnknownHostException e) {

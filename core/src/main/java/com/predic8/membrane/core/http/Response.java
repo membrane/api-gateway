@@ -192,7 +192,14 @@ public class Response extends Message {
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body(htmlMessage("Internal Server Error", message));
 	}
-	
+
+	public static ResponseBuilder badGateway(String message) {
+		return ResponseBuilder.newInstance().
+				status(502, "Bad Gateway").
+				contentType(MimeType.TEXT_HTML_UTF8).
+				body(htmlMessage("Bad Gateway", message));
+	}
+
 	public static ResponseBuilder forbidden() {
 		return ResponseBuilder.newInstance().
 				status(403, "Forbidden").
