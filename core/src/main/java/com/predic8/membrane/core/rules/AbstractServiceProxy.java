@@ -17,6 +17,7 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		private String host;
 		private int port = 80;
 		private String url;
+		private boolean adjustHostHeader = true;
 		
 		private SSLParser sslParser;
 		
@@ -54,6 +55,15 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		@MCChildElement
 		public void setSslParser(SSLParser sslParser) {
 			this.sslParser = sslParser;
+		}
+		
+		public boolean isAdjustHostHeader() {
+			return adjustHostHeader;
+		}
+		
+		@MCChildElement
+		public void setAdjustHostHeader(boolean adjustHostHeader) {
+			this.adjustHostHeader = adjustHostHeader;
 		}
 	}
 	
@@ -160,6 +170,10 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 
 	public String getTargetURL() {
 		return target.getUrl();
+	}
+	
+	public boolean isTargetAdjustHostHeader() {
+		return target.isAdjustHostHeader();
 	}
 
 }

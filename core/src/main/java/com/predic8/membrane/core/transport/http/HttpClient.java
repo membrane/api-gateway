@@ -111,7 +111,7 @@ public class HttpClient {
 			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
 		} 
 		
-		if (adjustHostHeader && exc.getRule() instanceof AbstractServiceProxy) {
+		if (adjustHostHeader && exc.getRule() instanceof AbstractServiceProxy && ((AbstractServiceProxy)exc.getRule()).isTargetAdjustHostHeader()) {
 			URL d = new URL(dest);
 			exc.getRequest().getHeader().setHost(d.getHost() + ":" + HttpUtil.getPort(d));
 		}
