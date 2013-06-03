@@ -178,40 +178,26 @@ public class RuleManager {
 		getExchangeStore().refreshExchangeStoreListeners();
 	}
 
-	public Rule getMatchingRule(RuleKey keyFromReq) {
-		if (exists(keyFromReq))
-			return getRule(keyFromReq);
-
+	public Rule getMatchingRule(String hostHeader, String method, String uri, int port, String localIP) {
 		for (Rule rule : rules) {
 
-			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + keyFromReq.getHost());
+			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + hostHeader);
 			
 			if (rule.getKey().getIp() != null)
-				if (!rule.getKey().getIp().equals(keyFromReq.getIp()))
+				if (!rule.getKey().getIp().equals(localIP))
 					continue;
 
-			if (!rule.getKey().isHostWildcard()) {
-				String ruleHost = rule.getKey().getHost().split(":")[0];
-				String requestHost = keyFromReq.getHost();
-				if (requestHost == null)
-					continue;
-				requestHost = requestHost.split(":")[0];
-
-				log.debug("Rule host: " + ruleHost + ";  Request host: " + requestHost);
-
-				if (!ruleHost.equalsIgnoreCase(requestHost))
-					continue;
-			}
-
-			if (rule.getKey().getPort() != -1 && keyFromReq.getPort() != -1 && rule.getKey().getPort() != keyFromReq.getPort())
+			if (!rule.getKey().matchesHostHeader(hostHeader))
 				continue;
-			if (!rule.getKey().getMethod().equals(keyFromReq.getMethod()) && !rule.getKey().isMethodWildcard())
+			if (rule.getKey().getPort() != -1 && port != -1 && rule.getKey().getPort() != port)
+				continue;
+			if (!rule.getKey().getMethod().equals(method) && !rule.getKey().isMethodWildcard())
 				continue;
 
 			if (!rule.getKey().isUsePathPattern())
 				return rule;
 
-			if (rule.getKey().matchesPath(keyFromReq.getPath()))
+			if (rule.getKey().matchesPath(uri))
 				return rule;
 
 		}

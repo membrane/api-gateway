@@ -30,7 +30,6 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -113,13 +112,6 @@ public class Exchange extends AbstractExchange {
 	public void setRequest(Request req) {
 		super.setRequest(req);
 		setOriginalHostHeader(req.getHeader().getHost());
-	}
-
-	public ServiceProxyKey getServiceProxyKey() {
-		return new ServiceProxyKey(request.getHeader().getHost(),
-				request.getMethod(), request.getUri(),
-				handler.isMatchLocalPort() ? handler.getLocalPort() : -1,
-				handler.getLocalAddress().getHostAddress());
 	}
 
 	public Connection getTargetConnection() {

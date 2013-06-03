@@ -14,10 +14,18 @@
 
 package com.predic8.membrane.core.rules;
 
-public class ServiceProxyKey extends AbstractRuleKey {
+import java.util.regex.Pattern;
 
-	String method = "*";
-	String host = "*";
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+public class ServiceProxyKey extends AbstractRuleKey {
+	private static Log log = LogFactory.getLog(ServiceProxyKey.class.getName());
+
+	private String method = "*";
+	private String host = "*";
+	private boolean isHostWildCard = true;
+	private Pattern hostPattern;
 
 	public ServiceProxyKey(int port) {
 		this(port, null);
@@ -33,7 +41,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 
 	public ServiceProxyKey(String host, String method, String path, int port, String ip) {
 		super(port, ip);
-		this.host = host;
+		setHost(host);
 		setPath(path);
 		this.method = method;
 	}
@@ -51,7 +59,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	}
 
 	public boolean isHostWildcard() {
-		return "*".equals(host.trim());
+		return isHostWildCard;
 	}
 
 	public String toString() {
@@ -102,7 +110,87 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	}
 	
 	public void setHost(String host) {
-		this.host = host;
+		this.host = host.trim();
+		this.isHostWildCard = "*".equals(this.host);
+		if (!isHostWildCard) {
+			String pattern = createHostPattern(this.host);
+			log.debug("Created host pattern match: " + pattern);
+			this.hostPattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+		} else {
+			this.hostPattern = null;
+		}
 	}
 
+	public static String createHostPattern(String host) {
+		StringBuilder regex = new StringBuilder();
+		boolean quoted = false;
+		boolean started = false;
+		regex.append("(");
+		for (int i = 0; i < host.length(); i++) {
+			char c = host.charAt(i);
+			switch (c) {
+			case ' ':
+				if (!started)
+					break;
+				if (quoted) {
+					regex.append("\\E");
+					quoted = false;
+				}
+				started = false;
+				regex.append(")|(");
+				break;
+			case '*':
+				if (quoted) {
+					regex.append("\\E");
+					quoted = false;
+				}
+				regex.append(".+");
+				started = true;
+				break;
+			default:
+				if (!quoted) {
+					regex.append("\\Q");
+					quoted = true;
+					started = true;
+				}
+				if (c == '\\')
+						regex.append('\\');
+				regex.append(c);
+			}
+		}
+		if (quoted) {
+			regex.append("\\E");
+			quoted = false;
+		}
+		if (!started && regex.length() > 1) {
+			regex.delete(regex.length()-3, regex.length());
+		}
+		regex.append(")");
+		
+		String r = regex.toString();
+		
+		return r;
+	}
+
+	@Override
+	public boolean matchesHostHeader(String hostHeader) {
+		if (isHostWildCard)
+			return true;
+
+		if (hostHeader == null)
+			return false;
+		
+		String requestHost = hostHeader.split(":")[0];
+
+		log.debug("Rule host: " + host + ";  Request host: " + requestHost);
+			
+		return hostPattern.matcher(requestHost).matches();
+	}
+	
+	/**
+	 * The pattern used to match the host name, or null if any host name matches.
+	 */
+	public Pattern getHostPattern() {
+		return hostPattern;
+	}
 }

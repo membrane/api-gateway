@@ -68,8 +68,8 @@ public class IndexInterceptor extends AbstractInterceptor {
 		ri.ssl = sp.getSslInboundContext() != null;// NOTE: when running as servlet, we have no idea what the protocol was
 		String protocol = ri.ssl ? "https" : "http";
 		
-		String host = k.isHostWildcard() ? new HostColonPort(exc.getRequest().getHeader().getHost()).host : k.getHost();
-		if (host == null)
+		String host = k.isHostWildcard() ? new HostColonPort(exc.getRequest().getHeader().getHost()).host : fullfillRegexp(ServiceProxyKey.createHostPattern(k.getHost()));
+		if (host == null || host.length() == 0)
 			host = exc.getHandler().getLocalAddress().getHostAddress().toString();
 		
 		int port = k.getPort();
@@ -100,7 +100,8 @@ public class IndexInterceptor extends AbstractInterceptor {
 	
 	private String fullfillRegexp(String path) {
 		StringBuilder sb = new StringBuilder();
-		int p = 0;
+		int p = 0, groupLevel = 0;
+		WHILE:
 		while (p < path.length()) {
 			int c = path.codePointAt(p++);
 			switch (c) {
@@ -137,9 +138,38 @@ public class IndexInterceptor extends AbstractInterceptor {
 			case '*':
 			case '+':
 			case '{':
-			case '(':
 				return null; // meaningful characters we do not unterstand
+			case '(':
+				groupLevel++;
+				break;
+			case ')':
+				if (groupLevel == 0)
+					return null; // unbalanced ')'
+				else
+					groupLevel--;
+				break;
 			case '|':
+				if (groupLevel == 0) {
+					break WHILE;
+				} 
+				W2:
+				while (true) {
+					if (++p == path.length())
+						return null; // unbalanced ')'
+					switch (path.charAt(p)) {
+					case ')':
+						break W2;
+					case '[':
+					case '?':
+					case '*':
+					case '+':
+					case '{':
+						return null; // meaningful characters we do not unterstand
+					case '\\':
+						return null; // TODO: \) \Q..\E
+					}
+				}
+				groupLevel--;
 				break;
 			case '^':
 				if (p == 1)
@@ -165,6 +195,8 @@ public class IndexInterceptor extends AbstractInterceptor {
 				break;
 			}
 		}
+		if (groupLevel > 0)
+			return null;
 		return sb.toString();
 	}
 	

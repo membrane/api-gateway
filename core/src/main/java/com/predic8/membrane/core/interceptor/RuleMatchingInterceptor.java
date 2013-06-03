@@ -23,12 +23,13 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
+import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 
 @MCElement(name="ruleMatching")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
@@ -69,12 +70,21 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private Rule getRule(Exchange exc) {
-		ServiceProxyKey key = exc.getServiceProxyKey();
+		Request request = exc.getRequest();
+		AbstractHttpHandler handler = exc.getHandler();
+		
+		// retrieve value to match
+		String hostHeader = request.getHeader().getHost();
+		String method = request.getMethod();
+		String uri = request.getUri();
+		int port = handler.isMatchLocalPort() ? handler.getLocalPort() : -1;
+		String localIP = handler.getLocalAddress().getHostAddress();
 
-		Rule rule = router.getRuleManager().getMatchingRule(key);
+		// match it
+		Rule rule = router.getRuleManager().getMatchingRule(hostHeader, method, uri, port, localIP);
 		if (rule != null) {
 			if (log.isDebugEnabled())
-				log.debug("Matching Rule found for RuleKey " + key);
+				log.debug("Matching Rule found for RuleKey " + hostHeader + " " + method + " " + uri + " " + port + " " + localIP);
 			return rule;
 		}
 

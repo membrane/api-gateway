@@ -20,12 +20,11 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 
 public class RuleManagerTest {
@@ -66,14 +65,12 @@ public class RuleManagerTest {
 	
 	@Test
 	public void testGetMatchingRuleForwardBlz() throws Exception {
-		RuleKey key = new ServiceProxyKey("localhost", "POST", "/axis2/services/blzservice", 3014);
-		assertEquals(forwardBlz, manager.getMatchingRule(key));
+		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", 3014, null));
 	}
 	
 	@Test
 	public void testGetMatchingRuleForwardBlzPOST() throws Exception {
-		RuleKey key = new ServiceProxyKey("localhost", "POST", "/axis2/services/blzservice", 3014);
-		assertEquals(forwardBlz, manager.getMatchingRule(key));
+		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", 3014, null));
 	}
 	
 	@Test

@@ -15,7 +15,8 @@ package com.predic8.membrane.core.rules;
 
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public abstract class AbstractRuleKey implements RuleKey {
 
@@ -124,4 +125,10 @@ public abstract class AbstractRuleKey implements RuleKey {
 	public void setIp(String ip) {
 		this.ip = ip;
 	}
+	
+	@Override
+	public boolean matchesHostHeader(String hostHeader) {
+		return false;
+	}
+
 }

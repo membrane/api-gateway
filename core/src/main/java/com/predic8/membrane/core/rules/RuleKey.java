@@ -59,12 +59,6 @@ public interface RuleKey {
 	public boolean isMethodWildcard();
 	
 	/**
-	 * When isHostWidldcard is set to true any value of the HTTP Host header will match.
-	 * @return whether the host wildcard is set to true
-	 */
-	public boolean isHostWildcard();
-	
-	/**
 	 * If isPathRegExp is true, than the path will be treated as a regexp pattern. 
 	 * The path of the incoming request will be match against this regexp. 
 	 * 
@@ -91,4 +85,6 @@ public interface RuleKey {
 	public String getIp();
 	
 	public void setIp(String ip);
+
+	public boolean matchesHostHeader(String hostHeader);
 }
