@@ -61,7 +61,7 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 			return adjustHostHeader;
 		}
 		
-		@MCChildElement
+		@MCAttribute
 		public void setAdjustHostHeader(boolean adjustHostHeader) {
 			this.adjustHostHeader = adjustHostHeader;
 		}

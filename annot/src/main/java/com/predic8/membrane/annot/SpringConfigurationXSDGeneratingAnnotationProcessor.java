@@ -292,6 +292,8 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				cei.setAnnotation(b);
 				cei.setE((ExecutableElement) e2);
 				TypeMirror setterArgType = cei.getE().getParameters().get(0).asType();
+				if (!(setterArgType instanceof DeclaredType))
+					throw new ProcessingException("Setter argument must be of an @MCElement-annotated type.", cei.getE().getParameters().get(0));
 				cei.setTypeDeclaration((TypeElement) ((DeclaredType) setterArgType).asElement());
 				cei.setPropertyName(AnnotUtils.dejavaify(e2.getSimpleName().toString().substring(3)));
 				cei.setRequired(isRequired(e2));
