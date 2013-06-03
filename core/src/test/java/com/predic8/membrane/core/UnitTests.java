@@ -27,6 +27,7 @@ import com.predic8.membrane.core.http.RequestTest;
 import com.predic8.membrane.core.http.ResponseTest;
 import com.predic8.membrane.core.interceptor.DispatchingInterceptorTest;
 import com.predic8.membrane.core.interceptor.HeaderFilterInterceptorTest;
+import com.predic8.membrane.core.interceptor.IndexInterceptorTest;
 import com.predic8.membrane.core.interceptor.InternalInvocationTest;
 import com.predic8.membrane.core.interceptor.MessageAnalyserTest;
 import com.predic8.membrane.core.interceptor.ThrottleInterceptorTest;
@@ -103,7 +104,8 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	SOAPUtilTest.class,	SoapOperationExtractorTest.class,
 	ContentTypeDetectorTest.class,
 	MessageAnalyserTest.class, ExchangeTest.class,
-	LimitedMemoryExchangeStoreTest.class
+	LimitedMemoryExchangeStoreTest.class,
+	IndexInterceptorTest.class
 })
 public class UnitTests {
 	/*

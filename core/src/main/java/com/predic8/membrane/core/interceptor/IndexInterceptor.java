@@ -98,28 +98,28 @@ public class IndexInterceptor extends AbstractInterceptor {
 		return ri;
 	}
 	
-	private String fullfillRegexp(String path) {
+	static String fullfillRegexp(String regex) {
 		StringBuilder sb = new StringBuilder();
 		int p = 0, groupLevel = 0;
 		WHILE:
-		while (p < path.length()) {
-			int c = path.codePointAt(p++);
+		while (p < regex.length()) {
+			int c = regex.codePointAt(p++);
 			switch (c) {
 			case '\\':
-				if (p == path.length())
+				if (p == regex.length())
 					return null; // illegal
-				c = path.codePointAt(p++);
+				c = regex.codePointAt(p++);
 				if (Character.isDigit(c))
 					return null; // backreferences are not supported
 				if (c == 'Q') {
 					while (true) {
-						if (p == path.length())
+						if (p == regex.length())
 							return null; // 'end of regex' within quote
-						c = path.codePointAt(p++);
+						c = regex.codePointAt(p++);
 						if (c == '\\') {
-							if (p == path.length())
+							if (p == regex.length())
 								return null; // 'end of regex' within quote
-							c = path.codePointAt(p++);
+							c = regex.codePointAt(p++);
 							if (c == 'E')
 								break;
 							sb.append('\\');
@@ -154,9 +154,9 @@ public class IndexInterceptor extends AbstractInterceptor {
 				} 
 				W2:
 				while (true) {
-					if (++p == path.length())
+					if (++p == regex.length())
 						return null; // unbalanced ')'
-					switch (path.charAt(p)) {
+					switch (regex.charAt(p)) {
 					case ')':
 						break W2;
 					case '[':
@@ -170,19 +170,20 @@ public class IndexInterceptor extends AbstractInterceptor {
 					}
 				}
 				groupLevel--;
+				p++;
 				break;
 			case '^':
 				if (p == 1)
 					break;
 				return null;
 			case '$':
-				if (p == path.length() || path.codePointAt(p) == '|')
+				if (p == regex.length() || regex.codePointAt(p) == '|')
 					break;
 				return null;
 			case '.':
 				int q; 
-				if (p != path.length() && isQuantifier(q = path.codePointAt(p))) {
-					if (++p != path.length() && isModifier(path.codePointAt(p)))
+				if (p != regex.length() && isQuantifier(q = regex.codePointAt(p))) {
+					if (++p != regex.length() && isModifier(regex.codePointAt(p)))
 						p++;
 					if (q == '+')
 						sb.append('a');
@@ -200,11 +201,11 @@ public class IndexInterceptor extends AbstractInterceptor {
 		return sb.toString();
 	}
 	
-	private boolean isQuantifier(int c) {
+	private static boolean isQuantifier(int c) {
 		return c == '?' || c == '*' || c == '+';
 	}
 
-	private boolean isModifier(int c) {
+	private static boolean isModifier(int c) {
 		return c == '?' || c == '+';
 	}
 

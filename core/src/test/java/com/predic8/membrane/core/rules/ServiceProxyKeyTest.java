@@ -66,4 +66,25 @@ public class ServiceProxyKeyTest {
 		assertTrue(key.matchesPath("/axis2/services/FooService"));
 		assertTrue(key.matchesPath("/axis2/services/FooService/Bla"));
 	}
+	
+	@Test
+	public void testHostMatch() {
+		testHostMatch("localhost", "localhost");
+		testHostMatch("foo.predic8.de", "foo.predic8.de");
+		testHostMatch(" foo.predic8.de ", "foo.predic8.de");
+		testHostMatch("foo.predic8.de", "foo.predic8.de:80");
+		testHostMatch("foo.predic8.de *.predic8.de", "foo.predic8.de");
+		testHostMatch("foo.predic8.de *.predic8.de", "bar.predic8.de");
+		testHostMatch("foo.predic8.de bar.predic8.de", "baz.predic8.de", false);
+		testHostMatch("*.predic8.de", "foo.predic8.de");
+		testHostMatch("a b c", "c");
+	}
+
+	private void testHostMatch(String hostArg, String hostHeader) {
+		testHostMatch(hostArg, hostHeader, true);
+	}
+	
+	private void testHostMatch(String hostArg, String hostHeader, boolean result) {
+		assertEquals(new ServiceProxyKey(hostArg, "GET", null, 80).matchesHostHeader(hostHeader), result);
+	}
 }
