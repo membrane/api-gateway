@@ -56,9 +56,9 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver());
 			return wsdlParser.parse(ctx).getTypes().getSchemas();
 		} catch (ResourceDownloadException e) {
-			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.");
+			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
 		} catch (DownloadException e) {
-			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.");
+			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
 		}
 	}
 	

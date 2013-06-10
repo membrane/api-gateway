@@ -21,10 +21,6 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.xmlprotection.XMLProtectionInterceptor;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 
@@ -32,16 +28,11 @@ public class XMLProtectionInterceptorTest {
 	private Exchange exc;
 	private XMLProtectionInterceptor interceptor;
 
-	private Rule getRule() {		
-		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
-	}
-
 	@Before
 	public void setUp() throws Exception {
 		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("/axis2/services/BLZService"));
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
-		exc.setRule(getRule());
 		
 		interceptor = new XMLProtectionInterceptor();
 	}

@@ -169,4 +169,7 @@ public abstract class AbstractProxy implements Rule {
 	public void init() throws Exception {
 	}
 	
+	public boolean isTargetAdjustHostHeader() {
+		return false;
+	}
 }

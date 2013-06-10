@@ -14,7 +14,9 @@
 
 package com.predic8.membrane.balancer.client;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.util.Properties;
@@ -22,16 +24,21 @@ import java.util.Properties;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.commons.cli.*;
-import org.apache.commons.codec.binary.*;
-import org.apache.commons.logging.*;
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingArgumentException;
+import org.apache.commons.cli.Options;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.balancer.Balancer;
 import com.predic8.membrane.core.interceptor.balancer.Cluster;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
 
@@ -78,7 +85,6 @@ public class LBNotificationClient {
 		r.setBodyContent(new byte[0]);
 		exc.setRequest(r);
 		exc.getDestinations().add(getRequestURL());
-		exc.setRule(new ServiceProxy());
 		Response res = client.call(exc);
 		return res;
 	}

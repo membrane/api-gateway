@@ -18,7 +18,6 @@ import java.net.URL;
 
 import junit.framework.Assert;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
@@ -26,8 +25,6 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.rules.AbstractProxy;
-import com.predic8.membrane.core.rules.AbstractRuleKey;
 import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 
 public class ReverseProxyingInterceptorTest {
@@ -122,11 +119,6 @@ public class ReverseProxyingInterceptorTest {
 	 */
 	private Exchange createExchange(String requestHostHeader, String requestDestinationHeader, int port, String requestURI, String redirectionURI) {
 		Exchange exc = new Exchange(new FakeHttpHandler(port));
-		exc.setRule(new AbstractProxy(new AbstractRuleKey(port, null) {}){
-			@Override
-			protected AbstractProxy getNewInstance() {
-				throw new NotImplementedException();
-			}});
 		Request req = new Request();
 		req.setUri(requestURI);
 		Header header = new Header();

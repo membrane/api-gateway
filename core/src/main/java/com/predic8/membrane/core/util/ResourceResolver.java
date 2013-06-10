@@ -24,16 +24,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.util.EntityUtils;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.xml.util.ExternalResolver;
 import com.predic8.xml.util.ResourceDownloadException;
 
@@ -129,8 +128,8 @@ public class ResourceResolver {
 	
 	private synchronized HttpClient getHttpClient() {
 		if (httpClient == null) {
-			httpClient = new DefaultHttpClient();
-		    HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 10000);
+			httpClient = new HttpClient();
+		    //HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 10000);
 		}
 		return httpClient;
 	}
@@ -168,20 +167,26 @@ public class ResourceResolver {
 	}
 	
 	protected InputStream resolveViaHttp(String url) {
-		try{
-		    HttpGet method = new HttpGet(url);
-		    method.setHeader("User-Agent", Constants.PRODUCT_NAME + " " + Constants.VERSION);
-		    HttpResponse response = getHttpClient().execute(method);
+		try {
+		    Request req = new Request();
+		    req.setMethod(Request.METHOD_GET);
+		    req.setUri(URLUtil.getPathQuery(url));
+		    req.getHeader().add(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION);
+		    Exchange exc = new Exchange(null);
+			exc.setRequest(req);
+		    exc.getDestinations().add(url);
+		    Response response = getHttpClient().call(exc);
 		    try {
-		    	if(response.getStatusLine().getStatusCode() != 200) {
+		    	if(response.getStatusCode() != 200) {
 		    		DownloadException rde = new DownloadException("could not get resource " + url + " by HTTP");
-		    		rde.setStatus(response.getStatusLine().getStatusCode());
+		    		rde.setStatus(response.getStatusCode());
 		    		rde.setUrl(url);
 		    		throw rde;
 		    	}
-		    	return new ByteArrayInputStream(EntityUtils.toByteArray(response.getEntity()));
+		    	return new ByteArrayInputStream(ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded()));
 		    } finally {
-		    	method.releaseConnection();
+		    	if (exc.getTargetConnection() != null)
+		    		exc.getTargetConnection().close();
 		    }
 		} catch (ResourceDownloadException e) {
 			throw e;
@@ -221,6 +226,10 @@ public class ResourceResolver {
 				} catch (Exception e) {
 					throw new RuntimeException(e);
 				}
+			}
+			
+			protected InputStream resolveViaHttp(Object url) {
+				return ResourceResolver.this.resolveViaHttp((String) url);
 			}
 		};
 	}

@@ -37,9 +37,6 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 import com.predic8.membrane.core.util.MessageUtil;
 
@@ -68,7 +65,6 @@ public class WSDLInterceptorTest {
 		exc.setResponse(okResponse);
 
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
-		exc.setRule(getRule());
 
 		interceptor = new WSDLInterceptor();
 	}
@@ -147,11 +143,6 @@ public class WSDLInterceptorTest {
 		assertTrue(matchSoap11("http://thomas-bayer.com.*"));
 		assertTrue(matchSoap12("http://thomas-bayer.com.*"));
 		assertTrue(matchHttp("http://thomas-bayer.com.*"));
-	}
-
-	private Rule getRule() {
-		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*",
-				3011), "thomas-bayer.com", 80);
 	}
 
 	private XMLEventReader getParser() throws Exception {

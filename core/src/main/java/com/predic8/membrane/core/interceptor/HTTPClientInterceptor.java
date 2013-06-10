@@ -77,7 +77,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			synchronized(this) {
 				result = httpClient;
 				if (result == null)
-					httpClient = result = new HttpClient(router, failOverOn5XX, keepAliveTimeout, adjustHostHeader, proxyConfiguration);
+					httpClient = result = new HttpClient(router.getTransport().getHttpClientRetries(), failOverOn5XX, keepAliveTimeout, adjustHostHeader, proxyConfiguration);
 			}
 		return result;
 	}

@@ -29,9 +29,6 @@ import org.xml.sax.InputSource;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.FakeHttpHandler;
 import com.predic8.membrane.core.util.MessageUtil;
 
@@ -114,11 +111,6 @@ public class WADLInterceptorTest {
 				.getResponse().getBodyAsStream())));
 	}
 
-	private Rule getRule() {
-		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*",
-				3011), "thomas-bayer.com", 80);
-	}
-
 	private Exchange getExchange() throws IOException {
 		Exchange exc = new Exchange(new FakeHttpHandler(3011));
 		exc.setRequest(MessageUtil.getGetRequest("/search?wadl"));
@@ -130,7 +122,6 @@ public class WADLInterceptorTest {
 		exc.setResponse(okResponse);
 
 		exc.setOriginalHostHeader("thomas-bayer.com:80");
-		exc.setRule(getRule());
 
 		return exc;
 	}

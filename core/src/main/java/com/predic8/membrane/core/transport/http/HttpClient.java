@@ -28,14 +28,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ChunkedBodyTransferrer;
 import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -63,14 +61,14 @@ public class HttpClient {
 		conMgr = new ConnectionManager(30000);
 		proxy = null;
 		maxRetries = 5;
-		adjustHostHeader = false;
+		adjustHostHeader = true;
 		this.failOverOn5XX = failOverOn5XX;
 	}
 	
-	public HttpClient(Router router, boolean failOverOn5XX, long keepAliveTimeout, boolean adjustHostHeader, ProxyConfiguration proxyConfiguration) {
+	public HttpClient(int maxRetries, boolean failOverOn5XX, long keepAliveTimeout, boolean adjustHostHeader, ProxyConfiguration proxyConfiguration) {
 		conMgr = new ConnectionManager(keepAliveTimeout);
 		this.adjustHostHeader = adjustHostHeader;
-		maxRetries = router.getTransport().getHttpClientRetries();
+		this.maxRetries = maxRetries;
 		proxy = proxyConfiguration;
 		this.failOverOn5XX = failOverOn5XX;
 	}
@@ -111,7 +109,7 @@ public class HttpClient {
 			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
 		} 
 		
-		if (adjustHostHeader && exc.getRule() instanceof AbstractServiceProxy && ((AbstractServiceProxy)exc.getRule()).isTargetAdjustHostHeader()) {
+		if (adjustHostHeader && (exc.getRule() == null || exc.getRule().isTargetAdjustHostHeader())) {
 			URL d = new URL(dest);
 			exc.getRequest().getHeader().setHost(d.getHost() + ":" + HttpUtil.getPort(d));
 		}
