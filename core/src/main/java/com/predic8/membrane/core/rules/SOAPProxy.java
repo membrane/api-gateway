@@ -95,19 +95,19 @@ public class SOAPProxy extends AbstractServiceProxy {
 					target.setPort(url.getDefaultPort());
 				if (key.getPath() == null) {
 					key.setUsePathPattern(true);
-					key.setPathRegExp(true);
-					key.setPath(Pattern.quote(url.getPath()) + ".*");
+					key.setPathRegExp(false);
+					key.setPath(url.getPath());
 				} else {
 					targetPath = url.getPath();
 				}
 				((ServiceProxyKey)key).setMethod("*");
 			} catch (MalformedURLException e) {
-				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.");
+				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
 			}
 		} catch (ResourceDownloadException e) {
-			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.");
+			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
 		} catch (DownloadException e) {
-			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.");
+			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
 		}
 	}
 	
@@ -181,11 +181,12 @@ public class SOAPProxy extends AbstractServiceProxy {
 					@Override
 					public String rewrite(String path2) {
 						try {
+							String keyPath = key.getPath();
 							if (path2.contains("://")) {
-								path2 = new URL(new URL(path2), key.getPath()).toString();
+								path2 = new URL(new URL(path2), keyPath).toString();
 							} else {
 								Matcher m = relativePathPattern.matcher(path2);
-								path2 = m.replaceAll("./" + URLUtil.getName(key.getPath()) + "?");
+								path2 = m.replaceAll("./" + URLUtil.getName(keyPath) + "?");
 							}
 						} catch (MalformedURLException e) {
 						}
