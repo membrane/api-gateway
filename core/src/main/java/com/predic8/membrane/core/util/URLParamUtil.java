@@ -19,6 +19,7 @@ import java.net.*;
 import java.util.*;
 import java.util.regex.*;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 
 public class URLParamUtil {
@@ -52,27 +53,68 @@ public class URLParamUtil {
 	}
 
 	
-	public static String createQueryString( String... params ) throws UnsupportedEncodingException {
-		StringBuilder buf = new StringBuilder();
-		for (int i = 0; i < params.length; i+=2) {
-			if (i != 0) buf.append('&');
-			buf.append(URLEncoder.encode(params[i], "UTF-8"));
-			buf.append('=');
-			buf.append(URLEncoder.encode(params[i+1], "UTF-8"));
-		}		
-		return buf.toString();
+	public static String createQueryString( String... params ) {
+		try {
+			StringBuilder buf = new StringBuilder();
+			for (int i = 0; i < params.length; i+=2) {
+				if (i != 0) buf.append('&');
+				buf.append(URLEncoder.encode(params[i], Constants.UTF_8));
+				buf.append('=');
+				buf.append(URLEncoder.encode(params[i+1], Constants.UTF_8));
+			}		
+			return buf.toString();
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 	
-	public static Map<String, String> parseQueryString(String query) throws UnsupportedEncodingException {
-		Map<String, String> params = new HashMap<String, String>();
-	
-		for (String p : query.split("&")) {
-			Matcher m = paramsPat.matcher(p);
-			m.matches();
-			params.put(URLDecoder.decode(m.group(1),"UTF-8"), 
-					   URLDecoder.decode(m.group(2),"UTF-8"));
+	public static Map<String, String> parseQueryString(String query) {
+		try {
+			Map<String, String> params = new HashMap<String, String>();
+
+			for (String p : query.split("&")) {
+				Matcher m = paramsPat.matcher(p);
+				m.matches();
+				params.put(URLDecoder.decode(m.group(1), Constants.UTF_8), 
+						URLDecoder.decode(m.group(2), Constants.UTF_8));
+			}
+			return params;
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
 		}
-		return params;
 	}
 
+	public static String encode(Map<String, String> params) {
+		try {
+			StringBuilder sb = new StringBuilder();
+			boolean first = true;
+
+			for (Map.Entry<String, String> p : params.entrySet()) {
+				if (first)
+					first = false;
+				else
+					sb.append("&");
+				sb.append(URLEncoder.encode(p.getKey(), Constants.UTF_8));
+				sb.append("=");
+				sb.append(URLEncoder.encode(p.getValue(), Constants.UTF_8));
+			}
+
+			return sb.toString();
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	public static class ParamBuilder {
+		HashMap<String, String> params = new HashMap<String, String>();
+
+		public ParamBuilder add(String key, String value) {
+			params.put(key, value);
+			return this;
+		}
+		
+		public String build() {
+			return encode(params);
+		}
+	}
 }

@@ -24,23 +24,18 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.http.Header;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.util.URLParamUtil;
 
 @MCElement(name="telekomSMSTokenProvider", group="tokenProvider", global=false)
 public class TelekomSMSTokenProvider extends SMSTokenProvider {
@@ -48,7 +43,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 
 	private String user, password;
 
-	private HttpClient hc = new DefaultHttpClient();
+	private HttpClient hc = new HttpClient();
 	private String smsAuthorToken;
 
 	@Override
@@ -81,20 +76,19 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	}
 
 	private static void sendSMS(HttpClient hc, String token, String recipientNumber, String text) throws InvalidAuthTokenException {
-		HttpPost p = new HttpPost("https://gateway.developer.telekom.com/p3gw-mod-odg-sms/rest/production/sms");
+		Exchange exc = new Request.Builder().method(Request.METHOD_POST).
+				url("https://gateway.developer.telekom.com/p3gw-mod-odg-sms/rest/production/sms").
+				header("Authorization", "TAuth realm=\"https://odg.t-online.de\",tauth_token=\"" + token + "\"").
+				header("Accept", "application/json").
+				header("Content-Type", "application/x-www-form-urlencoded").
+				body(new URLParamUtil.ParamBuilder().add("number", recipientNumber).add("message", text).build()).
+				buildExchange();
+		
 		try {
-			p.addHeader("Authorization", "TAuth realm=\"https://odg.t-online.de\",tauth_token=\"" + token + "\"");
-			p.addHeader("Accept", "application/json");
-			p.addHeader("Content-Type", "application/x-www-form-urlencoded");
+			Response response = hc.call(exc);
 
-			p.setEntity(new UrlEncodedFormEntity(Lists.newArrayList(
-					new BasicNameValuePair("number", recipientNumber),
-					new BasicNameValuePair("message", text)
-			)));
-			HttpResponse response = hc.execute(p);
-
-			if (response.getStatusLine().getStatusCode() != 200) {
-				String body = StringUtils.defaultString(EntityUtils.toString(response.getEntity()));
+			if (response.getStatusCode() != 200) {
+				String body = StringUtils.defaultString(response.getBodyAsStringDecoded());
 				// statusCode 0090 "Token is invalid."
 				if (body.contains("\"statusCode\":\"0090\""))
 					throw new InvalidAuthTokenException();
@@ -102,10 +96,15 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 			}
 
 			log.debug("sent SMS to " + recipientNumber);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
-			p.releaseConnection();
+			try {
+				if (exc.getTargetConnection() != null)
+					exc.getTargetConnection().close();
+			} catch (Exception e) {
+				log.error(e);
+			}
 		}
 	}
 
@@ -115,14 +114,14 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	 */
 	private static String getAuthToken(String user, String password, HttpClient hc)
 			throws UnsupportedEncodingException, IOException, Exception, JsonParseException {
-		HttpGet g = new HttpGet("https://sts.idm.telekom.com/rest-v1/tokens/odg");
-		g.addHeader("Authorization",
-				"Basic " + new String(Base64.encodeBase64((user + ":" + password).getBytes("UTF-8")), "UTF-8"));
-		g.addHeader("Accept", "application/json");
-		HttpResponse response = hc.execute(g);
+		Exchange g = new Request.Builder().method(Request.METHOD_GET).
+				url("https://sts.idm.telekom.com/rest-v1/tokens/odg").
+				header("Authorization", "Basic " + new String(Base64.encodeBase64((user + ":" + password).getBytes("UTF-8")), "UTF-8")).
+				header("Accept", "application/json").buildExchange();
+		Response response = hc.call(g);
 		
-		if (response.getStatusLine().getStatusCode() != 200)
-			throw new Exception("Authentication failed: " + EntityUtils.toString(response.getEntity()));
+		if (response.getStatusCode() != 200)
+			throw new Exception("Authentication failed: " + response.getBodyAsStringDecoded());
 
 		HashMap<String, String> values = parseJSONResponse(response);
 		
@@ -132,13 +131,13 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return values.get("token");
 	}
 
-	private static HashMap<String, String> parseJSONResponse(HttpResponse g) throws IOException, JsonParseException {
+	private static HashMap<String, String> parseJSONResponse(Response g) throws IOException, JsonParseException {
 		HashMap<String, String> values = new HashMap<String, String>();
 
-		Header contentType = g.getFirstHeader("Content-Type");
-		if (contentType != null && "application/json".equals(contentType.getValue())) {
+		String contentType = g.getHeader().getFirstValue("Content-Type");
+		if (contentType != null && "application/json".equals(contentType)) {
 			final JsonFactory jsonFactory = new JsonFactory();
-			final JsonParser jp = jsonFactory.createJsonParser(new InputStreamReader(g.getEntity().getContent()));
+			final JsonParser jp = jsonFactory.createJsonParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
 			String name = null;
 			while (jp.nextToken() != null) {
 				switch (jp.getCurrentToken()) {

@@ -168,13 +168,7 @@ public class ResourceResolver {
 	
 	protected InputStream resolveViaHttp(String url) {
 		try {
-		    Request req = new Request();
-		    req.setMethod(Request.METHOD_GET);
-		    req.setUri(URLUtil.getPathQuery(url));
-		    req.getHeader().add(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION);
-		    Exchange exc = new Exchange(null);
-			exc.setRequest(req);
-		    exc.getDestinations().add(url);
+		    Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
 		    Response response = getHttpClient().call(exc);
 		    try {
 		    	if(response.getStatusCode() != 200) {

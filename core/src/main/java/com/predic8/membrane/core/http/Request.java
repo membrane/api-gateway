@@ -25,11 +25,13 @@ import org.apache.commons.logging.LogFactory;
 
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.URLUtil;
 
 public class Request extends Message {
 
@@ -194,4 +196,47 @@ public class Request extends Message {
 				(method != null ? 2*method.length() : 0) +
 				(uri != null ? 2*uri.length() : 0);
 	}
+	
+	public static class Builder {
+		private Request req;
+		private String fullURL;
+		
+		public Builder() {
+			req = new Request();
+			req.setVersion("1.1");
+		}
+		
+		public Request build() {
+			return req;
+		}
+		
+		public Exchange buildExchange() {
+		    Exchange exc = new Exchange(null);
+			exc.setRequest(req);
+		    exc.getDestinations().add(fullURL);
+		    return exc;
+		}
+		
+		public Builder method(String method) {
+			req.setMethod(method);
+			return this;
+		}
+		
+		public Builder url(String url) {
+			fullURL = url;
+			req.setUri(URLUtil.getPathQuery(url));
+			return this;
+		}
+		
+		public Builder header(String headerName, String headerValue) {
+			req.getHeader().add(headerName, headerValue);
+			return this;
+		}
+
+		public Builder body(String body) {
+			req.setBodyContent(body.getBytes());
+			return this;
+		}
+	}
+	
 }
