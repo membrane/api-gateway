@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.predic8.membrane.core.resolver.ResourceResolver;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,7 +43,6 @@ import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.util.DNSCache;
-import com.predic8.membrane.core.util.ResourceResolver;
 
 @MCMain(
 		outputPackage="com.predic8.membrane.core.config.spring",

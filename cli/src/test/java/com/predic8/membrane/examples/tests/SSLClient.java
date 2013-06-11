@@ -37,7 +37,7 @@ public class SSLClient extends DistributionExtractingTestcase {
 		
 		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
 		try {
-			AssertUtils.assertContains("<svn", getAndAssert200("http://localhost:3023/svn/membrane/monitor/"));
+			AssertUtils.assertContains("<title>Google", getAndAssert200("http://localhost:3023/"));
 		} finally {
 			sl.killScript();
 		}

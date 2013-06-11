@@ -26,9 +26,9 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.resolver.ResourceResolver;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
-import com.predic8.membrane.core.util.ResourceResolver;
 import com.predic8.membrane.core.util.TextUtil;
 
 /**

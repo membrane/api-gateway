@@ -12,15 +12,15 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.config;
+package com.predic8.membrane.core.resolver;
 
-public class ConfigurationException extends Exception {
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.List;
 
-	private static final long serialVersionUID = 1L;
-
-	public ConfigurationException(String message) {
-		super(message);
-	}
-	
-
+public interface SchemaResolver {
+	public List<String> getSchemas();
+	public InputStream resolve(String url) throws FileNotFoundException;
+	public List<String> getChildren(String url);
+	public long getTimestamp(String url);
 }

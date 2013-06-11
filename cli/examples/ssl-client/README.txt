@@ -10,11 +10,11 @@ RUNNING THE EXAMPLE
 In the example we will connect to the following SVN repository without using SSL.
  
  
-https://predic8.com/svn/membrane/monitor/
+https://www.google.de/
 
 
 To run the example execute the following steps:
 
 1. Execute router.bat
 
-2. Open the URL http://localhost:8080/svn/membrane/monitor/ in your browser.
+2. Open the URL http://localhost:8080/ in your browser.

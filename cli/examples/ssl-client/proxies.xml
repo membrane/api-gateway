@@ -7,8 +7,7 @@
 	<router>
 
 		<serviceProxy port="8080">
-			<path>/svn</path>
-			<target host="predic8.com" port="443">
+			<target host="www.google.de" port="443">
 				<ssl ignoreTimestampCheckFailure="true" />
 			</target>
 		</serviceProxy>

@@ -32,7 +32,7 @@ public class RouterUtil {
 		Collection<Router> routers = appCtx.getBeansOfType(Router.class).values();
 		Router theOne = null;
 		for (Router r : routers) {
-			r.setResourceResolver(new WebAppResolver(ctx));
+			r.getResourceResolver().addSchemaResolver(new WebAppResolver(ctx));
 			if (r.getTransport() instanceof ServletTransport) {
 				if (theOne != null)
 					throw new RuntimeException("Only one <router> may have a <servletTransport> defined.");

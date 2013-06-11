@@ -69,6 +69,7 @@ public class LoginDialog {
 	}
 
 	public void init(Router router) throws Exception {
+		router.getResourceResolver().resolve(wsi.getDocBase() + "/index.html").close();
 		wsi.init(router);
 	}
 	

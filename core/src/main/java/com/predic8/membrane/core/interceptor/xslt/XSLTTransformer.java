@@ -32,7 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.util.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResourceResolver;
 
 public class XSLTTransformer {
 	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());

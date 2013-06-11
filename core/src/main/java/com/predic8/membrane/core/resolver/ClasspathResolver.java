@@ -12,14 +12,33 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.config;
+package com.predic8.membrane.core.resolver;
 
-public class ConfigurationException extends Exception {
+import java.io.InputStream;
+import java.util.List;
 
-	private static final long serialVersionUID = 1L;
+import com.google.common.collect.Lists;
 
-	public ConfigurationException(String message) {
-		super(message);
+public class ClasspathResolver implements SchemaResolver {
+
+	@Override
+	public List<String> getSchemas() {
+		return Lists.newArrayList("classpath");
+	}
+
+	@Override
+	public InputStream resolve(String url) {
+		return getClass().getResourceAsStream(url.substring(10));
+	}
+	
+	@Override
+	public List<String> getChildren(String url) {
+		return null;
+	}
+	
+	@Override
+	public long getTimestamp(String url) {
+		return 0;
 	}
 	
 

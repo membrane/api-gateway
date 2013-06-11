@@ -12,15 +12,36 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.config;
+package com.predic8.membrane.core.resolver;
 
-public class ConfigurationException extends Exception {
-
+public class DownloadException extends RuntimeException {
 	private static final long serialVersionUID = 1L;
 
-	public ConfigurationException(String message) {
-		super(message);
+	public DownloadException() {
 	}
 	
+	public DownloadException(String message) {
+		super(message);
+	}
 
+	public DownloadException(Exception e) {
+		super(e);
+	}
+	
+	private int status;
+	private String url;
+	
+	@Override
+	public String getMessage() {
+		return super.getMessage() + " " + status + " while downloading " + url;
+	}
+	
+	public void setUrl(String url) {
+		this.url = url;
+	}
+	
+	public void setStatus(int status) {
+		this.status = status;
+	}
+	
 }

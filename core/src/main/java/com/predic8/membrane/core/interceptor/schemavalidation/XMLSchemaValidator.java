@@ -32,7 +32,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.util.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResourceResolver;
 import com.predic8.schema.Schema;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {

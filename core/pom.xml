@@ -114,6 +114,12 @@
 		<dependency>
 			<groupId>com.predic8</groupId>
 			<artifactId>soa-model-core</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.httpcomponents</groupId>
+					<artifactId>httpclient</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.predic8</groupId>

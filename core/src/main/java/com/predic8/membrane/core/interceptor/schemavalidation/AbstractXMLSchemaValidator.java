@@ -37,7 +37,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.util.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResourceResolver;
 import com.predic8.schema.Schema;
 
 public abstract class AbstractXMLSchemaValidator implements IValidator {

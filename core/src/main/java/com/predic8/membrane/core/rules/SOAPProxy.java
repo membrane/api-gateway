@@ -34,7 +34,7 @@ import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
 import com.predic8.membrane.core.interceptor.soap.WebServiceExplorerInterceptor;
-import com.predic8.membrane.core.util.ResourceResolver.DownloadException;
+import com.predic8.membrane.core.resolver.DownloadException;
 import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 import com.predic8.wsdl.AbstractBinding;

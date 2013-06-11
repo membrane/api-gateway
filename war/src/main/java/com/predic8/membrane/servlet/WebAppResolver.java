@@ -14,15 +14,19 @@
 
 package com.predic8.membrane.servlet;
 
-import java.io.*;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.util.List;
 
 import javax.servlet.ServletContext;
 
-import org.apache.commons.logging.*;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.util.ResourceResolver;
+import com.google.common.collect.Lists;
+import com.predic8.membrane.core.resolver.SchemaResolver;
 
-public class WebAppResolver extends ResourceResolver {
+public class WebAppResolver implements SchemaResolver {
 
 	private static final Log log = LogFactory.getLog(WebAppResolver.class.getName());
 
@@ -32,15 +36,29 @@ public class WebAppResolver extends ResourceResolver {
 		this.ctx = ctx;
 	}
 
-	@Override
-	protected InputStream resolveFile(String uri, boolean useMembraneHome)
-			throws FileNotFoundException {
-		log.debug("loading resource from: " + uri);
-		return ctx.getResourceAsStream(uri);
-	}
-
 	public ServletContext getCtx() {
 		return ctx;
+	}
+
+	@Override
+	public List<String> getSchemas() {
+		return Lists.newArrayList((String)null);
+	}
+
+	@Override
+	public InputStream resolve(String url) throws FileNotFoundException {
+		log.debug("loading resource from: " + url);
+		return ctx.getResourceAsStream(url);
+	}
+
+	@Override
+	public List<String> getChildren(String url) {
+		return null;
+	}
+
+	@Override
+	public long getTimestamp(String url) {
+		return 0;
 	}
 
 }

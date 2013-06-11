@@ -38,7 +38,7 @@ import javax.net.ssl.TrustManagerFactory;
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.Store;
-import com.predic8.membrane.core.util.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResourceResolver;
 
 public class SSLContext {
 	private final javax.net.ssl.SSLContext sslc;

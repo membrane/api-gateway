@@ -17,7 +17,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.predic8.membrane.core.util.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResourceResolver;
 
 import junit.framework.TestCase;
 

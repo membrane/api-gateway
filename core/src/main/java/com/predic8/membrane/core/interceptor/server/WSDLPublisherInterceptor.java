@@ -32,6 +32,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
+import com.predic8.membrane.core.resolver.ResourceResolver;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -68,8 +69,9 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 		@Override
 		public String rewrite(String path) {
 			try {
-				if (!path.contains("://") && !path.startsWith("/")) // relative?
-					path = router.getResourceResolver().combine(resource, path);
+				if (!path.contains("://") && !path.startsWith("/")) {
+					path = ResourceResolver.combine(resource, path);
+				}
 				synchronized(paths) {
 					if (paths_reverse.containsKey(path)) {
 						path = paths_reverse.get(path).toString();

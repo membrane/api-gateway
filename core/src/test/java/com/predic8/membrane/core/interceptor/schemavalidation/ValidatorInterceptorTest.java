@@ -27,8 +27,8 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.resolver.ResourceResolver;
 import com.predic8.membrane.core.util.MessageUtil;
-import com.predic8.membrane.core.util.ResourceResolver;
 
 
 public class ValidatorInterceptorTest {

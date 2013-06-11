@@ -17,21 +17,35 @@ package com.predic8.membrane.osgi.extender;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.List;
 
-import com.predic8.membrane.core.util.ResourceResolver;
+import com.google.common.collect.Lists;
+import com.predic8.membrane.core.resolver.SchemaResolver;
 
-public class BundleResolver extends ResourceResolver {
+public class BundleResolver implements SchemaResolver {
 
 	@Override
-	protected InputStream resolveFile(String uri, boolean useMembraneHome)
-			throws FileNotFoundException {
-		if (uri.startsWith("bundle://"))
-			try {
-				return new URL(uri).openStream();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		throw new FileNotFoundException(uri);
+	public List<String> getSchemas() {
+		return Lists.newArrayList("bundle");
+	}
+	
+	@Override
+	public InputStream resolve(String uri) throws FileNotFoundException {
+		try {
+			return new URL(uri).openStream();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	public List<String> getChildren(String url) {
+		return null;
+	}
+
+	@Override
+	public long getTimestamp(String url) {
+		return 0;
 	}
 
 }

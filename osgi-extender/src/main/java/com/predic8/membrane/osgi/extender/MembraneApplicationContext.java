@@ -101,7 +101,7 @@ public class MembraneApplicationContext {
 					ClassLoader classLoader = new OverlayClassLoader(new BundleClassLoader(context.getBundle()), getClass().getClassLoader());
 					
 					Router router = Router.init(proxiesConfigurationURL, classLoader);
-					router.setResourceResolver(new BundleResolver());
+					router.getResourceResolver().addSchemaResolver(new BundleResolver());
 					return router;
 				} catch (Exception e) {
 					logger.error("loading proxies configuratio", e);
