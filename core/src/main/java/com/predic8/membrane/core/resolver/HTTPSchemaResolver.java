@@ -19,26 +19,31 @@ import java.io.InputStream;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.xml.util.ResourceDownloadException;
 
-public class HTTPResolver implements SchemaResolver {
+@MCElement(name="httpSchemaResolver")
+public class HTTPSchemaResolver implements SchemaResolver {
+
+	private HttpClientConfiguration httpClientConfig;
+	
 	private HttpClient httpClient;
 	
-	private synchronized HttpClient getHttpClient() {
+	public synchronized HttpClient getHttpClient() {
 		if (httpClient == null) {
-			httpClient = new HttpClient();
-		    //HttpConnectionParams.setConnectionTimeout(httpClient.getParams(), 10000);
+			httpClient = new HttpClient(httpClientConfig);
 		}
 		return httpClient;
 	}
-
+	
 	@Override
 	public List<String> getSchemas() {
 		return Lists.newArrayList("http", "https");
@@ -77,5 +82,13 @@ public class HTTPResolver implements SchemaResolver {
 	@Override
 	public long getTimestamp(String url) {
 		return 0;
+	}
+	
+	public HttpClientConfiguration getHttpClientConfig() {
+		return httpClientConfig;
+	}
+	
+	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+		this.httpClientConfig = httpClientConfig;
 	}
 }

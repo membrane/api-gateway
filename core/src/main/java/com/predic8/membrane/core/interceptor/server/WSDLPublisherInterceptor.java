@@ -32,7 +32,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -70,7 +70,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 		public String rewrite(String path) {
 			try {
 				if (!path.contains("://") && !path.startsWith("/")) {
-					path = ResourceResolver.combine(resource, path);
+					path = ResolverMap.combine(resource, path);
 				}
 				synchronized(paths) {
 					if (paths_reverse.containsKey(path)) {
@@ -109,7 +109,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 						break;
 					log.debug("WSDLPublisherInterceptor: processing " + doc);
 
-					exc.setResponse(WebServerInterceptor.createResponse(router.getResourceResolver(), doc));
+					exc.setResponse(WebServerInterceptor.createResponse(router.getResolverMap(), doc));
 					WSDLInterceptor wi = new WSDLInterceptor();
 					wi.setRewriteEndpoint(false);
 					wi.setPathRewriter(new RelativePathRewriter(exc, doc));
@@ -159,7 +159,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 			String resource = null;
 			if (exc.getRequestURI().endsWith("?wsdl") || exc.getRequestURI().endsWith("?WSDL")) {
 				processDocuments(exc);
-				exc.setResponse(WebServerInterceptor.createResponse(router.getResourceResolver(), resource = wsdl));
+				exc.setResponse(WebServerInterceptor.createResponse(router.getResolverMap(), resource = wsdl));
 				exc.getResponse().getHeader().setContentType(MimeType.TEXT_XML);
 			}
 			if (exc.getRequestURI().contains("?xsd=")) {
@@ -175,7 +175,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 						}
 						path = paths.get(n);
 					}
-					exc.setResponse(WebServerInterceptor.createResponse(router.getResourceResolver(), resource = path));
+					exc.setResponse(WebServerInterceptor.createResponse(router.getResolverMap(), resource = path));
 					exc.getResponse().getHeader().setContentType(MimeType.TEXT_XML);
 				}
 			}

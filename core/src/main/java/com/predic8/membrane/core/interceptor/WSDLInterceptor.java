@@ -37,6 +37,7 @@ import org.apache.commons.logging.LogFactory;
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -51,10 +52,17 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
 	private String registryWSDLRegisterURL;
 	private boolean rewriteEndpoint = true;
+	private HttpClient hc;
 
 	public WSDLInterceptor() {
 		name = "WSDL Rewriting Interceptor";
 		setFlow(Flow.Set.RESPONSE);
+	}
+	
+	@Override
+	public void init(Router router) throws Exception {
+		super.init(router);
+		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient();
 	}
 
 	@Override
@@ -110,8 +118,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
 	private void callRegistry(String uri) {
 		try {
-			HttpClient client = new HttpClient();
-			Response res = client.call(createExchange(uri));
+			Response res = hc.call(createExchange(uri));
 			if (res.getStatusCode() != 200)
 				log.warn(res);
 		} catch (Exception e) {

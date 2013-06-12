@@ -24,34 +24,27 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-					    
+
 	<router>
-	      	 
-		<!-- Forwards SOAP requests for the BLZService on port 2000 to the Web server on host thomas-bayer.com -->
-		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
+		<proxy port="3128">
+			<log/>
+		</proxy>
+	</router>
+
+	<httpClientConfig id="myHTTPClientConfig">
+		<connection keepAliveTimeout="3000" />
+		<proxy host="localhost" port="3128" />
+		<authentication username="tobias" password="foo" />
+	</httpClientConfig>
+
+	<router>
+		<spring:ref bean="myHTTPClientConfig" />
+
+		<soapProxy port="2000"
+			wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl"
+			wsdlHttpClientConfig="myHTTPClientConfig">
 		</soapProxy>
-	
-		<!-- Forwards HTTP requests on port 2001 to a local web container running on port 8080, maybe a Tomcat server. -->
-		<serviceProxy name="localhost" port="2001" >
-			<target host="localhost" port="8080"/>
-		</serviceProxy>
-	
-		<!-- Sets up the Administration Web Interface on port 9000-->
-		<serviceProxy name="Console" port="9000">
-			<basicAuthentication>
-				<user name="admin" password="membrane" />
-			</basicAuthentication>	
-			<accessControl file="conf/acl.xml" />
-			<adminConsole />
-		</serviceProxy>
-		
-		
-		<!-- This would tell Membrane to use a proxy for outgoing connections.
-		<global>
-			<proxyConfiguration host="proxy.mycompany.example" port="3128" />
-		</global>
-		 -->
-	 
-	 </router>
+	</router>
+
 
 </spring:beans>

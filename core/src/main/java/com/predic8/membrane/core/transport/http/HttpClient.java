@@ -28,13 +28,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.ProxyConfiguration;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ChunkedBodyTransferrer;
 import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.Util;
@@ -50,27 +51,15 @@ public class HttpClient {
 	private final ProxyConfiguration proxy;
 	private final int timeBetweenTries = 250;
 	private final int maxRetries;
-	private final boolean adjustHostHeader;
-	private final boolean failOverOn5XX;
 	
 	public HttpClient() {
-		this(true);
+		this(new HttpClientConfiguration());
 	}
 	
-	public HttpClient(boolean failOverOn5XX) {
-		conMgr = new ConnectionManager(30000);
-		proxy = null;
-		maxRetries = 5;
-		adjustHostHeader = true;
-		this.failOverOn5XX = failOverOn5XX;
-	}
-	
-	public HttpClient(int maxRetries, boolean failOverOn5XX, long keepAliveTimeout, boolean adjustHostHeader, ProxyConfiguration proxyConfiguration) {
-		conMgr = new ConnectionManager(keepAliveTimeout);
-		this.adjustHostHeader = adjustHostHeader;
-		this.maxRetries = maxRetries;
-		proxy = proxyConfiguration;
-		this.failOverOn5XX = failOverOn5XX;
+	public HttpClient(HttpClientConfiguration configuration) {
+		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
+		proxy = configuration.getProxy();
+		this.maxRetries = configuration.getMaxRetries();
 	}
 	
 	@Override
@@ -101,7 +90,7 @@ public class HttpClient {
 		return new HostColonPort(new URL(dest));
 	}
 	
-	private HostColonPort init(Exchange exc, String dest) throws UnknownHostException, IOException, MalformedURLException {
+	private HostColonPort init(Exchange exc, String dest, boolean adjustHostHeader) throws UnknownHostException, IOException, MalformedURLException {
 		setRequestURI(exc.getRequest(), dest);
 		HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
 		
@@ -121,6 +110,10 @@ public class HttpClient {
 	}
 
 	public Response call(Exchange exc) throws Exception {
+		return call(exc, true, true);
+	}
+	
+	public Response call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
 		if (exc.getDestinations().size() == 0)
 			throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
 		
@@ -132,7 +125,7 @@ public class HttpClient {
 			HostColonPort target = null;
 			try {
 				log.debug("try # " + counter + " to " + dest);
-				target = init(exc, dest);
+				target = init(exc, dest, adjustHostHeader);
 				InetAddress targetAddr = InetAddress.getByName(target.host);
 				if (counter == 0) {
 					con = exc.getTargetConnection();

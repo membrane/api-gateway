@@ -26,7 +26,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.TextUtil;
@@ -48,7 +48,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	private boolean skipFaults;
 	
 	private IValidator validator;
-	private ResourceResolver resourceResolver;
+	private ResolverMap resourceResolver;
 	private ApplicationContext applicationContext;
 	
 	private void setValidator(IValidator validator) throws Exception {
@@ -169,11 +169,11 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	
 	@Override
 	public void init(Router router) throws Exception {
-		resourceResolver = router.getResourceResolver();
+		resourceResolver = router.getResolverMap();
 		super.init(router);
 	}
 	
-	public void setResourceResolver(ResourceResolver resourceResolver) {
+	public void setResourceResolver(ResolverMap resourceResolver) {
 		this.resourceResolver = resourceResolver;
 	}
 	

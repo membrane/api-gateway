@@ -35,6 +35,9 @@ import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
 import com.predic8.membrane.core.interceptor.soap.WebServiceExplorerInterceptor;
 import com.predic8.membrane.core.resolver.DownloadException;
+import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 import com.predic8.wsdl.AbstractBinding;
@@ -53,6 +56,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 	protected String wsdl;
 	protected String portName;
 	protected String targetPath;
+	protected HttpClientConfiguration httpClientConfig;
 	
 	public SOAPProxy() {
 		this.key = new ServiceProxyKey(80);
@@ -68,7 +72,14 @@ public class SOAPProxy extends AbstractServiceProxy {
 		ctx.setInput(wsdl);
 		try {
 			WSDLParser wsdlParser = new WSDLParser();
-			wsdlParser.setResourceResolver(router.getResourceResolver().toExternalResolver());
+			ResolverMap resolverMap = router.getResolverMap();
+			if (httpClientConfig != null) {
+				HTTPSchemaResolver httpSR = new HTTPSchemaResolver();
+				httpSR.setHttpClientConfig(httpClientConfig);
+				resolverMap = resolverMap.clone();
+				resolverMap.addSchemaResolver(httpSR);
+			}
+			wsdlParser.setResourceResolver(resolverMap.toExternalResolver());
 			
 			Definitions definitions = wsdlParser.parse(ctx);
 			
@@ -232,6 +243,15 @@ public class SOAPProxy extends AbstractServiceProxy {
 	@MCAttribute
 	public void setPortName(String portName) {
 		this.portName = portName;
+	}
+	
+	public HttpClientConfiguration getWsdlHttpClientConfig() {
+		return httpClientConfig;
+	}
+	
+	@MCAttribute
+	public void setWsdlHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+		this.httpClientConfig = httpClientConfig; 
 	}
 
 }

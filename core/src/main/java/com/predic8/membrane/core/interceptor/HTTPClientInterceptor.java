@@ -22,10 +22,11 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.ProxyConfiguration;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.HttpUtil;
 
 @MCElement(name="httpClient")
@@ -35,10 +36,9 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private boolean failOverOn5XX;
 	private boolean adjustHostHeader = true;
-	private long keepAliveTimeout = 30000;
-	private ProxyConfiguration proxyConfiguration;
+	private HttpClientConfiguration httpClientConfig;
 	
-	private volatile HttpClient httpClient;
+	private HttpClient hc;
 	
 	public HTTPClientInterceptor() {
 		name="HTTPClient";
@@ -52,7 +52,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		Response targetRes = null;
 
 		try {
-			targetRes = getClient().call(exc);
+			targetRes = hc.call(exc, adjustHostHeader, failOverOn5XX);
 			return Outcome.RETURN;
 		} catch (ConnectException e) {
 			targetRes = Response.badGateway("Target " + getDestination(exc) + " is not reachable.").build();
@@ -69,18 +69,17 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	private String getDestination(Exchange exc) {
 		return exc.getDestinations().get(0);
 	}
+	
+	@Override
+	public void init(Router router) throws Exception {
+		super.init(router);
 
-	// http://en.wikipedia.org/wiki/Double-checked_locking
-	private HttpClient getClient() {
-		HttpClient result = httpClient;
-		if (result == null)
-			synchronized(this) {
-				result = httpClient;
-				if (result == null)
-					httpClient = result = new HttpClient(router.getTransport().getHttpClientRetries(), failOverOn5XX, keepAliveTimeout, adjustHostHeader, proxyConfiguration);
-			}
-		return result;
+		if (httpClientConfig == null)
+			hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient();
+		else
+			hc = new HttpClient(httpClientConfig);
 	}
+
 	
 	@Override
 	public String getHelpId() {
@@ -96,15 +95,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		this.failOverOn5XX = failOverOn5XX;
 	}
 	
-	public long getKeepAliveTimeout() {
-		return keepAliveTimeout;
-	}
-	
-	@MCAttribute
-	public void setKeepAliveTimeout(long keepAliveTimeout) {
-		this.keepAliveTimeout = keepAliveTimeout;
-	}
-	
 	public boolean isAdjustHostHeader() {
 		return adjustHostHeader;
 	}
@@ -114,12 +104,12 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		this.adjustHostHeader = adjustHostHeader;
 	}
 	
-	public ProxyConfiguration getProxyConfiguration() {
-		return proxyConfiguration;
+	public HttpClientConfiguration getHttpClientConfig() {
+		return httpClientConfig;
 	}
 	
 	@MCChildElement
-	public void setProxyConfiguration(ProxyConfiguration proxyConfiguration) {
-		this.proxyConfiguration = proxyConfiguration;
+	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+		this.httpClientConfig = httpClientConfig;
 	}
 }

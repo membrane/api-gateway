@@ -30,7 +30,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 
 @MCElement(name="accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {
@@ -80,14 +80,14 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	public void init() throws Exception {
-		accessControl = parse(file, router.getResourceResolver());
+		accessControl = parse(file, router.getResolverMap());
 	}
 	
 	public AccessControl getAccessControl() {
 		return accessControl;
 	}
 
-	protected AccessControl parse(String fileName, ResourceResolver resourceResolver) throws Exception {
+	protected AccessControl parse(String fileName, ResolverMap resourceResolver) throws Exception {
 	    try {
 			XMLInputFactory factory = XMLInputFactory.newInstance();
 		    XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(resourceResolver.resolve(fileName)));

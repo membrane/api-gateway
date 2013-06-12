@@ -1,4 +1,4 @@
-/* Copyright 2013 predic8 GmbH, www.predic8.com
+/* Copyright 2012 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -12,34 +12,40 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.resolver;
+package com.predic8.membrane.osgi.extender;
 
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.predic8.membrane.core.resolver.SchemaResolver;
 
-public class ClasspathResolver implements SchemaResolver {
+public class BundleSchemaResolver implements SchemaResolver {
 
 	@Override
 	public List<String> getSchemas() {
-		return Lists.newArrayList("classpath");
-	}
-
-	@Override
-	public InputStream resolve(String url) {
-		return getClass().getResourceAsStream(url.substring(10));
+		return Lists.newArrayList("bundle");
 	}
 	
+	@Override
+	public InputStream resolve(String uri) throws FileNotFoundException {
+		try {
+			return new URL(uri).openStream();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	@Override
 	public List<String> getChildren(String url) {
 		return null;
 	}
-	
+
 	@Override
 	public long getTimestamp(String url) {
 		return 0;
 	}
-	
 
 }

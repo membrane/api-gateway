@@ -27,7 +27,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.resolver.DownloadException;
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.SOAPUtil;
@@ -40,11 +40,11 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	static Log log = LogFactory
 			.getLog(WSDLValidator.class.getName());
 
-	public WSDLValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
+	public WSDLValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
 		super(resourceResolver, location, failureHandler, skipFaults);
 	}
 
-	public WSDLValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+	public WSDLValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		super(resourceResolver, location, failureHandler);
 	}
 	

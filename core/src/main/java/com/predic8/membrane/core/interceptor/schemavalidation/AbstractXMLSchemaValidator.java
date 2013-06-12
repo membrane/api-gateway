@@ -37,7 +37,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.schema.Schema;
 
 public abstract class AbstractXMLSchemaValidator implements IValidator {
@@ -46,18 +46,18 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	private final ArrayBlockingQueue<List<Validator>> validators;
 	protected final XOPReconstitutor xopr;
 	protected final String location;
-	protected final ResourceResolver resourceResolver;
+	protected final ResolverMap resourceResolver;
 	protected final ValidatorInterceptor.FailureHandler failureHandler;
 	private final boolean skipFaults;
 	
 	protected final AtomicLong valid = new AtomicLong();
 	protected final AtomicLong invalid = new AtomicLong();
 
-	public AbstractXMLSchemaValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
+	public AbstractXMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		this(resourceResolver, location, failureHandler, false);
 	}
 
-	public AbstractXMLSchemaValidator(ResourceResolver resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
+	public AbstractXMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
 		this.location = location;
 		this.resourceResolver = resourceResolver;
 		this.failureHandler = failureHandler;

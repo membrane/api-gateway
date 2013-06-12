@@ -47,7 +47,7 @@ public class SSLContextTest {
 		private SSLParser sslParser = new SSLParser();
 		
 		public SSLContext build() {
-			return new SSLContext(sslParser, router.getResourceResolver());
+			return new SSLContext(sslParser, router.getResolverMap());
 		}
 		
 		private SSLContextBuilder withCiphers(String ciphers) {

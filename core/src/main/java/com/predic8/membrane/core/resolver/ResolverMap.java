@@ -27,7 +27,17 @@ import com.google.common.base.Objects;
 import com.predic8.membrane.core.util.LSInputImpl;
 import com.predic8.xml.util.ExternalResolver;
 
-public class ResourceResolver {
+/**
+ * A ResolverMap consists of a list of {@link SchemaResolver}s.
+ * 
+ * It is itself a {@link Resolver}: Requests to resolve a URL are delegated
+ * to the corresponding {@link SchemaResolver} child depending on the URL's
+ * schema.
+ * 
+ * Note that this class is not thread-safe! The ResolverMap is setup during
+ * Membrane's single-threaded startup and is only used read-only thereafter.
+ */
+public class ResolverMap implements Cloneable, Resolver {
 
 	public static String combine(String parent, String relativeChild) {
 		if (parent.contains(":/")) {
@@ -48,14 +58,31 @@ public class ResourceResolver {
 	}
 
 	int count = 0;
-	private String[] schemas = new String[10];
-	private SchemaResolver[] resolvers = new SchemaResolver[10];
+	private String[] schemas;
+	private SchemaResolver[] resolvers;
 	
-	public ResourceResolver() {
+	public ResolverMap() {
+		schemas = new String[10];
+		resolvers = new SchemaResolver[10];
+		
 		// the default config
-		addSchemaResolver(new ClasspathResolver());
-		addSchemaResolver(new HTTPResolver());
-		addSchemaResolver(new FileResolver());
+		addSchemaResolver(new ClasspathSchemaResolver());
+		addSchemaResolver(new HTTPSchemaResolver());
+		addSchemaResolver(new FileSchemaResolver());
+	}
+	
+	private ResolverMap(ResolverMap other) {
+		count = other.count;
+		schemas = new String[other.schemas.length];
+		resolvers = new SchemaResolver[other.resolvers.length];
+		
+		System.arraycopy(other.schemas, 0, schemas, 0, count);
+		System.arraycopy(other.resolvers, 0, resolvers, 0, count);
+	}
+	
+	@Override
+	public ResolverMap clone() {
+		return new ResolverMap(this);
 	}
 	
 	public void addSchemaResolver(SchemaResolver sr) {
@@ -105,19 +132,21 @@ public class ResourceResolver {
 		throw new RuntimeException("No SchemaResolver defined for " + uri);
 	}
 	
-	public long getTimestamp(String uri) {
+	public long getTimestamp(String uri) throws FileNotFoundException {
 		return getSchemaResolver(uri).getTimestamp(uri);
 	}
-	
 	
 	public InputStream resolve(String uri) throws FileNotFoundException {
 		return getSchemaResolver(uri).resolve(uri);
 	}
 	
-	public List<String> getChildren(String uri) {
+	public List<String> getChildren(String uri) throws FileNotFoundException {
 		return getSchemaResolver(uri).getChildren(uri);
 	}
 
+	public HTTPSchemaResolver getHTTPSchemaResolver() {
+		return (HTTPSchemaResolver) getSchemaResolver("http:");
+	}
 	
 	public LSResourceResolver toLSResourceResolver() {
 		return new LSResourceResolver() {
@@ -141,9 +170,9 @@ public class ResourceResolver {
 			public InputStream resolveAsFile(String filename, String baseDir) {
 				try {
 					if(baseDir != null) {
-						return ResourceResolver.this.resolve(baseDir+filename);
+						return ResolverMap.this.resolve(baseDir+filename);
 					}
-					return ResourceResolver.this.resolve(filename);
+					return ResolverMap.this.resolve(filename);
 				} catch (Exception e) {
 					throw new RuntimeException(e);
 				}

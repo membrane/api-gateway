@@ -51,6 +51,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 
 	public void init(Router router) throws Exception {
 		super.init(router);
+		tokenProvider.init(router);
 		loginDialog.init(router);
 		sessionManager.init(router);
 		new CleanupThread(sessionManager, accountBlocker).start();

@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -43,9 +44,14 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 
 	private String user, password;
 
-	private HttpClient hc = new HttpClient();
+	private HttpClient hc;
 	private String smsAuthorToken;
 
+	@Override
+	public void init(Router router) {
+		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient();
+	}
+	
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		super.parseAttributes(token);

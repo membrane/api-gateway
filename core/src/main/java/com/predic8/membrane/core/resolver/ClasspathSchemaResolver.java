@@ -14,52 +14,32 @@
 
 package com.predic8.membrane.core.resolver;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
 
 import com.google.common.collect.Lists;
 
-public class FileResolver implements SchemaResolver {
-	
+public class ClasspathSchemaResolver implements SchemaResolver {
+
 	@Override
 	public List<String> getSchemas() {
-		return Lists.newArrayList("file", null);
-	}
-	
-	public InputStream resolve(String url) throws FileNotFoundException {
-	    return new FileInputStream(new File(normalize(url)));
-	}
-	
-	private String normalize(String uri) {
-	    if(uri.startsWith("file:")) {
-	    	try {
-	    		uri = new URL(uri).getPath();
-	    	} catch (Exception e) {
-	    		throw new RuntimeException(e);
-	    	}
-	    }
-		return uri;
+		return Lists.newArrayList("classpath");
 	}
 
+	@Override
+	public InputStream resolve(String url) {
+		return getClass().getResourceAsStream(url.substring(10));
+	}
+	
 	@Override
 	public List<String> getChildren(String url) {
-	    String[] children = new File(normalize(url)).list();
-	    if (children == null)
-	    	return null;
-	    ArrayList<String> res = new ArrayList<String>(children.length);
-	    for (String child : children)
-	    	res.add(child);
-
 		return null;
 	}
-
+	
 	@Override
 	public long getTimestamp(String url) {
-		return new File(normalize(url)).lastModified();
+		return 0;
 	}
+	
+
 }

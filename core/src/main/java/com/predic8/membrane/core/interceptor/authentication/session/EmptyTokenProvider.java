@@ -17,12 +17,19 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 
 @MCElement(name="emptyUserDataProvider", group="userDataProvider", global=false)
 public class EmptyTokenProvider implements TokenProvider {
 
 	@Override
+	public void init(Router router) {
+		// does nothing
+	}
+	
+	@Override
 	public void requestToken(Map<String, String> userAttributes) {
+		// does nothing
 	}
 
 	@Override

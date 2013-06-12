@@ -18,6 +18,8 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+
 
 public class ProxyTest {
 

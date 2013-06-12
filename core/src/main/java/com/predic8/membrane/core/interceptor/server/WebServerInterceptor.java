@@ -32,7 +32,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
@@ -69,7 +69,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		try {
 			exc.setTimeReqSent(System.currentTimeMillis());
 			
-			exc.setResponse(createResponse(router.getResourceResolver(), docBase + uri));
+			exc.setResponse(createResponse(router.getResolverMap(), docBase + uri));
 
 			exc.setReceived();
 			exc.setTimeResReceived(System.currentTimeMillis());
@@ -77,7 +77,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		} catch (FileNotFoundException e) {
 			for (String i : index) {
 				try {
-					exc.setResponse(createResponse(router.getResourceResolver(), docBase + uri + i));
+					exc.setResponse(createResponse(router.getResolverMap(), docBase + uri + i));
 
 					exc.setReceived();
 					exc.setTimeResReceived(System.currentTimeMillis());
@@ -87,7 +87,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			}
 			
 			if (generateIndex) {
-				List<String> children = router.getResourceResolver().getChildren(docBase + uri);
+				List<String> children = router.getResolverMap().getChildren(docBase + uri);
 				if (children != null) {
 					Collections.sort(children);
 					StringBuilder sb = new StringBuilder();
@@ -115,7 +115,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		}
 	}
 
-	public static Response createResponse(ResourceResolver rr, String resPath) throws IOException {
+	public static Response createResponse(ResolverMap rr, String resPath) throws IOException {
 		Response response = Response.ok().header(createHeaders(getContentType(resPath))).build();
 		
 		InputStream in = rr.resolve(resPath);

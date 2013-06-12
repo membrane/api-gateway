@@ -32,7 +32,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 
 public class XSLTTransformer {
 	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());
@@ -45,13 +45,13 @@ public class XSLTTransformer {
 		this.styleSheet = styleSheet;
 		log.debug("using " + concurrency + " parallel transformer instances for " + styleSheet);
 		transformers = new ArrayBlockingQueue<Transformer>(concurrency);
-		createOneTransformer(router.getResourceResolver());
+		createOneTransformer(router.getResolverMap());
 		router.getBackgroundInitializator().execute(new Runnable() {
 			@Override
 			public void run() {
 				try {
 					for (int i = 1; i < concurrency; i++)
-						createOneTransformer(router.getResourceResolver());
+						createOneTransformer(router.getResolverMap());
 				} catch (Exception e) {
 					log.error("Error creating XSLT transformer:", e);
 				}
@@ -59,7 +59,7 @@ public class XSLTTransformer {
 		});
 	}
 	
-	private void createOneTransformer(ResourceResolver rr) throws TransformerConfigurationException, FileNotFoundException, InterruptedException {
+	private void createOneTransformer(ResolverMap rr) throws TransformerConfigurationException, FileNotFoundException, InterruptedException {
 		Transformer t;
 		if (isNullOrEmpty(styleSheet))
 			t = fac.newTransformer();

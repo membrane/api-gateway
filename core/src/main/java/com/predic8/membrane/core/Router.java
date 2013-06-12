@@ -20,8 +20,6 @@ import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.predic8.membrane.core.resolver.ResourceResolver;
-import com.predic8.membrane.core.rules.ServiceProxy;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -38,10 +36,13 @@ import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http.HttpTransport;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.DNSCache;
 
 @MCMain(
@@ -58,7 +59,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	protected RuleManager ruleManager = new RuleManager();
 	protected ExchangeStore exchangeStore;
 	protected Transport transport;
-	protected ResourceResolver resourceResolver = new ResourceResolver();
+	protected ResolverMap resolverMap = new ResolverMap();
 	protected DNSCache dnsCache = new DNSCache();
 	protected ExecutorService backgroundInitializator = 
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
@@ -132,16 +133,21 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		this.transport = transport;
 	}
 
+	public HttpClientConfiguration getHttpClientConfig() {
+		return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
+	}
+	
+	@MCChildElement(order=0)
+	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+		resolverMap.getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
+	}
+	
 	public DNSCache getDnsCache() {
 		return dnsCache;
 	}
 
-	public ResourceResolver getResourceResolver() {
-		return resourceResolver;
-	}
-
-	public void setResourceResolver(ResourceResolver resourceResolver) {
-		this.resourceResolver = resourceResolver;
+	public ResolverMap getResolverMap() {
+		return resolverMap;
 	}
 
 	/**
@@ -195,6 +201,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 				exchangeStore = new LimitedMemoryExchangeStore();
 			if (transport == null)
 				transport = new HttpTransport();
+			
 			init();
 			getRuleManager().openPorts();
 

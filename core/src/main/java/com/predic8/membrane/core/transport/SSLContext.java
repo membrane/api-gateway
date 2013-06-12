@@ -38,14 +38,14 @@ import javax.net.ssl.TrustManagerFactory;
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.Store;
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 
 public class SSLContext {
 	private final javax.net.ssl.SSLContext sslc;
 	private final String[] ciphers;
 	private final boolean wantClientAuth, needClientAuth;
 	
-	public SSLContext(SSLParser sslParser, ResourceResolver resourceResolver) {
+	public SSLContext(SSLParser sslParser, ResolverMap resourceResolver) {
 		try {
 			String algorihm = KeyManagerFactory.getDefaultAlgorithm();
 			if (sslParser.getAlgorithm() != null)
@@ -117,7 +117,7 @@ public class SSLContext {
 		}
 	}
 	
-	private KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResourceResolver resourceResolver) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
+	private KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
 		String type = store.getType();
 		if (type == null)
 			type = defaultType;

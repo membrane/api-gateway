@@ -37,20 +37,20 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 
 public class JSONValidator implements IValidator {
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	private JsonSchema schema;
-	private final ResourceResolver resourceResolver;
+	private final ResolverMap resourceResolver;
 	private final String jsonSchema;
 	private final ValidatorInterceptor.FailureHandler failureHandler;
 	
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 	
-	public JSONValidator(ResourceResolver resourceResolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException {
+	public JSONValidator(ResolverMap resourceResolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException {
 		this.resourceResolver = resourceResolver;
 		this.jsonSchema = jsonSchema;
 		this.failureHandler = failureHandler;

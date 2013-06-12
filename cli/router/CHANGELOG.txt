@@ -1,6 +1,37 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [update config] 
+    <httpClient keepAliveTimeout="..." />,
+    <httpClient><proxyConfiguration ... /></httpClient> and
+    <transport httpClientRetries="..." />
+  have been refactored into a syntax allowing a much more fine grained
+  configuration. To simply get the old behavior working, use
+    <httpClient>
+      <httpClientConfig maxRetries="..">
+        <connection keepAliveTimeout="..." />
+        <proxyConfiguration ... /> 
+      </httpClientConfig>
+    </httpClient>
+  Every element and attribute shown here is optional: The minimal configuration
+  is just <httpClient />.
+  If you are interested in all the new things you can do with the
+  httpClientConfig, have a look at ???????????????.
+  
+* All Apache HttpClient instances have been replaced by Membrane's HttpClient
+  (the Apache HttpClient was formerly used to retrieve any secondary resource,
+  for example WSDLs). This removes the runtime dependency.
+  The element <httpClientConfig /> and its children can now be used to
+  configure *any* HttpClient instance used anywhere in Membrane. This allows
+  you to specify very precisely which outbound HTTP requests you want to use
+  which proxy and which (basic) authentication credentials. 
+
+* ?
+
+* [release] 4.0.4 (early access)
+
+* ?
+
 * [release] 4.0.3 (early access)
 
 * renamed Maven modules

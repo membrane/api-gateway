@@ -37,7 +37,6 @@ public abstract class Transport {
 	
 	private List<Interceptor> interceptors = new Vector<Interceptor>();
 	private Router router;
-	private int httpClientRetries = 5;
 	private boolean printStackTrace = false;
 
 	public List<Interceptor> getInterceptors() {
@@ -68,15 +67,6 @@ public abstract class Transport {
 	
 	public Router getRouter() {
 		return router;
-	}
-	
-	public int getHttpClientRetries() {
-		return httpClientRetries;
-	}
-
-	@MCAttribute
-	public void setHttpClientRetries(int httpClientRetries) {
-		this.httpClientRetries = httpClientRetries;
 	}
 	
 	public boolean isPrintStackTrace() {

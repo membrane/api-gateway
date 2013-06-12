@@ -17,7 +17,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.predic8.membrane.core.resolver.ResourceResolver;
+import com.predic8.membrane.core.resolver.ResolverMap;
 
 import junit.framework.TestCase;
 
@@ -34,7 +34,7 @@ public class AccessControlParserTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		resources = new AccessControlInterceptor().parse(FILE_NAME, new ResourceResolver()).getResources();
+		resources = new AccessControlInterceptor().parse(FILE_NAME, new ResolverMap()).getResources();
 	}
 	
 	@Test

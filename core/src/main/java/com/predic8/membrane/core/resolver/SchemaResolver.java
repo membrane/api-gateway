@@ -14,13 +14,13 @@
 
 package com.predic8.membrane.core.resolver;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.List;
 
-public interface SchemaResolver {
+public interface SchemaResolver extends Resolver {
+	/**
+	 * @return The list of schemas this resolver can handle ('http', 'https').
+	 *         If the list contains null, this resolver will be used as the
+	 *         default resolver by its {@link ResolverMap}.
+	 */
 	public List<String> getSchemas();
-	public InputStream resolve(String url) throws FileNotFoundException;
-	public List<String> getChildren(String url);
-	public long getTimestamp(String url);
 }

@@ -17,11 +17,17 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
 
 @MCElement(name="totpTokenProvider", group="tokenProvider", global=false)
 public class TOTPTokenProvider implements TokenProvider {
 
+	@Override
+	public void init(Router router) {
+		// does nothing
+	}
+	
 	@Override
 	public void requestToken(Map<String, String> userAttributes) {
 		// does nothing
