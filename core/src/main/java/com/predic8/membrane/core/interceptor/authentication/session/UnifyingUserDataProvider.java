@@ -28,7 +28,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.XMLElement;
 
-@MCElement(name="unifyingUserDataProvider", group="userDataProvider", global=false)
+@MCElement(name="unifyingUserDataProvider", group="userDataProvider", topLevel=false)
 public class UnifyingUserDataProvider extends AbstractXmlElement implements UserDataProvider {
 
 	private List<UserDataProvider> userDataProviders = new ArrayList<UserDataProvider>(); 

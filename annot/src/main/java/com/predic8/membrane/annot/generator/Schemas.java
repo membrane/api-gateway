@@ -100,7 +100,7 @@ public class Schemas {
 			if (i.getAis().size() > 0 || i.getCeis().size() > 0 || i.getAnnotation().mixed()) {
 				xsd = assembleElementInfo(m, main, i);
 			} else {
-				if (i.getAnnotation().global())
+				if (i.getAnnotation().topLevel())
 					return "<xsd:element name=\""+ i.getAnnotation().name() + "\" type=\"EmptyElementType\" />\r\n";
 				else
 					return 
@@ -115,7 +115,7 @@ public class Schemas {
 			xsd = i.getAnnotation().xsd();
 		}
 		String defHeader, defFooter;
-		if (i.getAnnotation().global()) {
+		if (i.getAnnotation().topLevel()) {
 			defHeader = "<xsd:element name=\""+ i.getAnnotation().name() +"\">\r\n" + 
 					"	<xsd:complexType>\r\n";
 			defFooter = "	</xsd:complexType>\r\n" + 
@@ -139,7 +139,7 @@ public class Schemas {
 		for (ChildElementInfo cei : i.getCeis()) {
 			xsd.append("<xsd:choice" + (cei.isRequired() ? " minOccurs=\"1\"" : " minOccurs=\"0\"") + (cei.isList() ? " maxOccurs=\"unbounded\"" : "") + ">\r\n");
 			for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-				if (ei.getAnnotation().global())
+				if (ei.getAnnotation().topLevel())
 					xsd.append("<xsd:element ref=\"" + ei.getAnnotation().name() + "\" />\r\n");
 				else
 					xsd.append("<xsd:element name=\"" + ei.getAnnotation().name() + "\" type=\"" + ei.getXSDTypeName(m) + "\" />\r\n");

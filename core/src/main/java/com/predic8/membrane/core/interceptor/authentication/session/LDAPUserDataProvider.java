@@ -38,7 +38,7 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
-@MCElement(name="ldapUserDataProvider", group="userDataProvider", global=false, xsd=
+@MCElement(name="ldapUserDataProvider", group="userDataProvider", topLevel=false, xsd=
 		"<xsd:sequence>\r\n" + 
 		"	<xsd:element name=\"map\">\r\n" + 
 		"		<xsd:complexType>\r\n" + 

@@ -23,7 +23,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.interceptor.balancer.Node.Status;
 
-@MCElement(name="cluster", group="loadBalancer", global=false)
+@MCElement(name="cluster", group="loadBalancer", topLevel=false)
 public class Cluster {
 
 	private static Log log = LogFactory.getLog(Cluster.class.getName());

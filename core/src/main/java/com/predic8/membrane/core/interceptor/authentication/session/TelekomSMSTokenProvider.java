@@ -38,7 +38,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-@MCElement(name="telekomSMSTokenProvider", group="tokenProvider", global=false)
+@MCElement(name="telekomSMSTokenProvider", group="tokenProvider", topLevel=false)
 public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	private static Log log = LogFactory.getLog(TelekomSMSTokenProvider.class.getName());
 

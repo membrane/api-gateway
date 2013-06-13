@@ -20,7 +20,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 
-@MCElement(name="proxy", global=false)
+@MCElement(name="proxy", topLevel=false)
 public class ProxyConfiguration {
 
 	public static final String ATTRIBUTE_ACTIVE = "active";

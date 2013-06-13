@@ -26,7 +26,7 @@ import com.predic8.membrane.core.transport.SSLContext;
 
 public abstract class AbstractServiceProxy extends AbstractProxy {
 
-	@MCElement(name="target", group="util", global=false)
+	@MCElement(name="target", group="util", topLevel=false)
 	public static class Target {
 		private String host;
 		private int port = 80;

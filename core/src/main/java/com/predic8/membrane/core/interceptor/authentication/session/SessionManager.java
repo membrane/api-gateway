@@ -31,7 +31,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
 
-@MCElement(name="sessionManager", group="sessionManager", global=false)
+@MCElement(name="sessionManager", group="sessionManager", topLevel=false)
 public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;
 	private long timeout;

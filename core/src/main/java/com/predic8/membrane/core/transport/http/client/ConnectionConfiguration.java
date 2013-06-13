@@ -3,7 +3,7 @@ package com.predic8.membrane.core.transport.http.client;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name="connection", global=false)
+@MCElement(name="connection", topLevel=false)
 public class ConnectionConfiguration {
 	
 	private long keepAliveTimeout = 30000;

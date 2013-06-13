@@ -31,7 +31,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.StatisticCollector;
 
-@MCElement(name="node", group="loadBalancer", global=false)
+@MCElement(name="node", group="loadBalancer", topLevel=false)
 public class Node extends AbstractXmlElement {
 
 	public static enum Status {

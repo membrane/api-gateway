@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Required;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name="authentication", global=false)
+@MCElement(name="authentication", topLevel=false)
 public class AuthenticationConfiguration {
 
 	private String username;

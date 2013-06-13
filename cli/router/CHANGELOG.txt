@@ -7,6 +7,9 @@ Membrane Service Proxy Change Log
   com.predic8.membrane.annot.AbstractNamespaceHandler . Use
   com.predic8.membrane.core.config.spring.NamespaceHandler as an example.
 
+  @MCElement(global=..) is now called @MCElement(topLevel=..) to use XML Schema
+  language.
+
 * [update config] 
     <httpClient keepAliveTimeout="..." />,
     <httpClient><proxyConfiguration ... /></httpClient> and

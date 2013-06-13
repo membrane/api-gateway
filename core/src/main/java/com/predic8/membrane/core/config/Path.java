@@ -18,7 +18,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 
-@MCElement(name="path", global=false, mixed=true)
+@MCElement(name="path", topLevel=false, mixed=true)
 public class Path {
 
 	public static final String ELEMENT_NAME = "path";

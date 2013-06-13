@@ -22,7 +22,7 @@ import javax.xml.stream.XMLStreamReader;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
-@MCElement(name="staticUserDataProvider", group="userDataProvider", global=false, xsd=
+@MCElement(name="staticUserDataProvider", group="userDataProvider", topLevel=false, xsd=
 			"<xsd:sequence>\r\n" +
 			"	<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
 			"		<xsd:complexType>\r\n" + 
