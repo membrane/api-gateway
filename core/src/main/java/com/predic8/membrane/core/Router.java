@@ -17,6 +17,7 @@ package com.predic8.membrane.core;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -53,6 +54,13 @@ import com.predic8.membrane.core.util.DNSCache;
 public class Router implements Lifecycle, ApplicationContextAware {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());
+
+	/**
+	 * In case more than one <router hotDeploy="true" /> starts within the same
+	 * app context, we track them here, so they start only one
+	 * HotDeploymentThread.
+	 */
+	protected static final HashSet<ApplicationContext> hotDeployingContexts = new HashSet<ApplicationContext>();
 
 	private ApplicationContext beanFactory;
 
@@ -225,6 +233,11 @@ public class Router implements Lifecycle, ApplicationContextAware {
 			throw new RuntimeException("ApplicationContext is not a TrackingApplicationContext. Please set <router hotDeploy=\"false\">.");
 		if (!(beanFactory instanceof AbstractRefreshableApplicationContext))
 			throw new RuntimeException("ApplicationContext is not a AbstractRefreshableApplicationContext. Please set <router hotDeploy=\"false\">.");
+		synchronized (hotDeployingContexts) {
+			if (hotDeployingContexts.contains(beanFactory))
+				return;
+			hotDeployingContexts.add(beanFactory);
+		}
 		hdt = new HotDeploymentThread((AbstractRefreshableApplicationContext) beanFactory);
 		hdt.setFiles(((TrackingApplicationContext) beanFactory).getFiles());
 		hdt.start();
@@ -234,6 +247,9 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		if (hdt != null) {
 			hdt.stopASAP();
 			hdt = null;
+			synchronized (hotDeployingContexts) {
+				hotDeployingContexts.remove(beanFactory);
+			}
 		}
 	}
 	
