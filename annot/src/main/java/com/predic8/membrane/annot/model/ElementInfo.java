@@ -1,5 +1,8 @@
 package com.predic8.membrane.annot.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.predic8.membrane.annot.AnnotUtils;
 import com.predic8.membrane.annot.MCElement;
 
@@ -7,6 +10,7 @@ import com.predic8.membrane.annot.MCElement;
 public class ElementInfo extends AbstractElementInfo {
 	private MCElement annotation;
 	private boolean generateParserClass;
+	private List<ChildElementDeclarationInfo> usedBy = new ArrayList<ChildElementDeclarationInfo>();
 
 	public String getParserClassSimpleName() {
 		if (getAnnotation().group().equals("interceptor"))
@@ -30,6 +34,10 @@ public class ElementInfo extends AbstractElementInfo {
 	public String getClassName(Model m) {
 		return getMain(m).getAnnotation().outputPackage() + "." + getParserClassSimpleName();
 	}
+	
+	public String getXSDTypeName(Model m) {
+		return getClassName(m);
+	}
 
 	public MCElement getAnnotation() {
 		return annotation;
@@ -45,5 +53,13 @@ public class ElementInfo extends AbstractElementInfo {
 
 	public void setGenerateParserClass(boolean generateParserClass) {
 		this.generateParserClass = generateParserClass;
+	}
+	
+	public void addUsedBy(ChildElementDeclarationInfo cedi) {
+		usedBy.add(cedi);
+	}
+	
+	public List<ChildElementDeclarationInfo> getUsedBy() {
+		return usedBy;
 	}
 }

@@ -1,6 +1,12 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [update api]
+  To extend Membrane's configuration language using the @MC... annotations,
+  you now have to implement a Spring NamespaceHandler extending
+  com.predic8.membrane.annot.AbstractNamespaceHandler . Use
+  com.predic8.membrane.core.config.spring.NamespaceHandler as an example.
+
 * [update config] 
     <httpClient keepAliveTimeout="..." />,
     <httpClient><proxyConfiguration ... /></httpClient> and

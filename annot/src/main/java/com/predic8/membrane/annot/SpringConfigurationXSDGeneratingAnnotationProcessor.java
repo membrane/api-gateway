@@ -22,13 +22,12 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
-import javax.tools.Diagnostic.Kind;
 
 import com.predic8.membrane.annot.generator.Parsers;
 import com.predic8.membrane.annot.generator.Schemas;
-import com.predic8.membrane.annot.model.AbstractElementInfo;
 import com.predic8.membrane.annot.model.AttributeInfo;
 import com.predic8.membrane.annot.model.ChildElementDeclarationInfo;
 import com.predic8.membrane.annot.model.ChildElementInfo;
@@ -236,6 +235,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 								if (processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()))
 									cedi.getElementInfo().add(e.getValue());
 						}
+						
+						for (ElementInfo ei2 : cedi.getElementInfo())
+							ei2.addUsedBy(f.getValue());
 
 						if (cedi.getElementInfo().size() == 0 && cedi.isRaiseErrorWhenNoSpecimen()) {
 							processingEnv.getMessager().printMessage(Kind.ERROR, "@MCChildElement references " + f.getKey().getQualifiedName() + ", but there is no @MCElement among it and its subclasses.", f.getKey());
@@ -267,11 +269,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 
 	private static final String REQUIRED = "org.springframework.beans.factory.annotation.Required";
 	
-	private void scan(Model m, MainInfo main, AbstractElementInfo ii) {
+	private void scan(Model m, MainInfo main, ElementInfo ii) {
 		scan(m, main, ii, ii.getElement());
 	}
 	
-	private void scan(Model m, MainInfo main, AbstractElementInfo ii, TypeElement te) {
+	private void scan(Model m, MainInfo main, ElementInfo ii, TypeElement te) {
 		TypeMirror superclass = te.getSuperclass();
 		if (superclass instanceof DeclaredType)
 			scan(m, main, ii, (TypeElement) ((DeclaredType)superclass).asElement());
@@ -289,6 +291,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			MCChildElement b = e2.getAnnotation(MCChildElement.class);
 			if (b != null) {
 				ChildElementInfo cei = new ChildElementInfo();
+				cei.setEi(ii);
 				cei.setAnnotation(b);
 				cei.setE((ExecutableElement) e2);
 				TypeMirror setterArgType = cei.getE().getParameters().get(0).asType();
@@ -306,15 +309,18 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					cei.setList(true);
 				}
 				
+				ChildElementDeclarationInfo cedi;
 				if (!main.getChildElementDeclarations().containsKey(cei.getTypeDeclaration())) {
-					ChildElementDeclarationInfo cedi = new ChildElementDeclarationInfo();
+					cedi = new ChildElementDeclarationInfo();
+					cedi.setTarget(cei.getTypeDeclaration());
 					cedi.setRaiseErrorWhenNoSpecimen(!cei.getAnnotation().allowForeign());
 					
 					main.getChildElementDeclarations().put(cei.getTypeDeclaration(), cedi);
 				} else {
-					ChildElementDeclarationInfo cedi = main.getChildElementDeclarations().get(cei.getTypeDeclaration());
+					cedi = main.getChildElementDeclarations().get(cei.getTypeDeclaration());
 					cedi.setRaiseErrorWhenNoSpecimen(cedi.isRaiseErrorWhenNoSpecimen() || !cei.getAnnotation().allowForeign());
 				}
+				cedi.addUsedBy(cei);
 			}
 			MCTextContent c = e2.getAnnotation(MCTextContent.class);
 			if (c != null) {

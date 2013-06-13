@@ -6,6 +6,7 @@ import javax.lang.model.element.TypeElement;
 import com.predic8.membrane.annot.MCChildElement;
 
 public class ChildElementInfo implements Comparable<ChildElementInfo> {
+	private ElementInfo ei;
 	private ExecutableElement e;
 	private TypeElement typeDeclaration;
 	private MCChildElement annotation;
@@ -17,6 +18,14 @@ public class ChildElementInfo implements Comparable<ChildElementInfo> {
 	@Override
 	public int compareTo(ChildElementInfo o) {
 		return getAnnotation().order() - o.getAnnotation().order();
+	}
+	
+	public ElementInfo getEi() {
+		return ei;
+	}
+	
+	public void setEi(ElementInfo ei) {
+		this.ei = ei;
 	}
 
 	public MCChildElement getAnnotation() {
