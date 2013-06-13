@@ -1,7 +1,9 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
-* [update api]
+* [release] 4.0.5 (early access)
+
+* [development]
   To extend Membrane's configuration language using the @MC... annotations,
   you now have to implement a Spring NamespaceHandler extending
   com.predic8.membrane.annot.AbstractNamespaceHandler . Use
@@ -35,14 +37,49 @@ Membrane Service Proxy Change Log
   you to specify very precisely which outbound HTTP requests you want to use
   which proxy and which (basic) authentication credentials. 
 
-* The "active" attribute has been <proxyConfiguration active="true" /> dropped,
+* [update config]
+  The "active" attribute has been <proxyConfiguration active="true" /> dropped,
   as users can simply remove the element.
 
-* ?
+* [new config] The host=".." attribute on <serviceProxy> and <soapProxy>
+  elements can now contain spaces to separate multiple entries and asterisks as
+  wildcards, eg. <serviceProxy host="predic8.com *.predic8.com">
+
+* [new config]
+  The optional "adjustHostHeader" was added to
+  <httpClient adjustHostHeader="true" />.
+  It can be ommitted, defaulting to "true".
+  
+  Iff adjustHostHeader="true" and <target host="mybackend.mycompany.com" />,
+  the HttpClient will add the header "Host: mybackend.mycompany.com" to the
+  request before forwarding it.
+  
+  The new configuration option adjustHostHeader="false" is interesting in
+  service virtualization cases where Membrane is configured using
+    <serviceProxy host="myservice.mycompany.com">
+      <target host="machine353.mycompany.com" />
+    </serviceProxy>,
+  but where machine353 is using virtual hosts to distinguish which web
+  application to forward requests to. The machine353 will analyze the "Host"
+  header in the requests it receives. Using adjustHostHeader="false"
+  will cause this "Host:" header to be "Host: myservice.mycompany.com" instead
+  of "Host: mymachine353.mycompany.com".
+
+* [changed behavior] Return HTTP 502 when TCP connection to target could not
+  be established.
+
+* [usage improvement]
+  adminConsole/load balancer: don't refresh form
+  adminConsole: IE8 fix
+
+* [usage improvement] warn if validator/@skipFaults="true" for a non-WSDL
+  validator
+
+* [bugfix] absolute MEMBRANE_HOME on Linux
 
 * [release] 4.0.4 (early access)
 
-* ?
+* [bugfix] fixed release build scripts
 
 * [release] 4.0.3 (early access)
 
