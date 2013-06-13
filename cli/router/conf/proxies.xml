@@ -27,6 +27,12 @@
 					    
 	<router>
 	      	 
+		<!-- This would tell Membrane to use a proxy for outgoing connections.
+	    <httpClientConfig>
+	    	<proxy host="proxy.mycompany.example" port="3128" />
+	    </httpClientConfig>
+	    -->
+	      	 
 		<!-- Forwards SOAP requests for the BLZService on port 2000 to the Web server on host thomas-bayer.com -->
 		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
 		</soapProxy>
@@ -44,13 +50,6 @@
 			<accessControl file="conf/acl.xml" />
 			<adminConsole />
 		</serviceProxy>
-		
-		
-		<!-- This would tell Membrane to use a proxy for outgoing connections.
-		<global>
-			<proxyConfiguration host="proxy.mycompany.example" port="3128" />
-		</global>
-		 -->
 	 
 	 </router>
 
