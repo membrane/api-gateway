@@ -7,7 +7,7 @@ import com.predic8.membrane.annot.MCElement;
 public class ConnectionConfiguration {
 	
 	private long keepAliveTimeout = 30000;
-	private long connectTimeout = 10000;
+	private int connectTimeout = 10000;
 	
 	public long getKeepAliveTimeout() {
 		return keepAliveTimeout;
@@ -18,11 +18,12 @@ public class ConnectionConfiguration {
 		this.keepAliveTimeout = keepAliveTimeout;
 	}
 	
-	public long getTimeout() {
+	public int getTimeout() {
 		return connectTimeout;
 	}
 	
-	public void setTimeout(long timeout) {
+	@MCAttribute
+	public void setTimeout(int timeout) {
 		this.connectTimeout = timeout;
 	}
 

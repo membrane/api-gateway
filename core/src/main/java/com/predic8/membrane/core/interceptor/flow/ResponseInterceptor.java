@@ -21,7 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCElement(name="response")
+@MCElement(name="response", topLevel=false)
 public class ResponseInterceptor extends AbstractFlowInterceptor {
 
 	/**

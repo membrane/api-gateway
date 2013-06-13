@@ -176,16 +176,25 @@ public class Header {
 		out.write(buffer.toString().getBytes(Constants.ISO_8859_1_CHARSET));
 	}
 
-	public HeaderField setValue(String name, String value) {
-		for (HeaderField field : fields) {
-			if (field.getHeaderName().equals(name)) {
-				field.setValue(value);
-				return field;
+	public void setValue(String name, String value) {
+		boolean found = false;
+		for (int i = 0; i < fields.size(); i++) {
+			if (fields.get(i).getHeaderName().equals(name)) {
+				if (found) {
+					fields.set(i, fields.get(fields.size()-1));
+					fields.remove(fields.size()-1);
+					i--;
+				} else {
+					fields.get(i).setValue(value);
+					found = true;
+				}
 			}
 		}
+		if (found)
+			return;
 		HeaderField newField = new HeaderField(name, value);
 		fields.add(newField);
-		return newField;
+		return;
 	}
 
 	public void setHost(String value) {
@@ -302,7 +311,7 @@ public class Header {
 				+ new String(Base64.encodeBase64((user + ":" + password)
 						.getBytes("UTF-8")), "UTF-8");
 
-		add("Authorization", value);
+		setValue("Authorization", value);
 	}
 
 	public void setXForwardedFor(String value) {

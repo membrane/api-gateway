@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.InvalidParameterException;
@@ -145,17 +146,22 @@ public class SSLContext {
 		return sslss;
 	}
 	
-	public Socket createSocket(InetAddress host, int port) throws IOException {
+	public Socket createSocket(InetAddress host, int port, int connectTimeout) throws IOException {
+		Socket s = new Socket();
+		s.connect(new InetSocketAddress(host, port), connectTimeout);
 		SSLSocketFactory sslsf = sslc.getSocketFactory();
-		SSLSocket ssls = (SSLSocket) sslsf.createSocket(host, port);
+		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host.getHostName(), port, true);
 		if (ciphers != null)
 			ssls.setEnabledCipherSuites(ciphers);
 		return ssls;
 	}
 	
-	public Socket createSocket(InetAddress host, int port, InetAddress addr, int foo) throws IOException {
+	public Socket createSocket(InetAddress host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException {
+		Socket s = new Socket();
+		s.bind(new InetSocketAddress(addr, localPort));
+		s.connect(new InetSocketAddress(host, port), connectTimeout);
 		SSLSocketFactory sslsf = sslc.getSocketFactory();
-		SSLSocket ssls = (SSLSocket) sslsf.createSocket(host, port, addr, foo);
+		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host.getHostName(), port, true);
 		if (ciphers != null)
 			ssls.setEnabledCipherSuites(ciphers);
 		return ssls;

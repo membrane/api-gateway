@@ -63,6 +63,7 @@ public class WSDLPublisherTest {
 		wi.init(router);
 		sp2.getInterceptors().add(wi);
 		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
+		router.init();
 	}
 	
 	@After

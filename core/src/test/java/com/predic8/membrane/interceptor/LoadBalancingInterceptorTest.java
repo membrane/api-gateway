@@ -74,6 +74,7 @@ public class LoadBalancingInterceptorTest {
 		});
 		sp1.getInterceptors().add(mockInterceptor1);
 		service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
+		service1.init();
 
 		service2 = new HttpRouter();
 		mockInterceptor2 = new DummyWebServiceInterceptor();
@@ -88,6 +89,7 @@ public class LoadBalancingInterceptorTest {
 		});
 		sp2.getInterceptors().add(mockInterceptor2);
 		service2.getRuleManager().addProxyAndOpenPortIfNew(sp2);
+		service2.init();
 
 		balancer = new HttpRouter();
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost",

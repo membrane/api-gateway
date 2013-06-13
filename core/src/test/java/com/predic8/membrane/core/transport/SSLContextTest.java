@@ -141,7 +141,7 @@ public class SSLContextTest {
 			@Override
 			public void run() {
 				try {
-					Socket s = client.createSocket(InetAddress.getLocalHost(), 3020);
+					Socket s = client.createSocket(InetAddress.getLocalHost(), 3020, 30000);
 					try {
 						BufferedReader br = new BufferedReader(new InputStreamReader(s.getInputStream()));
 						Assert.assertEquals("Hi", br.readLine());

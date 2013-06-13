@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
@@ -40,23 +41,26 @@ public class Connection {
 	public InputStream in;
 	public OutputStream out;
 
-	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext) throws UnknownHostException, IOException {
-		return open(host, port, localHost, sslContext, null);
+	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext, int connectTimeout) throws UnknownHostException, IOException {
+		return open(host, port, localHost, sslContext, null, connectTimeout);
 	}
 	
-	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext, ConnectionManager mgr) throws UnknownHostException, IOException {
+	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
 		Connection con = new Connection(mgr);
 		
 		if (sslContext != null) {
 			if (isNullOrEmpty(localHost))
-				con.socket = sslContext.createSocket(host, port);
+				con.socket = sslContext.createSocket(host, port, connectTimeout);
 			else
-				con.socket = sslContext.createSocket(host, port, InetAddress.getByName(localHost), 0);
+				con.socket = sslContext.createSocket(host, port, InetAddress.getByName(localHost), 0, connectTimeout);
 		} else {
-			if (isNullOrEmpty(localHost))
-				con.socket = new Socket(host, port);
-			else
-				con.socket = new Socket(host, port, InetAddress.getByName(localHost), 0);
+			if (isNullOrEmpty(localHost)) {
+				con.socket = new Socket();
+			} else {
+				con.socket = new Socket();
+				con.socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), 0));
+			}
+			con.socket.connect(new InetSocketAddress(host, port), connectTimeout);
 		}
 		
 		log.debug("Opened connection on localPort: " + con.socket.getLocalPort());

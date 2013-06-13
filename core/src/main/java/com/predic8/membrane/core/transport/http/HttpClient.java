@@ -34,6 +34,7 @@ import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import com.predic8.membrane.core.util.EndOfStreamException;
@@ -47,19 +48,26 @@ public class HttpClient {
 
 	private static Log log = LogFactory.getLog(HttpClient.class.getName());
 
-	private final ConnectionManager conMgr;
 	private final ProxyConfiguration proxy;
+	private final AuthenticationConfiguration authentication;
 	private final int timeBetweenTries = 250;
 	private final int maxRetries;
+	private final int connectTimeout;
+
+	private final ConnectionManager conMgr;
 	
 	public HttpClient() {
 		this(new HttpClientConfiguration());
 	}
 	
 	public HttpClient(HttpClientConfiguration configuration) {
-		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
 		proxy = configuration.getProxy();
-		this.maxRetries = configuration.getMaxRetries();
+		authentication = configuration.getAuthentication();
+		maxRetries = configuration.getMaxRetries();
+		
+		connectTimeout = configuration.getConnection().getTimeout();
+		
+		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
 	}
 	
 	@Override
@@ -67,21 +75,15 @@ public class HttpClient {
 		conMgr.shutdownWhenDone();
 	}
 	
-	private boolean useProxy() {
-		if (proxy == null)
-			return false;
-		return proxy.isActive();
-	}
-	
 	private void setRequestURI(Request req, String dest) throws MalformedURLException {
-		if (useProxy() || req.isCONNECTRequest())
+		if (proxy != null || req.isCONNECTRequest())
 			req.setUri(dest);
 		else
 			req.setUri(HttpUtil.getPathAndQueryString(dest));
 	}
 	
 	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
-		if (useProxy())
+		if (proxy != null)
 			return new HostColonPort(proxy.getHost(), proxy.getPort());
 		
 		if (connect)
@@ -94,9 +96,12 @@ public class HttpClient {
 		setRequestURI(exc.getRequest(), dest);
 		HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
 		
-		if (useProxy() && proxy.isAuthentication()) {
+		if (proxy != null && proxy.isAuthentication()) {
 			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
 		} 
+		
+		if (authentication != null) 
+			exc.getRequest().getHeader().setAuthorization(authentication.getUsername(), authentication.getPassword());
 		
 		if (adjustHostHeader && (exc.getRule() == null || exc.getRule().isTargetAdjustHostHeader())) {
 			URL d = new URL(dest);
@@ -133,7 +138,7 @@ public class HttpClient {
 						con = null;
 				}
 				if (con == null) {
-					con = conMgr.getConnection(targetAddr, target.port, exc.getRule() == null ? null : exc.getRule().getLocalHost(), getOutboundSSLContext(exc));
+					con = conMgr.getConnection(targetAddr, target.port, exc.getRule() == null ? null : exc.getRule().getLocalHost(), getOutboundSSLContext(exc), connectTimeout);
 					exc.setTargetConnection(con);
 				}
 				Response response = doCall(exc, con);
@@ -225,7 +230,7 @@ public class HttpClient {
 	}
 
 	private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
-		if (useProxy()) {
+		if (proxy != null) {
 			exc.getRequest().write(con.out);
 			Response response = new Response();
 			response.read(con.in, false);

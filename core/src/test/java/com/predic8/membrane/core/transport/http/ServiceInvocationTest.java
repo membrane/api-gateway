@@ -84,11 +84,12 @@ public class ServiceInvocationTest {
 		return post;
 	}
 	
-	private HttpRouter createRouter() throws IOException {
+	private HttpRouter createRouter() throws Exception {
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(createFirstRule());
 		router.getRuleManager().addProxyAndOpenPortIfNew(createServiceRule());
 		router.getTransport().getInterceptors().add(router.getTransport().getInterceptors().size()-1, new MockInterceptor("transport-log"));
+		router.init();
 		return router;
 	}
 

@@ -59,6 +59,7 @@ public class HttpKeepAliveTest {
 			}
 		});
 		service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
+		service1.init();
 	}
 
 	@After

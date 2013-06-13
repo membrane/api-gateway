@@ -1,5 +1,7 @@
 package com.predic8.membrane.core.transport.http.client;
 
+import java.security.InvalidParameterException;
+
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -18,6 +20,8 @@ public class HttpClientConfiguration {
 	
 	@MCChildElement(order=1)
 	public void setConnection(ConnectionConfiguration connection) {
+		if (connection == null)
+			throw new InvalidParameterException("'connection' parameter cannot be null.");
 		this.connection = connection;
 	}
 	

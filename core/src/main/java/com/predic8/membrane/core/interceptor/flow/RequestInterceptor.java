@@ -24,7 +24,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
-@MCElement(name="request")
+@MCElement(name="request", topLevel=false)
 public class RequestInterceptor extends AbstractFlowInterceptor {
 	
 	private static final Log log = LogFactory.getLog(RequestInterceptor.class);

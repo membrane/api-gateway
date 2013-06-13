@@ -111,10 +111,11 @@ public class InterceptorInvocationTest {
 		return sequense;
 	}
 
-	private HttpRouter createRouter() throws IOException {
+	private HttpRouter createRouter() throws Exception {
 		HttpRouter router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(createServiceProxy());
 		addMockInterceptors(router, regularInterceptorNames);
+		router.init();
 		return router;
 	}
 

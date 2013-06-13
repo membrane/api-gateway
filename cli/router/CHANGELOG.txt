@@ -19,7 +19,7 @@ Membrane Service Proxy Change Log
     <httpClient>
       <httpClientConfig maxRetries="..">
         <connection keepAliveTimeout="..." />
-        <proxyConfiguration ... /> 
+        <proxy ... /> 
       </httpClientConfig>
     </httpClient>
   Every element and attribute shown here is optional: The minimal configuration
@@ -34,6 +34,9 @@ Membrane Service Proxy Change Log
   configure *any* HttpClient instance used anywhere in Membrane. This allows
   you to specify very precisely which outbound HTTP requests you want to use
   which proxy and which (basic) authentication credentials. 
+
+* The "active" attribute has been <proxyConfiguration active="true" /> dropped,
+  as users can simply remove the element.
 
 * ?
 

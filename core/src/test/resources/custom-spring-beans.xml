@@ -14,7 +14,10 @@
 	<router
 			exchangeStore="memoryExchangeStore">
  
-		<transport coreThreadPoolSize="20" socketTimeout="30000" httpClientRetries="5" tcpNoDelay="true">
+ 		<httpClientConfig maxRetries="5">
+ 		</httpClientConfig>
+ 
+		<transport coreThreadPoolSize="20" socketTimeout="30000" tcpNoDelay="true">
 			<ruleMatching />
 			<dispatching />
 			<exchangeStore name="forgetfulExchangeStore" />

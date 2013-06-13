@@ -124,10 +124,11 @@ public class LoadBalancingWithClusterManagerTest {
 		lb.init();
 	}
 
-	private DummyWebServiceInterceptor startNode(HttpRouter node, int port) throws IOException {
+	private DummyWebServiceInterceptor startNode(HttpRouter node, int port) throws Exception {
 		DummyWebServiceInterceptor service1 = new DummyWebServiceInterceptor();
 		node.addUserFeatureInterceptor(service1);
 		node.getRuleManager().addProxyAndOpenPortIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80));
+		node.init();
 		return service1;
 	}
 

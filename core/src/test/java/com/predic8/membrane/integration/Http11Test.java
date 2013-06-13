@@ -48,6 +48,7 @@ public class Http11Test {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		router.init();
 	}
 	
 	@After

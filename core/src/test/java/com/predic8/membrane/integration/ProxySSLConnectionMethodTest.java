@@ -35,7 +35,8 @@ public class ProxySSLConnectionMethodTest {
 	public void setUp() throws Exception {
 		router = new HttpRouter();
 		router.setExchangeStore(new MemoryExchangeStore());
-		router.getRuleManager().addProxyAndOpenPortIfNew(new ProxyRule(new ProxyRuleKey(3128)));
+		router.getRuleManager().addProxyAndOpenPortIfNew(new ProxyRule(new ProxyRuleKey(3129)));
+		router.init();
 	}
 	
 	@After
@@ -46,7 +47,7 @@ public class ProxySSLConnectionMethodTest {
 	@Test
 	public void testSSLConnectionMethod() throws Exception {
 		HttpClient client = new HttpClient();
-		client.getHostConfiguration().setProxy("localhost", 3128);
+		client.getHostConfiguration().setProxy("localhost", 3129);
 	
 		GetMethod post = new GetMethod("https://www.google.com/");
 		client.executeMethod(post);

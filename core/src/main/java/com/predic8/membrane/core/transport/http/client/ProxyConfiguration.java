@@ -27,8 +27,6 @@ public class ProxyConfiguration {
 
 	public static final String ATTRIBUTE_AUTHENTICATION = "authentication";
 
-	private boolean active = true;
-
 	private String host;
 
 	private int port;
@@ -64,15 +62,6 @@ public class ProxyConfiguration {
 	@MCAttribute
 	public void setPassword(String password) {
 		this.password = password;
-	}
-
-	public boolean isActive() {
-		return active;
-	}
-
-	@MCAttribute
-	public void setActive(boolean active) {
-		this.active = active;
 	}
 
 	public String getUsername() {

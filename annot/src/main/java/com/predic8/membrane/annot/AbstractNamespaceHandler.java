@@ -42,12 +42,9 @@ public class AbstractNamespaceHandler implements NamespaceHandler {
 
 	private BeanDefinitionParser findParserForElement(Element element, ParserContext parserContext) {
 		String localName = parserContext.getDelegate().getLocalName(element);
-		
-		System.err.println("looking for " + localName);
 
 		if (parserContext.getContainingBeanDefinition() != null) {
 			String beanClassName = parserContext.getContainingBeanDefinition().getBeanClassName();
-			System.err.println("in " + beanClassName);
 			Map<String, BeanDefinitionParser> parentLocalParsers = localParsers.get(beanClassName);
 			if (parentLocalParsers != null) {
 				BeanDefinitionParser parser = parentLocalParsers.get(localName);

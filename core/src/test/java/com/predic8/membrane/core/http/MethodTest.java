@@ -35,6 +35,7 @@ public class MethodTest {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 4000), "oio.de", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+		router.init();
 	}
 	
 	@Test

@@ -43,8 +43,8 @@ public class ConnectionTest {
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule2000);
 		
-		conLocalhost = Connection.open(InetAddress.getByName("localhost"), 2000, null, null);
-		con127_0_0_1 = Connection.open(InetAddress.getByAddress(LOCALHOST_IP), 2000, null, null);
+		conLocalhost = Connection.open(InetAddress.getByName("localhost"), 2000, null, null, 30000);
+		con127_0_0_1 = Connection.open(InetAddress.getByAddress(LOCALHOST_IP), 2000, null, null, 30000);
 	}
 
 	@After

@@ -33,7 +33,7 @@ import com.predic8.xml.util.ResourceDownloadException;
 @MCElement(name="httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
 
-	private HttpClientConfiguration httpClientConfig;
+	private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 	
 	private HttpClient httpClient;
 	

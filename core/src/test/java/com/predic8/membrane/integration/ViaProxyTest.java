@@ -43,7 +43,6 @@ public class ViaProxyTest {
 	@Before
 	public void setUp() throws Exception {
 		ProxyConfiguration proxy = new ProxyConfiguration();
-		proxy.setActive(true);
 		proxy.setHost("localhost");
 		proxy.setPort(3128);
 
@@ -53,6 +52,7 @@ public class ViaProxyTest {
 		
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80));
+		router.init();
 	}
 	
 	@Test

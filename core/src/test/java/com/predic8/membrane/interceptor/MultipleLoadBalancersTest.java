@@ -50,7 +50,7 @@ public class MultipleLoadBalancersTest {
 		final HttpRouter service1;
 		final DummyWebServiceInterceptor mockInterceptor1;
 		
-		MockService(int port) throws IOException {
+		MockService(int port) throws Exception {
 			this.port = port;
 			service1 = new HttpRouter();
 			mockInterceptor1 = new DummyWebServiceInterceptor();
@@ -58,6 +58,7 @@ public class MultipleLoadBalancersTest {
 					"POST", ".*", port), "thomas-bayer.com", 80);
 			sp1.getInterceptors().add(mockInterceptor1);
 			service1.getRuleManager().addProxyAndOpenPortIfNew(sp1);
+			service1.init();
 		}
 
 		public void close() throws IOException {

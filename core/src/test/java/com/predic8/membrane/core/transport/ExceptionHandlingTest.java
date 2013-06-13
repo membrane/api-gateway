@@ -95,6 +95,7 @@ public class ExceptionHandlingTest {
 			}
 		});
 		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
+		router.init();
 	}
 
 	@After

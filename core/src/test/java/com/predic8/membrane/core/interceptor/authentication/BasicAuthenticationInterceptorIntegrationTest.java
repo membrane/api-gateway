@@ -33,7 +33,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 	private HttpRouter router = new HttpRouter();
 
 	@Before
-	public void setup() throws IOException {
+	public void setup() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		
@@ -43,6 +43,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 		interceptor.setUsers(mapping );
 		
 		router.addUserFeatureInterceptor(interceptor);
+		router.init();
 	}
 
 	@Test
