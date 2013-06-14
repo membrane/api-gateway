@@ -78,7 +78,7 @@ public class Constants {
 
 	public static final String PRODUCT_NAME = "Membrane Service Proxy";
 	
-	public static final String HTML_FOOTER = "Copyright ©2009-2012 " +
+	public static final String HTML_FOOTER = "Copyright ©2009-2013 " +
 			  		"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
 			  		". All Rights Reserved. See " +
 			  		"<a href=\"http://membrane-soa.org/esb/\">http://membrane-soa.org/esb/</a>" +
