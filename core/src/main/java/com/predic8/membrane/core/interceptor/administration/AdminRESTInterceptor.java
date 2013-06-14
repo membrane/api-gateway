@@ -113,6 +113,9 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 						gen.writeStartObject();
 						gen.writeNumberField("order", i += params.getString("order", "asc").equals("desc") ? -1 : 1);
 						gen.writeStringField("name", p.toString());
+						gen.writeBooleanField("active", p.isActive());
+						if (!p.isActive())
+							gen.writeStringField("error", p.getErrorState());
 						gen.writeNumberField("listenPort", p.getKey().getPort());
 						gen.writeStringField("virtualHost", p.getKey().getHost());
 						gen.writeStringField("method", p.getKey().getMethod());
@@ -123,7 +126,9 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 						gen.writeObjectFieldStart("actions");
 							if (!isReadOnly()) {
 								gen.writeStringField("delete", "/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p),"UTF-8"));
-							}						
+							}
+							if (!p.isActive())
+								gen.writeStringField("start", "/admin/service-proxy/start?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p),"UTF-8"));
 						gen.writeEndObject();
 						gen.writeEndObject();
 					}					

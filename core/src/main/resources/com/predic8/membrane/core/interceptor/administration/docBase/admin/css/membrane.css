@@ -78,3 +78,17 @@ table {
 	font-size: small;
 }
 
+span.ui-icon.proxy-state {
+	float: right;
+	margin: 0 4px;
+}
+
+a.action {
+	float: left;
+	margin-right: 10px;
+}
+
+.ui-icon.ui-icon-alert
+{
+    background-image: url(../jquery-ui/css/custom-theme/images/ui-icons_f7a50d_256x240.png);
+}

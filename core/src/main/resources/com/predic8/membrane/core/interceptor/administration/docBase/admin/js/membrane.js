@@ -239,16 +239,27 @@ $(function() {
 		  "aoColumnDefs": [ 
 	           {
 	               "fnRender": function ( o, v ) {
-	            	   return membrane.createLink(relativeRootPath + '/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
+	            	   r = membrane.createLink(relativeRootPath + '/admin/service-proxy/show', v, [['name',v+':'+o.aData.listenPort]]);
+	            	   if (!o.aData['active']) {
+	            	     error = o.aData['error'];
+	            	     if (!error)
+	            	     	error = "";
+	            	     r = r + " " + '<span class="proxy-state ui-icon ui-icon-alert" title="This service is not active: ' + error.replace(/"/g, "&quot;") + '. Click &quot;play&quot; to retry."></span>';
+	            	   }
+	            	   return r;
 	               },
 	               "aTargets": [ 1 ]
 	           },
 	           {
 	               "fnRender": function ( o, v ) {
-	            	   if (v['delete']) {
-	            		   return '<a href="'+v['delete']+'"><span class="ui-icon ui-icon-trash"></span></a>';
-	            	   }
-	                   return '';
+	               		r = "";
+	            		if (v['delete']) {
+	            			r += '<a class="action" href="'+v['delete']+'" title="Delete"><span class="ui-icon ui-icon-trash"></span></a>';
+	           			}
+	           			if (v['start']) {
+	            			r += '<a class="action" href="'+v['start']+'" title="Start"><span class="ui-icon ui-icon-play"></span></a>';
+	         			}
+						return r;
 	               },
 	               "aTargets": [ 9 ]
 	           }
@@ -278,6 +289,13 @@ $(function() {
             } );
           }		              
 	});
+
+	$('.hovericon').hover(
+		function(){ $(this).addClass('ui-state-hover'); }, 
+		function(){ $(this).removeClass('ui-state-hover'); }
+	);
+	$('.hovericon').click(function(){ $(this).toggleClass('ui-state-active'); });
+	$('.icons').append(' <a href="#">Toggle text</a>').find('a').click(function(){ $('.icon-collection li span.text').toggle(); return false; }).trigger('click');
 
 	membrane.messageTable = $('#message-stat-table').dataTable({
 		  "aaSorting": [[0,'desc']],

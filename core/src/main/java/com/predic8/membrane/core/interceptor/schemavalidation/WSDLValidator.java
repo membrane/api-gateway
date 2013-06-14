@@ -34,7 +34,6 @@ import com.predic8.membrane.core.util.SOAPUtil;
 import com.predic8.schema.Schema;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
-import com.predic8.xml.util.ResourceDownloadException;
 
 public class WSDLValidator extends AbstractXMLSchemaValidator {
 	static Log log = LogFactory
@@ -55,8 +54,6 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 			WSDLParser wsdlParser = new WSDLParser();
 			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver());
 			return wsdlParser.parse(ctx).getTypes().getSchemas();
-		} catch (ResourceDownloadException e) {
-			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
 		} catch (DownloadException e) {
 			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
 		}

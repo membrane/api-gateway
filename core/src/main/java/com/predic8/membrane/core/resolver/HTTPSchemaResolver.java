@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.resolver;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -28,7 +29,6 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ByteUtil;
-import com.predic8.xml.util.ResourceDownloadException;
 
 @MCElement(name="httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
@@ -49,13 +49,13 @@ public class HTTPSchemaResolver implements SchemaResolver {
 		return Lists.newArrayList("http", "https");
 	}
 	
-	public InputStream resolve(String url) {
+	public InputStream resolve(String url) throws FileNotFoundException {
 		try {
 		    Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
 		    Response response = getHttpClient().call(exc);
 		    try {
 		    	if(response.getStatusCode() != 200) {
-		    		DownloadException rde = new DownloadException("could not get resource " + url + " by HTTP");
+		    		DownloadException rde = new DownloadException("");
 		    		rde.setStatus(response.getStatusCode());
 		    		rde.setUrl(url);
 		    		throw rde;
@@ -65,7 +65,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 		    	if (exc.getTargetConnection() != null)
 		    		exc.getTargetConnection().close();
 		    }
-		} catch (ResourceDownloadException e) {
+		} catch (DownloadException e) {
 			throw e;
 		} catch (Exception e) {
 			DownloadException rde = new DownloadException(e);

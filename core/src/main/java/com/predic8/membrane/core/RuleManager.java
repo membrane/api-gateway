@@ -183,6 +183,9 @@ public class RuleManager {
 
 			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + hostHeader);
 			
+			if (!rule.isActive())
+				continue;
+			
 			if (rule.getKey().getIp() != null)
 				if (!rule.getKey().getIp().equals(localIP))
 					continue;
@@ -234,6 +237,20 @@ public class RuleManager {
 			listener.ruleRemoved(rule, rules.size());
 		}
 
+	}
+
+	public synchronized void replaceRule(Rule rule, Rule newRule) {
+		getExchangeStore().removeAllExchanges(rule);
+		
+		int i = rules.indexOf(rule);
+		rules.set(i, rule);
+
+		for (IRuleChangeListener listener : listeners) {
+			listener.ruleRemoved(rule, rules.size());
+		}
+		for (IRuleChangeListener listener : listeners) {
+			listener.ruleAdded(newRule);
+		}
 	}
 
 	public synchronized void removeRulesFromSource(RuleDefinitionSource source) {

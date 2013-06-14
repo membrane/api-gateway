@@ -172,4 +172,14 @@ public abstract class AbstractProxy implements Rule {
 	public boolean isTargetAdjustHostHeader() {
 		return false;
 	}
+	
+	@Override
+	public boolean isActive() {
+		return true;
+	}
+	
+	@Override
+	public String getErrorState() {
+		return null;
+	}
 }

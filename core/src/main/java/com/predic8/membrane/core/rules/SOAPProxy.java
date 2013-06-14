@@ -13,8 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
+import java.net.ConnectException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,17 +48,23 @@ import com.predic8.wsdl.Port;
 import com.predic8.wsdl.Service;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
-import com.predic8.xml.util.ResourceDownloadException;
 
 @MCElement(name="soapProxy", group="rule")
 public class SOAPProxy extends AbstractServiceProxy {
 	private static final Log log = LogFactory.getLog(SOAPProxy.class.getName());
 	private static final Pattern relativePathPattern = Pattern.compile("^./[^/?]*\\?");
 
+	// configuration attributes
 	protected String wsdl;
 	protected String portName;
 	protected String targetPath;
 	protected HttpClientConfiguration httpClientConfig;
+	
+	// set during initialization
+	protected ResolverMap resolverMap;
+	protected Router router;
+	protected boolean active;
+	protected String error;
 	
 	public SOAPProxy() {
 		this.key = new ServiceProxyKey(80);
@@ -67,18 +75,14 @@ public class SOAPProxy extends AbstractServiceProxy {
 		return new SOAPProxy();
 	}
 	
-	private void parseWSDL(Router router) {
+	/**
+	 * @return error or null for success
+	 */
+	private String parseWSDL() {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(wsdl);
 		try {
 			WSDLParser wsdlParser = new WSDLParser();
-			ResolverMap resolverMap = router.getResolverMap();
-			if (httpClientConfig != null) {
-				HTTPSchemaResolver httpSR = new HTTPSchemaResolver();
-				httpSR.setHttpClientConfig(httpClientConfig);
-				resolverMap = resolverMap.clone();
-				resolverMap.addSchemaResolver(httpSR);
-			}
 			wsdlParser.setResourceResolver(resolverMap.toExternalResolver());
 			
 			Definitions definitions = wsdlParser.parse(ctx);
@@ -115,9 +119,15 @@ public class SOAPProxy extends AbstractServiceProxy {
 			} catch (MalformedURLException e) {
 				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
 			}
-		} catch (ResourceDownloadException e) {
-			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
+			return null;
 		} catch (DownloadException e) {
+			if (e.getCause() == null) {
+				if (e.getStatus() >= 400)
+					return e.getMessage();
+			} else if (e.getCause() instanceof UnknownHostException)
+				return e.getMessage();
+			else if (e.getCause() instanceof ConnectException)
+				return e.getMessage();
 			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
 		}
 	}
@@ -159,16 +169,19 @@ public class SOAPProxy extends AbstractServiceProxy {
 
 	private int automaticallyAddedInterceptorCount;
 
-	@Override
-	public void init(Router router) throws Exception {
-		if (wsdl == null)
-			return;
+	public void configure() {
 
+		error = parseWSDL();
+		active = error == null;
+		if (!active) {
+			log.error("Continuing with disabled soapProxy: " + error);
+			return;
+		}
+		
 		// remove previously added interceptors
 		for(; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
 			interceptors.remove(0);
 
-		parseWSDL(router);
 
 		// add interceptors (in reverse order) to position 0.
 		
@@ -215,6 +228,24 @@ public class SOAPProxy extends AbstractServiceProxy {
 			interceptors.add(0, ri);
 			automaticallyAddedInterceptorCount++;
 		}
+	}
+	
+	@Override
+	public void init(Router router) throws Exception {
+		this.router = router;
+		if (wsdl == null)
+			return;
+		
+		resolverMap = router.getResolverMap();
+		if (httpClientConfig != null) {
+			HTTPSchemaResolver httpSR = new HTTPSchemaResolver();
+			httpSR.setHttpClientConfig(httpClientConfig);
+			resolverMap = resolverMap.clone();
+			resolverMap.addSchemaResolver(httpSR);
+		}
+
+
+		configure();
 		
 		super.init(router);
 	}
@@ -254,4 +285,25 @@ public class SOAPProxy extends AbstractServiceProxy {
 		this.httpClientConfig = httpClientConfig; 
 	}
 
+	@Override
+	public boolean isActive() {
+		return active;
+	}
+	
+	@Override
+	public String getErrorState() {
+		return error;
+	}
+	
+	@Override
+	public SOAPProxy clone() throws CloneNotSupportedException {
+		SOAPProxy clone = (SOAPProxy) super.clone();
+		configure();
+		try {
+			super.init(router);
+		} catch (Exception e) {
+			log.error(e);
+		}
+		return clone;
+	}
 }

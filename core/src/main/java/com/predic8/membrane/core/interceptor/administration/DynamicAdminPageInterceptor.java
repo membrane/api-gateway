@@ -48,6 +48,7 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.PortOccupiedException;
@@ -211,6 +212,18 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		
 		router.getRuleManager().removeRule(
 				RuleUtil.findRuleByIdentifier(router, params.get("name")));
+		return respond(getServiceProxyPage(params, relativeRootPath));
+	}
+
+	@Mapping("/admin/service-proxy/start/?(\\?.*)?")
+	public Response handleServiceProxyStartRequest(Map<String, String> params, String relativeRootPath)
+	  throws Exception {
+		if (readOnly)
+			return createReadOnlyErrorResponse();
+		
+		Rule rule = RuleUtil.findRuleByIdentifier(router, params.get("name"));
+		Rule newRule = ((SOAPProxy) rule).clone();
+		router.getRuleManager().replaceRule(rule, newRule);
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 

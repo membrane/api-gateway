@@ -59,4 +59,10 @@ public class ProxyRule extends AbstractProxy {
 	public void setIp(String ip) {
 		((ProxyRuleKey)key).setIp(ip);
 	}
+	
+	@Override
+	public AbstractProxy clone() throws CloneNotSupportedException {
+		throw new CloneNotSupportedException();
+	}
+
 }

@@ -28,4 +28,9 @@ public class EOFWhileReadingLineException extends RuntimeException {
 		return lineSoFar;
 	}
 	
+	@Override
+	public String getMessage() {
+		return super.getMessage() + " line so far: \"" + lineSoFar + "\"";
+	}
+	
 }

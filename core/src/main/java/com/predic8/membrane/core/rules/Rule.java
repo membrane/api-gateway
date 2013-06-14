@@ -21,7 +21,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.SSLContext;
 
-public interface Rule {
+public interface Rule extends Cloneable {
 	
 	public List<Interceptor> getInterceptors();
 	
@@ -60,4 +60,9 @@ public interface Rule {
 	public void init(Router router) throws Exception;
 	
 	public boolean isTargetAdjustHostHeader();
+	
+	public boolean isActive();
+
+	public String getErrorState();
+
 }
