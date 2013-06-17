@@ -249,6 +249,10 @@ public class SOAPProxy extends AbstractServiceProxy {
 		
 		super.init(router);
 	}
+	
+	private void superInit() throws Exception {
+		super.init(router);
+	}
 
 	private boolean containsInterceptorOfType(Class<? extends Interceptor> class1) {
 		for (Interceptor i : interceptors)
@@ -298,11 +302,12 @@ public class SOAPProxy extends AbstractServiceProxy {
 	@Override
 	public SOAPProxy clone() throws CloneNotSupportedException {
 		SOAPProxy clone = (SOAPProxy) super.clone();
-		configure();
+		clone.configure();
 		try {
-			super.init(router);
+			clone.superInit(); // continue previously terminated init()
 		} catch (Exception e) {
 			log.error(e);
+			active = false;
 		}
 		return clone;
 	}

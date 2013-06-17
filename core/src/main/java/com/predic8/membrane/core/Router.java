@@ -16,8 +16,11 @@ package com.predic8.membrane.core;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -39,6 +42,7 @@ import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
@@ -75,6 +79,9 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	
 	private boolean hotDeploy = true;
 	private boolean running;
+
+	private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
+	private Timer reinitializator;
 
 	public Router() {
 		ruleManager.setRouter(this);
@@ -220,6 +227,9 @@ public class Router implements Lifecycle, ApplicationContextAware {
 				shutdownNoWait();
 				throw e;
 			}
+			
+			if (retryInitInterval > 0)
+				startAutoReinitializator();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
@@ -244,12 +254,55 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	}
 
 	private void stopHotDeployment() {
+		stopAutoReinitializator();
 		if (hdt != null) {
 			hdt.stopASAP();
 			hdt = null;
 			synchronized (hotDeployingContexts) {
 				hotDeployingContexts.remove(beanFactory);
 			}
+		}
+	}
+	
+	private void startAutoReinitializator() {
+		if (getInactiveRules().size() == 0)
+			return;
+		
+		reinitializator = new Timer("auto reinitializator", true);
+		reinitializator.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				boolean stillFailing = false;
+				ArrayList<Rule> inactive = getInactiveRules();
+				if (inactive.size() > 0) {
+					log.info("Trying to activate all inactive rules.");
+					for (Rule rule : inactive) {
+						try {
+							Rule newRule = ((SOAPProxy) rule).clone();
+							if (!newRule.isActive()) {
+								log.info("New rule is still not active.");
+								stillFailing = true;
+							}
+							getRuleManager().replaceRule(rule, newRule);
+						} catch (CloneNotSupportedException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+				if (stillFailing)
+					log.info("There are still inactive rules.");
+				else {
+					stopAutoReinitializator();
+					log.info("All rules have been initialized.");
+				}
+			}
+		}, retryInitInterval, retryInitInterval);
+	}
+	
+	private void stopAutoReinitializator() {
+		Timer reinitializator2 = reinitializator;
+		if (reinitializator2 != null) {
+			reinitializator2.cancel();
 		}
 	}
 	
@@ -283,6 +336,23 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	
 	public boolean isHotDeploy() {
 		return hotDeploy;
+	}
+	
+	public int getRetryInitInterval() {
+		return retryInitInterval;
+	}
+	
+	@MCAttribute
+	public void setRetryInitInterval(int retryInitInterval) {
+		this.retryInitInterval = retryInitInterval;
+	}
+
+	private ArrayList<Rule> getInactiveRules() {
+		ArrayList<Rule> inactive = new ArrayList<Rule>();
+		for (Rule rule : getRuleManager().getRules()) 
+			if (!rule.isActive()) 
+				inactive.add(rule);
+		return inactive;
 	}
 	
 }
