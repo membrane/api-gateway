@@ -3,7 +3,6 @@
 ## TODO
 
 * documentation
-* configuration of "other" (=non-HttpClientInterceptor) httpClients
 * nice error message at startup if annotation processing is disabled
 * 'transformerFactory' global bean: make local
 
@@ -28,8 +27,12 @@
 * <global> element has been removed
   * global/router/@adjustContentLength is now always true (is there any use case where 'false' makes sense?)
   * global/monitor-gui has been removed (monitor config will be handled differently in 4.0)
-  * global/proxyConfiguration has been moved to httpClient/proxyConfiguration
+  * global/proxyConfiguration has been moved to httpClientConfig/proxy
+
+* <httpClientConfig> was introduced
 
 ## Java API (major changes)
 
 * @ElementName has been removed
+* 'Router' instances should be started (using 'router.start()') before using
+  them: '.start()' internally calls '.init()' and '.getRuleManager().openPorts()' .
