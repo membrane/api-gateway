@@ -140,19 +140,24 @@
 						</configuration>
 					</plugin>
 					<plugin>
-						<groupId>org.mortbay.jetty</groupId>
+						<groupId>org.eclipse.jetty</groupId>
 						<artifactId>jetty-maven-plugin</artifactId>
-						<version>8.1.0.RC5</version>
+						<version>9.0.3.v20130506</version>
+						<!-- documentation is at http://www.eclipse.org/jetty/documentation/current/jetty-maven-plugin.html -->
 						<configuration>
 							<war>${basedir}/target/${project.artifactId}-${project.version}-integration-test.war</war>
+							<httpConnector>
+								<port>3021</port>
+								<!-- <maxIdleTime>60000</maxIdleTime> seems not to work with jetty-maven-plugin 9.0.3 -->
+							</httpConnector>
+							<contextHandlers>
+								<contextHandler implementation="org.eclipse.jetty.webapp.WebAppContext">
+									<war>${basedir}/target/${project.artifactId}-${project.version}.war</war>
+									<contextPath>/release</contextPath>
+								</contextHandler>
+    						</contextHandlers>
 							<scanIntervalSeconds>10</scanIntervalSeconds>
 							<contextPath>/</contextPath>
-							<connectors>
-								<connector implementation="org.eclipse.jetty.server.nio.SelectChannelConnector">
-									<port>3021</port>
-									<maxIdleTime>60000</maxIdleTime>
-								</connector>
-							</connectors>
 							<stopPort>3022</stopPort>
 							<stopKey>STOP</stopKey>
 							<jvmArgs>-Xmx512m -XX:MaxPermSize=265m</jvmArgs>

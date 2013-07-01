@@ -26,6 +26,8 @@
 		server) and configured paths (see web.xml).
 	-->
 
+	<limitedMemoryExchangeStore id="memoryExchangeStore" />
+
 	<router hotDeploy="false" exchangeStore="memoryExchangeStore">
 
 		<web:servletTransport id="transport">

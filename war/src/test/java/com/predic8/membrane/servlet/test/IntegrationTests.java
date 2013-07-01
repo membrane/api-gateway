@@ -23,7 +23,8 @@ import org.junit.runners.Suite.SuiteClasses;
 	AdminConsoleTest.class,
 	ForwardingTest.class,
 	WSDLRewritingTest.class,
-	WSDLPublisherTest.class
+	WSDLPublisherTest.class,
+	ReleaseConfigurationTest.class
 })
 public class IntegrationTests {
 
