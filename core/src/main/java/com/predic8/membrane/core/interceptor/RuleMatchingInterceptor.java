@@ -19,10 +19,12 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
@@ -37,6 +39,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(RuleMatchingInterceptor.class.getName());
 
 	private boolean xForwardedForEnabled = true;
+	private int maxXForwardedForHeaders = 20;
 
 	public RuleMatchingInterceptor() {
 		name = "Rule Matching Interceptor";		
@@ -112,7 +115,13 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	}
 
 	private void insertXForwardedFor(AbstractExchange exc) {
-		exc.getRequest().getHeader().setXForwardedFor(getXForwardedForHeaderValue(exc));
+		Header h = exc.getRequest().getHeader();
+		if (h.getNumberOf(Header.X_FORWARDED_FOR) > maxXForwardedForHeaders) {
+			Request r = exc.getRequest();
+			throw new RuntimeException("Request caused " + Header.X_FORWARDED_FOR + " flood: " + r.getStartLine() +  
+					r.getHeader().toString());
+		}
+		h.setXForwardedFor(getXForwardedForHeaderValue(exc));
 	}
 
 	private String getXForwardedForHeaderValue(AbstractExchange exc) {
@@ -134,9 +143,19 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	public boolean isxForwardedForEnabled() {
 		return xForwardedForEnabled;
 	}
-
+	
+	@MCAttribute
 	public void setxForwardedForEnabled(boolean xForwardedForEnabled) {
 		this.xForwardedForEnabled = xForwardedForEnabled;
+	}
+	
+	public int getMaxXForwardedForHeaders() {
+		return maxXForwardedForHeaders;
+	}
+	
+	@MCAttribute
+	public void setMaxXForwardedForHeaders(int maxXForwardedForHeaders) {
+		this.maxXForwardedForHeaders = maxXForwardedForHeaders;
 	}
 
 	@Override

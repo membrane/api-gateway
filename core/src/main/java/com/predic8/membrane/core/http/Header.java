@@ -421,4 +421,12 @@ public class Header {
 		return m;
 	}
 
+	public int getNumberOf(String headerName) {
+		int res = 0;
+		for (HeaderField headerField : fields)
+			if (headerField.getHeaderName().equals(headerName))
+				res++;
+		return res;
+	}
+
 }
