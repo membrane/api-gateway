@@ -110,7 +110,11 @@ var membrane = function() {
 		$('#response-download-button').button({icons: {primary:'ui-icon-circle-arrow-s'}}).attr('href', responseBodyUrl);
 
 		$.get(exchangeUrl, function(exc) {
-			if (exc.respContentType == 'text/xml') {
+			function isXMLContentType(s) {
+				return s == 'text/xml' || (s.indexOf('application/') == 0 && s.indexOf('xml', s.length - 3) != -1);
+			}
+			
+			if (isXMLContentType(exc.respContentType)) {
 				$.get(responseBodyBeautifiedUrl, function(resp) {
 					setHTML('#response-body', resp);
 				});
@@ -118,7 +122,7 @@ var membrane = function() {
 				loadText('#response-body', responseBodyUrl);
 			}	
 			
-			if (exc.reqContentType == 'text/xml') {
+			if (isXMLContentType(exc.reqContentType)) {
 				$.get(requestBodyBeautifiedUrl, function(resp) {
 					setHTML('#request-body', resp);
 				});
