@@ -13,13 +13,13 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
+import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -117,7 +117,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					ul();
 						li().a().href("#tab1").text("Visualization").end(2);
 						li().a().href("#tab2").text("Statistics").end(2);
-						li().a().href("#tab3").text("XML Configuration").end(2);
+						//li().a().href("#tab3").text("XML Configuration").end(2);
 					end();
 					div().id("tab1");
 						createServiceProxyVisualization(rule, relativeRootPath);
@@ -819,32 +819,6 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return URLParamUtil.getParams(exc);
 	}
 	
-	/**
-	 * For example, returns "../.." for the input "/admin/clusters/".
-	 */
-	public static String getRelativeRootPath(String pathQuery) throws MalformedURLException {
-		String path = URLUtil.getPath(pathQuery);
-		// count '/'s
-		int depth = 0;
-		for (int i = 0; i < path.length(); i++)
-			if (path.charAt(i) == '/')
-				depth++;
-		// remove leading '/'
-		if (depth > 0)
-			depth--;
-		// build relative path for depth
-		StringBuilder relativeRootPath = new StringBuilder();
-		if (depth == 0)
-			relativeRootPath.append(".");
-		else
-			for (; depth>0; depth--)
-				if (depth == 1)
-					relativeRootPath.append("..");
-				else
-					relativeRootPath.append("../");
-		return relativeRootPath.toString();
-	}
-
 	private Response respond(String page) throws Exception {
 		return createResponse(200, "OK", page.getBytes(Constants.UTF_8_CHARSET), MimeType.TEXT_HTML_UTF8);
 	}

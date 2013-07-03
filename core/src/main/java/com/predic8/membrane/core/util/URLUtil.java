@@ -18,12 +18,9 @@ import java.net.URI;
 
 public class URLUtil {
 
-	public static String getPath(String uri) {
-		try {
-			return new URI(uri).getPath();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+	public static String getPathFromPathQuery(String pathQuery) {
+		int i = pathQuery.indexOf('?');
+		return i == -1 ? pathQuery : pathQuery.substring(0, i);
 	}
 
 	public static String getPathQuery(String uri) {

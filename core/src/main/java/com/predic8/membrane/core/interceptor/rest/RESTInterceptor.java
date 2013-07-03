@@ -91,8 +91,8 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	/**
 	 * For example, returns "../.." for the input "/admin/clusters/".
 	 */
-	protected String getRelativeRootPath(String pathQuery) throws MalformedURLException {
-		String path = URLUtil.getPath(pathQuery);
+	public static String getRelativeRootPath(String pathQuery) throws MalformedURLException {
+		String path = URLUtil.getPathFromPathQuery(pathQuery);
 		// count '/'s
 		int depth = 0;
 		for (int i = 0; i < path.length(); i++)
