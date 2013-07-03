@@ -27,7 +27,7 @@ public class URLParamUtil {
 	
 	public static Map<String, String> getParams(Exchange exc) throws Exception {		
 		URI jUri = new URI(exc.getRequest().getUri());
-		String q = jUri.getQuery();
+		String q = jUri.getRawQuery();
 		if (q == null) {
 			if (hasNoFormParams(exc))
 				return new HashMap<String, String>();
