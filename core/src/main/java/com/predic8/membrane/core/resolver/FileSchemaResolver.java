@@ -54,8 +54,7 @@ public class FileSchemaResolver implements SchemaResolver {
 	    ArrayList<String> res = new ArrayList<String>(children.length);
 	    for (String child : children)
 	    	res.add(child);
-
-		return null;
+		return res;
 	}
 
 	@Override

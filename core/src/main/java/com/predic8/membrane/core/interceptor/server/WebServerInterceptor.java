@@ -58,8 +58,6 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		String uri = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(exc.getDestinations().get(0)));
 
 		log.debug("request: " + uri);
-
-		log.debug("looking for file: " + uri);
 		
 		if (uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\")) {
 			exc.setResponse(Response.badRequest().body("").build());

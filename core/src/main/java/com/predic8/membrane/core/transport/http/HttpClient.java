@@ -78,8 +78,11 @@ public class HttpClient {
 	private void setRequestURI(Request req, String dest) throws MalformedURLException {
 		if (proxy != null || req.isCONNECTRequest())
 			req.setUri(dest);
-		else
+		else {
+			if (!dest.startsWith("http"))
+				throw new MalformedURLException("The exchange's destination URL ("+dest+") does not start with 'http'. Please specify a <target> within your <serviceProxy>.");
 			req.setUri(HttpUtil.getPathAndQueryString(dest));
+		}
 	}
 	
 	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
