@@ -17,6 +17,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import com.predic8.membrane.examples.env.AntInPath;
+import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
 import com.predic8.membrane.examples.tests.ACLTest;
 import com.predic8.membrane.examples.tests.BasicAuthTest;
 import com.predic8.membrane.examples.tests.CBRTest;
@@ -49,6 +51,9 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({ 
+	AntInPath.class,
+	ConsistentVersionNumbers.class,
+	
 	ACLTest.class,
 	BasicAuthTest.class,
 	CBRTest.class,
