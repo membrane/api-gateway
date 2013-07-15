@@ -79,11 +79,21 @@ public class ConnectionManager {
 	
 	private static class OldConnection {
 		public final Connection connection;
-		public final long timeout;
+		public final long deathTime;
 		
-		public OldConnection(Connection connection, long keepAliveTimeout) {
+		public OldConnection(Connection connection, long defaultKeepAliveTimeout) {
 			this.connection = connection;
-			this.timeout = System.currentTimeMillis() + keepAliveTimeout;
+			long lastUse = connection.getLastUse();
+			if (lastUse == 0)
+				lastUse = System.currentTimeMillis();
+			long delta = connection.getTimeout();
+			if (delta == 0)
+				delta = defaultKeepAliveTimeout;
+			if (delta > 0)
+				delta -= 1; // slippage
+			if (connection.getCompletedExchanges() >= connection.getMaxExchanges())
+				delta = 0; // let the background closer do its job
+			this.deathTime = lastUse + delta;
 		}
 	}
 	
@@ -120,7 +130,7 @@ public class ConnectionManager {
 			if (l != null) {
 				while(l.size() > 0) {
 					OldConnection c = l.remove(l.size()-1);
-					if (c.timeout > now)
+					if (c.deathTime > now)
 						return c.connection;
 				}
 			}
@@ -164,7 +174,7 @@ public class ConnectionManager {
 				ArrayList<OldConnection> l = e.getValue();
 				for (int i = 0; i < l.size(); i++) {
 					OldConnection o = l.get(i);
-					if (o.timeout < now) {
+					if (o.deathTime < now) {
 						// replace [i] by [last]
 						if (i == l.size() - 1)
 							l.remove(i);

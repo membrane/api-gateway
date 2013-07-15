@@ -30,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ChunkedBodyTransferrer;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -137,8 +138,10 @@ public class HttpClient {
 				InetAddress targetAddr = InetAddress.getByName(target.host);
 				if (counter == 0) {
 					con = exc.getTargetConnection();
-					if (con != null && !con.isSame(targetAddr, target.port))
+					if (con != null && !con.isSame(targetAddr, target.port)) {
+						con.close();
 						con = null;
+					}
 				}
 				if (con == null) {
 					con = conMgr.getConnection(targetAddr, target.port, exc.getRule() == null ? null : exc.getRule().getLocalHost(), getOutboundSSLContext(exc), connectTimeout);
@@ -147,8 +150,10 @@ public class HttpClient {
 				Response response = doCall(exc, con);
 				boolean is5XX = 500 <= response.getStatusCode() && response.getStatusCode() < 600; 
 				if (!failOverOn5XX || !is5XX || counter == maxRetries-1) {
+					applyKeepAliveHeader(response, con);
 					exc.getDestinations().clear();
 					exc.getDestinations().add(dest);
+					response.addObserver(con);
 					return response;
 				}
 				// java.net.SocketException: Software caused connection abort: socket write error
@@ -184,6 +189,20 @@ public class HttpClient {
 				Thread.sleep(timeBetweenTries);
 		}
 		throw exception;
+	}
+
+	private void applyKeepAliveHeader(Response response, Connection con) {
+		String value = response.getHeader().getFirstValue(Header.KEEP_ALIVE);
+		if (value == null)
+			return;
+		
+		long timeout = Header.parseKeepAliveHeader(value, Header.TIMEOUT);
+		if (timeout != -1)
+			con.setTimeout(timeout);
+		
+		long max = Header.parseKeepAliveHeader(value, Header.MAX);
+		if (max != -1 && max < con.getMaxExchanges())
+			con.setMaxExchanges((int)max);
 	}
 
 	private String getDestination(Exchange exc, int counter) {

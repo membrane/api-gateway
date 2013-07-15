@@ -30,9 +30,11 @@ import javax.net.ssl.SSLSocket;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.http.AbstractBody;
+import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.transport.SSLContext;
 
-public class Connection {
+public class Connection implements MessageObserver {
 	
 	private static Log log = LogFactory.getLog(Connection.class.getName());
 	
@@ -40,6 +42,10 @@ public class Connection {
 	public Socket socket;
 	public InputStream in;
 	public OutputStream out;
+	private long lastUse;
+	private long timeout;
+	private int maxExchanges = Integer.MAX_VALUE;
+	private int completedExchanges;
 
 	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext, int connectTimeout) throws UnknownHostException, IOException {
 		return open(host, port, localHost, sslContext, null, connectTimeout);
@@ -116,5 +122,39 @@ public class Connection {
 		else
 			close();
 	}
+
+	@Override
+	public void bodyRequested(AbstractBody body) {
+		// do nothing
+	}
+
+	@Override
+	public void bodyComplete(AbstractBody body) {
+		lastUse = System.currentTimeMillis();
+		completedExchanges++;
+	}
+
+	public final void setTimeout(long timeout) {
+		this.timeout = timeout;
+	}
 	
+	public final long getTimeout() {
+		return timeout;
+	}
+	
+	public final int getMaxExchanges() {
+		return maxExchanges;
+	}
+	
+	public final void setMaxExchanges(int maxExchanges) {
+		this.maxExchanges = maxExchanges;
+	}
+	
+	public final int getCompletedExchanges() {
+		return completedExchanges;
+	}
+	
+	public final long getLastUse() {
+		return lastUse;
+	}
 }

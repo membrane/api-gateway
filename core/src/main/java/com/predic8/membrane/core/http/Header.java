@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.http;
 
 import java.io.*;
+import java.security.InvalidParameterException;
 import java.util.*;
 import java.util.regex.*;
 
@@ -79,13 +80,21 @@ public class Header {
     public static final String X_REQUESTED_WITH = "X-Requested-With";
 
     public static final String EXPIRES = "Expires";
+    
+    public static final String KEEP_ALIVE = "Keep-Alive";
 
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
+	
+	public static final String TIMEOUT = "timeout";
+	public static final String MAX = "max";
 
 	private static final Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
 	private static final Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
+	
+	private static final Pattern timeoutPattern = Pattern.compile("timeout\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
+	private static final Pattern maxPattern = Pattern.compile("max\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
 
 	private static final Log log = LogFactory.getLog(Header.class.getName());
 
@@ -427,6 +436,26 @@ public class Header {
 			if (headerField.getHeaderName().equals(headerName))
 				res++;
 		return res;
+	}
+
+	/**
+	 * @param keepAliveHeaderValue the value of the "Keep-Alive" header, see http://www.w3.org/Protocols/HTTP/1.1/draft-ietf-http-v11-spec-01.html#Keep-Alive
+	 * @param paramName either {@link #TIMEOUT} or {@link #MAX}.
+	 * @return the extracted parameter value of the "Keep-Alive" header
+	 */
+	public static long parseKeepAliveHeader(String keepAliveHeaderValue, String paramName) {
+		Pattern p;
+		if (paramName == TIMEOUT) {
+			p = timeoutPattern;
+		} else if (paramName == MAX) {
+			p = maxPattern;
+		} else {
+			throw new InvalidParameterException("paramName must be one of Header.TIMEOUT and .MAX .");
+		}
+		Matcher m = p.matcher(keepAliveHeaderValue);
+		if (!m.find())
+			return -1;
+		return Long.parseLong(m.group(1));
 	}
 
 }
