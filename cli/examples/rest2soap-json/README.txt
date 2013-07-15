@@ -20,7 +20,7 @@ To test the router we will use the command line tool curl that can transfer data
 
 To run the example execute the following steps:
 
-1. Execute router.bat or router.sh.
+1. Execute service-proxy.bat or service-proxy.sh.
 
 2. Open a new console and execute
 

@@ -19,7 +19,7 @@ Execute the following steps:
 
 1. Go to examples/validation/soap-Proxy
 
-2. Start router.bat or router.sh
+2. Start service-proxy.bat or service-proxy.sh
 
 3. Navigate into the soap-Proxy folder and run the following command on the console. Observe a successful response.
 

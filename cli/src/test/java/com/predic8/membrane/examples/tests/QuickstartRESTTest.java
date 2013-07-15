@@ -34,7 +34,7 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 	@Test
 	public void doit() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("quickstart-rest");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			String result = getAndAssert200("http://localhost:2000/restnames/name.groovy?name=Pia");
 			assertContains("Italy", result);

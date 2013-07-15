@@ -12,7 +12,7 @@ To run the example execute the following steps:
 
 Execute the following steps:
 
-1. Execute examples/throttle/router.bat
+1. Execute examples/throttle/service-proxy.bat
 
 2. Open the URL http://localhost:2000 in your browser.
 

@@ -12,7 +12,7 @@ To run the example execute the following steps:
 
 1. Go to the examples/loadbalancer-client-2 directory.
 
-2. Execute router.bat or router.sh
+2. Execute service-proxy.bat or service-proxy.sh
 
    This will start 3 service proxies providing a router and the load balancer.
 
@@ -41,7 +41,7 @@ To run the example execute the following steps:
 
 14. Stop the router by closing the command line that runs the router.
 
-15. Execute router-secured.bat or router-secured.sh
+15. Execute service-proxy-secured.bat or service-proxy-secured.sh
 
 16. Execute lbclient.bat up localhost 4000
 

@@ -10,7 +10,7 @@ To run the example execute the following steps:
 
 1. Go to the examples/login directory.
 
-2. Execute router.bat
+2. Execute service-proxy.bat
 
 3. Open the URL http://localhost:2000/ in your browser.
 

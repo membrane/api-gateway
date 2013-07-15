@@ -6,7 +6,7 @@ Execute the following steps:
 
 1. Go to examples/validation/schematron
 
-2. Start router.bat or router.sh
+2. Start service-proxy.bat or service-proxy.sh
 
 3. Look at car-schematron.xml and compare the schema to car.xml and invalid-car.xml .
 

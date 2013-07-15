@@ -45,7 +45,7 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
 				replace("jdbc:derby://localhost:1527/membranedb;create=true", "jdbc:derby:derbyDB;create=true")
 				);
 		
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			getAndAssert200("http://localhost:2000/");
 		} finally {

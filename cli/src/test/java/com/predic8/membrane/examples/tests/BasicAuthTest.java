@@ -35,7 +35,7 @@ public class BasicAuthTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("basic-auth");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			disableHTTPAuthentication();
 			getAndAssert(401, CUSTOMER_HOST_LOCAL + CUSTOMER_PATH);

@@ -39,7 +39,7 @@ public class RoutingTest extends DistributionExtractingTestcase {
 		replaceInFile(new File(base, "proxies.xml"), "2000", "3025");
 		replaceInFile(new File(base, "src/com/predic8/contactservice/Launcher.java"), "8080", "3024");
 		
-		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(base).script("service-proxy").waitForMembrane().start();
 		try {
 			Process2 antNode1 = new Process2.Builder().in(base).waitAfterStartFor("run:").executable("ant run").start();
 			try {

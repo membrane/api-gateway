@@ -53,7 +53,7 @@ Execute the following steps:
    a response containing "Cannot find dispatch method".
 
 
-6. We now start Membrane: Execute examples/versioning/routing/router.bat .
+6. We now start Membrane: Execute examples/versioning/routing/service-proxy.bat .
 
 7. Return to the console. Run both:
      curl --header "Content-Type: text/xml" -d @request_v11.xml http://localhost:2000/ContactService

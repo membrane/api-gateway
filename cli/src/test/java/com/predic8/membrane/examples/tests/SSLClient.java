@@ -35,7 +35,7 @@ public class SSLClient extends DistributionExtractingTestcase {
 		
 		AssertUtils.replaceInFile(new File(baseDir, "proxies.xml"), "8080", "3023");
 		
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			AssertUtils.assertContains("<title>Google", getAndAssert200("http://localhost:3023/"));
 		} finally {

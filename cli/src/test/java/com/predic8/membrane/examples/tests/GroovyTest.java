@@ -29,7 +29,7 @@ public class GroovyTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
-		Process2 sl = new Process2.Builder().in(getExampleDir("groovy")).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(getExampleDir("groovy")).script("service-proxy").waitForMembrane().start();
 		try {
 			SubstringWaitableConsoleEvent groovyCalled = new SubstringWaitableConsoleEvent(sl, "X-Groovy header added.");
 			getAndAssert200("http://localhost:2000/");

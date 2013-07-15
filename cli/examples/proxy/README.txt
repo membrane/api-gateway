@@ -19,7 +19,7 @@ Execute the following steps:
 
 1. Go to the examples/proxy directory.
 
-2. Execute router.bat
+2. Execute service-proxy.bat
 
 3. Open the URL http://localhost:2000/axis2/services/BLZService?wsdl in your browser.
 

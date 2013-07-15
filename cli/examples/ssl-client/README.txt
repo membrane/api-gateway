@@ -15,6 +15,6 @@ https://www.google.de/
 
 To run the example execute the following steps:
 
-1. Execute router.bat
+1. Execute service-proxy.bat
 
 2. Open the URL http://localhost:8080/ in your browser.

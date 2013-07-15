@@ -23,7 +23,7 @@ To run the example execute the following steps:
 
 2. Execute
 
-   router.bat
+   service-proxy.bat
 
    This will initialize the LoadBalancingInterceptor and associate it with a rule.
 

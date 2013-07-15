@@ -39,7 +39,7 @@ public class LoadBalancerClient2Test extends DistributionExtractingTestcase {
 		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8080", "3023");
 		AssertUtils.replaceInFile(new File(base, "lb-client-secured.proxies.xml"), "8080", "3023");
 		
-		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(base).script("service-proxy").waitForMembrane().start();
 		try {
 			assertEquals(1, LoadBalancerUtil.getRespondingNode("http://localhost:4000/"));
 			assertEquals(2, LoadBalancerUtil.getRespondingNode("http://localhost:4001/"));
@@ -72,7 +72,7 @@ public class LoadBalancerClient2Test extends DistributionExtractingTestcase {
 			sl.killScript();
 		}
 		
-		sl = new Process2.Builder().in(base).script("router-secured").waitForMembrane().start();
+		sl = new Process2.Builder().in(base).script("service-proxy-secured").waitForMembrane().start();
 		try {
 			controlNodeViaScript(1, base, "up", "localhost", 4000); // 1 indicates failure
 			

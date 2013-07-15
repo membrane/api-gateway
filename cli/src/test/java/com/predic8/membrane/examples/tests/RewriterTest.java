@@ -30,7 +30,7 @@ public class RewriterTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("rewriter");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			String result = getAndAssert200("http://localhost:2000/bank/services/BLZService?wsdl");
 			AssertUtils.assertContains("wsdl:documentation", result);

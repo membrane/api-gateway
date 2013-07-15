@@ -7,7 +7,7 @@ To run this example execute the following steps:
 
 1. Go to the directory examples/validation/json-schema.
 
-2. Start router.bat or router.sh.
+2. Start service-proxy.bat or service-proxy.sh.
 
 3. Look at schema2000.json and compare the schema to good2000.json and bad2000.json .
 

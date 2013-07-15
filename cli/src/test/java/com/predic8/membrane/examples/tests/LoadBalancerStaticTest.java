@@ -32,7 +32,7 @@ public class LoadBalancerStaticTest extends DistributionExtractingTestcase {
 		
 		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8080", "3023");
 		
-		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(base).script("service-proxy").waitForMembrane().start();
 		try {
 			for (int i = 0; i < 7; i++)
 				Assert.assertEquals(

@@ -12,7 +12,7 @@ To run the example execute the following steps:
 
 Execute the following steps:
 
-1. Execute examples/cbr/router.bat
+1. Execute examples/cbr/service-proxy.bat
 
    To test the router we will use the command line tool curl that can transfer data with URL syntax. You can download it form the following location:
    

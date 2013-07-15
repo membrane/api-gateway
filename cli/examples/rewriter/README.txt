@@ -14,7 +14,7 @@ We want to hide that this service is hosted by axis2. To do this we have to repl
 
 1. Go to the examples/rewriter directory.
 
-2. Execute router.bat
+2. Execute service-proxy.bat
 
 2. Open the URL http://localhost:2000/bank/services/BLZService?wsdl in your browser.
 

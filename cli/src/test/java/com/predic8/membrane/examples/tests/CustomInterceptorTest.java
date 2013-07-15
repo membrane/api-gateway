@@ -45,7 +45,7 @@ public class CustomInterceptorTest extends DistributionExtractingTestcase {
 		
 		FileUtils.copyDirectoryToDirectory(new File(baseDir, "build/classes"), getMembraneHome());
 		
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			SubstringWaitableConsoleEvent invoked = new SubstringWaitableConsoleEvent(sl, "MyInterceptor invoked");
 			getAndAssert200("http://localhost:2000/");

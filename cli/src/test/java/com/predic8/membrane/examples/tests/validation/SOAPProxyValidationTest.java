@@ -30,7 +30,7 @@ public class SOAPProxyValidationTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("validation" + File.separator + "soap-Proxy");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			String url = "http://localhost:2000/axis2/services/BLZService/getBankResponse";
 			String[] headers = new String[] { "Content-Type", "application/soap+xml" };

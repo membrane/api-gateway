@@ -30,7 +30,7 @@ public class ThrottleTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("throttle");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			getAndAssert200("http://localhost:2000/");
 			long start = System.currentTimeMillis();

@@ -29,7 +29,7 @@ public class LoggingTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
-		Process2 sl = new Process2.Builder().in(getExampleDir("logging")).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(getExampleDir("logging")).script("service-proxy").waitForMembrane().start();
 		try {
 			SubstringWaitableConsoleEvent logged = new SubstringWaitableConsoleEvent(sl, "HTTP/1.1");
 			AssertUtils.getAndAssert200("http://localhost:2000/");

@@ -14,7 +14,7 @@ To run the example execute the following steps:
 
 1. Go to the examples/loadbalancer-basic-1 directory.
 
-2. Execute router.bat
+2. Execute service-proxy.bat
 
 3. Open the URL http://localhost:4000/ in your browser. 
    You will see a simple web app that counts how often it was called. There are 2 more web apps of the same kind

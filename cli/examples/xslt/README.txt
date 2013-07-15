@@ -19,7 +19,7 @@ Execute the following steps:
 
 1. Go to the examples/xslt directory.
 
-2. Execute router.bat or router.sh
+2. Execute service-proxy.bat or service-proxy.sh
 
 2. Open the URL http://www.thomas-bayer.com/samples/sqlrest/CUSTOMER/7/ in your browser.
 

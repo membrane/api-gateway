@@ -7,7 +7,7 @@ Execute the following steps:
 
 1. Go to the directory examples/validation/xml.
 
-2. Start "router.bat" or "router.sh".
+2. Start "service-proxy.bat" or "service-proxy.sh".
 
 3. Run "curl -d @year.xml http://localhost:2000/". Observe that you get a successful response.
 

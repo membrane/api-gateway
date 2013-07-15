@@ -30,7 +30,7 @@ public class JSONSchemaValidationTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("validation" + File.separator + "json-schema");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			for (int port : new int[] { 2000, 2001 }) {
 				postAndAssert(200, "http://localhost:" + port + "/", readFileToString(new File(baseDir, "good" + port + ".json")));

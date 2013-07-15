@@ -10,7 +10,7 @@ In this example we will use the GroovyInterceptor to add a header to the request
 
 Execute the following steps:
 
-1. Execute examples/groovy/router.bat
+1. Execute examples/groovy/service-proxy.bat
 
 2. Open the URL http://localhost:2000 in your browser.
 

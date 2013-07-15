@@ -28,7 +28,7 @@ public class LoginTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
-		Process2 sl = new Process2.Builder().in(getExampleDir("login")).script("router").withWatcher(new ConsoleLogger()).waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(getExampleDir("login")).script("service-proxy").withWatcher(new ConsoleLogger()).waitForMembrane().start();
 		try {
 			String form = AssertUtils.getAndAssert200("http://localhost:2000/");
 			AssertUtils.assertContains("Username:", form);

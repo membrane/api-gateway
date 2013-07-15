@@ -22,7 +22,7 @@ http://db.apache.org/derby/derby_downloads.html
 
 start DERBY_HOME/bin/startNetworkServer.bat
 
-6. Execute router.bat or router.sh
+6. Execute service-proxy.bat or service-proxy.sh
 
 7. Open the URL http://localhost:2000/ in your browser.
 

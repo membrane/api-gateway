@@ -29,7 +29,7 @@ public class ProxyTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("proxy");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
 			getAndAssert200("http://localhost:2001/axis2/services/BLZService?wsdl");

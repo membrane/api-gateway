@@ -34,7 +34,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 	@Test
 	public void doit() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("quickstart-soap");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			ProxiesXmlUtil pxu = new ProxiesXmlUtil(new File(baseDir, "proxies.xml"));
 			pxu.updateWith(

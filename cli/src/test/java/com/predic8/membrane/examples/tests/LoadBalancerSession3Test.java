@@ -42,7 +42,7 @@ public class LoadBalancerSession3Test extends DistributionExtractingTestcase {
 		AssertUtils.replaceInFile(new File(base, "src/com/predic8/chat/Client.java"), "8080", "3023");
 		AssertUtils.replaceInFile(new File(base, "data/ChatService.wsdl"), "8080", "3023");
 		
-		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(base).script("service-proxy").waitForMembrane().start();
 		try {
 
 			File buildXML = new File(base, "build.xml");

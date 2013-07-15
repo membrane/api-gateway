@@ -29,7 +29,7 @@ public class FormValidationTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("validation" + File.separator + "form");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			getAndAssert(400, "http://localhost:2000/?name=Abcde0");
 			getAndAssert(200, "http://localhost:2000/?name=Abcde");

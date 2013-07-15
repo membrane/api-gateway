@@ -36,7 +36,7 @@ public class LoadBalancerBasic1Test extends DistributionExtractingTestcase {
 		
 		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8080", "3023");
 		
-		Process2 sl = new Process2.Builder().in(base).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(base).script("service-proxy").waitForMembrane().start();
 		try {
 			assertEquals(1, LoadBalancerUtil.getRespondingNode("http://localhost:4000/"));
 			assertEquals(2, LoadBalancerUtil.getRespondingNode("http://localhost:4001/"));

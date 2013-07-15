@@ -14,7 +14,7 @@ To run the example execute the following steps:
 
 3. Copy the directory build/classes/com/ to [MEMBRANE_HOME]/classes
 
-4. Execute router.bat or router.sh
+4. Execute service-proxy.bat or service-proxy.sh
 
 5. Open http://localhost:2000/
 

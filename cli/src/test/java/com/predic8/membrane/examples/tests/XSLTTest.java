@@ -30,7 +30,7 @@ public class XSLTTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("xslt");
-		Process2 sl = new Process2.Builder().in(baseDir).script("router").waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			String result = getAndAssert200(BasicAuthTest.CUSTOMER_HOST_REMOTE + BasicAuthTest.CUSTOMER_PATH);
 			AssertUtils.assertContains("FIRSTNAME", result);

@@ -37,14 +37,14 @@
   	<fileSet>
   		<directory>router</directory>
   		<outputDirectory>/</outputDirectory>
-  		<excludes><exclude>memrouter.sh</exclude></excludes>
+  		<excludes><exclude>service-proxy.sh</exclude></excludes>
   		<fileMode>0644</fileMode>
   		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
   		<directory>router</directory>
   		<outputDirectory>/</outputDirectory>
-  		<includes><include>memrouter.sh</include></includes>
+  		<includes><include>service-proxy.sh</include></includes>
   		<fileMode>0755</fileMode>
   		<directoryMode>0755</directoryMode>
   	</fileSet>
