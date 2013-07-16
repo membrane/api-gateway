@@ -49,20 +49,16 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		exc.blockRequestIfNeeded();
 		
-		Response targetRes = null;
-
 		try {
-			targetRes = hc.call(exc, adjustHostHeader, failOverOn5XX);
+			hc.call(exc, adjustHostHeader, failOverOn5XX);
 			return Outcome.RETURN;
 		} catch (ConnectException e) {
-			targetRes = Response.badGateway("Target " + getDestination(exc) + " is not reachable.").build();
+			exc.setResponse(Response.badGateway("Target " + getDestination(exc) + " is not reachable.").build());
 			log.warn("Target " + getDestination(exc) + " is not reachable. " + e);
 			return Outcome.ABORT;
 		} catch (UnknownHostException e) {
-			targetRes = Response.interalServerError("Target host " + HttpUtil.getHostName(getDestination(exc)) + " is unknown. DNS was unable to resolve host name.").build();
+			exc.setResponse(Response.interalServerError("Target host " + HttpUtil.getHostName(getDestination(exc)) + " is unknown. DNS was unable to resolve host name.").build());
 			return Outcome.ABORT;
-		} finally {
-			exc.setResponse(targetRes);
 		}						
 	}
 

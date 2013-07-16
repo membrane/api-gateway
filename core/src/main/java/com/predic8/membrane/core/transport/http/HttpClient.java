@@ -118,11 +118,11 @@ public class HttpClient {
 		return exc.getRule() == null ? null : exc.getRule().getSslOutboundContext();
 	}
 
-	public Response call(Exchange exc) throws Exception {
+	public Exchange call(Exchange exc) throws Exception {
 		return call(exc, true, true);
 	}
 	
-	public Response call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
+	public Exchange call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
 		if (exc.getDestinations().size() == 0)
 			throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
 		
@@ -138,13 +138,18 @@ public class HttpClient {
 				InetAddress targetAddr = InetAddress.getByName(target.host);
 				if (counter == 0) {
 					con = exc.getTargetConnection();
-					if (con != null && !con.isSame(targetAddr, target.port)) {
-						con.close();
-						con = null;
+					if (con != null) {
+						if (!con.isSame(targetAddr, target.port)) {
+							con.close();
+							con = null;
+						} else {
+							con.setKeepAttachedToExchange(true);
+						}
 					}
 				}
 				if (con == null) {
 					con = conMgr.getConnection(targetAddr, target.port, exc.getRule() == null ? null : exc.getRule().getLocalHost(), getOutboundSSLContext(exc), connectTimeout);
+					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}
 				Response response = doCall(exc, con);
@@ -153,8 +158,10 @@ public class HttpClient {
 					applyKeepAliveHeader(response, con);
 					exc.getDestinations().clear();
 					exc.getDestinations().add(dest);
+					con.setExchange(exc);
 					response.addObserver(con);
-					return response;
+					exc.setResponse(response);
+					return exc;
 				}
 				// java.net.SocketException: Software caused connection abort: socket write error
 			} catch (ConnectException e) {

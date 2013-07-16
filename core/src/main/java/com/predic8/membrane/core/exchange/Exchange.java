@@ -168,4 +168,8 @@ public class Exchange extends AbstractExchange {
 		super.detach();
 		handler = null;
 	}
+	
+	public boolean canKeepConnectionAlive() {
+		return getRequest().isKeepAlive() && getResponse().isKeepAlive();
+	}
 }

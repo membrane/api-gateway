@@ -85,7 +85,7 @@ public class LBNotificationClient {
 		r.setBodyContent(new byte[0]);
 		exc.setRequest(r);
 		exc.getDestinations().add(getRequestURL());
-		Response res = client.call(exc);
+		Response res = client.call(exc).getResponse();
 		return res;
 	}
 

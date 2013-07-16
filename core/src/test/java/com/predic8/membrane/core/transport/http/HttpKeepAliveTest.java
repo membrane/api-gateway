@@ -89,20 +89,8 @@ public class HttpKeepAliveTest {
 	
 	private int issueRequest(HttpClient client) throws IOException, Exception {
 		Exchange exchange = createExchange();
-		Response response = client.call(exchange);
-		exchange.setResponse(response);
+		Response response = client.call(exchange).getResponse();
 		response.readBody();
-		
-		// TODO: refactor this connection-closing code into a MessageObserver
-		boolean canKeepConnectionAlive = exchange.getRequest().isKeepAlive() && exchange.getResponse().isKeepAlive(); 
-		if (exchange.getTargetConnection() != null) {
-			if (canKeepConnectionAlive)
-				exchange.getTargetConnection().release();
-			else
-				exchange.getTargetConnection().close();
-			exchange.setTargetConnection(null); // detach Connection from Exchange
-		}
-
 		return response.getStatusCode();
 	}
 

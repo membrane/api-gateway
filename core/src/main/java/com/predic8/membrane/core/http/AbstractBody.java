@@ -63,6 +63,7 @@ public abstract class AbstractBody {
 		read = true;
 		for (MessageObserver observer : observers)
 			observer.bodyComplete(this);
+		observers.clear();
 	}
 	
 	protected abstract void readLocal() throws IOException;
@@ -181,8 +182,10 @@ public abstract class AbstractBody {
 	}
 	
 	void addObserver(MessageObserver observer) {
-		observers.add(observer);
-		if (read)
+		if (read) {
 			observer.bodyComplete(this);
+			return;
+		}
+		observers.add(observer);
 	}
 }

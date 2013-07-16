@@ -91,7 +91,8 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 				buildExchange();
 		
 		try {
-			Response response = hc.call(exc);
+			Response response = hc.call(exc).getResponse();
+			response.readBody();
 
 			if (response.getStatusCode() != 200) {
 				String body = StringUtils.defaultString(response.getBodyAsStringDecoded());
@@ -104,13 +105,6 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 			log.debug("sent SMS to " + recipientNumber);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
-		} finally {
-			try {
-				if (exc.getTargetConnection() != null)
-					exc.getTargetConnection().close();
-			} catch (Exception e) {
-				log.error(e);
-			}
 		}
 	}
 
@@ -124,7 +118,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 				url("https://sts.idm.telekom.com/rest-v1/tokens/odg").
 				header("Authorization", "Basic " + new String(Base64.encodeBase64((user + ":" + password).getBytes("UTF-8")), "UTF-8")).
 				header("Accept", "application/json").buildExchange();
-		Response response = hc.call(g);
+		Response response = hc.call(g).getResponse();
 		
 		if (response.getStatusCode() != 200)
 			throw new Exception("Authentication failed: " + response.getBodyAsStringDecoded());

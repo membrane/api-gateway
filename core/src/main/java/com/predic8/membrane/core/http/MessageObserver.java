@@ -30,6 +30,17 @@ import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
  * {@link MessageObserver} will the write the body into permanent storage.
  */
 public interface MessageObserver {
-	public void bodyComplete(AbstractBody body);
 	public void bodyRequested(AbstractBody body);
+
+	/**
+	 * Notification that the body has fully been received.
+	 * 
+	 * Note that this event may run instantaneously (during the call to
+	 * {@link Message#addObserver(MessageObserver)}), as the body may have
+	 * already been fully received when registering the observer.
+	 * 
+	 * This is the last event that will be fired on any MessageObserver.
+	 */
+	public void bodyComplete(AbstractBody body);
+	
 }

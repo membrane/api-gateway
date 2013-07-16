@@ -78,16 +78,6 @@ class HttpServletHandler extends AbstractHttpHandler {
 			exchange.getRequest().readBody(); // read if not alread read
 			writeResponse(exchange.getResponse());
 			exchange.setCompleted();
-			
-			if (exchange.getTargetConnection() != null) {
-				if (canKeepConnectionAlive(srcReq)) {
-					exchange.getTargetConnection().release();
-				} else {
-					exchange.getTargetConnection().close();
-				}
-				exchange.setTargetConnection(null); // detach Connection from Exchange
-			}
-			
 		} catch (EndOfStreamException e) {
 			log.debug("stream closed");
 		} catch (EOFWhileReadingFirstLineException e) {
@@ -99,10 +89,6 @@ class HttpServletHandler extends AbstractHttpHandler {
 			exchange.detach();
 		}
 		
-	}
-	
-	private boolean canKeepConnectionAlive(Request srcReq) {
-		return srcReq.isKeepAlive() && exchange.getResponse().isKeepAlive();
 	}
 	
 	@SuppressWarnings("deprecation")

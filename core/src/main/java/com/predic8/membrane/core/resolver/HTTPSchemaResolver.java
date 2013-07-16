@@ -52,19 +52,16 @@ public class HTTPSchemaResolver implements SchemaResolver {
 	public InputStream resolve(String url) throws FileNotFoundException {
 		try {
 		    Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
-		    Response response = getHttpClient().call(exc);
-		    try {
-		    	if(response.getStatusCode() != 200) {
-		    		DownloadException rde = new DownloadException("");
-		    		rde.setStatus(response.getStatusCode());
-		    		rde.setUrl(url);
-		    		throw rde;
-		    	}
-		    	return new ByteArrayInputStream(ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded()));
-		    } finally {
-		    	if (exc.getTargetConnection() != null)
-		    		exc.getTargetConnection().close();
-		    }
+		    Response response = getHttpClient().call(exc).getResponse();
+		    response.readBody();
+		    
+	    	if(response.getStatusCode() != 200) {
+	    		DownloadException rde = new DownloadException("");
+	    		rde.setStatus(response.getStatusCode());
+	    		rde.setUrl(url);
+	    		throw rde;
+	    	}
+	    	return new ByteArrayInputStream(ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded()));
 		} catch (DownloadException e) {
 			throw e;
 		} catch (Exception e) {

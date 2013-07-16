@@ -118,7 +118,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 
 	private void callRegistry(String uri) {
 		try {
-			Response res = hc.call(createExchange(uri));
+			Response res = hc.call(createExchange(uri)).getResponse();
 			if (res.getStatusCode() != 200)
 				log.warn(res);
 		} catch (Exception e) {

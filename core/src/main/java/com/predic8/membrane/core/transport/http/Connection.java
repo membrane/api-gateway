@@ -30,10 +30,26 @@ import javax.net.ssl.SSLSocket;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.MessageObserver;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.SSLContext;
 
+/**
+ * A {@link Connection} is an outbound TCP/IP connection, possibly managed
+ * by a {@link ConnectionManager}.
+ * 
+ * It is symbiotic to an {@link Exchange} during the exchange's HTTP client
+ * call, which starts in {@link HttpClient#call(Exchange)} and ends when the
+ * HTTP response body has fully been read (or never, if
+ * {@link Request#isBindTargetConnectionToIncoming()} is true).
+ * 
+ * The connection will be registered by the {@link HttpClient} as a
+ * {@link MessageObserver} on the {@link Response} to get notified when the HTTP
+ * response body has fully been read and it should deassociate itself from the
+ * exchange.
+ */
 public class Connection implements MessageObserver {
 	
 	private static Log log = LogFactory.getLog(Connection.class.getName());
@@ -42,10 +58,14 @@ public class Connection implements MessageObserver {
 	public Socket socket;
 	public InputStream in;
 	public OutputStream out;
+	
 	private long lastUse;
 	private long timeout;
 	private int maxExchanges = Integer.MAX_VALUE;
 	private int completedExchanges;
+
+	private Exchange exchange;
+	private boolean keepAttachedToExchange;
 
 	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext, int connectTimeout) throws UnknownHostException, IOException {
 		return open(host, port, localHost, sslContext, null, connectTimeout);
@@ -132,7 +152,28 @@ public class Connection implements MessageObserver {
 	public void bodyComplete(AbstractBody body) {
 		lastUse = System.currentTimeMillis();
 		completedExchanges++;
+		
+		try {
+			if (exchange != null) {
+				if (exchange.canKeepConnectionAlive()) {
+					if (keepAttachedToExchange)
+						return;
+					else
+						release();
+				} else {
+					close();
+				}
+				exchange.setTargetConnection(null);
+				exchange = null;
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
 	}
+		
+	
+	
 
 	public final void setTimeout(long timeout) {
 		this.timeout = timeout;
@@ -156,5 +197,14 @@ public class Connection implements MessageObserver {
 	
 	public final long getLastUse() {
 		return lastUse;
+	}
+	
+	
+	void setKeepAttachedToExchange(boolean keepAttachedToExchange) {
+		this.keepAttachedToExchange = keepAttachedToExchange;
+	}
+	
+	void setExchange(Exchange exchange) {
+		this.exchange = exchange;
 	}
 }
