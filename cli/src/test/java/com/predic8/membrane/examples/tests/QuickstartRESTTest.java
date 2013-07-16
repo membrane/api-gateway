@@ -51,11 +51,9 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 					"\r\n" + 
 					"       <serviceProxy name=\"names\" port=\"2000\">\r\n" + 
 					"         <path isRegExp=\"true\">/(rest)?names.*</path>\r\n" + 
-					"         <request>\r\n" + 
-					"           <rewriter>\r\n" + 
-					"             <map from=\"/names/(.*)\" to=\"/restnames/name\\.groovy\\?name=$1\" />\r\n" + 
-					"           </rewriter>\r\n" + 
-					"         </request>\r\n" + 
+					"         <rewriter>\r\n" + 
+					"           <map from=\"/names/(.*)\" to=\"/restnames/name\\.groovy\\?name=$1\" />\r\n" + 
+					"         </rewriter>\r\n" + 
 					"         <statisticsCSV file=\"log.csv\" />\r\n" + 
 					"         <response>\r\n" + 
 					"           <regExReplacer regex=\"\\s*,\\s*&lt;\" replace=\"&lt;\" />\r\n" + 
