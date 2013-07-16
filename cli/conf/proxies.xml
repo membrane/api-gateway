@@ -15,6 +15,8 @@
 	distribution for several examples of how to configure different ESB
 	features within this file.
 	
+	Use an XML editor with XML Schema syntax completion for easy editing.
+	
 	Changes to this file will be picked up almost instantly if Membrane is
 	running	once this file has been saved. Any dynamic configuration changes
 	made (for example, via the adminConsole) will be forgotten.
