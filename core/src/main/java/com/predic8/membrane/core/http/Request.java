@@ -237,6 +237,11 @@ public class Request extends Message {
 			req.setBodyContent(body.getBytes());
 			return this;
 		}
+
+		public Builder body(byte[] body) {
+			req.setBodyContent(body);
+			return this;
+		}
 	}
 	
 }

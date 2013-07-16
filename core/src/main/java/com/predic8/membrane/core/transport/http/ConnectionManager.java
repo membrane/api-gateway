@@ -89,8 +89,10 @@ public class ConnectionManager {
 			long delta = connection.getTimeout();
 			if (delta == 0)
 				delta = defaultKeepAliveTimeout;
-			if (delta > 0)
-				delta -= 1; // slippage
+			if (delta > 400)
+				delta -= 400; // slippage
+			else
+				delta = 0;
 			if (connection.getCompletedExchanges() >= connection.getMaxExchanges())
 				delta = 0; // let the background closer do its job
 			this.deathTime = lastUse + delta;

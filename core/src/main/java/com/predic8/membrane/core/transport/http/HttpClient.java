@@ -198,7 +198,7 @@ public class HttpClient {
 		
 		long timeout = Header.parseKeepAliveHeader(value, Header.TIMEOUT);
 		if (timeout != -1)
-			con.setTimeout(timeout);
+			con.setTimeout(timeout * 1000);
 		
 		long max = Header.parseKeepAliveHeader(value, Header.MAX);
 		if (max != -1 && max < con.getMaxExchanges())
