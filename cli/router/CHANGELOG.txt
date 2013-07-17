@@ -1,6 +1,26 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.7 (early access)
+
+* [changed behavior] reduced default HTTP client keep-alive timeout to 4s, as
+  newer Apache versions use 5s. Parse the HTTP response "Keep-Alive" header
+  "timeout" and "max" parameters when the backend indicates other keep-alive
+  values.
+  
+* [bugfix] small issues and regressions
+
+* [changed behavior] Return HTTP status code 500 if too many "X-Forwarded-For"
+  request headers are present, preventing infinite forwarding loops.
+ 
+* [release] 4.0.6 (early access)
+
+* [changed behavior] If a WSDL referenced by <soapProxy wsdl="..."> cannot be
+  downloaded during startup, this <soapProxy> rule will be inactive.
+  Reinitialization will be automatically attempted every 5 minutes (by default,
+  configurable using <router retryInitInterval="300000">) or can be initiated
+  manually through the admin console.
+
 * [release] 4.0.5 (early access)
 
 * [development]
@@ -27,7 +47,7 @@ Membrane Service Proxy Change Log
   Every element and attribute shown here is optional: The minimal configuration
   is just <httpClient />.
   If you are interested in all the new things you can do with the
-  httpClientConfig, have a look at ???????????????.
+  httpClientConfig, have a look at the examples/proxy folder.
   
 * All Apache HttpClient instances have been replaced by Membrane's HttpClient
   (the Apache HttpClient was formerly used to retrieve any secondary resource,
