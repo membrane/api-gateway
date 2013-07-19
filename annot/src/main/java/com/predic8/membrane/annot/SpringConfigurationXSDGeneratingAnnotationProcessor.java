@@ -26,6 +26,7 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
+import com.predic8.membrane.annot.generator.HelpReference;
 import com.predic8.membrane.annot.generator.Parsers;
 import com.predic8.membrane.annot.generator.Schemas;
 import com.predic8.membrane.annot.model.AttributeInfo;
@@ -255,6 +256,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				new Schemas(processingEnv).writeXSD(m);
 				new Parsers(processingEnv).writeParsers(m);
 				new Parsers(processingEnv).writeParserDefinitior(m);
+				new HelpReference(processingEnv).writeHelp(m);
 			}
 
 			return true;

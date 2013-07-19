@@ -180,8 +180,8 @@ public class CustomSpringConfigurationTest {
 
 	private void assertBasicAuthenticationInterceptor(
 			BasicAuthenticationInterceptor i) {
-		assertTrue(i.getUsers().containsKey("jim"));
-		assertTrue(i.getUsers().containsValue("password"));
+		assertTrue(i.getUsersByName().containsKey("jim"));
+		assertEquals("password", i.getUsersByName().get("jim").getPassword());
 	}
 
 	private void assertRewriterInterceptor(RewriteInterceptor i) {

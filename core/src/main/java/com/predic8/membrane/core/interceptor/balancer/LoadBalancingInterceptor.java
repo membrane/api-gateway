@@ -143,6 +143,10 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	/**
 	 * This is *NOT* {@link #setDisplayName(String)}, but the balancer's name
 	 * set in the proxy configuration to identify this balancer.
+	 * @description Uniquely identifies this Load Balancer, if there is more than one. Used
+	 * in the web administration interface and lbclient to manage nodes.
+	 * @example balancer1
+	 * @default Default
 	 */
 	@MCAttribute
 	public void setName(String name) throws Exception {
@@ -162,6 +166,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return strategy;
 	}
 
+	/**
+	 * @description Sets the strategy used to choose the backend nodes.
+	 */
 	@MCChildElement(order=3)
 	public void setDispatchingStrategy(DispatchingStrategy strategy) {
 		this.strategy = strategy;
@@ -175,6 +182,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return sessionIdExtractor;
 	}
 
+	/**
+	 * @description Sets the strategy used to extract a session ID from incoming HTTP requests.
+	 */
 	@MCChildElement(order=1)
 	public void setSessionIdExtractor(
 			AbstractSessionIdExtractor sessionIdExtractor) {
@@ -193,6 +203,10 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return balancer;
 	}
 	
+	/**
+	 * @description Specifies a list of clusters.
+	 * @param balancers
+	 */
 	@MCChildElement(order=2)
 	public void setClustersFromSpring(List<Balancer> balancers) {
 		List<Cluster> clusters = new ArrayList<Cluster>();
@@ -223,6 +237,12 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return balancer.getSessionTimeout();
 	}
 
+	/**
+	 * @description Time in milliseconds after which sessions time out. (If a session
+	 * extractor is used.) Default is 1 hour, 0 means never.
+	 * @example 600000 <i>(10min)</i>
+	 * @default 3600000
+	 */
 	@MCAttribute
 	public void setSessionTimeout(long sessionTimeout) {
 		balancer.setSessionTimeout(sessionTimeout);

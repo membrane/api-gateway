@@ -29,6 +29,14 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.HttpUtil;
 
+/**
+ * @description The <i>httpClient</i> sends the request of an exchange to a Web
+ *              Server using the HTTP protocol. Usually it will be globally used
+ *              inside the transport. However, it is also possible to use it
+ *              inside a proxy to give the proxy an individual configuration for
+ *              its outgoing HTTP connection that is different from the global
+ *              configuration in the transport.
+ */
 @MCElement(name="httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
@@ -85,7 +93,13 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	public boolean isFailOverOn5XX() {
 		return failOverOn5XX;
 	}
-	
+
+	/**
+	 * @description Whether to retry again (possibly the next node, when load
+	 *              balancing is active) after a HTTP status code
+	 *              500&le;<i>x</i>&lt;600 was received.
+	 * @default false
+	 */
 	@MCAttribute
 	public void setFailOverOn5XX(boolean failOverOn5XX) {
 		this.failOverOn5XX = failOverOn5XX;

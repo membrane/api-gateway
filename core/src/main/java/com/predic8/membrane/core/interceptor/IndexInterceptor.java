@@ -34,6 +34,12 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HostColonPort;
 import com.predic8.membrane.core.transport.http.HttpServerHandler;
 
+/**
+ * @description The index feature lists available proxys at a simple Web page.
+ *              To use this feature just add a serviceProxy containing the index
+ *              element. Of course you can protect the service proxy by using
+ *              SSL or Username and Password.
+ */
 @MCElement(name="index")
 public class IndexInterceptor extends AbstractInterceptor {
 	

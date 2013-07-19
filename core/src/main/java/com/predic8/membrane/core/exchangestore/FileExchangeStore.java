@@ -171,6 +171,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return dir;
 	}
 
+	/**
+	 * @description Directory where the exchanges are saved.
+	 * @example logs
+	 */
 	@Required
 	@MCAttribute
 	public void setDir(String dir) {
@@ -181,6 +185,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return raw;
 	}
 
+	/**
+	 * @default false
+	 * @example true
+	 */
 	@MCAttribute
 	public void setRaw(boolean raw) {
 		this.raw = raw;
@@ -210,6 +218,10 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		return saveBodyOnly;
 	}
 
+	/**
+	 * @default false
+	 * @example true
+	 */
 	@MCAttribute
 	public void setSaveBodyOnly(boolean saveBodyOnly) {
 		this.saveBodyOnly = saveBodyOnly;

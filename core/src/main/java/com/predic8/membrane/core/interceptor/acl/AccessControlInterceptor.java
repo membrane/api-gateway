@@ -69,6 +69,10 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		exc.setResponse(Response.forbidden("Access denied: you are not authorized to access this service.").build());
 	}
 
+	/**
+	 * @description Location of the ACL file.
+	 * @example acl/acl.xml
+	 */
 	@Required
 	@MCAttribute
 	public void setFile(String file) {

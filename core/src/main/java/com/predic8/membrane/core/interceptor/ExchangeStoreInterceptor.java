@@ -91,6 +91,10 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 		return store;		
 	}
 
+	/**
+	 * @description Bean name of the exchange store defined as a spring bean.
+	 * @example forgetfulExchangeStore
+	 */
 	@MCAttribute(attributeName="name")
 	public void setExchangeStore(ExchangeStore exchangeStore) {
 		store = exchangeStore;

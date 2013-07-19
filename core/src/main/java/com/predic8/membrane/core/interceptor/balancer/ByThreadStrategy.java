@@ -73,6 +73,9 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 		throw new RuntimeException("All available servers are busy.");
 	}
 
+	/**
+	 * @description Maximum number of concurrently running requests per endpoint.
+	 */
 	@MCAttribute
 	public void setMaxNumberOfThreadsPerEndpoint(int maxNumberOfThreadsPerEndpoint) {
 		this.maxNumberOfThreadsPerEndpoint = maxNumberOfThreadsPerEndpoint;

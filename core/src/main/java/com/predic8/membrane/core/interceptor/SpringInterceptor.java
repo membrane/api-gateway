@@ -31,6 +31,10 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	private Interceptor i;
 	private ApplicationContext ac;
 	
+	/**
+	 * @description Spring bean id of the referenced interceptor.
+	 * @example myInterceptor
+	 */
 	@Required
 	@MCAttribute(attributeName="refid")
 	public void setRefId(String refid) {

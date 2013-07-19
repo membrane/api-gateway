@@ -110,7 +110,10 @@ public class Cluster {
 			}
 		};
 	}
-	
+
+	/**
+	 * @description Specifies a node.
+	 */
 	@MCChildElement
 	public void setNodes(List<Node> nodes) {
 		this.nodes.clear();
@@ -121,6 +124,10 @@ public class Cluster {
 		return name;
 	}
 
+	/**
+	 * @description Sets the name of the cluster.
+	 * @default Default
+	 */
 	@MCAttribute
 	public void setName(String name) {
 		this.name = name;

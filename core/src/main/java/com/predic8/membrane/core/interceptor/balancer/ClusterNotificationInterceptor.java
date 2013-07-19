@@ -142,6 +142,9 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		return validateSignature;
 	}
 
+	/**
+	 * @description Set Push Interface to encrypted mode.
+	 */
 	@MCAttribute
 	public void setValidateSignature(boolean validateSignature) {
 		this.validateSignature = validateSignature;
@@ -151,6 +154,10 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		return timeout;
 	}
 
+	/**
+	 * @description Timestamp invalidation period. (0=unlimited)
+	 * @example 5000
+	 */
 	@MCAttribute
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
@@ -160,6 +167,11 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 		return keyHex;
 	}
 
+	/**
+	 * @description Key used by encryption as hex string
+	 * @example 6f488a642b740fb70c5250987a284dc0
+	 * @param keyHex
+	 */
 	@MCAttribute
 	public void setKeyHex(String keyHex) {
 		this.keyHex = keyHex;

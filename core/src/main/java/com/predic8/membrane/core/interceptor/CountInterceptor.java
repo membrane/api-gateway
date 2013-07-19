@@ -77,6 +77,10 @@ public class CountInterceptor extends AbstractInterceptor {
 		return "Counter: " + super.getDisplayName();
 	}
 	
+	/**
+	 * @description Sets the name that will be displayed on the web page.
+	 * @example Mock Node 1
+	 */
 	@Required
 	@MCAttribute(attributeName="name")
 	@Override

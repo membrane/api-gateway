@@ -17,25 +17,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.log4j.Logger;
 
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 
-@MCElement(name="headerFilter", xsd="" +
-		"					<xsd:sequence maxOccurs=\"unbounded\">\r\n" + 
-		"						<xsd:choice>\r\n" + 
-		"							<xsd:element name=\"include\" type=\"xsd:string\" />\r\n" + 
-		"							<xsd:element name=\"exclude\" type=\"xsd:string\" />\r\n" + 
-		"						</xsd:choice>\r\n" + 
-		"					</xsd:sequence>\r\n" + 
-		"", generateParserClass=false)
+/**
+ * @description Removes message headers matching a list of patterns.
+ * The first matching child element will be acted upon by the filter.
+ */
+@MCElement(name="headerFilter")
 public class HeaderFilterInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = Logger.getLogger(HeaderFilterInterceptor.class);
@@ -49,14 +44,28 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 	public enum Action { KEEP, REMOVE }
 	
 	public static class Rule {
-		private final String pattern;
-		private final Pattern p;
 		private final Action action;
-		
+
+		private String pattern;
+		private Pattern p;
+
+		public Rule(Action action) {
+			this.action = action;
+		}
+
 		public Rule(String pattern, Action action) {
+			this(action);
+			setPattern(pattern);
+		}
+
+		public String getPattern() {
+			return pattern;
+		}
+
+		@MCTextContent
+		public void setPattern(String pattern) {
 			this.pattern = pattern;
 			p = Pattern.compile(pattern);
-			this.action = action;
 		}
 		
 		public boolean matches(String header) {
@@ -67,11 +76,25 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 			return action;
 		}
 		
-		protected void write(XMLStreamWriter out)
-				throws XMLStreamException {
-			out.writeStartElement(getClass().getSimpleName().toLowerCase());
-			out.writeCharacters(pattern);
-			out.writeEndElement();
+	}
+	
+	/**
+	 * @description Contains a Java regex for <i>including</i> message headers.
+	 */
+	@MCElement(name="include", mixed=true)
+	public static class Include extends Rule {
+		public Include() {
+			super(Action.KEEP);
+		}
+	}
+
+	/**
+	 * @description Contains a Java regex for <i>excluding</i> message headers.
+	 */
+	@MCElement(name="exclude", mixed=true)
+	public static class Exclude extends Rule {
+		public Exclude() {
+			super(Action.REMOVE);
 		}
 	}
 	

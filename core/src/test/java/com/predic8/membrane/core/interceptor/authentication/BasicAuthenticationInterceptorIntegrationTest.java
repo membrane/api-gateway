@@ -15,14 +15,15 @@
 package com.predic8.membrane.core.interceptor.authentication;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor.User;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
@@ -38,9 +39,10 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		
 		BasicAuthenticationInterceptor interceptor = new BasicAuthenticationInterceptor();
-		Map<String, String> mapping = new HashMap<String, String>();
-		mapping.put("admin", "admin");
-		interceptor.setUsers(mapping );
+		
+		List<User> users = new ArrayList<BasicAuthenticationInterceptor.User>();
+		users.add(new BasicAuthenticationInterceptor.User("admin", "admin"));
+		interceptor.setUsers(users );
 		
 		router.addUserFeatureInterceptor(interceptor);
 		router.init();

@@ -39,6 +39,10 @@ public class Case extends AbstractXmlElement {
 		return url;
 	}
 
+	/**
+	 * @description Target URL
+	 * @example http://predic8.com/fastorder
+	 */
 	@MCAttribute
 	public void setUrl(String url) {
 		this.url = url;
@@ -59,6 +63,10 @@ public class Case extends AbstractXmlElement {
 		return xPath;
 	}
 
+	/**
+	 * @description XPath expression.
+	 * @example //fastorder/
+	 */
 	@Required
 	@MCAttribute
 	public void setxPath(String xPath) {

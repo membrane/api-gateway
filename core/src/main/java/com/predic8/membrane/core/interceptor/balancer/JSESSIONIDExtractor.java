@@ -22,6 +22,10 @@ import org.apache.commons.logging.*;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.http.Message;
 
+/**
+ * @description The <i>jSessionIdExtractor</i> extracts the JSESSIONID from a
+ *              message and provides it to the {@link Balancer}.
+ */
 @MCElement(name="jSessionIdExtractor", group="sessionIdExtractor")
 public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
 

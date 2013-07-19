@@ -71,6 +71,10 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		return dapi.isReadOnly();
 	}
 	
+	/**
+	 * @description Whether runtime changes to Membrane's configuration can be committed in the admin console.
+	 * @default false
+	 */
 	@MCAttribute
 	public void setReadOnly(boolean readOnly) {
 		rai.setReadOnly(readOnly);

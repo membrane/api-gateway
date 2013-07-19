@@ -14,12 +14,17 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.web.util.HtmlUtils;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -29,20 +34,44 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
 
-@MCElement(name="basicAuthentication", xsd="" +
-		"<xsd:sequence>\r\n" + 
-		"	<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:sequence />\r\n" + 
-		"			<xsd:attribute name=\"name\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"			<xsd:attribute name=\"password\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
-		"</xsd:sequence>\r\n" + 
-		"", generateParserClass=false)
+@MCElement(name="basicAuthentication")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
+	
+	@MCElement(name="user", topLevel=false)
+	public static class User {
+		private String name, password;
+		
+		public User() {
+		}
+		
+		public User(String name, String password) {
+			setName(name);
+			setPassword(password);
+		}
 
-	private Map<String, String> users = new HashMap<String, String>();
+		public String getName() {
+			return name;
+		}
+		
+		@Required
+		@MCAttribute
+		public void setName(String name) {
+			this.name = name;
+		}
+		
+		public String getPassword() {
+			return password;
+		}
+		
+		@Required
+		@MCAttribute
+		public void setPassword(String password) {
+			this.password = password;
+		}
+	}
+
+	private List<User> users = new ArrayList<User>();
+	private Map<String, User> usersByName = new HashMap<String, User>();
 	
 	public BasicAuthenticationInterceptor() {
 		name = "Basic Authenticator";		
@@ -59,8 +88,8 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private boolean validUser(Exchange exc) throws Exception {		
-		return users.containsKey(getUsername(exc)) && 
-			   users.get(getUsername(exc)).equals(getPassword(exc));
+		return usersByName.containsKey(getUsername(exc)) && 
+			   usersByName.get(getUsername(exc)).getPassword().equals(getPassword(exc));
 	}
 
 	private String getUsername(Exchange exc) throws Exception {
@@ -78,7 +107,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private boolean hasNoAuthorizationHeader(Exchange exc) {
-		return exc.getRequest().getHeader().getFirstValue("Authorization")==null;
+		return exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION)==null;
 	}
 	
 	/**
@@ -89,12 +118,28 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		return new String(Base64.decodeBase64(value.substring(6).getBytes(Constants.UTF_8_CHARSET)), Constants.UTF_8_CHARSET);
 	}
 
-	public Map<String, String> getUsers() {
+	public List<User> getUsers() {
 		return users;
 	}
+	
+	public Map<String, User> getUsersByName() {
+		return usersByName;
+	}
 
-	public void setUsers(Map<String, String> users) {
+	/**
+	 * @description A list of username/password combinations to accept.
+	 */
+	@Required
+	@MCChildElement
+	public void setUsers(List<User> users) {
 		this.users = users;
+	}
+	
+	@Override
+	public void init() throws Exception {
+		usersByName.clear();
+		for (User user : users)
+			usersByName.put(user.getName(), user);
 	}
 
 	@Override
@@ -108,8 +153,8 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		sb.append(getShortDescription());
 		sb.append("<br/>");
 		sb.append("Users: ");
-		for (String user : users.keySet()) {
-			sb.append(HtmlUtils.htmlEscape(user));
+		for (User user : users) {
+			sb.append(HtmlUtils.htmlEscape(user.getName()));
 			sb.append(", ");
 		}
 		sb.delete(sb.length()-2, sb.length());

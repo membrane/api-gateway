@@ -36,6 +36,9 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URLParamUtil;
 
+/**
+ * @description Using the formValidation interceptor you can validate the input of HTML forms.
+ */
 @MCElement(name="formValidation")
 public class FormValidationInterceptor extends AbstractInterceptor {
 
@@ -70,6 +73,10 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 			return name;
 		}
 
+		/**
+		 * @description Name of the form parameter.
+		 * @example age
+		 */
 		@Required
 		@MCAttribute
 		public void setName(String name) {
@@ -80,6 +87,10 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 			return regex;
 		}
 
+		/**
+		 * @description Java Regular expression
+		 * @example \d+
+		 */
 		@Required
 		@MCAttribute
 		public void setRegex(String regex) {
@@ -133,6 +144,9 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 		return fields;
 	}
 
+	/**
+	 * @description Specifies the name of the parameter and the regex to match against.
+	 */
 	@Required
 	@MCChildElement
 	public void setFields(List<Field> fields) {

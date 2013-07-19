@@ -30,6 +30,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
 
 /**
+ * @description
  * Keeps track of blocked user accounts (accounts become blocked after too many failed logins).
  */
 @MCElement(name="accountBlocker", group="accountBlocker")

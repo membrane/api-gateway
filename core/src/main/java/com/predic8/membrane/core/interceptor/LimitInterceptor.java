@@ -61,6 +61,10 @@ public class LimitInterceptor extends AbstractInterceptor {
 		return maxBodyLength;
 	}
 	
+	/**
+	 * @description The maximal length of a message body.
+	 * @example 10485760
+	 */
 	@MCAttribute
 	public void setMaxBodyLength(long maxBodyLength) {
 		this.maxBodyLength = maxBodyLength;
