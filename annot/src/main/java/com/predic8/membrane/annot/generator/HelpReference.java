@@ -8,8 +8,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -41,6 +39,10 @@ public class HelpReference {
 
 	public void writeHelp(Model m) {
 		try {
+			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
+			if (path == null)
+				return;
+			path.replace("%VERSION%", "4.0");
 
 			// serialize
 	        StringWriter sw = new StringWriter();
@@ -55,7 +57,7 @@ public class HelpReference {
 	        Transformer transformer = factory.newTransformer();
 	        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 	        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-	        transformer.transform(new StreamSource(new StringReader(sw.toString())), new StreamResult(new File("target/" + getFileName(m) + ".xml")));
+	        transformer.transform(new StreamSource(new StringReader(sw.toString())), new StreamResult(new File(path + "/" + getFileName(m) + ".xml")));
 
 			xew = null;
 		} catch (Exception e) {

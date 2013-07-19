@@ -18,7 +18,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -140,6 +142,11 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 		return rules;
 	}
 	
+	/**
+	 * @description List of actions to take (either allowing or removing HTTP headers).
+	 */
+	@Required
+	@MCChildElement
 	public void setRules(List<Rule> rules) {
 		this.rules = rules;
 	}
