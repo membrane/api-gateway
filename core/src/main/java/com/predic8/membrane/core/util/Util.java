@@ -15,9 +15,17 @@
 package com.predic8.membrane.core.util;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.HashMap;
 
 import javax.net.ssl.SSLSocket;
+
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonParser;
+
+import com.predic8.membrane.core.http.Response;
 
 public class Util {
 	
@@ -37,5 +45,30 @@ public class Util {
 			socket.shutdownInput();
 		}
 	}
+
+	public static HashMap<String, String> parseSimpleJSONResponse(Response g) throws IOException, JsonParseException {
+		HashMap<String, String> values = new HashMap<String, String>();
+
+		String contentType = g.getHeader().getFirstValue("Content-Type");
+		if (contentType != null && "application/json".equals(contentType)) {
+			final JsonFactory jsonFactory = new JsonFactory();
+			final JsonParser jp = jsonFactory.createJsonParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
+			String name = null;
+			while (jp.nextToken() != null) {
+				switch (jp.getCurrentToken()) {
+				case FIELD_NAME:
+					name = jp.getCurrentName();
+					break;
+				case VALUE_STRING:
+					values.put(name, jp.getText());
+					break;
+				default:
+					break;
+				}
+			}
+		}
+		return values;
+	}
+
 
 }
