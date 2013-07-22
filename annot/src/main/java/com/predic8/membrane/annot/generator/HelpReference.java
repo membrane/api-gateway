@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -20,6 +22,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import com.predic8.membrane.annot.ProcessingException;
 import com.predic8.membrane.annot.model.AttributeInfo;
 import com.predic8.membrane.annot.model.ChildElementInfo;
 import com.predic8.membrane.annot.model.ElementInfo;
@@ -77,7 +80,6 @@ public class HelpReference {
 				sb.append("-");
 			sb.append(packages.get(i));
 		}
-		System.err.println(sb.toString());
 		return sb.toString();
 	}
 
@@ -114,6 +116,14 @@ public class HelpReference {
 		handleDoc(ei.getElement());
 		
 		List<AttributeInfo> ais = ei.getAis();
+		Collections.sort(ais, new Comparator<AttributeInfo>() {
+
+			@Override
+			public int compare(AttributeInfo o1, AttributeInfo o2) {
+				return o1.getXMLName().compareTo(o2.getXMLName());
+			}
+			
+		});
 		if (ais.size() > 0 && ais.get(0).getXMLName().equals("id"))
 			ais.remove(0);
 		if (ais.size() > 0) {
@@ -135,12 +145,16 @@ public class HelpReference {
 	}
 
 	private HashMap<String, Integer> ids = new HashMap<String, Integer>();
+	private HashMap<Integer, String> idsReverse = new HashMap<Integer, String>();
 	
 	private int getId(String xsdTypeName) {
 		if (ids.containsKey(xsdTypeName))
 			return ids.get(xsdTypeName);
 		int id = Math.abs(xsdTypeName.hashCode());
+		if (idsReverse.containsKey(id))
+			throw new ProcessingException("ID-assigning algorithm failed (two XSD types got the same ID)");
 		ids.put(xsdTypeName, id);
+		idsReverse.put(id, xsdTypeName);
 		return id;
 	}
 
@@ -151,9 +165,13 @@ public class HelpReference {
 		
 		handleDoc(cei.getE());
 		
+		SortedSet<String> possibilities = new TreeSet<String>();
 		for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
+			possibilities.add("" + getId(ei.getXSDTypeName(m)));
+		}
+		for (String id : possibilities) {
 			xew.writeStartElement("possibility");
-			xew.writeAttribute("refId", "element-" + getId(ei.getXSDTypeName(m)));
+			xew.writeAttribute("refId", "element-" + id);
 			xew.writeEndElement();
 		}
 		
