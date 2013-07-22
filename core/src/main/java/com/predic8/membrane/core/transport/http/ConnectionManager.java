@@ -168,7 +168,7 @@ public class ConnectionManager {
 	private int closeOldConnections() {
 		ArrayList<ConnectionKey> toRemove = new ArrayList<ConnectionKey>();
 		long now = System.currentTimeMillis();
-		log.debug("closing old connections");
+		log.trace("closing old connections");
 		int closed = 0, remaining;
 		synchronized(this) {
 			// close connections after their timeout

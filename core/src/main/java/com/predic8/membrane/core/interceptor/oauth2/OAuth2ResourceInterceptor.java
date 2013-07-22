@@ -74,7 +74,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		Session session = sessionManager.getSession(exc.getRequest());
 		
 		if (session == null || session.getUserAttributes() == null || !session.getUserAttributes().containsKey("state"))
-			return respondWithLoginRedirect(exc);
+			return respondWithLoginNewSession(exc);
 		
 		if (session.isAuthorized()) {
 			applyBackendAuthorization(exc, session);
@@ -87,15 +87,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 			return Outcome.RETURN;
 		}
 
-		return respondWithDenied(exc, session);
+		return respondWithLogin(exc, session.getUserAttributes().get("state"));
 	}
 
-	private Outcome respondWithDenied(Exchange exc, Session session) {
-		session.clear();
-		exc.setResponse(Response.ok().body("<html><body>Denied. <a href=\".\">Refresh</a> </body></html>").build());
-		return Outcome.RETURN;
-	}
-	
 	private void applyBackendAuthorization(Exchange exc, Session s) {
 		Header h = exc.getRequest().getHeader();
 		for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
@@ -106,15 +100,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 			}
 	}
 
-	private Outcome respondWithLoginRedirect(Exchange exc) {
+	private Outcome respondWithLoginNewSession(Exchange exc) {
 		String state = new BigInteger(130, new SecureRandom()).toString(32);
 
-		String pathQuery = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(exc.getDestinations().get(0)));
-		String url = authorizationService.getLoginURL(state, publicURL, pathQuery);
-		
-		exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_HTML_UTF8).
-				body("<html><body>Click <a href=\"" + url + "\">here</a> to login.</body></html>").
-				build());
+		respondWithLogin(exc, state);
 		
 		Session session = sessionManager.createSession(exc);
 		
@@ -122,6 +111,16 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		userAttributes.put("state", state);
 		session.preAuthorize("", userAttributes);
 		
+		return Outcome.RETURN;
+	}
+
+	private Outcome respondWithLogin(Exchange exc, String state) {
+		String pathQuery = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(exc.getDestinations().get(0)));
+		String url = authorizationService.getLoginURL(state, publicURL, pathQuery);
+		
+		exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_HTML_UTF8).
+				body("<html><body>Click <a href=\"" + url + "\">here</a> to login.</body></html>").
+				build());
 		return Outcome.RETURN;
 	}
 

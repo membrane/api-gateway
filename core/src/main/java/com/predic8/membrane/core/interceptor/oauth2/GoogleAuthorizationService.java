@@ -34,9 +34,11 @@ import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.util.Util;
 
 /**
- * Usage: 
- * * Go to https://code.google.com/apis/console/ and create a new project.
- * * Create OAuth2 client Id / Web Application
+ * @description Together with the {@link OAuth2ResourceInterceptor}, implements request authentication via OAuth2 using
+ *              Google's Authorization Servers.
+ * @explanation See the <a
+ *              href="https://httprouter.wordpress.com/2013/07/22/protect-your-rest-resources-using-membrane-s-oauth2-feature/"
+ *              >Membrane Blog</a> for a brief tutorial.
  */
 @MCElement(name="google", topLevel=false)
 public class GoogleAuthorizationService extends AuthorizationService {
