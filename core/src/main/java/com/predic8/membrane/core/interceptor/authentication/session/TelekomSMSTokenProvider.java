@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
@@ -24,9 +23,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -37,6 +34,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.Util;
 
 /**
  * @explanation A <i>token provider</i> using <i>Deutsche Telekom's</i> REST interface <a
@@ -155,36 +153,12 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		if (response.getStatusCode() != 200)
 			throw new Exception("Authentication failed: " + response.getBodyAsStringDecoded());
 
-		HashMap<String, String> values = parseJSONResponse(response);
+		HashMap<String, String> values = Util.parseSimpleJSONResponse(response);
 		
 		if (!values.containsKey("token"))
 			throw new Exception("Telekom Authentication: Received 200 and JSON body, but no token.");
 		
 		return values.get("token");
-	}
-
-	private static HashMap<String, String> parseJSONResponse(Response g) throws IOException, JsonParseException {
-		HashMap<String, String> values = new HashMap<String, String>();
-
-		String contentType = g.getHeader().getFirstValue("Content-Type");
-		if (contentType != null && "application/json".equals(contentType)) {
-			final JsonFactory jsonFactory = new JsonFactory();
-			final JsonParser jp = jsonFactory.createJsonParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
-			String name = null;
-			while (jp.nextToken() != null) {
-				switch (jp.getCurrentToken()) {
-				case FIELD_NAME:
-					name = jp.getCurrentName();
-					break;
-				case VALUE_STRING:
-					values.put(name, jp.getText());
-					break;
-				default:
-					break;
-				}
-			}
-		}
-		return values;
 	}
 
 	private static class InvalidAuthTokenException extends Exception {
