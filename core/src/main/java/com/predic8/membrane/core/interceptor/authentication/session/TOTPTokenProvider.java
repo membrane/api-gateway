@@ -20,6 +20,28 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
 
+/**
+ * @description A <i>token provider</i> using the Time-based One-time Password (TOTP) algorithm specified in RFC 6238 to
+ *              verify tokens using a pre-shared secret.
+ * @explanation <p>
+ *              The <i>totpTokenProvider</i> uses the Time-based One-time Password (TOTP) algorithm specified in <a
+ *              href="http://tools.ietf.org/html/rfc6238">RFC 6238</a> to verify tokens using a pre-shared secret.
+ *              </p>
+ *              <p>
+ *              The tokens consist of 6 digits.
+ *              </p>
+ *              <p>
+ *              The user's attribute <i>secret</i> is used as the pre-shared secret. If this attribute is missing, the
+ *              login attempt fails.
+ *              </p>
+ *              <p>
+ *              Note that the server's system time is taken into account when verifying tokens.
+ *              </p>
+ *              <p>
+ *              It is possible, for example, to use the <a href="http://code.google.com/p/google-authenticator">Google
+ *              Authenticator App</a> to store the pre-shared secret and generate such tokens.
+ *              </p>
+ */
 @MCElement(name="totpTokenProvider", group="tokenProvider", topLevel=false)
 public class TOTPTokenProvider implements TokenProvider {
 

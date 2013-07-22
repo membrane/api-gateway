@@ -38,6 +38,38 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.URLParamUtil;
 
+/**
+ * @explanation A <i>token provider</i> using <i>Deutsche Telekom's</i> REST interface <a
+ *              href="http://www.developergarden.com/">developer garden</a> to send a randomly generated numeric token
+ *              to the user via text message.
+ * @description <p>
+ *              The <i>telekomSMSTokenProvider</i> randomly generates a 6-digit token after the user entered her correct
+ *              password.
+ *              </p>
+ *              <p>
+ *              The token is then sent to the user via text message. The user's attribute <i>sms</i> is used as the
+ *              recipient phone number. If this attribute has not been provided by the <i>user data provider</i>, the
+ *              login attempt fails.
+ *              </p>
+ *              <p>
+ *              The text message is sent via <a href="http://www.developergarden.com/">Deutsche Telekom's developer
+ *              garden</a> REST API. To use this API, a registered user account with sufficient balance is necessary and
+ *              the <i>Send SMS</i> API has to be enabled for this account. The user account is specified using the
+ *              <i>user</i> and <i>password</i> attributes.
+ *              </p>
+ *              <p>
+ *              The token is prepended by <i>prefixText</i> to generate the text message's text.
+ *              </p>
+ *              <p>
+ *              If <i>normalizeTelephoneNumber</i> is set, the user's <i>sms</i> attribute will be normalized according
+ *              to the following rules before using it:
+ *              <ul>
+ *              <li>'<tt>+</tt>' is replaced by '<tt>00</tt>'.</li>
+ *              <li>Any characters within round brackets, '<tt>(</tt>' and '<tt>)</tt>', are removed.</li>
+ *              <li>'<tt>-</tt>' and '<tt>&#160;</tt>' are removed.</li>
+ *              </ul>
+ *              </p>
+ */
 @MCElement(name="telekomSMSTokenProvider", group="tokenProvider", topLevel=false)
 public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	private static Log log = LogFactory.getLog(TelekomSMSTokenProvider.class.getName());

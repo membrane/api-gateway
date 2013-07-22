@@ -30,8 +30,37 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
 
 /**
- * @description
- * Keeps track of blocked user accounts (accounts become blocked after too many failed logins).
+ * @description Keeps track of blocked user accounts (accounts become blocked after too many failed logins).
+ * @explanation <p>
+ *              The Account Blocker prevents password and token guessing attempts: It blocks a user (or the whole
+ *              system) after too many failed login attempts.
+ *              </p>
+ *              <p>
+ *              When a user entered a wrong password or wrong token more than <i>afterFailedLogins</i> times, this user
+ *              becomes blocked: He will be prevented from logging in again within the next <i>blockFor</i> milliseconds
+ *              (writing 3600000 means "for 1 hour").
+ *              </p>
+ *              <p>
+ *              The failed login attempts have to occur within the last <i>afterFailedLoginsWithin</i> milliseconds
+ *              (writing 9223372036854775807 means "forever").
+ *              </p>
+ *              <p>
+ *              If more than <i>blockWholeSystemAfter</i> users become blocked at a time, the <i>all</i> users will
+ *              become blocked. (This is necessary to limit memory usage.)
+ *              </p>
+ *              <h3>Discussion</h3>
+ *              <p>
+ *              Say, for example, a scripted dictionary attack tries to guess a user's password. Using the configuration
+ *              shown above, which is the default configuration if no <i>accountBlocker</i> is declared, this results in
+ *              5 guesses per 3600000 milliseconds; or equivalently 42720 guesses per year.
+ *              </p>
+ *              <p>
+ *              The probability of hitting a uniformly at random chosen word of the standard German vocabulary within
+ *              one year is therefore about 56%.
+ *              </p>
+ *              <p>
+ *              Therefore, a more secure password should be chosen, containing letters, digits and special characters.
+ *              </p>
  */
 @MCElement(name="accountBlocker", group="accountBlocker")
 public class AccountBlocker extends AbstractXmlElement implements Cleaner {

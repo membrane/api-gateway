@@ -24,6 +24,10 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+/**
+ * @description Interceptors are usually applied to requests and responses. By nesting interceptors into a
+ *              &lt;request&gt; Element you can limit their applictaion to requests only.
+ */
 @MCElement(name="request", topLevel=false)
 public class RequestInterceptor extends AbstractFlowInterceptor {
 	

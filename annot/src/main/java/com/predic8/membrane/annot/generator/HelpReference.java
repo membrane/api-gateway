@@ -42,7 +42,7 @@ public class HelpReference {
 			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
 			if (path == null)
 				return;
-			path.replace("%VERSION%", "4.0");
+			path = path.replace("%VERSION%", "4.0");
 
 			// serialize
 	        StringWriter sw = new StringWriter();
@@ -139,7 +139,7 @@ public class HelpReference {
 	private int getId(String xsdTypeName) {
 		if (ids.containsKey(xsdTypeName))
 			return ids.get(xsdTypeName);
-		int id = ids.size();
+		int id = Math.abs(xsdTypeName.hashCode());
 		ids.put(xsdTypeName, id);
 		return id;
 	}
@@ -183,7 +183,7 @@ public class HelpReference {
 		if (javadoc == null)
 			return;
 		
-		Doc doc = new Doc(javadoc);
+		Doc doc = new Doc(processingEnv, javadoc, element);
 		
 		xew.writeStartElement("documentation");
 		

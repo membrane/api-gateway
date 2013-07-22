@@ -22,6 +22,21 @@ import javax.xml.stream.XMLStreamReader;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
+/**
+ * @description A <i>user data provider</i> listing all user data in-place in the config file.
+ * @explanation <p>
+ *              the <i>staticuserdataprovider</i> can be used to statically list user data within the config file.
+ *              </p>
+ *              <p>
+ *              each user must have a unique <i>username</i> attribute as well as a <i>password</i> attribute.
+ *              </p>
+ *              <p>
+ *              arbitrary attributes can be set on a user element. other sub-components of the <i>login</i> interceptor
+ *              might use those: for example, the <i>telekomsmstokenprovider</i> uses the <i>sms</i> property as the
+ *              user's cell phone number. for example, the <i>totptokenprovider</i> uses the <i>secret</i> property to
+ *              initialize the token sequence.
+ *              </p>
+ */
 @MCElement(name="staticUserDataProvider", group="userDataProvider", topLevel=false, xsd=
 			"<xsd:sequence>\r\n" +
 			"	<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 

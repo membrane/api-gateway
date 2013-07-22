@@ -39,7 +39,7 @@ import org.springframework.util.ReflectionUtils.FieldFilter;
  * 
  * @author Adrian Colyer
  * @author Costin Leau
- * @see OsgiStringUtils
+ * @see "https://fisheye.springsource.org/browse/~author=costin_leau/spring-osgi/trunk/core/src/main/java/org/springframework/osgi/util/OsgiStringUtils.java"
  */
 public abstract class OsgiBundleUtils {
 

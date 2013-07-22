@@ -170,7 +170,6 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Key used by encryption as hex string
 	 * @example 6f488a642b740fb70c5250987a284dc0
-	 * @param keyHex
 	 */
 	@MCAttribute
 	public void setKeyHex(String keyHex) {

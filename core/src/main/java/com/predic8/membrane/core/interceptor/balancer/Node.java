@@ -101,6 +101,10 @@ public class Node extends AbstractXmlElement {
 		return host;
 	}
 
+	/**
+	 * @description The node's host.
+	 * @example server3
+	 */
 	@Required
 	@MCAttribute
 	public void setHost(String host) {
@@ -111,6 +115,11 @@ public class Node extends AbstractXmlElement {
 		return port;
 	}
 
+	/**
+	 * @description The node's port.
+	 * @example 8080
+	 * @default 80
+	 */
 	@MCAttribute
 	public void setPort(int port) {
 		this.port = port;

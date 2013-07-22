@@ -34,6 +34,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.SSLContext;
 
 /**

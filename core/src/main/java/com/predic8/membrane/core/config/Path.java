@@ -18,6 +18,21 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 
+/**
+ * @explanation <p>
+ *              The value of the content will be taken to match the path.
+ *              </p>
+ * 
+ *              <p>
+ *              If <tt>isRegExp="true"</tt>, the whole path has to match the given regular expression. If
+ *              <tt>isRegExp="false"</tt>, the path has to start with the given string.
+ *              </p>
+ * 
+ *              <p>
+ *              If <tt>&lt;path /&gt;</tt> is a child element of a <tt>&lt;soapProxy /&gt;</tt>, the <tt>isRegExp</tt>
+ *              attribute must not be present.
+ *              </p>
+ */
 @MCElement(name="path", topLevel=false, mixed=true)
 public class Path {
 
@@ -39,6 +54,11 @@ public class Path {
 		return regExp;
 	}
 
+	/**
+	 * @description If set to true the content will be evaluated as regex.
+	 * @default false
+	 * @example true
+	 */
 	@MCAttribute(attributeName="isRegExp")
 	public void setRegExp(boolean regExp) {
 		this.regExp = regExp;

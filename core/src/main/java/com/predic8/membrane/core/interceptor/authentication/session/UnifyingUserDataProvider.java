@@ -28,6 +28,18 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.config.XMLElement;
 
+/**
+ * @explanation <p>
+ *              The <i>unifyingUserDataProvider</i> can be used to merge two or more other <i>user data providers</i>
+ *              into one.
+ *              </p>
+ *              <p>
+ *              The <i>unifyingUserDataProvider</i> will forward a login attempt (username and password) to each inner
+ *              user data provider in the order they are specified. After one of the inner user data providers returned
+ *              a successful login (and returned the user's attributes), the procedure terminates. If no inner user data
+ *              provider could verify the user, the login attempt fails.
+ *              </p>
+ */
 @MCElement(name="unifyingUserDataProvider", group="userDataProvider", topLevel=false)
 public class UnifyingUserDataProvider extends AbstractXmlElement implements UserDataProvider {
 

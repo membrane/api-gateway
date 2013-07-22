@@ -205,7 +205,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	
 	/**
 	 * @description Specifies a list of clusters.
-	 * @param balancers
 	 */
 	@MCChildElement(order=2)
 	public void setClustersFromSpring(List<Balancer> balancers) {

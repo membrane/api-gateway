@@ -16,6 +16,7 @@ package com.predic8.membrane.core.http.cookie;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Request;
 
 /**
  * Adapter between Tomcat classes ({@link ServerCookie} etc.) and Membrane

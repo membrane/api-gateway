@@ -122,7 +122,7 @@ public abstract class AbstractBody {
 	 * Warning: Calling this method will trigger reading the body from the client, disabling "streaming".
 	 * Use {@link #isRead()} to determine wether the body already has been read, if necessary.
 	 * 
-	 * @return the length of the return value of {@link getContent()}
+	 * @return the length of the return value of {@link #getContent()}
 	 */
 	public int getLength() throws IOException {
 		read();

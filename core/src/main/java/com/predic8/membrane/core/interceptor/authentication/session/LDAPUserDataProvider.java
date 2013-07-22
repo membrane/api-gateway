@@ -38,6 +38,49 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
+/**
+ * @description A <i>user data provider</i> querying an LDAP server to authorize users and retrieve attributes.
+ * @explanation <p>
+ *              The LDAP User Data Provider performs two jobs:
+ *              <ol>
+ *              <li>Authentication of a <i>username</i> and <i>password</i>.</li>
+ *              <li>Retrieval of user attributes.</li>
+ *              </ol>
+ *              </p>
+ *              <p>
+ *              To achieve this, it first binds to <i>base</i> on the LDAP server <i>url</i>. If <i>binddn</i> is not
+ *              present, it binds to the LDAP server anonymously, elsewise <i>binddn</i> and <i>bindpw</i> are used for
+ *              authentication.
+ *              </p>
+ *              <p>
+ *              Next, a search <i>searchPattern</i> with scope <i>searchScope</i> is executed where "<tt>%LOGIN%</tt>"
+ *              is replaced by the escaped version of the <i>username</i>.
+ *              </p>
+ *              <p>
+ *              The search returning no node or more than one node is treated as failure.
+ *              </p>
+ *              <p>
+ *              If <i>passwordAttribute</i> is set, and the node has an attribute with this name and this attribute's
+ *              value starts with "<tt>{x-plain}</tt>", the password is checked against the rest of the value for
+ *              equality. If <i>passwordAttribute</i> is not set, a second binding is attempted on the node using the
+ *              <i>password</i> the user provided.
+ *              </p>
+ *              <p>
+ *              The user attribute keys specified in the mapping are then renamed according to the mapping and used for
+ *              further processing (see the other modules of the <i>login</i> interceptor).
+ *              </p>
+ *              <p>
+ *              </p>
+ *              <p>
+ *              For the initial binding, <i>connectTimeout</i> can be used to specify a timeout in milliseconds. For the
+ *              search, <i>timeout</i> can be used.
+ *              </p>
+ *              <p>
+ *              If <i>readAttributesAsSelf</i> is not set, the user attributes are collected from the search result. If
+ *              it is set, an additional request is made after the second successful binding to retrieve the node's
+ *              attributes.
+ *              </p>
+ */
 @MCElement(name="ldapUserDataProvider", group="userDataProvider", topLevel=false, xsd=
 		"<xsd:sequence>\r\n" + 
 		"	<xsd:element name=\"map\">\r\n" + 

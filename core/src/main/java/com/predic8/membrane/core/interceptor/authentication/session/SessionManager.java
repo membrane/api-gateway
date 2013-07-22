@@ -31,6 +31,19 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread.Cleaner;
 
+/**
+ * @explanation <p>
+ *              The Session Manager identifies users across HTTP requests using a session cookie.
+ *              </p>
+ *              <p>
+ *              The name of the session cookie can be specified using the <i>cookieName</i> attribute. The default name
+ *              is "<tt>SESSIONID</tt>".
+ *              </p>
+ *              <p>
+ *              The session timeout can be specified in milliseconds using the <i>timeout</i> attribute. The default
+ *              timeout is 5 minutes.
+ *              </p>
+ */
 @MCElement(name="sessionManager", group="sessionManager", topLevel=false)
 public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;

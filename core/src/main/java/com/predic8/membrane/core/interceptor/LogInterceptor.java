@@ -21,6 +21,12 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 
+/**
+ * @description The log feature logs request and response messages to the log4j
+ *              framework. The messages will appear either on the console or in
+ *              a log file depending on the configuration of the
+ *              <i>conf/log4j.properties</i> file.
+ */
 @MCElement(name="log")
 public class LogInterceptor extends AbstractInterceptor {
 
@@ -54,6 +60,10 @@ public class LogInterceptor extends AbstractInterceptor {
 		return headerOnly;
 	}
 
+	/**
+	 * @default false
+	 * @description If set to true only the HTTP header will be logged.
+	 */
 	@MCAttribute
 	public void setHeaderOnly(boolean headerOnly) {
 		this.headerOnly = headerOnly;
@@ -63,6 +73,11 @@ public class LogInterceptor extends AbstractInterceptor {
 		return level;
 	}
 
+	/**
+	 * @default INFO
+	 * @description Sets the log level.
+	 * @example WARN
+	 */
 	@MCAttribute
 	public void setLevel(Level level) {
 		this.level = level;
@@ -127,6 +142,11 @@ public class LogInterceptor extends AbstractInterceptor {
 		return category;
 	}
 
+	/**
+	 * @default com.predic8.membrane.core.interceptor.LogInterceptor
+	 * @description Sets the category of the logged message.
+	 * @example Membrane
+	 */
 	@MCAttribute
 	public void setCategory(String category) {
 		this.category = category;

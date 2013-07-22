@@ -92,6 +92,10 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		return regex;
 	}
 
+	/**
+	 * @description Regex to match against the body.
+	 * @example Hallo
+	 */
 	@Required
 	@MCAttribute
 	public void setRegex(String regex) {
@@ -102,6 +106,10 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		return replace;
 	}
 
+	/**
+	 * @description String used to replace matched parts.
+	 * @example Hello
+	 */
 	@Required
 	@MCAttribute
 	public void setReplace(String replace) {
@@ -117,6 +125,11 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		return target;
 	}
 	
+	/**
+	 * @description Whether the replacement should affect the message <tt>body</tt> or the <tt>header</tt> values.
+	 * @default body
+	 * @example header
+	 */
 	@MCAttribute
 	public void setTarget(TargetType target) {
 		this.target = target;
