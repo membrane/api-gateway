@@ -1,10 +1,10 @@
 @echo off
 if not "%MEMBRANE_HOME%" == "" goto homeSet
 set "MEMBRANE_HOME=%cd%"
-if exist "%MEMBRANE_HOME%\memrouter.bat" goto homeOk
+if exist "%MEMBRANE_HOME%\service-proxy.bat" goto homeOk
 
 :homeSet
-if exist "%MEMBRANE_HOME%\memrouter.bat" goto homeOk
+if exist "%MEMBRANE_HOME%\service-proxy.bat" goto homeOk
 echo Please set the MEMBRANE_HOME environment variable to point to
 echo the directory where you have extracted the Membrane software.
 goto end

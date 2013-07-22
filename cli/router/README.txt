@@ -8,7 +8,7 @@ Running Membrane ESB
 Make sure you have installed Java 1.6 or higher. Then do the following:
 
 * Starting the ESB (Windows)
-  Execute memrouter.bat
+  Execute service-proxy.bat
 	
 * Starting the ESB (Linux)
   Execute memrouter.sh
