@@ -97,7 +97,10 @@ public class HelpReference {
 		Collections.sort(main.getIis(), new Comparator<ElementInfo>() {
 			@Override
 			public int compare(ElementInfo o1, ElementInfo o2) {
-				return o1.getAnnotation().name().compareTo(o2.getAnnotation().name());
+				int res = o1.getAnnotation().name().compareTo(o2.getAnnotation().name());
+				if (res == 0)
+					res = o1.getElement().getQualifiedName().toString().compareTo(o2.getElement().getQualifiedName().toString());
+				return res;
 			}
 		});
 		for (ElementInfo ei : main.getIis())
