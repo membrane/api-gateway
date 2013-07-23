@@ -28,7 +28,7 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
  *              must be placed into the transport to make Service Proxies Work
  *              properly. It has to be placed after the ruleMatching
  *              interceptor. The ruleMatching interceptor looks up a service
- *              proxy for an incomming request and places it into the exchange
+ *              proxy for an incoming request and places it into the exchange
  *              object. The dispatching interceptor needs the service proxy to
  *              get information about the target.
  */

@@ -97,7 +97,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Whether to retry again (possibly the next node, when load
 	 *              balancing is active) after a HTTP status code
-	 *              500&le;<i>x</i>&lt;600 was received.
+	 *              500&lt;=<i>x</i>&lt;600 was received.
 	 * @default false
 	 */
 	@MCAttribute

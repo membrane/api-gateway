@@ -34,7 +34,13 @@ public class HelpReference {
 
 	private final ProcessingEnvironment processingEnv;
 
+	/** maps XSD types to numeric IDs */
+	private HashMap<String, Integer> ids = new HashMap<String, Integer>();
+	/** reverse map of ids */
+	private HashMap<Integer, String> idsReverse = new HashMap<Integer, String>();
+
 	private XMLStreamWriter xew;
+	private StringWriter sw;
 
 	public HelpReference(ProcessingEnvironment processingEnv) {
 		this.processingEnv = processingEnv;
@@ -47,8 +53,7 @@ public class HelpReference {
 				return;
 			path = path.replace("%VERSION%", "4.0");
 
-			// serialize
-	        StringWriter sw = new StringWriter();
+			sw = new StringWriter();
 			XMLOutputFactory output = XMLOutputFactory.newInstance();
 			xew = output.createXMLStreamWriter(sw);
 			xew.writeStartDocument();
@@ -147,9 +152,6 @@ public class HelpReference {
 		xew.writeEndElement();
 	}
 
-	private HashMap<String, Integer> ids = new HashMap<String, Integer>();
-	private HashMap<Integer, String> idsReverse = new HashMap<Integer, String>();
-	
 	private int getId(String xsdTypeName) {
 		if (ids.containsKey(xsdTypeName))
 			return ids.get(xsdTypeName);
@@ -215,9 +217,10 @@ public class HelpReference {
 	}
 	
 	private void handleDoc(Doc.Entry e) throws XMLStreamException {
-		xew.writeStartElement(e.getKey());
-		xew.writeCharacters(e.getValueAsXMLSnippet());
-		xew.writeEndElement();
+		xew.writeCharacters("");
+		xew.flush();
+		
+		sw.append(e.getValueAsXMLSnippet());
 	}
 
 }

@@ -110,7 +110,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 				return rule;
 			}
 		}
-		log.debug("No rule found for incomming request");
+		log.debug("No rule found for incoming request");
 		return new NullRule();
 	}
 

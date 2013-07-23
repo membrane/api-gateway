@@ -1,5 +1,6 @@
 package com.predic8.membrane.annot.model.doc;
 
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,9 +12,16 @@ import java.util.regex.Pattern;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic.Kind;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.events.EntityReference;
+import javax.xml.stream.events.XMLEvent;
 
 public class Doc {
 
+	static final XMLInputFactory fac = XMLInputFactory.newFactory();
+	
 	final ProcessingEnvironment processingEnv;
 	final Element e;
 	
@@ -25,6 +33,24 @@ public class Doc {
 			super();
 			this.key = key;
 			this.value = value;
+			
+			try {
+				XMLEventReader xer = fac.createXMLEventReader(new StringReader(wrapInRootElement(value)));
+				while (xer.hasNext()) {
+					XMLEvent event = xer.nextEvent();
+					if (event.isEntityReference()) {
+						EntityReference er = (EntityReference) event;
+						processingEnv.getMessager().printMessage(Kind.ERROR, "Entity " + er.getName() + " found, but not allowed.", e);
+					}
+				}
+			} catch (XMLStreamException f) {
+				value = "";
+				processingEnv.getMessager().printMessage(Kind.WARNING, f.getMessage(), e);
+			}
+		}
+
+		private String wrapInRootElement(String value) {
+			return "<" + key + ">" + value + "</" + key + ">";
 		}
 		
 		public String getKey() {
@@ -32,7 +58,7 @@ public class Doc {
 		}
 		
 		public String getValueAsXMLSnippet() {
-			return value;
+			return wrapInRootElement(value);
 		}
 	}
 	
