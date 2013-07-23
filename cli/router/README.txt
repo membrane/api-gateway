@@ -1,19 +1,19 @@
-Membrane ESB 
+Membrane Service Proxy 
 -------------------------------------------------------------------------------
-Thanks for downloading Membrane ESB.
+Thanks for downloading Membrane Service Proxy.
 
 
-Running Membrane ESB 
+Running Membrane Service Proxy
 -------------------------------------------------------------------------------
 Make sure you have installed Java 1.6 or higher. Then do the following:
 
-* Starting the ESB (Windows)
+* Starting the Service Proxy (Windows)
   Execute service-proxy.bat
 	
-* Starting the ESB (Linux)
-  Execute memrouter.sh
+* Starting the Service Proxy (Linux)
+  Execute service-proxy.sh
 	
-The ESB by default uses the sample configuration conf/proxies.xml .
+The Service Proxy by default uses the sample configuration conf/proxies.xml .
 
 
 Latest Version
@@ -35,7 +35,7 @@ For discussion, http://groups.google.com/group/membrane-monitor/ is available.
 
 Licensing
 -------------------------------------------------------------------------------
-Membrane ESB is covered by the Apache License, Version 2.0, January 2004.
+Membrane Service Proxy is covered by the Apache License, Version 2.0, January 2004.
 For licenses of the libraries included, see the LICENSE.txt file.
 
 
