@@ -688,7 +688,7 @@ public class AdminPageBuilder extends Html {
 		String helpId = i.getHelpId();
 		if (helpId != null) {
 			div().style("float:right;");
-				a().href("http://membrane-soa.org/esb-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm");
+				a().href("http://membrane-soa.org/service-proxy-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm");
 					span().classAttr("ui-icon ui-icon-help").title("help").end();
 				end();
 			end();

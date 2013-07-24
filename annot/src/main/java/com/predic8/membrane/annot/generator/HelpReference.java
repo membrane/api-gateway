@@ -6,12 +6,13 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.TypeElement;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -21,9 +22,9 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import com.predic8.membrane.annot.ProcessingException;
 import com.predic8.membrane.annot.model.AbstractJavadocedInfo;
 import com.predic8.membrane.annot.model.AttributeInfo;
+import com.predic8.membrane.annot.model.ChildElementDeclarationInfo;
 import com.predic8.membrane.annot.model.ChildElementInfo;
 import com.predic8.membrane.annot.model.ElementInfo;
 import com.predic8.membrane.annot.model.MainInfo;
@@ -33,11 +34,6 @@ import com.predic8.membrane.annot.model.doc.Doc;
 public class HelpReference {
 
 	private final ProcessingEnvironment processingEnv;
-
-	/** maps XSD types to numeric IDs */
-	private HashMap<String, Integer> ids = new HashMap<String, Integer>();
-	/** reverse map of ids */
-	private HashMap<Integer, String> idsReverse = new HashMap<Integer, String>();
 
 	private XMLStreamWriter xew;
 	private StringWriter sw;
@@ -119,7 +115,12 @@ public class HelpReference {
 		if (ei.getAnnotation().mixed())
 			xew.writeAttribute("mixed", "true");
 		xew.writeAttribute("topLevel", Boolean.toString(ei.getAnnotation().topLevel()));
-		xew.writeAttribute("id", "element-" + getId(ei.getXSDTypeName(m)));
+		xew.writeAttribute("id", ei.getId());
+		if (!ei.getAnnotation().topLevel()) {
+			String primaryParentId = getPrimaryParentId(m, main, ei);
+			if (primaryParentId != null)
+				xew.writeAttribute("primaryParentId", primaryParentId);
+		}
 		
 		handleDoc(ei);
 		
@@ -152,6 +153,18 @@ public class HelpReference {
 		xew.writeEndElement();
 	}
 
+	private String getPrimaryParentId(Model m, MainInfo mi, ElementInfo ei) {
+		// choose a random parent (TODO: choose a better one)
+		for (Map.Entry<TypeElement, ChildElementDeclarationInfo> e : mi.getChildElementDeclarations().entrySet())
+			if (e.getValue().getElementInfo().contains(ei)) {
+				List<ChildElementInfo> usedBy = e.getValue().getUsedBy();
+				if (usedBy.size() > 0)
+					return usedBy.get(0).getEi().getId();
+			}
+		return null;
+	}
+
+	/*
 	private int getId(String xsdTypeName) {
 		if (ids.containsKey(xsdTypeName))
 			return ids.get(xsdTypeName);
@@ -162,6 +175,7 @@ public class HelpReference {
 		idsReverse.put(id, xsdTypeName);
 		return id;
 	}
+	*/
 
 	private void handle(Model m, MainInfo main, ChildElementInfo cei) throws XMLStreamException {
 		xew.writeStartElement("child");
@@ -172,11 +186,11 @@ public class HelpReference {
 		
 		SortedSet<String> possibilities = new TreeSet<String>();
 		for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
-			possibilities.add("" + getId(ei.getXSDTypeName(m)));
+			possibilities.add(ei.getId());
 		}
 		for (String id : possibilities) {
 			xew.writeStartElement("possibility");
-			xew.writeAttribute("refId", "element-" + id);
+			xew.writeAttribute("refId", id);
 			xew.writeEndElement();
 		}
 		

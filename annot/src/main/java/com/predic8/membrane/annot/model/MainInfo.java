@@ -22,6 +22,7 @@ public class MainInfo {
 	private Map<TypeElement, ChildElementDeclarationInfo> childElementDeclarations = new HashMap<TypeElement, ChildElementDeclarationInfo>();
 	private Map<TypeElement, ElementInfo> elements = new HashMap<TypeElement, ElementInfo>();
 	private Map<String, ElementInfo> globals = new HashMap<String, ElementInfo>();
+	private Map<String, ElementInfo> ids = new HashMap<String, ElementInfo>();
 	
 	public List<Element> getInterceptorElements() {
 		ArrayList<Element> res = new ArrayList<Element>(getIis().size());
@@ -50,39 +51,23 @@ public class MainInfo {
 		return iis;
 	}
 
-	public void setIis(List<ElementInfo> iis) {
-		this.iis = iis;
-	}
-
 	public Map<String, List<ElementInfo>> getGroups() {
 		return groups;
-	}
-
-	public void setGroups(Map<String, List<ElementInfo>> groups) {
-		this.groups = groups;
 	}
 
 	public Map<TypeElement, ElementInfo> getElements() {
 		return elements;
 	}
 
-	public void setElements(Map<TypeElement, ElementInfo> elements) {
-		this.elements = elements;
-	}
-
 	public Map<String, ElementInfo> getGlobals() {
 		return globals;
-	}
-
-	public void setGlobals(Map<String, ElementInfo> globals) {
-		this.globals = globals;
 	}
 
 	public Map<TypeElement, ChildElementDeclarationInfo> getChildElementDeclarations() {
 		return childElementDeclarations;
 	}
 
-	public void setChildElementDeclarations(Map<TypeElement, ChildElementDeclarationInfo> childElementDeclarations) {
-		this.childElementDeclarations = childElementDeclarations;
+	public Map<String, ElementInfo> getIds() {
+		return ids;
 	}
 }

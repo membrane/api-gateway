@@ -106,4 +106,10 @@ public class ElementInfo extends AbstractJavadocedInfo {
 	public List<ChildElementDeclarationInfo> getUsedBy() {
 		return usedBy;
 	}
+	
+	public String getId() {
+		if (annotation.id().length() > 0)
+			return annotation.id();
+		return annotation.name();
+	}
 }
