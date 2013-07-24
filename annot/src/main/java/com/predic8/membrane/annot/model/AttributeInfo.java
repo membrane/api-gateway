@@ -10,7 +10,10 @@ import com.predic8.membrane.annot.AnnotUtils;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.ProcessingException;
 
-public class AttributeInfo {
+/**
+ * Mirrors {@link MCAttribute}.
+ */
+public class AttributeInfo extends AbstractJavadocedInfo {
 	private MCAttribute annotation;
 	private ExecutableElement e;
 	private boolean required;
@@ -114,6 +117,7 @@ public class AttributeInfo {
 
 	public void setE(ExecutableElement e) {
 		this.e = e;
+		setDocedE(e);
 	}
 
 	public boolean isRequired() {

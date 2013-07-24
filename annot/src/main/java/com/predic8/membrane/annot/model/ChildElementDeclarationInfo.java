@@ -9,7 +9,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 
 /**
- * Meta-info mirror for an abstract thing like 'interface Interceptor'.
+ * Meta-info mirror for the type of one or more {@link MCChildElement}s, for example 'interface Interceptor'.
  * 
  * Used by some {@link MCChildElement}s, implemented by any number of {@link MCElement}s.
  */

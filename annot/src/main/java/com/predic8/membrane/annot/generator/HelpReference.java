@@ -12,7 +12,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -23,6 +22,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import com.predic8.membrane.annot.ProcessingException;
+import com.predic8.membrane.annot.model.AbstractJavadocedInfo;
 import com.predic8.membrane.annot.model.AttributeInfo;
 import com.predic8.membrane.annot.model.ChildElementInfo;
 import com.predic8.membrane.annot.model.ElementInfo;
@@ -121,7 +121,7 @@ public class HelpReference {
 		xew.writeAttribute("topLevel", Boolean.toString(ei.getAnnotation().topLevel()));
 		xew.writeAttribute("id", "element-" + getId(ei.getXSDTypeName(m)));
 		
-		handleDoc(ei.getElement());
+		handleDoc(ei);
 		
 		List<AttributeInfo> ais = ei.getAis();
 		Collections.sort(ais, new Comparator<AttributeInfo>() {
@@ -168,7 +168,7 @@ public class HelpReference {
 		xew.writeAttribute("min", cei.isRequired() ? "1" : "0");
 		xew.writeAttribute("max", cei.isList() ? "unbounded" : "1");
 		
-		handleDoc(cei.getE());
+		handleDoc(cei);
 		
 		SortedSet<String> possibilities = new TreeSet<String>();
 		for (ElementInfo ei : main.getChildElementDeclarations().get(cei.getTypeDeclaration()).getElementInfo()) {
@@ -197,16 +197,14 @@ public class HelpReference {
 		xew.writeStartElement("attribute");
 		xew.writeAttribute("name", ai.getXMLName());
 		xew.writeAttribute("required", Boolean.toString(ai.isRequired()));
-		handleDoc(ai.getE());
+		handleDoc(ai);
 		xew.writeEndElement();
 	}
 
-	private void handleDoc(Element element) throws XMLStreamException {
-		String javadoc = processingEnv.getElementUtils().getDocComment(element);
-		if (javadoc == null)
+	private void handleDoc(AbstractJavadocedInfo info) throws XMLStreamException {
+		Doc doc = info.getDoc(processingEnv);
+		if (doc == null)
 			return;
-		
-		Doc doc = new Doc(processingEnv, javadoc, element);
 		
 		xew.writeStartElement("documentation");
 		
@@ -220,7 +218,7 @@ public class HelpReference {
 		xew.writeCharacters("");
 		xew.flush();
 		
-		sw.append(e.getValueAsXMLSnippet());
+		sw.append(e.getValueAsXMLSnippet(true));
 	}
 
 }

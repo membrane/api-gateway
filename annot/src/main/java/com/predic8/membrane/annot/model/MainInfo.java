@@ -10,6 +10,9 @@ import javax.lang.model.element.TypeElement;
 
 import com.predic8.membrane.annot.MCMain;
 
+/**
+ * Mirrors {@link MCMain}.
+ */
 public class MainInfo {
 	private TypeElement element;
 	private MCMain annotation;

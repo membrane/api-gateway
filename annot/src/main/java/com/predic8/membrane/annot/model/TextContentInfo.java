@@ -1,5 +1,10 @@
 package com.predic8.membrane.annot.model;
 
+import com.predic8.membrane.annot.MCTextContent;
+
+/**
+ * Mirrors {@link MCTextContent}.
+ */
 public class TextContentInfo {
 	private String propertyName;
 

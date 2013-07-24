@@ -5,7 +5,10 @@ import javax.lang.model.element.TypeElement;
 
 import com.predic8.membrane.annot.MCChildElement;
 
-public class ChildElementInfo implements Comparable<ChildElementInfo> {
+/**
+ * Mirrors {@link MCChildElement}.
+ */
+public class ChildElementInfo extends AbstractJavadocedInfo implements Comparable<ChildElementInfo> {
 	private ElementInfo ei;
 	private ExecutableElement e;
 	private TypeElement typeDeclaration;
@@ -42,6 +45,7 @@ public class ChildElementInfo implements Comparable<ChildElementInfo> {
 
 	public void setE(ExecutableElement e) {
 		this.e = e;
+		setDocedE(e);
 	}
 
 	public TypeElement getTypeDeclaration() {

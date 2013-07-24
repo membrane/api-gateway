@@ -1,11 +1,11 @@
 package com.predic8.membrane.annot.model.doc;
 
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,7 +25,7 @@ public class Doc {
 	final ProcessingEnvironment processingEnv;
 	final Element e;
 	
-	public class Entry {
+	public class Entry implements Comparable<Entry> {
 		String key;
 		String value;
 
@@ -57,15 +57,29 @@ public class Doc {
 			return key;
 		}
 		
-		public String getValueAsXMLSnippet() {
-			return wrapInRootElement(value);
+		
+		/**
+		 * @return a string containing a valid XML node set (or the empty string, if the input was invalid and a
+		 *         compiler warning was issued)
+		 */
+		public String getValueAsXMLSnippet(boolean wrap) {
+			if (wrap)
+				return wrapInRootElement(value);
+			else
+				return value;
+		}
+
+		@Override
+		public int compareTo(Entry o) {
+			return POSITIVE.indexOf(key) - POSITIVE.indexOf(o.key);
 		}
 	}
 	
-	Map<String, Entry> entries = new HashMap<String, Entry>();
+	HashSet<String> keys = new HashSet<String>();
+	List<Entry> entries = new ArrayList<Entry>();
 	
-	List<String> POSITIVE = Arrays.asList("description", "example", "default", "explanation");
-	List<String> NEGATIVE = Arrays.asList("author", "param");
+	static final List<String> POSITIVE = Arrays.asList("description", "example", "default", "explanation");
+	static final List<String> NEGATIVE = Arrays.asList("author", "param");
 	
 	private void handle(String key, String value) {
 		value = value.trim();
@@ -81,7 +95,13 @@ public class Doc {
 			return;
 		}
 		
-		entries.put(key, new Entry(key, value));
+		if (keys.contains(key)) {
+			processingEnv.getMessager().printMessage(Kind.WARNING, "Duplicate JavaDoc tag: " + key, e);
+			return;
+		}
+		
+		keys.add(key);
+		entries.add(new Entry(key, value));
 	}		
 	
 	public Doc(ProcessingEnvironment processingEnv, String javadoc, Element e) {
@@ -98,10 +118,12 @@ public class Doc {
 		}
 		if (last != -1)
 			handle(key, javadoc.substring(last));
+		
+		Collections.sort(entries);
 	}
 	
-	public Collection<Entry> getEntries() {
-		return entries.values();
+	public List<Entry> getEntries() {
+		return entries;
 	}
 
 }
