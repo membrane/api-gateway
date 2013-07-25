@@ -18,6 +18,12 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 
+/**
+ * @description <p>
+ *              A service proxy can be deployed on front of a Web server, Web Service or a REST resource. It conceals
+ *              the server and offers the same interface as the target server to its clients.
+ *              </p>
+ */
 @MCElement(name="serviceProxy", group="rule")
 public class ServiceProxy extends AbstractServiceProxy {
 	
@@ -41,6 +47,12 @@ public class ServiceProxy extends AbstractServiceProxy {
 		return ((ServiceProxyKey)key).getMethod();
 	}
 	
+	/**
+	 * @description If set, Membrane will only consider this rule, if the method (GET, PUT, POST, DELETE, etc.)
+	 *              header of incoming HTTP requests matches. The asterisk '*' matches any method.
+	 * @default *
+	 * @example GET
+	 */
 	@MCAttribute
 	public void setMethod(String method) {
 		((ServiceProxyKey)key).setMethod(method);

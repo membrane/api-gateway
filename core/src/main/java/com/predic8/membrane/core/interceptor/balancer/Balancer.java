@@ -106,6 +106,9 @@ public class Balancer extends AbstractXmlElement {
 		return true;
 	}
 	
+	/**
+	 * @description A list of clusters.
+	 */
 	@Required
 	@MCChildElement
 	public void setClusters(List<Cluster> clusters) {

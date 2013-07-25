@@ -26,6 +26,13 @@ import com.predic8.membrane.core.transport.SSLContext;
 
 public abstract class AbstractServiceProxy extends AbstractProxy {
 
+	/**
+	 * @description <p>
+	 *              The destination where the service proxy will send messages to. Use the target element, if you want
+	 *              to send the messages to a static target. If you want to use dynamic destinations have a look at the
+	 *              <a href="http://ms.org:8080/esb-doc/configuration/reference/router.htm">content based router</a>.
+	 *              </p>
+	 */
 	@MCElement(name="target", group="util", topLevel=false)
 	public static class Target {
 		private String host;
@@ -38,7 +45,11 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		public String getHost() {
 			return host;
 		}
-		
+
+		/**
+		 * @description Host address of the target.
+		 * @example localhost, 192.168.1.1
+		 */
 		@MCAttribute
 		public void setHost(String host) {
 			this.host = host;
@@ -48,6 +59,11 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 			return port;
 		}
 		
+		/**
+		 * @description Port number of the target.
+		 * @default 80
+		 * @example 8080
+		 */
 		@MCAttribute
 		public void setPort(int port) {
 			this.port = port;
@@ -57,6 +73,10 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 			return url;
 		}
 		
+		/**
+		 * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
+		 * @example http://membrane-soa.org
+		 */
 		@MCAttribute
 		public void setUrl(String url) {
 			this.url = url;
@@ -66,6 +86,10 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 			return sslParser;
 		}
 		
+		
+		/**
+		 * @description Configures outbound SSL (HTTPS).
+		 */
 		@MCChildElement
 		public void setSslParser(SSLParser sslParser) {
 			this.sslParser = sslParser;
@@ -111,6 +135,9 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		return sslInboundParser;
 	}
 
+	/**
+	 * @description Configures the usage of inbound SSL (HTTPS).
+	 */
 	@MCChildElement(order=75)
 	public void setSslInboundParser(SSLParser sslInboundParser) {
 		this.sslInboundParser = sslInboundParser;
@@ -134,6 +161,11 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		return ((ServiceProxyKey)key).getPort();
 	}
 
+	/**
+	 * @description The port Membrane listens on for incoming connections.
+	 * @default 80
+	 * @example 8080
+	 */
 	@MCAttribute
 	public void setPort(int port) {
 		((ServiceProxyKey)key).setPort(port);
@@ -143,6 +175,11 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		return ((ServiceProxyKey)key).getIp();
 	}
 	
+	/**
+	 * @description If present, binds the port only on the specified IP. Useful for hosts with multiple IP addresses.
+	 * @default <i>not set</i>
+	 * @example 127.0.0.1
+	 */
 	@MCAttribute
 	public void setIp(String ip) {
 		((ServiceProxyKey)key).setIp(ip);
@@ -151,7 +188,17 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 	public String getHost() {
 		return ((ServiceProxyKey)key).getHost();
 	}
-	
+
+	/**
+	 * @description <p>A space separated list of hostnames. If set, Membrane will only consider this rule, if the "Host"
+	 *              header of incoming HTTP requests matches one of the hostnames.
+	 *              </p>
+	 *              <p>
+	 *              The asterisk '*' can be used for basic globbing (to match any number, including zero, characters).
+	 *              </p>
+	 * @default <i>not set</i>
+	 * @example predic8.de *.predic8.de
+	 */
 	@MCAttribute
 	public void setHost(String host) {
 		((ServiceProxyKey)key).setHost(host);
@@ -164,6 +211,16 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		return new Path(k.isPathRegExp(), k.getPath());
 	}
 
+	/**
+	 * @description <p>
+	 *              If set, Membrane will only consider this rule, if the path of incoming HTTP requests matches.
+	 *              {@link Path} supports starts-with and regex matching.
+	 *              </p>
+	 *              <p>
+	 *              If used in a {@link SOAPProxy}, this causes path rewriting of SOAP requests and in the WSDL to
+	 *              automatically be configured.
+	 *              </p>
+	 */
 	@MCChildElement(order=50)
 	public void setPath(Path path) {
 		ServiceProxyKey k = (ServiceProxyKey)key;

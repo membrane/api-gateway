@@ -13,6 +13,12 @@ public class ConnectionConfiguration {
 		return keepAliveTimeout;
 	}
 	
+	/**
+	 * @description Time in milliseconds after which an open connection to the server is not reused. Be sure to set it to a smaller value than the KeepAlive
+					directive on your server. Note that the a "Keep-Alive" header in the response always takes precedence. 
+	 * @default 4000
+	 * @example 30000
+	 */
 	@MCAttribute
 	public void setKeepAliveTimeout(long keepAliveTimeout) {
 		this.keepAliveTimeout = keepAliveTimeout;
@@ -22,6 +28,10 @@ public class ConnectionConfiguration {
 		return connectTimeout;
 	}
 	
+	/**
+	 * @description Socket timeout (connect, read, etc.) in milliseconds.
+	 * @default 10000
+	 */
 	@MCAttribute
 	public void setTimeout(int timeout) {
 		this.connectTimeout = timeout;

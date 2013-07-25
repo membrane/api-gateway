@@ -26,6 +26,18 @@ import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 
+/**
+ * @description Limits the maximum length of a HTTP message body.
+ * @explanation <p>
+ *              Note that due to the streaming nature of Membrane, a request header may already have been passed on to
+ *              the backend, when the condition "body.length &gt; X" becomes true. In this case, further processing is
+ *              aborted and the connection to the backend is simply closed.
+ *              </p>
+ *              <p>
+ *              To apply <tt>&lt;limit/&gt;</tt> only to either requests or responses, wrap it in a corresponding tag:
+ *              <tt>&lt;request&gt;&lt;limit ... /&gt;&lt;/request&gt;</tt>.
+ *              </p>
+ */
 @MCElement(name="limit")
 public class LimitInterceptor extends AbstractInterceptor {
 

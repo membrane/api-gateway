@@ -37,6 +37,17 @@ import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
+/**
+ * @description Serves static files based on the request's path.
+ * @explanation <p>
+ *              Note that <i>docBase</i> any <i>location</i>: A relative or absolute directory, a
+ *              "classpath://com.predic8.membrane.core.interceptor.administration.docBase" expression or a URL.
+ *              </p>
+ *              <p>
+ *              The interceptor chain will not continue beyond this interceptor, as it either successfully returns a
+ *              HTTP response with the contents of a file, or a "404 Not Found." error.
+ *              </p>
+ */
 @MCElement(name="webServer")
 public class WebServerInterceptor extends AbstractInterceptor {
 
@@ -148,6 +159,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		return docBase;
 	}
 
+	/**
+	 * @description Sets path to the directory that contains the web content.
+	 * @default docBase
+	 * @example docBase
+	 */
 	@Required
 	@MCAttribute
 	public void setDocBase(String docBase) {

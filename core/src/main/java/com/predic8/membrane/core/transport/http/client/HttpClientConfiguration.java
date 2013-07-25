@@ -47,6 +47,11 @@ public class HttpClientConfiguration {
 		return maxRetries;
 	}
 	
+	/**
+	 * @description Determines how often Membrane tries to send a message to a target before it gives up and returns an
+	 *              error message to the client.
+	 * @default 5
+	 */
 	@MCAttribute
 	public void setMaxRetries(int maxRetries) {
 		this.maxRetries = maxRetries;

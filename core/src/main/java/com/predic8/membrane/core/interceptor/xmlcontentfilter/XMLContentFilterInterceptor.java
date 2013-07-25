@@ -26,6 +26,27 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+/**
+ * @description <p>
+ *              The <i>xmlContentFilter</i> removes certain XML elements from message bodies. The elements are described
+ *              using an XPath expression.
+ *              </p>
+ * @explanation <p>
+ *              If the XPath expression is simple enough, a StAX-Parser is used to determine whether the XPath might
+ *              match a message at all. This can improve performance significantly, as a DOM tree does probably not have
+ *              to to be constructed for every message. This is, for example, the case in <listing name="example"> <src
+ *              lang="xml"> &lt;xmlContentFilter xPath=&quot;//*[local-name()='Fault' and
+ *              namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']//*[local-name()='stacktrace']&quot; /&gt;
+ *              </src> <caption>xmlContentFilter using a StAX-Parser for improved performance</caption> </listing> where
+ *              the existence of the &lt;Fault&gt;-element is checked using the StAX-parser before the DOM is
+ *              constructed.
+ *              </p>
+ *              <p>
+ *              If the message body is not well-formed XML, it is left unchanged. If the message is XOP-encoded, the
+ *              XPath-expression is run on the reconstituted message; if it matches, the message is replaced by the
+ *              modified reconstituted message.
+ *              </p>
+ */
 @MCElement(name="xmlContentFilter")
 public class XMLContentFilterInterceptor extends AbstractInterceptor {
 	
@@ -42,6 +63,9 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 		return xPath;
 	}
 	
+	/**
+	 * @description An XPath 1.0 expression describing the elements to be removed from message bodies.
+	 */
 	@Required
 	@MCAttribute
 	public void setXPath(String xPath) {

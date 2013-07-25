@@ -73,6 +73,10 @@ public abstract class Transport {
 		return printStackTrace;
 	}
 	
+	/**
+	 * @description Whether the stack traces of exceptions thrown by interceptors should be returned in the HTTP response.
+	 * @default false
+	 */
 	@MCAttribute
 	public void setPrintStackTrace(boolean printStackTrace) {
 		this.printStackTrace = printStackTrace;

@@ -84,6 +84,10 @@ public abstract class AbstractProxy implements Rule {
 		return blockResponse;
 	}
 
+	/**
+	 * @description The name as shown in the Admin Console.
+	 * @default By default, a name will be automatically generated from the target host, port, etc.
+	 */
 	@MCAttribute
 	public void setName(String name) {
 		if (name == null)
@@ -96,11 +100,19 @@ public abstract class AbstractProxy implements Rule {
 		this.key = ruleKey;
 	}
 
+	/**
+	 * @description <i>legacy attribute</i> for usage by Membrane Monitor
+	 * @default false
+	 */
 	@MCAttribute
 	public void setBlockRequest(boolean blockStatus) {
 		this.blockRequest = blockStatus;
 	}
 
+	/**
+	 * @description <i>legacy attribute</i> for usage by Membrane Monitor
+	 * @default false
+	 */
 	@MCAttribute
 	public void setBlockResponse(boolean blockStatus) {
 		this.blockResponse = blockStatus;

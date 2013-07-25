@@ -88,6 +88,10 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 		}
 	}
 
+	/**
+	 * @description Locations of csv file to write out logs.
+	 * @example stat.csv
+	 */
 	@Required
 	@MCAttribute(attributeName="file")
 	public void setFileName(String fileName) throws Exception {

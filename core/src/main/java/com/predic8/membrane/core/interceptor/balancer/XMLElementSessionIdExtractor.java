@@ -23,6 +23,9 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.http.Message;
 
+/**
+ * @description Extracts a session ID from an XML HTTP request body based on the qualified name of an XML element.
+ */
 @MCElement(name="xmlSessionIdExtractor", group="sessionIdExtractor")
 public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
@@ -66,6 +69,10 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 		return localName;
 	}
 
+	/**
+	 * @description Specifies local name of session element.
+	 * @example session
+	 */
 	@Required
 	@MCAttribute
 	public void setLocalName(String localName) {
@@ -76,6 +83,10 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 		return namespace;
 	}
 
+	/**
+	 * @description Specifies namespace of session element.
+	 * @example http://chat.predic8.com/
+	 */
 	@Required
 	@MCAttribute
 	public void setNamespace(String namespace) {

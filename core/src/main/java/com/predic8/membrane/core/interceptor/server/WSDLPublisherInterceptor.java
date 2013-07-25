@@ -40,6 +40,12 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 
+/**
+ * @description <p>
+ *              The <i>wsdlPublisher</i> can be used to serve WSDL files (and attached XML Schema Documents), if your
+ *              backend service does not already do so.
+ *              </p>
+ */
 @MCElement(name="wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
@@ -127,6 +133,10 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 		return wsdl;
 	}
 	
+	/**
+	 * @description The WSDL (URL or file).
+	 * @example /WEB-INF/wsdl/ArticleService.wsdl
+	 */
 	@MCAttribute
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;

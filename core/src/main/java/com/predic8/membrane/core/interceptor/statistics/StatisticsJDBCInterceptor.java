@@ -143,7 +143,11 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 	public DataSource getDataSource() {
 		return dataSource;
 	}
-	
+
+	/**
+	 * @description The spring bean ID of a data source bean.
+	 * @param dataSource
+	 */
 	@Required
 	@MCAttribute
 	public void setDataSource(DataSource dataSource) {
@@ -155,6 +159,9 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 		return postMethodOnly;
 	}
 
+	/**
+	 * @default false
+	 */
 	@MCAttribute
 	public void setPostMethodOnly(boolean postMethodOnly) {
 		this.postMethodOnly = postMethodOnly;
@@ -164,6 +171,9 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 		return soapOnly;
 	}
 
+	/**
+	 * @default false
+	 */
 	@MCAttribute
 	public void setSoapOnly(boolean soapOnly) {
 		this.soapOnly = soapOnly;

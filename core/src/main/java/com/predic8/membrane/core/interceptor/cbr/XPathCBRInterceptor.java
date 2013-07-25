@@ -90,6 +90,9 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		this.namespaces = namespaces;
 	}
 
+	/**
+	 * @description Specifies a XPath expression and a target URL.
+	 */
 	@Required
 	@MCChildElement
 	public void setCases(List<Case> cases) {

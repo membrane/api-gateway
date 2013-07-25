@@ -25,6 +25,19 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+/**
+ * @description <p>
+ *              The <i>soapStackTraceFilter</i> removes SOAP stack traces from message bodies.
+ *              </p>
+ * @explanation <p>
+ *              Using this interceptor hides sensitive information, as the structure of your backend source code, from the caller.
+ *              </p>
+ *              <p>
+ *              The <i>soapStackTraceFilter</i> works without further configuration with most backend servers, but it is
+ *              advised to test its functionality in combination with your SOAP service provider before deploying it in
+ *              production.
+ *              </p>
+ */
 @MCElement(name="soapStackTraceFilter")
 public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 	

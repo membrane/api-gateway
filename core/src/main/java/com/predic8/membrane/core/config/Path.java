@@ -55,7 +55,7 @@ public class Path {
 	}
 
 	/**
-	 * @description If set to true the content will be evaluated as regex.
+	 * @description If set to true the content will be evaluated as a <a href="http://docs.oracle.com/javase/1.4.2/docs/api/java/util/regex/Pattern.html">Java Regular Expression</a>.
 	 * @default false
 	 * @example true
 	 */

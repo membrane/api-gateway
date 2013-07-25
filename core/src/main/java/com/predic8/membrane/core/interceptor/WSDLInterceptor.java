@@ -45,6 +45,10 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
+/**
+ * @description
+ * 		<p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
+ */
 @MCElement(name="wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
 
@@ -227,18 +231,33 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		this.rewriteEndpoint = rewriteEndpoint;
 	}
 
+	/**
+	 * @description The protocol the endpoint should be changed to.
+	 * @default Don't change the endpoint's protocol.
+	 * @example http
+	 */
 	@MCAttribute
 	@Override
 	public void setProtocol(String protocol) {
 		super.setProtocol(protocol);
 	}
 	
+	/**
+	 * @description The host the endpoint should be changed to.
+	 * @default Don't change the endpoint's host.
+	 * @example localhost
+	 */
 	@MCAttribute
 	@Override
 	public void setHost(String host) {
 		super.setHost(host);
 	}
 	
+	/**
+	 * @description The port the endpoint should be changed to.
+	 * @default Don't change the endpoint's port.
+	 * @example 4000
+	 */
 	@MCAttribute
 	@Override
 	public void setPort(String port) {

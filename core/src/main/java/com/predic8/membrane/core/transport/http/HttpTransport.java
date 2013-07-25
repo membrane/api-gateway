@@ -31,6 +31,13 @@ import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.Transport;
 
+/**
+ * @description <p>
+ *              The transport receives messages from clients and invokes interceptors in the request and response flow.
+ *              The interceptors that are engaged with the transport are global and are invoked for each message flowing
+ *              through the router.
+ *              </p>
+ */
 @MCElement(name="transport", group="transport")
 public class HttpTransport extends Transport {
 
@@ -77,7 +84,7 @@ public class HttpTransport extends Transport {
 		}
 	}
 
-	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(0,
+	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(20,
 			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
 			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory());
 
@@ -155,6 +162,11 @@ public class HttpTransport extends Transport {
 		}
 	}
 
+	/**
+	 * @description <p>Membrane uses a thread pool to allocate threads to incomming clients connections. The core thread pool size is the minimum number of threads that are created in advance to serve client requests.</p>
+	 * @default 20
+	 * @example 5
+	 */
 	@MCAttribute
 	public void setCoreThreadPoolSize(int corePoolSize) {
 		executorService.setCorePoolSize(corePoolSize);
@@ -172,6 +184,10 @@ public class HttpTransport extends Transport {
 		return socketTimeout;
 	}
 
+	/**
+	 * @description Socket timout in ms.
+	 * @default 30000
+	 */
 	@MCAttribute
 	public void setSocketTimeout(int timeout) {
 		this.socketTimeout = timeout;
@@ -181,6 +197,14 @@ public class HttpTransport extends Transport {
 		return tcpNoDelay;
 	}
 
+	/**
+	 * @description Whether to use the "TCP no delay" option. (=A TCP/IP packet should be constructed as soon as any
+	 *              data has been written to the network buffer. With "TCP no delay" set to false, the network hardware
+	 *              waits a short period of time wether the software will write more data. When the packet constructed
+	 *              from the data in the buffer would exceed the MTU in size, the packet is always constructed and sent
+	 *              immediately.)
+	 * @default true
+	 */
 	@MCAttribute
 	public void setTcpNoDelay(boolean tcpNoDelay) {
 		this.tcpNoDelay = tcpNoDelay;

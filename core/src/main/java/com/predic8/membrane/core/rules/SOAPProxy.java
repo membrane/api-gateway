@@ -49,6 +49,12 @@ import com.predic8.wsdl.Service;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 
+/**
+ * @description <p>
+ *              A SOAP proxy can be deployed on front of a SOAP Web Service. It conceals the server and offers the same
+ *              interface as the target server to its clients.
+ *              </p>
+ */
 @MCElement(name="soapProxy", group="rule")
 public class SOAPProxy extends AbstractServiceProxy {
 	private static final Log log = LogFactory.getLog(SOAPProxy.class.getName());
@@ -265,6 +271,10 @@ public class SOAPProxy extends AbstractServiceProxy {
 		return wsdl;
 	}
 	
+	/**
+	 * @description The WSDL of the SOAP service.
+	 * @example http://predic8.de/my.wsdl <i>or</i> file:my.wsdl
+	 */
 	@Required
 	@MCAttribute
 	public void setWsdl(String wsdl) {

@@ -17,6 +17,9 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 
+/**
+ * @description <p>Configures inbound or outbound SSL connections.</p>
+ */
 @MCElement(name="ssl", group="ssl")
 public class SSLParser {
 
@@ -49,7 +52,12 @@ public class SSLParser {
 	public String getAlgorithm() {
 		return algorithm;
 	}
-	
+
+	/**
+	 * @description <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/KeyManagerFactory.html#getDefaultAlgorithm%28%29">getDefaultAlgorithm()</a>
+	 * @default java default
+	 * @example SunX509
+	 */
 	@MCAttribute
 	public void setAlgorithm(String algorithm) {
 		this.algorithm = algorithm;
@@ -58,7 +66,11 @@ public class SSLParser {
 	public String getProtocol() {
 		return protocol;
 	}
-	
+
+	/**
+	 * @description <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/SSLContext.html#getInstance%28java.lang.String%29">SSLContext.getInstance()</a>
+	 * @default TLS
+	 */
 	@MCAttribute
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
@@ -67,7 +79,12 @@ public class SSLParser {
 	public String getCiphers() {
 		return ciphers;
 	}
-	
+
+	/**
+	 * @description Space separated list of ciphers to allow. <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/SSLSocketFactory.html#getSupportedCipherSuites%28%29">getSupportedCipherSuites()</a>
+	 * @default all system default ciphers
+	 * @example TLS_ECDH_anon_WITH_RC4_128_SHA
+	 */
 	@MCAttribute
 	public void setCiphers(String ciphers) {
 		this.ciphers = ciphers;
@@ -76,7 +93,12 @@ public class SSLParser {
 	public String getClientAuth() {
 		return clientAuth;
 	}
-	
+
+	/**
+	 * @description Either not set (=no), or <tt>want</tt> or <tt>need</tt>.
+	 * @default <i>not set</i>
+	 * @example <tt>need</tt>
+	 */
 	@MCAttribute
 	public void setClientAuth(String clientAuth) {
 		this.clientAuth = clientAuth;

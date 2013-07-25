@@ -56,6 +56,10 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 			return name;
 		}
 		
+		/**
+		 * @description The user's login.
+		 * @example admin
+		 */
 		@Required
 		@MCAttribute
 		public void setName(String name) {
@@ -66,6 +70,10 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 			return password;
 		}
 		
+		/**
+		 * @description The user's password.
+		 * @example s3cr3t
+		 */
 		@Required
 		@MCAttribute
 		public void setPassword(String password) {

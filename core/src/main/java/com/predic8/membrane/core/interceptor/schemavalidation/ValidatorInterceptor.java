@@ -113,6 +113,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		return validator.validateMessage(exc, exc.getResponse(), "response");
 	}
 	
+	/**
+	 * @description The WSDL (URL or file) to validate against.
+	 * @example http://predic8.com:8080/material/ArticleService?wsdl
+	 */
 	@MCAttribute
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
@@ -126,6 +130,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		return schema;
 	}
 
+	/**
+	 * @description The XSD Schema (URL or file) to validate against.
+	 * @example http://www.predic8.com/schemas/order.xsd
+	 */
 	@MCAttribute
 	public void setSchema(String schema) {
 		this.schema = schema;
@@ -134,7 +142,13 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	public String getFailureHandler() {
 		return failureHandler;
 	}
-	
+
+	/**
+	 * @description If "response", the HTTP response will include a detailled error message. If "log", the response will
+	 *              be generic and the validation error will be logged.
+	 * @default response
+	 * @example log
+	 */
 	@MCAttribute
 	public void setFailureHandler(String failureHandler) {
 		this.failureHandler = failureHandler;
@@ -144,6 +158,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		return jsonSchema;
 	}
 
+	/**
+	 * @description The JSON Schema (URL or file) to validate against.
+	 * @example examples/validation/json-schema/schema2000.json
+	 */
 	@MCAttribute
 	public void setJsonSchema(String jsonSchema) {
 		this.jsonSchema = jsonSchema;
@@ -153,6 +171,10 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		return schematron;
 	}
 
+	/**
+	 * @description The Schematron schema (URL or file) to validate against.
+	 * @example examples/validation/schematron/car-schematron.xml
+	 */
 	@MCAttribute
 	public void setSchematron(String schematron) {
 		this.schematron = schematron;
@@ -161,7 +183,11 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	public boolean isSkipFaults() {
 		return skipFaults;
 	}
-	
+
+	/**
+	 * @description Whether to skip validation for SOAP fault messages.
+	 * @default false
+	 */
 	@MCAttribute
 	public void setSkipFaults(boolean skipFaults) {
 		this.skipFaults = skipFaults;

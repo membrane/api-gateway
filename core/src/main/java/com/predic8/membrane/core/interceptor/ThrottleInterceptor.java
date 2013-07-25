@@ -22,6 +22,10 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
+/**
+ * @description
+		<p>The throttle feature can slow down traffic to thwart denial of service attacks.</p>
+ */
 @MCElement(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(ThrottleInterceptor.class.getName());
@@ -82,6 +86,11 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		return delay;
 	}
 
+	/**
+	 * @description If non-zero, delays requests by specified number of milliseconds.
+	 * @default 0
+	 * @example 1000
+	 */
 	@MCAttribute
 	public void setDelay(long delay) {
 		this.delay = delay;
@@ -91,6 +100,11 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		return maxThreads;
 	}
 
+	/**
+	 * @description If non-zero, newly incoming request are aborted if the number of running requests has reached this limit.
+	 * @default 0
+	 * @example 5
+	 */
 	@MCAttribute
 	public void setMaxThreads(int maxThreads) {
 		this.maxThreads = maxThreads;
@@ -100,6 +114,12 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		return busyDelay;
 	}
 
+	/**
+	 * @description If a newly incoming request exceeds maxThreads, the interceptor waits the specified number in
+	 *              milliseconds and retries once before aborting the request.
+	 * @default 0
+	 * @example 3000
+	 */
 	@MCAttribute
 	public void setBusyDelay(int busyDelay) {
 		this.busyDelay = busyDelay;
