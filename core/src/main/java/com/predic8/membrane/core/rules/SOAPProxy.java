@@ -58,7 +58,7 @@ import com.predic8.wsdl.WSDLParserContext;
  *              will become inactive. Through the admin console, reinitialization attempts can be triggered and, by
  *              default, the {@link Router} also periodically triggers such attempts.
  */
-@MCElement(name="soapProxy", group="rule")
+@MCElement(name="soapProxy")
 public class SOAPProxy extends AbstractServiceProxy {
 	private static final Log log = LogFactory.getLog(SOAPProxy.class.getName());
 	private static final Pattern relativePathPattern = Pattern.compile("^./[^/?]*\\?");

@@ -90,16 +90,12 @@ public class Schemas {
 		w.append("<xsd:complexContent " + (i.getAnnotation().mixed() ? "mixed=\"true\"" : "") + ">\r\n" + 
 				"<xsd:extension base=\"beans:identifiedType\">\r\n");
 		
-		if (i.getAnnotation().xsd().length() == 0) {
-			if (i.getAnnotation().mixed() && i.getCeis().size() > 0) {
-				throw new ProcessingException(
-						"@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
-						i.getElement());
-			}
-			assembleElementInfo(w, m, main, i);
-		} else {
-			w.append(i.getAnnotation().xsd());
+		if (i.getAnnotation().mixed() && i.getCeis().size() > 0) {
+			throw new ProcessingException(
+					"@MCElement(..., mixed=true) and @MCTextContent is not compatible with @MCChildElement.",
+					i.getElement());
 		}
+		assembleElementInfo(w, m, main, i);
 		
 		w.append("</xsd:extension>\r\n" + 
 				"</xsd:complexContent>\r\n");

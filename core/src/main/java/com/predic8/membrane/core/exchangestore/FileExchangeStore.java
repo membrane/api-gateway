@@ -40,7 +40,7 @@ import com.predic8.membrane.core.util.TextUtil;
 /**
  * The output file is UTF-8 encoded.
  */
-@MCElement(name="fileExchangeStore", group="exchangeStore")
+@MCElement(name="fileExchangeStore")
 public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static Log log = LogFactory.getLog(FileExchangeStore.class

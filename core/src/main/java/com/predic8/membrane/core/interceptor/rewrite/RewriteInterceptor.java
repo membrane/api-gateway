@@ -50,7 +50,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		REDIRECT_PERMANENT,
 	}
 	
-	@MCElement(name="map", group="rewriter", topLevel=false)
+	@MCElement(name="map", topLevel=false)
 	public static class Mapping {
 		public String to;
 		public String from;

@@ -6,8 +6,10 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -164,12 +166,21 @@ public class HelpReference {
 
 	private String getPrimaryParentId(Model m, MainInfo mi, ElementInfo ei) {
 		// choose a random parent (TODO: choose a better one)
+		Set<ElementInfo> possibleParents = new HashSet<ElementInfo>();
 		for (Map.Entry<TypeElement, ChildElementDeclarationInfo> e : mi.getChildElementDeclarations().entrySet())
 			if (e.getValue().getElementInfo().contains(ei)) {
-				List<ChildElementInfo> usedBy = e.getValue().getUsedBy();
-				if (usedBy.size() > 0)
-					return usedBy.get(0).getEi().getId();
+				for (ChildElementInfo usedBy : e.getValue().getUsedBy()) {
+					ElementInfo e2 = mi.getElements().get(usedBy.getEi().getElement());
+					if (e2 != null)
+						possibleParents.add(e2);
+				}
 			}
+		for (ElementInfo ei2 : possibleParents)
+			if (ei2.getAnnotation().topLevel())
+				return ei2.getId();
+		possibleParents.remove(ei);
+		if (possibleParents.size() > 0)
+			return possibleParents.iterator().next().getId();
 		return null;
 	}
 

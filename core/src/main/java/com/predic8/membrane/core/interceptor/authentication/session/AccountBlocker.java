@@ -62,7 +62,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.CleanupThrea
  *              Therefore, a more secure password should be chosen, containing letters, digits and special characters.
  *              </p>
  */
-@MCElement(name="accountBlocker", group="accountBlocker")
+@MCElement(name="accountBlocker")
 public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 	private static Log log = LogFactory.getLog(AccountBlocker.class.getName());
 

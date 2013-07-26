@@ -26,7 +26,7 @@ import com.predic8.membrane.core.http.Message;
 /**
  * @description Extracts a session ID from an XML HTTP request body based on the qualified name of an XML element.
  */
-@MCElement(name="xmlSessionIdExtractor", group="sessionIdExtractor")
+@MCElement(name="xmlSessionIdExtractor")
 public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
 	private static Log log = LogFactory.getLog(XMLElementSessionIdExtractor.class.getName());

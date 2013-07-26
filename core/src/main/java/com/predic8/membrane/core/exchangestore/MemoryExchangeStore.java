@@ -30,7 +30,7 @@ import com.predic8.membrane.core.rules.StatisticCollector;
 /**
  * TODO: thread-safety
  */
-@MCElement(name="memoryExchangeStore", group="exchangeStore")
+@MCElement(name="memoryExchangeStore")
 public class MemoryExchangeStore extends AbstractExchangeStore {
 
 	private Map<RuleKey, List<AbstractExchange>> exchangesMap = new HashMap<RuleKey, List<AbstractExchange>>();

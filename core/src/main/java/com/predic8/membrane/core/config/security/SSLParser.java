@@ -20,7 +20,7 @@ import com.predic8.membrane.annot.MCElement;
 /**
  * @description <p>Configures inbound or outbound SSL connections.</p>
  */
-@MCElement(name="ssl", group="ssl")
+@MCElement(name="ssl")
 public class SSLParser {
 
 	private KeyStore keyStore;

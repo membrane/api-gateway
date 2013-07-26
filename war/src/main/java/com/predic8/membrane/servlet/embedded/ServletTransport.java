@@ -26,7 +26,7 @@ import com.predic8.membrane.core.transport.Transport;
 		outputPackage="com.predic8.membrane.servlet.config.spring",
 		outputName="router-conf.xsd",
 		targetNamespace="http://membrane-soa.org/war/1/")
-@MCElement(name="servletTransport", group="transport", configPackage="com.predic8.membrane.servlet.config.spring")
+@MCElement(name="servletTransport", configPackage="com.predic8.membrane.servlet.config.spring")
 public class ServletTransport extends Transport {
 
 	boolean removeContextRoot = true;

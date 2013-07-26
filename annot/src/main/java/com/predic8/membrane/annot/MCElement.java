@@ -10,10 +10,7 @@ import java.lang.annotation.Target;
 public @interface MCElement {
 	String name();
 	String id() default "";
-	String group() default "interceptor";
 	boolean mixed() default false;
-	String xsd() default "";
 	boolean topLevel() default true;
 	String configPackage() default "";
-	boolean generateParserClass() default true;
 }

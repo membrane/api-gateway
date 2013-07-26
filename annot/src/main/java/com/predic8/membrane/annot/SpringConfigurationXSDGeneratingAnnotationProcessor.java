@@ -5,7 +5,6 @@ import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -205,13 +204,9 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					ElementInfo ii = new ElementInfo();
 					ii.setElement((TypeElement)e);
 					ii.setAnnotation(e.getAnnotation(MCElement.class));
-					ii.setGenerateParserClass(ii.getAnnotation().generateParserClass());
 					MainInfo main = ii.getMain(m);
 					main.getIis().add(ii);
 					
-					if (!main.getGroups().containsKey(ii.getAnnotation().group()))
-						main.getGroups().put(ii.getAnnotation().group(), new ArrayList<ElementInfo>());
-					main.getGroups().get(ii.getAnnotation().group()).add(ii);
 					main.getElements().put(ii.getElement(), ii);
 					if (main.getGlobals().containsKey(ii.getAnnotation().name()))
 						throw new ProcessingException("Duplicate global @MCElement name.", main.getGlobals().get(ii.getAnnotation().name()).getElement(), ii.getElement());

@@ -34,7 +34,7 @@ import com.predic8.membrane.core.interceptor.UserFeatureInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptor;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 
-@MCElement(name="defaultConfig", group="basic")
+@MCElement(name="defaultConfig")
 public class DefaultConfig implements BeanFactoryPostProcessor, Ordered {
 
 	private int order = 100; // the order in which BeanFactoryPostProcessors get executed

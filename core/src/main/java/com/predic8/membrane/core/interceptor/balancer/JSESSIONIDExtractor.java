@@ -26,7 +26,7 @@ import com.predic8.membrane.core.http.Message;
  * @description The <i>jSessionIdExtractor</i> extracts the JSESSIONID from a
  *              message and provides it to the {@link Balancer}.
  */
-@MCElement(name="jSessionIdExtractor", group="sessionIdExtractor")
+@MCElement(name="jSessionIdExtractor")
 public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
 
 	private static Log log = LogFactory.getLog(JSESSIONIDExtractor.class.getName());

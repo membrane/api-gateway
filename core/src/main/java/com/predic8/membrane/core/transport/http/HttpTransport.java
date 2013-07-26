@@ -38,7 +38,7 @@ import com.predic8.membrane.core.transport.Transport;
  *              through the router.
  *              </p>
  */
-@MCElement(name="transport", group="transport")
+@MCElement(name="transport")
 public class HttpTransport extends Transport {
 
 	private static Log log = LogFactory.getLog(HttpTransport.class.getName());

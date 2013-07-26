@@ -16,7 +16,7 @@ package com.predic8.membrane.core.config.security;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name="truststore", group="ssl")
+@MCElement(name="truststore")
 public class TrustStore extends Store {
 
 	protected String algorithm;

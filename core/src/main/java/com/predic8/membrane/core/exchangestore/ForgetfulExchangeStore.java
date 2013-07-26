@@ -23,7 +23,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
 
-@MCElement(name="forgetfulExchangeStore", group="exchangeStore")
+@MCElement(name="forgetfulExchangeStore")
 public class ForgetfulExchangeStore implements ExchangeStore {
 
 	public void add(AbstractExchange exchange) {

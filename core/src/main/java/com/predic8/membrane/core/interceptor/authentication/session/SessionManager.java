@@ -44,7 +44,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.CleanupThrea
  *              timeout is 5 minutes.
  *              </p>
  */
-@MCElement(name="sessionManager", group="sessionManager", topLevel=false)
+@MCElement(name="sessionManager", topLevel=false)
 public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;
 	private long timeout;

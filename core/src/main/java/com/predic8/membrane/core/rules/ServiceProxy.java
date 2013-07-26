@@ -24,7 +24,7 @@ import com.predic8.membrane.annot.MCElement;
  *              the server and offers the same interface as the target server to its clients.
  *              </p>
  */
-@MCElement(name="serviceProxy", group="rule")
+@MCElement(name="serviceProxy")
 public class ServiceProxy extends AbstractServiceProxy {
 	
 	public ServiceProxy() {

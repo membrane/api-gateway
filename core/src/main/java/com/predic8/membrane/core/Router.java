@@ -72,7 +72,7 @@ import com.predic8.membrane.core.util.DNSCache;
 		outputPackage="com.predic8.membrane.core.config.spring",
 		outputName="router-conf.xsd",
 		targetNamespace="http://membrane-soa.org/proxies/1/")
-@MCElement(name="router", group="basic")
+@MCElement(name="router")
 public class Router implements Lifecycle, ApplicationContextAware {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());

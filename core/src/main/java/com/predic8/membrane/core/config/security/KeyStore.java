@@ -17,7 +17,7 @@ package com.predic8.membrane.core.config.security;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name="keystore", group="ssl")
+@MCElement(name="keystore")
 public class KeyStore extends Store {
 
 	private String keyPassword;

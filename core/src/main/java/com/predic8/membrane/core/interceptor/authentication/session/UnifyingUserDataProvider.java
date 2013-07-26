@@ -37,7 +37,7 @@ import com.predic8.membrane.core.Router;
  *              provider could verify the user, the login attempt fails.
  *              </p>
  */
-@MCElement(name="unifyingUserDataProvider", group="userDataProvider", topLevel=false)
+@MCElement(name="unifyingUserDataProvider", topLevel=false)
 public class UnifyingUserDataProvider implements UserDataProvider {
 
 	private List<UserDataProvider> userDataProviders = new ArrayList<UserDataProvider>(); 

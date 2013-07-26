@@ -33,7 +33,7 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 	 *              <a href="http://ms.org:8080/esb-doc/configuration/reference/router.htm">content based router</a>.
 	 *              </p>
 	 */
-	@MCElement(name="target", group="util", topLevel=false)
+	@MCElement(name="target", topLevel=false)
 	public static class Target {
 		private String host;
 		private int port = 80;

@@ -84,7 +84,7 @@ import com.predic8.membrane.core.Router;
  *              attributes.
  *              </p>
  */
-@MCElement(name="ldapUserDataProvider", group="userDataProvider", topLevel=false)
+@MCElement(name="ldapUserDataProvider", topLevel=false)
 public class LDAPUserDataProvider implements UserDataProvider {
 
 	private static Log log = LogFactory.getLog(LDAPUserDataProvider.class.getName());

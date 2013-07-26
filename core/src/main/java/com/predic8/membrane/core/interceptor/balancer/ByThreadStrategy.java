@@ -22,7 +22,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
-@MCElement(name="byThreadStrategy", group="dispatchingStrategy")
+@MCElement(name="byThreadStrategy")
 public class ByThreadStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
 	private int maxNumberOfThreadsPerEndpoint = 5;

@@ -27,7 +27,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
-@MCElement(name="clusters", group="loadBalancer", topLevel=false)
+@MCElement(name="clusters", topLevel=false)
 public class Balancer extends AbstractXmlElement {
 	public static final String DEFAULT_NAME = "Default";
 	private static Log log = LogFactory.getLog(Balancer.class.getName());

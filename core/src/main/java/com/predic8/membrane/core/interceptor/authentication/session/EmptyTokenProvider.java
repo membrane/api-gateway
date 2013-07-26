@@ -19,7 +19,7 @@ import java.util.NoSuchElementException;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 
-@MCElement(name="emptyUserDataProvider", group="userDataProvider", topLevel=false)
+@MCElement(name="emptyTokenProvider", topLevel=false)
 public class EmptyTokenProvider implements TokenProvider {
 
 	@Override

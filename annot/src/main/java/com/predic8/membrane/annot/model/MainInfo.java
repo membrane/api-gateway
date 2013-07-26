@@ -18,7 +18,6 @@ public class MainInfo {
 	private MCMain annotation;
 	
 	private List<ElementInfo> iis = new ArrayList<ElementInfo>();
-	private Map<String, List<ElementInfo>> groups = new HashMap<String, List<ElementInfo>>();
 	private Map<TypeElement, ChildElementDeclarationInfo> childElementDeclarations = new HashMap<TypeElement, ChildElementDeclarationInfo>();
 	private Map<TypeElement, ElementInfo> elements = new HashMap<TypeElement, ElementInfo>();
 	private Map<String, ElementInfo> globals = new HashMap<String, ElementInfo>();
@@ -49,10 +48,6 @@ public class MainInfo {
 
 	public List<ElementInfo> getIis() {
 		return iis;
-	}
-
-	public Map<String, List<ElementInfo>> getGroups() {
-		return groups;
 	}
 
 	public Map<TypeElement, ElementInfo> getElements() {

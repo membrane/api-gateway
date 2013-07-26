@@ -29,7 +29,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
 
-@MCElement(name="limitedMemoryExchangeStore", group="exchangeStore")
+@MCElement(name="limitedMemoryExchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private int maxSize = 1000000;

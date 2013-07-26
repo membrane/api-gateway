@@ -93,10 +93,6 @@ public class Parsers {
 	public void writeParsers(Model m) throws IOException {
 		for (MainInfo main : m.getMains()) {
 			for (ElementInfo ii : main.getIis()) {
-				
-				if (!ii.isGenerateParserClass())
-					continue;
-				
 				List<Element> sources = new ArrayList<Element>();
 				sources.add(main.getElement());
 				sources.add(ii.getElement());

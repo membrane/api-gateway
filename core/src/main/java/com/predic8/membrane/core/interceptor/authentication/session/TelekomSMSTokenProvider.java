@@ -68,7 +68,7 @@ import com.predic8.membrane.core.util.Util;
  *              </ul>
  *              </p>
  */
-@MCElement(name="telekomSMSTokenProvider", group="tokenProvider", topLevel=false)
+@MCElement(name="telekomSMSTokenProvider", topLevel=false)
 public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	private static Log log = LogFactory.getLog(TelekomSMSTokenProvider.class.getName());
 

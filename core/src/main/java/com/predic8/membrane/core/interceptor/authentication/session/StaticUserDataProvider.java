@@ -40,7 +40,7 @@ import com.predic8.membrane.core.Router;
  *              initialize the token sequence.
  *              </p>
  */
-@MCElement(name="staticUserDataProvider", group="userDataProvider")
+@MCElement(name="staticUserDataProvider")
 public class StaticUserDataProvider implements UserDataProvider {
 
 	private List<User> users = new ArrayList<User>();

@@ -13,7 +13,6 @@ import com.predic8.membrane.annot.MCElement;
  */
 public class ElementInfo extends AbstractJavadocedInfo {
 	private MCElement annotation;
-	private boolean generateParserClass;
 	private List<ChildElementDeclarationInfo> usedBy = new ArrayList<ChildElementDeclarationInfo>();
 	
 	
@@ -91,14 +90,6 @@ public class ElementInfo extends AbstractJavadocedInfo {
 		this.annotation = annotation;
 	}
 
-	public boolean isGenerateParserClass() {
-		return generateParserClass;
-	}
-
-	public void setGenerateParserClass(boolean generateParserClass) {
-		this.generateParserClass = generateParserClass;
-	}
-	
 	public void addUsedBy(ChildElementDeclarationInfo cedi) {
 		usedBy.add(cedi);
 	}
@@ -120,4 +111,18 @@ public class ElementInfo extends AbstractJavadocedInfo {
 	public OtherAttributesInfo getOai() {
 		return oai;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof ElementInfo))
+			return false;
+		ElementInfo other = (ElementInfo) obj;
+		return element.equals(other.element);
+	}
+	
+	@Override
+	public int hashCode() {
+		return element.getQualifiedName().toString().hashCode();
+	}
+	
 }

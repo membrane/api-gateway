@@ -19,7 +19,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
-@MCElement(name="roundRobinStrategy", group="dispatchingStrategy")
+@MCElement(name="roundRobinStrategy")
 public class RoundRobinStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
 	private int last = -1;

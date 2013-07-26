@@ -42,7 +42,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 @MCElement(name="formValidation")
 public class FormValidationInterceptor extends AbstractInterceptor {
 
-	@MCElement(name="field", group="", topLevel=false)
+	@MCElement(name="field", topLevel=false)
 	public static class Field extends AbstractXmlElement {
 		public String name;
 		public String regex;

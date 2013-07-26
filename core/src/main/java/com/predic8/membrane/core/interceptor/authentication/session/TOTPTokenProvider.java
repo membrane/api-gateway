@@ -42,7 +42,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProv
  *              Authenticator App</a> to store the pre-shared secret and generate such tokens.
  *              </p>
  */
-@MCElement(name="totpTokenProvider", group="tokenProvider", topLevel=false)
+@MCElement(name="totpTokenProvider", topLevel=false)
 public class TOTPTokenProvider implements TokenProvider {
 
 	@Override
