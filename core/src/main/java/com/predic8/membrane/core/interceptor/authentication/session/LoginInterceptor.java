@@ -110,6 +110,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 			throw new Exception("No tokenProvider configured. - Cannot work without one.");
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
+		userDataProvider.init(router);
 		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path);
 	}
 

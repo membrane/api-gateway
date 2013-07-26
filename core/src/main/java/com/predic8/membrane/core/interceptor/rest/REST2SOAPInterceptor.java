@@ -29,8 +29,11 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.AbstractXmlElement;
@@ -46,22 +49,10 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 
-@MCElement(name="rest2Soap", xsd="" +
-		"					<xsd:sequence>\r\n" + 
-		"						<xsd:element name=\"mapping\" minOccurs=\"1\" maxOccurs=\"unbounded\">\r\n" + 
-		"							<xsd:complexType>\r\n" + 
-		"								<xsd:sequence />\r\n" + 
-		"								<xsd:attribute name=\"regex\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								<xsd:attribute name=\"soapAction\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								<xsd:attribute name=\"soapURI\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								<xsd:attribute name=\"requestXSLT\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"								<xsd:attribute name=\"responseXSLT\" type=\"xsd:string\" use=\"required\"/>\r\n" + 
-		"							</xsd:complexType>\r\n" + 
-		"						</xsd:element>\r\n" + 
-		"					</xsd:sequence>\r\n" + 
-		"", generateParserClass=false)
+@MCElement(name="rest2Soap")
 public class REST2SOAPInterceptor extends AbstractInterceptor {
 
+	@MCElement(name="mapping", topLevel=false)
 	public static class Mapping extends AbstractXmlElement {
 		public String regex;
 		public String soapAction;
@@ -88,6 +79,75 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 			out.writeAttribute("requestXSLT", requestXSLT);
 			out.writeAttribute("responseXSLT", responseXSLT);
 			out.writeEndElement();
+		}
+		
+		public String getRegex() {
+			return regex;
+		}
+		
+		/**
+		 * @description Java Regular expression
+		 * @example /bank/.*
+		 */
+		@Required
+		@MCAttribute
+		public void setRegex(String regex) {
+			this.regex = regex;
+		}
+		
+		public String getSoapAction() {
+			return soapAction;
+		}
+		
+		/**
+		 * @description Value of the soapAction header field.
+		 */
+		@Required
+		@MCAttribute
+		public void setSoapAction(String soapAction) {
+			this.soapAction = soapAction;
+		}
+		
+		public String getSoapURI() {
+			return soapURI;
+		}
+
+		/**
+		 * @description Endpoint address of the SOAP service.
+		 * @example /axis2/$1
+		 */
+		@Required
+		@MCAttribute
+		public void setSoapURI(String soapURI) {
+			this.soapURI = soapURI;
+		}
+		
+		public String getRequestXSLT() {
+			return requestXSLT;
+		}
+
+		/**
+		 * @description Transformation that will be applied to the request.
+		 * @example blz-request.xsl
+		 */
+		@Required
+		@MCAttribute
+		public void setRequestXSLT(String requestXSLT) {
+			this.requestXSLT = requestXSLT;
+		}
+		
+		public String getResponseXSLT() {
+			return responseXSLT;
+		}
+
+		/**
+		 * @description Transformation that will be applied to the response.
+		 * @example shop-request.xsl
+		 */
+		@Required
+		@MCAttribute
+		public void setResponseXSLT(String responseXSLT) {
+			this.responseXSLT = responseXSLT;
 		}
 	}
 
@@ -245,6 +305,10 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		return mappings;
 	}
 
+	/**
+	 * @description Specifies the mappings. The first matching mapping will be applied to the request.
+	 */
+	@MCChildElement
 	public void setMappings(List<Mapping> mappings) {
 		this.mappings = mappings;
 	}

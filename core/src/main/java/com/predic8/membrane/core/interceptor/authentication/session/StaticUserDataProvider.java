@@ -13,14 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import javax.xml.stream.XMLStreamReader;
-
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.annot.MCOtherAttributes;
+import com.predic8.membrane.core.Router;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
@@ -37,22 +40,11 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
  *              initialize the token sequence.
  *              </p>
  */
-@MCElement(name="staticUserDataProvider", group="userDataProvider", topLevel=false, xsd=
-			"<xsd:sequence>\r\n" +
-			"	<xsd:element name=\"user\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-			"		<xsd:complexType>\r\n" + 
-			"			<xsd:sequence />\r\n" + 
-			"			<xsd:attribute name=\"username\" type=\"xsd:string\" />\r\n" + 
-			"			<xsd:attribute name=\"password\" type=\"xsd:string\" />\r\n" + 
-			"			<xsd:attribute name=\"sms\" type=\"xsd:string\" />\r\n" + 
-			"			<xsd:attribute name=\"secret\" type=\"xsd:string\" />\r\n" + 
-			"			<xsd:anyAttribute processContents=\"skip\" />\r\n" + 
-			"		</xsd:complexType>\r\n" + 
-			"	</xsd:element>\r\n" +
-			"</xsd:sequence>\r\n", generateParserClass=false)
-public class StaticUserDataProvider extends AbstractXmlElement implements UserDataProvider {
+@MCElement(name="staticUserDataProvider", group="userDataProvider")
+public class StaticUserDataProvider implements UserDataProvider {
 
-	private Map<String, Map<String, String>> users = new HashMap<String, Map<String,String>>();
+	private List<User> users = new ArrayList<User>();
+	private Map<String, User> usersByName = new HashMap<String, User>();
 	
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {
@@ -61,42 +53,81 @@ public class StaticUserDataProvider extends AbstractXmlElement implements UserDa
 			throw new NoSuchElementException();
 		if (username.equals("error"))
 			throw new RuntimeException();
-		Map<String, String> userAttributes;
-		synchronized (users) {
-			userAttributes = users.get(username);
-		}
+		User userAttributes;
+		userAttributes = usersByName.get(username);
 		if (userAttributes == null)
 			throw new NoSuchElementException();
 		String pw = postData.get("password");
 		String pw2;
-		synchronized (userAttributes) {
-			pw2 = userAttributes.get("password");
-		}
+		pw2 = userAttributes.getPassword();
 		if (pw2 == null || !pw2.equals(pw))
 			throw new NoSuchElementException();
-		return userAttributes;
+		return userAttributes.getAttributes();
 	}
 	
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
-		if (child.equals("user")) {
-			HashMap<String, String> attributes = new HashMap<String, String>();
-			for (int i = 0; i < token.getAttributeCount(); i++)
-				attributes.put(token.getAttributeName(i).getLocalPart(), token.getAttributeValue(i));
-			synchronized (users) {
-				users.put(attributes.get("username"), attributes);
-			}
-			new AbstractXmlElement() {}.parse(token);
-		} else {
-			super.parseChildren(token, child);
+	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
+	public static class User {
+		Map<String, String> attributes = new HashMap<String, String>();
+
+		public String getUsername() {
+			return attributes.get("username");
+		}
+
+		@MCAttribute
+		public void setUsername(String value) {
+			attributes.put("username", value);
+		}
+
+		public String getPassword() {
+			return attributes.get("password");
+		}
+
+		@MCAttribute
+		public void setPassword(String value) {
+			attributes.put("username", value);
+		}
+
+		public String getSms() {
+			return attributes.get("sms");
+		}
+
+		@MCAttribute
+		public void setSms(String value) {
+			attributes.put("username", value);
+		}
+
+		public String getSecret() {
+			return attributes.get("secret");
+		}
+
+		@MCAttribute
+		public void setSecret(String value) {
+			attributes.put("username", value);
+		}
+		
+		public Map<String, String> getAttributes() {
+			return attributes;
+		}
+		
+		@MCOtherAttributes
+		public void setAttributes(Map<String, String> attributes) {
+			for (Map.Entry<String, String> e : attributes.entrySet())
+				this.attributes.put(e.getKey(), e.getValue());
 		}
 	}
 	
-	public Map<String, Map<String, String>> getUsers() {
+	public List<User> getUsers() {
 		return users;
 	}
 	
-	public void setUsers(Map<String, Map<String, String>> users) {
+	@MCChildElement
+	public void setUsers(List<User> users) {
 		this.users = users;
+	}
+	
+	@Override
+	public void init(Router router) {
+		for (User user : users)
+			usersByName.put(user.getUsername(), user);
 	}
 }

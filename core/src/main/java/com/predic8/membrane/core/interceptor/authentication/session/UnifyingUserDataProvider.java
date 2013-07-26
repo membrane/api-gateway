@@ -19,14 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import javax.xml.stream.XMLStreamReader;
-
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.AbstractXmlElement;
-import com.predic8.membrane.core.config.XMLElement;
+import com.predic8.membrane.core.Router;
 
 /**
  * @explanation <p>
@@ -41,37 +38,10 @@ import com.predic8.membrane.core.config.XMLElement;
  *              </p>
  */
 @MCElement(name="unifyingUserDataProvider", group="userDataProvider", topLevel=false)
-public class UnifyingUserDataProvider extends AbstractXmlElement implements UserDataProvider {
+public class UnifyingUserDataProvider implements UserDataProvider {
 
 	private List<UserDataProvider> userDataProviders = new ArrayList<UserDataProvider>(); 
 
-	@Override
-	public XMLElement parse(XMLStreamReader token) throws Exception {
-		userDataProviders.clear();
-		return super.parse(token);
-	}
-	
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
-		UserDataProvider userDataProvider;
-		if (child.equals("staticUserDataProvider")) {
-			userDataProvider = new StaticUserDataProvider();
-			((StaticUserDataProvider) userDataProvider).parse(token);
-			userDataProviders.add(userDataProvider);
-		} else if (child.equals("ldapUserDataProvider")) {
-			userDataProvider = new LDAPUserDataProvider();
-			((LDAPUserDataProvider) userDataProvider).parse(token);
-			userDataProviders.add(userDataProvider);
-		} else if (child.equals("unifyingUserDataProvider")) {
-			userDataProvider = new UnifyingUserDataProvider();
-			((UnifyingUserDataProvider) userDataProvider).parse(token);
-			userDataProviders.add(userDataProvider);
-		} else {
-			super.parseChildren(token, child);
-		}
-	}
-
-	
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {
 		for (UserDataProvider udp : userDataProviders)
@@ -90,6 +60,12 @@ public class UnifyingUserDataProvider extends AbstractXmlElement implements User
 	@MCChildElement
 	public void setUserDataProviders(List<UserDataProvider> userDataProviders) {
 		this.userDataProviders = userDataProviders;
+	}
+	
+	@Override
+	public void init(Router router) {
+		for (UserDataProvider udp : userDataProviders)
+			udp.init(router);
 	}
 
 }

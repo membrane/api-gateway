@@ -13,8 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
@@ -29,14 +31,15 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-import javax.xml.stream.XMLStreamReader;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
 
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.Router;
 
 /**
  * @description A <i>user data provider</i> querying an LDAP server to authorize users and retrieve attributes.
@@ -81,33 +84,8 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
  *              attributes.
  *              </p>
  */
-@MCElement(name="ldapUserDataProvider", group="userDataProvider", topLevel=false, xsd=
-		"<xsd:sequence>\r\n" + 
-		"	<xsd:element name=\"map\">\r\n" + 
-		"		<xsd:complexType>\r\n" + 
-		"			<xsd:sequence>\r\n" + 
-		"				<xsd:element name=\"attribute\" minOccurs=\"0\" maxOccurs=\"unbounded\">\r\n" + 
-		"					<xsd:complexType>\r\n" + 
-		"						<xsd:sequence />\r\n" + 
-		"						<xsd:attribute name=\"from\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"						<xsd:attribute name=\"to\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"					</xsd:complexType>\r\n" + 
-		"				</xsd:element>\r\n" + 
-		"			</xsd:sequence>\r\n" + 
-		"		</xsd:complexType>\r\n" + 
-		"	</xsd:element>\r\n" + 
-		"</xsd:sequence>\r\n" + 
-		"<xsd:attribute name=\"url\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"<xsd:attribute name=\"base\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"<xsd:attribute name=\"binddn\" type=\"xsd:string\" />\r\n" + 
-		"<xsd:attribute name=\"bindpw\" type=\"xsd:string\" />\r\n" + 
-		"<xsd:attribute name=\"searchPattern\" type=\"xsd:string\" use=\"required\" />\r\n" + 
-		"<xsd:attribute name=\"searchScope\" type=\"xsd:string\" default=\"subtree\" />\r\n" + 
-		"<xsd:attribute name=\"timeout\" type=\"xsd:string\" default=\"1000\" />\r\n" + 
-		"<xsd:attribute name=\"connectTimeout\" type=\"xsd:string\" default=\"1000\" />\r\n" + 
-		"<xsd:attribute name=\"readAttributesAsSelf\" type=\"xsd:boolean\" default=\"true\" />\r\n" + 
-		"<xsd:attribute name=\"passwordAttribute\" type=\"xsd:string\" />\r\n")
-public class LDAPUserDataProvider extends AbstractXmlElement implements UserDataProvider {
+@MCElement(name="ldapUserDataProvider", group="userDataProvider", topLevel=false)
+public class LDAPUserDataProvider implements UserDataProvider {
 
 	private static Log log = LogFactory.getLog(LDAPUserDataProvider.class.getName());
 
@@ -122,47 +100,48 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 	String connectTimeout = "1000";
 	boolean readAttributesAsSelf = true; // whether reading the user's attributes requires authentication
 	HashMap<String, String> attributeMap = new HashMap<String, String>(); // maps LDAP attributes to TokenGenerator attributes
-
-	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		url = token.getAttributeValue("", "url");
-		base = token.getAttributeValue("", "base");
-		binddn = token.getAttributeValue("", "binddn");
-		bindpw = token.getAttributeValue("", "bindpw");
-		searchPattern = token.getAttributeValue("", "searchPattern");
-		searchScope = searchScopeFromString(token.getAttributeValue("", "searchScope"));
-		passwordAttribute = token.getAttributeValue("", "passwordAttribute");
-		timeout = StringUtils.defaultIfEmpty(token.getAttributeValue("", "timeout"), "1000");
-		connectTimeout = StringUtils.defaultIfEmpty(token.getAttributeValue("", "connectTimeout"), timeout);
-		readAttributesAsSelf = Boolean.parseBoolean(StringUtils.defaultIfEmpty(token.getAttributeValue("", "readAttributesAsSelf"), "true"));
-		
-		if (passwordAttribute != null && readAttributesAsSelf)
-			throw new Exception("@passwordAttribute is not compatible with @readAttributesAsSelf.");
-	}
+	AttributeMap map;
 	
-	@Override
-	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
-		if (child.equals("map")) {
-			new AbstractXmlElement() {
-				protected void parseChildren(XMLStreamReader token, String child) throws Exception {
-					if (child.equals("attribute")) {
-						String from = token.getAttributeValue("", "from");
-						String to = token.getAttributeValue("", "to");
-						if (from == null || to == null)
-							throw new Exception("ldapUserDataProvider/map/attribute requires @from and @to attributes.");
-						attributeMap.put(from, to);
-						new AbstractXmlElement() {}.parse(token);
-					} else {
-						super.parseChildren(token, child);
-					}
-				};
-			}.parse(token);
-		} else {
-			super.parseChildren(token, child);
+	@MCElement(name="map", topLevel=false, id="ldapUserDataProvider-map")
+	public static class AttributeMap {
+	
+		@MCElement(name="attribute", topLevel=false)
+		public static class Attribute {
+			String from;
+			String to;
+
+			public String getFrom() {
+				return from;
+			}
+
+			@Required
+			@MCAttribute
+			public void setFrom(String from) {
+				this.from = from;
+			}
+
+			public String getTo() {
+				return to;
+			}
+
+			@Required
+			@MCAttribute
+			public void setTo(String to) {
+				this.to = to;
+			}
 		}
-		if (passwordAttribute != null) {
-			attributeMap.put(passwordAttribute, "_pass");
+		
+		private List<Attribute> attributes = new ArrayList<Attribute>();
+		
+		public List<Attribute> getAttributes() {
+			return attributes;
 		}
+		
+		@MCChildElement
+		public void setAttributes(List<Attribute> attributes) {
+			this.attributes = attributes;
+		}
+	
 	}
 	
 	/**
@@ -291,28 +270,12 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		}
 	}
 
-	private int searchScopeFromString(String s) {
-		if (s != null && "object".equalsIgnoreCase(s))
-			return SearchControls.OBJECT_SCOPE;
-		if (s != null && "onelevel".equalsIgnoreCase(s))
-			return SearchControls.ONELEVEL_SCOPE;
-		return SearchControls.SUBTREE_SCOPE;
-	}
-
-	/*
-	private String searchScopeToString(int scope) {
-		switch (scope) {
-		case SearchControls.OBJECT_SCOPE: return "object";
-		case SearchControls.ONELEVEL_SCOPE: return "onelevel";
-		default: return "subtree";
-		}
-	}
-	*/
-
 	public String getUrl() {
 		return url;
 	}
 
+	@Required
+	@MCAttribute
 	public void setUrl(String url) {
 		this.url = url;
 	}
@@ -321,6 +284,8 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		return base;
 	}
 
+	@Required
+	@MCAttribute
 	public void setBase(String base) {
 		this.base = base;
 	}
@@ -329,6 +294,7 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		return binddn;
 	}
 
+	@MCAttribute
 	public void setBinddn(String binddn) {
 		this.binddn = binddn;
 	}
@@ -337,6 +303,7 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		return bindpw;
 	}
 
+	@MCAttribute
 	public void setBindpw(String bindpw) {
 		this.bindpw = bindpw;
 	}
@@ -345,22 +312,35 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		return searchPattern;
 	}
 
+	@Required
+	@MCAttribute
 	public void setSearchPattern(String searchPattern) {
 		this.searchPattern = searchPattern;
 	}
 
-	public int getSearchScope() {
-		return searchScope;
+	public static enum SearchScope {
+		OBJECT,
+		ONELEVEL,
+		SUBTREE,
+	}
+	
+	public SearchScope getSearchScope() {
+		return SearchScope.values()[searchScope];
 	}
 
-	public void setSearchScope(int searchScope) {
-		this.searchScope = searchScope;
+	/**
+	 * @default subtree
+	 */
+	@MCAttribute
+	public void setSearchScope(SearchScope searchScope) {
+		this.searchScope = searchScope.ordinal();
 	}
 
 	public String getPasswordAttribute() {
 		return passwordAttribute;
 	}
 
+	@MCAttribute
 	public void setPasswordAttribute(String passwordAttribute) {
 		this.passwordAttribute = passwordAttribute;
 		if (passwordAttribute != null) {
@@ -372,6 +352,10 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		return timeout;
 	}
 
+	/**
+	 * @default 1000
+	 */
+	@MCAttribute
 	public void setTimeout(String timeout) {
 		this.timeout = timeout;
 	}
@@ -380,6 +364,10 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		return connectTimeout;
 	}
 
+	/**
+	 * @default 1000
+	 */
+	@MCAttribute
 	public void setConnectTimeout(String connectTimeout) {
 		this.connectTimeout = connectTimeout;
 	}
@@ -388,6 +376,10 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		return readAttributesAsSelf;
 	}
 
+	/**
+	 * @default true
+	 */
+	@MCAttribute
 	public void setReadAttributesAsSelf(boolean readAttributesAsSelf) {
 		this.readAttributesAsSelf = readAttributesAsSelf;
 	}
@@ -401,6 +393,29 @@ public class LDAPUserDataProvider extends AbstractXmlElement implements UserData
 		if (passwordAttribute != null) {
 			attributeMap.put(passwordAttribute, "_pass");
 		}
+	}
+	
+	@Override
+	public void init(Router router) {
+		if (passwordAttribute != null && readAttributesAsSelf)
+			throw new RuntimeException("@passwordAttribute is not compatible with @readAttributesAsSelf.");
+		
+		if (map != null) {
+			for (AttributeMap.Attribute a : map.getAttributes())
+				attributeMap.put(a.getFrom(), a.getTo());
+		}
+		if (passwordAttribute != null) {
+			attributeMap.put(passwordAttribute, "_pass");
+		}
+	}
+	
+	public AttributeMap getMap() {
+		return map;
+	}
+	
+	@MCChildElement
+	public void setMap(AttributeMap map) {
+		this.map = map;
 	}
 
 }
