@@ -211,7 +211,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					if (main.getGlobals().containsKey(ii.getAnnotation().name()))
 						throw new ProcessingException("Duplicate global @MCElement name.", main.getGlobals().get(ii.getAnnotation().name()).getElement(), ii.getElement());
 					if (main.getIds().containsKey(ii.getId()))
-						throw new ProcessingException("Duplicate element id \"" + ii.getId() + "\". Please assign one using @MCElement(id=\"...\").", e);
+						throw new ProcessingException("Duplicate element id \"" + ii.getId() + "\". Please assign one using @MCElement(id=\"...\").", e, main.getIds().get(ii.getId()).getElement());
 					main.getIds().put(ii.getId(), ii);
 	
 					scan(m, main, ii);
