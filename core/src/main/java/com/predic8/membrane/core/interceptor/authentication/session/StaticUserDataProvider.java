@@ -73,6 +73,9 @@ public class StaticUserDataProvider implements UserDataProvider {
 			return attributes.get("username");
 		}
 
+		/**
+		 * @description The user's login.
+		 */
 		@MCAttribute
 		public void setUsername(String value) {
 			attributes.put("username", value);
@@ -82,6 +85,9 @@ public class StaticUserDataProvider implements UserDataProvider {
 			return attributes.get("password");
 		}
 
+		/**
+		 * @description The user's password.
+		 */
 		@MCAttribute
 		public void setPassword(String value) {
 			attributes.put("username", value);
@@ -91,6 +97,9 @@ public class StaticUserDataProvider implements UserDataProvider {
 			return attributes.get("sms");
 		}
 
+		/**
+		 * @description The user's phone number (if used in combination with the {@link TelekomSMSTokenProvider}).
+		 */
 		@MCAttribute
 		public void setSms(String value) {
 			attributes.put("username", value);
@@ -100,6 +109,9 @@ public class StaticUserDataProvider implements UserDataProvider {
 			return attributes.get("secret");
 		}
 
+		/**
+		 * @description The user's shared TOTP secret (if used in combination with the {@link TOTPTokenProvider}).
+		 */
 		@MCAttribute
 		public void setSecret(String value) {
 			attributes.put("username", value);
@@ -109,6 +121,10 @@ public class StaticUserDataProvider implements UserDataProvider {
 			return attributes;
 		}
 		
+		/**
+		 * @description Other user attributes. For example any attribute starting with "<i>header</i>" will be added
+		 *              when HTTP requests are forwarded when authorized by this user.
+		 */
 		@MCOtherAttributes
 		public void setAttributes(Map<String, String> attributes) {
 			for (Map.Entry<String, String> e : attributes.entrySet())

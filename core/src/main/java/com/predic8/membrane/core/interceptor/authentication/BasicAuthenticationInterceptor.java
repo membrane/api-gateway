@@ -40,7 +40,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 @MCElement(name="basicAuthentication")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	
-	@MCElement(name="user", topLevel=false)
+	@MCElement(name="user", topLevel=false, id="basicAuthentication-user")
 	public static class User {
 		private String name, password;
 		

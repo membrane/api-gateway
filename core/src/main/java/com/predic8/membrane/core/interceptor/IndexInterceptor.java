@@ -40,7 +40,7 @@ import com.predic8.membrane.core.transport.http.HttpServerHandler;
  *              element. Of course you can protect the service proxy by using
  *              SSL or Username and Password.
  */
-@MCElement(name="index")
+@MCElement(name="index", id="index-interceptor")
 public class IndexInterceptor extends AbstractInterceptor {
 	
 	private static class ServiceInfo {

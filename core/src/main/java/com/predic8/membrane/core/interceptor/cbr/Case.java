@@ -22,7 +22,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
-@MCElement(name="case", topLevel=false)
+@MCElement(name="case", topLevel=false, id="switch-case")
 public class Case extends AbstractXmlElement {
 
 	private String url;

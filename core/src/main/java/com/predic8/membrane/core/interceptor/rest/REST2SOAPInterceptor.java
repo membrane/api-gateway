@@ -52,7 +52,7 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 @MCElement(name="rest2Soap")
 public class REST2SOAPInterceptor extends AbstractInterceptor {
 
-	@MCElement(name="mapping", topLevel=false)
+	@MCElement(name="mapping", topLevel=false, id="rest2Soap-mapping")
 	public static class Mapping extends AbstractXmlElement {
 		public String regex;
 		public String soapAction;
