@@ -54,6 +54,9 @@ import com.predic8.wsdl.WSDLParserContext;
  *              A SOAP proxy can be deployed on front of a SOAP Web Service. It conceals the server and offers the same
  *              interface as the target server to its clients.
  *              </p>
+ * @explanation If the WSDL referenced by the <i>wsdl</i> attribute is not available at startup, the &lt;soapProxy&gt;
+ *              will become inactive. Through the admin console, reinitialization attempts can be triggered and, by
+ *              default, the {@link Router} also periodically triggers such attempts.
  */
 @MCElement(name="soapProxy", group="rule")
 public class SOAPProxy extends AbstractServiceProxy {

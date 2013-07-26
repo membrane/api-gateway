@@ -39,7 +39,9 @@ import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.core.RuleManager.RuleDefinitionSource;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
+import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
@@ -50,6 +52,22 @@ import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.DNSCache;
 
+/**
+ * @description <p>
+ *              Membrane Service Proxy's main object.
+ *              </p>
+ *              <p>
+ *              The router is a Spring Lifecycle object: It is automatically started and stopped according to the
+ *              Lifecycle of the Spring Context containing it. In Membrane's standard setup (standalone or in a J2EE web
+ *              app), Membrane itself controls the creation of the Spring Context and its Lifecycle.
+ *              </p>
+ *              <p>
+ *              In this case, the router is <i>hot deployable</i>: It can monitor <i>proxies.xml</i>, the Spring
+ *              configuration file, for changes and reinitialize the Spring Context, when a change is detected. Note
+ *              that, during the Spring Context restart, the router object itself along with almost all other Membrane
+ *              objects (interceptors, etc.) will be recreated.
+ *              </p>
+ */
 @MCMain(
 		outputPackage="com.predic8.membrane.core.config.spring",
 		outputName="router-conf.xsd",
@@ -134,6 +152,12 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		return exchangeStore;
 	}
 
+	/**
+	 * @description Spring Bean ID of an {@link ExchangeStore}. The exchange store will be used by this router's
+	 *              components ({@link AdminConsoleInterceptor}, {@link ExchangeStoreInterceptor}, etc.) by default, if
+	 *              no other exchange store is explicitly set to be used by them.
+	 * @default create a {@link LimitedMemoryExchangeStore} limited to the size of 1 MB. 
+	 */
 	@MCAttribute
 	public void setExchangeStore(ExchangeStore exchangeStore) {
 		this.exchangeStore = exchangeStore;
@@ -323,6 +347,17 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		return running;
 	}
 	
+	/**
+	 * @description 
+	 * <p>Whether changes to the router's configuration file should automatically trigger a restart.
+	 * </p>
+	 * <p>
+	 * Monitoring the router's configuration file <i>proxies.xml</i> is only possible, if the router
+	 * is created by a Spring Application Context which supports monitoring.
+	 * </p>
+	 * @default true
+	 * @param hotDeploy
+	 */
 	@MCAttribute
 	public void setHotDeploy(boolean hotDeploy) {
 		if (running) {
@@ -342,6 +377,10 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		return retryInitInterval;
 	}
 	
+	/**
+	 * @description number of milliseconds after which reinitialization of &lt;soapProxy&gt;s should be attempted periodically
+	 * @default 5 minutes
+	 */
 	@MCAttribute
 	public void setRetryInitInterval(int retryInitInterval) {
 		this.retryInitInterval = retryInitInterval;

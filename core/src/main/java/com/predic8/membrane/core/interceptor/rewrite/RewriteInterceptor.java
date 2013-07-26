@@ -36,6 +36,11 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
+/**
+ * @description <p>
+ *              Rewrites the path of incoming requests based on a mapping or redirects requests.
+ *              </p>
+ */
 @MCElement(name="rewriter")
 public class RewriteInterceptor extends AbstractInterceptor {
 
@@ -82,6 +87,10 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			return from;
 		}
 		
+		/**
+		 * @description Java Regular expression
+		 * @example ^/bank/(.*)
+		 */
 		@Required
 		@MCAttribute
 		public void setFrom(String from) {
@@ -96,6 +105,10 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			return to;
 		}
 
+		/**
+		 * @description Replacement string. Can contain references to matching groups.
+		 * @example /axis2/$1
+		 */
 		@Required
 		@MCAttribute
 		public void setTo(String to) {
@@ -108,6 +121,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			return do_;
 		}
 		
+		/**
+		 * @description What to do: "rewrite", "redirect-temporary" or "redirect-permanent".
+		 * @default rewrite (default) or redirect (if "to" contains "://")
+		 * @example redirect-temporary
+		 */
 		@MCAttribute
 		public void setDo(Type do_) {
 			this.do_ = do_;
@@ -192,6 +210,9 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		return mappings;
 	}
 
+	/**
+	 * @description Defines a regex and a replacement for the rewriting of the URI.
+	 */
 	@Required
 	@MCChildElement
 	public void setMappings(List<Mapping> mappings) {
