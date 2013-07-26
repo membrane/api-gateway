@@ -8,8 +8,10 @@ import java.util.List;
 import javax.annotation.processing.FilerException;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 
+import com.predic8.membrane.annot.AnnotUtils;
 import com.predic8.membrane.annot.model.AttributeInfo;
 import com.predic8.membrane.annot.model.ChildElementDeclarationInfo;
 import com.predic8.membrane.annot.model.ChildElementInfo;
@@ -66,7 +68,8 @@ public class Parsers {
 						} else {
 							for (ChildElementDeclarationInfo cedi : i.getUsedBy()) {
 								for (ChildElementInfo cei : cedi.getUsedBy()) {
-									String clazz = cei.getEi().getElement().getQualifiedName().toString();
+									TypeElement element = cei.getEi().getElement();
+									String clazz = AnnotUtils.getRuntimeClassName(element);
 									bw.write("		nh.registerLocalBeanDefinitionParser(\"" + clazz + "\", \"" + i.getAnnotation().name() + "\", new " + i.getParserClassSimpleName() + "());\r\n");
 								}
 							}
@@ -86,7 +89,7 @@ public class Parsers {
 			}
 		}
 	}
-	
+
 	public void writeParsers(Model m) throws IOException {
 		for (MainInfo main : m.getMains()) {
 			for (ElementInfo ii : main.getIis()) {
@@ -154,6 +157,9 @@ public class Parsers {
 							}
 							if (ai.getXMLName().equals("name"))
 								bw.write("		element.removeAttribute(\"name\");\r\n");
+						}
+						if (ii.getOai() != null) {
+							bw.write("		setProperties(\"" + ii.getOai().getSpringName() + "\", element, builder);\r\n");
 						}
 						for (ChildElementInfo cei : ii.getCeis())
 							if (cei.isList())

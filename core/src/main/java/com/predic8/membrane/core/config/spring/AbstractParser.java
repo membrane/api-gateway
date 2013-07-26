@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.config.spring;
 
+import java.util.HashMap;
 import java.util.Set;
 
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -24,7 +25,9 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.xml.AbstractSingleBeanDefinitionParser;
 import org.springframework.beans.factory.xml.BeanDefinitionParserDelegate;
 import org.springframework.beans.factory.xml.ParserContext;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -95,6 +98,17 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 	protected void setPropertyIfSet(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
 		if (e.hasAttribute(xmlPropertyName))
 			setProperty(xmlPropertyName, springPropertyName, e, builder, flexibleEnum);
+	}
+	
+	protected void setProperties(String prop, Element e, BeanDefinitionBuilder builder) {
+		NamedNodeMap attributes = e.getAttributes();
+		HashMap<String, String> attrs = new HashMap<String, String>();
+		for (int i = 0; i < attributes.getLength(); i++) {
+			Attr item = (Attr) attributes.item(i);
+			if (item.getLocalName() != null)
+				attrs.put(item.getLocalName(), item.getValue());
+		}
+		builder.addPropertyValue(prop, attrs);
 	}
 	
 	protected void parseElementToProperty(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, String property) {

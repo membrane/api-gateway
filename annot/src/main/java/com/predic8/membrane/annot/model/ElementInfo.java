@@ -24,6 +24,9 @@ public class ElementInfo extends AbstractJavadocedInfo {
 	
 	private List<AttributeInfo> ais = new ArrayList<AttributeInfo>();
 	private List<ChildElementInfo> ceis = new ArrayList<ChildElementInfo>();
+	
+	private OtherAttributesInfo oai;
+	
 	public TypeElement getElement() {
 		return element;
 	}
@@ -57,10 +60,7 @@ public class ElementInfo extends AbstractJavadocedInfo {
 	}
 
 	public String getParserClassSimpleName() {
-		if (getAnnotation().group().equals("interceptor"))
-			return AnnotUtils.javaify(getAnnotation().name() + "InterceptorParser");
-		else
-			return AnnotUtils.javaify(getAnnotation().name() + "Parser");
+		return AnnotUtils.javaify(getId().replace("-", "") + "Parser");
 	}
 	
 	public MainInfo getMain(Model m) {
@@ -111,5 +111,13 @@ public class ElementInfo extends AbstractJavadocedInfo {
 		if (annotation.id().length() > 0)
 			return annotation.id();
 		return annotation.name();
+	}
+	
+	public void setOai(OtherAttributesInfo oai) {
+		this.oai = oai;
+	}
+	
+	public OtherAttributesInfo getOai() {
+		return oai;
 	}
 }

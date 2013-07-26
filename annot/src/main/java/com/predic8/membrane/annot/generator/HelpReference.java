@@ -29,6 +29,7 @@ import com.predic8.membrane.annot.model.ChildElementInfo;
 import com.predic8.membrane.annot.model.ElementInfo;
 import com.predic8.membrane.annot.model.MainInfo;
 import com.predic8.membrane.annot.model.Model;
+import com.predic8.membrane.annot.model.OtherAttributesInfo;
 import com.predic8.membrane.annot.model.doc.Doc;
 
 public class HelpReference {
@@ -133,12 +134,20 @@ public class HelpReference {
 			}
 			
 		});
+		OtherAttributesInfo oai = ei.getOai();
+		
 		if (ais.size() > 0 && ais.get(0).getXMLName().equals("id"))
 			ais.remove(0);
-		if (ais.size() > 0) {
+		
+		if (ais.size() > 0 || oai != null) {
 			xew.writeStartElement("attributes");
 			for (AttributeInfo ai : ais)
 				handle(ai);
+			if (oai != null) {
+				xew.writeStartElement("any");
+				handleDoc(oai);
+				xew.writeEndElement();
+			}
 			xew.writeEndElement();
 		}
 		

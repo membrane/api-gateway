@@ -127,6 +127,11 @@ public class Schemas {
 		for (AttributeInfo ai : i.getAis())
 			if (!ai.getXMLName().equals("id"))
 				assembleAttributeDeclaration(w, ai);
+		if (i.getOai() != null) {
+			w.append("<xsd:anyAttribute processContents=\"skip\">\r\n");
+			assembleDocumentation(w, i.getOai());
+			w.append("</xsd:anyAttribute>\r\n");
+		}
 	}
 
 	private void assembleAttributeDeclaration(Writer w, AttributeInfo ai) throws IOException {

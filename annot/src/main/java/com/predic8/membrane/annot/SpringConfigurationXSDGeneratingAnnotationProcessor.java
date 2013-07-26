@@ -35,6 +35,7 @@ import com.predic8.membrane.annot.model.ChildElementInfo;
 import com.predic8.membrane.annot.model.ElementInfo;
 import com.predic8.membrane.annot.model.MainInfo;
 import com.predic8.membrane.annot.model.Model;
+import com.predic8.membrane.annot.model.OtherAttributesInfo;
 import com.predic8.membrane.annot.model.TextContentInfo;
 
 @SupportedAnnotationTypes(value = { "com.predic8.membrane.annot.*" })
@@ -292,6 +293,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				ai.setRequired(isRequired(e2));
 				ii.getAis().add(ai);
 				ii.setHasIdField(ii.isHasIdField() || ai.getXMLName().equals("id"));
+			}
+			MCOtherAttributes d = e2.getAnnotation(MCOtherAttributes.class);
+			if (d != null) {
+				OtherAttributesInfo oai = new OtherAttributesInfo();
+				oai.setOtherAttributesSetter((ExecutableElement) e2);
+				ii.setOai(oai);
 			}
 			MCChildElement b = e2.getAnnotation(MCChildElement.class);
 			if (b != null) {
