@@ -38,6 +38,11 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 
+/**
+ * @description Writes statistics (time, status code, hostname, URI, etc.) about exchanges passing through into a 
+ * database (one row per exchange).
+ * @topic 5. Monitoring, Logging and Statistics
+ */
 @MCElement(name="statisticsJDBC")
 public class StatisticsJDBCInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 	private static final String DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED = "datasource bean id attribute cannot be used";

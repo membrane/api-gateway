@@ -22,6 +22,7 @@ import com.predic8.membrane.annot.MCElement;
 /**
  * @description
  * Clients can send HTTP requests to a proxy that forward the request to a Web server. It acts onbehalf of the client.
+ * @topic 2. Proxies
  */
 @MCElement(name="proxy")
 public class ProxyRule extends AbstractProxy {

@@ -46,6 +46,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
  *              XPath-expression is run on the reconstituted message; if it matches, the message is replaced by the
  *              modified reconstituted message.
  *              </p>
+ * @topic 3. Enterprise Integration Patterns
  */
 @MCElement(name="xmlContentFilter")
 public class XMLContentFilterInterceptor extends AbstractInterceptor {

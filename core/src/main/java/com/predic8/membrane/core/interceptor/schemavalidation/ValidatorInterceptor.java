@@ -35,6 +35,7 @@ import com.predic8.membrane.core.util.TextUtil;
  * Basically switches over {@link WSDLValidator}, {@link XMLSchemaValidator},
  * {@link JSONValidator} and {@link SchematronValidator} depending on the
  * attributes.
+ * @topic 8. SOAP based Web Services
  */
 @MCElement(name="validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {

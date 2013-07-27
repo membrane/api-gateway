@@ -27,8 +27,8 @@ import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 
 /**
- * Runs a regular-expression-replacement on either the message body (default) or
- * all header values.
+ * @description Runs a regular-expression-replacement on either the message body (default) or all header values.
+ * @topic 4. Interceptors/Features
  */
 @MCElement(name="regExReplacer")
 public class RegExReplaceInterceptor extends AbstractInterceptor {

@@ -36,6 +36,11 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+/**
+ * @description Receives control messages to dynamically modify the configuration of a {@link LoadBalancingInterceptor}.
+ * @explanation See also examples/loadbalancer-client-2 in the Membrane Service Proxy distribution.
+ * @topic 7. Clustering and Loadbalancing
+ */
 @MCElement(name="clusterNotification")
 public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory

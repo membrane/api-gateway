@@ -78,7 +78,7 @@ public class Doc {
 	HashSet<String> keys = new HashSet<String>();
 	List<Entry> entries = new ArrayList<Entry>();
 	
-	static final List<String> POSITIVE = Arrays.asList("description", "example", "default", "explanation");
+	static final List<String> POSITIVE = Arrays.asList("topic", "description", "example", "default", "explanation");
 	static final List<String> NEGATIVE = Arrays.asList("author", "param");
 	
 	private void handle(String key, String value) {

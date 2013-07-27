@@ -35,6 +35,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 /**
  * @description Blocks requests whose origin TCP/IP address (hostname or IP address) is not allowed to access the
  *              requested resource.
+ * @topic 6. Security
  */
 @MCElement(name="accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {

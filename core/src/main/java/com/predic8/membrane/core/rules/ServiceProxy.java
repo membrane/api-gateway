@@ -23,6 +23,7 @@ import com.predic8.membrane.annot.MCElement;
  *              A service proxy can be deployed on front of a Web server, Web Service or a REST resource. It conceals
  *              the server and offers the same interface as the target server to its clients.
  *              </p>
+ * @topic 2. Proxies
  */
 @MCElement(name="serviceProxy")
 public class ServiceProxy extends AbstractServiceProxy {

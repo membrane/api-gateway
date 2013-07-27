@@ -33,6 +33,9 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 
+/**
+ * @topic 4. Interceptors/Features
+ */
 @MCElement(name="groovy", mixed=true)
 public class GroovyInterceptor extends AbstractInterceptor {
 	private static final Log log = LogFactory.getLog(GroovyInterceptor.class);

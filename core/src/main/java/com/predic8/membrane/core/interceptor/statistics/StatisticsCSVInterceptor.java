@@ -34,7 +34,10 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
 /**
- * The output file is UTF-8 encoded.
+ * @description Writes statistics (time, status code, hostname, URI, etc.) about exchanges passing through into a CSV
+ *              file (one line per exchange).
+ * @explanation Note that the CSV file is UTF-8 encoded.
+ * @topic 5. Monitoring, Logging and Statistics
  */
 @MCElement(name="statisticsCSV")
 public class StatisticsCSVInterceptor extends AbstractInterceptor {

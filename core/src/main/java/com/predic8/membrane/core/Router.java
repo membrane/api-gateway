@@ -67,6 +67,7 @@ import com.predic8.membrane.core.util.DNSCache;
  *              that, during the Spring Context restart, the router object itself along with almost all other Membrane
  *              objects (interceptors, etc.) will be recreated.
  *              </p>
+ * @topic 1. Membrane Service Proxy
  */
 @MCMain(
 		outputPackage="com.predic8.membrane.core.config.spring",

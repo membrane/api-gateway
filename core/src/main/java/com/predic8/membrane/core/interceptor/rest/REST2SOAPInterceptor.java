@@ -49,6 +49,10 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 
+/**
+ * @description Converts REST requests into SOAP messages.
+ * @topic 8. SOAP based Web Services
+ */
 @MCElement(name="rest2Soap")
 public class REST2SOAPInterceptor extends AbstractInterceptor {
 

@@ -26,6 +26,7 @@ import com.predic8.membrane.core.http.Message;
  *              framework. The messages will appear either on the console or in
  *              a log file depending on the configuration of the
  *              <i>conf/log4j.properties</i> file.
+ * @topic 5. Monitoring, Logging and Statistics
  */
 @MCElement(name="log")
 public class LogInterceptor extends AbstractInterceptor {

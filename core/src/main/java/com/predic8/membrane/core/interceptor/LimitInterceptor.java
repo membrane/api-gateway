@@ -37,6 +37,7 @@ import com.predic8.membrane.core.http.Response;
  *              To apply <tt>&lt;limit/&gt;</tt> only to either requests or responses, wrap it in a corresponding tag:
  *              <tt>&lt;request&gt;&lt;limit ... /&gt;&lt;/request&gt;</tt>.
  *              </p>
+ * @topic 6. Security
  */
 @MCElement(name="limit")
 public class LimitInterceptor extends AbstractInterceptor {

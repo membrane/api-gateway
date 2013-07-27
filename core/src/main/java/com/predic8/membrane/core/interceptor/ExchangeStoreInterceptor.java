@@ -31,6 +31,12 @@ import com.predic8.membrane.core.interceptor.administration.AdminConsoleIntercep
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 
+/**
+ * @description Adds the current state of HTTP requests and responses to an "exchange store".
+ * @explanation Note that depending on the implementation of the exchange store, both request *and* response logging
+ *              might both be required for the exchange to be saved.
+ * @topic 5. Monitoring, Logging and Statistics
+ */
 @MCElement(name="exchangeStore")
 public class ExchangeStoreInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 

@@ -37,6 +37,10 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.TextUtil;
 
+/**
+ * @description Changes an exchange's target based on a series of XPath expressions.
+ * @topic 3. Enterprise Integration Patterns
+ */
 @MCElement(name="switch")
 public class XPathCBRInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(XPathCBRInterceptor.class.getName());

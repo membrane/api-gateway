@@ -45,6 +45,7 @@ import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
  *              The <i>wsdlPublisher</i> can be used to serve WSDL files (and attached XML Schema Documents), if your
  *              backend service does not already do so.
  *              </p>
+ * @topic 8. SOAP based Web Services
  */
 @MCElement(name="wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {

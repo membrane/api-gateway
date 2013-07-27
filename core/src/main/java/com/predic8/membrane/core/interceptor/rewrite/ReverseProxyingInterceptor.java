@@ -27,7 +27,10 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.ws.relocator.Relocator;
 
 /**
- * Rewrites the "Location" header in responses.
+ * @description Rewrites the scheme, hostname and port in the "Location" header in HTTP responses,
+ * as well as in the "Destination" header in HTTP requests. The rewriting reflects the different schemes,
+ * hostnames and ports used to access Membrane Service Proxy vs. the target HTTP server.
+ * @topic 4. Interceptors/Features
  */
 @MCElement(name="reverseProxying")
 public class ReverseProxyingInterceptor extends AbstractInterceptor {

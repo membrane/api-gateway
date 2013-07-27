@@ -29,6 +29,10 @@ import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 
+/**
+ * @description Displays up-to-date statistics, recent exchanges and, by default, allows live modification of Membrane's configuration.
+ * @topic 5. Monitoring, Logging and Statistics
+ */
 @MCElement(name="adminConsole")
 public class AdminConsoleInterceptor extends AbstractInterceptor {
 

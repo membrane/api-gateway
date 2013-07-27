@@ -29,6 +29,11 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+/**
+ * @description Prohibits XML documents to be passed through that look like XML attacks on older parsers. Too many
+ *              attributes, too long element names are such indications. DTD definitions will simply be removed.
+ * @topic 6. Security
+ */
 @MCElement(name="xmlProtection")
 public class XMLProtectionInterceptor extends AbstractInterceptor {
 

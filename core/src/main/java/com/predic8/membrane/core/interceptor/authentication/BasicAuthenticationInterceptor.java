@@ -36,6 +36,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ...."). 
+ * @topic 6. Security
  */
 @MCElement(name="basicAuthentication")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {

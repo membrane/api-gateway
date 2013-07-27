@@ -90,6 +90,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
  *              <li>The user is redirected to the originally requested URL (or a generic URL, in case the login dialog
  *              was directly requested). (Step 8.)</li>
  *              </ul>
+ * @topic 6. Security
  */
 @MCElement(name="login")
 public class LoginInterceptor extends AbstractInterceptor {

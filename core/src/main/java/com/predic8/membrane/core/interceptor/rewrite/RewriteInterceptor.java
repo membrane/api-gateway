@@ -40,6 +40,7 @@ import com.predic8.membrane.core.util.URLUtil;
  * @description <p>
  *              Rewrites the path of incoming requests based on a mapping or redirects requests.
  *              </p>
+ * @topic 4. Interceptors/Features
  */
 @MCElement(name="rewriter")
 public class RewriteInterceptor extends AbstractInterceptor {

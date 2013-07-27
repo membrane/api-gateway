@@ -17,15 +17,18 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
 /**
- * Replaces "/./" in the request URI's path by "/".
- * 
- * Necessary, as old SOA model versions do not normalize URIs before requesting
- * them. Our WSDLPublisher links to XSD Schemas using relative paths (as we want
- * the links to work under any servlet's context root). The SOA model then
- * combines "http://foo/material/ArticleService?wsdl" and
- * "./ArticleService?xsd=1" to "http://foo/material/./ArticleService?xsd=1".
- * This URI is sent to Membrane's new soapProxy which has configured a
- * serviceProxy-path of "\Q/material/ArticleService\E.*" which does not match.
+ * @description <p>
+ *              Replaces "/./" in the request URI's path by "/".
+ *              </p>
+ *              <p>
+ *              Necessary, as old SOA model versions do not normalize URIs before requesting them. Our WSDLPublisher
+ *              links to XSD Schemas using relative paths (as we want the links to work under any servlet's context
+ *              root). The SOA model then combines "http://foo/material/ArticleService?wsdl" and
+ *              "./ArticleService?xsd=1" to "http://foo/material/./ArticleService?xsd=1". This URI is sent to Membrane's
+ *              new soapProxy which has configured a serviceProxy-path of "\Q/material/ArticleService\E.*" which does
+ *              not match.
+ *              </p>
+ * @topic 4. Interceptors/Features
  */
 @MCElement(name="urlNormalizer")
 public class URLNormalizerInterceptor extends AbstractInterceptor {

@@ -27,10 +27,11 @@ import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.TextUtil;
 
 /**
- * @description 		<p>The transform feature applies an XSLT transformation to the content in the body of a message. After the transformation the body content is replaced with the result of the transformation.</p>
-
- * @author Tobias
- *
+ * @description <p>
+ *              The transform feature applies an XSLT transformation to the content in the body of a message. After the
+ *              transformation the body content is replaced with the result of the transformation.
+ *              </p>
+ * @topic 3. Enterprise Integration Patterns
  */
 @MCElement(name="transform")
 public class XSLTInterceptor extends AbstractInterceptor {

@@ -57,6 +57,7 @@ import com.predic8.wsdl.WSDLParserContext;
  * @explanation If the WSDL referenced by the <i>wsdl</i> attribute is not available at startup, the &lt;soapProxy&gt;
  *              will become inactive. Through the admin console, reinitialization attempts can be triggered and, by
  *              default, the {@link Router} also periodically triggers such attempts.
+ * @topic 2. Proxies
  */
 @MCElement(name="soapProxy")
 public class SOAPProxy extends AbstractServiceProxy {

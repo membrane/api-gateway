@@ -32,6 +32,11 @@ import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
+/**
+ * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
+ *              authorization server as response.
+ * @topic 6. Security
+ */
 @MCElement(name="oauth2Resource")
 public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(OAuth2ResourceInterceptor.class.getName());

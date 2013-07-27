@@ -39,6 +39,7 @@ import com.predic8.membrane.core.transport.http.HttpServerHandler;
  *              To use this feature just add a serviceProxy containing the index
  *              element. Of course you can protect the service proxy by using
  *              SSL or Username and Password.
+ * @topic 8. SOAP based Web Services
  */
 @MCElement(name="index", id="index-interceptor")
 public class IndexInterceptor extends AbstractInterceptor {

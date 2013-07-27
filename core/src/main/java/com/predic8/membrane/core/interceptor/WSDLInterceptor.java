@@ -48,6 +48,7 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
 /**
  * @description
  * 		<p>The <i>wsdlRewriter</i> rewrites endpoint addresses of services and XML Schema locations in WSDL documents.</p>
+ * @topic 8. SOAP based Web Services
  */
 @MCElement(name="wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
