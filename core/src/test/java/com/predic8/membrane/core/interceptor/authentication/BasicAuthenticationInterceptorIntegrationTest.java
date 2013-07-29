@@ -50,6 +50,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 
 	@Test
 	public void testDeny() throws Exception {
+		AssertUtils.disableHTTPAuthentication();
 		AssertUtils.getAndAssert(401, "http://localhost:3001/axis2/services/BLZService?wsdl");
 	}
 	
