@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.rewrite;
 
 import java.net.URL;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.Test;
 

@@ -16,9 +16,9 @@ package com.predic8.membrane.core.interceptor;
 import static com.predic8.membrane.core.Constants.WSDL_HTTP_NS;
 import static com.predic8.membrane.core.Constants.WSDL_SOAP11_NS;
 import static com.predic8.membrane.core.Constants.WSDL_SOAP12_NS;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;

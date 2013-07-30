@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.http;
 
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.DeleteMethod;

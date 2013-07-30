@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.interceptor;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 

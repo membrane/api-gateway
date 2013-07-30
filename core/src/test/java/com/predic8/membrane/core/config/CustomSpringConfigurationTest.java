@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.config;
 
-import static junit.framework.Assert.*;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.util.List;

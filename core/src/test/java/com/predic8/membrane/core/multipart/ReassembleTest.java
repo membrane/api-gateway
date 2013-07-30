@@ -21,7 +21,7 @@ import javax.xml.stream.FactoryConfigurationError;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.xpath.XPathExpressionException;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
 import org.apache.commons.httpclient.HttpException;

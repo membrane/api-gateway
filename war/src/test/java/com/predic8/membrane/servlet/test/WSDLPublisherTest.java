@@ -17,9 +17,8 @@ import java.io.IOException;
 
 import javax.xml.stream.XMLStreamException;
 
-import junit.framework.Assert;
-
 import org.apache.http.ParseException;
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.predic8.membrane.test.WSDLUtil;

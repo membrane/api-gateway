@@ -16,7 +16,7 @@ package com.predic8.membrane.core.transport;
 
 import java.util.Map;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.Test;
 

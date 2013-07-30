@@ -19,7 +19,7 @@ import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.apache.http.ParseException;
 import org.junit.After;

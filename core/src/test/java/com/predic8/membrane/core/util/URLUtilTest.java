@@ -16,7 +16,7 @@
 package com.predic8.membrane.core.util;
 
 import static com.predic8.membrane.core.util.URLParamUtil.*;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 

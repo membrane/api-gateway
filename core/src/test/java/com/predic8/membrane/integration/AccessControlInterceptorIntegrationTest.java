@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.integration;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 import java.net.InetAddress;

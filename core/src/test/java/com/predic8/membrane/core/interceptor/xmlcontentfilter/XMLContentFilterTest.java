@@ -17,7 +17,7 @@ import java.io.IOException;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.custommonkey.xmlunit.XMLAssert;
 import org.junit.Test;

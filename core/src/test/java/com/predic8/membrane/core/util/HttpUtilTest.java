@@ -25,7 +25,7 @@ import org.junit.Test;
 
 
 import com.predic8.membrane.core.Constants;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 public class HttpUtilTest {
 

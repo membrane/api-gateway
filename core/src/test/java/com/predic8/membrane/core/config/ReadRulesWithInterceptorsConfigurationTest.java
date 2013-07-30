@@ -18,7 +18,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.List;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.junit.After;
 import org.junit.Before;

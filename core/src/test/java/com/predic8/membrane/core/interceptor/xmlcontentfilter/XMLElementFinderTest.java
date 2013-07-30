@@ -21,7 +21,7 @@ import javax.xml.namespace.QName;
 
 import org.junit.Test;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 public class XMLElementFinderTest {
 	private final static String DOC = "<a xmlns:s=\"space-s\" xmlns=\"space-default\"><b /><s:c></a>";
