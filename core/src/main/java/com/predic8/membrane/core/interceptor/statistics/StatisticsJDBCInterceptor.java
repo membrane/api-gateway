@@ -206,11 +206,6 @@ public class StatisticsJDBCInterceptor extends AbstractInterceptor implements Ap
 		log.debug("statString: "+statString);
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "statistics-jdbc";
-	}
-
 	private void closeConnection(Connection con) {
 		try {
 			if (con != null ) con.close();

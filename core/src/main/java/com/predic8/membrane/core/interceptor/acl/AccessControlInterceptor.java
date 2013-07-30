@@ -114,9 +114,4 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		return "Authenticates incoming requests based on the file " + HtmlUtils.htmlEscape(file) + " .";
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "access-control";
-	}
-	
 }

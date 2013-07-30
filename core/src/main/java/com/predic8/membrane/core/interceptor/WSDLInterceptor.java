@@ -223,11 +223,6 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		return sb.toString();
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "wsdl-rewriter";
-	}
-
 	public void setRewriteEndpoint(boolean rewriteEndpoint) {
 		this.rewriteEndpoint = rewriteEndpoint;
 	}

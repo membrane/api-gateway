@@ -95,9 +95,4 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		return sb.toString();
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "admin-console";
-	}
-	
 }

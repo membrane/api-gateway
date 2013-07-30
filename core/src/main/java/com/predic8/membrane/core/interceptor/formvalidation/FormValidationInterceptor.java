@@ -154,9 +154,4 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 		this.fields = fields;
 	}
 
-	@Override
-	public String getHelpId() {
-		return "form-validation";
-	}
-
 }

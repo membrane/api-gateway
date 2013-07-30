@@ -158,9 +158,4 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		this.maxXForwardedForHeaders = maxXForwardedForHeaders;
 	}
 
-	@Override
-	public String getHelpId() {
-		return "rule-matching";
-	}
-
 }

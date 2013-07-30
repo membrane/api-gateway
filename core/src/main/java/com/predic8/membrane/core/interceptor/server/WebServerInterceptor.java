@@ -199,9 +199,4 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		return "Serves static files from<br/>" + TextUtil.linkURL(docBase) + " .";
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "web-server";
-	}
-
 }

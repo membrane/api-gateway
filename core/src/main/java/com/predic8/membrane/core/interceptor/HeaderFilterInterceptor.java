@@ -152,9 +152,4 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 		this.rules = rules;
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "header-filter";
-	}
-
 }

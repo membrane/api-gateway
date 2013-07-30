@@ -141,9 +141,4 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 		return sb.toString();
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "switch";
-	}
-
 }

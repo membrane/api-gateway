@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.server;
 
-import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -214,9 +213,4 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 		return "Publishes the WSDL at " + wsdl + " under \"?wsdl\" (as well as its dependent schemas under similar URLs).";
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "wsdl-publisher";
-	}
-
 }

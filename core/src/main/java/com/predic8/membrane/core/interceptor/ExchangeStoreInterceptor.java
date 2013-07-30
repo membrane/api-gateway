@@ -150,9 +150,4 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 				"that can be inspected using <a href=\"http://www.membrane-soa.org/soap-monitor/\">Membrane Monitor</a>.";
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "exchangeStore";
-	}
-
 }

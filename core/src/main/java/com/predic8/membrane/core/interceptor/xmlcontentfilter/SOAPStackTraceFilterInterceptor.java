@@ -78,9 +78,4 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 		}
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "soap-stack-trace-filter";
-	}
-
 }

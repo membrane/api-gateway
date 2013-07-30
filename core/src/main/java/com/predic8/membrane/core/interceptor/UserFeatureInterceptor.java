@@ -74,9 +74,4 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 		return router.getRuleManager().getRuleByName(dest.substring(8));
 	}
 
-	@Override
-	public String getHelpId() {
-		return "user-feature";
-	}
-
 }

@@ -17,9 +17,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.util.HtmlUtils;
 
@@ -289,16 +286,5 @@ public class IndexInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Lists services available through the " + Constants.PRODUCT_NAME + " service proxies.";
 	}
-	
-	@Override
-	public String getHelpId() {
-		return "index-interceptor";
-	}
-	
-	protected void writeInterceptor(XMLStreamWriter out) throws XMLStreamException {
-		out.writeStartElement("index");
-		out.writeEndElement();
-	}
-
 
 }

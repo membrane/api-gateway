@@ -85,11 +85,6 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	}
 
 	
-	@Override
-	public String getHelpId() {
-		return "http-client";
-	}
-	
 	public boolean isFailOverOn5XX() {
 		return failOverOn5XX;
 	}

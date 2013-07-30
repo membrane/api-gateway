@@ -98,9 +98,4 @@ public class XSLTInterceptor extends AbstractInterceptor {
 		return sb.toString();
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "transform";
-	}
-
 }

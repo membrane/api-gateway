@@ -170,9 +170,4 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 		return "Logs access statistics into the CSV-based file " + HtmlUtils.htmlEscape(fileName) + " .";
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "statistics-csv";
-	}
-
 }

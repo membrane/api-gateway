@@ -116,11 +116,6 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		this.replace = replace;
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "regex-replacer";
-	}
-	
 	public TargetType getTarget() {
 		return target;
 	}

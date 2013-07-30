@@ -70,10 +70,5 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		
 		return exc.getRequest().getUri();
 	}
-	
-	@Override
-	public String getHelpId() {
-		return "dispatching";
-	}
 
 }

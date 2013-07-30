@@ -322,9 +322,4 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 		return "Transforms REST requests into SOAP and responses vice versa.";
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "rest2soap";
-	}
-	
 }

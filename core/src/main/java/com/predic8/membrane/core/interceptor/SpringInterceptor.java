@@ -87,11 +87,6 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	}
 
 	@Override
-	public String getHelpId() {
-		return i.getHelpId();
-	}
-
-	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
 		if (refid != null)

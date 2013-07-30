@@ -174,9 +174,4 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		return sb.toString();
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "basic-authentication";
-	}
-
 }

@@ -65,11 +65,6 @@ public class LimitInterceptor extends AbstractInterceptor {
 		return maxBodyLength == -1 ? "" : "Limit the length of message bodies to " + maxBodyLength + " bytes.";
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "limit";
-	}
-	
 	public long getMaxBodyLength() {
 		return maxBodyLength;
 	}

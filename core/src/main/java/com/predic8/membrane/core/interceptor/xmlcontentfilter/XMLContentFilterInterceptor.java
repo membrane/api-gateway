@@ -99,10 +99,4 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 		}
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "xml-content-filter";
-	}
-
-	
 }

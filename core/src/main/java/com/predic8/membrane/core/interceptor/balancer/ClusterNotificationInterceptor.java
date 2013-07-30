@@ -185,10 +185,5 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Sets the status of load-balancer nodes to UP or DOWN, based on the request attributes.";
 	}
-	
-	@Override
-	public String getHelpId() {
-		return "cluster-notification";
-	}
 
 }

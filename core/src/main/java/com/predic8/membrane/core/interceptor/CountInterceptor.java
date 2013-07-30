@@ -68,11 +68,6 @@ public class CountInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
-	public String getHelpId() {
-		return "counter";
-	}
-	
-	@Override
 	public String getDisplayName() {
 		return "Counter: " + super.getDisplayName();
 	}

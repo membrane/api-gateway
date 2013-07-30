@@ -154,9 +154,4 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		return sb.toString();
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "groovy";
-	}
-	
 }

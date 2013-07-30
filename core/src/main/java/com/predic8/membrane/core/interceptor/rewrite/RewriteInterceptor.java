@@ -221,11 +221,6 @@ public class RewriteInterceptor extends AbstractInterceptor {
 	}
 	
 	@Override
-	public String getHelpId() {
-		return "rewriter";
-	}
-	
-	@Override
 	public String getShortDescription() {
 		EnumSet<Type> s = EnumSet.noneOf(Type.class);
 		for (Mapping m : mappings)

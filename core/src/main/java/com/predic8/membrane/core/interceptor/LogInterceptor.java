@@ -159,9 +159,4 @@ public class LogInterceptor extends AbstractInterceptor {
 				" using Log4J's " + level.toString() + " level.";
 	}
 	
-	@Override
-	public String getHelpId() {
-		return "log";
-	}
-
 }
