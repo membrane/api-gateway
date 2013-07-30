@@ -185,7 +185,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		if (msg== null || msg.isBodyEmpty()) {
 			return Response.noContent().build();
 		}
-		ResponseBuilder rb = Response.ok().contentType(ct).body(msg.getBodyAsStream());
+		ResponseBuilder rb = Response.ok().contentType(ct).body(msg.getBodyAsStream(), false);
 		String contentEncoding = msg.getHeader().getContentEncoding();
 		if (contentEncoding != null)
 			rb.header(Header.CONTENT_ENCODING, contentEncoding);

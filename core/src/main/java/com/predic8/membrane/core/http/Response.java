@@ -65,10 +65,23 @@ public class Response extends Message {
 			return this;
 		}
 
-		public ResponseBuilder body(InputStream is) throws IOException {
+		public ResponseBuilder body(final InputStream stream, boolean closeStreamWhenDone) throws IOException {
 			// use chunking, since Content-Length is not known
 			res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
-			res.setBody(new Body(is));
+			Body b = new Body(stream);
+			if (closeStreamWhenDone) {
+				b.addObserver(new AbstractMessageObserver() {
+					@Override
+					public void bodyComplete(AbstractBody body) {
+						try {
+							stream.close();
+						} catch (IOException e) {
+							LOG.error("Could not close body stream.", e);
+						}
+					}
+				});
+			}
+			res.setBody(b);
 			return this;
 		}
 		

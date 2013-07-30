@@ -58,7 +58,7 @@ public class SOAPFaultTest {
 	private Exchange getExchangeCP(String path) throws IOException,
 			FileNotFoundException {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(Response.ok().contentType("text/xml").body(getClass().getClassLoader().getResourceAsStream(path)).build());
+		exc.setResponse(Response.ok().contentType("text/xml").body(getClass().getClassLoader().getResourceAsStream(path), true).build());
 		return exc;
 	}
 

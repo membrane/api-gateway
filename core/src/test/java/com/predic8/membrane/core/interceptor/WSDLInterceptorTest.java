@@ -57,10 +57,10 @@ public class WSDLInterceptorTest {
 		exc = new Exchange(new FakeHttpHandler(3011));
 		exc.setRequest(MessageUtil
 				.getGetRequest("/axis2/services/BLZService?wsdl"));
-		InputStream resourceAsStream = this.getClass().getResourceAsStream(
-				"/blz-service.wsdl");
+		InputStream resourceAsStream = this.getClass().getResourceAsStream("/blz-service.wsdl");
 		Response okResponse = Response.ok()
-				.contentType("text/xml; charset=utf-8").body(resourceAsStream)
+				.contentType("text/xml; charset=utf-8")
+				.body(resourceAsStream, true)
 				.build();
 		exc.setResponse(okResponse);
 

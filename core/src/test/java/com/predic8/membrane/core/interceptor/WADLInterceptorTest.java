@@ -114,10 +114,10 @@ public class WADLInterceptorTest {
 	private Exchange getExchange() throws IOException {
 		Exchange exc = new Exchange(new FakeHttpHandler(3011));
 		exc.setRequest(MessageUtil.getGetRequest("/search?wadl"));
-		InputStream resourceAsStream = this.getClass().getResourceAsStream(
-				"/wadls/search.wadl");
+		InputStream resourceAsStream = this.getClass().getResourceAsStream("/wadls/search.wadl");
 		Response okResponse = Response.ok()
-				.contentType("text/xml; charset=utf-8").body(resourceAsStream)
+				.contentType("text/xml; charset=utf-8")
+				.body(resourceAsStream, true)
 				.build();
 		exc.setResponse(okResponse);
 

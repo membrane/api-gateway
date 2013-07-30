@@ -36,8 +36,7 @@ public class XSLTInterceptorTest extends TestCase {
 	@Test
 	public void testRequest() throws Exception {
 		exc = new Exchange(null);
-		exc.setResponse(Response.ok().body(getClass().getResourceAsStream(
-				"/customer.xml")).build());
+		exc.setResponse(Response.ok().body(getClass().getResourceAsStream("/customer.xml"), true).build());
 
 		XSLTInterceptor i = new XSLTInterceptor();
 		i.setXslt("classpath:/customer2person.xsl");
@@ -55,8 +54,7 @@ public class XSLTInterceptorTest extends TestCase {
 	@Test
 	public void testXSLTParameter() throws Exception {
 		exc = new Exchange(null);
-		exc.setResponse(Response.ok().body(getClass().getResourceAsStream(
-				"/customer.xml")).build());
+		exc.setResponse(Response.ok().body(getClass().getResourceAsStream("/customer.xml"), true).build());
 		
 		exc.setProperty("XSLT_COMPANY", "predic8");
 		

@@ -54,7 +54,7 @@ public class MessageAnalyserTest {
 
 	private Exchange getResponse(String path) throws IOException {
 		Exchange exc = new Exchange(null);
-		exc.setResponse(Response.ok().body(getClass().getClassLoader().getResourceAsStream(path)).build());
+		exc.setResponse(Response.ok().body(getClass().getClassLoader().getResourceAsStream(path), true).build());
 		return exc;
 	}
 

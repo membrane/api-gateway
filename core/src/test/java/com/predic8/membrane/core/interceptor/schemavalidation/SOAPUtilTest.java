@@ -53,7 +53,7 @@ public class SOAPUtilTest {
 	}
 
 	private Message getMessage(String path) throws Exception {
-		return Response.ok().contentType("text/xml").body(new FileInputStream(path)).build();
+		return Response.ok().contentType("text/xml").body(new FileInputStream(path), true).build();
 	}
 	
 }
