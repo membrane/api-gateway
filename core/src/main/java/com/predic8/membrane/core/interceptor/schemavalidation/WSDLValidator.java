@@ -26,7 +26,6 @@ import org.apache.commons.logging.LogFactory;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
-import com.predic8.membrane.core.resolver.DownloadException;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
@@ -54,7 +53,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 			WSDLParser wsdlParser = new WSDLParser();
 			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver());
 			return wsdlParser.parse(ctx).getTypes().getSchemas();
-		} catch (DownloadException e) {
+		} catch (RuntimeException e) {
 			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
 		}
 	}

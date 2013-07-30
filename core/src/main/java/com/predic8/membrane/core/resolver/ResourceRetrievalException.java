@@ -14,38 +14,32 @@
 
 package com.predic8.membrane.core.resolver;
 
-public class DownloadException extends RuntimeException {
+import java.io.IOException;
+
+public class ResourceRetrievalException extends IOException {
 	private static final long serialVersionUID = 1L;
 
-	public DownloadException() {
-	}
-	
-	public DownloadException(String message) {
-		super(message);
+	private int status;
+	private String url;
+
+	public ResourceRetrievalException(String url) {
+		super();
+		this.url = url;
 	}
 
-	public DownloadException(Exception e) {
+	public ResourceRetrievalException(String url, int statusCode) {
+		super();
+		this.url = url;
+		this.status = statusCode;
+	}
+
+	public ResourceRetrievalException(String url, Exception e) {
 		super(e);
 	}
 	
-	private int status;
-	private String url;
-	
 	@Override
 	public String getMessage() {
-		return super.getMessage() + " " + status + " while downloading " + url;
-	}
-	
-	public void setUrl(String url) {
-		this.url = url;
-	}
-	
-	public String getUrl() {
-		return url;
-	}
-	
-	public void setStatus(int status) {
-		this.status = status;
+		return super.getMessage() + (status == 0 ? "" : " returned status " + status) + " while retrieving " + url;
 	}
 	
 	public int getStatus() {

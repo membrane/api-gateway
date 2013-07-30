@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.xslt;
 import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -33,6 +32,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
 public class XSLTTransformer {
 	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());
@@ -59,7 +59,7 @@ public class XSLTTransformer {
 		});
 	}
 	
-	private void createOneTransformer(ResolverMap rr) throws TransformerConfigurationException, FileNotFoundException, InterruptedException {
+	private void createOneTransformer(ResolverMap rr) throws TransformerConfigurationException, InterruptedException, ResourceRetrievalException {
 		Transformer t;
 		if (isNullOrEmpty(styleSheet))
 			t = fac.newTransformer();

@@ -14,12 +14,12 @@
 
 package com.predic8.membrane.osgi.extender;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.resolver.SchemaResolver;
 
 public class BundleSchemaResolver implements SchemaResolver {
@@ -30,11 +30,11 @@ public class BundleSchemaResolver implements SchemaResolver {
 	}
 	
 	@Override
-	public InputStream resolve(String uri) throws FileNotFoundException {
+	public InputStream resolve(String uri) throws ResourceRetrievalException {
 		try {
 			return new URL(uri).openStream();
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new ResourceRetrievalException(uri, e);
 		}
 	}
 

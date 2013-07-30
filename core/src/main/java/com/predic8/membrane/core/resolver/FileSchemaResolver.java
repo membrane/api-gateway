@@ -31,8 +31,12 @@ public class FileSchemaResolver implements SchemaResolver {
 		return Lists.newArrayList("file", null);
 	}
 	
-	public InputStream resolve(String url) throws FileNotFoundException {
-	    return new FileInputStream(new File(normalize(url)));
+	public InputStream resolve(String url) throws ResourceRetrievalException {
+		try {
+			return new FileInputStream(new File(normalize(url)));
+		} catch (FileNotFoundException e) {
+			throw new ResourceRetrievalException(url, e);
+		}
 	}
 	
 	private String normalize(String uri) {

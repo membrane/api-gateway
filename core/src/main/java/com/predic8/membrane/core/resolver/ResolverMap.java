@@ -136,7 +136,7 @@ public class ResolverMap implements Cloneable, Resolver {
 		return getSchemaResolver(uri).getTimestamp(uri);
 	}
 	
-	public InputStream resolve(String uri) throws FileNotFoundException {
+	public InputStream resolve(String uri) throws ResourceRetrievalException {
 		return getSchemaResolver(uri).resolve(uri);
 	}
 	
@@ -182,7 +182,7 @@ public class ResolverMap implements Cloneable, Resolver {
 				try {
 					String url2 = (String) url;
 					return getSchemaResolver(url2).resolve(url2);
-				} catch (FileNotFoundException e) {
+				} catch (ResourceRetrievalException e) {
 					throw new RuntimeException(e);
 				}
 			}

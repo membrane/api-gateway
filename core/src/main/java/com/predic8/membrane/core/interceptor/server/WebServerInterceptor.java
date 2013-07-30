@@ -17,7 +17,6 @@ import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.List;
 
@@ -126,14 +125,10 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	}
 
 	public static Response createResponse(ResolverMap rr, String resPath) throws IOException {
-		Response response = Response.ok().header(createHeaders(getContentType(resPath))).build();
-		
-		InputStream in = rr.resolve(resPath);
-		if (in == null)
-			throw new FileNotFoundException(resPath);
-		
-		response.setBodyContent(ByteUtil.getByteArrayData(in));
-		return response;
+		return Response.ok()
+				.header(createHeaders(getContentType(resPath)))
+				.body(ByteUtil.getByteArrayData(rr.resolve(resPath)))
+				.build();
 	}
 
 	private static String getContentType(String uri) {

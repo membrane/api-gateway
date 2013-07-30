@@ -27,8 +27,11 @@ public class ClasspathSchemaResolver implements SchemaResolver {
 	}
 
 	@Override
-	public InputStream resolve(String url) {
-		return getClass().getResourceAsStream(url.substring(10));
+	public InputStream resolve(String url) throws ResourceRetrievalException {
+		InputStream is = getClass().getResourceAsStream(url.substring(10));
+		if (is == null)
+			throw new ResourceRetrievalException(url);
+		return is;
 	}
 	
 	@Override

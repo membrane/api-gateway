@@ -8,9 +8,9 @@ public interface Resolver {
 	
 	/**
 	 * Returns the InputStream for the requested URL.
-	 * @throws FileNotFoundException if the resource identified by the URL does not exist.
+	 * @throws ResourceRetrievalException if the resource identified by the URL does not exist.
 	 */
-	public InputStream resolve(String url) throws FileNotFoundException;
+	public InputStream resolve(String url) throws ResourceRetrievalException;
 	
 	/**
 	 * Returns the list of child resources of the resource identified by the URL.

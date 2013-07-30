@@ -14,7 +14,6 @@
 
 package com.predic8.membrane.servlet;
 
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -24,6 +23,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.google.common.collect.Lists;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.resolver.SchemaResolver;
 
 public class FileSchemaWebAppResolver implements SchemaResolver {
@@ -42,13 +42,18 @@ public class FileSchemaWebAppResolver implements SchemaResolver {
 
 	@Override
 	public List<String> getSchemas() {
-		return Lists.newArrayList((String)null);
+		return Lists.newArrayList("file", null);
 	}
 
 	@Override
-	public InputStream resolve(String url) throws FileNotFoundException {
+	public InputStream resolve(String url) throws ResourceRetrievalException {
+		if (url.startsWith("file:"))
+			url = url.substring(5);
 		log.debug("loading resource from: " + url);
-		return ctx.getResourceAsStream(url);
+		InputStream is = ctx.getResourceAsStream(url);
+		if (is == null)
+			throw new ResourceRetrievalException(url);
+		return is;
 	}
 
 	@Override

@@ -36,7 +36,7 @@ import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
 import com.predic8.membrane.core.interceptor.server.WSDLPublisherInterceptor;
 import com.predic8.membrane.core.interceptor.soap.WebServiceExplorerInterceptor;
-import com.predic8.membrane.core.resolver.DownloadException;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.resolver.HTTPSchemaResolver;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
@@ -130,14 +130,17 @@ public class SOAPProxy extends AbstractServiceProxy {
 				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
 			}
 			return null;
-		} catch (DownloadException e) {
-			if (e.getCause() == null) {
-				if (e.getStatus() >= 400)
-					return e.getMessage();
-			} else if (e.getCause() instanceof UnknownHostException)
-				return e.getMessage();
-			else if (e.getCause() instanceof ConnectException)
-				return e.getMessage();
+		} catch (Exception e) {
+			Throwable f = e;
+			while (f.getCause() != null && ! (f instanceof ResourceRetrievalException))
+				f = f.getCause();
+			if (f instanceof ResourceRetrievalException) {
+				if (((ResourceRetrievalException) f).getStatus() >= 400)
+					return f.getMessage();
+			} else if (f instanceof UnknownHostException)
+				return f.getMessage();
+			else if (f instanceof ConnectException)
+				return f.getMessage();
 			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
 		}
 	}
