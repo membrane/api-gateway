@@ -119,7 +119,7 @@ public class LoginDialog {
 		if (uri.equals("/logout")) {
 			if (s != null)
 				s.clear();
-			exc.setResponse(Response.redirect(path, false).build());
+			exc.setResponse(Response.redirect(path, false).body("").build());
 		} else if (uri.equals("/")) { 
 			if (s == null || !s.isPreAuthorized()) {
 				if (exc.getRequest().getMethod().equals("POST")) {
@@ -194,6 +194,7 @@ public class LoginDialog {
 				redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), "UTF-8"), false).
 				header("Pragma", "no-cache").
 				header("Cache-Control", "no-cache").
+				body("").
 				build());
 		return Outcome.RETURN;
 	}
