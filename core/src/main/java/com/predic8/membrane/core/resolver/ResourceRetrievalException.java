@@ -35,6 +35,7 @@ public class ResourceRetrievalException extends IOException {
 
 	public ResourceRetrievalException(String url, Exception e) {
 		super(e);
+		this.url = url;
 	}
 	
 	@Override

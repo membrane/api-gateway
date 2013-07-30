@@ -1,0 +1,19 @@
+<?xml version="1.0"?><!-- Published by JAX-WS RI at http://jax-ws.dev.java.net. 
+	RI's version is JAX-WS RI 2.2.7-b01 svn-revision#${svn.Last.Changed.Rev}. -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:tns="http://predic8.com/material/1/" xmlns:ns0="http://predic8.com/common/1/"
+	targetNamespace="http://predic8.com/material/1/">
+	<xsd:import schemaLocation="1.xsd" namespace="http://predic8.com/common/1/"></xsd:import>
+	<xsd:import schemaLocation="../resolver/4.xsd" namespace="http://predic8.com/foo4/1/"></xsd:import>
+	<xsd:import schemaLocation="./5.xsd" namespace="http://predic8.com/foo5/1/"></xsd:import>
+    <xsd:import schemaLocation="http://localhost:3029/resolver/7.xsd" namespace="http://predic8.com/foo7/1/"></xsd:import>
+	
+	<xsd:complexType name="ArticleType">
+		<xsd:sequence>
+			<xsd:element name="name" type="xsd:string"></xsd:element>
+			<xsd:element name="description" type="xsd:string"></xsd:element>
+			<xsd:element name="price" type="ns0:MoneyType"></xsd:element>
+			<xsd:element name="id" type="ns0:IdentifierType"></xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:schema>

@@ -17,7 +17,6 @@ import static com.predic8.membrane.test.AssertUtils.assertContains;
 import static com.predic8.membrane.test.AssertUtils.assertContainsNot;
 import static org.junit.Assert.assertEquals;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.junit.Test;
@@ -55,8 +54,7 @@ public class SOAPFaultTest {
 		assertEquals(Outcome.CONTINUE, i.handleResponse(exc));
 	}
 
-	private Exchange getExchangeCP(String path) throws IOException,
-			FileNotFoundException {
+	private Exchange getExchangeCP(String path) throws IOException {
 		Exchange exc = new Exchange(null);
 		exc.setResponse(Response.ok().contentType("text/xml").body(getClass().getClassLoader().getResourceAsStream(path), true).build());
 		return exc;

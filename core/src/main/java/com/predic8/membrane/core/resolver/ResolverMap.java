@@ -39,7 +39,21 @@ import com.predic8.xml.util.ExternalResolver;
  */
 public class ResolverMap implements Cloneable, Resolver {
 
+
 	public static String combine(String parent, String relativeChild) {
+		if (relativeChild.contains(":/") || parent.length() == 0)
+			return relativeChild;
+		if (parent.startsWith("file://")) {
+			if (relativeChild.startsWith("\\"))
+				return "file://" + new File(relativeChild).getAbsolutePath();
+			//System.err.println(FileSchemaResolver.normalize(parent));
+			File parentFile = new File(FileSchemaResolver.normalize(parent));
+			//System.err.println(parentFile.getAbsolutePath());
+			if (!parent.endsWith("/") && !parent.endsWith("\\"))
+				parentFile = parentFile.getParentFile();
+			//System.err.println(parentFile.getAbsolutePath());
+			return "file://" + new File(parentFile, relativeChild).getAbsolutePath();
+		}
 		if (parent.contains(":/")) {
 			try {
 				return new URI(parent).resolve(relativeChild).toString();
@@ -53,7 +67,10 @@ public class ResolverMap implements Cloneable, Resolver {
 				throw new RuntimeException(e);
 			}
 		} else {
-			return new File(new File(parent).getParent(), relativeChild).getAbsolutePath();
+			File parentFile = new File(parent);
+			if (!parent.endsWith("/") && !parent.endsWith("\\"))
+				parentFile = parentFile.getParentFile();
+			return new File(parentFile, relativeChild).getAbsolutePath();
 		}
 	}
 
@@ -137,7 +154,11 @@ public class ResolverMap implements Cloneable, Resolver {
 	}
 	
 	public InputStream resolve(String uri) throws ResourceRetrievalException {
-		return getSchemaResolver(uri).resolve(uri);
+		try {
+			return getSchemaResolver(uri).resolve(uri);
+		} catch (ResourceRetrievalException e) {
+			throw e;
+		}
 	}
 	
 	public List<String> getChildren(String uri) throws FileNotFoundException {
@@ -146,6 +167,10 @@ public class ResolverMap implements Cloneable, Resolver {
 
 	public HTTPSchemaResolver getHTTPSchemaResolver() {
 		return (HTTPSchemaResolver) getSchemaResolver("http:");
+	}
+
+	public SchemaResolver getFileSchemaResolver() {
+		return getSchemaResolver("file:");
 	}
 	
 	public LSResourceResolver toLSResourceResolver() {
@@ -170,7 +195,7 @@ public class ResolverMap implements Cloneable, Resolver {
 			public InputStream resolveAsFile(String filename, String baseDir) {
 				try {
 					if(baseDir != null) {
-						return ResolverMap.this.resolve(baseDir+filename);
+						return ResolverMap.this.resolve(combine(baseDir, filename));
 					}
 					return ResolverMap.this.resolve(filename);
 				} catch (Exception e) {
@@ -181,6 +206,12 @@ public class ResolverMap implements Cloneable, Resolver {
 			protected InputStream resolveViaHttp(Object url) {
 				try {
 					String url2 = (String) url;
+					int q = url2.indexOf('?');
+					if (q == -1)
+						url2 = url2.replaceAll("/[^/]+/\\.\\./", "/");
+					else
+						url2 = url2.substring(0, q).replaceAll("/[^/]+/\\.\\./", "/") + url2.substring(q);
+
 					return getSchemaResolver(url2).resolve(url2);
 				} catch (ResourceRetrievalException e) {
 					throw new RuntimeException(e);

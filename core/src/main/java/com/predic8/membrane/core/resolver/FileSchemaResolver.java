@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,13 +38,21 @@ public class FileSchemaResolver implements SchemaResolver {
 		}
 	}
 	
-	private String normalize(String uri) {
+	public static String normalize(String uri) {
+	    if(uri.startsWith("file:///")) {
+	    	if (uri.length() > 9 && uri.charAt(9) == '/')
+	    		uri = uri.charAt(8) + ":\\" + uri.substring(9);
+	    	else
+	    		uri = "/" + uri.substring(8);
+	    }
+	    if(uri.startsWith("file://")) {
+	    	if (uri.length() > 8 && uri.charAt(8) == '/')
+	    		uri = uri.charAt(7) + ":\\" + uri.substring(9);
+	    	else
+	    		uri = "/" + uri.substring(7);
+	    }
 	    if(uri.startsWith("file:")) {
-	    	try {
-	    		uri = new URL(uri).getPath();
-	    	} catch (Exception e) {
-	    		throw new RuntimeException(e);
-	    	}
+	    	uri = uri.substring(5);
 	    }
 		return uri;
 	}

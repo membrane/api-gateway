@@ -33,6 +33,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -122,7 +123,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 					wi.setPathRewriter(new RelativePathRewriter(exc, doc));
 					wi.handleResponse(exc);
 				}
-			} catch (FileNotFoundException e) {
+			} catch (ResourceRetrievalException e) {
 				log.error("Could not recursively load all documents referenced by '"+wsdl+"'.", e);
 			}
 		}
@@ -200,7 +201,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 		} catch (NumberFormatException e) {
 			exc.setResponse(HttpUtil.createHTMLErrorResponse("Bad parameter format.", ""));
 			return Outcome.ABORT;
-		} catch (FileNotFoundException e) {
+		} catch (ResourceRetrievalException e) {
 			exc.setResponse(Response.notFound().build());
 			return Outcome.ABORT;
 		}

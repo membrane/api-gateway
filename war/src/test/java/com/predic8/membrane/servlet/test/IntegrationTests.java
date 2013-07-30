@@ -24,7 +24,8 @@ import org.junit.runners.Suite.SuiteClasses;
 	ForwardingTest.class,
 	WSDLRewritingTest.class,
 	WSDLPublisherTest.class,
-	ReleaseConfigurationTest.class
+	ReleaseConfigurationTest.class,
+	ResolverTestTriggerTest.class
 })
 public class IntegrationTests {
 

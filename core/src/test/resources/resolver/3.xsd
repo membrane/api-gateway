@@ -1,0 +1,18 @@
+<?xml version="1.0"?><!-- Published by JAX-WS RI at http://jax-ws.dev.java.net. 
+	RI's version is JAX-WS RI 2.2.7-b01 svn-revision#${svn.Last.Changed.Rev}. -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	xmlns:tns="http://predic8.com/common/1/" targetNamespace="http://predic8.com/common/1/">
+
+	<xsd:complexType name="MoneyType">
+		<xsd:sequence>
+			<xsd:element name="amount" type="xsd:decimal"></xsd:element>
+			<xsd:element name="currency" type="tns:CurrencyType"></xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="CurrencyType">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="EUR"></xsd:enumeration>
+			<xsd:enumeration value="USD"></xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+</xsd:schema>

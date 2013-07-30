@@ -16,6 +16,8 @@
 		It uses the web server's connectors (see configuration of the web server) and configured paths (see web.xml).
 	-->
 	
+	<spring:bean id="test" class="com.predic8.membrane.servlet.test.ResolverTestTriggerTest" />
+	
 	<router hotDeploy="false">
 
 		<web:servletTransport id="transport">
@@ -41,6 +43,11 @@
 				<user name="admin" password="membrane" />
 			</basicAuthentication>	
 			<adminConsole />
+	    </serviceProxy>
+	    
+	    <serviceProxy>
+	    	<path>/test</path>
+	    	<interceptor refid="test" />
 	    </serviceProxy>
 	    
 	    <serviceProxy>

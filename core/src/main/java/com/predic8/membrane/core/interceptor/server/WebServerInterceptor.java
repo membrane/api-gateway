@@ -32,6 +32,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.TextUtil;
 import com.predic8.membrane.core.util.URLUtil;
@@ -70,23 +71,27 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 		log.debug("request: " + uri);
 		
-		if (uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\")) {
+		if (uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\") || uri.contains("/../") || uri.startsWith("..")) {
 			exc.setResponse(Response.badRequest().body("").build());
 			return Outcome.ABORT;
 		}
+		
+		if (uri.startsWith("/"))
+			uri = uri.substring(1);
+		
 
 		try {
 			exc.setTimeReqSent(System.currentTimeMillis());
 			
-			exc.setResponse(createResponse(router.getResolverMap(), docBase + uri));
+			exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(docBase,  uri)));
 
 			exc.setReceived();
 			exc.setTimeResReceived(System.currentTimeMillis());
 			return Outcome.RETURN;
-		} catch (FileNotFoundException e) {
+		} catch (ResourceRetrievalException e) {
 			for (String i : index) {
 				try {
-					exc.setResponse(createResponse(router.getResolverMap(), docBase + uri + i));
+					exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(docBase, uri + i)));
 
 					exc.setReceived();
 					exc.setTimeResReceived(System.currentTimeMillis());
@@ -163,6 +168,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	@Required
 	@MCAttribute
 	public void setDocBase(String docBase) {
+		if (!docBase.endsWith("/"))
+			docBase += "/";
 		this.docBase = docBase;
 	}
 	

@@ -28,10 +28,18 @@ public class ClasspathSchemaResolver implements SchemaResolver {
 
 	@Override
 	public InputStream resolve(String url) throws ResourceRetrievalException {
-		InputStream is = getClass().getResourceAsStream(url.substring(10));
+		InputStream is = getClass().getResourceAsStream(normalize(url));
 		if (is == null)
 			throw new ResourceRetrievalException(url);
 		return is;
+	}
+
+	private String normalize(String url) {
+		if (url.startsWith("classpath:"))
+			url = url.substring(10);
+		if (url.startsWith("//"))
+			url = url.substring(1);
+		return url;
 	}
 	
 	@Override
