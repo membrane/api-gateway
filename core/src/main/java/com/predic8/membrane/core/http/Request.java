@@ -212,7 +212,7 @@ public class Request extends Message {
 		
 		public Exchange buildExchange() {
 		    Exchange exc = new Exchange(null);
-			exc.setRequest(req);
+			exc.setRequest(build());
 		    exc.getDestinations().add(fullURL);
 		    return exc;
 		}

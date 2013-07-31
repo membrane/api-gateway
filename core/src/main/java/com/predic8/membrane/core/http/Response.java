@@ -85,6 +85,11 @@ public class Response extends Message {
 			return this;
 		}
 		
+		public ResponseBuilder bodyEmpty() {
+			res.getHeader().setContentLength(0);
+			return this;
+		}
+		
 		public ResponseBuilder header(Header header) {
 			res.setHeader(header);
 			return this;
@@ -115,19 +120,22 @@ public class Response extends Message {
 	public static ResponseBuilder ok() {
 		return ResponseBuilder.newInstance().
 							   status(200, "Ok").
-							   header("Server", SERVER_HEADER);
+							   header("Server", SERVER_HEADER).
+							   bodyEmpty();
 	}
 	
 	public static ResponseBuilder noContent() {
 		return ResponseBuilder.newInstance().
-				status(204, "No Content");
+				status(204, "No Content").
+				bodyEmpty();
 	}
 	
 	
 	public static ResponseBuilder badRequest() {
 		return ResponseBuilder.newInstance().
 				status(400, "Bad Request").
-				header("Server", SERVER_HEADER);
+				header("Server", SERVER_HEADER).
+				bodyEmpty();
 	}
 
 	public static ResponseBuilder badRequest(String message) {
