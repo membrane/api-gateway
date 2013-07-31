@@ -116,7 +116,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		sessionManager.init(router);
 		
 		wsi.setDocBase(loginLocation);
-		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "/index.html")).close();
+		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
 		wsi.init(router);
 	}
 	
