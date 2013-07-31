@@ -21,14 +21,13 @@ import org.junit.Test;
 import com.predic8.membrane.core.interceptor.authentication.session.totp.OtpProvider;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.util.ConsoleLogger;
 import com.predic8.membrane.test.AssertUtils;
 
 public class LoginTest extends DistributionExtractingTestcase {
 
 	@Test
 	public void test() throws IOException, InterruptedException {
-		Process2 sl = new Process2.Builder().in(getExampleDir("login")).script("service-proxy").withWatcher(new ConsoleLogger()).waitForMembrane().start();
+		Process2 sl = new Process2.Builder().in(getExampleDir("login")).script("service-proxy").waitForMembrane().start();
 		try {
 			String form = AssertUtils.getAndAssert200("http://localhost:2000/");
 			AssertUtils.assertContains("Username:", form);

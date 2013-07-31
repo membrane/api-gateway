@@ -80,7 +80,7 @@ public class RouterCLI {
 		String userDir = System.getProperty("user.dir").replaceAll("\\\\", "/");
 		if (!userDir.endsWith("/"))
 			userDir += "/";
-		String try1 = ResolverMap.combine(userDir, relativeFile);
+		String try1 = ResolverMap.combine(prefix(userDir), relativeFile);
 		try {
 			rm.resolve(try1);
 			return try1;
@@ -88,7 +88,7 @@ public class RouterCLI {
 		}
 		String try2 = null;
 		if (membraneHome != null) {
-			try2 = ResolverMap.combine(membraneHome, relativeFile);
+			try2 = ResolverMap.combine(prefix(membraneHome), relativeFile);
 			try {
 				rm.resolve(try2);
 				return try2;
@@ -98,6 +98,12 @@ public class RouterCLI {
 		System.err.println("Could not find Membrane's configuration file at " + try1 + (try2 == null ? "" : " and not at " + try2) + " . " + errorNotice);
 		System.exit(1);
 		throw new RuntimeException();
+	}
+
+	private static String prefix(String dir) {
+		if (dir.startsWith("/"))
+			return "file://" + dir;
+		return dir;
 	}
 
 }

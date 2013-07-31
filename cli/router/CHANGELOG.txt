@@ -1,6 +1,14 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.8 (early access)
+
+* [update config] relative URLs within proxies.xml are now resolved relatively
+  to the location of proxies.xml
+
+* [bugfix] fixed resolving resources starting with "file:", "c:" or "/" in
+  J2EE deployments
+
 * [release] 4.0.7 (early access)
 
 * [changed behavior] reduced default HTTP client keep-alive timeout to 4s, as

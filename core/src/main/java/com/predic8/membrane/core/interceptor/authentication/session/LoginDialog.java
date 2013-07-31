@@ -70,7 +70,7 @@ public class LoginDialog {
 	}
 
 	public void init(Router router) throws Exception {
-		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "/index.html")).close();
+		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
 		wsi.init(router);
 	}
 	

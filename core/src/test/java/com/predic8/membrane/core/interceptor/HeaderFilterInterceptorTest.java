@@ -40,9 +40,10 @@ public class HeaderFilterInterceptorTest {
 		fhi.handleResponse(exc);
 		
 		HeaderField[] h = exc.getResponse().getHeader().getAllHeaderFields();
-		assertEquals(2, h.length);
-		assertEquals("a", h[0].getHeaderName().toString());
-		assertEquals("e", h[1].getHeaderName().toString());
+		assertEquals(3, h.length);
+		assertEquals("Content-Length", h[0].getHeaderName().toString());
+		assertEquals("a", h[1].getHeaderName().toString());
+		assertEquals("e", h[2].getHeaderName().toString());
 	}
 
 }
