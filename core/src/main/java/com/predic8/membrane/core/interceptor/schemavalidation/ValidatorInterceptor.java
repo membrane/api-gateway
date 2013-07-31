@@ -69,21 +69,23 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 		if (skipFaults && wsdl == null)
 			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
 		
+		String baseLocation = router == null ? null : router.getBaseLocation();
+		
 		if (wsdl != null) {
 			name="SOAP Validator";
-			setValidator(new WSDLValidator(resourceResolver, wsdl, createFailureHandler(), skipFaults));
+			setValidator(new WSDLValidator(resourceResolver, ResolverMap.combine(baseLocation, wsdl), createFailureHandler(), skipFaults));
 		}
 		if (schema != null) {
 			name="XML Schema Validator";
-			setValidator(new XMLSchemaValidator(resourceResolver, schema, createFailureHandler()));
+			setValidator(new XMLSchemaValidator(resourceResolver, ResolverMap.combine(baseLocation, schema), createFailureHandler()));
 		}
 		if (jsonSchema != null) {
 			name="JSON Schema Validator";
-			setValidator(new JSONValidator(resourceResolver, jsonSchema, createFailureHandler()));
+			setValidator(new JSONValidator(resourceResolver, ResolverMap.combine(baseLocation, jsonSchema), createFailureHandler()));
 		}
 		if (schematron != null) {
 			name="Schematron Validator";
-			setValidator(new SchematronValidator(resourceResolver, schematron, createFailureHandler(), router, applicationContext));
+			setValidator(new SchematronValidator(resourceResolver, ResolverMap.combine(baseLocation, schematron), createFailureHandler(), router, applicationContext));
 		}
 		
 		if (validator == null) {
@@ -91,7 +93,7 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 			if (parent instanceof SOAPProxy) {
 				wsdl = ((SOAPProxy)parent).getWsdl();
 				name = "SOAP Validator";
-				setValidator(new WSDLValidator(resourceResolver, wsdl, createFailureHandler(), skipFaults));
+				setValidator(new WSDLValidator(resourceResolver, ResolverMap.combine(baseLocation, wsdl), createFailureHandler(), skipFaults));
 			}
 			if (validator == null)
 				throw new Exception("<validator> must have an attribute specifying the validator.");

@@ -24,7 +24,6 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.AbstractProxy;
 import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -51,7 +50,6 @@ public class GoogleAuthorizationService extends AuthorizationService {
 	private HttpClientConfiguration httpClientConfiguration;
 	
 	// fields
-	private ResolverMap resolverMap;
 	private HttpClient httpClient;
 	private JsonFactory factory;
 	private GoogleIdTokenVerifier verifier;
@@ -87,7 +85,6 @@ public class GoogleAuthorizationService extends AuthorizationService {
 	}
 	
 	public void init(Router router) {
-		resolverMap = router.getResolverMap();
 		httpClient = httpClientConfiguration == null ? router.getResolverMap()
 				.getHTTPSchemaResolver().getHttpClient() : new HttpClient(
 				httpClientConfiguration);
@@ -159,7 +156,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
 					
 					@Override
 					public SSLContext getSslOutboundContext() {
-						return new SSLContext(new SSLParser(), resolverMap);
+						return new SSLContext(new SSLParser(), null, null);
 					}
 					
 					@Override

@@ -66,7 +66,7 @@
 			</switch>
 			<regExReplacer regex="Hallo" replace="Hello" />
 			<counter name="Node 1"/>
-			<accessControl file="src/test/resources/acl/acl.xml"/>
+			<accessControl file="acl/acl.xml"/>
 			<groovy>exc.setProperty('foo', 'bar');CONTINUE</groovy>		
 			<!-- 
 	   		<statisticsJDBC postMethodOnly="false" soapOnly="true" dataSource="dataSource" />
@@ -102,7 +102,7 @@
 	<basicAuthentication>
 		<user name="jim" password="password" />
 	</basicAuthentication>
-	<accessControl id="accessControl" file="src/test/resources/acl/acl.xml"/>
+	<accessControl id="accessControl" file="acl/acl.xml"/>
 	<wsdlRewriter id="wsdlRewriter" />
 	<wadlRewriter id="wadlRewriter" />
 	<statisticsCSV file="target/temp/stat.csv" />

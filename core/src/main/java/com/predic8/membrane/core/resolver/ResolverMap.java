@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.net.URI;
+import java.security.InvalidParameterException;
 import java.util.List;
 
 import org.w3c.dom.ls.LSInput;
@@ -40,8 +41,20 @@ import com.predic8.xml.util.ExternalResolver;
 public class ResolverMap implements Cloneable, Resolver {
 
 
-	public static String combine(String parent, String relativeChild) {
-		if (relativeChild.contains(":/") || parent.length() == 0)
+	public static String combine(String... locations) {
+		if (locations.length < 2)
+			throw new InvalidParameterException();
+		
+		if (locations.length > 2) {
+			// lfold
+			String[] l = new String[locations.length-1];
+			System.arraycopy(locations, 0, l, 0, locations.length-1);
+			return combine(combine(l), locations[locations.length-1]);
+		}
+			
+		String parent = locations[0];
+		String relativeChild = locations[1];
+		if (relativeChild.contains(":/") || parent == null || parent.length() == 0)
 			return relativeChild;
 		if (parent.startsWith("file://")) {
 			if (relativeChild.startsWith("\\"))

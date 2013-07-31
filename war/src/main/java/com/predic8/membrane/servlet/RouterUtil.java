@@ -32,6 +32,7 @@ public class RouterUtil {
 		Collection<Router> routers = appCtx.getBeansOfType(Router.class).values();
 		Router theOne = null;
 		for (Router r : routers) {
+			r.setBaseLocation(configLocation);
 			r.getResolverMap().addSchemaResolver(new FileSchemaWebAppResolver(ctx));
 			if (r.getTransport() instanceof ServletTransport) {
 				if (theOne != null)

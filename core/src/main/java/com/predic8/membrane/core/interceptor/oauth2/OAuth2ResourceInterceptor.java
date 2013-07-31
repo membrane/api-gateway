@@ -29,6 +29,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
@@ -115,7 +116,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		sessionManager.init(router);
 		
 		wsi.setDocBase(loginLocation);
-		router.getResolverMap().resolve(wsi.getDocBase() + "/index.html").close();
+		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "/index.html")).close();
 		wsi.init(router);
 	}
 	

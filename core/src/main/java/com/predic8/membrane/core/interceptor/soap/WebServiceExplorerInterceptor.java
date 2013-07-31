@@ -39,6 +39,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.administration.Mapping;
 import com.predic8.membrane.core.interceptor.rest.QueryParameter;
 import com.predic8.membrane.core.interceptor.rest.RESTInterceptor;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.wsdl.Binding;
 import com.predic8.wsdl.Definitions;
@@ -106,7 +107,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		if (parsedWSDL != null)
 			return parsedWSDL;
 		WSDLParserContext ctx = new WSDLParserContext();
-		ctx.setInput(wsdl);
+		ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
 		WSDLParser wsdlParser = new WSDLParser();
 		wsdlParser.setResourceResolver(router.getResolverMap().toExternalResolver());
 		return parsedWSDL = wsdlParser.parse(ctx);

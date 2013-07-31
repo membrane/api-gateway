@@ -45,13 +45,13 @@ public class XSLTTransformer {
 		this.styleSheet = styleSheet;
 		log.debug("using " + concurrency + " parallel transformer instances for " + styleSheet);
 		transformers = new ArrayBlockingQueue<Transformer>(concurrency);
-		createOneTransformer(router.getResolverMap());
+		createOneTransformer(router.getResolverMap(), router.getBaseLocation());
 		router.getBackgroundInitializator().execute(new Runnable() {
 			@Override
 			public void run() {
 				try {
 					for (int i = 1; i < concurrency; i++)
-						createOneTransformer(router.getResolverMap());
+						createOneTransformer(router.getResolverMap(), router.getBaseLocation());
 				} catch (Exception e) {
 					log.error("Error creating XSLT transformer:", e);
 				}
@@ -59,12 +59,15 @@ public class XSLTTransformer {
 		});
 	}
 	
-	private void createOneTransformer(ResolverMap rr) throws TransformerConfigurationException, InterruptedException, ResourceRetrievalException {
+	private void createOneTransformer(ResolverMap rr, String baseLocation) throws TransformerConfigurationException, InterruptedException, ResourceRetrievalException {
 		Transformer t;
 		if (isNullOrEmpty(styleSheet))
 			t = fac.newTransformer();
-		else
-			t = fac.newTransformer(new StreamSource(rr.resolve(styleSheet)));
+		else {
+			StreamSource source = new StreamSource(rr.resolve(styleSheet));
+			source.setSystemId(styleSheet);
+			t = fac.newTransformer(source);
+		}
 		transformers.put(t);
 	}
 

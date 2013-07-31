@@ -39,11 +39,11 @@ public class ValidatorInterceptorTest {
 	
 	private Exchange exc;
 	
-	public static final String ARTICLE_SERVICE_WSDL = "src/test/resources/validation/ArticleService.xml";
+	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.xml";
 	
-	public static final String BLZ_SERVICE_WSDL = "src/test/resources/validation/BLZService.xml";
+	public static final String BLZ_SERVICE_WSDL = "classpath:/validation/BLZService.xml";
 	
-	public static final String E_MAIL_SERVICE_WSDL = "src/test/resources/validation/XWebEmailValidation.wsdl.xml";
+	public static final String E_MAIL_SERVICE_WSDL = "classpath:/validation/XWebEmailValidation.wsdl.xml";
 	
 	@Before
 	public void setUp() throws Exception {

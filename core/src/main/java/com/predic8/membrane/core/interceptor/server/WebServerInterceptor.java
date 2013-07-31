@@ -83,7 +83,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		try {
 			exc.setTimeReqSent(System.currentTimeMillis());
 			
-			exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(docBase,  uri)));
+			exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase,  uri)));
 
 			exc.setReceived();
 			exc.setTimeResReceived(System.currentTimeMillis());
@@ -91,7 +91,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		} catch (ResourceRetrievalException e) {
 			for (String i : index) {
 				try {
-					exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(docBase, uri + i)));
+					exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase, uri + i)));
 
 					exc.setReceived();
 					exc.setTimeResReceived(System.currentTimeMillis());
@@ -101,7 +101,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			}
 			
 			if (generateIndex) {
-				List<String> children = router.getResolverMap().getChildren(docBase + uri);
+				List<String> children = router.getResolverMap().getChildren(ResolverMap.combine(router.getBaseLocation(), docBase, uri));
 				if (children != null) {
 					Collections.sort(children);
 					StringBuilder sb = new StringBuilder();

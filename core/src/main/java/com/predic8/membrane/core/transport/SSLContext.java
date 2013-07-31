@@ -46,7 +46,7 @@ public class SSLContext {
 	private final String[] ciphers;
 	private final boolean wantClientAuth, needClientAuth;
 	
-	public SSLContext(SSLParser sslParser, ResolverMap resourceResolver) {
+	public SSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
 		try {
 			String algorihm = KeyManagerFactory.getDefaultAlgorithm();
 			if (sslParser.getAlgorithm() != null)
@@ -63,7 +63,7 @@ public class SSLContext {
 
 				if (sslParser.getKeyStore().getType() != null)
 					keyStoreType = sslParser.getKeyStore().getType();
-				KeyStore ks = openKeyStore(sslParser.getKeyStore(), "JKS", keyPass, resourceResolver);
+				KeyStore ks = openKeyStore(sslParser.getKeyStore(), "JKS", keyPass, resourceResolver, baseLocation);
 				kmf = KeyManagerFactory.getInstance(algorihm);
 				kmf.init(ks, keyPass);
 			}
@@ -72,7 +72,7 @@ public class SSLContext {
 				String trustAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
 				if (sslParser.getTrustStore().getAlgorithm() != null)
 					trustAlgorithm = sslParser.getTrustStore().getAlgorithm();
-				KeyStore ks = openKeyStore(sslParser.getTrustStore(), keyStoreType, null, resourceResolver);
+				KeyStore ks = openKeyStore(sslParser.getTrustStore(), keyStoreType, null, resourceResolver, baseLocation);
 				tmf = TrustManagerFactory.getInstance(trustAlgorithm);
 				tmf.init(ks);
 			}
@@ -118,7 +118,7 @@ public class SSLContext {
 		}
 	}
 	
-	private KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
+	private KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
 		String type = store.getType();
 		if (type == null)
 			type = defaultType;
@@ -132,7 +132,7 @@ public class SSLContext {
 			ks = KeyStore.getInstance(type, store.getProvider());
 		else
 			ks = KeyStore.getInstance(type);
-		ks.load(resourceResolver.resolve(store.getLocation()), password);
+		ks.load(resourceResolver.resolve(ResolverMap.combine(baseLocation, store.getLocation())), password);
 		return ks;
 	}
 	

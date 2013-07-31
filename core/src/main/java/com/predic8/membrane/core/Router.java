@@ -86,6 +86,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	protected static final HashSet<ApplicationContext> hotDeployingContexts = new HashSet<ApplicationContext>();
 
 	private ApplicationContext beanFactory;
+	private String baseLocation;
 
 	protected RuleManager ruleManager = new RuleManager();
 	protected ExchangeStore exchangeStore;
@@ -129,6 +130,9 @@ public class Router implements Lifecycle, ApplicationContextAware {
 				new TrackingFileSystemXmlApplicationContext(new String[] { resource }, false);
 		beanFactory.setClassLoader(classLoader);
 		beanFactory.refresh();
+		
+		for (Router router : beanFactory.getBeansOfType(Router.class).values())
+			router.setBaseLocation(resource);
 		
 		beanFactory.start();
 
@@ -393,6 +397,14 @@ public class Router implements Lifecycle, ApplicationContextAware {
 			if (!rule.isActive()) 
 				inactive.add(rule);
 		return inactive;
+	}
+	
+	public String getBaseLocation() {
+		return baseLocation;
+	}
+	
+	public void setBaseLocation(String baseLocation) {
+		this.baseLocation = baseLocation;
 	}
 	
 }

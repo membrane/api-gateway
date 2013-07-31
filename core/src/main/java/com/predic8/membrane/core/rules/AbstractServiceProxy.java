@@ -152,9 +152,9 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 	public void init(Router router) throws Exception {
 		super.init(router);
 		if (sslInboundParser != null)
-			setSslInboundContext(new SSLContext(sslInboundParser, router.getResolverMap()));
+			setSslInboundContext(new SSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
 		if (target.getSslParser() != null)
-			setSslOutboundContext(new SSLContext(target.getSslParser(), router.getResolverMap()));
+			setSslOutboundContext(new SSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
 	}
 	
 	public int getPort() {

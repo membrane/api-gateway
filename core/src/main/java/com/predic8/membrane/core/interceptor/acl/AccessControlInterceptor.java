@@ -99,7 +99,8 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	protected AccessControl parse(String fileName, ResolverMap resourceResolver) throws Exception {
 	    try {
 			XMLInputFactory factory = XMLInputFactory.newInstance();
-		    XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(resourceResolver.resolve(fileName)));
+			XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(resourceResolver
+					.resolve(ResolverMap.combine(router == null ? null : router.getBaseLocation(), fileName))));
 		    return (AccessControl) new AccessControl(router).parse(reader);
 	    } catch (Exception e) {
 	    	log.error("Error initializing accessControl.", e);
