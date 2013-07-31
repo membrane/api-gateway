@@ -14,6 +14,9 @@
 
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+
 
 public class RouterCLI {
 
@@ -30,7 +33,6 @@ public class RouterCLI {
 			Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
 		} catch (Exception ex) {
 			ex.printStackTrace();
-			System.err.println("Could not read rules configuration. Please specify a file containing rules using the -c command line option. Or make sure that the file " + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml exists");
 			System.exit(1);
 		}
 
@@ -47,11 +49,55 @@ public class RouterCLI {
 	}
 	
 	private static String getRulesFile(MembraneCommandLine line) {
+		ResolverMap rm = new ResolverMap();
 		if (line.hasConfiguration()) {
-			return "file:" + line.getConfiguration();
+			String s = line.getConfiguration().replaceAll("\\\\", "/");
+			if (s.startsWith("file:") || s.startsWith("/") || s.length() > 3 && s.substring(1, 3).equals(":/")) {
+				// absolute
+				try {
+					rm.resolve(s);
+					return s;
+				} catch (ResourceRetrievalException e) {
+					System.err.println("Could not open Membrane's configuration file: " + s + " not found.");
+					System.exit(1);
+				}
+			}
+			return getRulesFileFromRelativeSpec(rm, s, "");
 		} else {
-			return "file:" + System.getenv("MEMBRANE_HOME") +  System.getProperty("file.separator") + "conf" + System.getProperty("file.separator") + "proxies.xml";
+			String errorNotice = "Please specify the location of Membrane's proxies.xml configuration file using the -c command line option.";
+			if (System.getenv("MEMBRANE_HOME") != null) {
+				errorNotice += " Or create the file in MEMBRANE_HOME/conf (" + System.getenv("MEMBRANE_HOME") + "/conf/proxies.xml).";
+			} else {
+				errorNotice += " You can also point the MEMBRANE_HOME environment variable to Membrane's distribution root directory "+
+						"and ensure that MEMBRANE_HOME/conf/proxies.xml exists.";
+			}
+			return getRulesFileFromRelativeSpec(rm, "conf/proxies.xml", errorNotice);
 		}
+	}
+
+	private static String getRulesFileFromRelativeSpec(ResolverMap rm, String relativeFile, String errorNotice) {
+		String membraneHome = System.getenv("MEMBRANE_HOME");
+		String userDir = System.getProperty("user.dir").replaceAll("\\\\", "/");
+		if (!userDir.endsWith("/"))
+			userDir += "/";
+		String try1 = ResolverMap.combine(userDir, relativeFile);
+		try {
+			rm.resolve(try1);
+			return try1;
+		} catch (ResourceRetrievalException e) {
+		}
+		String try2 = null;
+		if (membraneHome != null) {
+			try2 = ResolverMap.combine(membraneHome, relativeFile);
+			try {
+				rm.resolve(try2);
+				return try2;
+			} catch (ResourceRetrievalException e) {
+			}
+		}
+		System.err.println("Could not find Membrane's configuration file at " + try1 + (try2 == null ? "" : " and not at " + try2) + " . " + errorNotice);
+		System.exit(1);
+		throw new RuntimeException();
 	}
 
 }
