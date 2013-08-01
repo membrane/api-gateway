@@ -164,14 +164,16 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			if (mapping == null)
 				continue;
 			
+			Type do_ = mapping.getDo();
+			
 			log.debug("match found: " + mapping.from);
 			log.debug("replacing with: " + mapping.to);
-			log.debug("for type: " + mapping.do_);
+			log.debug("for type: " + do_);
 			
 			String newDest = replace(pathQuery, mapping);
 
-			if (mapping.do_ == Type.REDIRECT_PERMANENT || mapping.do_ == Type.REDIRECT_TEMPORARY) {
-				exc.setResponse(Response.redirect(newDest, mapping.do_ == Type.REDIRECT_PERMANENT).build());
+			if (do_ == Type.REDIRECT_PERMANENT || do_ == Type.REDIRECT_TEMPORARY) {
+				exc.setResponse(Response.redirect(newDest, do_ == Type.REDIRECT_PERMANENT).build());
 				return Outcome.RETURN;
 			}
 
