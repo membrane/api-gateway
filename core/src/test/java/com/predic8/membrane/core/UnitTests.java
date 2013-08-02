@@ -57,6 +57,7 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.XMLElementFinderTe
 import com.predic8.membrane.core.interceptor.xslt.XSLTInterceptorTest;
 import com.predic8.membrane.core.magic.MagicTest;
 import com.predic8.membrane.core.multipart.ReassembleTest;
+import com.predic8.membrane.core.resolver.SingleResolverTest;
 import com.predic8.membrane.core.rules.ProxyRuleTest;
 import com.predic8.membrane.core.rules.ServiceProxyKeyTest;
 import com.predic8.membrane.core.transport.ExchangeTest;
@@ -105,7 +106,8 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	ContentTypeDetectorTest.class,
 	MessageAnalyserTest.class, ExchangeTest.class,
 	LimitedMemoryExchangeStoreTest.class,
-	IndexInterceptorTest.class
+	IndexInterceptorTest.class,
+	SingleResolverTest.class
 })
 public class UnitTests {
 	/*

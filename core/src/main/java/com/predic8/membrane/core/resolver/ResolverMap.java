@@ -40,7 +40,6 @@ import com.predic8.xml.util.ExternalResolver;
  */
 public class ResolverMap implements Cloneable, Resolver {
 
-
 	public static String combine(String... locations) {
 		if (locations.length < 2)
 			throw new InvalidParameterException();
@@ -54,7 +53,7 @@ public class ResolverMap implements Cloneable, Resolver {
 			
 		String parent = locations[0];
 		String relativeChild = locations[1];
-		if (relativeChild.contains(":/") || parent == null || parent.length() == 0)
+		if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.length() == 0)
 			return relativeChild;
 		if (parent.startsWith("file://")) {
 			if (relativeChild.startsWith("\\"))
@@ -72,7 +71,7 @@ public class ResolverMap implements Cloneable, Resolver {
 		}
 		if (parent.contains(":/")) {
 			try {
-				return new URI(parent).resolve(relativeChild).toString();
+				return new URI(parent).resolve(relativeChild.replaceAll("\\\\", "/")).toString();
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
