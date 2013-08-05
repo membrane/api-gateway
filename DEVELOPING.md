@@ -42,6 +42,8 @@ Building
       [X] Enable project specific settings
       [X] Enable annotation processing
 
+(Skip to the next section, if you don't need a distribution build.)
+
 6. Right click the service-proxy-core and run as "Maven install".
 
 7. Right click membrane-service-proxy and run as "Maven install".
@@ -52,8 +54,4 @@ Building
 Running Service Proxy in Eclipse
 ================================
 
-1. To run cli, navigate src/main/java/com.predic8.membrane.core/ and run IDEStarter as "Run Configurations...".
-
-2. Go to the Enviroment-tab and set the variable "MEMBRANE_HOME" to the \service-proxy\cli directory
-
-3. Hit run.
+1. To run cli, navigate src/main/java/com.predic8.membrane.core/ and run IDEStarter as "Java Application".
