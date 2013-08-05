@@ -1,7 +1,7 @@
 
-Membrane ESB
+Membrane Service Proxy
 ---------------------------------------------------------------------------
-Membrane ESB is covered by the Apache License Version 2.0. The
+Membrane Service Proxy is covered by the Apache License Version 2.0. The
 license agreement can be found on
 http://www.apache.org/licenses/LICENSE-2.0.html
 and is also included below.

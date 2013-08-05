@@ -1,6 +1,6 @@
 STATISTICS CSV INTERCEPTOR
 
-Using the StatisticsCSVInterceptor, Membrane Monitor and ESB can log access data to a file. The fields will be separated by semicolon (;), so that you can import the data into Excel.
+Using the StatisticsCSVInterceptor, Membrane Monitor and Service Proxy can log access data to a file. The fields will be separated by semicolon (;), so that you can import the data into Excel.
 
 RUNNING THE EXAMPLE
 

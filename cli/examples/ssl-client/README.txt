@@ -1,6 +1,6 @@
 SSL for Unsecured Servers
 
-Using the Membrane ESB we can enable clients that do not support SSL to communicate with a SSL secured server.  
+Using the Membrane Service Proxy we can enable clients that do not support SSL to communicate with a SSL secured server.  
 
 
 

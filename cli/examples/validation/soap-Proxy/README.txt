@@ -6,7 +6,7 @@ PREREQUISITES:
 
 - Install Curl from http://curl.haxx.se/download.html , if you have not done so already. Let us assume it is in your PATH.
 
-As the URL of a WSDL is specified in proxies.xml, the ESB retrieves all corresponding schemas and tries to validate the message body using them.
+As the URL of a WSDL is specified in proxies.xml, the Service Proxy retrieves all corresponding schemas and tries to validate the message body using them.
 
 As a SOAP-Proxy is a specialized version of the ServiceProxy, a SOAP-Proxy has a certain advantage if it is used for a SOAP Service. A SOAP-Proxy needs the WSDL's URL just once. Adding a Validator then needs less code, as you can see in the example below:
 

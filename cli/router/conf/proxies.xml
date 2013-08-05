@@ -1,18 +1,18 @@
 <!--
 	Routing Configuration
 	
-	Here you can configure routing rules for Membrane Monitor and ESB. It
+	Here you can configure routing rules for Membrane Service Proxy. It
 	contains some rules to show how to setup routing. Please make sure to
 	remove these rules before you put the router into production. More sample
 	configurations you can find in the examples directory.
 
 	Have a look at
-	http://membrane-soa.org/esb-doc/current/configuration/proxy-configuration.htm for
+	http://membrane-soa.org/service-proxy-doc/current/configuration/proxy-configuration.htm for
 	documentation and a reference explaining what XML elements can be used
 	how and where.
 	
-	See the proxies.xml files in the /examples/* directories in the ESB
-	distribution for several examples of how to configure different ESB
+	See the proxies.xml files in the /examples/* directories in the Service Proxy
+	distribution for several examples of how to configure different Service Proxy
 	features within this file.
 	
 	Changes to this file will be picked up almost instantly if Membrane is

@@ -1,6 +1,6 @@
 LOG INTERCEPTOR
 
-Using the LogInterceptor, Membrane Monitor and ESB can log requests and responses.
+Using the LogInterceptor, Membrane Monitor and Service Proxy can log requests and responses.
 
 RUNNING THE EXAMPLE
 

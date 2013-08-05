@@ -2,7 +2,7 @@
 	Routing Configuration
 	
 	Have a look at
-	http://membrane-soa.org/esb-doc/current/configuration/proxy-configuration.htm for
+	http://membrane-soa.org/service-proxy-doc/current/configuration/proxy-configuration.htm for
 	documentation and a reference explaining what XML elements can be used
 	how and where.
 	
@@ -23,7 +23,7 @@
 		<serviceProxy port="2000">
 			<!--
 			For SOAP proxying, you probably want <wsdlRewriter /> . See also
-			http://www.membrane-soa.org/esb-doc/current/url-rewriting-wsdl.htm .
+			http://membrane-soa.org/service-proxy-doc/current/url-rewriting-wsdl.htm .
 			-->
 		
 			<interceptor refid="myInterceptor" />

@@ -23,7 +23,7 @@ You can find the latest version at http://www.membrane-soa.org/downloads/ .
 
 Documentation
 -------------------------------------------------------------------------------
-The documentation is available at http://membrane-soa.org/esb-doc/ .
+The documentation is available at http://membrane-soa.org/service-proxy-doc/ .
 Examples are found in examples/ .
 
 

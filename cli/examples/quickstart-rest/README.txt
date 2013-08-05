@@ -1,1 +1,1 @@
-Please follow http://membrane-soa.org/esb-doc/current/rest-quickstart.htm .
+Please follow http://membrane-soa.org/service-proxy-doc/current/rest-quickstart.htm .
