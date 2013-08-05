@@ -23,6 +23,7 @@ import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.servlet.config.spring.BaseLocationXmlWebApplicationContext;
 
 public class MembraneServletContextListener implements ServletContextListener {
 
@@ -36,7 +37,7 @@ public class MembraneServletContextListener implements ServletContextListener {
 
 			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(sce));
 			
-			appCtx = new XmlWebApplicationContext();
+			appCtx = new BaseLocationXmlWebApplicationContext();
 			Router router = RouterUtil.initializeRoutersFromSpringWebContext(appCtx, sce.getServletContext(), getProxiesXmlLocation(sce));
 			if (router != null)
 				throw new RuntimeException("A <router> with a <servletTransport> cannot be used with MembraneServletContextListener. Use MembraneServlet instead.");

@@ -49,7 +49,7 @@
 			<basicAuthentication>
 				<user name="admin" password="membrane" />
 			</basicAuthentication>	
-			<accessControl file="conf/acl.xml" />
+			<accessControl file="acl.xml" />
 			<adminConsole />
 		</serviceProxy>
 	 

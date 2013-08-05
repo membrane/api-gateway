@@ -66,7 +66,7 @@ public class DistributionExtractingTestcase {
 		if (!unzipDir.mkdir())
 			throw new RuntimeException("Could not mkdir " + unzipDir.getAbsolutePath());
 
-		System.out.println("unzipping router distribution...");
+		System.out.println("unzipping router distribution [" + getClass().getSimpleName() + "]...");
 		unzip(zip, unzipDir);
 		
 		membraneHome = unzipDir.listFiles(new FilenameFilter() {

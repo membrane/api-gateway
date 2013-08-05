@@ -33,7 +33,7 @@ import org.springframework.core.io.Resource;
  * Delegates everything to {@link FileSystemXmlApplicationContext}. Additionally builds
  * a list of the files opened during the context refresh.
  */
-class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationContext implements TrackingApplicationContext {
+class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationContext implements TrackingApplicationContext, BaseLocationApplicationContext {
 	private static final Log log = LogFactory.getLog(TrackingFileSystemXmlApplicationContext.class.getName());
 	
 	private List<File> files = new ArrayList<File>();
@@ -116,5 +116,9 @@ class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationCo
 	
 	public List<File> getFiles() {
 		return files;
+	}
+	
+	public String getBaseLocation() {
+		return getConfigLocations()[0];
 	}
 }

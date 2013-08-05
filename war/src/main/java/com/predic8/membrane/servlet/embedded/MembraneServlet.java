@@ -28,6 +28,7 @@ import org.springframework.web.context.support.XmlWebApplicationContext;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.servlet.RouterUtil;
+import com.predic8.membrane.servlet.config.spring.BaseLocationXmlWebApplicationContext;
 
 /**
  * This embeds Membrane as a servlet.
@@ -42,7 +43,7 @@ public class MembraneServlet extends HttpServlet {
 	@Override
 	public void init(ServletConfig config) throws ServletException {
 		try {
-			appCtx = new XmlWebApplicationContext();
+			appCtx = new BaseLocationXmlWebApplicationContext();
 			
 			log.debug("loading beans configuration from: " + getProxiesXmlLocation(config));
 			router = RouterUtil.initializeRoutersFromSpringWebContext(appCtx, config.getServletContext(), getProxiesXmlLocation(config));

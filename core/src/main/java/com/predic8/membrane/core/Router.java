@@ -130,10 +130,6 @@ public class Router implements Lifecycle, ApplicationContextAware {
 				new TrackingFileSystemXmlApplicationContext(new String[] { resource }, false);
 		beanFactory.setClassLoader(classLoader);
 		beanFactory.refresh();
-		
-		for (Router router : beanFactory.getBeansOfType(Router.class).values())
-			router.setBaseLocation(resource);
-		
 		beanFactory.start();
 
 		return (Router) beanFactory.getBean("router");
@@ -142,6 +138,8 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		beanFactory = applicationContext;
+		if (applicationContext instanceof BaseLocationApplicationContext)
+			setBaseLocation(((BaseLocationApplicationContext)applicationContext).getBaseLocation());
 	}
 	
 	public RuleManager getRuleManager() {

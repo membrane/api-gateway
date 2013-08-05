@@ -41,12 +41,12 @@
 	      	 
 	    <!-- Configure all outbound HTTP connections for this router. -->
 	    <httpClientConfig>
+	    	<!-- configure timeouts -->
+	    	<connection timeout="10000" keepAliveTimeout="4000" />
+	    	<!-- use a HTTP proxy -->
+	    	<!-- <proxy host="proxy.predic8.de" port="3128" /> -->
 	    	<!-- use Basic Authentication -->
 	    	<authentication username="john" password="secret" />
-	    	<!-- configure timeouts -->
-	    	<connection timeout="" keepAliveTimeout="" />
-	    	<!-- use a HTTP proxy -->
-	    	<proxy host="proxy.predic8.de" port="3128" />
 	    </httpClientConfig>
 	    
 	    <!--
@@ -76,31 +76,31 @@
 			          request                                          
 			            |                               A               
 			            V                               |               
-			+----------------------------------------------------------+
-			|     rule matching                         -              |
-			+----------------------------------------------------------+
+			+——————————————————————————————————————————————————————————+
+			|     rule matching                         —              |
+			+——————————————————————————————————————————————————————————+
 			            |                               A               
 			            V                               |               
-			+----------------------------------------------------------+
+			+——————————————————————————————————————————————————————————+
 			|                     exchangeStore                        |
-			+----------------------------------------------------------+
+			+——————————————————————————————————————————————————————————+
 			            |                               A               
 			            V                               |               
-			+----------------------------------------------------------+
-			|      dispatching                          -              |
-			+----------------------------------------------------------+
+			+——————————————————————————————————————————————————————————+
+			|      dispatching                          —              |
+			+——————————————————————————————————————————————————————————+
 			            |                               A               
 			            V                               |               
-			+----------------------------------------------------------+
+			+——————————————————————————————————————————————————————————+
 			|                      user feature                        |
-			|                  (executes a sub-chain)                  |
-			+----------------------------------------------------------+
+			|                  (executes a sub—chain)                  |
+			+——————————————————————————————————————————————————————————+
 			            |                               A               
 			            V                               |               
-			+----------------------------------------------------------+
+			+——————————————————————————————————————————————————————————+
 			|                       httpClient                         |
 			|                        |      A                          |
-			+------------------------+------+--------------------------+
+			+————————————————————————+——————+——————————————————————————+
 			                         |      |
 			               outbound  |      |
 			           HTTP request  |      |
@@ -156,22 +156,22 @@
 			Forwards SOAP requests for the BLZService on port 2000 to the Web
 			server on host thomas-bayer.com . 
 
-			This <serviceProxy>'s sub-chain is the following:
+			This <serviceProxy>'s sub—chain is the following:
 			
-			+----------------|-------------------------------------------+
+			+————————————————|———————————————————————————————————————————+
 			|   userFeature  |                             A             |
 			|                |                             |             |
 			|                V                             |             |
-			|   +----------------------------------------------------+   |
+			|   +————————————————————————————————————————————————————+   |
 			|   |                      validator                     |   |
-			|   +----------------------------------------------------+   |
+			|   +————————————————————————————————————————————————————+   |
 			|                |                             A             |
-			+----------------+-----------------------------+-------------+
+			+————————————————+—————————————————————————————+—————————————+
 			                 |                             |             
 			                 V                             |             
-			+------------------------------------------------------------+
+			+————————————————————————————————————————————————————————————+
 			|             httpClient (from the <transport> chain)        |
-			+------------------------------------------------------------+
+			+————————————————————————————————————————————————————————————+
 			                 
 		-->
 		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
@@ -193,39 +193,65 @@
 			-->
 			<validator />
 		</soapProxy>
+
+		<!--
+			Acts as a webserver. 
+		 -->
+		<serviceProxy port="2001">
+			<!-- Answers all requests incoming on port 2001 starting with "/static/". -->
+			<path>/static/</path>
+			
+			<!-- Requires the admin password. -->
+			<basicAuthentication>
+				<user name="admin" password="membrane" />
+			</basicAuthentication>
+			
+			<!-- Removes the leading "/static" from the request's destination -->
+			<rewriter>
+				<map from="/static(/.*)" to="$1"/>
+			</rewriter>
+			
+			<!--
+				Maps requests into the filesystem to the "conf" subdirectory.
+				The <webServer> always terminates the interceptor (sub-)chain and reverses
+				the Exchange flow, either returning "200 OK" and the contents of a file,
+				or "404 Not Found".
+			-->
+			<webServer docBase="." /> 
+		</serviceProxy>
 	
 		<!--
 			Forwards HTTP requests on port 2001 to a local web container
 			running on port 8080, maybe a Tomcat server.
 		-->
-		<serviceProxy name="localhost" port="2001" >
+		<serviceProxy port="2001">
 			<target host="localhost" port="8080"/>
 		</serviceProxy>
-	
+
 		<!--
 			Sets up the Administration Web Interface on port 9000.
 			
 			This <serviceProxy>'s sub-chain is the following:
 			
-			+----------------|-------------------------------------------+
+			+————————————————|———————————————————————————————————————————+
 			|   userFeature  |                             A             |
 			|                |                             |             |
 			|                V                             |             |
-			|   +----------------------------------------------------+   |
-			|   |   basic authentication                   -         |   |
-			|   +----------------------------------------------------+   |
+			|   +————————————————————————————————————————————————————+   |
+			|   |   basic authentication                   —         |   |
+			|   +————————————————————————————————————————————————————+   |
 			|                |                             A             |
 			|                V                             |             |
-			|   +----------------------------------------------------+   |
-			|   |   access control list                    -         |   |
-			|   +----------------------------------------------------+   |
+			|   +————————————————————————————————————————————————————+   |
+			|   |   access control list                    —         |   |
+			|   +————————————————————————————————————————————————————+   |
 			|                |                             A             |
 			|                V                             |             |
-			|   +----------------------------------------------------+   |
+			|   +————————————————————————————————————————————————————+   |
 			|   |                    admin console                   |   |
-			|   +----------------------------------------------------+   |
+			|   +————————————————————————————————————————————————————+   |
 			|                                                            |
-			+------------------------------------------------------------+
+			+————————————————————————————————————————————————————————————+
 			
 			-->
 		<serviceProxy name="Console" port="9000">
@@ -237,7 +263,7 @@
 				
 			<!-- sub-step 2: allow requests only from these network addresses (see
 				the file "conf/acl.xml" for the list). -->
-			<accessControl file="conf/acl.xml" />
+			<accessControl file="acl.xml" />
 			
 			<!-- sub-step 3:
 				Display the admin console.
