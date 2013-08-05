@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
+import java.io.IOException;
 import java.io.StringWriter;
 
 import javax.xml.namespace.QName;
@@ -57,6 +58,9 @@ public class XML2HTTP {
 	public static void unwrapResponseIfNecessary(Response response) {
 		if (MimeType.TEXT_XML_UTF8.equals(response.getHeader().getContentType())) {
 			try {
+				if (response.getBody().getLength() == 0)
+					return;
+				
 				XMLEventReader parser;
 				synchronized(xmlInputFactory) {
 					parser = xmlInputFactory.createXMLEventReader(response.getBodyAsStreamDecoded(), response.getCharset());
@@ -109,9 +113,11 @@ public class XML2HTTP {
 					}
 				}
 			} catch (XMLStreamException e) {
-				log.error(e);
+				log.error("", e);
 			} catch (XML2HTTPException e) {
-				log.error(e);
+				log.error("", e);
+			} catch (IOException e) {
+				log.error("", e);
 			}
 		}
 	}

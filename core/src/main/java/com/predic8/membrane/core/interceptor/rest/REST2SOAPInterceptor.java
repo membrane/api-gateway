@@ -21,9 +21,12 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
+import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
@@ -161,6 +164,7 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 	private List<Mapping> mappings = new ArrayList<Mapping>();
 	private final ConcurrentHashMap<String, XSLTTransformer> xsltTransformers = 
 			new ConcurrentHashMap<String, XSLTTransformer>();
+	private Boolean isSOAP12;
 
 	public REST2SOAPInterceptor() {
 		name = "REST 2 SOAP Gateway";
@@ -194,7 +198,9 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 		exc.getResponse().setBodyContent(getTransformer(mapping.responseXSLT).
 				transform(getBodySource(exc)));
-		setContentType(exc.getResponse().getHeader());
+		Header header = exc.getResponse().getHeader();
+		header.removeFields(Header.CONTENT_TYPE);
+		header.setContentType(MimeType.TEXT_XML_UTF8);
 
 		XML2HTTP.unwrapResponseIfNecessary(exc.getResponse());
 		convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), mapping, exc.getResponse());
@@ -260,15 +266,33 @@ public class REST2SOAPInterceptor extends AbstractInterceptor {
 
 		exc.getRequest().setMethod("POST");
 		exc.getRequest().getHeader().setSOAPAction(mapping.soapAction);
-		setContentType(exc.getRequest().getHeader());
+		Header header = exc.getRequest().getHeader();
+		header.removeFields(Header.CONTENT_TYPE);
+		header.setContentType(isSOAP12(exc) ? MimeType.APPLICATION_SOAP : MimeType.TEXT_XML_UTF8);
 
 		exc.setProperty("mapping", mapping);
 		setServiceEndpoint(exc, mapping);
 	}
 
-	private void setContentType(Header header) {
-		header.removeFields(Header.CONTENT_TYPE);
-		header.setContentType(MimeType.TEXT_XML_UTF8);
+	private boolean isSOAP12(AbstractExchange exc) {
+		if (isSOAP12 != null)
+			return isSOAP12;
+		isSOAP12 = Constants.SOAP12_NS.equals(getRootElementNamespace(exc.getRequest().getBodyAsStream()));
+		return isSOAP12;
+	}
+
+	private String getRootElementNamespace(InputStream stream) {
+		try {
+			XMLEventReader xer = XMLInputFactory.newFactory().createXMLEventReader(stream);
+			while (xer.hasNext()) {
+				XMLEvent event = xer.nextEvent();
+				if (event.isStartElement())
+					return event.asStartElement().getName().getNamespaceURI();
+			}
+		} catch (XMLStreamException e) {
+			log.error("Could not determine root element namespace for check whether namespace is SOAP 1.2.", e);
+		}
+		return null;
 	}
 
 	private void setJSONContentType(Header header) {

@@ -18,6 +18,7 @@
 /cli/.settings
 /cli/target
 /cli/memrouter.log
+/cli/membrane.log
 /cli/derby.log
 
 # /cli/examples/router/custom-interceptor/
