@@ -204,10 +204,13 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	
 	/**
 	 * Closes all ports (if any were opened), but does not wait for running exchanges to complete.
+	 * 
+	 * @deprecated Simply invokes {@link #shutdown()}. "Not waiting" is not supported anymore, as open connections can
+	 *             now be forcibly closed after a timeout. See
+	 *             {@link HttpTransport#setForceSocketCloseOnHotDeployAfter(int)}.
 	 */
 	public void shutdownNoWait() throws IOException {
-		backgroundInitializator.shutdown();
-		getTransport().closeAll(false);
+		shutdown();
 	}
 	
 	public ExecutorService getBackgroundInitializator() {
@@ -251,7 +254,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 				if (hotDeploy)
 					startHotDeployment();
 			} catch (Exception e) {
-				shutdownNoWait();
+				shutdown();
 				throw e;
 			}
 			

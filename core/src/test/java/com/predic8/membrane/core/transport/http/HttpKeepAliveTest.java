@@ -65,7 +65,7 @@ public class HttpKeepAliveTest {
 
 	@After
 	public void tearDown() throws Exception {
-		service1.shutdownNoWait();
+		service1.shutdown();
 	}
 
 	private HttpClient createHttpClient(int defaultKeepAliveTimeout) {

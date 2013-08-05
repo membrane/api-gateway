@@ -149,9 +149,11 @@ public class HttpTransport extends Transport {
 			log.debug("Waiting for running exchanges to finish.");
 			executorService.shutdown();
 			try {
-				while (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
+				while (true) {
 					boolean onlyIdle = System.currentTimeMillis() - now <= forceSocketCloseOnHotDeployAfter;
 					closeConnections(onlyIdle);
+					if (executorService.awaitTermination(5, TimeUnit.SECONDS))
+						break;
 					
 					log.warn("Still waiting for running exchanges to finish. (Set <transport forceSocketCloseOnHotDeployAfter=\"" + forceSocketCloseOnHotDeployAfter + "\"> to a lower value to forcibly close connections more quickly.");
 				}
@@ -162,15 +164,17 @@ public class HttpTransport extends Transport {
 	}
 
 	private void closeConnections(boolean onlyIdle) throws IOException {
-		ArrayList<HttpEndpointListener> remove = new ArrayList<HttpEndpointListener>();
+		ArrayList<WeakReference<HttpEndpointListener>> remove = new ArrayList<WeakReference<HttpEndpointListener>>();
 		for (WeakReference<HttpEndpointListener> whel : stillRunning) {
 			HttpEndpointListener hel = whel.get();
-			if (hel != null)
+			if (hel == null)
+				remove.add(whel);
+			else
 				if (hel.closeConnections(onlyIdle))
-					remove.add(hel);
+					remove.add(whel);
 		}
-		for (HttpEndpointListener hel : remove)
-			stillRunning.remove(hel);
+		for (WeakReference<HttpEndpointListener> whel : remove)
+			stillRunning.remove(whel);
 	}
 
 	/**

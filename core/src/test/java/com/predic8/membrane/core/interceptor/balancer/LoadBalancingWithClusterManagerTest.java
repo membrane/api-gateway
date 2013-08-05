@@ -95,10 +95,10 @@ public class LoadBalancingWithClusterManagerTest {
 
 	@After
 	public void tearDown() throws Exception {
-		lb.shutdownNoWait();
-		node1.shutdownNoWait();
-		node2.shutdownNoWait();
-		node3.shutdownNoWait();
+		lb.shutdown();
+		node1.shutdown();
+		node2.shutdown();
+		node3.shutdown();
 	}
 	
 	private void startLB() throws Exception {

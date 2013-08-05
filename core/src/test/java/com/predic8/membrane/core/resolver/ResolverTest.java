@@ -284,7 +284,7 @@ public class ResolverTest {
 	
 	@AfterClass
 	public static void teardown() throws IOException {
-		router.shutdownNoWait();
+		router.shutdown();
 	}
 	
 }

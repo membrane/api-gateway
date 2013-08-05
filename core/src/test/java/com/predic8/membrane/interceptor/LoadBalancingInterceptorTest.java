@@ -115,9 +115,9 @@ public class LoadBalancingInterceptorTest {
 
 	@After
 	public void tearDown() throws Exception {
-		service1.shutdownNoWait();
-		service2.shutdownNoWait();
-		balancer.shutdownNoWait();
+		service1.shutdown();
+		service2.shutdown();
+		balancer.shutdown();
 	}
 
 	@Test
@@ -224,7 +224,7 @@ public class LoadBalancingInterceptorTest {
 		assertEquals(1, mockInterceptor1.counter);
 		assertEquals(1, mockInterceptor2.counter);
 
-		service1.shutdownNoWait();
+		service1.shutdown();
 		Thread.sleep(1000);
 
 		assertEquals(200, client.executeMethod(getPostMethod()));

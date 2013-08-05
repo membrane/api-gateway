@@ -51,7 +51,7 @@ public class AdjustContentLengthIntegrationTest extends TestCase {
 
 	@After
 	public void tearDown() throws Exception {
-		router.shutdownNoWait();
+		router.shutdown();
 	}
 
 	private GetMethod getDirektRequest() {

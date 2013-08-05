@@ -13,13 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
+import static com.predic8.membrane.test.AssertUtils.getAndAssert;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.http.params.HttpProtocolParams;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +26,8 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class AccessControlInterceptorTest {
+
+	private static final String BASE_URL = "http://localhost:4000";
 
 	private AccessControlInterceptor interceptor;
 	
@@ -56,29 +54,22 @@ public class AccessControlInterceptorTest {
 	
 	@Test
 	public void testAuthorizedAccess() throws Exception {
-		assertEquals(200, callService("/axis2/services/BLZService?wsdl"));
+		getAndAssert(200, BASE_URL + "/axis2/services/BLZService?wsdl");
 	}
 	
 	@Test
 	public void testUnauthorizedRequestUri() throws Exception {
-		assertEquals(403, callService("/predic8/services/BLZService?wsdl")); 
+		getAndAssert(403, BASE_URL + "/predic8/services/BLZService?wsdl"); 
 	}
 	
 	@Test
 	public void testUnauthorizedClient() throws Exception {
-		assertEquals(403, callService("/crm/services/BLZService?wsdl")); 
+		getAndAssert(403, BASE_URL + "/crm/services/BLZService?wsdl"); 
 	}
 	
 	@After
 	public void tearDown() throws Exception {
-		router.shutdownNoWait();
-	}
-	
-	private int callService(String uri) throws Exception {
-		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-		GetMethod get = new GetMethod("http://localhost:4000" + uri);
-		return client.executeMethod(get);
+		router.shutdown();
 	}
 	
 }

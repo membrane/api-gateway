@@ -72,7 +72,7 @@ public class ViaProxyTest {
 	
 	@After
 	public void tearDown() throws Exception {
-		router.shutdownNoWait();
-		proxyRouter.shutdownNoWait();
+		router.shutdown();
+		proxyRouter.shutdown();
 	}
 }

@@ -96,6 +96,8 @@ public class HttpEndpointListener extends Thread {
 	 * @return true, if there are no more open connections
 	 */
 	public boolean closeConnections(boolean onlyIdle) throws IOException {
+		if (!closed)
+			throw new IllegalStateException("please call closePort() fist.");
 		for (Socket s : (onlyIdle ? idleSockets : openSockets).keySet())
 			if (!s.isClosed())
 				s.close();

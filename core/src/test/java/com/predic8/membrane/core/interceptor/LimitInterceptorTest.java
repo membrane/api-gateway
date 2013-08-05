@@ -54,7 +54,7 @@ public class LimitInterceptorTest {
 	
 	@After
 	public void after() throws IOException {
-		router.shutdownNoWait();
+		router.shutdown();
 	}
 
 	@Test
