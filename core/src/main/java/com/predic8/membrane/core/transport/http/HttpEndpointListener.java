@@ -18,7 +18,10 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketException;
+import java.security.InvalidParameterException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 
 import org.apache.commons.logging.Log;
@@ -31,8 +34,11 @@ public class HttpEndpointListener extends Thread {
 
 	private static final Log log = LogFactory.getLog(HttpEndpointListener.class.getName());
 
-	private ServerSocket serverSocket;
-	private HttpTransport transport;
+	private final ServerSocket serverSocket;
+	private final HttpTransport transport;
+	private final ConcurrentHashMap<Socket, Boolean> idleSockets = new ConcurrentHashMap<Socket, Boolean>();
+	private final ConcurrentHashMap<Socket, Boolean> openSockets = new ConcurrentHashMap<Socket, Boolean>();
+	private volatile boolean closed;
 
 	public HttpEndpointListener(String ip, int port, HttpTransport transport, SSLContext sslContext) throws IOException {
 		this.transport = transport;
@@ -50,9 +56,18 @@ public class HttpEndpointListener extends Thread {
 	}
 
 	public void run() {
-		while (serverSocket != null && !serverSocket.isClosed()) {
+		while (!closed) {
 			try {
-				transport.getExecutorService().execute(new HttpServerHandler(serverSocket.accept(), transport));
+				Socket socket = serverSocket.accept();
+				openSockets.put(socket, Boolean.TRUE);
+				try {
+					transport.getExecutorService().execute(new HttpServerHandler(socket, this));
+				} catch (RejectedExecutionException e) {
+					openSockets.remove(socket);
+					log.error("HttpServerHandler execution rejected. Might be due to a proxies.xml hot deployment in progress or a low"
+							+ " value for <transport maxThreadPoolSize=\"...\">.");
+					socket.close();
+				}
 			}
 			catch (SocketException e) {
 				String message = e.getMessage();
@@ -63,8 +78,6 @@ public class HttpEndpointListener extends Thread {
 					log.error(e);
 			} catch (NullPointerException e) {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
-			} catch (RejectedExecutionException e) {
-				log.error("Max Thread pool size is exceeded. Please increase the property maxThreadPoolSize in monitor-beans.xml!");				
 			} catch (Exception e) {
 				log.error(e);
 			}
@@ -72,10 +85,46 @@ public class HttpEndpointListener extends Thread {
 	}
 
 	public void closePort() throws IOException {
-		ServerSocket temp = serverSocket;
-		serverSocket = null;
-		if (!temp.isClosed()) {
-			temp.close();
+		closed = true;
+		if (!serverSocket.isClosed())
+			serverSocket.close();
+	}
+
+	/**
+	 * Closes all connections or those that are <i>currently</i> idle.
+	 * @param onlyIdle whether to close only idle connections
+	 * @return true, if there are no more open connections
+	 */
+	public boolean closeConnections(boolean onlyIdle) throws IOException {
+		for (Socket s : (onlyIdle ? idleSockets : openSockets).keySet())
+			if (!s.isClosed())
+				s.close();
+		return openSockets.isEmpty();
+	}
+
+	void setIdleStatus(Socket socket, boolean isIdle) throws IOException {
+		if (isIdle) {
+			if (closed) {
+				socket.close();
+				throw new SocketException();
+			}
+			idleSockets.put(socket, Boolean.TRUE);
+		} else {
+			idleSockets.remove(socket);
 		}
+	}
+
+	void setOpenStatus(Socket socket, boolean isOpen) {
+		if (isOpen)
+			throw new InvalidParameterException("isOpen");
+		openSockets.remove(socket);
+	}
+
+	public HttpTransport getTransport() {
+		return transport;
+	}
+	
+	public boolean isClosed() {
+		return closed;
 	}
 }

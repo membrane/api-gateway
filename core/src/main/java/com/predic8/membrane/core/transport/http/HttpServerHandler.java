@@ -45,19 +45,21 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	private static final AtomicInteger counter = new AtomicInteger();
 	
 	private final Socket sourceSocket;
+	private final HttpEndpointListener endpointListener;
 	private final InputStream srcIn;
 	private final OutputStream srcOut;
 
 
-	public HttpServerHandler(Socket socket, HttpTransport transport) throws IOException {
-		super(transport);
+	public HttpServerHandler(Socket socket, HttpEndpointListener endpointListerer) throws IOException {
+		super(endpointListerer.getTransport());
 		this.sourceSocket = socket;
+		this.endpointListener = endpointListerer;
 		this.exchange = new Exchange(this);
 		log.debug("New ServerThread created. " + counter.incrementAndGet());
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
-		sourceSocket.setSoTimeout(transport.getSocketTimeout());
-		sourceSocket.setTcpNoDelay(transport.isTcpNoDelay());
+		sourceSocket.setSoTimeout(endpointListerer.getTransport().getSocketTimeout());
+		sourceSocket.setTcpNoDelay(endpointListerer.getTransport().isTcpNoDelay());
 	}
 
 	public HttpTransport getTransport() {
@@ -69,11 +71,23 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		try {
 			updateThreadName(true);
 			while (true) {
+				srcReq = new Request();
+				
+				endpointListener.setIdleStatus(sourceSocket, true);
+				try {
+					srcIn.mark(2);
+					if (srcIn.read() == -1)
+						break;
+					srcIn.reset();
+				} finally {
+					endpointListener.setIdleStatus(sourceSocket, false);
+				}
+
 				if (boundConnection != null) {
 					exchange.setTargetConnection(boundConnection);
 					boundConnection = null;
 				}
-				srcReq = new Request();
+
 				srcReq.read(srcIn, true);
 
 				exchange.received();
@@ -122,6 +136,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		}
 
 		finally {
+			endpointListener.setOpenStatus(sourceSocket, false);
+			
 			if (boundConnection != null)
 				try {
 					boundConnection.close();

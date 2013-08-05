@@ -15,8 +15,11 @@
 package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -27,6 +30,7 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.Transport;
@@ -48,9 +52,22 @@ public class HttpTransport extends Transport {
 	public static final String SOURCE_IP = "com.predic8.membrane.transport.http.source.Ip";
 
 	private int socketTimeout = 30000;
+	private int forceSocketCloseOnHotDeployAfter = 30000;
 	private boolean tcpNoDelay = true;
 
 	public Hashtable<Port, HttpEndpointListener> portListenerMapping = new Hashtable<Port, HttpEndpointListener>();
+	public List<WeakReference<HttpEndpointListener>> stillRunning = new ArrayList<WeakReference<HttpEndpointListener>>();
+
+	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(20,
+			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory());
+
+	@Override
+	public void init(Router router) throws Exception {
+		super.init(router);
+		
+
+	}
 	
 	private static class Port {
 		public String ip;
@@ -84,10 +101,6 @@ public class HttpTransport extends Transport {
 		}
 	}
 
-	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(20,
-			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
-			new SynchronousQueue<Runnable>(), new HttpServerThreadFactory());
-
 	public boolean isAnyThreadListeningAt(String ip, int port) {
 		return portListenerMapping.get(new Port(ip, port)) != null;
 	}
@@ -96,6 +109,10 @@ public class HttpTransport extends Transport {
 		return portListenerMapping.keys();
 	}
 
+	/**
+	 * Closes the corresponding server port. Note that connections might still be open and exchanges still running after
+	 * this method completes.
+	 */
 	public synchronized void closePort(String ip, int port) throws IOException {
 		Port p = new Port(ip, port);
 		log.debug("Closing server port: " + p);
@@ -110,6 +127,7 @@ public class HttpTransport extends Transport {
 			Thread.currentThread().interrupt();
 		}
 		portListenerMapping.remove(p);
+		stillRunning.add(new WeakReference<HttpEndpointListener>(plt));
 
 		for (IPortChangeListener listener : menuListeners) {
 			listener.removePort(port);
@@ -127,16 +145,32 @@ public class HttpTransport extends Transport {
 		}
 		
 		if (waitForCompletion) {
+			long now = System.currentTimeMillis();
 			log.debug("Waiting for running exchanges to finish.");
 			executorService.shutdown();
 			try {
 				while (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
-					log.warn("Still waiting for running exchanges to finish.");
+					boolean onlyIdle = System.currentTimeMillis() - now <= forceSocketCloseOnHotDeployAfter;
+					closeConnections(onlyIdle);
+					
+					log.warn("Still waiting for running exchanges to finish. (Set <transport forceSocketCloseOnHotDeployAfter=\"" + forceSocketCloseOnHotDeployAfter + "\"> to a lower value to forcibly close connections more quickly.");
 				}
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 			}
 		}
+	}
+
+	private void closeConnections(boolean onlyIdle) throws IOException {
+		ArrayList<HttpEndpointListener> remove = new ArrayList<HttpEndpointListener>();
+		for (WeakReference<HttpEndpointListener> whel : stillRunning) {
+			HttpEndpointListener hel = whel.get();
+			if (hel != null)
+				if (hel.closeConnections(onlyIdle))
+					remove.add(hel);
+		}
+		for (HttpEndpointListener hel : remove)
+			stillRunning.remove(hel);
 	}
 
 	/**
@@ -162,6 +196,10 @@ public class HttpTransport extends Transport {
 		}
 	}
 
+	public int getCoreThreadPoolSize() {
+		return executorService.getCorePoolSize();
+	}
+	
 	/**
 	 * @description <p>Membrane uses a thread pool to allocate threads to incomming clients connections. The core thread pool size is the minimum number of threads that are created in advance to serve client requests.</p>
 	 * @default 20
@@ -172,6 +210,16 @@ public class HttpTransport extends Transport {
 		executorService.setCorePoolSize(corePoolSize);
 	}
 
+	public int getMaxThreadPoolSize() {
+		return executorService.getMaximumPoolSize();
+	}
+	
+	/**
+	 * @description Maximum number of threads to handle incoming connections. (Membrane uses 1 thread per incoming connection.)
+	 * @default <i>no limit</i>
+	 * @example 300
+	 */
+	@MCAttribute
 	public void setMaxThreadPoolSize(int value) {
 		executorService.setMaximumPoolSize(value);
 	}
@@ -214,4 +262,22 @@ public class HttpTransport extends Transport {
 	public boolean isOpeningPorts() {
 		return true;
 	}
+	
+	public int getForceSocketCloseOnHotDeployAfter() {
+		return forceSocketCloseOnHotDeployAfter;
+	}
+	
+	/**
+	 * @description When proxies.xml is changed and &lt;router hotDeploy="true"&gt;, the Spring Context is automatically refreshed,
+	 * which restarts the {@link Router} object (=Membrane Service Proxy). Before the context refresh, all open socket connections
+	 * have to be closed. Exchange objects which are still running might delay this process. Setting forceSocketCloseOnHotDeployAfter
+	 * to a non-zero number of milliseconds forces connections to be closed after this time.  
+	 * @default 30000
+	 */
+	@MCAttribute
+	public void setForceSocketCloseOnHotDeployAfter(int forceSocketCloseOnHotDeployAfter) {
+		this.forceSocketCloseOnHotDeployAfter = forceSocketCloseOnHotDeployAfter;
+	}
+	
+	
 }
