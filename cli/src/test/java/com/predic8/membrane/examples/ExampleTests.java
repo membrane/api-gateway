@@ -20,6 +20,7 @@ import org.junit.runners.Suite.SuiteClasses;
 import com.predic8.membrane.examples.env.AntInPath;
 import com.predic8.membrane.examples.env.ConsistentVersionNumbers;
 import com.predic8.membrane.examples.env.DefaultConfigTest;
+import com.predic8.membrane.examples.env.JavaLicenseInfoTest;
 import com.predic8.membrane.examples.tests.ACLTest;
 import com.predic8.membrane.examples.tests.BasicAuthTest;
 import com.predic8.membrane.examples.tests.CBRTest;
@@ -55,6 +56,7 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 	AntInPath.class,
 	ConsistentVersionNumbers.class,
 	DefaultConfigTest.class,
+	JavaLicenseInfoTest.class,
 	
 	ACLTest.class,
 	BasicAuthTest.class,
