@@ -22,19 +22,22 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
+import com.predic8.membrane.core.config.spring.CheckableBeanFactory;
+import com.predic8.membrane.core.config.spring.CheckableBeanFactory.InvalidConfigurationException;
+
 public class HotDeploymentThread extends Thread {
 
 	private static Log log = LogFactory.getLog(HotDeploymentThread.class.getName());
 
 	private List<HotDeploymentThread.FileInfo> files = new ArrayList<HotDeploymentThread.FileInfo>();
+	protected AbstractRefreshableApplicationContext applicationContext;
+	private boolean reloading;
 	
 	private static class FileInfo {
 		public String file;
 		public long lastModified;
 	}
 
-	protected AbstractRefreshableApplicationContext applicationContext;
-	private boolean reloading;
 
 	public HotDeploymentThread(AbstractRefreshableApplicationContext applicationContext) {
 		super("Membrane Hot Deployment Thread");
@@ -77,9 +80,16 @@ public class HotDeploymentThread extends Thread {
 
 				log.debug("spring configuration changed.");
 
+				if (applicationContext instanceof CheckableBeanFactory)
+					((CheckableBeanFactory)applicationContext).checkForInvalidBeanDefinitions();
+				
 				reload();
 				
 				break;
+			} catch (InvalidConfigurationException e) {
+				log.error(e.getMessage());
+				log.error("Application context was NOT restarted. Please fix the error in the configuration file.");
+				updateLastModified();
 			} catch (InterruptedException e) {				
 			} catch (Exception e) {
 				log.error("Could not redeploy.", e);

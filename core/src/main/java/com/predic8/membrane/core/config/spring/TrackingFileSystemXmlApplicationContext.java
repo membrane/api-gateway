@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.config.spring;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,31 +25,32 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
+import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextException;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.core.io.Resource;
+import org.xml.sax.SAXParseException;
 
 /**
- * Delegates everything to {@link FileSystemXmlApplicationContext}. Additionally builds
- * a list of the files opened during the context refresh.
+ * Delegates everything to {@link FileSystemXmlApplicationContext}.
+ * 
+ * Additionally adds aspects of {@link TrackingApplicationContext}, {@link BaseLocationApplicationContext} and
+ * {@link CheckableBeanFactory}. 
  */
-class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationContext implements TrackingApplicationContext, BaseLocationApplicationContext {
+public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationContext implements
+		TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory {
 	private static final Log log = LogFactory.getLog(TrackingFileSystemXmlApplicationContext.class.getName());
 	
 	private List<File> files = new ArrayList<File>();
 	
-	TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh) throws BeansException {
+	public TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh) throws BeansException {
 		super(configLocations, refresh);
 	}
 
-	TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh, ApplicationContext parent) throws BeansException {
+	public TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh, ApplicationContext parent) throws BeansException {
 		super(configLocations, refresh, parent);
-	}
-
-	@Override
-	public void refresh() throws BeansException, IllegalStateException {
-		files.clear();
-		super.refresh();
 	}
 	
 	public Resource getResource(String location) {
@@ -111,6 +112,11 @@ class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationCo
 			public long contentLength() throws IOException {
 				return r2.contentLength();
 			}
+			
+			@Override
+			public String toString() {
+				return r2.toString();
+			}
 		};
 	}
 	
@@ -120,5 +126,42 @@ class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationCo
 	
 	public String getBaseLocation() {
 		return getConfigLocations()[0];
+	}
+	
+	@Override
+	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
+		files.clear();
+		super.loadBeanDefinitions(beanFactory);
+	}
+	
+	@Override
+	public void checkForInvalidBeanDefinitions() throws InvalidConfigurationException {
+		try {
+			DefaultListableBeanFactory beanFactory = createBeanFactory();
+			beanFactory.setSerializationId(null);
+			customizeBeanFactory(beanFactory);
+			loadBeanDefinitions(beanFactory);
+		} catch (XmlBeanDefinitionStoreException e) {
+			handleXmlBeanDefinitionStoreException(e);
+		} catch (IOException ex) {
+			throw new ApplicationContextException("I/O error parsing bean definition source for " + getDisplayName(), ex);
+		}
+	}
+
+	public static void handleXmlBeanDefinitionStoreException(XmlBeanDefinitionStoreException e) throws InvalidConfigurationException {
+		Throwable cause = e.getCause();
+		if (cause != null) {
+			if (cause instanceof SAXParseException) {
+				int line = ((SAXParseException) cause).getLineNumber();
+
+				throw new InvalidConfigurationException("line " + line + ": " + cause.getMessage());
+			}
+		}
+		throw e;
+	}
+	
+	@Override
+	public String toString() {
+		return "Membrane Service Proxy's Spring Context";
 	}
 }

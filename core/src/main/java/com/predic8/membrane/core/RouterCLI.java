@@ -14,6 +14,10 @@
 
 package com.predic8.membrane.core;
 
+import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
+
+import com.predic8.membrane.core.config.spring.CheckableBeanFactory.InvalidConfigurationException;
+import com.predic8.membrane.core.config.spring.TrackingFileSystemXmlApplicationContext;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
@@ -30,7 +34,14 @@ public class RouterCLI {
 				return;
 			}
 
-			Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
+			try {
+				Router.init(getRulesFile(cl), RouterCLI.class.getClassLoader());
+			} catch (XmlBeanDefinitionStoreException e) {
+				TrackingFileSystemXmlApplicationContext.handleXmlBeanDefinitionStoreException(e);
+			}
+		} catch (InvalidConfigurationException e) {
+			System.err.println("Fatal error: " + e.getMessage());
+			System.exit(1);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			System.exit(1);

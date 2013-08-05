@@ -15,7 +15,7 @@ package com.predic8.membrane.servlet.config.spring;
 
 import org.springframework.web.context.support.XmlWebApplicationContext;
 
-import com.predic8.membrane.core.BaseLocationApplicationContext;
+import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
 
 public class BaseLocationXmlWebApplicationContext extends XmlWebApplicationContext implements BaseLocationApplicationContext {
 

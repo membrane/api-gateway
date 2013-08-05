@@ -12,11 +12,18 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core;
+package com.predic8.membrane.core.config.spring;
 
 import java.io.File;
 import java.util.List;
 
+/**
+ * Tracks all files opened while constructing the Spring bean definitions.
+ */
 public interface TrackingApplicationContext {
+	
+	/**
+	 * @return The list of files accessed through the Spring Resource API while constructing the Spring bean definitions.
+	 */
 	public List<File> getFiles();
 }
