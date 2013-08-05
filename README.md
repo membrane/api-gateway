@@ -21,9 +21,9 @@ Download the [binary](http://membrane-soa.org/downloads/http-router.htm).
 
 Unpack.
 
-Start `membrane.sh` or `membrane.bat`.
+Start `service-proxy.sh` or `service-proxy.bat`.
 
-Have a look at the main configuration file `proxies.xml`. Changes to this file are instantly deployed.
+Have a look at the main configuration file `conf/proxies.xml`. Changes to this file are instantly deployed.
 
 Run the samples in the examples folder or go to the [website](http://membrane-soa.org/service-proxy/) for more documentation.
 
