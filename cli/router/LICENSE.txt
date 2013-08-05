@@ -6,7 +6,7 @@ license agreement can be found on
 http://www.apache.org/licenses/LICENSE-2.0.html
 and is also included below.
 
-Dependencies
+Dependencies (runtime; .zip and .war distribution)
 ---------------------------------------------------------------------------
 
 Common Development and Distribution License (CDDL) Version 1.0
@@ -14,76 +14,50 @@ Common Development and Distribution License (CDDL) Version 1.0
 JavaBeans(TM) Activation Framework Specification
 JavaMail(TM) API Design Specification
 Java Common Annotations API
-SAAJ API
-SAAJ Standard Implementation
 javax.annotation API
-JSR181 Web Services Metadata
-XML Stream Buffer
-StAX API
-Sun Typed XML Writer
-Sun istack
-Glassfish gmbal
-JAXB (JSR 222) reference implementation - Schema compiler
 
-
-Common Development and Distribution License (CDDL) Version 1.1
--------------------------------------------------
-JAX-WS API
-JAX-B API
-
-Dual Licensing: Common Development and Distribution License
-(CDDL) Version 1.1 or GNU General Public License version 2
--------------------------------------------------
-JAX-WS Reference Implementation
-JAX-B Reference Implementation
-StAX-Ex
-Mimepull
-Sun WS-Policy
 
 Apache License, Version 2.0
 -------------------------------------------------
 Apache Commons CLI
 Apache Jakarta Commons Codec
 Apache Commons DBCP
-Apache Jakarta HttpClient
-Apache HttpClient
+Apache Http Components
 Apache Commons Lang
 Apache Commons Logging
 Apache Commons Pool
-Apache Commons IO
+Apache Xalan
 Codehaus Groovy
-Jackson JSON Processor
+Codehaus Jackson JSON Processor
 Apache Log4J
 Spring libraries
 Java Anti-Template Language
 Google APIs Client Library
+Google OAuth Client Library
+Google HTTP Client Library
+Jackson Extensions to the Google HTTP Client Library
 Google libphonenumber
 Joda Time
-Parboiled
 Predic8 SOA Model
 Predic8 XML Beautifier
 Google Guava
 Apache Commons FileUpload
-Apache Derby
-Woodstox
-Apache XML Resolver
+Java Minimal Template Engine
+XML Commons External Components XML APIs
 
 Apache Software License, Version 1.1
 -------------------------------------------------
 Apache Commons Discovery
+Xml Pull Parser 3rd Edition
 
 BSD License
 -------------------------------------------------
 ANTLR
 ASM
-JUnit
-XML Unit
-StAX2 API
 
 New BSD License
 -------------------------------------------------
 JSR305 Reference Implementation
-
 
 see JSR223-LICENSE.txt within Groovy distribution
 -------------------------------------------------
@@ -96,11 +70,6 @@ AOP Alliance Library
 GNU Lesser General Public License Version 3
 -------------------------------------------------
 JSON Schema Validator org.eel.kitchen
-
-Dual Licensing: Eclipse Public License 1.0
-or GNU Lesser General Public License version 2.1
--------------------------------------------------
-QOS Logback
 
 MIT License
 -------------------------------------------------
