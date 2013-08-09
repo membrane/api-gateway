@@ -21,7 +21,6 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -109,7 +108,6 @@ public class Balancer extends AbstractXmlElement {
 	/**
 	 * @description A list of clusters.
 	 */
-	@Required
 	@MCChildElement
 	public void setClusters(List<Cluster> clusters) {
 		this.clusters.clear();

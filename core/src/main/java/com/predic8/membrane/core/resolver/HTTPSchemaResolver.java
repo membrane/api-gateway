@@ -77,11 +77,12 @@ public class HTTPSchemaResolver implements SchemaResolver {
 		return 0;
 	}
 	
-	public HttpClientConfiguration getHttpClientConfig() {
+	public synchronized HttpClientConfiguration getHttpClientConfig() {
 		return httpClientConfig;
 	}
 	
-	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
+	public synchronized void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
 		this.httpClientConfig = httpClientConfig;
+		httpClient = null;
 	}
 }

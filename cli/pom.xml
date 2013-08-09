@@ -54,6 +54,11 @@
 			<artifactId>jaxws-tools</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>xmlunit</groupId>
+			<artifactId>xmlunit</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 	
 	<build>
@@ -89,7 +94,7 @@
 				<version>2.11</version>
 				<configuration>
 					<failIfNoTests>false</failIfNoTests>
-					<test>**/UnitTests.java</test>
+					<test>**/ExampleUnitTests.java</test>
 				</configuration>
 			</plugin>
 			<plugin>

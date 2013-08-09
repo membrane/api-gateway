@@ -80,7 +80,10 @@ public class CountInterceptor extends AbstractInterceptor {
 	@MCAttribute(attributeName="name")
 	@Override
 	public void setDisplayName(String name) {
-		super.setDisplayName(name);
+		if (name.startsWith("Counter: "))
+			super.setDisplayName(name.substring(9));
+		else
+			super.setDisplayName(name);
 	}
 
 }
