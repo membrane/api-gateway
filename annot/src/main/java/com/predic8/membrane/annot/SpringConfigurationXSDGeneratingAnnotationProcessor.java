@@ -349,6 +349,11 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				ii.setTci(tci);
 			}
 		}
+		HashSet<Integer> childOrders = new HashSet<Integer>();
+		for (ChildElementInfo cei : ii.getCeis()) {
+			if (!childOrders.add(cei.getAnnotation().order()))
+				throw new ProcessingException("@MCChildElement(order=...) must be unique.", cei.getE());
+		}
 		Collections.sort(ii.getCeis());
 	}
 
