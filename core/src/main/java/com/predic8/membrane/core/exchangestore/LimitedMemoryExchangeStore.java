@@ -25,10 +25,17 @@ import java.util.Queue;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.http.AbstractBody;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.MessageObserver;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
 
+/**
+ * @description Store Exchange objects in-memory. Only the newest exchanges will be kept to keep the store below the configured memory limit.
+ */
 @MCElement(name="limitedMemoryExchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
@@ -37,8 +44,30 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	
 	private final Queue<AbstractExchange> exchanges = new LinkedList<AbstractExchange>();
 	
-	public synchronized void add(AbstractExchange exc) {
-		if (exc.getResponse() == null || exc.getHeapSizeEstimation() > maxSize)
+	public void snap(final AbstractExchange exc, final Flow flow) {
+		// TODO: [fix me] support multi-snap
+		// TODO: [fix me] snap message headers and request *here*, not in observer/response 
+
+		if (flow == Flow.REQUEST)
+			return;
+		
+		try {
+			Message m = /* doesn't occur so far anyway   flow == Flow.REQUEST ? exc.getRequest() :*/ exc.getResponse();
+			if (m != null)
+				m.addObserver(new MessageObserver() {
+					public void bodyRequested(AbstractBody body) {
+					}
+					public void bodyComplete(AbstractBody body) {
+						snapInternal(exc, flow);
+					}
+				});
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	private synchronized void snapInternal(AbstractExchange exc, Flow flow) {
+		if (exc.getHeapSizeEstimation() > maxSize)
 			return;
 
 		makeSpaceIfNeeded(exc);

@@ -17,7 +17,6 @@ package com.predic8.membrane.core;
 import java.io.IOException;
 
 import org.junit.Assert;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -26,6 +25,7 @@ import com.predic8.membrane.core.exchangestore.LimitedMemoryExchangeStore;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 
 public class LimitedMemoryExchangeStoreTest {
 
@@ -41,9 +41,9 @@ public class LimitedMemoryExchangeStoreTest {
 		
 		store.setMaxSize(5000);
 		
-		store.add(getExchange("0"));
+		store.snap(getExchange("0"), Flow.RESPONSE);
 		Exchange exc = getExchange("1");
-		store.add(exc);
+		store.snap(exc, Flow.RESPONSE);
 		
 		Assert.assertEquals(2, store.getAllExchangesAsList().size());
 		assertStore(0, "0");
@@ -51,7 +51,7 @@ public class LimitedMemoryExchangeStoreTest {
 
 		store.setMaxSize(store.getCurrentSize() + 1);
 		
-		store.add(getExchange("2"));
+		store.snap(getExchange("2"), Flow.RESPONSE);
 		
 		Assert.assertEquals(2, store.getAllExchangesAsList().size());
 		assertStore(0, "1");

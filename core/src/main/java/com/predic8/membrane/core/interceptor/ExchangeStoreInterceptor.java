@@ -25,8 +25,6 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
@@ -63,32 +61,26 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	}
 	
 	@Override
-	public Outcome handleResponse(final Exchange exc) throws Exception {	
-		return handle(exc);
+	public Outcome handleRequest(Exchange exc) throws Exception {
+		return handle(exc, Flow.REQUEST);
 	}
 	
 	@Override
-	public void handleAbort(final Exchange exc) {
-		handle(exc);	
+	public Outcome handleResponse(final Exchange exc) throws Exception {	
+		return handle(exc, Flow.RESPONSE);
+	}
+	
+	@Override
+	public void handleAbort(Exchange exc) {
+		handle(exc, Flow.ABORT);	
 	}
 
-	protected Outcome handle(final Exchange exc) {
+	protected Outcome handle(Exchange exc, Flow flow) {
 		if (serviceProxiesContainingAdminConsole.contains(exc.getRule())) {
 			return Outcome.CONTINUE;
 		}
 			
-		try {
-			if (exc.getResponse() != null)
-				exc.getResponse().addObserver(new MessageObserver() {
-					public void bodyRequested(AbstractBody body) {
-					}
-					public void bodyComplete(AbstractBody body) {
-						store.add(exc);
-					}
-				});
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
+		store.snap(exc, flow);
 		
 		return Outcome.CONTINUE;
 	}

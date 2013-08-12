@@ -387,6 +387,12 @@ public abstract class AbstractExchange {
 			estimatedHeapSize = estimateHeapSize();
 		return estimatedHeapSize;
 	}
+	
+	protected int resetHeapSizeEstimation() {
+		int estimatedHeapSize2 = estimatedHeapSize;
+		estimatedHeapSize = 0;
+		return estimatedHeapSize2;
+	}
 
 	protected int estimateHeapSize() {
 		return 2000 + 

@@ -243,7 +243,7 @@ public class RuleManager {
 		getExchangeStore().removeAllExchanges(rule);
 		
 		int i = rules.indexOf(rule);
-		rules.set(i, rule);
+		rules.set(i, newRule);
 
 		for (IRuleChangeListener listener : listeners) {
 			listener.ruleRemoved(rule, rules.size());

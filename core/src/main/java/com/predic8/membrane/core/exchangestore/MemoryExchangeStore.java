@@ -22,6 +22,7 @@ import java.util.Vector;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -29,6 +30,9 @@ import com.predic8.membrane.core.rules.StatisticCollector;
 
 /**
  * TODO: thread-safety
+ * 
+ * @description Stores all exchanges in-memory. The Java heap will overflow if this store is used to store too many
+ *              Exchanges. Use for Membrane Monitor only.
  */
 @MCElement(name="memoryExchangeStore")
 public class MemoryExchangeStore extends AbstractExchangeStore {
@@ -38,9 +42,10 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	//for synchronization purposes choose Vector class
 	private List<AbstractExchange> totals = new Vector<AbstractExchange>();  
 	
-	public void add(AbstractExchange exc) {
+	public void snap(AbstractExchange exc, Flow flow) {
+		// TODO: [fix me] this is for Membrane Monitor's legacy logic
 		
-		if (exc.getResponse() != null)
+		if (flow != Flow.REQUEST) 
 			return;
 		
 		if (isKeyInStore(exc)) {

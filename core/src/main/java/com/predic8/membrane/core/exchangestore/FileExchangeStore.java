@@ -31,7 +31,10 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.MessageObserver;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
@@ -65,7 +68,25 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private boolean saveBodyOnly = false;
 
-	public void add(AbstractExchange exc) {
+	public void snap(final AbstractExchange exc, final Flow flow) {
+		try {
+			Message m = flow == Flow.REQUEST ? exc.getRequest() : exc.getResponse();
+			// TODO: [fix me] support multi-snap
+			// TODO: [fix me] snap message headers *here*, not in observer 
+			if (m != null)
+				m.addObserver(new MessageObserver() {
+					public void bodyRequested(AbstractBody body) {
+					}
+					public void bodyComplete(AbstractBody body) {
+						snapInternal(exc, flow);
+					}
+				});
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+		
+	private void snapInternal(AbstractExchange exc, Flow flow) {
 		int fileNumber = counter.incrementAndGet();
 
 		StringBuilder buf = getDirectoryNameBuffer(exc.getTime());
@@ -83,9 +104,15 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			buf.append("Request.msg");
 			buf2.append("Response.msg");
 			try {
-				writeFile(exc.getRequest(), buf.toString());
-				if (exc.getResponse() != null)
-					writeFile(exc.getResponse(), buf2.toString());
+				switch (flow) {
+				case REQUEST:
+					writeFile(exc.getRequest(), buf.toString());
+					break;
+				case ABORT:
+				case RESPONSE:
+					if (exc.getResponse() != null)
+						writeFile(exc.getResponse(), buf2.toString());
+				}
 			} catch (Exception e) {
 				log.error(e, e);
 			}

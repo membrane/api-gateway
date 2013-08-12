@@ -17,7 +17,9 @@ package com.predic8.membrane.core.exchangestore;
 import java.util.List;
 
 
+
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -37,9 +39,14 @@ public interface ExchangeStore {
 	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange);
 		
 	/**
-	 * Adds both the exchange's request and response to the store.
+	 * Adds the current state of the exchange to the store.
+	 * 
+	 * Implementations should take a snapshot of the current state of the request (or response) headers and register a
+	 * body observer in which they will be called back as soon as the body has fully been received.
+	 * 
+	 * If flow==REQUEST, the request is added. Elsewise, the response is added (if present).
 	 */
-	public void add(AbstractExchange exchange);
+	public void snap(AbstractExchange exchange, Flow flow);
 	
 	public void remove(AbstractExchange exchange);
 
