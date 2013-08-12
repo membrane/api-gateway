@@ -22,11 +22,13 @@ import java.net.URLClassLoader;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.PropertyConfigurator;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.ILogListener;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Plugin;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceRegistration;
 
 import com.predic8.membrane.core.ClassloaderUtil;
 import com.predic8.membrane.core.Constants;
@@ -45,6 +47,7 @@ public class CoreActivator extends Plugin {
 	private static Log log = LogFactory.getLog(CoreActivator.class.getName());
 
 	private Router router;
+	private ServiceRegistration sr;
 
 	private ILogListener logListener;
 
@@ -55,6 +58,9 @@ public class CoreActivator extends Plugin {
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 
+		if (new File("configuration/log4j.properties").exists())
+			PropertyConfigurator.configure("configuration/log4j.properties");
+		
 		Platform.addLogListener(logListener);
 
 		final MembraneCommandLine cl = new MembraneCommandLine();
@@ -82,6 +88,8 @@ public class CoreActivator extends Plugin {
 				e1.printStackTrace();
 			}
 		}
+		
+		sr = context.registerService(router.getClass().getName(), router, null);
 	}
 
 	/*
@@ -151,7 +159,9 @@ public class CoreActivator extends Plugin {
 	}
 
 	public void stop(BundleContext context) throws Exception {
+		sr.unregister();
 		Platform.removeLogListener(logListener);
+		router.stop();
 		logListener = null;
 		super.stop(context);
 	}
