@@ -10,8 +10,8 @@
 			<rest2Soap>		
 				<mapping regex="/bank/.*" soapAction=""
 					soapURI="/axis2/services/BLZService" 
-					requestXSLT="get2soap.xsl"
-					responseXSLT="strip-env.xsl" />
+					requestXSLT="./get2soap.xsl"
+					responseXSLT="./strip-env.xsl" />
 			</rest2Soap>
 			<target host="thomas-bayer.com" />
 		</serviceProxy>

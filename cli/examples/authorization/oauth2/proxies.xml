@@ -12,7 +12,7 @@
         		<exclude>X-Authenticated-Email</exclude>
     		</headerFilter>
  
-    		<oauth2Resource loginLocation="dialog" publicURL="http://localhost:8080/">
+    		<oauth2Resource loginLocation="./dialog" publicURL="http://localhost:8080/">
 				<google
     		        clientId="826870501040"
 	    	        clientSecret="PdtH9leMnwh2Y3IH4jQOqgcQ" />

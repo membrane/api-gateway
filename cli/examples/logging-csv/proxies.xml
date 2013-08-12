@@ -7,7 +7,7 @@
 	<router>
 
 		<serviceProxy name="predic8.com" port="2000">
-			<statisticsCSV file="log.csv" />
+			<statisticsCSV file="./log.csv" />
 			<target host="membrane-soa.org" port="80" />
 		</serviceProxy>
 		

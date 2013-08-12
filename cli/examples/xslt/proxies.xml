@@ -8,7 +8,7 @@
 
 		<serviceProxy port="2000">
 			<response>
-				<transform xslt="customer2person.xsl" />
+				<transform xslt="./customer2person.xsl" />
 			</response>		
 			<target host="www.thomas-bayer.com" port="80" />
 		</serviceProxy>

@@ -8,7 +8,7 @@
 
 		<serviceProxy name="predic8.com" port="2000">
 	
-			<login path="/login/" location="dialog">
+			<login path="/login/" location="./dialog">
 				<staticUserDataProvider>
 					<user username="john" password="password" secret="abcdefghijklmnop" />
 				</staticUserDataProvider>

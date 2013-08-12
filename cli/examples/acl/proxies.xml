@@ -7,7 +7,7 @@
 	<router>
 
 		<serviceProxy name="predic8.com" port="2000">
-			<accessControl file="acl.xml" />
+			<accessControl file="./acl.xml" />
 			<target host="predic8.com" port="80" />
 		</serviceProxy>
 	

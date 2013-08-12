@@ -1,6 +1,34 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.9 (release candidate)
+
+* [development] OSGi: register Router as OSGi service; use log4j.properties,
+  if present; handle Router in OSGi lifecycle
+
+* [development] @MC.. annotations: (limited) support for spring config
+  recreation
+
+* [documentation] updated readmes, license files and file headers
+
+* [enhancement] rest2soap now supports SOAP 1.2
+
+* [usage improvement] if "proxies.xml" contains a syntax or schema error,
+  only print a warning and do not start a hot deployment
+
+* [new config] Membrane now automatically closes idle keep-alive connections
+  when shutting down or restarting the spring context during hot deployment.
+  Connections with active HTTP requests are forcibly closed by default after
+  30 seconds. This value can be configured using
+  <transport forceSocketCloseOnHotDeployAfter="30000" /> .
+
+* [update config] relative file paths in proxies.xml are now relative to the
+  location of proxies.xml
+
+* [bugfix] rewriter regression
+
+* [bugfix] resolve "c:\..." as location
+
 * [release] 4.0.8 (early access)
 
 * [update config] relative URLs within proxies.xml are now resolved relatively
