@@ -36,7 +36,7 @@ public class SSLParser {
 		return keyStore;
 	}
 
-	@MCChildElement
+	@MCChildElement(order=1)
 	public void setKeyStore(KeyStore keyStore) {
 		this.keyStore = keyStore;
 	}
@@ -45,7 +45,7 @@ public class SSLParser {
 		return trustStore;
 	}
 
-	@MCChildElement
+	@MCChildElement(order=2)
 	public void setTrustStore(TrustStore trustStore) {
 		this.trustStore = trustStore;
 	}
