@@ -177,7 +177,7 @@ public class JDBCUtil {
 		prepSt.setString(++ startIndex, exc.getRule().toString());
 		prepSt.setString(++ startIndex, exc.getRequest().getMethod());
 		prepSt.setString(++ startIndex, exc.getRequest().getUri());
-		prepSt.setString(++ startIndex, exc.getSourceHostname());
+		prepSt.setString(++ startIndex, exc.getRemoteAddr());
 		prepSt.setString(++ startIndex, exc.getServer());
 		prepSt.setString(++ startIndex, exc.getRequestContentType());
 		prepSt.setInt(++ startIndex, exc.getRequestContentLength());

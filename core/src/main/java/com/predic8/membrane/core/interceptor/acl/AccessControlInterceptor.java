@@ -26,6 +26,7 @@ import org.springframework.web.util.HtmlUtils;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.FixedStreamReader;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -62,7 +63,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 
-		if (!resource.checkAccess(exc.getHandler().getRemoteAddress())) {
+		if (!resource.checkAccess(exc.getRemoteAddr(), exc.getRemoteAddrIp())) {
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}
@@ -89,19 +90,21 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	}
 
 	public void init() throws Exception {
-		accessControl = parse(file, router.getResolverMap());
+		accessControl = parse(file, router);
 	}
 	
 	public AccessControl getAccessControl() {
 		return accessControl;
 	}
 
-	protected AccessControl parse(String fileName, ResolverMap resourceResolver) throws Exception {
+	protected AccessControl parse(String fileName, Router router) throws Exception {
 	    try {
 			XMLInputFactory factory = XMLInputFactory.newInstance();
-			XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(resourceResolver
+			XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(router.getResolverMap()
 					.resolve(ResolverMap.combine(router == null ? null : router.getBaseLocation(), fileName))));
-		    return (AccessControl) new AccessControl(router).parse(reader);
+		    AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
+		    res.init(router);
+			return res;
 	    } catch (Exception e) {
 	    	log.error("Error initializing accessControl.", e);
 	    	e.printStackTrace();

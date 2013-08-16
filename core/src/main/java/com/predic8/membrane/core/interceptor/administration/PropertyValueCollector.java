@@ -39,7 +39,7 @@ public class PropertyValueCollector implements ExchangeCollector{
 		reqContentTypes.add(exc.getRequestContentType());
 		respContentTypes.add(exc.getResponseContentType());
 		methods.add(exc.getRequest().getMethod());
-		clients.add(exc.getSourceHostname());
+		clients.add(exc.getRemoteAddr());
 		servers.add(exc.getServer());
 	}
 

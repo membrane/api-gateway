@@ -282,7 +282,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		for (AbstractExchange e : exchanges) {
 			if ((!params.has("proxy") || e.getRule().toString().equals(params.getString("proxy"))) &&
 			    (!params.has("statuscode") || e.getResponse().getStatusCode() == params.getInt("statuscode")) &&
-				(!params.has("client") || e.getSourceHostname().equals(params.getString("client"))) &&
+				(!params.has("client") || e.getRemoteAddr().equals(params.getString("client"))) &&
 				(!params.has("server") || params.getString("server").equals(e.getServer()==null?"":e.getServer())) &&
 				(!params.has("method") || e.getRequest().getMethod().equals(params.getString("method"))) &&
 				(!params.has("reqcontenttype") || e.getRequestContentType().equals(params.getString("reqcontenttype"))) &&
@@ -304,7 +304,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		gen.writeNumberField("listenPort", exc.getRule().getKey().getPort());
 		gen.writeStringField("method", exc.getRequest().getMethod());
 		gen.writeStringField("path", exc.getRequest().getUri());
-		gen.writeStringField("client", exc.getSourceHostname());
+		gen.writeStringField("client", exc.getRemoteAddr());
 		gen.writeStringField("server", exc.getServer());
 		gen.writeNumberField("serverPort",  getServerPort(exc));		
 		gen.writeStringField("reqContentType", exc.getRequestContentType());

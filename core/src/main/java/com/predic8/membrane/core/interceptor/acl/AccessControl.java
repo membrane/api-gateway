@@ -59,4 +59,9 @@ public class AccessControl extends AbstractXmlElement {
 		throw new IllegalArgumentException("Resource not found for given path");
 	}
 	
+	public void init(Router router) {
+		for (Resource resource : resources)
+			resource.init(router);
+	}
+	
 }

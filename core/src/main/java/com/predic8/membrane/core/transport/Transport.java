@@ -38,6 +38,7 @@ public abstract class Transport {
 	private List<Interceptor> interceptors = new Vector<Interceptor>();
 	private Router router;
 	private boolean printStackTrace = false;
+	private boolean reverseDNS = true;
 
 	public List<Interceptor> getInterceptors() {
 		return interceptors;
@@ -90,4 +91,16 @@ public abstract class Transport {
 	public void openPort(String ip, int port, SSLContext sslContext) throws IOException {}
 
 	public abstract boolean isOpeningPorts();
+	
+	public boolean isReverseDNS() {
+		return reverseDNS;
+	}
+	
+	/**
+	 * @description Whether the remote address should automatically reverse-looked up for incoming connections. 
+	 * @default true
+	 */
+	public void setReverseDNS(boolean reverseDNS) {
+		this.reverseDNS = reverseDNS;
+	}
 }

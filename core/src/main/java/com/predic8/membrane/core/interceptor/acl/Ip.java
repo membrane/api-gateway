@@ -13,8 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import java.net.InetAddress;
-
 import com.predic8.membrane.core.Router;
 
 public class Ip extends AbstractClientAddress {
@@ -31,8 +29,8 @@ public class Ip extends AbstractClientAddress {
 	}
 	
 	@Override
-	public boolean matches(InetAddress ia) {
-		return pattern.matcher(ia.getHostAddress()).matches();
+	public boolean matches(String hostname, String ip) {
+		return pattern.matcher(ip).matches();
 	}
 	
 }

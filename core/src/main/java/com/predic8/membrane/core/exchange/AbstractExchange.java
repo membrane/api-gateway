@@ -66,9 +66,8 @@ public abstract class AbstractExchange {
 	private List<String> destinations = new ArrayList<String>();
 	
 
-	private String sourceHostname;
-	
-	private String sourceIp;
+	private String remoteAddr;
+	private String remoteAddrIp;
 	
 	private final ArrayList<Interceptor> interceptorStack = new ArrayList<Interceptor>(10);
 
@@ -352,22 +351,29 @@ public abstract class AbstractExchange {
 		return destinations;
 	}
 
-	public String getSourceHostname() {
-		return sourceHostname;
+	/**
+	 * If &lt;transport reverseDNS="true"/&gt;, {@link #getRemoteAddr()} returns the hostname of the incoming TCP connection's remote address.
+	 * If false, it returns the IP address.
+	 */
+	public String getRemoteAddr() {
+		return remoteAddr;
 	}
 
-	public void setSourceHostname(String sourceHostname) {
-		this.sourceHostname = sourceHostname;
-	}
-
-	public String getSourceIp() {
-		return sourceIp;
-	}
-
-	public void setSourceIp(String sourceIp) {
-		this.sourceIp = sourceIp;
+	public void setRemoteAddr(String remoteAddr) {
+		this.remoteAddr = remoteAddr;
 	}
 	
+	/**
+	 * @return The IP address of the incoming TCP connection's remote address.
+	 */
+	public String getRemoteAddrIp() {
+		return remoteAddrIp;
+	}
+	
+	public void setRemoteAddrIp(String remoteAddrIp) {
+		this.remoteAddrIp = remoteAddrIp;
+	}
+
 	@Override
 	public String toString() {
 		return "[time:"+DateFormat.getDateInstance().format(time.getTime())+",requestURI:"+request.getUri()+"]";

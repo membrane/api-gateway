@@ -54,11 +54,6 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 	}
 	
 	@Override
-	public InetAddress getRemoteAddress() {
-		return null;
-	}
-	
-	@Override
 	public InetAddress getLocalAddress() {
 		return null;
 	}

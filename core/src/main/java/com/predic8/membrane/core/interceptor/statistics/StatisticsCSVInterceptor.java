@@ -76,7 +76,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 				writeCSV(exc.getRule().toString(), w);
 				writeCSV(exc.getRequest().getMethod(), w);
 				writeCSV(exc.getRequest().getUri(), w);
-				writeCSV(exc.getSourceHostname(), w);
+				writeCSV(exc.getRemoteAddr(), w);
 				writeCSV(exc.getServer(), w);
 				writeCSV(exc.getRequestContentType(), w);
 				writeCSV(ExchangesUtil.getRequestContentLength(exc), w);

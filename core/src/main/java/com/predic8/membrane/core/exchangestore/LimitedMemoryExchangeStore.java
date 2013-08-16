@@ -140,10 +140,10 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		Map<String, ClientStatisticsCollector> clients = new HashMap<String, ClientStatisticsCollector>();
 
 		for (AbstractExchange exc : getAllExchangesAsList()) {
-			if (!clients.containsKey(exc.getSourceHostname())) {
-				clients.put(exc.getSourceHostname(), new ClientStatisticsCollector(exc.getSourceHostname()));
+			if (!clients.containsKey(exc.getRemoteAddr())) {
+				clients.put(exc.getRemoteAddr(), new ClientStatisticsCollector(exc.getRemoteAddr()));
 			}
-			clients.get(exc.getSourceHostname()).collect(exc);
+			clients.get(exc.getRemoteAddr()).collect(exc);
 		}
 		return new ArrayList<ClientStatistics>(clients.values());
 	}

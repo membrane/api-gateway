@@ -21,9 +21,9 @@ public class ClientExchangeAccessor implements ExchangeAccessor {
 	public static final String ID = "Client";
 	
 	public Object get(AbstractExchange exc) {
-		if (exc == null || exc.getSourceHostname() == null)
+		if (exc == null || exc.getRemoteAddr() == null)
 			return "";
-		return exc.getSourceHostname();
+		return exc.getRemoteAddr();
 	}
 
 	public String getId() {

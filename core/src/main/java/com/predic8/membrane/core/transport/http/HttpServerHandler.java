@@ -36,6 +36,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.Util;
 
@@ -176,10 +177,11 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	private void process() throws Exception {
 		try {
 
-			exchange.setSourceHostname(getTransport().getRouter().getDnsCache()
-					.getHostName(sourceSocket.getInetAddress()));
-			exchange.setSourceIp(getTransport().getRouter().getDnsCache()
-					.getHostAddress(sourceSocket.getInetAddress()));
+			DNSCache dnsCache = getTransport().getRouter().getDnsCache();
+			InetAddress remoteAddr = sourceSocket.getInetAddress();
+			String ip = dnsCache.getHostAddress(remoteAddr);
+			exchange.setRemoteAddrIp(ip);
+			exchange.setRemoteAddr(getTransport().isReverseDNS() ? dnsCache.getHostName(remoteAddr) : ip);
 
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
@@ -267,11 +269,6 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		Util.shutdownInput(sourceSocket);	
 	}
 	
-	@Override
-	public InetAddress getRemoteAddress() {
-		return sourceSocket.getInetAddress();
-	}
-
 	@Override
 	public InetAddress getLocalAddress() {
 		return sourceSocket.getLocalAddress();

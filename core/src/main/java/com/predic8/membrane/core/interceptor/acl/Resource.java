@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.acl;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -67,25 +68,25 @@ public class Resource extends AbstractXmlElement {
 		pattern = Pattern.compile(TextUtil.globToRegExp(token.getAttributeValue(null, "uri")));
 	}
 	
-	public boolean checkAccess(InetAddress inetAddress) {
+	public boolean checkAccess(String hostname, String ip) {
 		if (log.isDebugEnabled()) {
-			log.debug("Hostname: " + router.getDnsCache().getHostName(inetAddress));
-			log.debug("Canonical Hostname: " + router.getDnsCache().getCanonicalHostName(inetAddress));
-			log.debug("Hostaddress: " + inetAddress.getHostAddress()); // slow
+			log.debug("Hostname: " + hostname + (router.getTransport().isReverseDNS() ? "" : " (reverse DNS is disabled in configuration)"));
+			log.debug("IP: " + ip);
+			try {
+				log.debug("Hostaddress (might require slow DNS lookup): " + router.getDnsCache().getHostName(InetAddress.getByName(ip)));
+			} catch (UnknownHostException e) {
+				log.debug("Failed to get hostname from address: " + e.getMessage());
+			}
 		}
 		
 		for (AbstractClientAddress cAdd : clientAddresses) {
-			if (cAdd.matches(inetAddress))
+			if (cAdd.matches(hostname, ip))
 				return true;
 		}
 		
 		return false;
 	}
 	
-	public List<AbstractClientAddress> getClientAddresses() {
-		return clientAddresses;
-	}
-
 	public boolean matches(String str) {
 		return pattern.matcher(str).matches();
 	}
@@ -94,4 +95,9 @@ public class Resource extends AbstractXmlElement {
 		return pattern.pattern();
 	}
 	
+	public void init(Router router) {
+		for (AbstractClientAddress ca : clientAddresses)
+			ca.init(router);
+	}
+
 }

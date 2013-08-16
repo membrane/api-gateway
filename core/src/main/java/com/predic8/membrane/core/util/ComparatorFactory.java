@@ -52,7 +52,7 @@ public class ComparatorFactory {
 		} else if ("client".equals(propName)) {
 			return new PropertyComparator<AbstractExchange, String>(order, new PropertyComparator.ValueResolver<AbstractExchange, String>() {
 				public String get(AbstractExchange exc) {
-					return exc.getSourceHostname();
+					return exc.getRemoteAddr();
 				}
 			});			
 		} else if ("server".equals(propName)) {

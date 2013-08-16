@@ -126,9 +126,9 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private String getXForwardedForHeaderValue(AbstractExchange exc) {
 		if (getXForwardedFor(exc) != null )
-			return getXForwardedFor(exc) + ", " + exc.getSourceIp();
+			return getXForwardedFor(exc) + ", " + exc.getRemoteAddrIp();
 		
-		return exc.getSourceIp();
+		return exc.getRemoteAddrIp();
 	}
 
 	private String getXForwardedFor(AbstractExchange exc) {

@@ -15,11 +15,11 @@ package com.predic8.membrane.core.interceptor.acl;
 
 import java.util.List;
 
+import junit.framework.TestCase;
+
 import org.junit.Test;
 
-import com.predic8.membrane.core.resolver.ResolverMap;
-
-import junit.framework.TestCase;
+import com.predic8.membrane.core.HttpRouter;
 
 public class AccessControlParserTest extends TestCase {
 
@@ -34,7 +34,7 @@ public class AccessControlParserTest extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
-		resources = new AccessControlInterceptor().parse(FILE_NAME, new ResolverMap()).getResources();
+		resources = new AccessControlInterceptor().parse(FILE_NAME, new HttpRouter()).getResources();
 	}
 	
 	@Test

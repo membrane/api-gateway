@@ -32,6 +32,9 @@ public class Hostname extends AbstractClientAddress {
 	private static InetAddress localhostIp4;
 	private static InetAddress localhostIp6;
 
+	private boolean reverseDNS;
+	private volatile long lastWarningSlowReverseDNSUsed;
+
 	
 	public Hostname(Router router) {
 		super(router);
@@ -49,14 +52,35 @@ public class Hostname extends AbstractClientAddress {
 	}
 
 	@Override
-	public boolean matches(InetAddress ia) {
-		if(pattern.toString().equals("^localhost$") && (ia.equals(localhostIp4) || ia.equals(localhostIp6))){
-			log.debug("Address to be matched : " + ia + " is being matched to :" + pattern.toString());
-			return true;
+	public boolean matches(String hostname, String ip) {
+		try {
+			if (pattern.toString().equals("^localhost$")) {
+				InetAddress ia = InetAddress.getByName(ip);
+				if (ia.equals(localhostIp4) || ia.equals(localhostIp6)) {
+					log.debug("Address to be matched : " + ia + " is being matched to :" + pattern.toString());
+					return true;
+				}
+			}
+			if (!reverseDNS) {
+				long now = System.currentTimeMillis();
+				if (now - lastWarningSlowReverseDNSUsed > 10 * 60 * 1000) {
+					log.warn("transport/@reverseDNS=false is incompatible with ACL hostname filtering. (Please use ip filtering instead.) Slow reverse DNS lookup will be performed.");
+					lastWarningSlowReverseDNSUsed = now;
+				}
+			}
+			String canonicalHostName = router.getDnsCache().getCanonicalHostName(InetAddress.getByName(ip));
+			log.debug("CanonicalHostname for " + hostname + " / " + ip + " is "  + canonicalHostName);
+			return pattern.matcher(canonicalHostName).matches();
+		} catch (UnknownHostException e) {
+			log.warn("Could not reverse lookup canonical hostname for " + hostname + " " + ip + ".", e);
+			return false;
 		}
-		String canonicalHostName = router.getDnsCache().getCanonicalHostName(ia);
-		log.debug("CanonicalHostname for " + ia.getHostAddress() + " is "  + canonicalHostName);
-		return pattern.matcher(canonicalHostName).matches();
+	}
+	
+	@Override
+	public void init(Router router) {
+		super.init(router);
+		reverseDNS = router.getTransport().isReverseDNS();
 	}
 
 }

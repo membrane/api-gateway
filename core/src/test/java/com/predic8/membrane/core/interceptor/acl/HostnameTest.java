@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.acl;
 
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import junit.framework.TestCase;
@@ -75,12 +74,11 @@ public class HostnameTest extends TestCase {
 	
 	private void check(String address, boolean b) throws UnknownHostException {
 		
-		InetAddress byName = InetAddress.getByName(address);
 //		System.out.println(router.getDnsCache().getCanonicalHostName(byName));
 //		System.out.println(byName.getCanonicalHostName());
 //		System.out.println("Local Host: " + InetAddress.getLocalHost());
 //		System.out.println(h1.matches(byName));
 //		System.out.println(ip.matches(byName));
-		assertEquals(b, h1.matches(byName));
+		assertEquals(b, h1.matches(address, address));
 	}
 }

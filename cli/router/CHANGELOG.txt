@@ -1,6 +1,9 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [feature] added with transport/@reverseDNS ("true" by default) the ability
+  to switch off reverse DNS hostname lookups
+
 * [release] 4.0.9 (release candidate)
 
 * [development] OSGi: register Router as OSGi service; use log4j.properties,

@@ -35,6 +35,7 @@ import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.AbortException;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
+import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 class HttpServletHandler extends AbstractHttpHandler {
@@ -63,8 +64,11 @@ class HttpServletHandler extends AbstractHttpHandler {
 			exchange.received();
 
 			try {
-				exchange.setSourceHostname(getTransport().getRouter().getDnsCache().getHostName(remoteAddr));
-				exchange.setSourceIp(getTransport().getRouter().getDnsCache().getHostAddress(remoteAddr));
+				DNSCache dnsCache = getTransport().getRouter().getDnsCache();
+				String ip = dnsCache.getHostAddress(remoteAddr);
+				exchange.setRemoteAddrIp(ip);
+				exchange.setRemoteAddr(getTransport().isReverseDNS() ? dnsCache.getHostName(remoteAddr) : ip);
+				
 				exchange.setRequest(srcReq);
 				exchange.setOriginalRequestUri(srcReq.getUri());
 
@@ -151,11 +155,6 @@ class HttpServletHandler extends AbstractHttpHandler {
 		request.getInputStream().close();
 		// nothing more we can do, since the servlet API does not give
 		// us access to the TCP API
-	}
-	
-	@Override
-	public InetAddress getRemoteAddress() {
-		return remoteAddr;
 	}
 	
 	public InetAddress getLocalAddress() {

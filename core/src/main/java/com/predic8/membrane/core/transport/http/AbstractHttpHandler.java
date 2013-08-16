@@ -60,7 +60,6 @@ public abstract class AbstractHttpHandler  {
 	 */
 	public abstract void shutdownInput() throws IOException;
 	public abstract InetAddress getLocalAddress();
-	public abstract InetAddress getRemoteAddress();
 	public abstract int getLocalPort();
 
 	
