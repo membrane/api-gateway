@@ -1,6 +1,8 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.10 (release candidate)
+
 * [enhancement] support <soapProxy><path>/myPath</path> path rewriting with
   an explicit <wsdlInterceptor host="myHost" port="80" />.
 
