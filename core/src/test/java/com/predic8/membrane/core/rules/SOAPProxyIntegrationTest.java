@@ -13,12 +13,14 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
-import static org.junit.Assert.assertEquals;
+import static com.predic8.membrane.test.AssertUtils.assertContains;
+import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
 
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpVersion;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.http.params.HttpProtocolParams;
+import java.io.IOException;
+import java.net.MalformedURLException;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.predic8.membrane.core.Router;
@@ -27,25 +29,40 @@ import com.predic8.membrane.core.http.MimeType;
 
 public class SOAPProxyIntegrationTest {
 
-	@Test
-	public void test() throws Exception {
-		Router router = Router.init("classpath:/soap-proxy.xml");
+	private static Router router;
 
-		HttpClient client = new HttpClient();
-		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
-		int status = client.executeMethod(getGetMethod());
-		
-		assertEquals(status, 200);
-
+	@BeforeClass
+	public static void init() throws MalformedURLException {
+		router = Router.init("classpath:/soap-proxy.xml");
+	}
+	
+	@AfterClass
+	public static void uninit() throws IOException {
 		router.shutdown();
 	}
 	
-	
-	private GetMethod getGetMethod() {
-		GetMethod get = new GetMethod("http://localhost:2000/axis2/services/BLZService?wsdl");
-		get.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		get.setRequestHeader(Header.SOAP_ACTION, "");		
-		return get;
+	@Test
+	public void test() throws Exception {
+		getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl",
+				new String[] {
+					Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8,
+					Header.SOAP_ACTION, ""
+		});
 	}
+
+	@Test
+	public void test2() throws Exception {
+		String wsdl = getAndAssert200("http://localhost:2001/myBLZService?wsdl");
+		assertContains("location=\"http://localhost:2001/myBLZService\"", wsdl);
+	}
+
+	@Test
+	public void test3() throws Exception {
+		String wsdl = getAndAssert200("http://localhost:2002/myBLZService?wsdl");
+		System.out.println(wsdl);
+		assertContains("location=\"http://localhost:2001/myBLZService\"", wsdl);
+	}
+
+	
 
 }

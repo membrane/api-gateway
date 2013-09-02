@@ -204,36 +204,42 @@ public class SOAPProxy extends AbstractServiceProxy {
 		interceptors.add(0, sui);
 		automaticallyAddedInterceptorCount++;
 
-		if (!containsInterceptorOfType(WSDLPublisherInterceptor.class)) {
+		boolean hasPublisher = getInterceptorOfType(WSDLPublisherInterceptor.class) != null;
+		if (!hasPublisher) {
 			WSDLPublisherInterceptor wp = new WSDLPublisherInterceptor();
 			wp.setWsdl(wsdl);
 			interceptors.add(0, wp);
 			automaticallyAddedInterceptorCount++;
 		}
 
-		if (!containsInterceptorOfType(WSDLInterceptor.class)) {
-			WSDLInterceptor wp = new WSDLInterceptor();
-			if (key.getPath() != null) {
-				wp.setPathRewriter(new PathRewriter() {
-					@Override
-					public String rewrite(String path2) {
-						try {
-							String keyPath = key.getPath();
-							if (path2.contains("://")) {
-								path2 = new URL(new URL(path2), keyPath).toString();
-							} else {
-								Matcher m = relativePathPattern.matcher(path2);
-								path2 = m.replaceAll("./" + URLUtil.getName(keyPath) + "?");
-							}
-						} catch (MalformedURLException e) {
-						}
-						return path2;
-					}
-				});
-			}
-			interceptors.add(0, wp);
+		WSDLInterceptor wsdlInterceptor = getInterceptorOfType(WSDLInterceptor.class);
+		boolean hasRewriter = wsdlInterceptor != null;
+		if (!hasRewriter) {
+			wsdlInterceptor = new WSDLInterceptor();
+			interceptors.add(0, wsdlInterceptor);
 			automaticallyAddedInterceptorCount++;
 		}
+		if (key.getPath() != null) {
+			wsdlInterceptor.setPathRewriter(new PathRewriter() {
+				@Override
+				public String rewrite(String path2) {
+					try {
+						String keyPath = key.getPath();
+						if (path2.contains("://")) {
+							path2 = new URL(new URL(path2), keyPath).toString();
+						} else {
+							Matcher m = relativePathPattern.matcher(path2);
+							path2 = m.replaceAll("./" + URLUtil.getName(keyPath) + "?");
+						}
+					} catch (MalformedURLException e) {
+					}
+					return path2;
+				}
+			});
+		}
+		
+		if (hasRewriter && !hasPublisher)
+			log.warn("A <soapProxy> contains a <wsdlRewriter>, but no <wsdlPublisher>. Probably you want to insert a <wsdlPublisher> just after the <wsdlRewriter>. (Or, if this is a valid use case, please notify us at " + Constants.PRODUCT_CONTACT_EMAIL + ".)");
 		
 		if (targetPath != null) {
 			RewriteInterceptor ri = new RewriteInterceptor();
@@ -267,11 +273,12 @@ public class SOAPProxy extends AbstractServiceProxy {
 		super.init(router);
 	}
 
-	private boolean containsInterceptorOfType(Class<? extends Interceptor> class1) {
+	@SuppressWarnings("unchecked")
+	private <T extends Interceptor> T getInterceptorOfType(Class<T> class1) {
 		for (Interceptor i : interceptors)
 			if (class1.isInstance(i))
-				return true;
-		return false;
+				return (T) i;
+		return null;
 	}
 
 	public String getWsdl() {

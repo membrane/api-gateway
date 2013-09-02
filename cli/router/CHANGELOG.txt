@@ -1,6 +1,9 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [enhancement] support <soapProxy><path>/myPath</path> path rewriting with
+  an explicit <wsdlInterceptor host="myHost" port="80" />.
+
 * [feature] added with transport/@reverseDNS ("true" by default) the ability
   to switch off reverse DNS hostname lookups
 

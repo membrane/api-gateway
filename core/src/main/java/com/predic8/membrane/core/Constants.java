@@ -78,6 +78,7 @@ public class Constants {
 	public static final String PROTOCOL_HTTP = "HTTP";
 
 	public static final String PRODUCT_NAME = "Membrane Service Proxy";
+	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
 	
 	public static final String HTML_FOOTER = "Copyright ©2009-2013 " +
 			  		"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
