@@ -100,6 +100,7 @@ public abstract class Transport {
 	 * @description Whether the remote address should automatically reverse-looked up for incoming connections. 
 	 * @default true
 	 */
+	@MCAttribute
 	public void setReverseDNS(boolean reverseDNS) {
 		this.reverseDNS = reverseDNS;
 	}
