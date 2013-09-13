@@ -168,6 +168,40 @@ public class HttpUtil {
 		return buf.toString();
 	}
 
+	public static String getFaultSOAP12Body(String title, String text) {
+		StringBuilder buf = new StringBuilder(256);
+
+		buf.append("<soapenv:Envelope xmlns:soapenv=\"" + Constants.SOAP12_NS + "\">");
+		buf.append(Constants.CRLF);
+		buf.append("<soapenv:Body>");
+		buf.append(Constants.CRLF);
+		buf.append("<soapenv:Fault>");
+		buf.append(Constants.CRLF);
+
+		buf.append("<soapenv:Code>");
+		buf.append(Constants.CRLF);
+		buf.append("<soapenv:Value>soapenv:Receiver</soapenv:Value>");
+		buf.append(Constants.CRLF);
+		buf.append("</soapenv:Code>");
+		buf.append(Constants.CRLF);
+		
+		
+		buf.append("<soapenv:Reason><soapenv:Text xml:lang=\"en-US\">");
+		buf.append(StringEscapeUtils.escapeXml(title));
+		buf.append("</soapenv:Text></soapenv:Reason>");
+		buf.append(Constants.CRLF);
+
+		buf.append("<soapenv:Detail><Text>" + StringEscapeUtils.escapeXml(text) + "</Text></soapenv:Detail>");
+
+		buf.append(Constants.CRLF);
+		buf.append("</soapenv:Fault>");
+		buf.append(Constants.CRLF);
+		buf.append("</soapenv:Body>");
+		buf.append(Constants.CRLF);
+		buf.append("</soapenv:Envelope>");
+		return buf.toString();
+	}
+
 	public static Response createResponse(int code, String msg, byte[] body, String contentType, String... headers) {
 		Response res = new Response();
 		res.setStatusCode(code);

@@ -83,6 +83,8 @@ public class Header {
     
     public static final String KEEP_ALIVE = "Keep-Alive";
 
+    public static final String SERVER = "Server";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
