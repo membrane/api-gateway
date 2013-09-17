@@ -281,4 +281,8 @@ public class HttpClient {
 		exc.getHandler().shutdownInput();
 		Util.shutdownOutput(con.socket);
 	}
+	
+	ConnectionManager getConnectionManager() {
+		return conMgr;
+	}
 }

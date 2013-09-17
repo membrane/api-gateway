@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
@@ -130,10 +131,15 @@ public class ConnectionManager {
 		synchronized(this) {
 			ArrayList<OldConnection> l = availableConnections.get(key);
 			if (l != null) {
-				while(l.size() > 0) {
-					OldConnection c = l.remove(l.size()-1);
-					if (c.deathTime > now)
+				int i = l.size() - 1;
+				while(i >= 0) {
+					OldConnection c = l.get(i);
+					if (c.deathTime > now) {
+						l.remove(i);
 						return c.connection;
+					}
+					Collections.swap(l, 0, i);
+					i--;
 				}
 			}
 		}
@@ -201,5 +207,9 @@ public class ConnectionManager {
 	
 	public void shutdownWhenDone() {
 		shutdownWhenDone = true;
+	}
+	
+	public int getNumberInPool() {
+		return numberInPool.get();
 	}
 }

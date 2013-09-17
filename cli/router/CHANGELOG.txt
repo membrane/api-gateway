@@ -1,6 +1,12 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [bugfix] ConnectionPool leaks connections (leaves them in CLOSE-WAIT)
+
+* [release] 4.0.11 (release candidate)
+
+* [bugfix] make transport/@reverseDNS configurable from proxies.xml
+
 * [release] 4.0.10 (release candidate)
 
 * [enhancement] support <soapProxy><path>/myPath</path> path rewriting with

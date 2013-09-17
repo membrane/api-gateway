@@ -126,6 +126,33 @@ public class HttpKeepAliveTest {
 	}
 
 	@Test
+	public void testConnectionClose() throws Exception {
+		HttpClient client = createHttpClient(500);
+		
+		sp1.getInterceptors().add(0, new AbstractInterceptor() {
+			@Override
+			public Outcome handleResponse(Exchange exc) throws Exception {
+				exc.getResponse().getHeader().add(Header.KEEP_ALIVE, "max=2");
+				return Outcome.CONTINUE;
+			}
+		});
+
+		assertEquals(200, issueRequest(client)); // opens connection 1
+		assertEquals(1, set.size());
+
+		assertEquals(1, client.getConnectionManager().getNumberInPool());
+		Thread.sleep(600); // connection closer did not yet run
+		// connection 1 is now dead, but still in pool
+		assertEquals(1, client.getConnectionManager().getNumberInPool()); 
+
+		assertEquals(200, issueRequest(client)); // opens connection 2
+		assertEquals(2, set.size());
+		
+		Thread.sleep(600); // connection closer runs and closes both
+		assertEquals(0, client.getConnectionManager().getNumberInPool());
+	}
+
+	@Test
 	public void testTimeoutCustom() throws Exception {
 		HttpClient client = createHttpClient(1000);
 		
