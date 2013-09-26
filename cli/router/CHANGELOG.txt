@@ -1,6 +1,10 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.12 (release candidate)
+
+* [bugfix] fixed release packaging
+
 * [bugfix] ConnectionPool leaks connections (leaves them in CLOSE-WAIT)
 
 * [release] 4.0.11 (release candidate)
