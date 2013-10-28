@@ -31,6 +31,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.WSDLInterceptor;
 import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptor;
@@ -125,6 +126,10 @@ public class SOAPProxy extends AbstractServiceProxy {
 				} else {
 					targetPath = url.getPath();
 				}
+                                if(location.startsWith("https")){
+                                    SSLParser sslOutboundParser = new SSLParser();
+                                    target.setSslParser(sslOutboundParser);
+                                }
 				((ServiceProxyKey)key).setMethod("*");
 			} catch (MalformedURLException e) {
 				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
