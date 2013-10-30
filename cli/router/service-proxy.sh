@@ -1,8 +1,29 @@
 #!/bin/bash
-abspath() {
-    { [[ "$1" =~ ^/ ]] && echo "$1" || echo "$(pwd)/$1"; } | sed -r ':. s#(/|^)\./#\1#g; t .; :: s#[^/]{1,}/\.\./##; t :'
-}
-export MEMBRANE_HOME="$(dirname $(abspath $0))"
+
+## resolve links - $0 may be a link to Membrane's home
+PRG="$0"
+
+# need this for relative symlinks
+while [ -h "$PRG" ] ; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG="`dirname "$PRG"`/$link"
+  fi
+done
+
+saveddir=`pwd`
+
+MEMBRANE_HOME=`dirname "$PRG"`
+
+# make it fully qualified
+export MEMBRANE_HOME=`cd "$MEMBRANE_HOME" && pwd`
+
+cd "$saveddir"
+# echo Using Membrane at $MEMBRANE_HOME
+
 CLASSPATH="$MEMBRANE_HOME/conf"
 CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
 export CLASSPATH
