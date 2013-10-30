@@ -140,12 +140,17 @@ public class SOAPProxy extends AbstractServiceProxy {
 			while (f.getCause() != null && ! (f instanceof ResourceRetrievalException))
 				f = f.getCause();
 			if (f instanceof ResourceRetrievalException) {
-				if (((ResourceRetrievalException) f).getStatus() >= 400)
+				ResourceRetrievalException rre = (ResourceRetrievalException) f;
+				if (rre.getStatus() >= 400)
 					return f.getMessage();
-			} else if (f instanceof UnknownHostException)
-				return f.getMessage();
-			else if (f instanceof ConnectException)
-				return f.getMessage();
+				Throwable cause = rre.getCause();
+				if (cause != null) {
+					if (cause instanceof UnknownHostException)
+						return cause.getMessage();
+					else if (cause instanceof ConnectException)
+						return cause.getMessage();				
+				}
+			}
 			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
 		}
 	}
