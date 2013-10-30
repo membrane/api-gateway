@@ -29,7 +29,7 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:svn:https://predic8.com/svn/membrane/monitor/</connection>
+		<connection>scm:git:https://github.com/membrane/service-proxy/</connection>
 		<tag>HEAD</tag>
 	</scm>
 
