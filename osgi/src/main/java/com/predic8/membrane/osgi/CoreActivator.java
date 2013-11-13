@@ -47,7 +47,7 @@ public class CoreActivator extends Plugin {
 	private static Log log = LogFactory.getLog(CoreActivator.class.getName());
 
 	private Router router;
-	private ServiceRegistration sr;
+	private ServiceRegistration<?> sr;
 
 	private ILogListener logListener;
 

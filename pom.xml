@@ -273,7 +273,7 @@
 			<dependency>
 				<groupId>org.eclipse.core</groupId>
 				<artifactId>runtime</artifactId>
-				<version>[3.3,4.0)</version>
+				<version>3.3.100-v20070530</version>
 			</dependency>
 
 			<dependency>
