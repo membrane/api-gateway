@@ -1,6 +1,15 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [changed behavior] when using the <rest2Soap> feature, the HTTP response
+  headers are now discarded by default when constructing the REST request.
+  To keep them, you have to specify
+    <http:response>
+      [...]
+      <headers keepSourceHeaders="true"> 
+        [...]
+      </headers>
+
 * [release] 4.0.12 (release candidate)
 
 * [bugfix] fixed release packaging

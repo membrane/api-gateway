@@ -31,9 +31,11 @@ class XMLBody extends AbstractXmlElement {
 	}
 
 	private final Message msg;
+	private final String charset;
 
 	public XMLBody(Message msg) {
 		this.msg = msg;
+		charset = msg.getCharset();
 	}
 
 	@Override
@@ -42,7 +44,7 @@ class XMLBody extends AbstractXmlElement {
 
 		XMLStreamReader parser;
 		synchronized(xmlInputFactory) {
-			parser = xmlInputFactory.createXMLStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset());
+			parser = xmlInputFactory.createXMLStreamReader(msg.getBodyAsStreamDecoded(), charset);
 		}
 
 		boolean endDoc = false;

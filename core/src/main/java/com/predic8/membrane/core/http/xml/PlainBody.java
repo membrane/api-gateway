@@ -17,14 +17,17 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.config.AbstractXmlElement;
+import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.Message;
 
 public class PlainBody extends AbstractXmlElement {
 	
-	private final Message msg;
+	private final String charset;
+	private final AbstractBody body;
 
 	public PlainBody(Message msg) {
-		this.msg = msg;
+		charset = msg.getCharset();
+		body = msg.getBody();
 	}
 
 	@Override
@@ -32,7 +35,7 @@ public class PlainBody extends AbstractXmlElement {
 		out.writeAttribute("type", "plain");
 		
 		try {
-			out.writeCData(new String(msg.getBody().getContent(), msg.getCharset()));
+			out.writeCData(new String(body.getContent(), charset));
 		} catch (Exception e) {
 			out.writeStartElement("error");
 			out.writeCharacters(e.getMessage());

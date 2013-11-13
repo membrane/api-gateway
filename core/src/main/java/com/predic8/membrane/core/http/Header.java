@@ -460,4 +460,8 @@ public class Header {
 		return Long.parseLong(m.group(1));
 	}
 
+	public void clear() {
+		fields.clear();
+	}
+
 }

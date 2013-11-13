@@ -19,9 +19,8 @@ import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.config.AbstractXmlElement;
 
-public class Request extends AbstractXmlElement {
+public class Request extends Message {
 
 	public static final String ELEMENT_NAME = "request";
 
@@ -29,27 +28,19 @@ public class Request extends AbstractXmlElement {
 	private String httpVersion;
 
 	private URI uri;
-	private Headers headers;
-	private AbstractXmlElement body;
 	
 	public Request(com.predic8.membrane.core.http.Request req) throws Exception {
+		super(req);
+		
 		setMethod(req.getMethod());
 		setHttpVersion(req.getVersion());
 
 		setUri(new URI(req.getUri()));
-
-		setHeaders(new Headers(req.getHeader()));
-		
-		if (req.isXML()) {
-			body = new XMLBody(req);
-		} else if (req.isJSON()) {
-			body = new JSONBody(req);
-		} else {
-			body = new PlainBody(req);
-		}
 	}
 
-	public Request() {}
+	public Request() {
+		super();
+	}
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws XMLStreamException {
@@ -61,7 +52,7 @@ public class Request extends AbstractXmlElement {
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (URI.ELEMENT_NAME.equals(child)) {
 			uri = (URI) new URI().parse(token);
-		} else if (URI.ELEMENT_NAME.equals(child)) {
+		} else if (Headers.ELEMENT_NAME.equals(child)) {
 			headers = (Headers) new Headers().parse(token);
 		} 
  
@@ -109,14 +100,6 @@ public class Request extends AbstractXmlElement {
 
 	public void setUri(URI uri) {
 		this.uri = uri;
-	}
-
-	public Headers getHeaders() {
-		return headers;
-	}
-
-	public void setHeaders(Headers headers) {
-		this.headers = headers;
 	}
 
 	@Override
