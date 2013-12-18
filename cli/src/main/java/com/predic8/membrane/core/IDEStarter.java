@@ -15,8 +15,11 @@ package com.predic8.membrane.core;
 
 import org.apache.log4j.PropertyConfigurator;
 
+import java.io.File;
+
 public class IDEStarter {
 	public static void main(String[] args) {
+        // TODO for testing purposes - do not commit
 		PropertyConfigurator.configure("conf/log4j.properties");
 		RouterCLI.main(args);
 	}

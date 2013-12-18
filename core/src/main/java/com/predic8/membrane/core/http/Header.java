@@ -245,7 +245,7 @@ public class Header {
 	}
 
 	public void setContentType(String value) {
-		add(CONTENT_TYPE, value);
+		setValue(CONTENT_TYPE, value);
 	}
 
 	public String getSOAPAction() {
@@ -253,7 +253,7 @@ public class Header {
 	}
 
 	public void setSOAPAction(String value) {
-		add(SOAP_ACTION, value);
+		setValue(SOAP_ACTION, value);
 	}
 
 	public String getAccept() {

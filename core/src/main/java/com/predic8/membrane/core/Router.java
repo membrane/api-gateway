@@ -88,7 +88,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	 */
 	protected static final HashSet<ApplicationContext> hotDeployingContexts = new HashSet<ApplicationContext>();
 
-	private ApplicationContext beanFactory;
+    private ApplicationContext beanFactory;
 	private String baseLocation;
 
 	protected RuleManager ruleManager = new RuleManager();
@@ -96,10 +96,10 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	protected Transport transport;
 	protected ResolverMap resolverMap = new ResolverMap();
 	protected DNSCache dnsCache = new DNSCache();
-	protected ExecutorService backgroundInitializator = 
+	protected ExecutorService backgroundInitializator =
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
 	protected HotDeploymentThread hdt;
-	
+
 	private boolean hotDeploy = true;
 	private boolean running;
 
@@ -113,7 +113,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public Collection<Rule> getRules() {
 		return getRuleManager().getRulesBySource(RuleDefinitionSource.SPRING);
 	}
-	
+
 	@MCChildElement(order=3)
 	public void setRules(Collection<Rule> proxies) {
 		for (Rule rule : proxies)
@@ -129,7 +129,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public static Router init(String resource, ClassLoader classLoader) {
 		log.debug("loading spring config: " + resource);
 
-		TrackingFileSystemXmlApplicationContext beanFactory = 
+		TrackingFileSystemXmlApplicationContext beanFactory =
 				new TrackingFileSystemXmlApplicationContext(new String[] { resource }, false);
 		beanFactory.setClassLoader(classLoader);
 		beanFactory.refresh();
@@ -144,7 +144,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		if (applicationContext instanceof BaseLocationApplicationContext)
 			setBaseLocation(((BaseLocationApplicationContext)applicationContext).getBaseLocation());
 	}
-	
+
 	public RuleManager getRuleManager() {
 		return ruleManager;
 	}
@@ -162,7 +162,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	 * @description Spring Bean ID of an {@link ExchangeStore}. The exchange store will be used by this router's
 	 *              components ({@link AdminConsoleInterceptor}, {@link ExchangeStoreInterceptor}, etc.) by default, if
 	 *              no other exchange store is explicitly set to be used by them.
-	 * @default create a {@link LimitedMemoryExchangeStore} limited to the size of 1 MB. 
+	 * @default create a {@link LimitedMemoryExchangeStore} limited to the size of 1 MB.
 	 */
 	@MCAttribute
 	public void setExchangeStore(ExchangeStore exchangeStore) {
@@ -181,12 +181,12 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public HttpClientConfiguration getHttpClientConfig() {
 		return resolverMap.getHTTPSchemaResolver().getHttpClientConfig();
 	}
-	
+
 	@MCChildElement(order=0)
 	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
 		resolverMap.getHTTPSchemaResolver().setHttpClientConfig(httpClientConfig);
 	}
-	
+
 	public DNSCache getDnsCache() {
 		return dnsCache;
 	}
@@ -197,17 +197,17 @@ public class Router implements Lifecycle, ApplicationContextAware {
 
 	/**
 	 * Closes all ports (if any were opened) and waits for running exchanges to complete.
-	 * 
+	 *
 	 * When running as an embedded servlet, this has no effect.
 	 */
 	public void shutdown() throws IOException {
 		backgroundInitializator.shutdown();
 		getTransport().closeAll();
 	}
-	
+
 	/**
 	 * Closes all ports (if any were opened), but does not wait for running exchanges to complete.
-	 * 
+	 *
 	 * @deprecated Simply invokes {@link #shutdown()}. "Not waiting" is not supported anymore, as open connections can
 	 *             now be forcibly closed after a timeout. See
 	 *             {@link HttpTransport#setForceSocketCloseOnHotDeployAfter(int)}.
@@ -215,11 +215,11 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public void shutdownNoWait() throws IOException {
 		shutdown();
 	}
-	
+
 	public ExecutorService getBackgroundInitializator() {
 		return backgroundInitializator;
 	}
-	
+
 	public Rule getParentProxy(Interceptor interceptor) {
 		for (Rule r : getRuleManager().getRules()) {
 			for (Interceptor i : r.getInterceptors())
@@ -249,7 +249,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 				exchangeStore = new LimitedMemoryExchangeStore();
 			if (transport == null)
 				transport = new HttpTransport();
-			
+
 			init();
 			getRuleManager().openPorts();
 
@@ -260,7 +260,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 				shutdown();
 				throw e;
 			}
-			
+
 			if (retryInitInterval > 0)
 				startAutoReinitializator();
 		} catch (Exception e) {
@@ -296,11 +296,11 @@ public class Router implements Lifecycle, ApplicationContextAware {
 			}
 		}
 	}
-	
+
 	private void startAutoReinitializator() {
 		if (getInactiveRules().size() == 0)
 			return;
-		
+
 		reinitializator = new Timer("auto reinitializator", true);
 		reinitializator.schedule(new TimerTask() {
 			@Override
@@ -331,14 +331,14 @@ public class Router implements Lifecycle, ApplicationContextAware {
 			}
 		}, retryInitInterval, retryInitInterval);
 	}
-	
+
 	private void stopAutoReinitializator() {
 		Timer reinitializator2 = reinitializator;
 		if (reinitializator2 != null) {
 			reinitializator2.cancel();
 		}
 	}
-	
+
 	@Override
 	public void stop() {
 		try {
@@ -355,9 +355,9 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public boolean isRunning() {
 		return running;
 	}
-	
+
 	/**
-	 * @description 
+	 * @description
 	 * <p>Whether changes to the router's configuration file should automatically trigger a restart.
 	 * </p>
 	 * <p>
@@ -377,15 +377,15 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		}
 		this.hotDeploy = hotDeploy;
 	}
-	
+
 	public boolean isHotDeploy() {
 		return hotDeploy;
 	}
-	
+
 	public int getRetryInitInterval() {
 		return retryInitInterval;
 	}
-	
+
 	/**
 	 * @description number of milliseconds after which reinitialization of &lt;soapProxy&gt;s should be attempted periodically
 	 * @default 5 minutes
@@ -397,18 +397,21 @@ public class Router implements Lifecycle, ApplicationContextAware {
 
 	private ArrayList<Rule> getInactiveRules() {
 		ArrayList<Rule> inactive = new ArrayList<Rule>();
-		for (Rule rule : getRuleManager().getRules()) 
-			if (!rule.isActive()) 
+		for (Rule rule : getRuleManager().getRules())
+			if (!rule.isActive())
 				inactive.add(rule);
 		return inactive;
 	}
-	
+
 	public String getBaseLocation() {
 		return baseLocation;
 	}
-	
+
 	public void setBaseLocation(String baseLocation) {
 		this.baseLocation = baseLocation;
 	}
-	
+
+    public ApplicationContext getBeanFactory() {
+        return beanFactory;
+    }
 }
