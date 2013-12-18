@@ -28,7 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 
 /**
  * Pools TCP/IP connections, holding them open for a configurable number of milliseconds.

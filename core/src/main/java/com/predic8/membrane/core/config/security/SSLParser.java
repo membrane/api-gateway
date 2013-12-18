@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
+import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -31,6 +32,21 @@ public class SSLParser {
 	private String ciphers;
 	private String clientAuth;
 	private boolean ignoreTimestampCheckFailure;
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof SSLParser))
+			return false;
+		SSLParser other = (SSLParser)obj;
+		return Objects.equal(keyStore, other.keyStore)
+				&& Objects.equal(trustStore, other.trustStore)
+				&& Objects.equal(algorithm, other.algorithm)
+				&& Objects.equal(protocol, other.protocol)
+				&& Objects.equal(ciphers, other.ciphers)
+				&& Objects.equal(clientAuth, other.clientAuth)
+				&& Objects.equal(ignoreTimestampCheckFailure, other.ignoreTimestampCheckFailure);
+	}
+	
 
 	public KeyStore getKeyStore() {
 		return keyStore;

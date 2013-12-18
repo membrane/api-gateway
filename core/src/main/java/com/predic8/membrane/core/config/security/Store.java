@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
+import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 
 public abstract class Store {
@@ -22,6 +23,17 @@ public abstract class Store {
 	protected String type;
 	protected String provider;
 
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Store))
+			return false;
+		Store other = (Store) obj;
+		return Objects.equal(location, other.location)
+				&& Objects.equal(password, other.password)
+				&& Objects.equal(type, other.type)
+				&& Objects.equal(provider, other.provider);
+	}
+	
 	public String getLocation() {
 		return location;
 	}

@@ -32,8 +32,8 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.model.IPortChangeListener;
-import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 /**
  * @description <p>
@@ -55,7 +55,7 @@ public class HttpTransport extends Transport {
 	private int forceSocketCloseOnHotDeployAfter = 30000;
 	private boolean tcpNoDelay = true;
 
-	public Hashtable<Port, HttpEndpointListener> portListenerMapping = new Hashtable<Port, HttpEndpointListener>();
+	public Hashtable<IpPort, HttpEndpointListener> portListenerMapping = new Hashtable<IpPort, HttpEndpointListener>();
 	public List<WeakReference<HttpEndpointListener>> stillRunning = new ArrayList<WeakReference<HttpEndpointListener>>();
 
 	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(20,
@@ -68,44 +68,12 @@ public class HttpTransport extends Transport {
 		
 
 	}
-	
-	private static class Port {
-		public String ip;
-		public int port;
-
-		public Port(String ip, int port) {
-			this.ip = ip;
-			this.port = port;
-		}
-		
-		@Override
-		public boolean equals(Object obj) {
-			if (!(obj instanceof Port))
-				return false;
-			Port other = (Port)obj;
-			if (other.port != port)
-				return false;
-			if (ip == null)
-				return other.ip == null;
-			return ip.equals(other.ip);
-		}
-		
-		@Override
-		public int hashCode() {
-			return 5 * port + (ip != null ? 3 * ip.hashCode() : 0);
-		}
-		
-		@Override
-		public String toString() {
-			return "port=" + port + " ip=" + ip;
-		}
-	}
 
 	public boolean isAnyThreadListeningAt(String ip, int port) {
-		return portListenerMapping.get(new Port(ip, port)) != null;
+		return portListenerMapping.get(new IpPort(ip, port)) != null;
 	}
 
-	public Enumeration<Port> getAllPorts() {
+	public Enumeration<IpPort> getAllPorts() {
 		return portListenerMapping.keys();
 	}
 
@@ -114,7 +82,7 @@ public class HttpTransport extends Transport {
 	 * this method completes.
 	 */
 	public synchronized void closePort(String ip, int port) throws IOException {
-		Port p = new Port(ip, port);
+		IpPort p = new IpPort(ip, port);
 		log.debug("Closing server port: " + p);
 		HttpEndpointListener plt = portListenerMapping.get(p);
 		if (plt == null)
@@ -138,9 +106,9 @@ public class HttpTransport extends Transport {
 	public synchronized void closeAll(boolean waitForCompletion) throws IOException {
 		
 		log.debug("Closing all network server sockets.");
-		Enumeration<Port> enumeration = getAllPorts();
+		Enumeration<IpPort> enumeration = getAllPorts();
 		while (enumeration.hasMoreElements()) {
-			Port p = enumeration.nextElement();
+			IpPort p = enumeration.nextElement();
 			closePort(p.ip, p.port);
 		}
 		
@@ -182,7 +150,7 @@ public class HttpTransport extends Transport {
 	 * @throws IOException
 	 */
 	@Override
-	public synchronized void openPort(String ip, int port, SSLContext sslContext) throws IOException {
+	public synchronized void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
 		if (isAnyThreadListeningAt(ip, port)) {
 			return;
 		}
@@ -191,8 +159,8 @@ public class HttpTransport extends Transport {
 			throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
 		
 		HttpEndpointListener portListenerThread = new HttpEndpointListener(
-				ip, port, this, sslContext);
-		portListenerMapping.put(new Port(ip, port), portListenerThread);
+				ip, port, this, sslProvider);
+		portListenerMapping.put(new IpPort(ip, port), portListenerThread);
 		portListenerThread.start();
 
 		for (IPortChangeListener listener : menuListeners) {

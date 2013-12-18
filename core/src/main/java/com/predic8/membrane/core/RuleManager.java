@@ -17,19 +17,26 @@ package com.predic8.membrane.core;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.predic8.membrane.core.config.ConfigurationException;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.model.IRuleChangeListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.transport.http.IpPort;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContextCollection;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public class RuleManager {
 
@@ -127,8 +134,32 @@ public class RuleManager {
 	}
 	
 	public synchronized void openPorts() throws IOException {
+		HashMap<IpPort, SSLProvider> sslProviders;
+		try {
+			HashMap<IpPort, SSLContextCollection.Builder> sslContexts = new HashMap<IpPort, SSLContextCollection.Builder>();
+			for (Rule rule : rules) {
+				SSLContext sslContext = rule.getSslInboundContext();
+				if (sslContext != null) {
+					IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
+					SSLContextCollection.Builder builder = sslContexts.get(ipPort);
+					if (builder == null) {
+						builder = new SSLContextCollection.Builder();
+						sslContexts.put(ipPort, builder);
+					}
+					builder.add(sslContext, rule.getKey().getHost());
+				}
+			}
+
+			sslProviders = new HashMap<IpPort, SSLProvider>();
+			for (Map.Entry<IpPort, SSLContextCollection.Builder> entry : sslContexts.entrySet())
+				sslProviders.put(entry.getKey(), entry.getValue().build());
+		} catch (ConfigurationException e) {
+			throw new IOException(e);
+		}
+
 		for (Rule rule : rules) {
-			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), rule.getSslInboundContext());
+			IpPort ipPort = new IpPort(rule.getKey().getIp(), rule.getKey().getPort());
+			router.getTransport().openPort(rule.getKey().getIp(), rule.getKey().getPort(), sslProviders.get(ipPort));
 		}
 	}
 

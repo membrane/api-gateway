@@ -79,6 +79,10 @@ Mozilla Public License
 -------------------------------------------------
 Mozilla Rhino
 
+Oracle SSL Server Name Indication utility classes
+-------------------------------------------------
+Copyright (c) 2013, Oracle and/or its affiliates. See https://github.com/membrane/service-proxy/blob/master/core/src/main/java/com/oracle/util/ssl/SSLCapabilities.java and ./SSLExplorer.java .
+
 
 
 

@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.transport;
+package com.predic8.membrane.core.transport.ssl;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,7 +24,6 @@ import java.net.Socket;
 import javax.net.ssl.SSLHandshakeException;
 
 import org.junit.Assert;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,6 +32,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.TrustStore;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 
 public class SSLContextTest {
 	

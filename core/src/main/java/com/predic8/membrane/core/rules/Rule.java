@@ -19,7 +19,7 @@ import java.util.Map;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 
 public interface Rule extends Cloneable {
 	

@@ -28,7 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.transport.PortOccupiedException;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public class HttpEndpointListener extends Thread {
 
@@ -40,12 +40,12 @@ public class HttpEndpointListener extends Thread {
 	private final ConcurrentHashMap<Socket, Boolean> openSockets = new ConcurrentHashMap<Socket, Boolean>();
 	private volatile boolean closed;
 
-	public HttpEndpointListener(String ip, int port, HttpTransport transport, SSLContext sslContext) throws IOException {
+	public HttpEndpointListener(String ip, int port, HttpTransport transport, SSLProvider sslProvider) throws IOException {
 		this.transport = transport;
 
 		try {
-			if (sslContext != null)
-				serverSocket = sslContext.createServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
+			if (sslProvider != null)
+				serverSocket = sslProvider.createServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
 			else
 				serverSocket = new ServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
 			

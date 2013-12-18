@@ -22,7 +22,7 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 
 public abstract class AbstractServiceProxy extends AbstractProxy {
 

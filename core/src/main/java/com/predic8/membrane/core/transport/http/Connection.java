@@ -35,7 +35,7 @@ import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.transport.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 
 /**
  * A {@link Connection} is an outbound TCP/IP connection, possibly managed

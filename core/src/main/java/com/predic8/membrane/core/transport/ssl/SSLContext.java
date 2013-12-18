@@ -12,7 +12,7 @@
    See the License for the specific language governing permissions and
    limitations under the License. */
 
-package com.predic8.membrane.core.transport;
+package com.predic8.membrane.core.transport.ssl;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -25,7 +25,13 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Set;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -36,17 +42,25 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.Store;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.TrustManagerWrapper;
 
-public class SSLContext {
+public class SSLContext implements SSLProvider {
+
+	private final SSLParser sslParser;
+	private List<String> dnsNames;
+
 	private final javax.net.ssl.SSLContext sslc;
 	private final String[] ciphers;
 	private final boolean wantClientAuth, needClientAuth;
 	
+	
 	public SSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
+		this.sslParser = sslParser;
 		try {
 			String algorihm = KeyManagerFactory.getDefaultAlgorithm();
 			if (sslParser.getAlgorithm() != null)
@@ -66,6 +80,29 @@ public class SSLContext {
 				KeyStore ks = openKeyStore(sslParser.getKeyStore(), "JKS", keyPass, resourceResolver, baseLocation);
 				kmf = KeyManagerFactory.getInstance(algorihm);
 				kmf.init(ks, keyPass);
+				
+				Enumeration<String> aliases = ks.aliases();
+				while (aliases.hasMoreElements()) {
+					String alias = aliases.nextElement();
+					if (ks.isKeyEntry(alias)) {
+						// first key is used by the KeyManagerFactory
+						Certificate c = ks.getCertificate(alias);
+						if (c instanceof X509Certificate) {
+							X509Certificate x = (X509Certificate) c;
+							
+							dnsNames = new ArrayList<String>();
+
+							Collection<List<?>> subjectAlternativeNames = x.getSubjectAlternativeNames();
+							if (subjectAlternativeNames != null)
+								for (List<?> l : subjectAlternativeNames) {
+									if (l.get(0) instanceof Integer && ((Integer)l.get(0) == 2))
+										dnsNames.add(l.get(1).toString());
+								}
+						}
+						break;
+					}
+				}
+
 			}
 			TrustManagerFactory tmf = null;
 			if (sslParser.getTrustStore() != null) {
@@ -118,6 +155,14 @@ public class SSLContext {
 		}
 	}
 	
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof SSLContext))
+			return false;
+		SSLContext other = (SSLContext)obj;
+		return Objects.equal(sslParser, other.sslParser);
+	}
+	
 	private KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
 		String type = store.getType();
 		if (type == null)
@@ -166,5 +211,32 @@ public class SSLContext {
 			ssls.setEnabledCipherSuites(ciphers);
 		return ssls;
 	}
+	
+	SSLSocketFactory getSocketFactory() {
+		return sslc.getSocketFactory();
+	}
+	
+	String[] getCiphers() {
+		return ciphers;
+	}
+	
+	boolean isNeedClientAuth() {
+		return needClientAuth;
+	}
+	
+	boolean isWantClientAuth() {
+		return wantClientAuth;
+	}
+	
+	List<String> getDnsNames() {
+		return dnsNames;
+	}
 
+	/**
+	 * 
+	 * @return Human-readable description of there the keystore lives.
+	 */
+	String getLocation() {
+		return sslParser.getKeyStore() != null ? sslParser.getKeyStore().getLocation() : "null";
+	}
 }
