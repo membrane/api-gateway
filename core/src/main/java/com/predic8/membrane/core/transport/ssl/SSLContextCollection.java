@@ -160,7 +160,7 @@ public class SSLContextCollection implements SSLProvider {
 				
 				if (capabilities != null) {
 					List<SNIServerName> serverNames = capabilities.getServerNames();
-					if (serverNames != null) {
+					if (serverNames != null && serverNames.size() > 0) {
 						OUTER:
 						for (SNIServerName snisn : serverNames) {
 							String hostname = new String(snisn.getEncoded(), "UTF-8");

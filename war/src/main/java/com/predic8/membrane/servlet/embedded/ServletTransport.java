@@ -19,8 +19,8 @@ import java.io.IOException;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCMain;
-import com.predic8.membrane.core.transport.SSLContext;
 import com.predic8.membrane.core.transport.Transport;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 @MCMain(
 		outputPackage="com.predic8.membrane.servlet.config.spring",
@@ -41,7 +41,7 @@ public class ServletTransport extends Transport {
 	}
 	
 	@Override
-	public void openPort(String ip, int port, SSLContext sslContext) throws IOException {
+	public void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
 		// do nothing
 	}
 	
