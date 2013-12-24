@@ -18,13 +18,10 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.groovy.util.StringUtil;
 import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.annot.MCElement;
