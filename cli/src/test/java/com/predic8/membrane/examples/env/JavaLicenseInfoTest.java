@@ -79,6 +79,9 @@ public class JavaLicenseInfoTest {
 		if (content.contains("Apache License"))
 			return;
 		
+		if (content.contains("Copyright (c) 2013, Oracle and/or its affiliates"))
+			return;
+		
 		files.add(file);
 	}
 

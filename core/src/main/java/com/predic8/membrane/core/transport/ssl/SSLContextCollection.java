@@ -31,6 +31,9 @@ import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.oracle.util.ssl.SSLCapabilities;
 import com.oracle.util.ssl.SSLExplorer;
 import com.predic8.membrane.core.config.ConfigurationException;
@@ -46,6 +49,8 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
  */
 public class SSLContextCollection implements SSLProvider {
 
+	private static final Log log = LogFactory.getLog(SSLContextCollection.class.getName());
+	
 	private static Method createSocketMethod;
 	
 	static {
@@ -94,6 +99,10 @@ public class SSLContextCollection implements SSLProvider {
 				else
 					sb.append(" ");
 				sb.append(dnsName);
+			}
+			if (sb == null) {
+				log.warn("Could not retrieve DNS hostname for certificate, using '*': " + sslContext.getLocation());
+				return "*";
 			}
 			return sb.toString();
 		}
