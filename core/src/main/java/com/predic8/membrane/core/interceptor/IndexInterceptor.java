@@ -17,8 +17,8 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.web.util.HtmlUtils;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.annot.MCElement;
@@ -96,9 +96,9 @@ public class IndexInterceptor extends AbstractInterceptor {
 		ri.name = sp.getName();
 		if (path != null)
 			ri.url = protocol + "://" + host + ":" + port + path;
-		ri.host = k.isHostWildcard() ? "" : HtmlUtils.htmlEscape(k.getHost());
+		ri.host = k.isHostWildcard() ? "" : StringEscapeUtils.escapeHtml(k.getHost());
 		ri.port = k.getPort() == -1 ? "" : "" + k.getPort();
-		ri.path = k.isUsePathPattern() ? "<tt>" + HtmlUtils.htmlEscape(k.getPath()) + "</tt>" + (k.isPathRegExp() ? " (regex)" : "") : ""; 
+		ri.path = k.isUsePathPattern() ? "<tt>" + StringEscapeUtils.escapeHtml(k.getPath()) + "</tt>" + (k.isPathRegExp() ? " (regex)" : "") : ""; 
 		return ri;
 	}
 	

@@ -20,10 +20,10 @@ import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -167,7 +167,7 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getShortDescription() {
-		return "Logs access statistics into the CSV-based file " + HtmlUtils.htmlEscape(fileName) + " .";
+		return "Logs access statistics into the CSV-based file " + StringEscapeUtils.escapeHtml(fileName) + " .";
 	}
 	
 }

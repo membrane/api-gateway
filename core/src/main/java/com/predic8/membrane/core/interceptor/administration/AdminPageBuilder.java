@@ -39,7 +39,6 @@ import java.util.TreeMap;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.springframework.web.util.HtmlUtils;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.Constants;
@@ -593,12 +592,12 @@ public class AdminPageBuilder extends Html {
 			boolean same = longDescription.equals(shortDescription);
 			
 			if (!TextUtil.isValidXMLSnippet(shortDescription)) {
-				shortDescription = HtmlUtils.htmlEscape(shortDescription).replace("\n", "<br/>");
+				shortDescription = StringEscapeUtils.escapeHtml(shortDescription).replace("\n", "<br/>");
 				if (same)
 					longDescription = shortDescription;
 			}
 			if (!same && !TextUtil.isValidXMLSnippet(longDescription)) {
-				longDescription = HtmlUtils.htmlEscape(longDescription).replace("\n", "<br/>");
+				longDescription = StringEscapeUtils.escapeHtml(longDescription).replace("\n", "<br/>");
 			}
 			
 			shortDescription = shortDescription.replaceAll("\"/admin", "\"" + relativeRootPath + "/admin");

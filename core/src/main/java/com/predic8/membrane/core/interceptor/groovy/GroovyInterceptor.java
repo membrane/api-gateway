@@ -20,9 +20,9 @@ import groovy.lang.Script;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
@@ -149,7 +149,7 @@ public class GroovyInterceptor extends AbstractInterceptor {
         StringBuilder sb = new StringBuilder();
         sb.append(TextUtil.removeFinalChar(getShortDescription()));
         sb.append(":<br/><pre style=\"overflow-x:auto\">");
-        sb.append(HtmlUtils.htmlEscape(TextUtil.removeCommonLeadingIndentation(src)));
+        sb.append(StringEscapeUtils.escapeHtml(TextUtil.removeCommonLeadingIndentation(src)));
         sb.append("</pre>");
         return sb.toString();
     }

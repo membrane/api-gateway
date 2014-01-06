@@ -94,7 +94,7 @@ public class ConfigSerializationTest {
 			String xml = MCUtil.toXML(o);
 
 			//prettyPrint(xml);
-			System.out.println(xml);
+			//System.out.println(xml);
 
 			AssertUtils.assertContainsNot("incomplete serialization", xml);
 

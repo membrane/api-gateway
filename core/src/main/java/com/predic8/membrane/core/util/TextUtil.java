@@ -26,8 +26,8 @@ import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.XMLEvent;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.beautifier.HtmlBeautifierFormatter;
 import com.predic8.beautifier.PlainBeautifierFormatter;
@@ -152,10 +152,10 @@ public class TextUtil {
 	
 	public static String linkURL(String url) {
 		if (url.startsWith("http://") || url.startsWith("https://")) {
-			url = HtmlUtils.htmlEscape(url);
+			url = StringEscapeUtils.escapeHtml(url);
 			return "<a href=\"" + url + "\">" + url + "</a>";  
 		}
-		return HtmlUtils.htmlEscape(url);
+		return StringEscapeUtils.escapeHtml(url);
 	}
 
 	public static Object removeFinalChar(String s) {

@@ -27,7 +27,6 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Chunk;
@@ -115,7 +114,7 @@ public class HttpUtil {
 		buf.append(comment);
 		buf.append("</p>\r\n");
 		buf.append("<pre id=\"msg\">");
-		buf.append(HtmlUtils.htmlEscape(text));
+		buf.append(StringEscapeUtils.escapeHtml(text));
 		buf.append("</pre>");
 		buf.append("<p class=\"footer\">");
 		buf.append(Constants.HTML_FOOTER);

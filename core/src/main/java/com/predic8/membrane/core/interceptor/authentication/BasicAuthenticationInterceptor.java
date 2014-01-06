@@ -20,8 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.web.util.HtmlUtils;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -166,7 +166,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		sb.append("<br/>");
 		sb.append("Users: ");
 		for (User user : users) {
-			sb.append(HtmlUtils.htmlEscape(user.getName()));
+			sb.append(StringEscapeUtils.escapeHtml(user.getName()));
 			sb.append(", ");
 		}
 		sb.delete(sb.length()-2, sb.length());
