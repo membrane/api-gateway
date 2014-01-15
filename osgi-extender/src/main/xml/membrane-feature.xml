@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<features xmlns="http://karaf.apache.org/xmlns/features/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+		http://karaf.apache.org/xmlns/features/v1.0.0
+		http://karaf.apache.org/xmlns/features/v1.0.0">
+		
+	<feature name="membrane" version="4.0.13">
+    	<feature version="[3.1,4)">spring</feature>
+    	<bundle start-level="80">mvn:org.membrane-soa.service-proxy/com.predic8.membrane.osgi.extender</bundle>
+	</feature>
+</features>    	
