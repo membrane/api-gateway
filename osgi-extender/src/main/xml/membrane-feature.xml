@@ -7,6 +7,6 @@
 		
 	<feature name="membrane" version="4.0.13">
     	<feature version="[3.1,4)">spring</feature>
-    	<bundle start-level="80">mvn:org.membrane-soa.service-proxy/com.predic8.membrane.osgi.extender</bundle>
+    	<bundle start-level="31">mvn:org.membrane-soa.service-proxy/com.predic8.membrane.osgi.extender</bundle>
 	</feature>
 </features>    	
