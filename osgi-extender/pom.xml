@@ -1,22 +1,8 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><!-- 
-   Copyright 2012, predic8 GmbH, www.predic8.com
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
- --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>com.predic8.membrane.osgi.extender</artifactId>
-    <name>Membrane OSGi Extender</name>
+	<name>Membrane OSGi Blueprint Extender</name>
 	<packaging>bundle</packaging>
 
     <parent>
@@ -26,17 +12,67 @@
         <version>4.0.13-SNAPSHOT</version>
     </parent>
 
-	<dependencies>  
+	<dependencies>
 		<dependency>
-			<groupId>org.apache.felix</groupId>
-			<artifactId>org.osgi.compendium</artifactId>
-			<version>1.0.1</version>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-beans</artifactId>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<scope>provided</scope>
+		</dependency>
+	
+		<dependency>
+			<groupId>org.membrane-soa.service-proxy</groupId>
+			<artifactId>service-proxy-annot</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-beans</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>org.springframework</groupId>
+					<artifactId>spring-context</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.membrane-soa.service-proxy</groupId>
 			<artifactId>service-proxy-core</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.aries.blueprint</groupId>
+			<artifactId>blueprint-parser</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.aries.blueprint</groupId>
+			<artifactId>org.apache.aries.blueprint.api</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.felix</groupId>
+			<artifactId>org.osgi.core</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.felix</groupId>
+			<artifactId>org.osgi.compendium</artifactId>
+			<scope>provided</scope>
+			<exclusions>
+				<exclusion>
+					<artifactId>org.apache.felix</artifactId>
+					<groupId>org.osgi.foundation</groupId>
+				</exclusion>
+				<exclusion>
+					<artifactId>*</artifactId>
+					<groupId>*</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -47,58 +83,51 @@
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
-	  
+
 	<build>
-        <pluginManagement>
-    	    <plugins>
+		<pluginManagement>
+			<plugins>
 				<plugin>
 					<groupId>org.apache.felix</groupId>
 					<artifactId>maven-bundle-plugin</artifactId>
 					<extensions>true</extensions>
 				</plugin>
-	        </plugins>
-        </pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.felix</groupId>
-                <artifactId>maven-bundle-plugin</artifactId>
-                <configuration>
-                    <instructions>
-                        <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Activator>com.predic8.membrane.osgi.extender.Activator</Bundle-Activator>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<configuration>
+					<instructions>
+						<Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
+						<Bundle-Activator>com.predic8.membrane.osgi.extender.Activator</Bundle-Activator>
 						<Embed-Transitive>true</Embed-Transitive>
 						<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
-						<_exportcontents>
-							!com.predic8.membrane.core.interceptor.administration.docBase.*,
-							com.googlecode.jatl,com.predic8.*,
-						</_exportcontents>
-						<Bundle-ClassPath>.,{maven-dependencies}</Bundle-ClassPath>
-						<_failok>true</_failok>
-						<_nouses>true</_nouses>
-                        <Import-Package>
+						<Import-Package>
+							org.apache.aries.blueprint.*,
                             org.apache.felix.service.command;version=0.10.0;status=provisional,
-                            org.osgi.framework,
+                            org.osgi.service.blueprint.reflect,
+                            org.osgi.*,
                             org.slf4j,
+                            org.springframework.*,
                             org.xml.*,
-                            !javax.ejb,
-                            !javax.faces.*,
-                            !javax.inject,
-                            !javax.interceptor,
-                            !javax.persistence.spi,
-                            !javax.portlet,
-                            !javax.validation,
-                            !javax.validation.*,
-                            !javax.xml.rpc,
-                            !javax.xml.rpc.*,
-                            javax.*,
-                            org.w3c.*
+                            javax.net.*,
+                            javax.*;resolution:="optional",
+                            org.w3c.*,
                         </Import-Package>
+						
+						<Bundle-Description>${project.description}</Bundle-Description>
 						<Bundle-Vendor>predic8 GmbH</Bundle-Vendor>
 						<Bundle-License>http://www.apache.org/licenses/LICENSE-2.0</Bundle-License>
+						<_exportcontents>
+							!com.predic8.membrane.core.interceptor.administration.docBase.*,
+							com.predic8.membrane.*,
+						</_exportcontents>
 					</instructions>
-                </configuration>
-            </plugin>
-        </plugins>
+				</configuration>
+			</plugin>
+		</plugins>
 	</build>
-	
+
 </project>
