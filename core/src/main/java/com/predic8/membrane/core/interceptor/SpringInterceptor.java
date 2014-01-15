@@ -48,7 +48,7 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		ac = applicationContext;
-		i = (Interceptor) ac.getBean(refid);
+		i = ac.getBean(refid, Interceptor.class);
 	}
 
 	@Override

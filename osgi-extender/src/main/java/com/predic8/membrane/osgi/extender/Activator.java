@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2014 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,91 +14,46 @@
 
 package com.predic8.membrane.osgi.extender;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Properties;
 
-import javax.annotation.concurrent.GuardedBy;
-
-import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleEvent;
-import org.osgi.framework.SynchronousBundleListener;
-import org.springframework.osgi.util.OsgiBundleUtils;
+import org.osgi.framework.ServiceReference;
+import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.log.LogService;
 
-import com.predic8.membrane.osgi.extender.logger.Log4JToSLF4J;
+import com.predic8.membrane.annot.MCMain;
+import com.predic8.membrane.annot.NamespaceUtil;
 
-public class Activator implements BundleActivator, SynchronousBundleListener {
-	private final Object syncRoot = new Object();
-	private final ConcurrentHashMap<Long, MembraneApplicationContext> membraneContexts = new ConcurrentHashMap<Long, MembraneApplicationContext>();
-	private final Log4JToSLF4J log4jToSLF4JAdapter = new Log4JToSLF4J();
+/**
+ * Publishes the {@link NamespaceHandler} service, which handles custom
+ * Blueprint XML elements from the Membrane namespaces (the ones defined using
+ * {@link MCMain} etc.).
+ */
+public class Activator implements BundleActivator {
 	
-	@GuardedBy("syncRoot")
-	private boolean stopping = false;
+	public static BundleContext context;
 
-	private long bundleId;
+	private ServiceReference logServiceReference;
+	private ServiceRegistration registerService;
 
-	public void start(BundleContext context) throws Exception {
-		org.apache.log4j.Logger.getRootLogger().addAppender(log4jToSLF4JAdapter);
-		bundleId = context.getBundle().getBundleId();
-		context.addBundleListener(this);
-		for (Bundle bundle : context.getBundles())
-			if (bundle.getState() == Bundle.ACTIVE)
-				handleBundleStart(bundle);
-	}
-
-	public void stop(BundleContext context) throws Exception {
-		org.apache.log4j.Logger.getRootLogger().removeAppender(log4jToSLF4JAdapter);
-		handleSystemStop();
-	}
-
-	public void bundleChanged(BundleEvent event) {
-		if (event.getBundle().getBundleId() == bundleId)
-			return;
+	public void start(BundleContext arg0) throws Exception {
+		context = arg0;
 		
-		switch (event.getType()) {
-			case BundleEvent.STARTED: {
-				handleBundleStart(event.getBundle());
-				break;
-			}
-			case BundleEvent.STOPPING: {
-				if (event.getBundle().getBundleId() == 0)
-					handleSystemStop();
-				else
-					handleBundleStop(event.getBundle());
+		logServiceReference = arg0.getServiceReference(LogService.class.getName());
+		OsgiAppender.setLogService((LogService) arg0.getService(logServiceReference));
 		
-			}
-		}
+		Properties p = new Properties();
+		p.put("osgi.service.blueprint.namespace", new NamespaceUtil().getTargetNamespaces().toArray(new String[0]));
+		
+		registerService = arg0.registerService(org.apache.aries.blueprint.NamespaceHandler.class.getName(), 
+				new NamespaceHandler(), p);
 	}
-	
-	private void handleBundleStart(Bundle bundle) {
-		MembraneApplicationContext m =  membraneContexts.get(bundle.getBundleId());
-		if (m != null)
-			return;
-		m = MembraneApplicationContext.create(OsgiBundleUtils.getBundleContext(bundle));
-		if (m == null)
-			return;
-		MembraneApplicationContext m2 = membraneContexts.putIfAbsent(bundle.getBundleId(), m);
-		if (m2 != null)
-			m = m2;
-		m.start();
+
+	public void stop(BundleContext arg0) throws Exception {
+		registerService.unregister();
+		OsgiAppender.setLogService(null);
+		arg0.ungetService(logServiceReference);
 	}
-	
-	private void handleBundleStop(Bundle bundle) {
-		MembraneApplicationContext m = membraneContexts.remove(bundle.getBundleId());
-		if (m == null)
-			return;
-		m.stop();
-	}
-	
-	private void handleSystemStop() {
-		synchronized(syncRoot) {
-			if (stopping)
-				return;
-			else
-				stopping = true;
-		}
-		for (MembraneApplicationContext m : membraneContexts.values())
-			m.stop();
-		membraneContexts.clear();
-	}
+
 }

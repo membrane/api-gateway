@@ -34,11 +34,13 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.Diagnostic.Kind;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
+import javax.tools.Diagnostic.Kind;
 
+import com.predic8.membrane.annot.generator.BlueprintParsers;
 import com.predic8.membrane.annot.generator.HelpReference;
+import com.predic8.membrane.annot.generator.NamespaceInfo;
 import com.predic8.membrane.annot.generator.Parsers;
 import com.predic8.membrane.annot.generator.Schemas;
 import com.predic8.membrane.annot.model.AttributeInfo;
@@ -50,6 +52,20 @@ import com.predic8.membrane.annot.model.Model;
 import com.predic8.membrane.annot.model.OtherAttributesInfo;
 import com.predic8.membrane.annot.model.TextContentInfo;
 
+/**
+ * The annotation processor for the annotations defining Membrane's configuration language ({@link MCMain} and others).
+ * 
+ * <ul>
+ * <li>validates the correct usage of the annotations (not everything is checked, though)</li>
+ * <li>generates the XML schema file for the declared namespace</li>
+ * <li>generates parser classes for Spring-based deployments</li>
+ * <li>generates parser classes for Blueprint-based deployments (if
+ * org.apache.aries.blueprint:blueprint-parser and org.apache.aries.blueprint:org.apache.aries.blueprint.api
+ * are present on the classpath)</li>
+ * <li>generates the documentation of the language as an XML file
+ * (if the MEMBRANE_GENERATE_DOC_DIR environment variable is set), based on the annotations and javadoc.</li>
+ * </ul>
+ */
 @SupportedAnnotationTypes(value = { "com.predic8.membrane.annot.*" })
 public class SpringConfigurationXSDGeneratingAnnotationProcessor extends AbstractProcessor {
 
@@ -265,10 +281,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					return true;
 				}
 
-				new Schemas(processingEnv).writeXSD(m);
-				new Parsers(processingEnv).writeParsers(m);
-				new Parsers(processingEnv).writeParserDefinitior(m);
-				new HelpReference(processingEnv).writeHelp(m);
+				process(m);
 			}
 
 			return true;
@@ -363,5 +376,18 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				return true;
 		return false;
 	}
+
+	public void process(Model m) throws IOException {
+		new Schemas(processingEnv).writeXSD(m);
+		new Parsers(processingEnv).writeParsers(m);
+		new Parsers(processingEnv).writeParserDefinitior(m);
+		new HelpReference(processingEnv).writeHelp(m);
+		new NamespaceInfo(processingEnv).writeInfo(m);
+		if (processingEnv.getElementUtils().getTypeElement("org.apache.aries.blueprint.ParserContext") != null) {
+			new BlueprintParsers(processingEnv).writeParserDefinitior(m);
+			new BlueprintParsers(processingEnv).writeParsers(m);
+		}
+	}
+
 
 }
