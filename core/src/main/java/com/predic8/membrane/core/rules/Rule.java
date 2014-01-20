@@ -20,6 +20,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public interface Rule extends Cloneable {
 	
@@ -55,7 +56,7 @@ public interface Rule extends Cloneable {
 	
 	public SSLContext getSslInboundContext();
 
-	public SSLContext getSslOutboundContext();
+	public SSLProvider getSslOutboundContext();
 	
 	public void init(Router router) throws Exception;
 	

@@ -37,7 +37,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.Util;
@@ -114,7 +114,7 @@ public class HttpClient {
 		return target;
 	}
 
-	private SSLContext getOutboundSSLContext(Exchange exc) {
+	private SSLProvider getOutboundSSLProvider(Exchange exc) {
 		return exc.getRule() == null ? null : exc.getRule().getSslOutboundContext();
 	}
 
@@ -148,7 +148,7 @@ public class HttpClient {
 					}
 				}
 				if (con == null) {
-					con = conMgr.getConnection(targetAddr, target.port, exc.getRule() == null ? null : exc.getRule().getLocalHost(), getOutboundSSLContext(exc), connectTimeout);
+					con = conMgr.getConnection(targetAddr, target.port, exc.getRule() == null ? null : exc.getRule().getLocalHost(), getOutboundSSLProvider(exc), connectTimeout);
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}

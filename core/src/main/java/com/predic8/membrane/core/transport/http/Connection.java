@@ -35,7 +35,7 @@ import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 /**
  * A {@link Connection} is an outbound TCP/IP connection, possibly managed
@@ -68,18 +68,18 @@ public class Connection implements MessageObserver {
 	private Exchange exchange;
 	private boolean keepAttachedToExchange;
 
-	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext, int connectTimeout) throws UnknownHostException, IOException {
-		return open(host, port, localHost, sslContext, null, connectTimeout);
+	public static Connection open(InetAddress host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
+		return open(host, port, localHost, sslProvider, null, connectTimeout);
 	}
 	
-	public static Connection open(InetAddress host, int port, String localHost, SSLContext sslContext, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
+	public static Connection open(InetAddress host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
 		Connection con = new Connection(mgr);
 		
-		if (sslContext != null) {
+		if (sslProvider != null) {
 			if (isNullOrEmpty(localHost))
-				con.socket = sslContext.createSocket(host, port, connectTimeout);
+				con.socket = sslProvider.createSocket(host, port, connectTimeout);
 			else
-				con.socket = sslContext.createSocket(host, port, InetAddress.getByName(localHost), 0, connectTimeout);
+				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0, connectTimeout);
 		} else {
 			if (isNullOrEmpty(localHost)) {
 				con.socket = new Socket();

@@ -24,6 +24,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public abstract class AbstractProxy implements Rule {
 
@@ -168,7 +169,7 @@ public abstract class AbstractProxy implements Rule {
 	}
 
 	@Override
-	public SSLContext getSslOutboundContext() {
+	public SSLProvider getSslOutboundContext() {
 		return null;
 	}
 	

@@ -23,6 +23,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public abstract class AbstractServiceProxy extends AbstractProxy {
 
@@ -123,7 +124,7 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 	}
 	
 	@Override
-	public SSLContext getSslOutboundContext() {
+	public SSLProvider getSslOutboundContext() {
 		return sslOutboundContext;
 	}
 	

@@ -28,7 +28,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 /**
  * Pools TCP/IP connections, holding them open for a configurable number of milliseconds.
@@ -119,7 +119,7 @@ public class ConnectionManager {
 		}, autoCloseInterval, autoCloseInterval);
 	}
 	
-	public Connection getConnection(InetAddress host, int port, String localHost, SSLContext sslContext, int connectTimeout) throws UnknownHostException, IOException {
+	public Connection getConnection(InetAddress host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
 		
 		log.debug("connection requested for host: " + host + " and port: " + port);
 		
@@ -144,7 +144,7 @@ public class ConnectionManager {
 			}
 		}
 
-		Connection result = Connection.open(host, port, localHost, sslContext, this, connectTimeout);
+		Connection result = Connection.open(host, port, localHost, sslProvider, this, connectTimeout);
 		numberInPool.incrementAndGet();
 		return result;
 	}

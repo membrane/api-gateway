@@ -236,19 +236,27 @@ public class SSLContextCollection implements SSLProvider {
 		};
 	}
 	
+	private SSLContext getSSLContextForHostname(String hostname) {
+		SSLContext sslContext = null;
+		for (int i = 0; i < dnsNames.size(); i++)
+			if (dnsNames.get(i).matcher(hostname).matches()) {
+				sslContext = sslContexts.get(i);
+				break;
+			}
+		if (sslContext == null)
+			sslContext = sslContexts.get(0);
+		return sslContext;
+	}
+	
 	@Override
 	public Socket createSocket(InetAddress host, int port, InetAddress addr,
 			int localPort, int connectTimeout) throws IOException {
-		SSLContext sslContext = sslContexts.get(0); // what is the correct client behavior?
-		// at the moment, for the client side, SSLContextCollection is never constructed
-		return sslContext.createSocket(host, port, addr, localPort, connectTimeout);
+		return getSSLContextForHostname(host.getHostName()).createSocket(host, port, addr, localPort, connectTimeout);
 	}
 	
 	@Override
 	public Socket createSocket(InetAddress host, int port, int connectTimeout)
 			throws IOException {
-		SSLContext sslContext = sslContexts.get(0); // what is the correct client behavior?
-		// at the moment, for the client side, SSLContextCollection is never constructed
-		return sslContext.createSocket(host, port, connectTimeout);
+		return getSSLContextForHostname(host.getHostName()).createSocket(host, port, connectTimeout);
 	}
 }
