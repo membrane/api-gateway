@@ -276,7 +276,8 @@ public class SOAPProxy extends AbstractServiceProxy {
 
 		configure();
 		
-		super.init(router);
+		if (active)
+			super.init(router); // note that <soapProxy wsdl="..."><validator/> could cause exception here when WSDL is available during soapProxy startup, but not during validator startup
 	}
 	
 	private void superInit() throws Exception {
@@ -337,11 +338,13 @@ public class SOAPProxy extends AbstractServiceProxy {
 	public SOAPProxy clone() throws CloneNotSupportedException {
 		SOAPProxy clone = (SOAPProxy) super.clone();
 		clone.configure();
-		try {
-			clone.superInit(); // continue previously terminated init()
-		} catch (Exception e) {
-			log.error(e);
-			active = false;
+		if (clone.active) {
+			try {
+				clone.superInit(); // continue previously terminated init()
+			} catch (Exception e) {
+				log.error(e);
+				clone.active = false;
+			}
 		}
 		return clone;
 	}
