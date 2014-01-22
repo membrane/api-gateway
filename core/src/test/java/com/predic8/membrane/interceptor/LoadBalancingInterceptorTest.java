@@ -255,7 +255,7 @@ public class LoadBalancingInterceptorTest {
 		((ServiceProxy)service1.getRuleManager().getRules().get(0)).getInterceptors().add(0, new AbstractInterceptor(){
 			@Override
 			public Outcome handleRequest(Exchange exc) throws Exception {
-				exc.setResponse(Response.interalServerError().build());
+				exc.setResponse(Response.internalServerError().build());
 				return Outcome.ABORT;
 			}
 		});

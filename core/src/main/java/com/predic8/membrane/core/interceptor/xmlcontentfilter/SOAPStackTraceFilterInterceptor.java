@@ -73,7 +73,7 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE;
 		} catch (Exception e) {
 			LOG.error("soapStackTraceFilter error", e);
-			exc.setResponse(Response.interalServerError("soapStackTraceFilter error. See log for details.").build());
+			exc.setResponse(Response.internalServerError("soapStackTraceFilter error. See log for details.").build());
 			return Outcome.ABORT;
 		}
 	}

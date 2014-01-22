@@ -86,7 +86,7 @@ public class HttpUtil {
 	}
 
 	public static Response createHTMLErrorResponse(String message, String comment) {
-		Response response = Response.interalServerError().build();
+		Response response = Response.internalServerError().build();
 		response.setHeader(createHeaders(MimeType.TEXT_HTML_UTF8));
 		response.setBodyContent(getHTMLErrorBody(message, comment).getBytes(Constants.UTF_8_CHARSET));
 		return response;

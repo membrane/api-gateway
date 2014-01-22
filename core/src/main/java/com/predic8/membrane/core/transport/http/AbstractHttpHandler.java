@@ -105,7 +105,7 @@ public abstract class AbstractHttpHandler  {
 		Response error = null;
 		switch (ContentTypeDetector.detect(exchange.getRequest()).getEffectiveContentType()) {
 		case XML:
-			error = Response.interalServerError().
+			error = Response.internalServerError().
 				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
 				body(("<error><message>" + 
 						StringEscapeUtils.escapeXml(msg) + 
@@ -128,13 +128,13 @@ public abstract class AbstractHttpHandler  {
 	        	log.error("Error generating JSON error response", f);
 	        }
 
-			error = Response.interalServerError().
+			error = Response.internalServerError().
 					header(HttpUtil.createHeaders(MimeType.APPLICATION_JSON_UTF8)).
 					body(baos.toByteArray()).
 					build();
 			break;
 		case SOAP:
-			error = Response.interalServerError().
+			error = Response.internalServerError().
 				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
 				body(HttpUtil.getFaultSOAPBody("Internal Server Error", msg + " " + comment).getBytes(Constants.UTF_8_CHARSET)).
 				build();

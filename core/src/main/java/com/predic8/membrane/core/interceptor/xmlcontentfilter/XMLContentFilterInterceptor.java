@@ -94,7 +94,7 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE;
 		} catch (Exception e) {
 			LOG.error("xmlContentFilter error", e);
-			exc.setResponse(Response.interalServerError("xmlContentFilter error. See log for details.").build());
+			exc.setResponse(Response.internalServerError("xmlContentFilter error. See log for details.").build());
 			return Outcome.ABORT;
 		}
 	}

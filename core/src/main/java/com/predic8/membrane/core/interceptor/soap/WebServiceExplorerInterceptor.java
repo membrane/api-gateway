@@ -138,7 +138,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			return Response.ok(sw.toString()).build();
 		} catch (IllegalArgumentException e) {
 			log.error("", e);
-			return Response.interalServerError().build();
+			return Response.internalServerError().build();
 		}
 	}
 	
@@ -271,7 +271,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 			return Response.ok(sw.toString()).build();
 		} catch (IllegalArgumentException e) {
 			log.error("", e);
-			return Response.interalServerError().build();
+			return Response.internalServerError().build();
 		}
 	}
 

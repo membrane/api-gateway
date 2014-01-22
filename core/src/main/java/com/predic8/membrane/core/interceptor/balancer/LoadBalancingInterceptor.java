@@ -58,7 +58,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			dispatchedNode = getDispatchedNode(exc.getRequest());
 		} catch (EmptyNodeListException e) {
 			log.error("No Node found.");
-			exc.setResponse(Response.interalServerError().build());
+			exc.setResponse(Response.internalServerError().build());
 			return Outcome.ABORT;
 		}
 

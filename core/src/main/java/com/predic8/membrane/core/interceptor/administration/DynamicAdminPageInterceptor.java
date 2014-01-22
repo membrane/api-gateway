@@ -181,7 +181,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		try {
 			router.getRuleManager().addProxyAndOpenPortIfNew(r);
 		} catch (PortOccupiedException e) {
-			return Response.interalServerError(
+			return Response.internalServerError(
 					"The port could not be opened: Either it is occupied or Membrane does " +
 					"not have enough privileges to do so.").build();
 		}

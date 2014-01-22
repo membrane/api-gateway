@@ -119,7 +119,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		String message = e.getMessage();
 		String body = useSoap11 ? HttpUtil.getFaultSOAPBody(title, message) : HttpUtil.getFaultSOAP12Body(title,
 				message);
-		return Response.interalServerError().
+		return Response.internalServerError().
 				header(Header.SERVER, Constants.PRODUCT_NAME + " " + Constants.VERSION).
 				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
 				body(body.getBytes(Constants.UTF_8_CHARSET)).

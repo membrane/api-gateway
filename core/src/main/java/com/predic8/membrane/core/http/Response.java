@@ -201,14 +201,14 @@ public class Response extends Message {
 				body(htmlMessage("Service Unavailable", message));
 	}
 	
-	public static ResponseBuilder interalServerError() {
+	public static ResponseBuilder internalServerError() {
 		return ResponseBuilder.newInstance().
 				status(500, "Internal Server Error").
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body(htmlMessage("Internal Server Error", ""));
 	}
 
-	public static ResponseBuilder interalServerError(String message) {
+	public static ResponseBuilder internalServerError(String message) {
 		return ResponseBuilder.newInstance().
 				status(500, "Internal Server Error").
 				contentType(MimeType.TEXT_HTML_UTF8).
