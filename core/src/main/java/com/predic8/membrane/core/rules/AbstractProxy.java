@@ -119,17 +119,6 @@ public abstract class AbstractProxy implements Rule {
 		this.blockResponse = blockStatus;
 	}
 
-	public String getLocalHost() {
-		return localHost;
-	}
-
-	/**
-	 * The host that Membrane is running on can have more then one ip address. Using the localhost element you can specify which ip address Membrane should use for outgoing connections.
-	 */
-	public void setLocalHost(String localHost) {
-		this.localHost = localHost;
-	}
-
 	private StatisticCollector getStatisticCollectorByStatusCode(int code) {
 		StatisticCollector sc = statusCodes.get(code);
 		if (sc == null) {

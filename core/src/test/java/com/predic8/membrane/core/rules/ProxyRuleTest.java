@@ -56,7 +56,6 @@ public class ProxyRuleTest {
 		
 		assertEquals(8888, rule.getKey().getPort());
 		assertEquals("Rule 1", rule.getName());
-		assertNull(rule.getLocalHost()); 
 		//TODO: see above assertEquals(true, rule.isInboundTLS());
 		assertNull(rule.getSslOutboundContext());
 		

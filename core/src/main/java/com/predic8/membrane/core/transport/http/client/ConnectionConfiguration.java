@@ -21,6 +21,7 @@ public class ConnectionConfiguration {
 	
 	private long keepAliveTimeout = 4000;
 	private int connectTimeout = 10000;
+	private String localAddr;
 	
 	public long getKeepAliveTimeout() {
 		return keepAliveTimeout;
@@ -48,6 +49,19 @@ public class ConnectionConfiguration {
 	@MCAttribute
 	public void setTimeout(int timeout) {
 		this.connectTimeout = timeout;
+	}
+	
+	public String getLocalAddr() {
+		return localAddr;
+	}
+	
+	/**
+	 * @description The local IP address to use for outbound connections.
+	 * @default not set
+	 */
+	@MCAttribute
+	public void setLocalAddr(String localAddr) {
+		this.localAddr = localAddr;
 	}
 
 

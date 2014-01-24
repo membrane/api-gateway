@@ -44,10 +44,6 @@ public interface Rule extends Cloneable {
 	
 	public void setBlockResponse(boolean blockStatus);
 	
-	public String getLocalHost();
-	
-	public void setLocalHost(String localHost);
-	
 	public void collectStatisticsFrom(Exchange exc);
 
 	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes();

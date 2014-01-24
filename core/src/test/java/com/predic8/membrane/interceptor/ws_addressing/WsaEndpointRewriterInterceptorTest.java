@@ -13,25 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.interceptor.ws_addressing;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Body;
-import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.ws_addressing.DecoupledEndpointRegistry;
-import com.predic8.membrane.core.interceptor.ws_addressing.WsaEndpointRewriterInterceptor;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.SOAPProxy;
-import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.rules.ServiceProxyKey;
-import com.predic8.membrane.core.util.MessageUtil;
-import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+
+import java.io.InputStream;
+
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.InputStream;
-
-import static org.junit.Assert.*;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Body;
+import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.ws_addressing.WsaEndpointRewriterInterceptor;
+import com.predic8.membrane.core.util.MessageUtil;
 
 @Ignore
 public class WsaEndpointRewriterInterceptorTest {

@@ -54,6 +54,7 @@ public class HttpClient {
 	private final int timeBetweenTries = 250;
 	private final int maxRetries;
 	private final int connectTimeout;
+	private final String localAddr;
 
 	private final ConnectionManager conMgr;
 	
@@ -67,6 +68,7 @@ public class HttpClient {
 		maxRetries = configuration.getMaxRetries();
 		
 		connectTimeout = configuration.getConnection().getTimeout();
+		localAddr = configuration.getConnection().getLocalAddr();
 		
 		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
 	}
@@ -148,7 +150,7 @@ public class HttpClient {
 					}
 				}
 				if (con == null) {
-					con = conMgr.getConnection(targetAddr, target.port, exc.getRule() == null ? null : exc.getRule().getLocalHost(), getOutboundSSLProvider(exc), connectTimeout);
+					con = conMgr.getConnection(targetAddr, target.port, localAddr, getOutboundSSLProvider(exc), connectTimeout);
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}
