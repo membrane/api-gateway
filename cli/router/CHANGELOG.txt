@@ -1,6 +1,36 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.14 (release candidate) - built against Java 7
+
+* [release] 4.0.13 (release candidate) - build against Java 8 (EA b120)
+
+* [changed behavior] When starting a <soapProxy> and loading the WSDL fails,
+  the subcomponents (for example a <validator>) will not be initialized.
+  Only when the WSDL could finally be downloaded and the <soapProxy> has been
+  initialized, the subcomponents' initialization will follow.
+
+* [feature] added Blueprint support for the Membrane configuration language
+  (defined by http://membrane-soa.org/schemas/proxies-1.xsd ) and replaced
+  the old OSGi extender. See
+  https://github.com/membrane/service-proxy/tree/master/osgi-extender/src/main/xml
+  for sample configurations.
+
+* [removed feature] removed the Karaf Extender: it has become pointless with 
+  Membrane 4.X.
+  Any Spring extender will claim a proxies.xml file for itself (as the
+  4.X proxies.xml format is based on Spring) and this will not work:
+  We are unable correctly define our own Spring namespace handlers in an
+  OSGi environment. 
+
+* [feature] support for server-side SSL with SNI (server name indication) when
+  running with JRE 8 or above: simply declare multiple <serviceProxy>s
+  with the same port (probably 443) using server-side SSL with different
+  <ssl> definitions.
+  When receiving an inbound SSL connection including an SNI header
+  (containing the hostname desired by the client), Membrane will select the
+  certificate based on the certificates' CN (common name) expressions. 
+
 * [changed behavior] when using the <rest2Soap> feature, the HTTP response
   headers are now discarded by default when constructing the REST request.
   To keep them, you have to specify
