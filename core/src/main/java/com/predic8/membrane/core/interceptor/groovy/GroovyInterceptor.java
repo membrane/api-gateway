@@ -1,4 +1,4 @@
-/* Copyright 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2012,2014 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
 
 package com.predic8.membrane.core.interceptor.groovy;
 
-import groovy.lang.Binding;
-import groovy.lang.GroovyShell;
-import groovy.lang.Script;
-
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
+import com.google.common.base.Function;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -31,6 +27,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
 import com.predic8.membrane.core.util.TextUtil;
 
 /**
@@ -38,12 +35,9 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name = "groovy", mixed = true)
 public class GroovyInterceptor extends AbstractInterceptor {
-    private static final Log log = LogFactory.getLog(GroovyInterceptor.class);
-    private static final GroovyShell shell = new GroovyShell();
-    private final int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-
     private String src = "";
-    private ArrayBlockingQueue<Script> scripts;
+
+	private Function<Map<String, Object>, Object> script;
 
     public GroovyInterceptor() {
         name = "Groovy";
@@ -59,58 +53,22 @@ public class GroovyInterceptor extends AbstractInterceptor {
         return runScript(exc);
     }
 
-
-    private void createOneScript(ArrayBlockingQueue<Script> scripts, String src) throws InterruptedException {
-        Script s;
-        synchronized (shell) {
-            s = shell.parse(srcWithImports(src));
-        }
-        scripts.put(s);
-    }
-
     public void init() {
         if (router == null)
             return;
         if ("".equals(src))
             return;
 
-        scripts = new ArrayBlockingQueue<Script>(concurrency);
-        try {
-            createOneScript(scripts, src);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        router.getBackgroundInitializator().execute(new Runnable() {
-            // close over 'scripts' and 'src' since their value might change while we run
-            private ArrayBlockingQueue<Script> scripts = GroovyInterceptor.this.scripts;
-            private String src = GroovyInterceptor.this.src;
-
-            @Override
-            public void run() {
-                try {
-                    for (int i = 1; i < concurrency; i++)
-                        createOneScript(scripts, src);
-                } catch (Exception e) {
-                    log.error("Error creating Groovy Script:", e);
-                }
-            }
-        });
+        script = new GroovyLanguageSupport().compileScript(router, src);
 
     }
 
     private Outcome runScript(Exchange exc) throws InterruptedException {
-        Binding b = new Binding();
-        b.setVariable("exc", exc);
-        Script s = scripts.take();
-        try {
-            s.setBinding(b);
-            return getOutcome(s.run(), exc);
-        } finally {
-            scripts.put(s);
-        }
-    }
-
-    private Outcome getOutcome(Object res, Exchange exc) {
+    	HashMap<String, Object> parameters = new HashMap<String, Object>();
+    	parameters.put("exc", exc);
+    	
+    	Object res = script.apply(parameters);
+    	
         if (res instanceof Outcome) {
             return (Outcome) res;
         }
@@ -124,10 +82,7 @@ public class GroovyInterceptor extends AbstractInterceptor {
             exc.setRequest((Request) res);
         }
         return Outcome.CONTINUE;
-    }
 
-    private String srcWithImports(String src) {
-        return "import static com.predic8.membrane.core.interceptor.Outcome.*\nimport com.predic8.membrane.core.http.*\n" + src;
     }
 
     public String getSrc() {

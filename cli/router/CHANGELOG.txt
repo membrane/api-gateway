@@ -1,6 +1,14 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.15
+
+* [feature] experimental support for <if test="...some groovy expression...">
+
+* [bugfix] close connections once dead ones are removed from the pool
+
+* [changed behavior] updated to new Telekom SMS sending REST API 
+
 * [release] 4.0.14 (release candidate) - built against Java 7
 
 * [release] 4.0.13 (release candidate) - build against Java 8 (EA b120)
