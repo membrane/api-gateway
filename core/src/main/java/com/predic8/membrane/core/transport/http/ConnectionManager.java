@@ -76,6 +76,11 @@ public class ConnectionManager {
 			ConnectionKey other = (ConnectionKey)obj;
 			return host.equals(other.host) && port == other.port;
 		}
+		
+		@Override
+		public String toString() {
+			return host + ":" + port;
+		}
 	}
 	
 	private static class OldConnection {
@@ -173,6 +178,7 @@ public class ConnectionManager {
 	
 	private int closeOldConnections() {
 		ArrayList<ConnectionKey> toRemove = new ArrayList<ConnectionKey>();
+		ArrayList<Connection> toClose = new ArrayList<Connection>();
 		long now = System.currentTimeMillis();
 		log.trace("closing old connections");
 		int closed = 0, remaining;
@@ -190,6 +196,7 @@ public class ConnectionManager {
 							l.set(i, l.remove(l.size() - 1));
 						--i;
 						closed++;
+						toClose.add(o.connection);
 					}
 				}
 				if (l.size() == 0)
@@ -198,6 +205,13 @@ public class ConnectionManager {
 			for (ConnectionKey remove : toRemove)
 				availableConnections.remove(remove);
 			remaining = availableConnections.size();
+		}
+		for (Connection c : toClose) {
+			try {
+				c.close();
+			} catch (Exception e) {
+				// do nothing
+			}
 		}
 		numberInPool.addAndGet(-closed);
 		if (closed != 0)
@@ -211,5 +225,16 @@ public class ConnectionManager {
 	
 	public int getNumberInPool() {
 		return numberInPool.get();
+	}
+	
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Number in pool: " + numberInPool.get() + "\n");
+		synchronized(this) {
+			for (Map.Entry<ConnectionKey, ArrayList<OldConnection>> e : availableConnections.entrySet()) {
+				sb.append("To " + e.getKey() + ": " + e.getValue().size() + "\n");
+			}
+		}
+		return sb.toString();
 	}
 }

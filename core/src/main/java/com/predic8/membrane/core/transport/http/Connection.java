@@ -103,11 +103,11 @@ public class Connection implements MessageObserver {
 	}
 	
 	public boolean isSame(InetAddress host, int port) {
-		return host.equals(socket.getInetAddress()) && port == socket.getPort();
+		return socket != null && host.equals(socket.getInetAddress()) && port == socket.getPort();
 	}
 
 	public void close() throws IOException {
-		if (isClosed())
+		if (socket == null)
 			return;
 		
 		log.debug("Closing HTTP connection LocalPort: " + socket.getLocalPort());
@@ -125,9 +125,15 @@ public class Connection implements MessageObserver {
 			socket.shutdownInput();
 		
 		socket.close();
+		socket = null;
 		
 		if (mgr != null)
 			mgr.releaseConnection(this); // this.isClosed() == true, but mgr keeps track of number of connections
+	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		close();
 	}
 
 	public boolean isClosed() {
