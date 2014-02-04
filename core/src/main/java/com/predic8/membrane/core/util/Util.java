@@ -19,6 +19,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.HashMap;
 
+import javax.mail.internet.ParseException;
 import javax.net.ssl.SSLSocket;
 
 import org.codehaus.jackson.JsonFactory;
@@ -46,11 +47,12 @@ public class Util {
 		}
 	}
 
-	public static HashMap<String, String> parseSimpleJSONResponse(Response g) throws IOException, JsonParseException {
+	public static HashMap<String, String> parseSimpleJSONResponse(Response g) throws IOException, JsonParseException, ParseException {
 		HashMap<String, String> values = new HashMap<String, String>();
 
+		
 		String contentType = g.getHeader().getFirstValue("Content-Type");
-		if (contentType != null && "application/json".equals(contentType)) {
+		if (contentType != null && g.getHeader().getContentTypeObject().match("application/json")) {
 			final JsonFactory jsonFactory = new JsonFactory();
 			final JsonParser jp = jsonFactory.createJsonParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
 			String name = null;
@@ -62,6 +64,8 @@ public class Util {
 				case VALUE_STRING:
 					values.put(name, jp.getText());
 					break;
+				case VALUE_NUMBER_INT:
+					values.put(name, "" + jp.getLongValue());
 				default:
 					break;
 				}
