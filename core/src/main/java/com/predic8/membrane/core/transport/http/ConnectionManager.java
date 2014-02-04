@@ -213,7 +213,6 @@ public class ConnectionManager {
 				// do nothing
 			}
 		}
-		numberInPool.addAndGet(-closed);
 		if (closed != 0)
 			log.debug("closed " + closed + " connections");
 		return remaining;
