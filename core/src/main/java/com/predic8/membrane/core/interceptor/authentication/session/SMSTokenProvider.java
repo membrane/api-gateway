@@ -96,6 +96,10 @@ public abstract class SMSTokenProvider extends AbstractXmlElement implements Tok
 		return prefixText;
 	}
 
+	/**
+	 * @description A string that will be prepended to the token when creating the text message.
+	 * @example "Token: "
+	 */
 	@MCAttribute
 	public void setPrefixText(String prefixText) {
 		this.prefixText = prefixText;
@@ -105,6 +109,9 @@ public abstract class SMSTokenProvider extends AbstractXmlElement implements Tok
 		return simulate;
 	}
 
+	/**
+	 * @description Don't send any text messages, only write tokens to the log.
+	 */
 	@MCAttribute
 	public void setSimulate(boolean simulate) {
 		this.simulate = simulate;
@@ -114,6 +121,9 @@ public abstract class SMSTokenProvider extends AbstractXmlElement implements Tok
 		return normalizeTelephoneNumber;
 	}
 
+	/**
+	 * @description Whether telephone numbers will be normalized (remove any non-digit characters, etc) before using.
+	 */
 	@MCAttribute
 	public void setNormalizeTelephoneNumber(boolean normalizeTelephoneNumber) {
 		this.normalizeTelephoneNumber = normalizeTelephoneNumber;

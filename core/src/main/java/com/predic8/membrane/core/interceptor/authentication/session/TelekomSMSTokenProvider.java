@@ -203,6 +203,9 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return scope;
 	}
 	
+	/**
+	 * @description The <i>scope</i> assigned to you by developergarden.com .
+	 */
 	@Required
 	@MCAttribute
 	public void setScope(String scope) {
@@ -213,6 +216,9 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return clientId;
 	}
 	
+	/**
+	 * @description The <i>clientId</i> assigned to you by developergarden.com .
+	 */
 	@Required
 	@MCAttribute
 	public void setClientId(String clientId) {
@@ -223,6 +229,9 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return clientSecret;
 	}
 	
+	/**
+	 * @description The <i>clientSecret</i> assigned to you by developergarden.com .
+	 */
 	@Required
 	@MCAttribute
 	public void setClientSecret(String clientSecret) {
@@ -233,6 +242,9 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return senderName;
 	}
 	
+	/**
+	 * @description The sender name of the text messages. May only be set, if you are a member of the <i>premium</i> program on developergarded.com .
+	 */
 	@MCAttribute
 	public void setSenderName(String senderName) {
 		this.senderName = senderName;
@@ -242,6 +254,9 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return senderAddress;
 	}
 	
+	/**
+	 * @description The sender address (telephone number) of the text messages. May only be set, if you are a member of the <i>premium</i> program on developergarded.com .
+	 */
 	@MCAttribute
 	public void setSenderAddress(String senderAddress) {
 		this.senderAddress = senderAddress;
@@ -251,6 +266,11 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		return environment;
 	}
 	
+	/**
+	 * @description The <i>environment</i> (program name) you are paying for on developergarden.com .
+	 * @example premium
+	 * @default budget
+	 */
 	@MCAttribute
 	public void setEnvironment(EnvironmentType environment) {
 		this.environment = environment;
