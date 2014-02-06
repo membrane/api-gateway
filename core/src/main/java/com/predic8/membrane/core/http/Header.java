@@ -474,7 +474,7 @@ public class Header {
 		if (getBrowserVersion(ua, "Opera") >= 8)
 			return true;
 		if (getBrowserVersion(ua, "Safari") >= 522)
-			return getBrowserVersion(ua, "Windows") >= 6 || getBrowserVersion(ua, "Mac OS X 10") >= 6;
+			return getBrowserVersion(ua, "Windows NT") >= 6 || getBrowserVersion(ua, "Mac OS X 10") >= 6;
 		if (getBrowserVersion(ua, "MSIE") >= 7 || getBrowserVersion(ua, "Trident") >= 5)
 			return getBrowserVersion(ua, "Windows NT") >= 6;
 		if (getBrowserVersion(ua, "Chrome") > 0) {
