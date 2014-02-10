@@ -84,6 +84,10 @@ public class Header {
     public static final String KEEP_ALIVE = "Keep-Alive";
 
     public static final String SERVER = "Server";
+    
+    public static final String PRAGMA = "Pragma";
+    
+    public static final String CACHE_CONTROL = "Cache-Control";
 
 	// Header field values
 
@@ -502,5 +506,12 @@ public class Header {
 			version = version * 10 + (c - '0');
 		}
 		return version;
+	}
+
+	public void setNoCacheResponseHeaders() {
+	    setValue(EXPIRES, "Tue, 03 Jul 2001 06:00:00 GMT");
+	    setValue(CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
+	    add(CACHE_CONTROL, "post-check=0, pre-check=0");
+	    add(PRAGMA, "no-cache");
 	}
 }

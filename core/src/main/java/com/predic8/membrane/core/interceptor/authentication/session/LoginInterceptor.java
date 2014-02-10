@@ -151,15 +151,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		Header header = exc.getResponse().getHeader();
-		header.removeFields("Cache-Control");
-		header.removeFields("Pragma");
-		header.removeFields("Expires");
-			
-	    header.add("Expires", "Tue, 03 Jul 2001 06:00:00 GMT");
-	    header.add("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
-	    header.add("Cache-Control", "post-check=0, pre-check=0");
-	    header.add("Pragma", "no-cache");
-		
+		header.setNoCacheResponseHeaders();
 		return super.handleResponse(exc);
 	}
 

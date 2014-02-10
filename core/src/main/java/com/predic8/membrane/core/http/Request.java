@@ -232,6 +232,11 @@ public class Request extends Message {
 			req.getHeader().add(headerName, headerValue);
 			return this;
 		}
+		
+		public Builder header(Header headers) {
+			req.setHeader(headers);
+			return this;
+		}
 
 		public Builder body(String body) {
 			req.setBodyContent(body.getBytes());
@@ -241,6 +246,14 @@ public class Request extends Message {
 		public Builder body(byte[] body) {
 			req.setBodyContent(body);
 			return this;
+		}
+
+		public Builder post(String url) {
+			return method(Request.METHOD_POST).url(url);
+		}
+
+		public Builder get(String url) {
+			return method(Request.METHOD_GET).url(url);
 		}
 	}
 	

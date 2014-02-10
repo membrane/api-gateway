@@ -193,8 +193,7 @@ public class LoginDialog {
 	public Outcome redirectToLogin(Exchange exc) throws MalformedURLException, UnsupportedEncodingException {
 		exc.setResponse(Response.
 				redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), "UTF-8"), false).
-				header("Pragma", "no-cache").
-				header("Cache-Control", "no-cache").
+				dontCache().
 				body("").
 				build());
 		return Outcome.RETURN;

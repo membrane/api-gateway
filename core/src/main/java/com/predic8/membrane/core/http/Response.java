@@ -110,6 +110,10 @@ public class Response extends Message {
 			return new ResponseBuilder();
 		}
 
+		public ResponseBuilder dontCache() {
+			res.getHeader().setNoCacheResponseHeaders();
+			return this;		
+		}
 	}
 
 	public static ResponseBuilder ok(String msg) throws Exception {
