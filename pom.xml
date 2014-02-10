@@ -296,7 +296,12 @@
 				<artifactId>google-http-client-jackson</artifactId>
 				<version>1.15.0-rc</version>
 			</dependency>
-			
+			<dependency>
+				<groupId>javax.mail</groupId>
+				<artifactId>mail</artifactId>
+				<version>1.4.7</version>
+			</dependency>
+            			
 			<dependency>
 				<groupId>org.apache.aries.blueprint</groupId>
 				<artifactId>blueprint-parser</artifactId>

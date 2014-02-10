@@ -14,56 +14,27 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.security.InvalidParameterException;
-import java.security.SecureRandom;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
-import javax.xml.stream.XMLStreamReader;
-
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.core.config.AbstractXmlElement;
 
-public abstract class SMSTokenProvider extends AbstractXmlElement implements TokenProvider {
+public abstract class SMSTokenProvider extends NumericTokenProvider {
 	private static Log log = LogFactory.getLog(SMSTokenProvider.class.getName());
 
-	private final SecureRandom r = new SecureRandom();
 	protected String prefixText = "Token: ";
 	private boolean simulate;
 	private boolean normalizeTelephoneNumber;
 	
 	@Override
-	protected void parseAttributes(XMLStreamReader token) throws Exception {
-		prefixText = StringUtils.defaultIfBlank(token.getAttributeValue("", "prefixText"), "Token: ");
-		simulate = token.getAttributeValue("", "simulate") != null;
-		normalizeTelephoneNumber = token.getAttributeValue("", "normalizeTelephoneNumber") != null;
-	}
-
-	
-	private long hash(Map<String, String> userAttributes) {
-		long hash = 0;
-		for (Map.Entry<String, String> entry : userAttributes.entrySet()) {
-			hash += entry.getKey().hashCode();
-			hash += 3 * entry.getValue().hashCode();
-		}
-		return hash;
-	}
-	
-	@Override
 	public void requestToken(Map<String, String> userAttributes) {
-		int t = (int) hash(userAttributes);
-		synchronized(r) {
-			t = t ^ r.nextInt();
-		}
-		t = Math.abs(t % 1000000);
-		String token = String.format("%06d", t);		
+		String token = generateToken(userAttributes);
 		String recipientNumber;
+
 		synchronized (userAttributes) {
 			recipientNumber = userAttributes.get("sms");
-			userAttributes.put("token", token);
 		}
 		
 		if (recipientNumber == null)
@@ -81,16 +52,6 @@ public abstract class SMSTokenProvider extends AbstractXmlElement implements Tok
 	}
 	
 	protected abstract void sendSMS(String text, String recipientNumber);
-
-	@Override
-	public void verifyToken(Map<String, String> userAttributes, String token) {
-		String t1;
-		synchronized (userAttributes) {
-			t1 = userAttributes.get("token");
-		}
-		if (t1 == null || !t1.equals(token))
-			throw new NoSuchElementException();
-	}
 
 	public String getPrefixText() {
 		return prefixText;
