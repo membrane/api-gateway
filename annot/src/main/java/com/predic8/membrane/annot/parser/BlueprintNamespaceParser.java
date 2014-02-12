@@ -18,6 +18,7 @@ import java.util.HashMap;
 import org.apache.aries.blueprint.ParserContext;
 import org.osgi.service.blueprint.reflect.Metadata;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import com.predic8.membrane.annot.MCMain;
 
@@ -25,8 +26,12 @@ import com.predic8.membrane.annot.MCMain;
  * Base class for auto-generated blueprint parsers for {@link MCMain}s (=XML namespaces).
  */
 public abstract class BlueprintNamespaceParser implements BlueprintParser {
+	
+	public static final String KEY_PARENT_CLASS_NAME = "parentClass";
 
 	HashMap<String, BlueprintParser> parsers = new HashMap<String, BlueprintParser>();
+	HashMap<String, HashMap<String, BlueprintParser>> localParsers = new HashMap<String, HashMap<String, BlueprintParser>>();
+
 	
 	public BlueprintNamespaceParser() {
 		init();
@@ -39,12 +44,31 @@ public abstract class BlueprintNamespaceParser implements BlueprintParser {
 	}
 
 	protected void registerLocalBeanDefinitionParser(String parentBeanClassName, String elementName, BlueprintParser parser) {
-		// TODO
+		HashMap<String, BlueprintParser> lp = localParsers.get(parentBeanClassName);
+		if (lp == null) {
+			lp = new HashMap<String, BlueprintParser>();
+			localParsers.put(parentBeanClassName, lp);
+		}
+		lp.put(elementName, parser);
 	}
 	
 	@Override
 	public Metadata parse(BlueprintParser globalParser, Element element,
 			ParserContext context) {
+		Node node = element.getParentNode();
+		if (node != null) {
+			String parentClass = (String) node.getUserData(KEY_PARENT_CLASS_NAME);
+			if (parentClass != null) {
+				HashMap<String, BlueprintParser> parentLocalParsers = localParsers.get(parentClass);
+				if (parentLocalParsers != null) {
+					BlueprintParser parser = parentLocalParsers.get(element.getNodeName());
+					if (parser != null) {
+						return parser.parse(globalParser, element, context);
+					}
+				}
+			}
+		}
+		
 		BlueprintParser parser = parsers.get(element.getNodeName());
 		if (parser == null)
 			throw new RuntimeException("No parser declared for element <" + element.getNodeName() + ">.");

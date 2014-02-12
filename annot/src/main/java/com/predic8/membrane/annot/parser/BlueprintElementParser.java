@@ -92,6 +92,8 @@ public abstract class BlueprintElementParser implements BlueprintParser {
 
 	protected void parseChildren(Element element, ParserContext context,
 			MutableBeanMetadata mcm, BlueprintParser globalParser) {
+		element.setUserData(BlueprintNamespaceParser.KEY_PARENT_CLASS_NAME, mcm.getRuntimeClass().getName(), null);
+		
 		NodeList nl = element.getChildNodes();
 		for (int i = 0; i < nl.getLength(); i++) {
 			Node node = nl.item(i);
@@ -201,16 +203,13 @@ public abstract class BlueprintElementParser implements BlueprintParser {
 	}
 
 	protected void setProperty(ParserContext context, MutableBeanMetadata mcm, String springPropertyName, Object value) {
-		MutablePassThroughMetadata vm = context.createMetadata(MutablePassThroughMetadata.class);
-		vm.setObject(value);
-		mcm.addProperty(springPropertyName, vm);
-		
-		/*
-		if (value instanceof RuntimeBeanNameReference)
-			builder.addPropertyReference(propertyName, ((RuntimeBeanNameReference)value).getBeanName());
-		else
-			builder.addPropertyValue(propertyName, value);
-			*/
+		if (value instanceof BeanMetadata) {
+			mcm.addProperty(springPropertyName, (Metadata) value);
+		} else {
+			MutablePassThroughMetadata vm = context.createMetadata(MutablePassThroughMetadata.class);
+			vm.setObject(value);
+			mcm.addProperty(springPropertyName, vm);
+		}
 	}
 
 	protected void setPropertyReference(ParserContext context, String springPropertyName, String beanId,
