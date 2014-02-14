@@ -13,9 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
-import com.predic8.membrane.core.exchange.Exchange;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -23,9 +23,11 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Writer;
+
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+import com.predic8.membrane.core.exchange.Exchange;
 
 public class DecoupledEndpointRewriter {
     private static final String ADDRESSING_URI = "http://www.w3.org/2005/08/addressing";
@@ -41,20 +43,20 @@ public class DecoupledEndpointRewriter {
         this.registry = registry;
     }
 
-    public void rewriteToElement(InputStream reader, Writer writer, Exchange exc) throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public void rewriteToElement(InputStream reader, OutputStream output, Exchange exc) throws ParserConfigurationException, IOException, SAXException, TransformerException {
         Document doc = getDocument(reader);
         String uri = getRelatesToValue(doc);
         setTarget(exc, uri);
         setToElement(doc, uri);
-        writeDocument(writer, doc);
+        writeDocument(output, doc);
     }
 
     private void setTarget(Exchange exc, String uri) {
         exc.getDestinations().set(0, registry.lookup(uri));
     }
 
-    private void writeDocument(Writer writer, Document doc) throws TransformerException {
-        transformerFactory.newTransformer().transform(new DOMSource(doc), new StreamResult(writer));
+    private void writeDocument(OutputStream output, Document doc) throws TransformerException {
+        transformerFactory.newTransformer().transform(new DOMSource(doc), new StreamResult(output));
     }
 
     private Document getDocument(InputStream reader) throws SAXException, IOException, ParserConfigurationException {

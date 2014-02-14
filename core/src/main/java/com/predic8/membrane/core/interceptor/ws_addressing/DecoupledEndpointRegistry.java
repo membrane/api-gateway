@@ -19,16 +19,16 @@ import java.util.Map;
 public class DecoupledEndpointRegistry {
     private final Map<String, String> registry = new HashMap<String, String>();
 
-    public void register(String id, String url) {
+    public synchronized void register(String id, String url) {
         registry.put(id, url);
     }
 
-    public String lookup(String id) {
+    public synchronized String lookup(String id) {
         return registry.get(id);
     }
 
     @Override
-    public String toString() {
+    public synchronized String toString() {
         return "DecoupledEndpointRegistry: " + registry.toString();
     }
 }

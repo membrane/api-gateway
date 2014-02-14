@@ -13,15 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.ws_addressing;
 
-import com.predic8.membrane.core.exchange.Exchange;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.*;
+import javax.xml.stream.XMLEventFactory;
+import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLEventWriter;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
-import java.io.Reader;
-import java.io.Writer;
+
+import com.predic8.membrane.core.exchange.Exchange;
 
 
 public class WsaEndpointRewriter {
@@ -35,7 +41,7 @@ public class WsaEndpointRewriter {
         this.registry = registry;
     }
 
-    public void rewriteEndpoint(Reader reader, Writer writer, int port, Exchange exc) throws XMLStreamException {
+    public void rewriteEndpoint(InputStream reader, OutputStream writer, int port, Exchange exc) throws XMLStreamException {
         XMLEventReader parser = inputFactory.createXMLEventReader(reader);
         XMLEventWriter eventWriter = XMLOutputFactory.newInstance().createXMLEventWriter(writer);
 
