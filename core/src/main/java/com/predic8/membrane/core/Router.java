@@ -202,7 +202,8 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	 */
 	public void shutdown() throws IOException {
 		backgroundInitializator.shutdown();
-		getTransport().closeAll();
+		if (transport != null)
+			transport.closeAll();
 	}
 
 	/**
@@ -243,7 +244,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	public void start() {
 		log.info("Starting " + Constants.PRODUCT_NAME + " " + Constants.VERSION);
 		try {
-			if (transport == null && beanFactory.getBeansOfType(Transport.class).values().size() > 0)
+			if (transport == null && beanFactory != null && beanFactory.getBeansOfType(Transport.class).values().size() > 0)
 				throw new RuntimeException("unclaimed transport detected. - please migrate to 4.0");
 			if (exchangeStore == null)
 				exchangeStore = new LimitedMemoryExchangeStore();
@@ -305,31 +306,35 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		reinitializator.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				boolean stillFailing = false;
-				ArrayList<Rule> inactive = getInactiveRules();
-				if (inactive.size() > 0) {
-					log.info("Trying to activate all inactive rules.");
-					for (Rule rule : inactive) {
-						try {
-							Rule newRule = ((SOAPProxy) rule).clone();
-							if (!newRule.isActive()) {
-								log.info("New rule is still not active.");
-								stillFailing = true;
-							}
-							getRuleManager().replaceRule(rule, newRule);
-						} catch (CloneNotSupportedException e) {
-							e.printStackTrace();
-						}
-					}
-				}
-				if (stillFailing)
-					log.info("There are still inactive rules.");
-				else {
-					stopAutoReinitializator();
-					log.info("All rules have been initialized.");
-				}
+				tryReinitialization();
 			}
 		}, retryInitInterval, retryInitInterval);
+	}
+	
+	public void tryReinitialization() {
+		boolean stillFailing = false;
+		ArrayList<Rule> inactive = getInactiveRules();
+		if (inactive.size() > 0) {
+			log.info("Trying to activate all inactive rules.");
+			for (Rule rule : inactive) {
+				try {
+					Rule newRule = ((SOAPProxy) rule).clone();
+					if (!newRule.isActive()) {
+						log.info("New rule is still not active.");
+						stillFailing = true;
+					}
+					getRuleManager().replaceRule(rule, newRule);
+				} catch (CloneNotSupportedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		if (stillFailing)
+			log.info("There are still inactive rules.");
+		else {
+			stopAutoReinitializator();
+			log.info("All rules have been initialized.");
+		}
 	}
 
 	private void stopAutoReinitializator() {
