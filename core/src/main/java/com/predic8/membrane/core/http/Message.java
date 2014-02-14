@@ -75,6 +75,17 @@ public abstract class Message {
 		return body;
 	}
 	
+	/**
+	 * <p>Probably you want to use {@link #getBodyAsStreamDecoded()} instead:</p>
+	 * 
+	 * <p>Transfer-Encodings (e.g. chunking) have been unapplied, but Content-Encodings (e.g. gzip) have <b>not</b>.</p>
+	 * 
+	 * <p>Returns the body as a stream.</p>
+	 * 
+	 * <p>Supports streaming: The HTTP message does not have to be completely received yet for this method to return.</p>
+	 * 
+	 * @see AbstractBody#getContentAsStream()
+	 */
 	public InputStream getBodyAsStream() {
 		try {
 			return body.getContentAsStream();
@@ -86,6 +97,13 @@ public abstract class Message {
 	
 	private static XOPReconstitutor xopr = new com.predic8.membrane.core.multipart.XOPReconstitutor();
 	
+	/**
+	 * <p>Returns the logical body content.</p>
+	 * 
+	 * <p>Any Transfer-Encodings (e.g. chunking) and/or Content-Encodings (e.g. gzip) have been unapplied.</p>
+	 * 
+	 * <p>Supports streaming: The HTTP message does not have to be completely received yet for this method to return.</p>
+	 */
 	public InputStream getBodyAsStreamDecoded() {
 		// TODO: this logic should be split up into configurable decoding modules
 		// TODO: decoding result should be cached
@@ -101,7 +119,15 @@ public abstract class Message {
 	}
 	
 	/**
-	 * As this method has bad performance, it should not be used in any critical component. 
+	 * <p>As this method has bad performance, it should <b>not</b> be used in any critical component.
+	 * (Use {@link #getBodyAsStreamDecoded()} instead.)</p>
+	 * 
+	 * <p>Allocates a new {@link String} object for the whole body (potentially performing charset conversion).</p>
+	 * 
+	 * <p>Blocks until the body has been fully received.</p>
+	 * 
+	 * <p>(... and more bad internal performance)</p> 
+	 * 
 	 * @return the message's body as a Java String.
 	 */
 	public String getBodyAsStringDecoded() {
@@ -112,10 +138,18 @@ public abstract class Message {
 		}
 	}
 
+	/**
+	 * Sets the body.
+	 *
+	 * Does <b>NOT</b> adjust the header fields (<tt>Content-Length</tt> etc.): Use {@link #setBodyContent(byte[])} instead.
+	 */
 	public void setBody(AbstractBody b) {
 		body = b;
 	}
 
+	/**
+	 * Sets the body. Also adjusts the header fields (<tt>Content-Length</tt>, <tt>Content-Encoding</tt>, <tt>Transfer-Encoding</tt>).
+	 */
 	public void setBodyContent(byte[] content) {
 		body = new Body(content);
 		header.removeFields(Header.CONTENT_ENCODING);
