@@ -1,6 +1,30 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [changed behavior] Set <router retryInit="true">, if you want the router
+  to start even though some routes may not have been initialized yet (for
+  example, because a WSDL could not be downloaded). These rules will be
+  inactive (=not used for routing decissions).
+  <router retryInitInterval=""> may be set to automatically try regular
+  reinitialization. Also the admin trigger this through the <adminConsole>.
+  
+  This now applies to proxy, serviceProxy and soapProxy, if retryInit="true"
+  is set.
+  
+  Since 4.0.13 until before 4.0.16, soapProxy exhibited this behavior by
+  default, without any option to turn it off.
+
+* [bugfix] fixed blueprint local bean parsing. Therefore, the OSGi deployment
+  tutorial on
+  http://membrane-soa.org/service-proxy-doc/4.0/deployment/osgi/servicemix-1.htm
+  Part I (proxies.xml deployment in Karaf 3.0) now works again. Part II
+  still needs some work
+
+* [feature] implemented an <emailTokenProvider> used to send numeric tokens
+  for <login> feature via email
+
+* [enhancement] improved user agent recognition
+
 * [release] 4.0.15
 
 * [feature] experimental support for <if test="...some groovy expression...">
