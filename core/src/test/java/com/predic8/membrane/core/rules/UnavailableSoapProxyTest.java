@@ -18,18 +18,28 @@ public class UnavailableSoapProxyTest {
 
 	private Router r, r2;
 	private SOAPProxy sp;
+	private ServiceProxy sp3;
 
 	@Before
 	public void setup() {
-		sp = new SOAPProxy();
-		sp.setPort(2000);
-		sp.setWsdl("http://localhost:2001/axis2/services/BLZService?wsdl");
 		r = new Router();
 		HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 		httpClientConfig.setMaxRetries(1);
 		r.setHttpClientConfig(httpClientConfig);
 		r.setHotDeploy(false);
-		r.getRules().add(sp);
+		r.setRetryInit(true);
+
+		sp = new SOAPProxy();
+		sp.setPort(2000);
+		sp.setWsdl("http://localhost:2001/axis2/services/BLZService?wsdl");
+
+		sp3 = new ServiceProxy();
+		sp3.setPort(2000);
+		sp3.setTarget(new AbstractServiceProxy.Target("localhost", 2001));
+		ValidatorInterceptor v = new ValidatorInterceptor();
+		v.setWsdl("http://localhost:2001/axis2/services/BLZService?wsdl");
+		sp3.getInterceptors().add(v);
+
 		
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
@@ -38,16 +48,22 @@ public class UnavailableSoapProxyTest {
 		r2.setHotDeploy(false);
 		r2.getRules().add(sp2);
 		// r2 will be started during the test
+
 	}
 
-	@Test
-	public void doit() {
+	private void test() {
 		r.start();
 		
 		List<Rule> rules = r.getRuleManager().getRules();
 		assertEquals(1, rules.size());
 		assertFalse(rules.get(0).isActive());
-		
+
+		r.tryReinitialization();
+
+		rules = r.getRuleManager().getRules();
+		assertEquals(1, rules.size());
+		assertFalse(rules.get(0).isActive());
+
 		r2.start();
 		r.tryReinitialization();
 
@@ -55,11 +71,27 @@ public class UnavailableSoapProxyTest {
 		assertEquals(1, rules.size());
 		assertTrue(rules.get(0).isActive());
 	}
+	
+	@Test
+	public void checkWSDLDownloadFailureInSoapProxy() {
+		r.getRules().add(sp);
+
+		test();
+	}
 
 	@Test
-	public void doit2() {
+	public void checkWSDLDownloadFailureInSoapProxyAndValidator() {
 		sp.getInterceptors().add(new ValidatorInterceptor());
-		doit();
+		r.getRules().add(sp);
+
+		test();
+	}
+	
+	@Test
+	public void checkWSDLDownloadFailureInValidatorOfServiceProxy() {
+		r.getRules().add(sp3);
+		
+		test();
 	}
 	
 	@After

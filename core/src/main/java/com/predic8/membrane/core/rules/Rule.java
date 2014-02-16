@@ -62,4 +62,5 @@ public interface Rule extends Cloneable {
 
 	public String getErrorState();
 
+	public Rule clone() throws CloneNotSupportedException;
 }

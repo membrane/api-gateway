@@ -66,8 +66,7 @@ public class ProxyRule extends AbstractProxy {
 	}
 	
 	@Override
-	public AbstractProxy clone() throws CloneNotSupportedException {
-		throw new CloneNotSupportedException();
+	public void init() throws Exception {
+		// do nothing
 	}
-
 }

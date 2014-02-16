@@ -17,6 +17,11 @@ package com.predic8.membrane.core.rules;
 public class NullRule extends AbstractProxy {
 
 	@Override
+	public void init() throws Exception {
+		// do nothing
+	}
+	
+	@Override
 	protected AbstractProxy getNewInstance() {
 		return new NullRule();
 	}

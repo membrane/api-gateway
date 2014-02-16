@@ -19,7 +19,6 @@ import org.apache.commons.lang.StringUtils;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -42,6 +41,17 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 		private boolean adjustHostHeader = true;
 		
 		private SSLParser sslParser;
+		
+		public Target() {}
+		
+		public Target(String host) {
+			setHost(host);
+		}
+		
+		public Target(String host, int port) {
+			setHost(host);
+			setPort(port);
+		}
 		
 		public String getHost() {
 			return host;
@@ -150,8 +160,7 @@ public abstract class AbstractServiceProxy extends AbstractProxy {
 	}
 
 	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
+	public void init() throws Exception {
 		if (sslInboundParser != null)
 			setSslInboundContext(new SSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
 		if (target.getSslParser() != null)

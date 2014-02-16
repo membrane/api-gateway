@@ -47,7 +47,6 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
@@ -104,6 +103,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	private boolean running;
 
 	private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
+	private boolean retryInit;
 	private Timer reinitializator;
 
 	public Router() {
@@ -318,7 +318,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 			log.info("Trying to activate all inactive rules.");
 			for (Rule rule : inactive) {
 				try {
-					Rule newRule = ((SOAPProxy) rule).clone();
+					Rule newRule = rule.clone();
 					if (!newRule.isActive()) {
 						log.info("New rule is still not active.");
 						stillFailing = true;
@@ -419,4 +419,31 @@ public class Router implements Lifecycle, ApplicationContextAware {
     public ApplicationContext getBeanFactory() {
         return beanFactory;
     }
+    
+    public boolean isRetryInit() {
+		return retryInit;
+	}
+    
+    /**
+     * @explanation 
+     * <p>Whether the router should continue startup, if initialization of a rule (proxy, serviceProxy or soapProxy) failed
+     * (for example, when a WSDL a component depends on could not be downloaded).</p>
+     * <p>If false, the router will exit with code -1 just after startup, when the initialization of a rule failed.</p>
+     * <p>If true, the router will continue startup, and all rules which could not be initialized will be <i>inactive</i> (=not
+     * {@link Rule#isActive()}).</p>
+     * <h3>Inactive rules</h3>
+     * <p>Inactive rules will simply be ignored for routing decissions for incoming requests.
+     * This means that requests for inactive rules might be routed using different routes or result in a "400 Bad Request"
+     * when no active route could be matched to the request.</p>
+     * <p>Once rules become active due to reinitialization, they are considered in future routing decissions.</p>
+     * <h3>Reinitialization</h3>
+     * <p>Inactive rules may be <i>reinitialized</i> and, if reinitialization succeeds, become active.</p>
+     * <p>By default, reinitialization is attempted at regular intervals using a timer (see {@link #setRetryInitInterval(int)}).</p>
+     * <p>Additionally, using the {@link AdminConsoleInterceptor}, an admin may trigger reinitialization of inactive rules at any time.</p>
+     * @default false
+     */
+    @MCAttribute
+    public void setRetryInit(boolean retryInit) {
+		this.retryInit = retryInit;
+	}
 }

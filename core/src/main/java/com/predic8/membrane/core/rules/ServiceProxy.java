@@ -80,9 +80,4 @@ public class ServiceProxy extends AbstractServiceProxy {
 		this.target.setUrl(targetURL);
 	}
 
-	@Override
-	public AbstractProxy clone() throws CloneNotSupportedException {
-		throw new CloneNotSupportedException();
-	}
-
 }

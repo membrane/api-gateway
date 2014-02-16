@@ -73,9 +73,6 @@ public class SOAPProxy extends AbstractServiceProxy {
 	
 	// set during initialization
 	protected ResolverMap resolverMap;
-	protected Router router;
-	protected boolean active;
-	protected String error;
 	
 	public SOAPProxy() {
 		this.key = new ServiceProxyKey(80);
@@ -89,7 +86,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 	/**
 	 * @return error or null for success
 	 */
-	private String parseWSDL() {
+	private void parseWSDL() throws Exception {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
 		try {
@@ -134,7 +131,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 			} catch (MalformedURLException e) {
 				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
 			}
-			return null;
+			return;
 		} catch (Exception e) {
 			Throwable f = e;
 			while (f.getCause() != null && ! (f instanceof ResourceRetrievalException))
@@ -142,13 +139,13 @@ public class SOAPProxy extends AbstractServiceProxy {
 			if (f instanceof ResourceRetrievalException) {
 				ResourceRetrievalException rre = (ResourceRetrievalException) f;
 				if (rre.getStatus() >= 400)
-					return f.getMessage();
+					throw rre;
 				Throwable cause = rre.getCause();
 				if (cause != null) {
 					if (cause instanceof UnknownHostException)
-						return cause.getMessage();
+						throw (UnknownHostException) cause;
 					else if (cause instanceof ConnectException)
-						return cause.getMessage();				
+						throw (ConnectException) cause;
 				}
 			}
 			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
@@ -192,14 +189,9 @@ public class SOAPProxy extends AbstractServiceProxy {
 
 	private int automaticallyAddedInterceptorCount;
 
-	public void configure() {
+	public void configure() throws Exception {
 
-		error = parseWSDL();
-		active = error == null;
-		if (!active) {
-			log.error("Continuing with disabled soapProxy: " + error);
-			return;
-		}
+		parseWSDL();
 		
 		// remove previously added interceptors
 		for(; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
@@ -260,8 +252,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 	}
 	
 	@Override
-	public void init(Router router) throws Exception {
-		this.router = router;
+	public void init() throws Exception {
 		if (wsdl == null)
 			return;
 		
@@ -273,15 +264,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 			resolverMap.addSchemaResolver(httpSR);
 		}
 
-
 		configure();
-		
-		if (active)
-			super.init(router); // note that <soapProxy wsdl="..."><validator/> could cause exception here when WSDL is available during soapProxy startup, but not during validator startup
-	}
-	
-	private void superInit() throws Exception {
-		super.init(router);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -324,28 +307,4 @@ public class SOAPProxy extends AbstractServiceProxy {
 		this.httpClientConfig = httpClientConfig; 
 	}
 
-	@Override
-	public boolean isActive() {
-		return active;
-	}
-	
-	@Override
-	public String getErrorState() {
-		return error;
-	}
-	
-	@Override
-	public SOAPProxy clone() throws CloneNotSupportedException {
-		SOAPProxy clone = (SOAPProxy) super.clone();
-		clone.configure();
-		if (clone.active) {
-			try {
-				clone.superInit(); // continue previously terminated init()
-			} catch (Exception e) {
-				log.error(e);
-				clone.active = false;
-			}
-		}
-		return clone;
-	}
 }

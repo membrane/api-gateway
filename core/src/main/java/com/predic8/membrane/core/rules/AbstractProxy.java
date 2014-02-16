@@ -18,6 +18,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Router;
@@ -27,6 +30,7 @@ import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public abstract class AbstractProxy implements Rule {
+	private static final Log log = LogFactory.getLog(AbstractProxy.class.getName());
 
 	protected String name = "";
 
@@ -47,6 +51,11 @@ public abstract class AbstractProxy implements Rule {
 	 */
 	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();
 
+	private boolean active;
+	private String error;
+
+	protected Router router;
+	
 	public AbstractProxy() {
 	}
 
@@ -165,14 +174,23 @@ public abstract class AbstractProxy implements Rule {
 	/**
 	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
 	 */
-	public void init(Router router) throws Exception {
-		init();
-		for (Interceptor i : interceptors)
-			i.init(router);
+	public final void init(Router router) throws Exception {
+		this.router = router;
+		try {
+			init();
+			for (Interceptor i : interceptors)
+				i.init(router);
+			active = true;
+		} catch (Exception e) {
+			if (!router.isRetryInit())
+				throw e;
+			log.error(e);
+			active = false;
+			error = e.getMessage();
+		}
 	}
 	
-	public void init() throws Exception {
-	}
+	public abstract void init() throws Exception;
 	
 	public boolean isTargetAdjustHostHeader() {
 		return false;
@@ -180,11 +198,23 @@ public abstract class AbstractProxy implements Rule {
 	
 	@Override
 	public boolean isActive() {
-		return true;
+		return active;
 	}
 	
 	@Override
 	public String getErrorState() {
-		return null;
+		return error;
 	}
+	
+	@Override
+	public AbstractProxy clone() throws CloneNotSupportedException {
+		AbstractProxy clone = (AbstractProxy) super.clone();
+		try {
+			clone.init(router);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		return clone;
+	}
+
 }

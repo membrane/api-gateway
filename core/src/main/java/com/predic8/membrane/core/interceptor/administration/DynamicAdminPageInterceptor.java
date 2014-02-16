@@ -48,7 +48,6 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.ProxyRuleKey;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.SOAPProxy;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.PortOccupiedException;
@@ -222,7 +221,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			return createReadOnlyErrorResponse();
 		
 		Rule rule = RuleUtil.findRuleByIdentifier(router, params.get("name"));
-		Rule newRule = ((SOAPProxy) rule).clone();
+		Rule newRule = rule.clone();
 		router.getRuleManager().replaceRule(rule, newRule);
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}

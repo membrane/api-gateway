@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -37,7 +36,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.rules.AbstractProxy;
+import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -160,21 +159,10 @@ public class GoogleAuthorizationService extends AuthorizationService {
 										+ ".apps.googleusercontent.com&client_secret="
 										+ clientSecret + "&" + "redirect_uri=" + publicURL
 										+ "oauth2callback&grant_type=authorization_code").buildExchange();
-				e.setRule(new AbstractProxy() {
-					
-					@Override
-					protected AbstractProxy getNewInstance() {
-						throw new NotImplementedException();
-					}
-					
+				e.setRule(new NullRule() {
 					@Override
 					public SSLContext getSslOutboundContext() {
 						return new SSLContext(new SSLParser(), null, null);
-					}
-					
-					@Override
-					public boolean isTargetAdjustHostHeader() {
-						return true;
 					}
 				});
 				
