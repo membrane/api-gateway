@@ -86,6 +86,11 @@ public class Request extends Message {
 		this.method = method;
 	}
 
+	/**
+	 * @return the "Request-URI" as sent by the client in the first line of the HTTP request (quoting from <a
+	 *         href="https://tools.ietf.org/html/rfc2616#page-36">RFC 2616</a>: Request-URI = "*" | absoluteURI |
+	 *         abs_path | authority )
+	 */
 	public String getUri() {
 		return uri;
 	}

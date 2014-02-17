@@ -126,6 +126,13 @@ public class Exchange extends AbstractExchange {
 		rule.collectStatisticsFrom(this);
 	}
 
+	/**
+	 * Returns the relative original URI.
+	 * 
+	 * "original" meaning "as recieved by Membrane's transport".
+	 * 
+	 * To be used, for example, when generating self-referring web pages.
+	 */
 	public String getRequestURI() {
 		if (HttpUtil.isAbsoluteURI(getOriginalRequestUri())) {
 			try {
