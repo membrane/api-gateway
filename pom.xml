@@ -9,7 +9,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.membrane-soa.service-proxy</groupId>
 	<artifactId>service-proxy-parent</artifactId>
-	<version>4.0.16-SNAPSHOT</version>
+	<version>4.0.17-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<developers>
@@ -488,7 +488,7 @@
 										</goals>
 									</pluginExecutionFilter>
 									<action>
-										<ignore />
+										<ignore/>
 									</action>
 								</pluginExecution>
 							</pluginExecutions>

@@ -1,6 +1,8 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.16
+
 * [changed behavior] Set <router retryInit="true">, if you want the router
   to start even though some routes may not have been initialized yet (for
   example, because a WSDL could not be downloaded). These rules will be
@@ -23,7 +25,7 @@ Membrane Service Proxy Change Log
 * [feature] implemented an <emailTokenProvider> used to send numeric tokens
   for <login> feature via email
 
-* [enhancement] improved user agent recognition
+* [enhancement] improved user agent recognition for Server Name Indication
 
 * [release] 4.0.15
 
