@@ -40,13 +40,16 @@ public class RuleManagerTest {
 	@Before
 	public void setUp() throws Exception{
 		manager = new RuleManager();
-		manager.setRouter(new MockRouter());
+		MockRouter router = new MockRouter();
+		manager.setRouter(router);
 		proxy3013 = new ProxyRule(new ProxyRuleKey(3013));
 		manager.addProxyAndOpenPortIfNew(proxy3013);
 		
 		forwardBlz = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3014), "thomas-bayer.com", 80);
+		forwardBlz.init(router);
 		
 		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3015), "thomas-bayer.com", 80);
+		forwardBlzPOST.init(router);
 		
 		manager.addProxyAndOpenPortIfNew(forwardBlz);
 		manager.addProxyAndOpenPortIfNew(forwardBlzPOST);
