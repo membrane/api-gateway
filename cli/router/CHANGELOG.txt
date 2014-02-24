@@ -1,6 +1,18 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [feature] a <login> interceptor's session can now be accessed by other
+  Membrane components using exchange.getProperty("login-session"), if "login"
+  is the ID of the <login> interceptor (which is the default).
+  In combination with the last feature, this gives access to the user's
+  password using
+    ((Session)exchange.getProperty("login-session").
+        getUserAttributes().get("password") .
+  This can, for example used for further backend authentication.
+
+* [feature] You can use <login exposeUserCredentialsToSession="true" ... />
+  to add a user's username and password as userAttributes to the session.
+
 * [release] 4.0.16
 
 * [changed behavior] Set <router retryInit="true">, if you want the router
