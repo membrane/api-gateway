@@ -44,6 +44,7 @@ public class LoginDialog {
 	private static Log log = LogFactory.getLog(LoginDialog.class.getName());
 
 	private String path;
+	private boolean exposeUserCredentialsToSession;
 
 	private final UserDataProvider userDataProvider;
 	private final TokenProvider tokenProvider;
@@ -58,8 +59,10 @@ public class LoginDialog {
 			SessionManager sessionManager,
 			AccountBlocker accountBlocker,
 			String dialogLocation,
-			String path) {
+			String path,
+			boolean exposeUserCredentialsToSession) {
 		this.path = path;
+		this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
 		this.userDataProvider = userDataProvider;
 		this.tokenProvider = tokenProvider;
 		this.sessionManager = sessionManager;
@@ -146,6 +149,11 @@ public class LoginDialog {
 						log.error(e);
 						showPage(exc, 0, "error", "INTERNAL_SERVER_ERROR");
 						return;
+					}
+					if (exposeUserCredentialsToSession) {
+						for (Map.Entry<String, String> param : params.entrySet())
+							if (!userAttributes.containsKey(param.getKey()))
+								userAttributes.put(param.getKey(), param.getValue());
 					}
 					showPage(exc, 1);
 					sessionManager.createSession(exc).preAuthorize(username, userAttributes);

@@ -96,6 +96,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 public class LoginInterceptor extends AbstractInterceptor {
 	
 	private String location, path;
+	private boolean exposeUserCredentialsToSession;
 	
 	private UserDataProvider userDataProvider;
 	private TokenProvider tokenProvider;
@@ -112,7 +113,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
 		userDataProvider.init(router);
-		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path);
+		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path, exposeUserCredentialsToSession);
 	}
 
 	public void init(Router router) throws Exception {
@@ -139,6 +140,8 @@ public class LoginInterceptor extends AbstractInterceptor {
 	}
 
 	private void applyBackendAuthorization(Exchange exc, Session s) {
+		if (getId() != null)
+			exc.setProperty(getId() + "-session", s);
 		Header h = exc.getRequest().getHeader();
 		for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
 			if (e.getKey().startsWith("header")) {
@@ -234,4 +237,16 @@ public class LoginInterceptor extends AbstractInterceptor {
 		this.accountBlocker = accountBlocker;
 	}
 
+	public boolean isExposeUserCredentialsToSession() {
+		return exposeUserCredentialsToSession;
+	}
+	
+	/**
+	 * @description Whether the user's credentials should be copied over to the session. This means they
+	 * will stay in memory and will be available to all Membrane components.
+	 */
+	@MCAttribute
+	public void setExposeUserCredentialsToSession(boolean exposeUserCredentialsToSession) {
+		this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
+	}
 }
