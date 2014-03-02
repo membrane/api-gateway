@@ -83,7 +83,7 @@
 			<artifactId>jatl</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.kitchen-eel</groupId>
+			<groupId>com.github.fge</groupId>
 			<artifactId>json-schema-validator</artifactId>
 			<exclusions>
 				<exclusion>

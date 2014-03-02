@@ -26,12 +26,14 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonParseException;
-import org.eel.kitchen.jsonschema.main.JsonSchema;
-import org.eel.kitchen.jsonschema.main.JsonSchemaFactory;
-import org.eel.kitchen.jsonschema.report.ValidationReport;
-import org.eel.kitchen.jsonschema.util.JsonLoader;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.fge.jackson.JsonLoader;
+import com.github.fge.jsonschema.core.exceptions.ProcessingException;
+import com.github.fge.jsonschema.core.report.ProcessingMessage;
+import com.github.fge.jsonschema.core.report.ProcessingReport;
+import com.github.fge.jsonschema.main.JsonSchema;
+import com.github.fge.jsonschema.main.JsonSchemaFactory;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
@@ -66,9 +68,11 @@ public class JSONValidator implements IValidator {
 		boolean success = true;
 		try {
 			JsonNode node = JsonLoader.fromReader(new InputStreamReader(body, charset));
-			ValidationReport report = schema.validate(node);
+			ProcessingReport report = schema.validateUnchecked(node);
 			success = report.isSuccess();
-			errors = report.getMessages();
+			errors = new ArrayList<String>();
+			for (ProcessingMessage message : report)
+				errors.add(message.getMessage());
 		} catch (JsonParseException e) {
 			success = false;
 			errors = new ArrayList<String>();
@@ -122,9 +126,13 @@ public class JSONValidator implements IValidator {
 
 	
 	private void createValidators() throws IOException {
-		JsonSchemaFactory factory = JsonSchemaFactory.defaultFactory();
+		JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
 		JsonNode schemaNode = JsonLoader.fromReader(new InputStreamReader(resourceResolver.resolve(jsonSchema)));
-		schema = factory.fromSchema(schemaNode);
+		try {
+			schema = factory.getJsonSchema(schemaNode);
+		} catch (ProcessingException e) {
+			throw new IOException(e);
+		}
 	}
 
 	@Override
