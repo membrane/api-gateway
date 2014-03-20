@@ -204,34 +204,42 @@ public class ResolverMap implements Cloneable, Resolver {
 		};
 	}
 
-	public ExternalResolver toExternalResolver() {
-		return new ExternalResolver() {
-			@Override
-			public InputStream resolveAsFile(String filename, String baseDir) {
-				try {
-					if(baseDir != null) {
-						return ResolverMap.this.resolve(combine(baseDir, filename));
-					}
-					return ResolverMap.this.resolve(filename);
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
-			}
-			
-			protected InputStream resolveViaHttp(Object url) {
-				try {
-					String url2 = (String) url;
-					int q = url2.indexOf('?');
-					if (q == -1)
-						url2 = url2.replaceAll("/[^/]+/\\.\\./", "/");
-					else
-						url2 = url2.substring(0, q).replaceAll("/[^/]+/\\.\\./", "/") + url2.substring(q);
+	public ExternalResolverConverter toExternalResolver() {
+		return new ExternalResolverConverter();
+	}
 
-					return getSchemaResolver(url2).resolve(url2);
-				} catch (ResourceRetrievalException e) {
-					throw new RuntimeException(e);
+	public class ExternalResolverConverter {
+	
+		public ExternalResolver toExternalResolver() {
+			return new ExternalResolver() {
+				@Override
+				public InputStream resolveAsFile(String filename, String baseDir) {
+					try {
+						if(baseDir != null) {
+							return ResolverMap.this.resolve(combine(baseDir, filename));
+						}
+						return ResolverMap.this.resolve(filename);
+					} catch (Exception e) {
+						throw new RuntimeException(e);
+					}
 				}
-			}
-		};
+
+				protected InputStream resolveViaHttp(Object url) {
+					try {
+						String url2 = (String) url;
+						int q = url2.indexOf('?');
+						if (q == -1)
+							url2 = url2.replaceAll("/[^/]+/\\.\\./", "/");
+						else
+							url2 = url2.substring(0, q).replaceAll("/[^/]+/\\.\\./", "/") + url2.substring(q);
+
+						return getSchemaResolver(url2).resolve(url2);
+					} catch (ResourceRetrievalException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			};
+		}
+	
 	}
 }

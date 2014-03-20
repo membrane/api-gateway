@@ -109,7 +109,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(ResolverMap.combine(router.getBaseLocation(), wsdl));
 		WSDLParser wsdlParser = new WSDLParser();
-		wsdlParser.setResourceResolver(router.getResolverMap().toExternalResolver());
+		wsdlParser.setResourceResolver(router.getResolverMap().toExternalResolver().toExternalResolver());
 		return parsedWSDL = wsdlParser.parse(ctx);
 	}
 	
