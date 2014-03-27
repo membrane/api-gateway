@@ -67,7 +67,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		String uri = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(exc.getDestinations().get(0)));
+		String uri = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().get(0)));
 
 		log.debug("request: " + uri);
 		

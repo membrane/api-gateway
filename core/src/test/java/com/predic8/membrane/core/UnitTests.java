@@ -71,6 +71,7 @@ import com.predic8.membrane.core.util.ContentTypeDetectorTest;
 import com.predic8.membrane.core.util.DNSCacheTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
 import com.predic8.membrane.core.util.TextUtilTest;
+import com.predic8.membrane.core.util.URITest;
 import com.predic8.membrane.core.util.URLUtilTest;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 import com.predic8.membrane.core.ws.relocator.RelocatorWADLTest;
@@ -109,7 +110,8 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	LimitedMemoryExchangeStoreTest.class,
 	IndexInterceptorTest.class,
 	SingleResolverTest.class,
-	JSONSchemaValidationTest.class
+	JSONSchemaValidationTest.class,
+	URITest.class
 })
 public class UnitTests {
 	/*

@@ -31,6 +31,7 @@ import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLUtil;
 
 public class Request extends Message {
@@ -227,9 +228,9 @@ public class Request extends Message {
 			return this;
 		}
 		
-		public Builder url(String url) {
+		public Builder url(URIFactory uriFactory, String url) {
 			fullURL = url;
-			req.setUri(URLUtil.getPathQuery(url));
+			req.setUri(URLUtil.getPathQuery(uriFactory, url));
 			return this;
 		}
 		
@@ -253,12 +254,23 @@ public class Request extends Message {
 			return this;
 		}
 
-		public Builder post(String url) {
-			return method(Request.METHOD_POST).url(url);
+		public Builder post(URIFactory uriFactory, String url) {
+			return method(Request.METHOD_POST).url(uriFactory, url);
 		}
 
+		public Builder post(String url) {
+			return post(new URIFactory(), url);
+		}
+		
+		public Builder get(URIFactory uriFactory, String url) {
+			return method(Request.METHOD_GET).url(uriFactory, url);
+		}
+
+		/**
+		 * Sets the request's method to "GET" and the URI to the parameter. Uses a standard {@link URIFactory}.
+		 */
 		public Builder get(String url) {
-			return method(Request.METHOD_GET).url(url);
+			return get(new URIFactory(), url);
 		}
 	}
 	

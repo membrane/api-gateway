@@ -64,7 +64,7 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
-		String pathQuery = URLUtil.getPathQuery(exc.getDestinations().get(0));
+		String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().get(0));
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if (a==null) continue;
@@ -73,10 +73,10 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 				Object[] parameters;
 				switch (m.getParameterTypes().length) {
 				case 2:
-					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(exc), matcher), getRelativeRootPath(pathQuery) };
+					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc), matcher), getRelativeRootPath(pathQuery) };
 					break;
 				case 3:
-					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(exc), matcher), getRelativeRootPath(pathQuery), exc };
+					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc), matcher), getRelativeRootPath(pathQuery), exc };
 					break;
 				default:
 					throw new InvalidParameterException("@Mapping is supposed to annotate a 2-parameter method.");

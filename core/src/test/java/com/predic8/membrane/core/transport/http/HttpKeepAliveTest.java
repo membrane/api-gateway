@@ -79,8 +79,7 @@ public class HttpKeepAliveTest {
 
 	private Exchange createExchange() throws IOException {
 		return new Request.Builder().
-			url("http://localhost:2003/axis2/services/BLZService").
-			method(Request.METHOD_POST).
+			post("http://localhost:2003/axis2/services/BLZService").
 			header(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8).
 			header(Header.SOAP_ACTION, "").
 			body(IOUtils.toByteArray(this.getClass().getResourceAsStream("/getBank.xml"))).

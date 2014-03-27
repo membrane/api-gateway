@@ -19,6 +19,7 @@ import java.util.*;
 
 import org.junit.*;
 
+import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterceptor.Field;
@@ -28,6 +29,7 @@ public class FormValidationInterceptorTest {
 	@Test
 	public void testValidation() throws Exception {
 		FormValidationInterceptor interceptor = new FormValidationInterceptor();
+		interceptor.init(new HttpRouter());
 		
 		Field article = new Field();
 		article.setName("article");

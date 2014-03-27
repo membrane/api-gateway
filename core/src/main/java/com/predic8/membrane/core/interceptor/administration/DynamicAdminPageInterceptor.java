@@ -803,7 +803,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 	
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
-		String pathQuery = URLUtil.getPathQuery(exc.getDestinations().get(0));
+		String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().get(0));
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if ( a != null && Pattern.matches(a.value(), pathQuery)) {
@@ -815,7 +815,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private Map<String, String> getParams(Exchange exc) throws Exception {
-		return URLParamUtil.getParams(exc);
+		return URLParamUtil.getParams(router.getUriFactory(), exc);
 	}
 	
 	private Response respond(String page) throws Exception {

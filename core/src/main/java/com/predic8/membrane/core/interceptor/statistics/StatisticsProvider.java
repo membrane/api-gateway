@@ -40,6 +40,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
+import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 @MCElement(name="statisticsProvider")
@@ -76,12 +77,12 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 		Connection con = dataSource.getConnection();
 		
 		try {
-			int offset = URLParamUtil.getIntParam(exc, "offset");
-			int max = URLParamUtil.getIntParam(exc, "max");
+			int offset = URLParamUtil.getIntParam(router.getUriFactory(), exc, "offset");
+			int max = URLParamUtil.getIntParam(router.getUriFactory(), exc, "max");
 			int total = getTotal(con);
 
 			Statement s = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			ResultSet r = s.executeQuery(getOrderedStatistics(exc));
+			ResultSet r = s.executeQuery(getOrderedStatistics(router.getUriFactory(), exc));
 			createJson(exc, r, offset, max, total);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -94,9 +95,9 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 		return Outcome.RETURN;
 	}
 
-	public static String getOrderedStatistics(Exchange exc) throws Exception {
-		String iOrder = URLParamUtil.getStringParam(exc, "order");
-		String iSort = URLParamUtil.getStringParam(exc, "sort");
+	public static String getOrderedStatistics(URIFactory uriFactory, Exchange exc) throws Exception {
+		String iOrder = URLParamUtil.getStringParam(uriFactory, exc, "order");
+		String iSort = URLParamUtil.getStringParam(uriFactory, exc, "sort");
 		
 		//injection protection. Can't use prepared statements (in jdbc) when variables are within order by.
 		String order = "desc".equals(iOrder.toLowerCase())?"desc":"asc";

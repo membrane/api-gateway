@@ -18,7 +18,6 @@ import groovy.xml.MarkupBuilder;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -169,7 +168,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 	@Mapping("(?!.*operation)([^?]*)")
 	public Response createSOAPUIResponse(QueryParameter params, final String relativeRootPath, final Exchange exc) throws Exception {
 		try {
-			final String myPath = new URI(exc.getRequestURI()).getPath();
+			final String myPath = router.getUriFactory().create(exc.getRequestURI()).getPath();
 			
 			final Definitions w = getParsedWSDL();
 			final Service service = getService(w);

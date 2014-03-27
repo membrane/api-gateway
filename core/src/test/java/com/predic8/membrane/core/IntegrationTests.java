@@ -30,6 +30,7 @@ import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;
 import com.predic8.membrane.core.rules.UnavailableSoapProxyTest;
 import com.predic8.membrane.core.transport.ExceptionHandlingTest;
 import com.predic8.membrane.core.transport.http.BoundConnectionTest;
+import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
 import com.predic8.membrane.core.transport.http.InterceptorInvocationTest;
 import com.predic8.membrane.integration.AccessControlInterceptorIntegrationTest;
 import com.predic8.membrane.integration.Http10Test;
@@ -53,7 +54,8 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 		SOAPProxyIntegrationTest.class,
 		SpringReferencesTest.class,
 		ResolverTest.class,
-		UnavailableSoapProxyTest.class })
+		UnavailableSoapProxyTest.class,
+		IllegalCharactersInURLTest.class })
 public class IntegrationTests {
 	/*
 	@BeforeClass

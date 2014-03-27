@@ -54,7 +54,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 	private WSDLInterceptor wi = new WSDLInterceptor();
 	
 	@Override
-	public void init(Router router) throws Exception {
+	public void init(final Router router) throws Exception {
 		super.init(router);
 		wi.init(router);
 
@@ -73,7 +73,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 								path2 = new URL(new URL(path2), keyPath).toString();
 							} else {
 								Matcher m = RELATIVE_PATH_PATTERN.matcher(path2);
-								path2 = m.replaceAll("./" + URLUtil.getName(keyPath) + "?");
+								path2 = m.replaceAll("./" + URLUtil.getName(router.getUriFactory(), keyPath) + "?");
 							}
 						} catch (MalformedURLException e) {
 						}

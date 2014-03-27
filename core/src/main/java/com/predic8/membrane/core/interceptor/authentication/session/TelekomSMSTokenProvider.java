@@ -136,8 +136,8 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 			
 			jg.close();
 			
-			Exchange exc = new Request.Builder().method(Request.METHOD_POST).
-					url("https://gateway.developer.telekom.com/plone/sms/rest/" + environment.name().toLowerCase()
+			Exchange exc = new Request.Builder().
+					post("https://gateway.developer.telekom.com/plone/sms/rest/" + environment.name().toLowerCase()
 							+ "/smsmessaging/v1/outbound/" + URLEncoder.encode(senderAddress, "UTF-8") + "/requests").
 					header("Host", "gateway.developer.telekom.com").
 					header("Authorization", "OAuth realm=\"developergarden.com\",oauth_token=\"" + getAccessToken() + "\"").
@@ -167,8 +167,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		long now = System.currentTimeMillis();
 		if (token == null || tokenExpiration < now) {
 			Exchange exc = new Request.Builder().
-					method(Request.METHOD_POST).
-					url("https://global.telekom.com/gcp-web-api/oauth").
+					post("https://global.telekom.com/gcp-web-api/oauth").
 					header(Header.HOST, "global.telekom.com").
 					header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((clientId + ":" + clientSecret).getBytes("UTF-8")), "UTF-8")).
 					header(Header.ACCEPT, "application/json").

@@ -153,7 +153,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		while ( it.hasNext() ) {
 			String dest = it.next();
 			
-			String pathQuery = URLUtil.getPathQuery(dest);
+			String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), dest);
 			int pathBegin = dest.lastIndexOf(pathQuery);
 			String schemaHostPort = pathBegin == -1 ? dest : dest.substring(0, pathBegin); // TODO check -1 case
 			

@@ -222,16 +222,17 @@ public class SOAPProxy extends AbstractServiceProxy {
 			automaticallyAddedInterceptorCount++;
 		}
 		if (key.getPath() != null) {
+			final String keyPath = key.getPath();
+			final String name = URLUtil.getName(router.getUriFactory(), keyPath);
 			wsdlInterceptor.setPathRewriter(new PathRewriter() {
 				@Override
 				public String rewrite(String path2) {
 					try {
-						String keyPath = key.getPath();
 						if (path2.contains("://")) {
 							path2 = new URL(new URL(path2), keyPath).toString();
 						} else {
 							Matcher m = relativePathPattern.matcher(path2);
-							path2 = m.replaceAll("./" + URLUtil.getName(keyPath) + "?");
+							path2 = m.replaceAll("./" + name + "?");
 						}
 					} catch (MalformedURLException e) {
 					}

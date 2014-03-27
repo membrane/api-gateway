@@ -25,8 +25,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 public class URLParamUtil {
 	private static Pattern paramsPat = Pattern.compile("([^=]*)=?(.*)");
 	
-	public static Map<String, String> getParams(Exchange exc) throws Exception {		
-		URI jUri = new URI(exc.getRequest().getUri());
+	public static Map<String, String> getParams(URIFactory uriFactory, Exchange exc) throws Exception {		
+		URI jUri = uriFactory.create(exc.getRequest().getUri());
 		String q = jUri.getRawQuery();
 		if (q == null) {
 			if (hasNoFormParams(exc))
@@ -37,12 +37,12 @@ public class URLParamUtil {
 		return parseQueryString(q);
 	}
 
-	public static String getStringParam(Exchange exc, String name) throws Exception {
-		return getParams(exc).get(name);
+	public static String getStringParam(URIFactory uriFactory, Exchange exc, String name) throws Exception {
+		return getParams(uriFactory, exc).get(name);
 	}
 
-	public static int getIntParam(Exchange exc, String name) throws Exception {
-		return Integer.parseInt(getParams(exc).get(name));
+	public static int getIntParam(URIFactory uriFactory, Exchange exc, String name) throws Exception {
+		return Integer.parseInt(getParams(uriFactory, exc).get(name));
 	}
 
 	

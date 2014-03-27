@@ -53,6 +53,7 @@ import com.predic8.membrane.core.transport.http.HttpServerThreadFactory;
 import com.predic8.membrane.core.transport.http.HttpTransport;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.DNSCache;
+import com.predic8.membrane.core.util.URIFactory;
 
 /**
  * @description <p>
@@ -98,6 +99,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	protected ExecutorService backgroundInitializator =
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
 	protected HotDeploymentThread hdt;
+	protected URIFactory uriFactory = new URIFactory(false);
 
 	private boolean hotDeploy = true;
 	private boolean running;
@@ -445,5 +447,14 @@ public class Router implements Lifecycle, ApplicationContextAware {
     @MCAttribute
     public void setRetryInit(boolean retryInit) {
 		this.retryInit = retryInit;
+	}
+    
+    public URIFactory getUriFactory() {
+		return uriFactory;
+	}
+    
+    @MCChildElement(order=-1)
+    public void setUriFactory(URIFactory uriFactory) {
+		this.uriFactory = uriFactory;
 	}
 }
