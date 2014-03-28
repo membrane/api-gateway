@@ -453,7 +453,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		return uriFactory;
 	}
     
-    @MCChildElement(order=-1)
+    @MCChildElement(order=-1, allowForeign=true)
     public void setUriFactory(URIFactory uriFactory) {
 		this.uriFactory = uriFactory;
 	}

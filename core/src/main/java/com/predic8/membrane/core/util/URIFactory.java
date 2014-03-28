@@ -22,27 +22,27 @@ import com.predic8.membrane.annot.MCElement;
 @MCElement(name = "uriFactory")
 public class URIFactory {
 
-	private boolean allowIllegalURICharacters;
+	private boolean allowIllegalCharacters;
 
 	public URIFactory() {
 		this(false);
 	}
 
-	public URIFactory(boolean allowIllegalURICharacters) {
-		this.allowIllegalURICharacters = allowIllegalURICharacters;
+	public URIFactory(boolean allowIllegalCharacters) {
+		this.allowIllegalCharacters = allowIllegalCharacters;
 	}
 	
-	public boolean isAllowIllegalURICharacters() {
-		return allowIllegalURICharacters;
+	public boolean isAllowIllegalCharacters() {
+		return allowIllegalCharacters;
 	}
 	
 	@MCAttribute
-	public void setAllowIllegalURICharacters(boolean allowIllegalURICharacters) {
-		this.allowIllegalURICharacters = allowIllegalURICharacters;
+	public void setAllowIllegalCharacters(boolean allowIllegalCharacters) {
+		this.allowIllegalCharacters = allowIllegalCharacters;
 	}
 	
 	public URI create(String uri) throws URISyntaxException {
-		return new URI(allowIllegalURICharacters, uri);
+		return new URI(allowIllegalCharacters, uri);
 	}
 	
 	/**
@@ -51,7 +51,7 @@ public class URIFactory {
 	 */
 	public URI createWithoutException(String uri) {
 		try {
-			return new URI(allowIllegalURICharacters, uri);
+			return new URI(allowIllegalCharacters, uri);
 		} catch (URISyntaxException e) {
 			throw new IllegalArgumentException(e);
 		}
