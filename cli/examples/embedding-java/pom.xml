@@ -9,7 +9,7 @@
         <dependency>
             <groupId>org.membrane-soa.service-proxy</groupId>
             <artifactId>service-proxy-core</artifactId>
-            <version>4.0.17-SNAPSHOT</version>
+            <version>4.0.18-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
