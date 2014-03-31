@@ -16,6 +16,7 @@ package com.predic8.membrane.core.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -228,7 +229,7 @@ public class Request extends Message {
 			return this;
 		}
 		
-		public Builder url(URIFactory uriFactory, String url) {
+		public Builder url(URIFactory uriFactory, String url) throws URISyntaxException {
 			fullURL = url;
 			req.setUri(URLUtil.getPathQuery(uriFactory, url));
 			return this;
@@ -254,22 +255,22 @@ public class Request extends Message {
 			return this;
 		}
 
-		public Builder post(URIFactory uriFactory, String url) {
+		public Builder post(URIFactory uriFactory, String url) throws URISyntaxException {
 			return method(Request.METHOD_POST).url(uriFactory, url);
 		}
 
-		public Builder post(String url) {
+		public Builder post(String url) throws URISyntaxException {
 			return post(new URIFactory(), url);
 		}
 		
-		public Builder get(URIFactory uriFactory, String url) {
+		public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
 			return method(Request.METHOD_GET).url(uriFactory, url);
 		}
 
 		/**
 		 * Sets the request's method to "GET" and the URI to the parameter. Uses a standard {@link URIFactory}.
 		 */
-		public Builder get(String url) {
+		public Builder get(String url) throws URISyntaxException {
 			return get(new URIFactory(), url);
 		}
 	}

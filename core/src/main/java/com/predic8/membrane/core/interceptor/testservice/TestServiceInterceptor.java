@@ -64,16 +64,17 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 			if (path != null) {
 				if (path.isRegExp())
 					throw new Exception("<testService> may not be used together with <path isRegExp=\"true\">.");
+				final String keyPath = path.getValue();
+				final String name = URLUtil.getName(router.getUriFactory(), keyPath);
 				wi.setPathRewriter(new PathRewriter() {
 					@Override
 					public String rewrite(String path2) {
 						try {
-							String keyPath = path.getValue();
 							if (path2.contains("://")) {
 								path2 = new URL(new URL(path2), keyPath).toString();
 							} else {
 								Matcher m = RELATIVE_PATH_PATTERN.matcher(path2);
-								path2 = m.replaceAll("./" + URLUtil.getName(router.getUriFactory(), keyPath) + "?");
+								path2 = m.replaceAll("./" + name + "?");
 							}
 						} catch (MalformedURLException e) {
 						}

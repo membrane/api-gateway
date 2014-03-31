@@ -121,7 +121,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
 	}
 	
 	@Override
-	public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) {
+	public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
 		String path = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(uriFactory, exc.getDestinations().get(0)));
 		
 		if ("/oauth2callback".equals(path)) {

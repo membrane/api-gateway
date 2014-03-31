@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.util;
 
+import java.net.URISyntaxException;
+
 public class URLUtil {
 
 	public static String getPathFromPathQuery(String pathQuery) {
@@ -21,14 +23,14 @@ public class URLUtil {
 		return i == -1 ? pathQuery : pathQuery.substring(0, i);
 	}
 
-	public static String getPathQuery(URIFactory uriFactory, String uri) {
-		URI u = uriFactory.createWithoutException(uri);
+	public static String getPathQuery(URIFactory uriFactory, String uri) throws URISyntaxException {
+		URI u = uriFactory.create(uri);
 		String query = u.getQuery();
 		return u.getPath() + (query == null ? "" : "?" + query);
 	}
 
-	public static String getName(URIFactory uriFactory, String uri) {
-		URI u = uriFactory.createWithoutException(uri);
+	public static String getName(URIFactory uriFactory, String uri) throws URISyntaxException {
+		URI u = uriFactory.create(uri);
 		String p = u.getPath();
 		int i = p.lastIndexOf('/');
 		return i == -1 ? p : p.substring(i+1);
