@@ -39,7 +39,6 @@ public class Body extends AbstractBody {
 	static {
 		String bufferSize = System.getProperty("membrane.core.http.body.buffersize");
 		BUFFER_SIZE = bufferSize == null ? 8192 : Integer.parseInt(bufferSize);
-		System.err.println("Using buffer size = " + BUFFER_SIZE);
 	}
 	
 	private static Log log = LogFactory.getLog(Body.class.getName());
