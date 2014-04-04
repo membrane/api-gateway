@@ -34,6 +34,14 @@ import com.predic8.membrane.core.util.ByteUtil;
  */
 public class Body extends AbstractBody {
 
+	private final static int BUFFER_SIZE;
+	
+	static {
+		String bufferSize = System.getProperty("membrane.core.http.body.buffersize");
+		BUFFER_SIZE = bufferSize == null ? 8192 : Integer.parseInt(bufferSize);
+		System.err.println("Using buffer size = " + BUFFER_SIZE);
+	}
+	
 	private static Log log = LogFactory.getLog(Body.class.getName());
 	private final InputStream inputStream;
 	private final int length;
@@ -71,7 +79,7 @@ public class Body extends AbstractBody {
 	}
 	
 	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
-		byte[] buffer = new byte[8192];
+		byte[] buffer = new byte[BUFFER_SIZE];
 
 		int totalLength = 0;
 		int length = 0;
