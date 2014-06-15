@@ -286,5 +286,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	public OutputStream getSrcOut() {
 		return srcOut;
 	}
+	
+	public Socket getSourceSocket() {
+		return sourceSocket;
+	}
 
 }

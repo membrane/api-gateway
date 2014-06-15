@@ -89,6 +89,8 @@ public class Header {
     
     public static final String CACHE_CONTROL = "Cache-Control";
 
+    public static final String UPGRADE = "Upgrade";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";

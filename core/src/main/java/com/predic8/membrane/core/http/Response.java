@@ -350,7 +350,7 @@ public class Response extends Message {
 
 	@Override
 	public boolean isBodyEmpty() throws IOException {
-		if (statusCode == 100 || statusCode == 204 || statusCode == 205)
+		if (statusCode == 100 || statusCode == 101 || statusCode == 204 || statusCode == 205)
 			return true;
 		return super.isBodyEmpty();
 	}

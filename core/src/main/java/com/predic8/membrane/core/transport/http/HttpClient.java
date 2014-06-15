@@ -34,6 +34,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.PlainBodyTransferrer;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
@@ -55,6 +56,7 @@ public class HttpClient {
 	private final int maxRetries;
 	private final int connectTimeout;
 	private final String localAddr;
+	private final boolean allowWebSockets;
 
 	private final ConnectionManager conMgr;
 	
@@ -66,6 +68,7 @@ public class HttpClient {
 		proxy = configuration.getProxy();
 		authentication = configuration.getAuthentication();
 		maxRetries = configuration.getMaxRetries();
+		allowWebSockets = configuration.isAllowWebSockets();
 		
 		connectTimeout = configuration.getConnection().getTimeout();
 		localAddr = configuration.getConnection().getLocalAddr();
@@ -154,7 +157,30 @@ public class HttpClient {
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}
-				Response response = doCall(exc, con);
+				Response response;
+				String newProtocol = null;
+				
+				if (exc.getRequest().isCONNECTRequest()) {
+					handleConnectRequest(exc, con);
+					response = Response.ok().build();
+					newProtocol = "CONNECT";
+				} else {
+					response = doCall(exc, con);
+					if (allowWebSockets && isUpgradeToWebSocketsResponse(response)) {
+						log.debug("Upgrading to WebSocket protocol.");
+						newProtocol = "WebSocket";
+					}
+				}
+				
+				if (newProtocol != null) {
+					setupConnectionForwarding(exc, con, newProtocol);
+					exc.getDestinations().clear();
+					exc.getDestinations().add(dest);
+					con.setExchange(exc);
+					exc.setResponse(response);
+					return exc;
+				}
+
 				boolean is5XX = 500 <= response.getStatusCode() && response.getStatusCode() < 600; 
 				if (!failOverOn5XX || !is5XX || counter == maxRetries-1) {
 					applyKeepAliveHeader(response, con);
@@ -236,11 +262,6 @@ public class HttpClient {
 	}
 
 	private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
-		if (exc.getRequest().isCONNECTRequest()) {
-			handleConnectRequest(exc, con);
-			return Response.ok().build();
-		}
-		
 		exc.getRequest().write(con.out);
 		exc.setTimeReqSent(System.currentTimeMillis());
 		
@@ -260,6 +281,39 @@ public class HttpClient {
 		return res;
 	}
 
+	private void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol) throws SocketException {
+		final HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
+		final StreamPump a = new StreamPump(con.in, hsr.getSrcOut());
+		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out); 
+		
+		hsr.getSourceSocket().setSoTimeout(0);
+		
+		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
+			
+			@Override
+			public void setExchangeFinished() {
+				String threadName = Thread.currentThread().getName();
+				new Thread(a, threadName + " " + protocol + " Backward Thread").start();
+				try {
+					Thread.currentThread().setName(threadName + " " + protocol + " Onward Thread");
+					b.run();
+				} finally {
+					try {
+						con.close();
+					} catch (IOException e) {
+						log.debug("", e);
+					}
+				}
+			}
+		});
+	}
+
+	private boolean isUpgradeToWebSocketsResponse(Response res) {
+		return res.getStatusCode() == 101 && 
+				"upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(Header.CONNECTION)) &&
+				"websocket".equalsIgnoreCase(res.getHeader().getFirstValue(Header.UPGRADE));
+	}
+
 	private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
 		if (proxy != null) {
 			exc.getRequest().write(con.out);
@@ -268,9 +322,6 @@ public class HttpClient {
 			log.debug("Status code response on CONNECT request: " + response.getStatusCode());
 		}
 		exc.getRequest().setUri(Constants.N_A);
-		HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
-		new TunnelThread(con.in, hsr.getSrcOut(), "Onward Thread").start();
-		new TunnelThread(hsr.getSrcIn(), con.out, "Backward Thread").start();
 	}
 
 	private void do100ExpectedHandling(Exchange exc, Response response, Connection con) throws IOException, EndOfStreamException {
