@@ -52,6 +52,8 @@ public class ProxySSLConnectionMethodTest {
 		GetMethod post = new GetMethod("https://www.google.com/");
 		client.executeMethod(post);
 		AssertUtils.assertContains("<html", post.getResponseBodyAsString());
+		
+		client.getHttpConnectionManager().closeIdleConnections(0);
 	}
 	
 }

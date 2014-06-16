@@ -65,7 +65,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			log.warn("Target " + getDestination(exc) + " is not reachable. " + e);
 			return Outcome.ABORT;
 		} catch (UnknownHostException e) {
-			exc.setResponse(Response.internalServerError("Target host " + HttpUtil.getHostName(getDestination(exc)) + " is unknown. DNS was unable to resolve host name.").build());
+			exc.setResponse(Response.internalServerError("Target host " + getDestination(exc) + " is unknown. DNS was unable to resolve host name.").build());
 			return Outcome.ABORT;
 		}						
 	}
