@@ -44,7 +44,6 @@ import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.URLUtil;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -208,7 +207,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		});
 		Map<String, Object> model = new HashMap<String, Object>();
 		model.put("loginPath", StringEscapeUtils.escapeXml(loginPath));
-		String pathQuery = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().get(0)));
+		String pathQuery = router.getUriFactory().create(exc.getDestinations().get(0)).getPath(); // TODO: path or pathQuery
 		String url = authorizationService.getLoginURL(state, publicURL, pathQuery);
 		model.put("loginURL", url);
 		model.put("target", StringEscapeUtils.escapeXml(target));

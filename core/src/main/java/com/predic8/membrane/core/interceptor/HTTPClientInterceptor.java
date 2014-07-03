@@ -27,7 +27,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.HttpUtil;
 
 /**
  * @description The <i>httpClient</i> sends the request of an exchange to a Web

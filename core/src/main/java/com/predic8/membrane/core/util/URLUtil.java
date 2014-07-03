@@ -18,11 +18,6 @@ import java.net.URISyntaxException;
 
 public class URLUtil {
 
-	public static String getPathFromPathQuery(String pathQuery) {
-		int i = pathQuery.indexOf('?');
-		return i == -1 ? pathQuery : pathQuery.substring(0, i);
-	}
-
 	public static String getPathQuery(URIFactory uriFactory, String uri) throws URISyntaxException {
 		URI u = uriFactory.create(uri);
 		String query = u.getQuery();

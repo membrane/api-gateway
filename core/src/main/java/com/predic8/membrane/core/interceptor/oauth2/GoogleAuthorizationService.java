@@ -42,7 +42,6 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.util.Util;
 
 /**
@@ -122,7 +121,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
 	
 	@Override
 	public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
-		String path = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(uriFactory, exc.getDestinations().get(0)));
+		String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
 		
 		if ("/oauth2callback".equals(path)) {
 			

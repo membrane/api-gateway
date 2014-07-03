@@ -35,7 +35,6 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.TextUtil;
-import com.predic8.membrane.core.util.URLUtil;
 
 /**
  * @description Serves static files based on the request's path.
@@ -67,7 +66,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		String uri = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().get(0)));
+		String uri = router.getUriFactory().create(exc.getDestinations().get(0)).getPath();
 
 		log.debug("request: " + uri);
 		
