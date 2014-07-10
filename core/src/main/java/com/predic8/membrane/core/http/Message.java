@@ -309,7 +309,7 @@ public abstract class Message {
 	public boolean isXML() {
 		if (header.getContentType() == null) 
 			return false;
-		return header.getContentType().indexOf("xml") > 0;
+		return header.getContentType().toLowerCase().indexOf("xml") > 0;
 	}
 	
 	public boolean isJSON() {
