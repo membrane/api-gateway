@@ -179,6 +179,10 @@ public class Relocator {
 			if (port == -1) {
 				return new URL(protocol, host, oldURL.getFile()).toString();
 			}
+			if ("http".equals(protocol) && port == 80)
+				port = -1;
+			if ("https".equals(protocol) && port == 443)
+				port = -1;
 			return new URL(protocol, host, port, oldURL.getFile()).toString();
 		} catch (MalformedURLException e) {
 			e.printStackTrace();
