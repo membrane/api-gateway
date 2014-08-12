@@ -281,7 +281,7 @@ public class HttpClient {
 		return res;
 	}
 
-	private void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol) throws SocketException {
+	public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol) throws SocketException {
 		final HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
 		final StreamPump a = new StreamPump(con.in, hsr.getSrcOut());
 		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out); 

@@ -56,6 +56,12 @@ public class HttpUtil {
 				in.read();
 				return line.toString();
 			}
+			if (b == 10) {
+				in.mark(2);
+				if (in.read() != 13)
+					in.reset();
+				return line.toString();
+			}
 
 			line.append((char) b);
 		}

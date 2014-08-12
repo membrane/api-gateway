@@ -16,6 +16,7 @@ package com.predic8.membrane.core.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.regex.Matcher;
@@ -64,15 +65,21 @@ public class Request extends Message {
 	String method;
 	String uri;
 
-	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
+	public void parseStartLine(InputStream in, boolean allowSTOMP) throws IOException, EndOfStreamException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
-			if (!matcher.find())
+			if (matcher.find()) {
+				method = matcher.group(1);
+				uri = matcher.group(2);
+				version = matcher.group(3);
+			} else if (allowSTOMP && "CONNECT".equalsIgnoreCase(firstLine)) {
+				method = "CONNECT";
+				uri = "";
+				version = "STOMP";
+			} else {
 				throw new EOFWhileReadingFirstLineException(firstLine);
-			method = matcher.group(1);
-			uri = matcher.group(2);
-			version = matcher.group(3);
+			}
 		} catch (EOFWhileReadingLineException e) {
 			if (e.getLineSoFar().length() == 0)
 				throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
@@ -203,6 +210,15 @@ public class Request extends Message {
 				(method != null ? 2*method.length() : 0) +
 				(uri != null ? 2*uri.length() : 0);
 	}
+	
+	public final void writeSTOMP(OutputStream out) throws IOException {
+		out.write("CONNECT".getBytes(Constants.UTF_8));
+		out.write(10);
+		for (HeaderField hf : header.getAllHeaderFields())
+			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(Constants.UTF_8));
+		out.write(10);
+	}
+
 	
 	public static class Builder {
 		private Request req;

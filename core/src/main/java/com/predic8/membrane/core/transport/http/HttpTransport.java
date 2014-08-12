@@ -54,6 +54,7 @@ public class HttpTransport extends Transport {
 	private int socketTimeout = 30000;
 	private int forceSocketCloseOnHotDeployAfter = 30000;
 	private boolean tcpNoDelay = true;
+	private boolean allowSTOMP = false;
 
 	public Hashtable<IpPort, HttpEndpointListener> portListenerMapping = new Hashtable<IpPort, HttpEndpointListener>();
 	public List<WeakReference<HttpEndpointListener>> stillRunning = new ArrayList<WeakReference<HttpEndpointListener>>();
@@ -251,5 +252,15 @@ public class HttpTransport extends Transport {
 		this.forceSocketCloseOnHotDeployAfter = forceSocketCloseOnHotDeployAfter;
 	}
 	
+	public boolean isAllowSTOMP() {
+		return allowSTOMP;
+	}
 	
+	/**
+	 * @description whether to accept STOMP "CONNECT" requests.
+	 */
+	@MCAttribute
+	public void setAllowSTOMP(boolean allowSTOMP) {
+		this.allowSTOMP = allowSTOMP;
+	}
 }
