@@ -94,7 +94,7 @@ public class WADLInterceptorTest {
 		assertEquals(interceptor.handleResponse(exc), Outcome.CONTINUE);
 
 		assertAttribute(exc, "//wadl:resources/@base",
-				"https://abc.de:443/search/V1/");
+				"https://abc.de/search/V1/");
 
 		assertAttribute(exc, "//wadl:resource/@path", "newsSearch");
 
