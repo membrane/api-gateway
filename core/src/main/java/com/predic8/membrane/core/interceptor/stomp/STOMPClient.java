@@ -95,7 +95,7 @@ public class STOMPClient extends AbstractInterceptor {
 		String acceptVersion = exc.getRequest().getHeader().getFirstValue("accept-version");
 		
 		if (host != null && acceptVersion != null) {
-			Connection c = connectionManager.getConnection(Inet4Address.getByName(host), port, connectionConfiguration.getLocalAddr(), sslOutboundProvider, connectionConfiguration.getTimeout());
+			Connection c = connectionManager.getConnection(Inet4Address.getByName(this.host), port, connectionConfiguration.getLocalAddr(), sslOutboundProvider, connectionConfiguration.getTimeout());
 			exc.getRequest().writeSTOMP(c.out);
 			HttpClient.setupConnectionForwarding(exc, c, "STOMP");
 		}
