@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 
 import org.apache.commons.logging.Log;
@@ -45,6 +46,8 @@ public class StreamPump implements Runnable {
 				out.flush();
 			}
 		} catch (SocketTimeoutException e) {
+			// do nothing
+		} catch (SocketException e) {
 			// do nothing
 		} catch (IOException e) {
 			log.error("Reading from or writing to stream failed: " + e);

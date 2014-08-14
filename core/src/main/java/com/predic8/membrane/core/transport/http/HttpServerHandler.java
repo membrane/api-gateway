@@ -25,6 +25,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.logging.Log;
@@ -119,6 +120,13 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("Socket of thread " + counter + " timed out");
 		} catch (SocketException se) {
 			log.debug("client socket closed");
+		} catch (SSLException s) {
+			if (s.getCause() instanceof SSLException)
+				s = (SSLException) s.getCause();
+			if (s.getCause() instanceof SocketException)
+				log.debug("ssl socket closed");
+			else
+				s.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (EndOfStreamException e) {
