@@ -9,6 +9,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.Connection;
@@ -91,14 +92,22 @@ public class STOMPClient extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
+		String login = exc.getRequest().getHeader().getFirstValue("login");
+		String passcode = exc.getRequest().getHeader().getFirstValue("passcode");
 		String host = exc.getRequest().getHeader().getFirstValue("host");
 		String acceptVersion = exc.getRequest().getHeader().getFirstValue("accept-version");
+
+		boolean isStomp1_0 = login != null && passcode != null; 
+		boolean isStomp1_1orAbove = host != null && acceptVersion != null;
 		
-		if (host != null && acceptVersion != null) {
+		if (isStomp1_0 || isStomp1_1orAbove) {
 			Connection c = connectionManager.getConnection(Inet4Address.getByName(this.host), port, connectionConfiguration.getLocalAddr(), sslOutboundProvider, connectionConfiguration.getTimeout());
 			exc.getRequest().writeSTOMP(c.out);
 			HttpClient.setupConnectionForwarding(exc, c, "STOMP");
+		} else {
+			exc.setResponse(Response.badRequest().build());
 		}
+		
 		return Outcome.RETURN;
 	}
 }
