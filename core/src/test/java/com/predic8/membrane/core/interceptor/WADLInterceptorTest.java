@@ -99,10 +99,10 @@ public class WADLInterceptorTest {
 		assertAttribute(exc, "//wadl:resource/@path", "newsSearch");
 
 		assertAttribute(exc, "//wadl:grammars/wadl:include[1]/@href",
-				"https://abc.de:443/search.xsd");
+				"https://abc.de/search.xsd");
 
 		assertAttribute(exc, "//wadl:grammars/wadl:include[2]/@href",
-				"https://abc.de:443/error/Error.xsd");
+				"https://abc.de/error/Error.xsd");
 	}
 
 	private void assertAttribute(Exchange exc, String xpathExpr, String expected)
