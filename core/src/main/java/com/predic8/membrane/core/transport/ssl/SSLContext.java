@@ -191,6 +191,10 @@ public class SSLContext implements SSLProvider {
 		return sslss;
 	}
 	
+	public Socket wrapAcceptedSocket(Socket socket) throws IOException {
+		return socket;
+	}
+	
 	public Socket createSocket(InetAddress host, int port, int connectTimeout) throws IOException {
 		Socket s = new Socket();
 		s.connect(new InetSocketAddress(host, port), connectTimeout);
