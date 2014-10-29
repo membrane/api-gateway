@@ -24,7 +24,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.SNIServerName;
@@ -228,6 +230,19 @@ public class SSLContextCollection implements SSLProvider {
 		String[] ciphers = sslContext.getCiphers();
 		if (ciphers != null)
 			serviceSocket.setEnabledCipherSuites(ciphers);
+		if (sslContext.getProtocols() != null) {
+			serviceSocket.setEnabledProtocols(sslContext.getProtocols());
+		} else {
+			String[] protocols = serviceSocket.getEnabledProtocols();
+			Set<String> set = new HashSet<String>();
+			for (String protocol : protocols) {
+				if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
+					continue;
+				}
+				set.add(protocol);
+			}
+			serviceSocket.setEnabledProtocols(set.toArray(new String[0]));
+		}
 		serviceSocket.setWantClientAuth(sslContext.isWantClientAuth());
 		serviceSocket.setNeedClientAuth(sslContext.isNeedClientAuth());
 		
