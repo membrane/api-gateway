@@ -29,6 +29,7 @@ public class SSLParser {
 	private TrustStore trustStore;
 	private String algorithm;
 	private String protocol;
+	private String protocols;
 	private String ciphers;
 	private String clientAuth;
 	private boolean ignoreTimestampCheckFailure;
@@ -92,7 +93,20 @@ public class SSLParser {
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
 	}
-	
+
+	public String getProtocols() {
+		return protocols;
+	}
+
+	/**
+	 * @description <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/SSLSocket.html#setEnabledProtocols%28java.lang.String[]%29">SSLSocket.setEnabledProtocols()</a>
+	 * @default TLS*
+	 */
+	@MCAttribute
+	public void setProtocols(String protocols) {
+		this.protocols = protocols;
+	}
+
 	public String getCiphers() {
 		return ciphers;
 	}

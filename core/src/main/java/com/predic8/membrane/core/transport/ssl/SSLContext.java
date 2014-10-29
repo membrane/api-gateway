@@ -31,6 +31,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -56,6 +57,7 @@ public class SSLContext implements SSLProvider {
 
 	private final javax.net.ssl.SSLContext sslc;
 	private final String[] ciphers;
+	private final String[] protocols;
 	private final boolean wantClientAuth, needClientAuth;
 	
 	
@@ -138,6 +140,12 @@ public class SSLContext implements SSLProvider {
 				ciphers = null;
 			}
 			
+			if (sslParser.getProtocols() != null) {
+				protocols = sslParser.getProtocols().split(","); 
+			} else {
+				protocols = null;
+			}
+			
 			if (sslParser.getClientAuth() == null) {
 				needClientAuth = false;
 				wantClientAuth = false;
@@ -186,6 +194,19 @@ public class SSLContext implements SSLProvider {
 		SSLServerSocket sslss = (SSLServerSocket) sslssf.createServerSocket(port, backlog, bindAddress);
 		if (ciphers != null)
 			sslss.setEnabledCipherSuites(ciphers);
+		if (protocols != null) {
+			sslss.setEnabledProtocols(protocols);
+		} else {
+			String[] protocols = sslss.getEnabledProtocols();
+			Set<String> set = new HashSet<String>();
+			for (String protocol : protocols) {
+				if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
+					continue;
+				}
+				set.add(protocol);
+			}
+			sslss.setEnabledProtocols(set.toArray(new String[0]));
+		}
 		sslss.setWantClientAuth(wantClientAuth);
 		sslss.setNeedClientAuth(needClientAuth);
 		return sslss;
@@ -196,6 +217,19 @@ public class SSLContext implements SSLProvider {
 		s.connect(new InetSocketAddress(host, port), connectTimeout);
 		SSLSocketFactory sslsf = sslc.getSocketFactory();
 		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host.getHostName(), port, true);
+		if (protocols != null) {
+			ssls.setEnabledProtocols(protocols);
+		} else {
+			String[] protocols = ssls.getEnabledProtocols();
+			Set<String> set = new HashSet<String>();
+			for (String protocol : protocols) {
+				if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
+					continue;
+				}
+				set.add(protocol);
+			}
+			ssls.setEnabledProtocols(set.toArray(new String[0]));
+		}
 		if (ciphers != null)
 			ssls.setEnabledCipherSuites(ciphers);
 		return ssls;
@@ -209,6 +243,19 @@ public class SSLContext implements SSLProvider {
 		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host.getHostName(), port, true);
 		if (ciphers != null)
 			ssls.setEnabledCipherSuites(ciphers);
+		if (protocols != null) {
+			ssls.setEnabledProtocols(protocols);
+		} else {
+			String[] protocols = ssls.getEnabledProtocols();
+			Set<String> set = new HashSet<String>();
+			for (String protocol : protocols) {
+				if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
+					continue;
+				}
+				set.add(protocol);
+			}
+			ssls.setEnabledProtocols(set.toArray(new String[0]));
+		}
 		return ssls;
 	}
 	
@@ -218,6 +265,10 @@ public class SSLContext implements SSLProvider {
 	
 	String[] getCiphers() {
 		return ciphers;
+	}
+	
+	String[] getProtocols() {
+		return protocols;
 	}
 	
 	boolean isNeedClientAuth() {
