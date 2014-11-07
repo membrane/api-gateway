@@ -113,6 +113,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
 						int p = base.lastIndexOf('/');
 						if (p != -1)
 							base = base.substring(p+1);
+						if (base.length() == 0)
+							base = ".";
 						base = base + "/";
 					}
 					for (String child : children)
