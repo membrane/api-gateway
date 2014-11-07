@@ -5,7 +5,7 @@ Check the [Repository at GitHub](https://github.com/membrane/service-proxy) for 
 
 What is Membrane?
 -----------------
-Membrane Service Proxy is an open-source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
+Membrane Service Proxy is an open source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
 
 *   a Service Virtualization layer,
 *   an API Gateway,
