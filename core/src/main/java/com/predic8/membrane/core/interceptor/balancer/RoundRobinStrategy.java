@@ -19,23 +19,26 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
+import java.util.List;
+
 @MCElement(name="roundRobinStrategy")
 public class RoundRobinStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
 	private int last = -1;
 	
 	public void done(AbstractExchange exc) {
-		
 	}
 
-	public synchronized Node dispatch(LoadBalancingInterceptor interceptor) throws EmptyNodeListException { //TODO should be synchronized
-		if (interceptor.getEndpoints().size() == 0 ) throw new EmptyNodeListException();
+	public synchronized Node dispatch(LoadBalancingInterceptor interceptor) throws EmptyNodeListException {
+        //getting a decoupled copy to avoid index out of bounds in case of concurrent modification (dynamic config files reload...)
+        List<Node> endpoints = interceptor.getEndpoints();
+        if (endpoints.isEmpty() ) throw new EmptyNodeListException();
 		
 		last ++;
-		if (last >= interceptor.getEndpoints().size())
+		if (last >= endpoints.size())
 			last = 0;
 		
-		return interceptor.getEndpoints().get(last);
+		return endpoints.get(last);
 	}
 
 	@Override
