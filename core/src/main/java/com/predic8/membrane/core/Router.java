@@ -301,7 +301,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	}
 
 	private void startAutoReinitializator() {
-		if (getInactiveRules().size() == 0)
+		if (getInactiveRules().isEmpty())
 			return;
 
 		reinitializator = new Timer("auto reinitializator", true);

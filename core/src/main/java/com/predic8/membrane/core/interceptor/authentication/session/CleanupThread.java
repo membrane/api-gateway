@@ -47,7 +47,7 @@ class CleanupThread extends Thread {
 			}
 			for (WeakReference<Cleaner> wr : removeUs)
 				cleaners.remove(wr);
-			if (cleaners.size() == 0)
+			if (cleaners.isEmpty())
 				return;
 		}
 	}

@@ -54,7 +54,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		if (!isSameHost(getProtocol(exc) + "://" + exc.getRequest().getHeader().getHost(), destination))
 			return Outcome.CONTINUE;
 		// if we cannot determine the target hostname
-		if (exc.getDestinations().size() == 0) {
+		if (exc.getDestinations().isEmpty()) {
 			// just remove the schema/hostname/port. this is illegal (by the spec),
 			// but most clients understand it
 			exc.getRequest().getHeader().setValue(Header.DESTINATION, new URL(destination).getFile());

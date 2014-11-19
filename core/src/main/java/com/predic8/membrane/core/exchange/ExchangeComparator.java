@@ -75,7 +75,7 @@ public class ExchangeComparator implements Comparator<AbstractExchange> {
 	}
 	
 	public boolean isEmpty() {
-		return accessors.size() == 0;
+		return accessors.isEmpty();
 	}
 
 	public List<ExchangeAccessor> getAccessors() {

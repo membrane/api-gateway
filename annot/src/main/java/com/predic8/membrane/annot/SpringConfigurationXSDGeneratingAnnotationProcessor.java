@@ -218,7 +218,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				Model m = new Model();
 				
 				Set<? extends Element> mcmains = getCachedElementsAnnotatedWith(roundEnv, MCMain.class);
-				if (mcmains.size() == 0) {
+				if (mcmains.isEmpty()) {
 					processingEnv.getMessager().printMessage(Kind.WARNING, "@MCMain was nowhere found.");
 					return true;
 				}
@@ -268,7 +268,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						for (ElementInfo ei2 : cedi.getElementInfo())
 							ei2.addUsedBy(f.getValue());
 
-						if (cedi.getElementInfo().size() == 0 && cedi.isRaiseErrorWhenNoSpecimen()) {
+						if (cedi.getElementInfo().isEmpty() && cedi.isRaiseErrorWhenNoSpecimen()) {
 							processingEnv.getMessager().printMessage(Kind.ERROR, "@MCChildElement references " + f.getKey().getQualifiedName() + ", but there is no @MCElement among it and its subclasses.", f.getKey());
 							return true;
 						}
@@ -276,7 +276,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				}
 
 
-				if (mcmains.size() == 0) {
+				if (mcmains.isEmpty()) {
 					processingEnv.getMessager().printMessage(Kind.ERROR, "@MCMain but no @MCElement found.", mcmains.iterator().next());
 					return true;
 				}

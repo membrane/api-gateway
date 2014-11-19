@@ -53,7 +53,7 @@ public abstract class Transport {
 	public void init(Router router) throws Exception {
 		this.router = router;
 		
-		if (interceptors.size() == 0) {
+		if (interceptors.isEmpty()) {
 			interceptors.add(new RuleMatchingInterceptor());
 			interceptors.add(new ExchangeStoreInterceptor(router.getExchangeStore()));
 			interceptors.add(new DispatchingInterceptor());

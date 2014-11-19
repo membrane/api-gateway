@@ -72,7 +72,7 @@ public class SSLContextCollection implements SSLProvider {
 		private List<SSLContext> sslContexts = new ArrayList<SSLContext>();
 		
 		public SSLProvider build() throws ConfigurationException {
-			if (sslContexts.size() == 0)
+			if (sslContexts.isEmpty())
 				throw new IllegalStateException("No SSLContext's were added to this Builder before invoking build().");
 			if (sslContexts.size() > 1) {
 				if (createSocketMethod == null)

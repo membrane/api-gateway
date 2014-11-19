@@ -198,7 +198,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 					Binding binding = port.getBinding();
 					PortType portType = binding.getPortType();
 					List<Operation> bindingOperations = getOperationsByBinding(w, binding);
-					if (bindingOperations.size() == 0)
+					if (bindingOperations.isEmpty())
 						p().text("There are no operations defined.").end();
 					else 
 						createOperationsTable(w, bindingOperations, binding, portType);
@@ -207,7 +207,7 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 					p().a().href(getClientURL(exc)).text(getClientURL(exc)).end().end();
 					
 					h2().text("Target Endpoints").end();
-					if (service.getPorts().size() == 0)
+					if (service.getPorts().isEmpty())
 						p().text("There are no endpoints defined.").end();
 					else
 						createEndpointTable(service.getPorts(), ports);
