@@ -283,7 +283,7 @@ public class Response extends Message {
 		this.statusMessage = statusMessage;
 	}
 
-	public void parseStartLine(InputStream in) throws IOException,
+	public void parseStartLine(InputStream in, boolean allowSTOMP) throws IOException,
 			EndOfStreamException {
 
 		String line;
@@ -350,7 +350,7 @@ public class Response extends Message {
 
 	@Override
 	public boolean isBodyEmpty() throws IOException {
-		if (statusCode == 100 || statusCode == 204 || statusCode == 205)
+		if (statusCode == 100 || statusCode == 101 || statusCode == 204 || statusCode == 205)
 			return true;
 		return super.isBodyEmpty();
 	}

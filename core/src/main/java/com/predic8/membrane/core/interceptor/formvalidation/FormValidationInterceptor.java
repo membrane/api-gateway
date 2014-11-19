@@ -117,7 +117,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 	
 		logMappings();
 		
-		Map<String, String> propMap = URLParamUtil.getParams(exc);
+		Map<String, String> propMap = URLParamUtil.getParams(router.getUriFactory(), exc);
 		for (Field f : fields) {
 			if ( !propMap.containsKey(f.name) ) continue;
 			

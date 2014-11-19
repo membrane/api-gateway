@@ -90,7 +90,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 						path = Integer.toString(n);
 					}
 				}
-				path = "./" + URLUtil.getName(exc.getDestinations().get(0)) + "?xsd=" + path;
+				path = "./" + URLUtil.getName(router.getUriFactory(), exc.getDestinations().get(0)) + "?xsd=" + path;
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
@@ -174,7 +174,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 				exc.getResponse().getHeader().setContentType(MimeType.TEXT_XML);
 			}
 			if (exc.getRequestURI().contains("?xsd=")) {
-				Map<String, String> params = URLParamUtil.getParams(exc);
+				Map<String, String> params = URLParamUtil.getParams(router.getUriFactory(), exc);
 				if (params.containsKey("xsd")) {
 					int n = Integer.parseInt(params.get("xsd"));
 					String path;
@@ -198,7 +198,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 				return Outcome.RETURN;
 			}
 		} catch (NumberFormatException e) {
-			exc.setResponse(HttpUtil.createHTMLErrorResponse("Bad parameter format.", ""));
+			exc.setResponse(HttpUtil.setHTMLErrorResponse(Response.internalServerError(), "Bad parameter format.", ""));
 			return Outcome.ABORT;
 		} catch (ResourceRetrievalException e) {
 			exc.setResponse(Response.notFound().build());

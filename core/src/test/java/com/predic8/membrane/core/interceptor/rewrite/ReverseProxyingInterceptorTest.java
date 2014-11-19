@@ -40,7 +40,7 @@ public class ReverseProxyingInterceptorTest {
 	public void sameServer() throws Exception {
 		// same server, redirection location should be rewritten
 		// (whether ":80" actually occurs the final string does not matter)
-		Assert.assertEquals("http://membrane:80/bar", getRewrittenRedirectionLocation("membrane", 80, "http://target/foo", "http://target/bar"));
+		Assert.assertEquals("http://membrane/bar", getRewrittenRedirectionLocation("membrane", 80, "http://target/foo", "http://target/bar"));
 	}
 
 	@Test
@@ -81,7 +81,7 @@ public class ReverseProxyingInterceptorTest {
 	public void sameServerDestination() throws Exception {
 		// same server, redirection location should be rewritten
 		// (whether ":80" actually occurs the final string does not matter)
-		Assert.assertEquals("http://target:80/bar", getRewrittenDestination("membrane", "http://membrane/bar", 80, "/foo", "http", 80));
+		Assert.assertEquals("http://target/bar", getRewrittenDestination("membrane", "http://membrane/bar", 80, "/foo", "http", 80));
 	}
 
 	@Test

@@ -33,6 +33,7 @@ import com.predic8.membrane.core.http.Chunk;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 
 public class HttpUtil {
@@ -53,6 +54,12 @@ public class HttpUtil {
 		while ((b = in.read()) != -1) {
 			if (b == 13) {
 				in.read();
+				return line.toString();
+			}
+			if (b == 10) {
+				in.mark(2);
+				if (in.read() != 13)
+					in.reset();
 				return line.toString();
 			}
 
@@ -85,8 +92,8 @@ public class HttpUtil {
 		return Integer.parseInt(buffer.toString().trim(), 16);
 	}
 
-	public static Response createHTMLErrorResponse(String message, String comment) {
-		Response response = Response.internalServerError().build();
+	public static Response setHTMLErrorResponse(ResponseBuilder responseBuilder, String message, String comment) {
+		Response response = responseBuilder.build();
 		response.setHeader(createHeaders(MimeType.TEXT_HTML_UTF8));
 		response.setBodyContent(getHTMLErrorBody(message, comment).getBytes(Constants.UTF_8_CHARSET));
 		return response;

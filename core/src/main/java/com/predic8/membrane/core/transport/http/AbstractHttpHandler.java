@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetAddress;
+import java.net.URISyntaxException;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
@@ -31,6 +32,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.util.ContentTypeDetector;
@@ -103,9 +105,14 @@ public abstract class AbstractHttpHandler  {
 				"More details might be found in the log.";
 		
 		Response error = null;
+		ResponseBuilder b = null;
+		if (e instanceof URISyntaxException)
+			b = Response.badRequest();
+		if (b == null)
+			b = Response.internalServerError();
 		switch (ContentTypeDetector.detect(exchange.getRequest()).getEffectiveContentType()) {
 		case XML:
-			error = Response.internalServerError().
+			error = b.
 				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
 				body(("<error><message>" + 
 						StringEscapeUtils.escapeXml(msg) + 
@@ -128,19 +135,19 @@ public abstract class AbstractHttpHandler  {
 	        	log.error("Error generating JSON error response", f);
 	        }
 
-			error = Response.internalServerError().
+			error = b.
 					header(HttpUtil.createHeaders(MimeType.APPLICATION_JSON_UTF8)).
 					body(baos.toByteArray()).
 					build();
 			break;
 		case SOAP:
-			error = Response.internalServerError().
+			error = b.
 				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
 				body(HttpUtil.getFaultSOAPBody("Internal Server Error", msg + " " + comment).getBytes(Constants.UTF_8_CHARSET)).
 				build();
 			break;
 		case UNKNOWN:
-			error = HttpUtil.createHTMLErrorResponse(msg, comment);
+			error = HttpUtil.setHTMLErrorResponse(b, msg, comment);
 			break;
 		}
 		return error;

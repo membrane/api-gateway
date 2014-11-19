@@ -47,6 +47,7 @@ import com.predic8.membrane.core.interceptor.formvalidation.FormValidationInterc
 import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptorTest;
 import com.predic8.membrane.core.interceptor.rest.HTTP2XMLInterceptorTest;
 import com.predic8.membrane.core.interceptor.rewrite.ReverseProxyingInterceptorTest;
+import com.predic8.membrane.core.interceptor.rewrite.RewriteInterceptorTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.JSONSchemaValidationTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.SOAPUtilTest;
 import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptorTest;
@@ -71,6 +72,7 @@ import com.predic8.membrane.core.util.ContentTypeDetectorTest;
 import com.predic8.membrane.core.util.DNSCacheTest;
 import com.predic8.membrane.core.util.HttpUtilTest;
 import com.predic8.membrane.core.util.TextUtilTest;
+import com.predic8.membrane.core.util.URITest;
 import com.predic8.membrane.core.util.URLUtilTest;
 import com.predic8.membrane.core.ws.relocator.RelocatorTest;
 import com.predic8.membrane.core.ws.relocator.RelocatorWADLTest;
@@ -109,7 +111,9 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	LimitedMemoryExchangeStoreTest.class,
 	IndexInterceptorTest.class,
 	SingleResolverTest.class,
-	JSONSchemaValidationTest.class
+	JSONSchemaValidationTest.class,
+	URITest.class,
+	RewriteInterceptorTest.class
 })
 public class UnitTests {
 	/*

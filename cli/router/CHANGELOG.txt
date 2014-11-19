@@ -1,6 +1,20 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.17
+
+* [feature] Membrane's URL parsing algorithm can now be exchanged: For
+  example by using <router><uriFactory allowIllegalCharacters="true" />...
+  you can allow characters like '{' in any Membrane component requiring URI
+  parsing (for example to proxy Microsoft SharePoint Server).
+
+* [update] dependency json-schema-validator to 2.1.8. The JSON Schema
+  Validaton draft v4 is now used, which might require some schema changes.
+
+* [refactoring] the basic classes used by Membrane now don't depend on Groovy
+  anymore. This means you can remove Groovy from the dependency list (or
+  classpath) as long as you don't use a feature explicitly requiring it.
+
 * [feature] a <login> interceptor's session can now be accessed by other
   Membrane components using exchange.getProperty("login-session"), if "login"
   is the ID of the <login> interceptor (which is the default).

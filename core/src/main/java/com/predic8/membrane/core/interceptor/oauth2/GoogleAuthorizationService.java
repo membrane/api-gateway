@@ -40,8 +40,8 @@ import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.util.Util;
 
 /**
@@ -65,6 +65,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
 	private HttpClient httpClient;
 	private JsonFactory factory;
 	private GoogleIdTokenVerifier verifier;
+	private URIFactory uriFactory;
 	
 	public String getClientId() {
 		return clientId;
@@ -103,6 +104,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
 
 		factory = new JacksonFactory();
 		verifier = new GoogleIdTokenVerifier(new ApacheHttpTransport(), factory);
+		uriFactory = router.getUriFactory();
 	}
 	
 	@Override
@@ -118,13 +120,13 @@ public class GoogleAuthorizationService extends AuthorizationService {
 	}
 	
 	@Override
-	public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) {
-		String path = URLUtil.getPathFromPathQuery(URLUtil.getPathQuery(exc.getDestinations().get(0)));
+	public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
+		String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
 		
 		if ("/oauth2callback".equals(path)) {
 			
 			try {
-				Map<String, String> params = URLParamUtil.getParams(exc);
+				Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
 				
 				String state2 = params.get("state");
 
@@ -151,8 +153,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
 					throw new RuntimeException("No code received.");
 
 				Exchange e = new Request.Builder()
-						.method("POST")
-						.url("https://accounts.google.com/o/oauth2/token")
+						.post("https://accounts.google.com/o/oauth2/token")
 						.header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
 						.body(
 								"code=" + code + "&client_id=" + clientId

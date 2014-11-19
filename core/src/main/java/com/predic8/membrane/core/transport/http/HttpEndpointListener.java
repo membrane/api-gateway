@@ -36,12 +36,14 @@ public class HttpEndpointListener extends Thread {
 
 	private final ServerSocket serverSocket;
 	private final HttpTransport transport;
+	private final SSLProvider sslProvider;
 	private final ConcurrentHashMap<Socket, Boolean> idleSockets = new ConcurrentHashMap<Socket, Boolean>();
 	private final ConcurrentHashMap<Socket, Boolean> openSockets = new ConcurrentHashMap<Socket, Boolean>();
 	private volatile boolean closed;
 
 	public HttpEndpointListener(String ip, int port, HttpTransport transport, SSLProvider sslProvider) throws IOException {
 		this.transport = transport;
+		this.sslProvider = sslProvider;
 
 		try {
 			if (sslProvider != null)
@@ -49,6 +51,7 @@ public class HttpEndpointListener extends Thread {
 			else
 				serverSocket = new ServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
 			
+			setName("Connection Acceptor " + (ip != null ? ip + ":" : ":") + port);
 			log.debug("listening at port "+port + (ip != null ? " ip " + ip : ""));
 		} catch (BindException e) {
 			throw new PortOccupiedException(port);
@@ -128,5 +131,9 @@ public class HttpEndpointListener extends Thread {
 	
 	public boolean isClosed() {
 		return closed;
+	}
+	
+	public SSLProvider getSslProvider() {
+		return sslProvider;
 	}
 }

@@ -17,6 +17,7 @@ package com.predic8.membrane.core.transport.http;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 
 import org.apache.commons.io.IOUtils;
@@ -77,10 +78,9 @@ public class HttpKeepAliveTest {
 		return client;
 	}
 
-	private Exchange createExchange() throws IOException {
+	private Exchange createExchange() throws IOException, URISyntaxException {
 		return new Request.Builder().
-			url("http://localhost:2003/axis2/services/BLZService").
-			method(Request.METHOD_POST).
+			post("http://localhost:2003/axis2/services/BLZService").
 			header(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8).
 			header(Header.SOAP_ACTION, "").
 			body(IOUtils.toByteArray(this.getClass().getResourceAsStream("/getBank.xml"))).

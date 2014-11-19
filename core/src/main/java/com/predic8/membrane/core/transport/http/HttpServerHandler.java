@@ -25,6 +25,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
 import org.apache.commons.logging.Log;
@@ -36,6 +37,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MessageObserver;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.Util;
@@ -45,32 +47,39 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	private static final Log log = LogFactory.getLog(HttpServerHandler.class);
 	private static final AtomicInteger counter = new AtomicInteger();
 	
-	private final Socket sourceSocket;
 	private final HttpEndpointListener endpointListener;
-	private final InputStream srcIn;
-	private final OutputStream srcOut;
+	private Socket sourceSocket;
+	private InputStream srcIn;
+	private OutputStream srcOut;
 
 
-	public HttpServerHandler(Socket socket, HttpEndpointListener endpointListerer) throws IOException {
-		super(endpointListerer.getTransport());
+	public HttpServerHandler(Socket socket, HttpEndpointListener endpointListener) throws IOException {
+		super(endpointListener.getTransport());
+		this.endpointListener = endpointListener;
 		this.sourceSocket = socket;
-		this.endpointListener = endpointListerer;
-		this.exchange = new Exchange(this);
-		log.debug("New ServerThread created. " + counter.incrementAndGet());
-		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
-		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
-		sourceSocket.setSoTimeout(endpointListerer.getTransport().getSocketTimeout());
-		sourceSocket.setTcpNoDelay(endpointListerer.getTransport().isTcpNoDelay());
 	}
 
 	public HttpTransport getTransport() {
 		return (HttpTransport)super.getTransport();
 	}
 	
+	private void setup() throws IOException {
+		SSLProvider sslProvider = endpointListener.getSslProvider();
+		if (sslProvider != null)
+			sourceSocket = sslProvider.wrapAcceptedSocket(sourceSocket);
+		this.exchange = new Exchange(this);
+		log.debug("New ServerThread created. " + counter.incrementAndGet());
+		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
+		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
+		sourceSocket.setSoTimeout(endpointListener.getTransport().getSocketTimeout());
+		sourceSocket.setTcpNoDelay(endpointListener.getTransport().isTcpNoDelay());
+	}
+	
 	public void run() {
 		Connection boundConnection = null; // see Request.isBindTargetConnectionToIncoming()
 		try {
 			updateThreadName(true);
+			setup();
 			while (true) {
 				srcReq = new Request();
 				
@@ -89,7 +98,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 					boundConnection = null;
 				}
 
-				srcReq.read(srcIn, true);
+				srcReq.read(srcIn, true, endpointListener.getTransport().isAllowSTOMP());
 
 				exchange.received();
 
@@ -119,6 +128,13 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("Socket of thread " + counter + " timed out");
 		} catch (SocketException se) {
 			log.debug("client socket closed");
+		} catch (SSLException s) {
+			if (s.getCause() instanceof SSLException)
+				s = (SSLException) s.getCause();
+			if (s.getCause() instanceof SocketException)
+				log.debug("ssl socket closed");
+			else
+				s.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (EndOfStreamException e) {
@@ -285,6 +301,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 	public OutputStream getSrcOut() {
 		return srcOut;
+	}
+	
+	public Socket getSourceSocket() {
+		return sourceSocket;
 	}
 
 }

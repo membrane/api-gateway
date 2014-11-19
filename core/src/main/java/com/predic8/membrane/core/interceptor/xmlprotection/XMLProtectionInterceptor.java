@@ -51,10 +51,15 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
+		
+		if (exc.getRequest().isBodyEmpty()) {
+			log.info("body is empty -> request is not scanned by xmlProtection");
+			return Outcome.CONTINUE;
+		}
+		
 		if (!exc.getRequest().isXML()) {
-			log.debug("request discarded by xmlProtection because it is not XML");
-			setFailResponse(exc);
-			return Outcome.ABORT;
+			log.debug("content-Type is not XML -> request is not scanned by xmlProtection");
+			return Outcome.CONTINUE;
 		}
 		
 		if (!protectXML(exc)) {

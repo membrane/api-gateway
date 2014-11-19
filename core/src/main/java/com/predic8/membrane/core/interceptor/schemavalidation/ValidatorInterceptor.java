@@ -66,9 +66,6 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	public void init() throws Exception {
 		validator = null;
 		
-		if (skipFaults && wsdl == null)
-			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
-		
 		String baseLocation = router == null ? null : router.getBaseLocation();
 		
 		if (wsdl != null) {
@@ -98,6 +95,9 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 			if (validator == null)
 				throw new Exception("<validator> must have an attribute specifying the validator.");
 		}
+
+		if (skipFaults && wsdl == null)
+			throw new Exception("validator/@skipFaults only makes sense with validator/@wsdl");
 	}
 	
 	@Override

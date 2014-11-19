@@ -24,7 +24,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.SNIServerName;
@@ -127,113 +129,124 @@ public class SSLContextCollection implements SSLProvider {
 	}
 	
 	public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException {
-		return new ServerSocket(port, 50, bindAddress) {
-			@Override
-			public Socket accept() throws IOException {
-				Socket socket = super.accept();
-				
-				InputStream ins = socket.getInputStream();
+		return new ServerSocket(port, 50, bindAddress);
+	}
+	
+	@Override
+	public Socket wrapAcceptedSocket(Socket socket) throws IOException {
+		InputStream ins = socket.getInputStream();
 
-				byte[] buffer = new byte[0xFF];
-				int position = 0;
-				SSLCapabilities capabilities = null;
+		byte[] buffer = new byte[0xFF];
+		int position = 0;
+		SSLCapabilities capabilities = null;
 
-				// Read the header of TLS record
-				while (position < SSLExplorer.RECORD_HEADER_SIZE) {
-					int count = SSLExplorer.RECORD_HEADER_SIZE - position;
-					int n = ins.read(buffer, position, count);
-					if (n < 0) {
-						throw new IOException("unexpected end of stream!");
-					}
-					position += n;
-				}
-
-				// Get the required size to explore the SSL capabilities
-				int recordLength = SSLExplorer.getRequiredSize(buffer, 0, position);
-				if (buffer.length < recordLength) {
-					buffer = Arrays.copyOf(buffer, recordLength);
-				}
-
-				while (position < recordLength) {
-					int count = recordLength - position;
-					int n = ins.read(buffer, position, count);
-					if (n < 0) {
-						throw new IOException("unexpected end of stream!");
-					}
-					position += n;
-				}
-
-				capabilities = SSLExplorer.explore(buffer, 0, recordLength);
-				
-				SSLContext sslContext = null;
-				
-				if (capabilities != null) {
-					List<SNIServerName> serverNames = capabilities.getServerNames();
-					if (serverNames != null && serverNames.size() > 0) {
-						OUTER:
-						for (SNIServerName snisn : serverNames) {
-							String hostname = new String(snisn.getEncoded(), "UTF-8");
-							for (int i = 0; i < dnsNames.size(); i++)
-								if (dnsNames.get(i).matcher(hostname).matches()) {
-									sslContext = sslContexts.get(i);
-									break OUTER;
-								}
-						}
-						if (sslContext == null) {
-							// no hostname matched: send 'unrecognized_name' alert and close socket
-							
-							byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-									2 /* fatal */, 112 /* unrecognized_name */ };
-
-							try {
-								socket.getOutputStream().write(alert_unrecognized_name);
-							} finally {
-								socket.close();
-							}
-
-							StringBuilder hostname = null;
-							for (SNIServerName snisn : serverNames) {
-								if (hostname == null)
-									hostname = new StringBuilder();
-								else
-									hostname.append(", ");
-								hostname.append(new String(snisn.getEncoded(), "UTF-8"));
-							}
-
-							throw new RuntimeException("no certificate configured (sending unrecognized_name alert) for hostname \"" + hostname + "\"");
-						}
-					}
-				}
-				
-				// no Server Name Indication used by the client: fall back to first sslContext
-				if (sslContext == null)
-					sslContext = sslContexts.get(0);
-
-				SSLSocketFactory serviceSocketFac = sslContext.getSocketFactory();
-
-				ByteArrayInputStream bais = new ByteArrayInputStream(buffer, 0, position);
-				
-				SSLSocket serviceSocket;
-				// "serviceSocket = (SSLSocket)serviceSocketFac.createSocket(socket, bais, true);" only compileable with Java 1.8
-				try {
-					serviceSocket = (SSLSocket) createSocketMethod.invoke(serviceSocketFac, new Object[] { socket, bais, true });
-				} catch (IllegalArgumentException e) {
-					throw new RuntimeException(e);
-				} catch (IllegalAccessException e) {
-					throw new RuntimeException(e);
-				} catch (InvocationTargetException e) {
-					throw new RuntimeException(e);
-				}
-				
-				String[] ciphers = sslContext.getCiphers();
-				if (ciphers != null)
-					serviceSocket.setEnabledCipherSuites(ciphers);
-				serviceSocket.setWantClientAuth(sslContext.isWantClientAuth());
-				serviceSocket.setNeedClientAuth(sslContext.isNeedClientAuth());
-				
-				return serviceSocket;
+		// Read the header of TLS record
+		while (position < SSLExplorer.RECORD_HEADER_SIZE) {
+			int count = SSLExplorer.RECORD_HEADER_SIZE - position;
+			int n = ins.read(buffer, position, count);
+			if (n < 0) {
+				throw new IOException("unexpected end of stream!");
 			}
-		};
+			position += n;
+		}
+
+		// Get the required size to explore the SSL capabilities
+		int recordLength = SSLExplorer.getRequiredSize(buffer, 0, position);
+		if (buffer.length < recordLength) {
+			buffer = Arrays.copyOf(buffer, recordLength);
+		}
+
+		while (position < recordLength) {
+			int count = recordLength - position;
+			int n = ins.read(buffer, position, count);
+			if (n < 0) {
+				throw new IOException("unexpected end of stream!");
+			}
+			position += n;
+		}
+
+		capabilities = SSLExplorer.explore(buffer, 0, recordLength);
+		
+		SSLContext sslContext = null;
+		
+		if (capabilities != null) {
+			List<SNIServerName> serverNames = capabilities.getServerNames();
+			if (serverNames != null && serverNames.size() > 0) {
+				OUTER:
+				for (SNIServerName snisn : serverNames) {
+					String hostname = new String(snisn.getEncoded(), "UTF-8");
+					for (int i = 0; i < dnsNames.size(); i++)
+						if (dnsNames.get(i).matcher(hostname).matches()) {
+							sslContext = sslContexts.get(i);
+							break OUTER;
+						}
+				}
+				if (sslContext == null) {
+					// no hostname matched: send 'unrecognized_name' alert and close socket
+					
+					byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+							2 /* fatal */, 112 /* unrecognized_name */ };
+
+					try {
+						socket.getOutputStream().write(alert_unrecognized_name);
+					} finally {
+						socket.close();
+					}
+
+					StringBuilder hostname = null;
+					for (SNIServerName snisn : serverNames) {
+						if (hostname == null)
+							hostname = new StringBuilder();
+						else
+							hostname.append(", ");
+						hostname.append(new String(snisn.getEncoded(), "UTF-8"));
+					}
+
+					throw new RuntimeException("no certificate configured (sending unrecognized_name alert) for hostname \"" + hostname + "\"");
+				}
+			}
+		}
+		
+		// no Server Name Indication used by the client: fall back to first sslContext
+		if (sslContext == null)
+			sslContext = sslContexts.get(0);
+
+		SSLSocketFactory serviceSocketFac = sslContext.getSocketFactory();
+
+		ByteArrayInputStream bais = new ByteArrayInputStream(buffer, 0, position);
+		
+		SSLSocket serviceSocket;
+		// "serviceSocket = (SSLSocket)serviceSocketFac.createSocket(socket, bais, true);" only compileable with Java 1.8
+		try {
+			serviceSocket = (SSLSocket) createSocketMethod.invoke(serviceSocketFac, new Object[] { socket, bais, true });
+		} catch (IllegalArgumentException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException(e);
+		}
+		
+		String[] ciphers = sslContext.getCiphers();
+		if (ciphers != null)
+			serviceSocket.setEnabledCipherSuites(ciphers);
+		if (sslContext.getProtocols() != null) {
+			serviceSocket.setEnabledProtocols(sslContext.getProtocols());
+		} else {
+			String[] protocols = serviceSocket.getEnabledProtocols();
+			Set<String> set = new HashSet<String>();
+			for (String protocol : protocols) {
+				if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
+					continue;
+				}
+				set.add(protocol);
+			}
+			serviceSocket.setEnabledProtocols(set.toArray(new String[0]));
+		}
+		serviceSocket.setWantClientAuth(sslContext.isWantClientAuth());
+		serviceSocket.setNeedClientAuth(sslContext.isNeedClientAuth());
+		
+		return serviceSocket;
 	}
 	
 	private SSLContext getSSLContextForHostname(String hostname) {

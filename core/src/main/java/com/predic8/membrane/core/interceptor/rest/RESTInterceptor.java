@@ -31,7 +31,6 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.administration.Mapping;
 import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.URLUtil;
 
 public abstract class RESTInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(RESTInterceptor.class.getName());
@@ -64,19 +63,19 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	}
 
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
-		String pathQuery = URLUtil.getPathQuery(exc.getDestinations().get(0));
+		String path = router.getUriFactory().create(exc.getDestinations().get(0)).getPath();
 		for (Method m : getClass().getMethods() ) {
 			Mapping a = m.getAnnotation(Mapping.class);
 			if (a==null) continue;
-			Matcher matcher = Pattern.compile(a.value()).matcher(pathQuery);
+			Matcher matcher = Pattern.compile(a.value()).matcher(path);
 			if (matcher.matches()) {
 				Object[] parameters;
 				switch (m.getParameterTypes().length) {
 				case 2:
-					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(exc), matcher), getRelativeRootPath(pathQuery) };
+					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc), matcher), getRelativeRootPath(path) };
 					break;
 				case 3:
-					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(exc), matcher), getRelativeRootPath(pathQuery), exc };
+					parameters = new Object[] { new QueryParameter(URLParamUtil.getParams(router.getUriFactory(), exc), matcher), getRelativeRootPath(path), exc };
 					break;
 				default:
 					throw new InvalidParameterException("@Mapping is supposed to annotate a 2-parameter method.");
@@ -91,8 +90,7 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	/**
 	 * For example, returns "../.." for the input "/admin/clusters/".
 	 */
-	public static String getRelativeRootPath(String pathQuery) throws MalformedURLException {
-		String path = URLUtil.getPathFromPathQuery(pathQuery);
+	public static String getRelativeRootPath(String path) throws MalformedURLException {
 		// count '/'s
 		int depth = 0;
 		for (int i = 0; i < path.length(); i++)

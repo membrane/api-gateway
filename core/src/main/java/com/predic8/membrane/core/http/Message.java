@@ -52,6 +52,10 @@ public abstract class Message {
 		
 	}
 
+	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
+		read(in, createBody, false);
+	}
+		
 	/**
 	 * If the message is HTTP 1.1 but the header has no information about the
 	 * content length, then an assumption is made that after the body the server
@@ -59,8 +63,8 @@ public abstract class Message {
 	 * 
 	 * See http://www.ietf.org/rfc/rfc2145.txt
 	 */
-	public void read(InputStream in, boolean createBody) throws IOException, EndOfStreamException {
-		parseStartLine(in);		
+	public void read(InputStream in, boolean createBody, boolean allowSTOMP) throws IOException, EndOfStreamException {
+		parseStartLine(in, allowSTOMP);		
 		header = new Header(in);
 				
 		if (createBody) 
@@ -192,7 +196,11 @@ public abstract class Message {
 		body = new Body(in); 
 	}
 
-	abstract protected void parseStartLine(InputStream in) throws IOException, EndOfStreamException;
+	protected void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
+		parseStartLine(in, false);
+	}
+	
+	abstract protected void parseStartLine(InputStream in, boolean allowSTOMP) throws IOException, EndOfStreamException;
 
 	public Header getHeader() {
 		return header;
@@ -309,7 +317,7 @@ public abstract class Message {
 	public boolean isXML() {
 		if (header.getContentType() == null) 
 			return false;
-		return header.getContentType().indexOf("xml") > 0;
+		return header.getContentType().toLowerCase().indexOf("xml") > 0;
 	}
 	
 	public boolean isJSON() {

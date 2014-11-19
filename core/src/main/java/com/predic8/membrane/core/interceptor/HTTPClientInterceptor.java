@@ -27,7 +27,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.HttpUtil;
 
 /**
  * @description The <i>httpClient</i> sends the request of an exchange to a Web
@@ -65,7 +64,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 			log.warn("Target " + getDestination(exc) + " is not reachable. " + e);
 			return Outcome.ABORT;
 		} catch (UnknownHostException e) {
-			exc.setResponse(Response.internalServerError("Target host " + HttpUtil.getHostName(getDestination(exc)) + " is unknown. DNS was unable to resolve host name.").build());
+			exc.setResponse(Response.internalServerError("Target host " + getDestination(exc) + " is unknown. DNS was unable to resolve host name.").build());
 			return Outcome.ABORT;
 		}						
 	}

@@ -28,6 +28,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ByteUtil;
+import com.predic8.membrane.core.util.URIFactory;
 
 @MCElement(name="httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
@@ -35,6 +36,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 	private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
 	
 	private HttpClient httpClient;
+	private URIFactory uriFactory = new URIFactory(false);
 	
 	public synchronized HttpClient getHttpClient() {
 		if (httpClient == null) {
@@ -50,7 +52,7 @@ public class HTTPSchemaResolver implements SchemaResolver {
 	
 	public InputStream resolve(String url) throws ResourceRetrievalException {
 		try {
-		    Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
+		    Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(uriFactory, url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
 		    Response response = getHttpClient().call(exc).getResponse();
 		    response.readBody();
 		    

@@ -16,6 +16,8 @@ package com.predic8.membrane.core.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,6 +33,7 @@ import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoMoreRequestsException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLUtil;
 
 public class Request extends Message {
@@ -62,15 +65,21 @@ public class Request extends Message {
 	String method;
 	String uri;
 
-	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
+	public void parseStartLine(InputStream in, boolean allowSTOMP) throws IOException, EndOfStreamException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
-			if (!matcher.find())
+			if (matcher.find()) {
+				method = matcher.group(1);
+				uri = matcher.group(2);
+				version = matcher.group(3);
+			} else if (allowSTOMP && "CONNECT".equalsIgnoreCase(firstLine)) {
+				method = "CONNECT";
+				uri = "";
+				version = "STOMP";
+			} else {
 				throw new EOFWhileReadingFirstLineException(firstLine);
-			method = matcher.group(1);
-			uri = matcher.group(2);
-			version = matcher.group(3);
+			}
 		} catch (EOFWhileReadingLineException e) {
 			if (e.getLineSoFar().length() == 0)
 				throw new NoMoreRequestsException(); // happens regularly at the end of a keep-alive connection
@@ -202,6 +211,15 @@ public class Request extends Message {
 				(uri != null ? 2*uri.length() : 0);
 	}
 	
+	public final void writeSTOMP(OutputStream out) throws IOException {
+		out.write("CONNECT".getBytes(Constants.UTF_8));
+		out.write(10);
+		for (HeaderField hf : header.getAllHeaderFields())
+			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(Constants.UTF_8));
+		out.write(10);
+	}
+
+	
 	public static class Builder {
 		private Request req;
 		private String fullURL;
@@ -227,9 +245,9 @@ public class Request extends Message {
 			return this;
 		}
 		
-		public Builder url(String url) {
+		public Builder url(URIFactory uriFactory, String url) throws URISyntaxException {
 			fullURL = url;
-			req.setUri(URLUtil.getPathQuery(url));
+			req.setUri(URLUtil.getPathQuery(uriFactory, url));
 			return this;
 		}
 		
@@ -253,12 +271,23 @@ public class Request extends Message {
 			return this;
 		}
 
-		public Builder post(String url) {
-			return method(Request.METHOD_POST).url(url);
+		public Builder post(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_POST).url(uriFactory, url);
 		}
 
-		public Builder get(String url) {
-			return method(Request.METHOD_GET).url(url);
+		public Builder post(String url) throws URISyntaxException {
+			return post(new URIFactory(), url);
+		}
+		
+		public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_GET).url(uriFactory, url);
+		}
+
+		/**
+		 * Sets the request's method to "GET" and the URI to the parameter. Uses a standard {@link URIFactory}.
+		 */
+		public Builder get(String url) throws URISyntaxException {
+			return get(new URIFactory(), url);
 		}
 	}
 	

@@ -23,6 +23,6 @@ public abstract class AuthorizationService {
 	
 	public abstract String getLoginURL(String securityToken, String publicURL, String pathQuery);
 
-	public abstract boolean handleRequest(Exchange exc, String state, String publicURL, Session session);
+	public abstract boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception;
 
 }

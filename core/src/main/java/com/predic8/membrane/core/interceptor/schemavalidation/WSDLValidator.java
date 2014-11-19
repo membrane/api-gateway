@@ -51,7 +51,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 		ctx.setInput(location);
 		try {
 			WSDLParser wsdlParser = new WSDLParser();
-			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver());
+			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver().toExternalResolver());
 			return wsdlParser.parse(ctx).getTypes().getSchemas();
 		} catch (RuntimeException e) {
 			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);

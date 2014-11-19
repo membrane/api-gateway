@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +37,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 public class LoginDialog {
@@ -45,6 +46,7 @@ public class LoginDialog {
 
 	private String path;
 	private boolean exposeUserCredentialsToSession;
+	private URIFactory uriFactory;
 
 	private final UserDataProvider userDataProvider;
 	private final TokenProvider tokenProvider;
@@ -73,17 +75,18 @@ public class LoginDialog {
 	}
 
 	public void init(Router router) throws Exception {
+		uriFactory = router.getUriFactory();
 		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
 		wsi.init(router);
 	}
 	
 	public boolean isLoginRequest(Exchange exc) {
-		URI uri = URI.create(exc.getRequest().getUri());
+		URI uri = uriFactory.createWithoutException(exc.getRequest().getUri());
 		return uri.getPath().startsWith(path);
 	}
 
 	private void showPage(Exchange exc, int page, Object... params) throws Exception {
-		String target = StringUtils.defaultString(URLParamUtil.getParams(exc).get("target"));
+		String target = StringUtils.defaultString(URLParamUtil.getParams(uriFactory, exc).get("target"));
 		
 		exc.getDestinations().set(0, "/index.html");
 		wsi.handleRequest(exc);
@@ -128,7 +131,7 @@ public class LoginDialog {
 			if (s == null || !s.isPreAuthorized()) {
 				if (exc.getRequest().getMethod().equals("POST")) {
 					Map<String, String> userAttributes;
-					Map<String, String> params = URLParamUtil.getParams(exc);
+					Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
 					String username = params.get("username");
 					if (username == null) {
 						showPage(exc, 0, "error", "INVALID_PASSWORD");
@@ -167,7 +170,7 @@ public class LoginDialog {
 					return;
 				}
 				if (exc.getRequest().getMethod().equals("POST")) {
-					String token = URLParamUtil.getParams(exc).get("token");
+					String token = URLParamUtil.getParams(uriFactory, exc).get("token");
 					try {
 						tokenProvider.verifyToken(s.getUserAttributes(), token);
 					} catch (NoSuchElementException e) {
@@ -184,7 +187,7 @@ public class LoginDialog {
 					}
 					if (accountBlocker != null)
 						accountBlocker.unblock(s.getUserName());
-					String target = URLParamUtil.getParams(exc).get("target");
+					String target = URLParamUtil.getParams(uriFactory, exc).get("target");
 					if (StringUtils.isEmpty(target))
 						target = "/";
 					exc.setResponse(Response.redirectWithout300(target, false).build());

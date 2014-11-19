@@ -136,7 +136,7 @@ public class ResolverTest {
 			WSDLParserContext ctx = new WSDLParserContext();
 			ctx.setInput(wsdlLocation);
 			WSDLParser wsdlParser = new WSDLParser();
-			wsdlParser.setResourceResolver(resolverMap.toExternalResolver());
+			wsdlParser.setResourceResolver(resolverMap.toExternalResolver().toExternalResolver());
 			Definitions definitions = wsdlParser.parse(ctx);
 			for (Schema schema : definitions.getSchemas())
 				schema.getElements(); // trigger lazy-loading
