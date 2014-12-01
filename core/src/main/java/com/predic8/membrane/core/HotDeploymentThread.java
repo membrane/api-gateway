@@ -69,13 +69,10 @@ public class HotDeploymentThread extends Thread {
 	@Override
 	public void run() {
 		log.debug("Spring Hot Deployment Thread started.");
-		OUTER:
 		while (!isInterrupted()) {
 			try {
 				while (!configurationChanged()) {
 					sleep(1000);
-					if (isInterrupted())
-						break OUTER;
 				}
 
 				log.debug("spring configuration changed.");
@@ -90,7 +87,11 @@ public class HotDeploymentThread extends Thread {
 				log.error(e.getMessage());
 				log.error("Application context was NOT restarted. Please fix the error in the configuration file.");
 				updateLastModified();
-			} catch (InterruptedException e) {				
+			} catch (InterruptedException e) {
+			    // #162 HotDeploymentThread don't stop on Interrupt.
+			    // InterruptedException clears interrupt flag. see javadoc Thread.interrupt();
+			    // So reset it.
+			    interrupt(); 
 			} catch (Exception e) {
 				log.error("Could not redeploy.", e);
 				updateLastModified();
