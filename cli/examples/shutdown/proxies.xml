@@ -1,0 +1,35 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+    xmlns:spring="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                        http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+    <router>
+        <serviceProxy name="predic8.com" port="2000" ip="127.0.0.1">
+            <!-- Accessible only via localhost interface ( ip="127.0.0.1" ).
+                 Be careful, if you set up shutdown interceptor to public IP-address.
+            -->
+            <!-- Only for specific path.
+                 Be careful, putting secret code to URL is not good idea, URLs are usually logged. -->
+            <path>/shutdown</path>
+            
+            <!-- !!! don't forget set up security !!! This example is without security. -->
+
+            <!-- The simplest case : any HTTP method (GET/POST/PUT/HEAD/DELETE/TRACE/CONNECT/OPTIONS) to shutdown.
+            <shutdown />
+            -->
+
+            <!-- only PUT method, other methods (GET/POST/HEAD/DELETE/TRACE/CONNECT/OPTIONS) are ignored
+            <shutdown httpMethod="PUT"/>
+            -->
+
+            <!-- only POST method where body contains "'secret code'" ( bodyContent is valid only for POST and PUT) -->
+            <shutdown httpMethod="POST" bodyContent="'secret code'"/>
+
+            <!-- only DELETE method, bodyContent is not significant (bodyContent is valid only for POST and PUT )
+            <shutdown httpMethod="DELETE" bodyContent="anything, because it's not validated"/>
+            -->
+        </serviceProxy>
+    </router>
+
+</spring:beans>
