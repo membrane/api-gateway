@@ -57,11 +57,7 @@ public class RouterCLI {
 	}
 
 	private synchronized void waitForever() {
-		try {
-			wait();
-		} catch (InterruptedException e) {
-			// do nothing
-		}
+        // DONOTHING, Router has own thread ( Spring HotDeploymentThread )
 	}
 
 	private static String getRulesFile(MembraneCommandLine line) {
