@@ -1,3 +1,7 @@
+# any VIM swap file
+.*.swp
+_*.swp
+
 # /
 /target
 /membrane.log
@@ -13,6 +17,29 @@
 /annot/.project
 /annot/.settings
 /annot/target
+
+# /cli/
+/cli/.classpath
+/cli/.project
+/cli/.settings
+/cli/target
+/cli/memrouter.log
+/cli/membrane.log
+/cli/derby.log
+/cli/executable.ps1
+/cli/log.csv
+
+# /cli/examples/router/custom-interceptor/
+/cli/examples/router/custom-interceptor/dist
+
+# /cli/examples/router/loadbalancer-session-3/
+/cli/examples/router/loadbalancer-session-3/build
+
+# /cli/examples/router/versioning/routing/
+/cli/examples/router/versioning/routing/build
+
+# /cli/examples/router/versioning/xslt/
+/cli/examples/router/versioning/xslt/build
 
 # /core/
 /core/.apt_generated
