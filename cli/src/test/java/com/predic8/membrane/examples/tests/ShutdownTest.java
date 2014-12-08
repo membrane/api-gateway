@@ -33,6 +33,7 @@ public class ShutdownTest extends DistributionExtractingTestcase {
 		        // .withWatcher(new com.predic8.membrane.examples.util.ConsoleLogger())
 		        .script("service-proxy").waitForMembrane().start();
 		try {
+		    AssertUtils.setupHTTPAuthentication("localhost",2000,"abc","def");
 			AssertUtils.getAndAssert(400, "http://localhost:2000/shutdown");
 			AssertUtils.postAndAssert(400, "http://localhost:2000/shutdown", "without code");
 			AssertUtils.postAndAssert200("http://localhost:2000/shutdown", "This is body with 'secret code' inside");
