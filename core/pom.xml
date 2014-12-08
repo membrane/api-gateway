@@ -23,16 +23,10 @@
         <relativePath>../pom.xml</relativePath>
         <version>4.0.18-SNAPSHOT</version>
     </parent>
-    
 	<dependencies>
 		<dependency>
 			<groupId>org.membrane-soa.service-proxy</groupId>
 			<artifactId>service-proxy-annot</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>javax.activation</groupId>
-			<artifactId>activation</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>commons-cli</groupId>
@@ -51,32 +45,8 @@
 			<artifactId>commons-discovery</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>commons-logging</groupId>
-			<artifactId>commons-logging</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>commons-pool</groupId>
-			<artifactId>commons-pool</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.groovy</groupId>
-			<artifactId>groovy</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-core-asl</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
 			<artifactId>jackson-mapper-asl</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.googlecode.jatl</groupId>
@@ -110,10 +80,6 @@
 			<groupId>com.springsource</groupId>
 			<artifactId>com.springsource.javax.annotation</artifactId>
 		</dependency>
-		<dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-        </dependency>
         <dependency>
         	<groupId>commons-fileupload</groupId>
         	<artifactId>commons-fileupload</artifactId>
@@ -121,10 +87,6 @@
 		<dependency>
 			<groupId>com.floreysoft</groupId>
 			<artifactId>jmte</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.google.code.findbugs</groupId>
-			<artifactId>jsr305</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.google.api-client</groupId>
@@ -138,7 +100,6 @@
 			<groupId>javax.mail</groupId>
 			<artifactId>mail</artifactId>
 		</dependency>
-                        
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-beans</artifactId>
@@ -159,7 +120,6 @@
 			<artifactId>org.apache.aries.blueprint.api</artifactId>
 			<scope>provided</scope>
 		</dependency>
- 
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
