@@ -8,6 +8,9 @@
         <serviceProxy name="predic8.com" port="2000" method="POST" ip="127.0.0.1" >
             <!-- Accessible only via localhost interface ( ip="127.0.0.1" ).
                  Be careful, if you set up shutdown interceptor to public IP-address.
+                 Be carefull about https://github.com/membrane/service-proxy/issues/170
+                 Maybe this could be better in case of more interfaces: 
+                 <serviceProxy name="predic8.com" port="2000" method="POST" host="localhost" >
             -->
             <!-- Only for specific path.
                  Be careful, putting secret code to URL is not good idea, URLs are usually logged. -->
