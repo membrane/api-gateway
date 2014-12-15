@@ -14,12 +14,15 @@
 
 package com.predic8.membrane.core.transport.http;
 
-public class IpPort {
-	public String ip;
-	public int port;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
-	public IpPort(String ip, int port) {
-		this.ip = ip;
+public class IpPort {
+	public final InetAddress ip;
+	public final int port;
+
+	public IpPort(String ip, int port) throws UnknownHostException {
+		this.ip = (ip == null) ? null : InetAddress.getByName(ip);
 		this.port = port;
 	}
 
@@ -44,4 +47,26 @@ public class IpPort {
 	public String toString() {
 		return "port=" + port + " ip=" + ip;
 	}
+
+
+	public String toShortString() {
+	    return new StringBuilder("'").append((ip == null) ? "*" : ip.toString())
+	            .append(':').append(port).append('\'')
+	            .toString();
+	}
+
+	/**
+	 * @return the ip
+	 */
+	public InetAddress getIp() {
+		return ip;
+	}
+
+	/**
+	 * @return the port
+	 */
+	public int getPort() {
+		return port;
+	}
+
 }
