@@ -16,7 +16,7 @@ package com.predic8.membrane.api;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;;
 
 import java.lang.Override;
 
@@ -26,7 +26,7 @@ import java.lang.Override;
  * @author Oliver Weiler
  */
 public class AddMyHeaderInterceptor extends AbstractInterceptor {
-    private static final Logger log = Logger.getLogger(AddMyHeaderInterceptor.class);
+    private static final Logger log = LoggerFactory.getLogger(AddMyHeaderInterceptor.class);
 
     @Override
     public Outcome handleRequest(Exchange exchange) {

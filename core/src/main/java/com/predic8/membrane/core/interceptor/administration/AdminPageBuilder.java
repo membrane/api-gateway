@@ -15,16 +15,8 @@ limitations under the License. */
 
 package com.predic8.membrane.core.interceptor.administration;
 
-import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
-import static org.apache.commons.lang.time.DurationFormatUtils.formatDurationHMS;
-import static org.apache.log4j.Level.ALL;
-import static org.apache.log4j.Level.DEBUG;
-import static org.apache.log4j.Level.ERROR;
-import static org.apache.log4j.Level.FATAL;
-import static org.apache.log4j.Level.INFO;
-import static org.apache.log4j.Level.OFF;
-import static org.apache.log4j.Level.TRACE;
-import static org.apache.log4j.Level.WARN;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
+import static org.apache.commons.lang.time.DurationFormatUtils.*;
 
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -38,8 +30,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.Constants;
@@ -966,6 +956,8 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createLogConfigurationEditor() {
+		/* LOG4J
+		 * Depends on used logging implementation
 		Logger root = Logger.getRootLogger();
 		Level rootLevel = root.getLevel();
 
@@ -993,6 +985,7 @@ public class AdminPageBuilder extends Html {
 		br();
 		input().type("submit").value("Change log4j config");
 		end();
+		 */
 	}
 }
 

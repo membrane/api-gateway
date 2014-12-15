@@ -21,6 +21,7 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.log.LogService;
+import org.slf4j.impl.OSGiLogFactory;
 
 import com.predic8.membrane.annot.MCMain;
 import com.predic8.membrane.annot.NamespaceUtil;
@@ -34,14 +35,12 @@ public class Activator implements BundleActivator {
 
 	public static BundleContext context;
 
-	private ServiceReference logServiceReference;
 	private ServiceRegistration registerService;
 
 	public void start(BundleContext arg0) throws Exception {
 		context = arg0;
 
-		logServiceReference = arg0.getServiceReference(LogService.class.getName());
-		OsgiAppender.setLogService((LogService) arg0.getService(logServiceReference));
+		OSGiLogFactory.initOSGi(context);
 
 		Properties p = new Properties();
 		p.put("osgi.service.blueprint.namespace", new NamespaceUtil().getTargetNamespaces().toArray(new String[0]));
@@ -52,8 +51,6 @@ public class Activator implements BundleActivator {
 
 	public void stop(BundleContext arg0) throws Exception {
 		registerService.unregister();
-		OsgiAppender.setLogService(null);
-		arg0.ungetService(logServiceReference);
 	}
 
 }

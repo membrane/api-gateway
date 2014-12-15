@@ -76,26 +76,30 @@ public class DistributionExtractingTestcase {
 			}
 		})[0];
 
-		replaceLog4JConfig();
+		replaceLogbackConfig();
 
 		System.out.println("running test...");
 	}
 
-	private void replaceLog4JConfig() throws IOException {
-		File log4jproperties = new File(membraneHome, "conf" + File.separator + "log4j.properties");
-		if (!log4jproperties.exists())
-			throw new RuntimeException("log4j.properties does not exits.");
+	private void replaceLogbackConfig() throws IOException {
+		File logbackXml = new File(membraneHome, "conf" + File.separator + "logback.xml");
+		if (!logbackXml.exists())
+			throw new RuntimeException(logbackXml.getAbsolutePath() + " does not exits.");
 
 		FileUtils.writeStringToFile(
-				log4jproperties,
-				"log4j.appender.stdout=org.apache.log4j.ConsoleAppender\r\n" +
-						"log4j.appender.stdout.Target=System.out\r\n" +
-						"log4j.appender.stdout.layout=org.apache.log4j.PatternLayout\r\n" +
-						"log4j.appender.stdout.layout.ConversionPattern=%d{ABSOLUTE} %5p %c{1}:%L - %m%n\r\n" +
-						"\r\n" +
-						"log4j.rootLogger=warn\r\n" +
-						"\r\n" +
-				"log4j.logger.com.predic8=debug, stdout");
+		        logbackXml,
+				"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
+				"<configuration scan=\"true\">\r\n" + 
+				"  <appender name=\"stdout\" class=\"ch.qos.logback.core.ConsoleAppender\">\r\n" + 
+				"    <Target>System.out</Target>\r\n" + 
+				"    <encoder>\r\n" + 
+				"      <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %5p %c{1}:%L - %m%n</pattern>\r\n" + 
+				"    </encoder>\r\n" + 
+				"  </appender>\r\n" + 
+				"  <root level=\"debug\">\r\n" + 
+				"    <appender-ref ref=\"stdout\"/>\r\n" + 
+				"  </root>\r\n" + 
+				"</configuration>");
 	}
 
 	public File getExampleDir(String name) {

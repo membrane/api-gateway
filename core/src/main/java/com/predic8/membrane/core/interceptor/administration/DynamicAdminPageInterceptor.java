@@ -13,11 +13,10 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.administration;
 
-import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRelativeRootPath;
-import static com.predic8.membrane.core.util.HttpUtil.createResponse;
-import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
+import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.*;
+import static com.predic8.membrane.core.util.HttpUtil.*;
+import static com.predic8.membrane.core.util.URLParamUtil.*;
 
-import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -29,9 +28,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -891,17 +887,23 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Response handleChangeLogLevelRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
+		return Response.forbidden("Changing log level depends on Logger implementation").build();
+		/* LOG4J
 		Logger.getRootLogger().setLevel(Level.toLevel(Integer.parseInt(params.get("loglevel"))));
 		return handleSystemRequest(params, relativeRootPath);
+		*/
 	}
 
 	@Mapping("/admin/log/config")
 	public Response handleReplaceLogConfigurationRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
+		return Response.forbidden("Changing log level depends on Logger implementation").build();
+		/* LOG4J
 		String config = params.get("logconfig");
 		PropertyConfigurator.configure(new ByteArrayInputStream(config.getBytes()));
 		return handleSystemRequest(params, relativeRootPath);
+		*/
 	}
 
 }

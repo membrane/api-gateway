@@ -65,6 +65,7 @@ _*.swp
 /distribution/examples/router/versioning/xslt/build
 /distribution/executable-*.pid
 /distribution/executable_launcher.sh
+/distribution/executable.ps1
 
 # /osgi/
 /osgi/.classpath
@@ -99,7 +100,18 @@ _*.swp
 /war/.settings
 /war/memrouter.log
 
-
 # Intellj
 *.iml
 .idea
+
+# /slf4j-osgi/
+/slf4j-osgi/.classpath
+/slf4j-osgi/.project
+/slf4j-osgi/.settings
+/slf4j-osgi/target
+/core/.classpath
+/core/.project
+/core/target
+/core/.settings
+/core/temp
+/core/.DS_Store

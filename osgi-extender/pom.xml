@@ -57,6 +57,11 @@
 			<artifactId>service-proxy-core</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>service-proxy-slf4j-osgi</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.aries.blueprint</groupId>
 			<artifactId>blueprint-parser</artifactId>
 			<scope>provided</scope>

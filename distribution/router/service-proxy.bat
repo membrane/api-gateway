@@ -14,4 +14,4 @@ set "CLASSPATH=%MEMBRANE_HOME%"
 set "CLASSPATH=%MEMBRANE_HOME%/conf"
 set "CLASSPATH=%CLASSPATH%;%MEMBRANE_HOME%/starter.jar"
 echo Membrane Router running...
-java  -classpath "%CLASSPATH%" com.predic8.membrane.core.Starter %1 %2 %3 %4 %5 %6 %7 %8 %9
+java -Dlogback.configurationFile="%MEMBRANE_HOME%/conf/logback.xml" -classpath "%CLASSPATH%" com.predic8.membrane.core.Starter %1 %2 %3 %4 %5 %6 %7 %8 %9

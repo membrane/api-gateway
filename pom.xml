@@ -66,6 +66,7 @@
 		<module>annot</module>
 		<module>core</module>
 		<module>distribution</module>
+		<module>slf4j-osgi</module>
 		<module>osgi</module>
 		<module>osgi-extender</module>
 		<module>war</module>
@@ -81,6 +82,8 @@
 		<javac.target>1.6</javac.target>
 		<jackson.version>2.6.1</jackson.version> <!-- This version is used by google-http-client-jackson2 -->
 		<powermock.version>1.6.2</powermock.version>
+        <slf4j.version>1.7.12</slf4j.version>
+        <logback.version>1.1.3</logback.version>
 	</properties>
 
 
@@ -147,9 +150,9 @@
 				<version>2.6</version>
 			</dependency>
 			<dependency>
-				<groupId>commons-logging</groupId>
-				<artifactId>commons-logging</artifactId>
-				<version>1.1.1</version>
+				<groupId>org.slf4j</groupId>
+				<artifactId>jcl-over-slf4j</artifactId>
+				<version>${slf4j.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-pool</groupId>
@@ -183,9 +186,10 @@
 			</dependency>
 
 			<dependency>
-				<groupId>log4j</groupId>
-				<artifactId>log4j</artifactId>
-				<version>1.2.17</version>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-classic</artifactId>
+				<version>${logback.version}</version>
+                <scope>runtime</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework</groupId>
@@ -310,12 +314,7 @@
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-api</artifactId>
-				<version>1.7.10</version>
-			</dependency>
-			<dependency>
-				<groupId>org.slf4j</groupId>
-				<artifactId>slf4j-log4j12</artifactId>
-				<version>1.7.10</version>
+				<version>${slf4j.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.eclipse.core</groupId>

@@ -29,4 +29,4 @@ CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
 export CLASSPATH
 cd "$MEMBRANE_HOME"
 echo Membrane Router running...
-java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter "$@"
+java -Dlogback.configurationFile="$MEMBRANE_HOME/conf/logback.xml" -classpath "$CLASSPATH" com.predic8.membrane.core.Starter "$@"

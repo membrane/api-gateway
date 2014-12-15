@@ -39,7 +39,7 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger; import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -60,7 +60,7 @@ import com.predic8.membrane.core.util.EndOfStreamException;
 @ThreadSafe
 public class XMLContentFilter {
 
-	private static final Logger LOG = Logger.getLogger(XMLContentFilter.class);
+	private static final Logger LOG = LoggerFactory.getLogger(XMLContentFilter.class);
 
 	private final ThreadLocal<XPathExpression> xpe = new ThreadLocal<XPathExpression>();
 	private final ThreadLocal<DocumentBuilder> db = new ThreadLocal<DocumentBuilder>();

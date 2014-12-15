@@ -22,7 +22,6 @@ import java.net.URLClassLoader;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.PropertyConfigurator;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.ILogListener;
 import org.eclipse.core.runtime.Platform;
@@ -58,9 +57,6 @@ public class CoreActivator extends Plugin {
 	@Override
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
-
-		if (new File("configuration/log4j.properties").exists())
-			PropertyConfigurator.configure("configuration/log4j.properties");
 
 		Platform.addLogListener(logListener);
 
