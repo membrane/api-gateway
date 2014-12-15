@@ -17,9 +17,9 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.google.api.client.repackaged.com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -55,8 +56,10 @@ public class HttpTransport extends Transport {
 	private int forceSocketCloseOnHotDeployAfter = 30000;
 	private boolean tcpNoDelay = true;
 
-	public Hashtable<IpPort, HttpEndpointListener> portListenerMapping = new Hashtable<IpPort, HttpEndpointListener>();
-	public List<WeakReference<HttpEndpointListener>> stillRunning = new ArrayList<WeakReference<HttpEndpointListener>>();
+	private final Map<Integer, Map<IpPort, HttpEndpointListener>> portListenerMapping
+	        = new HashMap<Integer, Map<IpPort, HttpEndpointListener>>();
+	private final List<WeakReference<HttpEndpointListener>> stillRunning
+	        = new ArrayList<WeakReference<HttpEndpointListener>>();
 
 	private ThreadPoolExecutor executorService = new ThreadPoolExecutor(20,
 			Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
@@ -65,28 +68,21 @@ public class HttpTransport extends Transport {
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-
-
-	}
-
-	public boolean isAnyThreadListeningAt(String ip, int port) {
-		return portListenerMapping.get(new IpPort(ip, port)) != null;
-	}
-
-	public Enumeration<IpPort> getAllPorts() {
-		return portListenerMapping.keys();
 	}
 
 	/**
 	 * Closes the corresponding server port. Note that connections might still be open and exchanges still running after
 	 * this method completes.
 	 */
-	public synchronized void closePort(String ip, int port) throws IOException {
-		IpPort p = new IpPort(ip, port);
-		log.debug("Closing server port: " + p);
-		HttpEndpointListener plt = portListenerMapping.get(p);
+	public synchronized void closePort(IpPort p) throws IOException {
+	    Map<IpPort, HttpEndpointListener> mih = portListenerMapping.get(p.getPort());
+	    if (mih == null || mih.isEmpty()) {
+	        return;
+	    }
+		HttpEndpointListener plt = mih.get(p);
 		if (plt == null)
 			return;
+		log.info("Closing server port: " + p);
 
 		plt.closePort();
 		try {
@@ -94,11 +90,14 @@ public class HttpTransport extends Transport {
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 		}
-		portListenerMapping.remove(p);
+		mih.remove(p);
+		if (mih.isEmpty()) {
+		    portListenerMapping.remove(p.getPort());
+		}
 		stillRunning.add(new WeakReference<HttpEndpointListener>(plt));
 
 		for (IPortChangeListener listener : menuListeners) {
-			listener.removePort(port);
+			listener.removePort(p.getPort());
 		}
 
 	}
@@ -107,10 +106,12 @@ public class HttpTransport extends Transport {
 	public synchronized void closeAll(boolean waitForCompletion) throws IOException {
 
 		log.debug("Closing all network server sockets.");
-		Enumeration<IpPort> enumeration = getAllPorts();
-		while (enumeration.hasMoreElements()) {
-			IpPort p = enumeration.nextElement();
-			closePort(p.ip, p.port);
+		List<IpPort> all = new ArrayList<IpPort>();
+		for (Map<IpPort, HttpEndpointListener> v : portListenerMapping.values()) {
+		    all.addAll(v.keySet());
+		}
+		for (IpPort ipPort : all) { // don't iterate thru portListenerMapping !!!
+			closePort(ipPort);
 		}
 		log.debug("Closing all stream pumps.");
 		getRouter().getStatistics().getStreamPumpStats().closeAllStreamPumps();
@@ -125,7 +126,6 @@ public class HttpTransport extends Transport {
 					closeConnections(onlyIdle);
 					if (executorService.awaitTermination(5, TimeUnit.SECONDS))
 						break;
-
 					log.warn("Still waiting for running exchanges to finish. (Set <transport forceSocketCloseOnHotDeployAfter=\"" + forceSocketCloseOnHotDeployAfter + "\"> to a lower value to forcibly close connections more quickly.");
 				}
 			} catch (InterruptedException e) {
@@ -154,21 +154,44 @@ public class HttpTransport extends Transport {
 	 */
 	@Override
 	public synchronized void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
-		if (isAnyThreadListeningAt(ip, port)) {
-			return;
-		}
+	    if (port == -1)
+	        throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
 
-		if (port == -1)
-			throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
+	    Map<IpPort, HttpEndpointListener> mih = portListenerMapping.get(port);
+	    if (mih == null) {
+	        mih = new HashMap<IpPort, HttpEndpointListener>();
+	        portListenerMapping.put(port, mih);
+	    }
+	    IpPort p = new IpPort(ip, port);
+	    HttpEndpointListener hel = mih.get(p);
+	    if (hel != null) { // already listen on the same "ip:port"
+	        if (Objects.equal(sslProvider, hel.getSslProvider())) {
+	            return; // O.K. both use the equivalent ssl provider
+	        }
+	        throw new RuntimeException("Lister thread on " + p.toShortString() + " should use the same SSL config");
+	    }
+	    if ((ip == null && !mih.isEmpty())                             // '*:port' vs 'XXX:port'
+	      || (ip != null && mih.containsKey(new IpPort(null, port)))   // 'XXX:port' vs '*:port'
+	      ) {
+	        throw new RuntimeException(createDiffInterfacesErrorMsg(p,mih));
+	    }
 
-		HttpEndpointListener portListenerThread = new HttpEndpointListener(
-				ip, port, this, sslProvider);
-		portListenerMapping.put(new IpPort(ip, port), portListenerThread);
+		HttpEndpointListener portListenerThread = new HttpEndpointListener(p, this, sslProvider);
+		mih.put(p, portListenerThread);
 		portListenerThread.start();
 
 		for (IPortChangeListener listener : menuListeners) {
 			listener.addPort(port);
 		}
+	}
+
+	private static String createDiffInterfacesErrorMsg(IpPort p, Map<IpPort, HttpEndpointListener> mih) {
+	    final StringBuilder sb = new StringBuilder("Conflict with listening on the same net interfaces [")
+	        .append(p.toShortString()).append(", ");
+	    for (IpPort ip : mih.keySet()) {
+	        sb.append(ip.toShortString()).append(", ");
+	    }
+		return sb.replace(sb.length() - 2, sb.length(), "]").toString();
 	}
 
 	public int getCoreThreadPoolSize() {
@@ -253,4 +276,5 @@ public class HttpTransport extends Transport {
 	public void setForceSocketCloseOnHotDeployAfter(int forceSocketCloseOnHotDeployAfter) {
 		this.forceSocketCloseOnHotDeployAfter = forceSocketCloseOnHotDeployAfter;
 	}
+
 }

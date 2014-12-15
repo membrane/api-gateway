@@ -16,7 +16,6 @@ package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
 import java.net.BindException;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
@@ -41,20 +40,20 @@ public class HttpEndpointListener extends Thread {
 	private final ConcurrentHashMap<Socket, Boolean> openSockets = new ConcurrentHashMap<Socket, Boolean>();
 	private volatile boolean closed;
 
-	public HttpEndpointListener(String ip, int port, HttpTransport transport, SSLProvider sslProvider) throws IOException {
+	public HttpEndpointListener(IpPort p, HttpTransport transport, SSLProvider sslProvider) throws IOException {
 		this.transport = transport;
 		this.sslProvider = sslProvider;
-
 		try {
 			if (sslProvider != null)
-				serverSocket = sslProvider.createServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
+				serverSocket = sslProvider.createServerSocket(p.getPort(), 50, p.getIp());
 			else
-				serverSocket = new ServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
+				serverSocket = new ServerSocket(p.getPort(), 50, p.getIp());
 
-			setName("Connection Acceptor " + (ip != null ? ip + ":" : ":") + port);
-			log.debug("listening at port "+port + (ip != null ? " ip " + ip : ""));
+				final String s = p.toShortString();
+				setName("Connection Acceptor " + s);
+					log.info("listening at " + s);
 		} catch (BindException e) {
-			throw new PortOccupiedException(port);
+			throw new PortOccupiedException(p);
 		}
 	}
 
@@ -62,6 +61,7 @@ public class HttpEndpointListener extends Thread {
 	public void run() {
 		while (!closed) {
 			try {
+				@SuppressWarnings("resource")
 				Socket socket = serverSocket.accept();
 				openSockets.put(socket, Boolean.TRUE);
 				try {
@@ -78,8 +78,8 @@ public class HttpEndpointListener extends Thread {
 				if (message != null && (message.endsWith("socket closed") || message.endsWith("Socket closed"))) {
 					log.debug("socket closed.");
 					break;
-				} else
-					log.error(e);
+				}
+				log.error(e);
 			} catch (NullPointerException e) {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
 			} catch (Exception e) {
