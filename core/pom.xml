@@ -12,17 +12,18 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
- --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <artifactId>service-proxy-core</artifactId>
-    <packaging>jar</packaging>
+ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>service-proxy-core</artifactId>
+	<packaging>jar</packaging>
 
-    <parent>
-        <groupId>org.membrane-soa.service-proxy</groupId>
-        <artifactId>service-proxy-parent</artifactId>
-        <relativePath>../pom.xml</relativePath>
-        <version>4.0.18-SNAPSHOT</version>
-    </parent>
+	<parent>
+		<groupId>org.membrane-soa.service-proxy</groupId>
+		<artifactId>service-proxy-parent</artifactId>
+		<relativePath>../pom.xml</relativePath>
+		<version>4.0.18-SNAPSHOT</version>
+	</parent>
 	<dependencies>
 		<dependency>
 			<groupId>org.membrane-soa.service-proxy</groupId>
@@ -80,10 +81,10 @@
 			<groupId>com.springsource</groupId>
 			<artifactId>com.springsource.javax.annotation</artifactId>
 		</dependency>
-        <dependency>
-        	<groupId>commons-fileupload</groupId>
-        	<artifactId>commons-fileupload</artifactId>
-        </dependency>
+		<dependency>
+			<groupId>commons-fileupload</groupId>
+			<artifactId>commons-fileupload</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>com.floreysoft</groupId>
 			<artifactId>jmte</artifactId>
@@ -126,10 +127,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
@@ -203,7 +204,6 @@
 					</excludes>
 				</configuration>
 			</plugin>
-
 		</plugins>
 	</build>
 
@@ -242,14 +242,14 @@
 		</profile>
 	</profiles>
 
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-        <version>2.4.0</version>
-      </plugin>
-    </plugins>
-  </reporting>
-    
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>2.4.0</version>
+			</plugin>
+		</plugins>
+	</reporting>
+
 </project>
