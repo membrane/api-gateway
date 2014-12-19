@@ -63,7 +63,7 @@ public class ChunkedBody extends AbstractBody {
 	}
 
 	protected int getRawLength() throws IOException {
-		if (chunks.size() == 0)
+		if (chunks.isEmpty())
 			return 0;
 		int length = getLength();
 		for (Chunk chunk : chunks) {

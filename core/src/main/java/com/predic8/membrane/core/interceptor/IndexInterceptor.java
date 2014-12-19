@@ -237,7 +237,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 					body();
 						h1().text("Service Proxies").end();
 						List<ServiceInfo> services = getServices(exc);
-						if (services.size() == 0)
+						if (services.isEmpty())
 							p().text("There are no services defined.").end();
 						else 
 							createIndexTable(services, exc.getHandler() instanceof HttpServerHandler);

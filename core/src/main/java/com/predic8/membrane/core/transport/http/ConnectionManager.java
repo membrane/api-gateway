@@ -199,7 +199,7 @@ public class ConnectionManager {
 						toClose.add(o.connection);
 					}
 				}
-				if (l.size() == 0)
+				if (l.isEmpty())
 					toRemove.add(e.getKey());
 			}
 			for (ConnectionKey remove : toRemove)

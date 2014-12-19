@@ -128,7 +128,7 @@ public class HttpClient {
 	}
 	
 	public Exchange call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
-		if (exc.getDestinations().size() == 0)
+		if (exc.getDestinations().isEmpty())
 			throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
 		
 		int counter = 0;

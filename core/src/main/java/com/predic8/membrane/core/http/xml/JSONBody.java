@@ -61,7 +61,7 @@ class JSONBody extends AbstractXmlElement {
 					case END_OBJECT:
 						out.writeEndElement();
 						name = stack.remove(stack.size()-1);
-						if (stack.size() == 0)
+						if (stack.isEmpty())
 							break OUTER;
 						break;
 					case FIELD_NAME:
@@ -78,7 +78,7 @@ class JSONBody extends AbstractXmlElement {
 					case END_ARRAY:
 						out.writeEndElement();
 						name = stack.remove(stack.size()-1);
-						if (stack.size() == 0)
+						if (stack.isEmpty())
 							break OUTER;
 						break;
 					case VALUE_TRUE:
