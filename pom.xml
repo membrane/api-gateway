@@ -61,6 +61,7 @@
 		<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 		<javac.source>1.6</javac.source>
 		<javac.target>1.6</javac.target>
+        <jackson.version>1.9.11</jackson.version> <!-- This version is used by google-http-client-jackson -->
 	</properties>
 
 	<dependencyManagement>
@@ -149,12 +150,12 @@
 			<dependency>
 				<groupId>org.codehaus.jackson</groupId>
 				<artifactId>jackson-core-asl</artifactId>
-				<version>1.9.9</version>
+				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.codehaus.jackson</groupId>
 				<artifactId>jackson-mapper-asl</artifactId>
-				<version>1.9.9</version>
+				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>log4j</groupId>

@@ -74,13 +74,13 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 		VariableElement ve = getE().getParameters().get(0);
 		switch (ve.asType().getKind()) {
 		case INT:
-			xsdType = "xsd:int";
+			xsdType = "spel_number";
 			return;
 		case LONG:
-			xsdType = "xsd:long";
+			xsdType = "spel_number";
 			return;
 		case BOOLEAN:
-			xsdType = "xsd:boolean";
+			xsdType = "spel_boolean";
 			return;
 		case DECLARED:
 			TypeElement e = (TypeElement) typeUtils.asElement(ve.asType());
@@ -93,7 +93,7 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 				TypeElement superClass = ((TypeElement)typeUtils.asElement(e.getSuperclass()));
 				if (superClass.getQualifiedName().toString().equals("java.lang.Enum")) {
 					isEnum = true;
-					xsdType = "xsd:string"; // TODO: restriction
+					xsdType = "xsd:string"; // TODO: restriction, but be carefull about Spring EL usage, for example "#{config.XXX}"
 				/*
 				 *	<xsd:attribute name=\"target\" use=\"optional\" default=\"body\">\r\n" + 
 				 *		<xsd:simpleType>\r\n" + 
