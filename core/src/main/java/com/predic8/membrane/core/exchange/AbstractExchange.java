@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -37,6 +40,9 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 
 public abstract class AbstractExchange {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractExchange.class);
+    
 	protected Request request;
 	private Response response;
 	
@@ -298,7 +304,7 @@ public abstract class AbstractExchange {
 				
 				return new URL(getOriginalRequestUri()).getHost();
 			} catch (MalformedURLException e) {
-				e.printStackTrace();
+				LOG.warn(e.getMessage(), e);
 			}
 			return getOriginalRequestUri();
 		}
@@ -317,7 +323,7 @@ public abstract class AbstractExchange {
 			try {
 				return  getResponse().getBody().getLength();
 			} catch (IOException e) {
-				e.printStackTrace();
+			    LOG.warn(e.getMessage(), e);
 			}
 		}
 			

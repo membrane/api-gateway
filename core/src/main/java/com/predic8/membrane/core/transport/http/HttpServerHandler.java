@@ -134,9 +134,9 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			if (s.getCause() instanceof SocketException)
 				log.debug("ssl socket closed");
 			else
-				s.printStackTrace();
+			    log.warn(s.getMessage(),s);
 		} catch (IOException e) {
-			e.printStackTrace();
+		    log.warn(e.getMessage(), e);
 		} catch (EndOfStreamException e) {
 			log.debug("stream closed");
 		} catch (AbortException e) {
@@ -149,7 +149,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.debug("Client connection terminated before line was read. Line so far: ("
 					+ e.getLineSoFar() + ")");
 		} catch (Exception e) {
-			e.printStackTrace();
+		    log.warn(e.getMessage(), e);
 		}
 
 		finally {
@@ -186,7 +186,6 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			log.error("problems closing socket on remote port: "
 					+ sourceSocket.getPort() + " on remote host: "
 					+ sourceSocket.getInetAddress());
-			e2.printStackTrace();
 		}
 	}
 

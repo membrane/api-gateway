@@ -59,7 +59,7 @@ public class ByteUtil {
 		try {
 			bos.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+		    // DONOTHING ignore close exception
 		}
 
 		return bos.toByteArray();

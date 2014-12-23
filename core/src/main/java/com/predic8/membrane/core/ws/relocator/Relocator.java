@@ -35,10 +35,15 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.core.Constants;
 
 @NotThreadSafe
 public class Relocator {
+    private static final Logger LOG = LoggerFactory.getLogger(Relocator.class);
+    
 	private final XMLEventFactory fac = XMLEventFactory.newInstance();
 
 	private final String host;
@@ -185,7 +190,7 @@ public class Relocator {
 				port = -1;
 			return new URL(protocol, host, port, oldURL.getFile()).toString();
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+		    LOG.warn(e.getMessage(), e);
 		}
 		return "";
 	}

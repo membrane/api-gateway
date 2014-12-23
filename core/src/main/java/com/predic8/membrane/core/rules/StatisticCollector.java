@@ -18,6 +18,9 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
@@ -32,6 +35,8 @@ import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
  * Instances are not thread-safe.
  */
 public class StatisticCollector {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(StatisticCollector.class);
 
 	private final NumberFormat nf = NumberFormat.getInstance(Locale.US);
 	
@@ -91,7 +96,7 @@ public class StatisticCollector {
 			AbstractBody responseBody = exc.getResponse().getBody();
 			totalBytesReceived += responseBody.isRead() ? responseBody.getLength() : 0;
 		} catch (IOException e) {
-			e.printStackTrace();
+		    LOG.warn(e.getMessage(), e);
 		}
 	}
 

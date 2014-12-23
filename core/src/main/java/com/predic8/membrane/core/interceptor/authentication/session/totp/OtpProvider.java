@@ -23,6 +23,9 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.core.interceptor.authentication.session.totp.PasscodeGenerator.Signer;
 
 /**
@@ -37,6 +40,8 @@ import com.predic8.membrane.core.interceptor.authentication.session.totp.Passcod
  */
 public class OtpProvider {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OtpProvider.class);
+    
 	private static final int PIN_LENGTH = 6; // HOTP or TOTP
 
 	public String getNextCode(String secret, long time) {
@@ -70,9 +75,9 @@ public class OtpProvider {
 				}
 			};
 		} catch (NoSuchAlgorithmException error) {
-			error.printStackTrace();
+			LOG.warn(error.getMessage(), error);
 		} catch (InvalidKeyException error) {
-			error.printStackTrace();
+		    LOG.warn(error.getMessage(), error);
 		}
 
 		return null;

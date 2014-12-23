@@ -127,7 +127,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 			if (res.getStatusCode() != 200)
 				log.warn(res);
 		} catch (Exception e) {
-			e.printStackTrace();
+		    log.warn(e.getMessage(), e);
 		}
 	}
 
