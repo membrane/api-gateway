@@ -154,6 +154,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			return "image/jpeg";
 		if (uri.endsWith(".png"))
 			return "image/png";
+		if (uri.endsWith(".json"))
+			return "application/json";
 		return null;
 	}
 
