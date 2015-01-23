@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import java.net.URL;
+import java.net.URI;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -63,7 +63,8 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		}
 		
 		if (p.getTargetHost() != null) {
-			String url = new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
+			URI uri = new URI(exc.getRequest().getUri());
+			String url = new URI(p.getTargetScheme(), "", p.getTargetHost(), p.getTargetPort(), uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
 			log.debug("destination: " + url);
 			return url;
 		}

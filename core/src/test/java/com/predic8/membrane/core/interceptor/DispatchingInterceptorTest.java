@@ -50,11 +50,24 @@ public class DispatchingInterceptorTest {
 		assertEquals("thomas-bayer.com", url.getHost());
 		assertEquals("/axis2/services/BLZService?wsdl", url.getFile());
 	}
-	
+
+	@Test
+	public void testServiceProxyWithAbsoluteURI() throws Exception {
+        exc.setRequest(MessageUtil.getGetRequest("http://www.example.com/axis2/services/BLZService?wsdl"));
+        exc.setRule(getServiceProxy());
+
+        assertEquals(Outcome.CONTINUE, dispatcher.handleRequest(exc));
+
+        URL url = new URL(exc.getDestinations().get(0));
+        assertEquals(80, url.getPort());
+        assertEquals("thomas-bayer.com", url.getHost());
+        assertEquals("/axis2/services/BLZService?wsdl", url.getFile());
+	}
+
 	@Test
 	public void testProxyRuleHttp() throws Exception {
 		exc.setRequest(MessageUtil.getGetRequest("http://www.thomas-bayer.com:80/axis2/services/BLZService?wsdl"));
-		exc.setRule(getProxyrRule());
+		exc.setRule(getProxyRule());
 		
 		assertEquals(Outcome.CONTINUE, dispatcher.handleRequest(exc));
 		
@@ -64,7 +77,7 @@ public class DispatchingInterceptorTest {
 		assertEquals("www.thomas-bayer.com", url.getHost());
 		assertEquals("/axis2/services/BLZService?wsdl", url.getFile());
 	}
-	
+
 	@Test
 	public void testProxyRuleHttps() throws Exception {
 		
@@ -74,7 +87,7 @@ public class DispatchingInterceptorTest {
 		return new ServiceProxy(new ServiceProxyKey("localhost", ".*", ".*", 3011), "thomas-bayer.com", 80);
 	}
 	
-	private ProxyRule getProxyrRule() {
+	private ProxyRule getProxyRule() {
 		return new ProxyRule(new ProxyRuleKey(3090));
 	}
 }
