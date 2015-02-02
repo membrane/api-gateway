@@ -227,9 +227,7 @@ public class SSLContextCollection implements SSLProvider {
 			throw new RuntimeException(e);
 		}
 		
-		String[] ciphers = sslContext.getCiphers();
-		if (ciphers != null)
-			serviceSocket.setEnabledCipherSuites(ciphers);
+		sslContext.applyCiphers(serviceSocket);
 		if (sslContext.getProtocols() != null) {
 			serviceSocket.setEnabledProtocols(sslContext.getProtocols());
 		} else {
