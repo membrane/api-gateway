@@ -5,14 +5,12 @@
 	Unless required by applicable law or agreed to in writing, software distributed
 	under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
 	OR CONDITIONS OF ANY KIND, either express or implied. See the License for
-	the specific language governing permissions and limitations under the License. -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	the specific language governing permissions and limitations under the License. --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.membrane-soa.service-proxy</groupId>
 	<artifactId>service-proxy-parent</artifactId>
-	<version>4.0.18-SNAPSHOT</version>
+	<version>4.1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<developers>
@@ -220,7 +218,7 @@
 			<dependency>
 				<groupId>com.predic8</groupId>
 				<artifactId>xmlbeautifier</artifactId>
-				<version>1.2.1</version>
+				<version>1.2.2</version>
 			</dependency>
 			<dependency>
 				<groupId>javax.annotation</groupId>
@@ -430,7 +428,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			
 		</plugins>
 
 		<pluginManagement>
