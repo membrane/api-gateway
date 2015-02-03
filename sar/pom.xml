@@ -16,6 +16,7 @@
     
     <modelVersion>4.0.0</modelVersion>
     <artifactId>service-proxy-sar</artifactId>
+    <name>${project.artifactId}</name>
     <packaging>jboss-sar</packaging>
 
     <parent>
