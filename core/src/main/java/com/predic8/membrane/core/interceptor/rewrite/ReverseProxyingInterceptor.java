@@ -17,6 +17,9 @@ package com.predic8.membrane.core.interceptor.rewrite;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -34,6 +37,9 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
  */
 @MCElement(name="reverseProxying")
 public class ReverseProxyingInterceptor extends AbstractInterceptor {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(ReverseProxyingInterceptor.class);
+    
 	public ReverseProxyingInterceptor() {
 		name = "Reverse Proxy";
 	}
@@ -113,7 +119,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 				return false;
 			return true;
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			LOG.warn(e.getMessage(), e);
 			return false;
 		}
 	}

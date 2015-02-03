@@ -35,7 +35,6 @@ public class Hostname extends AbstractClientAddress {
             //this should probably never fail... unless no network available.
             return InetAddress.getByName("127.0.0.1");
         } catch (UnknownHostException e) {
-            e.printStackTrace(); //if you must... maybe logging framework is not set up yet.
             log.error("Failed resolving localhost IPv4 127.0.0.1!");
             return null;
         }
@@ -46,7 +45,6 @@ public class Hostname extends AbstractClientAddress {
             //could this fail if the machine has no IPv6 support?
             return InetAddress.getByName("0:0:0:0:0:0:0:1");
         } catch (UnknownHostException e) {
-            e.printStackTrace(); //if you must... maybe logging framework is not set up yet.
             log.error("Failed resolving localhost IPv6 0:0:0:0:0:0:0:1!");
             return null;
         }

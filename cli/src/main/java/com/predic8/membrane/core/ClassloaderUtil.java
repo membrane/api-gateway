@@ -17,7 +17,12 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ClassloaderUtil {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(ClassloaderUtil.class); 
 
 	public static List<URL> getJarUrls(String folder) {
 
@@ -40,7 +45,7 @@ public class ClassloaderUtil {
 			try {
 				urls.add(new URL("file:" + folder + jars[i]));
 			} catch (MalformedURLException e) {
-				e.printStackTrace();
+				LOG.warn(e.getMessage(), e);
 			}
 		}
 
@@ -69,7 +74,7 @@ public class ClassloaderUtil {
 			return new URLClassLoader(urls.toArray(new URL[urls.size()]),
 					ClassloaderUtil.class.getClassLoader());
 		} catch (Exception e) {
-			e.printStackTrace();
+		    LOG.error(e.getMessage(), e);
 			System.exit(1);
 		}
 		return null;

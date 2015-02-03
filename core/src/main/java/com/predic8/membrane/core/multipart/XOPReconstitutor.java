@@ -70,7 +70,6 @@ public class XOPReconstitutor {
 				return reconstitutedMessage.getBodyAsStream();
 		} catch (Exception e) {
 			log.warn(e);
-			e.printStackTrace();
 		}
 		return MessageUtil.getContentAsStream(message);
 	}

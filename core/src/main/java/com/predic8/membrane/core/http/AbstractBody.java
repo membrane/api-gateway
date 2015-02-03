@@ -19,6 +19,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.core.Constants;
 
 /**
@@ -39,6 +42,8 @@ import com.predic8.membrane.core.Constants;
  * situation.
  */
 public abstract class AbstractBody {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractBody.class);
 
 	boolean read;
 	
@@ -172,7 +177,7 @@ public abstract class AbstractBody {
 		try {
 			return new String(getRaw(), Constants.UTF_8_CHARSET);
 		} catch (IOException e) {
-			e.printStackTrace();
+		    LOG.warn(e.getMessage(), e);
 			return "Error in body: " + e;
 		}
 	}

@@ -17,6 +17,9 @@ import java.util.*;
 
 import javax.xml.stream.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
@@ -24,6 +27,8 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 
 @MCElement(name="byThreadStrategy")
 public class ByThreadStrategy extends AbstractXmlElement implements DispatchingStrategy {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(ByThreadStrategy.class);
 
 	private int maxNumberOfThreadsPerEndpoint = 5;
 
@@ -66,7 +71,7 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 			try {
 				Thread.sleep(retryTimeOnBusy);
 			} catch (Exception e) {
-				e.printStackTrace();
+				LOG.warn(e.getMessage(), e);
 			}
 		}
 

@@ -107,8 +107,6 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 			return res;
 	    } catch (Exception e) {
 	    	log.error("Error initializing accessControl.", e);
-	    	e.printStackTrace();
-	    	System.err.println("Error initializing accessControl: terminating.");
 	    	throw new RuntimeException(e);
 	    }
 	}

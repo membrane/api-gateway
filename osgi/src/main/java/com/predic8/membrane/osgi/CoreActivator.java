@@ -85,7 +85,6 @@ public class CoreActivator extends Plugin {
 						+ e1.getMessage());
 				log.error("Unable to read bean configuration file: "
 						+ e1.getStackTrace());
-				e1.printStackTrace();
 			}
 		}
 		

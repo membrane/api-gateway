@@ -17,11 +17,16 @@ package com.predic8.membrane.core.transport.http;
 import java.io.IOException;
 import java.net.InetAddress;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.EndOfStreamException;
 
 
 public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(HttpResendHandler.class);
 
 	public HttpResendHandler(Exchange exc, HttpTransport transport) {
 		super(transport);
@@ -42,9 +47,9 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 			exchange.setCompleted();
 			return;
 		} catch (IOException e) {
-			e.printStackTrace();
+		    LOG.warn(e.getMessage(), e);
 		} catch (EndOfStreamException e) {
-			e.printStackTrace();
+		    LOG.warn(e.getMessage(), e);
 		}
 	}
 	

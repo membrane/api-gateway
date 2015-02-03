@@ -28,6 +28,8 @@ import javax.xml.stream.events.XMLEvent;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.beautifier.HtmlBeautifierFormatter;
 import com.predic8.beautifier.PlainBeautifierFormatter;
@@ -36,6 +38,8 @@ import com.predic8.beautifier.XMLBeautifierFormatter;
 
 
 public class TextUtil {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(TextUtil.class);
 
 	private static final char[] source;
 	private static final String[] replace;
@@ -59,13 +63,13 @@ public class TextUtil {
 			beautifier.parse(reader);
 		}
 		catch (Exception e){
-			e.printStackTrace();
+		    LOG.warn(e.getMessage(), e);
 		} finally {
 			try {
 				out.close();
 				reader.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				// DONOTHIG ignore close exception
 			}
 		}
 		return out.toString();
@@ -145,7 +149,7 @@ public class TextUtil {
 			}
 			return event != null && event.isEndDocument();
 		} catch (Exception e) {
-			e.printStackTrace();
+		    LOG.warn(e.getMessage(), e);
 			return false;
 		}
 	}

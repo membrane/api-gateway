@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeoutException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
 /**
@@ -42,6 +45,8 @@ import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
  * Note that ProcessStuff is not synchronized, only ProcessStuff.watchers.
  */
 public class Process2 {
+    
+    private static final Logger LOG = LoggerFactory.getLogger(Process2.class);
 	
 	public static class Builder {
 		private File baseDir;
@@ -127,7 +132,7 @@ public class Process2 {
 						watcher.outputLine(error, l);
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				LOG.warn(e.getMessage(), e);
 			}
 		}
 	}
