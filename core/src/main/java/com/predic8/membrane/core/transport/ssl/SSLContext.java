@@ -62,10 +62,12 @@ public class SSLContext implements SSLProvider {
 	
 	private static final Log log = LogFactory.getLog(SSLContext.class.getName());
 
-	private static Method setUseCipherSuitesOrderMethod;
+	private static Method setUseCipherSuitesOrderMethod, getSSLParametersMethod, setSSLParametersMethod;
 	
 	static {
 		try {
+			getSSLParametersMethod = SSLServerSocket.class.getMethod("getSSLParameters", new Class[] {});
+			setSSLParametersMethod = SSLServerSocket.class.getMethod("setSSLParameters", new Class[] { SSLParameters.class });
 			setUseCipherSuitesOrderMethod = SSLParameters.class.getMethod("setUseCipherSuitesOrder", new Class[] { Boolean.TYPE });
 		} catch (SecurityException e) {
 			throw new RuntimeException(e); 
@@ -271,10 +273,23 @@ public class SSLContext implements SSLProvider {
 	
 	public void applyCiphers(SSLServerSocket sslServerSocket) {
 		if (ciphers != null) {
-			SSLParameters sslParameters = sslServerSocket.getSSLParameters();
-			applyCipherOrdering(sslParameters);
-			sslParameters.setCipherSuites(ciphers);
-			sslServerSocket.setSSLParameters(sslParameters);
+			if (getSSLParametersMethod == null || setSSLParametersMethod == null) {
+				sslServerSocket.setEnabledCipherSuites(ciphers);
+			} else {
+				SSLParameters sslParameters;
+				try {
+					// "sslParameters = sslServerSocket.getSSLParameters();" works only on Java 7+
+					sslParameters = (SSLParameters) getSSLParametersMethod.invoke(sslServerSocket, new Object[] {});
+					applyCipherOrdering(sslParameters);
+					sslParameters.setCipherSuites(ciphers);
+					// "sslServerSocket.setSSLParameters(sslParameters);" works only on Java 7+
+					setSSLParametersMethod.invoke(sslServerSocket, new Object[] { sslParameters });
+				} catch (IllegalAccessException e) {
+					throw new RuntimeException(e);
+				} catch (InvocationTargetException e) {
+					throw new RuntimeException(e);
+				} 
+			}
 		}
 	}
 	
