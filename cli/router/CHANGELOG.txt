@@ -1,6 +1,20 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.19
+
+* [bugfix] Fixed buildability from public Maven repositories.
+
+* [update] Upgraded soa-model 1.5, available on Maven Central. This depends
+  on slf4j, so we include slf4j-log4j12 to keep using log4j.
+
+* [release] 4.0.18
+
+* [feature] added <ssl protocols="..." /> to specify which protocols to use
+
+* [changed behavior] Disabled SSLv3 and SSLv2Hello protocols because of
+  SSL v3 "Poodle" vulnerability (CVE-2014-3566).
+
 * [release] 4.0.17
 
 * [feature] Membrane's URL parsing algorithm can now be exchanged: For
