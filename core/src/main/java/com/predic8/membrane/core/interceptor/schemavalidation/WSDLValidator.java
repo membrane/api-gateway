@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.schemavalidation;
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.ArrayList;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Source;
@@ -31,6 +32,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
 import com.predic8.membrane.core.util.SOAPUtil;
 import com.predic8.schema.Schema;
+import com.predic8.wsdl.Types;
 import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 
@@ -52,7 +54,10 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 		try {
 			WSDLParser wsdlParser = new WSDLParser();
 			wsdlParser.setResourceResolver(resourceResolver.toExternalResolver().toExternalResolver());
-			return wsdlParser.parse(ctx).getTypes().getSchemas();
+			List<Schema> schemaList = new ArrayList<Schema>();
+			for (Types t : wsdlParser.parse(ctx).getTypes())
+				schemaList.addAll(t.getSchemas());
+			return schemaList;
 		} catch (RuntimeException e) {
 			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
 		}

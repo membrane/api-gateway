@@ -21,20 +21,20 @@ public class HostColonPortTest {
 
 	@Test
 	public void testDefaultPort() throws Exception {
-		HostColonPort hcp = new HostColonPort("predic8.com");
+		HostColonPort hcp = new HostColonPort(false, "predic8.com");
 		assertEquals("predic8.com", hcp.host);
 		assertEquals(80, hcp.port);
 	}
 	
 	@Test
 	public void testGetHost() throws Exception {
-		HostColonPort hcp = new HostColonPort("predic8.com:80");
+		HostColonPort hcp = new HostColonPort(false, "predic8.com:80");
 		assertEquals("predic8.com", hcp.host);
 	}
 
 	@Test
 	public void testGetPort() throws Exception {
-		HostColonPort hcp = new HostColonPort("predic8.com:80");
+		HostColonPort hcp = new HostColonPort(false, "predic8.com:80");
 		assertEquals(80, hcp.port);
 	}
 

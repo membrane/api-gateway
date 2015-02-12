@@ -72,7 +72,7 @@ public class IndexInterceptor extends AbstractInterceptor {
 		ri.ssl = sp.getSslInboundContext() != null;// NOTE: when running as servlet, we have no idea what the protocol was
 		String protocol = ri.ssl ? "https" : "http";
 		
-		String host = k.isHostWildcard() ? new HostColonPort(exc.getRequest().getHeader().getHost()).host : fullfillRegexp(ServiceProxyKey.createHostPattern(k.getHost()));
+		String host = k.isHostWildcard() ? new HostColonPort(ri.ssl, exc.getRequest().getHeader().getHost()).host : fullfillRegexp(ServiceProxyKey.createHostPattern(k.getHost()));
 		if (host == null || host.length() == 0)
 			host = exc.getHandler().getLocalAddress().getHostAddress().toString();
 		

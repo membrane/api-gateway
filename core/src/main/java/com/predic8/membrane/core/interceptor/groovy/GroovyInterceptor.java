@@ -66,6 +66,7 @@ public class GroovyInterceptor extends AbstractInterceptor {
     private Outcome runScript(Exchange exc) throws InterruptedException {
     	HashMap<String, Object> parameters = new HashMap<String, Object>();
     	parameters.put("exc", exc);
+    	parameters.put("spring", router.getBeanFactory());
     	
     	Object res = script.apply(parameters);
     	

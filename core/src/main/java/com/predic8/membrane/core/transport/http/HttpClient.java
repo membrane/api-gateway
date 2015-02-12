@@ -24,10 +24,13 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
+import javax.annotation.concurrent.GuardedBy;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.ChunkedBodyTransferrer;
 import com.predic8.membrane.core.http.Header;
@@ -38,6 +41,7 @@ import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -49,6 +53,8 @@ import com.predic8.membrane.core.util.Util;
 public class HttpClient {
 
 	private static Log log = LogFactory.getLog(HttpClient.class.getName());
+	@GuardedBy("HttpClient.class")
+	private static SSLProvider defaultSSLProvider;
 
 	private final ProxyConfiguration proxy;
 	private final AuthenticationConfiguration authentication;
@@ -93,10 +99,10 @@ public class HttpClient {
 	
 	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
 		if (proxy != null)
-			return new HostColonPort(proxy.getHost(), proxy.getPort());
+			return new HostColonPort(false, proxy.getHost(), proxy.getPort());
 		
 		if (connect)
-			return new HostColonPort(dest);
+			return new HostColonPort(false, dest);
 		
 		return new HostColonPort(new URL(dest));
 	}
@@ -119,8 +125,18 @@ public class HttpClient {
 		return target;
 	}
 
-	private SSLProvider getOutboundSSLProvider(Exchange exc) {
-		return exc.getRule() == null ? null : exc.getRule().getSslOutboundContext();
+	private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
+		if (exc.getRule() != null)
+			return exc.getRule().getSslOutboundContext();
+		if (hcp.useSSL)
+			return getDefaultSSLProvider();
+		return null;
+	}
+
+	private static synchronized SSLProvider getDefaultSSLProvider() {
+		if (defaultSSLProvider == null)
+			defaultSSLProvider = new SSLContext(new SSLParser(), null, null);
+		return defaultSSLProvider;
 	}
 
 	public Exchange call(Exchange exc) throws Exception {
@@ -153,7 +169,7 @@ public class HttpClient {
 					}
 				}
 				if (con == null) {
-					con = conMgr.getConnection(targetAddr, target.port, localAddr, getOutboundSSLProvider(exc), connectTimeout);
+					con = conMgr.getConnection(targetAddr, target.port, localAddr, getOutboundSSLProvider(exc, target), connectTimeout);
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}

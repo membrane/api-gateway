@@ -46,6 +46,7 @@ import org.xml.sax.SAXException;
  */
 public class ConsistentVersionNumbers {
 
+	static Handler handler;
 	String version;
 	
 	@Test
@@ -72,10 +73,6 @@ public class ConsistentVersionNumbers {
 
 		run(base);
 	}
-	
-	
-	
-	static Handler handler;
 	
 	public static void main(String[] args) throws Exception {
 		File base = new File("..");

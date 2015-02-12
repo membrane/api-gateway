@@ -232,12 +232,12 @@ public class WebServiceExplorerInterceptor extends RESTInterceptor {
 								end();
 								td();
 									for (Part p : o.getInput().getMessage().getParts())
-										text(p.getElement());
+										text(p.getElement().getName());
 									
 								end();
 								td();
 									for (Part p : o.getOutput().getMessage().getParts())
-										text(p.getElement());
+										text(p.getElement().getName());
 								end();
 							end();
 						}
