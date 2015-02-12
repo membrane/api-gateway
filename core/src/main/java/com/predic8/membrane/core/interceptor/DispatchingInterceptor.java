@@ -64,7 +64,7 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 		
 		if (p.getTargetHost() != null) {
 			URI uri = new URI(exc.getRequest().getUri());
-			String url = new URI(p.getTargetScheme(), "", p.getTargetHost(), p.getTargetPort(), uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
+			String url = new URI(p.getTargetScheme(), null, p.getTargetHost(), p.getTargetPort(), uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
 			log.debug("destination: " + url);
 			return url;
 		}
