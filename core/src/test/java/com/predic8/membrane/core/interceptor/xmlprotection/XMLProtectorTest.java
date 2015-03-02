@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.xmlprotection;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
@@ -37,6 +38,11 @@ public class XMLProtectorTest extends TestCase {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		xmlProtector = new XMLProtector(new OutputStreamWriter(baos, Constants.UTF_8), removeDTD, 1000, 1000);
 		input = ByteUtil.getByteArrayData(this.getClass().getResourceAsStream(resource));
+
+		if (resource.substring(resource.length() - 3).equals("lmx")) {
+			reverse();
+		}
+
 		boolean valid = xmlProtector.protect(new InputStreamReader(new ByteArrayInputStream(input), Constants.UTF_8));
 		if (!valid) {
 			output = null;
@@ -44,6 +50,20 @@ public class XMLProtectorTest extends TestCase {
 			output = baos.toByteArray();
 		}
 		return valid;
+	}
+	
+	private void reverse() {
+		// To reverse the input Stream
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		try {
+			bos.write(input);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		StringBuffer sb = new StringBuffer();
+		sb.append(bos.toString());
+		sb.reverse();
+		input = String.valueOf(sb).getBytes();
 	}
 	
 	public void testInvariant() throws Exception {
@@ -55,7 +75,7 @@ public class XMLProtectorTest extends TestCase {
 	}
 
 	public void testDTDRemoval1() throws Exception {
-		assertTrue(runOn("/xml/entity-expansion.xml"));
+		assertTrue(runOn("/xml/entity-expansion.lmx"));
 		assertTrue(output.length < input.length / 2);
 		assertFalse(new String(output).contains("ENTITY"));
 	}
@@ -67,7 +87,7 @@ public class XMLProtectorTest extends TestCase {
 	}
 
 	public void testExpandingEntities() throws Exception {
-		assertTrue(runOn("/xml/entity-expansion.xml", false));
+		assertTrue(runOn("/xml/entity-expansion.lmx", false));
 		assertTrue(output.length > input.length / 2);
 		assertTrue(new String(output).contains("ENTITY"));
 	}
