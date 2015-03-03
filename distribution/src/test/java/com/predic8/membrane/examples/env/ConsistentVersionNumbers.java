@@ -190,12 +190,12 @@ public class ConsistentVersionNumbers {
 		NodeList l = (NodeList) p.compile("//factorypath/factorypathentry[@kind='VARJAR' and contains(@id, 'service-proxy-annot')]").evaluate(d, XPathConstants.NODESET);
 		for (int i = 0; i < l.getLength(); i++) {
 			Element e = (Element) l.item(i);
-			// "M2_REPO/org/membrane-soa/service-proxy/service-proxy-annot/4.0.3/service-proxy-annot-4.0.3.jar"
+			// "M2_REPO/org/membrane-soa/service-proxy-annot/4.0.3/service-proxy-annot-4.0.3.jar"
 			Matcher m = Pattern.compile("service-proxy-annot-(.*?).jar").matcher(e.getAttribute("id"));
 			if (!m.find())
 				throw new RuntimeException("Could not match: " + e.getAttribute("id"));
 			String newValue = handler.handle(child, m.group(1));
-			e.setAttribute("id", "M2_REPO/org/membrane-soa/service-proxy/service-proxy-annot/" + newValue + "/service-proxy-annot-" + newValue + ".jar");
+			e.setAttribute("id", "M2_REPO/org/membrane-soa/service-proxy-annot/" + newValue + "/service-proxy-annot-" + newValue + ".jar");
 		}
 		TransformerFactory.newInstance().newTransformer().transform(new DOMSource(d), new StreamResult(child));
 	}

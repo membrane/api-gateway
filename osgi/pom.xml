@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><!-- 
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--
    Copyright 2012, predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,26 +12,29 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
- --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <artifactId>com.predic8.membrane.osgi</artifactId>
-    <name>service-proxy-osgi</name>
-    <packaging>bundle</packaging>
+--><project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-    <parent>
-        <groupId>org.membrane-soa.service-proxy</groupId>
-        <artifactId>service-proxy-parent</artifactId>
-        <relativePath>../pom.xml</relativePath>
-        <version>4.1.0-SNAPSHOT</version>
-    </parent>
-    
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>com.predic8.membrane.osgi</artifactId>
+	<name>service-proxy-osgi</name>
+	<packaging>bundle</packaging>
+
+	<parent>
+		<groupId>org.membrane-soa</groupId>
+		<artifactId>service-proxy-parent</artifactId>
+		<relativePath>../pom.xml</relativePath>
+		<version>4.1.0-SNAPSHOT</version>
+	</parent>
+
 	<dependencies>
 		<dependency>
-			<groupId>org.membrane-soa.service-proxy</groupId>
+			<groupId>org.membrane-soa</groupId>
 			<artifactId>service-proxy-core</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.membrane-soa.service-proxy</groupId>
+			<groupId>org.membrane-soa</groupId>
 			<artifactId>membrane-service-proxy</artifactId>
 		</dependency>
 		<dependency>
@@ -45,14 +48,16 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
+
 	<build>
 		<plugins>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.11</version>
 				<configuration>
-					<excludes><exclude>**/*</exclude></excludes>
+					<excludes>
+						<exclude>**/*</exclude>
+					</excludes>
 				</configuration>
 			</plugin>
 
@@ -103,8 +108,8 @@
 						<Eclipse-RegisterBuddy>org.apache.log4j</Eclipse-RegisterBuddy>
 						<Bundle-RequiredExecutionEnvironment>JavaSE-1.6</Bundle-RequiredExecutionEnvironment>
 						<Eclipse-BuddyPolicy>registered</Eclipse-BuddyPolicy>
-						<Import-Package/>
-						
+						<Import-Package />
+
 						<Bundle-Vendor>predic8 GmbH</Bundle-Vendor>
 						<Bundle-License>http://www.apache.org/licenses/LICENSE-2.0</Bundle-License>
 					</instructions>

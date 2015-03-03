@@ -7,7 +7,7 @@
   </formats>
   <dependencySets>
   	<dependencySet>
-  		<excludes><exclude>org.membrane-soa.service-proxy:membrane-service-proxy</exclude></excludes>
+  		<excludes><exclude>org.membrane-soa:membrane-service-proxy</exclude></excludes>
   		<unpack>false</unpack>
   		<outputDirectory>/lib</outputDirectory>
   	</dependencySet>

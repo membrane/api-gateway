@@ -10,7 +10,7 @@
   	<dependencySet>
   		<unpack>false</unpack>
   		<outputDirectory>/WEB-INF/lib</outputDirectory>
-  		<excludes><exclude>org.membrane-soa.service-proxy:service-proxy-war</exclude></excludes>
+  		<excludes><exclude>org.membrane-soa:service-proxy-war</exclude></excludes>
   	</dependencySet>
   	<!-- now include JUnit and its dependecies for the ResolverTest to run inside the container -->
   	<dependencySet>
