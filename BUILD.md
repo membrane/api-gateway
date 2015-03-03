@@ -15,7 +15,14 @@ Check the JAVA Version.
 	git clone https://github.com/membrane/service-proxy
 	cd service-proxy
 	mvn install
->	NOTE: For a Release Checkout use e.g.: git clone --branch v4.0.19 https://github.com/membrane/service-proxy
+
+NOTE: For a Release Checkout use
+
+        git clone --branch v4.0.19 https://github.com/membrane/service-proxy
+before checking out, or
+
+        git checkout v4.0.19
+after checking out.
 
 After the build find the distribution and the WAR at:
 
