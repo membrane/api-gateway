@@ -34,7 +34,7 @@
 /distribution/examples/router/loadbalancer-session-3/build
 /distribution/examples/router/versioning/routing/build
 /distribution/examples/router/versioning/xslt/build
-/distribution/executable--*.pid
+/distribution/executable-*.pid
 /distribution/executable_launcher.sh
 
 # /osgi/
