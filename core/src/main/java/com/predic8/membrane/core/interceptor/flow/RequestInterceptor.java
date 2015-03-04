@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import java.util.EnumSet;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -32,7 +33,12 @@ import com.predic8.membrane.core.interceptor.Outcome;
 public class RequestInterceptor extends AbstractFlowInterceptor {
 	
 	private static final Log log = LogFactory.getLog(RequestInterceptor.class);
-
+	
+	public RequestInterceptor() {
+		name = "Request Interceptor";
+		setFlow(Flow.Set.REQUEST);
+	}
+	
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		boolean logDebug = log.isDebugEnabled();
@@ -50,6 +56,5 @@ public class RequestInterceptor extends AbstractFlowInterceptor {
 				return o;
 		}
 		return Outcome.CONTINUE;
-	}
-	
+	}	
 }

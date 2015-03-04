@@ -52,6 +52,8 @@ import com.predic8.membrane.core.interceptor.balancer.Cluster;
 import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
 import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.interceptor.balancer.Session;
+import com.predic8.membrane.core.interceptor.flow.RequestInterceptor;
+import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
 import com.predic8.membrane.core.rules.AbstractProxy;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
@@ -764,7 +766,13 @@ public class AdminPageBuilder extends Html {
 		// build left and right stacks
 		for (Interceptor i : list) {
 			EnumSet<Flow> f = i.getFlow();
-			if (f.contains(Flow.REQUEST)) {
+			if (i instanceof ResponseInterceptor) {
+				for (Interceptor i2 : ((ResponseInterceptor)i).getInterceptors())
+					rightStack.add(i2);
+			} else if (i instanceof RequestInterceptor){
+				for (Interceptor i3 : ((RequestInterceptor)i).getInterceptors())
+					leftStack.add(i3);
+			} else if (f.contains(Flow.REQUEST)) {
 				if (f.contains(Flow.RESPONSE)) {
 					// fill left and right to same height
 					while (leftStack.size() < rightStack.size())
