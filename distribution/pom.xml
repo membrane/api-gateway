@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><!-- 
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--
    Copyright 2012, predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,26 +12,29 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
- --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <artifactId>membrane-service-proxy</artifactId>
-    <name>${project.artifactId}</name>
-    <packaging>jar</packaging>
+--><project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-    <parent>
-        <groupId>org.membrane-soa.service-proxy</groupId>
-        <artifactId>service-proxy-parent</artifactId>
-        <relativePath>../pom.xml</relativePath>
-        <version>4.0.19</version>
-    </parent>
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>membrane-service-proxy</artifactId>
+	<name>${project.artifactId}</name>
+	<packaging>jar</packaging>
+
+	<parent>
+		<groupId>org.membrane-soa</groupId>
+		<artifactId>service-proxy-parent</artifactId>
+		<relativePath>../pom.xml</relativePath>
+		<version>4.0.19</version>
+	</parent>
 
 	<dependencies>
 		<dependency>
-			<groupId>org.membrane-soa.service-proxy</groupId>
+			<groupId>org.membrane-soa</groupId>
 			<artifactId>service-proxy-core</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.membrane-soa.service-proxy</groupId>
+			<groupId>org.membrane-soa</groupId>
 			<artifactId>service-proxy-test</artifactId>
 			<scope>test</scope>
 		</dependency>
@@ -61,10 +64,10 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
+
 	<build>
 		<plugins>
-		 	<plugin>
+			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>2.2.2</version>
 				<configuration>
@@ -73,17 +76,17 @@
 					</descriptors>
 					<archiverConfig>
 						<fileMode>420</fileMode>
-        				<directoryMode>493</directoryMode>
-        				<defaultDirectoryMode>493</defaultDirectoryMode>
+						<directoryMode>493</directoryMode>
+						<defaultDirectoryMode>493</defaultDirectoryMode>
 					</archiverConfig>
 				</configuration>
 				<executions>
 					<execution>
 						<phase>package</phase>
-                        <configuration>
-                            <!-- excludes the dist part from the final name -->
-                            <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
+						<configuration>
+							<!-- excludes the dist part from the final name -->
+							<appendAssemblyId>false</appendAssemblyId>
+						</configuration>
 						<goals>
 							<goal>single</goal>
 						</goals>
@@ -121,5 +124,5 @@
 			</plugin>
 		</plugins>
 	</build>
-    
+
 </project>
