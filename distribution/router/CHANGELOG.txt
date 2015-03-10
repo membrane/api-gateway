@@ -1,6 +1,14 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.20
+
+* backported ossrh profile for Maven Central deployment
+
+* renamed submodule 'cli' to 'distribtion'
+
+* shorten groupId from "org.membrane-soa.service-proxy" to "org.membrane-soa"
+
 * [release] 4.0.19
 
 * [bugfix] Fixed buildability from public Maven repositories.
