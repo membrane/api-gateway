@@ -12,6 +12,27 @@
 /annot/.settings
 /annot/target
 
+# /cli/
+/cli/.classpath
+/cli/.project
+/cli/.settings
+/cli/target
+/cli/memrouter.log
+/cli/membrane.log
+/cli/derby.log
+
+# /cli/examples/router/custom-interceptor/
+/cli/examples/router/custom-interceptor/dist
+
+# /cli/examples/router/loadbalancer-session-3/
+/cli/examples/router/loadbalancer-session-3/build
+
+# /cli/examples/router/versioning/routing/
+/cli/examples/router/versioning/routing/build
+
+# /cli/examples/router/versioning/xslt/
+/cli/examples/router/versioning/xslt/build
+
 # /core/
 /core/.apt_generated
 /core/.classpath
@@ -21,21 +42,12 @@
 /core/temp
 /core/.DS_Store
 
-# /distribution/
-/distribution/.classpath
-/distribution/.project
-/distribution/.settings
-/distribution/target
-/distribution/memrouter.log
-/distribution/membrane.log
-/distribution/derby.log
-/distribution/log.csv
-/distribution/examples/router/custom-interceptor/dist
-/distribution/examples/router/loadbalancer-session-3/build
-/distribution/examples/router/versioning/routing/build
-/distribution/examples/router/versioning/xslt/build
-/distribution/executable-*.pid
-/distribution/executable_launcher.sh
+# /karaf-deployer/
+/karaf-deployer/.project
+/karaf-deployer/.classpath
+/karaf-deployer/target
+/karaf-deployer/.settings
+/karaf-deployer/.settings
 
 # /osgi/
 /osgi/.classpath

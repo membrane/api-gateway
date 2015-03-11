@@ -1,33 +1,16 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--
-   Copyright 2012, predic8 GmbH, www.predic8.com
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
---><project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!-- Copyright 2012,
+	predic8 GmbH, www.predic8.com Licensed under the Apache License, Version
+	2.0 (the "License"); you may not use this file except in compliance with
+	the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+	Unless required by applicable law or agreed to in writing, software distributed
+	under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+	OR CONDITIONS OF ANY KIND, either express or implied. See the License for
+	the specific language governing permissions and limitations under the License. --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.membrane-soa</groupId>
+	<groupId>org.membrane-soa.service-proxy</groupId>
 	<artifactId>service-proxy-parent</artifactId>
-	<version>4.0.20</version>
-	<name>${project.artifactId}</name>
-	<description>Membrane Service Proxy is an open source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as 
-	- Service Virtualization layer
-	- an API Gateway
-	- a synchronous ESB for HTTP based Integration
-	- a Security Proxy
-	</description>
-	<url>http://membrane-soa.org/service-proxy/</url>
+	<version>4.0.21</version>
 	<packaging>pom</packaging>
 
 	<developers>
@@ -49,7 +32,6 @@
 	<scm>
 		<connection>scm:git:https://github.com/membrane/service-proxy/</connection>
 		<tag>HEAD</tag>
-		<url>https://github.com/membrane/service-proxy</url>
 	</scm>
 
 	<issueManagement>
@@ -67,7 +49,7 @@
 	<modules>
 		<module>annot</module>
 		<module>core</module>
-		<module>distribution</module>
+		<module>cli</module>
 		<module>osgi</module>
 		<module>osgi-extender</module>
 		<module>war</module>
@@ -78,36 +60,34 @@
 	<properties>
 		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
-		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>1.6</javac.source>
 		<javac.target>1.6</javac.target>
-		<jackson.version>1.9.11</jackson.version> <!-- This version is used by google-http-client-jackson -->
-		<powermock.version>1.6.0</powermock.version>
+        	<jackson.version>1.9.11</jackson.version> <!-- This version is used by google-http-client-jackson -->
 	</properties>
-
 
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
-				<groupId>org.membrane-soa</groupId>
+				<groupId>org.membrane-soa.service-proxy</groupId>
 				<artifactId>service-proxy-annot</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.membrane-soa</groupId>
+				<groupId>org.membrane-soa.service-proxy</groupId>
 				<artifactId>service-proxy-core</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.membrane-soa</groupId>
+				<groupId>org.membrane-soa.service-proxy</groupId>
 				<artifactId>membrane-service-proxy</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.membrane-soa</groupId>
+				<groupId>org.membrane-soa.service-proxy</groupId>
 				<artifactId>service-proxy-test</artifactId>
 				<version>${project.version}</version>
 			</dependency>
+
 			<dependency>
 				<groupId>javax.activation</groupId>
 				<artifactId>activation</artifactId>
@@ -171,12 +151,12 @@
 			<dependency>
 				<groupId>org.codehaus.jackson</groupId>
 				<artifactId>jackson-core-asl</artifactId>
-				<version>${jackson.version}</version>
+				<version>1.9.9</version>
 			</dependency>
 			<dependency>
 				<groupId>org.codehaus.jackson</groupId>
 				<artifactId>jackson-mapper-asl</artifactId>
-				<version>${jackson.version}</version>
+				<version>1.9.9</version>
 			</dependency>
 			<dependency>
 				<groupId>log4j</groupId>
@@ -237,7 +217,7 @@
 			<dependency>
 				<groupId>com.predic8</groupId>
 				<artifactId>xmlbeautifier</artifactId>
-				<version>1.2.2</version>
+				<version>1.2.1</version>
 			</dependency>
 			<dependency>
 				<groupId>javax.annotation</groupId>
@@ -254,29 +234,11 @@
 				<artifactId>jsr305</artifactId>
 				<version>2.0.1</version>
 			</dependency>
+
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
 				<version>4.11</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.mockito</groupId>
-				<artifactId>mockito-core</artifactId>
-				<version>1.10.8</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.powermock</groupId>
-				<artifactId>powermock-api-mockito</artifactId>
-				<version>${powermock.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.powermock</groupId>
-				<artifactId>powermock-module-junit4</artifactId>
-				<version>${powermock.version}</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>commons-httpclient</groupId>
@@ -313,16 +275,19 @@
 				<artifactId>slf4j-log4j12</artifactId>
 				<version>1.7.10</version>
 			</dependency>
+
 			<dependency>
 				<groupId>org.eclipse.core</groupId>
 				<artifactId>runtime</artifactId>
 				<version>3.3.100-v20070530</version>
 			</dependency>
+
 			<dependency>
 				<groupId>xalan</groupId>
 				<artifactId>xalan</artifactId>
 				<version>2.7.1</version>
 			</dependency>
+			
 			<dependency>
 				<groupId>com.floreysoft</groupId>
 				<artifactId>jmte</artifactId>
@@ -366,7 +331,6 @@
 		</dependencies>
 	</dependencyManagement>
 
-
 	<repositories>
 		<repository>
 			<id>com.springsource.repository.bundles.external</id>
@@ -379,9 +343,9 @@
 		</repository>
 	</repositories>
 
-
 	<build>
 		<plugins>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -391,7 +355,7 @@
 					<target>${javac.target}</target>
 				</configuration>
 			</plugin>
-
+			
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
@@ -437,8 +401,7 @@
 							<rules>
 								<requireJavaVersion>
 									<!-- The Sun JDK 1.6 Java compiler has a bug with annotation processors. -->
-									<!-- The Oracle JDK 1.8 b124 compiler will link against a class
-										(return value of HashMap.entrySet()) not available before 1.8. -->
+									<!-- The Oracle JDK 1.8 b124 compiler will link against a class (return value of HashMap.entrySet()) not available before 1.8. -->
 									<version>[1.7,1.8)</version>
 								</requireJavaVersion>
 							</rules>
@@ -446,10 +409,12 @@
 					</execution>
 				</executions>
 			</plugin>
+			
 		</plugins>
 
 		<pluginManagement>
 			<plugins>
+
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>cobertura-maven-plugin</artifactId>
@@ -473,48 +438,48 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-jar-plugin</artifactId>
 					<version>2.4</version>
-					<configuration>
-						<archive>
-							<manifest>
-								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-								<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-							</manifest>
-						</archive>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            </manifest>
+                        </archive>
 					</configuration>
 				</plugin>
+				
+                <plugin>
+                    <artifactId>maven-ejb-plugin</artifactId>
+                    <version>2.3</version>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
 
-				<plugin>
-					<artifactId>maven-ejb-plugin</artifactId>
-					<version>2.3</version>
-					<configuration>
-						<archive>
-							<manifest>
-								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-								<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-							</manifest>
-						</archive>
-					</configuration>
-				</plugin>
-
-				<plugin>
-					<artifactId>maven-war-plugin</artifactId>
-					<version>2.2</version>
-					<configuration>
-						<archive>
-							<manifest>
-								<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-								<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-							</manifest>
-						</archive>
-					</configuration>
-				</plugin>
-
+                <plugin>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>2.2</version>
+                    <configuration>
+                        <archive>
+                            <manifest>
+                                <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                            </manifest>
+                        </archive>
+                    </configuration>
+                </plugin>
+				
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>exec-maven-plugin</artifactId>
 					<version>1.2.1</version>
 				</plugin>
-
+				
 				<plugin>
 					<groupId>org.apache.felix</groupId>
 					<artifactId>maven-bundle-plugin</artifactId>
@@ -538,88 +503,17 @@
 										</goals>
 									</pluginExecutionFilter>
 									<action>
-										<ignore />
+										<ignore/>
 									</action>
 								</pluginExecution>
 							</pluginExecutions>
 						</lifecycleMappingMetadata>
 					</configuration>
 				</plugin>
+
 			</plugins>
 		</pluginManagement>
 	</build>
-
-
-	<profiles>
-		<profile>
-			<id>ossrh</id>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-source-plugin</artifactId>
-						<version>2.4</version>
-						<executions>
-							<execution>
-								<id>attach-sources</id>
-								<goals>
-									<goal>jar-no-fork</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>2.10.1</version>
-						<executions>
-							<execution>
-								<id>attach-javadocs</id>
-								<goals>
-									<goal>jar</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.6</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>1.6.3</version>
-						<extensions>true</extensions>
-						<configuration>
-							<serverId>ossrh</serverId>
-							<nexusUrl>https://oss.sonatype.org/</nexusUrl>
-							<autoReleaseAfterClose>false</autoReleaseAfterClose>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-			<distributionManagement>
-				<repository>
-					<id>ossrh</id>
-					<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-				</repository>
-				<snapshotRepository>
-					<id>ossrh</id>
-					<url>https://oss.sonatype.org/content/repositories/snapshots</url>
-				</snapshotRepository>
-			</distributionManagement>
-		</profile>
-	</profiles>
 
 	<distributionManagement>
 		<repository>

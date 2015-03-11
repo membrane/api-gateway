@@ -7,53 +7,53 @@
   </formats>
   <includeBaseDirectory>false</includeBaseDirectory>
   <dependencySets>
-    <dependencySet>
-      <unpack>false</unpack>
-      <outputDirectory>/WEB-INF/lib</outputDirectory>
-      <excludes><exclude>org.membrane-soa:service-proxy-war</exclude></excludes>
-    </dependencySet>
-    <!-- now include JUnit and its dependecies for the ResolverTest to run inside the container -->
-    <dependencySet>
-      <scope>test</scope>
-      <unpack>false</unpack>
-      <outputDirectory>/WEB-INF/lib</outputDirectory>
-      <includes>
-        <include>junit:junit</include>
-        <include>org.hamcrest:hamcrest-core</include>
-      </includes>
-    </dependencySet>
+  	<dependencySet>
+  		<unpack>false</unpack>
+  		<outputDirectory>/WEB-INF/lib</outputDirectory>
+  		<excludes><exclude>org.membrane-soa.service-proxy:service-proxy-war</exclude></excludes>
+  	</dependencySet>
+  	<!-- now include JUnit and its dependecies for the ResolverTest to run inside the container -->
+  	<dependencySet>
+  		<scope>test</scope>
+  		<unpack>false</unpack>
+  		<outputDirectory>/WEB-INF/lib</outputDirectory>
+  		<includes>
+  			<include>junit:junit</include>
+  			<include>org.hamcrest:hamcrest-core</include>
+  		</includes>
+  	</dependencySet>
   </dependencySets>
   <fileSets>
-    <fileSet>
-      <directory>src/test/webapp</directory>
-      <outputDirectory>/</outputDirectory>
-    </fileSet>
-    <fileSet>
-      <directory>target/classes</directory>
-      <outputDirectory>/WEB-INF/classes</outputDirectory>
-      <excludes>
-        <exclude>META-INF/spring.schemas</exclude>
-        <exclude>META-INF/spring.handlers</exclude>
-      </excludes>
-    </fileSet>
-    <fileSet>
-      <directory>target/test-classes</directory>
-      <outputDirectory>/WEB-INF/classes</outputDirectory>
-    </fileSet>
-    <!-- include the resources required by the ResolverTest -->
-    <fileSet>
-      <directory>../core/src/test/resources/resolver</directory>
-      <outputDirectory>/test/resolver</outputDirectory>
-    </fileSet>
-    <fileSet>
-      <directory>../core/src/test/resources/resolver</directory>
-      <outputDirectory>/WEB-INF/classes/resolver</outputDirectory>
-    </fileSet>
-    <!-- include the ResolverTest to run inside the J2EE container -->
-    <fileSet>
-      <directory>../core/target/test-classes/com/predic8/membrane/core/resolver</directory>
-      <outputDirectory>/WEB-INF/classes/com/predic8/membrane/core/resolver</outputDirectory>
-    </fileSet>
+  	<fileSet>
+  		<directory>src/test/webapp</directory>
+  		<outputDirectory>/</outputDirectory>
+  	</fileSet>
+  	<fileSet>
+  		<directory>target/classes</directory>
+  		<outputDirectory>/WEB-INF/classes</outputDirectory>
+			<excludes>
+				<exclude>META-INF/spring.schemas</exclude>
+				<exclude>META-INF/spring.handlers</exclude>
+			</excludes>
+  	</fileSet>
+  	<fileSet>
+  		<directory>target/test-classes</directory>
+  		<outputDirectory>/WEB-INF/classes</outputDirectory>
+  	</fileSet>
+  	<!-- include the resources required by the ResolverTest -->
+  	<fileSet>
+  		<directory>../core/src/test/resources/resolver</directory>
+  		<outputDirectory>/test/resolver</outputDirectory>
+  	</fileSet>
+  	<fileSet>
+  		<directory>../core/src/test/resources/resolver</directory>
+  		<outputDirectory>/WEB-INF/classes/resolver</outputDirectory>
+  	</fileSet>
+  	<!-- include the ResolverTest to run inside the J2EE container -->
+  	<fileSet>
+  		<directory>../core/target/test-classes/com/predic8/membrane/core/resolver</directory>
+  		<outputDirectory>/WEB-INF/classes/com/predic8/membrane/core/resolver</outputDirectory>
+  	</fileSet>
   </fileSets>
   <files>
   </files>
