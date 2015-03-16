@@ -26,6 +26,7 @@ Apache Http Components
 Apache Commons Lang
 Apache Commons Logging
 Apache Commons Pool
+Apache Commons IO
 Apache Xalan
 Codehaus Groovy
 Codehaus Jackson JSON Processor

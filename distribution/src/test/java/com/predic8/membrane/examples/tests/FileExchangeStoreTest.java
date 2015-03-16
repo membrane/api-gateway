@@ -15,16 +15,26 @@
 package com.predic8.membrane.examples.tests;
 
 import static com.predic8.membrane.test.AssertUtils.getAndAssert200;
+import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Calendar;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
+import com.predic8.membrane.core.exchangestore.FileExchangeStore;
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(Calendar.class)
 public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 	
 	@Test
@@ -49,6 +59,49 @@ public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 		}
 	}
 	
+	@Test
+	public void testDeleteOldFolders() throws IOException {
+
+		PowerMockito.mockStatic(Calendar.class);
+		Calendar calendar = Mockito.mock(Calendar.class);
+		Mockito.when(calendar.get(Mockito.eq(Calendar.YEAR))).thenReturn(2015);
+		Mockito.when(calendar.get(Mockito.eq(Calendar.MONTH))).thenReturn(2); // 2 = March
+		Mockito.when(calendar.get(Mockito.eq(Calendar.DAY_OF_MONTH))).thenReturn(15);
+		Mockito.when(Calendar.getInstance()).thenReturn(calendar);
+
+		new File("/tmp/FileExchangeStoreTest").mkdirs();
+
+		for (int m = 1; m<=3; m++)
+			for (int d = 1; d<=31; d++)
+				if (!(m == 2 && d > 28))
+					new File("/tmp/FileExchangeStoreTest/2015/"+m+"/"+d).mkdirs();
+
+		FileExchangeStore fes = new FileExchangeStore();
+		fes.setDir("/tmp");
+		fes.setMaxDays(30);
+
+		// before
+		for (int m = 1; m<=3; m++)
+			for (int d = 1; d<=31; d++)
+				if (!(m == 2 && d > 28))
+					assertTrue(new File("/tmp/FileExchangeStoreTest/2015/"+m+"/"+d).exists());
+
+		fes.deleteOldFolders();
+
+		// after
+		for (int d = 1; d<=31; d++)
+			assertFalse(new File("/tmp/FileExchangeStoreTest/2015/1/"+d).exists());
+		for (int d = 1; d<=13; d++)
+			assertFalse(new File("/tmp/FileExchangeStoreTest/2015/2/"+d).exists());
+		for (int d = 17; d<=28; d++)
+			assertTrue(new File("/tmp/FileExchangeStoreTest/2015/2/"+d).exists());
+		for (int d = 1; d<=31; d++)
+			assertTrue(new File("/tmp/FileExchangeStoreTest/2015/3/"+d).exists());
+
+		// cleanup
+		new File("/tmp/FileExchangeStoreTest").delete();
+	}
+
 	private boolean containsRecursively(File base, FilenameFilter filter) {
 		for (File f : base.listFiles()) {
 			if (f.isDirectory())

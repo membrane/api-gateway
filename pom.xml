@@ -80,7 +80,7 @@
 		<javac.source>1.6</javac.source>
 		<javac.target>1.6</javac.target>
 		<jackson.version>1.9.11</jackson.version> <!-- This version is used by google-http-client-jackson -->
-		<powermock.version>1.6.0</powermock.version>
+		<powermock.version>1.6.2</powermock.version>
 	</properties>
 
 

@@ -16,9 +16,11 @@ package com.predic8.membrane.core.exchangestore;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,6 +69,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	private File directory;
 
 	private boolean saveBodyOnly = false;
+
+	private int maxDays;
 
 	public void snap(final AbstractExchange exc, final Flow flow) {
 		try {
@@ -174,6 +178,33 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
+	public void deleteOldFolders() throws IOException {
+		Calendar threshold = Calendar.getInstance();
+		threshold.add(Calendar.DAY_OF_MONTH, -maxDays);
+
+		ArrayList<File> folders3 = new DepthWalker(3).getDirectories(new File(dir));
+
+		ArrayList<File> deletion = new ArrayList<File>();
+
+		for (File f : folders3) {
+			System.out.println(f);
+			int day =  Integer.parseInt(f.getName());
+			int mon =  Integer.parseInt(f.getParentFile().getName());
+			int year = Integer.parseInt(f.getParentFile().getParentFile().getName());
+			Calendar folderTime = Calendar.getInstance();
+			folderTime.clear();
+			folderTime.set(year, mon-1, day);
+			if (folderTime.before(threshold)) {
+				deletion.add(f);
+			}
+		}
+
+		for (File d : deletion) {
+			//System.out.println(d + " would be deleted");
+			d.delete();
+		}
+	}
+
 	public AbstractExchange[] getExchanges(RuleKey ruleKey) {
 		throw new RuntimeException(
 				"Method getExchanges() is not supported by FileExchangeStore");
@@ -252,6 +283,19 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	@MCAttribute
 	public void setSaveBodyOnly(boolean saveBodyOnly) {
 		this.saveBodyOnly = saveBodyOnly;
+	}
+
+	public int getMaxDays() {
+		return maxDays;
+	}
+
+	/**
+	 * @default not set
+	 * @example 60
+	 */
+	@MCAttribute
+	public void setMaxDays(int maxDays) {
+		this.maxDays = maxDays;
 	}
 
 }
