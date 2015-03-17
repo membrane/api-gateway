@@ -27,6 +27,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -66,13 +67,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private String dir;
 
-	private boolean raw;
-
 	private File directory;
 
+	private boolean raw = false;
 	private boolean saveBodyOnly = false;
-
-	private int maxDays;
+	private int maxDays = -1;
 
 	private Timer oldFilesCleanupTimer;
 
@@ -240,8 +239,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		}
 
 		for (File d : deletion) {
-			//System.out.println(d + " would be deleted");
-			d.delete();
+			FileUtils.deleteDirectory(d);
 		}
 	}
 
@@ -301,7 +299,6 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	public boolean isRaw() {
 		return raw;
 	}
-	
 	/**
 	 * @default false
 	 * @description If this is true, headers will always be printed (overriding

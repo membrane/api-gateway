@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.Calendar;
 
 import org.junit.Test;
-import org.junit.internal.runners.statements.InvokeMethod;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
