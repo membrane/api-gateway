@@ -23,10 +23,12 @@ import java.io.IOException;
 import java.util.Calendar;
 
 import org.junit.Test;
+import org.junit.internal.runners.statements.InvokeMethod;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.reflect.Whitebox;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import com.predic8.membrane.core.exchangestore.FileExchangeStore;
@@ -60,7 +62,7 @@ public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 	}
 	
 	@Test
-	public void testDeleteOldFolders() throws IOException {
+	public void testDeleteOldFolders() throws Exception {
 
 		PowerMockito.mockStatic(Calendar.class);
 		Calendar calendar = Mockito.mock(Calendar.class);
@@ -86,7 +88,8 @@ public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 				if (!(m == 2 && d > 28))
 					assertTrue(new File("/tmp/FileExchangeStoreTest/2015/"+m+"/"+d).exists());
 
-		fes.deleteOldFolders();
+		// invoke private method
+		Whitebox.invokeMethod(fes, "deleteOldFolders");
 
 		// after
 		for (int d = 1; d<=31; d++)

@@ -23,6 +23,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
@@ -71,6 +73,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	private boolean saveBodyOnly = false;
 
 	private int maxDays;
+
+	private Timer oldFilesCleanupTimer;
 
 	public void snap(final AbstractExchange exc, final Flow flow) {
 		try {
@@ -178,7 +182,43 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
-	public void deleteOldFolders() throws IOException {
+	public void initializeTimer() {
+		if (this.maxDays < 0) {
+			return; // don't do anything if this feature is deactivated
+		}
+
+		oldFilesCleanupTimer = new Timer("Clean up old log files", true);
+
+		// schedule first run for the night
+		Calendar firstRun = Calendar.getInstance();
+		firstRun.set(Calendar.HOUR_OF_DAY, 3);
+		firstRun.set(Calendar.MINUTE, 14);
+
+		// schedule for the next day if the scheduled execution time is before now
+		if (firstRun.before(Calendar.getInstance()))
+			firstRun.add(Calendar.DAY_OF_MONTH, 1);
+
+		oldFilesCleanupTimer.scheduleAtFixedRate(
+			new TimerTask() {
+				@Override
+				public void run() {
+					try {
+						deleteOldFolders();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+				}
+			},
+			firstRun.getTime(),
+			24*60*60*1000		// one day
+		);
+	}
+
+	protected void deleteOldFolders() throws IOException {
+		if (this.maxDays < 0) {
+			return; // don't do anything if this feature is deactivated
+		}
+
 		Calendar threshold = Calendar.getInstance();
 		threshold.add(Calendar.DAY_OF_MONTH, -maxDays);
 
@@ -225,33 +265,6 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				"Method removeAllExchanges() is not supported by FileExchangeStore");
 	}
 
-	public String getDir() {
-		return dir;
-	}
-
-	/**
-	 * @description Directory where the exchanges are saved.
-	 * @example logs
-	 */
-	@Required
-	@MCAttribute
-	public void setDir(String dir) {
-		this.dir = dir;
-	}
-
-	public boolean isRaw() {
-		return raw;
-	}
-
-	/**
-	 * @default false
-	 * @example true
-	 */
-	@MCAttribute
-	public void setRaw(boolean raw) {
-		this.raw = raw;
-	}
-
 	public StatisticCollector getStatistics(RuleKey ruleKey) {
 		return null;
 	}
@@ -272,12 +285,42 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		// ignore
 	}
 
+	public String getDir() {
+		return dir;
+	}
+	/**
+	 * @description Directory where the exchanges are saved.
+	 * @example logs
+	 */
+	@Required
+	@MCAttribute
+	public void setDir(String dir) {
+		this.dir = dir;
+	}
+
+	public boolean isRaw() {
+		return raw;
+	}
+	
+	/**
+	 * @default false
+	 * @description If this is true, headers will always be printed (overriding
+	 *              saveBodyOnly) and the body of the exchange won't be
+	 *              formatted nicely.
+	 * @example true
+	 */
+	@MCAttribute
+	public void setRaw(boolean raw) {
+		this.raw = raw;
+	}
+
 	public boolean isSaveBodyOnly() {
 		return saveBodyOnly;
 	}
-
 	/**
 	 * @default false
+	 * @description If this is true, no headers will be written to the exchange
+	 *              log files.
 	 * @example true
 	 */
 	@MCAttribute
@@ -288,9 +331,11 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	public int getMaxDays() {
 		return maxDays;
 	}
-
 	/**
-	 * @default not set
+	 * @default -1
+	 * @description Number of days for which exchange logs are preserved. A
+	 *              value smaller than zero deactivates the deletion of old
+	 *              logs.
 	 * @example 60
 	 */
 	@MCAttribute
