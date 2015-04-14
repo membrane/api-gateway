@@ -22,8 +22,8 @@ Meeting the Requirements
 6. Now you'll have to finish this installation by accepting the terms of agreement. Eclipse should be installing the plugin now.
 
 
-Building
-========
+Building in Eclipse
+===================
 
 1. Checkout the source code from https://github.com/membrane/service-proxy .
 
