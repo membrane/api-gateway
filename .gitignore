@@ -20,6 +20,7 @@
 /cli/memrouter.log
 /cli/membrane.log
 /cli/derby.log
+/cli/log.csv
 
 # /cli/examples/router/custom-interceptor/
 /cli/examples/router/custom-interceptor/dist
