@@ -109,6 +109,11 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	public void init(Router router) {
 		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient();
 	}
+
+	@Override
+	protected String normalizeNumber(String number) {
+		return number.replaceAll("\\+", "00").replaceAll("[- ]|\\(.*\\)", "");
+	}
 	
 	protected void sendSMS(String text, String recipientNumber) {
 		recipientNumber = recipientNumber.replaceAll("^00", "\\+");

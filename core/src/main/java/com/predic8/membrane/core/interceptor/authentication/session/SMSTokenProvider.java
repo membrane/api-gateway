@@ -26,7 +26,6 @@ public abstract class SMSTokenProvider extends NumericTokenProvider {
 
 	protected String prefixText = "Token: ";
 	private boolean simulate;
-	private boolean normalizeTelephoneNumber;
 	
 	@Override
 	public void requestToken(Map<String, String> userAttributes) {
@@ -40,8 +39,7 @@ public abstract class SMSTokenProvider extends NumericTokenProvider {
 		if (recipientNumber == null)
 			throw new InvalidParameterException("User does not have the 'sms' attribute");
 		
-		if (normalizeTelephoneNumber)
-			recipientNumber = recipientNumber.replaceAll("\\+", "00").replaceAll("[- ]|\\(.*\\)", "");
+		recipientNumber = normalizeNumber(recipientNumber);
 
 		String text = prefixText + token;
 		
@@ -52,14 +50,15 @@ public abstract class SMSTokenProvider extends NumericTokenProvider {
 	}
 	
 	protected abstract void sendSMS(String text, String recipientNumber);
+	protected abstract String normalizeNumber(String number);
 
 	public String getPrefixText() {
 		return prefixText;
 	}
-
 	/**
 	 * @description A string that will be prepended to the token when creating the text message.
 	 * @example "Token: "
+	 * @default "Token: "
 	 */
 	@MCAttribute
 	public void setPrefixText(String prefixText) {
@@ -69,25 +68,12 @@ public abstract class SMSTokenProvider extends NumericTokenProvider {
 	public boolean isSimulate() {
 		return simulate;
 	}
-
 	/**
 	 * @description Don't send any text messages, only write tokens to the log.
 	 */
 	@MCAttribute
 	public void setSimulate(boolean simulate) {
 		this.simulate = simulate;
-	}
-
-	public boolean isNormalizeTelephoneNumber() {
-		return normalizeTelephoneNumber;
-	}
-
-	/**
-	 * @description Whether telephone numbers will be normalized (remove any non-digit characters, etc) before using.
-	 */
-	@MCAttribute
-	public void setNormalizeTelephoneNumber(boolean normalizeTelephoneNumber) {
-		this.normalizeTelephoneNumber = normalizeTelephoneNumber;
 	}
 
 }
