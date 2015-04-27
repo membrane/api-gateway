@@ -282,4 +282,3 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	
 
 }
->>>>>>> 73a4aaa... TelekomSMSTokenProvider: sendSMS(): improve readibility

@@ -26,7 +26,7 @@ public abstract class SMSTokenProvider extends NumericTokenProvider {
 
 	protected String prefixText = "Token: ";
 	private boolean simulate;
-	
+
 	@Override
 	public void requestToken(Map<String, String> userAttributes) {
 		String token = generateToken(userAttributes);
@@ -77,15 +77,16 @@ public abstract class SMSTokenProvider extends NumericTokenProvider {
 	}
 	
 	public boolean isNormalizeTelephoneNumber() {
-		return normalizeTelephoneNumber;
+		return true;
 	}
+	
 	/**
-
-	 * @description Whether telephone numbers will be normalized (remove any non-digit characters, etc) before using.
+	 * @description DEPRECATED. Every Implementation of SMSTokenProvider defines
+	 *              the Normalization of Phone Numbers on its own. Setting this
+	 *              attribute has no effect.
 	 */
 	@MCAttribute
 	public void setNormalizeTelephoneNumber(boolean normalizeTelephoneNumber) {
-		this.normalizeTelephoneNumber = normalizeTelephoneNumber;
 	}
 
 }
