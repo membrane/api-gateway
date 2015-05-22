@@ -25,7 +25,10 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -59,7 +62,9 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 		content.write(gen);
 		gen.flush();
 		
-		return Response.ok().body(jsonTxt.toString()).build();
+		return Response.ok()
+				.header(Header.CONTENT_TYPE, MimeType.APPLICATION_JSON_UTF8)
+				.body(jsonTxt.toString()).build();
 	}
 
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
