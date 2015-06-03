@@ -124,8 +124,8 @@
     </xsl:choose>
   </xsl:template>
 
-  <!-- number (no support for javascript mantise) -->
-  <xsl:template match="text()[not(string(number())='NaN')]">
+  <!-- number (no support for javascript mantise)-->
+  <xsl:template match="text()[not(string(number())='NaN' or (starts-with(.,'0' ) and . != '0'))]">
     <xsl:value-of select="."/>
   </xsl:template>
 
