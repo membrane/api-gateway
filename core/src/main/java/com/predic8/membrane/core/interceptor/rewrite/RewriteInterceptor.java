@@ -154,8 +154,11 @@ public class RewriteInterceptor extends AbstractInterceptor {
 			String dest = it.next();
 			
 			String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), dest);
-			int pathBegin = dest.lastIndexOf(pathQuery);
-			String schemaHostPort = pathBegin == -1 ? dest : dest.substring(0, pathBegin); // TODO check -1 case
+			int pathBegin = -1;
+			int authorityBegin = dest.indexOf("//");
+			if (authorityBegin != -1)
+				pathBegin = dest.indexOf("/", authorityBegin + 2);
+			String schemaHostPort = pathBegin == -1 ? null : dest.substring(0, pathBegin);
 			
 			log.debug("pathQuery: " + pathQuery);
 			log.debug("schemaHostPort: " + schemaHostPort);
@@ -177,7 +180,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 				return Outcome.RETURN;
 			}
 
-			if (!newDest.contains("://")) {
+			if (!newDest.contains("://") && schemaHostPort != null) {
 				// prepend schema, host and port from original uri
 				newDest = schemaHostPort + newDest;
 			}
