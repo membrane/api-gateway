@@ -53,6 +53,7 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 	private String user;
 	private String password;
 	private String senderName;
+	private boolean backupServiceAvailable;
 
 	private static final String HOST = "http.secure.api.whatevermobile.com:7011";
 	private static final String GATEWAY = "https://" + HOST + "/sendsms";
@@ -76,12 +77,14 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 		if (ret == 200) {
 			log.debug("Sent SMS to " + recipientNumber + " via whateverMobile Primary Gateway.");
 		} else {
-			log.warn("Primary Gateway failed when sending SMS to " + recipientNumber + ".");
-			ret = sendSmsToGateway(false, text, recipientNumber);
-			if (ret == 200) {
-				log.debug("Sent SMS to " + recipientNumber + " via whateverMobile Secondary Gateway.");
-			} else {
-				log.error("Both Primary and Secondary Gateway failed when sending SMS to " + recipientNumber + "!");
+			log.error("Primary Gateway failed when sending SMS to " + recipientNumber + ".");
+			if (backupServiceAvailable) {
+				ret = sendSmsToGateway(false, text, recipientNumber);
+				if (ret == 200) {
+					log.debug("Sent SMS to " + recipientNumber + " via whateverMobile Secondary Gateway.");
+				} else {
+					log.error("Both Primary and Secondary Gateway failed when sending SMS to " + recipientNumber + "!");
+				}
 			}
 		}
 	}
@@ -170,6 +173,18 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 	@MCAttribute
 	public void setSenderName(String senderName) {
 		this.senderName = senderName;
+	}
+
+
+	public boolean isBackupServiceAvailable() {
+		return backupServiceAvailable;
+	}
+	/**
+	 * @description Specify whether the alternative gateway is available for the configured account
+	 */
+	@MCAttribute
+	public void setBackupServiceAvailable(boolean backup) {
+		this.backupServiceAvailable = backup;
 	}
 
 
