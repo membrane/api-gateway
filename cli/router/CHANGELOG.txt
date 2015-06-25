@@ -1,7 +1,11 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
-* [release] 4.0.21
+* [release] 4.0.23
+
+* [feature] enhanded debug output for WhateverMobileSMSTokenProvider
+
+* [release] 4.0.22
 
 * [feature] Backport WhateverMobileSMSTokenProvider
 
