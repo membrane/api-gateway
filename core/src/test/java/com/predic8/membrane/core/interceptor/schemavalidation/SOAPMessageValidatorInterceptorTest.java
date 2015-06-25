@@ -43,6 +43,10 @@ public class SOAPMessageValidatorInterceptorTest {
 	
 	public static final String E_MAIL_SERVICE_WSDL = "src/test/resources/validation/XWebEmailValidation.wsdl.xml";
 	
+	public static final String INLINE_ANYTYPE_WSDL = "src/test/resources/validation/inline-anytype.wsdl";
+	
+	
+	
 	@Before
 	public void setUp() throws Exception {
 		requestTB = MessageUtil.getPostRequest("http://thomas-bayer.com");
@@ -88,6 +92,14 @@ public class SOAPMessageValidatorInterceptorTest {
 	@Test
 	public void testHandleRequestInvalidEmailMessageUnknownElement() throws Exception {
 		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
+	}
+	
+
+	
+	@Test
+	public void testInlineSchemaWithAnyType() throws Exception {
+		throw new Exception();
+		//assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 	
 	private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {
