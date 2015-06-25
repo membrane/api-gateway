@@ -69,3 +69,7 @@
 /war/target
 /war/.settings
 /war/memrouter.log
+
+
+# Intellj
+*.iml
