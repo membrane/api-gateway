@@ -5,6 +5,8 @@
 /.project
 /.metadata
 /.DS_Store
+*.iml
+*.idea
 
 # /annot/
 /annot/.classpath
