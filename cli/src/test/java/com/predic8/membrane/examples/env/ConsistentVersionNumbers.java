@@ -78,7 +78,7 @@ public class ConsistentVersionNumbers {
 	static Handler handler;
 	
 	public static void main(String[] args) throws Exception {
-		File base = new File("..");
+		File base = new File(".");
 		//base = new File("C:\\Users\\tobias\\git\\membrane\\service-proxy");
 
 		validateBase(base);
