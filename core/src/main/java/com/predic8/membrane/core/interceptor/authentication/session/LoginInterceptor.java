@@ -95,7 +95,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 @MCElement(name="login")
 public class LoginInterceptor extends AbstractInterceptor {
 	
-	private String location, path;
+	private String location, path, message;
 	private boolean exposeUserCredentialsToSession;
 	
 	private UserDataProvider userDataProvider;
@@ -113,7 +113,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
 		userDataProvider.init(router);
-		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path, exposeUserCredentialsToSession);
+		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path, exposeUserCredentialsToSession, message);
 	}
 
 	public void init(Router router) throws Exception {
@@ -248,5 +248,13 @@ public class LoginInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setExposeUserCredentialsToSession(boolean exposeUserCredentialsToSession) {
 		this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
+	}
+
+		/**
+	 * @description Set the message displayed during redirect.
+	 */
+	@MCAttribute
+	public void setMessage(String message) {
+		this.message = message;
 	}
 }

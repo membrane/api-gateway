@@ -44,7 +44,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 public class LoginDialog {
 	private static Log log = LogFactory.getLog(LoginDialog.class.getName());
 
-	private String path;
+	private String path, message;
 	private boolean exposeUserCredentialsToSession;
 	private URIFactory uriFactory;
 
@@ -62,13 +62,15 @@ public class LoginDialog {
 			AccountBlocker accountBlocker,
 			String dialogLocation,
 			String path,
-			boolean exposeUserCredentialsToSession) {
+			boolean exposeUserCredentialsToSession,
+			String message) {
 		this.path = path;
 		this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
 		this.userDataProvider = userDataProvider;
 		this.tokenProvider = tokenProvider;
 		this.sessionManager = sessionManager;
 		this.accountBlocker = accountBlocker;
+		this.message = message;
 		
 		wsi = new WebServerInterceptor();
 		wsi.setDocBase(dialogLocation);
@@ -190,7 +192,12 @@ public class LoginDialog {
 					String target = URLParamUtil.getParams(uriFactory, exc).get("target");
 					if (StringUtils.isEmpty(target))
 						target = "/";
-					exc.setResponse(Response.redirectWithout300(target, false).build());
+
+						if (this.message != null)
+						exc.setResponse(Response.redirectWithout300(target, false, message).build());
+					else
+						exc.setResponse(Response.redirectWithout300(target, false).build());
+
 					s.authorize();
 				} else {
 					showPage(exc, 1);
