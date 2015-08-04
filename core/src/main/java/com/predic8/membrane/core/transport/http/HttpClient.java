@@ -65,11 +65,12 @@ public class HttpClient {
 	private final boolean allowWebSockets;
 
 	private final ConnectionManager conMgr;
-	
+	private StreamPump.StreamPumpStats streamPumpStats;
+
 	public HttpClient() {
 		this(new HttpClientConfiguration());
 	}
-	
+
 	public HttpClient(HttpClientConfiguration configuration) {
 		proxy = configuration.getProxy();
 		authentication = configuration.getAuthentication();
@@ -81,7 +82,11 @@ public class HttpClient {
 		
 		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
 	}
-	
+
+	public void setStreamPumpStats(StreamPump.StreamPumpStats streamPumpStats) {
+		this.streamPumpStats = streamPumpStats;
+	}
+
 	@Override
 	protected void finalize() throws Throwable {
 		conMgr.shutdownWhenDone();
@@ -189,7 +194,7 @@ public class HttpClient {
 				}
 				
 				if (newProtocol != null) {
-					setupConnectionForwarding(exc, con, newProtocol);
+					setupConnectionForwarding(exc, con, newProtocol, streamPumpStats);
 					exc.getDestinations().clear();
 					exc.getDestinations().add(dest);
 					con.setExchange(exc);
@@ -297,10 +302,10 @@ public class HttpClient {
 		return res;
 	}
 
-	public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol) throws SocketException {
+	public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol, StreamPump.StreamPumpStats streamPumpStats) throws SocketException {
 		final HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
-		final StreamPump a = new StreamPump(con.in, hsr.getSrcOut());
-		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out); 
+		final StreamPump a = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats);
+		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats);
 		
 		hsr.getSourceSocket().setSoTimeout(0);
 		

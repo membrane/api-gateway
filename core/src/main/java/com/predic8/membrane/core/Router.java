@@ -100,6 +100,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 			Executors.newSingleThreadExecutor(new HttpServerThreadFactory("Router Background Initializator"));
 	protected HotDeploymentThread hdt;
 	protected URIFactory uriFactory = new URIFactory(false);
+	protected Statistics statistics = new Statistics();
 
 	private boolean hotDeploy = true;
 	private boolean running;
@@ -456,5 +457,9 @@ public class Router implements Lifecycle, ApplicationContextAware {
     @MCChildElement(order=-1, allowForeign=true)
     public void setUriFactory(URIFactory uriFactory) {
 		this.uriFactory = uriFactory;
+	}
+
+	public Statistics getStatistics() {
+		return statistics;
 	}
 }

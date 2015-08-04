@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,18 +28,26 @@ public class StreamPump implements Runnable {
 
 	private static Log log = LogFactory.getLog(StreamPump.class.getName());
 
+	public static class StreamPumpStats {
+		private static AtomicInteger running = new AtomicInteger();
+	}
+
 	private final InputStream in;
 	private final OutputStream out;
-	
-	public StreamPump(InputStream in, OutputStream out) {
+	private StreamPumpStats stats;
+
+	public StreamPump(InputStream in, OutputStream out, StreamPumpStats stats) {
 		this.in = in;
 		this.out = out;
+		this.stats = stats;
 	}
 	
 	@Override
 	public void run() {
 		byte[] buffer = new byte[8192];
 		int length = 0;
+		if (stats != null)
+			stats.running.incrementAndGet();
 		try {
 			while ((length = in.read(buffer)) > 0) {
 				//log.debug(Thread.currentThread().getName() + " pumped " + length + " bytes.");
@@ -51,6 +60,9 @@ public class StreamPump implements Runnable {
 			// do nothing
 		} catch (IOException e) {
 			log.error("Reading from or writing to stream failed: " + e);
+		} finally {
+			if (stats != null)
+				stats.running.decrementAndGet();
 		}
 		//log.debug(Thread.currentThread().getName() + " done.");
 	}
