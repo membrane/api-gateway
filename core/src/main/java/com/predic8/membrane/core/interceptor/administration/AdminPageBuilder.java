@@ -69,6 +69,7 @@ public class AdminPageBuilder extends Html {
 	static final int TAB_ID_SYSTEM = 3;
 	static final int TAB_ID_LOAD_BALANCING = 4;
 	static final int TAB_ID_STATISTICS = 5;
+	static final int TAB_ID_STREAM_PUMPS = 6;
 	static final int TAB_ID_CALLS = 7;
 	static final int TAB_ID_CLIENTS = 8;
 	static final int TAB_ID_ABOUT = 9;
@@ -305,6 +306,9 @@ public class AdminPageBuilder extends Html {
 			li().classAttr(getSelectedTabStyle(TAB_ID_STATISTICS, selected));
 				createLink("Statistics", "statistics", null, null);
 			end();
+			li().classAttr(getSelectedTabStyle(TAB_ID_STREAM_PUMPS, selected));
+				createLink("Stream Pumps", "streams", null, null);
+			end();
 			li().classAttr(getSelectedTabStyle(TAB_ID_CALLS, selected));
 				createLink("Calls", "calls", null, null);
 			end();
@@ -465,6 +469,10 @@ public class AdminPageBuilder extends Html {
 				}
 			end();
 		end();
+	}
+
+	protected void createStreamPumpsTable() throws UnsupportedEncodingException {
+		h4().text("Stream Pumps Table...").end();
 	}
 
 

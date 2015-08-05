@@ -436,7 +436,12 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Response handleStatisticsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getStatisticsPage(params, relativeRootPath));
 	}
-	
+
+	@Mapping("/admin/streams")
+	public Response handleStreamPumpsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getStreamPumpsPage(params, relativeRootPath));
+	}
+
 	@Mapping("/admin/calls(/?\\?.*)?")
 	public Response handleCallsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getCallsPage(params, relativeRootPath));
@@ -575,6 +580,22 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				createStatisticsTable();
 			}
 	
+		}.createPage();
+	}
+
+	private String getStreamPumpsPage(Map<String, String> params, String relativeRootPath)
+			throws Exception {
+		StringWriter writer = new StringWriter();
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
+			@Override
+			protected int getSelectedTab() {
+				return TAB_ID_STREAM_PUMPS;
+			}
+			@Override
+			protected void createTabContent() throws Exception {
+				h3().text("Stream Pump Statistics").end();
+				createStreamPumpsTable();
+			}
 		}.createPage();
 	}
 
