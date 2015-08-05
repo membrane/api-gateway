@@ -472,7 +472,8 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createStreamPumpsTable() throws UnsupportedEncodingException {
-		h4().text("Stream Pumps Table...").end();
+		// nothing yet
+		// TODO
 	}
 
 

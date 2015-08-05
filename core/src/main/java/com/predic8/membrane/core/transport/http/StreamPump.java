@@ -30,6 +30,9 @@ public class StreamPump implements Runnable {
 
 	public static class StreamPumpStats {
 		private static AtomicInteger running = new AtomicInteger();
+		public int getRunning() {
+			return running.get();
+		}
 	}
 
 	private final InputStream in;
