@@ -96,10 +96,9 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 0;
+				return TAB_ID_SERVICE_PROXIES;
 			}
-					
-			
+
 			@Override
 			protected String getTitle() {
 				return super.getTitle()+" "+rule.toString()+" ServiceProxy";
@@ -141,7 +140,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 1;
+				return TAB_ID_PROXIES;
 			}
 		
 			@Override
@@ -244,7 +243,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 2;
+				return TAB_ID_TRANSPORT;
 			}
 		
 			@Override
@@ -265,7 +264,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 3;
+				return TAB_ID_SYSTEM;
 			}
 		
 			@Override
@@ -320,7 +319,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 		
 			@Override
@@ -354,7 +353,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 		
 			@Override
@@ -464,7 +463,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 0;
+				return TAB_ID_SERVICE_PROXIES;
 			}
 		
 			@Override
@@ -483,7 +482,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 1;
+				return TAB_ID_PROXIES;
 			}
 		
 			@Override
@@ -502,7 +501,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 		
 			@Override
@@ -523,7 +522,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 		
 			@Override
@@ -549,7 +548,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 
 			@Override
@@ -567,7 +566,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 5;
+				return TAB_ID_STATISTICS;
 			}
 		
 			@Override
@@ -585,7 +584,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 6;
+				return TAB_ID_CALLS;
 			}
 		
 			@Override
@@ -701,7 +700,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 6;
+				return TAB_ID_CALLS;
 			}
 					
 			@Override
@@ -772,7 +771,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 7;
+				return TAB_ID_CLIENTS;
 			}
 		
 			@Override
@@ -790,7 +789,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 8;
+				return TAB_ID_ABOUT;
 			}
 		
 			@Override
