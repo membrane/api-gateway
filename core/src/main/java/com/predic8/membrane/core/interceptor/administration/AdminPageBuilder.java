@@ -59,6 +59,7 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.transport.http.StreamPump;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class AdminPageBuilder extends Html {
@@ -472,8 +473,23 @@ public class AdminPageBuilder extends Html {
 	}
 
 	protected void createStreamPumpsTable() throws UnsupportedEncodingException {
-		// nothing yet
-		// TODO
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "stream-pumps-table");
+		thead();
+			tr();
+				createThs("Name", "Transferred Bytes");
+			end();
+		end();
+		tbody();
+			for (StreamPump p : router.getStatistics().getStreamPumpStats().getStreamPumps()) {
+				tr().style("text-align: right;");
+					td().style("text-align:left;").text(p.getName()).end();
+					createTds(
+							""+p.getTransferredBytes()
+					);
+				end();
+			}
+		end();
+	end();
 	}
 
 

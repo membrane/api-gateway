@@ -594,7 +594,6 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			@Override
 			protected void createTabContent() throws Exception {
 				h3().text("Stream Pump Statistics").end();
-				p().text("Active Stream Pumps: " + router.getStatistics().getStreamPumpStats().getRunning()).end();
 				createStreamPumpsTable();
 			}
 		}.createPage();

@@ -164,7 +164,7 @@ var membrane = function() {
 
 $(function() {
 	
-	$('#proxy-rules-table, #interceptor-table, #statistics-table, #statuscode-table' ).dataTable({
+	$('#proxy-rules-table, #interceptor-table, #statistics-table, #stream-pumps-table, #statuscode-table' ).dataTable({
 	  'bJQueryUI': true,
 	  'sPaginationType': 'full_numbers'
 	});

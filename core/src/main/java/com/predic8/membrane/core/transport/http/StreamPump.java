@@ -19,7 +19,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,33 +31,48 @@ public class StreamPump implements Runnable {
 	private static Log log = LogFactory.getLog(StreamPump.class.getName());
 
 	public static class StreamPumpStats {
-		private static AtomicInteger running = new AtomicInteger();
-		public int getRunning() {
-			return running.get();
+		private static ArrayList<StreamPump> pumps = new ArrayList<StreamPump>();
+
+		public synchronized int getRunning() {
+			return pumps.size();
+		}
+		public synchronized void registerPump(StreamPump pump) {
+			pumps.add(pump);
+		}
+		public synchronized void unregisterPump(StreamPump pump) {
+			pumps.remove(pump);
+		}
+		public synchronized List<StreamPump> getStreamPumps() {
+			return new ArrayList<StreamPump>(this.pumps);
 		}
 	}
 
 	private final InputStream in;
 	private final OutputStream out;
 	private StreamPumpStats stats;
+	private AtomicLong bytesTransferred;
+	private String pumpName;
 
-	public StreamPump(InputStream in, OutputStream out, StreamPumpStats stats) {
+	public StreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name) {
 		this.in = in;
 		this.out = out;
 		this.stats = stats;
+		this.bytesTransferred = new AtomicLong();
+		this.pumpName = name;
 	}
-	
+
 	@Override
 	public void run() {
 		byte[] buffer = new byte[8192];
 		int length = 0;
 		if (stats != null)
-			stats.running.incrementAndGet();
+			stats.registerPump(this);
 		try {
 			while ((length = in.read(buffer)) > 0) {
-				//log.debug(Thread.currentThread().getName() + " pumped " + length + " bytes.");
 				out.write(buffer, 0, length);
 				out.flush();
+				if (stats != null)
+					bytesTransferred.addAndGet(length);
 			}
 		} catch (SocketTimeoutException e) {
 			// do nothing
@@ -65,8 +82,14 @@ public class StreamPump implements Runnable {
 			log.error("Reading from or writing to stream failed: " + e);
 		} finally {
 			if (stats != null)
-				stats.running.decrementAndGet();
+				stats.unregisterPump(this);
 		}
-		//log.debug(Thread.currentThread().getName() + " done.");
+	}
+
+	public String getName() {
+		return this.pumpName;
+	}
+	public synchronized long getTransferredBytes() {
+		return bytesTransferred.get();
 	}
 }

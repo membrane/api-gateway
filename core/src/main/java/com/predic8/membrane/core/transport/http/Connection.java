@@ -214,4 +214,9 @@ public class Connection implements MessageObserver {
 	void setExchange(Exchange exchange) {
 		this.exchange = exchange;
 	}
+
+	@Override
+	public String toString() {
+		return socket.getRemoteSocketAddress().toString();
+	}
 }
