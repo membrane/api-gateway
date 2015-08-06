@@ -81,6 +81,11 @@ public class StreamPump implements Runnable {
 		} catch (IOException e) {
 			log.error("Reading from or writing to stream failed: " + e);
 		} finally {
+			try {
+				out.close();
+			} catch (Exception e) {
+				// ignore
+			}
 			if (stats != null)
 				stats.unregisterPump(this);
 		}
