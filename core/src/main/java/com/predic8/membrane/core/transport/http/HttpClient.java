@@ -304,9 +304,11 @@ public class HttpClient {
 
 	public static void setupConnectionForwarding(Exchange exc, final Connection con, final String protocol, StreamPump.StreamPumpStats streamPumpStats) throws SocketException {
 		final HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
-		final StreamPump a = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats);
-		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats);
-		
+		String source = hsr.getSourceSocket().getRemoteSocketAddress().toString();
+		String dest = con.toString();
+		final StreamPump a = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest);
+		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest);
+
 		hsr.getSourceSocket().setSoTimeout(0);
 		
 		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {

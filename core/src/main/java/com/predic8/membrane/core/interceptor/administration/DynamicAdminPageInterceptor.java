@@ -96,10 +96,9 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 0;
+				return TAB_ID_SERVICE_PROXIES;
 			}
-					
-			
+
 			@Override
 			protected String getTitle() {
 				return super.getTitle()+" "+rule.toString()+" ServiceProxy";
@@ -141,7 +140,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 1;
+				return TAB_ID_PROXIES;
 			}
 		
 			@Override
@@ -244,7 +243,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 2;
+				return TAB_ID_TRANSPORT;
 			}
 		
 			@Override
@@ -265,7 +264,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 3;
+				return TAB_ID_SYSTEM;
 			}
 		
 			@Override
@@ -320,7 +319,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 		
 			@Override
@@ -354,7 +353,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 		
 			@Override
@@ -437,7 +436,12 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Response handleStatisticsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getStatisticsPage(params, relativeRootPath));
 	}
-	
+
+	@Mapping("/admin/streams")
+	public Response handleStreamPumpsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
+		return respond(getStreamPumpsPage(params, relativeRootPath));
+	}
+
 	@Mapping("/admin/calls(/?\\?.*)?")
 	public Response handleCallsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getCallsPage(params, relativeRootPath));
@@ -464,7 +468,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 0;
+				return TAB_ID_SERVICE_PROXIES;
 			}
 		
 			@Override
@@ -483,7 +487,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 1;
+				return TAB_ID_PROXIES;
 			}
 		
 			@Override
@@ -502,7 +506,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 		
 			@Override
@@ -523,7 +527,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 		
 			@Override
@@ -549,7 +553,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				
 			@Override
 			protected int getSelectedTab() {
-				return 4;
+				return TAB_ID_LOAD_BALANCING;
 			}
 
 			@Override
@@ -567,7 +571,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 5;
+				return TAB_ID_STATISTICS;
 			}
 		
 			@Override
@@ -579,13 +583,29 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		}.createPage();
 	}
 
+	private String getStreamPumpsPage(Map<String, String> params, String relativeRootPath)
+			throws Exception {
+		StringWriter writer = new StringWriter();
+		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
+			@Override
+			protected int getSelectedTab() {
+				return TAB_ID_STREAM_PUMPS;
+			}
+			@Override
+			protected void createTabContent() throws Exception {
+				h3().text("Stream Pump Statistics").end();
+				createStreamPumpsTable();
+			}
+		}.createPage();
+	}
+
 	private String getCallsPage(final Map<String, String> params, String relativeRootPath)
 			  throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 6;
+				return TAB_ID_CALLS;
 			}
 		
 			@Override
@@ -701,7 +721,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 6;
+				return TAB_ID_CALLS;
 			}
 					
 			@Override
@@ -772,7 +792,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 7;
+				return TAB_ID_CLIENTS;
 			}
 		
 			@Override
@@ -790,7 +810,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
-				return 8;
+				return TAB_ID_ABOUT;
 			}
 		
 			@Override

@@ -59,10 +59,22 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.transport.http.StreamPump;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class AdminPageBuilder extends Html {
-	
+
+	static final int TAB_ID_SERVICE_PROXIES = 0;
+	static final int TAB_ID_PROXIES = 1;
+	static final int TAB_ID_TRANSPORT = 2;
+	static final int TAB_ID_SYSTEM = 3;
+	static final int TAB_ID_LOAD_BALANCING = 4;
+	static final int TAB_ID_STATISTICS = 5;
+	static final int TAB_ID_STREAM_PUMPS = 6;
+	static final int TAB_ID_CALLS = 7;
+	static final int TAB_ID_CLIENTS = 8;
+	static final int TAB_ID_ABOUT = 9;
+
 	private final Router router;
 	private final Map<String, String> params;
 	private final StringWriter writer;
@@ -275,33 +287,36 @@ public class AdminPageBuilder extends Html {
 
 	protected void createTabs(int selected) throws Exception {
 		ul().classAttr("ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all");
-			li().classAttr(getSelectedTabStyle(0, selected));
+			li().classAttr(getSelectedTabStyle(TAB_ID_SERVICE_PROXIES, selected));
 				a().href("/admin").text("ServiceProxies").end();
 			end();
-			li().classAttr(getSelectedTabStyle(1, selected));
+			li().classAttr(getSelectedTabStyle(TAB_ID_PROXIES, selected));
 				createLink("Proxies", "proxy", null, null);
 			end();
-			li().classAttr(getSelectedTabStyle(2, selected));
+			li().classAttr(getSelectedTabStyle(TAB_ID_TRANSPORT, selected));
 				createLink("Transport", "transport", null, null);
 			end();
-			li().classAttr(getSelectedTabStyle(3, selected));
+			li().classAttr(getSelectedTabStyle(TAB_ID_SYSTEM, selected));
 				createLink("System", "system", null, null);
 			end();
 			if (BalancerUtil.hasLoadBalancing(router)) {
-				li().classAttr(getSelectedTabStyle(4, selected));
+				li().classAttr(getSelectedTabStyle(TAB_ID_LOAD_BALANCING, selected));
 					createLink("Load Balancing", "balancers", null, null);
 				end();
 			}
-			li().classAttr(getSelectedTabStyle(5, selected));
+			li().classAttr(getSelectedTabStyle(TAB_ID_STATISTICS, selected));
 				createLink("Statistics", "statistics", null, null);
 			end();
-			li().classAttr(getSelectedTabStyle(6, selected));
+			li().classAttr(getSelectedTabStyle(TAB_ID_STREAM_PUMPS, selected));
+				createLink("Stream Pumps", "streams", null, null);
+			end();
+			li().classAttr(getSelectedTabStyle(TAB_ID_CALLS, selected));
 				createLink("Calls", "calls", null, null);
 			end();
-			li().classAttr(getSelectedTabStyle(7, selected));
+			li().classAttr(getSelectedTabStyle(TAB_ID_CLIENTS, selected));
 				createLink("Clients", "clients", null, null);
 			end();
-			li().style("float: right;").classAttr(getSelectedTabStyle(8, selected));
+			li().style("float: right;").classAttr(getSelectedTabStyle(TAB_ID_ABOUT, selected));
 				createLink("About", "about", null, null);
 			end();
 		end();
@@ -455,6 +470,26 @@ public class AdminPageBuilder extends Html {
 				}
 			end();
 		end();
+	}
+
+	protected void createStreamPumpsTable() throws UnsupportedEncodingException {
+		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "stream-pumps-table");
+		thead();
+			tr();
+				createThs("Name", "Transferred Bytes");
+			end();
+		end();
+		tbody();
+			for (StreamPump p : router.getStatistics().getStreamPumpStats().getStreamPumps()) {
+				tr().style("text-align: right;");
+					td().style("text-align:left;").text(p.getName()).end();
+					createTds(
+							""+p.getTransferredBytes()
+					);
+				end();
+			}
+		end();
+	end();
 	}
 
 
