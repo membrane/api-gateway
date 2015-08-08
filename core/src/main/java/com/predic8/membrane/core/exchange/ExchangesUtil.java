@@ -20,7 +20,7 @@ import com.predic8.membrane.core.Constants;
 
 public class ExchangesUtil {
 
-	public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
+	public static final SimpleDateFormat DATE_FORMATTER = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
 	public static String extractContentTypeValue(String contentType) {
 		if (contentType == null)
