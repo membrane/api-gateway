@@ -29,6 +29,7 @@ import static org.apache.log4j.Level.WARN;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedList;
@@ -70,8 +71,8 @@ public class AdminPageBuilder extends Html {
 	static final int TAB_ID_SYSTEM = 3;
 	static final int TAB_ID_LOAD_BALANCING = 4;
 	static final int TAB_ID_STATISTICS = 5;
-	static final int TAB_ID_STREAM_PUMPS = 6;
-	static final int TAB_ID_CALLS = 7;
+	static final int TAB_ID_CALLS = 6;
+	static final int TAB_ID_STREAM_PUMPS = 7;
 	static final int TAB_ID_CLIENTS = 8;
 	static final int TAB_ID_ABOUT = 9;
 
@@ -307,11 +308,11 @@ public class AdminPageBuilder extends Html {
 			li().classAttr(getSelectedTabStyle(TAB_ID_STATISTICS, selected));
 				createLink("Statistics", "statistics", null, null);
 			end();
-			li().classAttr(getSelectedTabStyle(TAB_ID_STREAM_PUMPS, selected));
-				createLink("Stream Pumps", "streams", null, null);
-			end();
 			li().classAttr(getSelectedTabStyle(TAB_ID_CALLS, selected));
 				createLink("Calls", "calls", null, null);
+			end();
+			li().classAttr(getSelectedTabStyle(TAB_ID_STREAM_PUMPS, selected));
+				createLink("Stream Pumps", "streams", null, null);
 			end();
 			li().classAttr(getSelectedTabStyle(TAB_ID_CLIENTS, selected));
 				createLink("Clients", "clients", null, null);
@@ -476,7 +477,7 @@ public class AdminPageBuilder extends Html {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "stream-pumps-table");
 		thead();
 			tr();
-				createThs("Name", "Transferred Bytes");
+				createThs("Name", "Creation Time", "Active Time", "Transferred Bytes");
 			end();
 		end();
 		tbody();
@@ -484,6 +485,8 @@ public class AdminPageBuilder extends Html {
 				tr().style("text-align: right;");
 					td().style("text-align:left;").text(p.getName()).end();
 					createTds(
+							new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(p.getCreationTime()),
+							(System.currentTimeMillis() - p.getCreationTime())/1000 + " seconds", // TODO: Pretty Print with library
 							""+p.getTransferredBytes()
 					);
 				end();

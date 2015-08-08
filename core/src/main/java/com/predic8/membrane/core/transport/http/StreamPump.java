@@ -47,11 +47,14 @@ public class StreamPump implements Runnable {
 		}
 	}
 
+	// operational members
 	private final InputStream in;
 	private final OutputStream out;
 	private StreamPumpStats stats;
+	// statistical members
 	private AtomicLong bytesTransferred;
 	private String pumpName;
+	private final long creationTime;
 
 	public StreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name) {
 		this.in = in;
@@ -59,6 +62,7 @@ public class StreamPump implements Runnable {
 		this.stats = stats;
 		this.bytesTransferred = new AtomicLong();
 		this.pumpName = name;
+		this.creationTime = System.currentTimeMillis();
 	}
 
 	@Override
@@ -96,5 +100,8 @@ public class StreamPump implements Runnable {
 	}
 	public synchronized long getTransferredBytes() {
 		return bytesTransferred.get();
+	}
+	public synchronized long getCreationTime() {
+		return creationTime;
 	}
 }
