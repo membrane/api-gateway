@@ -477,7 +477,7 @@ public class AdminPageBuilder extends Html {
 		table().attr("cellpadding", "0", "cellspacing", "0", "border", "0", "class", "display", "id", "stream-pumps-table");
 		thead();
 			tr();
-				createThs("Name", "Creation Time", "Active Time", "Transferred Bytes");
+				createThs("Name", "Service Proxy", "Creation Time", "Active Time", "Transferred Bytes");
 			end();
 		end();
 		tbody();
@@ -485,6 +485,7 @@ public class AdminPageBuilder extends Html {
 				tr().style("text-align: right;");
 					td().style("text-align:left;").text(p.getName()).end();
 					createTds(
+							p.getServiceProxyName(),
 							new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(p.getCreationTime()),
 							(System.currentTimeMillis() - p.getCreationTime())/1000 + " seconds", // TODO: Pretty Print with library
 							""+p.getTransferredBytes()

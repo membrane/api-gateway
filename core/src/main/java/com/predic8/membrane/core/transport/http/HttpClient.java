@@ -306,8 +306,8 @@ public class HttpClient {
 		final HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
 		String source = hsr.getSourceSocket().getRemoteSocketAddress().toString();
 		String dest = con.toString();
-		final StreamPump a = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest);
-		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest);
+		final StreamPump a = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule());
+		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule());
 
 		hsr.getSourceSocket().setSoTimeout(0);
 		
