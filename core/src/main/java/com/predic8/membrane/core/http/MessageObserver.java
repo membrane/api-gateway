@@ -27,7 +27,7 @@ import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
  * {@link ExchangeStoreInterceptor} registers a {@link MessageObserver} on the
  * message. This {@link MessageObserver} will be called back once streaming has
  * been completed and the messages' body is fully known. The
- * {@link MessageObserver} will the write the body into permanent storage.
+ * {@link MessageObserver} will then write the body into permanent storage.
  */
 public interface MessageObserver {
 	public void bodyRequested(AbstractBody body);
