@@ -16,6 +16,7 @@ package com.predic8.membrane.core.rules;
 
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -63,7 +64,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	}
 
 	public String toString() {
-		return host + " " + method + " " + getPath() + ":" + port;
+		return host + " " + method + " " + StringUtils.defaultIfEmpty(getPath(), "") + ":" + port;
 	}
 
 	
