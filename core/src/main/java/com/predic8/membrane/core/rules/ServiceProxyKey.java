@@ -64,7 +64,10 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	}
 
 	public String toString() {
-		return host + " " + method + " " + StringUtils.defaultIfEmpty(getPath(), "") + ":" + port;
+		return    ( host.equals("*") ? "" : host+" " )
+				+ ( method.equals("*") ? "" : method+" " )
+				+ StringUtils.defaultIfEmpty(getPath(), "")
+				+ ":" + port;
 	}
 
 	
