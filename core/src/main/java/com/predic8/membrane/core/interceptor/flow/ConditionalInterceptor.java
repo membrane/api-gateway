@@ -26,6 +26,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.LanguageSupport;
@@ -62,6 +63,10 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 		GROOVY,
 	}
 	
+	public ConditionalInterceptor() {
+		name = "Conditional Interceptor";
+	}
+
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
@@ -92,7 +97,6 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 	public LanguageType getLanguage() {
 		return language;
 	}
-	
 	/**
 	 * @description the language of the 'test' condition
 	 * @example groovy
@@ -105,7 +109,6 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 	public String getTest() {
 		return test;
 	}
-	
 	/**
 	 * @description the condition to be tested
 	 * @example exc.request.header.userAgentSupportsSNI
@@ -114,6 +117,17 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 	@MCAttribute
 	public void setTest(String test) {
 		this.test = test;
+	}
+
+
+	@Override
+	public String getShortDescription() {
+		String ret = "if (" + test + ") {";
+		for (Interceptor i : getInterceptors()) {
+			ret += "<br/>&nbsp;&nbsp;&nbsp;&nbsp;" + i.getDisplayName();
+		}
+		ret += "<br/>}";
+		return ret;
 	}
 
 }
