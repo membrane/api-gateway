@@ -26,6 +26,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -66,6 +67,7 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 	private String user;
 	private String password;
 	private String senderName;
+	private boolean backupServiceAvailable;
 
 	private static final String HOST = "http.secure.api.whatevermobile.com:7011";
 	private static final String GATEWAY = "https://" + HOST + "/sendsms";
@@ -74,7 +76,6 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 
 	@Override
 	public void init(Router router) {
-		// we always need this to be true for WhateverMobile Gateway
 		hc = router.getResolverMap().getHTTPSchemaResolver().getHttpClient();
 	}
 
@@ -85,18 +86,22 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 
 	@Override
 	protected void sendSMS(String text, String recipientNumber) {
-		int ret = sendSmsToGateway(true, text, recipientNumber);
-		if (ret == 200) {
-			log.debug("Sent SMS to " + recipientNumber + " via whateverMobile Primary Gateway.");
-		} else {
-			log.warn("Primary Gateway failed when sending SMS to " + recipientNumber + ".");
-			ret = sendSmsToGateway(false, text, recipientNumber);
-			if (ret == 200) {
-				log.debug("Sent SMS to " + recipientNumber + " via whateverMobile Secondary Gateway.");
-			} else {
-				log.error("Both Primary and Secondary Gateway failed when sending SMS to " + recipientNumber + "!");
-			}
-		}
+		sendSmsToGateway(true, text, recipientNumber);
+	}
+
+	private void logSmsOK(boolean primary, String recipientNumber) {
+		String tail = primary ? "Primary Gateway" : "Secondary Gateway";
+		log.debug("Successfully sent SMS to " + recipientNumber + " via whateverMobile " + tail);
+	}
+
+	private void logSmsError(boolean primary, Exchange exc) {
+		String head = primary ? "Primary Gateway" : "Both Primary and Secondary Gateway";
+		log.error(head + " failed when sending SMS." +
+			" REQUEST: " + exc.getRequest().toString() +
+			( (exc.getResponse() != null)
+			  ? " RESPONSE: " + exc.getResponse().toString()
+			  : "")
+		);
 	}
 
 	/**
@@ -105,29 +110,41 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 	 *        This specifies whether the primary gateway is used.
 	 *        When false, the secondary gateway is used.
 	 * @return
+	 * @throws Exception
 	 */
-	private int sendSmsToGateway(boolean primary, String text, String recipientNumber) {
+	private void sendSmsToGateway(boolean primary, String text, String recipientNumber) {
 		Exchange exc;
-		try {
-			exc = new Request.Builder() // uses HTTP/1.1 which is exactly what we need here
-					.post(primary ? GATEWAY : GATEWAY2)
-					.header("Host", primary ? HOST : HOST2)
-					.header("Content-Type", "application/x-www-form-urlencoded")
-					.body(generateRequestData(senderName, recipientNumber, text))
-					.buildExchange();
-			exc.setRule(new NullRule() {
-				@Override
-				public SSLProvider getSslOutboundContext() {
-					return new SSLContext(new SSLParser(), new ResolverMap(), null);
-				}
-			});
+		exc = new Request.Builder() // uses HTTP/1.1 which is exactly what we need here
+				.post(primary ? GATEWAY : GATEWAY2)
+				.header("Host", primary ? HOST : HOST2)
+				.header("Content-Type", "application/x-www-form-urlencoded")
+				.body(generateRequestData(senderName, recipientNumber, text))
+				.buildExchange();
+		exc.setRule(new NullRule() {
+			@Override
+			public SSLProvider getSslOutboundContext() {
+				return new SSLContext(new SSLParser(), new ResolverMap(), null);
+			}
+		});
+		// todo: maybe reduce Exchange timeout
 
+		try {
 			hc.call(exc, false, true);
-			return exc.getResponse().getStatusCode();
+			// Everything went well
+			if (exc.getResponse().getStatusCode() == 200) {
+				logSmsOK(primary, recipientNumber);
+			} else { // If we got an error
+				logSmsError(primary, exc); // log it
+				// try secondary gateway if possible
+				if (primary && backupServiceAvailable) {
+					sendSmsToGateway(false, text, recipientNumber);
+				}
+			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			return -1;
+			// Exception from hc.call(..), most probably timeout
+			logSmsError(primary, exc);
 		}
+
 	}
 
 	private String generateRequestData(String from, String to, String body) {
@@ -183,6 +200,18 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 	@MCAttribute
 	public void setSenderName(String senderName) {
 		this.senderName = senderName;
+	}
+
+
+	public boolean isBackupServiceAvailable() {
+		return backupServiceAvailable;
+	}
+	/**
+	 * @description Specify whether the alternative gateway is available for the configured account
+	 */
+	@MCAttribute
+	public void setBackupServiceAvailable(boolean backup) {
+		this.backupServiceAvailable = backup;
 	}
 
 
