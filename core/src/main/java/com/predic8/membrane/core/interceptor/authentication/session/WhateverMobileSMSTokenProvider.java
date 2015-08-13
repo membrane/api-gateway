@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.net.URLEncoder;
 
 import org.apache.commons.logging.Log;
@@ -26,7 +27,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -113,20 +113,24 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 	 * @throws Exception
 	 */
 	private void sendSmsToGateway(boolean primary, String text, String recipientNumber) {
-		Exchange exc;
-		exc = new Request.Builder() // uses HTTP/1.1 which is exactly what we need here
-				.post(primary ? GATEWAY : GATEWAY2)
-				.header("Host", primary ? HOST : HOST2)
-				.header("Content-Type", "application/x-www-form-urlencoded")
-				.body(generateRequestData(senderName, recipientNumber, text))
-				.buildExchange();
+		Exchange exc = null;
+		try {
+			exc = new Request.Builder() // uses HTTP/1.1 which is exactly what we need here
+					.post(primary ? GATEWAY : GATEWAY2)
+					.header("Host", primary ? HOST : HOST2)
+					.header("Content-Type", "application/x-www-form-urlencoded")
+					.body(generateRequestData(senderName, recipientNumber, text))
+					.buildExchange();
+		} catch (URISyntaxException e1) {
+			logSmsError(primary, exc);
+		}
 		exc.setRule(new NullRule() {
 			@Override
 			public SSLProvider getSslOutboundContext() {
 				return new SSLContext(new SSLParser(), new ResolverMap(), null);
 			}
 		});
-		// todo: maybe reduce Exchange timeout
+		// TODO: maybe reduce Exchange timeout
 
 		try {
 			hc.call(exc, false, true);
