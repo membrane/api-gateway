@@ -28,11 +28,10 @@
 			<resource-root path="lib/commons-pool-1.6.jar"/>
 			<resource-root path="lib/groovy-2.0.4.jar"/>
 			<resource-root path="lib/groovy-xml-2.0.4.jar"/>
-			<resource-root path="lib/jackson-annotations-2.0.6.jar"/>
-			<resource-root path="lib/jackson-core-2.0.6.jar"/>
-			<resource-root path="lib/jackson-core-asl-1.9.9.jar"/>
-			<resource-root path="lib/jackson-databind-2.0.6.jar"/>
-			<resource-root path="lib/jackson-mapper-asl-1.9.9.jar"/>
+			<resource-root path="lib/jackson-annotations-2.6.1.jar"/>
+			<resource-root path="lib/jackson-core-2.6.1.jar"/>
+			<resource-root path="lib/jackson-coreutils-1.5.jar"/>
+			<resource-root path="lib/jackson-databind-2.6.1.jar"/>
 			<resource-root path="lib/jatl-0.1.0.jar"/>
 			<resource-root path="lib/jmte-3.0.jar"/>
 			<resource-root path="lib/joda-time-2.1.jar"/>

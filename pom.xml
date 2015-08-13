@@ -79,7 +79,7 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>1.6</javac.source>
 		<javac.target>1.6</javac.target>
-		<jackson.version>1.9.11</jackson.version> <!-- This version is used by google-http-client-jackson -->
+		<jackson.version>2.6.1</jackson.version> <!-- This version is used by google-http-client-jackson2 -->
 		<powermock.version>1.6.2</powermock.version>
 	</properties>
 
@@ -167,15 +167,21 @@
 				<version>2.3.9</version>
 			</dependency>
 			<dependency>
-				<groupId>org.codehaus.jackson</groupId>
-				<artifactId>jackson-core-asl</artifactId>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-core</artifactId>
 				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.codehaus.jackson</groupId>
-				<artifactId>jackson-mapper-asl</artifactId>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-annotations</artifactId>
 				<version>${jackson.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>com.fasterxml.jackson.core</groupId>
+				<artifactId>jackson-databind</artifactId>
+				<version>${jackson.version}</version>
+			</dependency>
+
 			<dependency>
 				<groupId>log4j</groupId>
 				<artifactId>log4j</artifactId>
@@ -329,12 +335,12 @@
 			<dependency>
 				<groupId>com.google.api-client</groupId>
 				<artifactId>google-api-client</artifactId>
-				<version>1.15.0-rc</version>
+				<version>1.20.0</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.http-client</groupId>
-				<artifactId>google-http-client-jackson</artifactId>
-				<version>1.15.0-rc</version>
+				<artifactId>google-http-client-jackson2</artifactId> <!-- note the 2 at the end -->
+				<version>1.20.0</version>
 			</dependency>
 			<dependency>
 				<groupId>javax.mail</groupId>

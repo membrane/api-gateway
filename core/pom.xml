@@ -51,10 +51,17 @@
 			<groupId>commons-discovery</groupId>
 			<artifactId>commons-discovery</artifactId>
 		</dependency>
+
 		<dependency>
-			<groupId>org.codehaus.jackson</groupId>
-			<artifactId>jackson-mapper-asl</artifactId>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
 		</dependency>
+<!--
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-annotations</artifactId>
+		</dependency>
+-->
 		<dependency>
 			<groupId>com.googlecode.jatl</groupId>
 			<artifactId>jatl</artifactId>
@@ -115,7 +122,7 @@
 		</dependency>
 		<dependency>
 			<groupId>com.google.http-client</groupId>
-			<artifactId>google-http-client-jackson</artifactId>
+			<artifactId>google-http-client-jackson2</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>javax.mail</groupId>

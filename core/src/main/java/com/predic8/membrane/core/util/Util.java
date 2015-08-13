@@ -22,9 +22,9 @@ import java.util.HashMap;
 import javax.mail.internet.ParseException;
 import javax.net.ssl.SSLSocket;
 
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
 
 import com.predic8.membrane.core.http.Response;
 
