@@ -97,11 +97,10 @@ public class SOAPMessageValidatorInterceptorTest {
 		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(E_MAIL_SERVICE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 	
-
+	@Ignore(value="This is a problem in the soa-model dependency.")
 	@Test
 	public void testInlineSchemaWithAnyType() throws Exception {
-		throw new Exception();
-		//assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
+		assertEquals(Outcome.ABORT, getOutcome(requestXService, createValidatorInterceptor(INLINE_ANYTYPE_WSDL), "/validation/invalidEmail3.xml"));
 	}
 	
 	private Outcome getOutcome(Request request, Interceptor interceptor, String fileName) throws Exception {
