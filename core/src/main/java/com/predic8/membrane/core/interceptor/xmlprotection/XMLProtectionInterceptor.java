@@ -58,8 +58,8 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		}
 		
 		if (!exc.getRequest().isXML()) {
-			log.debug("content-Type is not XML -> request is not scanned by xmlProtection");
-			return Outcome.CONTINUE;
+			log.warn("request discarded by xmlProtection, because it's Content-Type header did not indicate that it is actually XML.");
+			return Outcome.ABORT;
 		}
 		
 		if (!protectXML(exc)) {
