@@ -126,8 +126,13 @@ public class MCUtil {
 		
 		FileSystemXmlApplicationContext fsxacApplicationContext = new FileSystemXmlApplicationContextExtension(MAGIC, xml);
 		fsxacApplicationContext.setConfigLocation(MAGIC);
-		
-		fsxacApplicationContext.refresh();
+
+		try {
+			fsxacApplicationContext.refresh();
+		} catch (RuntimeException e) {
+			System.err.println(xml);
+			throw e;
+		}
 		
 		Object bean = null;
 		
