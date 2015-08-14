@@ -23,6 +23,7 @@ import com.predic8.membrane.annot.MCElement;
 public class URIFactory {
 
 	private boolean allowIllegalCharacters;
+	private boolean autoEscapeBackslashes = true;
 
 	public URIFactory() {
 		this(false);
@@ -40,8 +41,20 @@ public class URIFactory {
 	public void setAllowIllegalCharacters(boolean allowIllegalCharacters) {
 		this.allowIllegalCharacters = allowIllegalCharacters;
 	}
-	
+
+	public boolean isAutoEscapeBackslashes() {
+		return autoEscapeBackslashes;
+	}
+
+	@MCAttribute
+	public void setAutoEscapeBackslashes(boolean autoEscapeBackslashes) {
+		this.autoEscapeBackslashes = autoEscapeBackslashes;
+	}
+
 	public URI create(String uri) throws URISyntaxException {
+		if (autoEscapeBackslashes && uri.contains("\\"))
+			uri = uri.replaceAll("\\\\", "%5C");
+
 		return new URI(allowIllegalCharacters, uri);
 	}
 	
@@ -50,6 +63,8 @@ public class URIFactory {
 	 * {@link IllegalArgumentException}.
 	 */
 	public URI createWithoutException(String uri) {
+		if (autoEscapeBackslashes && uri.contains("\\"))
+			uri = uri.replaceAll("\\\\", "%5C");
 		try {
 			return new URI(allowIllegalCharacters, uri);
 		} catch (URISyntaxException e) {

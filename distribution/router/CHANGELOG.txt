@@ -1,6 +1,15 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [changed behavior] Membrane's URL parsing will now automatically translate
+  backslashes '\' to '%5C' before parsing the URL. The backslash is illegal
+  per RFC 3986, but passed along by all major browsers when contained in a
+  URL. This caused problem in webapps relying on this behavior.
+  The automatic translation can be turned off using
+  <router><uriFactory autoEscapeBackslashes="false" />... .
+
+TODO: review changes
+
 * [release] 4.0.17
 
 * [feature] Membrane's URL parsing algorithm can now be exchanged: For
