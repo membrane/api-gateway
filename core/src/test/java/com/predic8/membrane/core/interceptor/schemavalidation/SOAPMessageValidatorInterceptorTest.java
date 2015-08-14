@@ -18,7 +18,10 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStreamReader;
 
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.xml.util.ResourceResolver;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
@@ -95,7 +98,6 @@ public class SOAPMessageValidatorInterceptorTest {
 	}
 	
 
-	
 	@Test
 	public void testInlineSchemaWithAnyType() throws Exception {
 		throw new Exception();
@@ -115,6 +117,7 @@ public class SOAPMessageValidatorInterceptorTest {
 	private ValidatorInterceptor createValidatorInterceptor(String wsdl) throws Exception {
 		ValidatorInterceptor interceptor = new ValidatorInterceptor();
 		interceptor.setWsdl(wsdl);
+		interceptor.setResourceResolver(new ResolverMap());
 		interceptor.init();
 		return interceptor;
 	}

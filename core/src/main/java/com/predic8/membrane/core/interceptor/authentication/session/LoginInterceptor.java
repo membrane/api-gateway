@@ -250,7 +250,11 @@ public class LoginInterceptor extends AbstractInterceptor {
 		this.exposeUserCredentialsToSession = exposeUserCredentialsToSession;
 	}
 
-		/**
+	public String getMessage() {
+		return message;
+	}
+
+	/**
 	 * @description Set the message displayed during redirect.
 	 */
 	@MCAttribute
