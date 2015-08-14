@@ -25,6 +25,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.ws.relocator.Relocator;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * @description Rewrites the scheme, hostname and port in the "Location" header in HTTP responses,
@@ -34,6 +36,8 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
  */
 @MCElement(name="reverseProxying")
 public class ReverseProxyingInterceptor extends AbstractInterceptor {
+	private static final Log log = LogFactory.getLog(ReverseProxyingInterceptor.class);
+
 	public ReverseProxyingInterceptor() {
 		name = "Reverse Proxy";
 	}
@@ -101,7 +105,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	private boolean isSameSchemeHostAndPort(String location2, String location)
 			throws MalformedURLException {
 		try {
-			if (location.startsWith("/"))
+			if (location.startsWith("/") || location2.startsWith("/"))
 				return false; // no host info available
 			URL loc2 = new URL(location2);
 			URL loc1 = new URL(location);
@@ -115,7 +119,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 				return false;
 			return true;
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			log.warn("", e); // TODO: fix these cases
 			return false;
 		}
 	}

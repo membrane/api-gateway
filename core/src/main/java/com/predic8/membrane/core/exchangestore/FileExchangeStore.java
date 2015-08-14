@@ -226,7 +226,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		ArrayList<File> deletion = new ArrayList<File>();
 
 		for (File f : folders3) {
-			System.out.println(f);
+
 			int day =  Integer.parseInt(f.getName());
 			int mon =  Integer.parseInt(f.getParentFile().getName());
 			int year = Integer.parseInt(f.getParentFile().getParentFile().getName());

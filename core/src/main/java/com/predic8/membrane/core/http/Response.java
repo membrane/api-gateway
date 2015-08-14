@@ -134,8 +134,15 @@ public class Response extends Message {
 				status(204, "No Content").
 				bodyEmpty();
 	}
-	
-	
+
+	public static ResponseBuilder notModified(String date) {
+		return ResponseBuilder.newInstance().
+				status(304, "Not Modified").
+				header("Server", SERVER_HEADER).
+				header("Date", date).
+				bodyEmpty();
+	}
+
 	public static ResponseBuilder badRequest() {
 		return ResponseBuilder.newInstance().
 				status(400, "Bad Request").
