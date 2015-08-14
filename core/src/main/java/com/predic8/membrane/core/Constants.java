@@ -82,7 +82,7 @@ public class Constants {
 	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
 
 	public static final String HTML_FOOTER =
-					"Copyright ©2009-" + Calendar.getInstance().get(Calendar.YEAR) + " " +
+					"Copyright ©2009-2015 " +
 			  		"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
 			  		". All Rights Reserved. See " +
 					"<a href=\"http://www.membrane-soa.org/service-proxy/\">http://www.membrane-soa.org/service-proxy/</a>" +
