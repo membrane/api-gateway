@@ -328,7 +328,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 					}
 					getRuleManager().replaceRule(rule, newRule);
 				} catch (CloneNotSupportedException e) {
-					e.printStackTrace();
+					log.error("", e);
 				}
 			}
 		}

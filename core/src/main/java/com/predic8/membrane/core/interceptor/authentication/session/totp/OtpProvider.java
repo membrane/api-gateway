@@ -24,6 +24,8 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.predic8.membrane.core.interceptor.authentication.session.totp.PasscodeGenerator.Signer;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Class containing implementation of HOTP/TOTP. Generates OTP codes for one or
@@ -36,6 +38,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.totp.Passcod
  * @author Cem Paya (cemp@google.com)
  */
 public class OtpProvider {
+	private static Log log = LogFactory.getLog(OtpProvider.class.getName());
 
 	private static final int PIN_LENGTH = 6; // HOTP or TOTP
 
@@ -70,9 +73,9 @@ public class OtpProvider {
 				}
 			};
 		} catch (NoSuchAlgorithmException error) {
-			error.printStackTrace();
+			log.error("", error);
 		} catch (InvalidKeyException error) {
-			error.printStackTrace();
+			log.error("", error);
 		}
 
 		return null;

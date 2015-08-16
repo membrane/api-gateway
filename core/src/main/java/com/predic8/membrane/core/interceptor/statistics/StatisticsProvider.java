@@ -85,7 +85,6 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 			ResultSet r = s.executeQuery(getOrderedStatistics(router.getUriFactory(), exc));
 			createJson(exc, r, offset, max, total);
 		} catch (Exception e) {
-			e.printStackTrace();
 			log.warn("Could not retrieve statistics.", e);
 			return Outcome.ABORT;
 		} finally {

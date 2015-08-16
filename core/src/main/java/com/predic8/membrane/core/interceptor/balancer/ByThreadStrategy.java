@@ -65,8 +65,8 @@ public class ByThreadStrategy extends AbstractXmlElement implements DispatchingS
 			}
 			try {
 				Thread.sleep(retryTimeOnBusy);
-			} catch (Exception e) {
-				e.printStackTrace();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
 			}
 		}
 

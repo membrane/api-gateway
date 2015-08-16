@@ -33,9 +33,12 @@ import com.predic8.beautifier.HtmlBeautifierFormatter;
 import com.predic8.beautifier.PlainBeautifierFormatter;
 import com.predic8.beautifier.XMLBeautifier;
 import com.predic8.beautifier.XMLBeautifierFormatter;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 
 public class TextUtil {
+	private static Log log = LogFactory.getLog(TextUtil.class.getName());
 
 	private static final char[] source;
 	private static final String[] replace;
@@ -59,13 +62,13 @@ public class TextUtil {
 			beautifier.parse(reader);
 		}
 		catch (Exception e){
-			e.printStackTrace();
+			log.error("", e);
 		} finally {
 			try {
 				out.close();
 				reader.close();
 			} catch (IOException e) {
-				e.printStackTrace();
+				log.error("", e);
 			}
 		}
 		return out.toString();
@@ -145,7 +148,7 @@ public class TextUtil {
 			}
 			return event != null && event.isEndDocument();
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error("", e);
 			return false;
 		}
 	}

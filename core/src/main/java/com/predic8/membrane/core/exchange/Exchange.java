@@ -96,7 +96,7 @@ public class Exchange extends AbstractExchange {
 			if (isForcedToStop())
 				throw new TerminateException("Force the exchange to stop.");
 		} catch (InterruptedException e1) {
-			e1.printStackTrace();
+			Thread.currentThread().interrupt();
 		}
 	}
 

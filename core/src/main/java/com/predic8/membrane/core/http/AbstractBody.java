@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.predic8.membrane.core.Constants;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * A HTTP message body (request or response), as it is received or constructed
@@ -39,6 +41,7 @@ import com.predic8.membrane.core.Constants;
  * situation.
  */
 public abstract class AbstractBody {
+	private static final Log log = LogFactory.getLog(AbstractBody.class.getName());
 
 	boolean read;
 	
@@ -172,7 +175,7 @@ public abstract class AbstractBody {
 		try {
 			return new String(getRaw(), Constants.UTF_8_CHARSET);
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error("", e);
 			return "Error in body: " + e;
 		}
 	}

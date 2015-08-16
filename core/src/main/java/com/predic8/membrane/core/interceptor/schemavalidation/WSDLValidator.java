@@ -60,7 +60,6 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 				schemaList.addAll(t.getSchemas());
 			return schemaList;
 		} catch (RuntimeException e) {
-			e.printStackTrace();
 			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
 		}
 	}

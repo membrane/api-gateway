@@ -19,9 +19,12 @@ import java.net.InetAddress;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 
 public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
+	private static Log log = LogFactory.getLog(HttpResendHandler.class.getName());
 
 	public HttpResendHandler(Exchange exc, HttpTransport transport) {
 		super(transport);
@@ -42,9 +45,9 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 			exchange.setCompleted();
 			return;
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.warn("", e);
 		} catch (EndOfStreamException e) {
-			e.printStackTrace();
+			log.warn("", e);
 		}
 	}
 	

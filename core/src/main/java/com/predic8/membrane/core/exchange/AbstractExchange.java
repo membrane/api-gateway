@@ -35,8 +35,12 @@ import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public abstract class AbstractExchange {
+	private static final Log log = LogFactory.getLog(AbstractExchange.class.getName());
+
 	protected Request request;
 	private Response response;
 	
@@ -298,7 +302,7 @@ public abstract class AbstractExchange {
 				
 				return new URL(getOriginalRequestUri()).getHost();
 			} catch (MalformedURLException e) {
-				e.printStackTrace();
+				log.error("", e);
 			}
 			return getOriginalRequestUri();
 		}
@@ -317,7 +321,7 @@ public abstract class AbstractExchange {
 			try {
 				return  getResponse().getBody().getLength();
 			} catch (IOException e) {
-				e.printStackTrace();
+				log.error("", e);
 			}
 		}
 			

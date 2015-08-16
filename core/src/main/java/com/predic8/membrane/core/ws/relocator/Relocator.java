@@ -36,9 +36,13 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 import com.predic8.membrane.core.Constants;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 @NotThreadSafe
 public class Relocator {
+	private static Log log = LogFactory.getLog(Relocator.class.getName());
+
 	private final XMLEventFactory fac = XMLEventFactory.newInstance();
 
 	private final String host;
@@ -185,7 +189,7 @@ public class Relocator {
 				port = -1;
 			return new URL(protocol, host, port, oldURL.getFile()).toString();
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			log.error("", e);
 		}
 		return "";
 	}

@@ -204,7 +204,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 					try {
 						deleteOldFolders();
 					} catch (IOException e) {
-						e.printStackTrace();
+						log.error("", e);
 					}
 				}
 			},

@@ -160,8 +160,7 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 			request += "&to=" + URLEncoder.encode(to, "ISO-8859-15");
 			request += "&body=" + URLEncoder.encode(body, "ISO-8859-15");
 		} catch (UnsupportedEncodingException e) {
-			log.fatal("Invalid encoding in generateRequestData");
-			e.printStackTrace();
+			log.error("Invalid encoding in generateRequestData.", e);
 		}
 		return request;
 	}

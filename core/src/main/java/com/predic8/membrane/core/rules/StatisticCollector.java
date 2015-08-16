@@ -24,6 +24,8 @@ import com.predic8.membrane.core.exchange.ExchangeState;
 import com.predic8.membrane.core.exchangestore.MemoryExchangeStore;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * {@link StatisticCollector} counts {@link Exchange} objects, tracks the time they took
@@ -32,6 +34,7 @@ import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
  * Instances are not thread-safe.
  */
 public class StatisticCollector {
+	private static Log log = LogFactory.getLog(StatisticCollector.class.getName());
 
 	private final NumberFormat nf = NumberFormat.getInstance(Locale.US);
 	
@@ -91,7 +94,7 @@ public class StatisticCollector {
 			AbstractBody responseBody = exc.getResponse().getBody();
 			totalBytesReceived += responseBody.isRead() ? responseBody.getLength() : 0;
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.warn("", e);
 		}
 	}
 
