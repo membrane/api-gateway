@@ -14,6 +14,17 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Sets;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.security.Store;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.TrustManagerWrapper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import javax.crypto.Cipher;
+import javax.net.ssl.*;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -22,43 +33,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.InvalidParameterException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.crypto.Cipher;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLParameters;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import com.google.common.base.Objects;
-import com.google.common.collect.Sets;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.config.security.Store;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.TrustManagerWrapper;
+import java.util.*;
 
 public class SSLContext implements SSLProvider {
 
@@ -71,6 +50,10 @@ public class SSLContext implements SSLProvider {
 	private static Method setUseCipherSuitesOrderMethod, getSSLParametersMethod, setSSLParametersMethod;
 	
 	static {
+		String dhKeySize = System.getProperty("jdk.tls.ephemeralDHKeySize");
+		if (dhKeySize == null || "legacy".equals(dhKeySize))
+			System.setProperty("jdk.tls.ephemeralDHKeySize", "matched");
+
 		try {
 			limitedStrength = Cipher.getMaxAllowedKeyLength("AES") <= 128;
 			if (limitedStrength)
