@@ -193,6 +193,8 @@ public class ResolverMap implements Cloneable, Resolver {
 			@Override
 			public LSInput resolveResource(String type, String namespaceURI,
 					String publicId, String systemId, String baseURI) {
+				if (systemId == null)
+					return null;
 				try {
 					if (!systemId.contains("://"))
 						systemId = new URI(baseURI).resolve(systemId).toString();
