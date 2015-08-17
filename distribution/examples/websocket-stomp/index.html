@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="jquery.min.js"></script>
+	<script src="stomp.js"></script>
+</head>
+<body>
+Messages:
+
+<div id="messages"></div>
+
+<script>
+	var connectNow;
+	$(function () {
+
+		connectNow = function() {
+
+			var client = Stomp.client("wss://localhost:4443/");
+
+			client.debug = function(str) {
+				$("#debug").append(str + "\n");
+			};
+
+			console.log("connecting...");
+			client.connect("system", "manager", function (frame) {
+				console.log("connected.");
+				client.subscribe("/queue/foo", function (msg) {
+					$("#messages").append("<p>" + msg.body + "</p>");
+				});
+			}, function () {
+				// connect failed
+				console.log("disconnecting...");
+				client.disconnect(function() {
+					console.log("disconnected.");
+					window.setTimeout(connectNow, 1000);
+				});
+			});
+		};
+		connectNow();
+	});
+</script>
+
+</body>
+</html>
