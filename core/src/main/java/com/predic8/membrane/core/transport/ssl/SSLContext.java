@@ -25,6 +25,7 @@ import java.net.Socket;
 import java.security.InvalidParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.Certificate;
@@ -59,7 +60,10 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.TrustManagerWrapper;
 
 public class SSLContext implements SSLProvider {
-	
+
+	private static final String DEFAULT_CERTIFICATE_SHA256 = "c7:e3:fd:97:2f:d3:b9:4f:38:87:9c:45:32:70:b3:d8:c1:9f:d1:64:39:fc:48:5f:f4:a1:6a:95:b5:ca:08:f7";
+	private static boolean default_certificate_warned = false;
+
 	private static final Log log = LogFactory.getLog(SSLContext.class.getName());
 
 	private static Method setUseCipherSuitesOrderMethod, getSSLParametersMethod, setSSLParametersMethod;
@@ -259,6 +263,23 @@ public class SSLContext implements SSLProvider {
 		else
 			ks = KeyStore.getInstance(type);
 		ks.load(resourceResolver.resolve(ResolverMap.combine(baseLocation, store.getLocation())), password);
+		if (!default_certificate_warned && ks.getCertificate("membrane") != null) {
+			byte[] pkeEnc = ks.getCertificate("membrane").getEncoded();
+			MessageDigest md = MessageDigest.getInstance("SHA-256");
+			md.update(pkeEnc);
+			byte[] mdbytes = md.digest();
+			StringBuffer sb = new StringBuffer();
+			for (int i = 0; i < mdbytes.length; i++) {
+				if (i > 0)
+					sb.append(':');
+				sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16).substring(1));
+			}
+			if (sb.toString().equals(DEFAULT_CERTIFICATE_SHA256)) {
+				log.warn("Using Membrane with the default certificate. This is highly discouraged! "
+						+ "Please run the generate-ssl-keys script in the conf directory.");
+				default_certificate_warned = true;
+			}
+		}
 		return ks;
 	}
 	
