@@ -19,7 +19,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.InputStreamReader;
 
 import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.xml.util.ResourceResolver;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -69,12 +68,12 @@ public class SOAPMessageValidatorInterceptorTest {
 	
 	@Test
 	public void testHandleRequestValidArticleMessage() throws Exception {
-		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/articleRequest.xml"));
+		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequest.xml"));
 	}
 	
 	@Test
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/articleRequestInvalid.xml"));
+		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
 	}
 	
 	@Test

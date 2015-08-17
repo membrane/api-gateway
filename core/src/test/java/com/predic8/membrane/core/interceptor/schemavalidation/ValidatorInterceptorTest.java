@@ -38,9 +38,11 @@ public class ValidatorInterceptorTest {
 	private Request requestXService;
 	
 	private Exchange exc;
-	
+
 	public static final String ARTICLE_SERVICE_WSDL = "classpath:/validation/ArticleService.xml";
-	
+
+	public static final String ARTICLE_SERVICE_BOM_WSDL = "classpath:/validation/ArticleService.xml";
+
 	public static final String BLZ_SERVICE_WSDL = "classpath:/validation/BLZService.xml";
 	
 	public static final String E_MAIL_SERVICE_WSDL = "classpath:/validation/XWebEmailValidation.wsdl.xml";
@@ -61,10 +63,15 @@ public class ValidatorInterceptorTest {
 	public void testHandleRequestInvalidBLZMessage() throws Exception {
 		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(BLZ_SERVICE_WSDL), "/getBankInvalid.xml"));		
 	}
-	
+
 	@Test
 	public void testHandleRequestValidArticleMessage() throws Exception {
-		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/articleRequest.xml"));
+		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequest.xml"));
+	}
+
+	@Test
+	public void testHandleRequestValidArticleMessageBOM() throws Exception {
+		assertEquals(Outcome.CONTINUE, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_BOM_WSDL), "/validation/articleRequest-bom.xml"));
 	}
 
 	@Test
@@ -74,20 +81,25 @@ public class ValidatorInterceptorTest {
 
 	@Test
 	public void testHandleRequestInvalidArticleMessage() throws Exception {
-		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/articleRequestInvalid.xml"));
+		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_WSDL), "/validation/articleRequestInvalid.xml"));
+	}
+
+	@Test
+	public void testHandleRequestInvalidArticleMessageBOM() throws Exception {
+		assertEquals(Outcome.ABORT, getOutcome(requestTB, createValidatorInterceptor(ARTICLE_SERVICE_BOM_WSDL), "/validation/articleRequestInvalid-bom.xml"));
 	}
 
 	@Test
 	public void testHandleResponseValidArticleMessage() throws Exception {
 		exc.setRequest(requestTB);
-		exc.setResponse(Response.ok().body(getContent("/articleResponse.xml")).build());
+		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml")).build());
 		assertEquals(Outcome.CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
 	}
 
 	@Test
 	public void testHandleResponseValidArticleMessageGzipped() throws Exception {
 		exc.setRequest(requestTB);
-		exc.setResponse(Response.ok().body(getContent("/articleResponse.xml.gz")).header("Content-Encoding", "gzip").build());
+		exc.setResponse(Response.ok().body(getContent("/validation/articleResponse.xml.gz")).header("Content-Encoding", "gzip").build());
 		assertEquals(Outcome.CONTINUE, createValidatorInterceptor(ARTICLE_SERVICE_WSDL).handleResponse(exc));
 	}
 

@@ -59,12 +59,12 @@ public class LimitInterceptorTest {
 
 	@Test
 	public void small() throws ClientProtocolException, IOException {
-		postAndAssert(200, "http://localhost:3026/articleRequest.xml", "aaaaa");
+		postAndAssert(200, "http://localhost:3026/validation/articleRequest.xml", "aaaaa");
 	}
 
 	@Test
 	public void large() throws ClientProtocolException, IOException {
-		postAndAssert(400, "http://localhost:3026/articleRequest.xml", "aaaaaaaaaaaaaa");
+		postAndAssert(400, "http://localhost:3026/validation/articleRequest.xml", "aaaaaaaaaaaaaa");
 	}
 
 }
