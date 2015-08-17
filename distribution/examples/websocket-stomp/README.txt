@@ -74,23 +74,24 @@ The service proxy on port 9000 is just an admin console to watch the stream pump
 	</serviceProxy>
 
 
-Then there is a serviceProxy (port 4443) that tests for a specific header value.
-It does that with the if element:
+
+Then there is a serviceProxy (port 4443) that contains a webSocket element:
+
+	<webSocket url="http://localhost:61614/" />
+
+The webSocket element redirects your call to the local port 61614, which is
+ActiveMQ's preconfigured standard port for the websocket protocol.
+
+A webSocket element contains an if element which tests for a specific HTTP
+header value:
 
 	<if test="exc.request.header.getFirstValue('Upgrade') == 'websocket'">
 
 The if element matches this specific HTTP header
 	Upgrade: websocket
 
-Now take a closer look at the groovy element:
+If the condition succeeded, the webSocket element redirects your call to the
+given URL, which is http://localhost:61614/ in our case.
 
-	<groovy>
-		exc.request.uri = "/"
-		exc.destinations[0] = "http://localhost:61614/"
-	</groovy>
-
-The groovy element essentially redirects your call to the local port 61614,
-which is ActiveMQ's preconfigured standard port for the websocket protocol.
-After the groovy element, have the httpClient element
-	<httpClient />
-which does not return. This is where the stream pumps are working.
+This redirects to the local port 61614, which is ActiveMQ's preconfigured
+standard port for the websocket protocol.
