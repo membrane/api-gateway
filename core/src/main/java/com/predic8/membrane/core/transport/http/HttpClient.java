@@ -62,7 +62,6 @@ public class HttpClient {
 	private final int maxRetries;
 	private final int connectTimeout;
 	private final String localAddr;
-	private final boolean allowWebSockets;
 
 	private final ConnectionManager conMgr;
 	private StreamPump.StreamPumpStats streamPumpStats;
@@ -75,8 +74,7 @@ public class HttpClient {
 		proxy = configuration.getProxy();
 		authentication = configuration.getAuthentication();
 		maxRetries = configuration.getMaxRetries();
-		allowWebSockets = configuration.isAllowWebSockets();
-		
+
 		connectTimeout = configuration.getConnection().getTimeout();
 		localAddr = configuration.getConnection().getLocalAddr();
 		
@@ -187,7 +185,7 @@ public class HttpClient {
 					newProtocol = "CONNECT";
 				} else {
 					response = doCall(exc, con);
-					if (allowWebSockets && isUpgradeToWebSocketsResponse(response)) {
+					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToWebSocketsResponse(response)) {
 						log.debug("Upgrading to WebSocket protocol.");
 						newProtocol = "WebSocket";
 					}

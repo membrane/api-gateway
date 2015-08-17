@@ -38,6 +38,8 @@ public class Exchange extends AbstractExchange {
 
 	public static final String HTTP_SERVLET_REQUEST = "HttpServletRequest";
 
+	public static final String ALLOW_WEBSOCKET = "use-websocket";
+
 	private static Log log = LogFactory.getLog(Exchange.class.getName());
 
 	private AbstractHttpHandler handler;

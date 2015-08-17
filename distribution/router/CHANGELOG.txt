@@ -1,6 +1,20 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [feature] Introduced the <webSocket> interceptor. This interceptor marks
+  an exchange as upgradable to the WebSocket protocol (RFC 6455).
+
+  When the target server responds to the initial upgrade request with an
+  upgrade response, Membrane will simply start forwarding the connection data
+  in each direction (currently without monitoring it).
+
+  Using the URL attribute as in <webSocket url="http://localhost:61614/" />,
+  a different destination URL can be specified, which will override the
+  <serviceProxy>'s <target>. This way, incoming webSocket requests can be
+  split off and be forwarded to another destination. E.g. ActiveMQ usually
+  accepts incoming websocket connections on port 61614 and requires the path
+  to be '/'.
+
 * [changed behavior] Membrane's URL parsing will now automatically translate
   backslashes '\' to '%5C' before parsing the URL. The backslash is illegal
   per RFC 3986, but passed along by all major browsers when contained in a

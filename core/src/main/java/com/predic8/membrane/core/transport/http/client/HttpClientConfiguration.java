@@ -23,7 +23,6 @@ import com.predic8.membrane.annot.MCElement;
 public class HttpClientConfiguration {
 	
 	private int maxRetries = 5;
-	private boolean allowWebSockets = false;
 	private ConnectionConfiguration connection = new ConnectionConfiguration();
 	private ProxyConfiguration proxy;
 	private AuthenticationConfiguration authentication;
@@ -69,21 +68,5 @@ public class HttpClientConfiguration {
 	@MCAttribute
 	public void setMaxRetries(int maxRetries) {
 		this.maxRetries = maxRetries;
-	}
-
-	public boolean isAllowWebSockets() {
-		return allowWebSockets;
-	}
-	
-	/**
-	 * @description Whether to allow HTTP protocol upgrades to the <a
-	 *              href="http://tools.ietf.org/html/rfc6455">WebSockets protocol</a>.
-	 *              After the upgrade, the connection's data packets are simply forwarded
-	 *              and not inspected.
-	 * @default false
-	 */
-	@MCAttribute
-	public void setAllowWebSockets(boolean allowWebSockets) {
-		this.allowWebSockets = allowWebSockets;
 	}
 }
