@@ -65,7 +65,7 @@ public class Request extends Message {
 	String method;
 	String uri;
 
-	public void parseStartLine(InputStream in, boolean allowSTOMP) throws IOException, EndOfStreamException {
+	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
 			Matcher matcher = pattern.matcher(firstLine);
@@ -73,7 +73,7 @@ public class Request extends Message {
 				method = matcher.group(1);
 				uri = matcher.group(2);
 				version = matcher.group(3);
-			} else if (allowSTOMP && "CONNECT".equalsIgnoreCase(firstLine)) {
+			} else if ("CONNECT".equalsIgnoreCase(firstLine)) {
 				method = "CONNECT";
 				uri = "";
 				version = "STOMP";

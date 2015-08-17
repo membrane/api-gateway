@@ -295,7 +295,7 @@ public class Response extends Message {
 		this.statusMessage = statusMessage;
 	}
 
-	public void parseStartLine(InputStream in, boolean allowSTOMP) throws IOException,
+	public void parseStartLine(InputStream in) throws IOException,
 			EndOfStreamException {
 
 		String line;

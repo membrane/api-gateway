@@ -24,7 +24,12 @@ import com.predic8.membrane.annot.MCElement;
 public class STOMPProxy extends SSLableProxy {
 
 	public STOMPProxy() {
-		this.key = new ServiceProxyKey(80);
+		this.key = new ServiceProxyKey(80) {
+			@Override
+			public boolean matchesVersion(String version) {
+				return version.equals("STOMP");
+			}
+		};
 		((ServiceProxyKey)key).setMethod("CONNECT");
 	}
 

@@ -98,7 +98,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 					boundConnection = null;
 				}
 
-				srcReq.read(srcIn, true, endpointListener.getTransport().isAllowSTOMP());
+				srcReq.read(srcIn, true);
 
 				exchange.received();
 

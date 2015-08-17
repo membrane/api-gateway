@@ -68,12 +68,12 @@ public class RuleManagerTest {
 	
 	@Test
 	public void testGetMatchingRuleForwardBlz() throws Exception {
-		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", 3014, null));
+		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, null));
 	}
 	
 	@Test
 	public void testGetMatchingRuleForwardBlzPOST() throws Exception {
-		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", 3014, null));
+		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, null));
 	}
 	
 	@Test

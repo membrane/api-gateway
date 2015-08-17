@@ -131,4 +131,8 @@ public abstract class AbstractRuleKey implements RuleKey {
 		return false;
 	}
 
+	@Override
+	public boolean matchesVersion(String version) {
+		return !"STOMP".equals(version);
+	}
 }

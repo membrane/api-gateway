@@ -28,7 +28,7 @@ public class ServiceProxyKey extends AbstractRuleKey {
 	private boolean isHostWildCard = true;
 	private Pattern hostPattern;
 
-	public ServiceProxyKey(int port) {
+ 	public ServiceProxyKey(int port) {
 		this(port, null);
 	}
 

@@ -115,7 +115,7 @@ public class XOPReconstitutor {
 		
 		Message m = new Message(){
 			@Override
-			protected void parseStartLine(InputStream in, boolean allowSTOMP) throws IOException,
+			protected void parseStartLine(InputStream in) throws IOException,
 					EndOfStreamException {
 				throw new RuntimeException("not implemented.");
 			}

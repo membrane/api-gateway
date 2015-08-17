@@ -209,31 +209,33 @@ public class RuleManager {
 		getExchangeStore().refreshExchangeStoreListeners();
 	}
 
-	public Rule getMatchingRule(String hostHeader, String method, String uri, int port, String localIP) {
+	public Rule getMatchingRule(String hostHeader, String method, String uri, String version, int port, String localIP) {
 		for (Rule rule : rules) {
+			RuleKey key = rule.getKey();
 
-			log.debug("Host from rule: " + rule.getKey().getHost() + ";   Host from parameter rule key: " + hostHeader);
+			log.debug("Host from rule: " + key.getHost() + ";   Host from parameter rule key: " + hostHeader);
 			
 			if (!rule.isActive())
 				continue;
-			
-			if (rule.getKey().getIp() != null)
-				if (!rule.getKey().getIp().equals(localIP))
+
+			if (!key.matchesVersion(version))
+				continue;
+
+			if (key.getIp() != null)
+				if (!key.getIp().equals(localIP))
 					continue;
 
-			if (!rule.getKey().matchesHostHeader(hostHeader))
+			if (!key.matchesHostHeader(hostHeader))
 				continue;
-			if (rule.getKey().getPort() != -1 && port != -1 && rule.getKey().getPort() != port)
+			if (key.getPort() != -1 && port != -1 && key.getPort() != port)
 				continue;
-			if (!rule.getKey().getMethod().equals(method) && !rule.getKey().isMethodWildcard())
+			if (!key.getMethod().equals(method) && !key.isMethodWildcard())
 				continue;
 
-			if (!rule.getKey().isUsePathPattern())
-				return rule;
+			if (key.isUsePathPattern() && !key.matchesPath(uri))
+				continue;
 
-			if (rule.getKey().matchesPath(uri))
-				return rule;
-
+			return rule;
 		}
 		return null;
 	}
