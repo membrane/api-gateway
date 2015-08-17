@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.crypto.Cipher;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
@@ -63,12 +64,19 @@ public class SSLContext implements SSLProvider {
 
 	private static final String DEFAULT_CERTIFICATE_SHA256 = "c7:e3:fd:97:2f:d3:b9:4f:38:87:9c:45:32:70:b3:d8:c1:9f:d1:64:39:fc:48:5f:f4:a1:6a:95:b5:ca:08:f7";
 	private static boolean default_certificate_warned = false;
+	private static boolean limitedStrength;
 
 	private static final Log log = LogFactory.getLog(SSLContext.class.getName());
 
 	private static Method setUseCipherSuitesOrderMethod, getSSLParametersMethod, setSSLParametersMethod;
 	
 	static {
+		try {
+			limitedStrength = Cipher.getMaxAllowedKeyLength("AES") <= 128;
+			if (limitedStrength)
+				log.warn("Your Java Virtual Machine does not have unlimited strength cryptography. If it is legal in your country, we strongly advise installing the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files.");
+		} catch (NoSuchAlgorithmException ignored) {
+		}
 		try {
 			getSSLParametersMethod = SSLServerSocket.class.getMethod("getSSLParameters", new Class[] {});
 			setSSLParametersMethod = SSLServerSocket.class.getMethod("setSSLParameters", new Class[] { SSLParameters.class });
