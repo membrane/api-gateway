@@ -193,10 +193,10 @@ public class LoginDialog {
 					if (StringUtils.isEmpty(target))
 						target = "/";
 
-						if (this.message != null)
-						exc.setResponse(Response.redirectWithout300(target, false, message).build());
+					if (this.message != null)
+						exc.setResponse(Response.redirectWithout300(target, message).build());
 					else
-						exc.setResponse(Response.redirectWithout300(target, false).build());
+						exc.setResponse(Response.redirectWithout300(target).build());
 
 					s.authorize();
 				} else {
