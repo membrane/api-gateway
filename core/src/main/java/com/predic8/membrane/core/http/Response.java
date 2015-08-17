@@ -180,15 +180,15 @@ public class Response extends Message {
 				body(unescapedHtmlMessage("Moved.", "This page has moved to <a href=\""+escaped+"\">"+escaped+"</a>."));
 	}
 
-		public static ResponseBuilder redirectWithout300(String uri, boolean permanent) {
+	public static ResponseBuilder redirectWithout300(String uri) {
 		String escaped = StringEscapeUtils.escapeXml(uri);
-		return redirectWithout300(uri,permanent, " This page has moved to <a href=\"" + escaped + "\">" + escaped + "</a>.");
+		return redirectWithout300(uri, " This page has moved to <a href=\"" + escaped + "\">" + escaped + "</a>.");
 	}
 
-	public static ResponseBuilder redirectWithout300(String uri, boolean permanent, String body) {
+	public static ResponseBuilder redirectWithout300(String uri, String body) {
 		String escaped = StringEscapeUtils.escapeXml(uri);
 		return ResponseBuilder.newInstance().
-				status(permanent ? 301 : 307, permanent ? "Moved Permanently" : "Temporary Redirect").
+				status(200, "OK").
 				header("Location", uri).
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body("<html><head><meta http-equiv=\"refresh\" content=\"0;URL='" + escaped + "'\" /></head>" +
