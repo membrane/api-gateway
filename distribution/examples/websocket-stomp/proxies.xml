@@ -1,0 +1,45 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<httpClientConfig allowWebSockets="true" />
+
+		<transport allowSTOMP="true" forceSocketCloseOnHotDeployAfter="5000">
+			<ruleMatching />
+			<exchangeStore />
+			<dispatching />
+			<reverseProxying/>
+			<userFeature />
+			<httpClient />
+		</transport>
+
+		<serviceProxy port="4443">
+			<ssl>
+				<keystore location="../../router/conf/membrane.jks" password="secret" keyPassword="secret" />
+				<truststore location="../../router/conf/membrane.jks" password="secret" />
+			</ssl>
+
+			<if test="exc.request.header.getFirstValue('Upgrade') == 'websocket'">
+				<groovy>
+					exc.request.uri = "/"
+					exc.destinations[0] = "http://localhost:61614/"
+				</groovy>
+				<httpClient />
+			</if>
+			<webServer docBase="." index="index.html"/>
+		</serviceProxy>
+
+		<serviceProxy name="Console" port="9000">
+			<basicAuthentication>
+				<user name="admin" password="membrane" />
+			</basicAuthentication>
+			<adminConsole />
+		</serviceProxy>
+
+	</router>
+
+</spring:beans>
