@@ -33,7 +33,6 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
-import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.TextUtil;
 
 /**
@@ -133,7 +132,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	public static Response createResponse(ResolverMap rr, String resPath) throws IOException {
 		return Response.ok()
 				.header(createHeaders(getContentType(resPath)))
-				.body(ByteUtil.getByteArrayData(rr.resolve(resPath)))
+				.body(rr.resolve(resPath), true)
 				.build();
 	}
 
