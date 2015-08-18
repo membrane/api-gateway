@@ -25,9 +25,11 @@ import java.util.Queue;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractBody;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.MessageObserver;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -43,14 +45,30 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	private int currentSize;
 	
 	private final Queue<AbstractExchange> exchanges = new LinkedList<AbstractExchange>();
-	
+	private Map<AbstractExchange, Request> inflight = new HashMap<AbstractExchange, Request>();
+
 	public void snap(final AbstractExchange exc, final Flow flow) {
 		// TODO: [fix me] support multi-snap
 		// TODO: [fix me] snap message headers and request *here*, not in observer/response 
 
-		if (flow == Flow.REQUEST)
+		if (flow == Flow.REQUEST) {
+			// TODO: doesn't belong here
+			System.out.println("Exchange put inflight " + exc.hashCode() + exc.getRequest());
+			inflight.put(exc, exc.getRequest());
+			exc.getRequest().addObserver(
+					new MessageObserver() {
+						@Override
+						public void bodyRequested(AbstractBody body) {
+						}
+						@Override
+						public void bodyComplete(AbstractBody body) {
+							// TODO: belongs here
+						}
+					}
+			);
 			return;
-		
+		}
+
 		try {
 			Message m = /* doesn't occur so far anyway   flow == Flow.REQUEST ? exc.getRequest() :*/ exc.getResponse();
 			if (m != null)
@@ -59,6 +77,8 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 					}
 					public void bodyComplete(AbstractBody body) {
 						snapInternal(exc, flow);
+						inflight.remove(exc);
+						System.out.println("Exchange remove inflight " + exc.hashCode());
 					}
 				});
 		} catch (Exception e) {
@@ -119,9 +139,25 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 	
 	public synchronized List<AbstractExchange> getAllExchangesAsList() {
-		return (LinkedList<AbstractExchange>)exchanges;
-	}	
-	
+		List<AbstractExchange> ret = new LinkedList<AbstractExchange>();
+
+		for (Map.Entry<AbstractExchange, Request> entry : inflight.entrySet()) {
+			AbstractExchange ex = entry.getKey();
+			Request req = entry.getValue();
+			Exchange newEx = new Exchange(null);
+			newEx.setRequest(req);
+			newEx.setRule(ex.getRule());
+			newEx.setRemoteAddr(ex.getRemoteAddr());
+			newEx.setTime(ex.getTime());
+			newEx.setTimeReqSent(ex.getTimeReqReceived());
+			newEx.setTimeResReceived(System.currentTimeMillis());
+			ret.add(newEx);
+		}
+		ret.addAll(exchanges);
+
+		return ret;
+	}
+
 	public synchronized void removeAllExchanges(AbstractExchange[] candidates) {
 		exchanges.removeAll(Arrays.asList(candidates));
 	}

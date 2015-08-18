@@ -297,8 +297,17 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			throws IOException, JsonGenerationException, SQLException {
 		gen.writeStartObject();
 		gen.writeNumberField("id", exc.hashCode());
-		gen.writeNumberField("statusCode", exc.getResponse()
-				.getStatusCode());
+		if (exc.getResponse() != null) {
+			gen.writeNumberField("statusCode", exc.getResponse().getStatusCode());
+			if (exc.getResponseContentLength()!=-1) {
+				gen.writeNumberField("respContentLength", exc.getResponseContentLength());
+			} else {
+				gen.writeNullField("respContentLength");
+			}
+		} else {
+			gen.writeNullField("statusCode");
+			gen.writeNullField("respContentLength");
+		}
 		gen.writeStringField("time", ExchangesUtil.getTime(exc));
 		gen.writeStringField("proxy", exc.getRule().toString());
 		gen.writeNumberField("listenPort", exc.getRule().getKey().getPort());
@@ -317,11 +326,6 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		gen.writeStringField("respContentType", exc.getResponseContentType());
 		gen.writeStringField("respContentLength",
 				exc.getResponseContentType());
-		if (exc.getResponseContentLength()!=-1) {
-			gen.writeNumberField("respContentLength", exc.getResponseContentLength());
-		} else {
-			gen.writeNullField("respContentLength");
-		}
 
 		gen.writeNumberField("duration",
 				exc.getTimeResReceived() - exc.getTimeReqSent());

@@ -337,6 +337,8 @@ public abstract class AbstractExchange {
 	}
 
 	public String getResponseContentType() {
+		if (getResponse() == null)
+			return "";
 		return extractContentTypeValue((String) getResponse().getHeader().getContentType());
 	}
 
