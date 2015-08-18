@@ -48,9 +48,11 @@ public class Exchange extends AbstractExchange {
 
 	private Connection targetConnection;
 
+	private long id;
+
 	public Exchange(AbstractHttpHandler handler) {
 		this.handler = handler;
-
+		this.id = hashCode();
 	}
 
 	/**
@@ -62,6 +64,7 @@ public class Exchange extends AbstractExchange {
 		super(original);
 		this.handler = handler;
 		originalHostHeader = original.originalHostHeader;
+		id = hashCode();
 	}
 
 	public AbstractHttpHandler getHandler() {
@@ -180,5 +183,14 @@ public class Exchange extends AbstractExchange {
 	
 	public boolean canKeepConnectionAlive() {
 		return getRequest().isKeepAlive() && getResponse().isKeepAlive();
+	}
+
+	@Override
+	public long getId() {
+		return id;
+	}
+
+	public void setId(long id) {
+		this.id = id;
 	}
 }

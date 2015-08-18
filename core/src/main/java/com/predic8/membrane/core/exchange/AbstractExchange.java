@@ -419,5 +419,7 @@ public abstract class AbstractExchange {
 	public void detach() {
 		properties.clear();
 	}
+
+	public abstract long getId();
 	
 }

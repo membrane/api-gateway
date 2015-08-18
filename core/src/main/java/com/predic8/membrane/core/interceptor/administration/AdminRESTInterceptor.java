@@ -296,7 +296,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 	private void writeExchange(AbstractExchange exc, JsonGenerator gen)
 			throws IOException, JsonGenerationException, SQLException {
 		gen.writeStartObject();
-		gen.writeNumberField("id", exc.hashCode());
+		gen.writeNumberField("id", exc.getId());
 		if (exc.getResponse() != null) {
 			gen.writeNumberField("statusCode", exc.getResponse().getStatusCode());
 			if (exc.getResponseContentLength()!=-1) {
