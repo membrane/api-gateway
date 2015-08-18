@@ -45,12 +45,21 @@ public class GroovyInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        return runScript(exc);
+        return runScript(exc, Flow.REQUEST);
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        return runScript(exc);
+        return runScript(exc, Flow.RESPONSE);
+    }
+
+    @Override
+    public void handleAbort(Exchange exc) {
+        try {
+            runScript(exc, Flow.ABORT);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void init() {
@@ -63,9 +72,10 @@ public class GroovyInterceptor extends AbstractInterceptor {
 
     }
 
-    private Outcome runScript(Exchange exc) throws InterruptedException {
+    private Outcome runScript(Exchange exc, Flow flow) throws InterruptedException {
     	HashMap<String, Object> parameters = new HashMap<String, Object>();
     	parameters.put("exc", exc);
+        parameters.put("flow", flow);
     	parameters.put("spring", router.getBeanFactory());
     	
     	Object res = script.apply(parameters);
