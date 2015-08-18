@@ -1,6 +1,137 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.1.0
+
+* [feature] The admin console can now display 'inflight' exchanges, which have
+  not completed yet (among all completed Exchanges on the 'Calls' tab).
+  This can be used to inspect HTTP calls while they are going on.
+
+* [documentation] Added the 'webserver-stomp' example to demonstrate using
+  STOMP-over-WebSckets-over-SSL. This particular example demonstrates how
+  to connect from a Web Browser to ActiveMQ via Membrane Service Proxy.
+
+  Membrane Service Proxy is used to split the WebSocket from the remaining
+  'normal' (non-WebSocket) HTTP traffic.
+
+* [update] The wrapper.conf is updated to support the latest version (3.5.26)
+  of the Tanuki Service Wrapper, which can be used to run Membrane Service
+  Proxy as a service (e.g. on Windows or Linux).
+
+* [feature] Automatically set the jdk.tls.ephemeralDHKeySize System property
+  to 'matched', if not already set.
+  On Java 8, this increases the key size for Diffie Hellman to match the size
+  of the certificate used.
+
+  Emit a warning, if the Java Cryptography Extension (JCE) Unlimited Strength
+  Jurisdiction Policy Files are not installed.
+
+* [update] to soa-model 1.5.4. This allows a Unicode byte order mark (BOM)
+  to be present at the beginning of WSDLs, XML Schemas and SOAP messages.
+
+* [feature] The admin console can now display 'stream pump' traffic
+  statistics for proxy, WebSocket and STOMP connections.
+  All of those traffic types can not be monitored and are not checked for
+  format validity.
+
+* [feature] Replaced Membrane's default SSL certificate by one with 4096 bits
+  and SHA256, because the old one was regarded by modern browsers as insecure.
+
+  The new certificate should not be used except for testing though. A warning
+  is now emitted, if it is used, indicating that the 'generate-ssl-keys' script
+  can be used to generate your own certificate.
+
+* [bugfix] ABONO contributed a fix to the xml2json component, preserving any
+  octal number notation during the conversion.
+
+* [feature] <whateverMobileSMSTokenProvider ... /> can be used to send SMS
+  tokens via whatever mobile.
+
+* [feature] <fileExchangeStore maxDays="30" /> has a new attribute 'maxDays'
+  which can be used to automatically delete old files after 30 days.
+
+* The Maven groupId was changed from 'org.membrane-soa.service-proxy' to
+  'org.membrane-soa'.
+
+* [feature] In the <groovy> interceptor, you can use 'spring' to access the
+  spring context (contributed by Vladimir Kralik) and 'flow' to determine the
+  current direction the Exchange is travelling in: the enum Interceptor.FLOW
+  can have one of the three values REQUEST, RESPONSE or ABORT.
+
+* [feature] Prefer SSL ciphers with Forward Secrecy, if available and
+  running on Java 8.
+  (See https://en.wikipedia.org/wiki/Forward_secrecy )
+
+* [feature] Allow Spring Properties in numeric properties. The following
+  config is now allowed.
+
+  <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    <property name="my.port"><value>80</value></property>
+  </bean>
+  <m:router>
+    <m:serviceProxy host="a.mycompany.com" port="#{my.port}">
+      ...
+    </m:serviceProxy>
+    ...
+  </m:router>
+
+  See the documentation of the PropertyPlaceholderConfigurer for more examples.
+
+* [bugfix] Fabian Kessler contributed several bugfixes and optimizations to
+  the load balancing code.
+
+* [changed behavior] Disabled all SSL variants, as they are considered
+  insecure.
+
+* [feature] Support the SSL SNI extension (Server Name Indication) when
+  running on Java 8. SNI can be used by a SSL client to indicate the hostname
+  it want's to connect to within the initial SSL network paket. This
+  information can be used to present the correct SSL server certificate to
+  the client, matching the requested hostname.
+
+  Membrane will automatically do this, if running on Java 8 and configured
+  accordingly.
+  <router>
+    <serviceProxy host="a.mycompany.com" port="80">
+      <ssl><keystore location="a.keystore" /></ssl>
+      ...
+    </serviceProxy>
+    <serviceProxy host="b.mycompany.com" port="80">
+      <ssl><keystore location="b.keystore" /></ssl>
+      ...
+    </serviceProxy>
+  </router>
+
+  If the SSL client transmit the SNI extension (for example, because the client
+  does not support SNI), the first certificate is presented.
+
+  Below Java 8, a warning will be emitted, that this configuration is not
+  supported, and the first certificate (for "a.mycompany.com") will always
+  be presented.
+
+* [feature] Introduced the <stompProxy> to handle the "Simple Text
+  Oriented Message Protocol" (STOMP), which can be used to connect to Message
+  Brokers. It can be used, for example, the following way:
+  <router>
+    <stompProxy port="2000">
+      <stompClient host="localhost" port="61613"/>
+    </stompProxy>
+    <serviceProxy port="2000">
+      ...
+    </serviceProxy>
+  </router>
+
+  This detects whether the incoming connection is using HTTP (=handled by the
+  serviceProxy) or STOMP (supporting 1.0, 1.1 or 1.2). The STOMP connection is
+  handled by the stompProxy and is forwarded by the stompClient to
+  localhost:61613, which might be a locally running ActiveMQ, for example.
+
+  The <stompProxy> can additionally contain a <ssl> element as its first child
+  to configure using STOMP over SSL. Besides <log> (which will only log the
+  STOMP 'CONNECT' frame) no other interceptors will work with <stompProxy>.
+
+  This is considered experimental and the configuration is subject to change.
+
 * [feature] Introduced the <webSocket> interceptor. This interceptor marks
   an exchange as upgradable to the WebSocket protocol (RFC 6455).
 
@@ -22,7 +153,11 @@ Membrane Service Proxy Change Log
   The automatic translation can be turned off using
   <router><uriFactory autoEscapeBackslashes="false" />... .
 
-TODO: review changes
+* [bugfix] fixed several bugs concerning URL escaping/rewriting
+
+* [feature] Membrane's internal buffer is managed using blocks of size 8KB by
+  default. This can be configured by passing
+  -Dmembrane.core.http.body.buffersize=16384 to the JVM on startup.
 
 * [release] 4.0.17
 
