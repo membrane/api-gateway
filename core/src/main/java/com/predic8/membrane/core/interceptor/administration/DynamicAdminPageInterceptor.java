@@ -676,6 +676,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					end(2);	
 					br();
 					createButton("Reset Filter", "calls", null, null);
+					a().id("reloadData").classAttr("mb-button").text("Reload data").end();
 				end();
 				h3().text(getMessagesText()).end();
 				createMessageStatisticsTable();

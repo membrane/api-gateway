@@ -392,7 +392,11 @@ $(function() {
     );
     
     $('.mb-button').button();
-    
+
+	$('#reloadData').click(function() {
+		$('#message-stat-table').dataTable()._fnAjaxUpdate();
+	});
+
     $('form').validationEngine('attach', {promptPosition : 'bottomRight', scroll: false});
     $('form').submit(function() {
 		return this.validationEngine('validate');
