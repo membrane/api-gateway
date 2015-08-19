@@ -38,7 +38,7 @@
 		</soapProxy>
 	
 		<!-- Displays a list of all configured proxies. -->
-		<serviceProxy>
+		<serviceProxy port="2000">
 			<index />
 		</serviceProxy>
 
