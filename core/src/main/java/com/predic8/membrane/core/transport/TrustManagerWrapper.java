@@ -43,15 +43,15 @@ import javax.security.auth.x500.X500Principal;
 public class TrustManagerWrapper implements X509TrustManager {
 	private final boolean ignoreTimestampCheckFailure;
 	private final X509TrustManager tm;
-	
+
 	public TrustManagerWrapper(TrustManager[] trustManagers, boolean ignoreTimestampCheckFailure) throws KeyManagementException {
 		this.ignoreTimestampCheckFailure = ignoreTimestampCheckFailure;
-		
+
 		X509TrustManager tm2 = null;
-		
+
 		if (trustManagers != null)
 			tm2 = chooseTrustManager(trustManagers);
-		
+
 		if (tm2 == null) {
 			TrustManagerFactory tmf;
 			try {
@@ -67,13 +67,13 @@ public class TrustManagerWrapper implements X509TrustManager {
 			}
 			tm2 = chooseTrustManager(tmf.getTrustManagers());
 		}
-		
+
 		if (tm2 == null)
 			throw new RuntimeException("No trust manager passed and could not create one.");
-		
+
 		tm = tm2;
 	}
-	
+
 	private X509TrustManager chooseTrustManager(TrustManager[] tm)
 			throws KeyManagementException {
 		for (int i = 0; tm != null && i < tm.length; i++)
@@ -108,10 +108,12 @@ public class TrustManagerWrapper implements X509TrustManager {
 					return x509.getCriticalExtensionOIDs();
 				}
 
+				@Override
 				public boolean equals(Object other) {
 					return x509.equals(other);
 				}
 
+				@Override
 				public int hashCode() {
 					return x509.hashCode();
 				}
@@ -120,12 +122,14 @@ public class TrustManagerWrapper implements X509TrustManager {
 					return x509.getNonCriticalExtensionOIDs();
 				}
 
+				@Override
 				public byte[] getEncoded() throws CertificateEncodingException {
 					return x509.getEncoded();
 				}
 
+				@Override
 				public void verify(PublicKey key) throws CertificateException, NoSuchAlgorithmException,
-						InvalidKeyException, NoSuchProviderException, SignatureException {
+				InvalidKeyException, NoSuchProviderException, SignatureException {
 					x509.verify(key);
 				}
 
@@ -133,95 +137,118 @@ public class TrustManagerWrapper implements X509TrustManager {
 					return x509.getExtensionValue(oid);
 				}
 
+				@Override
 				public void verify(PublicKey key, String sigProvider) throws CertificateException,
-						NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
+				NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException {
 					x509.verify(key, sigProvider);
 				}
 
+				@Override
 				public int getVersion() {
 					return x509.getVersion();
 				}
 
+				@Override
 				public BigInteger getSerialNumber() {
 					return x509.getSerialNumber();
 				}
 
+				@Override
 				public String toString() {
 					return x509.toString();
 				}
 
+				@Override
 				public PublicKey getPublicKey() {
 					return x509.getPublicKey();
 				}
 
+				@Override
 				public Principal getIssuerDN() {
 					return x509.getIssuerDN();
 				}
 
+				@Override
 				public X500Principal getIssuerX500Principal() {
 					return x509.getIssuerX500Principal();
 				}
 
+				@Override
 				public Principal getSubjectDN() {
 					return x509.getSubjectDN();
 				}
 
+				@Override
 				public X500Principal getSubjectX500Principal() {
 					return x509.getSubjectX500Principal();
 				}
 
+				@Override
 				public Date getNotBefore() {
 					return x509.getNotBefore();
 				}
 
+				@Override
 				public Date getNotAfter() {
 					return x509.getNotAfter();
 				}
 
+				@Override
 				public byte[] getTBSCertificate() throws CertificateEncodingException {
 					return x509.getTBSCertificate();
 				}
 
+				@Override
 				public byte[] getSignature() {
 					return x509.getSignature();
 				}
 
+				@Override
 				public String getSigAlgName() {
 					return x509.getSigAlgName();
 				}
 
+				@Override
 				public String getSigAlgOID() {
 					return x509.getSigAlgOID();
 				}
 
+				@Override
 				public byte[] getSigAlgParams() {
 					return x509.getSigAlgParams();
 				}
 
+				@Override
 				public boolean[] getIssuerUniqueID() {
 					return x509.getIssuerUniqueID();
 				}
 
+				@Override
 				public boolean[] getSubjectUniqueID() {
 					return x509.getSubjectUniqueID();
 				}
 
+				@Override
 				public boolean[] getKeyUsage() {
 					return x509.getKeyUsage();
 				}
 
+				@Override
 				public List<String> getExtendedKeyUsage() throws CertificateParsingException {
 					return x509.getExtendedKeyUsage();
 				}
 
+				@Override
 				public int getBasicConstraints() {
 					return x509.getBasicConstraints();
 				}
 
+				@Override
 				public Collection<List<?>> getSubjectAlternativeNames() throws CertificateParsingException {
 					return x509.getSubjectAlternativeNames();
 				}
 
+				@Override
 				public Collection<List<?>> getIssuerAlternativeNames() throws CertificateParsingException {
 					return x509.getIssuerAlternativeNames();
 				}
@@ -232,7 +259,7 @@ public class TrustManagerWrapper implements X509TrustManager {
 						return;
 					x509.checkValidity(date);
 				}
-				
+
 				@Override
 				public void checkValidity() throws CertificateExpiredException, CertificateNotYetValidException {
 					if (ignoreTimestampCheckFailure)

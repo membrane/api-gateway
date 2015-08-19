@@ -28,7 +28,7 @@ import com.predic8.membrane.examples.Process2;
 import com.predic8.membrane.examples.util.BufferLogger;
 
 public class LoadBalancerSession3Test extends DistributionExtractingTestcase {
-	
+
 	/**
 	 * The test as described in README.txt, but "wsimport" (previously called by ant)
 	 * was removed and is run directly from this test before everything else. Thereby
@@ -37,11 +37,11 @@ public class LoadBalancerSession3Test extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File base = getExampleDir("loadbalancer-session-3");
-		
+
 		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8080", "3023");
 		AssertUtils.replaceInFile(new File(base, "src/com/predic8/chat/Client.java"), "8080", "3023");
 		AssertUtils.replaceInFile(new File(base, "data/ChatService.wsdl"), "8080", "3023");
-		
+
 		Process2 sl = new Process2.Builder().in(base).script("service-proxy").waitForMembrane().start();
 		try {
 
@@ -64,7 +64,7 @@ public class LoadBalancerSession3Test extends DistributionExtractingTestcase {
 					"-s",
 					source.getAbsolutePath()
 			}));
-			
+
 			// call "ant compile" now so that both antNodeX processes do call it at the same time
 			BufferLogger loggerCompile = new BufferLogger();
 			Process2 antCompile = new Process2.Builder().in(base).withWatcher(loggerCompile).executable("ant compile").start();
@@ -75,7 +75,7 @@ public class LoadBalancerSession3Test extends DistributionExtractingTestcase {
 			} finally {
 				antCompile.killScript();
 			}
-			
+
 
 			BufferLogger loggerNode1 = new BufferLogger();
 			BufferLogger loggerNode2 = new BufferLogger();
@@ -83,19 +83,19 @@ public class LoadBalancerSession3Test extends DistributionExtractingTestcase {
 			try {
 				Process2 antNode2 = new Process2.Builder().in(base).withWatcher(loggerNode2).executable("ant run-node2").start();
 				try {
-					
+
 					LoadBalancerUtil.addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4000);
 					LoadBalancerUtil.addLBNodeViaHTML("http://localhost:9000/admin/", "localhost", 4001);
-					
+
 					Thread.sleep(1000); // wait for nodes to come up
-					
+
 					Process2 antClient = new Process2.Builder().in(base).executable("ant run-client -Dlogin=jim").start();
 					try {
 						antClient.waitFor(60000);
 					} finally {
 						antClient.killScript();
 					}
-					
+
 				} finally {
 					antNode2.killScript();
 				}

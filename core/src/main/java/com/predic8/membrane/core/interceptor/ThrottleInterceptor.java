@@ -31,16 +31,16 @@ import com.predic8.membrane.core.http.Response;
 @MCElement(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(ThrottleInterceptor.class.getName());
-	
+
 	private long delay = 0;
 	private int maxThreads = 0;
 	private int threads = 0;
 	private int busyDelay = 0;
-	
+
 	public ThrottleInterceptor() {
 		name = "Throttle";
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if ( delay > 0 ) {
@@ -56,19 +56,19 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 				return Outcome.ABORT;
 			}
 		}
-		increaseThreads();		
-		log.debug("thread count increased: "+threads);		
+		increaseThreads();
+		log.debug("thread count increased: "+threads);
 		return Outcome.CONTINUE;
 	}
 
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		decreaseThreads();
 		log.debug("thread count decreased: "+threads);
 		return Outcome.CONTINUE;
 	}
-	
+
 	@Override
 	public void handleAbort(Exchange exchange) {
 		decreaseThreads();
@@ -77,11 +77,11 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 
 
 	private synchronized void decreaseThreads() {
-		--threads;		
+		--threads;
 	}
 
 	private synchronized void increaseThreads() {
-		++threads;		
+		++threads;
 	}
 
 	public long getDelay() {
@@ -111,7 +111,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	public void setMaxThreads(int maxThreads) {
 		this.maxThreads = maxThreads;
 	}
-		
+
 	public int getBusyDelay() {
 		return busyDelay;
 	}
@@ -134,7 +134,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		else
 			return "Not configured.";
 	}
-	
+
 	@Override
 	public String getLongDescription() {
 		StringBuilder sb = new StringBuilder();
@@ -143,8 +143,8 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 		if (maxThreads > 0) {
 			sb.append("Only allows " + maxThreads + " concurrent requests.");
 			if (busyDelay > 0)
-				sb.append("The server waits at most " + 
-				String.format("%.1f", busyDelay/1000.0) + " seconds for enough running requests to terminate, " +
+				sb.append("The server waits at most " +
+						String.format("%.1f", busyDelay/1000.0) + " seconds for enough running requests to terminate, " +
 						"returning an error if the server is still busy after the timeout.");
 		}
 		return sb.toString();

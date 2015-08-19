@@ -48,21 +48,21 @@ public class JSONValidator implements IValidator {
 	private final ResolverMap resourceResolver;
 	private final String jsonSchema;
 	private final ValidatorInterceptor.FailureHandler failureHandler;
-	
+
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
-	
+
 	public JSONValidator(ResolverMap resourceResolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException {
 		this.resourceResolver = resourceResolver;
 		this.jsonSchema = jsonSchema;
 		this.failureHandler = failureHandler;
 		createValidators();
 	}
-	
+
 	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception {
 		return validateMessage(exc, msg.getBodyAsStreamDecoded(), Charset.forName(msg.getCharset()), source);
 	}
-	
+
 	public Outcome validateMessage(Exchange exc, InputStream body, Charset charset, String source) throws Exception {
 		List<String> errors;
 		boolean success = true;
@@ -78,35 +78,35 @@ public class JSONValidator implements IValidator {
 			errors = new ArrayList<String>();
 			errors.add(e.getMessage());
 		}
-        
-        if (success) {
-        	valid.incrementAndGet();
-        	return Outcome.CONTINUE;
-        }
-        
-        if (failureHandler == FailureHandler.VOID) {
-        	StringBuilder message = new StringBuilder();
-        	message.append(source);
-        	message.append(": ");
-        	for (String error : errors) {
-        		message.append(error);
-        		message.append(";");
-        	}
-        	exc.setProperty("error", message.toString());
-        	invalid.incrementAndGet();
-        	return Outcome.ABORT;
-        }
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        JsonGenerator jg = new JsonFactory().createJsonGenerator(baos);
+		if (success) {
+			valid.incrementAndGet();
+			return Outcome.CONTINUE;
+		}
 
-        jg.writeStartObject();
-        jg.writeStringField("source", source);
-        jg.writeArrayFieldStart("errors");
-        for (String message : errors)
-        	jg.writeString(message);
-        jg.close();
-        	
+		if (failureHandler == FailureHandler.VOID) {
+			StringBuilder message = new StringBuilder();
+			message.append(source);
+			message.append(": ");
+			for (String error : errors) {
+				message.append(error);
+				message.append(";");
+			}
+			exc.setProperty("error", message.toString());
+			invalid.incrementAndGet();
+			return Outcome.ABORT;
+		}
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		JsonGenerator jg = new JsonFactory().createGenerator(baos);
+
+		jg.writeStartObject();
+		jg.writeStringField("source", source);
+		jg.writeArrayFieldStart("errors");
+		for (String message : errors)
+			jg.writeString(message);
+		jg.close();
+
 		if (failureHandler != null) {
 			failureHandler.handleFailure(new String(baos.toByteArray(), UTF8), exc);
 			exc.setResponse(Response.badRequest().
@@ -114,17 +114,17 @@ public class JSONValidator implements IValidator {
 					body("{\"error\":\"error\"}".getBytes(UTF8)).
 					build());
 		} else {
-	        exc.setResponse(Response.badRequest().
-	        		contentType("application/json;charset=utf-8").
-	        		body(baos.toByteArray()).
-	        		build());
+			exc.setResponse(Response.badRequest().
+					contentType("application/json;charset=utf-8").
+					body(baos.toByteArray()).
+					build());
 		}
-		
-        invalid.incrementAndGet();
+
+		invalid.incrementAndGet();
 		return Outcome.ABORT;
 	}
 
-	
+
 	private void createValidators() throws IOException {
 		JsonSchemaFactory factory = JsonSchemaFactory.byDefault();
 		JsonNode schemaNode = JsonLoader.fromReader(new InputStreamReader(resourceResolver.resolve(jsonSchema)));

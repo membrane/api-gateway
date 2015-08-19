@@ -26,7 +26,7 @@ import com.predic8.membrane.examples.Process2;
 public class WaitableConsoleEvent {
 	private AbstractConsoleWatcher watcher;
 	private boolean event;
-	
+
 	public WaitableConsoleEvent(final Process2 scriptLauncher, final Predicate<String> predicate) {
 		watcher = new AbstractConsoleWatcher() {
 			@Override
@@ -42,11 +42,11 @@ public class WaitableConsoleEvent {
 		};
 		scriptLauncher.addConsoleWatcher(watcher);
 	}
-	
+
 	public synchronized boolean occurred() {
 		return event;
 	}
-	
+
 	public synchronized void waitFor(long timeout) {
 		long start = System.currentTimeMillis();
 		while (true) {

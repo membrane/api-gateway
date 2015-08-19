@@ -29,7 +29,7 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class LimitInterceptorTest {
-	
+
 	private HttpRouter router;
 
 	@Before
@@ -37,7 +37,7 @@ public class LimitInterceptorTest {
 		router = new HttpRouter();
 
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3026), "", -1);
-		
+
 		LimitInterceptor wi = new LimitInterceptor();
 		wi.setMaxBodyLength(10);
 		wi.setFlow(Flow.Set.REQUEST);
@@ -51,7 +51,7 @@ public class LimitInterceptorTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
 		router.init();
 	}
-	
+
 	@After
 	public void after() throws IOException {
 		router.shutdown();

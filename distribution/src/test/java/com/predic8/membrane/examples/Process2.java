@@ -32,31 +32,31 @@ import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 /**
  * Starts a shell script (Windows batch file or Linux shell script) or
  * executable and later kills it.
- * 
+ *
  * **********************************************************************
  * You might have to run "powershell Set-ExecutionPolicy RemoteSigned" as
  * administrator before using this class.
  * **********************************************************************
- * 
- * 
+ *
+ *
  * Note that ProcessStuff is not synchronized, only ProcessStuff.watchers.
  */
 public class Process2 {
-	
+
 	public static class Builder {
 		private File baseDir;
 		private String id;
 		private String line;
 		private String waitAfterStartFor;
 		private ArrayList<AbstractConsoleWatcher> watchers = new ArrayList<AbstractConsoleWatcher>();
-		
+
 		public Builder() {}
-		
+
 		public Builder in(File baseDir) {
 			this.baseDir = baseDir;
 			return this;
 		}
-		
+
 		public Builder executable(String line) {
 			if (id != null)
 				throw new IllegalStateException("executable or script is already set.");
@@ -64,7 +64,7 @@ public class Process2 {
 			this.line = line;
 			return this;
 		}
-		
+
 		public Builder script(String script) {
 			if (id != null)
 				throw new IllegalStateException("executable or script is already set.");
@@ -72,12 +72,12 @@ public class Process2 {
 			line = isWindows() ? "cmd /c " + script + ".bat" : "bash " + script + ".sh";
 			return this;
 		}
-		
+
 		public Builder withWatcher(AbstractConsoleWatcher watcher) {
 			watchers.add(watcher);
 			return this;
 		}
-		
+
 		public Builder waitAfterStartFor(String s) {
 			waitAfterStartFor = s;
 			return this;
@@ -97,9 +97,9 @@ public class Process2 {
 				throw new IllegalStateException("line not set");
 			return new Process2(baseDir, id, line, watchers, waitAfterStartFor);
 		}
-		
+
 	}
-	
+
 	private final class OutputWatcher extends Thread {
 		private final ProcessStuff ps;
 		private final InputStream is;
@@ -137,18 +137,18 @@ public class Process2 {
 		public Integer pid;
 		public Thread inputReader, errorReader;
 		public final List<AbstractConsoleWatcher> watchers = new ArrayList<AbstractConsoleWatcher>();
-		
+
 		public ProcessStuff(Process p) {
 			this.p = p;
 		}
-		
+
 		public void startOutputWatchers() {
 			inputReader = new OutputWatcher(this, p.getInputStream(), false);
 			inputReader.start();
 			errorReader = new OutputWatcher(this, p.getErrorStream(), true);
 			errorReader.start();
 		}
-		
+
 		public int waitFor(long timeout) throws InterruptedException {
 			int res = Process2.waitFor(p, timeout);
 			inputReader.interrupt();
@@ -156,11 +156,11 @@ public class Process2 {
 			return res;
 		}
 	}
-	
+
 	private ProcessStuff stuff;
-	
+
 	private static Random random = new Random(System.currentTimeMillis());
-	
+
 	private Process2(File exampleDir, String id, String startCommand, List<AbstractConsoleWatcher> consoleWatchers, String waitAfterStartFor) throws IOException, InterruptedException {
 		if (!exampleDir.exists())
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
@@ -169,7 +169,7 @@ public class Process2 {
 		synchronized(random) {
 			pidFile = id + "-" + random.nextInt() + ".pid";
 		}
-		
+
 		ArrayList<String> command = new ArrayList<String>();
 		Charset charset;
 		if (isWindows()) {
@@ -179,8 +179,8 @@ public class Process2 {
 					startCommand+"\r\n"+
 					"exit $LASTEXITCODE");
 			fw.close();
-			charset = Charset.forName("UTF-16"); // powershell writes UTF-16 files by default 
-			
+			charset = Charset.forName("UTF-16"); // powershell writes UTF-16 files by default
+
 			command.add("powershell");
 			command.add(ps1.getAbsolutePath());
 		} else {
@@ -196,24 +196,24 @@ public class Process2 {
 			command.add("setsid"); // start new process group so we can kill it at once
 			command.add(ps1.getAbsolutePath());
 		}
-		
+
 		ProcessBuilder pb = new ProcessBuilder(command).directory(exampleDir);
 		pb.environment().remove("MEMBRANE_HOME");
 		//pb.redirectError(ProcessBuilder.Redirect.PIPE).redirectOutput(Redirect.PIPE).redirectInput(Redirect.PIPE);
 		final Process p = pb.start();
-		
+
 		p.getOutputStream().close();
-		
+
 		ProcessStuff ps = new ProcessStuff(p);
 		stuff = ps;
-		
+
 		for (AbstractConsoleWatcher acw : consoleWatchers)
 			ps.watchers.add(acw);
-		
+
 		SubstringWaitableConsoleEvent afterStartWaiter = null;
 		if (waitAfterStartFor != null)
 			afterStartWaiter = new SubstringWaitableConsoleEvent(this, waitAfterStartFor);
-		
+
 		ps.startOutputWatchers();
 
 		// now wait for the PID to be written
@@ -244,7 +244,7 @@ public class Process2 {
 				fr.close();
 			}
 		}
-		
+
 		if (afterStartWaiter != null)
 			afterStartWaiter.waitFor(60000);
 		Thread.sleep(100);
@@ -253,7 +253,7 @@ public class Process2 {
 	public static boolean isWindows() {
 		return System.getProperty("os.name").contains("Windows");
 	}
-	
+
 	public Process2 addConsoleWatcher(AbstractConsoleWatcher watcher) {
 		synchronized(stuff.watchers) {
 			stuff.watchers.add(watcher);
@@ -270,7 +270,7 @@ public class Process2 {
 
 	public void killScript() throws InterruptedException, IOException {
 		ProcessStuff ps = stuff;
-		
+
 		// start the killer
 		ArrayList<String> command = new ArrayList<String>();
 		if (isWindows()) {
@@ -294,11 +294,11 @@ public class Process2 {
 		//killerStuff.watchers.add(new ConsoleLogger());
 		killerStuff.startOutputWatchers();
 		killerStuff.waitFor(60000);
-		
+
 		// wait for membrane to terminate
 		ps.waitFor(60000);
 	}
-	
+
 	private static int waitFor(Process p, long timeout) {
 		long start = System.currentTimeMillis();
 		while (true) {
@@ -317,7 +317,7 @@ public class Process2 {
 			}
 		}
 	}
-	
+
 	public int waitFor(long timeout) {
 		return waitFor(stuff.p, timeout);
 	}

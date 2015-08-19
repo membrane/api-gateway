@@ -52,7 +52,7 @@ public class Relocator {
 	private final PathRewriter pathRewriter;
 
 	private Map<QName, String> relocatingAttributes = new HashMap<QName, String>();
-	
+
 	private boolean wsdlFound;
 
 	private class ReplaceIterator implements Iterator<Attribute> {
@@ -91,7 +91,7 @@ public class Relocator {
 			attrs.remove();
 		}
 	}
-	
+
 	public interface PathRewriter {
 		String rewrite(String path);
 	}

@@ -18,13 +18,13 @@ public class Session {
 	Node node;
 	long lastUsed;
 	String id;
-	
+
 	Session(String id, Node node) {
 		this.id = id;
 		this.node = node;
 		lastUsed = System.currentTimeMillis();
 	}
-	
+
 	public void used() {
 		lastUsed = System.currentTimeMillis();
 	}
@@ -40,6 +40,6 @@ public class Session {
 	public String getId() {
 		return id;
 	}
-	
-	
+
+
 }

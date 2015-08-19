@@ -20,23 +20,23 @@ import com.predic8.membrane.core.rules.Rule;
 
 
 public interface IExchangesStoreListener{
-	
-//	public void ruleAdded(Rule rule);
-//	
-//	public void removeRule(Rule rule, int rulesLeft);
-	
+
+	//	public void ruleAdded(Rule rule);
+	//
+	//	public void removeRule(Rule rule, int rulesLeft);
+
 	public void addExchange(Rule rule,AbstractExchange exchange);
-	
+
 	public void removeExchange(AbstractExchange exchange);
-	
+
 	public void removeExchanges(Rule parent, AbstractExchange[] exchanges);
-	
+
 	public void removeExchanges(AbstractExchange[] exchanges);
-	
+
 	public void setExchangeFinished(AbstractExchange exchange);
-	
+
 	public void setExchangeStopped(AbstractExchange exchange);
-	
+
 	public void refresh();
-	
+
 }

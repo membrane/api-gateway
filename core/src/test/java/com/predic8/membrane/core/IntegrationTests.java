@@ -41,21 +41,21 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 @RunWith(Suite.class)
 @SuiteClasses({ MethodTest.class, RegExReplaceInterceptorTest.class,
-		Http10Test.class, Http11Test.class,
-		AccessControlInterceptorIntegrationTest.class,
-		LoadBalancingInterceptorTest.class,
-		REST2SOAPInterceptorIntegrationTest.class,
-		InterceptorInvocationTest.class,
-		BasicAuthenticationInterceptorIntegrationTest.class,
-		ViaProxyTest.class, ProxySSLConnectionMethodTest.class,
-		AdjustContentLengthIntegrationTest.class,
-		BoundConnectionTest.class, ExceptionHandlingTest.class,
-		WSDLPublisherTest.class, LimitInterceptorTest.class,
-		SOAPProxyIntegrationTest.class,
-		SpringReferencesTest.class,
-		ResolverTest.class,
-		UnavailableSoapProxyTest.class,
-		IllegalCharactersInURLTest.class })
+	Http10Test.class, Http11Test.class,
+	AccessControlInterceptorIntegrationTest.class,
+	LoadBalancingInterceptorTest.class,
+	REST2SOAPInterceptorIntegrationTest.class,
+	InterceptorInvocationTest.class,
+	BasicAuthenticationInterceptorIntegrationTest.class,
+	ViaProxyTest.class, ProxySSLConnectionMethodTest.class,
+	AdjustContentLengthIntegrationTest.class,
+	BoundConnectionTest.class, ExceptionHandlingTest.class,
+	WSDLPublisherTest.class, LimitInterceptorTest.class,
+	SOAPProxyIntegrationTest.class,
+	SpringReferencesTest.class,
+	ResolverTest.class,
+	UnavailableSoapProxyTest.class,
+	IllegalCharactersInURLTest.class })
 public class IntegrationTests {
 	/*
 	@BeforeClass
@@ -69,5 +69,5 @@ public class IntegrationTests {
 		System.setOut(ps);
 		System.setErr(ps);
 	}
-	*/
+	 */
 }

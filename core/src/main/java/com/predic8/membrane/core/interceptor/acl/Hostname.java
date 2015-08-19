@@ -29,33 +29,33 @@ public class Hostname extends AbstractClientAddress {
 
 	public static final String ELEMENT_NAME = "hostname";
 
-    private static  InetAddress localhostIp4 = initV4();
-    private static InetAddress initV4() {
-        try {
-            //this should probably never fail... unless no network available.
-            return InetAddress.getByName("127.0.0.1");
-        } catch (UnknownHostException e) {
-            e.printStackTrace(); //if you must... maybe logging framework is not set up yet.
-            log.error("Failed resolving localhost IPv4 127.0.0.1!");
-            return null;
-        }
-    }
-    private static final InetAddress localhostIp6 = initV6();
-    private static InetAddress initV6() {
-        try {
-            //could this fail if the machine has no IPv6 support?
-            return InetAddress.getByName("0:0:0:0:0:0:0:1");
-        } catch (UnknownHostException e) {
-            e.printStackTrace(); //if you must... maybe logging framework is not set up yet.
-            log.error("Failed resolving localhost IPv6 0:0:0:0:0:0:0:1!");
-            return null;
-        }
-    }
+	private static  InetAddress localhostIp4 = initV4();
+	private static InetAddress initV4() {
+		try {
+			//this should probably never fail... unless no network available.
+			return InetAddress.getByName("127.0.0.1");
+		} catch (UnknownHostException e) {
+			e.printStackTrace(); //if you must... maybe logging framework is not set up yet.
+			log.error("Failed resolving localhost IPv4 127.0.0.1!");
+			return null;
+		}
+	}
+	private static final InetAddress localhostIp6 = initV6();
+	private static InetAddress initV6() {
+		try {
+			//could this fail if the machine has no IPv6 support?
+			return InetAddress.getByName("0:0:0:0:0:0:0:1");
+		} catch (UnknownHostException e) {
+			e.printStackTrace(); //if you must... maybe logging framework is not set up yet.
+			log.error("Failed resolving localhost IPv6 0:0:0:0:0:0:0:1!");
+			return null;
+		}
+	}
 
 	private boolean reverseDNS;
 	private volatile long lastWarningSlowReverseDNSUsed;
 
-	
+
 	public Hostname(Router router) {
 		super(router);
 	}
@@ -90,7 +90,7 @@ public class Hostname extends AbstractClientAddress {
 			return false;
 		}
 	}
-	
+
 	@Override
 	public void init(Router router) {
 		super.init(router);

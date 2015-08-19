@@ -20,14 +20,14 @@ import javax.xml.stream.XMLStreamWriter;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
 public class Header extends AbstractXmlElement {
-	
+
 	public static final String ELEMENT_NAME = "header";
 
 	private String value;
 	private String name;
-	
+
 	public Header() {}
-	
+
 	public Header(String name, String value) {
 		this.name = name;
 		this.value = value;
@@ -48,7 +48,7 @@ public class Header extends AbstractXmlElement {
 		out.writeStartElement(ELEMENT_NAME);
 		out.writeAttribute("name", name);
 		out.writeCharacters(value);
-		out.writeEndElement();		
+		out.writeEndElement();
 	}
 
 	public String getValue() {
@@ -71,5 +71,5 @@ public class Header extends AbstractXmlElement {
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 }

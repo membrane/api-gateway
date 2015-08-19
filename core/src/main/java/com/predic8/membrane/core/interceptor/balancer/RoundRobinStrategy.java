@@ -25,30 +25,30 @@ import java.util.List;
 public class RoundRobinStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
 	private int last = -1;
-	
+
 	public void done(AbstractExchange exc) {
 	}
 
 	public synchronized Node dispatch(LoadBalancingInterceptor interceptor) throws EmptyNodeListException {
-        //getting a decoupled copy to avoid index out of bounds in case of concurrent modification (dynamic config files reload...)
-        List<Node> endpoints = interceptor.getEndpoints(); //this calls synchronizes access internally.
-        if (endpoints.isEmpty()) {
-            throw new EmptyNodeListException();
-        }
-        int i = incrementAndGet(endpoints.size());
+		//getting a decoupled copy to avoid index out of bounds in case of concurrent modification (dynamic config files reload...)
+		List<Node> endpoints = interceptor.getEndpoints(); //this calls synchronizes access internally.
+		if (endpoints.isEmpty()) {
+			throw new EmptyNodeListException();
+		}
+		int i = incrementAndGet(endpoints.size());
 		return endpoints.get(i);
 	}
 
-    /**
-     * Must be atomic, therefore synchronized.
-     */
-    private synchronized int incrementAndGet(int numEndpoints) {
-        last ++;
-        if (last >= numEndpoints) {
-            last = 0;
-        }
-        return last;
-    }
+	/**
+	 * Must be atomic, therefore synchronized.
+	 */
+	private synchronized int incrementAndGet(int numEndpoints) {
+		last ++;
+		if (last >= numEndpoints) {
+			last = 0;
+		}
+		return last;
+	}
 
 	@Override
 	public void write(XMLStreamWriter out)
@@ -58,7 +58,7 @@ public class RoundRobinStrategy extends AbstractXmlElement implements Dispatchin
 
 		out.writeEndElement();
 	}
-	
+
 	@Override
 	protected String getElementName() {
 		return "roundRobinStrategy";

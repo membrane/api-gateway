@@ -21,7 +21,7 @@ import com.predic8.membrane.core.util.URIFactory;
 
 public class Test {
 	public static void main(String[] args) throws Exception {
-		
+
 		URIFactory uriFactory = new URIFactory();
 		uriFactory.setAllowIllegalCharacters(true);
 		Response res = new HttpClient().call(new Request.Builder().get(uriFactory, "http://localhost:2000/a.{/").buildExchange()).getResponse();

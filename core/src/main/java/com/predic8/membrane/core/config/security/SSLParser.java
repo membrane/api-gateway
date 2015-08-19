@@ -33,7 +33,7 @@ public class SSLParser {
 	private String ciphers;
 	private String clientAuth;
 	private boolean ignoreTimestampCheckFailure;
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof SSLParser))
@@ -47,7 +47,7 @@ public class SSLParser {
 				&& Objects.equal(clientAuth, other.clientAuth)
 				&& Objects.equal(ignoreTimestampCheckFailure, other.ignoreTimestampCheckFailure);
 	}
-	
+
 
 	public KeyStore getKeyStore() {
 		return keyStore;
@@ -66,7 +66,7 @@ public class SSLParser {
 	public void setTrustStore(TrustStore trustStore) {
 		this.trustStore = trustStore;
 	}
-	
+
 	public String getAlgorithm() {
 		return algorithm;
 	}
@@ -80,7 +80,7 @@ public class SSLParser {
 	public void setAlgorithm(String algorithm) {
 		this.algorithm = algorithm;
 	}
-	
+
 	public String getProtocol() {
 		return protocol;
 	}
@@ -120,7 +120,7 @@ public class SSLParser {
 	public void setCiphers(String ciphers) {
 		this.ciphers = ciphers;
 	}
-	
+
 	public String getClientAuth() {
 		return clientAuth;
 	}
@@ -138,7 +138,7 @@ public class SSLParser {
 	public boolean isIgnoreTimestampCheckFailure() {
 		return ignoreTimestampCheckFailure;
 	}
-	
+
 	@MCAttribute
 	public void setIgnoreTimestampCheckFailure(boolean ignoreTimestampCheckFailure) {
 		this.ignoreTimestampCheckFailure = ignoreTimestampCheckFailure;

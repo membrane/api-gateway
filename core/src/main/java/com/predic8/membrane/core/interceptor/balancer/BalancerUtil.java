@@ -91,7 +91,7 @@ public class BalancerUtil {
 	public static void addSession2Cluster(Router router, String balancerName, String sessionId, String cName, Node n) {
 		lookupBalancer(router, balancerName).addSession2Cluster(sessionId, cName, n);
 	}
-	
+
 	public static void removeNode(Router router, String balancerName, String cluster, String host, int port) {
 		lookupBalancer(router, balancerName).removeNode(cluster, host, port);
 	}

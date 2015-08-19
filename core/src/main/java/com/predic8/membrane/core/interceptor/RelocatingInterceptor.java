@@ -33,6 +33,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 	protected String port;
 	protected Relocator.PathRewriter pathRewriter;
 
+	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 
 		if (exc.getRule() instanceof ProxyRule) {
@@ -135,7 +136,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 	public Relocator.PathRewriter getPathRewriter() {
 		return pathRewriter;
 	}
-	
+
 	public void setPathRewriter(Relocator.PathRewriter pathRewriter) {
 		this.pathRewriter = pathRewriter;
 	}

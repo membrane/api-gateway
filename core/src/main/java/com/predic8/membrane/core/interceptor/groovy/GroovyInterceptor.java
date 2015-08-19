@@ -35,89 +35,90 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name = "groovy", mixed = true)
 public class GroovyInterceptor extends AbstractInterceptor {
-    private String src = "";
+	private String src = "";
 
 	private Function<Map<String, Object>, Object> script;
 
-    public GroovyInterceptor() {
-        name = "Groovy";
-    }
+	public GroovyInterceptor() {
+		name = "Groovy";
+	}
 
-    @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        return runScript(exc, Flow.REQUEST);
-    }
+	@Override
+	public Outcome handleRequest(Exchange exc) throws Exception {
+		return runScript(exc, Flow.REQUEST);
+	}
 
-    @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        return runScript(exc, Flow.RESPONSE);
-    }
+	@Override
+	public Outcome handleResponse(Exchange exc) throws Exception {
+		return runScript(exc, Flow.RESPONSE);
+	}
 
-    @Override
-    public void handleAbort(Exchange exc) {
-        try {
-            runScript(exc, Flow.ABORT);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
+	@Override
+	public void handleAbort(Exchange exc) {
+		try {
+			runScript(exc, Flow.ABORT);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
 
-    public void init() {
-        if (router == null)
-            return;
-        if ("".equals(src))
-            return;
+	@Override
+	public void init() {
+		if (router == null)
+			return;
+		if ("".equals(src))
+			return;
 
-        script = new GroovyLanguageSupport().compileScript(router, src);
+		script = new GroovyLanguageSupport().compileScript(router, src);
 
-    }
+	}
 
-    private Outcome runScript(Exchange exc, Flow flow) throws InterruptedException {
-    	HashMap<String, Object> parameters = new HashMap<String, Object>();
-    	parameters.put("exc", exc);
-        parameters.put("flow", flow);
-    	parameters.put("spring", router.getBeanFactory());
-    	
-    	Object res = script.apply(parameters);
-    	
-        if (res instanceof Outcome) {
-            return (Outcome) res;
-        }
+	private Outcome runScript(Exchange exc, Flow flow) throws InterruptedException {
+		HashMap<String, Object> parameters = new HashMap<String, Object>();
+		parameters.put("exc", exc);
+		parameters.put("flow", flow);
+		parameters.put("spring", router.getBeanFactory());
 
-        if (res instanceof Response) {
-            exc.setResponse((Response) res);
-            return Outcome.RETURN;
-        }
+		Object res = script.apply(parameters);
 
-        if (res instanceof Request) {
-            exc.setRequest((Request) res);
-        }
-        return Outcome.CONTINUE;
+		if (res instanceof Outcome) {
+			return (Outcome) res;
+		}
 
-    }
+		if (res instanceof Response) {
+			exc.setResponse((Response) res);
+			return Outcome.RETURN;
+		}
 
-    public String getSrc() {
-        return src;
-    }
+		if (res instanceof Request) {
+			exc.setRequest((Request) res);
+		}
+		return Outcome.CONTINUE;
 
-    @MCTextContent
-    public void setSrc(String src) {
-        this.src = src;
-    }
+	}
 
-    @Override
-    public String getShortDescription() {
-        return "Executes a groovy script.";
-    }
+	public String getSrc() {
+		return src;
+	}
 
-    @Override
-    public String getLongDescription() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(TextUtil.removeFinalChar(getShortDescription()));
-        sb.append(":<br/><pre style=\"overflow-x:auto\">");
-        sb.append(StringEscapeUtils.escapeHtml(TextUtil.removeCommonLeadingIndentation(src)));
-        sb.append("</pre>");
-        return sb.toString();
-    }
+	@MCTextContent
+	public void setSrc(String src) {
+		this.src = src;
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Executes a groovy script.";
+	}
+
+	@Override
+	public String getLongDescription() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(TextUtil.removeFinalChar(getShortDescription()));
+		sb.append(":<br/><pre style=\"overflow-x:auto\">");
+		sb.append(StringEscapeUtils.escapeHtml(TextUtil.removeCommonLeadingIndentation(src)));
+		sb.append("</pre>");
+		return sb.toString();
+	}
 
 }

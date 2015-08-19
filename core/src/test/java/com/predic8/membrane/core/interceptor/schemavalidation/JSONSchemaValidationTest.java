@@ -54,12 +54,12 @@ public class JSONSchemaValidationTest {
 	public void run2() throws Exception {
 		validate("classpath:/validation/jsonschema/schema2000.json", "/validation/jsonschema/bad2000.json", false);
 	}
-	
+
 	@Test
 	public void run3() throws Exception {
 		validate("classpath:/validation/jsonschema/schema2001.json", "/validation/jsonschema/good2001.json", true);
 	}
-	
+
 	@Test
 	public void run4() throws Exception {
 		validate("classpath:/validation/jsonschema/schema2001.json", "/validation/jsonschema/bad2001.json", false);

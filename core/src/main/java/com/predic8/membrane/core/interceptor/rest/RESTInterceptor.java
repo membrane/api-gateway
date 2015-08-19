@@ -39,15 +39,15 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	private boolean readOnly;
 
 	private final JsonFactory jsonFactory = new JsonFactory(); // thread-safe after configuration
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log.debug("request: " + exc.getOriginalRequestUri());
 
 		exc.setTimeReqSent(System.currentTimeMillis());
-		
+
 		Outcome o = dispatchRequest(exc);
-		
+
 		exc.setReceived();
 		exc.setTimeResReceived(System.currentTimeMillis());
 
@@ -57,10 +57,10 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	protected Response json(JSONContent content) throws Exception {
 		StringWriter jsonTxt = new StringWriter();
 
-		JsonGenerator gen = jsonFactory.createJsonGenerator(jsonTxt);
+		JsonGenerator gen = jsonFactory.createGenerator(jsonTxt);
 		content.write(gen);
 		gen.flush();
-		
+
 		return Response.ok()
 				.header(Header.CONTENT_TYPE, MimeType.APPLICATION_JSON_UTF8)
 				.body(jsonTxt.toString()).build();
@@ -119,7 +119,7 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	public boolean isReadOnly() {
 		return readOnly;
 	}
-	
+
 	public void setReadOnly(boolean readOnly) {
 		this.readOnly = readOnly;
 	}

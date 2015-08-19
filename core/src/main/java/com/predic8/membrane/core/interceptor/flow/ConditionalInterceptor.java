@@ -37,7 +37,7 @@ import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
  * <p>
  * 	The "if" interceptor supports conditional execution of a group of executors.
  * </p>
- * 
+ *
  * <p>
  * Note that this is a draft implementation only: Design decissions are still pending.
  * </p>
@@ -50,19 +50,19 @@ import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
 @MCElement(name="if")
 public class ConditionalInterceptor extends AbstractFlowInterceptor {
 	private static final Log log = LogFactory.getLog(InterceptorFlowController.class);
-	
+
 	// configuration
 	private String test;
-	private LanguageType language = LanguageType.GROOVY; 
+	private LanguageType language = LanguageType.GROOVY;
 
 	// state
 	private final InterceptorFlowController interceptorFlowController = new InterceptorFlowController();
 	private Function<Map<String, Object>, Boolean> condition;
-	
+
 	public enum LanguageType {
 		GROOVY,
 	}
-	
+
 	public ConditionalInterceptor() {
 		name = "Conditional Interceptor";
 	}
@@ -73,13 +73,13 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 		LanguageSupport ls = new GroovyLanguageSupport();
 		condition = ls.compileExpression(router, test);
 	}
-	
+
 	private boolean testCondition(Exchange exc) {
 		HashMap<String, Object> parameters = new HashMap<String, Object>();
 		parameters.put("exc", exc);
 		return condition.apply(parameters);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exchange) throws Exception {
 		boolean logDebug = log.isDebugEnabled();
@@ -87,13 +87,13 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 		boolean handleRequest = testCondition(exchange);
 		if (logDebug)
 			log.debug("ConditionalInterceptor: expression evaluated to " + handleRequest);
-		
+
 		if (handleRequest) {
 			return interceptorFlowController.invokeRequestHandlers(exchange, getInterceptors());
 		} else
 			return Outcome.CONTINUE;
 	}
-	
+
 	public LanguageType getLanguage() {
 		return language;
 	}
@@ -105,7 +105,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 	public void setLanguage(LanguageType language) {
 		this.language = language;
 	}
-	
+
 	public String getTest() {
 		return test;
 	}

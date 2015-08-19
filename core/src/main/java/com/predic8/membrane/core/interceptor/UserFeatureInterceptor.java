@@ -22,7 +22,7 @@ import com.predic8.membrane.core.rules.Rule;
 
 /**
  * Handles features that are user-configured in proxies.xml .
- * 
+ *
  * Not that we do not implement handleResponse() as this will be
  * automatically done by the stack-unwinding in {@link InterceptorFlowController}.
  */
@@ -41,7 +41,7 @@ public class UserFeatureInterceptor extends AbstractInterceptor {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Rule predecessorRule = exc.getRule();
 		Outcome outcome = flowController.invokeRequestHandlers(exc, predecessorRule.getInterceptors());
-		
+
 		while (isTargetInternalAndContinue(exc, outcome)) {
 			log.debug("routing to serviceProxy with name: " + getServiceProxyName(exc));
 

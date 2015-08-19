@@ -32,7 +32,7 @@ public class HotDeploymentThread extends Thread {
 	private List<HotDeploymentThread.FileInfo> files = new ArrayList<HotDeploymentThread.FileInfo>();
 	protected AbstractRefreshableApplicationContext applicationContext;
 	private boolean reloading;
-	
+
 	private static class FileInfo {
 		public String file;
 		public long lastModified;
@@ -79,19 +79,19 @@ public class HotDeploymentThread extends Thread {
 
 				if (applicationContext instanceof CheckableBeanFactory)
 					((CheckableBeanFactory)applicationContext).checkForInvalidBeanDefinitions();
-				
+
 				reload();
-				
+
 				break;
 			} catch (InvalidConfigurationException e) {
 				log.error(e.getMessage());
 				log.error("Application context was NOT restarted. Please fix the error in the configuration file.");
 				updateLastModified();
 			} catch (InterruptedException e) {
-			    // #162 HotDeploymentThread don't stop on Interrupt.
-			    // InterruptedException clears interrupt flag. see javadoc Thread.interrupt();
-			    // So reset it.
-			    interrupt(); 
+				// #162 HotDeploymentThread don't stop on Interrupt.
+				// InterruptedException clears interrupt flag. see javadoc Thread.interrupt();
+				// So reset it.
+				interrupt();
 			} catch (Exception e) {
 				log.error("Could not redeploy.", e);
 				updateLastModified();
@@ -108,7 +108,7 @@ public class HotDeploymentThread extends Thread {
 		applicationContext.refresh();
 		applicationContext.start();
 	}
-	
+
 	public void stopASAP() {
 		synchronized (this) {
 			if (reloading)

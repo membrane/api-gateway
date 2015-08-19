@@ -23,17 +23,17 @@ import org.junit.Test;
 import com.predic8.membrane.core.exchange.Exchange;
 
 public class ExchangeTest {
-	
+
 	@Test
 	public void testStringProperties() throws Exception {
 		Exchange exc = new Exchange(null);
-		
+
 		exc.setProperty("Integer", new Integer(906090));
 		exc.setProperty("Hallo", "Hallo");
 		exc.setProperty("Title", "Meteor");
-		
+
 		Map<String, String> props = exc.getStringProperties();
-		
+
 		Assert.assertTrue(props.containsKey("Hallo"));
 		Assert.assertTrue(props.containsKey("Title"));
 		Assert.assertFalse(props.containsKey("Integer"));

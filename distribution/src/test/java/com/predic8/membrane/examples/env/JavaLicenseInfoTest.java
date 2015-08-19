@@ -24,19 +24,19 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class JavaLicenseInfoTest {
-	
+
 	private List<File> files = new ArrayList<File>();
-	
+
 	@Before
 	public void precondition() {
 		Assert.assertTrue(new File("../pom.xml").exists());
 		Assert.assertTrue(new File("pom.xml").exists());
 	}
-	
+
 	@Test
 	public void doit() throws IOException {
 		recurse(new File("..").getCanonicalFile());
-		
+
 		if (!files.isEmpty()) {
 			StringBuilder sb = new StringBuilder();
 			sb.append("Missing license information in ");
@@ -71,17 +71,17 @@ public class JavaLicenseInfoTest {
 
 	private void handle(File file) throws IOException {
 		String content = FileUtils.readFileToString(file);
-		
-		
+
+
 		//if (content.contains("Copyright"))
-			//return;
-		
+		//return;
+
 		if (content.contains("Apache License"))
 			return;
-		
+
 		if (content.contains("Copyright (c) 2013, Oracle and/or its affiliates"))
 			return;
-		
+
 		files.add(file);
 	}
 

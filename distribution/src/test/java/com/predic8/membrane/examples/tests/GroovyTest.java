@@ -30,11 +30,11 @@ public class GroovyTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		Process2 sl = new Process2.Builder().in(getExampleDir("groovy"))
-		        //.withWatcher(new com.predic8.membrane.examples.util.ConsoleLogger())
-		        .script("service-proxy").waitForMembrane().start();
+				//.withWatcher(new com.predic8.membrane.examples.util.ConsoleLogger())
+				.script("service-proxy").waitForMembrane().start();
 		try {
-			SubstringWaitableConsoleEvent groovyCalled = 
-			        new SubstringWaitableConsoleEvent(sl, "X-Groovy header added with value :Groovy interceptor");
+			SubstringWaitableConsoleEvent groovyCalled =
+					new SubstringWaitableConsoleEvent(sl, "X-Groovy header added with value :Groovy interceptor");
 			getAndAssert200("http://localhost:2000/");
 			assertTrue(groovyCalled.occurred());
 		} finally {

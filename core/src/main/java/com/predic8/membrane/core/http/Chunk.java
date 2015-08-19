@@ -22,16 +22,16 @@ import com.predic8.membrane.core.Constants;
 
 /**
  * A chunk of a HTTP message body.
- * 
+ *
  * Also see http://en.wikipedia.org/wiki/Chunked_transfer_encoding .
- * 
+ *
  * Used (independently of whether "Transfer-Encoding: chunked" is actually
  * present) to store the message body's data.
  */
 public class Chunk {
 
 	private final byte[] content;
-	
+
 	public Chunk(byte[] content) {
 		this.content = content;
 	}
@@ -39,18 +39,18 @@ public class Chunk {
 	public byte[] getContent() {
 		return content;
 	}
-	
+
 	public int getLength() {
 		if (content == null ) {
 			return 0;
 		}
 		return content.length;
 	}
-	
+
 	public void write(OutputStream out) throws IOException {
-		if (content == null || out == null) 
+		if (content == null || out == null)
 			return;
-		
+
 		out.write(getLengthBytes());
 		out.write(Constants.CRLF_BYTES);
 		out.write(getContent(), 0, getLength());
@@ -82,5 +82,5 @@ public class Chunk {
 	private byte[] getLengthBytes() {
 		return Long.toHexString(getLength()).getBytes(Constants.UTF_8_CHARSET);
 	}
-	
+
 }

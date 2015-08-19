@@ -26,50 +26,50 @@ import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
 
 public interface ExchangeStore {
-	
-	
-	public void addExchangesStoreListener(IExchangesStoreListener viewer);	
-	
-	public void removeExchangesStoreListener(IExchangesStoreListener viewer);	
-	
+
+
+	public void addExchangesStoreListener(IExchangesStoreListener viewer);
+
+	public void removeExchangesStoreListener(IExchangesStoreListener viewer);
+
 	public void refreshExchangeStoreListeners();
-	
+
 	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange);
-	
+
 	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange);
-		
+
 	/**
 	 * Adds the current state of the exchange to the store.
-	 * 
+	 *
 	 * Implementations should take a snapshot of the current state of the request (or response) headers and register a
 	 * body observer in which they will be called back as soon as the body has fully been received.
-	 * 
+	 *
 	 * If flow==REQUEST, the request is added. Elsewise, the response is added (if present).
 	 */
 	public void snap(AbstractExchange exchange, Flow flow);
-	
+
 	public void remove(AbstractExchange exchange);
 
 	public void removeAllExchanges(Rule rule);
-	
+
 	public void removeAllExchanges(AbstractExchange[] exchanges);
-	
+
 	public AbstractExchange[] getExchanges(RuleKey ruleKey);
-	
+
 	public int getNumberOfExchanges(RuleKey ruleKey);
-	
+
 	public StatisticCollector getStatistics(RuleKey ruleKey);
-	
+
 	public Object[] getAllExchanges();
-	
+
 	public List<AbstractExchange> getAllExchangesAsList();
 
 	public AbstractExchange getExchangeById(int id);
-	
+
 	public void init() throws Exception;
-	
+
 	public List<? extends ClientStatistics> getClientStatistics();
-	
+
 	public void collect(ExchangeCollector col);
 
 	long getLastModified();

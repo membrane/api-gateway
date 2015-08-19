@@ -30,20 +30,20 @@ import com.predic8.membrane.core.http.Message;
 public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
 	private static Log log = LogFactory.getLog(XMLElementSessionIdExtractor.class.getName());
-	
+
 	private String localName;
 	private String namespace;
 	private XMLInputFactory fac = XMLInputFactory.newInstance();
-	
+
 	@Override
 	public String getSessionId(Message msg) throws Exception {
 		if ( !msg.isXML() ) {
 			log.debug("Didn't search a XML element in none XML message.");
 			return null;
 		}
-		
+
 		log.debug("searching for sessionid");
-		
+
 		fac.setProperty("javax.xml.stream.isNamespaceAware", namespace != null);
 		XMLStreamReader reader = new FixedStreamReader(fac.createXMLStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
 		while ( reader.hasNext() ) {
@@ -52,17 +52,17 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 				log.debug("sessionid element found");
 				return reader.getElementText();
 			}
-				
+
 		}
-			
+
 		log.debug("no sessionid element found");
 		return null;
 	}
 
 	private boolean isSessionIdElement(XMLStreamReader reader) {
 		return reader.isStartElement() &&
-			localName.equals(reader.getLocalName()) &&
-			(namespace == null || namespace.equals(reader.getNamespaceURI()));
+				localName.equals(reader.getLocalName()) &&
+				(namespace == null || namespace.equals(reader.getNamespaceURI()));
 	}
 
 	public String getLocalName() {
@@ -93,6 +93,7 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 		this.namespace = namespace;
 	}
 
+	@Override
 	public void write(XMLStreamWriter out)
 			throws XMLStreamException {
 
@@ -103,18 +104,18 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
 		out.writeEndElement();
 	}
-	
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token)
 			throws XMLStreamException {
 		localName = token.getAttributeValue("", "localName");
 		namespace = token.getAttributeValue("", "namespace");
 	}
-	
+
 	@Override
 	protected String getElementName() {
 		return "sessionIdExtractor";
 	}
-		
-	
+
+
 }

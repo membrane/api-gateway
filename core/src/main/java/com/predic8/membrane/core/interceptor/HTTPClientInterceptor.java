@@ -44,9 +44,9 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	private boolean failOverOn5XX;
 	private boolean adjustHostHeader = true;
 	private HttpClientConfiguration httpClientConfig;
-	
+
 	private HttpClient hc;
-	
+
 	public HTTPClientInterceptor() {
 		name="HTTPClient";
 		setFlow(Flow.Set.REQUEST);
@@ -55,7 +55,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		exc.blockRequestIfNeeded();
-		
+
 		try {
 			hc.call(exc, adjustHostHeader, failOverOn5XX);
 			return Outcome.RETURN;
@@ -66,13 +66,13 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		} catch (UnknownHostException e) {
 			exc.setResponse(Response.internalServerError("Target host " + getDestination(exc) + " is unknown. DNS was unable to resolve host name.").build());
 			return Outcome.ABORT;
-		}						
+		}
 	}
 
 	private String getDestination(Exchange exc) {
 		return exc.getDestinations().get(0);
 	}
-	
+
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
@@ -84,7 +84,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		hc.setStreamPumpStats(getRouter().getStatistics().getStreamPumpStats());
 	}
 
-	
+
 	public boolean isFailOverOn5XX() {
 		return failOverOn5XX;
 	}
@@ -99,11 +99,11 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	public void setFailOverOn5XX(boolean failOverOn5XX) {
 		this.failOverOn5XX = failOverOn5XX;
 	}
-	
+
 	public boolean isAdjustHostHeader() {
 		return adjustHostHeader;
 	}
-	
+
 	/**
 	 * @description Whether the HTTP "Host" header should be set before the response will be forwarded to its destination.
 	 * @explanation Set this to <i>false</i>, if the incoming HTTP "Host" header should not be modified.
@@ -113,11 +113,11 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	public void setAdjustHostHeader(boolean adjustHostHeader) {
 		this.adjustHostHeader = adjustHostHeader;
 	}
-	
+
 	public HttpClientConfiguration getHttpClientConfig() {
 		return httpClientConfig;
 	}
-	
+
 	@MCChildElement
 	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
 		this.httpClientConfig = httpClientConfig;

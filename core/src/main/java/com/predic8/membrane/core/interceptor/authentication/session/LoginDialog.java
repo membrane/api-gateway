@@ -52,9 +52,9 @@ public class LoginDialog {
 	private final TokenProvider tokenProvider;
 	private final SessionManager sessionManager;
 	private final AccountBlocker accountBlocker;
-	
+
 	private final WebServerInterceptor wsi;
-	
+
 	public LoginDialog(
 			UserDataProvider userDataProvider,
 			TokenProvider tokenProvider,
@@ -71,7 +71,7 @@ public class LoginDialog {
 		this.sessionManager = sessionManager;
 		this.accountBlocker = accountBlocker;
 		this.message = message;
-		
+
 		wsi = new WebServerInterceptor();
 		wsi.setDocBase(dialogLocation);
 	}
@@ -81,7 +81,7 @@ public class LoginDialog {
 		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
 		wsi.init(router);
 	}
-	
+
 	public boolean isLoginRequest(Exchange exc) {
 		URI uri = uriFactory.createWithoutException(exc.getRequest().getUri());
 		return uri.getPath().startsWith(path);
@@ -89,18 +89,18 @@ public class LoginDialog {
 
 	private void showPage(Exchange exc, int page, Object... params) throws Exception {
 		String target = StringUtils.defaultString(URLParamUtil.getParams(uriFactory, exc).get("target"));
-		
+
 		exc.getDestinations().set(0, "/index.html");
 		wsi.handleRequest(exc);
-		
+
 		Engine engine = new Engine();
 		engine.setErrorHandler(new ErrorHandler() {
-			
+
 			@Override
 			public void error(String arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
 				log.error(arg0);
 			}
-			
+
 			@Override
 			public void error(String arg0, Token arg1) throws ParseException {
 				log.error(arg0);
@@ -113,23 +113,23 @@ public class LoginDialog {
 			model.put("token", true);
 		for (int i = 0; i < params.length; i+=2)
 			model.put((String)params[i], params[i+1]);
-		
+
 		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBody().toString(), model).getBytes(Constants.UTF_8_CHARSET));
 	}
 
 	public void handleLoginRequest(Exchange exc) throws Exception {
 		Session s = sessionManager.getSession(exc.getRequest());
-		
+
 		String uri = exc.getRequest().getUri().substring(path.length()-1);
 		if (uri.indexOf('?') >= 0)
 			uri = uri.substring(0, uri.indexOf('?'));
 		exc.getDestinations().set(0, uri);
-		
+
 		if (uri.equals("/logout")) {
 			if (s != null)
 				s.clear();
 			exc.setResponse(Response.redirect(path, false).body("").build());
-		} else if (uri.equals("/")) { 
+		} else if (uri.equals("/")) {
 			if (s == null || !s.isPreAuthorized()) {
 				if (exc.getRequest().getMethod().equals("POST")) {
 					Map<String, String> userAttributes;
@@ -207,7 +207,7 @@ public class LoginDialog {
 			wsi.handleRequest(exc);
 		}
 	}
-	
+
 	public Outcome redirectToLogin(Exchange exc) throws MalformedURLException, UnsupportedEncodingException {
 		exc.setResponse(Response.
 				redirect(path + "?target=" + URLEncoder.encode(exc.getOriginalRequestUri(), "UTF-8"), false).

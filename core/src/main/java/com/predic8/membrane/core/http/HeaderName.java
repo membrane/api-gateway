@@ -20,21 +20,22 @@ package com.predic8.membrane.core.http;
  * not case sensitive (as per the HTTP spec).
  */
 public class HeaderName {
-	
+
 	private final String name;
-	
+
 	public HeaderName(String name) {
 		this.name = name;
 	}
-	
+
 	public HeaderName(HeaderName headerName) {
 		name = headerName.name;
 	}
 
+	@Override
 	public boolean equals(Object obj) {
 		if(!(obj instanceof HeaderName))
 			return false;
-		
+
 		return name.equalsIgnoreCase(obj.toString());
 	}
 
@@ -45,11 +46,13 @@ public class HeaderName {
 	public boolean equals(String s) {
 		return name.equalsIgnoreCase(s);
 	}
-	
+
+	@Override
 	public int hashCode() {
 		return name.toLowerCase().hashCode();
 	}
-	
+
+	@Override
 	public String toString() {
 		return name;
 	}

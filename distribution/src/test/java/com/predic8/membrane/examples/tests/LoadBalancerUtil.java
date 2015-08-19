@@ -55,7 +55,7 @@ public class LoadBalancerUtil {
 			post.releaseConnection();
 		}
 	}
-	
+
 	public static void assertNodeStatus(String adminPageHTML, String nodeHost, int nodePort,
 			String expectedNodeStatus) {
 		for (String row : adminPageHTML.split("<tr>")) {

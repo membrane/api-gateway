@@ -34,7 +34,7 @@ public class ByteUtil {
 	public static byte[] readByteArray(InputStream in, int length) throws IOException {
 		if (length < 0)
 			return getByteArrayData(in);
-		
+
 		byte[] content = new byte[length];
 		int offset = 0;
 		int count = 0;
@@ -70,9 +70,9 @@ public class ByteUtil {
 		decompressor.setInput(compressedData);
 
 		byte[] buf = new byte[1024];
-		
+
 		List<Chunk> chunks = new ArrayList<Chunk>();
-		
+
 		while (!decompressor.finished()) {
 			int count;
 			try {
@@ -92,23 +92,23 @@ public class ByteUtil {
 				chunks.add(chunk);
 			}
 		}
-		
+
 		log.debug("Number of decompressed chunks: " + chunks.size());
 		if (chunks.size() > 0) {
-			
+
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			
+
 			for (Chunk chunk : chunks) {
 				chunk.write(bos);
 			}
-			
+
 			try {
 				bos.close();
 			} catch (IOException e) {
 			}
-			return bos.toByteArray();	
-		} 
-		
+			return bos.toByteArray();
+		}
+
 		return null;
 	}
 

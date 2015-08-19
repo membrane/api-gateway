@@ -26,27 +26,27 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 public class JSONBeautifier {
 
 	private ObjectMapper objectMapper = new ObjectMapper();
-	
+
 	private boolean indentOutput = true;
-	
+
 	private boolean allowedUnquotedFieldNames = true;
-	
+
 	private boolean quoteFieldNames = false;
-	
+
 	private boolean failOnUnknownProperties = true;
-	
+
 	public String beautify(String content) throws IOException {
-	    JsonNode tree = objectMapper.readTree(content);
-	    return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tree);
+		JsonNode tree = objectMapper.readTree(content);
+		return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tree);
 	}
 
 	public void configure() {
 		objectMapper.configure(SerializationFeature.INDENT_OUTPUT, indentOutput);
-	    objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, allowedUnquotedFieldNames);
-	    objectMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, quoteFieldNames);
-	    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
+		objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, allowedUnquotedFieldNames);
+		objectMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, quoteFieldNames);
+		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
 	}
-	
+
 	public void setIndentOutput(boolean indentOutput) {
 		this.indentOutput = indentOutput;
 	}
@@ -58,9 +58,9 @@ public class JSONBeautifier {
 	public void setQuoteFieldNames(boolean quoteFieldNames) {
 		this.quoteFieldNames = quoteFieldNames;
 	}
-	
+
 	public void setFailOnUnknownProperties(boolean failOnUnknownProperties) {
 		this.failOnUnknownProperties = failOnUnknownProperties;
 	}
-	
+
 }

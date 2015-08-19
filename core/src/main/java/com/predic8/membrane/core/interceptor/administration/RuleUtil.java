@@ -23,7 +23,7 @@ public class RuleUtil {
 	public static String getRuleIdentifier(Rule rule) {
 		return rule.toString() + (rule.getKey().getPort() == -1 ? "" : ":" + rule.getKey().getPort());
 	}
-	
+
 	public static Rule findRuleByIdentifier(Router router, String name) throws Exception {
 		List<Rule> rules = router.getRuleManager().getRules();
 		for (Rule rule : rules) {
@@ -31,5 +31,5 @@ public class RuleUtil {
 		}
 		return null;
 	}
-	
+
 }

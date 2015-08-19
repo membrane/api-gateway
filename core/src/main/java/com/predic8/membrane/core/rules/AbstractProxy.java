@@ -45,7 +45,7 @@ public abstract class AbstractProxy implements Rule {
 	 * Used to determine the IP address for outgoing connections
 	 */
 	protected String localHost;
-	
+
 	/**
 	 * Map<Status Code, StatisticCollector>
 	 */
@@ -55,7 +55,7 @@ public abstract class AbstractProxy implements Rule {
 	private String error;
 
 	protected Router router;
-	
+
 	public AbstractProxy() {
 	}
 
@@ -65,7 +65,7 @@ public abstract class AbstractProxy implements Rule {
 
 	@Override
 	public String toString() { // TODO toString, getName, setName und name=""
-								// Initialisierung vereinheitlichen.
+		// Initialisierung vereinheitlichen.
 		return getName();
 	}
 
@@ -170,7 +170,7 @@ public abstract class AbstractProxy implements Rule {
 	public SSLProvider getSslOutboundContext() {
 		return null;
 	}
-	
+
 	/**
 	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
 	 */
@@ -189,23 +189,23 @@ public abstract class AbstractProxy implements Rule {
 			error = e.getMessage();
 		}
 	}
-	
+
 	public abstract void init() throws Exception;
-	
+
 	public boolean isTargetAdjustHostHeader() {
 		return false;
 	}
-	
+
 	@Override
 	public boolean isActive() {
 		return active;
 	}
-	
+
 	@Override
 	public String getErrorState() {
 		return error;
 	}
-	
+
 	@Override
 	public AbstractProxy clone() throws CloneNotSupportedException {
 		AbstractProxy clone = (AbstractProxy) super.clone();

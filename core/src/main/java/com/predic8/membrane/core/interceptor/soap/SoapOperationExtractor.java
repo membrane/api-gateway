@@ -32,7 +32,7 @@ import com.predic8.membrane.core.multipart.XOPReconstitutor;
 public class SoapOperationExtractor extends AbstractInterceptor {
 	public static final String SOAP_OPERATION = "XSLT_SOAP_OPERATION";
 	public static final String SOAP_OPERATION_NS = "XSLT_SOAP_OPERATION_NS";
-	
+
 	private static final XOPReconstitutor xopr = new XOPReconstitutor();
 	private static final XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
@@ -41,9 +41,9 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 	}
 
 	public SoapOperationExtractor() {
-		name = "SOAP Operation Extractor";		
+		name = "SOAP Operation Extractor";
 	}
-		
+
 	@Override
 	public String getLongDescription() {
 		return getShortDescription();
@@ -56,19 +56,19 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		
+
 		if ( exc.getRequest().isBodyEmpty() && !exc.getRequest().isXML()) {
 			return Outcome.CONTINUE;
 		}
-		
+
 		XMLStreamReader reader = getReader(exc);
-		
+
 		if (isNotSoap(reader)) {
 			return Outcome.CONTINUE;
 		}
-		
+
 		moveToSoapBody(reader);
-		
+
 		extractAndSaveNameAndNS(exc, reader);
 
 		return Outcome.CONTINUE;
@@ -82,9 +82,9 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 			}
 		}
 	}
-	
+
 	private XMLStreamReader getReader(Exchange exc) throws XMLStreamException,
-			FactoryConfigurationError, IOException {
+	FactoryConfigurationError, IOException {
 		synchronized (xmlInputFactory) {
 			return xmlInputFactory.createXMLStreamReader(xopr.reconstituteIfNecessary(exc.getRequest()));
 		}
@@ -110,10 +110,10 @@ public class SoapOperationExtractor extends AbstractInterceptor {
 
 	private boolean hasNextAndIsNotBody(XMLStreamReader reader)
 			throws XMLStreamException {
-		return reader.hasNext() && 
-			   !( reader.isStartElement() &&
-			     "Body".equals(reader.getName().getLocalPart()) &&
-			     Constants.SOAP11_NS.equals(reader.getNamespaceURI())
-			    );
-	}	
+		return reader.hasNext() &&
+				!( reader.isStartElement() &&
+						"Body".equals(reader.getName().getLocalPart()) &&
+						Constants.SOAP11_NS.equals(reader.getNamespaceURI())
+						);
+	}
 }

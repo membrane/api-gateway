@@ -41,7 +41,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private int maxSize = 1000000;
 	private int currentSize;
-	
+
 	/**
 	 * EVERY time that exchanges or inflight is changed, modify() MUST be called afterwards
 	 */
@@ -52,7 +52,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	public void snap(final AbstractExchange exc, final Flow flow) {
 		// TODO: [fix me] support multi-snap
-		// TODO: [fix me] snap message headers and request *here*, not in observer/response 
+		// TODO: [fix me] snap message headers and request *here*, not in observer/response
 
 		if (flow == Flow.REQUEST) {
 			exc.getRequest().addObserver(
@@ -73,7 +73,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 							modify();
 						}
 					}
-			);
+					);
 			return;
 		}
 
@@ -99,7 +99,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	private synchronized void snapInternal(AbstractExchange exc, Flow flow) {
 		if (exc.getHeapSizeEstimation() > maxSize)
 			return;
@@ -115,7 +115,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		exchanges.remove(exc);
 		modify();
 	}
-	
+
 	public synchronized void removeAllExchanges(Rule rule) {
 		exchanges.removeAll(getExchangeList(rule.getKey()));
 		modify();
@@ -146,15 +146,15 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			return statistics;
 
 		for (int i = 0; i < exchangesList.size(); i++)
-			statistics.collectFrom(exchangesList.get(i));			
-		
+			statistics.collectFrom(exchangesList.get(i));
+
 		return statistics;
 	}
 
 	public synchronized Object[] getAllExchanges() {
 		return exchanges.toArray(new AbstractExchange[0]);
 	}
-	
+
 	public synchronized List<AbstractExchange> getAllExchangesAsList() {
 		List<AbstractExchange> ret = new LinkedList<AbstractExchange>();
 
@@ -180,8 +180,9 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		exchanges.removeAll(Arrays.asList(candidates));
 		modify();
 	}
-	
-	
+
+
+	@Override
 	public synchronized AbstractExchange getExchangeById(int id) {
 		for (AbstractExchange exc : getAllExchangesAsList()) {
 			if (exc.hashCode() == id) {
@@ -194,7 +195,8 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 			}
 		return null;
 	}
-	
+
+	@Override
 	public synchronized List<? extends ClientStatistics> getClientStatistics() {
 		Map<String, ClientStatisticsCollector> clients = new HashMap<String, ClientStatisticsCollector>();
 
@@ -206,11 +208,11 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		}
 		return new ArrayList<ClientStatistics>(clients.values());
 	}
-	
+
 	public synchronized int getCurrentSize() {
 		return currentSize;
 	}
-	
+
 	public synchronized Long getOldestTimeResSent() {
 		AbstractExchange exc = exchanges.peek();
 		return exc == null ? null : exc.getTimeResSent();
@@ -239,7 +241,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		lastModification = System.currentTimeMillis();
 		notifyAll();
 	}
-	
+
 	@Override
 	public synchronized long getLastModified() {
 		return lastModification;

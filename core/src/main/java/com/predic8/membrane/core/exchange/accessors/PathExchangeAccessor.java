@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 public class PathExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Path";
-	
+
 	public Object get(AbstractExchange exc) {
 		if (exc == null || exc.getRequest() == null)
 			return "";

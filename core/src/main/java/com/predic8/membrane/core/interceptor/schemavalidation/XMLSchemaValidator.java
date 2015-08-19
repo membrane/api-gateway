@@ -41,11 +41,12 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		super(resourceResolver, location, failureHandler);
 	}
-	
+
+	@Override
 	protected List<Schema> getSchemas() {
 		return null; // never gets called
 	}
-	
+
 	@Override
 	protected List<Validator> createValidators() throws Exception {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
@@ -61,10 +62,11 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 		return validators;
 	}
 
+	@Override
 	protected Source getMessageBody(InputStream input) throws Exception {
 		return new StreamSource(input);
 	}
-	
+
 	@Override
 	protected Response createErrorResponse(String message) {
 		return Response.
@@ -78,7 +80,7 @@ public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
 	protected boolean isFault(Message msg) {
 		return false;
 	}
-	
+
 	@Override
 	protected String getPreliminaryError(XOPReconstitutor xopr, Message msg) {
 		return null;

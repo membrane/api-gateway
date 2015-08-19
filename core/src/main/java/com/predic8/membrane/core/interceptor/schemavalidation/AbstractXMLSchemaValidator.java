@@ -49,7 +49,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	protected final ResolverMap resourceResolver;
 	protected final ValidatorInterceptor.FailureHandler failureHandler;
 	private final boolean skipFaults;
-	
+
 	protected final AtomicLong valid = new AtomicLong();
 	protected final AtomicLong invalid = new AtomicLong();
 
@@ -68,14 +68,14 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 			validators.add(createValidators());
 		xopr = new XOPReconstitutor();
 	}
-	
+
 	public Outcome validateMessage(Exchange exc, Message msg, String source) throws Exception {
 		List<Exception> exceptions = new ArrayList<Exception>();
 		String preliminaryError = getPreliminaryError(xopr, msg);
 		if (preliminaryError == null) {
 			List<Validator> vals = validators.take();
 			try {
-				// the message must be valid for one schema embedded into WSDL 
+				// the message must be valid for one schema embedded into WSDL
 				for (Validator validator: vals) {
 					SchemaValidatorErrorHandler handler = (SchemaValidatorErrorHandler)validator.getErrorHandler();
 					try {
@@ -113,7 +113,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 		invalid.incrementAndGet();
 		return Outcome.ABORT;
 	}
-	
+
 	protected List<Validator> createValidators() throws Exception {
 		SchemaFactory sf = SchemaFactory.newInstance(Constants.XSD_NS);
 		List<Validator> validators = new ArrayList<Validator>();
@@ -149,7 +149,7 @@ public abstract class AbstractXMLSchemaValidator implements IValidator {
 	public long getInvalid() {
 		return invalid.get();
 	}
-	
+
 	protected abstract List<Schema> getSchemas();
 	protected abstract Source getMessageBody(InputStream input) throws Exception;
 	protected abstract Response createErrorResponse(String message);

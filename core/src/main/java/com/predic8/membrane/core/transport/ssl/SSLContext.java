@@ -48,7 +48,7 @@ public class SSLContext implements SSLProvider {
 	private static final Log log = LogFactory.getLog(SSLContext.class.getName());
 
 	private static Method setUseCipherSuitesOrderMethod, getSSLParametersMethod, setSSLParametersMethod;
-	
+
 	static {
 		String dhKeySize = System.getProperty("jdk.tls.ephemeralDHKeySize");
 		if (dhKeySize == null || "legacy".equals(dhKeySize))
@@ -65,7 +65,7 @@ public class SSLContext implements SSLProvider {
 			setSSLParametersMethod = SSLServerSocket.class.getMethod("setSSLParameters", new Class[] { SSLParameters.class });
 			setUseCipherSuitesOrderMethod = SSLParameters.class.getMethod("setUseCipherSuitesOrder", new Class[] { Boolean.TYPE });
 		} catch (SecurityException e) {
-			throw new RuntimeException(e); 
+			throw new RuntimeException(e);
 		} catch (NoSuchMethodException e) {
 			// do nothing
 		}
@@ -79,15 +79,15 @@ public class SSLContext implements SSLProvider {
 	private final String[] ciphers;
 	private final String[] protocols;
 	private final boolean wantClientAuth, needClientAuth;
-	
-	
+
+
 	public SSLContext(SSLParser sslParser, ResolverMap resourceResolver, String baseLocation) {
 		this.sslParser = sslParser;
 		try {
 			String algorihm = KeyManagerFactory.getDefaultAlgorithm();
 			if (sslParser.getAlgorithm() != null)
 				algorihm = sslParser.getAlgorithm();
-			
+
 			KeyManagerFactory kmf = null;
 			String keyStoreType = "JKS";
 			if (sslParser.getKeyStore() != null) {
@@ -102,7 +102,7 @@ public class SSLContext implements SSLProvider {
 				KeyStore ks = openKeyStore(sslParser.getKeyStore(), "JKS", keyPass, resourceResolver, baseLocation);
 				kmf = KeyManagerFactory.getInstance(algorihm);
 				kmf.init(ks, keyPass);
-				
+
 				Enumeration<String> aliases = ks.aliases();
 				while (aliases.hasMoreElements()) {
 					String alias = aliases.nextElement();
@@ -111,7 +111,7 @@ public class SSLContext implements SSLProvider {
 						Certificate c = ks.getCertificate(alias);
 						if (c instanceof X509Certificate) {
 							X509Certificate x = (X509Certificate) c;
-							
+
 							dnsNames = new ArrayList<String>();
 
 							Collection<List<?>> subjectAlternativeNames = x.getSubjectAlternativeNames();
@@ -135,21 +135,21 @@ public class SSLContext implements SSLProvider {
 				tmf = TrustManagerFactory.getInstance(trustAlgorithm);
 				tmf.init(ks);
 			}
-			
+
 			TrustManager[] tms = tmf != null ? tmf.getTrustManagers() : null /* trust anyone: new TrustManager[] { new NullTrustManager() } */;
 			if (sslParser.isIgnoreTimestampCheckFailure())
 				tms = new TrustManager[] { new TrustManagerWrapper(tms, true) };
-			
+
 			if (sslParser.getProtocol() != null)
 				sslc = javax.net.ssl.SSLContext.getInstance(sslParser.getProtocol());
 			else
 				sslc = javax.net.ssl.SSLContext.getInstance("TLS");
-			
+
 			sslc.init(
-					kmf != null ? kmf.getKeyManagers() : null, 
-					tms, 
-					null);
-			
+					kmf != null ? kmf.getKeyManagers() : null,
+							tms,
+							null);
+
 			if (sslParser.getCiphers() != null) {
 				ciphers = sslParser.getCiphers().split(",");
 				Set<String> supportedCiphers = Sets.newHashSet(sslc.getSocketFactory().getSupportedCipherSuites());
@@ -161,7 +161,7 @@ public class SSLContext implements SSLProvider {
 				}
 			} else {
 				// use all default ciphers except those using RC4
-				String supportedCiphers[] = sslc.getSocketFactory().getDefaultCipherSuites();				
+				String supportedCiphers[] = sslc.getSocketFactory().getDefaultCipherSuites();
 				ArrayList<String> ciphers = new ArrayList<String>(supportedCiphers.length);
 				for (String cipher : supportedCiphers)
 					if (!cipher.contains("_RC4_"))
@@ -171,13 +171,13 @@ public class SSLContext implements SSLProvider {
 			}
 			if (setUseCipherSuitesOrderMethod == null)
 				log.warn("Cannot set the cipher suite order before Java 8. This prevents Forward Secrecy with some SSL clients.");
-			
+
 			if (sslParser.getProtocols() != null) {
-				protocols = sslParser.getProtocols().split(","); 
+				protocols = sslParser.getProtocols().split(",");
 			} else {
 				protocols = null;
 			}
-			
+
 			if (sslParser.getClientAuth() == null) {
 				needClientAuth = false;
 				wantClientAuth = false;
@@ -194,17 +194,17 @@ public class SSLContext implements SSLProvider {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	private static class CipherInfo {
 		public final String cipher;
 		public final int points;
-		
+
 		public CipherInfo(String cipher) {
 			this.cipher = cipher;
 			int points = 0;
 			if (supportsPFS(cipher))
 				points = 1;
-			
+
 			this.points = points;
 		}
 
@@ -213,24 +213,24 @@ public class SSLContext implements SSLProvider {
 			return cipher.contains("_DHE_RSA_") || cipher.contains("_DHE_DSS_") || cipher.contains("_ECDHE_RSA_") || cipher.contains("_ECDHE_ECDSA_");
 		}
 	}
-	
+
 	private void sortCiphers(ArrayList<String> ciphers) {
 		ArrayList<CipherInfo> cipherInfos = new ArrayList<SSLContext.CipherInfo>(ciphers.size());
-		
+
 		for (String cipher : ciphers)
 			cipherInfos.add(new CipherInfo(cipher));
-		
+
 		Collections.sort(cipherInfos, new Comparator<CipherInfo>() {
 			@Override
 			public int compare(CipherInfo cipher1, CipherInfo cipher2) {
 				return cipher2.points - cipher1.points;
 			}
 		});
-		
+
 		for (int i = 0; i < ciphers.size(); i++)
 			ciphers.set(i, cipherInfos.get(i).cipher);
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof SSLContext))
@@ -238,7 +238,7 @@ public class SSLContext implements SSLProvider {
 		SSLContext other = (SSLContext)obj;
 		return Objects.equal(sslParser, other.sslParser);
 	}
-	
+
 	private KeyStore openKeyStore(Store store, String defaultType, char[] keyPass, ResolverMap resourceResolver, String baseLocation) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, NoSuchProviderException {
 		String type = store.getType();
 		if (type == null)
@@ -273,7 +273,7 @@ public class SSLContext implements SSLProvider {
 		}
 		return ks;
 	}
-	
+
 	public void applyCiphers(SSLSocket sslSocket) {
 		if (ciphers != null) {
 			SSLParameters sslParameters = sslSocket.getSSLParameters();
@@ -282,7 +282,7 @@ public class SSLContext implements SSLProvider {
 			sslSocket.setSSLParameters(sslParameters);
 		}
 	}
-	
+
 	public void applyCiphers(SSLServerSocket sslServerSocket) {
 		if (ciphers != null) {
 			if (getSSLParametersMethod == null || setSSLParametersMethod == null) {
@@ -300,11 +300,11 @@ public class SSLContext implements SSLProvider {
 					throw new RuntimeException(e);
 				} catch (InvocationTargetException e) {
 					throw new RuntimeException(e);
-				} 
+				}
 			}
 		}
 	}
-	
+
 	private void applyCipherOrdering(SSLParameters sslParameters) {
 		// "sslParameters.setUseCipherSuitesOrder(true);" works only on Java 8
 		try {
@@ -340,11 +340,11 @@ public class SSLContext implements SSLProvider {
 		sslss.setNeedClientAuth(needClientAuth);
 		return sslss;
 	}
-	
+
 	public Socket wrapAcceptedSocket(Socket socket) throws IOException {
 		return socket;
 	}
-	
+
 	public Socket createSocket(InetAddress host, int port, int connectTimeout) throws IOException {
 		Socket s = new Socket();
 		s.connect(new InetSocketAddress(host, port), connectTimeout);
@@ -366,7 +366,7 @@ public class SSLContext implements SSLProvider {
 		applyCiphers(ssls);
 		return ssls;
 	}
-	
+
 	public Socket createSocket(InetAddress host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException {
 		Socket s = new Socket();
 		s.bind(new InetSocketAddress(addr, localPort));
@@ -389,33 +389,33 @@ public class SSLContext implements SSLProvider {
 		}
 		return ssls;
 	}
-	
+
 	SSLSocketFactory getSocketFactory() {
 		return sslc.getSocketFactory();
 	}
-	
+
 	String[] getCiphers() {
 		return ciphers;
 	}
-	
+
 	String[] getProtocols() {
 		return protocols;
 	}
-	
+
 	boolean isNeedClientAuth() {
 		return needClientAuth;
 	}
-	
+
 	boolean isWantClientAuth() {
 		return wantClientAuth;
 	}
-	
+
 	List<String> getDnsNames() {
 		return dnsNames;
 	}
 
 	/**
-	 * 
+	 *
 	 * @return Human-readable description of there the keystore lives.
 	 */
 	String getLocation() {

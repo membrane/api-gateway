@@ -25,36 +25,36 @@ import com.predic8.membrane.core.util.ByteUtil;
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
  * "Transfer-Encoding: chunked" is set on the input.
- * 
+ *
  * The "Transfer-Encoding" of the output is not determined by this class hierarchy, but by
  * {@link AbstractBodyTransferrer} and its subclasses.
- * 
+ *
  * The caller is responsible to adjust the header accordingly,
  * e.g. the fields Transfer-Encoding and Content-Length.
  */
 public class Body extends AbstractBody {
 
 	private final static int BUFFER_SIZE;
-	
+
 	static {
 		String bufferSize = System.getProperty("membrane.core.http.body.buffersize");
 		BUFFER_SIZE = bufferSize == null ? 8192 : Integer.parseInt(bufferSize);
 	}
-	
+
 	private static Log log = LogFactory.getLog(Body.class.getName());
 	private final InputStream inputStream;
 	private final int length;
-	
+
 
 	public Body(InputStream in) throws IOException {
 		this(in, -1);
 	}
-		
+
 	public Body(InputStream in, int length) throws IOException {
 		this.inputStream = in;
 		this.length = length;
 	}
-	
+
 	public Body(byte[] content) {
 		this.inputStream = null;
 		this.length = content.length;
@@ -67,16 +67,17 @@ public class Body extends AbstractBody {
 	protected void readLocal() throws IOException {
 		chunks.add(new Chunk(ByteUtil.readByteArray(inputStream, length)));
 	}
-	
+
 	@Override
 	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
 		if (getLength() == 0)
 			return;
-		
+
 		out.write(getContent(), 0, getLength());
 		out.finish();
 	}
-	
+
+	@Override
 	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
 		byte[] buffer = new byte[BUFFER_SIZE];
 

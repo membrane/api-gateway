@@ -30,10 +30,10 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Class containing implementation of HOTP/TOTP. Generates OTP codes for one or
  * more accounts.
- * 
+ *
  * Source: http://code.google.com/p/google-authenticator
  * License: ASL 2.0
- * 
+ *
  * @author Steve Weis (sweis@google.com)
  * @author Cem Paya (cemp@google.com)
  */
@@ -83,7 +83,7 @@ public class OtpProvider {
 
 	/**
 	 * Computes the one-time PIN given the secret key.
-	 * 
+	 *
 	 * @param secret
 	 *            the secret key
 	 * @param otp_state

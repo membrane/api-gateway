@@ -22,19 +22,19 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 
 public class AbstractInterceptor implements Interceptor {
- 
+
 	protected String name = this.getClass().getName();
-	
+
 	private EnumSet<Flow> flow = Flow.Set.REQUEST_RESPONSE;
-	
+
 	protected String id;
-	
+
 	protected Router router;
-	
+
 	public AbstractInterceptor() {
 		super();
 	}
-	
+
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return Outcome.CONTINUE;
 	}
@@ -42,7 +42,7 @@ public class AbstractInterceptor implements Interceptor {
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		return Outcome.CONTINUE;
 	}
-	
+
 	public void handleAbort(Exchange exchange) {
 		// do nothing
 	}
@@ -63,12 +63,12 @@ public class AbstractInterceptor implements Interceptor {
 	public void setId(String id) {
 		this.id = id;
 	}
-	
+
 	public void setFlow(EnumSet<Flow> flow) {
 		this.flow = flow;
 	}
 
-	
+
 	public EnumSet<Flow> getFlow() {
 		return flow;
 	}
@@ -77,7 +77,7 @@ public class AbstractInterceptor implements Interceptor {
 	public String getShortDescription() {
 		return "";
 	}
-	
+
 	@Override
 	public String getLongDescription() {
 		return getShortDescription();
@@ -90,20 +90,20 @@ public class AbstractInterceptor implements Interceptor {
 			return null;
 		return annotation.name();
 	}
-	
+
 	/**
 	 * Called after parsing is complete and this has been added to the object tree (whose root is Router).
 	 */
 	public void init() throws Exception {
 		// do nothing here - override in subclasses.
 	}
-	
+
 	public void init(Router router) throws Exception {
 		this.router = router;
 		init();
 	}
-	
-	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.		
+
+	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
 		return router;
 	}
 

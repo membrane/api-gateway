@@ -30,44 +30,44 @@ import org.xml.sax.SAXException;
 import com.predic8.membrane.core.exchange.Exchange;
 
 public class DecoupledEndpointRewriter {
-    private static final String ADDRESSING_URI = "http://www.w3.org/2005/08/addressing";
+	private static final String ADDRESSING_URI = "http://www.w3.org/2005/08/addressing";
 
-    private final DocumentBuilderFactory builderFactory;
-    private final TransformerFactory transformerFactory = TransformerFactory.newInstance();
-    private final DecoupledEndpointRegistry registry;
+	private final DocumentBuilderFactory builderFactory;
+	private final TransformerFactory transformerFactory = TransformerFactory.newInstance();
+	private final DecoupledEndpointRegistry registry;
 
-    public DecoupledEndpointRewriter(DecoupledEndpointRegistry registry) {
-        builderFactory = DocumentBuilderFactory.newInstance();
-        builderFactory.setNamespaceAware(true);
+	public DecoupledEndpointRewriter(DecoupledEndpointRegistry registry) {
+		builderFactory = DocumentBuilderFactory.newInstance();
+		builderFactory.setNamespaceAware(true);
 
-        this.registry = registry;
-    }
+		this.registry = registry;
+	}
 
-    public void rewriteToElement(InputStream reader, OutputStream output, Exchange exc) throws ParserConfigurationException, IOException, SAXException, TransformerException {
-        Document doc = getDocument(reader);
-        String uri = getRelatesToValue(doc);
-        setTarget(exc, uri);
-        setToElement(doc, uri);
-        writeDocument(output, doc);
-    }
+	public void rewriteToElement(InputStream reader, OutputStream output, Exchange exc) throws ParserConfigurationException, IOException, SAXException, TransformerException {
+		Document doc = getDocument(reader);
+		String uri = getRelatesToValue(doc);
+		setTarget(exc, uri);
+		setToElement(doc, uri);
+		writeDocument(output, doc);
+	}
 
-    private void setTarget(Exchange exc, String uri) {
-        exc.getDestinations().set(0, registry.lookup(uri));
-    }
+	private void setTarget(Exchange exc, String uri) {
+		exc.getDestinations().set(0, registry.lookup(uri));
+	}
 
-    private void writeDocument(OutputStream output, Document doc) throws TransformerException {
-        transformerFactory.newTransformer().transform(new DOMSource(doc), new StreamResult(output));
-    }
+	private void writeDocument(OutputStream output, Document doc) throws TransformerException {
+		transformerFactory.newTransformer().transform(new DOMSource(doc), new StreamResult(output));
+	}
 
-    private Document getDocument(InputStream reader) throws SAXException, IOException, ParserConfigurationException {
-        return builderFactory.newDocumentBuilder().parse(reader);
-    }
+	private Document getDocument(InputStream reader) throws SAXException, IOException, ParserConfigurationException {
+		return builderFactory.newDocumentBuilder().parse(reader);
+	}
 
-    private void setToElement(Document doc, String relatesTo) {
-        doc.getElementsByTagNameNS(ADDRESSING_URI, "To").item(0).setTextContent(registry.lookup(relatesTo));
-    }
+	private void setToElement(Document doc, String relatesTo) {
+		doc.getElementsByTagNameNS(ADDRESSING_URI, "To").item(0).setTextContent(registry.lookup(relatesTo));
+	}
 
-    private String getRelatesToValue(Document doc) {
-        return doc.getElementsByTagNameNS(ADDRESSING_URI, "RelatesTo").item(0).getTextContent();
-    }
+	private String getRelatesToValue(Document doc) {
+		return doc.getElementsByTagNameNS(ADDRESSING_URI, "RelatesTo").item(0).getTextContent();
+	}
 }

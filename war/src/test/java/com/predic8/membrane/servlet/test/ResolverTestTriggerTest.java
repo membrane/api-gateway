@@ -37,7 +37,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.resolver.SchemaResolver;
 
 public class ResolverTestTriggerTest extends AbstractInterceptor {
-	
+
 	private static final String MAGIC = "MAGIC463634623\n";
 
 	@Override
@@ -45,20 +45,20 @@ public class ResolverTestTriggerTest extends AbstractInterceptor {
 		try {
 			Class<?> clazz = Class.forName("com.predic8.membrane.core.resolver.ResolverTest");
 			clazz.getField("deployment").set(null, "J2EE");
-			
+
 			Object value = router.getResolverMap().getFileSchemaResolver();
 			Object resolverMap = clazz.getField("resolverMap").get(null);
 			resolverMap.getClass().getMethod("addSchemaResolver", SchemaResolver.class).invoke(resolverMap, value);
 
-			
+
 			Parameterized p = new Parameterized(clazz);
 			JUnitCore c = new JUnitCore();
 			Result run = c.run(Request.runner(p));
-			
+
 			StringBuilder sb = new StringBuilder();
-			
+
 			sb.append(MAGIC);
-			
+
 			for (Failure f : run.getFailures()) {
 				sb.append(f.toString());
 				StringWriter stringWriter = new StringWriter();
@@ -67,15 +67,15 @@ public class ResolverTestTriggerTest extends AbstractInterceptor {
 				sb.append("\n");
 				sb.append("\n");
 			}
-			
+
 			exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_PLAIN_UTF8).body(sb.toString()).build());
-		
+
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
 		return Outcome.RETURN;
 	}
-	
+
 	@Test
 	public void run() throws ParseException, IOException {
 		Assert.assertEquals(MAGIC, getAndAssert200("http://localhost:3021/test/"));

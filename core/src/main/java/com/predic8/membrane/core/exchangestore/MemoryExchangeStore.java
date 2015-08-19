@@ -30,7 +30,7 @@ import com.predic8.membrane.core.rules.StatisticCollector;
 
 /**
  * TODO: thread-safety
- * 
+ *
  * @description Stores all exchanges in-memory. The Java heap will overflow if this store is used to store too many
  *              Exchanges. Use for Membrane Monitor only.
  */
@@ -40,14 +40,14 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 	private Map<RuleKey, List<AbstractExchange>> exchangesMap = new HashMap<RuleKey, List<AbstractExchange>>();
 
 	//for synchronization purposes choose Vector class
-	private List<AbstractExchange> totals = new Vector<AbstractExchange>();  
-	
+	private List<AbstractExchange> totals = new Vector<AbstractExchange>();
+
 	public void snap(AbstractExchange exc, Flow flow) {
 		// TODO: [fix me] this is for Membrane Monitor's legacy logic
-		
-		if (flow != Flow.REQUEST) 
+
+		if (flow != Flow.REQUEST)
 			return;
-		
+
 		if (isKeyInStore(exc)) {
 			getKeyList(exc).add(exc);
 		} else {
@@ -55,9 +55,9 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 			list.add(exc);
 			exchangesMap.put(exc.getRule().getKey(), list);
 		}
-		
+
 		totals.add(exc);
-		
+
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			exc.addExchangeStoreListener(listener);
 			listener.addExchange(exc.getRule(), exc);
@@ -66,15 +66,15 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 
 	public void remove(AbstractExchange exc) {
 		removeWithoutNotify(exc);
-		
+
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			listener.removeExchange(exc);
 		}
 	}
-	
+
 	public void removeAllExchanges(Rule rule) {
 		AbstractExchange[] exchanges = getExchanges(rule.getKey());
-		
+
 		exchangesMap.remove(rule.getKey());
 		totals.removeAll(Arrays.asList(exchanges));
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
@@ -106,23 +106,23 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 
 		for (int i = 0; i < exchangesList.size(); i++)
 			statistics.collectFrom(exchangesList.get(i));
-		
+
 		return statistics;
 	}
 
 	public Object[] getAllExchanges() {
-		if (totals.isEmpty()) 
+		if (totals.isEmpty())
 			return null;
-		
+
 		return totals.toArray();
 	}
 
-	
+
 	public List<AbstractExchange> getAllExchangesAsList() {
 		return totals;
 	}
-	
-	
+
+
 	public void removeAllExchanges(AbstractExchange[] exchanges) {
 		for (AbstractExchange exc : exchanges) {
 			removeWithoutNotify(exc);
@@ -131,7 +131,7 @@ public class MemoryExchangeStore extends AbstractExchangeStore {
 			listener.removeExchanges(exchanges);
 		}
 	}
-	
+
 	private List<AbstractExchange> getKeyList(AbstractExchange exc) {
 		return exchangesMap.get(exc.getRule().getKey());
 	}

@@ -59,7 +59,7 @@ public class Response extends Message {
 			res.setBodyContent(msg.getBytes(Constants.UTF_8_CHARSET));
 			return this;
 		}
-		
+
 		public ResponseBuilder body(byte[] body) {
 			res.setBodyContent(body);
 			return this;
@@ -85,12 +85,12 @@ public class Response extends Message {
 			res.setBody(b);
 			return this;
 		}
-		
+
 		public ResponseBuilder bodyEmpty() {
 			res.getHeader().setContentLength(0);
 			return this;
 		}
-		
+
 		public ResponseBuilder header(Header header) {
 			res.setHeader(header);
 			return this;
@@ -112,23 +112,23 @@ public class Response extends Message {
 
 		public ResponseBuilder dontCache() {
 			res.getHeader().setNoCacheResponseHeaders();
-			return this;		
+			return this;
 		}
 	}
 
 	public static ResponseBuilder ok(String msg) throws Exception {
 		return ok().contentType(MimeType.TEXT_HTML_UTF8).body(msg);
 	}
-	
+
 	private static String SERVER_HEADER = Constants.PRODUCT_NAME + " " + Constants.VERSION + ". See http://membrane-soa.org";
-	
+
 	public static ResponseBuilder ok() {
 		return ResponseBuilder.newInstance().
-							   status(200, "Ok").
-							   header("Server", SERVER_HEADER).
-							   bodyEmpty();
+				status(200, "Ok").
+				header("Server", SERVER_HEADER).
+				bodyEmpty();
 	}
-	
+
 	public static ResponseBuilder noContent() {
 		return ResponseBuilder.newInstance().
 				status(204, "No Content").
@@ -170,7 +170,7 @@ public class Response extends Message {
 		return ResponseBuilder.newInstance().
 				status(100, "Continue");
 	}
-	
+
 	public static ResponseBuilder redirect(String uri, boolean permanent) {
 		String escaped = StringEscapeUtils.escapeXml(uri);
 		return ResponseBuilder.newInstance().
@@ -192,11 +192,11 @@ public class Response extends Message {
 				header("Location", uri).
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body("<html><head><meta http-equiv=\"refresh\" content=\"0;URL='" + escaped + "'\" /></head>" +
-								"<body>" +
-								body +
-								"</body>");
+						"<body>" +
+						body +
+						"</body>");
 	}
-	
+
 	private static String unescapedHtmlMessage(String caption, String text) {
 		return "<html><head><title>" + caption
 				+ "</title></head>" + "<body><h1>"
@@ -216,7 +216,7 @@ public class Response extends Message {
 				contentType(MimeType.TEXT_HTML_UTF8).
 				body(htmlMessage("Service Unavailable", message));
 	}
-	
+
 	public static ResponseBuilder internalServerError() {
 		return ResponseBuilder.newInstance().
 				status(500, "Internal Server Error").
@@ -295,8 +295,9 @@ public class Response extends Message {
 		this.statusMessage = statusMessage;
 	}
 
+	@Override
 	public void parseStartLine(InputStream in) throws IOException,
-			EndOfStreamException {
+	EndOfStreamException {
 
 		String line;
 		try {
@@ -306,7 +307,7 @@ public class Response extends Message {
 				throw new NoResponseException();
 			throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
 		}
-		
+
 		Matcher matcher = pattern.matcher(line);
 		boolean find = matcher.find();
 
@@ -319,8 +320,9 @@ public class Response extends Message {
 
 	}
 
+	@Override
 	public void read(InputStream in, boolean createBody) throws IOException,
-			EndOfStreamException {
+	EndOfStreamException {
 		parseStartLine(in);
 
 		if (getStatusCode() == 100) {
@@ -334,6 +336,7 @@ public class Response extends Message {
 			createBody(in);
 	}
 
+	@Override
 	protected void createBody(InputStream in) throws IOException {
 		if (isRedirect() && mayHaveNoBody())
 			return;
@@ -374,7 +377,7 @@ public class Response extends Message {
 	public boolean isServerError() {
 		return statusCode >= 500;
 	}
-	
+
 	/**
 	 * Some web servers may not send a body e.g. after a redirect. We therefore
 	 * do not parse it in {@link #createBody(InputStream)} and close the connection
@@ -389,7 +392,7 @@ public class Response extends Message {
 			return false;
 		return true;
 	}
-	
+
 	@Override
 	public boolean isKeepAlive() {
 		if (isRedirect() && mayHaveNoBody())
@@ -399,7 +402,7 @@ public class Response extends Message {
 
 	@Override
 	public int estimateHeapSize() {
-		return super.estimateHeapSize() + 
+		return super.estimateHeapSize() +
 				12 +
 				(statusMessage != null ? 2*statusMessage.length() : 0);
 	}

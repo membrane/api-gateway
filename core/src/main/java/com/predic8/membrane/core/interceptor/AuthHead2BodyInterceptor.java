@@ -38,7 +38,7 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 	static final String COM_NS  = "test";
 	static final String NOR_NS  = "http://cooreo.com.br/normandes-EnviaSMS";
 	static final String XSI_NS  = "http://www.w3.org/2001/XMLSchema-instance";
-	
+
 	public Outcome handleRequest(AbstractExchange exchange) throws Exception {
 		Document doc = getDocument(exchange.getRequest().getBodyAsStreamDecoded(), exchange.getRequest().getCharset());
 		Element header = getAuthorisationHeader(doc);
@@ -46,9 +46,9 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		//System.out.println(DOM2String(doc));
 		Element nor = getNorElement(doc);
 		nor.appendChild(getUsername(doc, header));
-		nor.appendChild(getPassword(doc, header));		
+		nor.appendChild(getPassword(doc, header));
 
-		header.getParentNode().removeChild(header);		
+		header.getParentNode().removeChild(header);
 		exchange.getRequest().setBody(new Body(DOM2String(doc).getBytes(exchange.getRequest().getCharset())));
 		return Outcome.CONTINUE;
 	}
@@ -76,7 +76,7 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		if (nl.getLength()==0) return null;
 		return (Element)nl.item(0);
 	}
-	
+
 	private Document getDocument(InputStream xmlDocument, String encoding) throws Exception {
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		dbf.setNamespaceAware(true);
@@ -84,13 +84,13 @@ public class AuthHead2BodyInterceptor extends AbstractInterceptor {
 		is.setEncoding(encoding);
 		return dbf.newDocumentBuilder().parse(is);
 	}
-	
+
 	private String DOM2String(Document doc) throws Exception {
 		Transformer xformer = TransformerFactory.newInstance().newTransformer();
 		StringWriter writer = new StringWriter();
-		xformer.transform(new DOMSource(doc),new StreamResult(writer)); 				
+		xformer.transform(new DOMSource(doc),new StreamResult(writer));
 		return writer.toString();
 	}
-		
+
 }
 

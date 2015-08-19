@@ -30,7 +30,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 public class ServletTransport extends Transport {
 
 	boolean removeContextRoot = true;
-	
+
 	public boolean isRemoveContextRoot() {
 		return removeContextRoot;
 	}
@@ -39,12 +39,12 @@ public class ServletTransport extends Transport {
 	public void setRemoveContextRoot(boolean removeContextRoot) {
 		this.removeContextRoot = removeContextRoot;
 	}
-	
+
 	@Override
 	public void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {
 		// do nothing
 	}
-	
+
 	@Override
 	public void closeAll() throws IOException {
 		// do nothing
@@ -54,5 +54,5 @@ public class ServletTransport extends Transport {
 	public boolean isOpeningPorts() {
 		return false;
 	}
-	
+
 }

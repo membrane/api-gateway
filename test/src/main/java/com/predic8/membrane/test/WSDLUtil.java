@@ -54,10 +54,10 @@ public class WSDLUtil {
 				}
 			}
 		}
-		
+
 		return result;
 	}
-	
+
 	public static int countWSDLandXSDs(String url) throws ParseException, XMLStreamException, IOException {
 		int sum = 1;
 		List<String> xsds = WSDLUtil.getXSDs(AssertUtils.getAndAssert200(url));

@@ -41,27 +41,27 @@ import com.predic8.membrane.core.interceptor.Outcome;
  */
 @MCElement(name="soapStackTraceFilter")
 public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
-	
+
 	private static final Logger LOG = Logger.getLogger(SOAPStackTraceFilterInterceptor.class);
 	private static final String XPATH = ""
 			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='stackTrace' or local-name()='stacktrace'] | "
 			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='faultstring' and contains(., '.java:')] | "
 			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//*[local-name()='exception' and namespace-uri()='http://jax-ws.dev.java.net/']/message |"
 			+ "//*[local-name()='Fault' and namespace-uri()='" + Constants.SOAP11_NS + "']//detail/Exception";
-	
+
 	private final XMLContentFilter xmlContentFilter;
-	
+
 	public SOAPStackTraceFilterInterceptor() throws XPathExpressionException {
 		this.xmlContentFilter = new XMLContentFilter(XPATH);
 		setDisplayName("SOAP StackTrace Filter");
 		setFlow(Flow.Set.REQUEST_RESPONSE);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return handleMessage(exc, exc.getRequest());
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		return handleMessage(exc, exc.getResponse());
@@ -77,5 +77,5 @@ public class SOAPStackTraceFilterInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 	}
-	
+
 }

@@ -29,23 +29,23 @@ import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.
  * Utility methods for {@link XMLContentFilter}.
  */
 public class SimpleXPathAnalyzer {
-	
+
 	/**
 	 * Analyzes whether an XPath 2.0 string is a simple "UnionExpr" and splits
 	 * it into its IntersectExceptExpr parts.
-	 * 
+	 *
 	 * @return null, if the expression is not a UnionExpr; otherwise a list of
 	 *         IntersectExceptExprs, which the UnionExpr consists of.
 	 */
 	public List<ContainerNode> getIntersectExceptExprs(String xpath) {
 		ContainerNode node = new SimpleXPathParser().parse(xpath);
-		
+
 		if (!isUnionExpr(node))
 			return null;
 
 		return splitUnionExprIntoIntersectExceptExprs(node);
 	}
-	
+
 	/**
 	 * Checks whether a given expression requires the existence of a named element.
 	 * @return The named element (including its namespace) or null if there is no such element.
@@ -80,17 +80,17 @@ public class SimpleXPathAnalyzer {
 		skipWhitespace(m);
 		// if '[' + expr + ']' follows
 		if (m.isAtEnd() &&
-			intersectExceptExpr.nodes.length > 1 &&
-			intersectExceptExpr.nodes[1] instanceof SquareBracketNode) {
+				intersectExceptExpr.nodes.length > 1 &&
+				intersectExceptExpr.nodes[1] instanceof SquareBracketNode) {
 			ContainerNode predicate = ((SquareBracketNode)intersectExceptExpr.nodes[1]).node;
 			// expr matches "local-name() = 'foo'"
 			if (predicate.nodes.length == 4 &&
-				predicate.nodes[0] instanceof UnparsedStringNode &&
-				predicate.nodes[1] instanceof RoundBracketNode &&
-				((RoundBracketNode)predicate.nodes[1]).node.nodes.length == 0 &&
-				predicate.nodes[2] instanceof UnparsedStringNode &&
-				predicate.nodes[3] instanceof StringNode) {
-				Marker m2 = new Marker(((UnparsedStringNode)predicate.nodes[0]).s);	
+					predicate.nodes[0] instanceof UnparsedStringNode &&
+					predicate.nodes[1] instanceof RoundBracketNode &&
+					((RoundBracketNode)predicate.nodes[1]).node.nodes.length == 0 &&
+					predicate.nodes[2] instanceof UnparsedStringNode &&
+					predicate.nodes[3] instanceof StringNode) {
+				Marker m2 = new Marker(((UnparsedStringNode)predicate.nodes[0]).s);
 				String string1 = ((StringNode)predicate.nodes[3]).s;
 				skipWhitespace(m2);
 				String function = getName(m2);
@@ -114,12 +114,12 @@ public class SimpleXPathAnalyzer {
 					((RoundBracketNode)predicate.nodes[5]).node.nodes.length == 0 &&
 					predicate.nodes[6] instanceof UnparsedStringNode &&
 					predicate.nodes[7] instanceof StringNode) {
-				Marker m2 = new Marker(((UnparsedStringNode)predicate.nodes[0]).s);	
+				Marker m2 = new Marker(((UnparsedStringNode)predicate.nodes[0]).s);
 				String string1 = ((StringNode)predicate.nodes[3]).s;
 				skipWhitespace(m2);
 				String function = getName(m2);
 				if (m2.isAtEnd() && "local-name".equals(function)) {
-					Marker m3 = new Marker(((UnparsedStringNode)predicate.nodes[4]).s);	
+					Marker m3 = new Marker(((UnparsedStringNode)predicate.nodes[4]).s);
 					String string2 = ((StringNode)predicate.nodes[7]).s;
 					skipWhitespace(m3);
 					String and = getName(m3);
@@ -135,7 +135,7 @@ public class SimpleXPathAnalyzer {
 		}
 		return "*".equals(elementName) ? null : new QName(elementName);
 	}
-	
+
 	private String getName(Marker m) {
 		StringBuilder sb = new StringBuilder();
 		while(true) {
@@ -168,7 +168,7 @@ public class SimpleXPathAnalyzer {
 		public final String s;
 		/** The position we are at */
 		public int p;
-		
+
 		public Marker(String s) {
 			this.s = s;
 			p = 0;
@@ -178,10 +178,10 @@ public class SimpleXPathAnalyzer {
 			return p == s.length();
 		}
 	}
-	
+
 	private boolean isUnionExpr(ContainerNode node) {
 		// an expression is a UnionExpr, if it does not contain any operators with lower precedence
-		for (String op : new String[] { ",", "return", "for", "some", "every", "if", "or", "and", 
+		for (String op : new String[] { ",", "return", "for", "some", "every", "if", "or", "and",
 				"eq", "ne", "lt", "le", "gt", "ge", "=", "!=", "<", "<=", ">", ">=", "is", "<<", ">>",
 				"to", "+", "-", "*", "div", "idiv", "mod"})
 			for (Node n : node.nodes)
@@ -190,7 +190,7 @@ public class SimpleXPathAnalyzer {
 						return false;
 		return true;
 	}
-	
+
 	private List<ContainerNode> splitUnionExprIntoIntersectExceptExprs(ContainerNode node) {
 		List<ContainerNode> res = new ArrayList<ContainerNode>();
 		List<Node> intersectExceptExprParts = new ArrayList<Node>();
@@ -227,7 +227,7 @@ public class SimpleXPathAnalyzer {
 		res.add(0, xpath.substring(0, p));
 		return res;
 	}
-	
+
 	/** Ensure that any occurrence of op is not part of a name, if op itself is a name */
 	private int indexOfOperand(String xpath, String op) {
 		if ("*".equals(op)) {
@@ -238,20 +238,20 @@ public class SimpleXPathAnalyzer {
 			// in those we return it as being an operand.
 			int p = -1;
 			OUTER:
-			while (true) {
-				p = xpath.indexOf(op, p+1);
-				if (p == -1)
-					return -1;
-				int q = p; // 'q' is used to find first non-whitespace before 'p'
-				do {
-					if (--q == -1)
-						continue OUTER;
-				} while (isWhiteSpace(xpath.codePointAt(q)));
-				int c = xpath.codePointAt(q);
-				if (c == '+' || c == '-' || c == '/' || c == ':' || c == '@')
-					continue;
-				return p;
-			}
+				while (true) {
+					p = xpath.indexOf(op, p+1);
+					if (p == -1)
+						return -1;
+					int q = p; // 'q' is used to find first non-whitespace before 'p'
+					do {
+						if (--q == -1)
+							continue OUTER;
+					} while (isWhiteSpace(xpath.codePointAt(q)));
+					int c = xpath.codePointAt(q);
+					if (c == '+' || c == '-' || c == '/' || c == ':' || c == '@')
+						continue;
+					return p;
+				}
 		}
 		// 'letter' here refers to a character that can be part of a name
 		int p = -1;
@@ -260,23 +260,23 @@ public class SimpleXPathAnalyzer {
 			if (p == -1)
 				return -1;
 			// if op starts with a 'letter' and the previous character exists and is a 'letter'
-			if (isNameChar(op.codePointAt(0)) && 
-					p > 0 && 
+			if (isNameChar(op.codePointAt(0)) &&
+					p > 0 &&
 					isNameChar(xpath.codePointAt(p-1)))
 				continue;
 			// if op ends with a 'letter' and the following character exists and is a 'letter'
-			if (isNameChar(op.codePointAt(op.length()-1)) && 
-					p + op.length() < xpath.length() && 
+			if (isNameChar(op.codePointAt(op.length()-1)) &&
+					p + op.length() < xpath.length() &&
 					isNameChar(xpath.charAt(p + op.length())))
 				continue;
 			return p;
 		}
 	}
 
-	
+
 	/** See http://www.w3.org/TR/REC-xml/#NT-NameChar . */
 	private boolean isNameChar(int c) {
-		return c == ':' || 
+		return c == ':' ||
 				(c >= 'A' && c <= 'Z') ||
 				c == '_' ||
 				(c >= 'a' && c <= 'z') ||
@@ -299,7 +299,7 @@ public class SimpleXPathAnalyzer {
 				(c >= '\u0300' && c <= '\u036F') ||
 				(c >= '\u203F' && c <= '\u2040');
 	}
-	
+
 	private boolean isWhiteSpace(int c) {
 		return c == 0x20 || c == 0x9 || c == 0xD || c == 0xA;
 	}

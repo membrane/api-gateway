@@ -23,41 +23,41 @@ import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public interface Rule extends Cloneable {
-	
+
 	public List<Interceptor> getInterceptors();
-	
-	public void setInterceptors(List<Interceptor> interceptors); 
-	
+
+	public void setInterceptors(List<Interceptor> interceptors);
+
 	public boolean isBlockRequest();
-	
+
 	public boolean isBlockResponse();
-	
+
 	public RuleKey getKey();
-	
+
 	public void setKey(RuleKey ruleKey);
-	
+
 	public void setName(String name);
-	
+
 	public String getName();
-	
+
 	public void setBlockRequest(boolean blockStatus);
-	
+
 	public void setBlockResponse(boolean blockStatus);
-	
+
 	public void collectStatisticsFrom(Exchange exc);
 
 	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes();
-	
+
 	public int getCount();
-	
+
 	public SSLContext getSslInboundContext();
 
 	public SSLProvider getSslOutboundContext();
-	
+
 	public void init(Router router) throws Exception;
-	
+
 	public boolean isTargetAdjustHostHeader();
-	
+
 	public boolean isActive();
 
 	public String getErrorState();

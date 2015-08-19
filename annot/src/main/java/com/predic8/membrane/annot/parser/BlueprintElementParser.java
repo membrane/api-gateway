@@ -39,13 +39,13 @@ import com.predic8.membrane.annot.MCElement;
  * Base class for auto-generated blueprint parsers for {@link MCElement}s.
  */
 public abstract class BlueprintElementParser implements BlueprintParser {
-	
+
 	private boolean inlined;
-	
+
 	public boolean isInlined() {
 		return inlined;
 	}
-	
+
 	public Metadata parseChild(BlueprintParser globalParser, Element element,
 			ParserContext context) {
 		boolean oldInlined = inlined;
@@ -56,34 +56,34 @@ public abstract class BlueprintElementParser implements BlueprintParser {
 			inlined = oldInlined;
 		}
 	}
-	
+
 	protected void applySpringInterfacePatches(ParserContext context, Class<?> clazz, MutableBeanMetadata mcm) {
 		if (ApplicationContextAware.class.isAssignableFrom(clazz)) {
 			MutableRefMetadata mirm = context.createMetadata(MutableRefMetadata.class);
 			mirm.setComponentId("blueprintContainer");
-			
+
 			MutableBeanMetadata helper = context.createMetadata(MutableBeanMetadata.class);
 			helper.setId(context.generateId());
 			helper.setScope(BeanMetadata.SCOPE_SINGLETON);
 			helper.setRuntimeClass(BlueprintSpringInterfaceHelper.class);
 			helper.addProperty("blueprintContainer", mirm);
 			context.getComponentDefinitionRegistry().registerComponentDefinition(helper);
-					
+
 			// this does not work:
 			//   mcm.addProperty("applicationContext", simulatedSpringApplicationContext);
 			// -- the "applicationContext" property could possibly be set before any of the other properties (as they
 			// are filled in using a HashMap), which differs from the Spring logic.
-			
+
 			// workaround:
 			helper.addProperty("client", mcm);
 			helper.setInitMethod("init");
 			helper.setDestroyMethod("destroy");
-			
+
 			mcm.addDependsOn(helper.getId());
-			
+
 			return; // Lifecycle is handled by the Helper as well
 		}
-		
+
 		if (Lifecycle.class.isAssignableFrom(clazz)) {
 			mcm.setInitMethod("start");
 			mcm.setDestroyMethod("stop");
@@ -93,7 +93,7 @@ public abstract class BlueprintElementParser implements BlueprintParser {
 	protected void parseChildren(Element element, ParserContext context,
 			MutableBeanMetadata mcm, BlueprintParser globalParser) {
 		element.setUserData(BlueprintNamespaceParser.KEY_PARENT_CLASS_NAME, mcm.getRuntimeClass().getName(), null);
-		
+
 		NodeList nl = element.getChildNodes();
 		for (int i = 0; i < nl.getLength(); i++) {
 			Node node = nl.item(i);
@@ -102,7 +102,7 @@ public abstract class BlueprintElementParser implements BlueprintParser {
 			}
 		}
 	}
-	
+
 	protected void setIdIfNeeded(Element element, ParserContext context,
 			String defaultId) {
 		if ( !isInlined() && !element.hasAttribute("id") ) {
@@ -116,7 +116,7 @@ public abstract class BlueprintElementParser implements BlueprintParser {
 			}
 		}
 	}
-	
+
 	protected abstract void handleChildObject(Element ele, ParserContext parserContext, MutableBeanMetadata mcm, Class<?> clazz, Object child);
 
 
@@ -132,23 +132,23 @@ public abstract class BlueprintElementParser implements BlueprintParser {
 
 		handleChildObject(ele, context, mcm, clazz, m);
 	}
-	
+
 	protected void setPropertyIfSet(ParserContext context, String xmlPropertyName, String springPropertyName,
 			Element element, MutableBeanMetadata mcm) {
 		setPropertyIfSet(context, xmlPropertyName, springPropertyName, element, mcm, false);
 	}
-	
+
 	private BeanProperty findProperty(MutableBeanMetadata mcm, String springPropertyName) {
 		for (BeanProperty p : mcm.getProperties())
 			if (p.getName().equals(springPropertyName))
 				return p;
 		return null;
 	}
-	
+
 	protected boolean isPropertySet(MutableBeanMetadata mcm, String springPropertyName) {
 		return findProperty(mcm, springPropertyName) != null;
 	}
-	
+
 	protected void setProperty(ParserContext context, String xmlPropertyName, String springPropertyName, Element element,
 			MutableBeanMetadata mcm) {
 		setProperty(context, xmlPropertyName, springPropertyName, element, mcm, false);
@@ -181,13 +181,13 @@ public abstract class BlueprintElementParser implements BlueprintParser {
 		mcm.addProperty(springPropertyName, vm);
 	}
 
-	
+
 	protected void setPropertyIfSet(ParserContext context, String xmlPropertyName, String springPropertyName,
 			Element element, MutableBeanMetadata mcm, boolean flexibleEnum) {
 		if (element.hasAttribute(xmlPropertyName))
 			setProperty(context, xmlPropertyName, springPropertyName, element, mcm, flexibleEnum);
 	}
-	
+
 	protected void setProperties(ParserContext context, String springPropertyName, Element element,
 			MutableBeanMetadata mcm) {
 		NamedNodeMap attributes = element.getAttributes();

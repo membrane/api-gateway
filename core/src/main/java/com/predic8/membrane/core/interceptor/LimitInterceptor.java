@@ -45,30 +45,30 @@ public class LimitInterceptor extends AbstractInterceptor {
 	private static Logger log = LogManager.getLogger(LimitInterceptor.class);
 
 	private long maxBodyLength = -1;
-	
+
 	public LimitInterceptor() {
 		name = "Limit Interceptor";
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return handleMessage(exc, exc.getRequest());
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		return handleMessage(exc, exc.getResponse());
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return maxBodyLength == -1 ? "" : "Limit the length of message bodies to " + maxBodyLength + " bytes.";
 	}
-	
+
 	public long getMaxBodyLength() {
 		return maxBodyLength;
 	}
-	
+
 	/**
 	 * @description The maximal length of a message body.
 	 * @example 10485760
@@ -77,33 +77,33 @@ public class LimitInterceptor extends AbstractInterceptor {
 	public void setMaxBodyLength(long maxBodyLength) {
 		this.maxBodyLength = maxBodyLength;
 	}
-	
+
 	private Outcome handleMessage(Exchange exc, Message msg) throws IOException {
 		if (maxBodyLength == -1)
 			return Outcome.CONTINUE;
-		
+
 		int len = msg.getHeader().getContentLength();
 		if (len != -1 && len > maxBodyLength) {
 			log.info("Message length (" + len + ") exceeded limit (" + maxBodyLength + ")");
 			exc.setResponse(createFailureResponse());
 			return Outcome.ABORT;
 		}
-		
+
 		msg.setBody(new Body(new LengthLimitingStream(msg.getBodyAsStream())));
-		
+
 		return Outcome.CONTINUE;
 	}
-	
+
 	private Response createFailureResponse() {
 		return Response.badRequest("Message bodies must be smaller than " + maxBodyLength + " bytes.").build();
 	}
-	
+
 	public class LengthLimitingStream extends InputStream {
-		
+
 		private final InputStream is;
 
 		private long pos;
-		
+
 		public LengthLimitingStream(InputStream is) {
 			this.is = is;
 		}
@@ -114,7 +114,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 				throw new IOException("Message body too large.");
 			}
 		}
-		
+
 		@Override
 		public int read() throws IOException {
 			int i = is.read();
@@ -125,6 +125,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 			return i;
 		}
 
+		@Override
 		public int read(byte[] b) throws IOException {
 			int l = is.read(b);
 			if (l == -1)
@@ -134,6 +135,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 			return l;
 		}
 
+		@Override
 		public int read(byte[] b, int off, int len) throws IOException {
 			int l = is.read(b, off, len);
 			if (l == -1)
@@ -143,6 +145,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 			return l;
 		}
 
+		@Override
 		public long skip(long n) throws IOException {
 			long l = is.skip(n);
 			if (l == -1)
@@ -152,22 +155,26 @@ public class LimitInterceptor extends AbstractInterceptor {
 			return l;
 		}
 
+		@Override
 		public int available() throws IOException {
 			return is.available();
 		}
 
+		@Override
 		public String toString() {
 			return "LengthLimitingStream(" + is.toString() + ")";
 		}
 
+		@Override
 		public void close() throws IOException {
 			is.close();
 		}
 
+		@Override
 		public boolean markSupported() {
 			return false;
 		}
-		
+
 	}
 
 }

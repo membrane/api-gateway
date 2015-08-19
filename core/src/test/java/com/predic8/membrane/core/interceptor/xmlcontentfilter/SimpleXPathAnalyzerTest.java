@@ -25,7 +25,7 @@ public class SimpleXPathAnalyzerTest {
 
 	/**
 	 * Read the documentation for {@link SimpleXPathAnalyzer#getIntersectExceptExprs(String)}.
-	 * 
+	 *
 	 * @param countToAssert the number of "IntersectExceptExpr" productions contained in the XPath expression,
 	 * 	or -1 if the XPath expression is not a "UnionExpr" production.
 	 */
@@ -36,7 +36,7 @@ public class SimpleXPathAnalyzerTest {
 		else
 			Assert.assertEquals(countToAssert, l.size());
 	}
-	
+
 	@Test
 	public void testGetIntersectExceptExprs() {
 		assertIntersectExceptExprCount(-1, "//x and //y");
@@ -48,10 +48,10 @@ public class SimpleXPathAnalyzerTest {
 	}
 
 	private void assertGetElement(String xpath, QName expectedReturnValue) {
-		Assert.assertEquals(expectedReturnValue, 
+		Assert.assertEquals(expectedReturnValue,
 				new SimpleXPathAnalyzer().getElement(new SimpleXPathParser().parse(xpath)));
 	}
-	
+
 	@Test
 	public void testGetElement() {
 		assertGetElement("//a[@b]", new QName("a"));

@@ -18,12 +18,12 @@ package com.predic8.membrane.core;
 public class TerminateException extends Exception {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 6330549161301272316L;
 
 	/**
-	 * 
+	 *
 	 */
 	public TerminateException() {
 		super();

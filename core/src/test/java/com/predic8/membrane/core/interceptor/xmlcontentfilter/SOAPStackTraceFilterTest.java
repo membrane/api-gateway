@@ -25,13 +25,13 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.test.AssertUtils;
 
 public class SOAPStackTraceFilterTest {
-	
+
 	private Request getRequest() throws IOException {
 		Request r = new Request();
 		r.setBody(new Body(getClass().getResourceAsStream("/xml/soap-stack-trace.xml")));
 		return r;
 	}
-	
+
 	@Test
 	public void doit() throws XPathExpressionException, Exception {
 		Exchange exc = new Exchange(null);

@@ -37,12 +37,12 @@ public class ResourceRetrievalException extends IOException {
 		super(e);
 		this.url = url;
 	}
-	
+
 	@Override
 	public String getMessage() {
 		return super.getMessage() + (status == 0 ? "" : " returned status " + status) + " while retrieving " + url;
 	}
-	
+
 	public int getStatus() {
 		return status;
 	}

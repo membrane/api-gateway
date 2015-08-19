@@ -56,7 +56,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 
 /**
- * Handles the dynamic part of the admin console (= requests starting with "/admin/"). 
+ * Handles the dynamic part of the admin console (= requests starting with "/admin/").
  */
 public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(DynamicAdminPageInterceptor.class.getName());
@@ -67,9 +67,9 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		log.debug("request: " + exc.getOriginalRequestUri());
 
 		exc.setTimeReqSent(System.currentTimeMillis());
-		
+
 		Outcome o = dispatchRequest(exc);
-		
+
 		exc.setReceived();
 		exc.setTimeResReceived(System.currentTimeMillis());
 
@@ -88,11 +88,11 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@Mapping("/admin/service-proxy/show/?(\\?.*)?")
 	public Response handleServiceProxyShowRequest(final Map<String, String> params, final String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		final StringWriter writer = new StringWriter();
-		
+
 		final AbstractServiceProxy rule = (AbstractServiceProxy) RuleUtil.findRuleByIdentifier(router,params.get("name"));
-		
+
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
@@ -107,24 +107,24 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			@Override
 			protected void createTabContent() throws Exception {
 				h1().text(rule.toString()+" ServiceProxy").end();
-				script().raw("$(function() {\r\n" + 
-						"					$( \"#subtab\" ).tabs();\r\n" + 
+				script().raw("$(function() {\r\n" +
+						"					$( \"#subtab\" ).tabs();\r\n" +
 						"				});").end();
-				
+
 				div().id("subtab");
-					ul();
-						li().a().href("#tab1").text("Visualization").end(2);
-						li().a().href("#tab2").text("Statistics").end(2);
-						//li().a().href("#tab3").text("XML Configuration").end(2);
-					end();
-					div().id("tab1");
-						createServiceProxyVisualization(rule, relativeRootPath);
-					end();
-					div().id("tab2");
-						createStatusCodesTable(rule.getStatisticsByStatusCodes());
-						br();
-						createButton("View Messages", "calls", null, createQueryString("proxy", rule.toString()));
-					end();
+				ul();
+				li().a().href("#tab1").text("Visualization").end(2);
+				li().a().href("#tab2").text("Statistics").end(2);
+				//li().a().href("#tab3").text("XML Configuration").end(2);
+				end();
+				div().id("tab1");
+				createServiceProxyVisualization(rule, relativeRootPath);
+				end();
+				div().id("tab2");
+				createStatusCodesTable(rule.getStatisticsByStatusCodes());
+				br();
+				createButton("View Messages", "calls", null, createQueryString("proxy", rule.toString()));
+				end();
 				end();
 			}
 		}.createPage());
@@ -132,28 +132,28 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@Mapping("/admin/proxy/show/?(\\?.*)?")
 	public Response handlePruleShowRequest(final Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 
 		final ProxyRule rule = (ProxyRule) RuleUtil.findRuleByIdentifier(router,params.get("name"));
-		
+
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_PROXIES;
 			}
-		
+
 			@Override
 			protected String getTitle() {
 				return super.getTitle()+" "+rule.toString()+" Proxy";
 			}
-			
+
 			@Override
 			protected void createTabContent() throws Exception {
 				h1().text(rule.toString()+" Proxy").end();
 				if (rule.getKey().getPort() != -1) {
-					table();					
-						createTr("Listen Port",""+rule.getKey().getPort());
+					table();
+					createTr("Listen Port",""+rule.getKey().getPort());
 					end();
 				}
 				h2().text("Status Codes").end();
@@ -161,7 +161,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				h2().text("Interceptors").end();
 				createInterceptorTable(rule.getInterceptors());
 			}
-		
+
 		}.createPage());
 	}
 
@@ -169,9 +169,9 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Response handleServiceProxySaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
-		
+
 		logAddFwdRuleParams(params);
-		
+
 		Rule r = new ServiceProxy(new ServiceProxyKey("*",
 				params.get("method"), ".*", getPortParam(params), null),
 				params.get("targetHost"), getTargetPortParam(params));
@@ -183,19 +183,19 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					"The port could not be opened: Either it is occupied or Membrane does " +
 					"not have enough privileges to do so.").build();
 		}
-		
+
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
-	
+
 	@Mapping("/admin/proxy/save/?(\\?.*)?")
 	public Response handleProxySaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
-		
+
 		log.debug("adding proxy rule");
 		log.debug("name: " + params.get("name"));
 		log.debug("port: " + params.get("port"));
-		
+
 		Rule r = new ProxyRule(new ProxyRuleKey(Integer.parseInt(params.get("port")), null));
 		r.setName(params.get("name"));
 		router.getRuleManager().addProxyAndOpenPortIfNew(r);
@@ -204,10 +204,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@Mapping("/admin/service-proxy/delete/?(\\?.*)?")
 	public Response handleServiceProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
-		
+
 		router.getRuleManager().removeRule(
 				RuleUtil.findRuleByIdentifier(router, params.get("name")));
 		return respond(getServiceProxyPage(params, relativeRootPath));
@@ -215,10 +215,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@Mapping("/admin/service-proxy/start/?(\\?.*)?")
 	public Response handleServiceProxyStartRequest(Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
-		
+
 		Rule rule = RuleUtil.findRuleByIdentifier(router, params.get("name"));
 		Rule newRule = rule.clone();
 		router.getRuleManager().replaceRule(rule, newRule);
@@ -227,57 +227,57 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@Mapping("/admin/proxy/delete/?(\\?.*)?")
 	public Response handleProxyDeleteRequest(Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
-		
+
 		router.getRuleManager().removeRule(
 				RuleUtil.findRuleByIdentifier(router, params.get("name")));
 		return respond(getProxyPage(params, relativeRootPath));
 	}
-	
+
 	@Mapping("/admin/transport/?(\\?.*)?")
 	public Response handleTransportRequest(Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_TRANSPORT;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				h2().text("Transport").end();
-				
+
 				h3().text("Transport Interceptors").end();
 				createInterceptorTable(router.getTransport().getInterceptors());
 			}
-		
+
 		}.createPage());
 	}
 
 	@Mapping("/admin/system/?(\\?.*)?")
 	public Response handleSystemRequest(final Map<String, String> params, String relativeRootPath)
-   	  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_SYSTEM;
 			}
-		
+
 			@Override
 			protected void createTabContent() {
 				h2().text("System").end();
-				
+
 				long total = Runtime.getRuntime().totalMemory();
 				long free = Runtime.getRuntime().freeMemory();
 				p().text("Availabe system memory: " + total).end();
 				p().text("Free system memory: " + free).end();
-				
+
 				p().text("Membrane version: " + Constants.VERSION).end();
-				
+
 				createLogConfigurationEditor();
 			}
 		}.createPage());
@@ -287,7 +287,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Response handleBalancersRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getBalancersPage(params, relativeRootPath));
 	}
-	
+
 	@Mapping("/admin/clusters/?(\\?.*)?")
 	public Response handleClustersRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getClustersPage(params, relativeRootPath));
@@ -302,26 +302,26 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Response handleClustersSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
-		
+
 		log.debug("adding cluster");
 		log.debug("balancer: " + getBalancerParam(params));
 		log.debug("name: " + params.get("name"));
-		
+
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).addCluster(params.get("name"));
-		
+
 		return respond(getClustersPage(params, relativeRootPath));
 	}
 
 	@Mapping("/admin/node/show/?(\\?.*)?")
 	public Response handleNodeShowRequest(final Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_LOAD_BALANCING;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				String balancer = getBalancerParam(params);
@@ -337,10 +337,10 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				p().text("Current threads: " + n.getThreads()).end();
 				p().text("Requests without responses: " + n.getLost()).end();
 				span().classAttr("mb-button");
-					createLink("Reset Counter", "node", "reset", createQueryString("balancer", balancer, "cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
+				createLink("Reset Counter", "node", "reset", createQueryString("balancer", balancer, "cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
 				end();
 				span().classAttr("mb-button");
-					createLink("Show Sessions", "node", "sessions", createQueryString("balancer", balancer, "cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
+				createLink("Show Sessions", "node", "sessions", createQueryString("balancer", balancer, "cluster",params.get("cluster"),"host",n.getHost(),"port", ""+n.getPort()));
 				end();
 			}
 		}.createPage());
@@ -348,14 +348,14 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 	@Mapping("/admin/node/sessions/?(\\?.*)?")
 	public Response handleNodeSessionsRequest(final Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_LOAD_BALANCING;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				h2().text("Node " + params.get("host")+":"+params.get("port")).end();
@@ -367,21 +367,21 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 		}.createPage());
 	}
-	
+
 	@Mapping("/admin/node/save/?(\\?.*)?")
 	public Response handleNodeSaveRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
-		
+
 		log.debug("adding node");
 		log.debug("balancer: " + getBalancerParam(params));
 		log.debug("cluster: " + params.get("cluster"));
 		log.debug("host: " + params.get("host"));
 		log.debug("port: " + params.get("port"));
-		
+
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).up(
 				params.get("cluster"),
-				params.get("host"), 
+				params.get("host"),
 				Integer.parseInt(params.get("port")));
 		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster", params.get("cluster")), relativeRootPath);
 	}
@@ -414,12 +414,12 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public Response handleNodeDeleteRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
-		
+
 		BalancerUtil.lookupBalancer(router, getBalancerParam(params)).removeNode(
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port")));
 		return redirect("clusters","show",createQueryString("balancer", getBalancerParam(params), "cluster",params.get("cluster")), relativeRootPath);
-	}	
+	}
 
 	@Mapping("/admin/node/reset/?(\\?.*)?")
 	public Response handleNodeResetRequest(Map<String, String> params, String relativeRootPath) throws Exception {
@@ -427,11 +427,11 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				params.get("cluster"), params.get("host"),
 				Integer.parseInt(params.get("port"))).clearCounter();
 		return redirect("node","show",createQueryString("balancer", getBalancerParam(params),
-														"cluster",params.get("cluster"),
-														"host",params.get("host"),
-														"port",params.get("port")), relativeRootPath);
-	}	
-	
+				"cluster",params.get("cluster"),
+				"host",params.get("host"),
+				"port",params.get("port")), relativeRootPath);
+	}
+
 	@Mapping("/admin/statistics")
 	public Response handleStatisticsRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		return respond(getStatisticsPage(params, relativeRootPath));
@@ -463,73 +463,73 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private String getServiceProxyPage(Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_SERVICE_PROXIES;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				h3().text("ServiceProxies").end();
 				createFwdRulesTable();
-				createAddFwdRuleForm();			
+				createAddFwdRuleForm();
 			}
-	
+
 		}.createPage();
 	}
 
 	private String getProxyPage(Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_PROXIES;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				h3().text("Proxies").end();
 				createProxyRulesTable();
 				createAddProxyRuleForm();
 			}
-	
+
 		}.createPage();
 	}
 
 	private String getClusterPage(final Map<String, String> params, String relativeRootPath)
-  	  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_LOAD_BALANCING;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				String balancer = getBalancerParam(params);
 				h2().text("Cluster " + params.get("cluster") + " of Balancer " + balancer).end();
 				createNodesTable(balancer);
-				createAddNodeForm(balancer);				
+				createAddNodeForm(balancer);
 			}
-		
+
 		}.createPage();
 	}
-	
+
 	private String getClustersPage(final Map<String, String> params, String relativeRootPath)
-	  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
-		
+
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_LOAD_BALANCING;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				String balancer = getBalancerParam(params);
@@ -538,19 +538,19 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				createClustersTable(balancer);
 				createAddClusterForm(balancer);
 				p();
-					text("Failover: ");
-					text(BalancerUtil.lookupBalancerInterceptor(router, balancer).isFailOver() ? "yes" : "no");
+				text("Failover: ");
+				text(BalancerUtil.lookupBalancerInterceptor(router, balancer).isFailOver() ? "yes" : "no");
 				end();
 			}
-		
+
 		}.createPage();
 	}
 
 	private String getBalancersPage(final Map<String, String> params, String relativeRootPath)
-			  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
-				
+
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_LOAD_BALANCING;
@@ -566,20 +566,20 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private String getStatisticsPage(Map<String, String> params, String relativeRootPath)
-			  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_STATISTICS;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				h3().text("Statistics").end();
 				createStatisticsTable();
 			}
-	
+
 		}.createPage();
 	}
 
@@ -600,84 +600,84 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private String getCallsPage(final Map<String, String> params, String relativeRootPath)
-			  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_CALLS;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				PropertyValueCollector propertyValues = new PropertyValueCollector();
-				
+
 				router.getExchangeStore().collect(propertyValues);
 				h3().text("Filter").end();
 				form();
-					div();
-						span().text("Method").end()
-						.select().id("message-filter-method")
-						.onchange("membrane.messageTable.fnDraw();");
-							option("*", "*", true);	
-							for (String s : sort(propertyValues.getMethods())) {
-								option(s, s, false);	
-							}						
-						end();
-						span().text("Status Code").end()
-						.select().id("message-filter-statuscode")
-						.onchange("membrane.messageTable.fnDraw();");
-							option("*", "*", true);	
-							for (Integer i : sort(propertyValues.statusCodes)) {
-								option(i.toString(), i.toString(), false);	
-							}
-					end(2);					
-					div();
-						span().text("Proxy").end()
-						.select().id("message-filter-proxy")
-						.onchange("membrane.messageTable.fnDraw();");
-							option("*", "*", !params.containsKey("proxy"));	
-							for (String s : sort(propertyValues.getProxies())) {
-								option(s, s, s.equals(params.get("proxy")));	
-							}
-						end();
-	 					span().text("Client").end()
-	 					.select().id("message-filter-client")
-	 					.onchange("membrane.messageTable.fnDraw();");
-	 						option("*", "*", !params.containsKey("client"));	
-	 						for (String s : sort(propertyValues.getClients())) {
-	 							option(s, s, s.equals(params.get("client")));	
-	 						}
-	 					end();
- 						span().text("Server").end()
- 						.select().id("message-filter-server")
- 						.onchange("membrane.messageTable.fnDraw();");
- 							option("*", "*", true);	
- 							for (String s : sort(propertyValues.getServers())) {
- 								option(s==null?"undefined":s, s==null?"":s, false);	
- 							}						
-					end(2);					
-					div();
-						span().text("Request Content-Type").end()
-						.select().id("message-filter-reqcontenttype")
-						.onchange("membrane.messageTable.fnDraw();");
-							option("*", "*", true);	
-							for (String s : sort(propertyValues.getReqContentTypes())) {
-								option(s.isEmpty()?"undefined":s, s, false);	
-							}						
-						end();					
-						span().text("Response Content-Type").end()
-						.select().id("message-filter-respcontenttype")
-						.onchange("membrane.messageTable.fnDraw();");
-							option("*", "*", true);	
-							for (String s : sort(propertyValues.getRespContentTypes())) {
-								option(s.isEmpty()?"undefined":s, s, false);	
-							}						
-					end(2);	
-					br();
-					createButton("Reset Filter", "calls", null, null);
-					a().id("reload-data-button").classAttr("mb-button").text("Reload data").end();
-					label().forAttr("reload-data-checkbox").checkbox().id("reload-data-checkbox").text("Auto Reload").end();
+				div();
+				span().text("Method").end()
+				.select().id("message-filter-method")
+				.onchange("membrane.messageTable.fnDraw();");
+				option("*", "*", true);
+				for (String s : sort(propertyValues.getMethods())) {
+					option(s, s, false);
+				}
+				end();
+				span().text("Status Code").end()
+				.select().id("message-filter-statuscode")
+				.onchange("membrane.messageTable.fnDraw();");
+				option("*", "*", true);
+				for (Integer i : sort(propertyValues.statusCodes)) {
+					option(i.toString(), i.toString(), false);
+				}
+				end(2);
+				div();
+				span().text("Proxy").end()
+				.select().id("message-filter-proxy")
+				.onchange("membrane.messageTable.fnDraw();");
+				option("*", "*", !params.containsKey("proxy"));
+				for (String s : sort(propertyValues.getProxies())) {
+					option(s, s, s.equals(params.get("proxy")));
+				}
+				end();
+				span().text("Client").end()
+				.select().id("message-filter-client")
+				.onchange("membrane.messageTable.fnDraw();");
+				option("*", "*", !params.containsKey("client"));
+				for (String s : sort(propertyValues.getClients())) {
+					option(s, s, s.equals(params.get("client")));
+				}
+				end();
+				span().text("Server").end()
+				.select().id("message-filter-server")
+				.onchange("membrane.messageTable.fnDraw();");
+				option("*", "*", true);
+				for (String s : sort(propertyValues.getServers())) {
+					option(s==null?"undefined":s, s==null?"":s, false);
+				}
+				end(2);
+				div();
+				span().text("Request Content-Type").end()
+				.select().id("message-filter-reqcontenttype")
+				.onchange("membrane.messageTable.fnDraw();");
+				option("*", "*", true);
+				for (String s : sort(propertyValues.getReqContentTypes())) {
+					option(s.isEmpty()?"undefined":s, s, false);
+				}
+				end();
+				span().text("Response Content-Type").end()
+				.select().id("message-filter-respcontenttype")
+				.onchange("membrane.messageTable.fnDraw();");
+				option("*", "*", true);
+				for (String s : sort(propertyValues.getRespContentTypes())) {
+					option(s.isEmpty()?"undefined":s, s, false);
+				}
+				end(2);
+				br();
+				createButton("Reset Filter", "calls", null, null);
+				a().id("reload-data-button").classAttr("mb-button").text("Reload data").end();
+				label().forAttr("reload-data-checkbox").checkbox().id("reload-data-checkbox").text("Auto Reload").end();
 				end();
 				h3().text(getMessagesText()).end();
 				createMessageStatisticsTable();
@@ -694,15 +694,15 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 										DateUtil.prettyPrintTimeSpan(System.currentTimeMillis() - oldestTimeResSent));
 					return "Messages" + String.format(
 							" (limited to last %.2f MB%s)",
-							lmes.getMaxSize()/1000000., 
+							lmes.getMaxSize()/1000000.,
 							usageStr);
 				}
 				return "Messages";
 			}
-	
+
 		}.createPage();
 	}
-	
+
 	private <T extends Comparable<? super T>> List<T> sort(Set<T> data) {
 		int nulls = 0;
 		ArrayList<T> res = new ArrayList<T>(data.size());
@@ -718,112 +718,112 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	}
 
 	private String getCallPage(final Map<String, String> params, String relativeRootPath)
-			  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_CALLS;
 			}
-					
+
 			@Override
 			protected void createTabContent() throws Exception {
-				script().raw("$(function() {\r\n" + 
+				script().raw("$(function() {\r\n" +
 						"					$( \"#exchangeTab\" ).tabs();\r\n" +
 						"					$( \"#requestContentTab\" ).tabs();\r\n" +
 						"					$( \"#responseContentTab\" ).tabs();\r\n" +
 						"                   membrane.loadExchange("+params.get("id")+");\r\n"+
 						"				});").end();
-				
+
 				div().id("exchangeTab");
-					ul();
-						li().a().href("#tab1").text("Request").end(2);
-						li().a().href("#tab2").text("Response").end(2);
-					end();
-					div().id("tab1");
-						creatExchangeMetaTable("request-meta");
-						h3().text("Content").end();
-						div().align("right").a().id("request-download-button").text("Download").end().end();
-						div().id("requestContentTab");
-							ul();
-								li().a().href("#requestRawTab").text("Raw").end(2);
-								li().a().href("#requestHeadersTab").text("Headers").end(2);
-								li().a().href("#requestBodyTab").text("Body").end(2);
-							end();
-							div().id("requestRawTab");
-								div().classAttr("proxy-config").pre().id("request-raw").end().end();
-							end();
-							div().id("requestHeadersTab");
-								creatHeaderTable("request-headers");
-							end();
-							div().id("requestBodyTab");
-								div().classAttr("proxy-config").pre().id("request-body").end().end();
-							end();
-						end();
-					end();
-					div().id("tab2");
-						creatExchangeMetaTable("response-meta");					
-						h3().text("Content").end();
-						div().align("right").a().id("response-download-button").text("Download").end().end();
-						div().id("responseContentTab");
-							ul();
-								li().a().href("#responseRawTab").text("Raw").end(2);
-								li().a().href("#responseHeadersTab").text("Headers").end(2);
-								li().a().href("#responseBodyTab").text("Body").end(2);
-							end();
-							div().id("responseRawTab");
-								div().classAttr("proxy-config").pre().id("response-raw").end().end();
-							end();
-							div().id("responseHeadersTab");
-								creatHeaderTable("response-headers");
-							end();
-							div().id("responseBodyTab");
-								div().classAttr("proxy-config").pre().id("response-body").end().end();
-							end();
-						end();
-					end();
+				ul();
+				li().a().href("#tab1").text("Request").end(2);
+				li().a().href("#tab2").text("Response").end(2);
+				end();
+				div().id("tab1");
+				creatExchangeMetaTable("request-meta");
+				h3().text("Content").end();
+				div().align("right").a().id("request-download-button").text("Download").end().end();
+				div().id("requestContentTab");
+				ul();
+				li().a().href("#requestRawTab").text("Raw").end(2);
+				li().a().href("#requestHeadersTab").text("Headers").end(2);
+				li().a().href("#requestBodyTab").text("Body").end(2);
+				end();
+				div().id("requestRawTab");
+				div().classAttr("proxy-config").pre().id("request-raw").end().end();
+				end();
+				div().id("requestHeadersTab");
+				creatHeaderTable("request-headers");
+				end();
+				div().id("requestBodyTab");
+				div().classAttr("proxy-config").pre().id("request-body").end().end();
+				end();
+				end();
+				end();
+				div().id("tab2");
+				creatExchangeMetaTable("response-meta");
+				h3().text("Content").end();
+				div().align("right").a().id("response-download-button").text("Download").end().end();
+				div().id("responseContentTab");
+				ul();
+				li().a().href("#responseRawTab").text("Raw").end(2);
+				li().a().href("#responseHeadersTab").text("Headers").end(2);
+				li().a().href("#responseBodyTab").text("Body").end(2);
+				end();
+				div().id("responseRawTab");
+				div().classAttr("proxy-config").pre().id("response-raw").end().end();
+				end();
+				div().id("responseHeadersTab");
+				creatHeaderTable("response-headers");
+				end();
+				div().id("responseBodyTab");
+				div().classAttr("proxy-config").pre().id("response-body").end().end();
+				end();
+				end();
+				end();
 				end();
 			}
-	
+
 		}.createPage();
 	}
 
 	private String getClientsPage(Map<String, String> params, String relativeRootPath)
-			  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_CLIENTS;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				h3().text("Statistics").end();
 				createClientsStatisticsTable();
 			}
-	
+
 		}.createPage();
 	}
 
 	private String getAboutPage(final Map<String, String> params, String relativeRootPath)
-			  throws Exception {
+			throws Exception {
 		StringWriter writer = new StringWriter();
 		return new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_ABOUT;
 			}
-		
+
 			@Override
 			protected void createTabContent() throws Exception {
 				h3().text("Impressum").end();
 				p().text("predic8 GmbH").br().text("Moltkestr. 40").br().br().text("53173 Bonn").end();
 			}
-	
+
 		}.createPage();
 	}
-	
+
 	private Outcome dispatchRequest(Exchange exc) throws Exception {
 		String pathQuery = URLUtil.getPathQuery(router.getUriFactory(), exc.getDestinations().get(0));
 		for (Method m : getClass().getMethods() ) {
@@ -839,7 +839,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	private Map<String, String> getParams(Exchange exc) throws Exception {
 		return URLParamUtil.getParams(router.getUriFactory(), exc);
 	}
-	
+
 	private Response respond(String page) throws Exception {
 		return createResponse(200, "OK", page.getBytes(Constants.UTF_8_CHARSET), MimeType.TEXT_HTML_UTF8);
 	}
@@ -878,7 +878,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 	public boolean isReadOnly() {
 		return readOnly;
 	}
-	
+
 	public void setReadOnly(boolean readOnly) {
 		this.readOnly = readOnly;
 	}

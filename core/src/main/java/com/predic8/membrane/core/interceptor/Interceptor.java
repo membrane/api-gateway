@@ -23,46 +23,46 @@ public interface Interceptor {
 
 	public enum Flow {
 		REQUEST, RESPONSE, ABORT;
-		
+
 		public static class Set {
 			public static final EnumSet<Flow> REQUEST = EnumSet.of(Flow.REQUEST);
 			public static final EnumSet<Flow> RESPONSE = EnumSet.of(Flow.RESPONSE, Flow.ABORT);
 			public static final EnumSet<Flow> REQUEST_RESPONSE = EnumSet.of(Flow.REQUEST, Flow.RESPONSE, Flow.ABORT);
 		}
 	}
-	
+
 	public Outcome handleRequest(Exchange exc) throws Exception;
 	public Outcome handleResponse(Exchange exc) throws Exception;
-	
+
 	/**
 	 * Called when any {@link #handleRequest(Exchange)} or
 	 * {@link #handleResponse(Exchange)} later in the chain returned
 	 * {@link Outcome#ABORT} or threw an exception.
-	 * 
+	 *
 	 * handleAbort is called in the reverse order of the chain (as
 	 * handleResponse is).
 	 */
 	public void handleAbort(Exchange exchange);
-	
+
 	public String getDisplayName();
 	public void setDisplayName(String name);
-	
+
 	public String getId();
 	public void setId(String id);
-	
+
 	public Router getRouter();
 
-	public void setFlow(EnumSet<Flow> flow);	
+	public void setFlow(EnumSet<Flow> flow);
 	public EnumSet<Flow> getFlow();
-	
+
 	public String getShortDescription();
 	public String getLongDescription();
-	
+
 	/**
 	 * @return "accessControl" if http://membrane-soa.org/esb-doc/current/configuration/reference/accessControl.htm is the documentation page
 	 * for this interceptor, or null if there is no such page.
 	 */
 	public String getHelpId();
-	
+
 	public void init(Router router) throws Exception;
 }

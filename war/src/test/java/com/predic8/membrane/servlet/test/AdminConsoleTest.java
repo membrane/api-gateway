@@ -33,21 +33,21 @@ public class AdminConsoleTest {
 
 	@Parameters
 	public static List<Object[]> getPorts() {
-		return Arrays.asList(new Object[][] { 
+		return Arrays.asList(new Object[][] {
 				{ 3021 }, // jetty port embedding membrane
 				{ 3027 }, // membrane admin console port
-				});
+		});
 	}
 
 	private static final String BASIC_AUTH_USER = "admin";
 	private static final String BASIC_AUTH_PASSWORD = "membrane";
-	
+
 	private final int port;
-	
+
 	public AdminConsoleTest(int port) {
 		this.port = port;
 	}
-	
+
 	@Test
 	public void testAdminConsoleReachable() throws ClientProtocolException, IOException {
 		setupHTTPAuthentication("localhost", port, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
@@ -63,5 +63,5 @@ public class AdminConsoleTest {
 	private String getBaseURL() {
 		return "http://localhost:" + port + "/";
 	}
-	
+
 }

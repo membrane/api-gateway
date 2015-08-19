@@ -30,10 +30,10 @@ import com.predic8.membrane.core.interceptor.soap.SoapOperationExtractor;
  */
 @MCElement(name="soap2Rest")
 public class SOAP2RESTInterceptor extends SOAPRESTHelper {
-	
+
 	private String requestXSLT;
 	private String responseXSLT;
-	
+
 	private SoapOperationExtractor soe = new SoapOperationExtractor();
 	private DispatchingInterceptor di = new DispatchingInterceptor();
 
@@ -45,20 +45,20 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		// save SOAP operationName and namespace in exchange properties to generically construct response name
 		soe.handleRequest(exc);
-		
+
 		// apply request XSLT
 		transformAndReplaceBody(exc.getRequest(), requestXSLT, new StreamSource(exc.getRequest().getBodyAsStreamDecoded()), exc.getStringProperties());
-		
+
 		// fill Request object from HTTP-XML
 		Header header = exc.getRequest().getHeader();
 		header.removeFields(Header.CONTENT_TYPE);
 		header.setContentType(MimeType.TEXT_XML_UTF8);
 		XML2HTTP.unwrapMessageIfNecessary(exc.getRequest());
-		
+
 		// reset exchange destination to new request URI
 		exc.getDestinations().clear();
 		di.handleRequest(exc);
-		
+
 		return Outcome.CONTINUE;
 	}
 
@@ -72,20 +72,20 @@ public class SOAP2RESTInterceptor extends SOAPRESTHelper {
 	public String getShortDescription() {
 		return "Transforms SOAP messages into REST requests and vice versa.";
 	}
-	
+
 	public String getRequestXSLT() {
 		return requestXSLT;
 	}
-	
+
 	@MCAttribute
 	public void setRequestXSLT(String requestXSLT) {
 		this.requestXSLT = requestXSLT;
 	}
-	
+
 	public String getResponseXSLT() {
 		return responseXSLT;
 	}
-	
+
 	@MCAttribute
 	public void setResponseXSLT(String responseXSLT) {
 		this.responseXSLT = responseXSLT;

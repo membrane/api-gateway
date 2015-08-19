@@ -20,11 +20,12 @@ import com.predic8.membrane.core.Constants;
 
 public class ChunkedBodyTransferrer extends AbstractBodyTransferrer {
 	OutputStream out;
-	
+
 	public ChunkedBodyTransferrer(OutputStream out) {
 		this.out = out;
 	}
-	
+
+	@Override
 	public void write(byte[] content, int i, int length) throws IOException {
 		writeChunkSize(out, length);
 		out.write(content, i, length);
@@ -32,10 +33,12 @@ public class ChunkedBodyTransferrer extends AbstractBodyTransferrer {
 		out.flush();
 	}
 
+	@Override
 	public void write(Chunk chunk) throws IOException {
 		chunk.write(out);
 	}
 
+	@Override
 	public void finish() throws IOException {
 		out.write(ZERO);
 		out.write(Constants.CRLF_BYTES);

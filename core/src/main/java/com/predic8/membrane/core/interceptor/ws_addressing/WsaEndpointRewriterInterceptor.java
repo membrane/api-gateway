@@ -20,24 +20,24 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
 public class WsaEndpointRewriterInterceptor extends AbstractInterceptor {
-    @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+	@Override
+	public Outcome handleRequest(Exchange exc) throws Exception {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
 
-        new WsaEndpointRewriter(getRegistry()).rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, 2020, exc);
+		new WsaEndpointRewriter(getRegistry()).rewriteEndpoint(exc.getRequest().getBodyAsStreamDecoded(), output, 2020, exc);
 
-        exc.getRequest().setBodyContent(output.toByteArray());
+		exc.getRequest().setBodyContent(output.toByteArray());
 
-        return Outcome.CONTINUE;
-    }
+		return Outcome.CONTINUE;
+	}
 
-    private DecoupledEndpointRegistry getRegistry() {
-        return getRouter().getBeanFactory().getBean(DecoupledEndpointRegistry.class);
-    }
+	private DecoupledEndpointRegistry getRegistry() {
+		return getRouter().getBeanFactory().getBean(DecoupledEndpointRegistry.class);
+	}
 
-    @Override
-    public Outcome handleResponse(Exchange exc) throws Exception {
-        return Outcome.CONTINUE;
-    }
+	@Override
+	public Outcome handleResponse(Exchange exc) throws Exception {
+		return Outcome.CONTINUE;
+	}
 
 }

@@ -34,18 +34,18 @@ public class DefaultConfigTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getMembraneHome();
-		
+
 		File proxies = new File(baseDir, "conf/proxies.xml");
 		File proxiesFull = new File(baseDir, "conf/proxies-full-sample.xml");
 
 		replaceInFile(proxies, "9000", "2003");
 		replaceInFile(proxiesFull, "9000", "2003");
-		
+
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			setupHTTPAuthentication("localhost", 2003, "admin", "membrane");
 			assertContains("Membrane Service Proxy Administration", getAndAssert200("http://localhost:2003/admin/"));
-			
+
 			ProxiesXmlUtil pxu = new ProxiesXmlUtil(proxies);
 			pxu.updateWith(FileUtils.readFileToString(proxiesFull), sl);
 

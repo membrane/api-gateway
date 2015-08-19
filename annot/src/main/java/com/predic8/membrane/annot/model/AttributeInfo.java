@@ -34,14 +34,14 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 	private String xsdType;
 	private boolean isEnum;
 	private boolean isBeanReference;
-	
+
 	public String getXMLName() {
 		if (getAnnotation().attributeName().length() == 0)
 			return getSpringName();
 		else
 			return getAnnotation().attributeName();
 	}
-	
+
 	public String getSpringName() {
 		String s = getE().getSimpleName().toString();
 		if (!s.substring(0, 3).equals("set"))
@@ -59,7 +59,7 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 		analyze(typeUtils);
 		return isEnum;
 	}
-	
+
 	public boolean isBeanReference(Types typeUtils) {
 		analyze(typeUtils);
 		return isBeanReference;
@@ -68,7 +68,7 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 	private void analyze(Types typeUtils) {
 		if (xsdType != null) // already analyzed?
 			return;
-		
+
 		if (getE().getParameters().size() != 1)
 			throw new ProcessingException("Setter is supposed to have 1 parameter.", getE());
 		VariableElement ve = getE().getParameters().get(0);
@@ -88,26 +88,26 @@ public class AttributeInfo extends AbstractJavadocedInfo {
 				xsdType = "xsd:string";
 				return;
 			}
-			
+
 			if (e.getSuperclass().getKind() == TypeKind.DECLARED) {
 				TypeElement superClass = ((TypeElement)typeUtils.asElement(e.getSuperclass()));
 				if (superClass.getQualifiedName().toString().equals("java.lang.Enum")) {
 					isEnum = true;
 					xsdType = "xsd:string"; // TODO: restriction, but be carefull about Spring EL usage, for example "#{config.XXX}"
-				/*
-				 *	<xsd:attribute name=\"target\" use=\"optional\" default=\"body\">\r\n" + 
-				 *		<xsd:simpleType>\r\n" + 
-				 *			<xsd:restriction base=\"xsd:string\">\r\n" + 
-				 *				<xsd:enumeration value=\"body\" />\r\n" + 
-				 *				<xsd:enumeration value=\"header\" />\r\n" + 
-				 *			</xsd:restriction>\r\n" + 
-				 *		</xsd:simpleType>\r\n" + 
-				 *	</xsd:attribute>\r\n"
-				 */
+					/*
+					 *	<xsd:attribute name=\"target\" use=\"optional\" default=\"body\">\r\n" +
+					 *		<xsd:simpleType>\r\n" +
+					 *			<xsd:restriction base=\"xsd:string\">\r\n" +
+					 *				<xsd:enumeration value=\"body\" />\r\n" +
+					 *				<xsd:enumeration value=\"header\" />\r\n" +
+					 *			</xsd:restriction>\r\n" +
+					 *		</xsd:simpleType>\r\n" +
+					 *	</xsd:attribute>\r\n"
+					 */
 					return;
 				}
 			}
-			
+
 			isBeanReference = true;
 			xsdType = "xsd:string";
 			return;

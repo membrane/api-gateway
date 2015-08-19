@@ -25,7 +25,7 @@ import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 
 public class FormValidationTest extends DistributionExtractingTestcase {
-	
+
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("validation" + File.separator + "form");

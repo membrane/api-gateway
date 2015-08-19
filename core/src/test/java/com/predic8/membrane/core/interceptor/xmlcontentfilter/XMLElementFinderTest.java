@@ -30,10 +30,10 @@ public class XMLElementFinderTest {
 		List<QName> names2 = new ArrayList<QName>();
 		for (QName name : names)
 			names2.add(name);
-		Assert.assertEquals(isExpectedToContainOneOf, 
+		Assert.assertEquals(isExpectedToContainOneOf,
 				new XMLElementFinder(names2).matches(new ByteArrayInputStream(doc.getBytes())));
 	}
-	
+
 	@Test
 	public void doit() {
 		testIt(DOC, true, new QName("a"));
@@ -47,7 +47,7 @@ public class XMLElementFinderTest {
 		testIt(DOC, true, new QName("c"));
 		testIt(DOC, true, new QName("space-s", "c"));
 		testIt(DOC, false, new QName("space-other", "c"));
-		
+
 		testIt(DOC, false, new QName("d"));
 		testIt(DOC, false, new QName("space-s", "d"));
 		testIt(DOC, false, new QName("space-other", "d"));

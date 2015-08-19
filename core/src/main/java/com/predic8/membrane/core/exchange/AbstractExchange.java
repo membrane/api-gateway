@@ -43,9 +43,9 @@ public abstract class AbstractExchange {
 
 	protected Request request;
 	private Response response;
-	
+
 	private String originalRequestUri;
-	
+
 	private Calendar time = Calendar.getInstance();
 	private String errMessage = "";
 	private Set<IExchangeViewerListener> exchangeViewerListeners = new HashSet<IExchangeViewerListener>();
@@ -58,29 +58,29 @@ public abstract class AbstractExchange {
 
 	private boolean forceToStop = false;
 
-	
+
 	private long tReqSent;
-	
+
 	private long tReqReceived;
-	
+
 	private long tResSent;
-	
+
 	private long tResReceived;
-	
+
 	private List<String> destinations = new ArrayList<String>();
-	
+
 
 	private String remoteAddr;
 	private String remoteAddrIp;
-	
+
 	private final ArrayList<Interceptor> interceptorStack = new ArrayList<Interceptor>(10);
 
 	private int estimatedHeapSize = -1;
 
 	public AbstractExchange() {
-		
+
 	}
-	
+
 	/**
 	 * For HttpResendRunnable
 	 * @param original
@@ -88,7 +88,7 @@ public abstract class AbstractExchange {
 	public AbstractExchange(AbstractExchange original) {
 		properties = new HashMap<String, Object>(original.properties);
 		originalRequestUri = original.originalRequestUri;
-		
+
 		List<String> origDests = original.getDestinations();
 		for (String dest : origDests) {
 			destinations.add(dest);
@@ -173,7 +173,7 @@ public abstract class AbstractExchange {
 		status = ExchangeState.SENT;
 		notifyExchangeStopped();
 	}
-	
+
 	private void notifyExchangeFinished() {
 		for (IExchangeViewerListener listener : exchangeViewerListeners) {
 			listener.setExchangeFinished();
@@ -193,7 +193,7 @@ public abstract class AbstractExchange {
 			listener.setExchangeStopped(this);
 		}
 	}
-	
+
 	public void finishExchange(boolean refresh) {
 		finishExchange(refresh, "");
 	}
@@ -264,7 +264,7 @@ public abstract class AbstractExchange {
 	public void setTimeReqReceived(long tReqReceived) {
 		this.tReqReceived = tReqReceived;
 	}
-	
+
 	public void received() {
 		setTimeReqReceived(System.currentTimeMillis());
 	}
@@ -291,15 +291,15 @@ public abstract class AbstractExchange {
 
 	public void setOriginalRequestUri(String requestUri) {
 		this.originalRequestUri = requestUri;
-	}	
-	
+	}
+
 	public String getServer() {
 		if (getRule() instanceof ProxyRule) {
 			try {
 				if (getRequest().isCONNECTRequest()) {
 					return getRequest().getHeader().getHost();
 				}
-				
+
 				return new URL(getOriginalRequestUri()).getHost();
 			} catch (MalformedURLException e) {
 				log.error("", e);
@@ -311,12 +311,12 @@ public abstract class AbstractExchange {
 		}
 		return "";
 	}
-	
+
 	public int getResponseContentLength() {
 		int length = getResponse().getHeader().getContentLength();
 		if (length != -1)
 			return length;
-		
+
 		if (length == -1 && getResponse().getBody().isRead()) {
 			try {
 				return  getResponse().getBody().getLength();
@@ -324,7 +324,7 @@ public abstract class AbstractExchange {
 				log.error("", e);
 			}
 		}
-			
+
 		return -1;
 	}
 
@@ -333,26 +333,26 @@ public abstract class AbstractExchange {
 	}
 
 	public String getRequestContentType() {
-		return extractContentTypeValue((String)getRequest().getHeader().getContentType());
+		return extractContentTypeValue(getRequest().getHeader().getContentType());
 	}
 
 	public String getResponseContentType() {
 		if (getResponse() == null)
 			return "";
-		return extractContentTypeValue((String) getResponse().getHeader().getContentType());
+		return extractContentTypeValue(getResponse().getHeader().getContentType());
 	}
 
 	private String extractContentTypeValue(String contentType) {
 		if (contentType == null)
 			return "";
-		
+
 		int index = contentType.indexOf(";");
 		if (index > 0) {
 			return contentType.substring(0, index);
 		}
 		return contentType;
 	}
-	
+
 	public List<String> getDestinations() {
 		return destinations;
 	}
@@ -368,14 +368,14 @@ public abstract class AbstractExchange {
 	public void setRemoteAddr(String remoteAddr) {
 		this.remoteAddr = remoteAddr;
 	}
-	
+
 	/**
 	 * @return The IP address of the incoming TCP connection's remote address.
 	 */
 	public String getRemoteAddrIp() {
 		return remoteAddrIp;
 	}
-	
+
 	public void setRemoteAddrIp(String remoteAddrIp) {
 		this.remoteAddrIp = remoteAddrIp;
 	}
@@ -384,22 +384,22 @@ public abstract class AbstractExchange {
 	public String toString() {
 		return "[time:"+DateFormat.getDateInstance().format(time.getTime())+",requestURI:"+request.getUri()+"]";
 	}
-	
+
 	public void pushInterceptorToStack(Interceptor i) {
 		interceptorStack.add(i);
 	}
-	
+
 	public Interceptor popInterceptorFromStack() {
 		int s = interceptorStack.size();
 		return s == 0 ? null : interceptorStack.remove(s-1);
 	}
-	
+
 	public int getHeapSizeEstimation() {
 		if (estimatedHeapSize == -1)
 			estimatedHeapSize = estimateHeapSize();
 		return estimatedHeapSize;
 	}
-	
+
 	protected int resetHeapSizeEstimation() {
 		int estimatedHeapSize2 = estimatedHeapSize;
 		estimatedHeapSize = 0;
@@ -407,12 +407,12 @@ public abstract class AbstractExchange {
 	}
 
 	protected int estimateHeapSize() {
-		return 2000 + 
-				(originalRequestUri != null ? originalRequestUri.length() : 0) + 
+		return 2000 +
+				(originalRequestUri != null ? originalRequestUri.length() : 0) +
 				(request != null ? request.estimateHeapSize() : 0) +
 				(response != null ? response.estimateHeapSize() : 0);
 	}
-	
+
 	/**
 	 * Prepares for long-term storage (for example, in-memory {@link ExchangeStore}s).
 	 */
@@ -421,5 +421,5 @@ public abstract class AbstractExchange {
 	}
 
 	public abstract long getId();
-	
+
 }

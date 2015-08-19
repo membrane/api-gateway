@@ -40,12 +40,12 @@ import com.predic8.membrane.core.util.EndOfStreamException;
 
 class HttpServletHandler extends AbstractHttpHandler {
 	private static final Log log = LogFactory.getLog(HttpServletHandler.class);
-	
+
 	private final HttpServletRequest request;
 	private final HttpServletResponse response;
 	private final InetAddress remoteAddr, localAddr;
-	
-	public HttpServletHandler(HttpServletRequest request, HttpServletResponse response, 
+
+	public HttpServletHandler(HttpServletRequest request, HttpServletResponse response,
 			Transport transport) throws IOException {
 		super(transport);
 		this.request = request;
@@ -53,12 +53,12 @@ class HttpServletHandler extends AbstractHttpHandler {
 		remoteAddr = InetAddress.getByName(request.getRemoteAddr());
 		localAddr = InetAddress.getByName(request.getLocalAddr());
 		exchange = new Exchange(this);
-		
+
 		exchange.setProperty(Exchange.HTTP_SERVLET_REQUEST, request);
 	}
-	
+
 	public void run() {
-		try { 
+		try {
 			srcReq = createRequest();
 
 			exchange.received();
@@ -68,7 +68,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 				String ip = dnsCache.getHostAddress(remoteAddr);
 				exchange.setRemoteAddrIp(ip);
 				exchange.setRemoteAddr(getTransport().isReverseDNS() ? dnsCache.getHostName(remoteAddr) : ip);
-				
+
 				exchange.setRequest(srcReq);
 				exchange.setOriginalRequestUri(srcReq.getUri());
 
@@ -92,9 +92,9 @@ class HttpServletHandler extends AbstractHttpHandler {
 		} finally {
 			exchange.detach();
 		}
-		
+
 	}
-	
+
 	@SuppressWarnings("deprecation")
 	protected void writeResponse(Response res) throws Exception {
 		response.setStatus(res.getStatusCode(), res.getStatusMessage());
@@ -103,11 +103,11 @@ class HttpServletHandler extends AbstractHttpHandler {
 				continue;
 			response.addHeader(header.getHeaderName().toString(), header.getValue());
 		}
-		
+
 		ServletOutputStream out = response.getOutputStream();
 		res.getBody().write(new PlainBodyTransferrer(out));
 		out.flush();
-		
+
 		response.flushBuffer();
 
 		exchange.setTimeResSent(System.currentTimeMillis());
@@ -116,22 +116,22 @@ class HttpServletHandler extends AbstractHttpHandler {
 
 	private Request createRequest() throws IOException {
 		Request srcReq = new Request();
-		
+
 		String pathQuery = request.getRequestURI();
 		if (request.getQueryString() != null)
 			pathQuery += "?" + request.getQueryString();
-		
+
 		if (getTransport().isRemoveContextRoot()) {
 			String contextPath = request.getContextPath();
 			if (contextPath.length() > 0 && pathQuery.startsWith(contextPath))
 				pathQuery = pathQuery.substring(contextPath.length());
 		}
-		
+
 		srcReq.create(
-				request.getMethod(), 
-				pathQuery, 
-				request.getProtocol(), 
-				createHeader(), 
+				request.getMethod(),
+				pathQuery,
+				request.getProtocol(),
+				createHeader(),
 				request.getInputStream());
 		return srcReq;
 	}
@@ -149,36 +149,37 @@ class HttpServletHandler extends AbstractHttpHandler {
 		}
 		return header;
 	}
-	
+
 	@Override
 	public void shutdownInput() throws IOException {
 		request.getInputStream().close();
 		// nothing more we can do, since the servlet API does not give
 		// us access to the TCP API
 	}
-	
+
+	@Override
 	public InetAddress getLocalAddress() {
 		return localAddr;
 	}
-	
+
 	@Override
 	public int getLocalPort() {
 		return request.getLocalPort();
 	}
-	
+
 	@Override
 	public ServletTransport getTransport() {
 		return (ServletTransport)super.getTransport();
 	}
-	
+
 	@Override
 	public boolean isMatchLocalPort() {
 		return false;
 	}
-	
+
 	@Override
 	public String getContextPath(Exchange exc) {
 		return ((HttpServletRequest)exc.getProperty(Exchange.HTTP_SERVLET_REQUEST)).getContextPath();
 	}
-	
+
 }

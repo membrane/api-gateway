@@ -19,12 +19,12 @@ import java.net.InetAddress;
 public class FakeHttpHandler extends AbstractHttpHandler {
 
 	private final int port;
-	
+
 	public FakeHttpHandler(int port) {
 		super(null);
 		this.port = port;
 	}
-	
+
 	@Override
 	public void shutdownInput() throws IOException {
 	}

@@ -26,7 +26,7 @@ public class DummyWebServiceInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(DummyWebServiceInterceptor.class.getName());
 
 	public volatile long counter;
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		exc.setResponse(Response.ok().contentType("text/html").body("<aaa></aaa>".getBytes()).build());
@@ -34,5 +34,5 @@ public class DummyWebServiceInterceptor extends AbstractInterceptor {
 		log.debug("handle request "+counter);
 		return Outcome.RETURN;
 	}
-	
+
 }

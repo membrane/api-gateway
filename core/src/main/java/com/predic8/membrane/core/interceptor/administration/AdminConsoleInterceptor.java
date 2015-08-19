@@ -44,7 +44,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	// these are the interceptors this interceptor consists of
 	private final List<Interceptor> interceptors = Arrays.asList(new Interceptor[] { r, rai, dapi, wsi });
 	private final InterceptorFlowController flowController = new InterceptorFlowController();
-	
+
 	public AdminConsoleInterceptor() {
 		name = "Administration";
 
@@ -74,7 +74,7 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 	public boolean isReadOnly() {
 		return dapi.isReadOnly();
 	}
-	
+
 	/**
 	 * @description Whether runtime changes to Membrane's configuration can be committed in the admin console.
 	 * @default false
@@ -94,5 +94,5 @@ public class AdminConsoleInterceptor extends AbstractInterceptor {
 		sb.append("admin console.");
 		return sb.toString();
 	}
-	
+
 }

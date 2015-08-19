@@ -21,9 +21,9 @@ package com.predic8.membrane.core.transport.http;
 public class NoResponseException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	public NoResponseException() {
 	}
-	
+
 
 }

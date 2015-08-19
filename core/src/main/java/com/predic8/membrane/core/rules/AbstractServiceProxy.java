@@ -36,20 +36,20 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		private int port = 80;
 		private String url;
 		private boolean adjustHostHeader = true;
-		
+
 		private SSLParser sslParser;
-		
+
 		public Target() {}
-		
+
 		public Target(String host) {
 			setHost(host);
 		}
-		
+
 		public Target(String host, int port) {
 			setHost(host);
 			setPort(port);
 		}
-		
+
 		public String getHost() {
 			return host;
 		}
@@ -62,11 +62,11 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		public void setHost(String host) {
 			this.host = host;
 		}
-		
+
 		public int getPort() {
 			return port;
 		}
-		
+
 		/**
 		 * @description Port number of the target.
 		 * @default 80
@@ -76,11 +76,11 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		public void setPort(int port) {
 			this.port = port;
 		}
-		
+
 		public String getUrl() {
 			return url;
 		}
-		
+
 		/**
 		 * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
 		 * @example http://membrane-soa.org
@@ -89,12 +89,12 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		public void setUrl(String url) {
 			this.url = url;
 		}
-		
+
 		public SSLParser getSslParser() {
 			return sslParser;
 		}
-		
-		
+
+
 		/**
 		 * @description Configures outbound SSL (HTTPS).
 		 */
@@ -102,30 +102,30 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		public void setSslParser(SSLParser sslParser) {
 			this.sslParser = sslParser;
 		}
-		
+
 		public boolean isAdjustHostHeader() {
 			return adjustHostHeader;
 		}
-		
+
 		@MCAttribute
 		public void setAdjustHostHeader(boolean adjustHostHeader) {
 			this.adjustHostHeader = adjustHostHeader;
 		}
 	}
-	
+
 	protected Target target = new Target();
 
 	public String getTargetScheme() {
 		return getSslOutboundContext() != null ? "https" : "http";
 	}
-	
+
 	@Override
 	public void init() throws Exception {
 		super.init();
 		if (target.getSslParser() != null)
 			setSslOutboundContext(new SSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
 	}
-	
+
 	public String getHost() {
 		return ((ServiceProxyKey)key).getHost();
 	}
@@ -144,7 +144,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	public void setHost(String host) {
 		((ServiceProxyKey)key).setHost(host);
 	}
-	
+
 	public Path getPath() {
 		ServiceProxyKey k = (ServiceProxyKey)key;
 		if (!k.isUsePathPattern())
@@ -171,7 +171,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 			k.setPath(path.getValue());
 		}
 	}
-	
+
 	public String getTargetHost() {
 		return target.getHost();
 	}
@@ -183,7 +183,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	public String getTargetURL() {
 		return target.getUrl();
 	}
-	
+
+	@Override
 	public boolean isTargetAdjustHostHeader() {
 		return target.isAdjustHostHeader();
 	}

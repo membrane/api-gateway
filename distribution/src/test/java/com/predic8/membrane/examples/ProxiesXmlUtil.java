@@ -22,7 +22,7 @@ import org.apache.commons.io.FileUtils;
 import com.predic8.membrane.examples.util.SubstringWaitableConsoleEvent;
 
 public class ProxiesXmlUtil {
-	
+
 	private File proxiesXml;
 
 	public ProxiesXmlUtil(String file) {
@@ -30,13 +30,13 @@ public class ProxiesXmlUtil {
 		if (!proxiesXml.exists())
 			throw new IllegalArgumentException("File " + file + " does not exist.");
 	}
-	
+
 	public ProxiesXmlUtil(File file) {
 		proxiesXml = file;
 		if (!proxiesXml.exists())
 			throw new IllegalArgumentException("File " + file + " does not exist.");
 	}
-	
+
 	public void updateWith(String proxiesXmlContent, Process2 sl) throws IOException {
 		SubstringWaitableConsoleEvent reloaded = new SubstringWaitableConsoleEvent(sl, "Spring Hot Deployment Thread started.");
 		FileUtils.writeStringToFile(proxiesXml, proxiesXmlContent);

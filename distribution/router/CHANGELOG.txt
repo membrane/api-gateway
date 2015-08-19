@@ -1,6 +1,9 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [feature] The admin console now has a "Auto Reload" checkbox in the 'Calls'
+  tab. Calls are automatically refreshed while this checkbox is checked.
+
 * [release] 4.1.0
 
 * [feature] The admin console can now display 'inflight' exchanges, which have

@@ -22,11 +22,11 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
 @MCMain(outputPackage="com.predic8.membrane.servlet.test.config.spring",
-		outputName="router-conf.xsd",
-		targetNamespace="http://membrane-soa.org/war-test/1/")
+outputName="router-conf.xsd",
+targetNamespace="http://membrane-soa.org/war-test/1/")
 @MCElement(name="echo", configPackage="com.predic8.membrane.servlet.test.config.spring")
 public class EchoInterceptor extends AbstractInterceptor {
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Outcome outcome = exc.echo();

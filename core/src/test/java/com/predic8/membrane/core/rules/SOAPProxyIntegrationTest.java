@@ -35,18 +35,18 @@ public class SOAPProxyIntegrationTest {
 	public static void init() throws MalformedURLException {
 		router = Router.init("classpath:/soap-proxy.xml");
 	}
-	
+
 	@AfterClass
 	public static void uninit() throws IOException {
 		router.shutdown();
 	}
-	
+
 	@Test
 	public void test() throws Exception {
 		getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl",
 				new String[] {
-					Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8,
-					Header.SOAP_ACTION, ""
+				Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8,
+				Header.SOAP_ACTION, ""
 		});
 	}
 
@@ -62,6 +62,6 @@ public class SOAPProxyIntegrationTest {
 		assertContains("location=\"http://localhost:2001/myBLZService\"", wsdl);
 	}
 
-	
+
 
 }

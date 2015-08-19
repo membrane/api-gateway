@@ -19,37 +19,37 @@ import org.junit.Test;
 
 
 public class ClusterManagerTest extends TestCase {
-	
+
 	private Balancer cm;
-	
+
 	public ClusterManagerTest() {
 		cm = new Balancer();
 	}
-	
+
 	@Test
 	public void testAddEndpoint() throws Exception {
 
 		cm.up("c1", "localhost", 2000);
-		
+
 		assertEquals(1, cm.getAllNodesByCluster("c1").size());
 		assertEquals(true, cm.getAllNodesByCluster("c1").get(0).isUp());
 		assertEquals("localhost", cm.getAllNodesByCluster("c1").get(0).getHost());
 		assertEquals(2000, cm.getAllNodesByCluster("c1").get(0).getPort());
-	}	
+	}
 
 	@Test
 	public void testDownEndpoint() throws Exception {
 
 		cm.down("c2", "localhost", 2000);
 		assertEquals(false, cm.getAllNodesByCluster("c2").get(0).isUp());
-	}	
+	}
 
 	@Test
 	public void testEmptyEndpoints() throws Exception {
 
 		assertEquals(0, cm.getAllNodesByCluster("c3").size());
-	}	
-	
+	}
+
 	@Test
 	public void testTimeout() throws Exception {
 
@@ -58,6 +58,6 @@ public class ClusterManagerTest extends TestCase {
 		assertEquals(1, cm.getAvailableNodesByCluster("c3").size());
 		Thread.sleep(3000);
 		assertEquals(0, cm.getAvailableNodesByCluster("c3").size());
-	}	
+	}
 
 }

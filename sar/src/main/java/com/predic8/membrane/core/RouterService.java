@@ -21,18 +21,18 @@ public class RouterService implements RouterServiceMBean {
 	private static Log log = LogFactory.getLog(RouterService.class.getName());
 
 	Router router;
-	
+
 	private String proxiesXml = "classpath:/META-INF/proxies.xml";
-	
-    public void start() throws Exception {
-    	router = Router.init(proxiesXml);
-        log.info(Constants.PRODUCT_NAME + " started");
-    }
+
+	public void start() throws Exception {
+		router = Router.init(proxiesXml);
+		log.info(Constants.PRODUCT_NAME + " started");
+	}
 
 	public void stop() throws Exception {
-        router.shutdown();
-        log.info(Constants.PRODUCT_NAME + " stopped");
-    }
+		router.shutdown();
+		log.info(Constants.PRODUCT_NAME + " stopped");
+	}
 
 	public String getProxiesXml() {
 		return proxiesXml;

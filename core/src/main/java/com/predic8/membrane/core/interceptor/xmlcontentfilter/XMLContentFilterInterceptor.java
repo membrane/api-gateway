@@ -50,20 +50,20 @@ import com.predic8.membrane.core.interceptor.Outcome;
  */
 @MCElement(name="xmlContentFilter")
 public class XMLContentFilterInterceptor extends AbstractInterceptor {
-	
+
 	private static final Logger LOG = Logger.getLogger(XMLContentFilterInterceptor.class);
-	
+
 	private String xPath;
 	private XMLContentFilter xmlContentFilter;
-	
+
 	public XMLContentFilterInterceptor() {
 		setFlow(Flow.Set.REQUEST_RESPONSE);
 	}
-	
+
 	public String getXPath() {
 		return xPath;
 	}
-	
+
 	/**
 	 * @description An XPath 1.0 expression describing the elements to be removed from message bodies.
 	 */
@@ -77,17 +77,17 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		return handleMessage(exc, exc.getRequest());
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		return handleMessage(exc, exc.getResponse());
 	}
-	
+
 	private Outcome handleMessage(Exchange exc, Message message) {
 		try {
 			xmlContentFilter.removeMatchingElements(message);
@@ -98,5 +98,5 @@ public class XMLContentFilterInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 	}
-	
+
 }

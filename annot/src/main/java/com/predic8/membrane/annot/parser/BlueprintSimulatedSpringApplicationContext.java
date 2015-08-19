@@ -46,7 +46,7 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 		this.blueprintContainer = blueprintContainer;
 	}
 
-	
+
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -81,7 +81,7 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 		return (T)bean;
 	}
 
-	
+
 
 	@Override
 	public Environment getEnvironment() {

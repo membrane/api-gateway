@@ -32,7 +32,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 /**
  * Pools TCP/IP connections, holding them open for a configurable number of milliseconds.
- * 
+ *
  * With keep-alive use as follows:
  * <code>
  * Connection connection = connectionManager.getConnection(...);
@@ -42,33 +42,33 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
  *   connection.release();
  * }
  * </code>
- * 
+ *
  * Without keep-alive replace {@link Connection#release()} by {@link Connection#close()}.
- * 
+ *
  * Note that you should call {@link Connection#release()} exactly once, or alternatively
  * {@link Connection#close()} at least once.
  */
 public class ConnectionManager {
 
 	private static Log log = LogFactory.getLog(ConnectionManager.class.getName());
-	
-	private final long keepAliveTimeout; 
-	private final long autoCloseInterval; 
-	
+
+	private final long keepAliveTimeout;
+	private final long autoCloseInterval;
+
 	private static class ConnectionKey {
 		public final InetAddress host;
 		public final int port;
-		
+
 		public ConnectionKey(InetAddress host, int port) {
 			this.host = host;
 			this.port = port;
 		}
-		
+
 		@Override
 		public int hashCode() {
 			return Objects.hashCode(host, port);
 		}
-		
+
 		@Override
 		public boolean equals(Object obj) {
 			if (!(obj instanceof ConnectionKey) || obj == null)
@@ -76,17 +76,17 @@ public class ConnectionManager {
 			ConnectionKey other = (ConnectionKey)obj;
 			return host.equals(other.host) && port == other.port;
 		}
-		
+
 		@Override
 		public String toString() {
 			return host + ":" + port;
 		}
 	}
-	
+
 	private static class OldConnection {
 		public final Connection connection;
 		public final long deathTime;
-		
+
 		public OldConnection(Connection connection, long defaultKeepAliveTimeout) {
 			this.connection = connection;
 			long lastUse = connection.getLastUse();
@@ -104,7 +104,7 @@ public class ConnectionManager {
 			this.deathTime = lastUse + delta;
 		}
 	}
-	
+
 	private AtomicInteger numberInPool = new AtomicInteger();
 	private HashMap<ConnectionKey, ArrayList<OldConnection>> availableConnections =
 			new HashMap<ConnectionManager.ConnectionKey, ArrayList<OldConnection>>(); // guarded by this
@@ -123,16 +123,16 @@ public class ConnectionManager {
 			}
 		}, autoCloseInterval, autoCloseInterval);
 	}
-	
+
 	public Connection getConnection(InetAddress host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
-		
+
 		log.debug("connection requested for host: " + host + " and port: " + port);
-		
+
 		log.debug("Number of connections in pool: " + numberInPool.get());
-		
+
 		ConnectionKey key = new ConnectionKey(host, port);
 		long now = System.currentTimeMillis();
-		
+
 		synchronized(this) {
 			ArrayList<OldConnection> l = availableConnections.get(key);
 			if (l != null) {
@@ -153,16 +153,16 @@ public class ConnectionManager {
 		numberInPool.incrementAndGet();
 		return result;
 	}
-	
+
 	public void releaseConnection(Connection connection) {
 		if (connection == null)
 			return;
-		
+
 		if (connection.isClosed()) {
 			numberInPool.decrementAndGet();
 			return;
 		}
-		
+
 		ConnectionKey key = new ConnectionKey(connection.socket.getInetAddress(), connection.socket.getPort());
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
 		ArrayList<OldConnection> l;
@@ -175,7 +175,7 @@ public class ConnectionManager {
 			l.add(o);
 		}
 	}
-	
+
 	private int closeOldConnections() {
 		ArrayList<ConnectionKey> toRemove = new ArrayList<ConnectionKey>();
 		ArrayList<Connection> toClose = new ArrayList<Connection>();
@@ -217,15 +217,16 @@ public class ConnectionManager {
 			log.debug("closed " + closed + " connections");
 		return remaining;
 	}
-	
+
 	public void shutdownWhenDone() {
 		shutdownWhenDone = true;
 	}
-	
+
 	public int getNumberInPool() {
 		return numberInPool.get();
 	}
-	
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Number in pool: " + numberInPool.get() + "\n");

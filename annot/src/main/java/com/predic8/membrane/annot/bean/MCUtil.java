@@ -48,11 +48,11 @@ import com.predic8.membrane.annot.MCTextContent;
 /**
  * A utility class to deeply-clone/serizalize/deserialize {@link MCElement}-annotatated objects
  * (from/to a Spring-based XML configuration file).
- * 
+ *
  * The serialization process may fail: This occurs when non-{@link MCElement}-annotated objects are contained
  * in the object tree. This is, for example, the case in the JDBC logging example, where the DataSource is a
  * spring bean *not* created using {@link MCElement} annotations.
- * 
+ *
  * In case of a serialization failure, the resuling XML cannot be used to reconstruct the object tree.
  */
 public class MCUtil {
@@ -77,13 +77,13 @@ public class MCUtil {
 		try {
 			if (object == null)
 				throw new InvalidParameterException("'object' must not be null.");
-			
+
 			Class<? extends Object> clazz = object.getClass();
-			
+
 			MCElement e = clazz.getAnnotation(MCElement.class);
 			if (e == null)
 				throw new IllegalArgumentException("'object' must be @MCElement-annotated.");
-			
+
 			BeanWrapperImpl dst = new BeanWrapperImpl(clazz);
 			BeanWrapperImpl src = new BeanWrapperImpl(object);
 
@@ -112,8 +112,8 @@ public class MCUtil {
 					dst.setPropertyValue(propertyName, src.getPropertyValue(propertyName));
 				}
 			}
-			
-			
+
+
 			return (T) dst.getRootInstance();
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -123,7 +123,7 @@ public class MCUtil {
 	@SuppressWarnings("unchecked")
 	public static <T> T fromXML(Class<T> clazz, final String xml) {
 		final String MAGIC = "magic.xml";
-		
+
 		FileSystemXmlApplicationContext fsxacApplicationContext = new FileSystemXmlApplicationContextExtension(MAGIC, xml);
 		fsxacApplicationContext.setConfigLocation(MAGIC);
 
@@ -133,9 +133,9 @@ public class MCUtil {
 			System.err.println(xml);
 			throw e;
 		}
-		
+
 		Object bean = null;
-		
+
 		if (fsxacApplicationContext.containsBean("main")) {
 			bean = fsxacApplicationContext.getBean("main");
 		} else {
@@ -144,16 +144,16 @@ public class MCUtil {
 				throw new InvalidParameterException("There is more than one bean of type '" + clazz.getName() + "'.");
 			bean = beans.iterator().next();
 		}
-		
+
 		if (bean == null)
 			throw new InvalidParameterException("Did not find bean with ID 'main'.");
-		
+
 		if (!clazz.isAssignableFrom(bean.getClass()))
 			throw new InvalidParameterException("Bean 'main' is not a " + clazz.getName() + " .");
-		
+
 		return (T) bean;
 	}
-	
+
 	private static final class FileSystemXmlApplicationContextExtension extends FileSystemXmlApplicationContext {
 		private final String MAGIC;
 		private final String xml;
@@ -167,6 +167,7 @@ public class MCUtil {
 		public Resource getResource(String location) {
 			if (MAGIC.equals(location)) {
 				return new FileSystemResource(MAGIC) {
+					@Override
 					public InputStream getInputStream() throws IOException {
 						return new ByteArrayInputStream(xml.getBytes(Charset.forName("UTF-8")));
 					};
@@ -182,37 +183,38 @@ public class MCUtil {
 		HashMap<String, String> beans = new HashMap<String, String>();
 		HashMap<Object, String> ids = new HashMap<Object, String>();
 		int nextBean = 1;
-		
+
+		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
-			
+
 			sb.append("<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n");
 			sb.append("  xmlns:spring=\"http://www.springframework.org/schema/beans\"\r\n");
 			sb.append("  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n");
 			sb.append("  xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd\r\n");
 			sb.append("    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n");
 			sb.append("\r\n");
-			
+
 			if (incomplete)
 				sb.append("<!-- WARNING: This is an incomplete serialization of Membrane's configuration. Only use this config as a template for further processing. -->\r\n");
-			
+
 			for (String def : beans.values()) {
 				sb.append(def);
 				sb.append("\r\n");
 			}
-			
+
 			sb.append("\r\n");
 			sb.append("</spring:beans>\r\n");
 			return sb.toString();
 		}
 	}
-	
+
 	private static void addXML(Object object, String id, XMLStreamWriter xew, SerializationContext sc) throws XMLStreamException {
 		if (object == null)
 			throw new InvalidParameterException("'object' must not be null.");
 
 		Class<? extends Object> clazz = object.getClass();
-		
+
 		MCElement e = clazz.getAnnotation(MCElement.class);
 		if (e == null)
 			throw new IllegalArgumentException("'object' must be @MCElement-annotated.");
@@ -220,10 +222,10 @@ public class MCUtil {
 		BeanWrapperImpl src = new BeanWrapperImpl(object);
 
 		xew.writeStartElement(e.name());
-		
+
 		if (id != null)
 			xew.writeAttribute("id", id);
-		
+
 		HashSet<String> attributes = new HashSet<String>();
 		for (Method m : clazz.getMethods()) {
 			if (!m.getName().startsWith("set"))
@@ -254,10 +256,10 @@ public class MCUtil {
 						sc.incomplete = true;
 					}
 				}
-				
+
 				if (a.attributeName().length() > 0)
 					propertyName = a.attributeName();
-				
+
 				attributes.add(propertyName);
 				xew.writeAttribute(propertyName, str);
 			}
@@ -290,7 +292,7 @@ public class MCUtil {
 				}
 			}
 		}
-		
+
 		List<Method> childElements = new ArrayList<Method>();
 		for (Method m : clazz.getMethods()) {
 			if (!m.getName().startsWith("set"))
@@ -314,7 +316,7 @@ public class MCUtil {
 				}
 			}
 		}
-		
+
 		Collections.sort(childElements, new Comparator<Method>() {
 
 			@Override
@@ -324,7 +326,7 @@ public class MCUtil {
 				return c1.order() - c2.order();
 			}
 		});
-		
+
 		for (Method m : childElements) {
 			String propertyName = AnnotUtils.dejavaify(m.getName().substring(3));
 
@@ -339,41 +341,41 @@ public class MCUtil {
 			}
 		}
 
-		
+
 		xew.writeEndElement();
 	}
-	
+
 	private static String defineBean(SerializationContext sc, Object object, String idSuggestion, boolean requireBeanId) throws XMLStreamException {
 		if (sc.ids.containsKey(object))
 			return sc.ids.get(object);
-			
+
 		String id = idSuggestion;
-		
+
 		if (requireBeanId && id == null)
-			id = "bean" + sc.nextBean++; 
+			id = "bean" + sc.nextBean++;
 
 		StringWriter sw = new StringWriter();
 		XMLStreamWriter xew = xmlOutputFactory.createXMLStreamWriter(sw);
-		
+
 		addXML(object, id, xew, sc);
 		xew.flush();
 
 		if (id == null)
-			id = "bean" + sc.nextBean++; 
+			id = "bean" + sc.nextBean++;
 
 		sc.beans.put(id, sw.toString());
 		sc.ids.put(object, id);
-		
+
 		return id;
 	}
-	
+
 	public static String toXML(Object object) {
 		try {
-			
+
 			SerializationContext sc = new SerializationContext();
-			
+
 			defineBean(sc, object, "main", true);
-			
+
 			return sc.toString();
 		} catch (Exception e) {
 			throw new RuntimeException(e);

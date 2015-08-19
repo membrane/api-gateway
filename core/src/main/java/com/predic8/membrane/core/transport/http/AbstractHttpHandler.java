@@ -46,9 +46,9 @@ public abstract class AbstractHttpHandler  {
 	protected Exchange exchange;
 	protected Request srcReq;
 	private static final InterceptorFlowController flowController = new InterceptorFlowController();
-		
+
 	private final Transport transport;
-	
+
 	public AbstractHttpHandler(Transport transport) {
 		this.transport = transport;
 	}
@@ -64,7 +64,7 @@ public abstract class AbstractHttpHandler  {
 	public abstract InetAddress getLocalAddress();
 	public abstract int getLocalPort();
 
-	
+
 	protected void invokeHandlers() throws IOException, EndOfStreamException, AbortException, NoMoreRequestsException, EOFWhileReadingFirstLineException {
 		try {
 			flowController.invokeHandlers(exchange, transport.getInterceptors());
@@ -73,7 +73,7 @@ public abstract class AbstractHttpHandler  {
 		} catch (Exception e) {
 			if (exchange.getResponse() == null)
 				exchange.setResponse(generateErrorResponse(e));
-			
+
 			if (e instanceof IOException)
 				throw (IOException)e;
 			if (e instanceof EndOfStreamException)
@@ -103,7 +103,7 @@ public abstract class AbstractHttpHandler  {
 		String comment = "Stack traces can be " + (printStackTrace ? "dis" : "en") + "abled by setting the "+
 				"@printStackTrace attribute on <a href=\"http://membrane-soa.org/esb-doc/current/configuration/reference/transport.htm\">transport</a>. " +
 				"More details might be found in the log.";
-		
+
 		Response error = null;
 		ResponseBuilder b = null;
 		if (e instanceof URISyntaxException)
@@ -113,27 +113,27 @@ public abstract class AbstractHttpHandler  {
 		switch (ContentTypeDetector.detect(exchange.getRequest()).getEffectiveContentType()) {
 		case XML:
 			error = b.
-				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
-				body(("<error><message>" + 
-						StringEscapeUtils.escapeXml(msg) + 
-						"</message><comment>" + 
-						StringEscapeUtils.escapeXml(comment) + 
-						"</comment></error>").getBytes(Constants.UTF_8_CHARSET)).
-				build();
+			header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
+			body(("<error><message>" +
+					StringEscapeUtils.escapeXml(msg) +
+					"</message><comment>" +
+					StringEscapeUtils.escapeXml(comment) +
+					"</comment></error>").getBytes(Constants.UTF_8_CHARSET)).
+					build();
 			break;
 		case JSON:
-	        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-	        try {
-	        	JsonGenerator jg = new JsonFactory().createJsonGenerator(baos);
-	        	jg.writeStartObject();
-	        	jg.writeFieldName("error");
-	        	jg.writeString(msg);
-	        	jg.writeFieldName("comment");
-	        	jg.writeString(comment);
-	        	jg.close();
-	        } catch (Exception f) {
-	        	log.error("Error generating JSON error response", f);
-	        }
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			try {
+				JsonGenerator jg = new JsonFactory().createGenerator(baos);
+				jg.writeStartObject();
+				jg.writeFieldName("error");
+				jg.writeString(msg);
+				jg.writeFieldName("comment");
+				jg.writeString(comment);
+				jg.close();
+			} catch (Exception f) {
+				log.error("Error generating JSON error response", f);
+			}
 
 			error = b.
 					header(HttpUtil.createHeaders(MimeType.APPLICATION_JSON_UTF8)).
@@ -142,9 +142,9 @@ public abstract class AbstractHttpHandler  {
 			break;
 		case SOAP:
 			error = b.
-				header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
-				body(HttpUtil.getFaultSOAPBody("Internal Server Error", msg + " " + comment).getBytes(Constants.UTF_8_CHARSET)).
-				build();
+			header(HttpUtil.createHeaders(MimeType.TEXT_XML_UTF8)).
+			body(HttpUtil.getFaultSOAPBody("Internal Server Error", msg + " " + comment).getBytes(Constants.UTF_8_CHARSET)).
+			build();
 			break;
 		case UNKNOWN:
 			error = HttpUtil.setHTMLErrorResponse(b, msg, comment);

@@ -101,10 +101,10 @@ public class LDAPUserDataProvider implements UserDataProvider {
 	boolean readAttributesAsSelf = true; // whether reading the user's attributes requires authentication
 	HashMap<String, String> attributeMap = new HashMap<String, String>(); // maps LDAP attributes to TokenGenerator attributes
 	AttributeMap map;
-	
+
 	@MCElement(name="map", topLevel=false, id="ldapUserDataProvider-map")
 	public static class AttributeMap {
-	
+
 		@MCElement(name="attribute", topLevel=false)
 		public static class Attribute {
 			String from;
@@ -130,20 +130,20 @@ public class LDAPUserDataProvider implements UserDataProvider {
 				this.to = to;
 			}
 		}
-		
+
 		private List<Attribute> attributes = new ArrayList<Attribute>();
-		
+
 		public List<Attribute> getAttributes() {
 			return attributes;
 		}
-		
+
 		@MCChildElement
 		public void setAttributes(List<Attribute> attributes) {
 			this.attributes = attributes;
 		}
-	
+
 	}
-	
+
 	/**
 	 * @throws NoSuchElementException if no user could be found with the given login
 	 * @throws AuthenticationException if the password does not match
@@ -242,8 +242,8 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			case ')':
 				sb.append("\\29");
 				break;
-			case '\u0000': 
-				sb.append("\\00"); 
+			case '\u0000':
+				sb.append("\\00");
 				break;
 			default:
 				sb.append(curChar);
@@ -323,7 +323,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		ONELEVEL,
 		SUBTREE,
 	}
-	
+
 	public SearchScope getSearchScope() {
 		return SearchScope.values()[searchScope];
 	}
@@ -394,12 +394,12 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			attributeMap.put(passwordAttribute, "_pass");
 		}
 	}
-	
+
 	@Override
 	public void init(Router router) {
 		if (passwordAttribute != null && readAttributesAsSelf)
 			throw new RuntimeException("@passwordAttribute is not compatible with @readAttributesAsSelf.");
-		
+
 		if (map != null) {
 			for (AttributeMap.Attribute a : map.getAttributes())
 				attributeMap.put(a.getFrom(), a.getTo());
@@ -408,11 +408,11 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			attributeMap.put(passwordAttribute, "_pass");
 		}
 	}
-	
+
 	public AttributeMap getMap() {
 		return map;
 	}
-	
+
 	@MCChildElement
 	public void setMap(AttributeMap map) {
 		this.map = map;

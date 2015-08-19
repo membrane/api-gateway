@@ -24,14 +24,14 @@ public class Request extends Message {
 
 	public static final String ELEMENT_NAME = "request";
 
-	private String method;	
+	private String method;
 	private String httpVersion;
 
 	private URI uri;
-	
+
 	public Request(com.predic8.membrane.core.http.Request req) throws Exception {
 		super(req);
-		
+
 		setMethod(req.getMethod());
 		setHttpVersion(req.getVersion());
 
@@ -54,19 +54,19 @@ public class Request extends Message {
 			uri = (URI) new URI().parse(token);
 		} else if (Headers.ELEMENT_NAME.equals(child)) {
 			headers = (Headers) new Headers().parse(token);
-		} 
- 
+		}
+
 	}
-	 
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement("http", ELEMENT_NAME, Constants.HTTP_NS);
-		
+
 		out.writeNamespace("http", Constants.HTTP_NS);
 
 		out.writeAttribute("method", method);
 		out.writeAttribute("http-version", httpVersion);
-		
+
 		uri.write(out);
 		writeIfNotNull(headers, out);
 		if (body != null) {
@@ -74,8 +74,8 @@ public class Request extends Message {
 			body.write(out);
 			out.writeEndElement();
 		}
-		
-		out.writeEndElement();		
+
+		out.writeEndElement();
 	}
 
 	public String getMethod() {
@@ -106,5 +106,5 @@ public class Request extends Message {
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 }

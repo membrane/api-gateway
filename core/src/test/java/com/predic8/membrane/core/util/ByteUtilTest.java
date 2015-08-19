@@ -31,29 +31,29 @@ import com.predic8.membrane.core.Constants;
 public class ByteUtilTest {
 
 	private static final String message1 = "This is a test message";
-	
+
 	private static final String message2 = "This is a test message with carriage return and linefeed " + Constants.CRLF;
-		
+
 	private InputStream in1, in2;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		in1 = new ByteArrayInputStream(message1.getBytes());
 		in2 = new ByteArrayInputStream(message2.getBytes());
 	}
-	
+
 	@After
 	public void tearDown() throws Exception {
 		in1.close();
 		in2.close();
 	}
-	
+
 	@Test
 	public void testReadByteArray1() throws IOException {
 		byte[] readBytes = ByteUtil.readByteArray(in1, message1.length());
 		assertTrue(Arrays.equals(readBytes, message1.getBytes()));
 	}
-	
+
 	@Test
 	public void testReadByteArray2() throws IOException {
 		byte[] readBytes = ByteUtil.readByteArray(in2, message2.length());

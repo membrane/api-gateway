@@ -32,16 +32,16 @@ public class LoginTest extends DistributionExtractingTestcase {
 			String form = AssertUtils.getAndAssert200("http://localhost:2000/");
 			AssertUtils.assertContains("Username:", form);
 			AssertUtils.assertContains("Password:", form);
-			
-			form = AssertUtils.postAndAssert(200, "http://localhost:2000/login/", 
-					new String[] { "Content-Type", "application/x-www-form-urlencoded" }, 
+
+			form = AssertUtils.postAndAssert(200, "http://localhost:2000/login/",
+					new String[] { "Content-Type", "application/x-www-form-urlencoded" },
 					"username=john&password=password");
 			AssertUtils.assertContains("token:", form);
 
 			String token = new OtpProvider().getNextCode("abcdefghijklmnop", System.currentTimeMillis());
-			
-			form = AssertUtils.postAndAssert(200, "http://localhost:2000/login/", 
-					new String[] { "Content-Type", "application/x-www-form-urlencoded" }, 
+
+			form = AssertUtils.postAndAssert(200, "http://localhost:2000/login/",
+					new String[] { "Content-Type", "application/x-www-form-urlencoded" },
 					"token=" + token);
 
 			// successful login?
@@ -50,11 +50,11 @@ public class LoginTest extends DistributionExtractingTestcase {
 			// access the "protected" page
 			form = AssertUtils.getAndAssert200("http://localhost:2000/");
 			AssertUtils.assertContains("predic8.com", form);
-			
+
 			// logout
-			form = AssertUtils.getAndAssert200("http://localhost:2000/login/logout"); 
+			form = AssertUtils.getAndAssert200("http://localhost:2000/login/logout");
 			AssertUtils.assertContains("Username:", form);
-			
+
 		} finally {
 			sl.killScript();
 		}

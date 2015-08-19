@@ -33,34 +33,34 @@ import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 
 public class LoggingJDBCTest extends DistributionExtractingTestcase {
-	
+
 	@Test
 	public void test() throws IOException, InterruptedException, InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		copyDerbyJarToMembraneLib();
-		
+
 		File baseDir = getExampleDir("logging-jdbc");
 		File beansConfig = new File(baseDir, "proxies.xml");
 		FileUtils.writeStringToFile(beansConfig, FileUtils.readFileToString(beansConfig).
 				replace("org.apache.derby.jdbc.ClientDriver", "org.apache.derby.jdbc.EmbeddedDriver").
 				replace("jdbc:derby://localhost:1527/membranedb;create=true", "jdbc:derby:derbyDB;create=true")
 				);
-		
+
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			getAndAssert200("http://localhost:2000/");
 		} finally {
 			sl.killScript();
 		}
-		
+
 		assertLogToDerbySucceeded(baseDir);
 	}
 
 	private void assertLogToDerbySucceeded(File baseDir)
 			throws InstantiationException, IllegalAccessException,
 			ClassNotFoundException, SQLException {
-		String driver = "org.apache.derby.jdbc.EmbeddedDriver"; 
+		String driver = "org.apache.derby.jdbc.EmbeddedDriver";
 		Class.forName(driver).newInstance();
-		
+
 		File db = new File(baseDir, "derbyDB");
 		Connection conn = DriverManager.getConnection("jdbc:derby:" + db.getAbsolutePath().replace("\\", "/"));
 		try {
@@ -79,7 +79,7 @@ public class LoggingJDBCTest extends DistributionExtractingTestcase {
 		} finally {
 			conn.close();
 		}
-		
+
 		try {
 			DriverManager.getConnection("jdbc:derby:;shutdown=true");
 		} catch (SQLException e) {

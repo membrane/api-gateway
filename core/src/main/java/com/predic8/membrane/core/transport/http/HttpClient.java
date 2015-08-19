@@ -77,7 +77,7 @@ public class HttpClient {
 
 		connectTimeout = configuration.getConnection().getTimeout();
 		localAddr = configuration.getConnection().getLocalAddr();
-		
+
 		conMgr = new ConnectionManager(configuration.getConnection().getKeepAliveTimeout());
 	}
 
@@ -89,7 +89,7 @@ public class HttpClient {
 	protected void finalize() throws Throwable {
 		conMgr.shutdownWhenDone();
 	}
-	
+
 	private void setRequestURI(Request req, String dest) throws MalformedURLException {
 		if (proxy != null || req.isCONNECTRequest())
 			req.setUri(dest);
@@ -99,28 +99,28 @@ public class HttpClient {
 			req.setUri(HttpUtil.getPathAndQueryString(dest));
 		}
 	}
-	
+
 	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
 		if (proxy != null)
 			return new HostColonPort(false, proxy.getHost(), proxy.getPort());
-		
+
 		if (connect)
 			return new HostColonPort(false, dest);
-		
+
 		return new HostColonPort(new URL(dest));
 	}
-	
+
 	private HostColonPort init(Exchange exc, String dest, boolean adjustHostHeader) throws UnknownHostException, IOException, MalformedURLException {
 		setRequestURI(exc.getRequest(), dest);
 		HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
-		
+
 		if (proxy != null && proxy.isAuthentication()) {
 			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
-		} 
-		
-		if (authentication != null) 
+		}
+
+		if (authentication != null)
 			exc.getRequest().getHeader().setAuthorization(authentication.getUsername(), authentication.getPassword());
-		
+
 		if (adjustHostHeader && (exc.getRule() == null || exc.getRule().isTargetAdjustHostHeader())) {
 			URL d = new URL(dest);
 			exc.getRequest().getHeader().setHost(d.getHost() + ":" + HttpUtil.getPort(d));
@@ -145,11 +145,11 @@ public class HttpClient {
 	public Exchange call(Exchange exc) throws Exception {
 		return call(exc, true, true);
 	}
-	
+
 	public Exchange call(Exchange exc, boolean adjustHostHeader, boolean failOverOn5XX) throws Exception {
 		if (exc.getDestinations().isEmpty())
 			throw new IllegalStateException("List of destinations is empty. Please specify at least one destination.");
-		
+
 		int counter = 0;
 		Exception exception = null;
 		while (counter < maxRetries) {
@@ -178,7 +178,7 @@ public class HttpClient {
 				}
 				Response response;
 				String newProtocol = null;
-				
+
 				if (exc.getRequest().isCONNECTRequest()) {
 					handleConnectRequest(exc, con);
 					response = Response.ok().build();
@@ -190,7 +190,7 @@ public class HttpClient {
 						newProtocol = "WebSocket";
 					}
 				}
-				
+
 				if (newProtocol != null) {
 					setupConnectionForwarding(exc, con, newProtocol, streamPumpStats);
 					exc.getDestinations().clear();
@@ -200,7 +200,7 @@ public class HttpClient {
 					return exc;
 				}
 
-				boolean is5XX = 500 <= response.getStatusCode() && response.getStatusCode() < 600; 
+				boolean is5XX = 500 <= response.getStatusCode() && response.getStatusCode() < 600;
 				if (!failOverOn5XX || !is5XX || counter == maxRetries-1) {
 					applyKeepAliveHeader(response, con);
 					exc.getDestinations().clear();
@@ -219,15 +219,15 @@ public class HttpClient {
 					log.info("Connection to " + dest + " was aborted externally. Maybe by the server or the OS Membrane is running on.");
 				} else if (e.getMessage().contains("Connection reset") ) {
 					log.info("Connection to " + dest + " was reset externally. Maybe by the server or the OS Membrane is running on.");
- 				} else {
- 					logException(exc, counter, e);
- 				}
+				} else {
+					logException(exc, counter, e);
+				}
 				exception = e;
 			} catch (UnknownHostException e) {
 				log.warn("Unknown host: " + (target == null ? dest : target ));
 				exception = e;
 				if (exc.getDestinations().size() < 2) {
-					break; 
+					break;
 				}
 			} catch (EOFWhileReadingFirstLineException e) {
 				log.debug("Server connection to " + dest + " terminated before line was read. Line so far: " + e.getLineSoFar());
@@ -249,11 +249,11 @@ public class HttpClient {
 		String value = response.getHeader().getFirstValue(Header.KEEP_ALIVE);
 		if (value == null)
 			return;
-		
+
 		long timeout = Header.parseKeepAliveHeader(value, Header.TIMEOUT);
 		if (timeout != -1)
 			con.setTimeout(timeout * 1000);
-		
+
 		long max = Header.parseKeepAliveHeader(value, Header.MAX);
 		if (max != -1 && max < con.getMaxExchanges())
 			con.setMaxExchanges((int)max);
@@ -268,7 +268,7 @@ public class HttpClient {
 		msg.append("try # ");
 		msg.append(counter);
 		msg.append(" failed\n");
-		
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		exc.getRequest().writeStartLine(baos);
 		exc.getRequest().getHeader().write(baos);
@@ -283,7 +283,7 @@ public class HttpClient {
 	private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
 		exc.getRequest().write(con.out);
 		exc.setTimeReqSent(System.currentTimeMillis());
-		
+
 		if (exc.getRequest().isHTTP10()) {
 			shutDownRequestInputOutput(exc, con);
 		}
@@ -308,9 +308,9 @@ public class HttpClient {
 		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule());
 
 		hsr.getSourceSocket().setSoTimeout(0);
-		
+
 		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
-			
+
 			@Override
 			public void setExchangeFinished() {
 				String threadName = Thread.currentThread().getName();
@@ -330,7 +330,7 @@ public class HttpClient {
 	}
 
 	private boolean isUpgradeToWebSocketsResponse(Response res) {
-		return res.getStatusCode() == 101 && 
+		return res.getStatusCode() == 101 &&
 				"upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(Header.CONNECTION)) &&
 				"websocket".equalsIgnoreCase(res.getHeader().getFirstValue(Header.UPGRADE));
 	}
@@ -355,7 +355,7 @@ public class HttpClient {
 		exc.getHandler().shutdownInput();
 		Util.shutdownOutput(con.socket);
 	}
-	
+
 	ConnectionManager getConnectionManager() {
 		return conMgr;
 	}

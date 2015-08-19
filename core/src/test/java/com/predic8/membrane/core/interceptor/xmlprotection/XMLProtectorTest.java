@@ -29,11 +29,11 @@ public class XMLProtectorTest extends TestCase {
 
 	private XMLProtector xmlProtector;
 	private byte[] input, output;
-	
+
 	private boolean runOn(String resource) throws Exception {
 		return runOn(resource, true);
 	}
-	
+
 	private boolean runOn(String resource, boolean removeDTD) throws Exception {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		xmlProtector = new XMLProtector(new OutputStreamWriter(baos, Constants.UTF_8), removeDTD, 1000, 1000);
@@ -51,7 +51,7 @@ public class XMLProtectorTest extends TestCase {
 		}
 		return valid;
 	}
-	
+
 	private void reverse() {
 		// To reverse the input Stream
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -65,7 +65,7 @@ public class XMLProtectorTest extends TestCase {
 		sb.reverse();
 		input = String.valueOf(sb).getBytes();
 	}
-	
+
 	public void testInvariant() throws Exception {
 		assertTrue(runOn("/customer.xml"));
 	}

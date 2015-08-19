@@ -41,6 +41,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 		setFlow(Flow.Set.RESPONSE);
 	}
 
+	@Override
 	protected void rewrite(Exchange exc) throws Exception, IOException {
 
 		log.debug("Changing endpoint address in WADL");
@@ -66,13 +67,13 @@ public class WADLInterceptor extends RelocatingInterceptor {
 	public void setProtocol(String protocol) {
 		super.setProtocol(protocol);
 	}
-	
+
 	@MCAttribute
 	@Override
 	public void setHost(String host) {
 		super.setHost(host);
 	}
-	
+
 	@MCAttribute
 	@Override
 	public void setPort(String port) {

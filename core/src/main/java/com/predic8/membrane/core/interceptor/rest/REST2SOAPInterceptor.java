@@ -81,11 +81,11 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 			out.writeAttribute("responseXSLT", responseXSLT);
 			out.writeEndElement();
 		}
-		
+
 		public String getRegex() {
 			return regex;
 		}
-		
+
 		/**
 		 * @description Java Regular expression
 		 * @example /bank/.*
@@ -95,11 +95,11 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		public void setRegex(String regex) {
 			this.regex = regex;
 		}
-		
+
 		public String getSoapAction() {
 			return soapAction;
 		}
-		
+
 		/**
 		 * @description Value of the soapAction header field.
 		 */
@@ -108,7 +108,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		public void setSoapAction(String soapAction) {
 			this.soapAction = soapAction;
 		}
-		
+
 		public String getSoapURI() {
 			return soapURI;
 		}
@@ -122,7 +122,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		public void setSoapURI(String soapURI) {
 			this.soapURI = soapURI;
 		}
-		
+
 		public String getRequestXSLT() {
 			return requestXSLT;
 		}
@@ -136,7 +136,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		public void setRequestXSLT(String requestXSLT) {
 			this.requestXSLT = requestXSLT;
 		}
-		
+
 		public String getResponseXSLT() {
 			return responseXSLT;
 		}
@@ -195,12 +195,12 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 
 		XML2HTTP.unwrapMessageIfNecessary(exc.getResponse());
 		convertResponseToJSONIfNecessary(exc.getRequest().getHeader(), mapping, exc.getResponse(), exc.getStringProperties());
-		
+
 		return Outcome.CONTINUE;
 	}
 
 	private static MediaType[] supportedTypes = Header.convertStringsToMediaType(new String[] { MimeType.TEXT_XML, MimeType.APPLICATION_JSON_UTF8 });
-	
+
 	private void convertResponseToJSONIfNecessary(Header requestHeader, Mapping mapping, Response response, Map<String, String> properties) throws IOException, Exception {
 		boolean inputIsXml = MimeType.TEXT_XML_UTF8.equals(response.getHeader().getContentType());
 		int wantedType = requestHeader.getBestAcceptedType(supportedTypes);
@@ -306,5 +306,5 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	public String getShortDescription() {
 		return "Transforms REST requests into SOAP and responses vice versa.";
 	}
-	
+
 }

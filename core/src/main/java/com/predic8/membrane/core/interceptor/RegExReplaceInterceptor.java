@@ -36,16 +36,16 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(RegExReplaceInterceptor.class.getName());
 
 	private String regex;
-	
+
 	private String replace;
-	
+
 	private TargetType target = TargetType.BODY;
-	
+
 	public enum TargetType {
 		BODY,
 		HEADER
 	}
-	
+
 	public RegExReplaceInterceptor() {
 		name="Regex Replacer";
 	}
@@ -68,23 +68,23 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 			replaceBody(exc.getResponse());
 		return Outcome.CONTINUE;
 	}
-	
+
 	private void replaceHeader(Header header) {
 		for (HeaderField hf : header.getAllHeaderFields())
 			hf.setValue(hf.getValue().replaceAll(regex, replace));
 	}
 
 	private void replaceBody(Message res) throws IOException, Exception {
-		if (hasNoTextContent(res) ) return; 
-		
+		if (hasNoTextContent(res) ) return;
+
 		log.debug("pattern: " +regex);
 		log.debug("replacement: " +replace);
-		
+
 		res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(res.getCharset()));
 		res.getHeader().removeFields("Content-Encoding");
 	}
 
-	private boolean hasNoTextContent(Message res) throws Exception {		
+	private boolean hasNoTextContent(Message res) throws Exception {
 		return res.isBodyEmpty() || !res.isXML() && !res.isHTML();
 	}
 
@@ -115,11 +115,11 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	public void setReplace(String replace) {
 		this.replace = replace;
 	}
-	
+
 	public TargetType getTarget() {
 		return target;
 	}
-	
+
 	/**
 	 * @description Whether the replacement should affect the message <tt>body</tt> or the <tt>header</tt> values.
 	 * @default body
@@ -129,5 +129,5 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	public void setTarget(TargetType target) {
 		this.target = target;
 	}
-	
+
 }

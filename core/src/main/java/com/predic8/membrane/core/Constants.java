@@ -15,7 +15,6 @@
 package com.predic8.membrane.core;
 
 import java.nio.charset.Charset;
-import java.util.Calendar;
 import java.util.Properties;
 
 import com.predic8.membrane.core.http.Request;
@@ -33,7 +32,7 @@ public class Constants {
 	public static final byte[] CRLF_BYTES = { 13, 10 };
 
 	public static final String VERSION;
-	
+
 	static {
 		String version = "3.3"; // fallback
 		try {
@@ -82,11 +81,11 @@ public class Constants {
 	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
 
 	public static final String HTML_FOOTER =
-					"Copyright ©2009-2015 " +
-			  		"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
-			  		". All Rights Reserved. See " +
+			"Copyright ©2009-2015 " +
+					"<a href=\"http://predic8.com/\">predic8 GmbH</a>" +
+					". All Rights Reserved. See " +
 					"<a href=\"http://www.membrane-soa.org/service-proxy/\">http://www.membrane-soa.org/service-proxy/</a>" +
-			  		" for documentation and updates.";
+					" for documentation and updates.";
 
 	/**
 	 * Used for {@link Request}-to-XML and XML-to-{@link Response} conversions.

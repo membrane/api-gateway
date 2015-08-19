@@ -32,9 +32,9 @@ import com.predic8.membrane.core.rules.Rule;
 public class ReadRulesWithInterceptorsConfigurationTest {
 
 	private Router router;
-	
+
 	private List<Rule> rules;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		router = Router.init("src/test/resources/ref.proxies.xml");
@@ -43,15 +43,15 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 
 	@Test
 	public void testRulesSize() throws Exception {
-	 	Assert.assertEquals(2, rules.size());
+		Assert.assertEquals(2, rules.size());
 	}
-	
+
 	@Test
 	public void testRuleInterceptorSize() throws Exception {
-	 	Rule rule = rules.get(0);
-	 	assertEquals(1, rule.getInterceptors().size());
+		Rule rule = rules.get(0);
+		assertEquals(1, rule.getInterceptors().size());
 	}
-	
+
 	@Test
 	public void testRuleInterceptorsHaveRouterReference() throws Exception {
 		List<Interceptor> interceptors = rules.get(0).getInterceptors();
@@ -59,19 +59,19 @@ public class ReadRulesWithInterceptorsConfigurationTest {
 			assertNotNull(itsp.getRouter());
 		}
 	}
-	
+
 	@Test
 	public void testRuleInterceptorIDs() throws Exception {
 		List<Interceptor> interceptors = rules.get(0).getInterceptors();
 		assertEquals("accessControlInterceptor", ((SpringInterceptor) interceptors.get(0)).getRefId());
 	}
-	
+
 	@Test
 	public void testRuleInterceptorDisplayNames() throws Exception {
 		List<Interceptor> interceptors = rules.get(0).getInterceptors();
 		assertEquals("Access Control List Interceptor", interceptors.get(0).getDisplayName());
 	}
-	
+
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();

@@ -18,7 +18,7 @@ import org.osgi.service.blueprint.reflect.Metadata;
 import org.w3c.dom.Element;
 
 public interface BlueprintParser {
-	
+
 	public Metadata parse(BlueprintParser globalParser, Element element, ParserContext context);
 
 }

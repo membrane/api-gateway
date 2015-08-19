@@ -65,14 +65,14 @@ import com.sun.mail.smtp.SMTPTransport;
 public class EmailTokenProvider extends NumericTokenProvider {
 
 	private static Log log = LogFactory.getLog(EmailTokenProvider.class.getName());
-	
+
 	private boolean simulate = false;
 
 	private String recipient;
 	private String body;
 	private String sender;
 	private String subject;
-	
+
 	private String smtpHost;
 	private String smtpUser;
 	private int smtpPort = 25;
@@ -83,8 +83,8 @@ public class EmailTokenProvider extends NumericTokenProvider {
 	@Override
 	public void init(Router router) {
 	}
-	
-	
+
+
 	@Override
 	public void requestToken(Map<String, String> userAttributes) {
 		String token = generateToken(userAttributes);
@@ -94,13 +94,13 @@ public class EmailTokenProvider extends NumericTokenProvider {
 			model.put(e.getKey(), e.getValue());
 		}
 		model.put("token", token);
-		
+
 		Engine engine = new Engine();
 		String recipient = engine.transform(this.recipient, model);
 		String body = engine.transform(this.body, model);
 		String sender = engine.transform(this.sender, model);
 		String subject = engine.transform(this.subject, model);
-		
+
 		if (simulate)
 			log.error("Send Email '" + subject + "' '" + body + "' from " + sender + " to " + recipient);
 		else
@@ -133,7 +133,7 @@ public class EmailTokenProvider extends NumericTokenProvider {
 
 			SMTPTransport t = (SMTPTransport)session.getTransport(ssl ? "smtps" : "smtp");
 			t.connect(smtpHost, smtpUser, smtpPassword);
-			t.sendMessage(msg, msg.getAllRecipients());      
+			t.sendMessage(msg, msg.getAllRecipients());
 			t.close();
 		} catch (MessagingException e) {
 			throw new RuntimeException(e);

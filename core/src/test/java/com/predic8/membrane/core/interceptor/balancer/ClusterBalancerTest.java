@@ -33,9 +33,10 @@ public class ClusterBalancerTest extends TestCase {
 	private LoadBalancingInterceptor lb;
 	private Router r;
 
+	@Override
 	@Before
 	public void setUp() throws Exception {
-		
+
 		extracor = new XMLElementSessionIdExtractor();
 		extracor.setLocalName("session");
 		extracor.setNamespace("http://predic8.com/session/");
@@ -45,7 +46,7 @@ public class ClusterBalancerTest extends TestCase {
 		lb = new LoadBalancingInterceptor();
 		lb.setSessionIdExtractor(extracor);
 		lb.setName("Default");
-		
+
 		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(3011), "predic8.com", 80);
 		sp.getInterceptors().add(lb);
 		r.getRuleManager().addProxyAndOpenPortIfNew(sp);
@@ -54,11 +55,12 @@ public class ClusterBalancerTest extends TestCase {
 		BalancerUtil.up(r, "Default", "Default", "localhost", 2000);
 		BalancerUtil.up(r, "Default", "Default", "localhost", 3000);
 	}
-	
+
+	@Override
 	@After
 	public void tearDown() throws Exception {
 		r.shutdown();
-		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException 
+		//let the test wait so the next test can reopen the same port and avoid PortOccupiedException
 		Thread.sleep(400);
 	}
 
@@ -71,7 +73,7 @@ public class ClusterBalancerTest extends TestCase {
 		Session s = BalancerUtil.getSessions(r, "Default", "Default").get("555555");
 		assertEquals("localhost", s.getNode().getHost());
 
-		assertEquals(2, exc.getDestinations().size()); 
+		assertEquals(2, exc.getDestinations().size());
 
 		String stickyDestination = exc.getDestinations().get(0);
 		lb.handleRequest(exc);
@@ -82,14 +84,14 @@ public class ClusterBalancerTest extends TestCase {
 		BalancerUtil.takeout(r, "Default", "Default", "localhost", s.getNode().getPort());
 		assertEquals(1, BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").size());
 		assertFalse(stickyDestination.equals(BalancerUtil.getAvailableNodesByCluster(r, "Default", "Default").get(0)));
-		
+
 		lb.handleRequest(exc);
 		assertEquals(stickyDestination, exc.getDestinations().get(0));
-		
+
 		BalancerUtil.down(r, "Default", "Default", "localhost", s.getNode().getPort());
 		lb.handleRequest(exc);
-		
-		assertFalse(stickyDestination.equals(exc.getDestinations().get(0)));		
+
+		assertFalse(stickyDestination.equals(exc.getDestinations().get(0)));
 	}
 
 	@Test
@@ -101,7 +103,7 @@ public class ClusterBalancerTest extends TestCase {
 
 		Node stickyNode = (Node)exc.getProperty("dispatchedNode");
 		assertNotNull(stickyNode);
-		
+
 		exc.setResponse(getResponse());
 
 		lb.handleResponse(exc);
@@ -109,7 +111,7 @@ public class ClusterBalancerTest extends TestCase {
 		assertEquals(stickyNode, BalancerUtil.getSessions(r, "Default", "Default").get("444444").getNode());
 
 	}
-	
+
 	@Test
 	public void testNoNodeFound() throws Exception {
 		Exchange exc = getExchangeWithOutSession();
@@ -117,7 +119,7 @@ public class ClusterBalancerTest extends TestCase {
 		BalancerUtil.down(r, "Default", "Default", "localhost", 2000);
 		BalancerUtil.down(r, "Default", "Default", "localhost", 3000);
 
-		lb.handleRequest(exc);	
+		lb.handleRequest(exc);
 		assertEquals(500, exc.getResponse().getStatusCode());
 	}
 

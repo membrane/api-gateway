@@ -29,12 +29,12 @@ public class PropertyValueCollector implements ExchangeCollector{
 	Set<String> methods = new HashSet<String>();
 	Set<String> clients = new HashSet<String>();
 	Set<String> servers = new HashSet<String>();
-	
-	public void collect(AbstractExchange exc) {		
+
+	public void collect(AbstractExchange exc) {
 		if (exc.getResponse() != null) {
 			statusCodes.add(exc.getResponse().getStatusCode());
 		}
-		
+
 		proxies.add(exc.getRule().toString());
 		reqContentTypes.add(exc.getRequestContentType());
 		respContentTypes.add(exc.getResponseContentType());
@@ -69,5 +69,5 @@ public class PropertyValueCollector implements ExchangeCollector{
 
 	public Set<String> getServers() {
 		return servers;
-	}	
+	}
 }

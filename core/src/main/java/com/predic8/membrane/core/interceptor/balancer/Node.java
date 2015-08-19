@@ -37,17 +37,17 @@ public class Node extends AbstractXmlElement {
 	public static enum Status {
 		UP, DOWN, TAKEOUT;
 	}
-	
+
 	private String host;
 	private int port;
-	
+
 	private volatile long lastUpTime;
 	private volatile Status status;
 	private AtomicInteger counter = new AtomicInteger();
 	private AtomicInteger threads = new AtomicInteger();
-	
-	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();  
-	
+
+	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();
+
 	public Node(String host, int port) {
 		this.host = host;
 		this.port = port;
@@ -59,20 +59,20 @@ public class Node extends AbstractXmlElement {
 	@Override
 	public boolean equals(Object obj) {
 		return obj!=null && obj instanceof Node &&
-			   host.equals(((Node)obj).getHost()) &&
-			   port == ((Node)obj).getPort();
+				host.equals(((Node)obj).getHost()) &&
+				port == ((Node)obj).getPort();
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return Objects.hashCode(host, port);
 	}
-	
+
 	public int getLost() {
 		int received = 0;
 		for ( StatisticCollector statisticCollector : statusCodes.values() ) {
 			received += statisticCollector.getCount();
-		}			
+		}
 		return counter.get() - received - threads.get();
 	}
 
@@ -85,10 +85,10 @@ public class Node extends AbstractXmlElement {
 			if ( e.getKey() < 500 && e.getKey() > 0) {
 				successes += count;
 			}
-		}			
-		return all == 0 ? 0: 1-(double)successes/all; 
+		}
+		return all == 0 ? 0: 1-(double)successes/all;
 	}
-	
+
 	public long getLastUpTime() {
 		return lastUpTime;
 	}
@@ -130,19 +130,19 @@ public class Node extends AbstractXmlElement {
 	}
 
 	public boolean isDown() {
-		return status == Status.DOWN;		
+		return status == Status.DOWN;
 	}
-	
+
 	public boolean isTakeOut() {
-		return status == Status.TAKEOUT;		
+		return status == Status.TAKEOUT;
 	}
-	
+
 	public void setStatus(Status status) {
-		if (status == Status.DOWN) 
+		if (status == Status.DOWN)
 			threads.set(0);
 		this.status = status;
 	}
-	
+
 	public Status getStatus() {
 		return status;
 	}
@@ -157,11 +157,11 @@ public class Node extends AbstractXmlElement {
 	}
 
 	public void incCounter() {
-		counter.incrementAndGet();		
+		counter.incrementAndGet();
 	}
 
 	public void clearCounter() {
-		counter.set(0);	
+		counter.set(0);
 		statusCodes.clear();
 	}
 
@@ -179,18 +179,18 @@ public class Node extends AbstractXmlElement {
 	public void collectStatisticsFrom(Exchange exc) {
 		StatisticCollector sc = getStatisticCollectorByStatusCode(exc.getResponse().getStatusCode());
 		synchronized(sc) {
-			sc.collectFrom(exc);			
+			sc.collectFrom(exc);
 		}
 	}
-	
+
 	public void addThread() {
 		if (!isUp()) return;
-		threads.incrementAndGet();		
+		threads.incrementAndGet();
 	}
 
 	public void removeThread() {
 		if (!isUp()) return;
-		threads.incrementAndGet();		
+		threads.incrementAndGet();
 	}
 
 	public int getThreads() {
@@ -212,14 +212,14 @@ public class Node extends AbstractXmlElement {
 
 		out.writeEndElement();
 	}
-	
+
 	@Override
 	protected void parseAttributes(XMLStreamReader token) {
-		
+
 		host = token.getAttributeValue("", "host");
 		port = Integer.parseInt(token.getAttributeValue("", "port")!=null?token.getAttributeValue("", "port"):"80");
 	}
-	
+
 	public String getDestinationURL(Exchange exc) {
 		return "http://" + getHost() + ":" + getPort() + exc.getRequestURI();
 	}

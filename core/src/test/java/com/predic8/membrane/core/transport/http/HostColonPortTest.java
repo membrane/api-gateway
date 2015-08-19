@@ -25,7 +25,7 @@ public class HostColonPortTest {
 		assertEquals("predic8.com", hcp.host);
 		assertEquals(80, hcp.port);
 	}
-	
+
 	@Test
 	public void testGetHost() throws Exception {
 		HostColonPort hcp = new HostColonPort(false, "predic8.com:80");
@@ -38,5 +38,5 @@ public class HostColonPortTest {
 		assertEquals(80, hcp.port);
 	}
 
-	
+
 }

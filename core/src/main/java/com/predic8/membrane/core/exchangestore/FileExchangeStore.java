@@ -56,8 +56,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static AtomicInteger counter = new AtomicInteger();
 
-	private static final String DATE_FORMAT = "'h'HH'm'mm's'ss'ms'SSS"; 
-	
+	private static final String DATE_FORMAT = "'h'HH'm'mm's'ss'ms'SSS";
+
 	private static final ThreadLocal<DateFormat> dateFormat = new ThreadLocal<DateFormat>();
 
 	private static final String separator = System
@@ -79,7 +79,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		try {
 			Message m = flow == Flow.REQUEST ? exc.getRequest() : exc.getResponse();
 			// TODO: [fix me] support multi-snap
-			// TODO: [fix me] snap message headers *here*, not in observer 
+			// TODO: [fix me] snap message headers *here*, not in observer
 			if (m != null)
 				m.addObserver(new MessageObserver() {
 					public void bodyRequested(AbstractBody body) {
@@ -92,7 +92,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			throw new RuntimeException(e);
 		}
 	}
-		
+
 	private void snapInternal(AbstractExchange exc, Flow flow) {
 		int fileNumber = counter.incrementAndGet();
 
@@ -140,7 +140,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 		buf.append(time.get(Calendar.DAY_OF_MONTH));
 		return buf;
 	}
-	
+
 	private static DateFormat getDateFormat() {
 		DateFormat df = dateFormat.get();
 		if (df == null) {
@@ -172,7 +172,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 					os.write(TextUtil.formatXML(
 							new InputStreamReader(msg.getBodyAsStream(), msg
 									.getHeader().getCharset()))
-							.getBytes(Constants.UTF_8));
+									.getBytes(Constants.UTF_8));
 				else
 					os.write(msg.getBody().getContent());
 			}
@@ -198,19 +198,19 @@ public class FileExchangeStore extends AbstractExchangeStore {
 			firstRun.add(Calendar.DAY_OF_MONTH, 1);
 
 		oldFilesCleanupTimer.scheduleAtFixedRate(
-			new TimerTask() {
-				@Override
-				public void run() {
-					try {
-						deleteOldFolders();
-					} catch (IOException e) {
-						log.error("", e);
+				new TimerTask() {
+					@Override
+					public void run() {
+						try {
+							deleteOldFolders();
+						} catch (IOException e) {
+							log.error("", e);
+						}
 					}
-				}
-			},
-			firstRun.getTime(),
-			24*60*60*1000		// one day
-		);
+				},
+				firstRun.getTime(),
+				24*60*60*1000		// one day
+				);
 	}
 
 	protected void deleteOldFolders() throws IOException {

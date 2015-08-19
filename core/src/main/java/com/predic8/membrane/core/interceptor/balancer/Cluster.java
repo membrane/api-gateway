@@ -27,9 +27,9 @@ import com.predic8.membrane.core.interceptor.balancer.Node.Status;
 public class Cluster {
 
 	private static Log log = LogFactory.getLog(Cluster.class.getName());
-	
+
 	public static final String DEFAULT_NAME = "Default";
-	
+
 	private String name;
 	private List<Node> nodes = Collections.synchronizedList(new LinkedList<Node>());
 	private Map<String, Session> sessions = new Hashtable<String, Session>();
@@ -40,9 +40,9 @@ public class Cluster {
 	public Cluster(String name) {
 		this.name = name;
 	}
-	
 
-	public void nodeUp(Node n) {		
+
+	public void nodeUp(Node n) {
 		log.debug("node: " + n +" up");
 		getNodeCreateIfNeeded(n).setLastUpTime(System.currentTimeMillis());
 		getNodeCreateIfNeeded(n).setStatus(Status.UP);
@@ -57,8 +57,8 @@ public class Cluster {
 		log.debug("node: " + n +" takeout");
 		getNodeCreateIfNeeded(n).setStatus(Status.TAKEOUT);
 	}
-	
-	public boolean removeNode(Node node) {		
+
+	public boolean removeNode(Node node) {
 		return nodes.remove(node);
 	}
 
@@ -67,19 +67,19 @@ public class Cluster {
 		synchronized (nodes) {
 			for (Node n : getAllNodes(timeout)) {
 				if ( n.isUp() ) l.add(n);
-			}			
+			}
 		}
 		return l;
 	}
-	
-	public List<Node> getAllNodes(long timeout) {	
+
+	public List<Node> getAllNodes(long timeout) {
 		if (timeout <= 0) {
 			return nodes;
 		}
 		synchronized (nodes) {
 			for (Node n : nodes) {
 				if ( System.currentTimeMillis()-n.getLastUpTime() > timeout ) n.setStatus(Status.DOWN);
-			}			
+			}
 		}
 		return nodes;
 	}
@@ -87,18 +87,18 @@ public class Cluster {
 	public Node getNode(Node ep) {
 		synchronized (nodes) {
 			return nodes.get(nodes.indexOf(ep));
-		}		
+		}
 	}
-	
+
 	private Node getNodeCreateIfNeeded(Node ep) {
 		if ( nodes.contains(ep) ) {
-			return getNode(ep);			
+			return getNode(ep);
 		}
 		log.debug("creating endpoint: "+ep);
 		nodes.add(new Node(ep.getHost(), ep.getPort()));
-		return getNode(ep);			
+		return getNode(ep);
 	}
-	
+
 	public List<Node> getNodes() {
 		return new ArrayList<Node>(nodes) {
 			private static final long serialVersionUID = 1L;
@@ -136,11 +136,11 @@ public class Cluster {
 	public boolean containsSession(String sessionId) {
 		return sessions.containsKey(sessionId) && sessions.get(sessionId).getNode().isUp();
 	}
-	
+
 	public void addSession(String sessionId, Node n) {
 		sessions.put(sessionId, new Session(sessionId, n));
 	}
-	
+
 	public Map<String, Session> getSessions() {
 		return sessions;
 	}
@@ -149,11 +149,11 @@ public class Cluster {
 		List<Session> l = new LinkedList<Session>();
 		synchronized (sessions) {
 			for (Session s : sessions.values()) {
-				if ( s.getNode().equals(node)) 
+				if ( s.getNode().equals(node))
 					l.add(s);
-			}			
+			}
 		}
 		return l;
 	}
-		
+
 }

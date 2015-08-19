@@ -54,7 +54,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			.getName());
 
 	private static String[] EMPTY = new String[0];
-	
+
 	String docBase = "docBase";
 	String[] index = EMPTY;
 	boolean generateIndex;
@@ -68,19 +68,19 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		String uri = router.getUriFactory().create(exc.getDestinations().get(0)).getPath();
 
 		log.debug("request: " + uri);
-		
+
 		if (uri.endsWith("..") || uri.endsWith("../") || uri.endsWith("..\\") || uri.contains("/../") || uri.startsWith("..")) {
 			exc.setResponse(Response.badRequest().body("").build());
 			return Outcome.ABORT;
 		}
-		
+
 		if (uri.startsWith("/"))
 			uri = uri.substring(1);
-		
+
 
 		try {
 			exc.setTimeReqSent(System.currentTimeMillis());
-			
+
 			exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase,  uri)));
 
 			exc.setReceived();
@@ -97,7 +97,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 				} catch (FileNotFoundException e2) {
 				}
 			}
-			
+
 			if (generateIndex) {
 				List<String> children = router.getResolverMap().getChildren(ResolverMap.combine(router.getBaseLocation(), docBase, uri));
 				if (children != null) {
@@ -123,7 +123,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 					return Outcome.RETURN;
 				}
 			}
-			
+
 			exc.setResponse(Response.notFound().build());
 			return Outcome.ABORT;
 		}
@@ -174,11 +174,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			docBase += "/";
 		this.docBase = docBase;
 	}
-	
+
 	public String getIndex() {
 		return StringUtils.join(index, ",");
 	}
-	
+
 	@MCAttribute
 	public void setIndex(String i) {
 		if (i == null)
@@ -186,11 +186,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		else
 			index = i.split(",");
 	}
-	
+
 	public boolean isGenerateIndex() {
 		return generateIndex;
 	}
-	
+
 	@MCAttribute
 	public void setGenerateIndex(boolean generateIndex) {
 		this.generateIndex = generateIndex;
@@ -200,5 +200,5 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Serves static files from<br/>" + TextUtil.linkURL(docBase) + " .";
 	}
-	
+
 }

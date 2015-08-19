@@ -21,8 +21,8 @@ import javax.xml.xpath.XPathFactory;
 
 
 public class SynchronizedXPathFactory {
-	private static XPathFactory fac = XPathFactory.newInstance();  
-	
+	private static XPathFactory fac = XPathFactory.newInstance();
+
 	/*
 	 * Used to creat XPath objects, because XPathFactory is not thread-save and re-entrant.
 	 */
@@ -34,6 +34,6 @@ public class SynchronizedXPathFactory {
 		}
 		return xPath;
 	}
-	
+
 
 }

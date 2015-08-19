@@ -26,14 +26,14 @@ public class Query extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "query";
 
 	private List<Param> params = new ArrayList<Param>();
-	
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Param.ELEMENT_NAME.equals(child)) {
 			params.add((Param)new Param().parse(token));
-		} 
+		}
 	}
-	
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
@@ -41,8 +41,8 @@ public class Query extends AbstractXmlElement {
 		for (Param c : params) {
 			c.write(out);
 		}
-		
-		out.writeEndElement();		
+
+		out.writeEndElement();
 	}
 
 	public List<Param> getParams() {
@@ -57,6 +57,6 @@ public class Query extends AbstractXmlElement {
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
-	
+
+
 }

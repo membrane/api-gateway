@@ -17,18 +17,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DecoupledEndpointRegistry {
-    private final Map<String, String> registry = new HashMap<String, String>();
+	private final Map<String, String> registry = new HashMap<String, String>();
 
-    public synchronized void register(String id, String url) {
-        registry.put(id, url);
-    }
+	public synchronized void register(String id, String url) {
+		registry.put(id, url);
+	}
 
-    public synchronized String lookup(String id) {
-        return registry.get(id);
-    }
+	public synchronized String lookup(String id) {
+		return registry.get(id);
+	}
 
-    @Override
-    public synchronized String toString() {
-        return "DecoupledEndpointRegistry: " + registry.toString();
-    }
+	@Override
+	public synchronized String toString() {
+		return "DecoupledEndpointRegistry: " + registry.toString();
+	}
 }

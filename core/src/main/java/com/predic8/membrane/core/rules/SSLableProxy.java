@@ -30,16 +30,16 @@ public abstract class SSLableProxy extends AbstractProxy {
 	public SSLContext getSslInboundContext() {
 		return sslInboundContext;
 	}
-	
+
 	protected void setSslInboundContext(SSLContext sslInboundContext) {
 		this.sslInboundContext = sslInboundContext;
 	}
-	
+
 	@Override
 	public SSLProvider getSslOutboundContext() {
 		return sslOutboundContext;
 	}
-	
+
 	protected void setSslOutboundContext(SSLContext sslOutboundContext) {
 		this.sslOutboundContext = sslOutboundContext;
 	}
@@ -84,7 +84,7 @@ public abstract class SSLableProxy extends AbstractProxy {
 	public String getIp() {
 		return ((ServiceProxyKey)key).getIp();
 	}
-	
+
 	/**
 	 * @description If present, binds the port only on the specified IP. Useful for hosts with multiple IP addresses.
 	 * @default <i>not set</i>

@@ -49,43 +49,44 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	private String cookieName;
 	private long timeout;
 	private String domain;
-	
+
 	// TODO: bind session also to remote IP (for public Membrane release)
 	HashMap<String, Session> sessions = new HashMap<String, SessionManager.Session>();
-	
+
+	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
 		cookieName = token.getAttributeValue("", "cookieName");
 		timeout = Long.parseLong(StringUtils.defaultIfEmpty(token.getAttributeValue("", "timeout"), "300000"));
 		domain = token.getAttributeValue("", "domain");
 	}
-	
+
 	public void init(Router router) {
 		cookieName = StringUtils.defaultIfEmpty(cookieName, "SESSIONID");
 		timeout = timeout == 0 ? 300000 : timeout;
 	}
-	
+
 	public static class Session {
 		private Map<String, String> userAttributes;
 		private int level = 0;
 		private long lastUse;
 		private String userName;
-		
+
 		public synchronized boolean isAuthorized() {
 			return level == 2;
 		}
 		public synchronized boolean isPreAuthorized() {
 			return level == 1;
 		}
-		
+
 		public synchronized Map<String, String> getUserAttributes() {
 			return userAttributes;
 		}
-		
+
 		public synchronized void clear() {
 			level = 0;
 			userAttributes = null;
 		}
-		
+
 		public synchronized void preAuthorize(String userName, Map<String, String> userAttributes) {
 			this.userName = userName;
 			this.userAttributes = userAttributes;
@@ -95,24 +96,24 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		public synchronized void authorize() {
 			level = 2;
 		}
-		
+
 		public synchronized void touch() {
 			lastUse = System.currentTimeMillis();
 		}
-		
+
 		public synchronized long getLastUse() {
 			return lastUse;
 		}
-		
+
 		public synchronized String getUserName() {
 			return userName;
 		}
 	}
-	
+
 	private String generateSessionID() {
 		return UUID.randomUUID().toString();
 	}
-	
+
 	public Session getSession(Request request) {
 		String id = request.getHeader().getFirstCookie(cookieName);
 		if (id == null) {
@@ -127,7 +128,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		}
 		return s;
 	}
-	
+
 	public Session createSession(Exchange exc) {
 		String id = generateSessionID();
 		Session s = new Session();
@@ -140,7 +141,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 				(exc.getRule().getSslInboundContext() != null ? "; Secure" : ""));
 		return s;
 	}
-	
+
 	public void cleanup() {
 		long death = System.currentTimeMillis() - timeout;
 		List<String> removeUs = new ArrayList<String>();
@@ -174,7 +175,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	public String getDomain() {
 		return domain;
 	}
-	
+
 	@MCAttribute
 	public void setDomain(String domain) {
 		this.domain = domain;

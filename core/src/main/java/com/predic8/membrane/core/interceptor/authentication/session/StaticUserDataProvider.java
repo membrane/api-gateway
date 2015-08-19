@@ -45,7 +45,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	private List<User> users = new ArrayList<User>();
 	private Map<String, User> usersByName = new HashMap<String, User>();
-	
+
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {
 		String username = postData.get("username");
@@ -64,7 +64,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 			throw new NoSuchElementException();
 		return userAttributes.getAttributes();
 	}
-	
+
 	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
 	public static class User {
 		Map<String, String> attributes = new HashMap<String, String>();
@@ -116,11 +116,11 @@ public class StaticUserDataProvider implements UserDataProvider {
 		public void setSecret(String value) {
 			attributes.put("username", value);
 		}
-		
+
 		public Map<String, String> getAttributes() {
 			return attributes;
 		}
-		
+
 		/**
 		 * @description Other user attributes. For example any attribute starting with "<i>header</i>" will be added
 		 *              when HTTP requests are forwarded when authorized by this user.
@@ -131,16 +131,16 @@ public class StaticUserDataProvider implements UserDataProvider {
 				this.attributes.put(e.getKey(), e.getValue());
 		}
 	}
-	
+
 	public List<User> getUsers() {
 		return users;
 	}
-	
+
 	@MCChildElement
 	public void setUsers(List<User> users) {
 		this.users = users;
 	}
-	
+
 	@Override
 	public void init(Router router) {
 		for (User user : users)

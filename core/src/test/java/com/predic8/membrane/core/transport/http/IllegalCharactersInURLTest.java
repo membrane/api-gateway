@@ -53,19 +53,19 @@ public class IllegalCharactersInURLTest {
 		r.add(sp2);
 		r.start();
 	}
-	
+
 	@After
 	public void uninit() {
 		r.stop();
 	}
-	
+
 	@Test(expected=IllegalArgumentException.class)
 	public void apacheHttpClient() throws Exception {
 		DefaultHttpClient hc = new DefaultHttpClient();
 		HttpResponse res = hc.execute(new HttpGet("http://localhost:3027/foo{}"));
 		Assert.assertEquals(200, res.getStatusLine().getStatusCode());
 	}
-	
+
 	@Test
 	public void doit() throws Exception {
 		URIFactory uriFactory = new URIFactory(true);

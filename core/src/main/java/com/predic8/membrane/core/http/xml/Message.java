@@ -22,10 +22,10 @@ public abstract class Message extends AbstractXmlElement {
 
 	public Message() {
 	}
-	
+
 	public Message(com.predic8.membrane.core.http.Message message) {
 		setHeaders(new Headers(message.getHeader()));
-		
+
 		if (message.isXML()) {
 			body = new XMLBody(message);
 		} else if (message.isJSON()) {
@@ -35,7 +35,7 @@ public abstract class Message extends AbstractXmlElement {
 		}
 
 	}
-	
+
 	public Headers getHeaders() {
 		return headers;
 	}
@@ -47,7 +47,7 @@ public abstract class Message extends AbstractXmlElement {
 	public AbstractXmlElement getBody() {
 		return body;
 	}
-	
+
 	public void setBody(AbstractXmlElement body) {
 		this.body = body;
 	}

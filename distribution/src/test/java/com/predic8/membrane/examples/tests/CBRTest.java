@@ -37,7 +37,7 @@ public class CBRTest extends DistributionExtractingTestcase {
 
 			result = postAndAssert200("http://localhost:2000/shop", FileUtils.readFileToString(new File(baseDir, "express.xml")));
 			assertContains("Express order received.", result);
-			
+
 			result = postAndAssert200("http://localhost:2000/shop", FileUtils.readFileToString(new File(baseDir, "import.xml")));
 			assertContains("Order contains import items.", result);
 		} finally {

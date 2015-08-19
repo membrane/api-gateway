@@ -34,11 +34,11 @@ public class ACLTest extends DistributionExtractingTestcase {
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			getAndAssert200("http://localhost:2000/");
-			
+
 			String result = getAndAssert(404, "http://localhost:2000/contacts/");
 			// this request succeeds through membrane, but fails on the backend with 404
 			AssertUtils.assertContains("Tomcat", result);
-			
+
 			getAndAssert(403, "http://localhost:2000/open-source/");
 		} finally {
 			sl.killScript();

@@ -25,18 +25,18 @@ import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 
 public class LoadBalancerStaticTest extends DistributionExtractingTestcase {
-	
+
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File base = getExampleDir("loadbalancer-static");
-		
+
 		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8080", "3023");
-		
+
 		Process2 sl = new Process2.Builder().in(base).script("service-proxy").waitForMembrane().start();
 		try {
 			for (int i = 0; i < 7; i++)
 				Assert.assertEquals(
-						i % 3 + 1, 
+						i % 3 + 1,
 						LoadBalancerUtil.getRespondingNode("http://localhost:3023/service"));
 		} finally {
 			sl.killScript();

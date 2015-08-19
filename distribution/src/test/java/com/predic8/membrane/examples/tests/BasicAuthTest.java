@@ -31,7 +31,7 @@ public class BasicAuthTest extends DistributionExtractingTestcase {
 	public static final String CUSTOMER_HOST_LOCAL = "http://localhost:2000/";
 	public static final String CUSTOMER_HOST_REMOTE = "http://www.thomas-bayer.com/";
 	public static final String CUSTOMER_PATH = "samples/sqlrest/CUSTOMER/7/";
-	
+
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("basic-auth");

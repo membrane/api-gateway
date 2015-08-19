@@ -23,7 +23,7 @@ public class KeyStore extends Store {
 
 	private String keyPassword;
 	private String keyAlias;
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof KeyStore))
@@ -38,19 +38,19 @@ public class KeyStore extends Store {
 	public String getKeyPassword() {
 		return keyPassword;
 	}
-	
+
 	@MCAttribute
 	public void setKeyPassword(String keyPassword) {
 		this.keyPassword = keyPassword;
 	}
-	
+
 	public String getKeyAlias() {
 		return keyAlias;
 	}
-	
+
 	@MCAttribute
 	public void setKeyAlias(String keyAlias) {
 		this.keyAlias = keyAlias;
 	}
-	
+
 }

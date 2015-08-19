@@ -40,16 +40,17 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 	private HttpRouter router;
 	private ClusterNotificationInterceptor interceptor;
 	private LoadBalancingInterceptor lbi;
-	
+
+	@Override
 	@Before
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3002), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
-		
+
 		interceptor = new ClusterNotificationInterceptor();
 		router.addUserFeatureInterceptor(interceptor);
-		
+
 		lbi = new LoadBalancingInterceptor();
 		lbi.setName("Default");
 		Rule rule2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3003), "thomas-bayer.com", 80);
@@ -57,66 +58,67 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 		rule2.getInterceptors().add(lbi);
 		router.init();
 	}
-	
+
+	@Override
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-	
+
 	@Test
 	public void testUpEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
-									   createQueryString("host", "node1.clustera",
-									   			 		 "port", "3018", 
-										  			     "cluster","c1"));
-		
+				createQueryString("host", "node1.clustera",
+						"port", "3018",
+						"cluster","c1"));
+
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).getHost());
-		
-	}	
-	
+
+	}
+
 	@Test
 	public void testTakeOutEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/takeout?"+
-									   createQueryString("host", "node1.clustera",
-											   			 "port", "3018",
-										  			     "cluster","c1"));
-		
+				createQueryString("host", "node1.clustera",
+						"port", "3018",
+						"cluster","c1"));
+
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").size());
-		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).isTakeOut());		
-	}	
+		assertTrue(BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).isTakeOut());
+	}
 
 	@Test
 	public void testDownEndpoint() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/down?"+
-									   createQueryString("host", "node1.clustera",
-											   			 "port", "3018",
-										  			     "cluster","c1"));
-		
+				createQueryString("host", "node1.clustera",
+						"port", "3018",
+						"cluster","c1"));
+
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").size());
-		assertEquals(false, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).isUp());	
-	}	
+		assertEquals(false, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("c1").get(0).isUp());
+	}
 
 	@Test
 	public void testDefaultCluster() throws Exception {
 		GetMethod get = new GetMethod("http://localhost:3002/clustermanager/up?"+
-									   createQueryString("host", "node1.clustera",
-									   			 		 "port", "3018"));
-		
+				createQueryString("host", "node1.clustera",
+						"port", "3018"));
+
 		assertEquals(204, new HttpClient().executeMethod(get));
 		assertEquals(1, BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").size());
 		assertEquals("node1.clustera", BalancerUtil.lookupBalancer(router, "Default").getAllNodesByCluster("Default").get(0).getHost());
-	}	
+	}
 
 	@Test
 	public void testSecurity() throws Exception {
 		interceptor.setValidateSignature(true);
 		interceptor.setKeyHex("6f488a642b740fb70c5250987a284dc0");
-		
+
 		assertEquals(204, new HttpClient().executeMethod(getSecurityTestMethod(5004)));
-		
+
 		interceptor.setTimeout(3018);
 		GetMethod get = getSecurityTestMethod(System.currentTimeMillis());
 		assertEquals(204, new HttpClient().executeMethod(get));
@@ -124,19 +126,19 @@ public class ClusterNotificationInterceptorTest extends TestCase {
 
 		Thread.sleep(6000);
 		assertEquals(403, new HttpClient().executeMethod(get));
-		
+
 	}
 
-	private GetMethod getSecurityTestMethod(long time) throws Exception {	
+	private GetMethod getSecurityTestMethod(long time) throws Exception {
 		String qParams = "cluster=c3&host=node1.clustera&port=3018&time=" + time + "&nonce=" + new SecureRandom().nextLong();
-		return new GetMethod("http://localhost:3002/clustermanager/up?data=" + 
-				   URLEncoder.encode(getEncryptedQueryString(qParams),"UTF-8"));
+		return new GetMethod("http://localhost:3002/clustermanager/up?data=" +
+				URLEncoder.encode(getEncryptedQueryString(qParams),"UTF-8"));
 	}
 
 	private String getEncryptedQueryString(String qParams) throws Exception {
 		Cipher cipher = Cipher.getInstance("AES");
-		
+
 		cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(Hex.decodeHex("6f488a642b740fb70c5250987a284dc0".toCharArray()), "AES"));
 		return new String(Base64.encodeBase64(cipher.doFinal(qParams.getBytes("UTF-8"))),"UTF-8");
-	}	
+	}
 }

@@ -22,15 +22,15 @@ import org.apache.commons.lang.StringUtils;
 import com.predic8.membrane.core.Constants;
 
 public class Response extends Message {
-	
+
 	public static final String ELEMENT_NAME = "response";
 
 	private int statusCode;
 	private String statusMessage;
-	
+
 	public Response(com.predic8.membrane.core.http.Response res) throws Exception {
 		super(res);
-		
+
 		setStatusCode(res.getStatusCode());
 		setStatusMessage(res.getStatusMessage());
 	}
@@ -62,40 +62,40 @@ public class Response extends Message {
 			}
 		}
 	}
-	 
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement("http", ELEMENT_NAME, Constants.HTTP_NS);
-		
+
 		out.writeNamespace("http", Constants.HTTP_NS);
-		
+
 		out.writeStartElement("status");
 		out.writeAttribute("code", "" + statusCode);
 		out.writeCharacters(statusMessage);
 		out.writeEndElement();
-		
+
 		writeIfNotNull(headers, out);
 		if (body != null) {
 			out.writeStartElement("body");
 			body.write(out);
 			out.writeEndElement();
 		}
-		
-		out.writeEndElement();		
+
+		out.writeEndElement();
 	}
 
 	public int getStatusCode() {
 		return statusCode;
 	}
-	
+
 	public void setStatusCode(int statusCode) {
 		this.statusCode = statusCode;
 	}
-	
+
 	public String getStatusMessage() {
 		return statusMessage;
 	}
-	
+
 	public void setStatusMessage(String statusMessage) {
 		this.statusMessage = statusMessage;
 	}

@@ -21,5 +21,5 @@ public interface DispatchingStrategy {
 	public Node dispatch(LoadBalancingInterceptor interceptor) throws EmptyNodeListException;
 
 	public void done(AbstractExchange exc);
-	
+
 }

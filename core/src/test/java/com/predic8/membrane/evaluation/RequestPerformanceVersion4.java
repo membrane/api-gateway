@@ -40,7 +40,7 @@ public class RequestPerformanceVersion4 {
 		System.out.println(request.getStartLine());
 		System.out.println(request.getHeader());
 	}
-	
+
 	@Test
 	public void parseHeaderReadBufferFirst() throws Exception {
 		long time = System.currentTimeMillis();
@@ -81,7 +81,7 @@ public class RequestPerformanceVersion4 {
 		int s = 0;
 		int e = 0;
 		for (e = s; e < buf.length; e++) {
-		
+
 			if ( buf[e] == ' ') {
 				break;
 			}
@@ -91,7 +91,7 @@ public class RequestPerformanceVersion4 {
 
 		s = ++e;
 		for (e = s; e < buf.length; e++) {
-		
+
 			if ( buf[e] == ' ') {
 				break;
 			}
@@ -100,14 +100,14 @@ public class RequestPerformanceVersion4 {
 
 		s = ++e;
 		for (e = s; e < buf.length; e++) {
-		
+
 			if ( buf[e] == '/') {
 				break;
 			}
 		}
 		s = ++e;
 		for (e = s; e < buf.length; e++) {
-		
+
 			if ( buf[e] == 13 ) {
 				break;
 			}
@@ -117,7 +117,7 @@ public class RequestPerformanceVersion4 {
 		while (true) {
 			s = e + 2;
 			for (e = s; e < buf.length; e++) {
-			
+
 				if (buf[e] == 13 || buf[e] == ':') {
 					break;
 				}
@@ -128,7 +128,7 @@ public class RequestPerformanceVersion4 {
 
 			s = ++e;
 			for (e = s; e < buf.length; e++) {
-			
+
 				if (buf[e] == 13) {
 					break;
 				}

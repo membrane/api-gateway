@@ -54,15 +54,15 @@ import com.predic8.membrane.core.util.MessageUtil;
 public class XOPReconstitutor {
 	private static Log log = LogFactory.getLog(XOPReconstitutor.class.getName());
 	private static final String XOP_NAMESPACE_URI = "http://www.w3.org/2004/08/xop/include";
-	
-	private final XMLInputFactory xmlInputFactory; 
-	
+
+	private final XMLInputFactory xmlInputFactory;
+
 	public XOPReconstitutor() {
 		xmlInputFactory = XMLInputFactory.newInstance();
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
-	
+
 	public InputStream reconstituteIfNecessary(Message message) throws XMLStreamException, IOException {
 		try {
 			Message reconstitutedMessage = getReconstitutedMessage(message);
@@ -73,13 +73,13 @@ public class XOPReconstitutor {
 		}
 		return MessageUtil.getContentAsStream(message);
 	}
-	
+
 	private XMLEventReader createEventReaderFromStream(InputStream is) throws XMLStreamException {
 		synchronized (xmlInputFactory) {
 			return xmlInputFactory.createXMLEventReader(is);
 		}
 	}
-	
+
 	/**
 	 * @return reassembled SOAP message or null if message is not SOAP or not multipart
 	 */
@@ -88,7 +88,7 @@ public class XOPReconstitutor {
 		if (contentType == null || contentType.getPrimaryType() == null)
 			return null;
 		if (!contentType.getPrimaryType().equals("multipart")
-			|| !contentType.getSubType().equals("related"))
+				|| !contentType.getSubType().equals("related"))
 			return null;
 
 		String type = contentType.getParameter("type");
@@ -100,23 +100,23 @@ public class XOPReconstitutor {
 		String boundary = contentType.getParameter("boundary");
 		if (boundary == null)
 			return null;
-			
+
 		HashMap<String, Part> parts = split(message, boundary);
 		Part startPart = parts.get(start);
 		if (startPart == null)
 			return null;
-		
+
 		ContentType innerContentType = new ContentType(startPart.getHeader().getContentType());
 		if (!innerContentType.getPrimaryType().equals("application")
-			|| !innerContentType.getSubType().equals("xop+xml"))
+				|| !innerContentType.getSubType().equals("xop+xml"))
 			return null;
-					
+
 		byte[] body = fillInXOPParts(startPart.getInputStream(), parts);
-		
+
 		Message m = new Message(){
 			@Override
 			protected void parseStartLine(InputStream in) throws IOException,
-					EndOfStreamException {
+			EndOfStreamException {
 				throw new RuntimeException("not implemented.");
 			}
 
@@ -126,11 +126,11 @@ public class XOPReconstitutor {
 			}
 		};
 		m.setBodyContent(body);
-		
+
 		String reconstitutedContentType = innerContentType.getParameter("type");
 		if (reconstitutedContentType != null)
 			m.getHeader().add(Header.CONTENT_TYPE, reconstitutedContentType);
-		
+
 		return m;
 	}
 
@@ -138,14 +138,14 @@ public class XOPReconstitutor {
 	private HashMap<String, Part> split(Message message, String boundary)
 			throws IOException, EndOfStreamException, MalformedStreamException {
 		HashMap<String, Part> parts = new HashMap<String, Part>();
-		
+
 		MultipartStream multipartStream = new MultipartStream(MessageUtil.getContentAsStream(message), boundary.getBytes(Constants.UTF_8_CHARSET));
 		boolean nextPart = multipartStream.skipPreamble();
 		while(nextPart) {
 			Header header = new Header(multipartStream.readHeaders());
-			ByteArrayOutputStream baos = new ByteArrayOutputStream(); 
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			multipartStream.readBodyData(baos);
-			
+
 			// see http://www.iana.org/assignments/transfer-encodings/transfer-encodings.xml
 			String cte = header.getFirstValue("Content-Transfer-Encoding");
 			if (cte != null &&
@@ -153,14 +153,14 @@ public class XOPReconstitutor {
 					!cte.equals("8bit") &&
 					!cte.equals("7bit"))
 				throw new RuntimeException("Content-Transfer-Encoding '" + cte + "' not implemented.");
-					
-			
+
+
 			Part part = new Part(header, baos.toByteArray());
 			String id = part.getContentID();
 			if (id != null) {
 				parts.put(id, part);
 			}
-			
+
 			nextPart = multipartStream.readBoundary();
 		}
 		return parts;
@@ -175,10 +175,10 @@ public class XOPReconstitutor {
 			XMLEventReader parser = createEventReaderFromStream(inputStream);
 
 			boolean xopIncludeOpen = false;
-			
+
 			while (parser.hasNext()) {
 				XMLEvent event = parser.nextEvent();
-				
+
 				if (event instanceof StartElement) {
 					StartElement start = (StartElement)event;
 					if (XOP_NAMESPACE_URI.equals(start.getName().getNamespaceURI()) &&
@@ -205,7 +205,7 @@ public class XOPReconstitutor {
 						continue;
 					}
 				}
-				
+
 				writer.add(event);
 			}
 			writer.flush();

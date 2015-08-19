@@ -28,7 +28,7 @@ public class TextUtilTest {
 		assertTrue(pattern.matcher("jhkj.predic8.de").matches());
 		assertFalse(pattern.matcher("jhkj.predic8.com").matches());
 	}
-	
+
 	@Test
 	public void testGlobToExpStarSuffixHost() throws Exception {
 		Pattern pattern = Pattern.compile(TextUtil.globToRegExp("predic8.*"));
@@ -36,7 +36,7 @@ public class TextUtilTest {
 		assertTrue(pattern.matcher("predic8.com").matches());
 		assertFalse(pattern.matcher("jhkj.predic8.de").matches());
 	}
-	
+
 	@Test
 	public void testGlobToExpStarInfixHost() throws Exception {
 		Pattern pattern = Pattern.compile(TextUtil.globToRegExp("www.*.de"));
@@ -46,14 +46,14 @@ public class TextUtilTest {
 		assertFalse(pattern.matcher("www.predic8.co.uk").matches());
 		assertFalse(pattern.matcher("services.predic8.de").matches());
 	}
-	
+
 	@Test
 	public void testGlobToExpStarPrefixIp() throws Exception {
 		Pattern pattern = Pattern.compile(TextUtil.globToRegExp("*.68.5.122"));
 		assertTrue(pattern.matcher("192.68.5.122").matches());
 		assertFalse(pattern.matcher("192.68.5.123").matches());
 	}
-	
+
 	@Test
 	public void testGlobToExpStarSuffixIp() throws Exception {
 		Pattern pattern = Pattern.compile(TextUtil.globToRegExp("192.68.7.*"));
@@ -61,7 +61,7 @@ public class TextUtilTest {
 		assertTrue(pattern.matcher("192.68.7.4").matches());
 		assertFalse(pattern.matcher("192.68.6.12").matches());
 	}
-	
+
 	@Test
 	public void testGlobToExpStarInfixIp() throws Exception {
 		Pattern pattern = Pattern.compile(TextUtil.globToRegExp("192.68.*.15"));
@@ -69,5 +69,5 @@ public class TextUtilTest {
 		assertTrue(pattern.matcher("192.68.24.15").matches());
 		assertFalse(pattern.matcher("192.68.24.12").matches());
 	}
-	
+
 }

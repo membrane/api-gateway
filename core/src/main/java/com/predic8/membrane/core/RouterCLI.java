@@ -48,7 +48,7 @@ public class RouterCLI {
 		}
 
 		new RouterCLI().waitForever();
-		
+
 	}
 
 	private synchronized void waitForever() {
@@ -58,7 +58,7 @@ public class RouterCLI {
 			// do nothing
 		}
 	}
-	
+
 	private static String getRulesFile(MembraneCommandLine line) {
 		ResolverMap rm = new ResolverMap();
 		if (line.hasConfiguration()) {

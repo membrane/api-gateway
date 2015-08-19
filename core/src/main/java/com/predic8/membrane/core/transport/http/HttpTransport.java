@@ -65,7 +65,7 @@ public class HttpTransport extends Transport {
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-		
+
 
 	}
 
@@ -103,15 +103,16 @@ public class HttpTransport extends Transport {
 
 	}
 
+	@Override
 	public synchronized void closeAll(boolean waitForCompletion) throws IOException {
-		
+
 		log.debug("Closing all network server sockets.");
 		Enumeration<IpPort> enumeration = getAllPorts();
 		while (enumeration.hasMoreElements()) {
 			IpPort p = enumeration.nextElement();
 			closePort(p.ip, p.port);
 		}
-		
+
 		if (waitForCompletion) {
 			long now = System.currentTimeMillis();
 			log.debug("Waiting for running exchanges to finish.");
@@ -122,7 +123,7 @@ public class HttpTransport extends Transport {
 					closeConnections(onlyIdle);
 					if (executorService.awaitTermination(5, TimeUnit.SECONDS))
 						break;
-					
+
 					log.warn("Still waiting for running exchanges to finish. (Set <transport forceSocketCloseOnHotDeployAfter=\"" + forceSocketCloseOnHotDeployAfter + "\"> to a lower value to forcibly close connections more quickly.");
 				}
 			} catch (InterruptedException e) {
@@ -157,7 +158,7 @@ public class HttpTransport extends Transport {
 
 		if (port == -1)
 			throw new RuntimeException("The port-attribute is missing (probably on a <serviceProxy> element).");
-		
+
 		HttpEndpointListener portListenerThread = new HttpEndpointListener(
 				ip, port, this, sslProvider);
 		portListenerMapping.put(new IpPort(ip, port), portListenerThread);
@@ -171,7 +172,7 @@ public class HttpTransport extends Transport {
 	public int getCoreThreadPoolSize() {
 		return executorService.getCorePoolSize();
 	}
-	
+
 	/**
 	 * @description <p>Membrane uses a thread pool to allocate threads to incomming clients connections. The core thread pool size is the minimum number of threads that are created in advance to serve client requests.</p>
 	 * @default 20
@@ -185,7 +186,7 @@ public class HttpTransport extends Transport {
 	public int getMaxThreadPoolSize() {
 		return executorService.getMaximumPoolSize();
 	}
-	
+
 	/**
 	 * @description Maximum number of threads to handle incoming connections. (Membrane uses 1 thread per incoming connection.)
 	 * @default <i>no limit</i>
@@ -234,16 +235,16 @@ public class HttpTransport extends Transport {
 	public boolean isOpeningPorts() {
 		return true;
 	}
-	
+
 	public int getForceSocketCloseOnHotDeployAfter() {
 		return forceSocketCloseOnHotDeployAfter;
 	}
-	
+
 	/**
 	 * @description When proxies.xml is changed and &lt;router hotDeploy="true"&gt;, the Spring Context is automatically refreshed,
 	 * which restarts the {@link Router} object (=Membrane Service Proxy). Before the context refresh, all open socket connections
 	 * have to be closed. Exchange objects which are still running might delay this process. Setting forceSocketCloseOnHotDeployAfter
-	 * to a non-zero number of milliseconds forces connections to be closed after this time.  
+	 * to a non-zero number of milliseconds forces connections to be closed after this time.
 	 * @default 30000
 	 */
 	@MCAttribute

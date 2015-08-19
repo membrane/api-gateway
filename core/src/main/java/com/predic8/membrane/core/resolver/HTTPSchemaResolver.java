@@ -34,33 +34,33 @@ import com.predic8.membrane.core.util.URIFactory;
 public class HTTPSchemaResolver implements SchemaResolver {
 
 	private HttpClientConfiguration httpClientConfig = new HttpClientConfiguration();
-	
+
 	private HttpClient httpClient;
 	private URIFactory uriFactory = new URIFactory(false);
-	
+
 	public synchronized HttpClient getHttpClient() {
 		if (httpClient == null) {
 			httpClient = new HttpClient(httpClientConfig);
 		}
 		return httpClient;
 	}
-	
+
 	@Override
 	public List<String> getSchemas() {
 		return Lists.newArrayList("http", "https");
 	}
-	
+
 	public InputStream resolve(String url) throws ResourceRetrievalException {
 		try {
-		    Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(uriFactory, url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
-		    Response response = getHttpClient().call(exc).getResponse();
-		    response.readBody();
-		    
-	    	if(response.getStatusCode() != 200) {
-	    		ResourceRetrievalException rde = new ResourceRetrievalException(url, response.getStatusCode());
-	    		throw rde;
-	    	}
-	    	return new ByteArrayInputStream(ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded()));
+			Exchange exc = new Request.Builder().method(Request.METHOD_GET).url(uriFactory, url).header(Header.USER_AGENT, Constants.PRODUCT_NAME + " " + Constants.VERSION).buildExchange();
+			Response response = getHttpClient().call(exc).getResponse();
+			response.readBody();
+
+			if(response.getStatusCode() != 200) {
+				ResourceRetrievalException rde = new ResourceRetrievalException(url, response.getStatusCode());
+				throw rde;
+			}
+			return new ByteArrayInputStream(ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded()));
 		} catch (ResourceRetrievalException e) {
 			throw e;
 		} catch (Exception e) {
@@ -73,16 +73,16 @@ public class HTTPSchemaResolver implements SchemaResolver {
 	public List<String> getChildren(String url) {
 		return null;
 	}
-	
+
 	@Override
 	public long getTimestamp(String url) {
 		return 0;
 	}
-	
+
 	public synchronized HttpClientConfiguration getHttpClientConfig() {
 		return httpClientConfig;
 	}
-	
+
 	public synchronized void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
 		this.httpClientConfig = httpClientConfig;
 		httpClient = null;

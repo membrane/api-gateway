@@ -29,7 +29,7 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 	public HttpResendHandler(Exchange exc, HttpTransport transport) {
 		super(transport);
 		exchange = new Exchange(exc, this);
-		
+
 		srcReq = exc.getRequest();
 	}
 
@@ -50,17 +50,17 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 			log.warn("", e);
 		}
 	}
-	
+
 	@Override
 	public void shutdownInput() {
 		// do nothing
 	}
-	
+
 	@Override
 	public InetAddress getLocalAddress() {
 		return null;
 	}
-	
+
 	@Override
 	public int getLocalPort() {
 		return 0;

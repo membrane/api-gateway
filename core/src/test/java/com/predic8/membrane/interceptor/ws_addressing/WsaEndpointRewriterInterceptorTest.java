@@ -29,22 +29,22 @@ import com.predic8.membrane.core.util.MessageUtil;
 
 @Ignore
 public class WsaEndpointRewriterInterceptorTest {
-    private WsaEndpointRewriterInterceptor rewriter;
-    private Exchange exc;
+	private WsaEndpointRewriterInterceptor rewriter;
+	private Exchange exc;
 
-    @Before
-    public void setUp() {
-        rewriter = new WsaEndpointRewriterInterceptor();
-        exc = new Exchange(null);
-    }
+	@Before
+	public void setUp() {
+		rewriter = new WsaEndpointRewriterInterceptor();
+		exc = new Exchange(null);
+	}
 
-    @Test
-    public void testRewriterInterceptor() throws Exception {
-        exc.setRequest(MessageUtil.getPostRequest("http://localhost:9000/SoapContext/SoapPort?wsdl"));
-        InputStream input = WsaEndpointRewriterTest.class.getResourceAsStream("/interceptor/ws_addressing/body.xml");
-        exc.getRequest().setBody(new Body(input));
+	@Test
+	public void testRewriterInterceptor() throws Exception {
+		exc.setRequest(MessageUtil.getPostRequest("http://localhost:9000/SoapContext/SoapPort?wsdl"));
+		InputStream input = WsaEndpointRewriterTest.class.getResourceAsStream("/interceptor/ws_addressing/body.xml");
+		exc.getRequest().setBody(new Body(input));
 
-        assertEquals(Outcome.CONTINUE, rewriter.handleRequest(exc));
-        assertEquals(exc.getProperty("messageId"), "urn:uuid:62a0de08-055a-4da7-aefa-730af9dbc6b6");
-    }
+		assertEquals(Outcome.CONTINUE, rewriter.handleRequest(exc));
+		assertEquals(exc.getProperty("messageId"), "urn:uuid:62a0de08-055a-4da7-aefa-730af9dbc6b6");
+	}
 }

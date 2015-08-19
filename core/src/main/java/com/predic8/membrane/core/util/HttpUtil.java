@@ -37,7 +37,7 @@ import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 
 public class HttpUtil {
-	
+
 	private static DateFormat GMT_DATE_FORMAT = createGMTDateFormat();
 
 	public static DateFormat createGMTDateFormat() {
@@ -65,11 +65,11 @@ public class HttpUtil {
 
 			line.append((char) b);
 		}
-		
+
 		throw new EOFWhileReadingLineException(line.toString());
 	}
 
-	
+
 	public static int readChunkSize(InputStream in) throws IOException {
 		StringBuilder buffer = new StringBuilder();
 
@@ -88,7 +88,7 @@ public class HttpUtil {
 
 			buffer.append((char) c);
 		}
-		
+
 		return Integer.parseInt(buffer.toString().trim(), 16);
 	}
 
@@ -102,19 +102,19 @@ public class HttpUtil {
 	private static String getHTMLErrorBody(String text, String comment) {
 		StringBuilder buf = new StringBuilder(256);
 
-		buf.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \r\n" + 
-				"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\r\n" + 
-				"<html xmlns=\"http://www.w3.org/1999/xhtml\">\r\n" + 
-				"<head>\r\n" + 
-				"<title>Internal Server Error</title>\r\n" + 
+		buf.append("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \r\n" +
+				"  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\r\n" +
+				"<html xmlns=\"http://www.w3.org/1999/xhtml\">\r\n" +
+				"<head>\r\n" +
+				"<title>Internal Server Error</title>\r\n" +
 				"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\r\n" +
 				"<style><!--\r\n" +
 				"body { font-family:sans-serif; } \r\n" +
-				".footer { margin-top:20pt; color:#AAAAAA; padding:1em 0em; font-size:10pt; }\r\n" + 
-				".footer a { color:#AAAAAA; }\r\n" + 
-				".footer a:hover { color:#000000; }\r\n" + 
+				".footer { margin-top:20pt; color:#AAAAAA; padding:1em 0em; font-size:10pt; }\r\n" +
+				".footer a { color:#AAAAAA; }\r\n" +
+				".footer a:hover { color:#000000; }\r\n" +
 				"--></style>" +
-				"</head>\r\n" + 
+				"</head>\r\n" +
 				"<body><h1>Internal Server Error</h1>");
 		buf.append("<hr/>");
 		buf.append("<p>While processing your request, the following error was detected. ");
@@ -190,8 +190,8 @@ public class HttpUtil {
 		buf.append(Constants.CRLF);
 		buf.append("</soapenv:Code>");
 		buf.append(Constants.CRLF);
-		
-		
+
+
 		buf.append("<soapenv:Reason><soapenv:Text xml:lang=\"en-US\">");
 		buf.append(StringEscapeUtils.escapeXml(title));
 		buf.append("</soapenv:Text></soapenv:Reason>");
@@ -215,9 +215,9 @@ public class HttpUtil {
 		res.setHeader(createHeaders(contentType, headers));
 
 		if (body != null) res.setBodyContent(body);
-		return res;		
+		return res;
 	}
-	
+
 	public static Header createHeaders(String contentType, String... headers) {
 		Header header = new Header();
 		if (contentType != null ) header.setContentType(contentType);
@@ -231,7 +231,7 @@ public class HttpUtil {
 		}
 		return header;
 	}
-	
+
 	public static List<Chunk> readChunks(InputStream in) throws IOException {
 		List<Chunk> chunks = new ArrayList<Chunk>();
 		int chunkSize;

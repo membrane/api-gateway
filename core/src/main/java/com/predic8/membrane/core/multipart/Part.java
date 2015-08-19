@@ -32,105 +32,105 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Header;
 
 public class Part {
-	
+
 	private Header header;
 	private byte[] data;
-	
+
 	public Part(Header header, byte[] data) {
 		this.header = header;
 		this.data = data;
 	}
-	
+
 	public String getContentID() {
 		return header.getFirstValue("Content-ID");
 	}
-	
+
 	public Header getHeader() {
 		return header;
 	}
-	
+
 	public InputStream getInputStream() {
 		return new ByteArrayInputStream(data);
 	}
-	
+
 	public XMLEvent asXMLEvent() {
 		return new Characters() {
-			
+
 			@Override
 			public void writeAsEncodedUnicode(Writer writer) throws XMLStreamException {
 				throw new RuntimeException("not implemented");
 			}
-			
+
 			@Override
 			public boolean isStartElement() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean isStartDocument() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean isProcessingInstruction() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean isNamespace() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean isEntityReference() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean isEndElement() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean isEndDocument() {
 				return false;
 			}
-			
+
 			@Override
 			public boolean isCharacters() {
 				return true;
 			}
-			
+
 			@Override
 			public boolean isAttribute() {
 				return false;
 			}
-			
+
 			@Override
 			public QName getSchemaType() {
 				return null;
 			}
-			
+
 			@Override
 			public Location getLocation() {
 				return null;
 			}
-			
+
 			@Override
 			public int getEventType() {
 				return CHARACTERS;
 			}
-			
+
 			@Override
 			public StartElement asStartElement() {
 				return null;
 			}
-			
+
 			@Override
 			public EndElement asEndElement() {
 				return null;
 			}
-			
+
 			@Override
 			public Characters asCharacters() {
 				return this;

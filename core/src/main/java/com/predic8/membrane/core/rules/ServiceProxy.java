@@ -27,7 +27,7 @@ import com.predic8.membrane.annot.MCElement;
  */
 @MCElement(name="serviceProxy")
 public class ServiceProxy extends AbstractServiceProxy {
-	
+
 	public ServiceProxy() {
 		this.key = new ServiceProxyKey(80);
 	}
@@ -37,17 +37,17 @@ public class ServiceProxy extends AbstractServiceProxy {
 		setTargetHost(targetHost);
 		setTargetPort(targetPort);
 	}
-	
+
 
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new ServiceProxy();
 	}
-	
+
 	public String getMethod() {
 		return ((ServiceProxyKey)key).getMethod();
 	}
-	
+
 	/**
 	 * @description If set, Membrane will only consider this rule, if the method (GET, PUT, POST, DELETE, etc.)
 	 *              header of incoming HTTP requests matches. The asterisk '*' matches any method.

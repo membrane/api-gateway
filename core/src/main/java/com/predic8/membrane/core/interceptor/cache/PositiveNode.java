@@ -18,12 +18,12 @@ class PositiveNode extends Node {
 
 	static final Log log = LogFactory.getLog(PositiveNode.class.getName());
 
-	
+
 	byte[] content;
 	long lastModified;
 	String contentType;
 	String inResponseToAccept;
-	
+
 	public PositiveNode(Exchange exchange) throws IOException, ParseException {
 		Request request = exchange.getRequest();
 		Response response = exchange.getResponse();
@@ -31,7 +31,7 @@ class PositiveNode extends Node {
 		contentType = response.getHeader().getFirstValue(Header.CONTENT_TYPE);
 		lastModified = CacheInterceptor.fromRFC(response.getHeader().getFirstValue(Header.LAST_MODIFIED));
 		inResponseToAccept = request.getHeader().getFirstValue(Header.ACCEPT);
-		
+
 		/*
 		if (contentType == null) {
 			System.err.println("strange case with contentType == null");
@@ -40,9 +40,9 @@ class PositiveNode extends Node {
 			System.err.println(response.getStartLine());
 			System.err.println(response.getHeader());
 		}
-		*/
+		 */
 	}
-	
+
 	@Override
 	public Response toResponse(Request request) {
 		String ifModifiedSince = request.getHeader().getFirstValue(Header.IF_MODIFIED_SINCE);
@@ -59,7 +59,7 @@ class PositiveNode extends Node {
 			builder.contentType(contentType);
 		return builder.header(Header.LAST_MODIFIED, CacheInterceptor.toRFC(lastModified)).body(content).build();
 	}
-	
+
 	@Override
 	public boolean canSatisfy(Request request) {
 		String accept = request.getHeader().getFirstValue("accept");

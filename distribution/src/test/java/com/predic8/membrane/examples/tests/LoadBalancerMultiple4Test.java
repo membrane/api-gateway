@@ -29,15 +29,15 @@ import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 
 public class LoadBalancerMultiple4Test extends DistributionExtractingTestcase {
-	
+
 	@Test
 	public void test() throws IOException, InterruptedException {
-		
+
 		File base = getExampleDir("loadbalancer-multiple-4");
-		
+
 		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8080", "3023");
 		AssertUtils.replaceInFile(new File(base, "proxies.xml"), "8081", "3024");
-		
+
 		Process2 sl = new Process2.Builder().in(base).script("service-proxy").waitForMembrane().start();
 		try {
 			assertEquals(1, LoadBalancerUtil.getRespondingNode("http://localhost:3023/service"));
@@ -56,20 +56,20 @@ public class LoadBalancerMultiple4Test extends DistributionExtractingTestcase {
 
 			getAndAssert(204, "http://localhost:9010/clustermanager/down?balancer=balancer1&host=localhost&port=4001");
 			Thread.sleep(1000);
-			
+
 			status = getAndAssert200("http://localhost:9000/admin/clusters/show?balancer=balancer1&cluster=Default");
 			assertNodeStatus(status, "localhost", 4000, "UP");
 			assertNodeStatus(status, "localhost", 4001, "DOWN");
-			
+
 			assertEquals(1, LoadBalancerUtil.getRespondingNode("http://localhost:3023/service"));
 			assertEquals(1, LoadBalancerUtil.getRespondingNode("http://localhost:3023/service"));
-			
+
 		} finally {
 			sl.killScript();
 		}
 	}
 
-	
-	
+
+
 
 }

@@ -20,9 +20,9 @@ import org.junit.Test;
 import com.predic8.membrane.core.interceptor.xmlcontentfilter.SimpleXPathParser.ContainerNode;
 
 public class SimpleXPathParserTest {
-	
+
 	SimpleXPathParser p = new SimpleXPathParser();
-	
+
 	@Test
 	public void valid1() {
 		Assert.assertNotNull(p.parse("//a"));
@@ -34,7 +34,7 @@ public class SimpleXPathParserTest {
 		Assert.assertNotNull(n);
 		Assert.assertEquals(6, n.nodes.length);
 	}
-	
+
 	@Test(expected = RuntimeException.class)
 	public void invalid1() {
 		p.parse("//a[");

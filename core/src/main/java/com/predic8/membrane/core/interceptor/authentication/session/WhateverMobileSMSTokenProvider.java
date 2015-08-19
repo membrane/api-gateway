@@ -97,11 +97,11 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 	private void logSmsError(boolean primary, Exchange exc) {
 		String head = primary ? "Primary Gateway" : "Both Primary and Secondary Gateway";
 		log.error(head + " failed when sending SMS." +
-			" REQUEST: " + exc.getRequest().toString() +
-			( (exc.getResponse() != null)
-			  ? " RESPONSE: " + exc.getResponse().toString()
-			  : "")
-		);
+				" REQUEST: " + exc.getRequest().toString() +
+				( (exc.getResponse() != null)
+						? " RESPONSE: " + exc.getResponse().toString()
+								: "")
+				);
 	}
 
 	/**
@@ -116,11 +116,11 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 		Exchange exc = null;
 		try {
 			exc = new Request.Builder() // uses HTTP/1.1 which is exactly what we need here
-					.post(primary ? GATEWAY : GATEWAY2)
-					.header("Host", primary ? HOST : HOST2)
-					.header("Content-Type", "application/x-www-form-urlencoded")
-					.body(generateRequestData(senderName, recipientNumber, text))
-					.buildExchange();
+			.post(primary ? GATEWAY : GATEWAY2)
+			.header("Host", primary ? HOST : HOST2)
+			.header("Content-Type", "application/x-www-form-urlencoded")
+			.body(generateRequestData(senderName, recipientNumber, text))
+			.buildExchange();
 		} catch (URISyntaxException e1) {
 			logSmsError(primary, exc);
 		}

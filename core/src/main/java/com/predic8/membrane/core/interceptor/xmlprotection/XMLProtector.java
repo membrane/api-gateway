@@ -35,8 +35,8 @@ import org.apache.commons.logging.LogFactory;
  * <li>DTDs can be removed.</li>
  * <li>The length of element names can be limited.</li>
  * <li>The number of attibutes per element can be limited.</li>
- * </ul> 
- * 
+ * </ul>
+ *
  * If {@link #protect(InputStreamReader)} returns false, an unrecoverable error has
  * occurred (such as not-wellformed XML or an element name length exceeded the limit),
  * the {@link OutputStreamWriter} is left at this position: It should be discarded and
@@ -49,7 +49,7 @@ public class XMLProtector {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
-	
+
 	private XMLEventWriter writer;
 	private final int maxAttibuteCount;
 	private final int maxElementNameLength;
@@ -61,7 +61,7 @@ public class XMLProtector {
 		this.maxElementNameLength = maxElementNameLength;
 		this.maxAttibuteCount = maxAttibuteCount;
 	}
-	
+
 	public boolean protect(InputStreamReader isr) {
 		try {
 			XMLEventReader parser;

@@ -94,16 +94,16 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
  */
 @MCElement(name="login")
 public class LoginInterceptor extends AbstractInterceptor {
-	
+
 	private String location, path, message;
 	private boolean exposeUserCredentialsToSession;
-	
+
 	private UserDataProvider userDataProvider;
 	private TokenProvider tokenProvider;
 	private SessionManager sessionManager;
 	private AccountBlocker accountBlocker;
 	private LoginDialog loginDialog;
-	
+
 	@Override
 	public void init() throws Exception {
 		if (userDataProvider == null)
@@ -116,6 +116,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path, exposeUserCredentialsToSession, message);
 	}
 
+	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
 		tokenProvider.init(router);
@@ -134,7 +135,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 		if (s == null || !s.isAuthorized()) {
 			return loginDialog.redirectToLogin(exc);
 		}
-		
+
 		applyBackendAuthorization(exc, s);
 		return super.handleRequest(exc);
 	}
@@ -150,7 +151,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 				h.add(headerName, e.getValue());
 			}
 	}
-	
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		Header header = exc.getResponse().getHeader();
@@ -240,7 +241,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 	public boolean isExposeUserCredentialsToSession() {
 		return exposeUserCredentialsToSession;
 	}
-	
+
 	/**
 	 * @description Whether the user's credentials should be copied over to the session. This means they
 	 * will stay in memory and will be available to all Membrane components.

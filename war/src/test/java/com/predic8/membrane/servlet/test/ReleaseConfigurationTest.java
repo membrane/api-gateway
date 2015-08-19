@@ -32,11 +32,11 @@ import com.predic8.membrane.test.AssertUtils;
 public class ReleaseConfigurationTest {
 
 	private final int port;
-	
+
 	public ReleaseConfigurationTest() {
 		this.port = 3021;
 	}
-	
+
 	@Test
 	public void testReachable() throws ClientProtocolException, IOException {
 		String secret = "Web Services";
@@ -48,9 +48,9 @@ public class ReleaseConfigurationTest {
 
 		AssertUtils.assertContains(secret, EntityUtils.toString(res.getEntity()));
 	}
-	
+
 	private String getBaseURL() {
 		return "http://localhost:" + port + "/release/";
 	}
-	
+
 }

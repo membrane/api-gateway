@@ -42,21 +42,22 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private int maxXForwardedForHeaders = 20;
 
 	public RuleMatchingInterceptor() {
-		name = "Rule Matching Interceptor";		
+		name = "Rule Matching Interceptor";
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
+	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRule() != null ) return Outcome.CONTINUE;
-		
+
 		Rule rule = getRule(exc);
 		exc.setRule(rule);
-		
+
 		if (rule instanceof NullRule) {
 			handleNoRuleFound(exc);
 			return Outcome.ABORT;
 		}
-		
+
 		if (xForwardedForEnabled && (rule instanceof AbstractServiceProxy))
 			insertXForwardedFor(exc);
 
@@ -66,16 +67,16 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private void handleNoRuleFound(Exchange exc) throws IOException {
 		exc.setResponse(
 				Response.badRequest(
-						"This request was not accepted by " + 
-								"<a href=\"http://www.membrane-soa.org/esb-doc/\">" + Constants.PRODUCT_NAME + "</a>" + 
+						"This request was not accepted by " +
+								"<a href=\"http://www.membrane-soa.org/esb-doc/\">" + Constants.PRODUCT_NAME + "</a>" +
 								". Please correct the request and try again.",
-						false).build());
+								false).build());
 	}
 
 	private Rule getRule(Exchange exc) {
 		Request request = exc.getRequest();
 		AbstractHttpHandler handler = exc.getHandler();
-		
+
 		// retrieve value to match
 		String hostHeader = request.getHeader().getHost();
 		String method = request.getMethod();
@@ -104,7 +105,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 				if (!rule.getKey().getIp().equals(exc.getHandler().getLocalAddress().toString()))
 					continue;
 
-			
+
 			if (rule.getKey().getPort() == -1 || exc.getHandler().getLocalPort() == -1 || rule.getKey().getPort() == exc.getHandler().getLocalPort()) {
 				if (log.isDebugEnabled())
 					log.debug("proxy rule found: " + rule);
@@ -119,7 +120,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		Header h = exc.getRequest().getHeader();
 		if (h.getNumberOf(Header.X_FORWARDED_FOR) > maxXForwardedForHeaders) {
 			Request r = exc.getRequest();
-			throw new RuntimeException("Request caused " + Header.X_FORWARDED_FOR + " flood: " + r.getStartLine() +  
+			throw new RuntimeException("Request caused " + Header.X_FORWARDED_FOR + " flood: " + r.getStartLine() +
 					r.getHeader().toString());
 		}
 		h.setXForwardedFor(getXForwardedForHeaderValue(exc));
@@ -128,7 +129,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private String getXForwardedForHeaderValue(AbstractExchange exc) {
 		if (getXForwardedFor(exc) != null )
 			return getXForwardedFor(exc) + ", " + exc.getRemoteAddrIp();
-		
+
 		return exc.getRemoteAddrIp();
 	}
 
@@ -144,16 +145,16 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	public boolean isxForwardedForEnabled() {
 		return xForwardedForEnabled;
 	}
-	
+
 	@MCAttribute
 	public void setxForwardedForEnabled(boolean xForwardedForEnabled) {
 		this.xForwardedForEnabled = xForwardedForEnabled;
 	}
-	
+
 	public int getMaxXForwardedForHeaders() {
 		return maxXForwardedForHeaders;
 	}
-	
+
 	@MCAttribute
 	public void setMaxXForwardedForHeaders(int maxXForwardedForHeaders) {
 		this.maxXForwardedForHeaders = maxXForwardedForHeaders;

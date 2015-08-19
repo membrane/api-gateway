@@ -22,14 +22,14 @@ import java.util.List;
  * interested in the full XPath grammar: Uninteresting parts are left as
  * "unparsed string nodes" as long as we are able to parse the interesting
  * parts.)
- * 
+ *
  * An XPath expression, given as a string, is transformed into a tree of nodes
  * (instances of subclasses of {@link Node}).
- * 
+ *
  * We are only interested in strings, comments, round- and
  * square-bracket-expressions. Any other substring of the expression is
  * concatenated into a node of type {@link UnparsedStringNode}.
- * 
+ *
  * See the XPath 2.0 spec at http://www.w3.org/TR/xpath20/ .
  */
 public class SimpleXPathParser {
@@ -57,6 +57,7 @@ public class SimpleXPathParser {
 			this.s = s;
 		}
 
+		@Override
 		public void print(PrintStream ps) {
 			ps.print("UNPARSED(" + s + ")");
 		}
@@ -69,6 +70,7 @@ public class SimpleXPathParser {
 			this.s = s;
 		}
 
+		@Override
 		public void print(PrintStream ps) {
 			ps.print("STRING(" + s + ")");
 		}
@@ -81,6 +83,7 @@ public class SimpleXPathParser {
 			this.s = s;
 		}
 
+		@Override
 		public void print(PrintStream ps) {
 			ps.print("COMMENT(" + s + ")");
 		}
@@ -93,6 +96,7 @@ public class SimpleXPathParser {
 			this.nodes = nodes;
 		}
 
+		@Override
 		public void print(PrintStream ps) {
 			ps.print("CONTAINER(");
 			for (Node n : nodes) {
@@ -110,6 +114,7 @@ public class SimpleXPathParser {
 			this.node = node;
 		}
 
+		@Override
 		public void print(PrintStream ps) {
 			ps.print("SQUARE(");
 			node.print(ps);
@@ -124,6 +129,7 @@ public class SimpleXPathParser {
 			this.node = node;
 		}
 
+		@Override
 		public void print(PrintStream ps) {
 			ps.print("ROUND(");
 			node.print(ps);
@@ -149,7 +155,7 @@ public class SimpleXPathParser {
 	/**
 	 * Parses an XPath Expression (production "XPath" of the EBNF grammar of
 	 * http://www.w3.org/TR/xpath20/#nt-bnf ).
-	 * 
+	 *
 	 * @param m
 	 *            the XPath expression and the position of the first character
 	 * @param terminator
@@ -207,7 +213,7 @@ public class SimpleXPathParser {
 	/**
 	 * Parses a comment (production "Comment" of the EBNF grammar of
 	 * http://www.w3.org/TR/xpath20/#terminal-symbols ).
-	 * 
+	 *
 	 * @param m
 	 *            the XPath expression and the position of the first character
 	 */
@@ -240,7 +246,7 @@ public class SimpleXPathParser {
 	/**
 	 * Parses a String (production "StringLiteral" of the EBNF grammar of
 	 * http://www.w3.org/TR/xpath20/#terminal-symbols ).
-	 * 
+	 *
 	 * @param m
 	 *            the XPath expression and the position of the first character
 	 * @param terminator

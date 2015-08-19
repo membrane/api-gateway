@@ -50,7 +50,7 @@ public class SOAPFaultTest {
 	public void testSkipFault2() throws Exception {
 		ValidatorInterceptor i = createValidatorInterceptor(true);
 		Exchange exc = getExchangeCP("wsdlValidator/soapFaultCustom.xml");
-		
+
 		assertEquals(Outcome.CONTINUE, i.handleResponse(exc));
 	}
 
