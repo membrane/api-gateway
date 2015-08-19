@@ -44,6 +44,10 @@ public class QueryParameter {
 		return Integer.parseInt(params.get(name));
 	}
 
+	public long getLong(String name) {
+		return Long.parseLong(params.get(name));
+	}
+
 	public String getString(String name) {
 		return params.get(name);
 	}

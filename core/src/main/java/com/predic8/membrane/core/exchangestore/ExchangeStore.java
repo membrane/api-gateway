@@ -71,4 +71,11 @@ public interface ExchangeStore {
 	public List<? extends ClientStatistics> getClientStatistics();
 	
 	public void collect(ExchangeCollector col);
+
+	long getLastModified();
+	/**
+	 * Returns immediately if lastKnownModification is smaller than last known modification.
+	 * Otherwise it waits until a modification occurs.
+	 */
+	void waitForModification(long lastKnownModification);
 }
