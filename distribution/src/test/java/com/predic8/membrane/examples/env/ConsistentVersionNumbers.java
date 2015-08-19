@@ -107,7 +107,7 @@ public class ConsistentVersionNumbers {
 	private static void run(File base) throws Exception {
 		recurse(base, 2);
 		
-		handlePOM(new File(base.getAbsolutePath() + "/cli/examples/embedding-java/pom.xml"), false);
+		handlePOM(new File(base.getAbsolutePath() + "/distribution/examples/embedding-java/pom.xml"), false);
 		handleJBossDeploymentStructure(new File(base.getAbsolutePath() + "/sar/src/main/resources/META-INF/jboss-deployment-structure.xml"));
 	}
 
