@@ -26,9 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.rules.Rule;
-import com.predic8.wsdl.AbstractAddress;
 
 public class StreamPump implements Runnable {
 
@@ -47,7 +45,7 @@ public class StreamPump implements Runnable {
 			pumps.remove(pump);
 		}
 		public synchronized List<StreamPump> getStreamPumps() {
-			return new ArrayList<StreamPump>(this.pumps);
+			return new ArrayList<StreamPump>(pumps);
 		}
 	}
 

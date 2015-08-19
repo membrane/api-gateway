@@ -57,7 +57,7 @@ public abstract class RESTInterceptor extends AbstractInterceptor {
 	protected Response json(JSONContent content) throws Exception {
 		StringWriter jsonTxt = new StringWriter();
 
-		JsonGenerator gen = jsonFactory.createJsonGenerator(jsonTxt);
+		JsonGenerator gen = jsonFactory.createGenerator(jsonTxt);
 		content.write(gen);
 		gen.flush();
 		

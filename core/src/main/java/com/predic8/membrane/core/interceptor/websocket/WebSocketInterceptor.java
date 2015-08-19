@@ -6,7 +6,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URLUtil;
-import org.springframework.beans.factory.annotation.Required;
 
 /**
  * @description Allow HTTP protocol upgrades to the <a

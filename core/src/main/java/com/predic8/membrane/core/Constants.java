@@ -15,7 +15,6 @@
 package com.predic8.membrane.core;
 
 import java.nio.charset.Charset;
-import java.util.Calendar;
 import java.util.Properties;
 
 import com.predic8.membrane.core.http.Request;

@@ -121,7 +121,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			JsonFactory jsonFactory = new JsonFactory();
-			JsonGenerator jg = jsonFactory.createJsonGenerator(baos, JsonEncoding.UTF8);
+			JsonGenerator jg = jsonFactory.createGenerator(baos, JsonEncoding.UTF8);
 			
 			jg.writeStartObject();
 				jg.writeObjectFieldStart("outboundSMSMessageRequest");

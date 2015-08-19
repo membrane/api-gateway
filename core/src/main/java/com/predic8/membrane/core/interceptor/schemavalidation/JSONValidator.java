@@ -98,7 +98,7 @@ public class JSONValidator implements IValidator {
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        JsonGenerator jg = new JsonFactory().createJsonGenerator(baos);
+        JsonGenerator jg = new JsonFactory().createGenerator(baos);
 
         jg.writeStartObject();
         jg.writeStringField("source", source);

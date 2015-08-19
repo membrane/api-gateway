@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import java.util.EnumSet;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

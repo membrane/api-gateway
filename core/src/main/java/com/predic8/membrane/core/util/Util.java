@@ -54,7 +54,7 @@ public class Util {
 		String contentType = g.getHeader().getFirstValue("Content-Type");
 		if (contentType != null && g.getHeader().getContentTypeObject().match("application/json")) {
 			final JsonFactory jsonFactory = new JsonFactory();
-			final JsonParser jp = jsonFactory.createJsonParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
+			final JsonParser jp = jsonFactory.createParser(new InputStreamReader(g.getBodyAsStreamDecoded()));
 			String name = null;
 			while (jp.nextToken() != null) {
 				switch (jp.getCurrentToken()) {

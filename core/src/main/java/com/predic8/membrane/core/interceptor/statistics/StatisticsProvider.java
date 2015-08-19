@@ -129,7 +129,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 
 		StringWriter jsonTxt = new StringWriter();
 
-		JsonGenerator jsonGen = jsonFactory.createJsonGenerator(jsonTxt);
+		JsonGenerator jsonGen = jsonFactory.createGenerator(jsonTxt);
 		jsonGen.writeStartObject();
 			jsonGen.writeArrayFieldStart("statistics");
 				int size = 0;

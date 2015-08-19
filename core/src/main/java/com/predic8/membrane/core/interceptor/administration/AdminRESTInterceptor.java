@@ -28,7 +28,6 @@ import org.apache.commons.logging.LogFactory;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
-
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.ExchangesUtil;
 import com.predic8.membrane.core.exchangestore.ClientStatistics;
@@ -49,6 +48,7 @@ import com.predic8.membrane.core.util.TextUtil;
 
 public class AdminRESTInterceptor extends RESTInterceptor {
 
+	@SuppressWarnings("unused")
 	private static Log log = LogFactory.getLog(AdminRESTInterceptor.class.getName());
 
 	@Mapping("/admin/rest/clients(/?\\?.*)?")

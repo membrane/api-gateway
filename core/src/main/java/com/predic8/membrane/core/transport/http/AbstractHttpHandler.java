@@ -124,7 +124,7 @@ public abstract class AbstractHttpHandler  {
 		case JSON:
 	        ByteArrayOutputStream baos = new ByteArrayOutputStream();
 	        try {
-	        	JsonGenerator jg = new JsonFactory().createJsonGenerator(baos);
+	        	JsonGenerator jg = new JsonFactory().createGenerator(baos);
 	        	jg.writeStartObject();
 	        	jg.writeFieldName("error");
 	        	jg.writeString(msg);
