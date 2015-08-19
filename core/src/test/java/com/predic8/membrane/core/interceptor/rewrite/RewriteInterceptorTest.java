@@ -35,20 +35,20 @@ public class RewriteInterceptorTest {
 	private Exchange exc;
 	private DispatchingInterceptor di;
 	private ServiceProxy sp;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		HttpRouter router = new HttpRouter();
-		
+
 		di = new DispatchingInterceptor();
 		di.init(router);
-		
+
 		sp = new ServiceProxy(new ServiceProxyKey(80, null), "www.predic8.de", 80);
 		sp.init(router);
-		
+
 		exc = new Exchange(null);
 		exc.setRequest(MessageUtil.getGetRequest("/buy/banana/3"));
-		
+
 		rewriter = new RewriteInterceptor();
 		List<Mapping> mappings = new ArrayList<Mapping>();
 		mappings.add( new Mapping("/buy/(.*)/(.*)", "/buy?item=$1&amount=$2", null));
@@ -62,14 +62,14 @@ public class RewriteInterceptorTest {
 		assertEquals(Outcome.CONTINUE, rewriter.handleRequest(exc));
 		assertEquals("/buy?item=banana&amount=3", exc.getDestinations().get(0));
 	}
-	
+
 	@Test
 	public void testRewrite() throws Exception {
 		exc.setRule(sp);
-		
+
 		assertEquals(Outcome.CONTINUE, di.handleRequest(exc));
 		assertEquals(Outcome.CONTINUE, rewriter.handleRequest(exc));
 		assertEquals("http://www.predic8.de:80/buy?item=banana&amount=3", exc.getDestinations().get(0));
 	}
-	
+
 }

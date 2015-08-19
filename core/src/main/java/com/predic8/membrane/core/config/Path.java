@@ -22,12 +22,12 @@ import com.predic8.membrane.annot.MCTextContent;
  * @explanation <p>
  *              The value of the content will be taken to match the path.
  *              </p>
- * 
+ *
  *              <p>
  *              If <tt>isRegExp="true"</tt>, the whole path has to match the given regular expression. If
  *              <tt>isRegExp="false"</tt>, the path has to start with the given string.
  *              </p>
- * 
+ *
  *              <p>
  *              If <tt>&lt;path /&gt;</tt> is a child element of a <tt>&lt;soapProxy /&gt;</tt>, the <tt>isRegExp</tt>
  *              attribute must not be present.
@@ -37,19 +37,19 @@ import com.predic8.membrane.annot.MCTextContent;
 public class Path {
 
 	public static final String ELEMENT_NAME = "path";
-	
+
 	private String value;
-	
+
 	private boolean regExp;
-	
+
 	public Path() {
 	}
-	
+
 	public Path(boolean regExp, String value) {
 		this.regExp = regExp;
 		this.value = value;
 	}
-	
+
 	public boolean isRegExp() {
 		return regExp;
 	}
@@ -72,5 +72,5 @@ public class Path {
 	public void setValue(String value) {
 		this.value = value;
 	}
-	
+
 }

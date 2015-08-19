@@ -43,33 +43,33 @@ public class ReassembleTest {
 	private Response getResponse() throws IOException {
 		byte[] body = IOUtils.toByteArray(getClass().getResourceAsStream("/multipart/embedded-byte-array.txt"));
 		return Response.ok().
-		header("Content-Type", "multipart/related; " +
-				"type=\"application/xop+xml\"; " +
-				"boundary=\"uuid:168683dc-43b3-4e71-8e66-efb633ef406b\"; " +
-				"start=\"<root.message@cxf.apache.org>\"; " +
-				"start-info=\"text/xml\"").
-		header("Content-Length", ""+body.length).
-		body(body).
-		build();
+				header("Content-Type", "multipart/related; " +
+						"type=\"application/xop+xml\"; " +
+						"boundary=\"uuid:168683dc-43b3-4e71-8e66-efb633ef406b\"; " +
+						"start=\"<root.message@cxf.apache.org>\"; " +
+						"start-info=\"text/xml\"").
+						header("Content-Length", ""+body.length).
+						body(body).
+						build();
 	}
-	
+
 	@Test
 	public void doit() throws HttpException, IOException, SAXException, XMLStreamException {
 		String actual = IOUtils.toString(new XOPReconstitutor().reconstituteIfNecessary(getResponse()));
 		String expected = IOUtils.toString(getClass().getResourceAsStream("/multipart/embedded-byte-array-reassembled.xml"));
-		
+
 		if (actual.startsWith("--"))
 			throw new AssertionError("Response was not reassembled: " + actual);
-		
+
 		XMLAssert.assertXMLEqual(expected, actual);
 	}
-	
+
 	@Test
 	public void checkContentType() throws ParseException, MalformedStreamException, IOException, EndOfStreamException, XMLStreamException, FactoryConfigurationError {
 		Assert.assertEquals("text/xml",
 				new XOPReconstitutor().getReconstitutedMessage(getResponse()).getHeader().getContentType());
 	}
-	
+
 	private void testXMLContentFilter(String xpath, int expectedNumberOfRemainingElements) throws IOException, XPathExpressionException {
 		XMLContentFilter cf = new XMLContentFilter(xpath);
 		Message m = getResponse();
@@ -77,16 +77,16 @@ public class ReassembleTest {
 		Assert.assertEquals("text/xml", m.getHeader().getContentType());
 		Assert.assertEquals(expectedNumberOfRemainingElements+1, StringUtils.countMatches(m.getBody().toString(), "<"));
 	}
-	
+
 	@Test
 	public void inCombinationWithXMLContentFilterTest() throws XPathExpressionException, IOException {
 		testXMLContentFilter("//*[local-name()='Body']", 1);
 		testXMLContentFilter("//*[local-name()='Body' and namespace-uri()='http://schemas.xmlsoap.org/soap/envelope/']", 1);
 	}
-	
+
 	@Test
 	public void testContentTypeDetector() throws IOException {
-		Assert.assertEquals(ContentType.SOAP, ContentTypeDetector.detect(getResponse()).getEffectiveContentType()); 
+		Assert.assertEquals(ContentType.SOAP, ContentTypeDetector.detect(getResponse()).getEffectiveContentType());
 	}
 
 }

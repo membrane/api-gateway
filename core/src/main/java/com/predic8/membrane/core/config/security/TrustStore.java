@@ -21,7 +21,7 @@ import com.predic8.membrane.annot.MCElement;
 public class TrustStore extends Store {
 
 	protected String algorithm;
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof TrustStore))
@@ -35,10 +35,10 @@ public class TrustStore extends Store {
 	public String getAlgorithm() {
 		return algorithm;
 	}
-	
+
 	@MCAttribute
 	public void setAlgorithm(String algorithm) {
 		this.algorithm = algorithm;
 	}
-	
+
 }

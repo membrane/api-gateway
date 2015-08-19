@@ -25,56 +25,56 @@ import org.junit.Test;
 import com.predic8.membrane.core.http.*;
 
 public class XMLSessionIdExtractorTest extends TestCase {
-	
+
 
 	@Test
 	public void testSessionIdExtraction() throws Exception {
-		Request res = new Request();	
+		Request res = new Request();
 		res.setHeader(getHeader());
 		res.setBodyContent(getBodyContent());
 
 		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
 		extractor.setLocalName("session");
 		extractor.setNamespace("http://predic8.com/session/");
-				
+
 		assertEquals("555555", extractor.getSessionId(res));
-		
+
 	}
 
 	@Test
 	public void testSessionIdExtractionNoNS() throws Exception {
-		Response res = new Response();		
+		Response res = new Response();
 		res.setHeader(getHeader());
 		res.setBodyContent(getBodyContent());
 
 		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
 		extractor.setLocalName("ses:session");
-		
+
 		assertEquals("555555", extractor.getSessionId(res));
-		
+
 	}
-	
+
 	@Test
 	public void testPerformace() throws Exception {
-		Response res = new Response();		
+		Response res = new Response();
 		res.setHeader(getHeader());
 		res.setBodyContent(getBodyContent());
 
 		XMLElementSessionIdExtractor extractor = new XMLElementSessionIdExtractor();
 		extractor.setLocalName("session");
 		extractor.setNamespace("http://predic8.com/session/");
-		
+
 		//long t = System.currentTimeMillis();
 		for (int i = 0; i < 1000; i++) {
 			extractor.getSessionId(res);
-		}		
+		}
 		//System.out.println("Time (ms): "+(System.currentTimeMillis()-t));
 	}
 
 	private byte[] getBodyContent() throws IOException {
 		return getByteArrayData(getClass().getResourceAsStream("/getBankwithSession555555.xml"));
 	}
-	
+
 	private Header getHeader() {
 		Header h = new Header();
 		h.setContentType("application/soap+xml");

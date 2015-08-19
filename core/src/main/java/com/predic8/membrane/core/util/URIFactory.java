@@ -32,11 +32,11 @@ public class URIFactory {
 	public URIFactory(boolean allowIllegalCharacters) {
 		this.allowIllegalCharacters = allowIllegalCharacters;
 	}
-	
+
 	public boolean isAllowIllegalCharacters() {
 		return allowIllegalCharacters;
 	}
-	
+
 	@MCAttribute
 	public void setAllowIllegalCharacters(boolean allowIllegalCharacters) {
 		this.allowIllegalCharacters = allowIllegalCharacters;
@@ -57,7 +57,7 @@ public class URIFactory {
 
 		return new URI(allowIllegalCharacters, uri);
 	}
-	
+
 	/**
 	 * Simply calls {@link #create(String)}, but catches any {@link URISyntaxException} and wraps it in an
 	 * {@link IllegalArgumentException}.

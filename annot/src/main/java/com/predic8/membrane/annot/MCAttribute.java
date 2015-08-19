@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MCAttribute {
-	
+
 	public String attributeName() default "";
 
 }

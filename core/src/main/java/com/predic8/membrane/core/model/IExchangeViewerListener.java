@@ -18,7 +18,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 
 public interface IExchangeViewerListener {
-	
+
 	public void addRequest(Request request);
 
 	public void addResponse(Response response);
@@ -26,6 +26,6 @@ public interface IExchangeViewerListener {
 	public void removeExchange();
 
 	public void setExchangeFinished();
-	
+
 	public void setExchangeStopped();
 }

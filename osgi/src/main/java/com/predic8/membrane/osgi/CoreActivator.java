@@ -55,12 +55,13 @@ public class CoreActivator extends Plugin {
 		logListener = new MembraneLogListener();
 	}
 
+	@Override
 	public void start(BundleContext context) throws Exception {
 		super.start(context);
 
 		if (new File("configuration/log4j.properties").exists())
 			PropertyConfigurator.configure("configuration/log4j.properties");
-		
+
 		Platform.addLogListener(logListener);
 
 		final MembraneCommandLine cl = new MembraneCommandLine();
@@ -88,7 +89,7 @@ public class CoreActivator extends Plugin {
 				e1.printStackTrace();
 			}
 		}
-		
+
 		sr = context.registerService(router.getClass().getName(), router, null);
 	}
 
@@ -102,7 +103,7 @@ public class CoreActivator extends Plugin {
 			return args;
 
 		return (String[]) ArrayUtils.remove(
-				(String[]) ArrayUtils.remove(args, i), i);
+				ArrayUtils.remove(args, i), i);
 	}
 
 	private String getConfigurationFileName(MembraneCommandLine cl) {
@@ -142,8 +143,8 @@ public class CoreActivator extends Plugin {
 
 		router = Router.init(
 				"file:" + membraneHome + System.getProperty("file.separator")
-						+ "configuration"
-						+ System.getProperty("file.separator") + "proxies.xml",
+				+ "configuration"
+				+ System.getProperty("file.separator") + "proxies.xml",
 				this.getClass().getClassLoader());
 	}
 
@@ -158,6 +159,7 @@ public class CoreActivator extends Plugin {
 				.getPath()).getParentFile().getParentFile().getPath();
 	}
 
+	@Override
 	public void stop(BundleContext context) throws Exception {
 		sr.unregister();
 		Platform.removeLogListener(logListener);

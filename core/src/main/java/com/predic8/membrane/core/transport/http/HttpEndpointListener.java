@@ -50,7 +50,7 @@ public class HttpEndpointListener extends Thread {
 				serverSocket = sslProvider.createServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
 			else
 				serverSocket = new ServerSocket(port, 50, ip != null ? InetAddress.getByName(ip) : null);
-			
+
 			setName("Connection Acceptor " + (ip != null ? ip + ":" : ":") + port);
 			log.debug("listening at port "+port + (ip != null ? " ip " + ip : ""));
 		} catch (BindException e) {
@@ -58,6 +58,7 @@ public class HttpEndpointListener extends Thread {
 		}
 	}
 
+	@Override
 	public void run() {
 		while (!closed) {
 			try {
@@ -128,11 +129,11 @@ public class HttpEndpointListener extends Thread {
 	public HttpTransport getTransport() {
 		return transport;
 	}
-	
+
 	public boolean isClosed() {
 		return closed;
 	}
-	
+
 	public SSLProvider getSslProvider() {
 		return sslProvider;
 	}

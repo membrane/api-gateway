@@ -46,13 +46,13 @@ import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 
 @MCElement(name="testService")
 public class TestServiceInterceptor extends AbstractInterceptor {
-	
+
 	private static String SOAP_VERSION = "soap_version";
 	private static Pattern WSDL = Pattern.compile("\\?WSDL", Pattern.CASE_INSENSITIVE);
 	private static final Pattern RELATIVE_PATH_PATTERN = Pattern.compile("^./[^/?]*\\?");
 
 	private WSDLInterceptor wi = new WSDLInterceptor();
-	
+
 	@Override
 	public void init(final Router router) throws Exception {
 		super.init(router);
@@ -83,9 +83,9 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 				});
 			}
 		}
-		
+
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (WSDL.matcher(exc.getRequest().getUri()).find()) {
@@ -97,8 +97,8 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 			wi.handleResponse(exc);
 			return Outcome.RETURN;
 		}
-		
-		
+
+
 		try {
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			dbf.setNamespaceAware(true);
@@ -141,7 +141,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 			return handleSOAP12(envelope);
 		}
 		throw new AssertionError("Unknown SOAP version.");
-		
+
 	}
 
 	private Response handleSOAP11(Element envelope) {
@@ -165,10 +165,10 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		}
 		if (body == null)
 			throw new AssertionError("No SOAP <Body> found.");
-		
+
 		children = body.getChildNodes();
 		Element operation = null;
-		
+
 		for (int i = 0; i < children.getLength(); i++) {
 			if (children.item(i) instanceof Text) {
 				String text = ((Text) children.item(i)).getNodeValue();
@@ -183,7 +183,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		}
 		if (operation == null)
 			throw new AssertionError("No SOAP <Body> found.");
-		
+
 		return handleOperation(operation, true);
 	}
 
@@ -208,10 +208,10 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		}
 		if (body == null)
 			throw new AssertionError("No SOAP <Body> found.");
-		
+
 		children = body.getChildNodes();
 		Element operation = null;
-		
+
 		for (int i = 0; i < children.getLength(); i++) {
 			if (children.item(i) instanceof Text) {
 				String text = ((Text) children.item(i)).getNodeValue();
@@ -226,14 +226,14 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		}
 		if (operation == null)
 			throw new AssertionError("No SOAP <Body> found.");
-		
+
 		return handleOperation(operation, false);
 	}
 
 	private Response handleOperation(Element operation, boolean soap11) {
 		if (!operation.getNamespaceURI().equals("http://thomas-bayer.com/blz/"))
 			throw new AssertionError("Unknown operation namespace.");
-		
+
 		if (operation.getLocalName().equals("getBank")) {
 			NodeList children = operation.getChildNodes();
 			Element param = null;
@@ -251,7 +251,7 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 			}
 			if (param == null)
 				throw new AssertionError("No parameter child of operation element found.");
-			
+
 			if (!param.getNamespaceURI().equals("http://thomas-bayer.com/blz/") || !param.getLocalName().equals("blz"))
 				throw new AssertionError("Unknown parameter element.");
 
@@ -260,11 +260,11 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 				throw new AssertionError("Parameter element has children.length != 1");
 			if (!(children.item(0) instanceof Text))
 				throw new AssertionError("Parameter element has non-text child.");
-			
+
 			Text text = (Text)children.item(0);
-			
+
 			String blz = text.getNodeValue();
-			
+
 			return getBank(blz, soap11);
 		} else {
 			throw new AssertionError("Unknown operation.");
@@ -277,13 +277,13 @@ public class TestServiceInterceptor extends AbstractInterceptor {
 		} else {
 			throw new AssertionError("Keine Bank gefunden.");
 		}
-		
+
 	}
 
 	private String escape(String s) {
 		return s.replace("&", "&amp;").replace(">", "&gt;").replace("<", "&lt;");
 	}
-	
+
 	private Response respondBank(String bezeichnung, String bic, String ort, String plz, boolean soap11) {
 		String ns = soap11 ? "http://schemas.xmlsoap.org/soap/envelope/" : "http://www.w3.org/2003/05/soap-envelope";
 		String body = "<soapenv:Envelope xmlns:soapenv=\"" + ns + "\"><soapenv:Body>"+

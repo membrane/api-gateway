@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
  */
 public class URI {
 	private java.net.URI uri;
-	
+
 	private String input;
 	private String path, query;
 	private String pathDecoded, queryDecoded;
@@ -34,7 +34,7 @@ public class URI {
 	//                                                 12            3  4          5       6   7        8 9
 	// if defined, the groups are:
 	// 2: scheme, 4: host, 5: path, 7: query, 9: fragment
-	
+
 	private boolean customInit(String s) {
 		Matcher m = PATTERN.matcher(s);
 		if (!m.matches())
@@ -44,7 +44,7 @@ public class URI {
 		query = m.group(7);
 		return true;
 	}
-	
+
 	URI(boolean allowCustomParsing, String s) throws URISyntaxException {
 		try {
 			uri = new java.net.URI(s);
@@ -63,7 +63,7 @@ public class URI {
 			uri = new java.net.URI(s);
 		}
 	}
-	
+
 	public String getPath() {
 		if (uri != null)
 			return uri.getPath();
@@ -71,7 +71,7 @@ public class URI {
 			pathDecoded = decode(path);
 		return pathDecoded;
 	}
-	
+
 	public String getQuery() {
 		if (uri != null)
 			return uri.getQuery();
@@ -79,7 +79,7 @@ public class URI {
 			queryDecoded = decode(query);
 		return queryDecoded;
 	}
-	
+
 	private String decode(String string) {
 		if (string == null)
 			return string;

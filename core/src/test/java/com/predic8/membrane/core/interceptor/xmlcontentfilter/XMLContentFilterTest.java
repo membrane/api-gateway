@@ -28,9 +28,9 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 
 public class XMLContentFilterTest {
-	
+
 	private final static String DOC = "<a><b c=\"12\" d=\"&quot;\"></b></a>";
-	
+
 	private Message getMessage() {
 		Message m = new Request();
 		m.setBody(new Body(DOC.getBytes()));
@@ -50,13 +50,13 @@ public class XMLContentFilterTest {
 		XMLAssert.assertXMLEqual("<a/>", applyXPath("//*[ local-name() = 'b' ]"));
 		XMLAssert.assertXMLEqual(DOC, applyXPath("//b[@c='2']"));
 	}
-	
+
 	public void assertFastCheck(String xpath) {
 		// if createElementFinder is not null, a (fast) StAX parser can be used
 		// to run a first check whether the XPath expression has any chance of succeeding
 		Assert.assertNotNull(XMLContentFilter.createElementFinder(xpath));
 	}
-	
+
 	@Test
 	public void testPerformance() {
 		// if createElementFinder is not null, a (fast) StAX parser can be used

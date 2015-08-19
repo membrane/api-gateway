@@ -35,16 +35,16 @@ import org.xml.sax.SAXParseException;
 
 /**
  * Delegates everything to {@link FileSystemXmlApplicationContext}.
- * 
+ *
  * Additionally adds aspects of {@link TrackingApplicationContext}, {@link BaseLocationApplicationContext} and
- * {@link CheckableBeanFactory}. 
+ * {@link CheckableBeanFactory}.
  */
 public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationContext implements
-		TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory {
+TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory {
 	private static final Log log = LogFactory.getLog(TrackingFileSystemXmlApplicationContext.class.getName());
-	
+
 	private List<File> files = new ArrayList<File>();
-	
+
 	public TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh) throws BeansException {
 		super(configLocations, refresh);
 	}
@@ -52,7 +52,8 @@ public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplic
 	public TrackingFileSystemXmlApplicationContext(String[] configLocations, boolean refresh, ApplicationContext parent) throws BeansException {
 		super(configLocations, refresh, parent);
 	}
-	
+
+	@Override
 	public Resource getResource(String location) {
 		final Resource r = super.getResource(location);
 		try {
@@ -108,32 +109,32 @@ public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplic
 			public String getDescription() {
 				return r2.getDescription();
 			}
-			
+
 			public long contentLength() throws IOException {
 				return r2.contentLength();
 			}
-			
+
 			@Override
 			public String toString() {
 				return r2.toString();
 			}
 		};
 	}
-	
+
 	public List<File> getFiles() {
 		return files;
 	}
-	
+
 	public String getBaseLocation() {
 		return getConfigLocations()[0];
 	}
-	
+
 	@Override
 	protected void loadBeanDefinitions(DefaultListableBeanFactory beanFactory) throws BeansException, IOException {
 		files.clear();
 		super.loadBeanDefinitions(beanFactory);
 	}
-	
+
 	@Override
 	public void checkForInvalidBeanDefinitions() throws InvalidConfigurationException {
 		try {
@@ -159,7 +160,7 @@ public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplic
 		}
 		throw e;
 	}
-	
+
 	@Override
 	public String toString() {
 		return "Membrane Service Proxy's Spring Context";

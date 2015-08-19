@@ -21,12 +21,12 @@ public enum Outcome {
 	/**
 	 * Continue with the interceptor chain.
 	 */
-	CONTINUE, 
+	CONTINUE,
 
 	/**
 	 * Do not continue the interceptor chain, but start normal response
 	 * handling:
-	 * 
+	 *
 	 * All interceptors passed up to this point will be given a chance to handle
 	 * the response (in reverse order).
 	 */
@@ -36,5 +36,5 @@ public enum Outcome {
 	 * Abort the interceptor chain, start abortion handling.
 	 */
 	ABORT
-	
+
 }

@@ -26,7 +26,7 @@ public abstract class SMSTokenProvider extends NumericTokenProvider {
 
 	protected String prefixText = "Token: ";
 	private boolean simulate;
-	
+
 	@Override
 	public void requestToken(Map<String, String> userAttributes) {
 		String token = generateToken(userAttributes);
@@ -35,20 +35,20 @@ public abstract class SMSTokenProvider extends NumericTokenProvider {
 		synchronized (userAttributes) {
 			recipientNumber = userAttributes.get("sms");
 		}
-		
+
 		if (recipientNumber == null)
 			throw new InvalidParameterException("User does not have the 'sms' attribute");
-		
+
 		recipientNumber = normalizeNumber(recipientNumber);
 
 		String text = prefixText + token;
-		
+
 		if (simulate)
 			log.error("Send SMS '" + text + "' to " + recipientNumber);
 		else
 			sendSMS(text, recipientNumber);
 	}
-	
+
 	protected abstract void sendSMS(String text, String recipientNumber);
 	protected abstract String normalizeNumber(String number);
 

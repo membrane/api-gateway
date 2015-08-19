@@ -26,8 +26,8 @@ import org.springframework.context.Lifecycle;
  * if the bean implements {@link ApplicationContextAware}</li>
  * <li>call {@link Lifecycle#start()}, if the bean implements {@link Lifecycle}.</li>
  * </ol>
- * 
- * To avoid calling {@link ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)} 
+ *
+ * To avoid calling {@link ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)}
  * on a bean A before all other properties have been set on it (step 2), an instance B of this class is created. "B.client = A"
  * and "A depends on B" are the relationships modeled using Blueprint. This causes "B.setClient(A)" to be executed
  * <ul>
@@ -37,27 +37,27 @@ import org.springframework.context.Lifecycle;
  * which fulfills our requirements.
  */
 public class BlueprintSpringInterfaceHelper {
-	
+
 	private Object client;
-	
+
 	BlueprintContainer blueprintContainer;
-	
+
 	public BlueprintContainer getBlueprintContainer() {
 		return blueprintContainer;
 	}
-	
+
 	public void setBlueprintContainer(BlueprintContainer blueprintContainer) {
 		this.blueprintContainer = blueprintContainer;
 	}
-	
+
 	public Object getClient() {
 		return client;
 	}
-	
+
 	public void setClient(Object client) {
 		this.client = client;
 	}
-	
+
 	public void init() {
 		if (client instanceof ApplicationContextAware) {
 			((ApplicationContextAware)client).setApplicationContext(new BlueprintSimulatedSpringApplicationContext(blueprintContainer));
@@ -72,5 +72,5 @@ public class BlueprintSpringInterfaceHelper {
 			((Lifecycle)client).stop();
 		}
 	}
-	
+
 }

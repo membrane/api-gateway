@@ -35,19 +35,19 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
 
 /**
- * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ...."). 
+ * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
  * @topic 6. Security
  */
 @MCElement(name="basicAuthentication")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
-	
+
 	@MCElement(name="user", topLevel=false, id="basicAuthentication-user")
 	public static class User {
 		private String name, password;
-		
+
 		public User() {
 		}
-		
+
 		public User(String name, String password) {
 			setName(name);
 			setPassword(password);
@@ -56,7 +56,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		public String getName() {
 			return name;
 		}
-		
+
 		/**
 		 * @description The user's login.
 		 * @example admin
@@ -66,11 +66,11 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		public void setName(String name) {
 			this.name = name;
 		}
-		
+
 		public String getPassword() {
 			return password;
 		}
-		
+
 		/**
 		 * @description The user's password.
 		 * @example s3cr3t
@@ -84,24 +84,25 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
 	private List<User> users = new ArrayList<User>();
 	private Map<String, User> usersByName = new HashMap<String, User>();
-	
+
 	public BasicAuthenticationInterceptor() {
-		name = "Basic Authenticator";		
+		name = "Basic Authenticator";
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
+	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		
+
 		if (hasNoAuthorizationHeader(exc) || !validUser(exc)) {
 			return deny(exc);
 		}
-		
+
 		return Outcome.CONTINUE;
 	}
 
-	private boolean validUser(Exchange exc) throws Exception {		
-		return usersByName.containsKey(getUsername(exc)) && 
-			   usersByName.get(getUsername(exc)).getPassword().equals(getPassword(exc));
+	private boolean validUser(Exchange exc) throws Exception {
+		return usersByName.containsKey(getUsername(exc)) &&
+				usersByName.get(getUsername(exc)).getPassword().equals(getPassword(exc));
 	}
 
 	private String getUsername(Exchange exc) throws Exception {
@@ -121,7 +122,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	private boolean hasNoAuthorizationHeader(Exchange exc) {
 		return exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION)==null;
 	}
-	
+
 	/**
 	 * The "Basic" authentication scheme defined in RFC 2617 does not properly define how to treat non-ASCII characters.
 	 */
@@ -133,7 +134,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	public List<User> getUsers() {
 		return users;
 	}
-	
+
 	public Map<String, User> getUsersByName() {
 		return usersByName;
 	}
@@ -146,7 +147,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	public void setUsers(List<User> users) {
 		this.users = users;
 	}
-	
+
 	@Override
 	public void init() throws Exception {
 		usersByName.clear();
@@ -158,7 +159,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Authenticates incoming requests based on a fixed user list.";
 	}
-	
+
 	@Override
 	public String getLongDescription() {
 		StringBuilder sb = new StringBuilder();
@@ -173,5 +174,5 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		sb.append("<br/>Passwords are not shown.");
 		return sb.toString();
 	}
-	
+
 }

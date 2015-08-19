@@ -48,11 +48,11 @@ public class ConsistentVersionNumbers {
 
 	static Handler handler;
 	String version;
-	
+
 	@Test
 	public void doit() throws Exception {
 		File base = new File("..");
-		
+
 		validateBase(base);
 
 		handler = new Handler() {
@@ -66,20 +66,20 @@ public class ConsistentVersionNumbers {
 					} catch (RuntimeException e) {
 						throw new RuntimeException("in file " + file.getAbsolutePath(), e);
 					}
-				} 
+				}
 				return old;
 			}
 		};
 
 		run(base);
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		File base = new File("..");
 		//base = new File("C:\\Users\\tobias\\git\\membrane\\service-proxy");
 
 		validateBase(base);
-		
+
 		handler = new Handler() {
 			@Override
 			public String handle(File file, String old) {
@@ -89,11 +89,11 @@ public class ConsistentVersionNumbers {
 		};
 
 		run(base);
-		
+
 		System.out.println("Please enter the new version:");
 		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
 		final String version = br.readLine();
-		
+
 		handler = new Handler() {
 			@Override
 			public String handle(File file, String old) {
@@ -106,7 +106,7 @@ public class ConsistentVersionNumbers {
 
 	private static void run(File base) throws Exception {
 		recurse(base, 2);
-		
+
 		handlePOM(new File(base.getAbsolutePath() + "/cli/examples/embedding-java/pom.xml"), false);
 		handleJBossDeploymentStructure(new File(base.getAbsolutePath() + "/sar/src/main/resources/META-INF/jboss-deployment-structure.xml"));
 	}
@@ -140,7 +140,7 @@ public class ConsistentVersionNumbers {
 	private static void validateBase(File base) throws Exception {
 		if (!base.exists() || !base.isDirectory())
 			throw new Exception();
-		
+
 		if (!new File(base, "pom.xml").exists())
 			throw new Exception("Could not find Membrane's main pom.xml.");
 
@@ -151,7 +151,7 @@ public class ConsistentVersionNumbers {
 	private static void recurse(File base, int i) throws Exception {
 		if (i == 0)
 			return;
-		for (File child : base.listFiles()) { 
+		for (File child : base.listFiles()) {
 			if (child.isFile() && child.getName().equals("pom.xml"))
 				handlePOM(child, true);
 			if (child.isFile() && child.getName().equals(".factorypath"))
@@ -160,7 +160,7 @@ public class ConsistentVersionNumbers {
 				recurse(child, i-1);
 		}
 	}
-	
+
 	private static void handlePOM(File child, boolean isPartOfProject) throws XPathExpressionException, SAXException, IOException, ParserConfigurationException, TransformerConfigurationException, TransformerException, TransformerFactoryConfigurationError {
 		//System.out.println(child.getName());
 		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -170,8 +170,8 @@ public class ConsistentVersionNumbers {
 		XPath p = pf.newXPath();
 		NodeList l = (NodeList) p.compile(
 				isPartOfProject ?
-				"//project/version | //project/parent/version" :
-					"//project/dependencies/dependency[./artifactId='service-proxy-core']/version"
+						"//project/version | //project/parent/version" :
+							"//project/dependencies/dependency[./artifactId='service-proxy-core']/version"
 				).evaluate(d, XPathConstants.NODESET);
 		for (int i = 0; i < l.getLength(); i++) {
 			Element e = (Element) l.item(i);

@@ -66,45 +66,45 @@ public class Header {
 	public static final String LOCATION = "Location";
 
 	public static final String AUTHORIZATION = "Authorization";
-	
+
 	public static final String SET_COOKIE = "Set-Cookie";
-	
+
 	public static final String COOKIE = "Cookie";
 
 	public static final String DESTINATION = "Destination";
 
 	public static final String VALIDATION_ERROR_SOURCE = "X-Validation-Error-Source";
 
-    public static final String USER_AGENT = "User-Agent";
-    
-    public static final String X_REQUESTED_WITH = "X-Requested-With";
+	public static final String USER_AGENT = "User-Agent";
 
-    public static final String EXPIRES = "Expires";
-    
-    public static final String KEEP_ALIVE = "Keep-Alive";
+	public static final String X_REQUESTED_WITH = "X-Requested-With";
 
-    public static final String SERVER = "Server";
-    
-    public static final String PRAGMA = "Pragma";
-    
-    public static final String CACHE_CONTROL = "Cache-Control";
+	public static final String EXPIRES = "Expires";
 
-    public static final String UPGRADE = "Upgrade";
+	public static final String KEEP_ALIVE = "Keep-Alive";
 
-    public static final String LAST_MODIFIED = "Last-Modified";
-    
-    public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
+	public static final String SERVER = "Server";
+
+	public static final String PRAGMA = "Pragma";
+
+	public static final String CACHE_CONTROL = "Cache-Control";
+
+	public static final String UPGRADE = "Upgrade";
+
+	public static final String LAST_MODIFIED = "Last-Modified";
+
+	public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
 
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
-	
+
 	public static final String TIMEOUT = "timeout";
 	public static final String MAX = "max";
 
 	private static final Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
 	private static final Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
-	
+
 	private static final Pattern timeoutPattern = Pattern.compile("timeout\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
 	private static final Pattern maxPattern = Pattern.compile("max\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
 
@@ -192,7 +192,7 @@ public class Header {
 			String name = field.getHeaderName().toString();
 			String value = field.getValue();
 			buffer.append(name).append(": ").append(value)
-					.append(Constants.CRLF);
+			.append(Constants.CRLF);
 		}
 		out.write(buffer.toString().getBytes(Constants.ISO_8859_1_CHARSET));
 	}
@@ -243,7 +243,7 @@ public class Header {
 	public String getContentType() {
 		return getFirstValue(CONTENT_TYPE);
 	}
-	
+
 	/**
 	 * @return An object describing the value of the "Content-Type" HTTP header.
 	 * 	Null, if the header is not present.
@@ -347,9 +347,9 @@ public class Header {
 		return getFirstValue(CONTENT_ENCODING);
 	}
 
-    public String getUserAgent() {
-        return getFirstValue(USER_AGENT);
-    }
+	public String getUserAgent() {
+		return getFirstValue(USER_AGENT);
+	}
 
 	// TODO header value is a complex unit
 	public String getCharset() {
@@ -392,11 +392,11 @@ public class Header {
 		}
 		return map;
 	}
-	
+
 	public void addCookieSession(String cookieName, String value) {
 		add(SET_COOKIE, cookieName + "=" + value);
 	}
-	
+
 	public String getFirstCookie(String cookieName) {
 		Cookies c = new Cookies(new MimeHeaders(this));
 		for (int i = 0; i < c.getCookieCount(); i++) {
@@ -406,7 +406,7 @@ public class Header {
 		}
 		return null;
 	}
-	
+
 	public int estimateHeapSize() {
 		int size = 10;
 		for (HeaderField hf : fields)
@@ -434,7 +434,7 @@ public class Header {
 					return i;
 		return -1;
 	}
-	
+
 	public static MediaType[] convertStringsToMediaType(String[] mediaTypes) {
 		MediaType[] m = new MediaType[mediaTypes.length];
 		for (int i = 0; i < mediaTypes.length; i++)
@@ -485,25 +485,25 @@ public class Header {
 			return true;
 		if (getBrowserVersion(ua, "Safari") >= 522)
 			return getBrowserVersion(ua, "Windows NT") >= 6 || getBrowserVersion(ua, "Mac OS X 10") >= 6;
-		if (getBrowserVersion(ua, "MSIE") >= 7 || getBrowserVersion(ua, "Trident") >= 5)
-			return getBrowserVersion(ua, "Windows NT") >= 6;
-		if (getBrowserVersion(ua, "Chrome") > 0) {
-			int windows = getBrowserVersion(ua, "Windows NT");
-			return windows >= 6 || windows == -1;
-		}
-		return false;
+			if (getBrowserVersion(ua, "MSIE") >= 7 || getBrowserVersion(ua, "Trident") >= 5)
+				return getBrowserVersion(ua, "Windows NT") >= 6;
+				if (getBrowserVersion(ua, "Chrome") > 0) {
+					int windows = getBrowserVersion(ua, "Windows NT");
+					return windows >= 6 || windows == -1;
+				}
+				return false;
 	}
-	
+
 	private int getBrowserVersion(String userAgent, String browserID) {
 		int p = userAgent.indexOf(browserID);
 		p += browserID.length();
-		
+
 		if (userAgent.length() == p)
 			return -1;
 		char c = userAgent.charAt(p++);
 		if (c != ' ' && c != '/' && c != '_')
 			return -1;
-		
+
 		int version = 0;
 		while (userAgent.length() != p) {
 			c = userAgent.charAt(p++);
@@ -515,9 +515,9 @@ public class Header {
 	}
 
 	public void setNoCacheResponseHeaders() {
-	    setValue(EXPIRES, "Tue, 03 Jul 2001 06:00:00 GMT");
-	    setValue(CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
-	    add(CACHE_CONTROL, "post-check=0, pre-check=0");
-	    add(PRAGMA, "no-cache");
+		setValue(EXPIRES, "Tue, 03 Jul 2001 06:00:00 GMT");
+		setValue(CACHE_CONTROL, "no-store, no-cache, must-revalidate, max-age=0");
+		add(CACHE_CONTROL, "post-check=0, pre-check=0");
+		add(PRAGMA, "no-cache");
 	}
 }

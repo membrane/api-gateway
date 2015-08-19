@@ -27,7 +27,7 @@ import org.w3c.dom.Node;
 public class AbstractNamespaceHandler implements NamespaceHandler {
 
 	private final Map<String, BeanDefinitionParser> parsers = new HashMap<String, BeanDefinitionParser>();
-	
+
 	private final Map<String, Map<String, BeanDefinitionParser>> localParsers = new HashMap<String, Map<String,BeanDefinitionParser>>();
 
 	@Override
@@ -65,7 +65,7 @@ public class AbstractNamespaceHandler implements NamespaceHandler {
 					return parser;
 			}
 		}
-		
+
 		BeanDefinitionParser parser = this.parsers.get(localName);
 		if (parser == null) {
 			parserContext.getReaderContext().fatal("Cannot locate BeanDefinitionParser for element [" + localName + "]", element);
@@ -74,10 +74,10 @@ public class AbstractNamespaceHandler implements NamespaceHandler {
 	}
 
 	public BeanDefinition parse(Element element, ParserContext parserContext) {
-		
+
 		return findParserForElement(element, parserContext).parse(element, parserContext);
 	}
 
-	
+
 
 }

@@ -33,7 +33,7 @@ public class ProxyTest extends DistributionExtractingTestcase {
 		try {
 			getAndAssert200("http://localhost:2000/axis2/services/BLZService?wsdl");
 			getAndAssert200("http://localhost:2001/axis2/services/BLZService?wsdl");
-			
+
 		} finally {
 			sl.killScript();
 		}

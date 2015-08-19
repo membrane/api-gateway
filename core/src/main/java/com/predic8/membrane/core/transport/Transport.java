@@ -35,7 +35,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 public abstract class Transport {
 
 	protected Set<IPortChangeListener> menuListeners = new HashSet<IPortChangeListener>();
-	
+
 	private List<Interceptor> interceptors = new Vector<Interceptor>();
 	private Router router;
 	private boolean printStackTrace = false;
@@ -52,7 +52,7 @@ public abstract class Transport {
 
 	public void init(Router router) throws Exception {
 		this.router = router;
-		
+
 		if (interceptors.isEmpty()) {
 			interceptors.add(new RuleMatchingInterceptor());
 			interceptors.add(new ExchangeStoreInterceptor(router.getExchangeStore()));
@@ -61,20 +61,20 @@ public abstract class Transport {
 			interceptors.add(new UserFeatureInterceptor());
 			interceptors.add(new HTTPClientInterceptor());
 		}
-		
+
 		for (Interceptor interceptor : interceptors) {
 			interceptor.init(router);
 		}
 	}
-	
+
 	public Router getRouter() {
 		return router;
 	}
-	
+
 	public boolean isPrintStackTrace() {
 		return printStackTrace;
 	}
-	
+
 	/**
 	 * @description Whether the stack traces of exceptions thrown by interceptors should be returned in the HTTP response.
 	 * @default false
@@ -83,22 +83,22 @@ public abstract class Transport {
 	public void setPrintStackTrace(boolean printStackTrace) {
 		this.printStackTrace = printStackTrace;
 	}
-	
+
 	public void closeAll() throws IOException {
 		closeAll(true);
 	}
-	
+
 	public void closeAll(boolean waitForCompletion) throws IOException {}
 	public void openPort(String ip, int port, SSLProvider sslProvider) throws IOException {}
 
 	public abstract boolean isOpeningPorts();
-	
+
 	public boolean isReverseDNS() {
 		return reverseDNS;
 	}
-	
+
 	/**
-	 * @description Whether the remote address should automatically reverse-looked up for incoming connections. 
+	 * @description Whether the remote address should automatically reverse-looked up for incoming connections.
 	 * @default true
 	 */
 	@MCAttribute

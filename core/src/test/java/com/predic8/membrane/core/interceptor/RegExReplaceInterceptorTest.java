@@ -32,7 +32,7 @@ import com.predic8.membrane.core.rules.Rule;
 public class RegExReplaceInterceptorTest {
 
 	private Router router;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		router = Router.init("src/test/resources/regex-monitor-beans.xml");
@@ -40,22 +40,22 @@ public class RegExReplaceInterceptorTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(serverRule);
 		router.init();
 	}
-	
+
 	@Test
 	public void testReplace() throws Exception {
 		HttpClient client = new HttpClient();
-		
+
 		GetMethod method = new GetMethod("http://localhost:3009");
 		method.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		method.setRequestHeader(Header.SOAP_ACTION, "");
-		
+
 		assertEquals(200, client.executeMethod(method));
-		
+
 		assertTrue(new String(method.getResponseBody()).contains("Membrane RegEx Replacement Is Cool"));
 	}
 
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();
-	}	
+	}
 }

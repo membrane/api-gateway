@@ -46,7 +46,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 	private static final Log log = LogFactory.getLog(HttpServerHandler.class);
 	private static final AtomicInteger counter = new AtomicInteger();
-	
+
 	private final HttpEndpointListener endpointListener;
 	private Socket sourceSocket;
 	private InputStream srcIn;
@@ -59,10 +59,11 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		this.sourceSocket = socket;
 	}
 
+	@Override
 	public HttpTransport getTransport() {
 		return (HttpTransport)super.getTransport();
 	}
-	
+
 	private void setup() throws IOException {
 		SSLProvider sslProvider = endpointListener.getSslProvider();
 		if (sslProvider != null)
@@ -74,7 +75,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		sourceSocket.setSoTimeout(endpointListener.getTransport().getSocketTimeout());
 		sourceSocket.setTcpNoDelay(endpointListener.getTransport().isTcpNoDelay());
 	}
-	
+
 	public void run() {
 		Connection boundConnection = null; // see Request.isBindTargetConnectionToIncoming()
 		try {
@@ -82,7 +83,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			setup();
 			while (true) {
 				srcReq = new Request();
-				
+
 				endpointListener.setIdleStatus(sourceSocket, true);
 				try {
 					srcIn.mark(2);
@@ -154,21 +155,21 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 		finally {
 			endpointListener.setOpenStatus(sourceSocket, false);
-			
+
 			if (boundConnection != null)
 				try {
 					boundConnection.close();
 				} catch (IOException e) {
 					log.debug("Closing bound connection.", e);
 				}
-			
+
 			if (srcReq.isCONNECTRequest())
 				return;
 
 			closeConnections();
-			
+
 			exchange.detach();
-			
+
 			updateThreadName(false);
 		}
 
@@ -200,7 +201,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 			exchange.setRequest(srcReq);
 			exchange.setOriginalRequestUri(srcReq.getUri());
-			
+
 			if (exchange.getRequest().getHeader().is100ContinueExpected()) {
 				final Request request = exchange.getRequest();
 				request.addObserver(new MessageObserver() {
@@ -216,19 +217,19 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 							throw new RuntimeException(e);
 						}
 					}
-					
+
 					public void bodyComplete(AbstractBody body) {
 					}
 				});
 			}
 
 			invokeHandlers();
-			
+
 			exchange.blockResponseIfNeeded();
 		} catch (AbortException e) {
 			log.debug("Aborted");
 			exchange.finishExchange(true, exchange.getErrorMessage());
-			
+
 			removeBodyFromBuffer();
 			writeResponse(exchange.getResponse());
 
@@ -244,7 +245,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
 	/**
 	 * Read the body from the client, if not already read.
-	 * 
+	 *
 	 * If the body has not already been read, the header includes
 	 * "Expect: 100-continue" and the body has not already been sent by the
 	 * client, nothing will be done. (Allowing the HTTP connection state to skip
@@ -271,19 +272,19 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			Thread.currentThread().setName(HttpServerThreadFactory.DEFAULT_THREAD_NAME);
 		}
 	}
-	
+
 	protected void writeResponse(Response res) throws Exception{
 		res.write(srcOut);
 		srcOut.flush();
 		exchange.setTimeResSent(System.currentTimeMillis());
 		exchange.collectStatistics();
 	}
-	
+
 	@Override
 	public void shutdownInput() throws IOException {
-		Util.shutdownInput(sourceSocket);	
+		Util.shutdownInput(sourceSocket);
 	}
-	
+
 	@Override
 	public InetAddress getLocalAddress() {
 		return sourceSocket.getLocalAddress();
@@ -293,7 +294,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	public int getLocalPort() {
 		return sourceSocket.getLocalPort();
 	}
-	
+
 	public InputStream getSrcIn() {
 		return srcIn;
 	}
@@ -301,7 +302,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	public OutputStream getSrcOut() {
 		return srcOut;
 	}
-	
+
 	public Socket getSourceSocket() {
 		return sourceSocket;
 	}

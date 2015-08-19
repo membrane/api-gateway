@@ -49,7 +49,7 @@ public class TOTPTokenProvider implements TokenProvider {
 	public void init(Router router) {
 		// does nothing
 	}
-	
+
 	@Override
 	public void requestToken(Map<String, String> userAttributes) {
 		// does nothing

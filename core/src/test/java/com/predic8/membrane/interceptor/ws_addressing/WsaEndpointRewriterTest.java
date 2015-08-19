@@ -28,25 +28,25 @@ import com.predic8.membrane.core.interceptor.ws_addressing.DecoupledEndpointRegi
 import com.predic8.membrane.core.interceptor.ws_addressing.WsaEndpointRewriter;
 
 public class WsaEndpointRewriterTest {
-    private InputStream input;
+	private InputStream input;
 
-    @Before
-    public void setUp() {
-        input = WsaEndpointRewriterTest.class.getResourceAsStream("/interceptor/ws_addressing/body.xml");
-    }
+	@Before
+	public void setUp() {
+		input = WsaEndpointRewriterTest.class.getResourceAsStream("/interceptor/ws_addressing/body.xml");
+	}
 
-    @Test
-    public void testRewriteEndpointAddress() throws XMLStreamException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        WsaEndpointRewriter rewriter = new WsaEndpointRewriter(new DecoupledEndpointRegistry());
+	@Test
+	public void testRewriteEndpointAddress() throws XMLStreamException {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		WsaEndpointRewriter rewriter = new WsaEndpointRewriter(new DecoupledEndpointRegistry());
 
-        int port = 2000;
-        rewriter.rewriteEndpoint(input, output, port, new Exchange(null));
+		int port = 2000;
+		rewriter.rewriteEndpoint(input, output, port, new Exchange(null));
 
-        String rewrittenXml = output.toString();
+		String rewrittenXml = output.toString();
 
-        System.out.println(rewrittenXml);
+		System.out.println(rewrittenXml);
 
-        assertTrue(rewrittenXml.contains("<Address>http://localhost:" + port + "/decoupled_endpoint</Address>"));
-    }
+		assertTrue(rewrittenXml.contains("<Address>http://localhost:" + port + "/decoupled_endpoint</Address>"));
+	}
 }

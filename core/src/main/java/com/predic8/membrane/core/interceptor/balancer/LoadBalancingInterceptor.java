@@ -48,7 +48,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public LoadBalancingInterceptor() {
 		name = "Balancer";
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log.debug("handleRequest");
@@ -154,8 +154,8 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public void setName(String name) throws Exception {
 		balancer.setName(name);
 	}
-	
-	
+
+
 	/**
 	 * This is *NOT* {@link #getDisplayName()}, but the balancer's name set in
 	 * the proxy configuration to identify this balancer.
@@ -200,11 +200,11 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public void setFailOver(boolean failOver) {
 		this.failOver = failOver;
 	}
-	
+
 	public Balancer getClusterManager() {
 		return balancer;
 	}
-	
+
 	/**
 	 * @description Specifies a list of clusters.
 	 */
@@ -215,7 +215,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			clusters.addAll(balancer.getClusters());
 		this.balancer.setClusters(clusters);
 	}
-	
+
 	public List<Balancer> getClustersFromSpring() {
 		return new ArrayList<Balancer>(Lists.newArrayList(balancer)) {
 			private static final long serialVersionUID = 1L;
@@ -225,7 +225,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 				balancer.setClusters(e.getClusters());
 				return super.add(e);
 			}
-			
+
 			@Override
 			public Balancer set(int index, Balancer element) {
 				balancer.setClusters(element.getClusters());
@@ -253,7 +253,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Performs load-balancing between <a href=\"/admin/balancers\">several nodes</a>.";
 	}
-	
+
 	@Override
 	public void init() throws Exception {
 		for (Cluster c : balancer.getClusters())

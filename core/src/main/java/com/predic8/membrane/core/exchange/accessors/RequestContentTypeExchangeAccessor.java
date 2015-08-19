@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 public class RequestContentTypeExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Request Content-Type";
-	
+
 	public Object get(AbstractExchange exc) {
 		if (exc == null || exc.getRequest() == null || exc.getRequest().getHeader().getContentType() == null)
 			return "";
@@ -29,10 +29,10 @@ public class RequestContentTypeExchangeAccessor implements ExchangeAccessor {
 	public String getId() {
 		return ID;
 	}
-	
+
 	private String getContentType(AbstractExchange exc) {
-		String contentType = (String) exc.getRequest().getHeader().getContentType();
-		
+		String contentType = exc.getRequest().getHeader().getContentType();
+
 		int index = contentType.indexOf(";");
 		if (index > 0) {
 			contentType = contentType.substring(0, index);

@@ -40,7 +40,7 @@ import com.predic8.membrane.core.services.DummyWebServiceInterceptor;
 
 public class MultipleLoadBalancersTest {
 	private MockService service1, service2, service11, service12;
-	
+
 	protected LoadBalancingInterceptor balancingInterceptor1, balancingInterceptor2;
 	private DispatchingStrategy roundRobinStrategy1, roundRobinStrategy2;
 	protected HttpRouter balancer;
@@ -49,7 +49,7 @@ public class MultipleLoadBalancersTest {
 		final int port;
 		final HttpRouter service1;
 		final DummyWebServiceInterceptor mockInterceptor1;
-		
+
 		MockService(int port) throws Exception {
 			this.port = port;
 			service1 = new HttpRouter();
@@ -65,7 +65,7 @@ public class MultipleLoadBalancersTest {
 			service1.shutdown();
 		}
 	}
-	
+
 	private LoadBalancingInterceptor createBalancingInterceptor(int port, String name) throws Exception {
 		ServiceProxy sp3 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", port), "thomas-bayer.com", 80);
 		LoadBalancingInterceptor balancingInterceptor1 = new LoadBalancingInterceptor();
@@ -76,7 +76,7 @@ public class MultipleLoadBalancersTest {
 		return balancingInterceptor1;
 	}
 
-	
+
 	@Before
 	public void setUp() throws Exception {
 
@@ -86,13 +86,13 @@ public class MultipleLoadBalancersTest {
 		service12 = new MockService(2012);
 
 		balancer = new HttpRouter();
-		
+
 		balancingInterceptor1 = createBalancingInterceptor(7000, "Default");
 		balancingInterceptor2 = createBalancingInterceptor(7001, "Balancer2");
-		
+
 		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", service1.port);
 		BalancerUtil.lookupBalancer(balancer, "Default").up("Default", "localhost", service2.port);
-		
+
 		BalancerUtil.lookupBalancer(balancer, "Balancer2").up("Default", "localhost", service11.port);
 		BalancerUtil.lookupBalancer(balancer, "Balancer2").up("Default", "localhost", service12.port);
 
@@ -116,7 +116,7 @@ public class MultipleLoadBalancersTest {
 		assertEquals(n11, service11.mockInterceptor1.counter);
 		assertEquals(n12, service12.mockInterceptor1.counter);
 	}
-	
+
 	@Test
 	public void testRoundRobinDispachingStrategy() throws Exception {
 		balancingInterceptor1.setDispatchingStrategy(roundRobinStrategy1);
@@ -149,7 +149,7 @@ public class MultipleLoadBalancersTest {
 
 		assertEquals(200, client.executeMethod(getPostMethod(7001)));
 		assertMockCounters(2, 2, 2, 1);
-}
+	}
 
 	private PostMethod getPostMethod(int port) {
 		PostMethod post = new PostMethod(

@@ -22,9 +22,9 @@ import org.xml.sax.SAXParseException;
 public class SchemaValidatorErrorHandler implements ErrorHandler {
 
 	private static Log log = LogFactory.getLog(SchemaValidatorErrorHandler.class.getName());
-	
-	private Exception exception; 
-	
+
+	private Exception exception;
+
 	public void error(SAXParseException e) throws SAXException {
 		exception = e;
 		log.info("Error: " + e);
@@ -38,15 +38,15 @@ public class SchemaValidatorErrorHandler implements ErrorHandler {
 	public void warning(SAXParseException e) throws SAXException {
 		log.info("Warning: " + e);
 	}
-	
+
 	public Exception getException() {
 		return exception;
 	}
-	
+
 	public boolean noErrors() {
 		return exception == null;
 	}
-	
+
 	public void reset() {
 		exception = null;
 	}

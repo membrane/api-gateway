@@ -43,25 +43,25 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	private int maxElementNameLength = 1000;
 	private boolean removeDTD = true;
 
-	
+
 	public XMLProtectionInterceptor() {
 		name = "XML Protection";
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		
+
 		if (exc.getRequest().isBodyEmpty()) {
 			log.info("body is empty -> request is not scanned by xmlProtection");
 			return Outcome.CONTINUE;
 		}
-		
+
 		if (!exc.getRequest().isXML()) {
 			log.warn("request discarded by xmlProtection, because it's Content-Type header did not indicate that it is actually XML.");
 			return Outcome.ABORT;
 		}
-		
+
 		if (!protectXML(exc)) {
 			log.warn("request discarded by xmlProtection, because it is not wellformed or exceeds limits");
 			setFailResponse(exc);
@@ -72,17 +72,17 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 
 		return Outcome.CONTINUE;
 	}
-	
+
 	private void setFailResponse(Exchange exc) {
 		exc.setResponse(Response.badRequest("Invalid XML features used in request.").build());
 	}
 
 	private boolean protectXML(Exchange exc) throws Exception {
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		
-		XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, getCharset(exc)), 
+
+		XMLProtector protector = new XMLProtector(new OutputStreamWriter(stream, getCharset(exc)),
 				removeDTD, maxElementNameLength, maxAttibuteCount);
-		
+
 		if (!protector.protect(new InputStreamReader(exc.getRequest().getBodyAsStreamDecoded(), getCharset(exc) )))
 			return false;
 		exc.getRequest().setBodyContent(stream.toByteArray());
@@ -96,7 +96,7 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 		String charset = exc.getRequest().getCharset();
 		if (charset == null)
 			return Constants.UTF_8;
-		
+
 		return charset;
 	}
 
@@ -126,11 +126,11 @@ public class XMLProtectionInterceptor extends AbstractInterceptor {
 	public void setRemoveDTD(boolean removeDTD) {
 		this.removeDTD = removeDTD;
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return "Protects agains XML attacks.";
 	}
-	
+
 }
 

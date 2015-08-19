@@ -24,11 +24,11 @@ import com.predic8.membrane.core.http.Request;
  */
 public final class MessageBytes  {
 	private static byte[] empty = new byte[0];
-	
+
 	private byte[] bytes;
 	private int offset;
 	private int length;
-	
+
 	public static MessageBytes newInstance() {
 		return new MessageBytes();
 	}
@@ -58,7 +58,7 @@ public final class MessageBytes  {
 		offset = 0;
 		length = 0;
 	}
-	
+
 	@Override
 	public String toString() {
 		try {
@@ -67,7 +67,7 @@ public final class MessageBytes  {
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		return toString().equals(obj);

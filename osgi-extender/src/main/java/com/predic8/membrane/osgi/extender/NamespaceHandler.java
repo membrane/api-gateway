@@ -64,18 +64,18 @@ public class NamespaceHandler implements org.apache.aries.blueprint.NamespaceHan
 	public Metadata parse(Element element, ParserContext context) {
 		return parse(this, element, context);
 	}
-	
+
 	@Override
 	public Metadata parse(BlueprintParser globalParser, Element element,
 			ParserContext context) {
-		
+
 		try {
 			Class<?> clazz = Class.forName(nu.getOutputPackage(element.getNamespaceURI()) + ".blueprint.BlueprintNamespaceParser");
-			
+
 			BlueprintParser bp = (BlueprintParser) clazz.newInstance();
-			
+
 			return bp.parse(this, element, context);
-			
+
 		} catch (ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		} catch (InstantiationException e) {

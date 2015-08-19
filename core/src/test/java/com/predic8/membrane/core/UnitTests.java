@@ -121,7 +121,7 @@ public class UnitTests {
 	/*
 	 * @BeforeClass public static void forbidScreenOutput() { PrintStream ps =
 	 * new PrintStream(new OutputStream() {
-	 * 
+	 *
 	 * @Override public void write(int b) throws IOException { throw new
 	 * RuntimeException("this test uses stdout"); } }); System.setOut(ps);
 	 * System.setErr(ps); }

@@ -42,7 +42,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 public class AccessControlInterceptor extends AbstractInterceptor {
 
 	private static final Log log = LogFactory.getLog(AccessControlInterceptor.class.getName());
-	
+
 	private String file;
 
 	private AccessControl accessControl;
@@ -51,7 +51,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		setDisplayName("Access Control");
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Resource resource;
@@ -89,32 +89,33 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		return file;
 	}
 
+	@Override
 	public void init() throws Exception {
 		accessControl = parse(file, router);
 	}
-	
+
 	public AccessControl getAccessControl() {
 		return accessControl;
 	}
 
 	protected AccessControl parse(String fileName, Router router) throws Exception {
-	    try {
+		try {
 			XMLInputFactory factory = XMLInputFactory.newInstance();
 			XMLStreamReader reader = new FixedStreamReader(factory.createXMLStreamReader(router.getResolverMap()
 					.resolve(ResolverMap.combine(router == null ? null : router.getBaseLocation(), fileName))));
-		    AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
-		    res.init(router);
+			AccessControl res = (AccessControl) new AccessControl(router).parse(reader);
+			res.init(router);
 			return res;
-	    } catch (Exception e) {
-	    	log.error("Error initializing accessControl.", e);
-	    	System.err.println("Error initializing accessControl: terminating.");
-	    	throw new RuntimeException(e);
-	    }
+		} catch (Exception e) {
+			log.error("Error initializing accessControl.", e);
+			System.err.println("Error initializing accessControl: terminating.");
+			throw new RuntimeException(e);
+		}
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return "Authenticates incoming requests based on the file " + StringEscapeUtils.escapeHtml(file) + " .";
 	}
-	
+
 }

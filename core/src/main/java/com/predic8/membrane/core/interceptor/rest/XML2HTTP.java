@@ -54,7 +54,7 @@ public class XML2HTTP {
 	 * Checks, if the response contains an XML doc with NS {@link Constants#HTTP_NS}.
 	 * If it does, the HTTP data (uri, method, status, headers, body) is extracted from the doc
 	 * and set as the response.
-	 * 
+	 *
 	 * Reverse of {@link com.predic8.membrane.core.http.xml.Request#write(XMLStreamWriter)} and
 	 * {@link com.predic8.membrane.core.http.xml.Response#write(XMLStreamWriter)}.
 	 */
@@ -63,7 +63,7 @@ public class XML2HTTP {
 			try {
 				if (message.getBody().getLength() == 0)
 					return;
-				
+
 				XMLEventReader parser;
 				synchronized(xmlInputFactory) {
 					parser = xmlInputFactory.createXMLEventReader(message.getBodyAsStreamDecoded(), message.getCharset());
@@ -74,9 +74,9 @@ public class XML2HTTP {
 				 * 1 = root element has HTTP_NS namespace
 				 */
 				int state = 0;
-				
+
 				boolean keepSourceHeaders = false, foundHeaders = false, foundBody = false;
-				
+
 				while (parser.hasNext()) {
 					XMLEvent event = parser.nextEvent();
 					switch (state) {
@@ -140,7 +140,7 @@ public class XML2HTTP {
 						break;
 					}
 				}
-				
+
 				if (!foundHeaders && !keepSourceHeaders)
 					message.getHeader().clear();
 				if (!foundBody)
@@ -154,7 +154,7 @@ public class XML2HTTP {
 			}
 		}
 	}
-	
+
 	private static String slurpCharacterData(XMLEventReader parser, StartElement sevent) throws XMLStreamException, XML2HTTPException {
 		String name = sevent.getName().getLocalPart();
 		StringBuilder value = new StringBuilder();
@@ -170,7 +170,7 @@ public class XML2HTTP {
 		}
 		return value.toString();
 	}
-	
+
 	private static String slurpXMLData(XMLEventReader parser, StartElement sevent) throws XML2HTTPException, XMLStreamException {
 		StringWriter bodyStringWriter = new StringWriter();
 		XMLEventWriter bodyWriter = null;
@@ -204,7 +204,7 @@ public class XML2HTTP {
 			throw new XML2HTTPException("XML-HTTP doc <" + element.getName().getLocalPart() + "> element does not have @"+name+" attribute.");
 		return attribute.getValue();
 	}
-	
+
 	/**
 	 * @return the attribute's value or null, if the element has no attribute with the given name.
 	 */
@@ -215,7 +215,7 @@ public class XML2HTTP {
 		return attribute.getValue();
 	}
 
-	
+
 	private static class XML2HTTPException extends Exception {
 		private static final long serialVersionUID = 1L;
 

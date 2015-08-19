@@ -20,7 +20,7 @@ public class BufferLogger extends AbstractConsoleWatcher {
 
 	private StringBuffer b = new StringBuffer();
 	private String newline = System.getProperty("line.separator");
-	
+
 	@Override
 	public void outputLine(boolean error, String line) {
 		synchronized(b) {
@@ -28,7 +28,7 @@ public class BufferLogger extends AbstractConsoleWatcher {
 			b.append(newline);
 		}
 	}
-	
+
 	@Override
 	public String toString() {
 		synchronized(b) {

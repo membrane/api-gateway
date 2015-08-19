@@ -53,7 +53,7 @@ public class UnavailableSoapProxyTest {
 		v.setWsdl("http://localhost:2001/axis2/services/BLZService?wsdl");
 		sp3.getInterceptors().add(v);
 
-		
+
 		SOAPProxy sp2 = new SOAPProxy();
 		sp2.setPort(2001);
 		sp2.setWsdl("http://www.thomas-bayer.com/axis2/services/BLZService?wsdl");
@@ -66,7 +66,7 @@ public class UnavailableSoapProxyTest {
 
 	private void test() {
 		r.start();
-		
+
 		List<Rule> rules = r.getRuleManager().getRules();
 		assertEquals(1, rules.size());
 		assertFalse(rules.get(0).isActive());
@@ -84,7 +84,7 @@ public class UnavailableSoapProxyTest {
 		assertEquals(1, rules.size());
 		assertTrue(rules.get(0).isActive());
 	}
-	
+
 	@Test
 	public void checkWSDLDownloadFailureInSoapProxy() {
 		r.getRules().add(sp);
@@ -99,14 +99,14 @@ public class UnavailableSoapProxyTest {
 
 		test();
 	}
-	
+
 	@Test
 	public void checkWSDLDownloadFailureInValidatorOfServiceProxy() {
 		r.getRules().add(sp3);
-		
+
 		test();
 	}
-	
+
 	@After
 	public void cleanup() {
 		r2.stop();

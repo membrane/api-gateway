@@ -25,53 +25,53 @@ import com.predic8.membrane.core.rules.Rule;
 public abstract class AbstractExchangeStore implements ExchangeStore {
 
 	protected Set<IExchangesStoreListener> exchangesStoreListeners = new HashSet<IExchangesStoreListener>();
-	
+
 	public void addExchangesStoreListener(IExchangesStoreListener viewer) {
 		exchangesStoreListeners.add(viewer);
-		
+
 	}
 	public void removeExchangesStoreListener(IExchangesStoreListener viewer) {
 		exchangesStoreListeners.remove(viewer);
 	}
-	
+
 	public void refreshExchangeStoreListeners(){
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			listener.refresh();
 		}
 	}
-	
+
 	public void notifyListenersOnExchangeAdd(Rule rule, AbstractExchange exchange) {
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			exchange.addExchangeStoreListener(listener);
 			listener.addExchange(rule, exchange);
 		}
 	}
-	
+
 	public void notifyListenersOnExchangeRemoval(AbstractExchange exchange) {
 		for (IExchangesStoreListener listener : exchangesStoreListeners) {
 			exchange.removeExchangeStoreListener(listener);
 			listener.removeExchange(exchange);
 		}
 	}
-	
+
 	public AbstractExchange getExchangeById(int id) {
 		throw new UnsupportedOperationException("getExchangeById must be implemented in the sub class.");
 	}
-		
-	
+
+
 	public List<? extends ClientStatistics> getClientStatistics() {
 		throw new UnsupportedOperationException("getClientStatistics must be implemented in the sub class.");
 	}
-	
+
 	public void init() {
 	}
 
 	public synchronized void collect(ExchangeCollector collector) {
 		for (AbstractExchange exc: getAllExchangesAsList()) {
 			collector.collect(exc);
-		}	
+		}
 	}
-	
+
 	@Override
 	public long getLastModified() {
 		return System.currentTimeMillis();

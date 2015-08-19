@@ -46,10 +46,10 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 			.getName());
 
 	// maps all fileName objects used by instances of this class to themselves.
-	// used to get unique String instances of the same file name 
+	// used to get unique String instances of the same file name
 	// (when two instances use the same file name)
 	private static final Map<String, String> fileNames = new HashMap<String, String>();
-	
+
 	// the file name of the log file; at the same time a lock guarding the lock file
 	private String fileName;
 
@@ -169,5 +169,5 @@ public class StatisticsCSVInterceptor extends AbstractInterceptor {
 	public String getShortDescription() {
 		return "Logs access statistics into the CSV-based file " + StringEscapeUtils.escapeHtml(fileName) + " .";
 	}
-	
+
 }

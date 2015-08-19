@@ -157,17 +157,17 @@ public class WSDLInterceptorTest {
 	}
 
 	private boolean matchSoap12(String pattern) throws XMLStreamException,
-			Exception {
+	Exception {
 		return match(pattern, ADDRESS_SOAP12);
 	}
 
 	private boolean matchSoap11(String pattern) throws XMLStreamException,
-			Exception {
+	Exception {
 		return match(pattern, ADDRESS_SOAP11);
 	}
 
 	private boolean matchHttp(String pattern) throws XMLStreamException,
-			Exception {
+	Exception {
 		return match(pattern, ADDRESS_HTTP);
 	}
 

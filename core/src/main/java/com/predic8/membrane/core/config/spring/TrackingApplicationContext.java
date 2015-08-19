@@ -21,7 +21,7 @@ import java.util.List;
  * Tracks all files opened while constructing the Spring bean definitions.
  */
 public interface TrackingApplicationContext {
-	
+
 	/**
 	 * @return The list of files accessed through the Spring Resource API while constructing the Spring bean definitions.
 	 */

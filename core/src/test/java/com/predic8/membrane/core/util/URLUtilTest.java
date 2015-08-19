@@ -23,26 +23,26 @@ import java.io.IOException;
 import org.junit.Test;
 
 public class URLUtilTest {
-	
+
 	@Test
 	public void testCreateQueryString() throws IOException {
-		assertEquals("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1", 
-  				     createQueryString("endpoint", "http://node1.clustera", 
-					  	               "cluster","c1"));
+		assertEquals("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1",
+				createQueryString("endpoint", "http://node1.clustera",
+						"cluster","c1"));
 
 	}
 
 	@Test
 	public void testParseQueryString() throws IOException {
-		assertEquals("http://node1.clustera", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1").get("endpoint")); 
-		assertEquals("c1", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1").get("cluster")); 
+		assertEquals("http://node1.clustera", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1").get("endpoint"));
+		assertEquals("c1", parseQueryString("endpoint=http%3A%2F%2Fnode1.clustera&cluster=c1").get("cluster"));
 	}
 
 	@Test
 	public void testParamsWithoutValueString() throws IOException {
-		assertEquals("jim", parseQueryString("name=jim&male").get("name")); 
-		assertEquals("", parseQueryString("name=jim&male").get("male")); 
-		assertEquals("", parseQueryString("name=anna&age=").get("age")); 
+		assertEquals("jim", parseQueryString("name=jim&male").get("name"));
+		assertEquals("", parseQueryString("name=jim&male").get("male"));
+		assertEquals("", parseQueryString("name=anna&age=").get("age"));
 	}
-	
+
 }

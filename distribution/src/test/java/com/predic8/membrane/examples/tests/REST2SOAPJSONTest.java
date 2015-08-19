@@ -27,17 +27,17 @@ import com.predic8.membrane.examples.Process2;
 import com.predic8.membrane.test.AssertUtils;
 
 public class REST2SOAPJSONTest extends DistributionExtractingTestcase {
-	
+
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("rest2soap-json");
 		AssertUtils.replaceInFile(new File(baseDir, "proxies.xml"), "2000", "2043");
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
-			assertContains("\"bic\":\"COLSDE33XXX\"", 
-					getAndAssert200("http://localhost:2043/bank/37050198", 
+			assertContains("\"bic\":\"COLSDE33XXX\"",
+					getAndAssert200("http://localhost:2043/bank/37050198",
 							new String[] { "Accept", "application/json" } ));
-			assertContains("\"bic\":\"GENODE61KIR\"", 
+			assertContains("\"bic\":\"GENODE61KIR\"",
 					getAndAssert200("http://localhost:2043/bank/66762332",
 							new String[] { "Accept", "application/json" } ));
 		} finally {

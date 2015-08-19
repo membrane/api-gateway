@@ -32,19 +32,19 @@ public class WSDLRewritingTest {
 
 	@Parameters
 	public static List<Object[]> getPorts() {
-		return Arrays.asList(new Object[][] { 
+		return Arrays.asList(new Object[][] {
 				{ 3021 }, // jetty port embedding membrane
 				{ 3025 }, // membrane backend test port
 				{ 3026 }, // membrane own proxy port
-				});
+		});
 	}
 
 	private final int port;
-	
+
 	public WSDLRewritingTest(int port) {
 		this.port = port;
 	}
-	
+
 	@Test
 	public void testWSDLRewritten() throws ClientProtocolException, IOException {
 		assertContains("localhost:" + port, getAndAssert200(getBaseURL() + "ArticleService.wsdl"));
@@ -53,5 +53,5 @@ public class WSDLRewritingTest {
 	private String getBaseURL() {
 		return "http://localhost:" + port + "/";
 	}
-	
+
 }

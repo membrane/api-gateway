@@ -21,5 +21,5 @@ public class EndOfStreamException extends Exception {
 	public EndOfStreamException(String message) {
 		super(message);
 	}
-	
+
 }

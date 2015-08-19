@@ -40,7 +40,7 @@ import com.predic8.membrane.core.Router;
 @MCElement(name="unifyingUserDataProvider", topLevel=false)
 public class UnifyingUserDataProvider implements UserDataProvider {
 
-	private List<UserDataProvider> userDataProviders = new ArrayList<UserDataProvider>(); 
+	private List<UserDataProvider> userDataProviders = new ArrayList<UserDataProvider>();
 
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {
@@ -51,17 +51,17 @@ public class UnifyingUserDataProvider implements UserDataProvider {
 			}
 		throw new NoSuchElementException();
 	}
-	
+
 	public List<UserDataProvider> getUserDataProviders() {
 		return userDataProviders;
 	}
-	
+
 	@Required
 	@MCChildElement
 	public void setUserDataProviders(List<UserDataProvider> userDataProviders) {
 		this.userDataProviders = userDataProviders;
 	}
-	
+
 	@Override
 	public void init(Router router) {
 		for (UserDataProvider udp : userDataProviders)

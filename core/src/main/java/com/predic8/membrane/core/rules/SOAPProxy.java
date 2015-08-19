@@ -70,19 +70,19 @@ public class SOAPProxy extends AbstractServiceProxy {
 	protected String portName;
 	protected String targetPath;
 	protected HttpClientConfiguration httpClientConfig;
-	
+
 	// set during initialization
 	protected ResolverMap resolverMap;
-	
+
 	public SOAPProxy() {
 		this.key = new ServiceProxyKey(80);
 	}
-	
+
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new SOAPProxy();
 	}
-	
+
 	/**
 	 * @return error or null for success
 	 */
@@ -92,46 +92,46 @@ public class SOAPProxy extends AbstractServiceProxy {
 		try {
 			WSDLParser wsdlParser = new WSDLParser();
 			wsdlParser.setResourceResolver(resolverMap.toExternalResolver().toExternalResolver());
-			
+
 			Definitions definitions = wsdlParser.parse(ctx);
-			
+
 			List<Service> services = definitions.getServices();
 			if (services.size() != 1)
 				throw new IllegalArgumentException("There are " + services.size() + " services defined in the WSDL, but exactly 1 is required for soapProxy.");
 			Service service = services.get(0);
-			
+
 			if (StringUtils.isEmpty(name))
 				name = StringUtils.isEmpty(service.getName()) ? definitions.getName() : service.getName();
-			
-			List<Port> ports = service.getPorts();
-			Port port = selectPort(ports, portName);
-			
-			String location = port.getAddress().getLocation();
-			if (location == null)
-				throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
-			try {
-				URL url = new URL(location);
-				target.setHost(url.getHost());
-				if (url.getPort() != -1)
-					target.setPort(url.getPort());
-				else
-					target.setPort(url.getDefaultPort());
-				if (key.getPath() == null) {
-					key.setUsePathPattern(true);
-					key.setPathRegExp(false);
-					key.setPath(url.getPath());
-				} else {
-					targetPath = url.getPath();
+
+				List<Port> ports = service.getPorts();
+				Port port = selectPort(ports, portName);
+
+				String location = port.getAddress().getLocation();
+				if (location == null)
+					throw new IllegalArgumentException("In the WSDL, there is no @location defined on the port.");
+				try {
+					URL url = new URL(location);
+					target.setHost(url.getHost());
+					if (url.getPort() != -1)
+						target.setPort(url.getPort());
+					else
+						target.setPort(url.getDefaultPort());
+					if (key.getPath() == null) {
+						key.setUsePathPattern(true);
+						key.setPathRegExp(false);
+						key.setPath(url.getPath());
+					} else {
+						targetPath = url.getPath();
+					}
+					if(location.startsWith("https")){
+						SSLParser sslOutboundParser = new SSLParser();
+						target.setSslParser(sslOutboundParser);
+					}
+					((ServiceProxyKey)key).setMethod("*");
+				} catch (MalformedURLException e) {
+					throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
 				}
-                                if(location.startsWith("https")){
-                                    SSLParser sslOutboundParser = new SSLParser();
-                                    target.setSslParser(sslOutboundParser);
-                                }
-				((ServiceProxyKey)key).setMethod("*");
-			} catch (MalformedURLException e) {
-				throw new IllegalArgumentException("WSDL endpoint location '"+location+"' is not an URL.", e);
-			}
-			return;
+				return;
 		} catch (Exception e) {
 			Throwable f = e;
 			while (f.getCause() != null && ! (f instanceof ResourceRetrievalException))
@@ -151,7 +151,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 			throw new IllegalArgumentException("Could not download the WSDL '" + wsdl + "'.", e);
 		}
 	}
-	
+
 	public static Port selectPort(List<Port> ports, String portName) {
 		if (portName != null) {
 			for (Port port : ports)
@@ -166,7 +166,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 			throw new IllegalArgumentException("No SOAP/1.1 or SOAP/1.2 ports found in WSDL.");
 		return port;
 	}
-	
+
 	private static Port getPortByNamespace(List<Port> ports, String namespace) {
 		for (Port port : ports) {
 			try {
@@ -192,14 +192,14 @@ public class SOAPProxy extends AbstractServiceProxy {
 	public void configure() throws Exception {
 
 		parseWSDL();
-		
+
 		// remove previously added interceptors
 		for(; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
 			interceptors.remove(0);
 
 
 		// add interceptors (in reverse order) to position 0.
-		
+
 		WebServiceExplorerInterceptor sui = new WebServiceExplorerInterceptor();
 		sui.setWsdl(wsdl);
 		sui.setPortName(portName);
@@ -240,10 +240,10 @@ public class SOAPProxy extends AbstractServiceProxy {
 				}
 			});
 		}
-		
+
 		if (hasRewriter && !hasPublisher)
 			log.warn("A <soapProxy> contains a <wsdlRewriter>, but no <wsdlPublisher>. Probably you want to insert a <wsdlPublisher> just after the <wsdlRewriter>. (Or, if this is a valid use case, please notify us at " + Constants.PRODUCT_CONTACT_EMAIL + ".)");
-		
+
 		if (targetPath != null) {
 			RewriteInterceptor ri = new RewriteInterceptor();
 			ri.setMappings(Lists.newArrayList(new RewriteInterceptor.Mapping("^" + Pattern.quote(key.getPath()), Matcher.quoteReplacement(targetPath), "rewrite")));
@@ -251,12 +251,12 @@ public class SOAPProxy extends AbstractServiceProxy {
 			automaticallyAddedInterceptorCount++;
 		}
 	}
-	
+
 	@Override
 	public void init() throws Exception {
 		if (wsdl == null)
 			return;
-		
+
 		resolverMap = router.getResolverMap();
 		if (httpClientConfig != null) {
 			HTTPSchemaResolver httpSR = new HTTPSchemaResolver();
@@ -279,7 +279,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 	public String getWsdl() {
 		return wsdl;
 	}
-	
+
 	/**
 	 * @description The WSDL of the SOAP service.
 	 * @example http://predic8.de/my.wsdl <i>or</i> file:my.wsdl
@@ -289,23 +289,23 @@ public class SOAPProxy extends AbstractServiceProxy {
 	public void setWsdl(String wsdl) {
 		this.wsdl = wsdl;
 	}
-	
+
 	public String getPortName() {
 		return portName;
 	}
-	
+
 	@MCAttribute
 	public void setPortName(String portName) {
 		this.portName = portName;
 	}
-	
+
 	public HttpClientConfiguration getWsdlHttpClientConfig() {
 		return httpClientConfig;
 	}
-	
+
 	@MCAttribute
 	public void setWsdlHttpClientConfig(HttpClientConfiguration httpClientConfig) {
-		this.httpClientConfig = httpClientConfig; 
+		this.httpClientConfig = httpClientConfig;
 	}
 
 }

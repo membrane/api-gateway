@@ -53,60 +53,61 @@ import com.predic8.membrane.core.util.Util;
  */
 @MCElement(name="google", topLevel=false)
 public class GoogleAuthorizationService extends AuthorizationService {
-	
+
 	private static Log log = LogFactory.getLog(GoogleAuthorizationService.class.getName());
 
 	// properties
 	private String clientId;
 	private String clientSecret;
 	private HttpClientConfiguration httpClientConfiguration;
-	
+
 	// fields
 	private HttpClient httpClient;
 	private JsonFactory factory;
 	private GoogleIdTokenVerifier verifier;
 	private URIFactory uriFactory;
-	
+
 	public String getClientId() {
 		return clientId;
 	}
-	
+
 	@Required
 	@MCAttribute
 	public void setClientId(String clientId) {
 		this.clientId = clientId;
 	}
-	
+
 	public String getClientSecret() {
 		return clientSecret;
 	}
-	
+
 	@Required
 	@MCAttribute
 	public void setClientSecret(String clientSecret) {
 		this.clientSecret = clientSecret;
 	}
-	
+
 	public HttpClientConfiguration getHttpClientConfiguration() {
 		return httpClientConfiguration;
 	}
-	
+
 	@MCAttribute
 	public void setHttpClientConfiguration(
 			HttpClientConfiguration httpClientConfiguration) {
 		this.httpClientConfiguration = httpClientConfiguration;
 	}
-	
+
+	@Override
 	public void init(Router router) {
 		httpClient = httpClientConfiguration == null ? router.getResolverMap()
 				.getHTTPSchemaResolver().getHttpClient() : new HttpClient(
-				httpClientConfiguration);
+						httpClientConfiguration);
 
-		factory = new JacksonFactory();
-		verifier = new GoogleIdTokenVerifier(new ApacheHttpTransport(), factory);
-		uriFactory = router.getUriFactory();
+				factory = new JacksonFactory();
+				verifier = new GoogleIdTokenVerifier(new ApacheHttpTransport(), factory);
+				uriFactory = router.getUriFactory();
 	}
-	
+
 	@Override
 	public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
 		return "https://accounts.google.com/o/oauth2/auth?"+
@@ -118,77 +119,77 @@ public class GoogleAuthorizationService extends AuthorizationService {
 				//+"&login_hint=jsmith@example.com"
 				;
 	}
-	
+
 	@Override
 	public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
 		String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
-		
+
 		if ("/oauth2callback".equals(path)) {
-			
+
 			try {
 				Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
-				
+
 				String state2 = params.get("state");
 
 				if (state2 == null)
 					throw new RuntimeException("No CSRF token.");
 
 				Map<String, String> param = URLParamUtil.parseQueryString(state2);
-				
+
 				if (param == null || !param.containsKey("security_token"))
 					throw new RuntimeException("No CSRF token.");
-				
+
 				if (!param.get("security_token").equals(state))
 					throw new RuntimeException("CSRF token mismatch.");
-				
+
 				String url = param.get("url");
 				if (url == null)
 					url = "/";
-				
+
 				if (log.isDebugEnabled())
 					log.debug("CSRF token match.");
-				
+
 				String code = params.get("code");
 				if (code == null)
 					throw new RuntimeException("No code received.");
 
 				Exchange e = new Request.Builder()
-						.post("https://accounts.google.com/o/oauth2/token")
-						.header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-						.body(
-								"code=" + code + "&client_id=" + clientId
-										+ ".apps.googleusercontent.com&client_secret="
-										+ clientSecret + "&" + "redirect_uri=" + publicURL
-										+ "oauth2callback&grant_type=authorization_code").buildExchange();
+				.post("https://accounts.google.com/o/oauth2/token")
+				.header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+				.body(
+						"code=" + code + "&client_id=" + clientId
+						+ ".apps.googleusercontent.com&client_secret="
+						+ clientSecret + "&" + "redirect_uri=" + publicURL
+						+ "oauth2callback&grant_type=authorization_code").buildExchange();
 				e.setRule(new NullRule() {
 					@Override
 					public SSLContext getSslOutboundContext() {
 						return new SSLContext(new SSLParser(), null, null);
 					}
 				});
-				
+
 				LogInterceptor logi = null;
 				if (log.isDebugEnabled()) {
 					logi = new LogInterceptor();
 					logi.setHeaderOnly(false);
 					logi.handleRequest(e);
 				}
-				
+
 				Response response = httpClient.call(e).getResponse();
-				
+
 				if (response.getStatusCode() != 200) {
 					response.getBody().read();
 					throw new RuntimeException("Google Authentication server returned " + response.getStatusCode() + ".");
 				}
-				
+
 				if (log.isDebugEnabled())
 					logi.handleResponse(e);
-				
+
 				HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
-				
+
 				if (!json.containsKey("id_token"))
 					throw new RuntimeException("No id_token received.");
-				
+
 				GoogleIdToken idToken = GoogleIdToken.parse(factory, json.get("id_token"));
 				if (idToken == null)
 					throw new RuntimeException("Token cannot be parsed");
@@ -212,6 +213,6 @@ public class GoogleAuthorizationService extends AuthorizationService {
 		return false;
 	}
 
-	
-	
+
+
 }

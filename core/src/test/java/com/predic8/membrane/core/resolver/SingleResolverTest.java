@@ -17,7 +17,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class SingleResolverTest {
-	
+
 	@Test
 	public void combineWithWindowsAbsolute() {
 		String parent = "C:/git/membrane/service-proxy/cli/conf/proxies.xml";

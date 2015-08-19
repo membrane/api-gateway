@@ -26,11 +26,11 @@ import org.osgi.service.log.LogService;
 public class OsgiAppender extends AppenderSkeleton {
 
 	private static LogService logService;
-	
+
 	public static synchronized void setLogService(LogService logService) {
 		OsgiAppender.logService = logService;
 	}
-	
+
 	@Override
 	public void close() {
 	}
@@ -44,7 +44,7 @@ public class OsgiAppender extends AppenderSkeleton {
 	protected synchronized void append(LoggingEvent event) {
 		if (logService == null)
 			return;
-		
+
 		int osgiLogLevel;
 		Level level = event.getLevel();
 		if (level == null || level.toInt() < Level.DEBUG_INT) {
@@ -61,7 +61,7 @@ public class OsgiAppender extends AppenderSkeleton {
 		if (renderedMessage == null)
 			renderedMessage = "";
 
-		
+
 		ThrowableInformation throwableInformation = event.getThrowableInformation();
 		if (throwableInformation != null) {
 			Throwable throwable = throwableInformation.getThrowable();
@@ -70,7 +70,7 @@ public class OsgiAppender extends AppenderSkeleton {
 				return;
 			}
 		}
-		
+
 		logService.log(osgiLogLevel, renderedMessage);
 	}
 

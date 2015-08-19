@@ -40,7 +40,7 @@ public class DistributionExtractingTestcase {
 		targetDir = new File("target").getCanonicalFile();
 		if (!targetDir.exists())
 			throw new RuntimeException("membraneHome " + targetDir.getName() + " does not exist.");
-		
+
 		File zip = null;
 		{
 			File[] files = targetDir.listFiles(new FilenameFilter() {
@@ -54,7 +54,7 @@ public class DistributionExtractingTestcase {
 			if (files.length == 1)
 				zip = files[0];
 		}
-		
+
 		if (zip == null)
 			throw new RuntimeException("TODO: calling 'ant dist-router' automatically is not implemented.");
 
@@ -68,33 +68,33 @@ public class DistributionExtractingTestcase {
 
 		System.out.println("unzipping router distribution [" + getClass().getSimpleName() + "]...");
 		unzip(zip, unzipDir);
-		
+
 		membraneHome = unzipDir.listFiles(new FilenameFilter() {
 			@Override
 			public boolean accept(File dir, String name) {
 				return name.startsWith("membrane-service-proxy");
 			}
 		})[0];
-		
+
 		replaceLog4JConfig();
-		
+
 		System.out.println("running test...");
 	}
-	
+
 	private void replaceLog4JConfig() throws IOException {
 		File log4jproperties = new File(membraneHome, "conf" + File.separator + "log4j.properties");
 		if (!log4jproperties.exists())
 			throw new RuntimeException("log4j.properties does not exits.");
-		
+
 		FileUtils.writeStringToFile(
 				log4jproperties,
-				"log4j.appender.stdout=org.apache.log4j.ConsoleAppender\r\n" + 
-				"log4j.appender.stdout.Target=System.out\r\n" + 
-				"log4j.appender.stdout.layout=org.apache.log4j.PatternLayout\r\n" + 
-				"log4j.appender.stdout.layout.ConversionPattern=%d{ABSOLUTE} %5p %c{1}:%L - %m%n\r\n" + 
-				"\r\n" + 
-				"log4j.rootLogger=warn\r\n" +
-				"\r\n" + 
+				"log4j.appender.stdout=org.apache.log4j.ConsoleAppender\r\n" +
+						"log4j.appender.stdout.Target=System.out\r\n" +
+						"log4j.appender.stdout.layout=org.apache.log4j.PatternLayout\r\n" +
+						"log4j.appender.stdout.layout.ConversionPattern=%d{ABSOLUTE} %5p %c{1}:%L - %m%n\r\n" +
+						"\r\n" +
+						"log4j.rootLogger=warn\r\n" +
+						"\r\n" +
 				"log4j.logger.com.predic8=debug, stdout");
 	}
 
@@ -104,7 +104,7 @@ public class DistributionExtractingTestcase {
 			throw new RuntimeException("Example dir " + exampleDir.getAbsolutePath() + " does not exist.");
 		return exampleDir;
 	}
-	
+
 	public File getMembraneHome() {
 		return membraneHome;
 	}
@@ -128,7 +128,7 @@ public class DistributionExtractingTestcase {
 		ZipFile zipFile = new ZipFile(zip);
 		Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		while (entries.hasMoreElements()) {
-			ZipEntry entry = (ZipEntry) entries.nextElement();
+			ZipEntry entry = entries.nextElement();
 			if (entry.isDirectory()) {
 				// Assume directories are stored parents first then children.
 				// This is not robust, just for demonstration purposes.

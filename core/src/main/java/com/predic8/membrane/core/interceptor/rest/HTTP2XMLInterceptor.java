@@ -30,11 +30,11 @@ public class HTTP2XMLInterceptor extends AbstractInterceptor {
 	public HTTP2XMLInterceptor() {
 		name = "HTTP 2 XML";
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log.debug("uri: "+ exc.getRequest().getUri());
-		
+
 		String res = new Request(exc.getRequest()).toXml();
 		log.debug("http-xml: "+ res);
 

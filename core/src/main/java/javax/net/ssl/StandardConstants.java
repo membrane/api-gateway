@@ -18,7 +18,7 @@ package javax.net.ssl;
  * Fake implementation, do not use.
  */
 public class StandardConstants {
-	
+
 	public static final int SNI_HOST_NAME = 0;
 
 }

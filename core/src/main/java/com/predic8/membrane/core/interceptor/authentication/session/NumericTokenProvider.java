@@ -41,7 +41,7 @@ public abstract class NumericTokenProvider implements TokenProvider {
 			userAttributes.put("token", token);
 		}
 		return token;
-	} 
+	}
 
 	@Override
 	public void verifyToken(Map<String, String> userAttributes, String token) {

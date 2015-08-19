@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 public class ClientExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Client";
-	
+
 	public Object get(AbstractExchange exc) {
 		if (exc == null || exc.getRemoteAddr() == null)
 			return "";

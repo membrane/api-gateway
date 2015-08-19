@@ -54,7 +54,7 @@ import com.predic8.membrane.annot.model.TextContentInfo;
 
 /**
  * The annotation processor for the annotations defining Membrane's configuration language ({@link MCMain} and others).
- * 
+ *
  * <ul>
  * <li>validates the correct usage of the annotations (not everything is checked, though)</li>
  * <li>generates the XML schema file for the declared namespace</li>
@@ -75,19 +75,19 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	}
 
 	private static final String CACHE_FILE_FORMAT_VERSION = "1";
-	
+
 	private void log(String message) {
 		//processingEnv.getMessager().printMessage(Kind.NOTE, message);  // for Eclipse
 		//System.out.println(message); // for Maven command line
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private void read() {
 		if (cache != null)
 			return;
-		
+
 		cache = new HashMap<Class<? extends Annotation>, HashSet<Element>>();
-		
+
 		try {
 			FileObject o = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT, "", "META-INF/membrane.cache");
 			BufferedReader r = new BufferedReader(o.openReader(false));
@@ -137,7 +137,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		}
 
 	}
-	
+
 	private void write() {
 		try {
 			FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", "META-INF/membrane.cache");
@@ -161,14 +161,14 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 			throw new RuntimeException(e);
 		}
 	}
-	
+
 	private HashMap<Class<? extends Annotation>, HashSet<Element>> cache;
-	
+
 	private Set<? extends Element> getCachedElementsAnnotatedWith(RoundEnvironment roundEnv, Class<? extends Annotation> annotation) {
 		//FileObject o = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "META-INF", "membrane.cache");
 		if (cache == null)
 			read();
-		
+
 		HashSet<Element> result = cache.get(annotation);
 		if (result == null) {
 			// update cache
@@ -179,12 +179,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				result.add(e);
 			}
 		}
-		
+
 		return result;
 	}
-	
+
 	boolean done;
-	
+
 	@Override
 	public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
 		// An instance is create per compiler call and not kept for the next incremental compilation.
@@ -197,26 +197,26 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 		// * resources (and java files?) may only be filed in one round
 		// * in the last round, "roundEnv.processingOver()" is true
 		try {
-			
-			String status = "process() a=" + annotations.size() + 
-					" r=" + roundEnv.getRootElements().size() + 
+
+			String status = "process() a=" + annotations.size() +
+					" r=" + roundEnv.getRootElements().size() +
 					" h=" + hashCode() +
 					(roundEnv.processingOver() ? " processing-over" : " ");
 			log(status);
-			
+
 			read();
 			if (roundEnv.processingOver())
 				write();
-			
+
 			if (annotations.size() > 0) { // a class with one of our annotation needs to be compiled
-				
+
 				status = "working with " + getCachedElementsAnnotatedWith(roundEnv, MCMain.class).size() + " and " + getCachedElementsAnnotatedWith(roundEnv, MCElement.class).size();
 				log(status);
 
-				
-				
+
+
 				Model m = new Model();
-				
+
 				Set<? extends Element> mcmains = getCachedElementsAnnotatedWith(roundEnv, MCMain.class);
 				if (mcmains.isEmpty()) {
 					processingEnv.getMessager().printMessage(Kind.WARNING, "@MCMain was nowhere found.");
@@ -235,24 +235,24 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 					ii.setAnnotation(e.getAnnotation(MCElement.class));
 					MainInfo main = ii.getMain(m);
 					main.getIis().add(ii);
-					
+
 					main.getElements().put(ii.getElement(), ii);
 					if (main.getGlobals().containsKey(ii.getAnnotation().name()))
 						throw new ProcessingException("Duplicate global @MCElement name.", main.getGlobals().get(ii.getAnnotation().name()).getElement(), ii.getElement());
 					if (main.getIds().containsKey(ii.getId()))
 						throw new ProcessingException("Duplicate element id \"" + ii.getId() + "\". Please assign one using @MCElement(id=\"...\").", e, main.getIds().get(ii.getId()).getElement());
 					main.getIds().put(ii.getId(), ii);
-	
+
 					scan(m, main, ii);
-					
+
 					if (ii.getTci() != null && !ii.getAnnotation().mixed())
 						throw new ProcessingException("@MCTextContent requires @MCElement(..., mixed=true) on the class.", ii.getElement());
 					if (ii.getTci() == null && ii.getAnnotation().mixed())
 						throw new ProcessingException("@MCElement(..., mixed=true) requires @MCTextContent on a property.", ii.getElement());
 				}
-				
+
 				for (MainInfo main : m.getMains()) {
-					
+
 					for (Map.Entry<TypeElement, ChildElementDeclarationInfo> f : main.getChildElementDeclarations().entrySet()) {
 						ChildElementDeclarationInfo cedi = f.getValue();
 						ElementInfo ei = main.getElements().get(f.getKey());
@@ -264,7 +264,7 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 								if (processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()))
 									cedi.getElementInfo().add(e.getValue());
 						}
-						
+
 						for (ElementInfo ei2 : cedi.getElementInfo())
 							ei2.addUsedBy(f.getValue());
 
@@ -295,16 +295,16 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 	}
 
 	private static final String REQUIRED = "org.springframework.beans.factory.annotation.Required";
-	
+
 	private void scan(Model m, MainInfo main, ElementInfo ii) {
 		scan(m, main, ii, ii.getElement());
 	}
-	
+
 	private void scan(Model m, MainInfo main, ElementInfo ii, TypeElement te) {
 		TypeMirror superclass = te.getSuperclass();
 		if (superclass instanceof DeclaredType)
 			scan(m, main, ii, (TypeElement) ((DeclaredType)superclass).asElement());
-		
+
 		for (Element e2 : te.getEnclosedElements()) {
 			MCAttribute a = e2.getAnnotation(MCAttribute.class);
 			if (a != null) {
@@ -334,20 +334,20 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				cei.setPropertyName(AnnotUtils.dejavaify(e2.getSimpleName().toString().substring(3)));
 				cei.setRequired(isRequired(e2));
 				ii.getCeis().add(cei);
-				
+
 				// unwrap "java.util.List<?>" and "java.util.Collection<?>"
 				if (cei.getTypeDeclaration().getQualifiedName().toString().startsWith("java.util.List") ||
 						cei.getTypeDeclaration().getQualifiedName().toString().startsWith("java.util.Collection")) {
 					cei.setTypeDeclaration((TypeElement) ((DeclaredType) ((DeclaredType) setterArgType).getTypeArguments().get(0)).asElement());
 					cei.setList(true);
 				}
-				
+
 				ChildElementDeclarationInfo cedi;
 				if (!main.getChildElementDeclarations().containsKey(cei.getTypeDeclaration())) {
 					cedi = new ChildElementDeclarationInfo();
 					cedi.setTarget(cei.getTypeDeclaration());
 					cedi.setRaiseErrorWhenNoSpecimen(!cei.getAnnotation().allowForeign());
-					
+
 					main.getChildElementDeclarations().put(cei.getTypeDeclaration(), cedi);
 				} else {
 					cedi = main.getChildElementDeclarations().get(cei.getTypeDeclaration());

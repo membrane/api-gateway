@@ -21,7 +21,7 @@ import com.predic8.membrane.core.Router;
 public interface UserDataProvider {
 
 	public void init(Router router);
-	
+
 	/**
 	 * @throws NoSuchElementException
 	 *             to display an error message as a response

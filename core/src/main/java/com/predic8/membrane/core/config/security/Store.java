@@ -33,7 +33,7 @@ public abstract class Store {
 				&& Objects.equal(type, other.type)
 				&& Objects.equal(provider, other.provider);
 	}
-	
+
 	public String getLocation() {
 		return location;
 	}
@@ -51,11 +51,11 @@ public abstract class Store {
 	public void setPassword(String password) {
 		this.password = password;
 	}
-	
+
 	public String getType() {
 		return type;
 	}
-	
+
 	@MCAttribute
 	public void setType(String type) {
 		this.type = type;

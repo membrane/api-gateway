@@ -19,40 +19,41 @@ import org.junit.Test;
 
 import com.predic8.membrane.core.exchange.Exchange;
 public class ThrottleInterceptorTest {
-		
+
 	boolean success;
-	
+
 	@Test
 	public void testProtocolSet() throws Exception {
 		final ThrottleInterceptor i = new ThrottleInterceptor();
 		final Exchange exc = new Exchange(null);
-		
+
 		long t = System.currentTimeMillis();
 		i.handleRequest(exc);
 		assertTrue(System.currentTimeMillis()-t < 2000);
-		
-		t = System.currentTimeMillis();		
+
+		t = System.currentTimeMillis();
 		i.setDelay(3000);
 		i.handleRequest(exc);
 		assertTrue(System.currentTimeMillis()-t > 2000);
-		
+
 		i.setDelay(0);
-		
+
 		i.setMaxThreads(3);
 		assertEquals(Outcome.CONTINUE, i.handleRequest(exc));
-				
+
 		assertEquals(Outcome.ABORT, i.handleRequest(exc));
 		assertEquals(503, exc.getResponse().getStatusCode());
-		
+
 		i.handleResponse(exc);
 		assertEquals(Outcome.CONTINUE, i.handleRequest(exc));
-		
+
 		i.setBusyDelay(3000);
-		t = System.currentTimeMillis();		
+		t = System.currentTimeMillis();
 		assertEquals(Outcome.ABORT, i.handleRequest(exc));
 		assertTrue(System.currentTimeMillis()-t > 2000);
-		
+
 		Thread thread1 = new Thread() {
+			@Override
 			public void run() {
 				try {
 					success = (Outcome.CONTINUE == i.handleRequest(exc));
@@ -61,15 +62,15 @@ public class ThrottleInterceptorTest {
 				}
 			};
 		};
-		
+
 		thread1.start();
-		
+
 		Thread.sleep(1000);
 		i.handleResponse(exc);
-		
-		thread1.join();		
-		
+
+		thread1.join();
+
 		assertTrue(success);
 	}
-	
+
 }

@@ -20,7 +20,7 @@ public class NullRule extends AbstractProxy {
 	public void init() throws Exception {
 		// do nothing
 	}
-	
+
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new NullRule();

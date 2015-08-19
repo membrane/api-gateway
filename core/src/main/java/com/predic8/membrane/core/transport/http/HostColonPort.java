@@ -23,27 +23,27 @@ public class HostColonPort {
 	public final boolean useSSL;
 	public final String host;
 	public final int port;
-	
+
 	public HostColonPort(boolean useSSL, String hostAndPort) {
 		String[] strs = hostAndPort.split(":");
-		
+
 		this.useSSL = useSSL;
 		host = strs[0];
 		port = strs.length > 1 ? Integer.parseInt(strs[1]) : 80;
 	}
-	
+
 	public HostColonPort(boolean useSSL, String host, int port) {
 		this.useSSL = useSSL;
 		this.host = host;
 		this.port = port;
 	}
-	
+
 	public HostColonPort(URL url) throws MalformedURLException {
 		useSSL = url.getProtocol().endsWith("s");
 		host = url.getHost();
 		port = HttpUtil.getPort(url);
 	}
-	
+
 	@Override
 	public String toString() {
 		return host + ":" + port;

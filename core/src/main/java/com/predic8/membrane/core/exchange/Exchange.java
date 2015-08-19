@@ -57,7 +57,7 @@ public class Exchange extends AbstractExchange {
 
 	/**
 	 * For HttpResendRunnable
-	 * 
+	 *
 	 * @param original
 	 */
 	public Exchange(Exchange original, AbstractHttpHandler handler) {
@@ -133,9 +133,9 @@ public class Exchange extends AbstractExchange {
 
 	/**
 	 * Returns the relative original URI.
-	 * 
+	 *
 	 * "original" meaning "as recieved by Membrane's transport".
-	 * 
+	 *
 	 * To be used, for example, when generating self-referring web pages.
 	 */
 	public String getRequestURI() {
@@ -174,13 +174,13 @@ public class Exchange extends AbstractExchange {
 		}
 		return map;
 	}
-	
+
 	@Override
 	public void detach() {
 		super.detach();
 		handler = null;
 	}
-	
+
 	public boolean canKeepConnectionAlive() {
 		return getRequest().isKeepAlive() && getResponse().isKeepAlive();
 	}

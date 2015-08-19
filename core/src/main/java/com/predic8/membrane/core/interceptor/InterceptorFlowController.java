@@ -25,40 +25,40 @@ import com.predic8.membrane.core.transport.http.AbortException;
 
 /**
  * Controls the flow of an exchange through a chain of interceptors.
- * 
+ *
  * In the trivial setup, an exchange passes through two chains until it hits
  * Outcome.RETURN: The main chain owned by the Transport (containing the
  * RuleMatching, Dispatching, UserFeature and HttpClient-Interceptors) and the
  * inner chain owned by the UserFeatureInterceptor (containing any interceptor
  * configured in proxies.xml).
- * 
+ *
  * The {@link HTTPClientInterceptor}, the last interceptor in the main chain,
  * always returns {@link Outcome#RETURN} or {@link Outcome#ABORT}, never
  * {@link Outcome#CONTINUE}.
- * 
+ *
  * Any chain is followed using {@link Interceptor#handleRequest(Exchange)} until
  * it hits {@link Outcome#RETURN} or {@link Outcome#ABORT}. As the chain is
  * followed, every interceptor (except those with {@link Flow#REQUEST}) are
  * added to the exchange's stack.
- * 
+ *
  * When {@link Outcome#RETURN} is hit, the exchange's interceptor stack is
  * unwound and {@link Interceptor#handleResponse(Exchange)} is called for every
  * interceptor on it.
- * 
+ *
  * When {@link Outcome#ABORT} is hit, handling is aborted: An
  * {@link AbortException} is thrown. The stack is unwound calling
  * {@link Interceptor#handleAbort(Exchange)} on each interceptor on it.
  */
 public class InterceptorFlowController {
-	
+
 	private static final Log log = LogFactory.getLog(InterceptorFlowController.class);
-	
+
 	/**
 	 * Key into {@link Exchange#getProperty(String)} to find out the reason why some
 	 * interceptor returned ABORT.
-	 * 
+	 *
 	 * This refers to the last interceptor that returned ABORT.
-	 * 
+	 *
 	 * Note that this does not have to be set if ABORT was returned by the interceptor.
 	 */
 	public static final String ABORTION_REASON = "abortionReason";
@@ -83,7 +83,7 @@ public class InterceptorFlowController {
 			throw e;
 		}
 	}
-	
+
 	/**
 	 * Runs the request handlers of the given chain. Response handlers are collected as
 	 * the request handlers are executed and appended to the exchange's interceptor stack
@@ -106,31 +106,31 @@ public class InterceptorFlowController {
 			Outcome o = i.handleRequest(exchange);
 			if (o != Outcome.CONTINUE)
 				return o;
-				
+
 			if (f.contains(Flow.RESPONSE))
 				exchange.pushInterceptorToStack(i);
 		}
 		return Outcome.CONTINUE;
 	}
-	
+
 	/**
 	 * Runs all response handlers for interceptors that have been collected on
 	 * the exchange's stack so far.
 	 */
 	private void invokeResponseHandlers(Exchange exchange) throws Exception {
 		boolean logDebug = log.isDebugEnabled();
-		
+
 		Interceptor i;
 		while ((i = exchange.popInterceptorFromStack()) != null) {
 			if (logDebug)
 				log.debug("Invoking response handler: " + i.getDisplayName() + " on exchange: " + exchange);
-			
+
 			if (i.handleResponse(exchange) == Outcome.ABORT) {
 				throw new AbortException();
 			}
 		}
 	}
-	
+
 	/**
 	 * Runs all abortion handlers for interceptors that have been collected on
 	 * the exchange's stack so far.

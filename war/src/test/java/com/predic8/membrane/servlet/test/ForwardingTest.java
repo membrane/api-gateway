@@ -37,21 +37,21 @@ import com.predic8.membrane.test.AssertUtils;
 
 @RunWith(Parameterized.class)
 public class ForwardingTest {
-	
+
 	@Parameters
 	public static List<Object[]> getPorts() {
-		return Arrays.asList(new Object[][] { 
+		return Arrays.asList(new Object[][] {
 				{ 3021 }, // jetty port embedding membrane
 				{ 3026 }, // membrane port
-				});
+		});
 	}
 
 	private final int port;
-	
+
 	public ForwardingTest(int port) {
 		this.port = port;
 	}
-	
+
 	@Test
 	public void testReachable() throws ClientProtocolException, IOException {
 		String secret = "secret452363763";
@@ -63,7 +63,7 @@ public class ForwardingTest {
 
 		AssertUtils.assertContains(secret, EntityUtils.toString(res.getEntity()));
 	}
-	
+
 	private void testQueryParam(String param) throws ClientProtocolException, IOException {
 		HttpClient hc = new DefaultHttpClient();
 		HttpGet get = new HttpGet(getBaseURL() + "?" + param);
@@ -72,12 +72,12 @@ public class ForwardingTest {
 
 		AssertUtils.assertContains("?" + param, EntityUtils.toString(res.getEntity()));
 	}
-	
+
 	@Test
 	public void testParam1() throws ClientProtocolException, IOException {
 		testQueryParam("a");
 	}
-	
+
 	@Test
 	public void testParam2() throws ClientProtocolException, IOException {
 		testQueryParam("a=1");
@@ -91,5 +91,5 @@ public class ForwardingTest {
 	private String getBaseURL() {
 		return "http://localhost:" + port + "/";
 	}
-	
+
 }

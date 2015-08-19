@@ -33,14 +33,14 @@ public class RESTBLZServiceIntegrationTest {
 
 	private static HttpRouter router;
 
-	
+
 	@Before
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3005), "thomas-bayer.com", 80);
 		router = new HttpRouter();
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
-		
-		
+
+
 		HTTP2XMLInterceptor http2xml = new HTTP2XMLInterceptor();
 		router.getTransport().getInterceptors().add(http2xml);
 
@@ -49,14 +49,14 @@ public class RESTBLZServiceIntegrationTest {
 		mappings.add( new Mapping("/bank/.*", "/axis2/services/BLZService", null));
 		urlRewriter.setMappings(mappings);
 		router.getTransport().getInterceptors().add(urlRewriter);
-		
+
 		XSLTInterceptor xslt = new XSLTInterceptor();
 		xslt.setXslt("classpath:/blz-httpget2soap-request.xsl");
 		xslt.setFlow(Flow.Set.REQUEST);
 		xslt.setXslt("classpath:/strip-soap-envelope.xsl");
 		xslt.setFlow(Flow.Set.RESPONSE);
 		router.getTransport().getInterceptors().add(xslt);
-		
+
 	}
 
 	@After
@@ -69,10 +69,10 @@ public class RESTBLZServiceIntegrationTest {
 		HttpClient client = new HttpClient();
 		client.getParams().setParameter(HttpProtocolParams.PROTOCOL_VERSION, HttpVersion.HTTP_1_1);
 		GetMethod get = new GetMethod("http://localhost:3005/bank/37050198");
-		
+
 		int status = client.executeMethod(get);
 		System.out.println(get.getResponseBodyAsString());
-		
-		assertEquals(200, status);			    
-	}	
+
+		assertEquals(200, status);
+	}
 }

@@ -37,16 +37,16 @@ import com.predic8.membrane.examples.Process2;
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(Calendar.class)
 public class FileExchangeStoreTest extends DistributionExtractingTestcase {
-	
+
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("file-exchangestore");
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			getAndAssert200("http://localhost:2000/");
-			
+
 			Thread.sleep(1000);
-			
+
 			File exchangesDir = new File(baseDir, "exchanges");
 			if (!containsRecursively(exchangesDir, new FilenameFilter() {
 				@Override
@@ -59,7 +59,7 @@ public class FileExchangeStoreTest extends DistributionExtractingTestcase {
 			sl.killScript();
 		}
 	}
-	
+
 	@Test
 	public void testDeleteOldFolders() throws Exception {
 

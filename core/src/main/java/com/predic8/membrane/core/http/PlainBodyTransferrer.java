@@ -18,19 +18,22 @@ import java.io.OutputStream;
 
 public class PlainBodyTransferrer extends AbstractBodyTransferrer {
 	OutputStream out;
-	
+
 	public PlainBodyTransferrer(OutputStream out) {
 		this.out = out;
 	}
-	
+
+	@Override
 	public void write(byte[] content, int i, int length) throws IOException {
 		out.write(content, i, length);
 	}
 
+	@Override
 	public void write(Chunk chunk) throws IOException {
 		out.write(chunk.getContent());
 	}
 
+	@Override
 	public void finish() throws IOException {
 	}
 }

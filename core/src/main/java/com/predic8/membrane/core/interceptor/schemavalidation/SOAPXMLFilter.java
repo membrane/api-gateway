@@ -20,9 +20,9 @@ import org.xml.sax.helpers.XMLFilterImpl;
 
 public class SOAPXMLFilter extends XMLFilterImpl {
 
-	
+
 	private boolean body;
-	
+
 	public SOAPXMLFilter(XMLReader reader) {
 		super(reader);
 	}
@@ -30,41 +30,41 @@ public class SOAPXMLFilter extends XMLFilterImpl {
 	@Override
 	public void startElement(String uri, String localName, String qName,
 			Attributes atts) throws SAXException {
-		
+
 		if (localName.equals("Body")) {
 			body = true;
 			return;
 		}
-		
+
 		if (!body)
 			return;
-		
+
 		super.startElement(uri, localName, qName, atts);
-		
+
 	}
-	
+
 	@Override
 	public void endElement(String uri, String localName, String qName)
 			throws SAXException {
-		
+
 		if (localName.equals("Body")) {
 			body = false;
 			return;
 		}
-		
+
 		if (!body)
 			return;
-		
+
 		super.endElement(uri, localName, qName);
 	}
-	
-//	@Override
-//	public void startPrefixMapping(String prefix, String uri) throws SAXException {
-////		System.err.println("prefix: " + prefix);
-////		System.err.println("uri: " + uri);
-//		if (!"soapenv".equals(prefix)) {
-//			
-//		}
-//		super.startPrefixMapping(prefix, uri);
-//	}
+
+	//	@Override
+	//	public void startPrefixMapping(String prefix, String uri) throws SAXException {
+	////		System.err.println("prefix: " + prefix);
+	////		System.err.println("uri: " + uri);
+	//		if (!"soapenv".equals(prefix)) {
+	//
+	//		}
+	//		super.startPrefixMapping(prefix, uri);
+	//	}
 }

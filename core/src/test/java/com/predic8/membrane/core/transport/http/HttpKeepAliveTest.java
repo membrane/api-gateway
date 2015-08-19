@@ -43,11 +43,11 @@ public class HttpKeepAliveTest {
 	private HashSet<Integer> set; // tracks the hashcodes of all connections used
 	private HttpRouter service1;
 	private ServiceProxy sp1;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		set = new HashSet<Integer>();
-		
+
 		service1 = new HttpRouter();
 		sp1 = new ServiceProxy(new ServiceProxyKey("localhost",
 				"POST", ".*", 2003), "thomas-bayer.com", 80);
@@ -80,13 +80,13 @@ public class HttpKeepAliveTest {
 
 	private Exchange createExchange() throws IOException, URISyntaxException {
 		return new Request.Builder().
-			post("http://localhost:2003/axis2/services/BLZService").
-			header(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8).
-			header(Header.SOAP_ACTION, "").
-			body(IOUtils.toByteArray(this.getClass().getResourceAsStream("/getBank.xml"))).
-			buildExchange();
+				post("http://localhost:2003/axis2/services/BLZService").
+				header(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8).
+				header(Header.SOAP_ACTION, "").
+				body(IOUtils.toByteArray(this.getClass().getResourceAsStream("/getBank.xml"))).
+				buildExchange();
 	}
-	
+
 	private int issueRequest(HttpClient client) throws IOException, Exception {
 		Exchange exchange = createExchange();
 		Response response = client.call(exchange).getResponse();
@@ -107,7 +107,7 @@ public class HttpKeepAliveTest {
 	@Test
 	public void testTimeoutDefault() throws Exception {
 		HttpClient client = createHttpClient(1000);
-		
+
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
 			@Override
 			public Outcome handleResponse(Exchange exc) throws Exception {
@@ -118,7 +118,7 @@ public class HttpKeepAliveTest {
 
 		assertEquals(200, issueRequest(client));
 		assertEquals(1, set.size());
-		
+
 		Thread.sleep(1500);
 
 		assertEquals(200, issueRequest(client));
@@ -128,7 +128,7 @@ public class HttpKeepAliveTest {
 	@Test
 	public void testConnectionClose() throws Exception {
 		HttpClient client = createHttpClient(500);
-		
+
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
 			@Override
 			public Outcome handleResponse(Exchange exc) throws Exception {
@@ -143,11 +143,11 @@ public class HttpKeepAliveTest {
 		assertEquals(1, client.getConnectionManager().getNumberInPool());
 		Thread.sleep(600); // connection closer did not yet run
 		// connection 1 is now dead, but still in pool
-		assertEquals(1, client.getConnectionManager().getNumberInPool()); 
+		assertEquals(1, client.getConnectionManager().getNumberInPool());
 
 		assertEquals(200, issueRequest(client)); // opens connection 2
 		assertEquals(2, set.size());
-		
+
 		Thread.sleep(600); // connection closer runs and closes both
 		assertEquals(0, client.getConnectionManager().getNumberInPool());
 	}
@@ -155,7 +155,7 @@ public class HttpKeepAliveTest {
 	@Test
 	public void testTimeoutCustom() throws Exception {
 		HttpClient client = createHttpClient(1000);
-		
+
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
 			@Override
 			public Outcome handleResponse(Exchange exc) throws Exception {
@@ -166,7 +166,7 @@ public class HttpKeepAliveTest {
 
 		assertEquals(200, issueRequest(client));
 		assertEquals(1, set.size());
-		
+
 		Thread.sleep(1500);
 
 		assertEquals(200, issueRequest(client));
@@ -174,7 +174,7 @@ public class HttpKeepAliveTest {
 
 		assertEquals(200, issueRequest(client));
 		assertEquals(2, set.size());
-		
+
 		assertEquals(200, issueRequest(client));
 		assertEquals(3, set.size());
 	}
@@ -182,7 +182,7 @@ public class HttpKeepAliveTest {
 	@Test
 	public void testMaxParameter() throws Exception {
 		HttpClient client = new HttpClient();
-		
+
 		sp1.getInterceptors().add(0, new AbstractInterceptor() {
 			@Override
 			public Outcome handleResponse(Exchange exc) throws Exception {
@@ -197,7 +197,7 @@ public class HttpKeepAliveTest {
 
 		assertEquals(200, issueRequest(client));
 		assertEquals(2, set.size());
-		
+
 		assertEquals(200, issueRequest(client));
 		assertEquals(2, set.size());
 

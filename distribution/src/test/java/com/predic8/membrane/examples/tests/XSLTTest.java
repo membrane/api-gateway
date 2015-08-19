@@ -26,7 +26,7 @@ import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 
 public class XSLTTest extends DistributionExtractingTestcase {
-	
+
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("xslt");
@@ -34,7 +34,7 @@ public class XSLTTest extends DistributionExtractingTestcase {
 		try {
 			String result = getAndAssert200(BasicAuthTest.CUSTOMER_HOST_REMOTE + BasicAuthTest.CUSTOMER_PATH);
 			AssertUtils.assertContains("FIRSTNAME", result);
-			
+
 			result = getAndAssert200(BasicAuthTest.CUSTOMER_HOST_LOCAL + BasicAuthTest.CUSTOMER_PATH);
 			AssertUtils.assertContains("first", result);
 		} finally {

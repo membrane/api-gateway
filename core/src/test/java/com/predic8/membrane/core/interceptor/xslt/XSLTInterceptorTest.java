@@ -55,9 +55,9 @@ public class XSLTInterceptorTest extends TestCase {
 	public void testXSLTParameter() throws Exception {
 		exc = new Exchange(null);
 		exc.setResponse(Response.ok().body(getClass().getResourceAsStream("/customer.xml"), true).build());
-		
+
 		exc.setProperty("XSLT_COMPANY", "predic8");
-		
+
 		XSLTInterceptor i = new XSLTInterceptor();
 		i.setXslt("classpath:/customer2personAddCompany.xsl");
 		i.init(new HttpRouter());

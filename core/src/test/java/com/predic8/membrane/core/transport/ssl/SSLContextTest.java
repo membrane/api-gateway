@@ -35,21 +35,21 @@ import com.predic8.membrane.core.config.security.TrustStore;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 
 public class SSLContextTest {
-	
+
 	private Router router;
-	
+
 	@Before
 	public void before() {
 		router = new HttpRouter();
 	}
-	
+
 	private class SSLContextBuilder {
 		private SSLParser sslParser = new SSLParser();
-		
+
 		public SSLContext build() {
 			return new SSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
 		}
-		
+
 		private SSLContextBuilder withCiphers(String ciphers) {
 			sslParser.setCiphers(ciphers);
 			return this;
@@ -74,11 +74,11 @@ public class SSLContextTest {
 			return this;
 		}
 	}
-	
+
 	private SSLContextBuilder cb() {
 		return new SSLContextBuilder();
 	}
-	
+
 	@Test(expected=Exception.class)
 	public void simpleConfig() throws Exception {
 		SSLContext server = cb().build();
@@ -101,7 +101,7 @@ public class SSLContextTest {
 		SSLContext client = cb().build();
 		testCombination(server, client);
 	}
-	
+
 	@Test
 	public void serverKeyOnlyWithClientTrust() throws Exception {
 		SSLContext server = cb().withKeyStore("classpath:/ssl-rsa.keystore").build();
@@ -134,9 +134,9 @@ public class SSLContextTest {
 	private void testCombination(SSLContext server, final SSLContext client)
 			throws IOException, InterruptedException, Exception {
 		ServerSocket ss = server.createServerSocket(3020, 50, null);
-		
+
 		final Exception ex[] = new Exception[1];
-		
+
 		Thread t = new Thread(new Runnable(){
 			@Override
 			public void run() {
@@ -153,7 +153,7 @@ public class SSLContextTest {
 				}
 			}});
 		t.start();
-		
+
 		try {
 			Socket s = ss.accept();
 			s.getOutputStream().write("Hi\n".getBytes());
@@ -161,9 +161,9 @@ public class SSLContextTest {
 		} finally {
 			ss.close();
 		}
-		
+
 		t.join();
-		
+
 		if (ex[0] != null)
 			throw ex[0];
 	}

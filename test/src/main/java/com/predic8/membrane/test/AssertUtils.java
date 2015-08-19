@@ -60,7 +60,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
 public class AssertUtils {
-	
+
 	public static void assertContains(String needle, String haystack) {
 		if (haystack.contains(needle))
 			return;
@@ -72,21 +72,21 @@ public class AssertUtils {
 			return;
 		throw new AssertionError("The string '" + haystack + "' does contain '" + needle + "'.");
 	}
-	
+
 	private static HttpClient hc;
-	
+
 	public static String getAndAssert200(String url) throws ParseException, IOException {
 		return getAndAssert(200, url);
 	}
-	
+
 	public static String getAndAssert200(String url, String[] header) throws ParseException, IOException {
 		return getAndAssert(200, url, header);
 	}
-	
+
 	public static String getAndAssert(int expectedHttpStatusCode, String url) throws ParseException, IOException {
 		return getAndAssert(expectedHttpStatusCode, url, null);
 	}
-	
+
 	public static String getAndAssert(int expectedHttpStatusCode, String url, String[] header) throws ParseException, IOException {
 		if (hc == null)
 			hc = new DefaultHttpClient();
@@ -123,7 +123,7 @@ public class AssertUtils {
 	public static String postAndAssert(int expectedHttpStatusCode, String url, String body) throws ClientProtocolException, IOException {
 		return postAndAssert(expectedHttpStatusCode, url, new String[0], body);
 	}
-	
+
 	public static String postAndAssert(int expectedHttpStatusCode, String url, String[] headers, String body) throws ClientProtocolException, IOException {
 		if (hc == null)
 			hc = new DefaultHttpClient();
@@ -139,17 +139,17 @@ public class AssertUtils {
 			post.releaseConnection();
 		}
 	}
-	
+
 	public static void disableHTTPAuthentication() {
 		hc = new DefaultHttpClient();
 	}
-	
+
 	public static void setupHTTPAuthentication(String host, int port, String user, String pass) {
 		if (hc != null)
 			closeConnections();
 		hc = getAuthenticatingHttpClient(host, port, user, pass);
 	}
-	
+
 	private static DefaultHttpClient getAuthenticatingHttpClient(String host, int port, String user, String pass) {
 		DefaultHttpClient hc = new DefaultHttpClient();
 		HttpRequestInterceptor preemptiveAuth = new HttpRequestInterceptor() {
@@ -164,7 +164,7 @@ public class AssertUtils {
 						authState.update(new BasicScheme(), creds);
 					}
 				}
-			}    
+			}
 		};
 		hc.addRequestInterceptor(preemptiveAuth, 0);
 		Credentials defaultcreds = new UsernamePasswordCredentials(user, pass);
@@ -174,7 +174,7 @@ public class AssertUtils {
 		hc.setCookieStore(new BasicCookieStore());
 		return hc;
 	}
-	
+
 	public static void trustAnyHTTPSServer(int port) throws NoSuchAlgorithmException, KeyManagementException {
 		SSLContext context = SSLContext.getInstance("SSL");
 		context.init(null, new TrustManager[] { new X509TrustManager() {
@@ -203,9 +203,9 @@ public class AssertUtils {
 
 	public static void replaceInFile(File file, String from, String to_) throws IOException {
 		FileUtils.writeStringToFile(file, FileUtils.readFileToString(file).replace(from, to_));
-		
+
 	}
-	
+
 	public static void closeConnections() {
 		if (hc != null)
 			hc.getConnectionManager().closeIdleConnections(0, TimeUnit.SECONDS);

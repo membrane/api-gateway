@@ -31,13 +31,13 @@ public class UserFeatureTest {
 
 	private Router router;
 
-	List<String> labels, inverseLabels; 
+	List<String> labels, inverseLabels;
 
 	@Before
 	public void setUp() throws Exception {
 		router = Router.init("classpath:/userFeature/proxies.xml");
 		MockInterceptor.clear();
-		
+
 		labels = new ArrayList<String>(Arrays.asList(new String[] { "Mock1", "Mock3", "Mock4", "Mock7" }));
 		inverseLabels = new ArrayList<String>(Arrays.asList(new String[] { "Mock7", "Mock6", "Mock5", "Mock4", "Mock2", "Mock1" }));
 	}
@@ -52,8 +52,8 @@ public class UserFeatureTest {
 		httpClient.executeMethod(new GetMethod("http://localhost:3030/" + s + "/"));
 		httpClient.getHttpConnectionManager().closeIdleConnections(0);
 	}
-	
-	
+
+
 	@Test
 	public void testInvocation() throws Exception {
 		callService("ok");
@@ -69,7 +69,7 @@ public class UserFeatureTest {
 	@Test
 	public void testFailInRequest() throws Exception {
 		labels.add("Mock8");
-		
+
 		callService("failinrequest");
 		MockInterceptor.assertContent(labels, new ArrayList<String>(), inverseLabels);
 	}
@@ -81,12 +81,12 @@ public class UserFeatureTest {
 		callService("failinresponse");
 		MockInterceptor.assertContent(labels, Arrays.asList("Mock9"), inverseLabels);
 	}
-	
+
 	@Test
 	public void testFailInAbort() throws Exception {
 		labels.add("Mock10");
 		inverseLabels.add(0, "Mock10");
-		
+
 		callService("failinabort");
 		MockInterceptor.assertContent(labels, new ArrayList<String>(), inverseLabels);
 	}

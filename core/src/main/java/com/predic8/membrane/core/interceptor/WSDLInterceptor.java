@@ -63,7 +63,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		name = "WSDL Rewriting Interceptor";
 		setFlow(Flow.Set.RESPONSE);
 	}
-	
+
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
@@ -175,45 +175,45 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	public String getShortDescription() {
 		return "Rewrites SOAP endpoint addresses and XML Schema locations in WSDL and XSD documents.";
 	}
-	
+
 	@Override
 	public String getLongDescription() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(getShortDescription());
 		sb.append("<br/>");
 		sb.append("The protocol, host and port of the incoming request will be used for the substitution");
-		
+
 		if (protocol != null || port != null || host != null) {
 			sb.append(" except the following fixed values:");
 			StringWriter sw = new StringWriter();
 			new Html(sw){{
 				table();
-					thead();
-						tr();
-							th().text("Part").end();
-							th().text("Value").end();
-						end();
+				thead();
+				tr();
+				th().text("Part").end();
+				th().text("Value").end();
+				end();
+				end();
+				tbody();
+				if (protocol != null) {
+					tr();
+					td().text("Protocol").end();
+					td().text(protocol).end();
 					end();
-					tbody();
-					if (protocol != null) {
-						tr();
-							td().text("Protocol").end();
-							td().text(protocol).end();
-						end();
-					}
-					if (host != null) {
-						tr();
-							td().text("Host").end();
-							td().text(host).end();
-						end();
-					}
-					if (port != null) {
-						tr();
-							td().text("Port").end();
-							td().text(port).end();
-						end();
-					}
+				}
+				if (host != null) {
+					tr();
+					td().text("Host").end();
+					td().text(host).end();
 					end();
+				}
+				if (port != null) {
+					tr();
+					td().text("Port").end();
+					td().text(port).end();
+					end();
+				}
+				end();
 				end();
 			}};
 			sb.append(sw.toString());
@@ -222,7 +222,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		}
 		return sb.toString();
 	}
-	
+
 	public void setRewriteEndpoint(boolean rewriteEndpoint) {
 		this.rewriteEndpoint = rewriteEndpoint;
 	}
@@ -237,7 +237,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	public void setProtocol(String protocol) {
 		super.setProtocol(protocol);
 	}
-	
+
 	/**
 	 * @description The host the endpoint should be changed to.
 	 * @default Don't change the endpoint's host.
@@ -248,7 +248,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 	public void setHost(String host) {
 		super.setHost(host);
 	}
-	
+
 	/**
 	 * @description The port the endpoint should be changed to.
 	 * @default Don't change the endpoint's port.

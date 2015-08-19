@@ -28,13 +28,13 @@ import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
 
 public class SSLClient extends DistributionExtractingTestcase {
-	
+
 	@Test
 	public void test() throws IOException, InterruptedException, NoSuchAlgorithmException, KeyManagementException {
 		File baseDir = getExampleDir("ssl-client");
-		
+
 		AssertUtils.replaceInFile(new File(baseDir, "proxies.xml"), "8080", "3023");
-		
+
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			AssertUtils.assertContains("<title>Google", getAndAssert200("http://localhost:3023/"));

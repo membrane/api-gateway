@@ -11,6 +11,6 @@ abstract class Node implements Serializable {
 	public boolean canSatisfy(Request request) {
 		return true; // TODO
 	}
-	
+
 	public abstract Response toResponse(Request request);
 }

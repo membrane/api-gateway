@@ -22,7 +22,7 @@ public class IpPort {
 		this.ip = ip;
 		this.port = port;
 	}
-	
+
 	@Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof IpPort))
@@ -34,12 +34,12 @@ public class IpPort {
 			return other.ip == null;
 		return ip.equals(other.ip);
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return 5 * port + (ip != null ? 3 * ip.hashCode() : 0);
 	}
-	
+
 	@Override
 	public String toString() {
 		return "port=" + port + " ip=" + ip;

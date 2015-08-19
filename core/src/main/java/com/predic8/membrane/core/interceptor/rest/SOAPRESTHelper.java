@@ -31,12 +31,12 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 
 abstract class SOAPRESTHelper extends AbstractInterceptor {
-	
+
 	private static Log log = LogFactory.getLog(REST2SOAPInterceptor.class.getName());
-	
-	private final ConcurrentHashMap<String, XSLTTransformer> xsltTransformers = 
+
+	private final ConcurrentHashMap<String, XSLTTransformer> xsltTransformers =
 			new ConcurrentHashMap<String, XSLTTransformer>();
-	
+
 	protected XSLTTransformer getTransformer(String ss) throws Exception {
 		String key = ss == null ? "null" : ss;
 		XSLTTransformer t = xsltTransformers.get(key);

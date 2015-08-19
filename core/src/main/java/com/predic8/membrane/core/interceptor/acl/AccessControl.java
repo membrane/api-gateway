@@ -24,44 +24,44 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 public class AccessControl extends AbstractXmlElement {
 
 	public static final String ELEMENT_NAME = "accessControl";
-		
+
 	private Router router;
 	private List<Resource> resources = new ArrayList<Resource>();
-	
+
 	public AccessControl(Router router) {
 		this.router = router;
 	}
-	
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Resource.ELEMENT_NAME.equals(child)) {
 			resources.add((Resource) (new Resource(router)).parse(token));
-		} 
+		}
 	}
 
 	public List<Resource> getResources() {
 		return resources;
 	}
-	
+
 	public Resource getResourceFor(String uri) throws Exception {
 		if (uri == null)
 			throw new IllegalArgumentException("Resource URI can not be null.");
-		
+
 		for (Resource res : resources) {
 			if (res.matches(uri))
 				return res;
 		}
 		throw new IllegalArgumentException("Resource not found for given path");
 	}
-	
+
 	public void init(Router router) {
 		for (Resource resource : resources)
 			resource.init(router);
 	}
-	
+
 }

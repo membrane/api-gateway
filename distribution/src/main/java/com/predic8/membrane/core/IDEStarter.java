@@ -17,7 +17,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 public class IDEStarter {
 	public static void main(String[] args) {
-        // TODO for testing purposes - do not commit
+		// TODO for testing purposes - do not commit
 		PropertyConfigurator.configure("conf/log4j.properties");
 		RouterCLI.main(args);
 	}

@@ -47,9 +47,9 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 	public static class Field extends AbstractXmlElement {
 		public String name;
 		public String regex;
-		
+
 		private Pattern pattern;
-		
+
 		public boolean matchesSubstring(String input) {
 			return pattern.matcher(input).matches();
 		}
@@ -99,7 +99,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 			pattern = Pattern.compile(regex);
 		}
 
-		
+
 	}
 
 	private static Log log = LogFactory.getLog(FormValidationInterceptor.class
@@ -114,13 +114,13 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-	
+
 		logMappings();
-		
+
 		Map<String, String> propMap = URLParamUtil.getParams(router.getUriFactory(), exc);
 		for (Field f : fields) {
 			if ( !propMap.containsKey(f.name) ) continue;
-			
+
 			if ( !f.matchesSubstring(propMap.get(f.name)) ) {
 				setErrorResponse(exc, propMap, f);
 				return Outcome.ABORT;
@@ -139,8 +139,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 			log.debug("[regex:"+m.regex+"],[name:"+m.name+"]");
 		}
 	}
-	
-	
+
+
 	public List<Field> getFields() {
 		return fields;
 	}

@@ -49,13 +49,13 @@ public class Request extends Message {
 	public static final String METHOD_TRACE = "TRACE";
 	public static final String METHOD_CONNECT = "CONNECT";
 	public static final String METHOD_OPTIONS = "OPTIONS";
-	
+
 	private static final HashSet<String> methodsWithoutBody = Sets.newHashSet("GET", "HEAD", "CONNECT");
 	private static final HashSet<String> methodsWithOptionalBody = Sets.newHashSet(
 			"DELETE",
 			/* some WebDAV methods, see http://www.ietf.org/rfc/rfc2518.txt */
 			"PROPFIND",
-			"MKCOL", 
+			"MKCOL",
 			"COPY",
 			"MOVE",
 			"LOCK",
@@ -65,6 +65,7 @@ public class Request extends Message {
 	String method;
 	String uri;
 
+	@Override
 	public void parseStartLine(InputStream in) throws IOException, EndOfStreamException {
 		try {
 			String firstLine = HttpUtil.readLine(in);
@@ -107,16 +108,16 @@ public class Request extends Message {
 	public void setUri(String uri) {
 		this.uri = uri;
 	}
-	
+
 	public void create(String method, String uri, String protocol, Header header, InputStream in) throws IOException {
 		this.method = method;
 		this.uri = uri;
 		if (!protocol.startsWith("HTTP/"))
 			throw new RuntimeException("Unknown protocol '" + protocol + "'");
 		this.version = protocol.substring(5);
-		
+
 		this.header = header;
-		
+
 		createBody(in);
 	}
 
@@ -133,6 +134,7 @@ public class Request extends Message {
 		return buf.toString();
 	}
 
+	@Override
 	protected void createBody(InputStream in) throws IOException {
 		LOG.debug("createBody");
 
@@ -194,7 +196,7 @@ public class Request extends Message {
 
 	/**
 	 * NTLM and SPNEGO authentication schemes authorize HTTP connections, not single requests.
-	 * 
+	 *
 	 * We therefore have to "bind" the targetConnection to the incoming connection to ensure
 	 * the same targetConnection is used again for further requests.
 	 */
@@ -202,15 +204,15 @@ public class Request extends Message {
 		String auth = header.getFirstValue(Header.AUTHORIZATION);
 		return auth != null && (auth.startsWith("NTLM") || auth.startsWith("Negotiate"));
 	}
-	
+
 	@Override
 	public int estimateHeapSize() {
-		return super.estimateHeapSize() + 
+		return super.estimateHeapSize() +
 				12 +
 				(method != null ? 2*method.length() : 0) +
 				(uri != null ? 2*uri.length() : 0);
 	}
-	
+
 	public final void writeSTOMP(OutputStream out) throws IOException {
 		out.write("CONNECT".getBytes(Constants.UTF_8));
 		out.write(10);
@@ -219,43 +221,43 @@ public class Request extends Message {
 		out.write(10);
 	}
 
-	
+
 	public static class Builder {
 		private Request req;
 		private String fullURL;
-		
+
 		public Builder() {
 			req = new Request();
 			req.setVersion("1.1");
 		}
-		
+
 		public Request build() {
 			return req;
 		}
-		
+
 		public Exchange buildExchange() {
-		    Exchange exc = new Exchange(null);
+			Exchange exc = new Exchange(null);
 			exc.setRequest(build());
-		    exc.getDestinations().add(fullURL);
-		    return exc;
+			exc.getDestinations().add(fullURL);
+			return exc;
 		}
-		
+
 		public Builder method(String method) {
 			req.setMethod(method);
 			return this;
 		}
-		
+
 		public Builder url(URIFactory uriFactory, String url) throws URISyntaxException {
 			fullURL = url;
 			req.setUri(URLUtil.getPathQuery(uriFactory, url));
 			return this;
 		}
-		
+
 		public Builder header(String headerName, String headerValue) {
 			req.getHeader().add(headerName, headerValue);
 			return this;
 		}
-		
+
 		public Builder header(Header headers) {
 			req.setHeader(headers);
 			return this;
@@ -278,7 +280,7 @@ public class Request extends Message {
 		public Builder post(String url) throws URISyntaxException {
 			return post(new URIFactory(), url);
 		}
-		
+
 		public Builder get(URIFactory uriFactory, String url) throws URISyntaxException {
 			return method(Request.METHOD_GET).url(uriFactory, url);
 		}
@@ -290,5 +292,5 @@ public class Request extends Message {
 			return get(new URIFactory(), url);
 		}
 	}
-	
+
 }

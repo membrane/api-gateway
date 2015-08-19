@@ -30,13 +30,13 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 public class RuleManagerTest {
 
 	RuleManager manager;
-	
+
 	Rule proxy3013;
-	
+
 	Rule forwardBlz;
-	
+
 	Rule forwardBlzPOST;
-	
+
 	@Before
 	public void setUp() throws Exception{
 		manager = new RuleManager();
@@ -44,51 +44,51 @@ public class RuleManagerTest {
 		manager.setRouter(router);
 		proxy3013 = new ProxyRule(new ProxyRuleKey(3013));
 		manager.addProxyAndOpenPortIfNew(proxy3013);
-		
+
 		forwardBlz = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3014), "thomas-bayer.com", 80);
 		forwardBlz.init(router);
-		
+
 		forwardBlzPOST = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3015), "thomas-bayer.com", 80);
 		forwardBlzPOST.init(router);
-		
+
 		manager.addProxyAndOpenPortIfNew(forwardBlz);
 		manager.addProxyAndOpenPortIfNew(forwardBlzPOST);
 	}
-	
+
 	@Test
 	public void testGetRules() throws Exception {
 		assertFalse(manager.getRules().isEmpty());
 		assertEquals(3, manager.getRules().size());
 	}
-	
+
 	@Test
 	public void testExists() throws Exception {
 		assertTrue(manager.exists(proxy3013.getKey()));
 	}
-	
+
 	@Test
 	public void testGetMatchingRuleForwardBlz() throws Exception {
 		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, null));
 	}
-	
+
 	@Test
 	public void testGetMatchingRuleForwardBlzPOST() throws Exception {
 		assertEquals(forwardBlz, manager.getMatchingRule("localhost", "POST", "/axis2/services/blzservice", "1.1", 3014, null));
 	}
-	
+
 	@Test
 	public void testRemoveRule() throws Exception {
 		manager.removeRule(proxy3013);
 		assertEquals(2, manager.getRules().size());
 		assertFalse(manager.getRules().contains(proxy3013));
 	}
-	
+
 	@Test
 	public void testRemoveAllRules() throws Exception {
 		manager.removeAllRules();
 		assertTrue(manager.getRules().isEmpty());
 	}
-	
+
 	@Test
 	public void testIsAnyRuleWithPort() throws Exception {
 		assertFalse(manager.isAnyRuleWithPort(1234));
@@ -96,17 +96,17 @@ public class RuleManagerTest {
 		assertTrue(manager.isAnyRuleWithPort(3014));
 		assertTrue(manager.isAnyRuleWithPort(3015));
 	}
-	
+
 	@Test
 	public void testRuleUp() throws Exception {
 		manager.ruleUp(forwardBlz);
 		assertEquals(forwardBlz, manager.getRules().get(0));
 	}
-	
+
 	@Test
 	public void testRuleDown() throws Exception {
 		manager.ruleDown(forwardBlz);
 		assertEquals(forwardBlz, manager.getRules().get(2));
 	}
-	
+
 }

@@ -36,13 +36,13 @@ import com.predic8.membrane.core.util.MessageUtil;
 
 
 public class HTTP2XMLInterceptorTest extends TestCase {
-	
+
 	private Exchange exc;
-	
-	private HTTP2XMLInterceptor interceptor = new HTTP2XMLInterceptor(); 
-	
+
+	private HTTP2XMLInterceptor interceptor = new HTTP2XMLInterceptor();
+
 	XPath xpath = XPathFactory.newInstance().newXPath();
-	
+
 	@Override
 	protected void setUp() throws Exception {
 		exc = new Exchange(null);
@@ -52,12 +52,12 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 		exc.getRequest().setVersion("1.1");
 		exc.getRequest().getHeader().add("Host", "localhost:3011");
 	}
-	
+
 	@Test
 	public void testRequest() throws Exception {
 
 		interceptor.handleRequest(exc);
-		
+
 		assertXPath("local-name(/*)", "request");
 		assertXPath("/*/@method", "POST");
 		assertXPath("/*/@http-version", "1.1");
@@ -72,21 +72,21 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 	@Test
 	public void parseXML() throws Exception {
 		String xml = "<request method='POST' http-version='1.1'><uri value='http://localhost:3011/manager/person?vorname=jim&amp;nachname=panse'><host>localhost</host><port>8080</port><path><component>manager</component><component>person</component></path><query><param name='vorname'>jim</param><param name='nachname'>panse</param></query></uri></request>";
-		
+
 		XMLStreamReader r = XMLInputFactory.newInstance().createXMLStreamReader(new StringReader(xml));
 		r.next(); //skip DocumentNode
 		Request req = new Request();
 		req.parse(r);
 
 		assertEquals("POST", req.getMethod());
-		assertEquals("1.1", req.getHttpVersion());		
+		assertEquals("1.1", req.getHttpVersion());
 		assertURI(req.getUri());
 	}
 
 	private void assertURI(URI uri) {
 		assertEquals("http://localhost:3011/manager/person?vorname=jim&nachname=panse", uri.getValue());
 		assertEquals("localhost", uri.getHost());
-		assertEquals(3011, uri.getPort());	
+		assertEquals(3011, uri.getPort());
 		assertPath(uri.getPath());
 		assertQuery(uri.getQuery());
 	}
@@ -95,20 +95,20 @@ public class HTTP2XMLInterceptorTest extends TestCase {
 		assertParam("vorname", "jim", query.getParams().get(0));
 		assertParam("nachname", "panse", query.getParams().get(1));
 	}
-	
+
 	private void assertParam(String name, String value, Param param) {
 		assertEquals(name, param.getName());
 		assertEquals(value, param.getValue());
 	}
-	
+
 	private void assertPath(Path path) {
 		assertEquals("manager", path.getComponents().get(0).getValue());
 		assertEquals("person", path.getComponents().get(1).getValue());
 	}
-	
+
 	private void assertXPath(String xpathExpr, String expected) throws XPathExpressionException {
 		assertEquals(expected, xpath.evaluate(xpathExpr, new InputSource(exc.getRequest().getBodyAsStream())));
 	}
-	
-	
+
+
 }

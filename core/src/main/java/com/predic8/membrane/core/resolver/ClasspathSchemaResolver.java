@@ -41,16 +41,16 @@ public class ClasspathSchemaResolver implements SchemaResolver {
 			url = url.substring(1);
 		return url;
 	}
-	
+
 	@Override
 	public List<String> getChildren(String url) {
 		return null;
 	}
-	
+
 	@Override
 	public long getTimestamp(String url) {
 		return 0;
 	}
-	
+
 
 }

@@ -26,19 +26,19 @@ import com.predic8.membrane.annot.MCMain;
  * Base class for auto-generated blueprint parsers for {@link MCMain}s (=XML namespaces).
  */
 public abstract class BlueprintNamespaceParser implements BlueprintParser {
-	
+
 	public static final String KEY_PARENT_CLASS_NAME = "parentClass";
 
 	HashMap<String, BlueprintParser> parsers = new HashMap<String, BlueprintParser>();
 	HashMap<String, HashMap<String, BlueprintParser>> localParsers = new HashMap<String, HashMap<String, BlueprintParser>>();
 
-	
+
 	public BlueprintNamespaceParser() {
 		init();
 	}
 
 	public abstract void init();
-	
+
 	protected void registerGlobalBeanDefinitionParser(String elementName, BlueprintParser parser) {
 		parsers.put(elementName, parser);
 	}
@@ -51,7 +51,7 @@ public abstract class BlueprintNamespaceParser implements BlueprintParser {
 		}
 		lp.put(elementName, parser);
 	}
-	
+
 	@Override
 	public Metadata parse(BlueprintParser globalParser, Element element,
 			ParserContext context) {
@@ -68,7 +68,7 @@ public abstract class BlueprintNamespaceParser implements BlueprintParser {
 				}
 			}
 		}
-		
+
 		BlueprintParser parser = parsers.get(element.getNodeName());
 		if (parser == null)
 			throw new RuntimeException("No parser declared for element <" + element.getNodeName() + ">.");

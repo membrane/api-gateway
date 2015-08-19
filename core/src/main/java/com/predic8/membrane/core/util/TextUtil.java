@@ -42,12 +42,12 @@ public class TextUtil {
 
 	private static final char[] source;
 	private static final String[] replace;
-	
-	static { 
+
+	static {
 		source = new char[] {    '*',    '?',  '.',    '\\',      '(' ,    ')',    '+',      '|',    '^',     '$',    '%',       '@'    };
 		replace = new String[] { ".*",   ".",  "\\.",  "\\\\",   "\\(",   "\\)",   "\\+",   "\\|",  "\\^",   "\\$",    "\\%",   "\\@"   };
 	}
-	
+
 
 	public static String formatXML(Reader reader) {
 		return formatXML(reader, false);
@@ -55,8 +55,8 @@ public class TextUtil {
 
 	public static String formatXML(Reader reader, boolean asHTML) {
 		StringWriter out = new StringWriter();
-		
-		try {      
+
+		try {
 			XMLBeautifierFormatter formatter = asHTML ? new HtmlBeautifierFormatter(out, 0) : new PlainBeautifierFormatter(out, 0);
 			XMLBeautifier beautifier = new XMLBeautifier(formatter);
 			beautifier.parse(reader);
@@ -72,13 +72,13 @@ public class TextUtil {
 			}
 		}
 		return out.toString();
-		
+
 	}
 
 	public static boolean isNullOrEmpty(String str) {
 		return str == null || str.length() == 0;
 	}
-	
+
 	public static String globToRegExp(String glob) {
 		StringBuilder buf = new StringBuilder();
 		buf.append("^");
@@ -88,17 +88,17 @@ public class TextUtil {
 		buf.append("$");
 		return buf.toString();
 	}
-	
+
 	private static void appendReplacement(char c, StringBuilder buf) {
 		for (int j = 0; j < source.length; j++) {
 			if (c == source[j]) {
 				buf.append(replace[j]);
 				return;
-			} 
+			}
 		}
 		buf.append(c);
 	}
-	
+
 	public static String toEnglishList(String conjuction, String... args) {
 		ArrayList<String> l = new ArrayList<String>();
 		for (String arg : args)
@@ -125,7 +125,7 @@ public class TextUtil {
 	}
 
 	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
-	
+
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
@@ -133,7 +133,7 @@ public class TextUtil {
 
 	/**
 	 * Checks whether s is a valid (well-formed and balanced) XML snippet.
-	 * 
+	 *
 	 * Note that attributes escaped by single quotes are accepted (which is illegal by spec).
 	 */
 	public static boolean isValidXMLSnippet(String s) {
@@ -144,7 +144,7 @@ public class TextUtil {
 			}
 			XMLEvent event = null;
 			while (parser.hasNext()) {
-			    event = (XMLEvent) parser.next();
+				event = (XMLEvent) parser.next();
 			}
 			return event != null && event.isEndDocument();
 		} catch (Exception e) {
@@ -152,11 +152,11 @@ public class TextUtil {
 			return false;
 		}
 	}
-	
+
 	public static String linkURL(String url) {
 		if (url.startsWith("http://") || url.startsWith("https://")) {
 			url = StringEscapeUtils.escapeHtml(url);
-			return "<a href=\"" + url + "\">" + url + "</a>";  
+			return "<a href=\"" + url + "\">" + url + "</a>";
 		}
 		return StringEscapeUtils.escapeHtml(url);
 	}
@@ -184,7 +184,7 @@ public class TextUtil {
 			return src;
 		for (int i = 0; i < lines.length; i++)
 			lines[i] = lines[i].length() > indent ? lines[i].substring(indent) : "";
-		return StringUtils.join(lines, '\n');
+			return StringUtils.join(lines, '\n');
 	}
-	
+
 }

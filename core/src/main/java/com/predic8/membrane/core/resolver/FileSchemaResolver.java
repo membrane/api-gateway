@@ -24,12 +24,12 @@ import java.util.List;
 import com.google.common.collect.Lists;
 
 public class FileSchemaResolver implements SchemaResolver {
-	
+
 	@Override
 	public List<String> getSchemas() {
 		return Lists.newArrayList("file", null);
 	}
-	
+
 	public InputStream resolve(String url) throws ResourceRetrievalException {
 		try {
 			return new FileInputStream(new File(normalize(url)));
@@ -37,34 +37,34 @@ public class FileSchemaResolver implements SchemaResolver {
 			throw new ResourceRetrievalException(url, e);
 		}
 	}
-	
+
 	public static String normalize(String uri) {
-	    if(uri.startsWith("file:///")) {
-	    	if (uri.length() > 9 && uri.charAt(9) == '/')
-	    		uri = uri.charAt(8) + ":\\" + uri.substring(9);
-	    	else
-	    		uri = "/" + uri.substring(8);
-	    }
-	    if(uri.startsWith("file://")) {
-	    	if (uri.length() > 8 && uri.charAt(8) == '/')
-	    		uri = uri.charAt(7) + ":\\" + uri.substring(9);
-	    	else
-	    		uri = "/" + uri.substring(7);
-	    }
-	    if(uri.startsWith("file:")) {
-	    	uri = uri.substring(5);
-	    }
+		if(uri.startsWith("file:///")) {
+			if (uri.length() > 9 && uri.charAt(9) == '/')
+				uri = uri.charAt(8) + ":\\" + uri.substring(9);
+			else
+				uri = "/" + uri.substring(8);
+		}
+		if(uri.startsWith("file://")) {
+			if (uri.length() > 8 && uri.charAt(8) == '/')
+				uri = uri.charAt(7) + ":\\" + uri.substring(9);
+			else
+				uri = "/" + uri.substring(7);
+		}
+		if(uri.startsWith("file:")) {
+			uri = uri.substring(5);
+		}
 		return uri;
 	}
 
 	@Override
 	public List<String> getChildren(String url) {
-	    String[] children = new File(normalize(url)).list();
-	    if (children == null)
-	    	return null;
-	    ArrayList<String> res = new ArrayList<String>(children.length);
-	    for (String child : children)
-	    	res.add(child);
+		String[] children = new File(normalize(url)).list();
+		if (children == null)
+			return null;
+		ArrayList<String> res = new ArrayList<String>(children.length);
+		for (String child : children)
+			res.add(child);
 		return res;
 	}
 

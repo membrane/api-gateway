@@ -20,8 +20,8 @@ public class FileUtil {
 	public static File prefixMembraneHomeIfNeeded(File f) {
 		if ( f.isAbsolute() )
 			return f;
-		
+
 		return new File(System.getenv("MEMBRANE_HOME"), f.getPath());
-		
+
 	}
 }

@@ -25,27 +25,27 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Outcome;
 
 public class GroovyInterceptorTest {
-    
-    private ApplicationContext applicationContext = mock(ApplicationContext.class);
-    
+
+	private ApplicationContext applicationContext = mock(ApplicationContext.class);
+
 	@Test
 	public void testRequest() throws Exception {
 		HttpRouter r = new HttpRouter();
 		r.setApplicationContext(applicationContext);
 		when(applicationContext.getBean("abc")).thenReturn("OK");
-		
+
 		Exchange exc = new Exchange(null);
 		exc.setRequest(new Request());
-		
+
 		GroovyInterceptor i = new GroovyInterceptor();
 		i.setSrc("exc.setProperty('foo', 'bar')\n"+
-		         "def b = spring.getBean('abc')\n"+
-				 "CONTINUE");
+				"def b = spring.getBean('abc')\n"+
+				"CONTINUE");
 		i.init(r);
-		
+
 		assertEquals(Outcome.CONTINUE, i.handleRequest(exc));
 		assertEquals("bar", exc.getProperty("foo"));
 		verify(applicationContext, times(1)).getBean("abc");
 	}
-	
+
 }

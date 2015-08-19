@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 public class ResponseContentTypeExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Response Content-Type";
-	
+
 	public Object get(AbstractExchange exc) {
 		if (exc == null || exc.getResponse() == null || exc.getResponse().getHeader() == null || exc.getResponse().getHeader().getContentType() == null)
 			return "N/A";

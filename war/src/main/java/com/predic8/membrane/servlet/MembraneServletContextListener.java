@@ -30,13 +30,13 @@ public class MembraneServletContextListener implements ServletContextListener {
 	private static Log log = LogFactory.getLog(MembraneServletContextListener.class);
 
 	private XmlWebApplicationContext appCtx;
-	
+
 	public void contextInitialized(ServletContextEvent sce) {
 		try {
 			log.info(Constants.PRODUCT_NAME + " starting...");
 
 			log.debug("loading proxies configuration from: " + getProxiesXmlLocation(sce));
-			
+
 			appCtx = new BaseLocationXmlWebApplicationContext();
 			Router router = RouterUtil.initializeRoutersFromSpringWebContext(appCtx, sce.getServletContext(), getProxiesXmlLocation(sce));
 			if (router != null)

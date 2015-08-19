@@ -22,7 +22,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.util.ContentTypeDetector.ContentType;
 
 public class ContentTypeDetectorTest {
-	
+
 	@Test
 	public void testJSON() {
 		Assert.assertEquals(ContentType.JSON, ContentTypeDetector.detect(Response.ok().contentType(MimeType.APPLICATION_JSON_UTF8).build()).getEffectiveContentType());

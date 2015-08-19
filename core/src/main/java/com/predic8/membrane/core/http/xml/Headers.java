@@ -27,22 +27,22 @@ public class Headers extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "headers";
 
 	List<Header> headers = new ArrayList<Header>();
-	
+
 	public Headers() {}
-	
+
 	public Headers( com.predic8.membrane.core.http.Header header) {
 		for (HeaderField o : header.getAllHeaderFields()) {
 			headers.add(new Header("" + o.getHeaderName(), o.getValue()));
 		}
 	}
-		
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Param.ELEMENT_NAME.equals(child)) {
 			headers.add((Header)new Header().parse(token));
-		} 
+		}
 	}
-	
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
@@ -50,13 +50,13 @@ public class Headers extends AbstractXmlElement {
 		for (Header c : headers) {
 			c.write(out);
 		}
-		
-		out.writeEndElement();		
+
+		out.writeEndElement();
 	}
 
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 }

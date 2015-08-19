@@ -54,17 +54,17 @@ public class HttpUtilTest {
 		String line = readLine(in);
 		assertEquals("POST /operation/call HTTP/1.1", line);
 	}
-	
+
 	@Test
 	public void testReadChunkSize() throws Exception {
 		String s = "3d2F" + Constants.CRLF;
 		assertEquals(15663, HttpUtil.readChunkSize(new ByteArrayInputStream(s.getBytes())));
 	}
-	
+
 	@Test
 	public void testReadChunkSizeWithExtension() throws Exception {
 		String s = "3d2F" + Constants.CRLF + ";gfgfgfg" + Constants.CRLF;
 		assertEquals(15663, HttpUtil.readChunkSize(new ByteArrayInputStream(s.getBytes())));
 	}
-	
+
 }

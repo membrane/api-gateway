@@ -22,10 +22,10 @@ public class MockRouter extends Router {
 	public MockRouter() {
 		setExchangeStore(new ForgetfulExchangeStore());
 	}
-	
+
 	@Override
 	public Transport getTransport() {
 		return new MockHttpTransport();
 	}
-	
+
 }

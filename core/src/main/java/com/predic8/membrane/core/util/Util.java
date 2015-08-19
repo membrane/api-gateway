@@ -29,7 +29,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.predic8.membrane.core.http.Response;
 
 public class Util {
-	
+
 	public static void shutdownOutput(Socket socket) throws IOException {
 		if (!(socket instanceof SSLSocket) &&
 				!socket.isClosed() &&
@@ -40,8 +40,8 @@ public class Util {
 
 	public static void shutdownInput(Socket socket) throws IOException {
 		//SSLSocket does not implement shutdown input and output
-		if (!(socket instanceof SSLSocket) && 
-				!socket.isClosed() && 
+		if (!(socket instanceof SSLSocket) &&
+				!socket.isClosed() &&
 				!socket.isInputShutdown()) {
 			socket.shutdownInput();
 		}
@@ -50,7 +50,7 @@ public class Util {
 	public static HashMap<String, String> parseSimpleJSONResponse(Response g) throws IOException, JsonParseException, ParseException {
 		HashMap<String, String> values = new HashMap<String, String>();
 
-		
+
 		String contentType = g.getHeader().getFirstValue("Content-Type");
 		if (contentType != null && g.getHeader().getContentTypeObject().match("application/json")) {
 			final JsonFactory jsonFactory = new JsonFactory();

@@ -34,7 +34,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 
 /**
  * @description <p>
- 	*              Don't use, this does NOT implement valid HTTP caching.
+ *              Don't use, this does NOT implement valid HTTP caching.
  *              </p>
  *              <p>
  *                  We currently just use this class to cache a bunch of Debian Repositories for offline use.
@@ -46,44 +46,46 @@ import com.predic8.membrane.core.resolver.ResolverMap;
  */
 @MCElement(name="cache")
 public class CacheInterceptor extends AbstractInterceptor {
-	
+
 	static final Log log = LogFactory.getLog(CacheInterceptor.class.getName());
-	
+
 	private Store store;
-	
+
 	public static abstract class Store {
 		public void init(Router router) {}
-		
+
 		public abstract Node get(String url);
 		public abstract void put(String url, Node node);
 	}
-	
+
 	@MCElement(name="inMemoryStore")
 	public static class InMemoryStore extends Store {
 		HashMap<String, Node> cache = new HashMap<String, Node>();
-		
+
+		@Override
 		public Node get(String url) {
 			return cache.get(url);
 		}
-		
+
+		@Override
 		public void put(String url, Node node) {
 			cache.put(url, node);
 		}
 	}
-	
+
 	@MCElement(name="fileStore")
 	public static class FileStore extends Store {
 		private String dir;
-		
+
 		public String getDir() {
 			return dir;
 		}
-		
+
 		@MCAttribute
 		public void setDir(String dir) {
 			this.dir = dir;
 		}
-		
+
 		@Override
 		public void init(Router router) {
 			dir = ResolverMap.combine(router.getBaseLocation(), dir);
@@ -92,11 +94,12 @@ public class CacheInterceptor extends AbstractInterceptor {
 				if (!d.mkdirs())
 					throw new RuntimeException("Could not create directory " + dir);
 		}
-		
+
 		private String encode(String url) {
 			return Base64.encodeBase64String(url.getBytes(Constants.UTF_8_CHARSET));
 		}
-		
+
+		@Override
 		public Node get(String url) {
 			File f = new File(dir, encode(url));
 			if (!f.exists())
@@ -113,7 +116,8 @@ public class CacheInterceptor extends AbstractInterceptor {
 				return null;
 			}
 		}
-		
+
+		@Override
 		public void put(String url, Node node) {
 			File f = new File(dir, encode(url));
 			try {
@@ -130,22 +134,22 @@ public class CacheInterceptor extends AbstractInterceptor {
 			}
 		}
 	}
-	
+
 	public Store getStore() {
 		return store;
 	}
-	
+
 	@Required
 	@MCChildElement
 	public void setStore(Store store) {
 		this.store = store;
 	}
-	
+
 	@Override
 	public void init(Router router) throws Exception {
 		store.init(router);
 	}
-	
+
 	/*
 	 * HTTP/1.1 200 OK
 	 * Date: Tue, 10 Mar 2015 13:10:30 GMT
@@ -157,18 +161,18 @@ public class CacheInterceptor extends AbstractInterceptor {
 	 * Age: 13570
 	 * Connection: keep-alive
 	 */
-	
+
 	static String toRFC(long timestamp) {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 		dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
 		return dateFormat.format(new Date(timestamp));
 	}
-	
+
 	static long fromRFC(String timestamp) throws ParseException {
 		SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 		return dateFormat.parse(timestamp).getTime();
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		String dest = exc.getDestinations().get(0);
@@ -177,17 +181,17 @@ public class CacheInterceptor extends AbstractInterceptor {
 			exc.setResponse(node.toResponse(exc.getRequest()));
 			return Outcome.RETURN;
 		}
-		
+
 		if (canCache(exc.getRequest(), true)) {
 			// simplify request to allow caching
 			exc.getRequest().getHeader().removeFields(Header.IF_MODIFIED_SINCE);
 		}
-			
+
 		return super.handleRequest(exc);
 	}
-	
-	
-	
+
+
+
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		try {
@@ -210,7 +214,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 		} catch (Exception e) {
 			log.warn("Exception during cache handling.", e);
 		}
-		
+
 		// we drop some headers so the client does not get the idea we support
 		// any fancy HTTP features
 		// TODO: check whether dropping these headers is valid
@@ -220,23 +224,23 @@ public class CacheInterceptor extends AbstractInterceptor {
 		exc.getResponse().getHeader().removeFields("Age");
 		exc.getResponse().getHeader().removeFields("Connection");
 		exc.getResponse().getHeader().removeFields("Vary");
-		exc.getResponse().getHeader().removeFields("Expires");    
+		exc.getResponse().getHeader().removeFields("Expires");
 		exc.getResponse().getHeader().removeFields("Cache-Control");
 
-		
+
 		return super.handleResponse(exc);
 	}
 
 	private HashSet<String> allowedRequestHeaders = new HashSet<String>();
 	private HashSet<String> allowedResponseHeaders = new HashSet<String>();
-	
+
 	{
 		allowedRequestHeaders.add("host");
 		allowedRequestHeaders.add("cache-control");
 		allowedRequestHeaders.add("if-modified-since");
 		allowedRequestHeaders.add("user-agent");
 		allowedRequestHeaders.add("accept");
-		
+
 		allowedResponseHeaders.add("date");
 		allowedResponseHeaders.add("server");
 		allowedResponseHeaders.add("last-modified");
@@ -246,11 +250,11 @@ public class CacheInterceptor extends AbstractInterceptor {
 		allowedResponseHeaders.add("age");
 		allowedResponseHeaders.add("connection");
 		allowedResponseHeaders.add("vary");
-		allowedResponseHeaders.add("content-type");    
-		allowedResponseHeaders.add("expires");    
+		allowedResponseHeaders.add("content-type");
+		allowedResponseHeaders.add("expires");
 		allowedResponseHeaders.add("cache-control");
 	}
-	
+
 	private boolean canCache(Request request, boolean emitWarning) {
 		for (HeaderField header : request.getHeader().getAllHeaderFields()) {
 			String headerName = header.getHeaderName().toString().toLowerCase(Locale.US);

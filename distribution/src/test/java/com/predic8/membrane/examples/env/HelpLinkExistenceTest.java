@@ -33,7 +33,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
 
 public class HelpLinkExistenceTest {
-	
+
 	private static final String CACHE_FILE_FORMAT_VERSION = "1";
 
 	private String getVersion() {
@@ -50,18 +50,18 @@ public class HelpLinkExistenceTest {
 	@Test
 	public void doit() throws Exception {
 		Set<Class<?>> classes = getElementClasses();
-		
+
 		Assert.assertNotEquals(0, classes.size());
 		HttpClient hc = new HttpClient();
 		for (Class<?> clazz : classes) {
 			if (Interceptor.class.isAssignableFrom(clazz)) {
 				Interceptor i = (Interceptor) clazz.newInstance();
 				String helpId = i.getHelpId();
-				
+
 				String url = "http://membrane-soa.org/service-proxy-doc/" + getVersion() + "/configuration/reference/" + helpId + ".htm";
-				
+
 				Response r = hc.call(new Request.Builder().get(url).buildExchange()).getResponse();
-				
+
 				try {
 					Assert.assertEquals(200, r.getStatusCode());
 				} catch (Exception e) {
@@ -71,7 +71,7 @@ public class HelpLinkExistenceTest {
 		}
 
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	private Set<Class<?>> getElementClasses() {
 		try {

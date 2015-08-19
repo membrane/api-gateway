@@ -21,17 +21,17 @@ import org.junit.Test;
 import com.predic8.membrane.core.http.*;
 
 public class JSESSIONIDExtractorTest extends TestCase {
-	
+
 
 	@Test
 	public void testRequestExtraction() throws Exception {
-		Request req = new Request();	
+		Request req = new Request();
 
 		JSESSIONIDExtractor extractor = new JSESSIONIDExtractor();
-				
+
 		req.setHeader(getHeader("path=root/dir ; JSESSIONID=555555"));
 		assertEquals("555555", extractor.getSessionId(req));
-		
+
 		req.setHeader(getHeader("path=root/dir ; JSESSIONID=555555; name=jim"));
 		assertEquals("555555", extractor.getSessionId(req));
 
@@ -47,13 +47,13 @@ public class JSESSIONIDExtractorTest extends TestCase {
 
 	@Test
 	public void testResponseExtraction() throws Exception {
-		Response res = new Response();	
+		Response res = new Response();
 
 		JSESSIONIDExtractor extractor = new JSESSIONIDExtractor();
-				
+
 		res.setHeader(getHeader("path=root/dir ; JSESSIONID=555555"));
 		assertEquals("555555", extractor.getSessionId(res));
-		
+
 		res.setHeader(getHeader("path=root/dir ; JSESSIONID=555555; name=jim"));
 		assertEquals("555555", extractor.getSessionId(res));
 

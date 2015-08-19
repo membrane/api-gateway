@@ -37,13 +37,13 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 	public void setup() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
-		
+
 		BasicAuthenticationInterceptor interceptor = new BasicAuthenticationInterceptor();
-		
+
 		List<User> users = new ArrayList<BasicAuthenticationInterceptor.User>();
 		users.add(new BasicAuthenticationInterceptor.User("admin", "admin"));
 		interceptor.setUsers(users );
-		
+
 		router.addUserFeatureInterceptor(interceptor);
 		router.init();
 	}
@@ -53,7 +53,7 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 		AssertUtils.disableHTTPAuthentication();
 		AssertUtils.getAndAssert(401, "http://localhost:3001/axis2/services/BLZService?wsdl");
 	}
-	
+
 	@Test
 	public void testAccept() throws Exception {
 		AssertUtils.setupHTTPAuthentication("localhost", 3001, "admin", "admin");
@@ -65,5 +65,5 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 		AssertUtils.closeConnections();
 		router.shutdown();
 	}
-	
+
 }

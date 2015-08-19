@@ -20,7 +20,7 @@ import org.junit.runners.Suite.SuiteClasses;
 import com.predic8.membrane.examples.config.ConfigSerializationTest;
 
 @RunWith(Suite.class)
-@SuiteClasses({ 
+@SuiteClasses({
 	ConfigSerializationTest.class
 })
 public class ExampleUnitTests {}

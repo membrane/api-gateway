@@ -30,7 +30,7 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	private String refid;
 	private Interceptor i;
 	private ApplicationContext ac;
-	
+
 	/**
 	 * @description Spring bean id of the referenced interceptor.
 	 * @example myInterceptor
@@ -44,7 +44,7 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 	public String getRefId() {
 		return refid;
 	}
-	
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		ac = applicationContext;
@@ -93,7 +93,7 @@ public class SpringInterceptor extends AbstractInterceptor implements Applicatio
 			i = (Interceptor) ac.getBean(refid);
 		i.init(router);
 	}
-	
+
 	public Interceptor getInner() {
 		return i;
 	}

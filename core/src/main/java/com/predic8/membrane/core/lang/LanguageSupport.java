@@ -22,7 +22,7 @@ import com.predic8.membrane.core.Router;
 public abstract class LanguageSupport {
 
 	public abstract Function<Map<String, Object>, Boolean> compileExpression(Router router, String expression);
-	
+
 	public abstract Function<Map<String, Object>, Object> compileScript(Router router, String script);
 
 }

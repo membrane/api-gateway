@@ -36,10 +36,10 @@ import com.predic8.membrane.test.WSDLUtil;
 
 @RunWith(Parameterized.class)
 public class WSDLPublisherTest {
-		
+
 	@Parameters
 	public static List<Object[]> getPorts() {
-		return Arrays.asList(new Object[][] { 
+		return Arrays.asList(new Object[][] {
 				{ "src/test/resources/validation/ArticleService.xml", 3024 },
 				{ "classpath:/validation/ArticleService.xml", 3025 },
 		});
@@ -53,7 +53,7 @@ public class WSDLPublisherTest {
 		this.wsdlLocation = wsdlLocation;
 		this.port = port;
 	}
-	
+
 	@Before
 	public void before() throws Exception {
 		router = new HttpRouter();
@@ -65,17 +65,17 @@ public class WSDLPublisherTest {
 		router.getRuleManager().addProxyAndOpenPortIfNew(sp2);
 		router.init();
 	}
-	
+
 	@After
 	public void after() throws IOException {
 		router.shutdown();
 	}
-	
+
 	@Test
 	public void doit() throws ParseException, IOException, XMLStreamException {
 		// this recursively fetches 5 documents (1 WSDL + 4 XSD)
 		Assert.assertEquals(5, WSDLUtil.countWSDLandXSDs("http://localhost:" + port + "/articles/?wsdl"));
 	}
-	
-	
+
+
 }

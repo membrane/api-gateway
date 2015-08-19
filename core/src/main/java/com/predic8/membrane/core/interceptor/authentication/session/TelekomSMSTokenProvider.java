@@ -92,14 +92,14 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	private String senderAddress = "0191011";
 	private String senderName;
 	private EnvironmentType environment = EnvironmentType.BUDGET;
-	
+
 	public enum EnvironmentType {
 		BUDGET,
 		PREMIUM,
 		MOCK,
 		SANDBOX,
 	}
-	
+
 	@GuardedBy("this")
 	private String token;
 	@GuardedBy("this")
@@ -114,42 +114,43 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	protected String normalizeNumber(String number) {
 		return number.replaceAll("\\+", "00").replaceAll("[- ]|\\(.*\\)", "");
 	}
-	
+
+	@Override
 	protected void sendSMS(String text, String recipientNumber) {
 		recipientNumber = recipientNumber.replaceAll("^00", "\\+");
-		
+
 		try {
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			JsonFactory jsonFactory = new JsonFactory();
 			JsonGenerator jg = jsonFactory.createGenerator(baos, JsonEncoding.UTF8);
-			
+
 			jg.writeStartObject();
-				jg.writeObjectFieldStart("outboundSMSMessageRequest");
-					jg.writeArrayFieldStart("address");
-						jg.writeString("tel:" + recipientNumber);
-					jg.writeEndArray();
-					jg.writeStringField("senderAddress", senderAddress);
-					jg.writeObjectFieldStart("outboundSMSTextMessage");
-						jg.writeStringField("message", text);
-					jg.writeEndObject();
-					jg.writeStringField("outboundEncoding", "7bitGSM");
-					jg.writeStringField("clientCorrelator", "" + ((long)(Math.random() * Long.MAX_VALUE)));
-					if (senderName != null)
-						jg.writeStringField("senderName", senderName);
-				jg.writeEndObject();
+			jg.writeObjectFieldStart("outboundSMSMessageRequest");
+			jg.writeArrayFieldStart("address");
+			jg.writeString("tel:" + recipientNumber);
+			jg.writeEndArray();
+			jg.writeStringField("senderAddress", senderAddress);
+			jg.writeObjectFieldStart("outboundSMSTextMessage");
+			jg.writeStringField("message", text);
 			jg.writeEndObject();
-			
+			jg.writeStringField("outboundEncoding", "7bitGSM");
+			jg.writeStringField("clientCorrelator", "" + ((long)(Math.random() * Long.MAX_VALUE)));
+			if (senderName != null)
+				jg.writeStringField("senderName", senderName);
+			jg.writeEndObject();
+			jg.writeEndObject();
+
 			jg.close();
-			
+
 			Exchange exc = new Request.Builder().
 					post("https://gateway.developer.telekom.com/plone/sms/rest/" + environment.name().toLowerCase()
 							+ "/smsmessaging/v1/outbound/" + URLEncoder.encode(senderAddress, "UTF-8") + "/requests").
-					header("Host", "gateway.developer.telekom.com").
-					header("Authorization", "OAuth realm=\"developergarden.com\",oauth_token=\"" + getAccessToken() + "\"").
-					header("Accept", "application/json").
-					header("Content-Type", "application/json").
-					body(baos.toByteArray()).
-					buildExchange();
+							header("Host", "gateway.developer.telekom.com").
+							header("Authorization", "OAuth realm=\"developergarden.com\",oauth_token=\"" + getAccessToken() + "\"").
+							header("Accept", "application/json").
+							header("Content-Type", "application/json").
+							body(baos.toByteArray()).
+							buildExchange();
 
 			exc.setRule(new NullRule() {
 				@Override
@@ -158,10 +159,10 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 				}
 			});
 			hc.call(exc, false, true);
-			
+
 			if (exc.getResponse().getStatusCode() != 201)
 				throw new RuntimeException("Could not send SMS: " + exc.getResponse());
-			
+
 			log.debug("sent SMS to " + recipientNumber);
 		} catch (Exception e2) {
 			throw new RuntimeException(e2);
@@ -202,11 +203,11 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 
 		return token;
 	}
-	
+
 	public String getScope() {
 		return scope;
 	}
-	
+
 	/**
 	 * @description The <i>scope</i> assigned to you by developergarden.com .
 	 */
@@ -215,11 +216,11 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	public void setScope(String scope) {
 		this.scope = scope;
 	}
-	
+
 	public String getClientId() {
 		return clientId;
 	}
-	
+
 	/**
 	 * @description The <i>clientId</i> assigned to you by developergarden.com .
 	 */
@@ -228,11 +229,11 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	public void setClientId(String clientId) {
 		this.clientId = clientId;
 	}
-	
+
 	public String getClientSecret() {
 		return clientSecret;
 	}
-	
+
 	/**
 	 * @description The <i>clientSecret</i> assigned to you by developergarden.com .
 	 */
@@ -245,7 +246,7 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	public String getSenderName() {
 		return senderName;
 	}
-	
+
 	/**
 	 * @description The sender name of the text messages. May only be set, if you are a member of the <i>premium</i> program on developergarded.com .
 	 */
@@ -253,11 +254,11 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	public void setSenderName(String senderName) {
 		this.senderName = senderName;
 	}
-	
+
 	public String getSenderAddress() {
 		return senderAddress;
 	}
-	
+
 	/**
 	 * @description The sender address (telephone number) of the text messages. May only be set, if you are a member of the <i>premium</i> program on developergarded.com .
 	 */
@@ -265,11 +266,11 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	public void setSenderAddress(String senderAddress) {
 		this.senderAddress = senderAddress;
 	}
-	
+
 	public EnvironmentType getEnvironment() {
 		return environment;
 	}
-	
+
 	/**
 	 * @description The <i>environment</i> (program name) you are paying for on developergarden.com .
 	 * @example premium
@@ -279,6 +280,6 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 	public void setEnvironment(EnvironmentType environment) {
 		this.environment = environment;
 	}
-	
+
 
 }

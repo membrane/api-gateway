@@ -44,7 +44,7 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 /**
  * Manages multiple {@link SSLContext}s using the same port. This is only possible when using SSL with
  * "Server Name Indication", see http://en.wikipedia.org/wiki/Server_Name_Indication .
- * 
+ *
  * This requires Java 8 (at runtime only, using reflection and dummy classes for compilation). Using the
  * inner {@link Builder} class, no Java 8 feature will be used, if not required by the configution. If the
  * configuration ("proxies.xml") requires Java 8 and it is not available, an exception will be thrown.
@@ -52,15 +52,15 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 public class SSLContextCollection implements SSLProvider {
 
 	private static final Log log = LogFactory.getLog(SSLContextCollection.class.getName());
-	
+
 	private static Method createSocketMethod;
-	
+
 	static {
 		try {
 			createSocketMethod = SSLSocketFactory.class.getMethod("createSocket", new Class[] { Socket.class,
 					InputStream.class, Boolean.TYPE });
 		} catch (SecurityException e) {
-			throw new RuntimeException(e); 
+			throw new RuntimeException(e);
 		} catch (NoSuchMethodException e) {
 			// do nothing
 		}
@@ -70,7 +70,7 @@ public class SSLContextCollection implements SSLProvider {
 	public static class Builder {
 		private List<String> dnsNames = new ArrayList<String>();
 		private List<SSLContext> sslContexts = new ArrayList<SSLContext>();
-		
+
 		public SSLProvider build() throws ConfigurationException {
 			if (sslContexts.isEmpty())
 				throw new IllegalStateException("No SSLContext's were added to this Builder before invoking build().");
@@ -91,7 +91,7 @@ public class SSLContextCollection implements SSLProvider {
 		}
 
 		private String constructHostNamePattern(SSLContext sslContext) {
-			StringBuilder sb = null; 
+			StringBuilder sb = null;
 			List<String> dnsNames = sslContext.getDnsNames();
 			if (dnsNames == null)
 				throw new RuntimeException("Could not extract DNS names from the first key's certificate in " + sslContext.getLocation());
@@ -109,10 +109,10 @@ public class SSLContextCollection implements SSLProvider {
 			return sb.toString();
 		}
 	}
-	
+
 	private final List<SSLContext> sslContexts;
 	private final List<Pattern> dnsNames;
-	
+
 	/**
 	 * @param sslContexts
 	 *            list of SSLContext
@@ -127,11 +127,11 @@ public class SSLContextCollection implements SSLProvider {
 			this.dnsNames.add(Pattern.compile(ServiceProxyKey.createHostPattern(dnsName), Pattern.CASE_INSENSITIVE));
 		this.sslContexts = sslContexts;
 	}
-	
+
 	public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException {
 		return new ServerSocket(port, 50, bindAddress);
 	}
-	
+
 	@Override
 	public Socket wrapAcceptedSocket(Socket socket) throws IOException {
 		InputStream ins = socket.getInputStream();
@@ -166,47 +166,47 @@ public class SSLContextCollection implements SSLProvider {
 		}
 
 		capabilities = SSLExplorer.explore(buffer, 0, recordLength);
-		
+
 		SSLContext sslContext = null;
-		
+
 		if (capabilities != null) {
 			List<SNIServerName> serverNames = capabilities.getServerNames();
 			if (serverNames != null && serverNames.size() > 0) {
 				OUTER:
-				for (SNIServerName snisn : serverNames) {
-					String hostname = new String(snisn.getEncoded(), "UTF-8");
-					for (int i = 0; i < dnsNames.size(); i++)
-						if (dnsNames.get(i).matcher(hostname).matches()) {
-							sslContext = sslContexts.get(i);
-							break OUTER;
-						}
-				}
-				if (sslContext == null) {
-					// no hostname matched: send 'unrecognized_name' alert and close socket
-					
-					byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
-							2 /* fatal */, 112 /* unrecognized_name */ };
-
-					try {
-						socket.getOutputStream().write(alert_unrecognized_name);
-					} finally {
-						socket.close();
-					}
-
-					StringBuilder hostname = null;
 					for (SNIServerName snisn : serverNames) {
-						if (hostname == null)
-							hostname = new StringBuilder();
-						else
-							hostname.append(", ");
-						hostname.append(new String(snisn.getEncoded(), "UTF-8"));
+						String hostname = new String(snisn.getEncoded(), "UTF-8");
+						for (int i = 0; i < dnsNames.size(); i++)
+							if (dnsNames.get(i).matcher(hostname).matches()) {
+								sslContext = sslContexts.get(i);
+								break OUTER;
+							}
 					}
+			if (sslContext == null) {
+				// no hostname matched: send 'unrecognized_name' alert and close socket
 
-					throw new RuntimeException("no certificate configured (sending unrecognized_name alert) for hostname \"" + hostname + "\"");
+				byte[] alert_unrecognized_name = { 21 /* alert */, 3, 1 /* TLS 1.0 */, 0, 2 /* length: 2 bytes */,
+						2 /* fatal */, 112 /* unrecognized_name */ };
+
+				try {
+					socket.getOutputStream().write(alert_unrecognized_name);
+				} finally {
+					socket.close();
 				}
+
+				StringBuilder hostname = null;
+				for (SNIServerName snisn : serverNames) {
+					if (hostname == null)
+						hostname = new StringBuilder();
+					else
+						hostname.append(", ");
+					hostname.append(new String(snisn.getEncoded(), "UTF-8"));
+				}
+
+				throw new RuntimeException("no certificate configured (sending unrecognized_name alert) for hostname \"" + hostname + "\"");
+			}
 			}
 		}
-		
+
 		// no Server Name Indication used by the client: fall back to first sslContext
 		if (sslContext == null)
 			sslContext = sslContexts.get(0);
@@ -214,7 +214,7 @@ public class SSLContextCollection implements SSLProvider {
 		SSLSocketFactory serviceSocketFac = sslContext.getSocketFactory();
 
 		ByteArrayInputStream bais = new ByteArrayInputStream(buffer, 0, position);
-		
+
 		SSLSocket serviceSocket;
 		// "serviceSocket = (SSLSocket)serviceSocketFac.createSocket(socket, bais, true);" only compileable with Java 1.8
 		try {
@@ -226,7 +226,7 @@ public class SSLContextCollection implements SSLProvider {
 		} catch (InvocationTargetException e) {
 			throw new RuntimeException(e);
 		}
-		
+
 		sslContext.applyCiphers(serviceSocket);
 		if (sslContext.getProtocols() != null) {
 			serviceSocket.setEnabledProtocols(sslContext.getProtocols());
@@ -243,10 +243,10 @@ public class SSLContextCollection implements SSLProvider {
 		}
 		serviceSocket.setWantClientAuth(sslContext.isWantClientAuth());
 		serviceSocket.setNeedClientAuth(sslContext.isNeedClientAuth());
-		
+
 		return serviceSocket;
 	}
-	
+
 	private SSLContext getSSLContextForHostname(String hostname) {
 		SSLContext sslContext = null;
 		for (int i = 0; i < dnsNames.size(); i++)
@@ -258,13 +258,13 @@ public class SSLContextCollection implements SSLProvider {
 			sslContext = sslContexts.get(0);
 		return sslContext;
 	}
-	
+
 	@Override
 	public Socket createSocket(InetAddress host, int port, InetAddress addr,
 			int localPort, int connectTimeout) throws IOException {
 		return getSSLContextForHostname(host.getHostName()).createSocket(host, port, addr, localPort, connectTimeout);
 	}
-	
+
 	@Override
 	public Socket createSocket(InetAddress host, int port, int connectTimeout)
 			throws IOException {

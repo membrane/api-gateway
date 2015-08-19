@@ -55,10 +55,10 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 @RunWith(Parameterized.class)
 public class ExceptionHandlingTest {
-		
+
 	@Parameters
 	public static List<Object[]> getPorts() {
-		return Arrays.asList(new Object[][] { 
+		return Arrays.asList(new Object[][] {
 				{ true, ContentType.UNKNOWN },
 				{ true, ContentType.SOAP },
 				{ true, ContentType.JSON },
@@ -77,11 +77,11 @@ public class ExceptionHandlingTest {
 		this.printStackTrace = printStackTrace;
 		this.contentType = contentType;
 	}
-	
-	
+
+
 	HttpRouter router;
 	volatile long connectionHash = 0;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		router = new HttpRouter();
@@ -102,7 +102,7 @@ public class ExceptionHandlingTest {
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-	
+
 	private int getPort() {
 		return printStackTrace ? 3022 : 3023;
 	}
@@ -121,7 +121,7 @@ public class ExceptionHandlingTest {
 		HttpEntity entity = res.getEntity();
 		return entity == null ? "" : EntityUtils.toString(entity);
 	}
-	
+
 	private HttpUriRequest createRequest() throws UnsupportedEncodingException {
 		String url = "http://localhost:" + getPort() + "/";
 		HttpUriRequest get = null;
@@ -146,7 +146,7 @@ public class ExceptionHandlingTest {
 		}
 		return get;
 	}
-	
+
 	private void checkResponseContentType(String response) {
 		switch (contentType) {
 		case JSON:
@@ -173,5 +173,5 @@ public class ExceptionHandlingTest {
 		assertContains("secret", response);
 		checkResponseContentType(response);
 	}
-	
+
 }

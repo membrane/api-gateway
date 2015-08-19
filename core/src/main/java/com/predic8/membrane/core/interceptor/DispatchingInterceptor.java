@@ -36,22 +36,22 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 public class DispatchingInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(DispatchingInterceptor.class.getName());
-	
-	public DispatchingInterceptor() {		
-		name = "Dispatching Interceptor";		
+
+	public DispatchingInterceptor() {
+		name = "Dispatching Interceptor";
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-	
+
 		if (exc.getRule() instanceof AbstractServiceProxy) {
-			exc.getDestinations().add(getForwardingDestination(exc));	
+			exc.getDestinations().add(getForwardingDestination(exc));
 			return Outcome.CONTINUE;
 		}
 
-		exc.getDestinations().add(exc.getRequest().getUri());	
-	
+		exc.getDestinations().add(exc.getRequest().getUri());
+
 		return Outcome.CONTINUE;
 	}
 
@@ -61,13 +61,13 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 			log.debug("destination: " + p.getTargetURL());
 			return p.getTargetURL();
 		}
-		
+
 		if (p.getTargetHost() != null) {
 			String url = new URL(p.getTargetScheme(), p.getTargetHost(), p.getTargetPort(), exc.getRequest().getUri()).toString();
 			log.debug("destination: " + url);
 			return url;
 		}
-		
+
 		return exc.getRequest().getUri();
 	}
 

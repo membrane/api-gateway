@@ -42,7 +42,7 @@ import com.predic8.membrane.core.rules.Rule;
 public class Http11Test {
 
 	private HttpRouter router;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 4000), "thomas-bayer.com", 80);
@@ -50,12 +50,12 @@ public class Http11Test {
 		router.getRuleManager().addProxyAndOpenPortIfNew(rule);
 		router.init();
 	}
-	
+
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-	
+
 	/**
 	 * Note that "Read timed out" indicates incorrect server behavior. The
 	 * socket timeout is set on the client to avoid fallback mentioned in
@@ -72,31 +72,31 @@ public class Http11Test {
 		});
 		client.getParams().setParameter("http.socket.timeout", 7000);
 	}
-	
+
 	private void testPost(boolean useExpect100Continue) throws Exception {
 		HttpClient client = new HttpClient();
 		if (useExpect100Continue)
 			initExpect100ContinueWithFastFail(client);
 		PostMethod post = new PostMethod("http://localhost:4000/axis2/services/BLZService");
 		InputStream stream = this.getClass().getResourceAsStream("/getBank.xml");
-		
+
 		InputStreamRequestEntity entity = new InputStreamRequestEntity(stream);
-		post.setRequestEntity(entity); 
+		post.setRequestEntity(entity);
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
-		
+
 		int status = client.executeMethod(post); // also see comment on initExpect100ContinueWithFastFail()
 		assertEquals(200, status);
 		assertNotNull(post.getResponseBodyAsString());
 		assertFalse(isNullOrEmpty(post.getResponseBodyAsString()));
 		//System.out.println(post.getResponseBodyAsString());
 	}
-	
+
 	@Test
 	public void testPost() throws Exception {
 		testPost(false);
 	}
-	
+
 	@Test
 	public void testExpect100Continue() throws Exception {
 		testPost(true);

@@ -82,6 +82,7 @@ public class Balancer extends AbstractXmlElement {
 		return new ArrayList<Cluster>(clusters.values()) {
 			private static final long serialVersionUID = 1L;
 
+			@Override
 			public boolean add(Cluster e) {
 				Balancer.this.clusters.put(e.getName(), e);
 				return super.add(e);
@@ -91,7 +92,7 @@ public class Balancer extends AbstractXmlElement {
 
 	private Cluster getCluster(String name) {
 		if (!clusters.containsKey(name)) // backward-compatibility: auto create
-											// clusters as they are accessed
+			// clusters as they are accessed
 			addCluster(name);
 		return clusters.get(name);
 	}
@@ -104,7 +105,7 @@ public class Balancer extends AbstractXmlElement {
 		clusters.put(name, new Cluster(name));
 		return true;
 	}
-	
+
 	/**
 	 * @description A list of clusters.
 	 */

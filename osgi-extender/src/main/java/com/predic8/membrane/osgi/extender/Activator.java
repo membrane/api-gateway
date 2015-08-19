@@ -31,7 +31,7 @@ import com.predic8.membrane.annot.NamespaceUtil;
  * {@link MCMain} etc.).
  */
 public class Activator implements BundleActivator {
-	
+
 	public static BundleContext context;
 
 	private ServiceReference logServiceReference;
@@ -39,14 +39,14 @@ public class Activator implements BundleActivator {
 
 	public void start(BundleContext arg0) throws Exception {
 		context = arg0;
-		
+
 		logServiceReference = arg0.getServiceReference(LogService.class.getName());
 		OsgiAppender.setLogService((LogService) arg0.getService(logServiceReference));
-		
+
 		Properties p = new Properties();
 		p.put("osgi.service.blueprint.namespace", new NamespaceUtil().getTargetNamespaces().toArray(new String[0]));
-		
-		registerService = arg0.registerService(org.apache.aries.blueprint.NamespaceHandler.class.getName(), 
+
+		registerService = arg0.registerService(org.apache.aries.blueprint.NamespaceHandler.class.getName(),
 				new NamespaceHandler(), p);
 	}
 

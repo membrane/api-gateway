@@ -35,7 +35,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 @MCElement(name="stompClient")
 public class STOMPClient extends AbstractInterceptor {
-	
+
 	// config
 	private int port = 61613;
 	private String host = null;
@@ -49,7 +49,7 @@ public class STOMPClient extends AbstractInterceptor {
 	public int getPort() {
 		return port;
 	}
-	
+
 	/**
 	 * @description The port to connect to.
 	 * @default 61613
@@ -58,11 +58,11 @@ public class STOMPClient extends AbstractInterceptor {
 	public void setPort(int port) {
 		this.port = port;
 	}
-	
+
 	public String getHost() {
 		return host;
 	}
-	
+
 	/**
 	 * @description The host (name or IP) to connect to.
 	 */
@@ -71,11 +71,11 @@ public class STOMPClient extends AbstractInterceptor {
 	public void setHost(String host) {
 		this.host = host;
 	}
-	
+
 	public ConnectionConfiguration getConnectionConfiguration() {
 		return connectionConfiguration;
 	}
-	
+
 	/**
 	 * @description Parameters for outbound STOMP connections.
 	 */
@@ -87,8 +87,8 @@ public class STOMPClient extends AbstractInterceptor {
 	public SSLParser getSslOutboundParser() {
 		return sslOutboundParser;
 	}
-	
-	
+
+
 	/**
 	 * @description Configures outbound SSL (STOMP via SSL).
 	 */
@@ -103,7 +103,7 @@ public class STOMPClient extends AbstractInterceptor {
 		if (sslOutboundParser != null)
 			sslOutboundProvider = new SSLContext(sslOutboundParser, router.getResolverMap(), router.getBaseLocation());
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		String login = exc.getRequest().getHeader().getFirstValue("login");
@@ -111,9 +111,9 @@ public class STOMPClient extends AbstractInterceptor {
 		String host = exc.getRequest().getHeader().getFirstValue("host");
 		String acceptVersion = exc.getRequest().getHeader().getFirstValue("accept-version");
 
-		boolean isStomp1_0 = login != null && passcode != null; 
+		boolean isStomp1_0 = login != null && passcode != null;
 		boolean isStomp1_1orAbove = host != null && acceptVersion != null;
-		
+
 		if (isStomp1_0 || isStomp1_1orAbove) {
 			Connection c = connectionManager.getConnection(Inet4Address.getByName(this.host), port, connectionConfiguration.getLocalAddr(), sslOutboundProvider, connectionConfiguration.getTimeout());
 			exc.getRequest().writeSTOMP(c.out);
@@ -121,7 +121,7 @@ public class STOMPClient extends AbstractInterceptor {
 		} else {
 			exc.setResponse(Response.badRequest().build());
 		}
-		
+
 		return Outcome.RETURN;
 	}
 }

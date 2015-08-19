@@ -17,15 +17,15 @@ package com.predic8.membrane.core.exchangestore;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
 public class ClientStatisticsCollector implements ClientStatistics {
-	
+
 	private int count;
 	private long minDuration = Long.MAX_VALUE;
 	private long maxDuration = Long.MIN_VALUE;
 	private long total;
 	private String client;
-	
+
 	public ClientStatisticsCollector(String client) {
-	
+
 		this.client = client;
 	}
 
@@ -38,7 +38,7 @@ public class ClientStatisticsCollector implements ClientStatistics {
 		total += getDuration(exc);
 		count ++;
 	}
-	
+
 	@Override
 	public int getCount() {
 		return count;

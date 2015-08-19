@@ -20,14 +20,14 @@ class CleanupThread extends Thread {
 	public interface Cleaner {
 		public void cleanup();
 	}
-	
+
 	private final ArrayList<WeakReference<Cleaner>> cleaners = new ArrayList<WeakReference<Cleaner>>();
-	
+
 	public CleanupThread(Cleaner... cleaner) {
 		for (Cleaner c : cleaner)
 			cleaners.add(new WeakReference<Cleaner>(c));
 	}
-	
+
 	@Override
 	public void run() {
 		while (!interrupted()) {

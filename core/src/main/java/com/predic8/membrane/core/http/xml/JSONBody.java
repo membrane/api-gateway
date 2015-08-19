@@ -42,7 +42,7 @@ class JSONBody extends AbstractXmlElement {
 		out.writeAttribute("type", "json");
 
 		try {
-		
+
 			final JsonFactory jsonFactory = new JsonFactory();
 			final JsonParser jp = jsonFactory.createParser(new InputStreamReader(msg.getBodyAsStreamDecoded(), msg.getCharset()));
 			final List<String> stack = new ArrayList<String>();
@@ -98,10 +98,10 @@ class JSONBody extends AbstractXmlElement {
 					case VALUE_NUMBER_INT:
 					case VALUE_NUMBER_FLOAT:
 						out.writeStartElement(name);
-						out.writeAttribute("type", 
-								jp.getCurrentToken() == JsonToken.VALUE_STRING ? "s" : 
-								jp.getCurrentToken() == JsonToken.VALUE_NUMBER_INT ? "i" :
-									"f");
+						out.writeAttribute("type",
+								jp.getCurrentToken() == JsonToken.VALUE_STRING ? "s" :
+									jp.getCurrentToken() == JsonToken.VALUE_NUMBER_INT ? "i" :
+								"f");
 						out.writeCharacters(jp.getText());
 						out.writeEndElement();
 						break;

@@ -41,7 +41,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	public ReverseProxyingInterceptor() {
 		name = "Reverse Proxy";
 	}
-	
+
 	/**
 	 * handles "Destination" header (see RFC 2518 section 9.3; also used by WebDAV)
 	 */
@@ -66,12 +66,12 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		}
 		URL target = new URL(exc.getDestinations().get(0));
 		// rewrite to our schema, host and port
-		exc.getRequest().getHeader().setValue(Header.DESTINATION, 
-				Relocator.getNewLocation(destination, target.getProtocol(), 
+		exc.getRequest().getHeader().setValue(Header.DESTINATION,
+				Relocator.getNewLocation(destination, target.getProtocol(),
 						target.getHost(), target.getPort() == -1 ? target.getDefaultPort() : target.getPort()));
 		return Outcome.CONTINUE;
 	}
-	
+
 	/**
 	 * Handles "Location" header.
 	 */
@@ -96,8 +96,8 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE;
 		}
 		// rewrite to our schema, host and port
-		exc.getResponse().getHeader().setValue(Header.LOCATION, 
-				Relocator.getNewLocation(location, getProtocol(exc), 
+		exc.getResponse().getHeader().setValue(Header.LOCATION,
+				Relocator.getNewLocation(location, getProtocol(exc),
 						exc.getOriginalHostHeaderHost(), getPort(exc)));
 		return Outcome.CONTINUE;
 	}
@@ -123,11 +123,11 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 			return false;
 		}
 	}
-	
+
 	int getPort(Exchange exc) {
 		return exc.getHandler().getLocalPort();
 	}
-	
+
 	private String getProtocol(Exchange exc) {
 		Rule r = exc.getRule();
 		return r != null && r instanceof AbstractServiceProxy && ((AbstractServiceProxy)r).getSslInboundContext() != null ? "https" : "http";

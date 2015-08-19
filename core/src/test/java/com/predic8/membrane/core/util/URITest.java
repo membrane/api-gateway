@@ -22,11 +22,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class URITest {
-	
+
 	private void assertSame(String uri) {
 		assertSame(uri, false);
 	}
-		
+
 	private void assertSame(String uri, boolean mayDiffer) {
 		try {
 			URI u1 = new URI(uri, false);
@@ -79,7 +79,7 @@ public class URITest {
 		assertSame("?a=query#foo");
 		assertSame("scheme:?a=query#foo", true); // opaque
 	}
-	
+
 	@Test
 	public void testEncoding() {
 		assertSame("http://predic8.de/path/file?a=queräy#foo");

@@ -31,7 +31,7 @@ public class FileSchemaWebAppResolver implements SchemaResolver {
 	private static final Log log = LogFactory.getLog(FileSchemaWebAppResolver.class.getName());
 
 	private final ServletContext ctx;
-	
+
 	public FileSchemaWebAppResolver(ServletContext ctx) {
 		this.ctx = ctx;
 	}

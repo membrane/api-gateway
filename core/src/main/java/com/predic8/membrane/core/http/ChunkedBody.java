@@ -28,14 +28,14 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 /**
  * Reads the body with "Transfer-Encoding: chunked".
- * 
- * See {@link ChunkedBodyTransferrer} for writing a body using chunks. 
+ *
+ * See {@link ChunkedBodyTransferrer} for writing a body using chunks.
  */
 public class ChunkedBody extends AbstractBody {
 
 	private static final Log log = LogFactory.getLog(ChunkedBody.class.getName());
 	private InputStream inputStream;
-	
+
 	public ChunkedBody(InputStream in) {
 		log.debug("ChunkedInOutBody constructor");
 		inputStream = in;
@@ -46,6 +46,7 @@ public class ChunkedBody extends AbstractBody {
 		chunks.addAll(HttpUtil.readChunks(inputStream));
 	}
 
+	@Override
 	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
 		log.debug("writeNotReadChunked");
 		int chunkSize;
@@ -89,7 +90,7 @@ public class ChunkedBody extends AbstractBody {
 		destPos = copyCRLF(raw, destPos);
 		return raw;
 	}
-	
+
 	private int copyLastChunk(byte[] raw, int destPos) {
 		System.arraycopy(ZERO, 0, raw, destPos, ZERO.length);
 		destPos += ZERO.length;
@@ -101,7 +102,7 @@ public class ChunkedBody extends AbstractBody {
 		System.arraycopy(Constants.CRLF_BYTES, 0, raw, destPos, 2);
 		return destPos += 2;
 	}
-	
+
 	@Override
 	protected void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException {
 		if (getLength() == 0)

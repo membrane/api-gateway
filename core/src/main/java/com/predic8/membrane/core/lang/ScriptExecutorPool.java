@@ -24,24 +24,24 @@ import com.google.common.base.Function;
 import com.predic8.membrane.core.Router;
 
 public abstract class ScriptExecutorPool<T, R> implements Function<Map<String, Object>, R> {
-    private static final Log log = LogFactory.getLog(ScriptExecutorPool.class);
+	private static final Log log = LogFactory.getLog(ScriptExecutorPool.class);
 
-    private static final int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-    ArrayBlockingQueue<T> scripts = new ArrayBlockingQueue<T>(concurrency);
+	private static final int concurrency = Runtime.getRuntime().availableProcessors() * 2;
+	ArrayBlockingQueue<T> scripts = new ArrayBlockingQueue<T>(concurrency);
 
 	public void init(Router router) {
-        scripts.add(createOneScript());
-        router.getBackgroundInitializator().execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    for (int i = 1; i < concurrency; i++)
-                        scripts.add(createOneScript());
-                } catch (Exception e) {
-                    log.error("Error compiling script:", e);
-                }
-            }
-        });
+		scripts.add(createOneScript());
+		router.getBackgroundInitializator().execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					for (int i = 1; i < concurrency; i++)
+						scripts.add(createOneScript());
+				} catch (Exception e) {
+					log.error("Error compiling script:", e);
+				}
+			}
+		});
 	}
 
 	public final Object execute(Map<String, Object> parameters) {
@@ -57,7 +57,7 @@ public abstract class ScriptExecutorPool<T, R> implements Function<Map<String, O
 			return null;
 		}
 	}
-	
+
 	protected abstract Object invoke(T script, Map<String, Object> parameters);
 	protected abstract T createOneScript();
 

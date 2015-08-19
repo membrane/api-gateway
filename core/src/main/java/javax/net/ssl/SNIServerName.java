@@ -21,7 +21,7 @@ public class SNIServerName {
 
 	public SNIServerName() {
 	}
-	
+
 	public SNIServerName(int code, byte[] encoded) {
 	}
 

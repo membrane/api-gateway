@@ -54,7 +54,7 @@ import com.predic8.membrane.core.util.EndOfStreamException;
 /**
  * Takes action on XML documents based on an XPath expression. The only action
  * as of writing is {@link #removeMatchingElements(Message)}.
- * 
+ *
  * As even Java 7 only supports XPath 1.0, this is what this class supports.
  */
 @ThreadSafe
@@ -71,13 +71,13 @@ public class XMLContentFilter {
 	 * The XPath expression.
 	 */
 	private final String xPath;
-	
-	/** 
+
+	/**
 	 * The elementFinder is only used for improved performance: It can make
 	 * a first decision whether the XPath expression has any chance of succeeding
 	 * (if the XPath expression is simple enough, see {@link #createElementFinder(String)}).
-	 * 
-	 * That decision is made (here is the performance gain) using a StAX parser and without 
+	 *
+	 * That decision is made (here is the performance gain) using a StAX parser and without
 	 * a DOM.
 	 */
 	private final XMLElementFinder elementFinder;
@@ -96,11 +96,11 @@ public class XMLContentFilter {
 	/**
 	 * Constructs an XMLElementFinder which can make a first decision whether a
 	 * given XPath expression has any chance of succeeding.
-	 * 
+	 *
 	 * This only works if the XPath expression is simple enough. (The XPath
 	 * expression must be a UnionExpr consisting of PathExprs, which start with
 	 * "//foo", optionally followed by "[namespace-uri()='http://bar/']").
-	 * 
+	 *
 	 * @return the xmlElementFinder as described above, or null if the XPath
 	 *         expression is too complex.
 	 */
@@ -119,7 +119,7 @@ public class XMLContentFilter {
 		}
 		return new XMLElementFinder(rootElements);
 	}
-	
+
 	private XPathExpression createXPathExpression() throws XPathExpressionException {
 		XPathExpression res = xpe.get();
 		if (res != null)
@@ -130,7 +130,7 @@ public class XMLContentFilter {
 		xpe.set(res);
 		return res;
 	}
-	
+
 	private DocumentBuilder createDocumentBuilder() throws ParserConfigurationException {
 		DocumentBuilder res = db.get();
 		if (res != null)
@@ -142,7 +142,7 @@ public class XMLContentFilter {
 		db.set(res);
 		return res;
 	}
-	
+
 	private Transformer createTransformer() throws TransformerConfigurationException, TransformerFactoryConfigurationError {
 		Transformer res = t.get();
 		if (res != null)
@@ -151,10 +151,10 @@ public class XMLContentFilter {
 		t.set(res);
 		return res;
 	}
-	
+
 	/**
 	 * Removes parts of an XML document based on an XPath expression.
-	 * 
+	 *
 	 * If the message is not valid XML, it is left unchanged.
 	 */
 	public void removeMatchingElements(Message message) {
@@ -166,9 +166,9 @@ public class XMLContentFilter {
 			} catch (EndOfStreamException e) {
 			} catch (FactoryConfigurationError e) {
 			}
-			
+
 			if (elementFinder != null &&
-				!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStream())) {
+					!elementFinder.matches(xop != null ? xop.getBodyAsStream() : message.getBodyAsStream())) {
 				return;
 			}
 			DocumentBuilder db = createDocumentBuilder();
@@ -209,9 +209,9 @@ public class XMLContentFilter {
 	 */
 	private void removeElementsIfNecessary(Message originalMessage,
 			Message xopDecodedMessage, Document doc)
-			throws XPathExpressionException, TransformerException,
-			TransformerConfigurationException,
-			TransformerFactoryConfigurationError {
+					throws XPathExpressionException, TransformerException,
+					TransformerConfigurationException,
+					TransformerFactoryConfigurationError {
 		NodeList toBeDeleted = (NodeList) createXPathExpression().evaluate(doc,
 				XPathConstants.NODESET);
 		if (toBeDeleted.getLength() > 0) {
@@ -227,7 +227,7 @@ public class XMLContentFilter {
 				Node n = toBeDeleted.item(i);
 				n.getParentNode().removeChild(n);
 			}
-			
+
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			createTransformer().transform(new DOMSource(doc), new StreamResult(baos));
 			originalMessage.setBodyContent(baos.toByteArray());

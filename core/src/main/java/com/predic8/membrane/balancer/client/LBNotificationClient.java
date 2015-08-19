@@ -70,11 +70,11 @@ public class LBNotificationClient {
 		logArguments();
 
 		Response res = notifiyClusterManager();
-		
+
 		if (res.getStatusCode() != 204) {
 			throw new Exception("Got StatusCode: " + res.getStatusCode());
 		}
-		
+
 		log.info("Sent " +cmd + " message to "+host+":"+port + (skeySpec!=null?" encrypted":""));
 	}
 
@@ -91,7 +91,7 @@ public class LBNotificationClient {
 
 	private void parseArguments(CommandLine cl) throws Exception {
 		if (!new File(propertiesFile).exists()) log.warn("no properties file found at: "+ new File(propertiesFile).getAbsolutePath());
-		
+
 		cmd = getArgument(cl, 0, '-', null, null,
 				"No command up, down or takeout specified!");
 		host = getArgument(cl, 1, 'H', null, null, "No host name specified!");
@@ -101,7 +101,7 @@ public class LBNotificationClient {
 		cmURL = getArgument(cl, -1, 'u', "clusterManager", null,
 				"No cluster manager location found!");
 		String key = getArgument(cl, -1, '-', "key", "", null);
-		if (!"".equals(key)) {		
+		if (!"".equals(key)) {
 			skeySpec = new SecretKeySpec(Hex.decodeHex(key.toCharArray()), "AES");
 		}
 	}
@@ -143,14 +143,14 @@ public class LBNotificationClient {
 	}
 
 	private String getRequestURL() throws Exception {
-		if (skeySpec!=null) {			
+		if (skeySpec!=null) {
 			return cmURL + "/" + cmd + "?data="+
-			   URLEncoder.encode(getEncryptedQueryString(),"UTF-8");
+					URLEncoder.encode(getEncryptedQueryString(),"UTF-8");
 		}
-		String time = String.valueOf(System.currentTimeMillis()); 
+		String time = String.valueOf(System.currentTimeMillis());
 		return cmURL + "/" + cmd + "?balancer=" + balancer + "&cluster=" + cluster + "&host=" + host + "&port=" + port + "&time=" + time;
 	}
-	
+
 	private String getEncryptedQueryString() throws Exception {
 		Cipher cipher = Cipher.getInstance("AES");
 
@@ -181,7 +181,7 @@ public class LBNotificationClient {
 		options.addOption("u", "clusterManager", true,
 				"Sets the url of the cluster manager.");
 		options.addOption("e", "useEncryption", false,
-			"When set the parameters will be encrypted.");
+				"When set the parameters will be encrypted.");
 		return options;
 	}
 

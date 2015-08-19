@@ -30,14 +30,14 @@ import com.predic8.membrane.core.interceptor.Outcome;
  */
 @MCElement(name="request", topLevel=false)
 public class RequestInterceptor extends AbstractFlowInterceptor {
-	
+
 	private static final Log log = LogFactory.getLog(RequestInterceptor.class);
-	
+
 	public RequestInterceptor() {
 		name = "Request Interceptor";
 		setFlow(Flow.Set.REQUEST);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		boolean logDebug = log.isDebugEnabled();
@@ -55,5 +55,5 @@ public class RequestInterceptor extends AbstractFlowInterceptor {
 				return o;
 		}
 		return Outcome.CONTINUE;
-	}	
+	}
 }

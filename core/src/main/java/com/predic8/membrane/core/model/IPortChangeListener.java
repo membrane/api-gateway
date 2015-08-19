@@ -16,10 +16,10 @@ package com.predic8.membrane.core.model;
 
 
 public interface IPortChangeListener {
-	
+
 	public void addPort(int port);
-	
+
 	public void removePort(int port);
-	
+
 	public void updatePort(int oldPort,int newPort);
 }

@@ -19,7 +19,7 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 public class ResponseContentLengthExchangeAccessor implements ExchangeAccessor {
 
 	public static final String ID = "Response Content-Length";
-	
+
 	public Object get(AbstractExchange exc) {
 		if (exc == null || exc.getResponse() == null)
 			return 0;

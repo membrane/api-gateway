@@ -60,14 +60,14 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		}
 	}
 
-	protected boolean isInlined() {		
+	protected boolean isInlined() {
 		return inlined ;
-	}	
+	}
 
 	protected void setProperty(String prop, Element e, BeanDefinitionBuilder builder) {
 		setProperty(prop, prop, e, builder);
 	}
-	
+
 	protected void setProperty(String prop, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
 		setProperty(prop, prop, e, builder, flexibleEnum);
 	}
@@ -75,7 +75,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 	protected void setProperty(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder) {
 		setProperty(xmlPropertyName, springPropertyName, e, builder, false);
 	}
-	
+
 	protected void setProperty(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
 		String value = e.getAttribute(xmlPropertyName);
 		if (flexibleEnum)
@@ -90,7 +90,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 	protected void setPropertyIfSet(String prop, Element e, BeanDefinitionBuilder builder, boolean flexibleEnum) {
 		setPropertyIfSet(prop, prop, e, builder, flexibleEnum);
 	}
-	
+
 	protected void setPropertyIfSet(String xmlPropertyName, String springPropertyName, Element e, BeanDefinitionBuilder builder) {
 		setPropertyIfSet(xmlPropertyName, springPropertyName, e, builder, false);
 	}
@@ -99,7 +99,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		if (e.hasAttribute(xmlPropertyName))
 			setProperty(xmlPropertyName, springPropertyName, e, builder, flexibleEnum);
 	}
-	
+
 	protected void setProperties(String prop, Element e, BeanDefinitionBuilder builder) {
 		NamedNodeMap attributes = e.getAttributes();
 		HashMap<String, String> attrs = new HashMap<String, String>();
@@ -110,7 +110,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		}
 		builder.addPropertyValue(prop, attrs);
 	}
-	
+
 	protected void parseElementToProperty(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, String property) {
 		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
 
@@ -122,11 +122,11 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 			builder.addPropertyValue(property, bd);
 		}
 	}
-	
+
 	protected void handleChildObject(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder, Class<?> clazz, Object child) {
 		throw new RuntimeException("Do not know how to handle child of class " + clazz + ". Please override handleChildObject().");
 	}
-	
+
 	protected void parseChildren(Element element, ParserContext parserContext, BeanDefinitionBuilder builder) {
 		NodeList nl = element.getChildNodes();
 		for (int i = 0; i < nl.getLength(); i++) {
@@ -136,7 +136,7 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 			}
 		}
 	}
-	
+
 	protected void handleChildElement(Element ele, ParserContext parserContext, BeanDefinitionBuilder builder) {
 		BeanDefinitionParserDelegate delegate = parserContext.getDelegate();
 
@@ -167,12 +167,12 @@ public abstract class AbstractParser extends AbstractSingleBeanDefinitionParser 
 		builder.getRawBeanDefinition().setAttribute(counter, i+1);
 		return i;
 	}
-	
+
 	protected boolean isMembraneNamespace(String namespace) {
 		return MEMBRANE_BEANS_NAMESPACE.equals(namespace) ||
 				MEMBRANE_PROXIES_NAMESPACE.equals(namespace);
 	}
-	
+
 	protected void setProperty(BeanDefinitionBuilder builder, String propertyName, Object value) {
 		if (value instanceof RuntimeBeanNameReference)
 			builder.addPropertyReference(propertyName, ((RuntimeBeanNameReference)value).getBeanName());

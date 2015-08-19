@@ -54,7 +54,7 @@ public class RuleManager {
 	private int defaultTargetPort = 8080;
 	private String defaultPath = ".*";
 	private int defaultMethod = 4;
-	
+
 	public enum RuleDefinitionSource {
 		/** rule defined in the spring context that created the router */
 		SPRING,
@@ -106,7 +106,7 @@ public class RuleManager {
 	public void addProxyAndOpenPortIfNew(Rule rule) throws IOException {
 		addProxyAndOpenPortIfNew(rule, RuleDefinitionSource.MANUAL);
 	}
-	
+
 	public synchronized void addProxyAndOpenPortIfNew(Rule rule, RuleDefinitionSource source) throws IOException {
 		if (exists(rule.getKey()))
 			return;
@@ -132,7 +132,7 @@ public class RuleManager {
 			listener.ruleAdded(rule);
 		}
 	}
-	
+
 	public synchronized void openPorts() throws IOException {
 		HashMap<IpPort, SSLProvider> sslProviders;
 		try {
@@ -214,7 +214,7 @@ public class RuleManager {
 			RuleKey key = rule.getKey();
 
 			log.debug("Host from rule: " + key.getHost() + ";   Host from parameter rule key: " + hostHeader);
-			
+
 			if (!rule.isActive())
 				continue;
 
@@ -261,7 +261,7 @@ public class RuleManager {
 
 	public synchronized void removeRule(Rule rule) {
 		getExchangeStore().removeAllExchanges(rule);
-		
+
 		int i = rules.indexOf(rule);
 		rules.remove(i);
 		ruleSources.remove(i);
@@ -274,7 +274,7 @@ public class RuleManager {
 
 	public synchronized void replaceRule(Rule rule, Rule newRule) {
 		getExchangeStore().removeAllExchanges(rule);
-		
+
 		int i = rules.indexOf(rule);
 		rules.set(i, newRule);
 
@@ -291,7 +291,7 @@ public class RuleManager {
 			if (ruleSources.get(i) == source)
 				removeRule(rules.get(i--));
 	}
-	
+
 	public synchronized void removeAllRules() {
 		while (rules.size() > 0)
 			removeRule(rules.get(0));
@@ -324,13 +324,16 @@ public class RuleManager {
 					if (ruleSources.get(i) == source)
 						add(rules.get(i));
 			}
+			@Override
 			public Rule set(int index, Rule element) {
 				throw new IllegalStateException("set(int, Rule) is not allowed");
 			}
+			@Override
 			public boolean add(Rule e) {
 				addProxy(e, source);
 				return super.add(e);
 			}
+			@Override
 			public void add(int index, Rule e) {
 				addProxy(e, source);
 				super.add(index, e);

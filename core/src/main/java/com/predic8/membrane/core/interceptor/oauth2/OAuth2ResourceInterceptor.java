@@ -53,11 +53,11 @@ import com.predic8.membrane.core.util.URLParamUtil;
 @MCElement(name="oauth2Resource")
 public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(OAuth2ResourceInterceptor.class.getName());
-	
+
 	private String loginLocation, loginPath = "/login/", publicURL;
 	private AuthorizationService authorizationService;
 	private SessionManager sessionManager;
-	
+
 	private final WebServerInterceptor wsi = new WebServerInterceptor();
 
 	public String getLoginLocation() {
@@ -73,11 +73,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 	public void setLoginLocation(String login) {
 		this.loginLocation = login;
 	}
-	
+
 	public String getLoginPath() {
 		return loginPath;
 	}
-	
+
 	/**
 	 * @description context path of the login dialog
 	 * @default /login/
@@ -86,65 +86,65 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 	public void setLoginPath(String loginPath) {
 		this.loginPath = loginPath;
 	}
-	
-	
+
+
 	public String getPublicURL() {
 		return publicURL;
 	}
-	
+
 	@Required
 	@MCAttribute
 	public void setPublicURL(String publicURL) {
 		this.publicURL = publicURL;
 	}
-	
+
 	public AuthorizationService getAuthorizationService() {
 		return authorizationService;
 	}
-	
+
 	@Required
 	@MCChildElement(order=10)
 	public void setAuthorizationService(AuthorizationService authorizationService) {
 		this.authorizationService = authorizationService;
 	}
-	
+
 	public SessionManager getSessionManager() {
 		return sessionManager;
 	}
-	
+
 	@MCChildElement(order=20)
 	public void setSessionManager(SessionManager sessionManager) {
 		this.sessionManager = sessionManager;
 	}
-	
+
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-		
+
 		authorizationService.init(router);
-		
+
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
 		sessionManager.init(router);
-		
+
 		wsi.setDocBase(loginLocation);
 		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
 		wsi.init(router);
 	}
-	
+
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		
+
 		if (isLoginRequest(exc)) {
 			handleLoginRequest(exc);
 			return Outcome.RETURN;
 		}
-		
+
 		Session session = sessionManager.getSession(exc.getRequest());
-		
+
 		if (session == null)
 			return respondWithRedirect(exc);
-		
+
 		if (session.isAuthorized()) {
 			applyBackendAuthorization(exc, session);
 			return Outcome.CONTINUE;
@@ -174,13 +174,13 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		return Outcome.RETURN;
 	}
 
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
 	public boolean isLoginRequest(Exchange exc) {
 		URI uri = router.getUriFactory().createWithoutException(exc.getRequest().getUri());
 		return uri.getPath().startsWith(loginPath);
@@ -188,18 +188,18 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
 	private void showPage(Exchange exc, String state, Object... params) throws Exception {
 		String target = StringUtils.defaultString(URLParamUtil.getParams(router.getUriFactory(), exc).get("target"));
-		
+
 		exc.getDestinations().set(0, "/index.html");
 		wsi.handleRequest(exc);
-		
+
 		Engine engine = new Engine();
 		engine.setErrorHandler(new ErrorHandler() {
-			
+
 			@Override
 			public void error(String arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
 				log.error(arg0);
 			}
-			
+
 			@Override
 			public void error(String arg0, Token arg1) throws ParseException {
 				log.error(arg0);
@@ -213,29 +213,29 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		model.put("target", StringEscapeUtils.escapeXml(target));
 		for (int i = 0; i < params.length; i+=2)
 			model.put((String)params[i], params[i+1]);
-		
+
 		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBody().toString(), model).getBytes(Constants.UTF_8_CHARSET));
 	}
 
 	public void handleLoginRequest(Exchange exc) throws Exception {
 		Session s = sessionManager.getSession(exc.getRequest());
-		
+
 		String uri = exc.getRequest().getUri().substring(loginPath.length()-1);
 		if (uri.indexOf('?') >= 0)
 			uri = uri.substring(0, uri.indexOf('?'));
 		exc.getDestinations().set(0, uri);
-		
+
 		if (uri.equals("/logout")) {
 			if (s != null)
 				s.clear();
 			exc.setResponse(Response.redirect("/", false).build());
-		} else if (uri.equals("/")) { 
+		} else if (uri.equals("/")) {
 			if (s == null || !s.isAuthorized()) {
 				String state = new BigInteger(130, new SecureRandom()).toString(32);
 				showPage(exc, state);
 
 				Session session = sessionManager.createSession(exc);
-				
+
 				HashMap<String, String> userAttributes = new HashMap<String, String>();
 				userAttributes.put("state", state);
 				session.preAuthorize("", userAttributes);

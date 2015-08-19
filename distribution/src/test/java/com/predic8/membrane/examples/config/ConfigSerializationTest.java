@@ -37,23 +37,23 @@ import com.predic8.membrane.test.AssertUtils;
 /**
  * Tests {@link MCUtil#fromXML(Class, String)} and {@link MCUtil#toXML(Object)} on every
  * proxies.xml file found in the "examples" directory.
- * 
+ *
  * The test is:
  * 1. call fromXml() on the file.
  * 2. call toXml() on the result. (ensure that no serialization warning as been issued)
  * 3. call fromXml() on the result.
  * 4. call toXml() on the result.
  * 5. compare output from steps 2 and 4.
- * 
+ *
  */
 @RunWith(Parameterized.class)
 public class ConfigSerializationTest {
-	
+
 	// list of examples that do not work
 	public static List<String> EXCLUDED = Arrays.asList(new String[] {
-		"custom-interceptor", // has external classpath dependencies
-		"logging-jdbc", // contains a reference to a DataSource bean (not serializable)
-		"proxy" // contains more than one <router> (not supported by MCUtil#fromXML())
+			"custom-interceptor", // has external classpath dependencies
+			"logging-jdbc", // contains a reference to a DataSource bean (not serializable)
+			"proxy" // contains more than one <router> (not supported by MCUtil#fromXML())
 	});
 
 	@Parameters
@@ -79,11 +79,11 @@ public class ConfigSerializationTest {
 	}
 
 	private final String configFile;
-	
+
 	public ConfigSerializationTest(String configFile) {
 		this.configFile = configFile;
 	}
-	
+
 	@Test
 	public void doit() throws Exception {
 		try {

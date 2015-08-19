@@ -23,13 +23,13 @@ public class Host extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "host";
 
 	private String value;
-	
+
 	public Host(String host) {
 		value = host;
 	}
 
 	public Host() {
-		
+
 	}
 
 	@Override
@@ -41,9 +41,9 @@ public class Host extends AbstractXmlElement {
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
 		out.writeCharacters(value);
-		out.writeEndElement();		
+		out.writeEndElement();
 	}
-	
+
 	public String getValue() {
 		return value;
 	}
@@ -51,10 +51,10 @@ public class Host extends AbstractXmlElement {
 	public void setValue(String value) {
 		this.value = value;
 	}
-	
+
 	@Override
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 }

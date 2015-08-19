@@ -49,24 +49,24 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 			.getName());
 
 	private final JsonFactory jsonFactory = new JsonFactory(); // thread-safe
-																// after
-																// configuration
+	// after
+	// configuration
 	private DataSource dataSource;
 	private String dataSourceBeanId;
 	private ApplicationContext applicationContext;
 
 	private static final ImmutableMap<String, String> sortNameColmnMapping =
-			   new ImmutableMap.Builder<String, String>()
-			   	   .put("statusCode", JDBCUtil.STATUS_CODE)
-			       .put("time", JDBCUtil.TIME)	
-			       //TODO missing other colmns
-			       .build();
-			  
+			new ImmutableMap.Builder<String, String>()
+			.put("statusCode", JDBCUtil.STATUS_CODE)
+			.put("time", JDBCUtil.TIME)
+			//TODO missing other colmns
+			.build();
+
 
 	public StatisticsProvider() {
 		name = "Provides caller statistics as JSON";
 	}
-	
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		this.applicationContext = applicationContext;
@@ -75,7 +75,7 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		Connection con = dataSource.getConnection();
-		
+
 		try {
 			int offset = URLParamUtil.getIntParam(router.getUriFactory(), exc, "offset");
 			int max = URLParamUtil.getIntParam(router.getUriFactory(), exc, "max");
@@ -97,10 +97,10 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	public static String getOrderedStatistics(URIFactory uriFactory, Exchange exc) throws Exception {
 		String iOrder = URLParamUtil.getStringParam(uriFactory, exc, "order");
 		String iSort = URLParamUtil.getStringParam(uriFactory, exc, "sort");
-		
+
 		//injection protection. Can't use prepared statements (in jdbc) when variables are within order by.
 		String order = "desc".equals(iOrder.toLowerCase())?"desc":"asc";
-		
+
 		//injection protection
 		String sort;
 		if (!sortNameColmnMapping.containsKey(iSort)) {
@@ -108,11 +108,11 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 		} else {
 			sort = sortNameColmnMapping.get(iSort);
 		}
-		
-		return	"select * from " +JDBCUtil.TABLE_NAME + " ORDER BY "+sort+" "+order;	
+
+		return	"select * from " +JDBCUtil.TABLE_NAME + " ORDER BY "+sort+" "+order;
 	}
-			
-	
+
+
 	private int getTotal(Connection con) throws Exception {
 		ResultSet r = con.createStatement().executeQuery(JDBCUtil.COUNT_ALL);
 		r.next();
@@ -125,22 +125,22 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	}
 
 	private void createJson(Exchange exc, ResultSet r, int offset, int max, int total) throws IOException,
-			JsonGenerationException, SQLException {
+	JsonGenerationException, SQLException {
 
 		StringWriter jsonTxt = new StringWriter();
 
 		JsonGenerator jsonGen = jsonFactory.createGenerator(jsonTxt);
 		jsonGen.writeStartObject();
-			jsonGen.writeArrayFieldStart("statistics");
-				int size = 0;
-				r.absolute(offset+1); //jdbc doesn't support paginating. This can be inefficient.
-				while (size < max && !r.isAfterLast()) {
-					size++;
-					writeRecord(r, jsonGen);
-					r.next();
-				}		
-			jsonGen.writeEndArray();
-			jsonGen.writeNumberField("total", total);
+		jsonGen.writeArrayFieldStart("statistics");
+		int size = 0;
+		r.absolute(offset+1); //jdbc doesn't support paginating. This can be inefficient.
+		while (size < max && !r.isAfterLast()) {
+			size++;
+			writeRecord(r, jsonGen);
+			r.next();
+		}
+		jsonGen.writeEndArray();
+		jsonGen.writeNumberField("total", total);
 		jsonGen.writeEndObject();
 		jsonGen.flush();
 
@@ -180,20 +180,21 @@ public class StatisticsProvider extends AbstractInterceptor implements Applicati
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
 	}
-	
+
 	public String getDataSourceBeanId() {
 		return dataSourceBeanId;
 	}
-	
+
 	/**
 	 * @deprecated use {@link #setDataSource(DataSource)} instead: Using
 	 *             {@link #setDataSourceBeanId(String)} from Spring works,
 	 *             but does not create a Spring bean dependency.
 	 */
+	@Deprecated
 	public void setDataSourceBeanId(String dataSourceBeanId) {
 		this.dataSourceBeanId = dataSourceBeanId;
 	}
-	
+
 	@Override
 	public void init() throws Exception {
 		if (dataSourceBeanId != null)

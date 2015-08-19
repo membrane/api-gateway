@@ -51,16 +51,16 @@ import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LogManager.getLogger(WSDLPublisherInterceptor.class);
-	
+
 	public WSDLPublisherInterceptor() {
 		name = "WSDL Publisher";
 	}
-	
+
 	/**
 	 * Note that this class fulfills two purposes:
-	 * 
+	 *
 	 * * During the initial processDocuments() run, the XSDs are enumerated.
-	 * 
+	 *
 	 * * During later runs (as well as the initial run, but that's result is discarded),
 	 * the documents are rewritten.
 	 */
@@ -104,7 +104,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 	private final HashMap<String, Integer> paths_reverse = new HashMap<String, Integer>();
 	@GuardedBy("paths")
 	private final Queue<String> documents_to_process = new LinkedList<String>();
-	
+
 	private void processDocuments(Exchange exc) throws Exception {
 		// exc.response is only temporarily used so we can call the WSDLInterceptor
 		// exc.response is set to garbage and should be discarded after this method
@@ -127,13 +127,13 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 			}
 		}
 	}
-	
+
 	private String wsdl;
-	
+
 	public String getWsdl() {
 		return wsdl;
 	}
-	
+
 	/**
 	 * @description The WSDL (URL or file).
 	 * @example /WEB-INF/wsdl/ArticleService.wsdl
@@ -148,7 +148,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 			documents_to_process.add(wsdl);
 		}
 	}
-	
+
 	@Override
 	public void init() throws Exception {
 		// inherit wsdl="..." from SoapProxy
@@ -160,12 +160,12 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 			}
 		}
 	}
-	
+
 	@Override
 	public Outcome handleRequest(final Exchange exc) throws Exception {
 		if (!"GET".equals(exc.getRequest().getMethod()))
 			return Outcome.CONTINUE;
-		
+
 		try {
 			String resource = null;
 			if (exc.getRequestURI().endsWith("?wsdl") || exc.getRequestURI().endsWith("?WSDL")) {
@@ -204,13 +204,13 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 			exc.setResponse(Response.notFound().build());
 			return Outcome.ABORT;
 		}
-			
+
 		return Outcome.CONTINUE;
 	}
-	
+
 	@Override
 	public String getShortDescription() {
 		return "Publishes the WSDL at " + wsdl + " under \"?wsdl\" (as well as its dependent schemas under similar URLs).";
 	}
-	
+
 }

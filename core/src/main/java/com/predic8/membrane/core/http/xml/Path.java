@@ -26,14 +26,14 @@ public class Path extends AbstractXmlElement {
 	public static final String ELEMENT_NAME = "path";
 
 	List<Component> components = new ArrayList<Component>();
-	
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Component.ELEMENT_NAME.equals(child)) {
 			components.add((Component)new Component().parse(token));
-		} 
+		}
 	}
-	
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement(ELEMENT_NAME);
@@ -41,8 +41,8 @@ public class Path extends AbstractXmlElement {
 		for (Component c : components) {
 			c.write(out);
 		}
-		
-		out.writeEndElement();		
+
+		out.writeEndElement();
 	}
 
 	public List<Component> getComponents() {
@@ -57,5 +57,5 @@ public class Path extends AbstractXmlElement {
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 }

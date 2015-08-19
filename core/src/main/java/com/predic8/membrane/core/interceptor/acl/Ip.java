@@ -27,10 +27,10 @@ public class Ip extends AbstractClientAddress {
 	protected String getElementName() {
 		return ELEMENT_NAME;
 	}
-	
+
 	@Override
 	public boolean matches(String hostname, String ip) {
 		return pattern.matcher(ip).matches();
 	}
-	
+
 }

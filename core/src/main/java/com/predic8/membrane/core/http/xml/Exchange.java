@@ -32,27 +32,27 @@ public class Exchange extends AbstractXmlElement {
 		com.predic8.membrane.core.http.Response res = exc.getResponse();
 		response = res == null ? null : new Response(res);
 	}
-	
+
 	@Override
 	protected void parseChildren(XMLStreamReader token, String child) throws Exception {
 		if (Request.ELEMENT_NAME.equals(child)) {
 			request = (Request) new Request().parse(token);
 		} else if (Response.ELEMENT_NAME.equals(child)) {
 			response = (Response) new Headers().parse(token);
-		} 
- 
+		}
+
 	}
-	 
+
 	@Override
 	public void write(XMLStreamWriter out) throws XMLStreamException {
 		out.writeStartElement("http", ELEMENT_NAME, Constants.HTTP_NS);
-		
+
 		out.writeNamespace("http", Constants.HTTP_NS);
 
 		request.write(out);
 		writeIfNotNull(response, out);
-		
-		out.writeEndElement();		
+
+		out.writeEndElement();
 	}
 
 	@Override
@@ -63,15 +63,15 @@ public class Exchange extends AbstractXmlElement {
 	public Request getRequest() {
 		return request;
 	}
-	
+
 	public void setRequest(Request request) {
 		this.request = request;
 	}
-	
+
 	public Response getResponse() {
 		return response;
 	}
-	
+
 	public void setResponse(Response response) {
 		this.response = response;
 	}

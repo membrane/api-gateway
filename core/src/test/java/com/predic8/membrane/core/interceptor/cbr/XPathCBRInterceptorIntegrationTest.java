@@ -28,14 +28,15 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 
 public class XPathCBRInterceptorIntegrationTest extends TestCase {
-		
+
 	private Router router;
-	
+
+	@Override
 	@Before
-	public void setUp() throws Exception {		
+	public void setUp() throws Exception {
 		router = Router.init("classpath:/cbr/cbr.proxies.xml");
 	}
-	
+
 	@Test
 	public void testRouting() throws Exception {
 		PostMethod post = createPostMethod();
@@ -45,14 +46,15 @@ public class XPathCBRInterceptorIntegrationTest extends TestCase {
 		httpClient.getHttpConnectionManager().closeIdleConnections(0);
 	}
 
+	@Override
 	@After
 	public void tearDown() throws Exception {
 		router.shutdown();
 	}
-	
+
 	private PostMethod createPostMethod() {
 		PostMethod post = new PostMethod("http://localhost:3024/");
-		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/cbr/order.xml"))); 
+		post.setRequestEntity(new InputStreamRequestEntity(this.getClass().getResourceAsStream("/cbr/order.xml")));
 		post.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
 		post.setRequestHeader(Header.SOAP_ACTION, "");
 		return post;

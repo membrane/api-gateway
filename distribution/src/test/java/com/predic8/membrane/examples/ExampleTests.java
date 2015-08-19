@@ -53,13 +53,13 @@ import com.predic8.membrane.examples.tests.validation.XMLValidationTest;
 import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 
 @RunWith(Suite.class)
-@SuiteClasses({ 
+@SuiteClasses({
 	AntInPath.class,
 	ConsistentVersionNumbers.class,
 	DefaultConfigTest.class,
 	HelpLinkExistenceTest.class,
 	JavaLicenseInfoTest.class,
-	
+
 	ACLTest.class,
 	BasicAuthTest.class,
 	CBRTest.class,
@@ -84,12 +84,12 @@ import com.predic8.membrane.examples.tests.versioning.RoutingTest;
 	SSLClient.class,
 	ThrottleTest.class,
 	XSLTTest.class,
-	
+
 	FormValidationTest.class,
 	JSONSchemaValidationTest.class,
 	SchematronValidationTest.class,
 	XMLValidationTest.class,
-	
+
 	RoutingTest.class
 })
 public class ExampleTests {}

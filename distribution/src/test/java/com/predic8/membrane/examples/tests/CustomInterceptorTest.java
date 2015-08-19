@@ -32,7 +32,7 @@ public class CustomInterceptorTest extends DistributionExtractingTestcase {
 	@Test
 	public void test() throws IOException, InterruptedException {
 		File baseDir = getExampleDir("custom-interceptor");
-		
+
 		BufferLogger b = new BufferLogger();
 		Process2 ant = new Process2.Builder().in(baseDir).executable("ant compile").withWatcher(b).start();
 		try {
@@ -42,9 +42,9 @@ public class CustomInterceptorTest extends DistributionExtractingTestcase {
 		} finally {
 			ant.killScript();
 		}
-		
+
 		FileUtils.copyDirectoryToDirectory(new File(baseDir, "build/classes"), getMembraneHome());
-		
+
 		Process2 sl = new Process2.Builder().in(baseDir).script("service-proxy").waitForMembrane().start();
 		try {
 			SubstringWaitableConsoleEvent invoked = new SubstringWaitableConsoleEvent(sl, "MyInterceptor invoked");

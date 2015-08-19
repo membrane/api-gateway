@@ -28,7 +28,7 @@ import com.predic8.membrane.core.lang.ScriptExecutorPool;
 public class GroovyLanguageSupport extends LanguageSupport {
 
 	private abstract class GroovyScriptExecutorPool<R> extends
-			ScriptExecutorPool<Script, R> {
+	ScriptExecutorPool<Script, R> {
 		private final String groovyCode;
 
 		private GroovyScriptExecutorPool(Router router, String expression) {
@@ -36,26 +36,27 @@ public class GroovyLanguageSupport extends LanguageSupport {
 			init(router);
 		}
 
+		@Override
 		protected Script createOneScript() {
-		    synchronized (shell) {
-		        return shell.parse(groovyCode);
-		    }
+			synchronized (shell) {
+				return shell.parse(groovyCode);
+			}
 		}
 
 		@Override
 		protected Object invoke(Script script, Map<String, Object> parameters) {
-		    Binding b = new Binding();
-		    for (Map.Entry<String, Object> parameter : parameters.entrySet())
-		    	b.setVariable(parameter.getKey(), parameter.getValue());
-		    script.setBinding(b);
-		    return script.run();
+			Binding b = new Binding();
+			for (Map.Entry<String, Object> parameter : parameters.entrySet())
+				b.setVariable(parameter.getKey(), parameter.getValue());
+			script.setBinding(b);
+			return script.run();
 		}
 
 	}
 
 	private static final GroovyShell shell = new GroovyShell();
 
-    @Override
+	@Override
 	public Function<Map<String, Object>, Boolean> compileExpression(Router router, String src) {
 		return new GroovyScriptExecutorPool<Boolean>(router, addImports(src)) {
 			@Override
@@ -67,21 +68,21 @@ public class GroovyLanguageSupport extends LanguageSupport {
 			}
 		};
 	}
-    
-    @Override
-    public Function<Map<String, Object>, Object> compileScript(Router router, String script) {
+
+	@Override
+	public Function<Map<String, Object>, Object> compileScript(Router router, String script) {
 		return new GroovyScriptExecutorPool<Object>(router, addImports(script)) {
 			@Override
 			public Object apply(Map<String, Object> parameters) {
 				return this.execute(parameters);
 			}
 		};
-    }
+	}
 
 	private String addImports(String src) {
-		return 
+		return
 				"import static com.predic8.membrane.core.interceptor.Outcome.*\n" +
-				"import com.predic8.membrane.core.http.*\n" + 
+				"import com.predic8.membrane.core.http.*\n" +
 				src;
 	}
 

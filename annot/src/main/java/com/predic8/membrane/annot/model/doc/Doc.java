@@ -34,10 +34,10 @@ import javax.xml.stream.events.XMLEvent;
 public class Doc {
 
 	static final XMLInputFactory fac = XMLInputFactory.newFactory();
-	
+
 	final ProcessingEnvironment processingEnv;
 	final Element e;
-	
+
 	public class Entry implements Comparable<Entry> {
 		String key;
 		String value;
@@ -46,7 +46,7 @@ public class Doc {
 			super();
 			this.key = key;
 			this.value = value;
-			
+
 			try {
 				XMLEventReader xer = fac.createXMLEventReader(new StringReader(wrapInRootElement(value)));
 				while (xer.hasNext()) {
@@ -65,12 +65,12 @@ public class Doc {
 		private String wrapInRootElement(String value) {
 			return "<" + key + ">" + value + "</" + key + ">";
 		}
-		
+
 		public String getKey() {
 			return key;
 		}
-		
-		
+
+
 		/**
 		 * @return a string containing a valid XML node set (or the empty string, if the input was invalid and a
 		 *         compiler warning was issued)
@@ -87,19 +87,19 @@ public class Doc {
 			return POSITIVE.indexOf(key) - POSITIVE.indexOf(o.key);
 		}
 	}
-	
+
 	HashSet<String> keys = new HashSet<String>();
 	List<Entry> entries = new ArrayList<Entry>();
-	
+
 	static final List<String> POSITIVE = Arrays.asList("topic", "description", "example", "default", "explanation");
 	static final List<String> NEGATIVE = Arrays.asList("author", "param");
-	
+
 	private void handle(String key, String value) {
 		value = value.trim();
-		
+
 		if (value.length() == 0)
 			return;
-		
+
 		if (NEGATIVE.contains(key))
 			return;
 
@@ -107,16 +107,16 @@ public class Doc {
 			processingEnv.getMessager().printMessage(Kind.WARNING, "Unknown javadoc tag: " + key, e);
 			return;
 		}
-		
+
 		if (keys.contains(key)) {
 			processingEnv.getMessager().printMessage(Kind.WARNING, "Duplicate JavaDoc tag: " + key, e);
 			return;
 		}
-		
+
 		keys.add(key);
 		entries.add(new Entry(key, value));
-	}		
-	
+	}
+
 	public Doc(ProcessingEnvironment processingEnv, String javadoc, Element e) {
 		this.processingEnv = processingEnv;
 		this.e = e;
@@ -131,10 +131,10 @@ public class Doc {
 		}
 		if (last != -1)
 			handle(key, javadoc.substring(last));
-		
+
 		Collections.sort(entries);
 	}
-	
+
 	public List<Entry> getEntries() {
 		return entries;
 	}

@@ -47,7 +47,8 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	public WSDLValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		super(resourceResolver, location, failureHandler);
 	}
-	
+
+	@Override
 	protected List<Schema> getSchemas() {
 		WSDLParserContext ctx = new WSDLParserContext();
 		ctx.setInput(location);
@@ -63,11 +64,12 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 			throw new IllegalArgumentException("Could not download the WSDL " + location + " or its dependent XML Schemas.", e);
 		}
 	}
-	
+
+	@Override
 	protected Source getMessageBody(InputStream input) throws Exception {
 		return MessageUtil.getSOAPBody(input);
 	}
-	
+
 	@Override
 	protected Response createErrorResponse(String message) {
 		return HttpUtil.createSOAPValidationErrorResponse(message);
@@ -83,7 +85,7 @@ public class WSDLValidator extends AbstractXMLSchemaValidator {
 	protected boolean isFault(Message msg) {
 		return SOAPUtil.isFault(xmlInputFactory, xopr, msg);
 	}
-	
+
 	@Override
 	protected String getPreliminaryError(XOPReconstitutor xopr, Message msg) {
 		if (SOAPUtil.isSOAP(xmlInputFactory, xopr, msg))

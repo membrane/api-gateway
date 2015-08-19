@@ -27,7 +27,7 @@ public class Starter {
 	}
 
 	private static Method getMainMethod() throws NoSuchMethodException,
-			ClassNotFoundException {
+	ClassNotFoundException {
 		return getRouterCLIClass().getDeclaredMethod("main",
 				new Class[] { String[].class });
 	}
