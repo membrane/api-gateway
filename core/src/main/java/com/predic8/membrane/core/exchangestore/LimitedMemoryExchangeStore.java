@@ -42,8 +42,13 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	private int maxSize = 1000000;
 	private int currentSize;
 	
+	/**
+	 * EVERY time that exchanges or inflight is changed, modify() MUST be called afterwards
+	 */
 	private final Queue<AbstractExchange> exchanges = new LinkedList<AbstractExchange>();
 	private Map<AbstractExchange, Request> inflight = new ConcurrentHashMap<AbstractExchange, Request>();
+
+	private long lastModification = System.currentTimeMillis();
 
 	public void snap(final AbstractExchange exc, final Flow flow) {
 		// TODO: [fix me] support multi-snap
@@ -65,6 +70,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 							}
 							//System.out.println("Exchange put inflight " + exc.hashCode() + " " + exc.getRequest().getStartLine());
 							inflight.put(exc, exc.getRequest());
+							modify();
 						}
 					}
 			);
@@ -80,11 +86,13 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 					public void bodyComplete(AbstractBody body) {
 						snapInternal(exc, flow);
 						inflight.remove(exc);
+						modify();
 						//System.out.println("Exchange remove inflight " + exc.hashCode());
 					}
 				});
 			else {
 				inflight.remove(exc);
+				modify();
 				//System.out.println("Exchange remove inflight " + exc.hashCode() + " (2)");
 			}
 		} catch (Exception e) {
@@ -99,15 +107,18 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		makeSpaceIfNeeded(exc);
 
 		exchanges.offer(exc);
+		modify();
 		currentSize += exc.getHeapSizeEstimation();
 	}
 
 	public synchronized void remove(AbstractExchange exc) {
 		exchanges.remove(exc);
+		modify();
 	}
 	
 	public synchronized void removeAllExchanges(Rule rule) {
 		exchanges.removeAll(getExchangeList(rule.getKey()));
+		modify();
 	}
 
 	private synchronized List<AbstractExchange> getExchangeList(RuleKey key) {
@@ -167,6 +178,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	public synchronized void removeAllExchanges(AbstractExchange[] candidates) {
 		exchanges.removeAll(Arrays.asList(candidates));
+		modify();
 	}
 	
 	
@@ -222,5 +234,30 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	public void setMaxSize(int maxSize) {
 		this.maxSize = maxSize;
 	}
+
+	private synchronized void modify() {
+		lastModification = System.currentTimeMillis();
+		notifyAll();
+	}
 	
+	@Override
+	public synchronized long getLastModified() {
+		return lastModification;
+	}
+
+	@Override
+	public synchronized void waitForModification(long lastKnownModification) {
+		for (;;) {
+			if (lastKnownModification < this.lastModification) {
+				return;
+			}
+			// lastKnownModification >= this.lastModification:
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+			}
+		}
+	}
+
 }

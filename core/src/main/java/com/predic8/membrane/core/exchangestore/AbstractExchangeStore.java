@@ -72,6 +72,14 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 		}	
 	}
 	
-	
-	
+	@Override
+	public long getLastModified() {
+		return System.currentTimeMillis();
+	}
+
+	@Override
+	public void waitForModification(long lastKnownModification) {
+		// nothing
+	}
+
 }

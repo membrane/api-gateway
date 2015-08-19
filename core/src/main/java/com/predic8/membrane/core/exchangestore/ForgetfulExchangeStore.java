@@ -116,4 +116,12 @@ public class ForgetfulExchangeStore implements ExchangeStore {
 	
 	public void collect(ExchangeCollector collector) {}
 	
+	public long getLastModified() {
+		return 0;
+	}
+
+	public void waitForModification(long lastKnownModification) {
+		
+	}
+
 }

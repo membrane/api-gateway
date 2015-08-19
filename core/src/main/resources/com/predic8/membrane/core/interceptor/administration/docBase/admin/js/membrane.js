@@ -160,10 +160,15 @@ var membrane = function() {
 		createLink:createLink,
 		loadExchange:loadExchange
 	}
+
+	var lastMod;
 }();
 
 $(function() {
 	
+	// initialize at the beginning
+	membrane.lastMod = 0;
+
 	$('#proxy-rules-table, #interceptor-table, #statistics-table, #stream-pumps-table, #statuscode-table' ).dataTable({
 	  'bJQueryUI': true,
 	  'sPaginationType': 'full_numbers'
@@ -344,6 +349,7 @@ $(function() {
         	  var queryData = [{name:'offset', value:getParam('iDisplayStart')}, 
                           {name:'max', value:getParam('iDisplayLength')},
                           {name:'sort', value:getParam('mDataProp_'+getParam('iSortCol_0'))},
+                          {name:'waitForModification', value:membrane.lastMod},
                           {name:'order', value:getParam('sSortDir_0')}];
         	  
         	  function addFilterProps(name) {
@@ -376,7 +382,9 @@ $(function() {
                 	data.sEcho = aoData.sEcho;
                 	data.iTotalRecords = data.total;
                 	data.iTotalDisplayRecords = data.total;
+                	membrane.lastMod = data.lastModified;
                 	fnCallback(data);
+                	window.setTimeout(updateCallsTablePeriodically, 1000);
                 }
               } );
             }		              
@@ -393,9 +401,28 @@ $(function() {
     
     $('.mb-button').button();
 
-	$('#reloadData').click(function() {
-		$('#message-stat-table').dataTable()._fnAjaxUpdate();
+	$('#reload-data-button').click(function() {
+		updateCallsTable();
 	});
+
+	$('#reload-data-checkbox').change(function() {
+		if ($('#reload-data-checkbox').attr('checked')) {
+			updateCallsTablePeriodically();
+		}
+	});
+
+	function updateCallsTable() {
+		$('#message-stat-table').dataTable()._fnAjaxUpdate();
+		console.log(membrane.lastMod);
+	}
+
+	function updateCallsTablePeriodically() {
+		if ($('#reload-data-checkbox').attr('checked')) {
+			updateCallsTable();
+		} else {
+			return;
+		}
+	}
 
     $('form').validationEngine('attach', {promptPosition : 'bottomRight', scroll: false});
     $('form').submit(function() {

@@ -23,6 +23,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 
@@ -45,6 +48,8 @@ import com.predic8.membrane.core.util.ComparatorFactory;
 import com.predic8.membrane.core.util.TextUtil;
 
 public class AdminRESTInterceptor extends RESTInterceptor {
+
+	private static Log log = LogFactory.getLog(AdminRESTInterceptor.class.getName());
 
 	@Mapping("/admin/rest/clients(/?\\?.*)?")
 	public Response getClients(QueryParameter params, String relativeRootPath) throws Exception {
@@ -240,7 +245,11 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 
 	@Mapping("/admin/rest/exchanges(/?\\?.*)?")
 	public Response getExchanges(QueryParameter params, String relativeRootPath) throws Exception {
-		
+
+		if (params.getString("waitForModification") != null) {
+			getRouter().getExchangeStore().waitForModification(params.getLong("waitForModification"));
+		}
+
 		List<AbstractExchange> exchanges;		
 		synchronized (getRouter().getExchangeStore().getAllExchangesAsList()) {
 			exchanges = new ArrayList<AbstractExchange>(
@@ -270,6 +279,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 					}					
 					gen.writeEndArray();
 					gen.writeNumberField("total", total);
+					gen.writeNumberField("lastModified", getRouter().getExchangeStore().getLastModified());
 				gen.writeEndObject();
 			}
 		});
