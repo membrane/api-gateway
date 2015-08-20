@@ -36,10 +36,9 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(RegExReplaceInterceptor.class.getName());
 
 	private String regex;
-
 	private String replace;
-
 	private TargetType target = TargetType.BODY;
+	private boolean onlyTextContent = true;
 
 	public enum TargetType {
 		BODY,
@@ -75,7 +74,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	}
 
 	private void replaceBody(Message res) throws IOException, Exception {
-		if (hasNoTextContent(res) ) return;
+		if (onlyTextContent && !hasTextContent(res) ) return;
 
 		log.debug("pattern: " +regex);
 		log.debug("replacement: " +replace);
@@ -84,8 +83,8 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		res.getHeader().removeFields("Content-Encoding");
 	}
 
-	private boolean hasNoTextContent(Message res) throws Exception {
-		return res.isBodyEmpty() || !res.isXML() && !res.isHTML();
+	private boolean hasTextContent(Message res) throws Exception {
+		return !res.isBodyEmpty() && (res.isHTML() || res.isXML());
 	}
 
 	public String getRegex() {
@@ -128,6 +127,18 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	@MCAttribute
 	public void setTarget(TargetType target) {
 		this.target = target;
+	}
+
+	public boolean isOnlyTextContent() {
+		return onlyTextContent;
+	}
+	/**
+	 * @description Whether only textual content (XML or HTML) should be replaced.
+	 * @default true
+	 */
+	@MCAttribute
+	public void setOnlyTextContent(boolean onlyTextContent) {
+		this.onlyTextContent = onlyTextContent;
 	}
 
 }

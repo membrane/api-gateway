@@ -182,6 +182,10 @@
 			<artifactId>service-proxy-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>io.swagger</groupId>
+			<artifactId>swagger-parser</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>
