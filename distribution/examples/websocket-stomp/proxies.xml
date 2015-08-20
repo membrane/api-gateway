@@ -18,9 +18,6 @@
 		</serviceProxy>
 
 		<serviceProxy name="Console" port="9000">
-			<basicAuthentication>
-				<user name="admin" password="membrane" />
-			</basicAuthentication>
 			<adminConsole />
 		</serviceProxy>
 
