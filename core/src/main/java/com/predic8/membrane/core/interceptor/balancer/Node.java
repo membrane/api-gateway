@@ -221,7 +221,7 @@ public class Node extends AbstractXmlElement {
 	}
 
 	public String getDestinationURL(Exchange exc) {
-		return "http://" + getHost() + ":" + getPort() + exc.getRequest().getUri();
+		return "http://" + getHost() + (getPort() == 0 ? "" : ":" + getPort()) + exc.getRequest().getUri();
 	}
 
 }
