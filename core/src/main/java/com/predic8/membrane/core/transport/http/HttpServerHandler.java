@@ -65,10 +65,10 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	}
 
 	private void setup() throws IOException {
+		this.exchange = new Exchange(this);
 		SSLProvider sslProvider = endpointListener.getSslProvider();
 		if (sslProvider != null)
 			sourceSocket = sslProvider.wrapAcceptedSocket(sourceSocket);
-		this.exchange = new Exchange(this);
 		log.debug("New ServerThread created. " + counter.incrementAndGet());
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
