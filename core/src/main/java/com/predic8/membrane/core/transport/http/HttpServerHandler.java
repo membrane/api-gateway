@@ -163,9 +163,6 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 					log.debug("Closing bound connection.", e);
 				}
 
-			if (srcReq.isCONNECTRequest())
-				return;
-
 			closeConnections();
 
 			exchange.detach();
