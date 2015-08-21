@@ -187,6 +187,16 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 			it.set(newDest);
 		}
+
+		Mapping mapping = findFirstMatchingRegEx(exc.getRequest().getUri());
+		if (mapping != null && mapping.do_ == Type.REWRITE) {
+			String newDest = replace(exc.getRequest().getUri(), mapping);
+			if (newDest.contains("://")) {
+				newDest = URLUtil.getPathQuery(router.getUriFactory(), newDest);
+			}
+			exc.getRequest().setUri(newDest);
+		}
+
 		return Outcome.CONTINUE;
 	}
 

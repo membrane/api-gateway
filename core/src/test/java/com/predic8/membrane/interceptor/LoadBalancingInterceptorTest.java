@@ -16,8 +16,12 @@ package com.predic8.membrane.interceptor;
 import static org.junit.Assert.assertEquals;
 
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.List;
 
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.URLUtil;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpVersion;
 import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
@@ -122,7 +126,7 @@ public class LoadBalancingInterceptorTest {
 
 	@Test
 	public void testGetDestinationURLWithHostname()
-			throws MalformedURLException {
+			throws MalformedURLException, URISyntaxException {
 		doTestGetDestinationURL(
 				"http://localhost/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
@@ -130,13 +134,15 @@ public class LoadBalancingInterceptorTest {
 
 	@Test
 	public void testGetDestinationURLWithoutHostname()
-			throws MalformedURLException {
+			throws MalformedURLException, URISyntaxException {
 		doTestGetDestinationURL("/axis2/services/BLZService?wsdl",
 				"http://thomas-bayer.com:80/axis2/services/BLZService?wsdl");
 	}
 
-	private void doTestGetDestinationURL(String requestUri, String expectedUri) {
+	private void doTestGetDestinationURL(String requestUri, String expectedUri) throws URISyntaxException {
 		Exchange exc = new Exchange(null);
+		exc.setRequest(new Request());
+		exc.getRequest().setUri(URLUtil.getPathQuery(new URIFactory(), requestUri));
 		exc.setOriginalRequestUri(requestUri);
 		assertEquals(expectedUri, new Node("thomas-bayer.com", 80).getDestinationURL(exc));
 	}
