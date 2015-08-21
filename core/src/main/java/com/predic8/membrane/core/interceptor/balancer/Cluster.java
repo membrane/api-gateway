@@ -30,7 +30,7 @@ public class Cluster {
 
 	public static final String DEFAULT_NAME = "Default";
 
-	private String name;
+	private String name = DEFAULT_NAME;
 	private List<Node> nodes = Collections.synchronizedList(new LinkedList<Node>());
 	private Map<String, Session> sessions = new Hashtable<String, Session>();
 
