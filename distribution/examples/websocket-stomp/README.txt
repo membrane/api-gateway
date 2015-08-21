@@ -1,6 +1,6 @@
 WEBSOCKET STOMP EXAMPLE
 
-In this example we are going to send STMOP over WebSocket, all handled by
+In this example we are going to send STOMP over WebSocket, all handled by
 Membrane Service Proxy.
 
 STOMP is an abbreviation for Streaming Text Oriented Messaging Protocol. It's a
@@ -35,24 +35,23 @@ Let's route some WebSocket Traffic over Membrane.
 To run the example execute the following steps:
 
 1.	Open the URL http://localhost:9000 in your browser.
-2.	Login with the username "admin" and the password "membrane".
-3.	Click on the "Stream Pumps" tab.
+2.	Click on the "Stream Pumps" tab.
 
-4.	Open another tab in your browser with the URL https://localhost:4443.
+3.	Open another tab in your browser with the URL https://localhost:4443.
 	You will probably get a certificate warning when this example runs with
 	Membrane's standard certificate. For local testing, this can be ignored.
-5.	If your browser has a JavaScript console, open it (F12 in Chrome).
+4.	If your browser has a JavaScript console, open it (F12 in Chrome).
 	You should see the following output:
 		connecting...
 		connected.
-6.	Press F5 on the Membrane Admin Console.
+5.	Press F5 on the Membrane Admin Console.
 	You should now see two brand new Streamp Pumps.
 
-7.	In the ActiveMQ admin overview you can now click on "Send To"
+6.	In the ActiveMQ admin overview you can now click on "Send To"
 	for the queue foo you created earlier.
 	Type in a message and click on Send.
-8.	The message should instantly appear in the tab you opened in step 4.
-9.	If you refresh the Admin Console again, you can see that the
+7.	The message should instantly appear in the tab you opened in step 4.
+8.	If you refresh the Admin Console again, you can see that the
 	"Transferred Bytes" for one of the stream pumps went up a little.
 
 

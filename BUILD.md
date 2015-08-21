@@ -26,5 +26,5 @@ after checking out.
 
 After the build find the distribution and the WAR at:
 
-	../cli/target/membrane-service-proxy-X.X.X.zip
+	../distribution/target/membrane-service-proxy-X.X.X.zip
 	../war/target/service-proxy-war-X.X.X.war
