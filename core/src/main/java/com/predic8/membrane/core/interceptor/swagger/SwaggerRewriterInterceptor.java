@@ -41,8 +41,6 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 
-		System.out.println(exc.getRequest().getUri() + " : " + exc.getRequest().getUri().matches("/.*\\.js(on)?"));
-
 		// replacement in swagger.json
 		if (exc.getRequest().getUri().endsWith(swaggerJson) && exc.getResponseContentType().equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE)) {
 			Swagger swagBody = new SwaggerParser().parse(exc.getResponse().getBodyAsStringDecoded());
@@ -51,17 +49,13 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 		}
 
 		// replacement in json and javascript (specifically UI)
-		System.out.println(exc.getResponse().getHeader().getContentType());
 		if (rewriteUI &&
 				(exc.getRequest().getUri().matches("/.*.js(on)?")
 					|| exc.getResponse().getHeader().getContentType() != null
 						&& exc.getResponse().getHeader().getContentType().equals(MediaType.TEXT_HTML_VALUE)
 				)) {
-			System.out.println("INSIDE");
 			String from = "(http(s)?://)" + Pattern.quote(((ServiceProxy) exc.getRule()).getTarget().getHost()) + "(/.*\\.js(on)?)";
-			System.out.println(from);
 			String to = "$1" + exc2originalHostPort(exc) + "$3";
-			System.out.println(to);
 			byte[] body = exc.getResponse().getBodyAsStringDecoded().replaceAll(from, to).getBytes(exc.getResponse().getCharset());
 			exc.getResponse().setBodyContent(body);
 		}
