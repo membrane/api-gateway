@@ -7,13 +7,7 @@
 	<router>
 
 		<serviceProxy port="8000" >
-			<swaggerRewriter />
-			<if test="exc.request.uri.endsWith('swagger-ui.js') || exc.request.uri == '/'">
-				<regExReplacer
-					regex="petstore.swagger.io"
-					replace="localhost:8000"
-					onlyTextContent="false" />
-			</if>
+			<swaggerRewriter rewriteUI="true" />
 			<target host="petstore.swagger.io" port="80" />
 		</serviceProxy>
 

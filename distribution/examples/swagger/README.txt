@@ -38,20 +38,15 @@ The following part describes the example in detail.
 First, take a look at the proxies.xml file.
 
 	<serviceProxy port="8000" >
-		<swaggerRewriter />
-		<if test="exc.request.uri.endsWith('swagger-ui.js') || exc.request.uri == '/'">
-			<regExReplacer
-				regex="petstore.swagger.io"
-				replace="localhost:8000"
-				onlyTextContent="false" />
-		</if>
+		<swaggerRewriter rewriteUI="true" />
 		<target host="petstore.swagger.io" port="80" />
 	</serviceProxy>
 
 The swaggerRewriter does the rewriting of the host URL in the Swagger Object
 that is initially transferred.
-The regExReplacer does some rewriting in a script that is used by the petstore
-example site. Without it, the URL in the text field at the top wouldn't be
-rewritten.
+The rewriteUI option is true per default but it is included here for vividness.
+When this option is set, it also rewrites the URL of html and javascript files
+that are transferred.
 Lastly, the target specifies the site which the swaggerRewriter should actually
 rewrite.
+
