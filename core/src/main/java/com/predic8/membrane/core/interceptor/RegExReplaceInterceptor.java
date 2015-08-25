@@ -84,7 +84,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	}
 
 	private boolean hasTextContent(Message res) throws Exception {
-		return !res.isBodyEmpty() && (res.isHTML() || res.isXML());
+		return !res.isBodyEmpty() && (res.isHTML() || res.isXML() || res.isJSON());
 	}
 
 	public String getRegex() {

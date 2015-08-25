@@ -1,6 +1,6 @@
 SWAGGER REWRITER EXAMPLE
 
-In this example we will run a Proxy for Swagger using Membrane.
+In this example we will run a proxy for Swagger using Membrane.
 Swagger is a specification for standardized REST APIs (http://swagger.io/).
 Specification for Version 2.0 is available at
   https://github.com/swagger-api/swagger-spec/blob/master/versions/2.0.md
