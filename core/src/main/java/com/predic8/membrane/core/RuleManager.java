@@ -235,6 +235,10 @@ public class RuleManager {
 			if (key.isUsePathPattern() && !key.matchesPath(uri))
 				continue;
 
+			System.out.println("calling complexMatch " + key.getClass().toString());
+			if (key.complexMatch(hostHeader, method, uri, version, port, localIP))
+				continue;
+
 			return rule;
 		}
 		return null;

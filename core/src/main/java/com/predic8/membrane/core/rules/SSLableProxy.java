@@ -68,7 +68,7 @@ public abstract class SSLableProxy extends AbstractProxy {
 	}
 
 	public int getPort() {
-		return ((ServiceProxyKey)key).getPort();
+		return ((AbstractRuleKey)key).getPort();
 	}
 
 	/**
@@ -78,11 +78,11 @@ public abstract class SSLableProxy extends AbstractProxy {
 	 */
 	@MCAttribute
 	public void setPort(int port) {
-		((ServiceProxyKey)key).setPort(port);
+		((AbstractRuleKey)key).setPort(port);
 	}
 
 	public String getIp() {
-		return ((ServiceProxyKey)key).getIp();
+		return ((AbstractRuleKey)key).getIp();
 	}
 
 	/**
@@ -92,7 +92,7 @@ public abstract class SSLableProxy extends AbstractProxy {
 	 */
 	@MCAttribute
 	public void setIp(String ip) {
-		((ServiceProxyKey)key).setIp(ip);
+		((AbstractRuleKey)key).setIp(ip);
 	}
 
 }

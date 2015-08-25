@@ -88,4 +88,6 @@ public interface RuleKey {
 	boolean matchesHostHeader(String hostHeader);
 
 	boolean matchesVersion(String version);
+
+	boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP);
 }
