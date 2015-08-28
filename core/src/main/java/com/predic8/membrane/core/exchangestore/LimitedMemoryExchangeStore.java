@@ -248,17 +248,13 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	@Override
-	public synchronized void waitForModification(long lastKnownModification) {
+	public synchronized void waitForModification(long lastKnownModification) throws InterruptedException {
 		for (;;) {
 			if (lastKnownModification < this.lastModification) {
 				return;
 			}
 			// lastKnownModification >= this.lastModification:
-			try {
-				wait();
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-			}
+			wait();
 		}
 	}
 

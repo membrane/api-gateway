@@ -34,7 +34,7 @@ class CleanupThread extends Thread {
 			try {
 				Thread.sleep(60 * 1000);
 			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
+				return;
 			}
 			ArrayList<WeakReference<Cleaner>> removeUs = new ArrayList<WeakReference<Cleaner>>();
 			for (WeakReference<Cleaner> wr : cleaners) {

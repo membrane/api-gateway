@@ -78,7 +78,7 @@ public abstract class AbstractExchangeStore implements ExchangeStore {
 	}
 
 	@Override
-	public void waitForModification(long lastKnownModification) {
+	public void waitForModification(long lastKnownModification) throws InterruptedException {
 		// nothing
 	}
 

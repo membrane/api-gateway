@@ -77,5 +77,5 @@ public interface ExchangeStore {
 	 * Returns immediately if lastKnownModification is smaller than last known modification.
 	 * Otherwise it waits until a modification occurs.
 	 */
-	void waitForModification(long lastKnownModification);
+	void waitForModification(long lastKnownModification) throws InterruptedException;
 }
