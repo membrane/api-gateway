@@ -336,7 +336,7 @@ public class Header {
 	}
 
 	public void setXForwardedFor(String value) {
-		add(X_FORWARDED_FOR, value);
+		setValue(X_FORWARDED_FOR, value);
 	}
 
 	public String getXForwardedFor() {
