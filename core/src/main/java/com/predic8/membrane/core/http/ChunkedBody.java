@@ -42,8 +42,68 @@ public class ChunkedBody extends AbstractBody {
 	}
 
 	@Override
+	public void read() throws IOException {
+		if (bodyObserved && !bodyComplete)
+			ByteUtil.readStream(getContentAsStream());
+		bodyObserved = true;
+		super.read();
+	}
+
+	public void write(AbstractBodyTransferrer out) throws IOException {
+		if (bodyObserved && !bodyComplete)
+			ByteUtil.readStream(getContentAsStream());
+		super.write(out);
+	}
+
+	@Override
+	protected void markAsRead() {
+		super.markAsRead();
+		bodyComplete = true;
+	}
+
+	@Override
 	protected void readLocal() throws IOException {
 		chunks.addAll(HttpUtil.readChunks(inputStream));
+	}
+
+	boolean bodyObserved = false;
+	boolean bodyComplete = false;
+
+	public InputStream getContentAsStream() throws IOException {
+		read = true;
+
+		if (!bodyObserved) {
+			bodyObserved = true;
+			for (MessageObserver observer : observers)
+				observer.bodyRequested(this);
+			chunks.clear();
+		}
+
+		return new BodyInputStream(chunks) {
+			@Override
+			protected Chunk readNextChunk() throws IOException {
+				if (bodyComplete)
+					return null;
+				int chunkSize = HttpUtil.readChunkSize(inputStream);
+				if (chunkSize > 0) {
+					Chunk c = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
+					chunks.add(c);
+					inputStream.read(); // CR
+					inputStream.read(); // LF
+					return c;
+				} else {
+					inputStream.read(); // CR
+					inputStream.read(); // LF
+
+					for (MessageObserver observer : observers)
+						observer.bodyComplete(ChunkedBody.this);
+					observers.clear();
+
+					bodyComplete = true;
+					return null;
+				}
+			}
+		};
 	}
 
 	@Override

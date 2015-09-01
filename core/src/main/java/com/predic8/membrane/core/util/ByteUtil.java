@@ -65,6 +65,15 @@ public class ByteUtil {
 		return bos.toByteArray();
 	}
 
+	public static void readStream(InputStream stream) throws IOException {
+		byte[] buffer = new byte[2048];
+		while (true) {
+			int read = stream.read(buffer);
+			if (read < 0)
+				break;
+		}
+	}
+
 	public static byte[] getDecompressedData(byte[] compressedData) throws IOException {
 		Inflater decompressor = new Inflater(true);
 		decompressor.setInput(compressedData);

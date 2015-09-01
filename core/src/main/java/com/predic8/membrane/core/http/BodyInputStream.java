@@ -44,23 +44,37 @@ public class BodyInputStream extends InputStream {
 		if (currentChunk != null) {
 			currentChunkLength = currentChunk.getLength();
 			currentChunkData = currentChunk.getContent();
+		} else {
+			currentChunkIndex = -1;
 		}
 	}
 
 	/**
 	 * @return whether the new position is still a valid index
 	 */
-	private boolean advanceToNextPosition() {
-		if (currentChunk == null)
-			return false;
+	private boolean advanceToNextPosition() throws IOException {
+		if (currentChunk == null) {
+			currentChunk = readNextChunk();
+			if (currentChunk == null) {
+				return false;
+			}
+			chunks.add(currentChunk);
+			currentChunkIndex = chunks.size() - 1;
+			currentChunkLength = currentChunk.getLength();
+			currentChunkData = currentChunk.getContent();
+		}
 
 		positionWithinChunk++;
 
 		while (positionWithinChunk == currentChunkLength) {
 			currentChunkIndex++;
 			if (currentChunkIndex == chunks.size()) {
-				currentChunk = null;
-				return false;
+				Chunk c = readNextChunk();
+				if (c == null) {
+					currentChunk = null;
+					return false;
+				}
+				chunks.add(c);
 			}
 			currentChunk = chunks.get(currentChunkIndex);
 			currentChunkLength = currentChunk.getLength();
@@ -68,6 +82,13 @@ public class BodyInputStream extends InputStream {
 			positionWithinChunk = 0;
 		}
 		return true;
+	}
+
+	/**
+	 * @return the next chunk or null, if there is no next chunk
+	 */
+	protected Chunk readNextChunk() throws IOException {
+		return null;
 	}
 
 	@Override
