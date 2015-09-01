@@ -46,7 +46,7 @@ public abstract class AbstractBody {
 	boolean read;
 
 	protected List<Chunk> chunks = new ArrayList<Chunk>();
-	private List<MessageObserver> observers = new ArrayList<MessageObserver>(1);
+	protected List<MessageObserver> observers = new ArrayList<MessageObserver>(1);
 
 	public void read() throws IOException {
 		if (read)
@@ -190,5 +190,9 @@ public abstract class AbstractBody {
 			return;
 		}
 		observers.add(observer);
+	}
+
+	List<MessageObserver> getObservers() {
+		return observers;
 	}
 }

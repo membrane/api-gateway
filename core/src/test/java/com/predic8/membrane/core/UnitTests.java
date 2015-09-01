@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.exchangestore.AbortExchangeTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -115,7 +116,8 @@ import com.predic8.membrane.interceptor.MultipleLoadBalancersTest;
 	JSONSchemaValidationTest.class,
 	SOAPMessageValidatorInterceptorTest.class,
 	URITest.class,
-	RewriteInterceptorTest.class
+	RewriteInterceptorTest.class,
+	AbortExchangeTest.class
 })
 public class UnitTests {
 	/*
