@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core;
 
+import java.io.FileInputStream;
 import java.nio.charset.Charset;
 import java.util.Properties;
 
@@ -34,12 +35,18 @@ public class Constants {
 	public static final String VERSION;
 
 	static {
-		String version = "3.3"; // fallback
+		String version = "4"; // fallback
 		try {
-			Properties p = new Properties();
+			Properties p = new Properties(); // Production
 			p.load(Constants.class.getResourceAsStream("/META-INF/maven/org.membrane-soa/service-proxy-core/pom.properties"));
 			version = p.getProperty("version");
 		} catch (Exception e) {
+			try {
+				Properties p = new Properties(); // Development
+				p.load(new FileInputStream("target/maven-archiver/pom.properties"));
+				version = p.getProperty("version") + " - DEVELOPMENT";
+			} catch (Exception e2) {
+			}
 		}
 		VERSION = version;
 	}
