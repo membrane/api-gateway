@@ -84,7 +84,7 @@ public class AbortExchangeTest {
         BodyUtil.closeConnection(response.getBody());
         Thread.sleep(100);
 
-        assertExchangeStoreHas(router.getExchangeStore(), 1, 1);
+        assertExchangeStoreHas(router.getExchangeStore(), 0, 0);
     }
 
     private void assertExchangeStoreHas(ExchangeStore exchangeStore, int numberOfExchanges, int responsePresent) {

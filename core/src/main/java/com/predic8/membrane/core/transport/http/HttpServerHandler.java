@@ -225,7 +225,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			exchange.blockResponseIfNeeded();
 		} catch (AbortException e) {
 			log.debug("Aborted");
-			exchange.finishExchange(true, exchange.getErrorMessage());
+			exchange.finishExchange(true, e.getMessage());
 
 			removeBodyFromBuffer();
 			writeResponse(exchange.getResponse());
@@ -234,10 +234,15 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 			return;
 		}
 
-		removeBodyFromBuffer();
-		writeResponse(exchange.getResponse());
-		exchange.setCompleted();
-		log.debug("exchange set completed");
+		try {
+			removeBodyFromBuffer();
+			writeResponse(exchange.getResponse());
+			exchange.setCompleted();
+			log.debug("exchange set completed");
+		} catch (Exception e) {
+			exchange.finishExchange(true, e.getMessage());
+			throw e;
+		}
 	}
 
 	/**

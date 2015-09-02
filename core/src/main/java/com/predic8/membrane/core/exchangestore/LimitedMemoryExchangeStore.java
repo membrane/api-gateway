@@ -29,6 +29,8 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
+import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
+import com.predic8.membrane.core.model.IExchangeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
@@ -53,6 +55,13 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	public void snap(final AbstractExchange exc, final Flow flow) {
 		// TODO: [fix me] support multi-snap
 		// TODO: [fix me] snap message headers and request *here*, not in observer/response
+
+		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
+			@Override
+			public void setExchangeFinished() {
+				inflight.remove(exc);
+			}
+		});
 
 		if (flow == Flow.REQUEST) {
 			exc.getRequest().addObserver(
