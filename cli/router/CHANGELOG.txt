@@ -1,6 +1,22 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.26
+
+* [feature] backported #187: Allow the Spring PropertyPlaceholderConfigurer
+  to work with Membrane. This allows
+  <serviceProxy port="${proxy.a.port}" ... />
+  where "proxy.a.port" is a property defined elsewhere and is replaced by 
+  an externally defined standard Spring compontent.
+
+* [bugfix] fixed <rewriter> implicitly unescaping the URL
+
+* [release] 4.0.25
+
+* [release] 4.0.24
+
+* [feature] make <login> redirection message configurable
+
 * [release] 4.0.23
 
 * [feature] enhanded debug output for WhateverMobileSMSTokenProvider
