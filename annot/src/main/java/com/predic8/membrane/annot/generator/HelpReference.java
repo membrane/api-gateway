@@ -63,7 +63,7 @@ public class HelpReference {
 			String path = System.getenv("MEMBRANE_GENERATE_DOC_DIR");
 			if (path == null)
 				return;
-			path = path.replace("%VERSION%", "4.0");
+			path = path.replace("%VERSION%", "4.1");
 
 			sw = new StringWriter();
 			XMLOutputFactory output = XMLOutputFactory.newInstance();
