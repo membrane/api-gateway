@@ -27,7 +27,6 @@ public class SwaggerProxy extends ServiceProxy {
 	private String swaggerUrl;
 
 	private Swagger swagger;
-	private SwaggerProxyKey key;
 
 	public SwaggerProxy() {
 		System.out.println("SwaggerProxy CTOR 0");
@@ -61,7 +60,7 @@ public class SwaggerProxy extends ServiceProxy {
 		// parse it
 		swagger = new SwaggerParser().parse(ex.getResponse().getBodyAsStringDecoded());
 		// pass swagger spec to Swagger Key
-		key.setSwagger(swagger);
+		((SwaggerProxyKey)key).setSwagger(swagger);
 		interceptors.add(new SwaggerRewriterInterceptor());
 	}
 
