@@ -17,12 +17,17 @@ the Running instructions.
 PREPARATIONS
 
 1.	Download ActiveMQ and unpack it.
-	ActiveMQ DL Site: http://activemq.apache.org/download.html
+	ActiveMQ DL Site:
+		http://activemq.apache.org/download.html
 	(Latest stable is probably a good idea.)
-2.	Start ActiveMQ by executing "bin/activemq start" in the ActiveMQ directory.
+2.	Start ActiveMQ by executing
+	> bin/activemq start
+	in the ActiveMQ directory.
 3.	Go to the examples/websocket-stomp directory.
 4.	Execute service-proxy.sh / service-proxy.bat
-5.	Open the URL http://localhost:8161/admin/queues.jsp in your browser.
+5.	Open the URL
+		http://localhost:8161/admin/queues.jsp
+	in your browser.
 	Login with the username "admin" and the password "admin".
 6.	Create a queue named "foo".
 
@@ -34,10 +39,13 @@ Let's route some WebSocket Traffic over Membrane.
 
 To run the example execute the following steps:
 
-1.	Open the URL http://localhost:9000 in your browser.
+1.	Open the URL
+		http://localhost:9000
+	in your browser.
 2.	Click on the "Stream Pumps" tab.
 
-3.	Open another tab in your browser with the URL https://localhost:4443.
+3.	Open another tab in your browser with the URL
+		https://localhost:4443
 	You will probably get a certificate warning when this example runs with
 	Membrane's standard certificate. For local testing, this can be ignored.
 4.	If your browser has a JavaScript console, open it (F12 in Chrome).
@@ -50,7 +58,7 @@ To run the example execute the following steps:
 6.	In the ActiveMQ admin overview you can now click on "Send To"
 	for the queue foo you created earlier.
 	Type in a message and click on Send.
-7.	The message should instantly appear in the tab you opened in step 4.
+7.	The message should instantly appear in the tab where it says "Messages:".
 8.	If you refresh the Admin Console again, you can see that the
 	"Transferred Bytes" for one of the stream pumps went up a little.
 
@@ -94,3 +102,4 @@ given URL, which is http://localhost:61614/ in our case.
 
 This redirects to the local port 61614, which is ActiveMQ's preconfigured
 standard port for the websocket protocol.
+

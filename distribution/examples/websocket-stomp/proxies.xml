@@ -8,12 +8,16 @@
 
 		<serviceProxy port="4443">
 			<ssl>
-				<keystore location="../../router/conf/membrane.jks" password="secret" keyPassword="secret" />
-				<truststore location="../../router/conf/membrane.jks" password="secret" />
+				<keystore location="../../conf/membrane.jks" password="secret" keyPassword="secret" />
+				<truststore location="../../conf/membrane.jks" password="secret" />
 			</ssl>
 
 			<webSocket url="http://localhost:61614/" />
 
+			<target host="localhost" port="4444" />
+		</serviceProxy>
+
+		<serviceProxy port="4444">
 			<webServer docBase="." index="index.html" />
 		</serviceProxy>
 
@@ -24,3 +28,4 @@
 	</router>
 
 </spring:beans>
+
