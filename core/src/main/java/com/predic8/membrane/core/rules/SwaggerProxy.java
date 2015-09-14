@@ -29,7 +29,6 @@ public class SwaggerProxy extends ServiceProxy {
 	private Swagger swagger;
 
 	public SwaggerProxy() {
-		System.out.println("SwaggerProxy CTOR 0");
 		this.key = new SwaggerProxyKey(80);
 	}
 
@@ -37,15 +36,12 @@ public class SwaggerProxy extends ServiceProxy {
 		this.key = ruleKey;
 		setTargetHost(targetHost);
 		setTargetPort(targetPort);
-		System.out.println("SwaggerProxy CTOR 3");
 	}
 
 	@Override
 	protected AbstractProxy getNewInstance() {
 		return new SwaggerProxy();
 	}
-
-
 
 	@Override
 	public void init() throws Exception {
@@ -57,13 +53,12 @@ public class SwaggerProxy extends ServiceProxy {
 			log.fatal("Couldn't fetch Swagger URL!");
 			throw new Exception("Couldn't fetch Swagger URL!");
 		}
-		// parse it
+		// parse swaggerUrl
 		swagger = new SwaggerParser().parse(ex.getResponse().getBodyAsStringDecoded());
-		// pass swagger spec to Swagger Key
+		// pass swagger specification to Swagger Key
 		((SwaggerProxyKey)key).setSwagger(swagger);
 		interceptors.add(new SwaggerRewriterInterceptor());
 	}
-
 
 	public String getUrl() {
 		return swaggerUrl;

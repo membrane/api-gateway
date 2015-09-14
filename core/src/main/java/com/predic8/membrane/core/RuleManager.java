@@ -24,9 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import com.predic8.membrane.core.config.ConfigurationException;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
@@ -39,8 +36,6 @@ import com.predic8.membrane.core.transport.ssl.SSLContextCollection;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public class RuleManager {
-
-	private static Log log = LogFactory.getLog(RuleManager.class.getName());
 
 	private Router router;
 
@@ -213,29 +208,20 @@ public class RuleManager {
 		for (Rule rule : rules) {
 			RuleKey key = rule.getKey();
 
-			log.debug("Host from rule: " + key.getHost() + ";   Host from parameter rule key: " + hostHeader);
-
 			if (!rule.isActive())
 				continue;
-
 			if (!key.matchesVersion(version))
 				continue;
-
-			if (key.getIp() != null)
-				if (!key.getIp().equals(localIP))
-					continue;
-
+			if (key.getIp() != null && !key.getIp().equals(localIP))
+				continue;
 			if (!key.matchesHostHeader(hostHeader))
 				continue;
 			if (key.getPort() != -1 && port != -1 && key.getPort() != port)
 				continue;
 			if (!key.getMethod().equals(method) && !key.isMethodWildcard())
 				continue;
-
 			if (key.isUsePathPattern() && !key.matchesPath(uri))
 				continue;
-
-			System.out.println("calling complexMatch " + key.getClass().toString());
 			if (key.complexMatch(hostHeader, method, uri, version, port, localIP))
 				continue;
 

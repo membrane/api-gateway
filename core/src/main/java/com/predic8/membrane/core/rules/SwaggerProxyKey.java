@@ -8,13 +8,10 @@ import io.swagger.models.Swagger;
 
 public class SwaggerProxyKey extends ServiceProxyKey {
 
-
 	private Swagger swagger;
-
 
 	public SwaggerProxyKey(int port) {
 		super(port);
-		System.out.println("SwaggerProxyKey CTOR");
 	}
 
 	public SwaggerProxyKey(int port, String ip) {
@@ -29,16 +26,12 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 		super(host, method, path, port);
 	}
 
-
 	@Override
 	public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
-
-		System.out.println("real complexMatch called");
-
-		// TODO: check if request is in Swagger specification
 		assert swagger != null;
 
 		Map<String, Path> paths = swagger.getPaths();
+		// TODO: check if request is in Swagger specification
 		for (Entry<String,Path> p : paths.entrySet()) {
 			String name = p.getKey();
 			Path path = p.getValue();
