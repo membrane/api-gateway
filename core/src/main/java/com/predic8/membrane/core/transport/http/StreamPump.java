@@ -47,6 +47,11 @@ public class StreamPump implements Runnable {
 		public synchronized List<StreamPump> getStreamPumps() {
 			return new ArrayList<StreamPump>(pumps);
 		}
+		public synchronized void closeAllStreamPumps() {
+			for (StreamPump p : pumps) {
+				p.close();
+			}
+		}
 	}
 
 	// operational members
@@ -111,4 +116,15 @@ public class StreamPump implements Runnable {
 	public synchronized long getCreationTime() {
 		return creationTime;
 	}
+
+	public synchronized void close() {
+		try {
+			log.debug("Closing Stream Pump '" + pumpName + "'");
+			in.close();
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 }
