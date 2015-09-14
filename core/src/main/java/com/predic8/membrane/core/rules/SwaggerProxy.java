@@ -57,7 +57,12 @@ public class SwaggerProxy extends ServiceProxy {
 		swagger = new SwaggerParser().parse(ex.getResponse().getBodyAsStringDecoded());
 		// pass swagger specification to Swagger Key
 		((SwaggerProxyKey)key).setSwagger(swagger);
-		interceptors.add(new SwaggerRewriterInterceptor());
+
+		SwaggerRewriterInterceptor sri = new SwaggerRewriterInterceptor();
+		// Defaults:
+		//sri.setRewriteUI(true);
+		//sri.setSwaggerJson("swagger.json");
+		interceptors.add(sri);
 	}
 
 	public String getUrl() {

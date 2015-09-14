@@ -28,17 +28,41 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 
 	@Override
 	public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
+
+		System.out.println("SwaggerProxyKey.complexMatch()...");
+
 		assert swagger != null;
 
 		Map<String, Path> paths = swagger.getPaths();
 		// TODO: check if request is in Swagger specification
 		for (Entry<String,Path> p : paths.entrySet()) {
+
 			String name = p.getKey();
 			Path path = p.getValue();
-			System.out.println(name + path);
+
+			System.out.println(name +" "+ path.getParameters() +" "+ method +" "+ uri);
+
+			if (pathTemplateMatch(uri, name) && methodMatch(method, path)) {
+				return true;
+			}
+
 		}
 
-		return true;
+		//return true; // <-- temporary
+		return false; // <-- when above check works
+	}
+
+	// TODO: Path Template Matching !!!!!!!!!!
+	private boolean pathTemplateMatch(String calledURI, String specName) {
+		// TODO: FIX UGLY TEMPORARY WORKAROUND !!!
+		return calledURI.equals(swagger.getBasePath() + specName);
+	}
+
+	private boolean methodMatch(String method, Path path) {
+		return method.equalsIgnoreCase("GET") && path.getGet() != null
+			|| method.equalsIgnoreCase("POST") && path.getPost() != null
+			|| method.equalsIgnoreCase("PUT") && path.getPut() != null
+			|| method.equalsIgnoreCase("DELETE") && path.getDelete() != null;
 	}
 
 	public Swagger getSwagger() {
