@@ -39,7 +39,6 @@ public class SwaggerProxy extends ServiceProxy {
 
 	private String swaggerUrl;
 	private boolean allowUI = true;
-
 	private Swagger swagger;
 
 	public SwaggerProxy() {
@@ -74,7 +73,7 @@ public class SwaggerProxy extends ServiceProxy {
 		((SwaggerProxyKey)key).setAllowUI(allowUI);
 
 		// add interceptor to position 0.
-		SwaggerRewriterInterceptor sri = new SwaggerRewriterInterceptor(swagger);
+		SwaggerRewriterInterceptor sri = new SwaggerRewriterInterceptor(swagger, swaggerUrl);
 		interceptors.add(0, sri);
 	}
 

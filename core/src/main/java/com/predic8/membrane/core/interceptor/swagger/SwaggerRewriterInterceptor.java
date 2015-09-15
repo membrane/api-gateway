@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.interceptor.swagger;
 
+import java.net.URL;
 import java.util.regex.Pattern;
 
 import org.springframework.http.MediaType;
@@ -37,6 +38,7 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 
 	private Swagger swagger;
 	private boolean rewriteUI = true;
+	private String swaggerUrl;
 	private String swaggerJson = "swagger.json";
 
 	public SwaggerRewriterInterceptor(Swagger swag) {
@@ -51,10 +53,16 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 		this.rewriteUI = rewrite;
 		this.swaggerJson = json;
 	}
+	public SwaggerRewriterInterceptor(Swagger swag, String swagUrl) {
+		this(swag);
+		this.swaggerUrl = swagUrl;
+	}
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-//		exc.getDestinations()
+		((ServiceProxy) exc.getRule()).setTargetHost(swagger.getHost());
+		URL url = new URL(swaggerUrl);
+		exc.getDestinations().set(0, url.getProtocol() + "://" + url.getHost() + (url.getPort() < 0 ? "" : ":"+url.getPort()) + exc.getOriginalRequestUri());
 		return super.handleRequest(exc);
 	}
 
