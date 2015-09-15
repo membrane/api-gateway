@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.rules;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -78,7 +77,7 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 
 	// Self-made Path Template Matching
 	private boolean pathTemplateMatch(String calledURI, String specName) {
-		final String IDENTIFIER = "[A-Za-z_0-9]+";
+		final String IDENTIFIER = "[-_a-zA-Z0-9]+";
 		specName = specName.replaceAll("\\{" + IDENTIFIER + "\\}", IDENTIFIER);
 		String spec = swagger.getBasePath() + specName;
 		return Pattern.matches(spec, calledURI);
