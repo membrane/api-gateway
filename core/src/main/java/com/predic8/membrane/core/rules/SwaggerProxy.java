@@ -74,11 +74,7 @@ public class SwaggerProxy extends ServiceProxy {
 		((SwaggerProxyKey)key).setAllowUI(allowUI);
 
 		// add interceptor to position 0.
-		SwaggerRewriterInterceptor sri = new SwaggerRewriterInterceptor();
-		sri.setRewriteUI(isAllowUI());
-		// Defaults:
-		//sri.setRewriteUI(true);
-		//sri.setSwaggerJson("swagger.json");
+		SwaggerRewriterInterceptor sri = new SwaggerRewriterInterceptor(swagger);
 		interceptors.add(0, sri);
 	}
 

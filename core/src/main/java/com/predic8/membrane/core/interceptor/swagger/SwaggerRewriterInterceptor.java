@@ -35,8 +35,28 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 @MCElement(name = "swaggerRewriter")
 public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 
+	private Swagger swagger;
 	private boolean rewriteUI = true;
 	private String swaggerJson = "swagger.json";
+
+	public SwaggerRewriterInterceptor(Swagger swag) {
+		this(swag, true, "swagger.json");
+	}
+	public SwaggerRewriterInterceptor(Swagger swag, boolean rewrite) {
+		this(swag, rewrite, "swagger.json");
+	}
+	public SwaggerRewriterInterceptor(Swagger swag, boolean rewrite, String json) {
+		name = "Swagger Rewriter";
+		this.swagger = swag;
+		this.rewriteUI = rewrite;
+		this.swaggerJson = json;
+	}
+
+	@Override
+	public Outcome handleRequest(Exchange exc) throws Exception {
+//		exc.getDestinations()
+		return super.handleRequest(exc);
+	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
@@ -69,7 +89,19 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getShortDescription() {
-		return super.getShortDescription();
+		String uipath = "http://" + swagger.getHost();
+		String jsonpath = "http://" + swagger.getHost() + swagger.getBasePath() + "/" + swaggerJson;
+		return "Rewriting <b>" + swagger.getHost() + "</b><br/>"
+				+ "Allow and Rewrite UI = " + rewriteUI + "<br/>"
+				+ (rewriteUI ? ("Swagger UI: <a target='_blank' href='" + uipath + "'>" + uipath + "</a><br/>") : "")
+				+ "JSON Specification: <a target='_blank' href='" + jsonpath + "'>" + jsonpath + "</a><br/>";
+	}
+
+	public Swagger getSwagger() {
+		return swagger;
+	}
+	public void setSwagger(Swagger swagger) {
+		this.swagger = swagger;
 	}
 
 	public boolean isRewriteUI() {
