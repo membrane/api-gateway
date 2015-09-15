@@ -24,6 +24,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.predic8.membrane.core.config.ConfigurationException;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
@@ -36,6 +39,8 @@ import com.predic8.membrane.core.transport.ssl.SSLContextCollection;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public class RuleManager {
+
+	private static Log log = LogFactory.getLog(RuleManager.class.getName());
 
 	private Router router;
 
@@ -207,6 +212,8 @@ public class RuleManager {
 	public Rule getMatchingRule(String hostHeader, String method, String uri, String version, int port, String localIP) {
 		for (Rule rule : rules) {
 			RuleKey key = rule.getKey();
+
+			log.debug("Host from rule: " + key.getHost() + ";   Host from parameter rule key: " + hostHeader);
 
 			if (!rule.isActive())
 				continue;
