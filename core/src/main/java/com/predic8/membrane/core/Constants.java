@@ -1,4 +1,4 @@
-/* Copyright 2009, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2009, 2012, 2015 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -85,6 +85,8 @@ public class Constants {
 	public static final String PROTOCOL_HTTP = "HTTP";
 
 	public static final String PRODUCT_NAME = "Membrane Service Proxy";
+	public static final String PRODUCT_WEBSITE = "http://www.membrane-soa.org/service-proxy/";
+	public static final String PRODUCT_WEBSITE_DOC = "http://www.membrane-soa.org/service-proxy-doc/";
 	public static final String PRODUCT_CONTACT_EMAIL = "info@predic8.de";
 
 	public static final String HTML_FOOTER =

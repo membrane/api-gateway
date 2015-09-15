@@ -68,7 +68,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		exc.setResponse(
 				Response.badRequest(
 						"This request was not accepted by " +
-								"<a href=\"http://www.membrane-soa.org/esb-doc/\">" + Constants.PRODUCT_NAME + "</a>" +
+								"<a href=\"" + Constants.PRODUCT_WEBSITE_DOC + "\">" + Constants.PRODUCT_NAME + "</a>" +
 								". Please correct the request and try again.",
 								false).build());
 	}
