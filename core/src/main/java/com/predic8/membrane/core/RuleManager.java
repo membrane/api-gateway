@@ -222,7 +222,7 @@ public class RuleManager {
 				continue;
 			if (key.isUsePathPattern() && !key.matchesPath(uri))
 				continue;
-			if (key.complexMatch(hostHeader, method, uri, version, port, localIP))
+			if (!key.complexMatch(hostHeader, method, uri, version, port, localIP))
 				continue;
 
 			return rule;

@@ -137,7 +137,7 @@ public abstract class AbstractRuleKey implements RuleKey {
 	}
 
 	public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
-		return false;
+		return true;
 	}
 
 }

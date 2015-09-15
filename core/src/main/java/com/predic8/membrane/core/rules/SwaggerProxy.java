@@ -1,3 +1,16 @@
+/* Copyright 2009, 2011. 2015 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
 package com.predic8.membrane.core.rules;
 
 import io.swagger.models.Swagger;
@@ -25,6 +38,7 @@ public class SwaggerProxy extends ServiceProxy {
 	private static Log log = LogFactory.getLog(SwaggerProxy.class.getName());
 
 	private String swaggerUrl;
+	private boolean allowUI = true;
 
 	private Swagger swagger;
 
@@ -57,12 +71,15 @@ public class SwaggerProxy extends ServiceProxy {
 		swagger = new SwaggerParser().parse(ex.getResponse().getBodyAsStringDecoded());
 		// pass swagger specification to Swagger Key
 		((SwaggerProxyKey)key).setSwagger(swagger);
+		((SwaggerProxyKey)key).setAllowUI(allowUI);
 
+		// add interceptor to position 0.
 		SwaggerRewriterInterceptor sri = new SwaggerRewriterInterceptor();
+		sri.setRewriteUI(isAllowUI());
 		// Defaults:
 		//sri.setRewriteUI(true);
 		//sri.setSwaggerJson("swagger.json");
-		interceptors.add(sri);
+		interceptors.add(0, sri);
 	}
 
 	public String getUrl() {
@@ -76,6 +93,19 @@ public class SwaggerProxy extends ServiceProxy {
 	@MCAttribute
 	public void setUrl(String swaggerUrl) {
 		this.swaggerUrl = swaggerUrl;
+	}
+
+
+	public boolean isAllowUI() {
+		return allowUI;
+	}
+	/**
+	 * @description Whether to allow Swagger UI forwarding
+	 * @default true
+	 */
+	@MCAttribute
+	public void setAllowUI(boolean allowUI) {
+		this.allowUI = allowUI;
 	}
 
 }

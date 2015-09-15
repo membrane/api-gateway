@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.rules;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
@@ -27,6 +29,7 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 	private static Log log = LogFactory.getLog(SwaggerProxyKey.class.getName());
 
 	private Swagger swagger;
+	private boolean allowUI;
 
 	public SwaggerProxyKey(int port) {
 		super(port);
@@ -50,14 +53,26 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 			log.error("Swagger specification is null!");
 			return false;
 		}
+
+		// check if swagger specification is fetched
+		if (uri.endsWith("swagger.json")) {
+			return true;
+		}
+
+		// check if request is part of the UI
+		if (allowUI && method.equalsIgnoreCase("GET") && isUI(uri)) {
+			return true;
+		}
+
 		// check if request is in Swagger specification
 		Map<String, Path> paths = swagger.getPaths();
-		for (Entry<String,Path> p : paths.entrySet()) {
+		for (Entry<String, Path> p : paths.entrySet()) {
 			if (pathTemplateMatch(uri, p.getKey()) && methodMatch(method, p.getValue())) {
 				log.debug("Request is a Swagger call according to specification");
 				return true;
 			}
 		}
+
 		return false;
 	}
 
@@ -77,11 +92,43 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 			|| method.equalsIgnoreCase("DELETE") && path.getDelete() != null;
 	}
 
+	private boolean isUI(String path) {
+		return Arrays.asList(
+			  "/"
+			, "/favicon.ico"
+			, "/swagger-ui.js"
+			, "/css/typography.css"
+			, "/css/reset.css"
+			, "/css/screen.css"
+			, "/css/print.css"
+			, "/lib/jquery.slideto.min.js"
+			, "/lib/jquery-1.8.0.min.js"
+			, "/lib/jquery.wiggle.min.js"
+			, "/lib/jquery.ba-bbq.min.js"
+			, "/lib/underscore-min.js"
+			, "/lib/handlebars-2.0.0.js"
+			, "/lib/backbone-min.js"
+			, "/lib/highlight.7.3.pack.js"
+			, "/lib/marked.js"
+			, "/lib/swagger-oauth.js"
+			, "/images/favicon-16x16.png"
+			, "/images/logo_small.png"
+			, "/fonts/droid-sans-v6-latin-700.woff2"
+		).contains(path);
+	}
+
 	public Swagger getSwagger() {
 		return swagger;
 	}
 	public void setSwagger(Swagger swag) {
 		this.swagger = swag;
+	}
+
+	public boolean isAllowUI() {
+		return allowUI;
+	}
+	public void setAllowUI(boolean allowUI) {
+		this.allowUI = allowUI;
 	}
 
 }
