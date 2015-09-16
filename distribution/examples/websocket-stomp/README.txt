@@ -23,7 +23,7 @@ PREPARATIONS
 2.	Start ActiveMQ by executing
 	> bin/activemq start
 	in the ActiveMQ directory.
-3.	Go to the examples/websocket directory.
+3.	Go to the examples/websocket-stomp directory.
 4.	Execute service-proxy.sh / service-proxy.bat
 5.	Open the URL
 		http://localhost:8161/admin/queues.jsp
