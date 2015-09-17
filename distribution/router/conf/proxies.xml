@@ -1,6 +1,6 @@
 <!--
 	Routing Configuration
-	
+
 	Here you can configure routing rules for Membrane Service Proxy. It
 	contains some rules to show how to setup routing. Please make sure to
 	remove these rules before you put the router into production. More sample
@@ -10,11 +10,11 @@
 	http://membrane-soa.org/service-proxy-doc/current/configuration/proxy-configuration.htm for
 	documentation and a reference explaining what XML elements can be used
 	how and where.
-	
+
 	See the proxies.xml files in the /examples/* directories in the Service Proxy
 	distribution for several examples of how to configure different Service Proxy
 	features within this file.
-	
+
 	Changes to this file will be picked up almost instantly if Membrane is
 	running	once this file has been saved. Any dynamic configuration changes
 	made (for example, via the adminConsole) will be forgotten.
@@ -22,21 +22,22 @@
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
 	xmlns:spring="http://www.springframework.org/schema/beans"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
-					    
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	                    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+	                    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
 	<router>
-	      	 
+
 		<!-- This would tell Membrane to use a proxy for outgoing connections.
-	    <httpClientConfig>
-	    	<proxy host="proxy.mycompany.example" port="3128" />
-	    </httpClientConfig>
-	    -->
-	      	 
+		<httpClientConfig>
+			<proxy host="proxy.mycompany.example" port="3128" />
+		</httpClientConfig>
+		-->
+
 		<!-- Forwards SOAP requests for the BLZService on port 2000 to the Web server on host thomas-bayer.com -->
 		<soapProxy port="2000" wsdl="http://www.thomas-bayer.com/axis2/services/BLZService?wsdl">
 		</soapProxy>
-	
+
 		<!-- Displays a list of all configured proxies. -->
 		<serviceProxy port="2000">
 			<index />
@@ -46,7 +47,7 @@
 		<serviceProxy name="localhost" port="2001" >
 			<target host="www.membrane-soa.org" port="80"/>
 		</serviceProxy>
-	
+
 		<!-- Sets up the Administration Web Interface on port 9000-->
 		<serviceProxy name="Console" port="9000">
 			<basicAuthentication>
@@ -55,7 +56,7 @@
 			<accessControl file="acl.xml" />
 			<adminConsole />
 		</serviceProxy>
-	 
-	 </router>
+
+	</router>
 
 </spring:beans>
