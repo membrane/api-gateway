@@ -20,16 +20,14 @@ Let's proxy some Swagger!
 
 To run the example execute the following steps:
 
-1.	Open the URL http://localhost:8000/ in your browser
+1.	Open the URL http://localhost:7000/ in your browser
 2.	Open another tab in your browser with the URL http://petstore.swagger.io/
-3.	The websites on localhost:8000 and petstore.swagger.io should look the same,
-	except that all URLs on the former are rewritten to localhost:8000.
+3.	The websites on localhost:7000 and petstore.swagger.io should look the same,
+	except that all URLs on the former are rewritten to localhost:7000.
 	You can also navigate on both sites: click on "pet" and explore the REST API.
 4.	Run the following calls in the command line, they should yield the same result.
-	curl -X GET --header "Accept: application/json" "http://localhost:8000/v2/pet/findByStatus?status=pending"
-	curl -X GET --header "Accept: application/json" "http://petstore.swagger.io/v2/pet/findByStatus?status=pending"
-
-
+	curl -X GET --header "Accept: application/json" "http://localhost:7000/v2/pet/8"
+	curl -X GET --header "Accept: application/json" "http://petstore.swagger.io/v2/pet/8"
 
 HOW IT IS DONE
 
@@ -39,12 +37,12 @@ First, take a look at the proxies.xml file.
 
 	<swaggerProxy port="7000" url="http://petstore.swagger.io/v2/swagger.json" />
 
-	<serviceProxy port="8000" >
+	<serviceProxy port="8000">
 		<swaggerRewriter />
 		<target host="petstore.swagger.io" port="80" />
 	</serviceProxy>
 
-There are thress Service Proxies defined here:
+There are three Service Proxies defined here:
 
 The first and the second are both Service Proxies with function as a Swagger
 Proxy.
@@ -56,7 +54,7 @@ The first one, the swaggerProxy
 offers a shorter and more concise way to define a Swagger Proxy,
 whereas the second method
 
-	<serviceProxy port="8000" >
+	<serviceProxy port="8000">
 		<swaggerRewriter />
 		<target host="petstore.swagger.io" port="80" />
 	</serviceProxy>
@@ -78,3 +76,6 @@ When this option is set, it also rewrites the URL of html and javascript files
 that are transferred.
 Lastly, the target specifies the site which the swaggerRewriter should actually
 rewrite.
+
+The third Service Proxy is just an Admin Console which you can use to watch
+active Service Proxies and current calls and connections.
