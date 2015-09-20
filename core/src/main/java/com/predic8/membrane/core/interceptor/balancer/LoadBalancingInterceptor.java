@@ -90,6 +90,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		}
 
 		updateDispatchedNode(exc);
+		strategy.done(exc);
 
 		return Outcome.CONTINUE;
 	}
