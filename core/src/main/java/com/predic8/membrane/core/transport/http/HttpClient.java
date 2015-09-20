@@ -48,6 +48,9 @@ import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.Util;
 
 /**
+ * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
+ * switch destinations on failures.
+ *
  * Instances are thread-safe.
  */
 public class HttpClient {
