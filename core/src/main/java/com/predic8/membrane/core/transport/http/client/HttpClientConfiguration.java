@@ -63,6 +63,10 @@ public class HttpClientConfiguration {
 	/**
 	 * @description Determines how often Membrane tries to send a message to a target before it gives up and returns an
 	 *              error message to the client.
+	 *              All tries to all servers count together. For example if you have 2 targets, and a RoundRobin
+	 *              strategy, then the number 5 means it tries, in this order: one, two, one, two, one.
+	 *              NOTE: the word "retries" is used incorrectly throughout this project. The current meaning is "tries".
+	 *              The first attempt, which is semantically not a "re"-try, counts as one already.
 	 * @default 5
 	 */
 	@MCAttribute

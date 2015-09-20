@@ -94,13 +94,17 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
+	/**
+	 * Add secondary destinations in case the primary fails.
+	 */
 	private void setFailOverNodes(Exchange exc, Node dispatchedNode) {
 		if (!failOver)
 			return;
 
 		for (Node ep : getEndpoints()) {
-			if (!ep.equals(dispatchedNode))
+			if (!ep.equals(dispatchedNode)) { //don't add the primary one again
 				exc.getDestinations().add(ep.getDestinationURL(exc));
+			}
 		}
 	}
 
