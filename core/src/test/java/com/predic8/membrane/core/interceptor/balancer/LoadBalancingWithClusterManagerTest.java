@@ -58,37 +58,37 @@ public class LoadBalancingWithClusterManagerTest {
 		sendNotification("up", 3000);
 
 		assertEquals(200, post("/getBankwithSession555555.xml"));// goes to service one
-		assertEquals(1, service1.counter);
-		assertEquals(0, service2.counter);
+		assertEquals(1, service1.getCount());
+		assertEquals(0, service2.getCount());
 
 		assertEquals(200, post("/getBankwithSession555555.xml"));// goes to service 1 again
-		assertEquals(2, service1.counter);
-		assertEquals(0, service2.counter);
+		assertEquals(2, service1.getCount());
+		assertEquals(0, service2.getCount());
 
 		assertEquals(200, post("/getBankwithSession444444.xml")); // goes to service 2
-		assertEquals(2, service1.counter);
-		assertEquals(1, service2.counter);
+		assertEquals(2, service1.getCount());
+		assertEquals(1, service2.getCount());
 
 		sendNotification("down", 2000);
 
 		assertEquals(200, post("/getBankwithSession555555.xml")); // goes to service 2 because service 1 is down
-		assertEquals(2, service1.counter);
-		assertEquals(2, service2.counter);
+		assertEquals(2, service1.getCount());
+		assertEquals(2, service2.getCount());
 
 		sendNotification("up", 4000);
 
-		assertEquals(0, service3.counter);
+		assertEquals(0, service3.getCount());
 		assertEquals(200, post("/getBankwithSession666666.xml")); // goes to service 3
-		assertEquals(2, service1.counter);
-		assertEquals(2, service2.counter);
-		assertEquals(1, service3.counter);
+		assertEquals(2, service1.getCount());
+		assertEquals(2, service2.getCount());
+		assertEquals(1, service3.getCount());
 
 		assertEquals(200, post("/getBankwithSession555555.xml")); // goes to service 2
 		assertEquals(200, post("/getBankwithSession444444.xml")); // goes to service 2
 		assertEquals(200, post("/getBankwithSession666666.xml")); // goes to service 3
-		assertEquals(2, service1.counter);
-		assertEquals(4, service2.counter);
-		assertEquals(2, service3.counter);
+		assertEquals(2, service1.getCount());
+		assertEquals(4, service2.getCount());
+		assertEquals(2, service3.getCount());
 
 
 	}

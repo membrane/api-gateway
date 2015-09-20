@@ -21,18 +21,24 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 public class DummyWebServiceInterceptor extends AbstractInterceptor {
 
 	private static Log log = LogFactory.getLog(DummyWebServiceInterceptor.class.getName());
 
-	public volatile long counter;
+    private AtomicLong counter = new AtomicLong();
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		exc.setResponse(Response.ok().contentType("text/html").body("<aaa></aaa>".getBytes()).build());
-		counter ++;
-		log.debug("handle request "+counter);
+        long count = counter.incrementAndGet();
+        log.debug("handle request "+count);
 		return Outcome.RETURN;
 	}
+
+   public long getCount() {
+      return counter.get();
+   }
 
 }

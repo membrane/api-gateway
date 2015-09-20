@@ -111,10 +111,10 @@ public class MultipleLoadBalancersTest {
 	}
 
 	private void assertMockCounters(int n1, int n2, int n11, int n12) {
-		assertEquals(n1, service1.mockInterceptor1.counter);
-		assertEquals(n2, service2.mockInterceptor1.counter);
-		assertEquals(n11, service11.mockInterceptor1.counter);
-		assertEquals(n12, service12.mockInterceptor1.counter);
+		assertEquals(n1, service1.mockInterceptor1.getCount());
+		assertEquals(n2, service2.mockInterceptor1.getCount());
+		assertEquals(n11, service11.mockInterceptor1.getCount());
+		assertEquals(n12, service12.mockInterceptor1.getCount());
 	}
 
 	@Test
