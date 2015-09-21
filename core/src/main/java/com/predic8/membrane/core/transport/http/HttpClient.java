@@ -75,6 +75,12 @@ public class HttpClient {
 	private final ConnectionManager conMgr;
 	private StreamPump.StreamPumpStats streamPumpStats;
 
+	/**
+	 * TODO make injectable, make it an optional feature, don't pay for what you don't use.
+	 */
+	private HttpClientStatusEventBus httpClientStatusEventBus = HttpClientStatusEventBus.getService();
+
+
 	public HttpClient() {
 		this(new HttpClientConfiguration());
 	}
@@ -181,6 +187,7 @@ public class HttpClient {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
 			HostColonPort target = null;
+			Integer responseStatusCode = null;
 			try {
 				log.debug("try # " + counter + " to " + dest);
 				target = init(exc, dest, adjustHostHeader);
@@ -211,6 +218,7 @@ public class HttpClient {
 					handleConnectRequest(exc, con);
 					response = Response.ok().build();
 					newProtocol = "CONNECT";
+					//TODO should we report to the httpClientStatusEventBus here somehow?
 				} else {
 					response = doCall(exc, con);
 					if (trackNodeStatus)
@@ -219,6 +227,7 @@ public class HttpClient {
 					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToResponse(response, "websocket")) {
 						log.debug("Upgrading to WebSocket protocol.");
 						newProtocol = "WebSocket";
+						//TODO should we report to the httpClientStatusEventBus here somehow?
 					}
 					if (exc.getProperty(Exchange.ALLOW_TCP) == Boolean.TRUE && isUpgradeToResponse(response, "tcp")) {
 						log.debug("Upgrading to TCP protocol.");
@@ -239,21 +248,27 @@ public class HttpClient {
 					return exc;
 				}
 
-				boolean is5XX = 500 <= response.getStatusCode() && response.getStatusCode() < 600;
-				if (!failOverOn5XX || !is5XX || counter == maxRetries-1) {
+				responseStatusCode = response.getStatusCode();
+
+				httpClientStatusEventBus.reportResponse(dest, responseStatusCode);
+
+				if (!failOverOn5XX || !is5xx(responseStatusCode) || counter == maxRetries-1) {
 					applyKeepAliveHeader(response, con);
 					exc.getDestinations().clear();
 					exc.getDestinations().add(dest);
 					con.setExchange(exc);
 					response.addObserver(con);
 					exc.setResponse(response);
+					//TODO should we report to the httpClientStatusEventBus here somehow?
 					return exc;
 				}
+
 				// java.net.SocketException: Software caused connection abort: socket write error
 			} catch (ConnectException e) {
 				exception = e;
-				log.info("Connection to " + (target == null ? dest : target ) + " refused.");
+				log.info("Connection to " + (target == null ? dest : target) + " refused.");
 			} catch(SocketException e){
+				exception = e;
 				if ( e.getMessage().contains("Software caused connection abort")) {
 					log.info("Connection to " + dest + " was aborted externally. Maybe by the server or the OS Membrane is running on.");
 				} else if (e.getMessage().contains("Connection reset") ) {
@@ -261,22 +276,17 @@ public class HttpClient {
 				} else {
 					logException(exc, counter, e);
 				}
-				exception = e;
 			} catch (UnknownHostException e) {
+				exception = e;
 				log.warn("Unknown host: " + (target == null ? dest : target ));
-				exception = e;
-				if (exc.getDestinations().size() < 2) {
-					//don't retry this host, it's useless. (it's very unlikely that it will work after timeBetweenTriesMs)
-					break;
-				}
 			} catch (EOFWhileReadingFirstLineException e) {
+				exception = e;
 				log.debug("Server connection to " + dest + " terminated before line was read. Line so far: " + e.getLineSoFar());
-				exception = e;
 			} catch (NoResponseException e) {
-				throw e;
-			} catch (Exception e) {
-				logException(exc, counter, e);
 				exception = e;
+			} catch (Exception e) {
+				exception = e;
+				logException(exc, counter, e);
 			}
 			finally	{
 				if (trackNodeStatus) {
@@ -285,9 +295,29 @@ public class HttpClient {
 					}
 				}
 			}
+
+			//we have an error. either in the form of an exception, or as a 5xx response code.
+			if (exception!=null) {
+				httpClientStatusEventBus.reportException(dest, exception);
+			} else {
+				assert responseStatusCode!=null && is5xx(responseStatusCode);
+				httpClientStatusEventBus.reportResponse(dest, responseStatusCode);
+			}
+
+			if (exception instanceof UnknownHostException) {
+				if (exc.getDestinations().size() < 2) {
+					//don't retry this host, it's useless. (it's very unlikely that it will work after timeBetweenTriesMs)
+					break;
+				}
+			} else if (exception instanceof NoResponseException) {
+				//TODO explain why we give up here, don't even retry another host.
+				//maybe it means we ourselves lost network connection?
+				throw exception;
+			}
+
 			counter++;
 			if (exc.getDestinations().size() == 1) {
-				//as documented above, the sleep timeout is only applied between successive calls to the same destination.
+				//as documented above, the sleep timeout is only applied between successive calls to the SAME destination.
 				Thread.sleep(timeBetweenTriesMs);
 			}
 		}
@@ -296,9 +326,13 @@ public class HttpClient {
 
 	private String getSNIServerName(Exchange exc) {
 		Object sniObject = exc.getProperty(Exchange.SNI_SERVER_NAME);
-		if(sniObject == null)
+		if (sniObject == null)
 			return null;
 		return (String) sniObject;
+	}
+
+	private boolean is5xx(Integer responseStatusCode) {
+		return 500 <= responseStatusCode && responseStatusCode < 600;
 	}
 
 	private void applyKeepAliveHeader(Response response, Connection con) {
