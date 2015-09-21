@@ -287,20 +287,22 @@ public class HttpClient {
 	}
 
 	private void logException(Exchange exc, int counter, Exception e) throws IOException {
-		StringBuilder msg = new StringBuilder();
-		msg.append("try # ");
-		msg.append(counter);
-		msg.append(" failed\n");
+		if (log.isDebugEnabled()) {
+			StringBuilder msg = new StringBuilder();
+			msg.append("try # ");
+			msg.append(counter);
+			msg.append(" failed\n");
 
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		exc.getRequest().writeStartLine(baos);
-		exc.getRequest().getHeader().write(baos);
-		msg.append(Constants.ISO_8859_1_CHARSET.decode(ByteBuffer.wrap(baos.toByteArray())));
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			exc.getRequest().writeStartLine(baos);
+			exc.getRequest().getHeader().write(baos);
+			msg.append(Constants.ISO_8859_1_CHARSET.decode(ByteBuffer.wrap(baos.toByteArray())));
 
-		if (e != null)
-			log.debug(msg, e);
-		else
-			log.debug(msg);
+			if (e != null)
+				log.debug(msg, e);
+			else
+				log.debug(msg);
+		}
 	}
 
 	private Response doCall(Exchange exc, Connection con) throws IOException, EndOfStreamException {
