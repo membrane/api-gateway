@@ -14,6 +14,16 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
+/**
+ * This is thrown if there is no Node available right now.
+ *
+ * <p>Possible causes:
+ * <pre>
+ *  - Misconfiguration, no node was configured at all.
+ *  - All nodes went down during runtime, detected by external monitoring like Nagios/Zabbix, and they were
+ *    removed externally through the membrane rest api.
+ * </pre></p>
+ */
 public class EmptyNodeListException extends Exception {
 
 	private static final long serialVersionUID = -1239983654002876857L;

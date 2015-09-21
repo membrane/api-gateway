@@ -40,6 +40,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(LoadBalancingInterceptor.class
 			.getName());
 
+	/**
+	 * Round-robin is the default, but it's configurable.
+	 */
 	private DispatchingStrategy strategy = new RoundRobinStrategy();
 	private AbstractSessionIdExtractor sessionIdExtractor;
 	private boolean failOver = true;
@@ -57,6 +60,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		try {
 			dispatchedNode = getDispatchedNode(exc.getRequest());
 		} catch (EmptyNodeListException e) {
+			//This can happen for 2 reasons:
+			//1) Initial server misconfiguration. None configured at all.
+			//2) All destinations got disabled externally (through Membrane maintenance API). See class EmptyNodeListException.
 			log.error("No Node found.");
 			exc.setResponse(Response.internalServerError().build());
 			return Outcome.ABORT;
@@ -94,13 +100,17 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
+	/**
+	 * Add secondary destinations in case the primary fails.
+	 */
 	private void setFailOverNodes(Exchange exc, Node dispatchedNode) {
 		if (!failOver)
 			return;
 
 		for (Node ep : getEndpoints()) {
-			if (!ep.equals(dispatchedNode))
+			if (!ep.equals(dispatchedNode)) { //don't add the primary one again
 				exc.getDestinations().add(ep.getDestinationURL(exc));
+			}
 		}
 	}
 

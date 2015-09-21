@@ -353,6 +353,11 @@ public abstract class AbstractExchange {
 		return contentType;
 	}
 
+	/**
+	 * @return Probably never empty.
+	 *         Is this guaranteed to always contain at least 1 entry? There are many hardcoded calls with
+	 *         getDestinations().get(0) in the system.
+	 */
 	public List<String> getDestinations() {
 		return destinations;
 	}

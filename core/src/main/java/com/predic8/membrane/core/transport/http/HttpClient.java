@@ -48,6 +48,9 @@ import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.Util;
 
 /**
+ * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
+ * switch destinations on failures.
+ *
  * Instances are thread-safe.
  */
 public class HttpClient {
@@ -58,7 +61,20 @@ public class HttpClient {
 
 	private final ProxyConfiguration proxy;
 	private final AuthenticationConfiguration authentication;
-	private final int timeBetweenTries = 250;
+
+	/**
+	 * How long to wait between calls to the same destination, in milliseconds.
+	 * To prevent hammering one target.
+	 * Between calls to different targets (think servers) this waiting time is not applied.
+	 *
+	 * Note: for reasons of code simplicity, this sleeping time is only applied between direct successive calls
+	 * to the same target. If there are multiple targets like one, two, one and it all goes very fast, then
+	 * it's possible that the same server gets hit with less time in between.
+	 */
+	private final int timeBetweenTriesMs = 250;
+	/**
+	 * See {@link HttpClientConfiguration#setMaxRetries(int)}
+	 */
 	private final int maxRetries;
 	private final int connectTimeout;
 	private final String localAddr;
@@ -227,6 +243,7 @@ public class HttpClient {
 				log.warn("Unknown host: " + (target == null ? dest : target ));
 				exception = e;
 				if (exc.getDestinations().size() < 2) {
+					//don't retry this host, it's useless. (it's very unlikely that it will work after timeBetweenTriesMs)
 					break;
 				}
 			} catch (EOFWhileReadingFirstLineException e) {
@@ -239,8 +256,10 @@ public class HttpClient {
 				exception = e;
 			}
 			counter++;
-			if (exc.getDestinations().size() == 1)
-				Thread.sleep(timeBetweenTries);
+			if (exc.getDestinations().size() == 1) {
+				//as documented above, the sleep timeout is only applied between successive calls to the same destination.
+				Thread.sleep(timeBetweenTriesMs);
+			}
 		}
 		throw exception;
 	}
@@ -250,15 +269,19 @@ public class HttpClient {
 		if (value == null)
 			return;
 
-		long timeout = Header.parseKeepAliveHeader(value, Header.TIMEOUT);
-		if (timeout != -1)
-			con.setTimeout(timeout * 1000);
+		long timeoutSeconds = Header.parseKeepAliveHeader(value, Header.TIMEOUT);
+		if (timeoutSeconds != -1)
+			con.setTimeout(timeoutSeconds * 1000);
 
 		long max = Header.parseKeepAliveHeader(value, Header.MAX);
 		if (max != -1 && max < con.getMaxExchanges())
 			con.setMaxExchanges((int)max);
 	}
 
+	/**
+	 * Returns the target destination to use for this attempt.
+	 * @param counter starting at 0 meaning the first.
+	 */
 	private String getDestination(Exchange exc, int counter) {
 		return exc.getDestinations().get(counter % exc.getDestinations().size());
 	}

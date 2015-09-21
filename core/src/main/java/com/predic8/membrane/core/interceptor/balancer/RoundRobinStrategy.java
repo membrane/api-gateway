@@ -21,6 +21,11 @@ import com.predic8.membrane.core.exchange.AbstractExchange;
 
 import java.util.List;
 
+/**
+ * Strategy that iterates the endpoints according to https://en.wikipedia.org/wiki/Round-robin
+ * This strategy is agnostic to every other factor, such as sessions and endpoint performance.
+ * All endpoints that are considered to be UP are in.
+ */
 @MCElement(name="roundRobinStrategy")
 public class RoundRobinStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
