@@ -19,6 +19,12 @@ import java.util.EnumSet;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 
+/**
+ * TODO describe in short what an interceptor is.
+ *
+ * Interceptor implementations need to be thread safe.
+ *
+ */
 public interface Interceptor {
 
 	public enum Flow {
