@@ -123,7 +123,7 @@ public class StreamPump implements Runnable {
 			in.close();
 			out.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			log.error(e.getMessage(), e);
 		}
 	}
 

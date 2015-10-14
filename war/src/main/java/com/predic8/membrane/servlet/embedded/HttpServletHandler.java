@@ -88,7 +88,7 @@ class HttpServletHandler extends AbstractHttpHandler {
 			log.debug("Client connection terminated before line was read. Line so far: ("
 					+ e.getLineSoFar() + ")");
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.error(e.getMessage(), e);
 		} finally {
 			exchange.detach();
 		}

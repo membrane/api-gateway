@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import junit.framework.TestCase;
 
 import com.predic8.membrane.core.Constants;
@@ -27,6 +30,7 @@ import com.predic8.membrane.core.util.ByteUtil;
 
 public class XMLProtectorTest extends TestCase {
 
+    private static final Logger LOG = LoggerFactory.getLogger(XMLProtectorTest.class);
 	private XMLProtector xmlProtector;
 	private byte[] input, output;
 
@@ -58,7 +62,7 @@ public class XMLProtectorTest extends TestCase {
 		try {
 			bos.write(input);
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOG.error(e.getMessage(), e);
 		}
 		StringBuffer sb = new StringBuffer();
 		sb.append(bos.toString());
