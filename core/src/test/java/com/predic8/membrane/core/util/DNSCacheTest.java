@@ -22,9 +22,11 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DNSCacheTest {
-
+    private static final Logger LOG = LoggerFactory.getLogger(DNSCacheTest.class);
 	private DNSCache cache = new DNSCache();
 
 	private static InetAddress address;
@@ -33,7 +35,7 @@ public class DNSCacheTest {
 		try {
 			address = InetAddress.getByName("localhost");
 		} catch (UnknownHostException e) {
-			e.printStackTrace();
+			LOG.error(e.getMessage(), e);
 		}
 	}
 

@@ -27,6 +27,8 @@ import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -38,6 +40,7 @@ import com.predic8.membrane.core.resolver.SchemaResolver;
 
 public class ResolverTestTriggerTest extends AbstractInterceptor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ResolverTestTriggerTest.class);
 	private static final String MAGIC = "MAGIC463634623\n";
 
 	@Override
@@ -71,7 +74,7 @@ public class ResolverTestTriggerTest extends AbstractInterceptor {
 			exc.setResponse(Response.ok().header(Header.CONTENT_TYPE, MimeType.TEXT_PLAIN_UTF8).body(sb.toString()).build());
 
 		} catch (Throwable t) {
-			t.printStackTrace();
+			LOG.error(t.getMessage(), t);
 		}
 		return Outcome.RETURN;
 	}

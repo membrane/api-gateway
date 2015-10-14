@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
 
 import com.predic8.membrane.core.config.spring.CheckableBeanFactory.InvalidConfigurationException;
@@ -23,6 +25,8 @@ import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
 
 public class RouterCLI {
+
+    private static final Logger LOG = LoggerFactory.getLogger(RouterCLI.class);
 
 	public static void main(String[] args) {
 
@@ -43,6 +47,7 @@ public class RouterCLI {
 			System.err.println("Fatal error: " + e.getMessage());
 			System.exit(1);
 		} catch (Exception ex) {
+		    LOG.error(ex.getMessage(), ex);
 			ex.printStackTrace();
 			System.exit(1);
 		}
