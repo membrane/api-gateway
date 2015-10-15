@@ -109,7 +109,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	protected String jmxRouterName;
 
 	private boolean hotDeploy = true;
-	private boolean running;
+	private volatile boolean running;
 
 	private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
 	private boolean retryInit;
