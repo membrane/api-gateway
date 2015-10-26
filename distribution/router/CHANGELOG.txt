@@ -1,6 +1,10 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [feature] Swagger Proxy
+  This includes a "Swagger Rewriter Interceptor" and a new service Proxy type:
+  the "Swagger Proxy". There's also an example for swagger.
+
 * [feature] The admin console now has a "Auto Reload" checkbox in the 'Calls'
   tab. Calls are automatically refreshed while this checkbox is checked.
 
