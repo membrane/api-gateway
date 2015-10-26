@@ -135,4 +135,9 @@ public abstract class AbstractRuleKey implements RuleKey {
 	public boolean matchesVersion(String version) {
 		return !"STOMP".equals(version);
 	}
+
+	public boolean complexMatch(String hostHeader, String method, String uri, String version, int port, String localIP) {
+		return true;
+	}
+
 }

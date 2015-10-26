@@ -1,4 +1,4 @@
-/* Copyright 2011, 2012 predic8 GmbH, www.predic8.com
+/* Copyright 2011, 2012, 2015 predic8 GmbH, www.predic8.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -36,9 +36,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(RegExReplaceInterceptor.class.getName());
 
 	private String regex;
-
 	private String replace;
-
 	private TargetType target = TargetType.BODY;
 
 	public enum TargetType {
@@ -75,8 +73,6 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	}
 
 	private void replaceBody(Message res) throws IOException, Exception {
-		if (hasNoTextContent(res) ) return;
-
 		log.debug("pattern: " +regex);
 		log.debug("replacement: " +replace);
 
@@ -84,14 +80,9 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 		res.getHeader().removeFields("Content-Encoding");
 	}
 
-	private boolean hasNoTextContent(Message res) throws Exception {
-		return res.isBodyEmpty() || !res.isXML() && !res.isHTML();
-	}
-
 	public String getRegex() {
 		return regex;
 	}
-
 	/**
 	 * @description Regex to match against the body.
 	 * @example Hallo
@@ -105,7 +96,6 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	public String getReplace() {
 		return replace;
 	}
-
 	/**
 	 * @description String used to replace matched parts.
 	 * @example Hello
@@ -119,9 +109,9 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	public TargetType getTarget() {
 		return target;
 	}
-
 	/**
 	 * @description Whether the replacement should affect the message <tt>body</tt> or the <tt>header</tt> values.
+	 *              Possible values are body and header.
 	 * @default body
 	 * @example header
 	 */

@@ -127,7 +127,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	}
 
 	public String getHost() {
-		return ((ServiceProxyKey)key).getHost();
+		return ((AbstractRuleKey)key).getHost();
 	}
 
 	/**
@@ -146,7 +146,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	}
 
 	public Path getPath() {
-		ServiceProxyKey k = (ServiceProxyKey)key;
+		AbstractRuleKey k = (AbstractRuleKey)key;
 		if (!k.isUsePathPattern())
 			return null;
 		return new Path(k.isPathRegExp(), k.getPath());
@@ -164,7 +164,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	 */
 	@MCChildElement(order=50)
 	public void setPath(Path path) {
-		ServiceProxyKey k = (ServiceProxyKey)key;
+		AbstractRuleKey k = (AbstractRuleKey)key;
 		k.setUsePathPattern(path != null);
 		if (path != null) {
 			k.setPathRegExp(path.isRegExp());

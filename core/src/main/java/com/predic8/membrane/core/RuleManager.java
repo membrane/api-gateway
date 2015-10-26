@@ -217,22 +217,19 @@ public class RuleManager {
 
 			if (!rule.isActive())
 				continue;
-
 			if (!key.matchesVersion(version))
 				continue;
-
-			if (key.getIp() != null)
-				if (!key.getIp().equals(localIP))
-					continue;
-
+			if (key.getIp() != null && !key.getIp().equals(localIP))
+				continue;
 			if (!key.matchesHostHeader(hostHeader))
 				continue;
 			if (key.getPort() != -1 && port != -1 && key.getPort() != port)
 				continue;
 			if (!key.getMethod().equals(method) && !key.isMethodWildcard())
 				continue;
-
 			if (key.isUsePathPattern() && !key.matchesPath(uri))
+				continue;
+			if (!key.complexMatch(hostHeader, method, uri, version, port, localIP))
 				continue;
 
 			return rule;
