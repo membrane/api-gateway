@@ -101,4 +101,9 @@ public class Constants {
 	 * See {@link REST2SOAPInterceptor}.
 	 */
 	public static final String HTTP_NS = "http://membrane-soa.org/schemas/http/v1/";
+
+	/**
+	 * The user agent string that will be sent when identifying as Membrane
+	 */
+	public static final String USERAGENT = "Membrane " + VERSION;
 }

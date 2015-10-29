@@ -28,6 +28,7 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -110,6 +111,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
 
 	@Override
 	public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
+		// This is the URL that is called by the user's web browser
 		return "https://accounts.google.com/o/oauth2/auth?"+
 				"client_id=" + clientId + ".apps.googleusercontent.com&"+
 				"response_type=code&"+
@@ -153,14 +155,19 @@ public class GoogleAuthorizationService extends AuthorizationService {
 				if (code == null)
 					throw new RuntimeException("No code received.");
 
+				// This is the request that Membrane sends to Google's API
 				Exchange e = new Request.Builder()
-				.post("https://accounts.google.com/o/oauth2/token")
+				.post("https://www.googleapis.com/oauth2/v3/token")
 				.header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-				.body(
-						"code=" + code + "&client_id=" + clientId
-						+ ".apps.googleusercontent.com&client_secret="
-						+ clientSecret + "&" + "redirect_uri=" + publicURL
-						+ "oauth2callback&grant_type=authorization_code").buildExchange();
+				.header(Header.HOST, "www.googleapis.com")
+				.header(Header.ACCEPT, "*/*")
+				.header(Header.USER_AGENT, Constants.USERAGENT)
+				.body(    "code=" + code
+						+ "&" + "client_id=" + clientId + ".apps.googleusercontent.com"
+						+ "&" + "client_secret=" + clientSecret
+						+ "&" + "redirect_uri=" + publicURL + "oauth2callback"
+						+ "&" + "grant_type=authorization_code")
+				.buildExchange();
 				e.setRule(new NullRule() {
 					@Override
 					public SSLContext getSslOutboundContext() {
