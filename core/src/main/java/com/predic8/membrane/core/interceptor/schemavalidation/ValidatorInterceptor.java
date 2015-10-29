@@ -104,8 +104,12 @@ public class ValidatorInterceptor extends AbstractInterceptor implements Applica
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		if (exc.getRequest().isBodyEmpty()) 
 			return Outcome.CONTINUE;
-			
-		return validator.validateMessage(exc, exc.getRequest(), "request");
+		
+		try { // added by Victor to wrap any validation error with AbortException. This shall prevent membrane from quitting unexpectedly when validation throws IOException, e.g.Jackson's JSON lib
+			return validator.validateMessage(exc, exc.getRequest(), "request");
+		} catch (Exception e) {
+			throw new com.predic8.membrane.core.transport.http.AbortException(e.getMessage());
+		}
 	}
 	
 	@Override
