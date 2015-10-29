@@ -118,7 +118,22 @@ public class SSLContext implements SSLProvider {
 			
 			TrustManager[] tms = tmf != null ? tmf.getTrustManagers() : null /* trust anyone: new TrustManager[] { new NullTrustManager() } */;
 			if (sslParser.isIgnoreTimestampCheckFailure())
-				tms = new TrustManager[] { new TrustManagerWrapper(tms, true) };
+				tms = new TrustManager[] { new javax.net.ssl.X509TrustManager() { // treat isIgnoreTimestampCheckFailure as trust-anyone
+                                                @Override
+                                                public void checkClientTrusted(java.security.cert.X509Certificate[] xcs, String string) 
+                                                    throws java.security.cert.CertificateException {
+                                                }
+                                                @Override
+                                                public void checkServerTrusted(java.security.cert.X509Certificate[] xcs, String string) 
+                                                    throws java.security.cert.CertificateException {
+                                                }
+                                                @Override
+                                                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                                                    return null; // SECURITY ALERT
+                                                }
+                                            }
+                                         };
+            
 			
 			if (sslParser.getProtocol() != null)
 				sslc = javax.net.ssl.SSLContext.getInstance(sslParser.getProtocol());
