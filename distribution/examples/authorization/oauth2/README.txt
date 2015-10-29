@@ -1,1 +1,1 @@
-Please follow http://www.membrane-soa.org/service-proxy-doc/current/oauth2.htm .
+Please follow http://www.membrane-soa.org/service-proxy-doc/current/oauth2.htm
