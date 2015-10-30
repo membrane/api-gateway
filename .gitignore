@@ -10,6 +10,7 @@ _*.swp
 /.metadata
 /.DS_Store
 *.iml
+*.eml
 *.idea
 
 # /annot/
