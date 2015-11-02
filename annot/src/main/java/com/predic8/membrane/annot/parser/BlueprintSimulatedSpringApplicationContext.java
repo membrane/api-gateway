@@ -229,6 +229,11 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 	}
 
 	@Override
+	public String getApplicationName() {
+		return "Membrane";
+	}
+
+	@Override
 	public String getDisplayName() {
 		throw new RuntimeException("not implemented");
 	}

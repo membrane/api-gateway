@@ -19,7 +19,7 @@
 	<artifactId>service-proxy-parent</artifactId>
 	<version>4.1.1-SNAPSHOT</version>
 	<name>${project.artifactId}</name>
-	<description>Membrane Service Proxy is an open source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as 
+	<description>Membrane Service Proxy is an open source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
 	- Service Virtualization layer
 	- an API Gateway
 	- a synchronous ESB for HTTP based Integration
@@ -81,6 +81,7 @@
 		<javac.target>1.6</javac.target>
 		<jackson.version>2.6.1</jackson.version> <!-- This version is used by google-http-client-jackson2 -->
 		<powermock.version>1.6.2</powermock.version>
+		<spring.version>3.2.15.RELEASE</spring.version>
 	</properties>
 
 
@@ -187,35 +188,48 @@
 				<artifactId>log4j</artifactId>
 				<version>1.2.17</version>
 			</dependency>
+			<!-- ensure that all spring dependencies (both direct and
+			     transitive) are at the same version -->
+			<!--
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-framework-bom</artifactId>
+				<version>${spring.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			-->
+			<!-- DROPPED IN SPRING 3.2
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-asm</artifactId>
-				<version>3.1.2.RELEASE</version>
+				<version>${spring.version}</version>
 			</dependency>
+			-->
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-beans</artifactId>
-				<version>3.1.2.RELEASE</version>
+				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-context</artifactId>
-				<version>3.1.2.RELEASE</version>
+				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-core</artifactId>
-				<version>3.1.2.RELEASE</version>
+				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-expression</artifactId>
-				<version>3.1.2.RELEASE</version>
+				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-web</artifactId>
-				<version>3.1.2.RELEASE</version>
+				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.googlecode.jatl</groupId>
