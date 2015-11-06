@@ -26,4 +26,8 @@ public class NullRule extends AbstractProxy {
 		return new NullRule();
 	}
 
+   @Override
+   public boolean isTargetAdjustHostHeader() {
+      return true;
+   }
 }
