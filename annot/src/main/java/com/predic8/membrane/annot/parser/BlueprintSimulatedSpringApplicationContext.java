@@ -31,6 +31,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.NoSuchMessageException;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.Resource;
 
@@ -110,6 +111,11 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 	}
 
 	@Override
+	public String[] getBeanNamesForType(ResolvableType resolvableType) {
+		return new String[0];
+	}
+
+	@Override
 	public String[] getBeanNamesForType(Class<?> arg0) {
 		throw new RuntimeException("not implemented");
 	}
@@ -124,6 +130,11 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 	public <T> Map<String, T> getBeansOfType(Class<T> arg0, boolean arg1,
 			boolean arg2) throws BeansException {
 		throw new RuntimeException("not implemented");
+	}
+
+	@Override
+	public String[] getBeanNamesForAnnotation(Class<? extends Annotation> aClass) {
+		return new String[0];
 	}
 
 	@Override
@@ -153,6 +164,11 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 	}
 
 	@Override
+	public <T> T getBean(Class<T> aClass, Object... objects) throws BeansException {
+		return null;
+	}
+
+	@Override
 	public Class<?> getType(String arg0) throws NoSuchBeanDefinitionException {
 		throw new RuntimeException("not implemented");
 	}
@@ -161,6 +177,11 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 	public boolean isPrototype(String arg0)
 			throws NoSuchBeanDefinitionException {
 		throw new RuntimeException("not implemented");
+	}
+
+	@Override
+	public boolean isTypeMatch(String s, ResolvableType resolvableType) throws NoSuchBeanDefinitionException {
+		return false;
 	}
 
 	@Override
@@ -205,6 +226,11 @@ public class BlueprintSimulatedSpringApplicationContext implements ApplicationCo
 
 	@Override
 	public void publishEvent(ApplicationEvent event) {
+		throw new RuntimeException("not implemented");
+	}
+
+	@Override
+	public void publishEvent(Object o) {
 		throw new RuntimeException("not implemented");
 	}
 
