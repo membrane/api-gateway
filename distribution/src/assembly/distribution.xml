@@ -18,8 +18,6 @@
   		<directory>examples</directory>
   		<outputDirectory>/examples</outputDirectory>
   		<excludes><exclude>**/build/</exclude><exclude>**/*.sh</exclude></excludes>
-  		<fileMode>0644</fileMode>
-  		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
       <!-- examples fileSet: .sh scripts (execute permissions) -->
@@ -27,23 +25,18 @@
   		<outputDirectory>/examples</outputDirectory>
   		<includes><include>**/*.sh</include></includes>
   		<fileMode>0755</fileMode>
-  		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
       <!-- examples fileSet: build folder -->
   		<directory>examples</directory>
   		<outputDirectory>/examples</outputDirectory>
   		<includes><include>custom-interceptor/build/**/*</include></includes>
-  		<fileMode>0644</fileMode>
-  		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
       <!-- router folder fileSet without service-proxy.sh -->
   		<directory>router</directory>
   		<outputDirectory>/</outputDirectory>
   		<excludes><exclude>service-proxy.sh</exclude></excludes>
-  		<fileMode>0644</fileMode>
-  		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
       <!-- extra fileSet for service-proxy.sh with execute permissions -->
@@ -51,7 +44,6 @@
   		<outputDirectory>/</outputDirectory>
   		<includes><include>service-proxy.sh</include></includes>
   		<fileMode>0755</fileMode>
-  		<directoryMode>0755</directoryMode>
   	</fileSet>
     <fileSet>
       <!-- docker fileSet -->
