@@ -39,7 +39,7 @@ public class LimitedMemoryExchangeStoreTest {
 	@Test
 	public void testStore() throws Exception {
 
-		store.setMaxSize(5000);
+		store.setMaxSize(500000);
 
 		store.snap(getExchange("0"), Flow.RESPONSE);
 		Exchange exc = getExchange("1");
