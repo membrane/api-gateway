@@ -191,7 +191,7 @@ public class MCUtil {
 			sb.append("<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n");
 			sb.append("  xmlns:spring=\"http://www.springframework.org/schema/beans\"\r\n");
 			sb.append("  xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n");
-			sb.append("  xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd\r\n");
+			sb.append("  xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd\r\n");
 			sb.append("    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n");
 			sb.append("\r\n");
 

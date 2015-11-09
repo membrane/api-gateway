@@ -44,7 +44,7 @@ public class QuickstartRESTTest extends DistributionExtractingTestcase {
 					"<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" +
 							"	xmlns:spring=\"http://www.springframework.org/schema/beans\"\r\n" +
 							"	xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n" +
-							"	xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd\r\n" +
+							"	xsi:schemaLocation=\"http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd\r\n" +
 							"					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd\">\r\n" +
 							"\r\n" +
 							"	<router>\r\n" +
