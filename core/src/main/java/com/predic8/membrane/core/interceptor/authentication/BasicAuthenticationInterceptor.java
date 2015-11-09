@@ -106,12 +106,10 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private String getUsername(Exchange exc) throws Exception {
-		return getAuthorizationHeaderDecoded(exc).split(":")[0];
+		return getAuthorizationHeaderDecoded(exc).split(":", 2)[0];
 	}
 	private String getPassword(Exchange exc) throws Exception {
-		return (getAuthorizationHeaderDecoded(exc).split(":").length < 2)
-				? ""
-				: getAuthorizationHeaderDecoded(exc).split(":")[1];
+		return getAuthorizationHeaderDecoded(exc).split(":", 2)[1];
 	}
 
 	private Outcome deny(Exchange exc) {
