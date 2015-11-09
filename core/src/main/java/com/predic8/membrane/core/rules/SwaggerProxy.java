@@ -103,4 +103,8 @@ public class SwaggerProxy extends ServiceProxy {
 		this.allowUI = allowUI;
 	}
 
+	public Swagger getSwagger() {
+		return swagger;
+	}
+
 }

@@ -17,6 +17,8 @@ package com.predic8.membrane.core.interceptor.swagger;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.SwaggerProxy;
 import org.springframework.http.MediaType;
 
 import io.swagger.models.Swagger;
@@ -41,6 +43,7 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 	private String swaggerUrl;
 	private String swaggerJson = "swagger.json";
 
+	public SwaggerRewriterInterceptor() { this(null, true, "swagger.json"); } // 0-parameter ctor needed because of MCElement
 	public SwaggerRewriterInterceptor(Swagger swag) {
 		this(swag, true, "swagger.json");
 	}
@@ -56,6 +59,17 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 	public SwaggerRewriterInterceptor(Swagger swag, String swagUrl) {
 		this(swag);
 		this.swaggerUrl = swagUrl;
+	}
+
+	@Override
+	public void init() throws Exception {
+		// inherit wsdl="..." from SoapProxy
+		if (this.swagger == null) {
+			Rule parent = router.getParentProxy(this);
+			if (parent instanceof SwaggerProxy) {
+				setSwagger(((SwaggerProxy)parent).getSwagger());
+			}
+		}
 	}
 
 	@Override
