@@ -3,10 +3,10 @@
 Creates an image with Membrane and copies over the proxies.xml configuration file from this folder.
 
 ## Create image
-	docker build -t predic8/membrane:latestStable .
+	docker build -t predic8/membrane:latestSnapshot .
 
 ## Run container
-	docker run -d -p 8000-9000:8000-9000 --name membrane predic8/membrane:latestStable
+	docker run -d -p 8000-9000:8000-9000 --name membrane predic8/membrane:latestSnapshot
 
 ## Open Example Proxies
 

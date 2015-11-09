@@ -11,13 +11,13 @@ RUN		rm -rf /var/lib/apt/lists/* && \
 
 ENV		JAVA_HOME /usr/lib/jvm/java-8-oracle
 
-ENV		MEMBRANE_DOWNLOAD_URL "http://repository.membrane-soa.org/service/local/artifact/maven/content?r=releases&g=org.membrane-soa&a=membrane-service-proxy&v=LATEST&e=zip"
+ENV		MEMBRANE_DOWNLOAD_URL "http://repository.membrane-soa.org/service/local/artifact/maven/content?r=snapshots&g=org.membrane-soa&a=membrane-service-proxy&v=LATEST&e=zip"
 
 RUN		wget -L -P /opt ${MEMBRANE_DOWNLOAD_URL} --content-disposition && \
 		cd /opt && \
 		unzip *.zip && \
 		rm *.zip && \
-		ln -s membrane-service-proxy-4.1.1-SNAPSHOT membrane
+		ln -s membrane-service-proxy-* membrane
 
 COPY	proxies.xml /opt/membrane/conf/
 
