@@ -39,14 +39,14 @@
 			<resource-root path="lib/libphonenumber-5.1.jar"/>
 			<resource-root path="lib/service-proxy-core-4.1.1-SNAPSHOT.jar"/>
 			<resource-root path="lib/rhino-1.7R4.jar"/>
-			<resource-root path="lib/soa-model-core-1.5.0.jar"/>
-			<resource-root path="lib/spring-aop-3.1.2.RELEASE.jar"/>
-			<resource-root path="lib/spring-asm-3.1.2.RELEASE.jar"/>
-			<resource-root path="lib/spring-beans-3.1.2.RELEASE.jar"/>
-			<resource-root path="lib/spring-context-3.1.2.RELEASE.jar"/>
-			<resource-root path="lib/spring-core-3.1.2.RELEASE.jar"/>
-			<resource-root path="lib/spring-expression-3.1.2.RELEASE.jar"/>
-			<resource-root path="lib/spring-web-3.1.2.RELEASE.jar"/>
+			<resource-root path="lib/soa-model-core-1.5.4.jar"/>
+			<resource-root path="lib/spring-aop-4.2.2.RELEASE.jar"/>
+			<resource-root path="lib/spring-asm-4.2.2.RELEASE.jar"/>
+			<resource-root path="lib/spring-beans-4.2.2.RELEASE.jar"/>
+			<resource-root path="lib/spring-context-4.2.2.RELEASE.jar"/>
+			<resource-root path="lib/spring-core-4.2.2.RELEASE.jar"/>
+			<resource-root path="lib/spring-expression-4.2.2.RELEASE.jar"/>
+			<resource-root path="lib/spring-web-4.2.2.RELEASE.jar"/>
 			<resource-root path="lib/xml-apis-1.3.04.jar"/>
 			<resource-root path="lib/xmlbeautifier-1.2.2.jar"/>
 		</resources>
