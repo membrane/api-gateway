@@ -14,6 +14,7 @@
   </dependencySets>
   <fileSets>
   	<fileSet>
+      <!-- examples fileSet: bod build folder or .sh scripts -->
   		<directory>examples</directory>
   		<outputDirectory>/examples</outputDirectory>
   		<excludes><exclude>**/build/</exclude><exclude>**/*.sh</exclude></excludes>
@@ -21,6 +22,7 @@
   		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
+      <!-- examples fileSet: .sh scripts (execute permissions) -->
   		<directory>examples</directory>
   		<outputDirectory>/examples</outputDirectory>
   		<includes><include>**/*.sh</include></includes>
@@ -28,6 +30,7 @@
   		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
+      <!-- examples fileSet: build folder -->
   		<directory>examples</directory>
   		<outputDirectory>/examples</outputDirectory>
   		<includes><include>custom-interceptor/build/**/*</include></includes>
@@ -35,6 +38,7 @@
   		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
+      <!-- router folder fileSet without service-proxy.sh -->
   		<directory>router</directory>
   		<outputDirectory>/</outputDirectory>
   		<excludes><exclude>service-proxy.sh</exclude></excludes>
@@ -42,12 +46,18 @@
   		<directoryMode>0755</directoryMode>
   	</fileSet>
   	<fileSet>
+      <!-- extra fileSet for service-proxy.sh with execute permissions -->
   		<directory>router</directory>
   		<outputDirectory>/</outputDirectory>
   		<includes><include>service-proxy.sh</include></includes>
   		<fileMode>0755</fileMode>
   		<directoryMode>0755</directoryMode>
   	</fileSet>
+    <fileSet>
+      <!-- docker fileSet -->
+      <directory>docker</directory>
+      <outputDirectory>/docker</outputDirectory>
+    </fileSet>
   </fileSets>
   <files>
   	<file>
