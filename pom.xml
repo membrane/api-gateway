@@ -81,7 +81,7 @@
 		<javac.target>1.6</javac.target>
 		<jackson.version>2.6.1</jackson.version> <!-- This version is used by google-http-client-jackson2 -->
 		<powermock.version>1.6.2</powermock.version>
-		<spring.version>3.2.15.RELEASE</spring.version>
+		<spring.version>4.2.2.RELEASE</spring.version>
 	</properties>
 
 
@@ -140,7 +140,7 @@
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
 				<artifactId>httpclient</artifactId>
-				<version>4.2.2</version>
+				<version>4.5.1</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-lang</groupId>
@@ -190,7 +190,6 @@
 			</dependency>
 			<!-- ensure that all spring dependencies (both direct and
 			     transitive) are at the same version -->
-			<!--
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-framework-bom</artifactId>
@@ -198,7 +197,6 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-			-->
 			<!-- DROPPED IN SPRING 3.2
 			<dependency>
 				<groupId>org.springframework</groupId>
@@ -221,11 +219,13 @@
 				<artifactId>spring-core</artifactId>
 				<version>${spring.version}</version>
 			</dependency>
+			<!-- Never needed
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-expression</artifactId>
 				<version>${spring.version}</version>
 			</dependency>
+			-->
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-web</artifactId>
