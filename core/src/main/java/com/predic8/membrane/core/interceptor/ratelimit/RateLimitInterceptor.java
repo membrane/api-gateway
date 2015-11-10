@@ -3,7 +3,6 @@ package com.predic8.membrane.core.interceptor.ratelimit;
 import java.io.UnsupportedEncodingException;
 import java.util.Locale;
 
-import org.apache.http.entity.ContentType;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.format.DateTimeFormat;
@@ -16,6 +15,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.http.Response.ResponseBuilder;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -27,7 +27,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name = "rateLimiter")
 public class RateLimitInterceptor extends AbstractInterceptor {
 
-	enum RateLimitStrategyType {
+	public static enum RateLimitStrategyType {
 		LAZY, PRECISE
 	}
 
@@ -91,7 +91,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 		byte[] body = bodyString.toString().getBytes(exc.getResponse().getCharset());
 
 		Response resp = ResponseBuilder.newInstance().status(429, "Too Many Requests.")
-				.contentType(ContentType.TEXT_PLAIN.toString()).header(hd).body(body).build();
+				.contentType(MimeType.TEXT_PLAIN_UTF8).header(hd).body(body).build();
 		exc.setResponse(resp);
 	}
 
@@ -108,8 +108,11 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 		rateLimitStrategy.setRequestLimit(rl);
 	}
 
-	public Duration getRequestLimitDuration() {
-		return rateLimitStrategy.requestLimitDuration;
+	public String getRequestLimitDuration() {
+		PeriodFormatter formatter = new PeriodFormatterBuilder().appendHours().appendSeparator(":").appendMinutes()
+				.appendSeparator(":").appendSeconds().appendSeparator(":").appendMillis().toFormatter();
+		
+		return formatter.print(rateLimitStrategy.requestLimitDuration.toPeriod());
 	}
 
 	/**
@@ -118,6 +121,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	 */
 	@MCAttribute
 	public void setRequestLimitDuration(String rld) {
+
 		PeriodFormatter formatter = new PeriodFormatterBuilder().appendHours().appendSeparator(":").appendMinutes()
 				.appendSeparator(":").appendSeconds().appendSeparator(":").appendMillis().toFormatter();
 		setRequestLimitDuration(formatter.parsePeriod(rld).toStandardDuration());
@@ -137,15 +141,6 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	 * @default "lazy"
 	 */
 	@MCAttribute
-	public void setMode(String mode) {
-		if (mode.equals("precise")) {
-			setMode(RateLimitStrategyType.PRECISE);
-		} else {
-			setMode(RateLimitStrategyType.LAZY);
-		}
-
-	}
-
 	public void setMode(RateLimitStrategyType mode) {
 		this.mode = mode;
 	}
