@@ -6,7 +6,7 @@ With the RateLimitInterceptor you can limit the number of requests in a timefram
 
 RUNNING THE EXAMPLE
 
-In this example we will send 4 requests to the service with a rate limit of 3 requests per 10 seconds. The first 3 requests will go through while the last one will be blocked with code 429.
+In this example we will send 4 requests to the service with a rate limit of 3 requests per 10 seconds. The first 3 requests will go through while the last one will be blocked with code 429. NOTICE: The interceptor runs in Lazy mode so you can run into a situation where you can do 6 requests and the 7th is blocked ( see below for details ).
 
 1. Go to the examples/rateLimiter directory.
 

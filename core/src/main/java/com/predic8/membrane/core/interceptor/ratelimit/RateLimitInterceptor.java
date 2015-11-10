@@ -59,15 +59,13 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 			setResponseToServiceUnavailable(exc);
 			return Outcome.RETURN;
 		}
-
 		return Outcome.CONTINUE;
 
 	}
 
 	public void setResponseToServiceUnavailable(Exchange exc) throws UnsupportedEncodingException {
 
-		Header hd = exc.getResponse().getHeader();
-		hd.add("Status", "429 Too Many Requests");
+		Header hd = new Header();
 		DateTimeFormatter dateFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withZoneUTC()
 				.withLocale(Locale.US);
 		hd.add("Date", dateFormatter.print(DateTime.now()));
@@ -78,7 +76,6 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 		hd.add("X-LimitReset", Long.toString(availableAgainDateTime.getMillis()));
 
 		StringBuilder bodyString = new StringBuilder();
-		bodyString.setLength(0);
 		bodyString.append(ip);
 		bodyString.append(" exceeded the rate limit of ");
 		bodyString.append(rateLimitStrategy.requestLimit);
@@ -88,10 +85,8 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 		DateTimeFormatter dtFormatter = DateTimeFormat.forPattern("HH:mm:ss aa");
 		bodyString.append(dtFormatter.print(availableAgainDateTime));
 
-		byte[] body = bodyString.toString().getBytes(exc.getResponse().getCharset());
-
 		Response resp = ResponseBuilder.newInstance().status(429, "Too Many Requests.")
-				.contentType(MimeType.TEXT_PLAIN_UTF8).header(hd).body(body).build();
+				.contentType(MimeType.TEXT_PLAIN_UTF8).header(hd).body(bodyString.toString()).build();
 		exc.setResponse(resp);
 	}
 
@@ -111,7 +106,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	public String getRequestLimitDuration() {
 		PeriodFormatter formatter = new PeriodFormatterBuilder().appendHours().appendSeparator(":").appendMinutes()
 				.appendSeparator(":").appendSeconds().appendSeparator(":").appendMillis().toFormatter();
-		
+
 		return formatter.print(rateLimitStrategy.requestLimitDuration.toPeriod());
 	}
 
