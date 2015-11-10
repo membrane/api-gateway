@@ -51,4 +51,8 @@ public class PreciseRateLimit extends RateLimitStrategy {
 
 	}
 
+	@Override
+	public void updateAfterConfigChange() {
+	}
+
 }

@@ -8,8 +8,9 @@ import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.DateTimeFormatterBuilder;
 import org.joda.time.format.PeriodFormat;
+import org.joda.time.format.PeriodFormatter;
+import org.joda.time.format.PeriodFormatterBuilder;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -21,7 +22,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 
 /**
- * @description Allows rate limiting
+ * @description Allows rate limiting (Experimental)
  */
 @MCElement(name = "rateLimiter")
 public class RateLimitInterceptor extends AbstractInterceptor {
@@ -32,10 +33,9 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
 	public RateLimitStrategy rateLimitStrategy;
 	private RateLimitStrategyType mode;
-	
-	public RateLimitInterceptor()
-	{
-		this(RateLimitStrategyType.LAZY,Duration.standardHours(1),1000);
+
+	public RateLimitInterceptor() {
+		this(RateLimitStrategyType.LAZY, Duration.standardHours(1), 1000);
 	}
 
 	public RateLimitInterceptor(RateLimitStrategyType type, Duration requestLimitDuration, int requestLimit) {
@@ -68,9 +68,8 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
 		Header hd = exc.getResponse().getHeader();
 		hd.add("Status", "429 Too Many Requests");
-		DateTimeFormatter dateFormatter = 
-			    DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'")
-			    .withZoneUTC().withLocale(Locale.US);
+		DateTimeFormatter dateFormatter = DateTimeFormat.forPattern("EEE, dd MMM yyyy HH:mm:ss 'GMT'").withZoneUTC()
+				.withLocale(Locale.US);
 		hd.add("Date", dateFormatter.print(DateTime.now()));
 		hd.add("X-LimitDuration", PeriodFormat.getDefault().print(rateLimitStrategy.requestLimitDuration.toPeriod()));
 		hd.add("X-LimitRequests", Integer.toString(rateLimitStrategy.requestLimit));
@@ -102,11 +101,11 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
 	/**
 	 * @description number of requests
-	 * @Required
+	 * @default 1000
 	 */
 	@MCAttribute
 	public void setRequestLimit(int rl) {
-		rateLimitStrategy.requestLimit = rl;
+		rateLimitStrategy.setRequestLimit(rl);
 	}
 
 	public Duration getRequestLimitDuration() {
@@ -114,14 +113,19 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description Duration after the limit is reset
-	 * @Required
+	 * @description Duration after the limit is reset in H:m:s:ms
+	 * @default 1:0:0:0
 	 */
 	@MCAttribute
+	public void setRequestLimitDuration(String rld) {
+		PeriodFormatter formatter = new PeriodFormatterBuilder().appendHours().appendSeparator(":").appendMinutes()
+				.appendSeparator(":").appendSeconds().appendSeparator(":").appendMillis().toFormatter();
+		setRequestLimitDuration(formatter.parsePeriod(rld).toStandardDuration());
+
+	}
+
 	public void setRequestLimitDuration(Duration rld) {
-		// Wahrscheinlich können aus der config nur bestimmte datentypen
-		// ausgelesen werden. Hier wird dann eher ein String gelesen und aus
-		// diesem das Datum generiert.
+		rateLimitStrategy.setRequestLimitDuration(rld);
 	}
 
 	public RateLimitStrategyType getMode() {
@@ -130,9 +134,18 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
 	/**
 	 * @description Precise or Lazy mode
-	 * @Required
+	 * @default "lazy"
 	 */
 	@MCAttribute
+	public void setMode(String mode) {
+		if (mode.equals("precise")) {
+			setMode(RateLimitStrategyType.PRECISE);
+		} else {
+			setMode(RateLimitStrategyType.LAZY);
+		}
+
+	}
+
 	public void setMode(RateLimitStrategyType mode) {
 		this.mode = mode;
 	}

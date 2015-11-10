@@ -46,4 +46,12 @@ public class LazyRateLimit extends RateLimitStrategy {
 		return nextCleanup;
 	}
 
+	@Override
+	public void updateAfterConfigChange() {
+		for (IPAddressInfo info : ipRequestCounter.values()) {
+			info.currentRequests.set(0);
+		}
+		incrementNextCleanupTime();
+	}
+
 }

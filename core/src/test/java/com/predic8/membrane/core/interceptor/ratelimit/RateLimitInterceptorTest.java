@@ -12,7 +12,6 @@ import com.predic8.membrane.core.interceptor.ratelimit.RateLimitInterceptor.Rate
 
 public class RateLimitInterceptorTest {
 
-
 	@Test
 	public void testHandleRequestPreciseRateLimit1Second() throws Exception {
 		Exchange exc = new Exchange(null);
@@ -64,45 +63,33 @@ public class RateLimitInterceptorTest {
 		assertEquals(Outcome.RETURN, rli.handleRequest(exc));
 
 	}
-	
-	
-	
-	
+
 	/*
-	@Test
-	public void testHandleRequestPreciseRateLimit() throws Exception {
-		Exchange exc = new Exchange(null);
-		exc.setRemoteAddrIp("192.168.1.100");
-
-		int tryLimit = 16;
-		int rateLimitMinutes = 1;
-		RateLimitInterceptor rli = new RateLimitInterceptor(RateLimitStrategyType.PRECISE,
-				Duration.standardMinutes(rateLimitMinutes), tryLimit);
-
-		for (int i = 0; i < tryLimit; i++) {
-			assertEquals(Outcome.CONTINUE, rli.handleRequest(exc));
-		}
-
-		assertEquals(Outcome.RETURN, rli.handleRequest(exc));
-	}
-
-	@Test
-	public void testHandleRequestLazyRateLimit() throws Exception {
-		Exchange exc = new Exchange(null);
-		exc.setRemoteAddrIp("192.168.1.100");
-
-		int tryLimit = 16;
-		int rateLimitMinutes = 1;
-		RateLimitInterceptor rli = new RateLimitInterceptor(RateLimitStrategyType.LAZY,
-				Duration.standardMinutes(rateLimitMinutes), tryLimit);
-
-		for (int i = 0; i < tryLimit; i++) {
-			assertEquals(Outcome.CONTINUE, rli.handleRequest(exc));
-		}
-
-		assertEquals(Outcome.RETURN, rli.handleRequest(exc));
-
-	}
-*/
+	 * @Test public void testHandleRequestPreciseRateLimit() throws Exception {
+	 * Exchange exc = new Exchange(null); exc.setRemoteAddrIp("192.168.1.100");
+	 * 
+	 * int tryLimit = 16; int rateLimitMinutes = 1; RateLimitInterceptor rli =
+	 * new RateLimitInterceptor(RateLimitStrategyType.PRECISE,
+	 * Duration.standardMinutes(rateLimitMinutes), tryLimit);
+	 * 
+	 * for (int i = 0; i < tryLimit; i++) { assertEquals(Outcome.CONTINUE,
+	 * rli.handleRequest(exc)); }
+	 * 
+	 * assertEquals(Outcome.RETURN, rli.handleRequest(exc)); }
+	 * 
+	 * @Test public void testHandleRequestLazyRateLimit() throws Exception {
+	 * Exchange exc = new Exchange(null); exc.setRemoteAddrIp("192.168.1.100");
+	 * 
+	 * int tryLimit = 16; int rateLimitMinutes = 1; RateLimitInterceptor rli =
+	 * new RateLimitInterceptor(RateLimitStrategyType.LAZY,
+	 * Duration.standardMinutes(rateLimitMinutes), tryLimit);
+	 * 
+	 * for (int i = 0; i < tryLimit; i++) { assertEquals(Outcome.CONTINUE,
+	 * rli.handleRequest(exc)); }
+	 * 
+	 * assertEquals(Outcome.RETURN, rli.handleRequest(exc));
+	 * 
+	 * }
+	 */
 
 }
