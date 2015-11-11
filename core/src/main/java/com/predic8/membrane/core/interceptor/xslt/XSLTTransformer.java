@@ -39,7 +39,6 @@ public class XSLTTransformer {
 
 	private final TransformerFactory fac = TransformerFactory.newInstance(
 	        "net.sf.saxon.TransformerFactoryImpl", null);
-	//private final TransformerFactory fac = TransformerFactory.newInstance();
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final String styleSheet;
 
