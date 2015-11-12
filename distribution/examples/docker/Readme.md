@@ -3,10 +3,10 @@
 Creates an image with Membrane and copies over the proxies.xml configuration file from this folder.
 
 ## Create image
-	docker build -t predic8/membrane:latestSnapshot .
+	docker build -t predic8/membrane:latestRelease .
 
 ## Run container
-	docker run -d -p 8000-9000:8000-9000 --name membrane predic8/membrane:latestSnapshot
+	docker run -d -p 8000-9000:8000-9000 --name membrane predic8/membrane:latestRelease
 
 ## Open Example Proxies
 
@@ -16,7 +16,7 @@ Creates an image with Membrane and copies over the proxies.xml configuration fil
 ### Membrane Web Console
 	http://<<docker-machine>>:9000/
 
-### Whole Web Seite
+### Whole Web Site
 	http://<<docker-machine>>:9000/
 
 ## Troubleshooting
@@ -27,3 +27,4 @@ Creates an image with Membrane and copies over the proxies.xml configuration fil
 ### Open shell in container and take a look at the Membrane log
 	docker exec -it membrane /bin/bash
 	less /opt/membrane/memrouter.log
+
