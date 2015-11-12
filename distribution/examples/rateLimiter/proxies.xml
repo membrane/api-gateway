@@ -7,7 +7,7 @@
 	<router>
 
 		<serviceProxy port="2000">
-			<rateLimiter requestLimit="3" requestLimitDuration="0:0:10:0" mode="LAZY" />
+			<rateLimiter requestLimit="3" requestLimitDuration="PT30S" mode="LAZY" />
 			<target host="www.google.de" port="80" />
 		</serviceProxy>
 

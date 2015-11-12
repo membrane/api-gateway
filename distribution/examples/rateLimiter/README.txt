@@ -6,7 +6,7 @@ With the RateLimitInterceptor you can limit the number of requests in a timefram
 
 RUNNING THE EXAMPLE
 
-In this example we will send 4 requests to the service with a rate limit of 3 requests per 10 seconds. The first 3 requests will go through while the last one will be blocked with code 429. NOTICE: The interceptor runs in Lazy mode so you can run into a situation where you can do 6 requests and the 7th is blocked ( see below for details ).
+In this example we will send 4 requests to the service with a rate limit of 3 requests per 30 seconds. The first 3 requests will go through while the last one will be blocked with code 429. NOTICE: The interceptor runs in Lazy mode so you can run into a situation where you can do 6 requests and the 7th is blocked ( see below for details ).
 
 1. Go to the examples/rateLimiter directory.
 
@@ -14,7 +14,7 @@ In this example we will send 4 requests to the service with a rate limit of 3 re
 
 3. Open curl in the command line
 
-4. Repeat 4 times within 10 seconds: Request the header of localhost:2000 with "curl localhost:2000 -I"
+4. Repeat 4 times within 30 seconds: Request the header of localhost:2000 with "curl localhost:2000 -I"
 
 
 
@@ -26,7 +26,7 @@ First take a look at the proxies.xml file.
 
 	<router>
 		<serviceProxy port="2000">
-			<rateLimiter requestLimit="3" requestLimitDuration="0:0:10:0" mode="LAZY" />
+			<rateLimiter requestLimit="3" requestLimitDuration="PT30S" mode="LAZY" />
 			<target host="www.google.de" port="80" />
 		</serviceProxy>
 	</router>
@@ -36,7 +36,7 @@ You will see that there is a serviceProxy on port 2000. Additionally the RateLim
 The rateLimiter element has 3 values that you can set and by default it is set to 1000 requests per 1 hour in lazy mode.
 
 requestLimit="x" can be any positive number. Specifies the number of requests per interval.
-requestLimitDuration="H:m:s:ms" can be any Duration. Specifies the interval in which requestLimit requests can be done. Format is "H:m:s:ms" with H = hour, m = minute, s = seconds, ms = milliseconds
+requestLimitDuration="PTxS" can be any Duration. Specifies the interval in which requestLimit requests can be done. Format is "PTxS" where x is the duration in seconds.
 mode="mode" can be "PRECISE" or "LAZY". Specifies the mode the interceptor is working in.
 
 Precise mode:
