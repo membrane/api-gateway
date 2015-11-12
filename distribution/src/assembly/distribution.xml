@@ -45,11 +45,6 @@
   		<includes><include>service-proxy.sh</include></includes>
   		<fileMode>0755</fileMode>
   	</fileSet>
-    <fileSet>
-      <!-- docker fileSet -->
-      <directory>docker</directory>
-      <outputDirectory>/docker</outputDirectory>
-    </fileSet>
   </fileSets>
   <files>
   	<file>
