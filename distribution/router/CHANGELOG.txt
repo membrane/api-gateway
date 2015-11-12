@@ -1,6 +1,11 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [example] Added docker example which features a Dockerfile for Docker
+  deployment of the latest release version.
+
+* [upgrade] Upgraded from Spring 3.1.2 to 4.2.2
+
 * [feature] Swagger Proxy
   This includes a "Swagger Rewriter Interceptor" and a new service Proxy type:
   the "Swagger Proxy". There's also an example for swagger.
