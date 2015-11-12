@@ -6,7 +6,6 @@ import org.junit.Test;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
 import com.predic8.membrane.examples.Process2;
-import com.predic8.membrane.examples.util.ConsoleLogger;
 import com.predic8.membrane.test.AssertUtils;
 
 public class RateLimiterTest extends DistributionExtractingTestcase {
