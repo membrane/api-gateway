@@ -104,23 +104,16 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	}
 
 	public String getRequestLimitDuration() {
-		PeriodFormatter formatter = new PeriodFormatterBuilder().appendHours().appendSeparator(":").appendMinutes()
-				.appendSeparator(":").appendSeconds().appendSeparator(":").appendMillis().toFormatter();
-
-		return formatter.print(rateLimitStrategy.requestLimitDuration.toPeriod());
+		return rateLimitStrategy.requestLimitDuration.toString();
 	}
 
 	/**
-	 * @description Duration after the limit is reset in H:m:s:ms
-	 * @default 1:0:0:0
+	 * @description Duration after the limit is reset in PTxS where x is the time in seconds
+	 * @default PT3600S
 	 */
 	@MCAttribute
 	public void setRequestLimitDuration(String rld) {
-
-		PeriodFormatter formatter = new PeriodFormatterBuilder().appendHours().appendSeparator(":").appendMinutes()
-				.appendSeparator(":").appendSeconds().appendSeparator(":").appendMillis().toFormatter();
-		setRequestLimitDuration(formatter.parsePeriod(rld).toStandardDuration());
-
+		setRequestLimitDuration(Duration.parse(rld));
 	}
 
 	public void setRequestLimitDuration(Duration rld) {
