@@ -79,6 +79,7 @@ SLF4J
 Mozilla Public License
 -------------------------------------------------
 Mozilla Rhino
+Saxon HE
 
 Oracle SSL Server Name Indication utility classes
 -------------------------------------------------

@@ -44,6 +44,7 @@ public class XSLTTransformer {
 	public XSLTTransformer(String styleSheet, final Router router, final int concurrency, boolean requiresXSLT_2_0) throws Exception {
 		TransformerFactory fac2 = TransformerFactory.newInstance();
 		if (requiresXSLT_2_0) {
+			// TODO: is there a way to find out whether fac2 supports XSLT 2.0?
 			fac2 = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null);
 		}
 		fac = fac2;
