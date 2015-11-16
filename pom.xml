@@ -378,6 +378,11 @@
 				<artifactId>swagger-parser</artifactId>
 				<version>1.0.10</version>
 			</dependency>
+			<dependency>
+				<groupId>net.sf.saxon</groupId>
+				<artifactId>Saxon-HE</artifactId>
+				<version>9.4</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 

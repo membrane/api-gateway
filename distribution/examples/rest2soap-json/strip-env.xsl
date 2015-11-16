@@ -16,7 +16,7 @@
 	  
 	     ns1:getBank will be just getBank   
 	-->
-	<xsl:template match="*">
+	<xsl:template match="text()">
 		<xsl:element name="{local-name()}">
 			<xsl:apply-templates/>
 		</xsl:element>

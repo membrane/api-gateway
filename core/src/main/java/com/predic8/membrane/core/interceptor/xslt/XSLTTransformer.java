@@ -37,12 +37,17 @@ import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 public class XSLTTransformer {
 	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());
 
-	private final TransformerFactory fac = TransformerFactory.newInstance(
-	        "net.sf.saxon.TransformerFactoryImpl", null);
+	private final TransformerFactory fac;
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final String styleSheet;
 
-	public XSLTTransformer(String styleSheet, final Router router, final int concurrency) throws Exception {
+	public XSLTTransformer(String styleSheet, final Router router, final int concurrency, boolean requiresXSLT_2_0) throws Exception {
+		TransformerFactory fac2 = TransformerFactory.newInstance();
+		if (requiresXSLT_2_0) {
+			fac2 = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null);
+		}
+		fac = fac2;
+
 		this.styleSheet = styleSheet;
 		log.debug("using " + concurrency + " parallel transformer instances for " + styleSheet);
 		transformers = new ArrayBlockingQueue<Transformer>(concurrency);

@@ -38,11 +38,15 @@ abstract class SOAPRESTHelper extends AbstractInterceptor {
 			new ConcurrentHashMap<String, XSLTTransformer>();
 
 	protected XSLTTransformer getTransformer(String ss) throws Exception {
+		return getTransformer(ss, false);
+	}
+
+	protected XSLTTransformer getTransformer(String ss, boolean requires_XSLT_2_0) throws Exception {
 		String key = ss == null ? "null" : ss;
 		XSLTTransformer t = xsltTransformers.get(key);
 		if (t == null) {
 			int concurrency = 2 * Runtime.getRuntime().availableProcessors();
-			t = new XSLTTransformer(ss, router, concurrency);
+			t = new XSLTTransformer(ss, router, concurrency, requires_XSLT_2_0);
 			XSLTTransformer t2 = xsltTransformers.putIfAbsent(key, t);
 			if (t2 != null)
 				return t2;
