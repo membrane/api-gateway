@@ -114,7 +114,7 @@ public class LoginDialog {
 		for (int i = 0; i < params.length; i+=2)
 			model.put((String)params[i], params[i+1]);
 
-		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBody().toString(), model).getBytes(Constants.UTF_8_CHARSET));
+		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
 	}
 
 	public void handleLoginRequest(Exchange exc) throws Exception {
