@@ -1,10 +1,21 @@
 package com.predic8.membrane.core.cloud.etcd;
 
+import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.Test;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.JSONPObject;
+import com.google.api.client.json.JsonObjectParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -14,7 +25,7 @@ public class EtcdRequestTest {
 
 	@Test
 	public void testSendRequest() throws Exception {
-		EtcdRequest reqPut = new EtcdRequest().client(new HttpClient()).local().defaultBaseModule().defaultModule()
+		EtcdRequest reqPut = new EtcdRequest().client(new HttpClient()).local().defaultBaseKey().defaultModule()
 				.uuid(Integer.toString(1)).setValue("port", "7000").createPutRequest();
 		System.out.println(reqPut.method);
 		System.out.println(reqPut.url);
@@ -48,21 +59,57 @@ public class EtcdRequestTest {
 		 * getBodyAsStringDecoded());
 		 */
 
-		EtcdResponse respTTLDirectory = new EtcdRequest().local().defaultBaseModule().createDir("test").ttl(30)
-				.sendRequest();
-		System.out.println(respTTLDirectory.getOriginalRequest().method);
-		System.out.println(respTTLDirectory.getOriginalRequest().url);
-		System.out.println(respTTLDirectory.getOriginalRequest().body);
-		System.out.println("---");
-		System.out.println(respTTLDirectory.getOriginalResponse().getBodyAsStringDecoded());
+		/*
+		 * EtcdResponse respTTLDirectory = new
+		 * EtcdRequest().local().defaultBaseModule().createDir("asa/lb/eep").ttl
+		 * (30) .sendRequest();
+		 * System.out.println(respTTLDirectory.getOriginalRequest().method);
+		 * System.out.println(respTTLDirectory.getOriginalRequest().url);
+		 * System.out.println(respTTLDirectory.getOriginalRequest().body);
+		 * System.out.println("---");
+		 * System.out.println(respTTLDirectory.getOriginalResponse().
+		 * getBodyAsStringDecoded());
+		 */
 
-		EtcdResponse respTTLDirRefresh = new EtcdRequest().local().defaultBaseModule().module("test").refreshTTL(60)
-				.sendRequest();
-		System.out.println(respTTLDirRefresh.getOriginalRequest().method);
-		System.out.println(respTTLDirRefresh.getOriginalRequest().url);
-		System.out.println(respTTLDirRefresh.getOriginalRequest().body);
-		System.out.println("---");
-		System.out.println(respTTLDirRefresh.getOriginalResponse().getBodyAsStringDecoded());
+		EtcdResponse respDirGet = new EtcdRequest().local().defaultBaseKey().defaultModule().sendRequest();
+		JsonFactory fac = new JsonFactory();
+		JsonParser par = fac.createParser(respDirGet.getOriginalResponse().getBodyAsStringDecoded());
+		/*
+		 * if (par.nextToken() != JsonToken.START_OBJECT) { throw new
+		 * IOException("Expected data to start with an Object"); } while
+		 * (par.nextToken() != JsonToken.END_OBJECT) {
+		 * System.out.println(par.getCurrentName()); par.nextToken(); }
+		 */
+
+		String baseKey = "/asa/lb";
+		String module = "/eep";
+		ArrayList<String> eepServices = new ArrayList<String>();
+		Map<String, Object> respData = new ObjectMapper().readValue(par, Map.class);
+		if (respData.containsKey("node")) {
+			LinkedHashMap<String, Object> nodeJson = (LinkedHashMap<String, Object>) respData.get("node");
+			ArrayList<Object> nodesArray = (ArrayList<Object>) nodeJson.get("nodes");
+			for (Object object : nodesArray) {
+				LinkedHashMap<String, Object> service = (LinkedHashMap<String, Object>) object;
+				String servicePath = service.get("key").toString();
+				String uuid = servicePath.replaceAll(baseKey + module, "");
+				eepServices.add(uuid);
+			}
+		}
+		for (String s : eepServices) {
+			System.out.println(s);
+		}
+
+		/*
+		 * EtcdResponse respTTLDirRefresh = new
+		 * EtcdRequest().local().defaultBaseModule().module("test").refreshTTL(
+		 * 60) .sendRequest();
+		 * System.out.println(respTTLDirRefresh.getOriginalRequest().method);
+		 * System.out.println(respTTLDirRefresh.getOriginalRequest().url);
+		 * System.out.println(respTTLDirRefresh.getOriginalRequest().body);
+		 * System.out.println("---");
+		 * System.out.println(respTTLDirRefresh.getOriginalResponse().
+		 * getBodyAsStringDecoded());
+		 */
 
 	}
 

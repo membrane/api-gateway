@@ -1,6 +1,8 @@
 package com.predic8.membrane.core.cloud.etcd;
 
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -28,7 +30,8 @@ public class EtcdRequest {
 	final String bodySeperator = "&";
 	String ip = "";
 	String port = "";
-	String baseModule = "";
+	String root = "/v2/keys";
+	String baseKey = "";
 	String module = "";
 	String uuid = "";
 	String key = "";
@@ -46,25 +49,13 @@ public class EtcdRequest {
 	public EtcdRequest() {
 	}
 
-	// API design, nur zum angucken wie es aussehen soll
-	public static void test() {
-		EtcdResponse resp1 = new EtcdRequest().uuid("1").setValue("port", "8080").sendRequest();
-		EtcdResponse resp2 = new EtcdRequest().uuid("1").getValue("port").sendRequest();
-
-		EtcdResponse resp3 = new EtcdRequest().ip("127.0.0.1").port("4001").baseModule("vs/keys").module("asa/lb/eep")
-				.uuid("1").getValue("port").sendRequest();
-		EtcdResponse resp4 = new EtcdRequest().local().defaultBaseModule().defaultModule().uuid("1").getValue("port")
-				.sendRequest();
-
-	}
-
 	public EtcdRequest defaultModule() {
-		module("asa/lb/eep");
+		module("/eep");
 		return this;
 	}
 
-	public EtcdRequest defaultBaseModule() {
-		baseModule("v2/keys");
+	public EtcdRequest defaultBaseKey() {
+		baseKey("/asa/lb");
 		return this;
 	}
 
@@ -72,14 +63,26 @@ public class EtcdRequest {
 		ip("localhost").port("4001");
 		return this;
 	}
-
-	public EtcdRequest module(String module) {
-		this.module = "/" + module;
+	
+	public EtcdRequest url(String url)
+	{
+		URL u;
+		try {
+			u = new URL(url);
+			ip(u.getHost()).port(Integer.toString(u.getPort()));
+		} catch (MalformedURLException e) {
+		}
+		
 		return this;
 	}
 
-	public EtcdRequest baseModule(String baseModule) {
-		this.baseModule = "/" + baseModule;
+	public EtcdRequest module(String module) {
+		this.module = module;
+		return this;
+	}
+
+	public EtcdRequest baseKey(String baseModule) {
+		this.baseKey = baseModule;
 		return this;
 	}
 
@@ -94,7 +97,7 @@ public class EtcdRequest {
 	}
 
 	public EtcdRequest uuid(String uuid) {
-		this.uuid = "/" + uuid;
+		this.uuid = uuid;
 		return this;
 	}
 
@@ -114,7 +117,7 @@ public class EtcdRequest {
 
 	public EtcdRequest createDir(String dir) {
 		this.isDir = "dir=true";
-		this.key = "/" + dir;
+		this.key = dir;
 		this.value = "";
 		method = MethodType.PUT;
 		return this;
@@ -190,7 +193,7 @@ public class EtcdRequest {
 
 	protected EtcdRequest createPutRequest() {
 		StringBuilder builder = new StringBuilder();
-		builder.append(httpPrefix).append(ip).append(port).append(baseModule).append(module).append(uuid).append(key);
+		builder.append(httpPrefix).append(ip).append(port).append(root).append(baseKey).append(module).append(uuid).append(key);
 		url = builder.toString();
 		builder.setLength(0);
 
@@ -228,7 +231,7 @@ public class EtcdRequest {
 
 	protected EtcdRequest createDeleteRequest() {
 		StringBuilder builder = new StringBuilder();
-		builder.append(httpPrefix).append(ip).append(port).append(baseModule).append(module).append(uuid);
+		builder.append(httpPrefix).append(ip).append(port).append(root).append(baseKey).append(module).append(uuid);
 		/*
 		 * if (!deleteDir) { builder.append(key); }
 		 */
@@ -240,7 +243,7 @@ public class EtcdRequest {
 
 	protected EtcdRequest createGetRequest() {
 		StringBuilder builder = new StringBuilder();
-		builder.append(httpPrefix).append(ip).append(port).append(baseModule).append(module).append(uuid).append(key);
+		builder.append(httpPrefix).append(ip).append(port).append(root).append(baseKey).append(module).append(uuid).append(key);
 		url = builder.toString();
 		body = "";
 		return this;

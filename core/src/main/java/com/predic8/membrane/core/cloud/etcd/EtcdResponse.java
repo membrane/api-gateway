@@ -1,8 +1,20 @@
 package com.predic8.membrane.core.cloud.etcd;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.http.Response;
 
 public class EtcdResponse {
+
+	private static JsonFactory jsonFac = new JsonFactory();
 
 	private EtcdRequest originalRequest;
 	private Response originalResponse;
@@ -26,7 +38,67 @@ public class EtcdResponse {
 	public EtcdResponse(EtcdRequest originalRequest, Response resp) {
 		this.originalRequest = originalRequest;
 		originalResponse = resp;
+	}
 
-		// TODO process the originalResponse
+	private JsonParser getParser(String json) {
+		JsonParser result = null;
+		try {
+			synchronized (jsonFac) {
+				result = jsonFac.createParser(json);
+			}
+		} catch (JsonParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	public ArrayList<String> getDirectories() {
+		JsonParser par = getParser(originalResponse.getBodyAsStringDecoded());
+
+		String baseKey = originalRequest.baseKey;
+		String module = originalRequest.module;
+		ArrayList<String> directories = new ArrayList<String>();
+		Map<String, Object> respData = null;
+		try {
+			respData = new ObjectMapper().readValue(par, Map.class);
+		} catch (JsonParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JsonMappingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		if (respData.containsKey("node")) {
+			LinkedHashMap<String, Object> nodeJson = (LinkedHashMap<String, Object>) respData.get("node");
+			if (nodeJson.containsKey("nodes")) {
+				ArrayList<Object> nodesArray = (ArrayList<Object>) nodeJson.get("nodes");
+				for (Object object : nodesArray) {
+					LinkedHashMap<String, Object> dirs = (LinkedHashMap<String, Object>) object;
+					if (dirs.containsKey("key")) {
+						String servicePath = dirs.get("key").toString();
+						String uuid = servicePath.replaceAll(baseKey + module, "");
+						directories.add(uuid);
+					}
+				}
+			}
+		}
+		return directories;
+	}
+	
+	public String getValue()
+	{
+		
+		
+		
+		
+		
+		return null;
 	}
 }
