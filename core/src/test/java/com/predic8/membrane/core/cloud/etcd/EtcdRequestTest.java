@@ -25,12 +25,14 @@ public class EtcdRequestTest {
 
 	@Test
 	public void testSendRequest() throws Exception {
-		EtcdRequest reqPut = new EtcdRequest().client(new HttpClient()).local().defaultBaseKey().defaultModule()
-				.uuid(Integer.toString(1)).setValue("port", "7000").createPutRequest();
-		System.out.println(reqPut.method);
-		System.out.println(reqPut.url);
-		System.out.println(reqPut.body);
+		EtcdResponse respGetValue = EtcdUtil.createBasicRequest("http://localhost:4001", "/asa/lb", "/eep").uuid("/823c8611-eeda-4bd1-b7d8-7dfa5c38801a").getValue("host").sendRequest();
+		System.out.println(respGetValue.getOriginalRequest().method);
+		System.out.println(respGetValue.getOriginalRequest().url);
+		System.out.println(respGetValue.getOriginalRequest().body);
+		System.out.println(respGetValue.getOriginalResponse().getBodyAsStringDecoded());
+		System.out.println(respGetValue.getValue());
 		System.out.println("---");
+		
 
 		/*
 		 * EtcdResponse respPut = new EtcdRequest().client(new
@@ -71,15 +73,9 @@ public class EtcdRequestTest {
 		 * getBodyAsStringDecoded());
 		 */
 
-		EtcdResponse respDirGet = new EtcdRequest().local().defaultBaseKey().defaultModule().sendRequest();
+		/*EtcdResponse respDirGet = new EtcdRequest().local().defaultBaseKey().defaultModule().sendRequest();
 		JsonFactory fac = new JsonFactory();
 		JsonParser par = fac.createParser(respDirGet.getOriginalResponse().getBodyAsStringDecoded());
-		/*
-		 * if (par.nextToken() != JsonToken.START_OBJECT) { throw new
-		 * IOException("Expected data to start with an Object"); } while
-		 * (par.nextToken() != JsonToken.END_OBJECT) {
-		 * System.out.println(par.getCurrentName()); par.nextToken(); }
-		 */
 
 		String baseKey = "/asa/lb";
 		String module = "/eep";
@@ -97,7 +93,7 @@ public class EtcdRequestTest {
 		}
 		for (String s : eepServices) {
 			System.out.println(s);
-		}
+		}*/
 
 		/*
 		 * EtcdResponse respTTLDirRefresh = new

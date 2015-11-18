@@ -66,14 +66,8 @@ public class EtcdResponse {
 		try {
 			respData = new ObjectMapper().readValue(par, Map.class);
 		} catch (JsonParseException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (JsonMappingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
 		if (respData.containsKey("node")) {
 			LinkedHashMap<String, Object> nodeJson = (LinkedHashMap<String, Object>) respData.get("node");
@@ -94,11 +88,31 @@ public class EtcdResponse {
 	
 	public String getValue()
 	{
+		JsonParser par = getParser(originalResponse.getBodyAsStringDecoded());
+
+		String baseKey = originalRequest.baseKey;
+		String module = originalRequest.module;
+		String result = null;
 		
+		Map<String, Object> respData = null;
+		try {
+			respData = new ObjectMapper().readValue(par, Map.class);
+		} catch (JsonParseException e) {
+		} catch (JsonMappingException e) {
+		} catch (IOException e) {
+		}
+		if (respData.containsKey("node")) {
+			LinkedHashMap<String, Object> nodeJson = (LinkedHashMap<String, Object>) respData.get("node");
+			if (nodeJson.containsKey("value")) {
+				result = nodeJson.get("value").toString();
+			}
+		}
 		
+		if(result == null)
+		{
+			throw new RuntimeException();
+		}
 		
-		
-		
-		return null;
+		return result;
 	}
 }

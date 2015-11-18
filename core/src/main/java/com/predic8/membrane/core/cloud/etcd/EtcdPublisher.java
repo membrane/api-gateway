@@ -24,7 +24,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 
 	private ApplicationContext context;
 	private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();
-	private int ttlInSeconds = 20; // 20 for test, 300 normally
+	private int ttlInSeconds = 20; //300 normally, other for testing
 	boolean isRunning = true;
 	private String baseUrl;
 	private String baseKey;
@@ -97,6 +97,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 	@Override
 	public void start() {
 		Router router = context.getBean(Router.class);
+		System.out.println("EtcdPublisher OUTPUT:");
 		for (Rule rule : router.getRuleManager().getRules()) {
 			if (rule instanceof ServiceProxy) {
 				ServiceProxy sp = (ServiceProxy) rule;
@@ -137,6 +138,10 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 				if (!modulesToUUIDs.containsKey(path)) {
 					modulesToUUIDs.put(path, new ArrayList<String>());
 				}
+				
+				
+				System.out.println("UUID: " + uuid);
+				
 				modulesToUUIDs.get(path).add(uuid);
 			}
 		}
