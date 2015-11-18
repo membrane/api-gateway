@@ -36,6 +36,7 @@ import java.net.Socket;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -108,24 +109,35 @@ public class SSLContext implements SSLProvider {
 					String alias = aliases.nextElement();
 					if (ks.isKeyEntry(alias)) {
 						// first key is used by the KeyManagerFactory
-						Certificate c = ks.getCertificate(alias);
-						if (c instanceof X509Certificate) {
-							X509Certificate x = (X509Certificate) c;
-
-							dnsNames = new ArrayList<String>();
-
-							Collection<List<?>> subjectAlternativeNames = x.getSubjectAlternativeNames();
-							if (subjectAlternativeNames != null)
-								for (List<?> l : subjectAlternativeNames) {
-									if (l.get(0) instanceof Integer && ((Integer)l.get(0) == 2))
-										dnsNames.add(l.get(1).toString());
-								}
-						}
+						dnsNames = getDNSNames(ks.getCertificate(alias));
 						break;
 					}
 				}
-
 			}
+			if (sslParser.getKey() != null) {
+				if (kmf != null)
+					throw new InvalidParameterException("<trust> may not be used together with <truststore>.");
+
+				KeyStore ks = KeyStore.getInstance(keyStoreType);
+				ks.load(null, "".toCharArray());
+
+				List<Certificate> certs = new ArrayList<Certificate>();
+
+				for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKey().getCertificates())
+					certs.add(PEMSupport.getInstance().parseCertificate(cert.getContent()));
+				if (certs.size() == 0)
+					throw new RuntimeException("At least one //ssl/key/certificate is required.");
+				dnsNames = getDNSNames(certs.get(0));
+
+				ks.setKeyEntry("inlinePemKeyAndCertificate", PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().getContent()).getPrivate(), "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
+
+				kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+				String keyPassword = "";
+				if (sslParser.getKey().getPassword() != null)
+					keyPassword = sslParser.getKey().getPassword();
+				kmf.init(ks, keyPassword.toCharArray());
+			}
+
 			TrustManagerFactory tmf = null;
 			if (sslParser.getTrustStore() != null) {
 				String trustAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
@@ -133,6 +145,19 @@ public class SSLContext implements SSLProvider {
 					trustAlgorithm = sslParser.getTrustStore().getAlgorithm();
 				KeyStore ks = openKeyStore(sslParser.getTrustStore(), keyStoreType, null, resourceResolver, baseLocation);
 				tmf = TrustManagerFactory.getInstance(trustAlgorithm);
+				tmf.init(ks);
+			}
+			if (sslParser.getTrust() != null) {
+				if (tmf != null)
+					throw new InvalidParameterException("<trust> may not be used together with <truststore>.");
+
+				KeyStore ks = KeyStore.getInstance(keyStoreType);
+				ks.load(null, "".toCharArray());
+
+				for (int j = 0; j < sslParser.getTrust().getCertificateList().size(); j++)
+					ks.setCertificateEntry("inlinePemCertificate" + j, PEMSupport.getInstance().parseCertificate(sslParser.getTrust().getCertificateList().get(j).getContent()));
+
+				tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 				tmf.init(ks);
 			}
 
@@ -193,6 +218,21 @@ public class SSLContext implements SSLProvider {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private List<String> getDNSNames(Certificate certificate) throws CertificateParsingException {
+		ArrayList<String> dnsNames = new ArrayList<String>();
+		if (certificate instanceof X509Certificate) {
+			X509Certificate x = (X509Certificate) certificate;
+
+			Collection<List<?>> subjectAlternativeNames = x.getSubjectAlternativeNames();
+			if (subjectAlternativeNames != null)
+				for (List<?> l : subjectAlternativeNames) {
+					if (l.get(0) instanceof Integer && ((Integer)l.get(0) == 2))
+						dnsNames.add(l.get(1).toString());
+				}
+		}
+		return dnsNames;
 	}
 
 	private static class CipherInfo {

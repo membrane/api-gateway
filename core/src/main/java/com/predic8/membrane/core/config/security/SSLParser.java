@@ -26,7 +26,9 @@ import com.predic8.membrane.annot.MCElement;
 public class SSLParser {
 
 	private KeyStore keyStore;
+	private Key key;
 	private TrustStore trustStore;
+	private Trust trust;
 	private String algorithm;
 	private String protocol;
 	private String protocols;
@@ -58,11 +60,23 @@ public class SSLParser {
 		this.keyStore = keyStore;
 	}
 
+	public Key getKey() {
+		return key;
+	}
+
+	/**
+	 * @description Used to manually compose the keystore.
+	 */
+	@MCChildElement(order=2)
+	public void setKey(Key key) {
+		this.key = key;
+	}
+
 	public TrustStore getTrustStore() {
 		return trustStore;
 	}
 
-	@MCChildElement(order=2)
+	@MCChildElement(order=3)
 	public void setTrustStore(TrustStore trustStore) {
 		this.trustStore = trustStore;
 	}
@@ -144,4 +158,15 @@ public class SSLParser {
 		this.ignoreTimestampCheckFailure = ignoreTimestampCheckFailure;
 	}
 
+	public Trust getTrust() {
+		return trust;
+	}
+
+	/**
+	 * @description Used to manually compose the truststore.
+     */
+	@MCChildElement(order=4)
+	public void setTrust(Trust trust) {
+		this.trust = trust;
+	}
 }
