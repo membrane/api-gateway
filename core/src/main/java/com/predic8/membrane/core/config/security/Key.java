@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.config.security;
 
+import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -21,6 +22,14 @@ public class Key {
     public static class Private {
         String content;
 
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof Private))
+                return false;
+            Private other = (Private)obj;
+            return Objects.equal(content, other.content);
+        }
+
         public String getContent() {
             return content;
         }
@@ -36,6 +45,16 @@ public class Key {
     String password;
     Private private_;
     List<Certificate> certificates = new ArrayList<Certificate>();
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Key))
+            return false;
+        Key other = (Key)obj;
+        return Objects.equal(password, other.password)
+                && Objects.equal(private_, other.private_)
+                && Objects.equal(certificates, other.certificates);
+    }
 
     public String getPassword() {
         return password;

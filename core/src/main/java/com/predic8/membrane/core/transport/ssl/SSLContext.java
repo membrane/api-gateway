@@ -319,6 +319,7 @@ public class SSLContext implements SSLProvider {
 			SSLParameters sslParameters = sslSocket.getSSLParameters();
 			applyCipherOrdering(sslParameters);
 			sslParameters.setCipherSuites(ciphers);
+			sslParameters.setEndpointIdentificationAlgorithm(sslParser.getEndpointIdentificationAlgorithm());
 			sslSocket.setSSLParameters(sslParameters);
 		}
 	}

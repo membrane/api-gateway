@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.config.security;
 
+import com.google.common.base.Objects;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 
@@ -15,6 +16,14 @@ import java.util.List;
 @MCElement(name="trust")
 public class Trust {
     List<Certificate> certificateList = new ArrayList<Certificate>();
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Trust))
+            return false;
+        Trust other = (Trust)obj;
+        return Objects.equal(certificateList, other.certificateList);
+    }
 
     public List<Certificate> getCertificateList() {
         return certificateList;
