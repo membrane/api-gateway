@@ -7,6 +7,7 @@ import org.bouncycastle.openssl.PEMReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.security.InvalidParameterException;
+import java.security.Key;
 import java.security.KeyPair;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -14,7 +15,8 @@ import java.security.cert.X509Certificate;
 public abstract class PEMSupport {
 
     public abstract X509Certificate parseCertificate(String pemBlock) throws IOException;
-    public abstract KeyPair parseKey(String pemBlock) throws IOException;
+    public abstract Key getPrivateKey(String content) throws IOException;
+    public abstract Object parseKey(String content) throws IOException;
 
     private static PEMSupport instance;
 
@@ -57,14 +59,28 @@ public abstract class PEMSupport {
             return (X509Certificate) o2;
         }
 
-        public KeyPair parseKey(String pemBlock) throws IOException {
+        public Key getPrivateKey(String pemBlock) throws IOException {
             PEMReader p = new PEMReader(new StringReader(cleanupPEM(pemBlock)));
             Object o = p.readObject();
             if (o == null)
                 throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
-            if (!(o instanceof KeyPair))
-                throw new InvalidParameterException("Expected KeyPair.");
-            return (KeyPair) o;
+            if (o instanceof Key)
+                return (Key) o;
+            if (o instanceof KeyPair)
+                return ((KeyPair) o).getPrivate();
+            throw new InvalidParameterException("Expected KeyPair or Key.");
+        }
+
+        public Object parseKey(String pemBlock) throws IOException {
+            PEMReader p = new PEMReader(new StringReader(cleanupPEM(pemBlock)));
+            Object o = p.readObject();
+            if (o == null)
+                throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
+            if (o instanceof Key)
+                return o;
+            if (o instanceof KeyPair)
+                return o;
+            throw new InvalidParameterException("Expected KeyPair or Key.");
         }
     }
 }
