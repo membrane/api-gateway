@@ -1,3 +1,17 @@
+/* Copyright 2015 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core.interceptor.ratelimit;
 
 import java.io.UnsupportedEncodingException;
@@ -27,29 +41,14 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name = "rateLimiter")
 public class RateLimitInterceptor extends AbstractInterceptor {
 
-	public static enum RateLimitStrategyType {
-		LAZY, PRECISE
-	}
-
 	public RateLimitStrategy rateLimitStrategy;
-	private RateLimitStrategyType mode;
 
 	public RateLimitInterceptor() {
-		this(RateLimitStrategyType.LAZY, Duration.standardHours(1), 1000);
+		this(Duration.standardHours(1), 1000);
 	}
 
-	public RateLimitInterceptor(RateLimitStrategyType type, Duration requestLimitDuration, int requestLimit) {
-		switch (type) {
-		case LAZY:
-			rateLimitStrategy = new LazyRateLimit(requestLimitDuration, requestLimit);
-			break;
-		case PRECISE:
-			rateLimitStrategy = new PreciseRateLimit(requestLimitDuration, requestLimit);
-			break;
-		default:
-			rateLimitStrategy = new LazyRateLimit(requestLimitDuration, requestLimit);
-		}
-		mode = type;
+	public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
+		rateLimitStrategy = new LazyRateLimit(requestLimitDuration, requestLimit);
 	}
 
 	@Override
@@ -76,14 +75,11 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 		hd.add("X-LimitReset", Long.toString(availableAgainDateTime.getMillis()));
 
 		StringBuilder bodyString = new StringBuilder();
-		bodyString.append(ip);
-		bodyString.append(" exceeded the rate limit of ");
-		bodyString.append(rateLimitStrategy.requestLimit);
-		bodyString.append(" requests per ");
-		bodyString.append(PeriodFormat.getDefault().print(rateLimitStrategy.requestLimitDuration.toPeriod()));
-		bodyString.append(". The next request can be made at ");
 		DateTimeFormatter dtFormatter = DateTimeFormat.forPattern("HH:mm:ss aa");
-		bodyString.append(dtFormatter.print(availableAgainDateTime));
+		bodyString.append(ip).append(" exceeded the rate limit of ").append(rateLimitStrategy.requestLimit)
+				.append(" requests per ")
+				.append(PeriodFormat.getDefault().print(rateLimitStrategy.requestLimitDuration.toPeriod()))
+				.append(". The next request can be made at ").append(dtFormatter.print(availableAgainDateTime));
 
 		Response resp = ResponseBuilder.newInstance().status(429, "Too Many Requests.")
 				.contentType(MimeType.TEXT_PLAIN_UTF8).header(hd).body(bodyString.toString()).build();
@@ -108,7 +104,8 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @description Duration after the limit is reset in PTxS where x is the time in seconds
+	 * @description Duration after the limit is reset in PTxS where x is the
+	 *              time in seconds
 	 * @default PT3600S
 	 */
 	@MCAttribute
@@ -118,19 +115,6 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
 	public void setRequestLimitDuration(Duration rld) {
 		rateLimitStrategy.setRequestLimitDuration(rld);
-	}
-
-	public RateLimitStrategyType getMode() {
-		return mode;
-	}
-
-	/**
-	 * @description Precise or Lazy mode
-	 * @default "lazy"
-	 */
-	@MCAttribute
-	public void setMode(RateLimitStrategyType mode) {
-		this.mode = mode;
 	}
 
 }
