@@ -35,6 +35,7 @@ public class SSLParser {
 	private String ciphers;
 	private String clientAuth;
 	private boolean ignoreTimestampCheckFailure;
+	private String endpointIdentificationAlgorithm = "HTTPS";
 
 	@Override
 	public boolean equals(Object obj) {
@@ -42,12 +43,15 @@ public class SSLParser {
 			return false;
 		SSLParser other = (SSLParser)obj;
 		return Objects.equal(keyStore, other.keyStore)
+				&& Objects.equal(key, other.key)
 				&& Objects.equal(trustStore, other.trustStore)
+				&& Objects.equal(trust, other.trust)
 				&& Objects.equal(algorithm, other.algorithm)
 				&& Objects.equal(protocol, other.protocol)
 				&& Objects.equal(ciphers, other.ciphers)
 				&& Objects.equal(clientAuth, other.clientAuth)
-				&& Objects.equal(ignoreTimestampCheckFailure, other.ignoreTimestampCheckFailure);
+				&& Objects.equal(ignoreTimestampCheckFailure, other.ignoreTimestampCheckFailure)
+				&& Objects.equal(endpointIdentificationAlgorithm, other.endpointIdentificationAlgorithm);
 	}
 
 
@@ -168,5 +172,18 @@ public class SSLParser {
 	@MCChildElement(order=4)
 	public void setTrust(Trust trust) {
 		this.trust = trust;
+	}
+
+	public String getEndpointIdentificationAlgorithm() {
+		return endpointIdentificationAlgorithm;
+	}
+
+	/**
+	 * @description See <a href="http://docs.oracle.com/javase/7/docs/api/javax/net/ssl/SSLParameters.html#setEndpointIdentificationAlgorithm%28java.lang.String%29">setEndpointIdentificationAlgorithm()</a>.
+	 * @default HTTPS
+     */
+	@MCAttribute
+	public void setEndpointIdentificationAlgorithm(String endpointIdentificationAlgorithm) {
+		this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
 	}
 }

@@ -38,6 +38,8 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 
 public class SSLContext implements SSLProvider {
@@ -129,7 +131,17 @@ public class SSLContext implements SSLProvider {
 					throw new RuntimeException("At least one //ssl/key/certificate is required.");
 				dnsNames = getDNSNames(certs.get(0));
 
-				ks.setKeyEntry("inlinePemKeyAndCertificate", PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().getContent()).getPrivate(), "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
+				checkChainValidity(certs);
+				Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().getContent());
+				Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
+				if (k instanceof RSAPrivateCrtKey && certs.get(0).getPublicKey() instanceof RSAPublicKey) {
+					RSAPrivateCrtKey privkey = (RSAPrivateCrtKey)k;
+					RSAPublicKey pubkey = (RSAPublicKey) certs.get(0).getPublicKey();
+					if (!(privkey.getModulus().equals(pubkey.getModulus()) && privkey.getPublicExponent().equals(pubkey.getPublicExponent())))
+						log.warn("Certificate does not fit to key.");
+				}
+
+				ks.setKeyEntry("inlinePemKeyAndCertificate", k, "".toCharArray(),  certs.toArray(new Certificate[certs.size()]));
 
 				kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
 				String keyPassword = "";
@@ -217,6 +229,24 @@ public class SSLContext implements SSLProvider {
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	private void checkChainValidity(List<Certificate> certs) {
+		boolean valid = true;
+		for (int i = 0; i < certs.size() - 1; i++) {
+			String currentIssuer = ((X509Certificate)certs.get(i)).getIssuerX500Principal().toString();
+			String nextSubject = ((X509Certificate)certs.get(i+1)).getSubjectX500Principal().toString();
+			valid = valid && Objects.equal(currentIssuer, nextSubject);
+		}
+		if (!valid) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Certificate chain is not valid:\n");
+			for (int i = 0; i < certs.size(); i++) {
+				sb.append("Cert " + String.format("%2d", i) + ": Subject: " + ((X509Certificate)certs.get(i)).getSubjectX500Principal().toString() + "\n");
+				sb.append("         Issuer: " + ((X509Certificate)certs.get(i)).getIssuerX500Principal().toString() + "\n");
+			}
+			log.warn(sb.toString());
 		}
 	}
 
@@ -319,6 +349,7 @@ public class SSLContext implements SSLProvider {
 			SSLParameters sslParameters = sslSocket.getSSLParameters();
 			applyCipherOrdering(sslParameters);
 			sslParameters.setCipherSuites(ciphers);
+			sslParameters.setEndpointIdentificationAlgorithm(sslParser.getEndpointIdentificationAlgorithm());
 			sslSocket.setSSLParameters(sslParameters);
 		}
 	}

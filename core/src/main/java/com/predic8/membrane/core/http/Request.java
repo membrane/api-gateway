@@ -291,6 +291,22 @@ public class Request extends Message {
 		public Builder get(String url) throws URISyntaxException {
 			return get(new URIFactory(), url);
 		}
+		
+		public Builder delete(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_DELETE).url(uriFactory, url);
+		}
+
+		public Builder delete(String url) throws URISyntaxException {
+			return delete(new URIFactory(), url);
+		}
+		
+		public Builder put(URIFactory uriFactory, String url) throws URISyntaxException {
+			return method(Request.METHOD_PUT).url(uriFactory, url);
+		}
+
+		public Builder put(String url) throws URISyntaxException {
+			return put(new URIFactory(), url);
+		}
 	}
 
 }

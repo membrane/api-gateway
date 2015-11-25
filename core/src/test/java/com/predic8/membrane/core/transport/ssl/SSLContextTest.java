@@ -46,6 +46,10 @@ public class SSLContextTest {
 	private class SSLContextBuilder {
 		private SSLParser sslParser = new SSLParser();
 
+		public SSLContextBuilder() {
+			sslParser.setEndpointIdentificationAlgorithm("");
+		}
+
 		public SSLContext build() {
 			return new SSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
 		}
