@@ -25,7 +25,6 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 	private ApplicationContext context;
 	private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();
 	private int ttlInSeconds = 20; // 300 normally, other for testing
-	boolean isRunning = true;
 	private String baseUrl;
 	private String baseKey;
 
@@ -61,29 +60,26 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 
 		@Override
 		public void run() {
-			int sleepTime = (ttlInSeconds - 10) * 1000;
-			if (isFirstTime) {
-				isFirstTime = false;
-				try {
+			try {
+				int sleepTime = (ttlInSeconds - 10) * 1000;
+				if (isFirstTime) {
+					isFirstTime = false;
 					Thread.sleep(sleepTime);
-				} catch (InterruptedException e) {
 				}
-			}
-			while (isRunning) {
-				// System.out.println("Refreshing ttl");
-				for (String module : modulesToUUIDs.keySet()) {
-					for (String uuid : modulesToUUIDs.get(module)) {
-						EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
-								.uuid(uuid).refreshTTL(ttlInSeconds).sendRequest();
-						if (!EtcdUtil.checkOK(respTTLDirRefresh)) {
-							throw new RuntimeException();
+				while (true) {
+					// System.out.println("Refreshing ttl");
+					for (String module : modulesToUUIDs.keySet()) {
+						for (String uuid : modulesToUUIDs.get(module)) {
+							EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
+									.uuid(uuid).refreshTTL(ttlInSeconds).sendRequest();
+							if (!EtcdUtil.checkOK(respTTLDirRefresh)) {
+								throw new RuntimeException();
+							}
 						}
 					}
-				}
-				try {
 					Thread.sleep(sleepTime);
-				} catch (InterruptedException e) {
 				}
+			} catch (InterruptedException ignored) {
 			}
 		}
 
@@ -144,28 +140,25 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 				modulesToUUIDs.get(path).add(uuid);
 			}
 		}
-		Runtime.getRuntime().addShutdownHook(new Thread() {
-			@Override
-			public void run() {
-				isRunning = false;
-				ttlRefreshThread.interrupt();
-				for (String module : modulesToUUIDs.keySet()) {
-					for (String uuid : modulesToUUIDs.get(module)) {
-						EtcdResponse respUnregisterProxy = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
-								.uuid(uuid).deleteDir().sendRequest();
-						// this is probably unneeded as the etcd data has ttl
-						// set and will autodelete after the ttl
-					}
-				}
-			}
-		});
 		ttlRefreshThread.start();
-
 	}
 
 	@Override
 	public void stop() {
-
+		ttlRefreshThread.interrupt();
+		try {
+			ttlRefreshThread.join();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		for (String module : modulesToUUIDs.keySet()) {
+			for (String uuid : modulesToUUIDs.get(module)) {
+				EtcdResponse respUnregisterProxy = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
+						.uuid(uuid).deleteDir().sendRequest();
+				// this is probably unneeded as the etcd data has ttl
+				// set and will autodelete after the ttl
+			}
+		}
 	}
 
 	@Override

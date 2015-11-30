@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -26,6 +28,8 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 @MCElement(name = "etcdBasedConfigurator")
 public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle {
 
+	private static final Log log = LogFactory.getLog(EtcdBasedConfigurator.class.getName());
+
 	private ApplicationContext context;
 	private int port = 8080;
 	private String baseUrl;
@@ -37,11 +41,14 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	private Thread nodeRefreshThread = new Thread(new Runnable() {
 		@Override
 		public void run() {
+			// TODO: interrupted, stop() etc
 			while (isRunning) {
 				// System.out.println("Refreshing nodes");
 				EtcdResponse respWaitForChange = EtcdUtil.createBasicRequest(baseUrl, baseKey, "").longPollRecursive()
 						.sendRequest();
 				if (!EtcdUtil.checkOK(respWaitForChange)) {
+					log.warn("Could not contact etcd at " + baseUrl);
+					// TODO: service proxies loeschen, nach timeout wieder versuchen
 					throw new RuntimeException();
 				}
 				handleContextRefresh(null);
