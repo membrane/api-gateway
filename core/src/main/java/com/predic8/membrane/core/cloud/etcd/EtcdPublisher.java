@@ -2,9 +2,10 @@ package com.predic8.membrane.core.cloud.etcd;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.UUID;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -13,14 +14,12 @@ import org.springframework.context.Lifecycle;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import com.predic8.membrane.core.transport.http.HttpClient;
 
 @MCElement(name = "etcdPublisher")
 public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
+	private static final Log log = LogFactory.getLog(EtcdPublisher.class.getName());
 
 	private ApplicationContext context;
 	private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();
@@ -73,7 +72,9 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 							EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
 									.uuid(uuid).refreshTTL(ttlInSeconds).sendRequest();
 							if (!EtcdUtil.checkOK(respTTLDirRefresh)) {
-								throw new RuntimeException();
+								log.warn("Could not contact etcd at " + baseUrl);
+								// TODO: nach timeout nochmal versuchen								
+								//throw new RuntimeException();
 							}
 						}
 					}
@@ -153,8 +154,8 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 		}
 		for (String module : modulesToUUIDs.keySet()) {
 			for (String uuid : modulesToUUIDs.get(module)) {
-				EtcdResponse respUnregisterProxy = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
-						.uuid(uuid).deleteDir().sendRequest();
+				EtcdResponse respUnregisterProxy = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
+						.deleteDir().sendRequest();
 				// this is probably unneeded as the etcd data has ttl
 				// set and will autodelete after the ttl
 			}
