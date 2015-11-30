@@ -25,7 +25,7 @@ public class EtcdRequestTest {
 
 	@Test
 	public void testSendRequest() throws Exception {
-		EtcdResponse respGetValue = EtcdUtil.createBasicRequest("http://localhost:4001", "/asa/lb", "/eep").uuid("/823c8611-eeda-4bd1-b7d8-7dfa5c38801a").getValue("host").sendRequest();
+		EtcdResponse respGetValue = EtcdUtil.createBasicRequest("http://localhost:4001", "/asa/lb", "/eep").uuid("/f06b3434-3e52-44cd-83bb-b240bae9beda").longPoll().sendRequest();
 		System.out.println(respGetValue.getOriginalRequest().method);
 		System.out.println(respGetValue.getOriginalRequest().url);
 		System.out.println(respGetValue.getOriginalRequest().body);

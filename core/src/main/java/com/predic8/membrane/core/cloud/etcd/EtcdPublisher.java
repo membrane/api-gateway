@@ -24,7 +24,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 
 	private ApplicationContext context;
 	private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();
-	private int ttlInSeconds = 20; //300 normally, other for testing
+	private int ttlInSeconds = 20; // 300 normally, other for testing
 	boolean isRunning = true;
 	private String baseUrl;
 	private String baseKey;
@@ -70,7 +70,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 				}
 			}
 			while (isRunning) {
-				System.out.println("Refreshing ttl");
+				// System.out.println("Refreshing ttl");
 				for (String module : modulesToUUIDs.keySet()) {
 					for (String uuid : modulesToUUIDs.get(module)) {
 						EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
@@ -97,7 +97,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 	@Override
 	public void start() {
 		Router router = context.getBean(Router.class);
-		System.out.println("EtcdPublisher OUTPUT:");
+		// System.out.println("EtcdPublisher OUTPUT:");
 		for (Rule rule : router.getRuleManager().getRules()) {
 			if (rule instanceof ServiceProxy) {
 				ServiceProxy sp = (ServiceProxy) rule;
@@ -138,10 +138,9 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 				if (!modulesToUUIDs.containsKey(path)) {
 					modulesToUUIDs.put(path, new ArrayList<String>());
 				}
-				
-				
-				System.out.println("UUID: " + uuid);
-				
+
+				// System.out.println("UUID: " + uuid);
+
 				modulesToUUIDs.get(path).add(uuid);
 			}
 		}
@@ -154,7 +153,8 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 					for (String uuid : modulesToUUIDs.get(module)) {
 						EtcdResponse respUnregisterProxy = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
 								.uuid(uuid).deleteDir().sendRequest();
-						// this is probably unneeded as the etcd data has ttl set and will autodelete after the ttl
+						// this is probably unneeded as the etcd data has ttl
+						// set and will autodelete after the ttl
 					}
 				}
 			}

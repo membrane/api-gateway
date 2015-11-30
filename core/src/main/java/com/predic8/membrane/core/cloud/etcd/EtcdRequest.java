@@ -45,6 +45,8 @@ public class EtcdRequest {
 	// boolean deleteDir = false;
 	String isDir = "";
 	String prevExist = "";
+	String longPoll = "";
+	String recursiveLongPoll = "";
 
 	public EtcdRequest() {
 	}
@@ -63,16 +65,15 @@ public class EtcdRequest {
 		ip("localhost").port("4001");
 		return this;
 	}
-	
-	public EtcdRequest url(String url)
-	{
+
+	public EtcdRequest url(String url) {
 		URL u;
 		try {
 			u = new URL(url);
 			ip(u.getHost()).port(Integer.toString(u.getPort()));
 		} catch (MalformedURLException e) {
 		}
-		
+
 		return this;
 	}
 
@@ -148,6 +149,17 @@ public class EtcdRequest {
 		return ttl(seconds);
 	}
 
+	public EtcdRequest longPoll() {
+		this.method = MethodType.GET;
+		this.longPoll = "wait=true";
+		return this;
+	}
+
+	public EtcdRequest longPollRecursive() {
+		this.recursiveLongPoll = "recursive=true";
+		return longPoll();
+	}
+
 	public EtcdResponse sendRequest() {
 		Exchange requestExc = null;
 		try {
@@ -193,7 +205,8 @@ public class EtcdRequest {
 
 	protected EtcdRequest createPutRequest() {
 		StringBuilder builder = new StringBuilder();
-		builder.append(httpPrefix).append(ip).append(port).append(root).append(baseKey).append(module).append(uuid).append(key);
+		builder.append(httpPrefix).append(ip).append(port).append(root).append(baseKey).append(module).append(uuid)
+				.append(key);
 		url = builder.toString();
 		builder.setLength(0);
 
@@ -224,6 +237,16 @@ public class EtcdRequest {
 		}
 	}
 
+	private void addQueries(StringBuilder builder, String... queries) {
+		if (queries.length == 0) {
+			return;
+		}
+		builder.append("?" + queries[0]);
+		for (int i = 1; i < queries.length; i++) {
+			builder.append("&" + queries[i]);
+		}
+	}
+
 	protected EtcdRequest createPostRequest() {
 		// TODO Auto-generated method stub
 		return this;
@@ -243,7 +266,9 @@ public class EtcdRequest {
 
 	protected EtcdRequest createGetRequest() {
 		StringBuilder builder = new StringBuilder();
-		builder.append(httpPrefix).append(ip).append(port).append(root).append(baseKey).append(module).append(uuid).append(key);
+		builder.append(httpPrefix).append(ip).append(port).append(root).append(baseKey).append(module).append(uuid)
+				.append(key);
+		addQueries(builder, longPoll, recursiveLongPoll);
 		url = builder.toString();
 		body = "";
 		return this;
