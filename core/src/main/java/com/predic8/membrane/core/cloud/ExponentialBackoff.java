@@ -1,6 +1,5 @@
 package com.predic8.membrane.core.cloud;
 
-import org.apache.http.conn.HttpHostConnectException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
