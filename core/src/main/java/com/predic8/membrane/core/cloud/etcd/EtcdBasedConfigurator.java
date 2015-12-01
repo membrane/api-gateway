@@ -1,6 +1,5 @@
 package com.predic8.membrane.core.cloud.etcd;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,16 +11,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.ContextStartedEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Component;
-
-import com.fasterxml.jackson.core.JsonParseException;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.HeaderFilterInterceptor.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
@@ -35,21 +27,19 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	private String baseUrl;
 	private String baseKey;
 	private Router router;
-	private boolean isRunning = true;
 	private HashSet<EtcdNodeInformation> runningNodes = new HashSet<EtcdNodeInformation>();
 	private HashMap<EtcdNodeInformation, ServiceProxy> runningProxies = new HashMap<EtcdNodeInformation, ServiceProxy>();
 	private Thread nodeRefreshThread = new Thread(new Runnable() {
 		@Override
 		public void run() {
-			// TODO: interrupted, stop() etc
-			while (isRunning) {
+			while (true) {
 				// System.out.println("Refreshing nodes");
 				EtcdResponse respWaitForChange = EtcdUtil.createBasicRequest(baseUrl, baseKey, "").longPollRecursive()
 						.sendRequest();
 				if (!EtcdUtil.checkOK(respWaitForChange)) {
 					log.warn("Could not contact etcd at " + baseUrl);
 					// TODO: service proxies loeschen, nach timeout wieder versuchen
-					throw new RuntimeException();
+					//throw new RuntimeException();
 				}
 				handleContextRefresh(null);
 			}
@@ -199,6 +189,12 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 
 	@Override
 	public void stop() {
+		nodeRefreshThread.interrupt();
+		try {
+			nodeRefreshThread.join();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 
 	}
 
