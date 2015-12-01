@@ -211,7 +211,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	}
 
 	private byte[] xml2json(InputStream xmlResp, Map<String, String> properties) throws Exception {
-		return getTransformer("classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl", true).
+		return getTransformer("classpath:/com/predic8/membrane/core/interceptor/rest/xml2json.xsl").
 				transform(new StreamSource(xmlResp), properties);
 	}
 

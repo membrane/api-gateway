@@ -41,13 +41,8 @@ public class XSLTTransformer {
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final String styleSheet;
 
-	public XSLTTransformer(String styleSheet, final Router router, final int concurrency, boolean requiresXSLT_2_0) throws Exception {
-		TransformerFactory fac2 = TransformerFactory.newInstance();
-		if (requiresXSLT_2_0) {
-			// TODO: is there a way to find out whether fac2 supports XSLT 2.0?
-			fac2 = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null);
-		}
-		fac = fac2;
+	public XSLTTransformer(String styleSheet, final Router router, final int concurrency) throws Exception {
+		fac = TransformerFactory.newInstance();
 
 		this.styleSheet = styleSheet;
 		log.debug("using " + concurrency + " parallel transformer instances for " + styleSheet);
