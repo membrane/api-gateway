@@ -208,8 +208,9 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
 
-		router.getRuleManager().removeRule(
-				RuleUtil.findRuleByIdentifier(router, params.get("name")));
+		Rule rule = RuleUtil.findRuleByIdentifier(router, params.get("name"));
+		if (rule != null)
+			router.getRuleManager().removeRule(rule);
 		return respond(getServiceProxyPage(params, relativeRootPath));
 	}
 
