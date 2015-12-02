@@ -1,3 +1,17 @@
+/* Copyright 2015 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core.cloud.etcd;
 
 import java.util.ArrayList;
@@ -10,16 +24,14 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.cloud.ExponentialBackoff;
-import com.predic8.membrane.core.cloud.ExponentialBackoff.Job;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
-
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
 
 @MCElement(name = "etcdBasedConfigurator")
 public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle {
@@ -33,39 +45,16 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	private Router router;
 	private HashSet<EtcdNodeInformation> runningNodes = new HashSet<EtcdNodeInformation>();
 	private HashMap<EtcdNodeInformation, ServiceProxy> runningProxies = new HashMap<EtcdNodeInformation, ServiceProxy>();
-	private int retryDelayMin = 10 * 1000;
-	private int retryDelayMax = 10 * 60 * 1000;
-	private double expDelayFactor = 2.0d;
-	private Job longPollRecursiveEtcd = new Job() {
-
-		@Override
-		public boolean run() throws Exception {
-			EtcdResponse respWaitForChange = EtcdUtil.createBasicRequest(baseUrl, baseKey, "").longPollRecursive()
-					.sendRequest();
-			if (!EtcdUtil.checkOK(respWaitForChange)) {
-				log.warn("Could not contact etcd at " + baseUrl);
-				return false;
-			}
-			respWaitForChange.waitForResponse();
-			return true;
-
-		}
-	};
+	private int waitTimeUntilLongPollAgain = 1000;
 
 	private Thread nodeRefreshThread = new Thread(new Runnable() {
 		@Override
 		public void run() {
 			while (true) {
-				System.out.println("Refreshing nodes");
-				try {
-					ExponentialBackoff.retryAfter(retryDelayMin, retryDelayMax, expDelayFactor, "Long polling on etcd",
-							longPollRecursiveEtcd);
-					System.out.println("long polling worked");
-				} catch (InterruptedException ignored) {
-					System.out.println("exc");
-				}
+				// System.out.println("Refreshing nodes");
 				try {
 					setUpServiceProxies(getConfigFromEtcd());
+					Thread.sleep(waitTimeUntilLongPollAgain);
 				} catch (Exception ignored) {
 				}
 			}
@@ -117,21 +106,21 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		return false;
 	}
 
-	@EventListener({ContextRefreshedEvent.class})
+	@EventListener({ ContextRefreshedEvent.class })
 	@Override
 	public void start() {
 		if (router == null) {
 			if (context == null)
-				throw new IllegalStateException("EtcdBasedConfigurator requires a Router. Option 1 is to call setRouter(). Option 2 is setApplicationContext() and the EBC will try to use the only Router available.");
+				throw new IllegalStateException(
+						"EtcdBasedConfigurator requires a Router. Option 1 is to call setRouter(). Option 2 is setApplicationContext() and the EBC will try to use the only Router available.");
 			router = context.getBean(Router.class);
 		}
-		// System.out.println("Starting configurator");
-
 		try {
-			setUpServiceProxies(getConfigFromEtcd());
 		} catch (Exception ignored) {
 		}
-		nodeRefreshThread.start();
+		if (!nodeRefreshThread.isAlive()) {
+			nodeRefreshThread.start();
+		}
 	}
 
 	private void setUpServiceProxies(ArrayList<EtcdNodeInformation> nodes) throws Exception {
@@ -166,8 +155,10 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	}
 
 	private void setUpServiceProxy(EtcdNodeInformation node) {
-		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("*", "*", node.getModule(), port), node.getTargetHost(),
-				Integer.parseInt(node.getTargetPort()));
+		ServiceProxyKey key = new ServiceProxyKey("*", "*", node.getModule(), port);
+		key.setUsePathPattern(true);
+		key.setPathRegExp(false);
+		ServiceProxy sp = new ServiceProxy(key, node.getTargetHost(), Integer.parseInt(node.getTargetPort()));
 		try {
 			sp.init(router);
 			router.add(sp);
@@ -217,7 +208,8 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 					}
 					String targetHost = respHost.getValue();
 
-					EtcdNodeInformation node = new EtcdNodeInformation(module, uuid, targetHost, targetPort, targetName);
+					EtcdNodeInformation node = new EtcdNodeInformation(module, uuid, targetHost, targetPort,
+							targetName);
 					if (node.isValid()) {
 						nodes.add(node);
 					}

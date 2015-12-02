@@ -1,3 +1,17 @@
+/* Copyright 2015 predic8 GmbH, www.predic8.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License. */
+
 package com.predic8.membrane.core.cloud.etcd;
 
 import java.net.MalformedURLException;
@@ -46,6 +60,7 @@ public class EtcdRequest {
 	String prevExist = "";
 	String longPoll = "";
 	String recursiveLongPoll = "";
+	String waitIndex = "";
 
 	public EtcdRequest() {
 	}
@@ -159,6 +174,11 @@ public class EtcdRequest {
 		return longPoll();
 	}
 
+	public EtcdRequest longPollRecursive(long index) {
+		this.waitIndex = "waitIndex=" + index;
+		return longPollRecursive();
+	}
+
 	public EtcdResponse sendRequest() {
 		Exchange requestExc = null;
 		try {
@@ -236,9 +256,13 @@ public class EtcdRequest {
 		if (queries.length == 0) {
 			return;
 		}
-		builder.append("?" + queries[0]);
+		if (!queries[0].equals("")) {
+			builder.append("?" + queries[0]);
+		}
 		for (int i = 1; i < queries.length; i++) {
-			builder.append("&" + queries[i]);
+			if (!queries[i].equals("")) {
+				builder.append("&" + queries[i]);
+			}
 		}
 	}
 
@@ -263,7 +287,7 @@ public class EtcdRequest {
 		StringBuilder builder = new StringBuilder();
 		builder.append(httpPrefix).append(ip).append(port).append(root).append(baseKey).append(module).append(uuid)
 				.append(key);
-		addQueries(builder, longPoll, recursiveLongPoll);
+		addQueries(builder, longPoll, recursiveLongPoll, waitIndex);
 		url = builder.toString();
 		body = "";
 		return this;
