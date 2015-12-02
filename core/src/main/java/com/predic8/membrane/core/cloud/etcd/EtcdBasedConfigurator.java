@@ -18,6 +18,9 @@ import com.predic8.membrane.core.cloud.ExponentialBackoff.Job;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+
 @MCElement(name = "etcdBasedConfigurator")
 public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle {
 
@@ -114,9 +117,14 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		return false;
 	}
 
+	@EventListener({ContextRefreshedEvent.class})
 	@Override
 	public void start() {
-		router = context.getBean(Router.class);
+		if (router == null) {
+			if (context == null)
+				throw new IllegalStateException("EtcdBasedConfigurator requires a Router. Option 1 is to call setRouter(). Option 2 is setApplicationContext() and the EBC will try to use the only Router available.");
+			router = context.getBean(Router.class);
+		}
 		// System.out.println("Starting configurator");
 
 		try {
@@ -132,6 +140,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 
 			if (node.isValid()) {
 				if (!runningNodes.contains(node)) {
+					log.info("Creating " + node);
 					setUpServiceProxy(node);
 				}
 				newRunningNodes.add(node);
@@ -144,6 +153,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	private void cleanUpNotRunningUuuids(HashSet<EtcdNodeInformation> newRunningNodes) {
 		for (EtcdNodeInformation node : runningNodes) {
 			if (!newRunningNodes.contains(node)) {
+				log.info("Destroying " + node);
 				shutDownRunningServiceProxy(node);
 			}
 		}
@@ -159,6 +169,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		ServiceProxy sp = new ServiceProxy(new ServiceProxyKey("*", "*", node.getModule(), port), node.getTargetHost(),
 				Integer.parseInt(node.getTargetPort()));
 		try {
+			sp.init(router);
 			router.add(sp);
 			runningProxies.put(node, sp);
 		} catch (Exception e) {
@@ -168,48 +179,52 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 
 	private ArrayList<EtcdNodeInformation> getConfigFromEtcd() {
 		ArrayList<EtcdNodeInformation> nodes = new ArrayList<EtcdNodeInformation>();
+		try {
 
-		EtcdResponse respAvailableModules = EtcdUtil.createBasicRequest(baseUrl, baseKey, "").sendRequest();
-		if (!EtcdUtil.checkOK(respAvailableModules)) {
-			return nodes;
-		}
-		ArrayList<String> availableModules = respAvailableModules.getDirectories();
-		for (String module : availableModules) {
-			EtcdResponse respAvailableServicesForModule = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
-					.sendRequest();
-			if (!EtcdUtil.checkOK(respAvailableServicesForModule)) {
+			EtcdResponse respAvailableModules = EtcdUtil.createBasicRequest(baseUrl, baseKey, "").sendRequest();
+			if (!EtcdUtil.checkOK(respAvailableModules)) {
 				return nodes;
 			}
-			ArrayList<String> availableUUIDs = respAvailableServicesForModule.getDirectories();
-			for (String uuid : availableUUIDs) {
-
-				EtcdResponse respName = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
-						.getValue("name").sendRequest();
-				if (!EtcdUtil.checkOK(respName)) {
-					return nodes;
-
-				}
-				String targetName = respName.getValue();
-
-				EtcdResponse respPort = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
-						.getValue("port").sendRequest();
-				if (!EtcdUtil.checkOK(respPort)) {
+			ArrayList<String> availableModules = respAvailableModules.getDirectories();
+			for (String module : availableModules) {
+				EtcdResponse respAvailableServicesForModule = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
+						.sendRequest();
+				if (!EtcdUtil.checkOK(respAvailableServicesForModule)) {
 					return nodes;
 				}
-				String targetPort = respPort.getValue();
+				ArrayList<String> availableUUIDs = respAvailableServicesForModule.getDirectories();
+				for (String uuid : availableUUIDs) {
 
-				EtcdResponse respHost = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
-						.getValue("host").sendRequest();
-				if (!EtcdUtil.checkOK(respHost)) {
-					return nodes;
-				}
-				String targetHost = respHost.getValue();
+					EtcdResponse respName = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
+							.getValue("name").sendRequest();
+					if (!EtcdUtil.checkOK(respName)) {
+						return nodes;
 
-				EtcdNodeInformation node = new EtcdNodeInformation(module, uuid, targetHost, targetPort, targetName);
-				if (node.isValid()) {
-					nodes.add(node);
+					}
+					String targetName = respName.getValue();
+
+					EtcdResponse respPort = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
+							.getValue("port").sendRequest();
+					if (!EtcdUtil.checkOK(respPort)) {
+						return nodes;
+					}
+					String targetPort = respPort.getValue();
+
+					EtcdResponse respHost = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
+							.getValue("host").sendRequest();
+					if (!EtcdUtil.checkOK(respHost)) {
+						return nodes;
+					}
+					String targetHost = respHost.getValue();
+
+					EtcdNodeInformation node = new EtcdNodeInformation(module, uuid, targetHost, targetPort, targetName);
+					if (node.isValid()) {
+						nodes.add(node);
+					}
 				}
 			}
+		} catch (Exception e) {
+			log.warn("Error retrieving base info from etcd.");
 		}
 		return nodes;
 	}
@@ -230,4 +245,11 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		context = arg0;
 	}
 
+	public Router getRouter() {
+		return router;
+	}
+
+	public void setRouter(Router router) {
+		this.router = router;
+	}
 }

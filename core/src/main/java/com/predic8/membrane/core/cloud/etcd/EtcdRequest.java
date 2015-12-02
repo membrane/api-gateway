@@ -193,11 +193,7 @@ public class EtcdRequest {
 		try {
 			response = client.call(requestExc).getResponse();
 		} catch (Exception e) {
-			// e.printStackTrace();
-			throw new RuntimeException();
-		}
-		if (response == null) {
-			throw new RuntimeException();
+			throw new RuntimeException(e);
 		}
 		return new EtcdResponse(this, response);
 	}

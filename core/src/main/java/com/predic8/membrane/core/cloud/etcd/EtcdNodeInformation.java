@@ -118,4 +118,9 @@ public class EtcdNodeInformation {
 			return false;
 		return true;
 	}
+
+	@Override
+	public String toString() {
+		return "[EtcdNodeInformation module=" + module + ", uuid=" + uuid + ", targetHost=" + targetHost + ", targetPort=" + targetPort + ", name=" + name + "]";
+	}
 }

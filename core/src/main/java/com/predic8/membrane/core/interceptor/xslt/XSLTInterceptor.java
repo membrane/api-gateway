@@ -66,7 +66,7 @@ public class XSLTInterceptor extends AbstractInterceptor {
 	@Override
 	public void init() throws Exception {
 		int concurrency = Runtime.getRuntime().availableProcessors() * 2;
-		xsltTransformer = new XSLTTransformer(xslt, router, concurrency, false);
+		xsltTransformer = new XSLTTransformer(xslt, router, concurrency);
 	}
 
 	public String getXslt() {
