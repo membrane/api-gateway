@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.util.JSONPObject;
 import com.google.api.client.json.JsonObjectParser;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -25,12 +27,25 @@ public class EtcdRequestTest {
 
 	@Test
 	public void testSendRequest() throws Exception {
-		EtcdResponse respGetValue = EtcdUtil.createBasicRequest("http://localhost:4001", "/asa/lb", "/eep").uuid("/f06b3434-3e52-44cd-83bb-b240bae9beda").longPoll().sendRequest();
-		System.out.println(respGetValue.getOriginalRequest().method);
-		System.out.println(respGetValue.getOriginalRequest().url);
-		System.out.println(respGetValue.getOriginalRequest().body);
-		System.out.println(respGetValue.getOriginalResponse().getBodyAsStringDecoded());
-		System.out.println(respGetValue.getValue());
+		/*EtcdResponse respLongPoll = EtcdUtil.createBasicRequest("http://localhost:4001", "/asa/lb", "/eep").uuid("/5ba3349b-86c3-4d6c-9c4e-ae5800bbad12").longPoll().sendRequest();
+		System.out.println(respLongPoll.getOriginalRequest().method);
+		System.out.println(respLongPoll.getOriginalRequest().url);
+		System.out.println(respLongPoll.getOriginalRequest().body);
+		System.out.println(respLongPoll.getOriginalResponse().getBodyAsStringDecoded());
+		System.out.println("---");*/
+		
+		EtcdResponse respLongPollRecursive = EtcdUtil.createBasicRequest("http://localhost:4001", "/asa/lb", "").longPollRecursive().sendRequest();
+		if(EtcdUtil.checkOK(respLongPollRecursive))
+		{
+			System.out.println("is ok");
+		}
+		System.out.println("Waiting");
+		respLongPollRecursive.waitForResponse();
+		System.out.println("Waiting done");
+		System.out.println(respLongPollRecursive.getOriginalRequest().method);
+		System.out.println(respLongPollRecursive.getOriginalRequest().url);
+		System.out.println(respLongPollRecursive.getOriginalRequest().body);
+		System.out.println(respLongPollRecursive.getOriginalResponse().getBodyAsStringDecoded());
 		System.out.println("---");
 		
 

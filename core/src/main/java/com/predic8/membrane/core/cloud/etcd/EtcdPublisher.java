@@ -2,6 +2,7 @@ package com.predic8.membrane.core.cloud.etcd;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
@@ -14,6 +15,8 @@ import org.springframework.context.Lifecycle;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.cloud.ExponentialBackoff;
+import com.predic8.membrane.core.cloud.ExponentialBackoff.Job;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 
@@ -23,9 +26,21 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 
 	private ApplicationContext context;
 	private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();
+	private HashSet<EtcdNodeInformation> nodesFromConfig = new HashSet<EtcdNodeInformation>();
 	private int ttlInSeconds = 20; // 300 normally, other for testing
 	private String baseUrl;
 	private String baseKey;
+	private Router router;
+	private int retryDelayMin = 10 * 1000;
+	private int retryDelayMax = 10 * 60 * 1000;
+	private double expDelayFactor = 2.0d;
+	private Job jobPublishToEtcd = new Job() {
+
+		@Override
+		public boolean run() throws Exception {
+			return publishToEtcd();
+		}
+	};
 
 	public String getBaseUrl() {
 		return baseUrl;
@@ -66,17 +81,21 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 					Thread.sleep(sleepTime);
 				}
 				while (true) {
-					// System.out.println("Refreshing ttl");
+					boolean connectionLost = false;
+					System.out.println("Refreshing ttl");
 					for (String module : modulesToUUIDs.keySet()) {
 						for (String uuid : modulesToUUIDs.get(module)) {
 							EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
 									.uuid(uuid).refreshTTL(ttlInSeconds).sendRequest();
 							if (!EtcdUtil.checkOK(respTTLDirRefresh)) {
 								log.warn("Could not contact etcd at " + baseUrl);
-								// TODO: nach timeout nochmal versuchen								
-								//throw new RuntimeException();
+								connectionLost = true;
 							}
 						}
+					}
+					if (connectionLost) {
+						ExponentialBackoff.retryAfter(retryDelayMin, retryDelayMax, expDelayFactor,
+								"Republish from thread after failed ttl refresh", jobPublishToEtcd);
 					}
 					Thread.sleep(sleepTime);
 				}
@@ -91,10 +110,8 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 		return false;
 	}
 
-	@Override
-	public void start() {
-		Router router = context.getBean(Router.class);
-		// System.out.println("EtcdPublisher OUTPUT:");
+	public void readConfig() {
+		nodesFromConfig.clear();
 		for (Rule rule : router.getRuleManager().getRules()) {
 			if (rule instanceof ServiceProxy) {
 				ServiceProxy sp = (ServiceProxy) rule;
@@ -107,39 +124,58 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 				String port = Integer.toString(sp.getPort());
 				String uuid = "/" + UUID.randomUUID().toString();
 				String host = "localhost";
-
-				EtcdResponse respTTLDirCreate = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).createDir(uuid)
-						.ttl(ttlInSeconds).sendRequest();
-				if (!EtcdUtil.checkOK(respTTLDirCreate)) {
-					throw new RuntimeException();
-				}
-
-				EtcdResponse respName = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
-						.setValue("name", name).sendRequest();
-				if (!EtcdUtil.checkOK(respName)) {
-					throw new RuntimeException();
-				}
-
-				EtcdResponse respPort = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
-						.setValue("port", port).sendRequest();
-				if (!EtcdUtil.checkOK(respPort)) {
-					throw new RuntimeException();
-				}
-
-				EtcdResponse respHost = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
-						.setValue("host", host).sendRequest();
-				if (!EtcdUtil.checkOK(respHost)) {
-					throw new RuntimeException();
-				}
-
-				if (!modulesToUUIDs.containsKey(path)) {
-					modulesToUUIDs.put(path, new ArrayList<String>());
-				}
-
-				// System.out.println("UUID: " + uuid);
-
-				modulesToUUIDs.get(path).add(uuid);
+				nodesFromConfig.add(new EtcdNodeInformation(path, uuid, host, port, name));
 			}
+		}
+	}
+
+	public boolean publishToEtcd() {
+		for (EtcdNodeInformation node : nodesFromConfig) {
+			String path = node.module;
+			String uuid = node.uuid;
+			String name = node.name;
+			String port = node.targetPort;
+			String host = node.targetHost;
+			EtcdResponse respTTLDirCreate = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).createDir(uuid)
+					.ttl(ttlInSeconds).sendRequest();
+			if (!EtcdUtil.checkOK(respTTLDirCreate)) {
+				return false;
+			}
+
+			EtcdResponse respName = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
+					.setValue("name", name).sendRequest();
+			if (!EtcdUtil.checkOK(respName)) {
+				return false;
+			}
+
+			EtcdResponse respPort = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
+					.setValue("port", port).sendRequest();
+			if (!EtcdUtil.checkOK(respPort)) {
+				return false;
+			}
+
+			EtcdResponse respHost = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
+					.setValue("host", host).sendRequest();
+			if (!EtcdUtil.checkOK(respHost)) {
+				return false;
+			}
+
+			if (!modulesToUUIDs.containsKey(path)) {
+				modulesToUUIDs.put(path, new ArrayList<String>());
+			}
+			modulesToUUIDs.get(path).add(uuid);
+		}
+		return true;
+	}
+
+	@Override
+	public void start() {
+		router = context.getBean(Router.class);
+		readConfig();
+		try {
+			ExponentialBackoff.retryAfter(retryDelayMin, retryDelayMax, expDelayFactor, "Publish to etcd",
+					jobPublishToEtcd);
+		} catch (InterruptedException ignored) {
 		}
 		ttlRefreshThread.start();
 	}
@@ -154,6 +190,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 		}
 		for (String module : modulesToUUIDs.keySet()) {
 			for (String uuid : modulesToUUIDs.get(module)) {
+				@SuppressWarnings("unused")
 				EtcdResponse respUnregisterProxy = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
 						.deleteDir().sendRequest();
 				// this is probably unneeded as the etcd data has ttl

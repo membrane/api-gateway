@@ -4,15 +4,30 @@ public class EtcdNodeInformation {
 	String module;
 	String uuid;
 	String targetHost;
-	int targetPort;
+	String targetPort;
 	String name;
 
-	public EtcdNodeInformation(String module, String uuid, String targetHost, int targetPort, String name) {
+	public EtcdNodeInformation(String module, String uuid, String targetHost, String targetPort, String name) {
 		this.module = module;
 		this.uuid = uuid;
 		this.targetHost = targetHost;
 		this.targetPort = targetPort;
 		this.name = name;
+	}
+
+	public boolean isValid() {
+		if (module == null) {
+			return false;
+		} else if (uuid == null) {
+			return false;
+		} else if (targetHost == null) {
+			return false;
+		} else if (targetPort == null) {
+			return false;
+		} else if (name == null) {
+			return false;
+		}
+		return true;
 	}
 
 	public String getModule() {
@@ -39,11 +54,11 @@ public class EtcdNodeInformation {
 		this.targetHost = targetHost;
 	}
 
-	public int getTargetPort() {
+	public String getTargetPort() {
 		return targetPort;
 	}
 
-	public void setTargetPort(int targetPort) {
+	public void setTargetPort(String targetPort) {
 		this.targetPort = targetPort;
 	}
 
@@ -60,6 +75,9 @@ public class EtcdNodeInformation {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((module == null) ? 0 : module.hashCode());
+		result = prime * result + ((name == null) ? 0 : name.hashCode());
+		result = prime * result + ((targetHost == null) ? 0 : targetHost.hashCode());
+		result = prime * result + ((targetPort == null) ? 0 : targetPort.hashCode());
 		result = prime * result + ((uuid == null) ? 0 : uuid.hashCode());
 		return result;
 	}
@@ -77,6 +95,21 @@ public class EtcdNodeInformation {
 			if (other.module != null)
 				return false;
 		} else if (!module.equals(other.module))
+			return false;
+		if (name == null) {
+			if (other.name != null)
+				return false;
+		} else if (!name.equals(other.name))
+			return false;
+		if (targetHost == null) {
+			if (other.targetHost != null)
+				return false;
+		} else if (!targetHost.equals(other.targetHost))
+			return false;
+		if (targetPort == null) {
+			if (other.targetPort != null)
+				return false;
+		} else if (!targetPort.equals(other.targetPort))
 			return false;
 		if (uuid == null) {
 			if (other.uuid != null)

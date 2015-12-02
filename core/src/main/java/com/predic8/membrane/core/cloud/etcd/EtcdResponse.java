@@ -56,6 +56,7 @@ public class EtcdResponse {
 		return result;
 	}
 
+	@SuppressWarnings("unchecked")
 	public ArrayList<String> getDirectories() {
 		JsonParser par = getParser(originalResponse.getBodyAsStringDecoded());
 
@@ -85,15 +86,13 @@ public class EtcdResponse {
 		}
 		return directories;
 	}
-	
-	public String getValue()
-	{
+
+	@SuppressWarnings("unchecked")
+	public String getValue() {
 		JsonParser par = getParser(originalResponse.getBodyAsStringDecoded());
 
-		String baseKey = originalRequest.baseKey;
-		String module = originalRequest.module;
 		String result = null;
-		
+
 		Map<String, Object> respData = null;
 		try {
 			respData = new ObjectMapper().readValue(par, Map.class);
@@ -107,12 +106,19 @@ public class EtcdResponse {
 				result = nodeJson.get("value").toString();
 			}
 		}
-		
-		if(result == null)
-		{
+
+		if (result == null) {
 			throw new RuntimeException();
 		}
-		
+
 		return result;
+	}
+
+	public void waitForResponse() {
+		try {
+			originalResponse.readBody();
+		} catch (IOException ignored) {
+		}
+		//originalResponse.getBodyAsStringDecoded();
 	}
 }
