@@ -107,6 +107,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 						}
 					}
 					if (connectionLost) {
+						log.warn("Connection lost to etcd");
 						ExponentialBackoff.retryAfter(retryDelayMin, retryDelayMax, expDelayFactor,
 								"Republish from thread after failed ttl refresh", jobPublishToEtcd);
 					}

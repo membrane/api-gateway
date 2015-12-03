@@ -24,7 +24,7 @@ public class EtcdUtil {
 	}
 
 	public static boolean checkStatusCode(int minInc, int maxExc, EtcdResponse resp) {
-		if (!isInRange(minInc, maxExc, resp.getOriginalResponse().getStatusCode())) {
+		if (!isInRange(minInc, maxExc, resp.getStatusCode())) {
 			return false;
 		}
 		return true;
