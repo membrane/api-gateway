@@ -79,9 +79,12 @@
 		<gpg.keyname>5B8A65F6</gpg.keyname>
 		<javac.source>1.6</javac.source>
 		<javac.target>1.6</javac.target>
-		<jackson.version>2.6.1</jackson.version> <!-- This version is used by google-http-client-jackson2 -->
-		<powermock.version>1.6.2</powermock.version>
-		<spring.version>4.2.2.RELEASE</spring.version>
+		<jackson.version>2.6.3</jackson.version> <!-- This version is used by google-http-client-jackson2 -->
+		<powermock.version>1.6.3</powermock.version>
+		<spring.version>4.2.3.RELEASE</spring.version>
+		<jaxws.version>2.2.10</jaxws.version>
+		<slf4j.version>1.7.13</slf4j.version>
+		<felix.osgi.version>1.4.0</felix.osgi.version>
 	</properties>
 
 
@@ -110,17 +113,17 @@
 			<dependency>
 				<groupId>javax.activation</groupId>
 				<artifactId>activation</artifactId>
-				<version>1.1</version>
+				<version>1.1.1</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-cli</groupId>
 				<artifactId>commons-cli</artifactId>
-				<version>1.2</version>
+				<version>1.3.1</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-codec</groupId>
 				<artifactId>commons-codec</artifactId>
-				<version>1.7</version>
+				<version>1.10</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-dbcp</groupId>
@@ -135,7 +138,7 @@
 			<dependency>
 				<groupId>commons-fileupload</groupId>
 				<artifactId>commons-fileupload</artifactId>
-				<version>1.2.2</version>
+				<version>1.3.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
@@ -150,7 +153,7 @@
 			<dependency>
 				<groupId>commons-logging</groupId>
 				<artifactId>commons-logging</artifactId>
-				<version>1.1.1</version>
+				<version>1.2</version>
 			</dependency>
 			<dependency>
 				<groupId>commons-pool</groupId>
@@ -165,7 +168,7 @@
 			<dependency>
 				<groupId>org.codehaus.groovy</groupId>
 				<artifactId>groovy</artifactId>
-				<version>2.3.9</version>
+				<version>2.4.5</version>
 			</dependency>
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
@@ -182,7 +185,6 @@
 				<artifactId>jackson-databind</artifactId>
 				<version>${jackson.version}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>log4j</groupId>
 				<artifactId>log4j</artifactId>
@@ -212,8 +214,8 @@
 				<artifactId>spring-core</artifactId>
 				<version>${spring.version}</version>
 			</dependency>
-			<!-- Used nowhere (currently (2015-11-09)) -->
 			<dependency>
+				<!-- Used nowhere currently (2015-11-09) -->
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-expression</artifactId>
 				<version>${spring.version}</version>
@@ -226,12 +228,12 @@
 			<dependency>
 				<groupId>com.googlecode.jatl</groupId>
 				<artifactId>jatl</artifactId>
-				<version>0.1.0</version>
+				<version>0.2.2</version>
 			</dependency>
 			<dependency>
 				<groupId>com.github.fge</groupId>
 				<artifactId>json-schema-validator</artifactId>
-				<version>2.1.8</version>
+				<version>2.2.6</version>
 			</dependency>
 			<dependency>
 				<groupId>javax.servlet</groupId>
@@ -250,6 +252,7 @@
 				<version>1.2.2</version>
 			</dependency>
 			<dependency>
+				<!-- This package is not listed in the Maven Central Index for some reason... -->
 				<groupId>javax.annotation</groupId>
 				<artifactId>com.springsource.javax.annotation</artifactId>
 				<version>1.0.0</version>
@@ -257,23 +260,23 @@
 			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
-				<version>16.0.1</version>
+				<version>18.0</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.code.findbugs</groupId>
 				<artifactId>jsr305</artifactId>
-				<version>2.0.1</version>
+				<version>3.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
-				<version>4.11</version>
+				<version>4.12</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-core</artifactId>
-				<version>1.10.8</version>
+				<version>1.10.19</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
@@ -296,57 +299,58 @@
 			<dependency>
 				<groupId>xmlunit</groupId>
 				<artifactId>xmlunit</artifactId>
-				<version>1.3</version>
+				<version>1.6</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.derby</groupId>
 				<artifactId>derbynet</artifactId>
-				<version>10.8.2.2</version>
+				<version>10.12.1.1</version>
 			</dependency>
 			<dependency>
 				<groupId>com.sun.xml.ws</groupId>
 				<artifactId>jaxws-rt</artifactId>
-				<version>2.1.7</version>
+				<version>${jaxws.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.sun.xml.ws</groupId>
 				<artifactId>jaxws-tools</artifactId>
-				<version>2.1.7</version>
+				<version>${jaxws.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-api</artifactId>
-				<version>1.7.10</version>
+				<version>${slf4j.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-log4j12</artifactId>
-				<version>1.7.10</version>
+				<version>${slf4j.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.eclipse.core</groupId>
 				<artifactId>runtime</artifactId>
 				<version>3.3.100-v20070530</version>
+				<!--<version>3.10.0-v20140318-2214</version>-->
 			</dependency>
 			<dependency>
 				<groupId>xalan</groupId>
 				<artifactId>xalan</artifactId>
-				<version>2.7.1</version>
+				<version>2.7.2</version>
 			</dependency>
 			<dependency>
 				<groupId>com.floreysoft</groupId>
 				<artifactId>jmte</artifactId>
-				<version>3.1.1</version>
+				<version>3.2.0</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.api-client</groupId>
 				<artifactId>google-api-client</artifactId>
-				<version>1.20.0</version>
+				<version>1.21.0</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.http-client</groupId>
 				<artifactId>google-http-client-jackson2</artifactId> <!-- note the 2 at the end -->
-				<version>1.20.0</version>
+				<version>1.21.0</version>
 			</dependency>
 			<dependency>
 				<groupId>javax.mail</groupId>
@@ -356,32 +360,32 @@
 			<dependency>
 				<groupId>org.apache.aries.blueprint</groupId>
 				<artifactId>blueprint-parser</artifactId>
-				<version>1.0.0</version>
+				<version>1.3.2</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.aries.blueprint</groupId>
 				<artifactId>org.apache.aries.blueprint.api</artifactId>
-				<version>1.0.0</version>
+				<version>1.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.osgi.core</artifactId>
-				<version>1.0.1</version>
+				<version>${felix.osgi.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>org.osgi.compendium</artifactId>
-				<version>1.0.1</version>
+				<version>${felix.osgi.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.swagger</groupId>
 				<artifactId>swagger-parser</artifactId>
-				<version>1.0.10</version>
+				<version>1.0.13</version>
 			</dependency>
 			<dependency>
 				<groupId>net.sf.saxon</groupId>
 				<artifactId>Saxon-HE</artifactId>
-				<version>9.4</version>
+				<version>9.7.0-1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.bouncycastle</groupId>
@@ -480,6 +484,16 @@
 						<tag>
 							<name>example</name>
 							<head>Example</head>
+							<placement>a</placement>
+						</tag>
+						<tag>
+							<name>explanation</name>
+							<head>Explanation</head>
+							<placement>a</placement>
+						</tag>
+						<tag>
+							<name>topic</name>
+							<head>Topic</head>
 							<placement>a</placement>
 						</tag>
 					</tags>
