@@ -60,6 +60,7 @@
 					<ruleMatching />
 					<exchangeStore />
 					<dispatching />
+					<reverseProxying />
 					<userFeature />
 					<httpClient />
 	    		</transport>
