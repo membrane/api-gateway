@@ -82,7 +82,6 @@
 		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.2.2</version>
 				<configuration>
 					<descriptors>
 						<descriptor>src/assembly/distribution.xml</descriptor>
@@ -108,7 +107,6 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>2.11</version>
 				<configuration>
 					<failIfNoTests>false</failIfNoTests>
 					<test>**/ExampleUnitTests.java</test>
@@ -116,7 +114,6 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-failsafe-plugin</artifactId>
-				<version>2.11</version>
 				<executions>
 					<execution>
 						<goals>
