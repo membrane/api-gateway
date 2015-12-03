@@ -17,7 +17,6 @@ package com.predic8.membrane.core.cloud.etcd;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -30,6 +29,9 @@ import org.springframework.context.event.EventListener;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.interceptor.balancer.Balancer;
+import com.predic8.membrane.core.interceptor.balancer.LoadBalancingInterceptor;
+import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 
@@ -43,9 +45,9 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	private String baseUrl;
 	private String baseKey;
 	private Router router;
-	private HashSet<EtcdNodeInformation> runningNodes = new HashSet<EtcdNodeInformation>();
-	private HashMap<EtcdNodeInformation, ServiceProxy> runningProxies = new HashMap<EtcdNodeInformation, ServiceProxy>();
-	private int waitTimeUntilLongPollAgain = 1000;
+	private HashMap<String, ServiceProxy> runningServiceProxyForModule = new HashMap<String, ServiceProxy>();
+	private HashMap<String, HashSet<EtcdNodeInformation>> runningNodesForModule = new HashMap<String, HashSet<EtcdNodeInformation>>();
+	private int waitTimeUntilPollAgain = 1000;
 
 	private Thread nodeRefreshThread = new Thread(new Runnable() {
 		@Override
@@ -54,7 +56,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 				// System.out.println("Refreshing nodes");
 				try {
 					setUpServiceProxies(getConfigFromEtcd());
-					Thread.sleep(waitTimeUntilLongPollAgain);
+					Thread.sleep(waitTimeUntilPollAgain);
 				} catch (Exception ignored) {
 				}
 			}
@@ -125,47 +127,86 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 
 	private void setUpServiceProxies(ArrayList<EtcdNodeInformation> nodes) throws Exception {
 		HashSet<EtcdNodeInformation> newRunningNodes = new HashSet<EtcdNodeInformation>();
-		for (EtcdNodeInformation node : nodes) {
-
-			if (node.isValid()) {
-				if (!runningNodes.contains(node)) {
-					log.info("Creating " + node);
-					setUpServiceProxy(node);
+		if (nodes.size() > 0) {
+			for (EtcdNodeInformation node : nodes) {
+				String currentModule = node.getModule();
+				if (!runningServiceProxyForModule.containsKey(currentModule)) {
+					setUpModuleServiceProxy(currentModule + " cluster", port, currentModule);
+					runningNodesForModule.put(currentModule, new HashSet<EtcdNodeInformation>());
+				}
+				if (!runningNodesForModule.get(currentModule).contains(node)) {
+					setUpClusterNode(node);
 				}
 				newRunningNodes.add(node);
 			}
 		}
 		cleanUpNotRunningUuuids(newRunningNodes);
-		runningNodes = newRunningNodes;
+	}
+
+	private void setUpClusterNode(EtcdNodeInformation node) {
+		log.info("Creating " + node);
+		ServiceProxy sp = runningServiceProxyForModule.get(node.getModule());
+		LoadBalancingInterceptor lbi = (LoadBalancingInterceptor) sp.getInterceptors().get(0);
+		lbi.getClusterManager().getClusters().get(0)
+				.nodeUp(new Node(node.getTargetHost(), Integer.parseInt(node.getTargetPort())));
+		runningNodesForModule.get(node.getModule()).add(node);
+	}
+
+	private ServiceProxy setUpModuleServiceProxy(String name, int port, String path) {
+		log.info("Creating serviceProxy for module: " + path);
+		ServiceProxyKey key = new ServiceProxyKey("*", "*", path, port);
+		key.setUsePathPattern(true);
+		key.setPathRegExp(false);
+		ServiceProxy sp = new ServiceProxy(key, null, 0);
+
+		sp.getInterceptors().add(new LoadBalancingInterceptor());
+
+		try {
+			sp.init(router);
+			router.add(sp);
+			runningServiceProxyForModule.put(path, sp);
+		} catch (Exception ignored) {
+		}
+		return sp;
 	}
 
 	private void cleanUpNotRunningUuuids(HashSet<EtcdNodeInformation> newRunningNodes) {
-		for (EtcdNodeInformation node : runningNodes) {
-			if (!newRunningNodes.contains(node)) {
-				log.info("Destroying " + node);
-				shutDownRunningServiceProxy(node);
+		HashSet<EtcdNodeInformation> currentlyRunningNodes = new HashSet<EtcdNodeInformation>();
+		for (String module : runningNodesForModule.keySet()) {
+			currentlyRunningNodes.addAll(runningNodesForModule.get(module));
+		}
+		for (EtcdNodeInformation node : newRunningNodes) {
+			currentlyRunningNodes.remove(node);
+		}
+		for (EtcdNodeInformation node : currentlyRunningNodes) {
+			shutdownRunningClusterNode(node);
+		}
+
+		HashSet<String> modules = new HashSet<String>();
+		for (String module : runningNodesForModule.keySet()) {
+			modules.add(module);
+		}
+		for (String module : modules) {
+			if (runningNodesForModule.get(module).size() == 0) {
+				runningNodesForModule.remove(module);
+				shutDownRunningModuleServiceProxy(module);
 			}
 		}
 	}
 
-	private void shutDownRunningServiceProxy(EtcdNodeInformation node) {
-		ServiceProxy sp = runningProxies.get(node);
+	private void shutDownRunningModuleServiceProxy(String module) {
+		log.info("Destroying serviceProxy for module: " + module);
+		ServiceProxy sp = runningServiceProxyForModule.get(module);
 		router.getRuleManager().removeRule(sp);
-		runningProxies.remove(node);
+		runningServiceProxyForModule.remove(module);
 	}
 
-	private void setUpServiceProxy(EtcdNodeInformation node) {
-		ServiceProxyKey key = new ServiceProxyKey("*", "*", node.getModule(), port);
-		key.setUsePathPattern(true);
-		key.setPathRegExp(false);
-		ServiceProxy sp = new ServiceProxy(key, node.getTargetHost(), Integer.parseInt(node.getTargetPort()));
-		try {
-			sp.init(router);
-			router.add(sp);
-			runningProxies.put(node, sp);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	private void shutdownRunningClusterNode(EtcdNodeInformation node) {
+		log.info("Destroying " + node);
+		ServiceProxy sp = runningServiceProxyForModule.get(node.getModule());
+		LoadBalancingInterceptor lbi = (LoadBalancingInterceptor) sp.getInterceptors().get(0);
+		lbi.getClusterManager().removeNode(Balancer.DEFAULT_NAME, baseUrl, port);
+		runningNodesForModule.get(node.getModule()).remove(node);
 	}
 
 	private ArrayList<EtcdNodeInformation> getConfigFromEtcd() {
@@ -216,6 +257,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 				}
 			}
 		} catch (Exception e) {
+			e.printStackTrace();
 			log.warn("Error retrieving base info from etcd.");
 		}
 		return nodes;

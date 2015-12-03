@@ -31,7 +31,8 @@ public class EtcdResponse {
 	private static JsonFactory jsonFac = new JsonFactory();
 
 	private EtcdRequest originalRequest;
-	private Response originalResponse;
+	private int statusCode = 0;
+	private String body;
 
 	public EtcdRequest getOriginalRequest() {
 		return originalRequest;
@@ -41,17 +42,10 @@ public class EtcdResponse {
 		this.originalRequest = originalRequest;
 	}
 
-	public Response getOriginalResponse() {
-		return originalResponse;
-	}
-
-	public void setOriginalResponse(Response originalResponse) {
-		this.originalResponse = originalResponse;
-	}
-
 	public EtcdResponse(EtcdRequest originalRequest, Response resp) {
 		this.originalRequest = originalRequest;
-		originalResponse = resp;
+		statusCode = resp.getStatusCode();
+		body = resp.getBodyAsStringDecoded();
 	}
 
 	private JsonParser getParser(String json) {
@@ -72,7 +66,7 @@ public class EtcdResponse {
 
 	@SuppressWarnings("unchecked")
 	public ArrayList<String> getDirectories() {
-		JsonParser par = getParser(originalResponse.getBodyAsStringDecoded());
+		JsonParser par = getParser(body);
 
 		String baseKey = originalRequest.baseKey;
 		String module = originalRequest.module;
@@ -105,17 +99,9 @@ public class EtcdResponse {
 		return get("value");
 	}
 
-	public void waitForResponse() {
-		try {
-			originalResponse.readBody();
-		} catch (IOException ignored) {
-		}
-		// originalResponse.getBodyAsStringDecoded();
-	}
-
 	@SuppressWarnings("unchecked")
 	public String get(String name) {
-		JsonParser par = getParser(originalResponse.getBodyAsStringDecoded());
+		JsonParser par = getParser(body);
 
 		String result = null;
 
@@ -138,5 +124,21 @@ public class EtcdResponse {
 		}
 
 		return result;
+	}
+
+	public int getStatusCode() {
+		return statusCode;
+	}
+
+	public void setStatusCode(int statuscode) {
+		this.statusCode = statuscode;
+	}
+
+	public String getBody() {
+		return body;
+	}
+
+	public void setBody(String body) {
+		this.body = body;
 	}
 }
