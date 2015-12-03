@@ -202,7 +202,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 	private static MediaType[] supportedTypes = Header.convertStringsToMediaType(new String[] { MimeType.TEXT_XML, MimeType.APPLICATION_JSON_UTF8 });
 
 	private void convertResponseToJSONIfNecessary(Header requestHeader, Mapping mapping, Response response, Map<String, String> properties) throws IOException, Exception {
-		boolean inputIsXml = MimeType.TEXT_XML_UTF8.equals(response.getHeader().getContentType());
+		boolean inputIsXml = response.isXML();
 		int wantedType = requestHeader.getBestAcceptedType(supportedTypes);
 		if (inputIsXml && wantedType >= 1) {
 			response.setBodyContent(xml2json(response.getBodyAsStreamDecoded(), properties));
