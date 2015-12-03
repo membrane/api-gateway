@@ -168,7 +168,7 @@
 			<dependency>
 				<groupId>org.codehaus.groovy</groupId>
 				<artifactId>groovy</artifactId>
-				<version>2.4.5</version>
+				<version>2.3.11</version>
 			</dependency>
 			<dependency>
 				<groupId>com.fasterxml.jackson.core</groupId>
@@ -260,7 +260,7 @@
 			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
-				<version>18.0</version>
+				<version>16.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>com.google.code.findbugs</groupId>
@@ -346,6 +346,13 @@
 				<groupId>com.google.api-client</groupId>
 				<artifactId>google-api-client</artifactId>
 				<version>1.21.0</version>
+				<exclusions>
+					<!-- Don't use the jdk5 backport for Guava -->
+					<exclusion>
+						<artifactId>guava-jdk5</artifactId>
+						<groupId>com.google.guava</groupId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>com.google.http-client</groupId>
