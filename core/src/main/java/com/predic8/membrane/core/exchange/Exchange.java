@@ -39,6 +39,8 @@ public class Exchange extends AbstractExchange {
 	public static final String HTTP_SERVLET_REQUEST = "HttpServletRequest";
 
 	public static final String ALLOW_WEBSOCKET = "use-websocket";
+	
+	public static final String TRACK_NODE_STATUS = "TRACK_NODE_STATUS";
 
 	private static Log log = LogFactory.getLog(Exchange.class.getName());
 
@@ -47,6 +49,10 @@ public class Exchange extends AbstractExchange {
 	private String originalHostHeader = "";
 
 	private Connection targetConnection;
+	
+	private int[] nodeStatusCodes;
+	
+	private Exception[] nodeExceptions;
 
 	private long id;
 
@@ -174,6 +180,20 @@ public class Exchange extends AbstractExchange {
 		}
 		return map;
 	}
+	
+	public void setNodeStatusCode(int tryCounter, int code){
+		if(nodeStatusCodes == null){
+			nodeStatusCodes = new int[getDestinations().size()];
+		}
+		nodeStatusCodes[tryCounter % getDestinations().size()] = code;
+	}
+	
+	public void setNodeException(int tryCounter, Exception e){
+		if(nodeExceptions == null){
+			nodeExceptions = new Exception[getDestinations().size()];
+		}
+		nodeExceptions[tryCounter % getDestinations().size()] = e;
+	}
 
 	@Override
 	public void detach() {
@@ -192,5 +212,21 @@ public class Exchange extends AbstractExchange {
 
 	public void setId(long id) {
 		this.id = id;
+	}
+
+	public int[] getNodeStatusCodes() {
+		return nodeStatusCodes;
+	}
+
+	public void setNodeStatusCodes(int[] nodeStatusCodes) {
+		this.nodeStatusCodes = nodeStatusCodes;
+	}
+
+	public Exception[] getNodeExceptions() {
+		return nodeExceptions;
+	}
+
+	public void setNodeExceptions(Exception[] nodeExceptions) {
+		this.nodeExceptions = nodeExceptions;
 	}
 }

@@ -201,6 +201,9 @@ public class HttpClient {
 					newProtocol = "CONNECT";
 				} else {
 					response = doCall(exc, con);
+					if((Boolean) exc.getProperty(Exchange.TRACK_NODE_STATUS)){
+						exc.setNodeStatusCode(counter, response.getStatusCode());
+					}
 					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToWebSocketsResponse(response)) {
 						log.debug("Upgrading to WebSocket protocol.");
 						newProtocol = "WebSocket";
@@ -254,6 +257,13 @@ public class HttpClient {
 			} catch (Exception e) {
 				logException(exc, counter, e);
 				exception = e;
+			}
+			finally	{
+				if((Boolean) exc.getProperty(Exchange.TRACK_NODE_STATUS)){			
+					if(exception != null){
+						exc.setNodeException(counter, exception);
+					}
+				}
 			}
 			counter++;
 			if (exc.getDestinations().size() == 1) {

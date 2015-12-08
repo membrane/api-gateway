@@ -24,6 +24,8 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -83,25 +85,27 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 
 	private Thread ttlRefreshThread = new Thread(new Runnable() {
 
-		boolean isFirstTime = true;
+		int sleepTime = (ttlInSeconds - 10) * 1000;
 
 		@Override
 		public void run() {
 			try {
-				int sleepTime = (ttlInSeconds - 10) * 1000;
-				if (isFirstTime) {
-					isFirstTime = false;
-					Thread.sleep(sleepTime);
-				}
 				while (true) {
 					boolean connectionLost = false;
 					// System.out.println("Refreshing ttl");
 					for (String module : modulesToUUIDs.keySet()) {
 						for (String uuid : modulesToUUIDs.get(module)) {
+							try
+							{
 							EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
 									.uuid(uuid).refreshTTL(ttlInSeconds).sendRequest();
 							if (!EtcdUtil.checkOK(respTTLDirRefresh)) {
 								log.warn("Could not contact etcd at " + baseUrl);
+								connectionLost = true;
+							}
+							}
+							catch(Exception e)
+							{
 								connectionLost = true;
 							}
 						}
@@ -182,16 +186,25 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 		return true;
 	}
 
+	@EventListener({ ContextRefreshedEvent.class })
 	@Override
 	public void start() {
-		router = context.getBean(Router.class);
+		if (router == null) {
+			if (context == null)
+				throw new IllegalStateException(
+						"EtcdBasedConfigurator requires a Router. Option 1 is to call setRouter(). Option 2 is setApplicationContext() and the EBC will try to use the only Router available.");
+			router = context.getBean(Router.class);
+		}
 		readConfig();
 		try {
 			ExponentialBackoff.retryAfter(retryDelayMin, retryDelayMax, expDelayFactor, "Publish to etcd",
 					jobPublishToEtcd);
 		} catch (InterruptedException ignored) {
 		}
-		ttlRefreshThread.start();
+		if(!ttlRefreshThread.isAlive())
+		{
+			ttlRefreshThread.start();
+		}
 	}
 
 	@Override

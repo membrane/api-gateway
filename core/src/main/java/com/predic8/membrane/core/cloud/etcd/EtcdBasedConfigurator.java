@@ -140,7 +140,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 				newRunningNodes.add(node);
 			}
 		}
-		cleanUpNotRunningUuuids(newRunningNodes);
+		cleanUpNotRunningNodes(newRunningNodes);
 	}
 
 	private void setUpClusterNode(EtcdNodeInformation node) {
@@ -170,7 +170,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		return sp;
 	}
 
-	private void cleanUpNotRunningUuuids(HashSet<EtcdNodeInformation> newRunningNodes) {
+	private void cleanUpNotRunningNodes(HashSet<EtcdNodeInformation> newRunningNodes) {
 		HashSet<EtcdNodeInformation> currentlyRunningNodes = new HashSet<EtcdNodeInformation>();
 		for (String module : runningNodesForModule.keySet()) {
 			currentlyRunningNodes.addAll(runningNodesForModule.get(module));

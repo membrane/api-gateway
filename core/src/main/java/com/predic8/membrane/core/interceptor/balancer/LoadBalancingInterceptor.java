@@ -47,6 +47,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	private AbstractSessionIdExtractor sessionIdExtractor;
 	private boolean failOver = true;
 	private final Balancer balancer = new Balancer();
+	private NodeOnlineChecker nodeOnlineChecker;
 
 	public LoadBalancingInterceptor() {
 		name = "Balancer";
@@ -55,6 +56,10 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
 		log.debug("handleRequest");
+		
+		if(nodeOnlineChecker != null){
+			exc.setProperty(Exchange.TRACK_NODE_STATUS, true);
+		}
 
 		Node dispatchedNode;
 		try {
@@ -82,10 +87,21 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 		return Outcome.CONTINUE;
 	}
+	
+	@Override
+	public void handleAbort(Exchange exc) {
+		if(nodeOnlineChecker != null){
+			nodeOnlineChecker.handle(exc);
+		}		
+	}
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
 		log.debug("handleResponse");
+		
+		if(nodeOnlineChecker != null){
+			nodeOnlineChecker.handle(exc);
+		}
 
 		if (sessionIdExtractor != null) {
 			String sessionId = getSessionId(exc.getResponse());
@@ -193,6 +209,13 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	public AbstractSessionIdExtractor getSessionIdExtractor() {
 		return sessionIdExtractor;
+	}
+	
+	@MCChildElement
+	public void setNodeOnlineChecker(NodeOnlineChecker noc)
+	{
+		this.nodeOnlineChecker = noc;
+		this.nodeOnlineChecker.setLbi(this);
 	}
 
 	/**
