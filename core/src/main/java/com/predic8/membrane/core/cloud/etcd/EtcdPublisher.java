@@ -42,7 +42,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 	private ApplicationContext context;
 	private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();
 	private HashSet<EtcdNodeInformation> nodesFromConfig = new HashSet<EtcdNodeInformation>();
-	private int ttlInSeconds = 20; // 300 normally, other for testing
+	private int ttl = 300; // 300 normally, other for testing
 	private String baseUrl;
 	private String baseKey;
 	private Router router;
@@ -83,9 +83,22 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 		this.baseKey = baseKey;
 	}
 
+	public int getTtl() {
+		return ttl;
+	}
+
+	/**
+	 * @description time to live of etcd data
+	 * @default 300
+	 */
+	@MCAttribute
+	public void setTtl(int ttl) {
+		this.ttl = ttl;
+	}
+
 	private Thread ttlRefreshThread = new Thread(new Runnable() {
 
-		int sleepTime = (ttlInSeconds - 10) * 1000;
+		int sleepTime = (ttl - 10) * 1000;
 
 		@Override
 		public void run() {
@@ -95,17 +108,14 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 					// System.out.println("Refreshing ttl");
 					for (String module : modulesToUUIDs.keySet()) {
 						for (String uuid : modulesToUUIDs.get(module)) {
-							try
-							{
-							EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
-									.uuid(uuid).refreshTTL(ttlInSeconds).sendRequest();
-							if (!EtcdUtil.checkOK(respTTLDirRefresh)) {
-								log.warn("Could not contact etcd at " + baseUrl);
-								connectionLost = true;
-							}
-							}
-							catch(Exception e)
-							{
+							try {
+								EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
+										.uuid(uuid).refreshTTL(ttl).sendRequest();
+								if (!EtcdUtil.checkOK(respTTLDirRefresh)) {
+									log.warn("Could not contact etcd at " + baseUrl);
+									connectionLost = true;
+								}
+							} catch (Exception e) {
 								connectionLost = true;
 							}
 						}
@@ -148,42 +158,46 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 	}
 
 	public boolean publishToEtcd() {
-		for (EtcdNodeInformation node : nodesFromConfig) {
-			String path = node.module;
-			String uuid = node.uuid;
-			String name = node.name;
-			String port = node.targetPort;
-			String host = node.targetHost;
-			EtcdResponse respTTLDirCreate = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).createDir(uuid)
-					.ttl(ttlInSeconds).sendRequest();
-			if (!EtcdUtil.checkOK(respTTLDirCreate)) {
-				return false;
-			}
+		try {
+			for (EtcdNodeInformation node : nodesFromConfig) {
+				String path = node.module;
+				String uuid = node.uuid;
+				String name = node.name;
+				String port = node.targetPort;
+				String host = node.targetHost;
+				EtcdResponse respTTLDirCreate = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).createDir(uuid)
+						.ttl(ttl).sendRequest();
+				if (!EtcdUtil.checkOK(respTTLDirCreate)) {
+					return false;
+				}
 
-			EtcdResponse respName = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
-					.setValue("name", name).sendRequest();
-			if (!EtcdUtil.checkOK(respName)) {
-				return false;
-			}
+				EtcdResponse respName = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
+						.setValue("name", name).sendRequest();
+				if (!EtcdUtil.checkOK(respName)) {
+					return false;
+				}
 
-			EtcdResponse respPort = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
-					.setValue("port", port).sendRequest();
-			if (!EtcdUtil.checkOK(respPort)) {
-				return false;
-			}
+				EtcdResponse respPort = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
+						.setValue("port", port).sendRequest();
+				if (!EtcdUtil.checkOK(respPort)) {
+					return false;
+				}
 
-			EtcdResponse respHost = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
-					.setValue("host", host).sendRequest();
-			if (!EtcdUtil.checkOK(respHost)) {
-				return false;
-			}
+				EtcdResponse respHost = EtcdUtil.createBasicRequest(baseUrl, baseKey, path).uuid(uuid)
+						.setValue("host", host).sendRequest();
+				if (!EtcdUtil.checkOK(respHost)) {
+					return false;
+				}
 
-			if (!modulesToUUIDs.containsKey(path)) {
-				modulesToUUIDs.put(path, new ArrayList<String>());
+				if (!modulesToUUIDs.containsKey(path)) {
+					modulesToUUIDs.put(path, new ArrayList<String>());
+				}
+				modulesToUUIDs.get(path).add(uuid);
 			}
-			modulesToUUIDs.get(path).add(uuid);
+			return true;
+		} catch (Exception ignored) {
+			return false;
 		}
-		return true;
 	}
 
 	@EventListener({ ContextRefreshedEvent.class })
@@ -201,8 +215,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 					jobPublishToEtcd);
 		} catch (InterruptedException ignored) {
 		}
-		if(!ttlRefreshThread.isAlive())
-		{
+		if (!ttlRefreshThread.isAlive()) {
 			ttlRefreshThread.start();
 		}
 	}
