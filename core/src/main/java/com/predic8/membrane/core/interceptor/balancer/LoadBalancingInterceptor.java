@@ -217,6 +217,11 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		this.nodeOnlineChecker = noc;
 		this.nodeOnlineChecker.setLbi(this);
 	}
+	
+	public NodeOnlineChecker getNodeOnlineChecker()
+	{
+		return this.nodeOnlineChecker;
+	}
 
 	/**
 	 * @description Sets the strategy used to extract a session ID from incoming HTTP requests.
