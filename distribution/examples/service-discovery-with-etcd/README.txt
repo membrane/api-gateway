@@ -1,26 +1,27 @@
 NOTICE: THIS IS A DRAFT
 
-DYNAMIC FORWARDING TO SERVICE PROXIES 
+Service discovery with etcd
 
-The publisher publishes call details for services to "the cloud". The configurator reads those details from "the cloud" and dynamically forwards to those services
+The publisher publishes endpoint details for services to "the cloud". The configurator reads those details from "the cloud" and dynamically forwards to those services
  
  
  
 RUNNING THE EXAMPLE
 
-In this example we will start a self-publishing service that responds with "hello" that is forwarded to from a different service. 
+In this example we will start a self-publishing service that responds with "hello" that can be called from another service without knowledge of the endpoint
 
-x. Download etcd: go to "https://github.com/coreos/etcd/releases/", scroll down to the "Downloads" section and pick the version for your operating system
-x. Extract etcd in any directory and start etcd
-x. Execute the Configurator/configurator.bat
-x. Open your favorite browser and go to "localhost:9001", this opens the admin console of the configurator
-x. Notice that "Console" is the only available service, "Console" is the admin console
-x. Execute the Publisher/publisher.bat 
-x. Open another tab in your browser and go to "localhost:8081/helloResponseService", this is a service from the publisher
-x. Go back to the admin console window and refresh the page, another service should appear
-x. Open another tab in your browser and go to "localhost:8080/helloResponseService", this is a service from the configurator
-x. Exit the publisher.bat
-x. Go back to the admin console window and refresh the page, the second service should disappear
+1. Download etcd: go to "https://github.com/coreos/etcd/releases/", scroll down to the "Downloads" section and pick the version for your operating system
+2. Extract etcd in any directory and start etcd
+3. In the membrane folder go to "examples/service-discovery-with-etcd/"
+4. Execute "configurator/start.bat"
+5. Open your favorite browser and go to "localhost:9001", this opens the admin console of the configurator
+6. Notice that "Console" is the only available service, "Console" is the admin console
+7. Execute the publisher/start.bat 
+8. Open another tab in your browser and go to "localhost:8081/myService" and receive "hello" as response, this is a service from the publisher
+9. Go back to the admin console window and refresh the page, another service should appear
+10. Open another tab in your browser and go to "localhost:8080/myService" and receive "hello" as response, this is a service from the configurator
+11. Exit the publisher.bat and wait 20 seconds.
+12. Go back to the admin console window and refresh the page, the second service should disappear
 
 
 
@@ -28,12 +29,12 @@ HOW IT IS DONE
 
 This section describes the example in detail.  
 
-First take a look at the proxies.xml file in the Publisher folder.
+First take a look at the proxies.xml file in the publisher folder.
 
-<etcdPublisher baseUrl="http://localhost:4001" baseKey="/example"/>
+<etcdPublisher baseUrl="http://localhost:4001" baseKey="/example" ttl="20"/>
 	<router>
 		<serviceProxy name="helloResponse" port="8081">
-			<path>/helloResponseService</path>
+			<path>/myService</path>
 			<groovy>				
 			exc.response = Response.ok("Hello").build()
 			RETURN
@@ -41,13 +42,14 @@ First take a look at the proxies.xml file in the Publisher folder.
 		</serviceProxy>
 	</router>
 
-You will see that there is a service proxy that responds with "Hello" when going to "http://localhost:8081" in you browser. On top of that you can see the etcdPublisher that is responsible for publishing the call details to an etcd.
+You will see that there is a service proxy that responds with "hello" when going to "http://localhost:8081" in you browser. On top of that you can see the etcdPublisher that is responsible for publishing the endpoint details to an etcd.
 
-The etcdPublisher element has 2 values that you can set and by default it is set to publish to a local started etcd on "http://localhost:4001".
+The etcdPublisher element has 3 values that you can set and by default it is set to publish to a locally started etcd on "http://localhost:4001" every 5 minutes.
 baseUrl is the url the etcd is residing on
-baseKey is the directory where the call details are saved
+baseKey is the directory where the endpoint details are saved
+ttl is how long in seconds the data in the etcd should be valid
 
-Now take a look at the proxies.xml file in the Configurator folder.
+Now take a look at the proxies.xml file in the configurator folder.
 
 <etcdBasedConfigurator baseUrl="http://localhost:4001" baseKey="/example" port="8080"/>
 	<router>
@@ -57,8 +59,8 @@ Now take a look at the proxies.xml file in the Configurator folder.
 		</serviceProxy>
 	</router>
 
-You will see a service proxy that provides the admin console on port 9001. Additionally on top you can see the etcdBasedConfigurator that reads from an etcd and creates forwarding services dynamically.
-The etcdBasedConfigurator has 2 values that you can set and by default it is set to read from an etcd on "http://localhost:4001".
+You will see a service proxy that provides the admin console on port 9001. Additionally on top you can see the etcdBasedConfigurator that reads from an etcd and creates service proxies for those services dynamically.
+The etcdBasedConfigurator has 3 values that you can set and by default it is set to read from an etcd on "http://localhost:4001" and provides its service on port 8080.
 baseUrl is the url the etcd is residing on
 baseKey is the directory where the call details are saved
 port is the port the etcdBasedConfigurator provides its service on
