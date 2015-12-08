@@ -168,6 +168,8 @@ public class HttpClient {
 
 		int counter = 0;
 		Exception exception = null;
+		Object trackNodeStatusObj = exc.getProperty(Exchange.TRACK_NODE_STATUS);
+		boolean trackNodeStatus = trackNodeStatusObj != null && trackNodeStatusObj instanceof Boolean && (Boolean)trackNodeStatusObj;
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
@@ -201,9 +203,9 @@ public class HttpClient {
 					newProtocol = "CONNECT";
 				} else {
 					response = doCall(exc, con);
-					if((Boolean) exc.getProperty(Exchange.TRACK_NODE_STATUS)){
+					if (trackNodeStatus)
 						exc.setNodeStatusCode(counter, response.getStatusCode());
-					}
+
 					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToWebSocketsResponse(response)) {
 						log.debug("Upgrading to WebSocket protocol.");
 						newProtocol = "WebSocket";
@@ -259,7 +261,7 @@ public class HttpClient {
 				exception = e;
 			}
 			finally	{
-				if((Boolean) exc.getProperty(Exchange.TRACK_NODE_STATUS)){			
+				if (trackNodeStatus) {
 					if(exception != null){
 						exc.setNodeException(counter, exception);
 					}

@@ -87,7 +87,6 @@ public class ChunkedBody extends AbstractBody {
 				int chunkSize = HttpUtil.readChunkSize(inputStream);
 				if (chunkSize > 0) {
 					Chunk c = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
-					chunks.add(c);
 					inputStream.read(); // CR
 					inputStream.read(); // LF
 					return c;
