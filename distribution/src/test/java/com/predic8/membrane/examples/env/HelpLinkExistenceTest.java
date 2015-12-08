@@ -32,6 +32,10 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.transport.http.HttpClient;
 
+/**
+ * This test unfortunately fails if there are new classes in the project
+ * for which there is no documentation available in the online docs yet!
+ */
 public class HelpLinkExistenceTest {
 
 	private static final String CACHE_FILE_FORMAT_VERSION = "1";
