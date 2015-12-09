@@ -121,7 +121,11 @@ public class SOAPProxy extends AbstractServiceProxy {
 						key.setPathRegExp(false);
 						key.setPath(url.getPath());
 					} else {
-						targetPath = url.getPath();
+						String query = "";
+						if(url.getQuery() != null){
+							query = "?" + url.getQuery();
+						}
+						targetPath = url.getPath()+ query;
 					}
 					if(location.startsWith("https")){
 						SSLParser sslOutboundParser = new SSLParser();
@@ -192,7 +196,6 @@ public class SOAPProxy extends AbstractServiceProxy {
 	public void configure() throws Exception {
 
 		parseWSDL();
-
 		// remove previously added interceptors
 		for(; automaticallyAddedInterceptorCount > 0; automaticallyAddedInterceptorCount--)
 			interceptors.remove(0);
@@ -227,6 +230,7 @@ public class SOAPProxy extends AbstractServiceProxy {
 			wsdlInterceptor.setPathRewriter(new PathRewriter() {
 				@Override
 				public String rewrite(String path2) {
+
 					try {
 						if (path2.contains("://")) {
 							path2 = new URL(new URL(path2), keyPath).toString();
