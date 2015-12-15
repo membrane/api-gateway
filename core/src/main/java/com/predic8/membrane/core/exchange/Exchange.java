@@ -42,6 +42,8 @@ public class Exchange extends AbstractExchange {
 	
 	public static final String TRACK_NODE_STATUS = "TRACK_NODE_STATUS";
 
+	public static final String API_KEY = "API_KEY";
+
 	private static Log log = LogFactory.getLog(Exchange.class.getName());
 
 	private AbstractHttpHandler handler;
