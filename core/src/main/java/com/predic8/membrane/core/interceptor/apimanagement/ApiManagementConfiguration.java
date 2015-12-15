@@ -17,18 +17,25 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ApiManagementConfiguration {
 
+    private static String currentDir = System.getProperty("user.dir") + "/distribution";
+
     private static Logger log = LogManager.getLogger(ApiManagementConfiguration.class);
-    private Object name;
+    private ResolverMap resolver = new ResolverMap();
+    private String location = null;
 
     public Map<String, Policy> getPolicies() {
         return policies;
@@ -46,8 +53,17 @@ public class ApiManagementConfiguration {
         this.keys = keys;
     }
 
-    private Map<String,Policy> policies = new HashMap<String, Policy>();
-    private Map<String,Key> keys = new HashMap<String, Key>();
+    private Map<String,Policy> policies = new ConcurrentHashMap<String, Policy>();
+    private Map<String,Key> keys = new ConcurrentHashMap<String, Key>();
+
+    public ApiManagementConfiguration(){
+
+    }
+
+    public  ApiManagementConfiguration(String location) throws ResourceRetrievalException {
+        InputStream is = resolver.resolve(ResolverMap.combine(currentDir, location));
+        parseAndConstructConfiguration(is);
+    }
 
     public ApiManagementConfiguration(InputStream is)
     {
@@ -80,9 +96,9 @@ public class ApiManagementConfiguration {
                 LinkedHashMap<String,Object> yamlPolicyDef = (LinkedHashMap<String, Object>) polObj;
                 Policy policy = new Policy();
 
-                name = yamlPolicyDef.get("name");
+                Object name = yamlPolicyDef.get("id");
                 if(name == null){
-                    log.warn("Policy object found, but no \"name\" field");
+                    log.warn("Policy object found, but no \"id\" field");
                     continue;
                 }
                 String policyName = (String) name;
@@ -98,11 +114,9 @@ public class ApiManagementConfiguration {
                 }
 
                 //Optionals like rateLimit/quota etc. follow
-
-                if(yamlPolicyDef.containsValue("rateLimit")){
-                    Object rateLimitObj = yamlPolicyDef.get("rateLimit");
-                    if(rateLimitObj != null){
-                        LinkedHashMap<String,Object> rateLimitData = (LinkedHashMap<String, Object>) rateLimitObj;
+                Object rateLimitObj = yamlPolicyDef.get("rateLimit");
+                if(rateLimitObj != null){
+                    LinkedHashMap<String,Object> rateLimitData = (LinkedHashMap<String, Object>) rateLimitObj;
                         RateLimit rateLimit = new RateLimit();
 
                         int requests = -1;
@@ -111,7 +125,7 @@ public class ApiManagementConfiguration {
                             log.warn("RateLimit object found, but request field is empty");
                             requests = RateLimit.REQUESTS_DEFAULT;
                         }else {
-                            requests = Integer.parseInt((String) requestsObj);
+                            requests = (Integer) requestsObj;
                         }
 
                         int interval = -1;
@@ -120,12 +134,12 @@ public class ApiManagementConfiguration {
                             log.warn("RateLimit object found, but interval field is empty. Setting default: \" + RateLimit.INTERVAL_DEFAULT");
                             interval = RateLimit.INTERVAL_DEFAULT;
                         }else {
-                            interval = Integer.parseInt((String) intervalObj);
+                            interval = (Integer)intervalObj;
                         }
                         rateLimit.setRequests(requests);
                         rateLimit.setInterval(interval);
                         policy.setRateLimit(rateLimit);
-                    }
+
                 }
                 result.put(policyName,policy);
             }
@@ -180,7 +194,17 @@ public class ApiManagementConfiguration {
     }
 
 
+    public String getLocation() {
+        return location;
+    }
 
-
-
+    public void setLocation(String location) {
+        this.location = location;
+        try {
+            InputStream is = resolver.resolve(ResolverMap.combine(currentDir, location));
+            parseAndConstructConfiguration(is);
+        } catch (ResourceRetrievalException e) {
+            e.printStackTrace();
+        }
+    }
 }

@@ -23,11 +23,10 @@ import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
 import java.io.InputStream;
 
-@MCElement(name="staticPolicyDecisionPoint")
 public class StaticPolicyDecisionPoint {
 
     private ApiManagementConfiguration configuration;
-    String location;
+    /*String location;
 
     public String getLocation() {
         return location;
@@ -36,18 +35,22 @@ public class StaticPolicyDecisionPoint {
     @MCAttribute
     public void setLocation(String location) {
         this.location = location;
-    }
+    }*/
 
-    public void init(Router router) throws ResourceRetrievalException {
+    /*public void init(Router router) throws ResourceRetrievalException {
         InputStream is = router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), location));
         setConfiguration(new ApiManagementConfiguration(is));
+        setConfiguration();
+    }*/
 
+    public StaticPolicyDecisionPoint(ApiManagementConfiguration amc){
+        this.configuration = amc;
     }
 
     public AuthorizationResult getAuthorization(Exchange exc, String apiKey) {
         if(!getConfiguration().getKeys().containsKey(apiKey))
         {
-            return AuthorizationResult.getAuthorizedFalse("API Key not found");
+            return AuthorizationResult.getAuthorizedFalse("API key not found");
         }
         Key key = getConfiguration().getKeys().get(apiKey);
         String requestedAPI = exc.getRule().getName();
@@ -55,25 +58,12 @@ public class StaticPolicyDecisionPoint {
         String reasonFailed ="";
         for(Policy policy : key.getPolicies()){
             if(policy.getServiceProxies().contains(requestedAPI)){
-                if(isAccessGranted(key)) {
-                    configureExchangeToPointToTarget(exc);
-                    return AuthorizationResult.getAuthorizedTrue();
-                }
-                reasonFailed = "Access denied";
+                return AuthorizationResult.getAuthorizedTrue();
             }
         }
-        reasonFailed = "Service not found";
+        reasonFailed = "Service not available: " + requestedAPI;
         return AuthorizationResult.getAuthorizedFalse(reasonFailed);
     }
-
-    private boolean isAccessGranted(Key key) {
-        // TODO
-        return true;
-    }
-
-    private void configureExchangeToPointToTarget(Exchange exc) {
-    }
-
 
     public ApiManagementConfiguration getConfiguration() {
         return configuration;

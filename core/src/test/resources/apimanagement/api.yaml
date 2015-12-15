@@ -1,21 +1,31 @@
 policies:
-  - policy: &TrialAppX
-      name: "Trial App X"
+  - policy:
+      id: "TrialAppX"
       serviceProxy:
         - "Order API"
-  - policy: &Customer
-      name: "Customer"
+  - policy:
+      id: "Customer"
       rateLimit:
         requests: 1000
         interval: 3600
       serviceProxy:
         - "Order API"
         - "Names API"
+  - policy:
+        id: "junitPol"
+        rateLimit:
+          requests: 5
+          interval: 2
+        serviceProxy:
+          - "junit API"
 keys:
   - key: "abcdefg"
     policies:
-      - "Trial App X"
+      - "TrialAppX"
       - "Customer"
   - key: "gfedcba"
     policies:
-      - "Trial App X"
+      - "TrialAppX"
+  - key: "junit"
+    policies:
+      - "junitPol"

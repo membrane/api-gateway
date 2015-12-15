@@ -13,33 +13,51 @@
 
 package com.predic8.membrane.core.interceptor.apimanagement;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.AMRateLimiter;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 @MCElement(name="apiManagement")
 public class ApiManagementInterceptor extends AbstractInterceptor {
 
     private static Logger log = LogManager.getLogger(ApiManagementInterceptor.class);
     private StaticPolicyDecisionPoint staticPolicyDecisionPoint;
+    private AMRateLimiter amRli = null;
 
 
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-        staticPolicyDecisionPoint.init(router);
+        Object amcObj = router.getBeanFactory().getBean("amc");
+        if(amcObj == null){
+            log.error("ApiManagementConfiguration not available. Define it as a spring bean in proxies.xml");
+        }
+        ApiManagementConfiguration amc = (ApiManagementConfiguration) amcObj;
+        setStaticPolicyDecisionPoint(new StaticPolicyDecisionPoint(amc));
+        if(amRli != null){
+            amRli.setAmc(amc);
+        }
     }
+
 
     public StaticPolicyDecisionPoint getStaticPolicyDecisionPoint() {
         return staticPolicyDecisionPoint;
     }
 
-    @MCChildElement
     public void setStaticPolicyDecisionPoint(StaticPolicyDecisionPoint staticPolicyDecisionPoint) {
         this.staticPolicyDecisionPoint = staticPolicyDecisionPoint;
     }
@@ -49,19 +67,20 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         String key = exc.getRequest().getHeader().getFirstValue("Authorization");
         if(key == null)
         {
-            System.out.println("No auth key");
             setResponseNoAuthKey(exc);
             return Outcome.RETURN;
         }
+        exc.setProperty(Exchange.API_KEY, key);
         AuthorizationResult auth = staticPolicyDecisionPoint.getAuthorization(exc,key);
         if(auth.isAuthorized())
         {
-            System.out.println("Granted");
+            if(amRli != null){
+                return amRli.handleRequest(exc);
+            }
             return Outcome.CONTINUE;
         }
         else
         {
-            System.out.println("Denied: " + auth.getReason());
             setResponsePolicyDenied(exc, auth);
             return Outcome.RETURN;
         }
@@ -69,10 +88,52 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
 
     }
 
+    private Response buildResponse(int code, String msg, ByteArrayOutputStream baos){
+        Response resp = new Response.ResponseBuilder().status(code,msg).contentType("application/json").body(baos.toByteArray()).build();
+        return resp;
+    }
+
+    private ByteArrayOutputStream buildJson(int code, String msg){
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        JsonGenerator jgen = null;
+        try {
+            jgen = new JsonFactory().createGenerator(os);
+            jgen.writeStartObject();
+            jgen.writeObjectField("Statuscode", code);
+            jgen.writeObjectField("Message", msg);
+            jgen.writeEndObject();
+            jgen.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return os;
+    }
+
     private void setResponsePolicyDenied(Exchange exc, AuthorizationResult auth) {
+        int code = 400;
+        String msg = "Bad request";
+        Response resp = buildResponse(code,msg,buildJson(code,msg));
+        exc.setResponse(resp);
     }
 
     private void setResponseNoAuthKey(Exchange exc) {
+        int code = 401;
+        String msg = "Unauthorized";
+        Response resp = buildResponse(code,msg,buildJson(code,msg));
+        exc.setResponse(resp);
+    }
 
+    public AMRateLimiter getAmRli() {
+        return amRli;
+    }
+
+    @MCChildElement
+    public void setAmRli(AMRateLimiter amRli) {
+        this.amRli = amRli;
+        try {
+            //this.amRli.init(this.getRouter());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
