@@ -29,6 +29,7 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.URIFactory;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 @MCElement(name="httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
@@ -67,6 +68,11 @@ public class HTTPSchemaResolver implements SchemaResolver {
 			ResourceRetrievalException rre = new ResourceRetrievalException(url, e);
 			throw rre;
 		}
+	}
+
+	@Override
+	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+		throw new NotImplementedException();
 	}
 
 	@Override

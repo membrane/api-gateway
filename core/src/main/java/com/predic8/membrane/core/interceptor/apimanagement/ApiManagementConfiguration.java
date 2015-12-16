@@ -17,6 +17,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
+import com.predic8.membrane.core.resolver.Consumer;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
@@ -56,20 +57,6 @@ public class ApiManagementConfiguration {
 
     private Map<String,Policy> policies = new ConcurrentHashMap<String, Policy>();
     private Map<String,Key> keys = new ConcurrentHashMap<String, Key>();
-
-    public ApiManagementConfiguration(){
-
-    }
-
-    public  ApiManagementConfiguration(String location) throws ResourceRetrievalException {
-        InputStream is = resolver.resolve(ResolverMap.combine(currentDir, location));
-        parseAndConstructConfiguration(is);
-    }
-
-    public ApiManagementConfiguration(InputStream is)
-    {
-        parseAndConstructConfiguration(is);
-    }
 
     private Map<String,Policy> parsePolicies(Map<String,Object> yaml) {
         Map<String,Policy> result = new HashMap<String, Policy>();
@@ -231,10 +218,28 @@ public class ApiManagementConfiguration {
     }
 
     public void setLocation(String location) {
-        this.location = location;
+        final String newLocation = ResolverMap.combine(currentDir, location);
+        this.location = newLocation;
+        InputStream is = null;
         try {
-            InputStream is = resolver.resolve(ResolverMap.combine(currentDir, location));
-            parseAndConstructConfiguration(is);
+            is = resolver.resolve(newLocation);
+        } catch (ResourceRetrievalException e) {
+            e.printStackTrace();
+        }
+        parseAndConstructConfiguration(is);
+        try {
+            resolver.observeChange(newLocation, new Consumer<InputStream>() {
+                @Override
+                public void call(InputStream inputStream) {
+                    System.out.println("Configuration changed, reloading...");
+                    parseAndConstructConfiguration(inputStream);
+                    try {
+                        resolver.observeChange(newLocation,this);
+                    } catch (ResourceRetrievalException ignored) {
+                    }
+                    System.out.println("Configuration reloading done.");
+                }
+            });
         } catch (ResourceRetrievalException e) {
             e.printStackTrace();
         }

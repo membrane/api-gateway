@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class ClasspathSchemaResolver implements SchemaResolver {
 
@@ -32,6 +33,11 @@ public class ClasspathSchemaResolver implements SchemaResolver {
 		if (is == null)
 			throw new ResourceRetrievalException(url);
 		return is;
+	}
+
+	@Override
+	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+		throw new NotImplementedException();
 	}
 
 	private String normalize(String url) {

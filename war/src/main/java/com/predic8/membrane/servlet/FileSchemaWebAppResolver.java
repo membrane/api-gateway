@@ -19,12 +19,14 @@ import java.util.List;
 
 import javax.servlet.ServletContext;
 
+import com.predic8.membrane.core.resolver.Consumer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.resolver.SchemaResolver;
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class FileSchemaWebAppResolver implements SchemaResolver {
 
@@ -54,6 +56,11 @@ public class FileSchemaWebAppResolver implements SchemaResolver {
 		if (is == null)
 			throw new ResourceRetrievalException(url);
 		return is;
+	}
+
+	@Override
+	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+		throw new NotImplementedException();
 	}
 
 	@Override

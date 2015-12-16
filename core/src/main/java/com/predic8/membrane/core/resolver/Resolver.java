@@ -13,6 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
+import com.predic8.wsdl.Input;
+
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.List;
@@ -24,6 +26,12 @@ public interface Resolver {
 	 * @throws ResourceRetrievalException if the resource identified by the URL does not exist.
 	 */
 	public InputStream resolve(String url) throws ResourceRetrievalException;
+
+	/**
+	 * Calls the consumer when the InputStream for the requested URL changes.
+	 * @throws ResourceRetrievalException if the resource identified by the URL does not exist.
+	 */
+	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException;
 
 	/**
 	 * Returns the list of child resources of the resource identified by the URL.

@@ -28,9 +28,9 @@ public class ApiManagementConfigurationTest {
     @Test
     public void testParseYaml() throws Exception {
         String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
-        InputStream in = IOUtils.toInputStream(source, Charset.defaultCharset());
 
-        ApiManagementConfiguration conf = new ApiManagementConfiguration(in);
+        ApiManagementConfiguration conf = new ApiManagementConfiguration();
+        conf.setLocation(source);
         Map<String, Policy> policies = conf.getPolicies();
         for(Policy p : policies.values()){
             System.out.println(p);

@@ -43,10 +43,11 @@ public class AMRateLimitInterceptorTest {
         exc.getRule().setName("junit API");
 
         String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
-        InputStream in = IOUtils.toInputStream(source, Charset.defaultCharset());
 
         final AMRateLimiter rli = new AMRateLimiter();
-        rli.setAmc(new ApiManagementConfiguration(in));
+        ApiManagementConfiguration amc = new ApiManagementConfiguration();
+        amc.setLocation(source);
+        rli.setAmc(amc);
 
         ArrayList<Thread> threads = new ArrayList<Thread>();
         final AtomicInteger continues = new AtomicInteger();

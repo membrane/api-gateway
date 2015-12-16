@@ -176,6 +176,15 @@ public class ResolverMap implements Cloneable, Resolver {
 		}
 	}
 
+	@Override
+	public void observeChange(String uri, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+		try {
+			getSchemaResolver(uri).observeChange(uri,consumer);
+		} catch (ResourceRetrievalException e) {
+			throw e;
+		}
+	}
+
 	public List<String> getChildren(String uri) throws FileNotFoundException {
 		return getSchemaResolver(uri).getChildren(uri);
 	}

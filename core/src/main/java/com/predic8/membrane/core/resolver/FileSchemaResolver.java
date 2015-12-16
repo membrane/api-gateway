@@ -14,16 +14,51 @@
 
 package com.predic8.membrane.core.resolver;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.google.common.collect.Lists;
 
+import java.io.*;
+import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class FileSchemaResolver implements SchemaResolver {
+
+	WatchService watchService;
+	ConcurrentHashMap<String,WatchKey> watchServiceForFile = new ConcurrentHashMap<String, WatchKey>();
+	ConcurrentHashMap<String,Consumer<InputStream>> watchedFiles = new ConcurrentHashMap<String, Consumer<InputStream>>();
+	int fileWatchIntervalInSeconds = 1;
+	Runnable fileWatchJob = new Runnable() {
+		@Override
+		public void run() {
+			while(watchedFiles.size() > 0){
+				for(String url : watchServiceForFile.keySet()){
+					WatchKey wk = watchServiceForFile.get(url);
+					List<WatchEvent<?>> events = wk.pollEvents();
+					for(WatchEvent<?> event : events){
+						Path changedFile = ((Path) event.context());
+						Path urlPath = Paths.get(url).getFileName();
+						if(changedFile.toString().equals(urlPath.toString())){
+							try {
+								watchedFiles.get(url).call(resolve(url));
+							} catch (ResourceRetrievalException ignored) {
+								ignored.printStackTrace();
+							}
+						}
+					}
+				}
+
+				try {
+					Thread.sleep(fileWatchIntervalInSeconds*1000);
+				} catch (InterruptedException ignored) {
+				}
+			}
+			fileWatcher = null;
+		}
+	};
+	Thread fileWatcher = null;
+
+
 
 	@Override
 	public List<String> getSchemas() {
@@ -35,6 +70,33 @@ public class FileSchemaResolver implements SchemaResolver {
 			return new FileInputStream(new File(normalize(url)));
 		} catch (FileNotFoundException e) {
 			throw new ResourceRetrievalException(url, e);
+		}
+	}
+
+	@Override
+	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
+		url = Paths.get(normalize(url)).toAbsolutePath().toString();
+		if(watchService == null){
+			try {
+				watchService = FileSystems.getDefault().newWatchService();
+			} catch (IOException ignored) {
+			}
+		}
+		Path path = Paths.get(url).getParent();
+		System.out.println("Watching directory: "+ path.toString());
+		WatchKey watchKey = null;
+		try {
+			watchKey = path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+		} catch (IOException ignored) {
+		}
+		watchServiceForFile.put(url,watchKey);
+		watchedFiles.put(url,consumer);
+
+		if(fileWatcher == null){
+			fileWatcher = new Thread(fileWatchJob);
+		}
+		if(!fileWatcher.isAlive()){
+			fileWatcher.start();
 		}
 	}
 
