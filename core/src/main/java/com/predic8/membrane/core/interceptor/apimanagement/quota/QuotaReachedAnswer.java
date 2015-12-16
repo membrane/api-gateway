@@ -11,29 +11,30 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.apimanagement.policy;
+package com.predic8.membrane.core.interceptor.apimanagement.quota;
 
-public class RateLimit
-{
-    public static final int REQUESTS_DEFAULT = 1000;
-    public static final int INTERVAL_DEFAULT = 3600;
+public class QuotaReachedAnswer {
+    PolicyQuota pq = null;
 
-    private int requests = REQUESTS_DEFAULT;
-    private int interval = INTERVAL_DEFAULT;
+    private QuotaReachedAnswer(){
 
-    public int getRequests() {
-        return requests;
     }
 
-    public void setRequests(int requests) {
-        this.requests = requests;
+    public static QuotaReachedAnswer createQuotaNotReached(){
+        return new QuotaReachedAnswer();
     }
 
-    public int getInterval() {
-        return interval;
+    public static QuotaReachedAnswer createQuotaReached(PolicyQuota pq){
+        QuotaReachedAnswer result = new QuotaReachedAnswer();
+        result.pq = pq;
+        return result;
     }
 
-    public void setInterval(int interval) {
-        this.interval = interval;
+    public boolean isQuotaReached(){
+        return pq != null;
+    }
+
+    public PolicyQuota getPq() {
+        return pq;
     }
 }

@@ -11,22 +11,31 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.apimanagement.policy;
+package com.predic8.membrane.core.interceptor.apimanagement.quota;
 
-public class RateLimit
-{
-    public static final int REQUESTS_DEFAULT = 1000;
-    public static final int INTERVAL_DEFAULT = 3600;
+import java.util.HashSet;
 
-    private int requests = REQUESTS_DEFAULT;
-    private int interval = INTERVAL_DEFAULT;
+public class PolicyQuota {
 
-    public int getRequests() {
-        return requests;
+    private String name;
+    private long size;
+    private int interval;
+    private HashSet<String> services = new HashSet<String>();
+
+    public String getName() {
+        return name;
     }
 
-    public void setRequests(int requests) {
-        this.requests = requests;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public void setSize(long size) {
+        this.size = size;
     }
 
     public int getInterval() {
@@ -35,5 +44,13 @@ public class RateLimit
 
     public void setInterval(int interval) {
         this.interval = interval;
+    }
+
+    public HashSet<String> getServices() {
+        return services;
+    }
+
+    public void setServices(HashSet<String> services) {
+        this.services = services;
     }
 }

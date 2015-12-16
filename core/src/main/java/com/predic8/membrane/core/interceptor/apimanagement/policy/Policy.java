@@ -19,6 +19,7 @@ public class Policy
 {
     private String name = "";
     private RateLimit rateLimit = new RateLimit();
+    private Quota quota = new Quota();
     private HashSet<String> serviceProxies = new HashSet<String>();
 
     public RateLimit getRateLimit() {
@@ -53,5 +54,14 @@ public class Policy
 
     public void setName(String name) {
         this.name = name;
+    }
+
+
+    public Quota getQuota() {
+        return quota;
+    }
+
+    public void setQuota(Quota quota) {
+        this.quota = quota;
     }
 }

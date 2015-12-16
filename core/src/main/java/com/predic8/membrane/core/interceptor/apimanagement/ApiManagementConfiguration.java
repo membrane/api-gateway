@@ -13,25 +13,26 @@
 
 package com.predic8.membrane.core.interceptor.apimanagement;
 
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
+import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.joda.time.Duration;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ApiManagementConfiguration {
 
-    private static String currentDir = System.getProperty("user.dir") + "/distribution";
+    private static String currentDir = System.getProperty("user.dir");
 
     private static Logger log = LogManager.getLogger(ApiManagementConfiguration.class);
     private ResolverMap resolver = new ResolverMap();
@@ -70,8 +71,7 @@ public class ApiManagementConfiguration {
         parseAndConstructConfiguration(is);
     }
 
-    private Map<String,Policy> parsePolicies(Map<String,Object> yaml)
-    {
+    private Map<String,Policy> parsePolicies(Map<String,Object> yaml) {
         Map<String,Policy> result = new HashMap<String, Policy>();
         Object policies = yaml.get("policies");
         if(policies == null)
@@ -141,6 +141,38 @@ public class ApiManagementConfiguration {
                         policy.setRateLimit(rateLimit);
 
                 }
+                Object quotaObj = yamlPolicyDef.get("quota");
+                if(quotaObj != null){
+                    LinkedHashMap<String,Object> quota = (LinkedHashMap<String, Object>) quotaObj;
+                    Object quotaSizeObj = quota.get("size");
+                    long quotaNumber = 0;
+                    String quotaSymbolString = "";
+                    if(quotaSizeObj == null){
+                        log.warn("Quota object found, but size field is empty");
+                        quotaNumber = Quota.SIZE_DEFAULT;
+                    }else{
+                        try {
+                            String quotaString = (String) quotaSizeObj;
+                            quotaNumber = ((Number) NumberFormat.getInstance().parse(quotaString)).intValue();
+                            quotaSymbolString = quotaString.replaceFirst(Long.toString(quotaNumber),"").toLowerCase();
+                        } catch (ParseException ignored) {
+                        }
+                    }
+                    if(quotaSymbolString.length() > 0) {
+                        char quotaSymbol = quotaSymbolString.charAt(0);
+                        switch (quotaSymbol) {
+                            case 'g': quotaNumber *= 1024;
+                            case 'm': quotaNumber *= 1024;
+                            case 'k': quotaNumber *= 1024;
+                            case 'b':
+                            default:
+                        }
+                    }
+                    Quota q = new Quota();
+                    q.setSize(quotaNumber);
+                    policy.setQuota(q);
+                }
+
                 result.put(policyName,policy);
             }
         }

@@ -1,0 +1,38 @@
+policies:
+  - policy:
+      id: "TrialAppX"
+      serviceProxy:
+        - "Order API"
+  - policy:
+      id: "Customer"
+      rateLimit:
+        requests: 1000
+        interval: 3600
+      serviceProxy:
+        - "Order API"
+        - "Names API"
+  - policy:
+        id: "junitPol"
+        rateLimit:
+          requests: 5
+          interval: 30
+        serviceProxy:
+          - "junit API"
+  - policy:
+        id: "unauthorized"
+        serviceProxy:
+          - "AdminConsole"
+
+
+keys:
+  - key: "abcdefg"
+    policies:
+      - "TrialAppX"
+      - "Customer"
+  - key: "gfedcba"
+    policies:
+      - "TrialAppX"
+  - key: "junit"
+    policies:
+      - "junitPol"
+      - "unauthorized"

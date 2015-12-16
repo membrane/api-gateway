@@ -13,20 +13,20 @@
 
 package com.predic8.membrane.core.interceptor.apimanagement.policy;
 
-public class RateLimit
-{
-    public static final int REQUESTS_DEFAULT = 1000;
-    public static final int INTERVAL_DEFAULT = 3600;
+public class Quota {
 
-    private int requests = REQUESTS_DEFAULT;
+    public static long SIZE_DEFAULT = 1*1024*1024;
+    public static int INTERVAL_DEFAULT = 1;
+
+    private long size = SIZE_DEFAULT;
     private int interval = INTERVAL_DEFAULT;
 
-    public int getRequests() {
-        return requests;
+    public long getSize() {
+        return size;
     }
 
-    public void setRequests(int requests) {
-        this.requests = requests;
+    public void setSize(long size) {
+        this.size = size;
     }
 
     public int getInterval() {

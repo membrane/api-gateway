@@ -11,25 +11,19 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.apimanagement.rateLimiter;
-
-import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
+package com.predic8.membrane.core.interceptor.apimanagement.quota;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class ApiKeyInformation {
+public class ApiKeyByteCounter {
+    private HashMap<String,AtomicLong> policyByteCounters = new HashMap<String, AtomicLong>();
 
-    private HashMap<String,AtomicInteger> policyCounters = new HashMap<String, AtomicInteger>();
-
-    public HashMap<String, AtomicInteger> getPolicyCounters() {
-        return policyCounters;
+    public HashMap<String, AtomicLong> getPolicyByteCounters() {
+        return policyByteCounters;
     }
 
-    public void setPolicyCounters(HashMap<String, AtomicInteger> policyCounters) {
-        this.policyCounters = policyCounters;
+    public void setPolicyByteCounters(HashMap<String, AtomicLong> policyByteCounters) {
+        this.policyByteCounters = policyByteCounters;
     }
 }

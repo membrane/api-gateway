@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
@@ -47,7 +46,7 @@ public class AMRateLimiter {
     private static Logger log = LogManager.getLogger(AMRateLimiter.class);
     private ApiManagementConfiguration amc;
 
-    public ConcurrentHashMap<String, ApiKeyInformation> keyInformation = new ConcurrentHashMap<String, ApiKeyInformation>();
+    public ConcurrentHashMap<String, ApiKeyRequestCounter> keyInformation = new ConcurrentHashMap<String, ApiKeyRequestCounter>();
     public ConcurrentHashMap<String, PolicyRateLimit> policyRateLimits = new ConcurrentHashMap<String, PolicyRateLimit>();
 
     public ApiManagementConfiguration getAmc() {
@@ -133,7 +132,7 @@ public class AMRateLimiter {
     public LimitReachedAnswer isRequestLimitReached(String service, String apiKey) {
         doCleanup();
         addRequestEntry(apiKey);
-        ApiKeyInformation info = keyInformation.get(apiKey);
+        ApiKeyRequestCounter info = keyInformation.get(apiKey);
         boolean resultTemp = false;
         PolicyRateLimit prlTemp = null;
         synchronized(info) {
@@ -168,7 +167,7 @@ public class AMRateLimiter {
         synchronized (policyRateLimits) {
             for (PolicyRateLimit prl : policyRateLimits.values()) {
                 if (DateTime.now().isAfter(prl.getNextCleanup())) {
-                    for(ApiKeyInformation keyInfo : keyInformation.values()){
+                    for(ApiKeyRequestCounter keyInfo : keyInformation.values()){
                         if(keyInfo.getPolicyCounters().keySet().contains(prl.getName())){
                             keyInfo.getPolicyCounters().get(prl.getName()).set(0);
                         }
@@ -182,7 +181,7 @@ public class AMRateLimiter {
     private void addRequestEntry(String apiKey) {
         synchronized (keyInformation) {
             if (!keyInformation.containsKey(apiKey)) {
-                ApiKeyInformation value = new ApiKeyInformation();
+                ApiKeyRequestCounter value = new ApiKeyRequestCounter();
                 Key key = amc.getKeys().get(apiKey);
                 for(Policy p : key.getPolicies()){
                     value.getPolicyCounters().put(p.getName(), new AtomicInteger());
@@ -191,7 +190,7 @@ public class AMRateLimiter {
             }
         }
 
-        ApiKeyInformation keyInfo = keyInformation.get(apiKey);
+        ApiKeyRequestCounter keyInfo = keyInformation.get(apiKey);
         for(AtomicInteger counter : keyInfo.getPolicyCounters().values()) {
             counter.incrementAndGet();
         }
