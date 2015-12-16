@@ -23,6 +23,10 @@ import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.Lifecycle;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,13 +35,14 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ApiManagementConfiguration {
+public class ApiManagementConfiguration implements Lifecycle, ApplicationContextAware {
 
     private static String currentDir = System.getProperty("user.dir");
 
     private static Logger log = LogManager.getLogger(ApiManagementConfiguration.class);
-    private ResolverMap resolver = new ResolverMap();
+    private ResolverMap resolver = null;
     private String location = null;
+    private ApplicationContext context;
 
     public Map<String, Policy> getPolicies() {
         return policies;
@@ -218,8 +223,15 @@ public class ApiManagementConfiguration {
     }
 
     public void setLocation(String location) {
+        this.location = location;
+        if(resolver != null)
+        {
+            updateAfterLocationChange(location);
+        }
+    }
+
+    public void updateAfterLocationChange(String location){
         final String newLocation = ResolverMap.combine(currentDir, location);
-        this.location = newLocation;
         InputStream is = null;
         try {
             is = resolver.resolve(newLocation);
@@ -231,17 +243,57 @@ public class ApiManagementConfiguration {
             resolver.observeChange(newLocation, new Consumer<InputStream>() {
                 @Override
                 public void call(InputStream inputStream) {
-                    System.out.println("Configuration changed, reloading...");
+                    log.info("Configuration changed, reloading...");
                     parseAndConstructConfiguration(inputStream);
                     try {
                         resolver.observeChange(newLocation,this);
                     } catch (ResourceRetrievalException ignored) {
                     }
-                    System.out.println("Configuration reloading done.");
+                    log.info("Configuration reloading done.");
                 }
             });
         } catch (ResourceRetrievalException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.context = applicationContext;
+    }
+
+    public static final String TEMP_DEFAULT_RESOLVER_NAME = "DEFAULT_RESOLVER_MAP";
+
+    @Override
+    public void start() {
+        try {
+            if (resolver == null) {
+                Object defaultResolver = null;
+                try {
+                    defaultResolver = context.getBean(TEMP_DEFAULT_RESOLVER_NAME);
+                    if(defaultResolver != null){
+                        resolver = (ResolverMap) defaultResolver;
+                    }
+                } catch (Exception ignored) {
+                }
+                if (resolver == null) {
+                    resolver = new ResolverMap();
+                }
+            }
+            updateAfterLocationChange(this.location);
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void stop() {
+
+    }
+
+    @Override
+    public boolean isRunning() {
+        return false;
     }
 }

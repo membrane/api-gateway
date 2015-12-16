@@ -83,7 +83,6 @@ public class FileSchemaResolver implements SchemaResolver {
 			}
 		}
 		Path path = Paths.get(url).getParent();
-		System.out.println("Watching directory: "+ path.toString());
 		WatchKey watchKey = null;
 		try {
 			watchKey = path.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
