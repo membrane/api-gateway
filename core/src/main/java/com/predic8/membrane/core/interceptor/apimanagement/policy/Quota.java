@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.apimanagement.policy;
 public class Quota {
 
     public static long SIZE_DEFAULT = 1*1024*1024;
-    public static int INTERVAL_DEFAULT = 1;
+    public static int INTERVAL_DEFAULT = 1*60*60*24;
 
     private long size = SIZE_DEFAULT;
     private int interval = INTERVAL_DEFAULT;

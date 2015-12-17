@@ -93,7 +93,6 @@ public class EtcdResolver implements SchemaResolver{
                 String valueName = normalizedUrl.substring(lastSlash+1,normalizedUrl.length());
                 EtcdResponse respLongPollForChange = EtcdUtil.createBasicRequest(EtcdResolver.this.url,baseKey,"").getValue(valueName).longPoll().sendRequest();
                 if(!EtcdUtil.checkOK(respLongPollForChange)){
-                    System.out.println("fehler");
                 }
                 try {
                     consumer.call(resolve(normalizedUrl));

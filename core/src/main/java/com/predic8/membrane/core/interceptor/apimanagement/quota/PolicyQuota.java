@@ -13,13 +13,17 @@
 
 package com.predic8.membrane.core.interceptor.apimanagement.quota;
 
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
+
 import java.util.HashSet;
 
 public class PolicyQuota {
 
     private String name;
     private long size;
-    private int interval;
+    private Duration interval;
+    private DateTime nextCleanup;
     private HashSet<String> services = new HashSet<String>();
 
     public String getName() {
@@ -38,12 +42,16 @@ public class PolicyQuota {
         this.size = size;
     }
 
-    public int getInterval() {
+    public Duration getInterval() {
         return interval;
     }
 
-    public void setInterval(int interval) {
+    public void setInterval(Duration interval) {
         this.interval = interval;
+    }
+
+    public void incrementNextCleanup(){
+        setNextCleanup(DateTime.now().plus(interval));
     }
 
     public HashSet<String> getServices() {
@@ -52,5 +60,13 @@ public class PolicyQuota {
 
     public void setServices(HashSet<String> services) {
         this.services = services;
+    }
+
+    public DateTime getNextCleanup() {
+        return nextCleanup;
+    }
+
+    public void setNextCleanup(DateTime nextCleanup) {
+        this.nextCleanup = nextCleanup;
     }
 }

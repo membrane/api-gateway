@@ -16,12 +16,19 @@ package com.predic8.membrane.core.interceptor.apimanagement.quota;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import com.predic8.membrane.core.interceptor.apimanagement.Key;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
+import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.ApiKeyRequestCounter;
+import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.LimitReachedAnswer;
+import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.PolicyRateLimit;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,10 +52,10 @@ public class AMQuota {
 
     public void setAmc(ApiManagementConfiguration amc) {
         this.amc = amc;
-        fillPolicyCleanupTimes();
+        fillPolicyQuotas();
     }
 
-    private void fillPolicyCleanupTimes() {
+    private void fillPolicyQuotas() {
         policyQuotas.clear();
         for(Policy policy : amc.getPolicies().values()){
             String name = policy.getName();
@@ -58,7 +65,8 @@ public class AMQuota {
             PolicyQuota pq = new PolicyQuota();
             pq.setName(name);
             pq.setSize(quotaSize);
-            pq.setInterval(interval);
+            pq.setInterval(Duration.standardSeconds(interval));
+            pq.incrementNextCleanup();
             pq.setServices(services);
             policyQuotas.put(name,pq);
         }
@@ -67,15 +75,11 @@ public class AMQuota {
 
 
     public Outcome handleRequest(Exchange exc){
-        //System.out.println("amQuotaReq");
-        //return handle(exc, exc.getRequest());
-        return Outcome.CONTINUE;
+        return handle(exc, exc.getRequest());
     }
 
     public Outcome handleResponse(Exchange exc){
-        //System.out.println("amQuotaResp");
-        //return handle(exc, exc.getResponse());
-        return Outcome.CONTINUE;
+        return handle(exc, exc.getResponse());
     }
 
     private Outcome handle(Exchange exc, Message msg){
@@ -86,10 +90,12 @@ public class AMQuota {
         }
         String apiKey = (String) apiKeyObj;
         String requestedService = exc.getRule().getName();
-        QuotaReachedAnswer answer = isQuotaReached(exc,requestedService,apiKey);
-        if (answer.isQuotaReached()) {
-            setResponseToServiceUnavailable(exc,answer.getPq());
-            return Outcome.RETURN;
+        QuotaReachedAnswer answer = isQuotaReached(msg,requestedService,apiKey);
+        if(msg instanceof Request) { // lets responses over the limit always through
+            if (answer.isQuotaReached()) {
+                setResponseToServiceUnavailable(exc, answer.getPq());
+                return Outcome.RETURN;
+            }
         }
         return Outcome.CONTINUE;
     }
@@ -98,22 +104,38 @@ public class AMQuota {
         //TODO
     }
 
-    private QuotaReachedAnswer isQuotaReached(Exchange exc, String requestedService, String apiKey) {
+    private QuotaReachedAnswer isQuotaReached(Message msg, String requestedService, String apiKey) {
         doCleanup();
-        long size = getSizeFromExchange(exc);
+        long size = msg.getHeader().getContentLength();
         addRequestEntry(apiKey, size);
-
-
-        //TODO
-        return null;
-
-    }
-
-    private long getSizeFromExchange(Exchange exc) {
-        //exc.
-
-        // TODO
-        return 0;
+        ApiKeyByteCounter info = keyByteCounter.get(apiKey);
+        boolean resultTemp = false;
+        PolicyQuota pqTemp = null;
+        synchronized (info){
+            for (String policy : info.getPolicyByteCounters().keySet()) {
+                PolicyQuota pq = policyQuotas.get(policy);
+                if (!pq.getServices().contains(requestedService)) {
+                    // the service is not in this policy
+                    //System.out.println("service not found in " + policy);
+                    continue;
+                }
+                if (info.getPolicyByteCounters().get(policy).get() > pq.getSize()) {
+                    resultTemp = true;
+                    pqTemp = pq;
+                    //System.out.println("limit reached for " + policy);
+                    continue;
+                }
+                // if atleast one policy has available quota, then let it through
+                resultTemp = false;
+                //System.out.println("limit not reached for " + policy);
+                break;
+            }
+        }
+        if(resultTemp){
+            return QuotaReachedAnswer.createQuotaReached(pqTemp);
+        }else{
+            return QuotaReachedAnswer.createQuotaNotReached();
+        }
     }
 
     private void addRequestEntry(String apiKey, long sizeOfBytes) {
@@ -135,7 +157,18 @@ public class AMQuota {
     }
 
     private void doCleanup() {
-        //TODO
+        synchronized (policyQuotas) {
+            for (PolicyQuota pq : policyQuotas.values()) {
+                if (DateTime.now().isAfter(pq.getNextCleanup())) {
+                    for(ApiKeyByteCounter keyInfo : keyByteCounter.values()){
+                        if(keyInfo.getPolicyByteCounters().keySet().contains(pq.getName())){
+                            keyInfo.getPolicyByteCounters().get(pq.getName()).set(0);
+                        }
+                    }
+                    pq.incrementNextCleanup();
+                }
+            }
+        }
     }
 
 
