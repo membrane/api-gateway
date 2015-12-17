@@ -40,9 +40,11 @@ public class FileSchemaResolver implements SchemaResolver {
 						Path urlPath = Paths.get(url).getFileName();
 						if(changedFile.toString().equals(urlPath.toString())){
 							try {
-								watchedFiles.get(url).call(resolve(url));
+								Consumer<InputStream> inputStreamConsumer = watchedFiles.get(url);
+								watchServiceForFile.remove(url);
+								watchedFiles.remove(url);
+								inputStreamConsumer.call(resolve(url));
 							} catch (ResourceRetrievalException ignored) {
-								ignored.printStackTrace();
 							}
 						}
 					}

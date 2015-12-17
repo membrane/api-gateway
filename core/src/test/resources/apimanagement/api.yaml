@@ -8,16 +8,25 @@ policies:
       rateLimit:
         requests: 1000
         interval: 3600
+      quota:
+        size: 1M
+        interval: 1
       serviceProxy:
         - "Order API"
         - "Names API"
   - policy:
-        id: "junitPol"
-        rateLimit:
-          requests: 5
-          interval: 2
-        serviceProxy:
-          - "junit API"
+      id: "junitPol"
+      rateLimit:
+        requests: 5
+        interval: 30
+      serviceProxy:
+        - "junit API"
+  - policy:
+      id: "unauthorized"
+      serviceProxy:
+         - "AdminConsole"
+
+
 keys:
   - key: "abcdefg"
     policies:

@@ -14,6 +14,27 @@
 
 package com.predic8.membrane.core.cloud.etcd;
 
+import org.junit.Test;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 public class EtcdRequestTest {
+
+    @Test
+    public void testFillEtcdWithYaml() throws IOException {
+        String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
+
+        try {
+            EtcdResponse respPutYaml = EtcdUtil.createBasicRequest("http://localhost:4001", "/amc", "").setValue("file", source).sendRequest();
+            EtcdResponse respPutHash = EtcdUtil.createBasicRequest("http://localhost:4001", "/amc", "").setValue("hash", "12345").sendRequest();
+        }catch(Exception ignored){
+        }
+
+
+
+    }
 
 }

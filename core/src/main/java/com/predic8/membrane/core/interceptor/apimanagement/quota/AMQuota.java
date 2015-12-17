@@ -67,13 +67,15 @@ public class AMQuota {
 
 
     public Outcome handleRequest(Exchange exc){
-        System.out.println("amQuotaReq");
-        return handle(exc, exc.getRequest());
+        //System.out.println("amQuotaReq");
+        //return handle(exc, exc.getRequest());
+        return Outcome.CONTINUE;
     }
 
     public Outcome handleResponse(Exchange exc){
-        System.out.println("amQuotaResp");
-        return handle(exc, exc.getResponse());
+        //System.out.println("amQuotaResp");
+        //return handle(exc, exc.getResponse());
+        return Outcome.CONTINUE;
     }
 
     private Outcome handle(Exchange exc, Message msg){

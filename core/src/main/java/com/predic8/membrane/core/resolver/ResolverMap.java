@@ -21,6 +21,9 @@ import java.net.URI;
 import java.security.InvalidParameterException;
 import java.util.List;
 
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.cloud.etcd.*;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 
@@ -38,7 +41,10 @@ import com.predic8.xml.util.ExternalResolver;
  * Note that this class is not thread-safe! The ResolverMap is setup during
  * Membrane's single-threaded startup and is only used read-only thereafter.
  */
+@MCElement(name="resolverMap")
 public class ResolverMap implements Cloneable, Resolver {
+
+	private EtcdResolver etcdResolver;
 
 	public static String combine(String... locations) {
 		if (locations.length < 2)
@@ -217,6 +223,16 @@ public class ResolverMap implements Cloneable, Resolver {
 
 	public ExternalResolverConverter toExternalResolver() {
 		return new ExternalResolverConverter();
+	}
+
+	public EtcdResolver getEtcdResolver() {
+		return etcdResolver;
+	}
+
+	@MCChildElement(order = 0)
+	public void setEtcdResolver(EtcdResolver etcdResolver) {
+		this.etcdResolver = etcdResolver;
+		addSchemaResolver(etcdResolver);
 	}
 
 	public class ExternalResolverConverter {

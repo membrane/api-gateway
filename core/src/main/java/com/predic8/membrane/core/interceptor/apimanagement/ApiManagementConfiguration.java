@@ -14,6 +14,9 @@
 package com.predic8.membrane.core.interceptor.apimanagement;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
@@ -30,11 +33,16 @@ import org.springframework.context.Lifecycle;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@MCElement(name="amc")
 public class ApiManagementConfiguration implements Lifecycle, ApplicationContextAware {
 
     private static String currentDir = System.getProperty("user.dir");
@@ -42,6 +50,8 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
     private static Logger log = LogManager.getLogger(ApiManagementConfiguration.class);
     private ResolverMap resolver = null;
     private String location = null;
+    private String hashLocation = null;
+    private String currentHash = "";
     private ApplicationContext context;
 
     public Map<String, Policy> getPolicies() {
@@ -190,6 +200,7 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
         }
         setPolicies(parsePolicies(yaml));
         setKeys(parsePoliciesForKeys(yaml));
+        log.info("Configuration loaded.");
     }
 
     private Map<String,Key> parsePoliciesForKeys(Map<String, Object> yaml) {
@@ -222,38 +233,73 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
         return location;
     }
 
+    /**
+     * @description location of the api definition
+     * @default api.yaml
+     */
+    @MCAttribute
     public void setLocation(String location) {
         this.location = location;
-        if(resolver != null)
+        if(getResolver() != null)
         {
             updateAfterLocationChange(location);
         }
     }
 
-    public void updateAfterLocationChange(String location){
-        final String newLocation = ResolverMap.combine(currentDir, location);
-        InputStream is = null;
+    private boolean isLocalFile(String location){
+        boolean isFile = false;
         try {
-            is = resolver.resolve(newLocation);
-        } catch (ResourceRetrievalException e) {
-            e.printStackTrace();
+            URI uri = new URI(location);
+            if(uri.getScheme() == null || uri.getScheme().equals("file")){
+                isFile = true;
+            }
+        } catch (URISyntaxException ignored) {
         }
-        parseAndConstructConfiguration(is);
-        try {
-            resolver.observeChange(newLocation, new Consumer<InputStream>() {
-                @Override
-                public void call(InputStream inputStream) {
-                    log.info("Configuration changed, reloading...");
-                    parseAndConstructConfiguration(inputStream);
-                    try {
-                        resolver.observeChange(newLocation,this);
-                    } catch (ResourceRetrievalException ignored) {
+        return isFile;
+    }
+
+    public void updateAfterLocationChange(String location){
+        if(!isLocalFile(location)){
+            try {
+                parseAndConstructConfiguration(getResolver().resolve(location));
+            } catch (ResourceRetrievalException e) {
+                log.error("Could not retrieve resource");
+                return;
+            }
+            return;
+        }else {
+            final String newLocation = ResolverMap.combine(currentDir, location);
+            InputStream is = null;
+            try {
+                is = getResolver().resolve(newLocation);
+            } catch (ResourceRetrievalException e) {
+                log.error("Could not retrieve resource");
+                return;
+            }
+            parseAndConstructConfiguration(is);
+            try {
+                getResolver().observeChange(newLocation, new Consumer<InputStream>() {
+                    @Override
+                    public void call(InputStream inputStream) {
+                        parseAndConstructConfiguration(inputStream);
+                        try {
+                            getResolver().observeChange(newLocation, this);
+                        } catch (ResourceRetrievalException ignored) {
+                        }
                     }
-                    log.info("Configuration reloading done.");
+                });
+            } catch (Exception warn) {
+                URL url = null;
+                try {
+                    url = new URL(newLocation);
+                } catch (MalformedURLException ignored) {
                 }
-            });
-        } catch (ResourceRetrievalException e) {
-            e.printStackTrace();
+                String schema = "";
+                if (url != null) {
+                    schema = url.getProtocol();
+                }
+                log.warn("Could not observe AMC location for " + schema);
+            }
         }
     }
 
@@ -262,25 +308,33 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
         this.context = applicationContext;
     }
 
-    public static final String TEMP_DEFAULT_RESOLVER_NAME = "DEFAULT_RESOLVER_MAP";
+    public static final String DEFAULT_RESOLVER_NAME = "resolverMap";
 
     @Override
     public void start() {
         try {
-            if (resolver == null) {
+            if (getResolver() == null) {
                 Object defaultResolver = null;
                 try {
-                    defaultResolver = context.getBean(TEMP_DEFAULT_RESOLVER_NAME);
-                    if(defaultResolver != null){
-                        resolver = (ResolverMap) defaultResolver;
+                    if(context != null) {
+                        defaultResolver = context.getBean("resolverMap");
+                        if (defaultResolver != null) {
+                            setResolver((ResolverMap) defaultResolver);
+                        }
+                    }else{
+                        log.error("Context not set");
                     }
                 } catch (Exception ignored) {
                 }
-                if (resolver == null) {
-                    resolver = new ResolverMap();
+                if (getResolver() == null) {
+                    setResolver(new ResolverMap());
                 }
             }
-            updateAfterLocationChange(this.location);
+            if(this.hashLocation == null) {
+                updateAfterLocationChange(this.location);
+            }else {
+                setHashLocation(this.hashLocation);
+            }
         }
         catch(Exception e){
             e.printStackTrace();
@@ -295,5 +349,51 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
     @Override
     public boolean isRunning() {
         return false;
+    }
+
+    public ResolverMap getResolver() {
+        return resolver;
+    }
+
+    @MCChildElement
+    public void setResolver(ResolverMap resolver) {
+        this.resolver = resolver;
+    }
+
+    public String getHashLocation() {
+        return hashLocation;
+    }
+
+    /**
+     * @description location of the hash
+     * @default
+     */
+    @MCAttribute
+    public void setHashLocation(final String hashLocation) throws IOException {
+        this.hashLocation = hashLocation;
+        if(getResolver() != null){
+            if (!isLocalFile(hashLocation)) {
+                this.hashLocation = hashLocation;
+                String newHash = IOUtils.toString(resolver.resolve(hashLocation));
+                if (!currentHash.equals(newHash)) {
+                    currentHash = newHash;
+                    updateAfterLocationChange(this.location);
+                    getResolver().observeChange(hashLocation, new Consumer<InputStream>() {
+                        @Override
+                        public void call(InputStream inputStream) {
+                            try {
+                                currentHash = IOUtils.toString(resolver.resolve(hashLocation));
+                            } catch (IOException ignored) {
+                            }
+                            updateAfterLocationChange(ApiManagementConfiguration.this.location);
+                            try {
+                                getResolver().observeChange(hashLocation,this);
+                            } catch (ResourceRetrievalException ignored) {
+                            }
+                        }
+                    });
+                }
+            }
+        }
     }
 }
