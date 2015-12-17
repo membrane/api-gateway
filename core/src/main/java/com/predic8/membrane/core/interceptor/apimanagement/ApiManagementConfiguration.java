@@ -170,8 +170,18 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
                             default:
                         }
                     }
+                    Object quotaIntervalObj = quota.get("interval");
+                    int quotaInterval = 0;
+                    if(quotaIntervalObj == null){
+                        log.warn("Quota object found, but interval field is empty");
+                        quotaInterval = Quota.INTERVAL_DEFAULT;
+                    }else {
+                        quotaInterval = (Integer) quotaIntervalObj;
+                    }
+
                     Quota q = new Quota();
                     q.setSize(quotaNumber);
+                    q.setInterval(quotaInterval);
                     policy.setQuota(q);
                 }
 

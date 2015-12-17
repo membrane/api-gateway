@@ -74,21 +74,25 @@ public class AMQuotaInterceptorTest {
                         {
                             returns.incrementAndGet();
                         }
-                        //amq.handleResponse(exc);
+                        amq.handleResponse(exc);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
             });
             threads.add(t);
-            t.start();
+            //t.start();
+            t.run();
         }
         for(Thread t : threads)
         {
             t.join();
         }
-        assertEquals(6, continues.get());
-        assertEquals(994, returns.get());
+        // 5 + 11 = 16 -> 16*2 = 32 -> after the second request it should block because the limit is 30b
+        assertEquals(2, continues.get());
+        assertEquals(998, returns.get());
+        Thread.sleep(2000);
+        assertEquals(Outcome.CONTINUE,amq.handleRequest(exc));
 
     }
 }
