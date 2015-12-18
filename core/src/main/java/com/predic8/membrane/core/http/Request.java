@@ -258,6 +258,11 @@ public class Request extends Message {
 			return this;
 		}
 
+		public Builder contentType(String value) {
+			req.getHeader().add(Header.CONTENT_TYPE, value);
+			return this;
+		}
+
 		public Builder header(Header headers) {
 			req.setHeader(headers);
 			return this;

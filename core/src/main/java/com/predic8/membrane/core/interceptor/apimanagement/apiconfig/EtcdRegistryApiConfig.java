@@ -11,26 +11,33 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.cloud.etcd;
+package com.predic8.membrane.core.interceptor.apimanagement.apiconfig;
 
 import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.cloud.ExponentialBackoff;
-import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
+import com.predic8.membrane.core.cloud.etcd.EtcdUtil;
+import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
+import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
 
-@MCElement(name="etcdRegistryConfig")
-public class EtcdRegistryConfig implements Lifecycle, ApplicationContextAware {
+import java.net.MalformedURLException;
+import java.net.URL;
 
-    private static final Log log = LogFactory.getLog(EtcdRegistryConfig.class.getName());
+@MCElement(name="etcdRegistryApiConfig")
+public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware, ApiConfig, DisposableBean {
+
+    private static final Log log = LogFactory.getLog(EtcdRegistryApiConfig.class.getName());
 
     private ApplicationContext context;
+    private ApiManagementConfiguration amc;
     private String url;
     private String membrane;
     private String endpoint;
@@ -50,9 +57,9 @@ public class EtcdRegistryConfig implements Lifecycle, ApplicationContextAware {
                         "First publish from thread", jobPublisher);
 
                 boolean connectionLost = false;
+
                 while (true) {
-                    System.out.println("Refreshing ttl");
-                    String baseKey = "/gateway/"+membrane;
+                    String baseKey = "/gateways/"+membrane;
                     EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(url, baseKey, "")
                             .refreshTTL(ttl).sendRequest();
                     if (!EtcdUtil.checkOK(respTTLDirRefresh)) {
@@ -80,9 +87,17 @@ public class EtcdRegistryConfig implements Lifecycle, ApplicationContextAware {
     };
 
     private boolean publishToEtcd() {
-        String baseKey = "/gateway/"+membrane;
+        String baseKey = "/gateways/"+membrane;
         EtcdResponse respPublishEndpoint = EtcdUtil.createBasicRequest(url,baseKey,"").setValue("endpoint",endpoint).sendRequest();
         if(!EtcdUtil.checkOK(respPublishEndpoint)){
+            return false;
+        }
+        EtcdResponse respPublishApiUrl = EtcdUtil.createBasicRequest(url,baseKey,"/apiconfig").setValue("url","http://localhost:8081/api/api.yaml").sendRequest();
+        if(!EtcdUtil.checkOK(respPublishApiUrl)){
+            return false;
+        }
+        EtcdResponse respPublishApiFingerprint = EtcdUtil.createBasicRequest(url,baseKey,"/apiconfig").setValue("fingerprint","").sendRequest();
+        if(!EtcdUtil.checkOK(respPublishApiFingerprint)){
             return false;
         }
         return true;
@@ -99,13 +114,31 @@ public class EtcdRegistryConfig implements Lifecycle, ApplicationContextAware {
         endpoint = "123.456.789.1";
 
         if(!publisher.isAlive()) {
+            log.info("Started membrane publishing");
             publisher.start();
         }
+        String workingDir = ((BaseLocationApplicationContext)context).getBaseLocation();
+        String etcdUrlForAmc = null;
+        URL u = null;
+        try {
+            u = new URL(getUrl());
+
+        } catch (MalformedURLException e) {
+            try {
+                u = new URL("http://" + getUrl());
+            } catch (MalformedURLException ignored) {
+            }
+        }
+        if(u == null){
+            log.error("Url malformed: " + getUrl());
+        }
+        etcdUrlForAmc = "etcd://" + u.getHost() + ":" + u.getPort();
+        amc = new ApiManagementConfiguration(workingDir,etcdUrlForAmc,getMembrane());
     }
 
     @Override
     public void stop() {
-
+        amc.shutdown();
     }
 
     @Override
@@ -158,5 +191,15 @@ public class EtcdRegistryConfig implements Lifecycle, ApplicationContextAware {
     @MCAttribute
     public void setTtl(int ttl) {
         this.ttl = ttl;
+    }
+
+    @Override
+    public ApiManagementConfiguration getConfiguration() {
+        return amc;
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        stop();
     }
 }

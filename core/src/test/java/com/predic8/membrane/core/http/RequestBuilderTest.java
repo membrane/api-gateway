@@ -11,20 +11,17 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.apimanagement.rateLimiter;
+package com.predic8.membrane.core.http;
 
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.Test;
 
-public class ApiKeyRequestCounter {
+import static org.junit.Assert.assertEquals;
 
-    private HashMap<String,AtomicInteger> policyCounters = new HashMap<String, AtomicInteger>();
+public class RequestBuilderTest {
+    @Test
+    public void testSetContentType(){
+        Request req = new Request.Builder().contentType("ContentType").build();
 
-    public HashMap<String, AtomicInteger> getPolicyCounters() {
-        return policyCounters;
-    }
-
-    public void setPolicyCounters(HashMap<String, AtomicInteger> policyCounters) {
-        this.policyCounters = policyCounters;
+        assertEquals("ContentType",req.getHeader().getContentType());
     }
 }

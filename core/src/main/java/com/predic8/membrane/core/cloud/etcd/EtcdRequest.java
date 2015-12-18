@@ -20,10 +20,12 @@ import java.net.URL;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 
 public class EtcdRequest {
+
+	public static final String APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded";
+
 	enum MethodType {
 		GET, PUT, DELETE, POST,
 	}
@@ -62,6 +64,10 @@ public class EtcdRequest {
 	String recursiveLongPoll = "";
 	String waitIndex = "";
 
+	public static EtcdRequest create(String url, String baseKey, String module){
+		return new EtcdRequest().url(url).baseKey(baseKey).module(module);
+	}
+
 	public EtcdRequest() {
 	}
 
@@ -81,13 +87,19 @@ public class EtcdRequest {
 	}
 
 	public EtcdRequest url(String url) {
-		URL u;
+		URL u = null;
 		try {
 			u = new URL(url);
-			ip(u.getHost()).port(Integer.toString(u.getPort()));
 		} catch (MalformedURLException e) {
-		}
+			try {
+				u = new URL("http://" + url);
 
+			} catch (MalformedURLException e1) {
+			}
+		}
+		if(u != null){
+			ip(u.getHost()).port(Integer.toString(u.getPort()));
+		}
 		return this;
 	}
 
@@ -157,6 +169,13 @@ public class EtcdRequest {
 		return this;
 	}
 
+	public static EtcdRequest refreshTTLSta(int seconds) {
+		EtcdRequest req = new EtcdRequest();
+		req.method = MethodType.PUT;
+		req.prevExist = "prevExist=true";
+		return req.ttl(seconds);
+	}
+
 	public EtcdRequest refreshTTL(int seconds) {
 		this.method = MethodType.PUT;
 		this.prevExist = "prevExist=true";
@@ -182,40 +201,39 @@ public class EtcdRequest {
 	public EtcdResponse sendRequest() {
 		Exchange requestExc = null;
 		try {
-			switch (method) {
-			case GET:
-				createGetRequest();
-				requestExc = new Request.Builder().get(url).buildExchange();
-				break;
-			case DELETE: // TODO body?
-				createDeleteRequest();
-				requestExc = new Request.Builder().delete(url).buildExchange();
-				break;
-			case POST:// TODO body?
-				createPostRequest();
-				requestExc = new Request.Builder().header("Content-Type", "application/x-www-form-urlencoded").post(url)
-						.buildExchange();
-				break;
-			case PUT:
-				createPutRequest();
-				requestExc = new Request.Builder().header("Content-Type", "application/x-www-form-urlencoded").put(url)
-						.body(body).buildExchange();
-				break;
-			default:
-			}
+			requestExc = getExchange();
 		} catch (URISyntaxException e1) {
 			throw new RuntimeException();
 		}
 		if (requestExc == null) {
 			throw new RuntimeException();
 		}
-		Response response = null;
+
 		try {
-			response = client.call(requestExc).getResponse();
+			return new EtcdResponse(this,  client.call(requestExc).getResponse());
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-		return new EtcdResponse(this, response);
+	}
+
+	private Exchange getExchange() throws URISyntaxException {
+		switch (method) {
+        case GET:
+            createGetRequest();
+            return new Request.Builder().get(url).buildExchange();
+        case DELETE: // TODO body?
+            createDeleteRequest();
+			return new Request.Builder().delete(url).buildExchange();
+        case POST:// TODO body?
+            createPostRequest();
+			return new Request.Builder().contentType( APPLICATION_X_WWW_FORM_URLENCODED).post(url)
+                    .buildExchange();
+        case PUT:
+            createPutRequest();
+			return new Request.Builder().contentType(APPLICATION_X_WWW_FORM_URLENCODED).put(url)
+                    .body(body).buildExchange();
+        }
+		throw new RuntimeException("Method not supported");
 	}
 
 	protected EtcdRequest createPutRequest() {
@@ -291,6 +309,10 @@ public class EtcdRequest {
 		url = builder.toString();
 		body = "";
 		return this;
+	}
+
+	public String getUrl(){
+		return url;
 	}
 
 }

@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.apimanagement;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
@@ -22,6 +23,9 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.ApiConfig;
+import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.EtcdRegistryApiConfig;
+import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.SimpleApiConfig;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.quota.AMQuota;
 import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.AMRateLimiter;
@@ -30,38 +34,49 @@ import org.apache.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 @MCElement(name = "apiManagement")
 public class ApiManagementInterceptor extends AbstractInterceptor {
 
     private static Logger log = LogManager.getLogger(ApiManagementInterceptor.class);
-    private StaticPolicyDecisionPoint staticPolicyDecisionPoint;
+    private ApiConfig apiConfig;
     private AMRateLimiter amRli = null;
     private AMQuota amQ = null;
-    private ApiManagementConfiguration amc;
-
+    private ApiManagementConfiguration amc = null;
+    private String config = "api.yaml";
 
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-        Object amcObj = router.getBeanFactory().getBean("amc");
-        if (amcObj == null) {
-            log.error("ApiManagementConfiguration not available. Define it as a spring bean in proxies.xml");
+
+        Map<String, ApiConfig> apiConfigs = router.getBeanFactory().getBeansOfType(ApiConfig.class);
+        String etcdRegistryApiConfig = EtcdRegistryApiConfig.class.getSimpleName();
+        String etcdRegistryApiConfigCorrected = etcdRegistryApiConfig.substring(0,1).toLowerCase() + etcdRegistryApiConfig.substring(1);
+        String simpleApiConfig = SimpleApiConfig.class.getSimpleName();
+        String simpleApiConfigCorrected = simpleApiConfig.substring(0,1).toLowerCase() + simpleApiConfig.substring(1);
+
+
+        if(apiConfigs.containsKey(etcdRegistryApiConfigCorrected)){
+            apiConfig = apiConfigs.get(etcdRegistryApiConfigCorrected);
         }
-        amc = (ApiManagementConfiguration) amcObj;
-        setStaticPolicyDecisionPoint(new StaticPolicyDecisionPoint(amc));
+        else if(apiConfigs.containsKey(simpleApiConfigCorrected)){
+            apiConfig = apiConfigs.get(simpleApiConfigCorrected);
+        }
+        if(apiConfig != null){
+            log.info("used apiConfig: " + apiConfig.getClass().getSimpleName());
+            amc = apiConfig.getConfiguration();
+        }else{
+            log.info("No ApiConfig set. Using default");
+            amc = new ApiManagementConfiguration(router.getBaseLocation(),"api.yaml");
+        }
+
         if (amRli != null) {
             amRli.setAmc(amc);
         }
-    }
-
-
-    public StaticPolicyDecisionPoint getStaticPolicyDecisionPoint() {
-        return staticPolicyDecisionPoint;
-    }
-
-    public void setStaticPolicyDecisionPoint(StaticPolicyDecisionPoint staticPolicyDecisionPoint) {
-        this.staticPolicyDecisionPoint = staticPolicyDecisionPoint;
+        if(amQ != null){
+            amQ.setAmc(amc);
+        }
     }
 
     @Override
@@ -75,10 +90,10 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
             return Outcome.CONTINUE;
         }
         exc.setProperty(Exchange.API_KEY, key);
-        AuthorizationResult auth = staticPolicyDecisionPoint.getAuthorization(exc, key);
+        AuthorizationResult auth = getAuthorization(exc, key);
         if (auth.isAuthorized()) {
-            if (amRli != null) {
-                if(amRli.handleRequest(exc) == Outcome.RETURN){
+            if (getAmRli() != null) {
+                if(getAmRli().handleRequest(exc) == Outcome.RETURN){
                     return Outcome.RETURN;
                 }
             }
@@ -98,10 +113,11 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        if(amQ != null){
-            amQ.handleResponse(exc);
+        if (!hasUnauthorizedPolicy(exc)) {
+            if (getAmQ() != null) {
+                getAmQ().handleResponse(exc);
+            }
         }
-
         return Outcome.CONTINUE;
     }
 
@@ -119,6 +135,24 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         }
 
         return false;
+    }
+
+    public AuthorizationResult getAuthorization(Exchange exc, String apiKey) {
+        if(!amc.getKeys().containsKey(apiKey))
+        {
+            return AuthorizationResult.getAuthorizedFalse("API key not found");
+        }
+        Key key = amc.getKeys().get(apiKey);
+        String requestedAPI = exc.getRule().getName();
+
+        String reasonFailed ="";
+        for(Policy policy : key.getPolicies()){
+            if(policy.getServiceProxies().contains(requestedAPI)){
+                return AuthorizationResult.getAuthorizedTrue();
+            }
+        }
+        reasonFailed = "Service not available: " + requestedAPI;
+        return AuthorizationResult.getAuthorizedFalse(reasonFailed);
     }
 
     private Response buildResponse(int code, String msg, ByteArrayOutputStream baos) {
@@ -163,11 +197,6 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 0)
     public void setAmRli(AMRateLimiter amRli) {
         this.amRli = amRli;
-        try {
-            //this.amRli.init(this.getRouter());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     public AMQuota getAmQ() {
@@ -177,5 +206,21 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 1)
     public void setAmQ(AMQuota amQ) {
         this.amQ = amQ;
+    }
+
+    public String getConfig() {
+        return config;
+    }
+
+    /**
+     * @description the location of the configuration
+     * @default api.yaml
+     */
+    @MCAttribute
+    public void setConfig(String config) {
+        this.config = config;
+        if(amc != null){
+            amc.setLocation(this.config);
+        }
     }
 }

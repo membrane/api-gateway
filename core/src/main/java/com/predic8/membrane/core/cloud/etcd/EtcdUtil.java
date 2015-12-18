@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.cloud.etcd;
 
+@Deprecated
 public class EtcdUtil {
 	private static boolean isInRange(int minInclusive, int maxExclusive, int value) {
 		return value >= minInclusive && value < maxExclusive;
@@ -24,10 +25,7 @@ public class EtcdUtil {
 	}
 
 	public static boolean checkStatusCode(int minInc, int maxExc, EtcdResponse resp) {
-		if (!isInRange(minInc, maxExc, resp.getStatusCode())) {
-			return false;
-		}
-		return true;
+		return isInRange(minInc, maxExc, resp.getStatusCode());
 	}
 
 	public static boolean checkOK(EtcdResponse resp) {

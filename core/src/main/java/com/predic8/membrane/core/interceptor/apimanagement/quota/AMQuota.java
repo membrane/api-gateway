@@ -17,14 +17,10 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import com.predic8.membrane.core.interceptor.apimanagement.Key;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
-import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.ApiKeyRequestCounter;
-import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.LimitReachedAnswer;
-import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.PolicyRateLimit;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
@@ -50,9 +46,21 @@ public class AMQuota {
         return amc;
     }
 
+    private Runnable observer = new Runnable() {
+        @Override
+        public void run() {
+            log.info("Getting new config");
+            fillPolicyQuotas();
+        }
+    };
+
     public void setAmc(ApiManagementConfiguration amc) {
+        if(this.amc != null) {
+            this.amc.configChangeObservers.remove(observer);
+        }
         this.amc = amc;
         fillPolicyQuotas();
+        amc.configChangeObservers.add(observer);
     }
 
     private void fillPolicyQuotas() {

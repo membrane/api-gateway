@@ -29,12 +29,23 @@ public class EtcdRequestTest {
 
         try {
             EtcdResponse respPutYaml = EtcdUtil.createBasicRequest("http://localhost:4001", "/amc", "").setValue("file", source).sendRequest();
+            if(!EtcdUtil.checkOK(respPutYaml)){
+                throw new RuntimeException();
+            }
             EtcdResponse respPutHash = EtcdUtil.createBasicRequest("http://localhost:4001", "/amc", "").setValue("hash", "12345").sendRequest();
         }catch(Exception ignored){
         }
 
 
 
+    }
+
+    @Test
+    public void testChangeFingerprint(){
+        EtcdResponse respChangeFingerprint = EtcdUtil.createBasicRequest("http://localhost:4001", "/gateways/m1", "/apiconfig").setValue("fingerprint", "1234").sendRequest();
+        if(!EtcdUtil.checkOK(respChangeFingerprint)){
+            throw new RuntimeException();
+        }
     }
 
 }

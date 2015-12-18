@@ -53,9 +53,21 @@ public class AMRateLimiter {
         return amc;
     }
 
+    private Runnable observer = new Runnable() {
+        @Override
+        public void run() {
+            log.info("Getting new config");
+            fillPolicyCleanupTimes();
+        }
+    };
+
     public void setAmc(ApiManagementConfiguration amc) {
+        if(this.amc != null) {
+            this.amc.configChangeObservers.remove(observer);
+        }
         this.amc = amc;
         fillPolicyCleanupTimes();
+        amc.configChangeObservers.add(observer);
     }
 
     private void fillPolicyCleanupTimes() {

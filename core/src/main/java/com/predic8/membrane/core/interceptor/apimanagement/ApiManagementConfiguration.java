@@ -14,9 +14,9 @@
 package com.predic8.membrane.core.interceptor.apimanagement;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.cloud.etcd.EtcdRequest;
+import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
+import com.predic8.membrane.core.cloud.etcd.EtcdUtil;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
@@ -28,8 +28,6 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.Lifecycle;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,10 +40,9 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-@MCElement(name="amc")
-public class ApiManagementConfiguration implements Lifecycle, ApplicationContextAware {
+public class ApiManagementConfiguration {
 
-    private static String currentDir = System.getProperty("user.dir");
+    private static String currentDir;
 
     private static Logger log = LogManager.getLogger(ApiManagementConfiguration.class);
     private ResolverMap resolver = null;
@@ -53,6 +50,23 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
     private String hashLocation = null;
     private String currentHash = "";
     private ApplicationContext context;
+    public HashSet<Runnable> configChangeObservers = new HashSet<Runnable>();
+    private String membraneName;
+    private boolean contextLost = false;
+
+    private void notifyConfigChangeObservers(){
+        for(Runnable runner : configChangeObservers){
+            runner.run();
+        }
+    }
+
+    public static String getCurrentDir() {
+        return currentDir;
+    }
+
+    public static void setCurrentDir(String currentDir) {
+        ApiManagementConfiguration.currentDir = currentDir;
+    }
 
     public Map<String, Policy> getPolicies() {
         return policies;
@@ -72,6 +86,23 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
 
     private Map<String,Policy> policies = new ConcurrentHashMap<String, Policy>();
     private Map<String,Key> keys = new ConcurrentHashMap<String, Key>();
+
+    public ApiManagementConfiguration(){
+        this(System.getProperty("user.dir"),"api.yaml","membrane");
+    }
+
+    public ApiManagementConfiguration(String currentDir, String configLocation){
+        this(currentDir,configLocation,"");
+    }
+
+    public ApiManagementConfiguration(String currentDir, String configLocation, String membraneName){
+        if (getResolver() == null) {
+            setResolver(new ResolverMap());
+        }
+        setCurrentDir(currentDir);
+        setMembraneName(membraneName);
+        setLocation(configLocation);
+    }
 
     private Map<String,Policy> parsePolicies(Map<String,Object> yaml) {
         Map<String,Policy> result = new HashMap<String, Policy>();
@@ -211,6 +242,7 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
         setPolicies(parsePolicies(yaml));
         setKeys(parsePoliciesForKeys(yaml));
         log.info("Configuration loaded.");
+        notifyConfigChangeObservers();
     }
 
     private Map<String,Key> parsePoliciesForKeys(Map<String, Object> yaml) {
@@ -243,11 +275,6 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
         return location;
     }
 
-    /**
-     * @description location of the api definition
-     * @default api.yaml
-     */
-    @MCAttribute
     public void setLocation(String location) {
         this.location = location;
         if(getResolver() != null)
@@ -270,15 +297,21 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
 
     public void updateAfterLocationChange(String location){
         if(!isLocalFile(location)){
-            try {
-                parseAndConstructConfiguration(getResolver().resolve(location));
-            } catch (ResourceRetrievalException e) {
-                log.error("Could not retrieve resource");
-                return;
+            log.info("Loading configuration from [" + location + "]");
+            if(location.startsWith("etcd")){
+                handleEtcd(location);
+            }else {
+                try {
+                    parseAndConstructConfiguration(getResolver().resolve(location));
+                } catch (ResourceRetrievalException e) {
+                    log.error("Could not retrieve resource");
+                    return;
+                }
             }
             return;
         }else {
-            final String newLocation = ResolverMap.combine(currentDir, location);
+            final String newLocation = ResolverMap.combine(getCurrentDir(), location);
+            log.info("Loading configuration from [" + newLocation + "]");
             InputStream is = null;
             try {
                 is = getResolver().resolve(newLocation);
@@ -291,6 +324,7 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
                 getResolver().observeChange(newLocation, new Consumer<InputStream>() {
                     @Override
                     public void call(InputStream inputStream) {
+                        log.info("Loading configuration from [" + newLocation + "]");
                         parseAndConstructConfiguration(inputStream);
                         try {
                             getResolver().observeChange(newLocation, this);
@@ -313,14 +347,47 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
         }
     }
 
-    @Override
+    private Thread etcdConfigFingerprintLongPollThread;
+
+    private void handleEtcd(String location) {
+        // assumption: location is of type "etcd://[url]"
+
+        final String etcdLocation = location.substring(7);
+
+        final String baseKey = "/gateways/" + getMembraneName();
+
+        EtcdResponse respGetConfigUrl = EtcdUtil.createBasicRequest(etcdLocation,baseKey,"/apiconfig").getValue("url").sendRequest();
+        if(!EtcdUtil.checkOK(respGetConfigUrl)){
+            log.warn("Could not get config url at " + etcdLocation);
+            return;
+        }
+        final String configLocation = respGetConfigUrl.getValue();
+        setLocation(configLocation); // this gets the resource and loads the config
+
+        etcdConfigFingerprintLongPollThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if(!EtcdRequest.create(etcdLocation,baseKey,"/apiconfig").getValue("fingerprint").longPoll().sendRequest().is2XX()){
+                    log.warn("Could not get config fingerprint at " + etcdLocation);
+                    return;
+                }
+                if(!getContextLost()) {
+                    setLocation(configLocation);
+                }
+            }
+        });
+        etcdConfigFingerprintLongPollThread.start();
+
+
+
+    }
+
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.context = applicationContext;
     }
 
     public static final String DEFAULT_RESOLVER_NAME = "resolverMap";
 
-    @Override
     public void start() {
         try {
             if (getResolver() == null) {
@@ -351,12 +418,10 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
         }
     }
 
-    @Override
     public void stop() {
 
     }
 
-    @Override
     public boolean isRunning() {
         return false;
     }
@@ -365,7 +430,6 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
         return resolver;
     }
 
-    @MCChildElement
     public void setResolver(ResolverMap resolver) {
         this.resolver = resolver;
     }
@@ -374,11 +438,6 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
         return hashLocation;
     }
 
-    /**
-     * @description location of the hash
-     * @default
-     */
-    @MCAttribute
     public void setHashLocation(final String hashLocation) throws IOException {
         this.hashLocation = hashLocation;
         if(getResolver() != null){
@@ -405,5 +464,25 @@ public class ApiManagementConfiguration implements Lifecycle, ApplicationContext
                 }
             }
         }
+    }
+
+    public void setMembraneName(String membraneName) {
+        this.membraneName = membraneName;
+    }
+
+    public String getMembraneName() {
+        return membraneName;
+    }
+
+    public boolean getContextLost() {
+        return contextLost;
+    }
+
+    public void setContextLost(boolean contextLost) {
+        this.contextLost = contextLost;
+    }
+
+    public void shutdown() {
+        setContextLost(true);
     }
 }

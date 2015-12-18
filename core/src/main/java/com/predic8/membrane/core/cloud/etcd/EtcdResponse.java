@@ -141,4 +141,16 @@ public class EtcdResponse {
 	public void setBody(String body) {
 		this.body = body;
 	}
+
+	public boolean is2XX() {
+		return checkStatusCode(200,300);
+	}
+
+	private boolean isInRange(int minInclusive, int maxExclusive, int value) {
+		return value >= minInclusive && value < maxExclusive;
+	}
+
+	private boolean checkStatusCode(int minInc, int maxExc) {
+		return isInRange(minInc, maxExc, this.getStatusCode());
+	}
 }

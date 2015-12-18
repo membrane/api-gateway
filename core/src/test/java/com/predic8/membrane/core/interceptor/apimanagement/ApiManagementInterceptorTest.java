@@ -52,13 +52,10 @@ public class ApiManagementInterceptorTest {
         //hd.removeFields(headerName);
         exc.setRequest(new Request.Builder().get("").header(hd).build());
 
-        StaticPolicyDecisionPoint staticPolicyDecisionPoint = new StaticPolicyDecisionPoint();
         String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
         InputStream in = IOUtils.toInputStream(source, Charset.defaultCharset());
-        staticPolicyDecisionPoint.setConfiguration(new ApiManagementConfiguration(in));
 
         ApiManagementInterceptor ami = new ApiManagementInterceptor();
-        ami.setStaticPolicyDecisionPoint(staticPolicyDecisionPoint);
 
         Assert.assertEquals(expectedOutcome,ami.handleRequest(exc));*/
     }

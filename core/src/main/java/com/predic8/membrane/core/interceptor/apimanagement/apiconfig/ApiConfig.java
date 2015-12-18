@@ -11,20 +11,10 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.apimanagement.rateLimiter;
+package com.predic8.membrane.core.interceptor.apimanagement.apiconfig;
 
-import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 
-public class ApiKeyRequestCounter {
-
-    private HashMap<String,AtomicInteger> policyCounters = new HashMap<String, AtomicInteger>();
-
-    public HashMap<String, AtomicInteger> getPolicyCounters() {
-        return policyCounters;
-    }
-
-    public void setPolicyCounters(HashMap<String, AtomicInteger> policyCounters) {
-        this.policyCounters = policyCounters;
-    }
+public interface ApiConfig {
+    ApiManagementConfiguration getConfiguration();
 }
