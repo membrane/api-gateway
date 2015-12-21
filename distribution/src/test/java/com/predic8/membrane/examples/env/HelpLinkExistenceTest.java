@@ -68,7 +68,7 @@ public class HelpLinkExistenceTest {
 
 				try {
 					Assert.assertEquals(200, r.getStatusCode());
-				} catch (Exception e) {
+				} catch (Throwable e) {
 					throw new RuntimeException(url, e);
 				}
 			}
