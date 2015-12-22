@@ -325,10 +325,12 @@ public class ApiManagementConfiguration {
                     @Override
                     public void call(InputStream inputStream) {
                         log.info("Loading configuration from [" + newLocation + "]");
-                        parseAndConstructConfiguration(inputStream);
-                        try {
-                            getResolver().observeChange(newLocation, this);
-                        } catch (ResourceRetrievalException ignored) {
+                        if (!getContextLost()) {
+                            parseAndConstructConfiguration(inputStream);
+                            try {
+                                getResolver().observeChange(newLocation, this);
+                            } catch (ResourceRetrievalException ignored) {
+                            }
                         }
                     }
                 });
