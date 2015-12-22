@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 
 @MCElement(name = "apiManagement")
@@ -49,7 +50,8 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-
+        StringBuilder nameBuilder = new StringBuilder();
+        nameBuilder.append("Api Management Interceptor");
         Map<String, ApiConfig> apiConfigs = router.getBeanFactory().getBeansOfType(ApiConfig.class);
         String etcdRegistryApiConfig = EtcdRegistryApiConfig.class.getSimpleName();
         String etcdRegistryApiConfigCorrected = etcdRegistryApiConfig.substring(0,1).toLowerCase() + etcdRegistryApiConfig.substring(1);
@@ -71,12 +73,24 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
             amc = new ApiManagementConfiguration(router.getBaseLocation(),"api.yaml");
         }
 
+        ArrayList<String> interceptors = new ArrayList<String>();
+        nameBuilder.append(" { ");
         if (amRli != null) {
             amRli.setAmc(amc);
+            interceptors.add("RateLimiter");
         }
         if(amQ != null){
             amQ.setAmc(amc);
+            interceptors.add("Quota");
         }
+        if(interceptors.size() > 0){
+            nameBuilder.append(interceptors.get(0));
+            for(int i = 1; i < interceptors.size();i++){
+                nameBuilder.append(", ").append(interceptors.get(i));
+            }
+        }
+        nameBuilder.append(" }");
+        this.name = nameBuilder.toString();
     }
 
     @Override

@@ -49,6 +49,8 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
 	public RateLimitInterceptor(Duration requestLimitDuration, int requestLimit) {
 		rateLimitStrategy = new LazyRateLimit(requestLimitDuration, requestLimit);
+		name = "RateLimiter";
+		setFlow(Flow.Set.REQUEST);
 	}
 
 	@Override
@@ -115,6 +117,11 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 
 	public void setRequestLimitDuration(Duration rld) {
 		rateLimitStrategy.setRequestLimitDuration(rld);
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Limits incoming requests. It limits to " + rateLimitStrategy.getRequestLimit() + " requests every " + PeriodFormat.getDefault().print(rateLimitStrategy.getRequestLimitDuration().toPeriod()) + ".";
 	}
 
 }
