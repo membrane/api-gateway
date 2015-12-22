@@ -100,6 +100,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		 */
 		@MCChildElement
 		public void setSslParser(SSLParser sslParser) {
+			if(getPort() == 80)
+				setPort(443);
 			this.sslParser = sslParser;
 		}
 
@@ -124,6 +126,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		super.init();
 		if (target.getSslParser() != null)
 			setSslOutboundContext(new SSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
+		System.out.println(getPort());
 	}
 
 	public String getHost() {
