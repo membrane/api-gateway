@@ -246,7 +246,6 @@ public class Router implements Lifecycle, ApplicationContextAware {
 
 	@Override
 	public void start() {
-		log.info("Starting " + Constants.PRODUCT_NAME + " " + Constants.VERSION);
 		try {
 			if (transport == null && beanFactory != null && beanFactory.getBeansOfType(Transport.class).values().size() > 0)
 				throw new RuntimeException("unclaimed transport detected. - please migrate to 4.0");
@@ -272,6 +271,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 			throw new RuntimeException(e);
 		}
 		running = true;
+		log.info(Constants.PRODUCT_NAME + " " + Constants.VERSION + " up and running!");
 	}
 
 	private void startHotDeployment() {
