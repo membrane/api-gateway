@@ -202,7 +202,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 					@Override
 					public void run() {
 						try {
-							deleteOldFolders();
+							deleteOldFolders(Calendar.getInstance());
 						} catch (IOException e) {
 							log.error("", e);
 						}
@@ -213,12 +213,12 @@ public class FileExchangeStore extends AbstractExchangeStore {
 				);
 	}
 
-	protected void deleteOldFolders() throws IOException {
+	public void deleteOldFolders(Calendar now) throws IOException {
 		if (this.maxDays < 0) {
 			return; // don't do anything if this feature is deactivated
 		}
 
-		Calendar threshold = Calendar.getInstance();
+		Calendar threshold = now;
 		threshold.add(Calendar.DAY_OF_MONTH, -maxDays);
 
 		ArrayList<File> folders3 = new DepthWalker(3).getDirectories(new File(dir));
