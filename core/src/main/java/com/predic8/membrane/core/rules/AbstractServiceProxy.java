@@ -126,7 +126,6 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		super.init();
 		if (target.getSslParser() != null)
 			setSslOutboundContext(new SSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
-		System.out.println(getPort());
 	}
 
 	public String getHost() {
