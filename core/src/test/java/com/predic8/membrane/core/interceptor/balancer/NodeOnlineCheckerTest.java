@@ -23,10 +23,64 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 
+import static org.junit.Assert.assertEquals;
+
 public class NodeOnlineCheckerTest {
 	
 	@Test
-	public void test()
+	public void testExchangeWithException()
 	{
+		Node node = new Node("http://www.predic8.de",80);
+
+		Exchange exc = new Exchange(null);
+		exc.getDestinations().add(0,"http://www.predic8.de:80");
+		exc.setNodeException(0, new Exception());
+
+		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
+		Cluster cl = lbi.getClusterManager().getClusters().get(0);
+		cl.nodeUp(node);
+		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+
+		NodeOnlineChecker noc = new NodeOnlineChecker();
+		lbi.setNodeOnlineChecker(noc);
+
+		noc.handle(exc);
+		assertEquals(Node.Status.DOWN,cl.getNode(node).getStatus());
+	}
+
+	@Test
+	public void testExchangeWithBadStatuscode(){
+		Node node = new Node("http://www.predic8.de",80);
+
+		Exchange exc = new Exchange(null);
+		exc.getDestinations().add(0,"http://www.predic8.de:80");
+		exc.setNodeStatusCode(0,500);
+
+		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
+		Cluster cl = lbi.getClusterManager().getClusters().get(0);
+		cl.nodeUp(node);
+		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+
+		NodeOnlineChecker noc = new NodeOnlineChecker();
+		lbi.setNodeOnlineChecker(noc);
+
+		final int limit = 10;
+		noc.setNodeCounterLimit5XX(limit);
+
+
+
+		for(int i = 0; i < limit; i++){
+			noc.handle(exc);
+		}
+		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		exc.setNodeStatusCode(0,400);
+		noc.handle(exc);
+		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		exc.setNodeStatusCode(0,500);
+		for(int i = 0; i < limit+1;i++){
+			noc.handle(exc);
+		}
+		assertEquals(Node.Status.DOWN, cl.getNode(node).getStatus());
+
 	}
 }
