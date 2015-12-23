@@ -40,12 +40,12 @@ public class LoginTest extends DistributionExtractingTestcase {
 
 			String token = new OtpProvider().getNextCode("abcdefghijklmnop", System.currentTimeMillis());
 			
-			form = AssertUtils.postAndAssert(200, "http://localhost:2000/login/", 
+			form = AssertUtils.postAndAssert(307, "http://localhost:2000/login/",
 					new String[] { "Content-Type", "application/x-www-form-urlencoded" }, 
 					"token=" + token);
 
 			// successful login?
-			AssertUtils.assertContains("This page has moved to", form);
+			AssertUtils.assertContains("has moved", form);
 
 			// access the "protected" page
 			form = AssertUtils.getAndAssert200("http://localhost:2000/");
