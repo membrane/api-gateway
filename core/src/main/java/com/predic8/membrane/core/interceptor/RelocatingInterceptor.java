@@ -63,7 +63,7 @@ abstract public class RelocatingInterceptor extends AbstractInterceptor {
 		return Outcome.CONTINUE;
 	}
 
-	abstract void rewrite(Exchange exc) throws Exception;
+	public abstract void rewrite(Exchange exc) throws Exception;
 
 	private boolean hasContent(Exchange exc) {
 		return exc.getResponse().getHeader().getContentType() != null;

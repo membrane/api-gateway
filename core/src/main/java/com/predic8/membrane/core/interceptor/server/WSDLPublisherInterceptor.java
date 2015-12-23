@@ -120,7 +120,7 @@ public class WSDLPublisherInterceptor extends AbstractInterceptor {
 					WSDLInterceptor wi = new WSDLInterceptor();
 					wi.setRewriteEndpoint(false);
 					wi.setPathRewriter(new RelativePathRewriter(exc, doc));
-					wi.handleResponse(exc);
+					wi.rewrite(exc);
 				}
 			} catch (ResourceRetrievalException e) {
 				log.error("Could not recursively load all documents referenced by '"+wsdl+"'.", e);

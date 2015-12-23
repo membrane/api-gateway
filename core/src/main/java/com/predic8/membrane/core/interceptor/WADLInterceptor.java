@@ -41,7 +41,7 @@ public class WADLInterceptor extends RelocatingInterceptor {
 		setFlow(Flow.Set.RESPONSE);
 	}
 
-	protected void rewrite(Exchange exc) throws Exception, IOException {
+	public void rewrite(Exchange exc) throws Exception, IOException {
 
 		log.debug("Changing endpoint address in WADL");
 
