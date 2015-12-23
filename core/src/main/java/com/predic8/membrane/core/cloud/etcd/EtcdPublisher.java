@@ -42,7 +42,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
     private ApplicationContext context;
     private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();
     private HashSet<EtcdNodeInformation> nodesFromConfig = new HashSet<EtcdNodeInformation>();
-    private int ttl = 300; // 300 normally, other for testing
+    private int ttl;
     private String baseUrl;
     private String baseKey;
     private Router router;
@@ -98,8 +98,6 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
 
     private Thread ttlRefreshThread = new Thread(new Runnable() {
 
-        int sleepTime = (ttl - 10) * 1000;
-
         @Override
         public void run() {
             try {
@@ -108,9 +106,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
                     for (String module : modulesToUUIDs.keySet()) {
                         for (String uuid : modulesToUUIDs.get(module)) {
                             try {
-                                if(!EtcdRequest.create(baseUrl, baseKey,module).uuid(uuid).refreshTTL(ttl).sendRequest().is2XX())
-
-                                if (!EtcdRequest.refreshTTLSta(ttl).url(baseUrl).baseKey(baseKey).module(module).uuid(uuid).sendRequest().is2XX()) {
+                                if(!EtcdRequest.create(baseUrl, baseKey,module).uuid(uuid).refreshTTL(ttl).sendRequest().is2XX()){
 
                                     log.warn("Could not contact etcd at " + baseUrl);
                                     connectionLost = true;
@@ -125,9 +121,9 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
                         ExponentialBackoff.retryAfter(retryDelayMin, retryDelayMax, expDelayFactor,
                                 "Republish from thread after failed ttl refresh", jobPublishToEtcd);
                     }
-                    Thread.sleep(sleepTime);
+                    Thread.sleep(Math.max(0,(getTtl() - 2) * 1000));
                 }
-            } catch (InterruptedException ignored) {
+            } catch (Exception ignored) {
             }
         }
 
