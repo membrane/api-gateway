@@ -36,7 +36,7 @@ public class RegExReplaceInterceptorTest {
 	@Before
 	public void setUp() throws Exception {
 		router = Router.init("src/test/resources/regex-monitor-beans.xml");
-		Rule serverRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3009), "predic8.de", 80);
+		Rule serverRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3009), "www.predic8.de", 80);
 		router.getRuleManager().addProxyAndOpenPortIfNew(serverRule);
 		router.init();
 	}
@@ -50,7 +50,6 @@ public class RegExReplaceInterceptorTest {
 		method.setRequestHeader(Header.SOAP_ACTION, "");
 		
 		assertEquals(200, client.executeMethod(method));
-		
 		assertTrue(new String(method.getResponseBody()).contains("Membrane RegEx Replacement Is Cool"));
 	}
 
