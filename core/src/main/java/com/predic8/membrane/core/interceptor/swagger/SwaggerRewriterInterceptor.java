@@ -15,10 +15,15 @@
 package com.predic8.membrane.core.interceptor.swagger;
 
 import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SwaggerProxy;
+import org.apache.commons.io.IOUtils;
 import org.springframework.http.MediaType;
 
 import io.swagger.models.Swagger;
@@ -70,6 +75,13 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 				setSwagger(((SwaggerProxy)parent).getSwagger());
 			}
 		}
+		// use default if no SwaggerProxy is found
+		if(this.swagger == null) {
+			String swaggerSource = IOUtils.toString(this.getRouter().getResolverMap().resolve(this.swaggerJson));
+			this.swagger = new SwaggerParser().parse(swaggerSource);
+			this.swaggerUrl = this.swaggerJson;
+		}
+
 	}
 
 	@Override
