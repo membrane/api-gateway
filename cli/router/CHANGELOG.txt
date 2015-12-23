@@ -1,6 +1,15 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [release] 4.0.27
+
+* [bugfix] fixed several tests
+
+* [bugfix] fixed <soapProxy> failing to serve "?xsd=.." request after start
+
+* [bugfix] JSON validation: do not handle validation errors as I/O errors
+  (thanks go to vweng for the contribution)
+
 * [release] 4.0.26
 
 * [feature] backported #187: Allow the Spring PropertyPlaceholderConfigurer
