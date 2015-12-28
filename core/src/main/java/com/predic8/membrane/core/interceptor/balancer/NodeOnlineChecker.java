@@ -14,10 +14,11 @@
 
 package com.predic8.membrane.core.interceptor.balancer;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.io.IOException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,9 +28,19 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import org.joda.time.DateTime;
 
 @MCElement(name = "nodeOnlineChecker")
 public class NodeOnlineChecker {
+
+
+    public int getPingTimeoutInSeconds() {
+        return pingTimeoutInSeconds;
+    }
+
+    public void setPingTimeoutInSeconds(int pingTimeoutInSeconds) {
+        this.pingTimeoutInSeconds = pingTimeoutInSeconds;
+    }
 
     private class BadNode {
         private Node node;
@@ -87,6 +98,8 @@ public class NodeOnlineChecker {
     HashSet<BadNode> offlineNodes = new HashSet<BadNode>();
     private int retryTimeInSeconds = -1;
     private int nodeCounterLimit5XX = 10;
+    private int pingTimeoutInSeconds = 1;
+    private DateTime lastCheck = DateTime.now();
 
 
     public NodeOnlineChecker() {
@@ -152,7 +165,6 @@ public class NodeOnlineChecker {
                 if (cl.getNodes().contains(node)) {
                     cl.nodeDown(node);
                     bad.getNodeClusters().add(cl);
-                    System.out.println();
                 }
             }
             offlineNodes.add(bad);
@@ -168,6 +180,54 @@ public class NodeOnlineChecker {
         } catch (MalformedURLException e) {
         }
         return u;
+    }
+
+
+    public void putNodesBackUp() {
+        if(retryTimeInSeconds < 0) {
+            return;
+        }
+        if(retryTimeInSeconds > 0) {
+            if (DateTime.now().isBefore(lastCheck.plusSeconds(retryTimeInSeconds))) {
+                return;
+            }
+        }
+        List<BadNode> onlineNodes = pingOfflineNodes();
+        for(BadNode node : onlineNodes){
+            putNodeUp(node);
+        }
+    }
+
+    private void putNodeUp(BadNode node) {
+        for(Cluster cl : node.getNodeClusters()){
+            cl.nodeUp(node.getNode());
+        }
+        offlineNodes.remove(node);
+        log.info("Node down: " + node.getNode().getHost() + ":" + node.getNode().getPort());
+    }
+
+    private List<BadNode> pingOfflineNodes() {
+        ArrayList<BadNode> onlineNodes = new ArrayList<BadNode>();
+
+        for(BadNode node : offlineNodes){
+            URL url = null;
+            try {
+                url = new URL(node.getNode().getHost());
+            } catch (MalformedURLException ignored) {
+                continue;
+            }
+            try {
+                HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
+                urlConn.setConnectTimeout(pingTimeoutInSeconds*1000);
+                urlConn.connect();
+                if(urlConn.getResponseCode() == HttpURLConnection.HTTP_OK)
+                    onlineNodes.add(node);
+            } catch (IOException ignored) {
+                continue;
+            }
+        }
+
+        return onlineNodes;
     }
 
     public LoadBalancingInterceptor getLbi() {

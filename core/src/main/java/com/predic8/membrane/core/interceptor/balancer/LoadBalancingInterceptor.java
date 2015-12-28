@@ -55,10 +55,10 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		log.debug("handleRequest");
 		
 		if(nodeOnlineChecker != null){
 			exc.setProperty(Exchange.TRACK_NODE_STATUS, true);
+			nodeOnlineChecker.putNodesBackUp();
 		}
 
 		Node dispatchedNode;
@@ -97,7 +97,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleResponse(Exchange exc) throws Exception {
-		log.debug("handleResponse");
 		
 		if(nodeOnlineChecker != null){
 			nodeOnlineChecker.handle(exc);

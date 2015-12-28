@@ -83,4 +83,37 @@ public class NodeOnlineCheckerTest {
 		assertEquals(Node.Status.DOWN, cl.getNode(node).getStatus());
 
 	}
+
+	@Test
+	public void testPutNodesBackOnline() throws InterruptedException {
+		Node node = new Node("http://www.predic8.de",80);
+
+		Exchange exc = new Exchange(null);
+		exc.getDestinations().add(0,"http://www.predic8.de:80");
+		exc.setNodeStatusCode(0,500);
+
+		LoadBalancingInterceptor lbi = new LoadBalancingInterceptor();
+		Cluster cl = lbi.getClusterManager().getClusters().get(0);
+		cl.nodeUp(node);
+		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+
+		NodeOnlineChecker noc = new NodeOnlineChecker();
+		lbi.setNodeOnlineChecker(noc);
+
+		final int limit = 10;
+		noc.setNodeCounterLimit5XX(limit);
+
+		noc.setRetryTimeInSeconds(1);
+
+		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+		for(int i = 0; i < limit + 1; i++){
+			noc.handle(exc);
+		}
+		assertEquals(Node.Status.DOWN, cl.getNode(node).getStatus());
+		noc.putNodesBackUp();
+		assertEquals(Node.Status.DOWN, cl.getNode(node).getStatus());
+		Thread.sleep(noc.getRetryTimeInSeconds()*1000);
+		noc.putNodesBackUp();
+		assertEquals(Node.Status.UP, cl.getNode(node).getStatus());
+	}
 }
