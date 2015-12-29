@@ -29,6 +29,7 @@ import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.SimpleApiCo
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.quota.AMQuota;
 import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.AMRateLimiter;
+import com.predic8.membrane.core.interceptor.apimanagement.statistics.AMStatisticsCollector;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -44,6 +45,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     private ApiConfig apiConfig;
     private AMRateLimiter amRli = null;
     private AMQuota amQ = null;
+    private AMStatisticsCollector amSc = null;
     private ApiManagementConfiguration amc = null;
     private String config = "api.yaml";
 
@@ -95,6 +97,12 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
+        if(amSc != null)
+            return amSc.handleRequest(exc,handleRequest2(exc));
+        return handleRequest2(exc);
+    }
+
+    private Outcome handleRequest2(Exchange exc) throws Exception {
         String key = exc.getRequest().getHeader().getFirstValue("Authorization");
         if (key == null) {
             if (!hasUnauthorizedPolicy(exc)) {
@@ -121,12 +129,16 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
             setResponsePolicyDenied(exc, auth);
             return Outcome.RETURN;
         }
-
-
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
+        if(amSc != null)
+            return amSc.handleResponse(exc,handleResponse2(exc));
+        return handleResponse2(exc);
+    }
+
+    private Outcome handleResponse2(Exchange exc) {
         if (!hasUnauthorizedPolicy(exc)) {
             if (getAmQ() != null) {
                 getAmQ().handleResponse(exc);
