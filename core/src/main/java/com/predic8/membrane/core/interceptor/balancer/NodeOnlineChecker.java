@@ -203,7 +203,7 @@ public class NodeOnlineChecker {
             cl.nodeUp(node.getNode());
         }
         offlineNodes.remove(node);
-        log.info("Node down: " + node.getNode().getHost() + ":" + node.getNode().getPort());
+        log.info("Node up: " + node.getNode().getHost() + ":" + node.getNode().getPort());
     }
 
     private List<BadNode> pingOfflineNodes() {
