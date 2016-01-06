@@ -370,6 +370,10 @@ public class Response extends Message {
 		return super.isBodyEmpty();
 	}
 
+	public boolean isOk(){
+		return statusCode >= 200 && statusCode < 300;
+	}
+
 	public boolean isUserError() {
 		return statusCode >= 400 && statusCode < 500;
 	}
