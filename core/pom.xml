@@ -200,7 +200,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk16</artifactId>
+			<artifactId>bcpkix-jdk15on</artifactId>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>

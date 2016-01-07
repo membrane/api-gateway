@@ -126,13 +126,13 @@ public class SSLContext implements SSLProvider {
 				List<Certificate> certs = new ArrayList<Certificate>();
 
 				for (com.predic8.membrane.core.config.security.Certificate cert : sslParser.getKey().getCertificates())
-					certs.add(PEMSupport.getInstance().parseCertificate(cert.getContent()));
+					certs.add(PEMSupport.getInstance().parseCertificate(cert.get(resourceResolver, baseLocation)));
 				if (certs.size() == 0)
 					throw new RuntimeException("At least one //ssl/key/certificate is required.");
 				dnsNames = getDNSNames(certs.get(0));
 
 				checkChainValidity(certs);
-				Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().getContent());
+				Object key = PEMSupport.getInstance().parseKey(sslParser.getKey().getPrivate().get(resourceResolver, baseLocation));
 				Key k = key instanceof Key ? (Key) key : ((KeyPair)key).getPrivate();
 				if (k instanceof RSAPrivateCrtKey && certs.get(0).getPublicKey() instanceof RSAPublicKey) {
 					RSAPrivateCrtKey privkey = (RSAPrivateCrtKey)k;
@@ -167,7 +167,7 @@ public class SSLContext implements SSLProvider {
 				ks.load(null, "".toCharArray());
 
 				for (int j = 0; j < sslParser.getTrust().getCertificateList().size(); j++)
-					ks.setCertificateEntry("inlinePemCertificate" + j, PEMSupport.getInstance().parseCertificate(sslParser.getTrust().getCertificateList().get(j).getContent()));
+					ks.setCertificateEntry("inlinePemCertificate" + j, PEMSupport.getInstance().parseCertificate(sslParser.getTrust().getCertificateList().get(j).get(resourceResolver, baseLocation)));
 
 				tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 				tmf.init(ks);

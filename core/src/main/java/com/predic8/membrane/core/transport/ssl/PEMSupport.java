@@ -14,9 +14,12 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import com.google.common.base.Strings;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -24,6 +27,7 @@ import java.security.InvalidParameterException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.Security;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 public abstract class PEMSupport {
@@ -39,7 +43,7 @@ public abstract class PEMSupport {
             try {
                 instance = new PEMSupportImpl();
             } catch (NoClassDefFoundError e) {
-                throw new RuntimeException("Bouncycastle support classes not found. Please download http://central.maven.org/maven2/org/bouncycastle/bcprov-jdk16/1.46/bcprov-jdk16-1.46.jar and put it into the 'lib' directory.");
+                throw new RuntimeException("Bouncycastle support classes not found. Please download http://central.maven.org/maven2/org/bouncycastle/bcpkix-jdk15on/1.54/bcpkix-jdk15on-1.54.jar and put it into the 'lib' directory.");
             }
         return instance;
     }
@@ -64,20 +68,30 @@ public abstract class PEMSupport {
         }
 
         public X509Certificate parseCertificate(String pemBlock) throws IOException {
-            PEMReader p2 = new PEMReader(new StringReader(cleanupPEM(pemBlock)));
+            PEMParser p2 = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
             Object o2 = p2.readObject();
             if (o2 == null)
                 throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
-            if (!(o2 instanceof X509Certificate))
-                throw new InvalidParameterException("Expected X509Certificate.");
-            return (X509Certificate) o2;
+            if (!(o2 instanceof X509CertificateHolder))
+                throw new InvalidParameterException("Expected X509CertificateHolder, got " + o2.getClass().getName());
+
+            JcaX509CertificateConverter certconv = new JcaX509CertificateConverter().setProvider("BC");
+            try {
+                return certconv.getCertificate((X509CertificateHolder) o2);
+            } catch (CertificateException e) {
+                throw new IOException(e);
+            }
         }
 
         public Key getPrivateKey(String pemBlock) throws IOException {
-            PEMReader p = new PEMReader(new StringReader(cleanupPEM(pemBlock)));
+            PEMParser p = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
             Object o = p.readObject();
             if (o == null)
                 throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
+            if (o instanceof PEMKeyPair) {
+                JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+                return converter.getPrivateKey(((PEMKeyPair) o).getPrivateKeyInfo());
+            }
             if (o instanceof Key)
                 return (Key) o;
             if (o instanceof KeyPair)
@@ -86,15 +100,19 @@ public abstract class PEMSupport {
         }
 
         public Object parseKey(String pemBlock) throws IOException {
-            PEMReader p = new PEMReader(new StringReader(cleanupPEM(pemBlock)));
+            PEMParser p = new PEMParser(new StringReader(cleanupPEM(pemBlock)));
             Object o = p.readObject();
             if (o == null)
                 throw new InvalidParameterException("Could not read certificate. Expected the certificate to begin with '-----BEGIN CERTIFICATE-----'.");
+            if (o instanceof PEMKeyPair) {
+                JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+                return converter.getKeyPair((PEMKeyPair) o);
+            }
             if (o instanceof Key)
                 return o;
             if (o instanceof KeyPair)
                 return o;
-            throw new InvalidParameterException("Expected KeyPair or Key.");
+            throw new InvalidParameterException("Expected KeyPair or Key, got " + o.getClass().getName());
         }
     }
 }
