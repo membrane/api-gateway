@@ -48,6 +48,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     private AMStatisticsCollector amSc = null;
     private ApiManagementConfiguration amc = null;
     private String config = "api.yaml";
+    private final String UNAUTHORIZED_API_KEY = "UNAUTHORIZED_API_KEY";
 
     @Override
     public void init(Router router) throws Exception {
@@ -85,6 +86,11 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
             amQ.setAmc(amc);
             interceptors.add("Quota");
         }
+
+        //temp
+        amSc = new AMStatisticsCollector();
+
+
         if(interceptors.size() > 0){
             nameBuilder.append(interceptors.get(0));
             for(int i = 1; i < interceptors.size();i++){
@@ -109,6 +115,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
                 setResponseNoAuthKey(exc);
                 return Outcome.RETURN;
             }
+            exc.setProperty(Exchange.API_KEY, UNAUTHORIZED_API_KEY);
             return Outcome.CONTINUE;
         }
         exc.setProperty(Exchange.API_KEY, key);

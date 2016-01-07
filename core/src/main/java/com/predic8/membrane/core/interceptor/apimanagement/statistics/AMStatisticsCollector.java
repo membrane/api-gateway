@@ -20,11 +20,17 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class AMStatisticsCollector {
 
     int bodyBytes = -1;
     ConcurrentHashMap<String,ApiKeyStatistic> statisticsForKey = new ConcurrentHashMap<String, ApiKeyStatistic>();
+    ConcurrentLinkedQueue<Exchange> exchangesToCollect = new ConcurrentLinkedQueue<Exchange>();
+
+    ExecutorService collectorThread = Executors.newFixedThreadPool(1);
 
     /**
      * Inits listeners and collects statistik from the exchange
@@ -36,37 +42,53 @@ public class AMStatisticsCollector {
         exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
             @Override
             public void setExchangeFinished() {
-                String apiKey = (String) exc.getProperty(Exchange.API_KEY);
-
-                // SO 3752194: tries to prevent further unneeded allocations when aks already exists
-                ApiKeyStatistic aks = statisticsForKey.get(apiKey);
-                if(aks == null) {
-                    ApiKeyStatistic newValue = new ApiKeyStatistic(apiKey);
-                    aks = statisticsForKey.putIfAbsent(apiKey, newValue);
-                    if(aks == null)
-                        aks = newValue;
-                }
-                //
-
-                aks.collectFrom(exc);
+                exchangesToCollect.add(exc);
             }
         });
 
-        exc.getRequest().addObserver(new AbstractMessageObserver() {
+        /*collectorThread.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    for(Exchange excQ : exch)
+                    // SO 3752194: tries to prevent further unneeded allocations when aks already exists
+                    ApiKeyStatistic aks = statisticsForKey.get(apiKey);
+                    if (aks == null) {
+                        ApiKeyStatistic newValue = new ApiKeyStatistic(apiKey, bodyBytes);
+                        aks = statisticsForKey.putIfAbsent(apiKey, newValue);
+                        if (aks == null) {
+                            aks = newValue;
+                        }
+                    }
+                    //
+
+                    aks.collectFrom(exc);
+                }
+                catch(Exception e){
+                    e.printStackTrace();
+                }
+            }
+        });*/
+
+        /*exc.getRequest().addObserver(new AbstractMessageObserver() {
             @Override
             public void bodyComplete(AbstractBody body) {
                 //statistics.addRequestBody(exc, bodyBytes);
             }
-        });
+        });*/
 
-        exc.getResponse().addObserver(new AbstractMessageObserver() {
+
+
+        return outcome;
+    }
+
+    public Outcome handleResponse(Exchange exc, Outcome outcome) {
+        /*exc.getResponse().addObserver(new AbstractMessageObserver() {
             @Override
             public void bodyComplete(AbstractBody body) {
-               //statistics.addResponseBody(exc,bodyBytes);
+                //statistics.addResponseBody(exc,bodyBytes);
             }
-        });
-
-
+        });*/
 
         return outcome;
     }
