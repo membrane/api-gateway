@@ -29,6 +29,7 @@ public class AMStatisticsCollectorTest {
     public void testThreadedStatisticCollection() throws InterruptedException {
 
         final AMStatisticsCollector amSc = new AMStatisticsCollector();
+        amSc.setCollectTimeInSeconds(2);
         ArrayList<Thread> threads = new ArrayList<Thread>();
 
         for (int i = 0; i < 1000; i++) {
@@ -39,8 +40,8 @@ public class AMStatisticsCollectorTest {
                 public void run() {
                     try {
                         Exchange exc = new Exchange(null);
-                        exc.setRequest(new Request.Builder().build());
-                        exc.setResponse(new Response.ResponseBuilder().build());
+                        exc.setRequest(new Request.Builder().header("Test","Test").body("Hello").build());
+                        exc.setResponse(new Response.ResponseBuilder().header("Test","Test").body("Hello back").build());
                         exc.setProperty(Exchange.API_KEY, "junit-" + j);
                         exc.setRule(new ServiceProxy());
                         exc.getRule().setName("junit API");
@@ -59,8 +60,8 @@ public class AMStatisticsCollectorTest {
             t.join();
         }
 
-
-        Thread.sleep(amSc.getCollectTimeInSeconds() * 3 * 1000);
+        Thread.sleep(amSc.getCollectTimeInSeconds()*1000*2);
+        amSc.shutdown();
 
 
     }

@@ -16,6 +16,8 @@ package com.predic8.membrane.core.interceptor.apimanagement.statistics;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -30,15 +32,13 @@ import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMStatisticsCollector {
 
-    private int collectTimeInSeconds = 1;
+    boolean shutdown = false;
+    private int collectTimeInSeconds = 10;
     static final String localHostname;
     static final long startTime = System.currentTimeMillis();
     private AtomicInteger runningId = new AtomicInteger(0);
@@ -62,8 +62,9 @@ public class AMStatisticsCollector {
         localHostname = localHostname1;
     }
 
-    boolean traceExchanges;
-    boolean traceIncludesHeader;
+    boolean traceStatistics = true;
+    boolean traceExchanges = true;
+    boolean traceIncludesHeader = true;
     int bodyBytes = -1;
 
     ConcurrentHashMap<String,ConcurrentLinkedQueue<Exchange>> exchangesForApiKey = new ConcurrentHashMap<String,ConcurrentLinkedQueue<Exchange>>();
@@ -78,21 +79,36 @@ public class AMStatisticsCollector {
                     try {
                         Exchange exc = null;
                         ArrayList<String> jsonStatisticsForApiKey = new ArrayList<String>();
+                        ArrayList<String> jsonExchangesForApiKey = new ArrayList<String>();
                         for(String apiKey : exchangesForApiKey.keySet()){
                             ArrayList<String> jsonStatisticsForRequests = new ArrayList<String>();
+                            ArrayList<String> jsonExchangesForRequests = new ArrayList<String>();
                             while((exc = exchangesForApiKey.get(apiKey).poll()) != null) {
-                                jsonStatisticsForRequests.add(collectFrom(exc));
+                                if(traceStatistics)
+                                    jsonStatisticsForRequests.add(collectStatisticFrom(exc));
+                                if(traceExchanges)
+                                    jsonExchangesForRequests.add(collectExchangeDataFrom(exc));
                             }
                             if(!jsonStatisticsForRequests.isEmpty()) {
                                 String e = combineJsons(apiKey, jsonStatisticsForRequests);
                                 //System.out.println(e);
                                 jsonStatisticsForApiKey.add(e);
                             }
+                            if(!jsonExchangesForRequests.isEmpty()) {
+                                String e = combineJsons(apiKey, jsonExchangesForRequests);
+                                jsonExchangesForApiKey.add(e);
+                            }
+
                         }
                         if(!jsonStatisticsForApiKey.isEmpty())
                             sendJsonToElasticSearch("/api/statistics/",combineJsons(localHostname, jsonStatisticsForApiKey));
-
+                        if(!jsonExchangesForApiKey.isEmpty())
+                            sendJsonToElasticSearch("/api/exchanges/",combineJsons(localHostname, jsonExchangesForApiKey));
+                        runningId.incrementAndGet();
+                        if(shutdown)
+                            break;
                         Thread.sleep(getCollectTimeInSeconds() * 1000);
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -101,8 +117,55 @@ public class AMStatisticsCollector {
         });
     }
 
+    private String collectExchangeDataFrom(Exchange exc) {
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        JsonGenerator gen = createJsonGenerator(os);
+
+        try {
+            gen.writeStartObject();
+                gen.writeObjectField("excId", exc.getId());
+                gen.writeObjectFieldStart("Request");
+                    collectFromMessage(gen,exc.getRequest());
+                gen.writeEndObject();
+                gen.writeObjectFieldStart("Response");
+                    collectFromMessage(gen,exc.getResponse());
+                gen.writeEndObject();
+            gen.writeEndObject();
+            gen.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return os.toString();
+    }
+
+    private void collectFromMessage(JsonGenerator gen, Message msg) {
+        try {
+            if(traceIncludesHeader){
+                if(msg.getHeader().getAllHeaderFields().length > 0) {
+                    gen.writeObjectFieldStart("headers");
+                    for (HeaderField hf : msg.getHeader().getAllHeaderFields()) {
+                        gen.writeObjectField(hf.getHeaderName().toString(), hf.getValue());
+                    }
+                    gen.writeEndObject();
+                }
+            }
+            String origBody = msg.getBodyAsStringDecoded();
+            int bodySnapshotSize = 0;
+            if(bodyBytes == -1)
+                bodySnapshotSize = origBody.length();
+            else
+                bodySnapshotSize = bodyBytes;
+            String body = origBody.substring(0,bodySnapshotSize);
+            if(body.length() > 0)
+                gen.writeObjectField("body", body);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     private String getLocalMachineNameWithSuffix() {
-        return localHostname + "-" + startTime + "-" + runningId.getAndIncrement();
+        return localHostname + "-" + startTime + "-" + runningId.get();
     }
 
     private void sendJsonToElasticSearch(String path, String json) {
@@ -153,7 +216,7 @@ public class AMStatisticsCollector {
         return os.toString();
     }
 
-    private String collectFrom(Exchange exc) {
+    private String collectStatisticFrom(Exchange exc) {
         StatisticCollector statistics = new StatisticCollector(false);
         statistics.collectFrom(exc);
 
@@ -259,5 +322,15 @@ public class AMStatisticsCollector {
 
     public void setCollectTimeInSeconds(int collectTimeInSeconds) {
         this.collectTimeInSeconds = collectTimeInSeconds;
+    }
+
+    public void shutdown(){
+        shutdown = true;
+        try {
+            collectorThread.shutdown();
+            collectorThread.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
