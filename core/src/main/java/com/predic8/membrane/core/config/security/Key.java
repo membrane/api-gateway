@@ -33,26 +33,19 @@ import java.util.List;
 @MCElement(name="key")
 public class Key {
     @MCElement(name="private", mixed=true)
-    public static class Private {
-        String content;
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof Private))
-                return false;
-            Private other = (Private)obj;
-            return Objects.equal(content, other.content);
+    public static class Private extends Blob {
+        /**
+         * @description A file containing the key in PEM format.
+         */
+        public void setLocation(String location) {
+            super.setLocation(location);
         }
 
-        public String getContent() {
-            return content;
-        }
         /**
          * @description The key in PEM format.
          */
-        @MCTextContent
         public void setContent(String content) {
-            this.content = content;
+            super.setContent(content);
         }
     }
 
