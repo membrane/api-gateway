@@ -170,7 +170,6 @@ public class AMStatisticsCollector {
 
     private void sendJsonToElasticSearch(String path, String json) {
         String elasticSearchUrl = getElasticSearchPath(path);
-        System.out.println(elasticSearchUrl);
         Exchange exc = null;
         try {
             exc = new Request.Builder().put(elasticSearchUrl).body(json).buildExchange();
