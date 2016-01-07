@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMStatisticsCollector {
 
-    int collectTimeInSeconds = 1;
+    private int collectTimeInSeconds = 1;
     static final String localHostname;
     static final long startTime = System.currentTimeMillis();
     private AtomicInteger runningId = new AtomicInteger(0);
@@ -92,7 +92,7 @@ public class AMStatisticsCollector {
                         if(!jsonStatisticsForApiKey.isEmpty())
                             sendJsonToElasticSearch("/api/statistics/",combineJsons(localHostname, jsonStatisticsForApiKey));
 
-                        Thread.sleep(collectTimeInSeconds * 1000);
+                        Thread.sleep(getCollectTimeInSeconds() * 1000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -198,20 +198,7 @@ public class AMStatisticsCollector {
         exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
             @Override
             public void setExchangeFinished() {
-                String apiKey = (String) exc.getProperty(Exchange.API_KEY);
-
-
-                ConcurrentLinkedQueue<Exchange> exchangeQueue = exchangesForApiKey.get(apiKey);
-
-                // See SO 3752194 for explanation for this
-                if(exchangeQueue == null){
-                    ConcurrentLinkedQueue<Exchange> newValue = new ConcurrentLinkedQueue<Exchange>();
-                    exchangeQueue = exchangesForApiKey.putIfAbsent(apiKey,newValue);
-                    if(exchangeQueue == null)
-                        exchangeQueue = newValue;
-                }
-
-                exchangeQueue.add(exc);
+                addExchangeToQueue(exc);
             }
         });
 
@@ -225,6 +212,23 @@ public class AMStatisticsCollector {
 
 
         return outcome;
+    }
+
+    public void addExchangeToQueue(Exchange exc){
+        String apiKey = (String) exc.getProperty(Exchange.API_KEY);
+
+
+        ConcurrentLinkedQueue<Exchange> exchangeQueue = exchangesForApiKey.get(apiKey);
+
+        // See SO 3752194 for explanation for this
+        if(exchangeQueue == null){
+            ConcurrentLinkedQueue<Exchange> newValue = new ConcurrentLinkedQueue<Exchange>();
+            exchangeQueue = exchangesForApiKey.putIfAbsent(apiKey,newValue);
+            if(exchangeQueue == null)
+                exchangeQueue = newValue;
+        }
+
+        exchangeQueue.add(exc);
     }
 
     public Outcome handleResponse(Exchange exc, Outcome outcome) {
@@ -247,5 +251,13 @@ public class AMStatisticsCollector {
                 throw new RuntimeException();
             }
         }
+    }
+
+    public int getCollectTimeInSeconds() {
+        return collectTimeInSeconds;
+    }
+
+    public void setCollectTimeInSeconds(int collectTimeInSeconds) {
+        this.collectTimeInSeconds = collectTimeInSeconds;
     }
 }
