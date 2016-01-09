@@ -13,10 +13,14 @@
 
 package com.predic8.membrane.core.interceptor.apimanagement.quota;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import com.predic8.membrane.core.interceptor.apimanagement.Key;
@@ -25,8 +29,14 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.PeriodFormat;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -109,7 +119,27 @@ public class AMQuota {
     }
 
     private void setResponseToServiceUnavailable(Exchange exc, PolicyQuota pq) {
-        //TODO
+        //TODO do a better response here
+
+        Header hd = new Header();
+
+
+        DateTimeFormatter dtFormatter = DateTimeFormat.forPattern("HH:mm:ss aa");
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        JsonGenerator jgen = null;
+        try {
+            jgen = new JsonFactory().createGenerator(os);
+            jgen.writeStartObject();
+            jgen.writeObjectField("Statuscode", 429);
+            jgen.writeObjectField("Message", "Quota Exceeded");
+            jgen.writeEndObject();
+            jgen.close();
+        } catch (IOException ignored) {
+        }
+
+        Response resp = Response.ResponseBuilder.newInstance().status(429, "Too Many Requests.")
+                .header(hd).contentType("application/json").body(os.toByteArray()).build();
+        exc.setResponse(resp);
     }
 
     private QuotaReachedAnswer isQuotaReached(Message msg, String requestedService, String apiKey) {

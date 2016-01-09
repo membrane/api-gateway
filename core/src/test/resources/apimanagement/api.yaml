@@ -24,6 +24,7 @@ policies:
         interval: 1
       serviceProxy:
         - "junit API"
+        - "BigFileWebserver"
   - policy:
       id: "unauthorized"
       serviceProxy:
