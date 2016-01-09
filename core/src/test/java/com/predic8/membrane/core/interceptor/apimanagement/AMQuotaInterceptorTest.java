@@ -36,21 +36,19 @@ public class AMQuotaInterceptorTest {
     @Test
     public void testAMQuota() throws IOException, InterruptedException {
         final Exchange exc = new Exchange(null);
-        exc.setRequest(new Request.Builder().body("hello").build());
-        exc.setResponse(new Response.ResponseBuilder().body("Hello back!").build());
+        exc.setRequest(new Request.Builder().header("Test","test").body("hello").build());
+        exc.setResponse(new Response.ResponseBuilder().header("Test2","test2").body("Hello back!").build());
         exc.setProperty(Exchange.API_KEY,"junit");
         exc.setRule(new ServiceProxy());
         exc.getRule().setName("junit API");
 
-        ApiManagementConfiguration amc = new ApiManagementConfiguration();
-        amc.setResolver(new ResolverMap());
-        amc.setLocation(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml");
+        ApiManagementConfiguration amc = new ApiManagementConfiguration(System.getProperty("user.dir") , "src\\test\\resources\\apimanagement\\api.yaml");
 
-        int reqSize = exc.getRequest().getHeader().getContentLength(); // 5
-        int respSize = exc.getResponse().getHeader().getContentLength(); // 11
+        int reqSize = exc.getRequest().getHeader().toString().getBytes().length+exc.getRequest().getHeader().getContentLength();
+        int respSize = exc.getResponse().getHeader().toString().getBytes().length+exc.getResponse().getHeader().getContentLength();
 
-        assertEquals(5,reqSize);
-        assertEquals(11,respSize);
+        assertEquals(31+5,reqSize);
+        assertEquals(34+11,respSize);
 
         final AMQuota amq = new AMQuota();
         amq.setAmc(amc);
@@ -82,13 +80,15 @@ public class AMQuotaInterceptorTest {
             });
             threads.add(t);
             //t.start();
-            t.run();
+            t.run(); // doing sync because else we cant predictably count request/response pairs
         }
         for(Thread t : threads)
         {
             t.join();
         }
-        // 5 + 11 = 16 -> 16*2 = 32 -> after the second request it should block because the limit is 30b
+        // the limit is ( or should be ) 120B
+        // 31+5 ( Req ) + 34+11 ( Resp ) = 81 for every completed exchange
+        // the second request adds another 31+5 -> 81 + 36 = 117 < 120B -> after the second request it should block because the limit is 120b and the following response would bring it over the limit ( responses never block, only requests )
         assertEquals(2, continues.get());
         assertEquals(998, returns.get());
         Thread.sleep(2000);

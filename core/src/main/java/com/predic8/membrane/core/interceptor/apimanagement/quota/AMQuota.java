@@ -114,7 +114,7 @@ public class AMQuota {
 
     private QuotaReachedAnswer isQuotaReached(Message msg, String requestedService, String apiKey) {
         doCleanup();
-        long size = msg.getHeader().getContentLength();
+        long size = msg.getHeader().toString().getBytes().length + msg.getHeader().getContentLength();
         addRequestEntry(apiKey, size);
         ApiKeyByteCounter info = keyByteCounter.get(apiKey);
         boolean resultTemp = false;
