@@ -14,44 +14,42 @@
 package com.predic8.membrane.core.jmx;
 
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
-import org.springframework.context.ApplicationContext;
 import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedOperation;
 import org.springframework.jmx.export.annotation.ManagedResource;
 
-import java.util.ArrayList;
+import java.io.IOException;
 
-@ManagedResource()
-public class JmxRouter {
+@ManagedResource
+public class JmxServiceProxy {
 
-
+    private final ServiceProxy rule;
     private final Router router;
-    private final JmxExporter exporter;
 
-    public JmxRouter(Router router, JmxExporter exporter) {
+    public JmxServiceProxy(ServiceProxy rule, Router router) {
+        this.rule = rule;
         this.router = router;
-        this.exporter = exporter;
-        exportServiceProxyList();
+    }
+
+    @ManagedOperation
+    public void toggleActive() throws IOException {
+        if(isActive()) {
+            router.getRuleManager().removeRule(rule);
+        }
+        else {
+            router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+        }
+        router.getRuleManager().ruleChanged(rule);
     }
 
     @ManagedAttribute
-    public String getName(){
-        return router.getJmx();
+    public boolean isActive(){
+        return router.getRuleManager().exists(rule.getKey());
     }
 
-    private void exportServiceProxyList(){
-        for(Rule rule : router.getRules()){
-            if(rule instanceof ServiceProxy){
-                exportServiceProxy((ServiceProxy) rule);
-            }
-        }
-
-
-    }
-
-    private void exportServiceProxy(ServiceProxy rule) {
-        String prefix = "org.membrane-soa:00=serviceProxies, 01=" + router.getJmx()+ ", name=";
-        exporter.addBean(prefix + rule.getName(), new JmxServiceProxy(rule, router));
+    @ManagedAttribute
+    public int getProcessedExchanges(){
+        return rule.getCount();
     }
 }

@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.jmx;
 
 import com.predic8.membrane.annot.MCElement;
+import org.apache.commons.logging.Log;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
@@ -22,12 +23,20 @@ import org.springframework.context.Lifecycle;
 import org.springframework.jmx.export.MBeanExporter;
 import org.springframework.jmx.export.annotation.AnnotationJmxAttributeSource;
 import org.springframework.jmx.export.assembler.MetadataMBeanInfoAssembler;
+import org.springframework.jmx.export.metadata.JmxAttributeSource;
+import org.springframework.jmx.support.MBeanRegistrationSupport;
+import org.springframework.jmx.support.RegistrationPolicy;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-@MCElement(name="jmx")
-public class JmxExporter implements Lifecycle, ApplicationContextAware, DisposableBean {
+@MCElement(name=JmxExporter.JMX_EXPORTER_NAME)
+public class JmxExporter extends MBeanExporter implements Lifecycle, ApplicationContextAware, DisposableBean {
+
+    public static final String JMX_EXPORTER_NAME = "jmxExporter";
+    HashMap<String, Object> jmxBeans = new HashMap<String, Object>();
 
     ApplicationContext context;
 
@@ -42,9 +51,11 @@ public class JmxExporter implements Lifecycle, ApplicationContextAware, Disposab
     @Override
     public void start() {
         exporter = new MBeanExporter();
-        exporter.setBeans(collectBeans());
-        exporter.afterPropertiesSet();
-        exporter.afterSingletonsInstantiated();
+        exporter.setRegistrationPolicy(RegistrationPolicy.IGNORE_EXISTING);
+        MetadataMBeanInfoAssembler assembler = new MetadataMBeanInfoAssembler();
+        assembler.setAttributeSource(new AnnotationJmxAttributeSource());
+        assembler.afterPropertiesSet();
+        exporter.setAssembler(assembler);
     }
 
     @Override
@@ -57,14 +68,24 @@ public class JmxExporter implements Lifecycle, ApplicationContextAware, Disposab
         return false;
     }
 
-    public Map<String,Object> collectBeans(){
-        HashMap<String,Object> result = new HashMap<String, Object>();
-        result.put("bean:name=Router", new JmxRouter(context));
-        return result;
+    @Override
+    public void destroy() {
+        jmxBeans.clear();
+        exporter.destroy();
     }
 
-    @Override
-    public void destroy() throws Exception {
-        exporter.destroy();
+    public void addBean(String fullyQualifiedMBeanName, Object bean ) {
+        jmxBeans.put(fullyQualifiedMBeanName,bean);
+    }
+
+    public void removeBean(String fullyQualifiedMBeanName){
+        jmxBeans.remove(fullyQualifiedMBeanName);
+    }
+
+    public void initAfterBeansAdded()
+    {
+        exporter.setBeans(jmxBeans);
+        exporter.afterPropertiesSet();
+        exporter.afterSingletonsInstantiated();
     }
 }

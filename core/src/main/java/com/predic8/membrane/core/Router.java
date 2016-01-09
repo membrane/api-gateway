@@ -24,6 +24,8 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.predic8.membrane.core.jmx.JmxExporter;
+import com.predic8.membrane.core.jmx.JmxRouter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
@@ -101,6 +103,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	protected HotDeploymentThread hdt;
 	protected URIFactory uriFactory = new URIFactory(false);
 	protected Statistics statistics = new Statistics();
+	protected String jmxRouterName;
 
 	private boolean hotDeploy = true;
 	private boolean running;
@@ -255,6 +258,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 				transport = new HttpTransport();
 
 			init();
+			setJmx(jmxRouterName);
 			getRuleManager().openPorts();
 
 			try {
@@ -270,6 +274,16 @@ public class Router implements Lifecycle, ApplicationContextAware {
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+
+		try {
+			Object exporterObj = getBeanFactory().getBean(JmxExporter.JMX_EXPORTER_NAME);
+			if (exporterObj != null) {
+				((JmxExporter) exporterObj).initAfterBeansAdded();
+			}
+		}
+		catch(Exception ignored){
+		}
+
 		running = true;
 		log.info(Constants.PRODUCT_NAME + " " + Constants.VERSION + " up and running!");
 	}
@@ -462,5 +476,37 @@ public class Router implements Lifecycle, ApplicationContextAware {
 
 	public Statistics getStatistics() {
 		return statistics;
+	}
+
+	@MCAttribute
+	public void setJmx(String name){
+		try {
+			if(jmxRouterName != null)
+				if (name == null || name.isEmpty())
+					return;
+
+			if (beanFactory != null) {
+				try {
+					Object exporterObj = beanFactory.getBean(JmxExporter.JMX_EXPORTER_NAME);
+					if (exporterObj != null) {
+						JmxExporter exporter = (JmxExporter) exporterObj;
+						String prefix = "org.membrane-soa:00=routers, name=";
+						//exporter.removeBean(prefix + jmxRouterName);
+						exporter.addBean(prefix + name, new JmxRouter(this, exporter));
+					}
+				}
+				catch(Exception ignored){
+
+				}
+			}
+			jmxRouterName = name;
+		}
+		catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+
+	public String getJmx(){
+		return jmxRouterName;
 	}
 }
