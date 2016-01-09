@@ -49,6 +49,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     private ApiManagementConfiguration amc = null;
     private String config = "api.yaml";
     private final String UNAUTHORIZED_API_KEY = "UNAUTHORIZED_API_KEY";
+    private ApiKeyRetriever apiKeyRetriever = new HeaderKeyRetriever();
 
     @Override
     public void init(Router router) throws Exception {
@@ -109,7 +110,8 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleRequest2(Exchange exc) throws Exception {
-        String key = exc.getRequest().getHeader().getFirstValue("Authorization");
+        String key = apiKeyRetriever.getKey(exc);
+
         if (key == null) {
             if (!hasUnauthorizedPolicy(exc)) {
                 setResponseNoAuthKey(exc);
