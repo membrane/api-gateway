@@ -279,18 +279,19 @@ public class AMStatisticsCollector {
     public void addExchangeToQueue(Exchange exc){
         String apiKey = (String) exc.getProperty(Exchange.API_KEY);
 
+        if(apiKey != null) {
+            ConcurrentLinkedQueue<Exchange> exchangeQueue = exchangesForApiKey.get(apiKey);
 
-        ConcurrentLinkedQueue<Exchange> exchangeQueue = exchangesForApiKey.get(apiKey);
+            // See SO 3752194 for explanation for this
+            if (exchangeQueue == null) {
+                ConcurrentLinkedQueue<Exchange> newValue = new ConcurrentLinkedQueue<Exchange>();
+                exchangeQueue = exchangesForApiKey.putIfAbsent(apiKey, newValue);
+                if (exchangeQueue == null)
+                    exchangeQueue = newValue;
+            }
 
-        // See SO 3752194 for explanation for this
-        if(exchangeQueue == null){
-            ConcurrentLinkedQueue<Exchange> newValue = new ConcurrentLinkedQueue<Exchange>();
-            exchangeQueue = exchangesForApiKey.putIfAbsent(apiKey,newValue);
-            if(exchangeQueue == null)
-                exchangeQueue = newValue;
+            exchangeQueue.add(exc);
         }
-
-        exchangeQueue.add(exc);
     }
 
     public Outcome handleResponse(Exchange exc, Outcome outcome) {
