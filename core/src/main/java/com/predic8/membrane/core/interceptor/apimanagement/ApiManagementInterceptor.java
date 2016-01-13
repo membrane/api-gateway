@@ -90,7 +90,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
 
         //temp
         amSc = new AMStatisticsCollector();
-
+        interceptors.add("Statistics");
 
         if(interceptors.size() > 0){
             nameBuilder.append(interceptors.get(0));
