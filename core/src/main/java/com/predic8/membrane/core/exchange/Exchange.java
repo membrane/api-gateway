@@ -38,9 +38,11 @@ public class Exchange extends AbstractExchange {
 
 	public static final String HTTP_SERVLET_REQUEST = "HttpServletRequest";
 
-	public static final String ALLOW_WEBSOCKET = "use-websocket";
-	
-	public static final String TRACK_NODE_STATUS = "TRACK_NODE_STATUS";
+	public static final String /*PROPERTY_*/ALLOW_WEBSOCKET = "use-websocket";
+
+	public static final String /*PROPERTY_*/TRACK_NODE_STATUS = "TRACK_NODE_STATUS";
+
+	public static final String /*PROPERTY_*/SSL_CONTEXT = "SSL_CONTEXT";
 
 	public static final String API_KEY = "API_KEY";
 
