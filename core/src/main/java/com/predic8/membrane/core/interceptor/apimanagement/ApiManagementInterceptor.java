@@ -41,12 +41,13 @@ import java.util.Map;
 @MCElement(name = "apiManagement")
 public class ApiManagementInterceptor extends AbstractInterceptor {
 
+    public static final String APPLICATION_JSON = "application/json"; // @TODO use constant somewhere else
     private static Logger log = LogManager.getLogger(ApiManagementInterceptor.class);
     private ApiConfig apiConfig;
-    private AMRateLimiter amRli = null;
-    private AMQuota amQ = null;
-    private AMStatisticsCollector amSc = null;
-    private ApiManagementConfiguration amc = null;
+    private AMRateLimiter amRateLimiter = null;
+    private AMQuota amQuota = null;
+    private AMStatisticsCollector amStatisticsCollector = new AMStatisticsCollector();
+    private ApiManagementConfiguration apiManagementConfiguration = null;
     private String config = "api.yaml";
     private final String UNAUTHORIZED_API_KEY = "UNAUTHORIZED_API_KEY";
     private ApiKeyRetriever apiKeyRetriever = new HeaderKeyRetriever();
@@ -54,47 +55,46 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     @Override
     public void init(Router router) throws Exception {
         super.init(router);
-        StringBuilder nameBuilder = new StringBuilder();
-        nameBuilder.append("Api Management Interceptor");
+
         Map<String, ApiConfig> apiConfigs = router.getBeanFactory().getBeansOfType(ApiConfig.class);
-        String etcdRegistryApiConfig = EtcdRegistryApiConfig.class.getSimpleName();
-        String etcdRegistryApiConfigCorrected = etcdRegistryApiConfig.substring(0,1).toLowerCase() + etcdRegistryApiConfig.substring(1);
-        String simpleApiConfig = SimpleApiConfig.class.getSimpleName();
-        String simpleApiConfigCorrected = simpleApiConfig.substring(0,1).toLowerCase() + simpleApiConfig.substring(1);
+        String etcdRegistryApiConfigCorrected = getCorrectedName(EtcdRegistryApiConfig.class.getSimpleName());
+        String simpleApiConfigCorrected = getCorrectedName(SimpleApiConfig.class.getSimpleName());
 
-
-        if(apiConfigs.containsKey(etcdRegistryApiConfigCorrected)){
+        if (apiConfigs.containsKey(etcdRegistryApiConfigCorrected)) {
             apiConfig = apiConfigs.get(etcdRegistryApiConfigCorrected);
-        }
-        else if(apiConfigs.containsKey(simpleApiConfigCorrected)){
+        } else if (apiConfigs.containsKey(simpleApiConfigCorrected)) {
             apiConfig = apiConfigs.get(simpleApiConfigCorrected);
         }
-        if(apiConfig != null){
+        if (apiConfig != null) {
             log.info("used apiConfig: " + apiConfig.getClass().getSimpleName());
-            amc = apiConfig.getConfiguration();
-        }else{
+            apiManagementConfiguration = apiConfig.getConfiguration();
+        } else {
             log.info("No ApiConfig set. Using default");
-            amc = new ApiManagementConfiguration(router.getBaseLocation(),"api.yaml");
+            apiManagementConfiguration = new ApiManagementConfiguration(router.getBaseLocation(), "api.yaml");
         }
 
+        addInterceptors();
+    }
+
+    private void addInterceptors() {
+        StringBuilder nameBuilder = new StringBuilder();
+        nameBuilder.append("Api Management Interceptor");
         ArrayList<String> interceptors = new ArrayList<String>();
         nameBuilder.append(" { ");
-        if (amRli != null) {
-            amRli.setAmc(amc);
+        if (amRateLimiter != null) {
+            amRateLimiter.setAmc(apiManagementConfiguration);
             interceptors.add("RateLimiter");
         }
-        if(amQ != null){
-            amQ.setAmc(amc);
+        if (amQuota != null) {
+            amQuota.setAmc(apiManagementConfiguration);
             interceptors.add("Quota");
         }
-
         //temp
-        amSc = new AMStatisticsCollector();
         interceptors.add("Statistics");
 
-        if(interceptors.size() > 0){
+        if (interceptors.size() > 0) {
             nameBuilder.append(interceptors.get(0));
-            for(int i = 1; i < interceptors.size();i++){
+            for (int i = 1; i < interceptors.size(); i++) {
                 nameBuilder.append(", ").append(interceptors.get(i));
             }
         }
@@ -102,11 +102,13 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         this.name = nameBuilder.toString();
     }
 
+    private String getCorrectedName(String etcdRegistryApiConfig) {
+        return etcdRegistryApiConfig.substring(0, 1).toLowerCase() + etcdRegistryApiConfig.substring(1);
+    }
+
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        if(amSc != null)
-            return amSc.handleRequest(exc,handleRequest2(exc));
-        return handleRequest2(exc);
+        return amStatisticsCollector.handleRequest(exc,handleRequest2(exc) );
     }
 
     private Outcome handleRequest2(Exchange exc) throws Exception {
@@ -123,124 +125,103 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         exc.setProperty(Exchange.API_KEY, key);
         AuthorizationResult auth = getAuthorization(exc, key);
         if (auth.isAuthorized()) {
-            if (getAmRli() != null) {
-                if(getAmRli().handleRequest(exc) == Outcome.RETURN){
-                    return Outcome.RETURN;
-                }
+            if (getAmRateLimiter() != null && getAmRateLimiter().handleRequest(exc) == Outcome.RETURN) {
+                return Outcome.RETURN;
             }
-            if (getAmQ() != null) {
-                if(getAmQ().handleRequest(exc) == Outcome.RETURN){
-                    return Outcome.RETURN;
-                }
+            if (getAmQuota() != null && getAmQuota().handleRequest(exc) == Outcome.RETURN) {
+                return Outcome.RETURN;
             }
             return Outcome.CONTINUE;
-        } else {
-            setResponsePolicyDenied(exc, auth);
-            return Outcome.RETURN;
         }
+
+        setResponsePolicyDenied(exc, auth);
+        return Outcome.RETURN;
     }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        if(amSc != null)
-            return amSc.handleResponse(exc,handleResponse2(exc));
-        return handleResponse2(exc);
+        return amStatisticsCollector.handleResponse(exc, handleResponse2(exc));
     }
 
     private Outcome handleResponse2(Exchange exc) {
-        if (!hasUnauthorizedPolicy(exc)) {
-            if (getAmQ() != null) {
-                getAmQ().handleResponse(exc);
-            }
+        if (!hasUnauthorizedPolicy(exc) && getAmQuota() != null) {
+            getAmQuota().handleResponse(exc);
         }
         return Outcome.CONTINUE;
     }
 
     private boolean hasUnauthorizedPolicy(Exchange exc) {
-        Policy unauthPol = amc.getPolicies().get("unauthorized");
+        Policy unauthPol = apiManagementConfiguration.getPolicies().get("unauthorized");
         if (unauthPol == null) {
             return false;
         }
-        String requestedApi = exc.getRule().getName();
-        for(String unauthedServices : unauthPol.getServiceProxies()){
-            String serviceName = unauthPol.getServiceProxies().iterator().next();
-            if(requestedApi.equals(serviceName)){
+        for (String unauthedServices : unauthPol.getServiceProxies()) {
+            if (exc.getRule().getName().equals(unauthPol.getServiceProxies().iterator().next())) {
                 return true;
             }
         }
-
         return false;
     }
 
     public AuthorizationResult getAuthorization(Exchange exc, String apiKey) {
-        if(!amc.getKeys().containsKey(apiKey))
-        {
+        if (!apiManagementConfiguration.getKeys().containsKey(apiKey)) {
             return AuthorizationResult.getAuthorizedFalse("API key not found");
         }
-        Key key = amc.getKeys().get(apiKey);
-        String requestedAPI = exc.getRule().getName();
 
-        String reasonFailed ="";
-        for(Policy policy : key.getPolicies()){
-            if(policy.getServiceProxies().contains(requestedAPI)){
+        for (Policy policy : apiManagementConfiguration.getKeys().get(apiKey).getPolicies()) {
+            if (policy.getServiceProxies().contains(exc.getRule().getName())) {
                 return AuthorizationResult.getAuthorizedTrue();
             }
         }
-        reasonFailed = "Service not available: " + requestedAPI;
-        return AuthorizationResult.getAuthorizedFalse(reasonFailed);
+        return AuthorizationResult.getAuthorizedFalse("Service not available: " + exc.getRule().getName());
     }
 
-    private Response buildResponse(int code, String msg, ByteArrayOutputStream baos) {
-        Response resp = new Response.ResponseBuilder().status(code, msg).contentType("application/json").body(baos.toByteArray()).build();
-        return resp;
-    }
-
-    private ByteArrayOutputStream buildJson(int code, String msg) {
+    private byte[] buildJsonErrorMessage(Response res) {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        JsonGenerator jgen = null;
+        JsonGenerator jgen;
         try {
             jgen = new JsonFactory().createGenerator(os);
             jgen.writeStartObject();
-            jgen.writeObjectField("Statuscode", code);
-            jgen.writeObjectField("Message", msg);
+            jgen.writeObjectField("Statuscode", res.getStatusCode());
+            jgen.writeObjectField("Message", res.getStatusMessage());
             jgen.writeEndObject();
             jgen.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return os;
+        return os.toByteArray();
     }
 
     private void setResponsePolicyDenied(Exchange exc, AuthorizationResult auth) {
-        int code = 400;
-        String msg = "Bad request";
-        Response resp = buildResponse(code, msg, buildJson(code, msg));
-        exc.setResponse(resp);
+        setErrorResponse(exc, Response.badRequest(auth.getReason()));
     }
 
     private void setResponseNoAuthKey(Exchange exc) {
-        int code = 401;
-        String msg = "Unauthorized";
-        Response resp = buildResponse(code, msg, buildJson(code, msg));
-        exc.setResponse(resp);
+        setErrorResponse(exc, Response.unauthorized());
     }
 
-    public AMRateLimiter getAmRli() {
-        return amRli;
+    private void setErrorResponse(Exchange exc, Response.ResponseBuilder builder) {
+        Response res = builder.contentType(APPLICATION_JSON).build();
+        res.setBodyContent(buildJsonErrorMessage(res));
+        exc.setResponse(res);
+    }
+
+    public AMRateLimiter getAmRateLimiter() {
+        return amRateLimiter;
     }
 
     @MCChildElement(order = 0)
-    public void setAmRli(AMRateLimiter amRli) {
-        this.amRli = amRli;
+    public void setAmRateLimiter(AMRateLimiter amRateLimiter) {
+        this.amRateLimiter = amRateLimiter;
     }
 
-    public AMQuota getAmQ() {
-        return amQ;
+    public AMQuota getAmQuota() {
+        return amQuota;
     }
 
     @MCChildElement(order = 1)
-    public void setAmQ(AMQuota amQ) {
-        this.amQ = amQ;
+    public void setAmQuota(AMQuota amQuota) {
+        this.amQuota = amQuota;
     }
 
     public String getConfig() {
@@ -254,8 +235,6 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     @MCAttribute
     public void setConfig(String config) {
         this.config = config;
-        if(amc != null){
-            amc.setLocation(this.config);
-        }
+        apiManagementConfiguration.setLocation(this.config);
     }
 }

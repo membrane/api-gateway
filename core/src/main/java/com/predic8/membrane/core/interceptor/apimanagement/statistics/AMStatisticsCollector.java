@@ -25,11 +25,12 @@ import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.concurrent.*;
@@ -37,6 +38,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMStatisticsCollector {
 
+    private static Logger log = LogManager.getLogger(AMStatisticsCollector.class);
+    public static final String API_STATISTICS_PATH = "/api/statistics/";
+    public static final String API_EXCHANGES_PATH = "/api/exchanges/";
     boolean shutdown = false;
     private int collectTimeInSeconds = 10;
     static final String localHostname;
@@ -46,66 +50,66 @@ public class AMStatisticsCollector {
     int elasticSearchPort = 9200;
 
     JsonFactory jsonFactory = new JsonFactory();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    JsonGenerator jsonGenerator;
     HttpClient client = new HttpClient();
-
-    static{
-        String localHostname1 = null;
-        try {
-            localHostname1 = InetAddress.getLocalHost().getHostName();
-        } catch (UnknownHostException e) {
-            try {
-                localHostname1 = IOUtils.toString(Runtime.getRuntime().exec("hostname").getInputStream());
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
-        }
-        localHostname = localHostname1;
-    }
 
     boolean traceStatistics = true;
     boolean traceExchanges = true;
     boolean traceIncludesHeader = true;
     int bodyBytes = -1;
 
-    ConcurrentHashMap<String,ConcurrentLinkedQueue<Exchange>> exchangesForApiKey = new ConcurrentHashMap<String,ConcurrentLinkedQueue<Exchange>>();
+    ConcurrentHashMap<String, ConcurrentLinkedQueue<Exchange>> exchangesForApiKey = new ConcurrentHashMap<String, ConcurrentLinkedQueue<Exchange>>();
 
     ExecutorService collectorThread = Executors.newFixedThreadPool(1);
 
-    public AMStatisticsCollector(){
+    static {
+        localHostname = getLocalHostname();
+    }
+
+    public AMStatisticsCollector() {
+        try {
+            jsonGenerator = jsonFactory.createGenerator(baos);
+        } catch (IOException ignored) {
+        }
+
         collectorThread.submit(new Runnable() {
             @Override
             public void run() {
-                while(true) {
+                while (true) {
                     try {
                         Exchange exc = null;
                         ArrayList<String> jsonStatisticsForApiKey = new ArrayList<String>();
                         ArrayList<String> jsonExchangesForApiKey = new ArrayList<String>();
-                        for(String apiKey : exchangesForApiKey.keySet()){
-                            ArrayList<String> jsonStatisticsForRequests = new ArrayList<String>();
-                            ArrayList<String> jsonExchangesForRequests = new ArrayList<String>();
-                            while((exc = exchangesForApiKey.get(apiKey).poll()) != null) {
-                                if(traceStatistics)
-                                    jsonStatisticsForRequests.add(collectStatisticFrom(exc));
-                                if(traceExchanges)
-                                    jsonExchangesForRequests.add(collectExchangeDataFrom(exc));
-                            }
-                            if(!jsonStatisticsForRequests.isEmpty()) {
-                                String e = combineJsons(apiKey, jsonStatisticsForRequests);
-                                //System.out.println(e);
-                                jsonStatisticsForApiKey.add(e);
-                            }
-                            if(!jsonExchangesForRequests.isEmpty()) {
-                                String e = combineJsons(apiKey, jsonExchangesForRequests);
-                                jsonExchangesForApiKey.add(e);
-                            }
+                        for (String apiKey : exchangesForApiKey.keySet()) {
+                            while ((exc = exchangesForApiKey.get(apiKey).poll()) != null) {
+                                String exchangeStatistics = null;
+                                String exchangeData = null;
+                                if (traceStatistics) {
+                                    try {
+                                        exchangeStatistics = collectStatisticFrom(exc, apiKey);
+                                        jsonStatisticsForApiKey.add(exchangeStatistics);
+                                    } catch (Exception ignored) {
+                                        continue;
+                                    }
 
+                                }
+                                if (traceExchanges) {
+                                    try {
+                                        exchangeData = collectExchangeDataFrom(exc, apiKey);
+                                        jsonExchangesForApiKey.add(exchangeData);
+                                    } catch (Exception ignored) {
+                                        continue;
+                                    }
+                                }
+                            }
                         }
-                        if(!jsonStatisticsForApiKey.isEmpty())
-                            sendJsonToElasticSearch("/api/statistics/",combineJsons(localHostname, jsonStatisticsForApiKey));
-                        if(!jsonExchangesForApiKey.isEmpty())
-                            sendJsonToElasticSearch("/api/exchanges/",combineJsons(localHostname, jsonExchangesForApiKey));
+                        if (!jsonStatisticsForApiKey.isEmpty())
+                            sendJsonToElasticSearch(API_STATISTICS_PATH, combineJsons(localHostname, jsonStatisticsForApiKey));
+                        if (!jsonExchangesForApiKey.isEmpty())
+                            sendJsonToElasticSearch(API_EXCHANGES_PATH, combineJsons(localHostname, jsonExchangesForApiKey));
                         runningId.incrementAndGet();
-                        if(shutdown)
+                        if (shutdown)
                             break;
                         Thread.sleep(getCollectTimeInSeconds() * 1000);
 
@@ -117,31 +121,30 @@ public class AMStatisticsCollector {
         });
     }
 
-    private String collectExchangeDataFrom(Exchange exc) {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        JsonGenerator gen = createJsonGenerator(os);
+    private String collectExchangeDataFrom(Exchange exc, String apiKey) throws IOException {
+        JsonGenerator gen = getAndResetJsonGenerator();
 
         try {
             gen.writeStartObject();
-                gen.writeObjectField("excId", exc.getId());
-                gen.writeObjectFieldStart("Request");
-                    collectFromMessage(gen,exc.getRequest());
-                gen.writeEndObject();
-                gen.writeObjectFieldStart("Response");
-                    collectFromMessage(gen,exc.getResponse());
-                gen.writeEndObject();
+            gen.writeObjectField("excId", exc.getId());
+            gen.writeObjectField("excApiKey", apiKey);
+            gen.writeObjectFieldStart("Request");
+            collectFromMessage(gen, exc.getRequest());
             gen.writeEndObject();
-            gen.close();
+            gen.writeObjectFieldStart("Response");
+            collectFromMessage(gen, exc.getResponse());
+            gen.writeEndObject();
+            gen.writeEndObject();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return os.toString();
+        return getStringFromJsonGenerator();
     }
 
     private void collectFromMessage(JsonGenerator gen, Message msg) {
         try {
-            if(traceIncludesHeader){
-                if(msg.getHeader().getAllHeaderFields().length > 0) {
+            if (traceIncludesHeader) {
+                if (msg.getHeader().getAllHeaderFields().length > 0) {
                     gen.writeObjectFieldStart("headers");
                     for (HeaderField hf : msg.getHeader().getAllHeaderFields()) {
                         gen.writeObjectField(hf.getHeaderName().toString(), hf.getValue());
@@ -149,18 +152,20 @@ public class AMStatisticsCollector {
                     gen.writeEndObject();
                 }
             }
-            String origBody = msg.getBodyAsStringDecoded();
-            int bodySnapshotSize = 0;
-            if(bodyBytes == -1)
-                bodySnapshotSize = origBody.length();
-            else
-                bodySnapshotSize = bodyBytes;
-            String body = origBody.substring(0,bodySnapshotSize);
-            if(body.length() > 0)
+            String body = getBody(msg);
+            if (body.length() > 0)
                 gen.writeObjectField("body", body);
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private String getBody(Message msg) {
+        String origBody = msg.getBodyAsStringDecoded();
+        if (bodyBytes == -1)
+            return origBody.substring(0, origBody.length());
+
+        return origBody.substring(0, bodyBytes);
     }
 
 
@@ -168,95 +173,87 @@ public class AMStatisticsCollector {
         return localHostname + "-" + startTime + "-" + runningId.get();
     }
 
-    private void sendJsonToElasticSearch(String path, String json) {
-        String elasticSearchUrl = getElasticSearchPath(path);
-        Exchange exc = null;
-        try {
-            exc = new Request.Builder().put(elasticSearchUrl).body(json).buildExchange();
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            throw new RuntimeException();
-        }
+    private void sendJsonToElasticSearch(String path, String json) throws Exception {
 
         Response resp = null;
-        synchronized(client){
-            try {
-                resp = client.call(exc).getResponse();
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new RuntimeException();
-            }
+        synchronized (client) {
+            resp = client.call(new Request.Builder().put(getElasticSearchPath(path)).body(json).buildExchange()).getResponse();
         }
-        if(!resp.isOk()){
-            System.out.println("code not 2xx");
-            System.out.println(resp.getBodyAsStringDecoded());
-            throw new RuntimeException();
-        }
+        if (!resp.isOk())
+            log.warn("Could not send statistics to elastic search instance. Response: " + resp.getStatusCode() + " - " + resp.getStatusMessage());
     }
 
-    private String combineJsons(String name, ArrayList<String> jsonStatisticsForRequests) {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        JsonGenerator gen = createJsonGenerator(os);
+    private String combineJsons(ArrayList<String> jsonStatisticsForRequests) throws IOException {
+        return combineJsons("",jsonStatisticsForRequests);
+    }
+
+    private String combineJsons(String name, ArrayList<String> jsonStatisticsForRequests) throws IOException {
+        JsonGenerator gen = getAndResetJsonGenerator();
 
         try {
             gen.writeStartObject();
             gen.writeArrayFieldStart(name);
-            if(!jsonStatisticsForRequests.isEmpty())
+            if (!jsonStatisticsForRequests.isEmpty())
                 gen.writeRaw(jsonStatisticsForRequests.get(0));
-            for(int i = 1; i < jsonStatisticsForRequests.size();i++){
+            for (int i = 1; i < jsonStatisticsForRequests.size(); i++) {
                 gen.writeRaw("," + jsonStatisticsForRequests.get(i));
             }
             gen.writeEndArray();
             gen.writeEndObject();
-            gen.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return os.toString();
+        return getStringFromJsonGenerator();
     }
 
-    private String collectStatisticFrom(Exchange exc) {
+    private String collectStatisticFrom(Exchange exc, String apiKey) throws IOException {
         StatisticCollector statistics = new StatisticCollector(false);
         statistics.collectFrom(exc);
 
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        JsonGenerator gen = createJsonGenerator(os);
+        JsonGenerator gen = getAndResetJsonGenerator();
 
 
         try {
             gen.writeStartObject();
             gen.writeObjectField("excId", exc.getId());
+            gen.writeObjectField("excApiKey", apiKey);
             gen.writeObjectField("excStatus", exc.getStatus().toString());
-            gen.writeObjectField("code" ,exc.getResponse().getStatusCode());
-            int time = 0;
-            if(exc.getTimeReqSent() == 0)
-                time = -1;
-            else
-                time = (int) (exc.getTimeResSent() - exc.getTimeReqSent());
-            gen.writeObjectField("time", time);
+            gen.writeObjectField("code", exc.getResponse().getStatusCode());
+            gen.writeObjectField("time", getInflightTime(exc));
             gen.writeEndObject();
-            gen.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return os.toString();
+        return getStringFromJsonGenerator();
+    }
+
+    private long getInflightTime(Exchange exc) {
+        if (exc.getTimeReqSent() == 0)
+            return -1;
+        else
+            return exc.getTimeResSent() - exc.getTimeReqSent();
     }
 
     private String getElasticSearchPath(String path) {
-        if(!path.startsWith("/"))
+        return "http://" + elasticSearchHost + ":" + elasticSearchPort + normalizePath(path) + getLocalMachineNameWithSuffix();
+    }
+
+    private String normalizePath(String path) {
+        if (!path.startsWith("/"))
             path = "/" + path;
-        if(!path.endsWith("/"))
+        if (!path.endsWith("/"))
             path = path + "/";
-        return "http://" + elasticSearchHost + ":" + elasticSearchPort + path + getLocalMachineNameWithSuffix();
+        return path;
     }
 
     /**
-     * Inits listeners and collects statistik from the exchange
+     * Inits listener and puts exchange in a queue for later processing
+     *
      * @param exc
      * @param outcome
      * @return always returns the outcome unmodified
      */
-    public Outcome handleRequest(final Exchange exc, final Outcome outcome){
+    public Outcome handleRequest(final Exchange exc, final Outcome outcome) {
         exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
             @Override
             public void setExchangeFinished() {
@@ -264,7 +261,8 @@ public class AMStatisticsCollector {
             }
         });
 
-        /*exc.getRequest().addObserver(new AbstractMessageObserver() {
+        /* Ask Tobias if this is a better alternative than to wait for body complete
+         exc.getRequest().addObserver(new AbstractMessageObserver() {
             @Override
             public void bodyComplete(AbstractBody body) {
                 //statistics.addRequestBody(exc, bodyBytes);
@@ -272,14 +270,13 @@ public class AMStatisticsCollector {
         });*/
 
 
-
         return outcome;
     }
 
-    public void addExchangeToQueue(Exchange exc){
+    public void addExchangeToQueue(Exchange exc) {
         String apiKey = (String) exc.getProperty(Exchange.API_KEY);
 
-        if(apiKey != null) {
+        if (apiKey != null) {
             ConcurrentLinkedQueue<Exchange> exchangeQueue = exchangesForApiKey.get(apiKey);
 
             // See SO 3752194 for explanation for this
@@ -295,7 +292,8 @@ public class AMStatisticsCollector {
     }
 
     public Outcome handleResponse(Exchange exc, Outcome outcome) {
-        /*exc.getResponse().addObserver(new AbstractMessageObserver() {
+        /* Ask Tobias if this is a better alternative than to wait for body complete
+        exc.getResponse().addObserver(new AbstractMessageObserver() {
             @Override
             public void bodyComplete(AbstractBody body) {
                 //statistics.addResponseBody(exc,bodyBytes);
@@ -303,17 +301,6 @@ public class AMStatisticsCollector {
         });*/
 
         return outcome;
-    }
-
-    private JsonGenerator createJsonGenerator(ByteArrayOutputStream os) {
-        synchronized(jsonFactory){
-            try {
-                return jsonFactory.createGenerator(os);
-            } catch (IOException e) {
-                e.printStackTrace();
-                throw new RuntimeException();
-            }
-        }
     }
 
     public int getCollectTimeInSeconds() {
@@ -324,7 +311,7 @@ public class AMStatisticsCollector {
         this.collectTimeInSeconds = collectTimeInSeconds;
     }
 
-    public void shutdown(){
+    public void shutdown() {
         shutdown = true;
         try {
             collectorThread.shutdown();
@@ -333,4 +320,28 @@ public class AMStatisticsCollector {
             e.printStackTrace();
         }
     }
+
+    private static String getLocalHostname() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            try {
+                return IOUtils.toString(Runtime.getRuntime().exec("hostname").getInputStream());
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                return "localhost";
+            }
+        }
+    }
+
+    protected JsonGenerator getAndResetJsonGenerator(){
+        baos.reset();
+        return jsonGenerator;
+    }
+
+    protected String getStringFromJsonGenerator() throws IOException {
+        jsonGenerator.flush();
+        return baos.toString();
+    }
+
 }

@@ -266,6 +266,13 @@ public class Response extends Message {
 				body(htmlMessage("Unauthorized.", message));
 	}
 
+	public static ResponseBuilder unauthorized() {
+		return ResponseBuilder.newInstance().
+				status(401, "Unauthorized.").
+				contentType(MimeType.TEXT_HTML_UTF8).
+				bodyEmpty();
+	}
+
 	@Override
 	public String getStartLine() {
 		StringBuilder buf = new StringBuilder();
