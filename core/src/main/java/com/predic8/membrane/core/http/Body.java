@@ -90,9 +90,11 @@ public class Body extends AbstractBody {
 			// TODO: for improved performance and memory usage, do not retain a copy of
 			// the chunk, if not executing the monitor. Throw an exception in
 			// handleResponse(), if read() is called but was already called from the HttpClient
-			byte[] chunk = new byte[length];
-			System.arraycopy(buffer, 0, chunk, 0, length);
-			chunks.add(new Chunk(chunk));
+			if(!observers.isEmpty()) {
+				byte[] chunk = new byte[length];
+				System.arraycopy(buffer, 0, chunk, 0, length);
+				chunks.add(new Chunk(chunk));
+			}
 		}
 		out.finish();
 		markAsRead();
