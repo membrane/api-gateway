@@ -89,13 +89,13 @@ public class BoundConnectionTest {
 	public void testBinding() throws Exception {
 		Connection c = null, c2 = null;
 		try {
-			c = Connection.open(InetAddress.getByName("localhost"), 3021, null, null, 30000);
+			c = Connection.open("localhost", 3021, null, null, 30000);
 			doExchange(c, true); // this opens a bound targetConnection
 
 			long authenticatedConnectionHash = connectionHash;
 			assertTrue(authenticatedConnectionHash != 0);
 
-			c2 = Connection.open(InetAddress.getByName("localhost"), 3021, null, null, 30000);
+			c2 = Connection.open("localhost", 3021, null, null, 30000);
 			doExchange(c2, true); // this should not reuse the same targetConnection
 
 			long authenticatedConnection2Hash = connectionHash;

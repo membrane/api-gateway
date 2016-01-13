@@ -177,11 +177,10 @@ public class HttpClient {
 			try {
 				log.debug("try # " + counter + " to " + dest);
 				target = init(exc, dest, adjustHostHeader);
-				InetAddress targetAddr = InetAddress.getByName(target.host);
 				if (counter == 0) {
 					con = exc.getTargetConnection();
 					if (con != null) {
-						if (!con.isSame(targetAddr, target.port)) {
+						if (!con.isSame(target.host, target.port)) {
 							con.close();
 							con = null;
 						} else {
@@ -190,7 +189,7 @@ public class HttpClient {
 					}
 				}
 				if (con == null) {
-					con = conMgr.getConnection(targetAddr, target.port, localAddr, getOutboundSSLProvider(exc, target), connectTimeout);
+					con = conMgr.getConnection(target.host, target.port, localAddr, getOutboundSSLProvider(exc, target), connectTimeout);
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}

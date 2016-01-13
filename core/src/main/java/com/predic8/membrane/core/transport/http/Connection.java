@@ -56,6 +56,7 @@ public class Connection implements MessageObserver {
 	private static Log log = LogFactory.getLog(Connection.class.getName());
 
 	public final ConnectionManager mgr;
+	public final String host;
 	public Socket socket;
 	public InputStream in;
 	public OutputStream out;
@@ -68,12 +69,12 @@ public class Connection implements MessageObserver {
 	private Exchange exchange;
 	private boolean keepAttachedToExchange;
 
-	public static Connection open(InetAddress host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
+	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
 		return open(host, port, localHost, sslProvider, null, connectTimeout);
 	}
 
-	public static Connection open(InetAddress host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
-		Connection con = new Connection(mgr);
+	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
+		Connection con = new Connection(mgr, host);
 
 		if (sslProvider != null) {
 			if (isNullOrEmpty(localHost))
@@ -98,12 +99,13 @@ public class Connection implements MessageObserver {
 		return con;
 	}
 
-	private Connection(ConnectionManager mgr) {
+	private Connection(ConnectionManager mgr, String host) {
 		this.mgr = mgr;
+		this.host = host;
 	}
 
-	public boolean isSame(InetAddress host, int port) {
-		return socket != null && host.equals(socket.getInetAddress()) && port == socket.getPort();
+	public boolean isSame(String host, int port) {
+		return socket != null && host.equals(this.host) && port == socket.getPort();
 	}
 
 	public void close() throws IOException {
@@ -206,6 +208,9 @@ public class Connection implements MessageObserver {
 		return lastUse;
 	}
 
+	public String getHost() {
+		return host;
+	}
 
 	void setKeepAttachedToExchange(boolean keepAttachedToExchange) {
 		this.keepAttachedToExchange = keepAttachedToExchange;

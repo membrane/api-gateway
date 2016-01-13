@@ -260,14 +260,14 @@ public class SSLContextCollection implements SSLProvider {
 	}
 
 	@Override
-	public Socket createSocket(InetAddress host, int port, InetAddress addr,
+	public Socket createSocket(String host, int port, InetAddress addr,
 			int localPort, int connectTimeout) throws IOException {
-		return getSSLContextForHostname(host.getHostName()).createSocket(host, port, addr, localPort, connectTimeout);
+		return getSSLContextForHostname(host).createSocket(host, port, addr, localPort, connectTimeout);
 	}
 
 	@Override
-	public Socket createSocket(InetAddress host, int port, int connectTimeout)
+	public Socket createSocket(String host, int port, int connectTimeout)
 			throws IOException {
-		return getSSLContextForHostname(host.getHostName()).createSocket(host, port, connectTimeout);
+		return getSSLContextForHostname(host).createSocket(host, port, connectTimeout);
 	}
 }

@@ -22,7 +22,7 @@ import java.net.Socket;
 public interface SSLProvider {
 	public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException;
 	public Socket wrapAcceptedSocket(Socket socket) throws IOException;
-	public Socket createSocket(InetAddress host, int port, int connectTimeout) throws IOException;
-	public Socket createSocket(InetAddress host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException;
+	public Socket createSocket(String host, int port, int connectTimeout) throws IOException;
+	public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException;
 
 }

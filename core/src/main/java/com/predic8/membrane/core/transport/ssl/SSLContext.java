@@ -416,11 +416,11 @@ public class SSLContext implements SSLProvider {
 		return socket;
 	}
 
-	public Socket createSocket(InetAddress host, int port, int connectTimeout) throws IOException {
+	public Socket createSocket(String host, int port, int connectTimeout) throws IOException {
 		Socket s = new Socket();
 		s.connect(new InetSocketAddress(host, port), connectTimeout);
 		SSLSocketFactory sslsf = sslc.getSocketFactory();
-		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host.getHostName(), port, true);
+		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host, port, true);
 		if (protocols != null) {
 			ssls.setEnabledProtocols(protocols);
 		} else {
@@ -438,12 +438,12 @@ public class SSLContext implements SSLProvider {
 		return ssls;
 	}
 
-	public Socket createSocket(InetAddress host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException {
+	public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException {
 		Socket s = new Socket();
 		s.bind(new InetSocketAddress(addr, localPort));
 		s.connect(new InetSocketAddress(host, port), connectTimeout);
 		SSLSocketFactory sslsf = sslc.getSocketFactory();
-		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host.getHostName(), port, true);
+		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host, port, true);
 		applyCiphers(ssls);
 		if (protocols != null) {
 			ssls.setEnabledProtocols(protocols);
