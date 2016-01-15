@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 predic8 GmbH, www.predic8.com
+ * Copyright 2016 predic8 GmbH, www.predic8.com
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
  *    You may obtain a copy of the License at
@@ -11,17 +11,11 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.apimanagement.statistics;
+package com.predic8.membrane.core.interceptor.apimanagement;
 
-import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.xml.Headers;
+import com.predic8.membrane.core.exchange.Exchange;
 
-public class ExchangeStatistic {
-    int id;
-    String method;
-    Headers headers;
-    AbstractBody body;
+public interface ApiKeyRetriever {
 
-    int responseTimeInMillis;
-    int trafficInBytes;
+    String getKey(Exchange exc);
 }

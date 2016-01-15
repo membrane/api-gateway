@@ -52,6 +52,9 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 		Rule rule = getRule(exc);
 		exc.setRule(rule);
+		if(exc.getRule().getSslOutboundContext() != null){
+			exc.setProperty(Exchange.SSL_CONTEXT, exc.getRule().getSslOutboundContext());
+		}
 
 		if (rule instanceof NullRule) {
 			handleNoRuleFound(exc);

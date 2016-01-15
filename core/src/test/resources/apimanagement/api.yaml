@@ -9,7 +9,7 @@ policies:
         requests: 1000
         interval: 3600
       quota:
-        size: 30B
+        size: 120B
         interval: 1
       serviceProxy:
         - "Order API"
@@ -20,10 +20,11 @@ policies:
         requests: 5
         interval: 1
       quota:
-        size: 30B
+        size: 120B
         interval: 1
       serviceProxy:
         - "junit API"
+        - "BigFileWebserver"
   - policy:
       id: "unauthorized"
       serviceProxy:

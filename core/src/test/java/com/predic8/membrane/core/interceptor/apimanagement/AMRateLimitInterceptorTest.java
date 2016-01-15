@@ -44,9 +44,7 @@ public class AMRateLimitInterceptorTest {
         exc.getRule().setName("junit API");
 
         final AMRateLimiter rli = new AMRateLimiter();
-        ApiManagementConfiguration amc = new ApiManagementConfiguration();
-        amc.setResolver(new ResolverMap());
-        amc.setLocation(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml");
+        ApiManagementConfiguration amc = new ApiManagementConfiguration(System.getProperty("user.dir") , "src\\test\\resources\\apimanagement\\api.yaml");
         rli.setAmc(amc);
 
         ArrayList<Thread> threads = new ArrayList<Thread>();
