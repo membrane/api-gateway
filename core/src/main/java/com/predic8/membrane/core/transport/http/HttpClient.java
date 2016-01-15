@@ -145,12 +145,11 @@ public class HttpClient {
 	}
 
 	private SSLProvider getOutboundSSLProvider(Exchange exc, HostColonPort hcp) {
-		if (exc.getRule() != null) {
-			Object sslPropObj = exc.getProperty(Exchange.SSL_CONTEXT);
-			if(sslPropObj != null)
-				return (SSLProvider) sslPropObj;
+		Object sslPropObj = exc.getProperty(Exchange.SSL_CONTEXT);
+		if(sslPropObj != null)
+			return (SSLProvider) sslPropObj;
+		if (exc.getRule() != null)
 			return exc.getRule().getSslOutboundContext();
-		}
 		if (hcp.useSSL)
 			return getDefaultSSLProvider();
 		return null;
