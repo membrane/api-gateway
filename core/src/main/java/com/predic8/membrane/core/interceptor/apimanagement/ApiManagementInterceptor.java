@@ -108,7 +108,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        return amStatisticsCollector.handleRequest(exc,handleRequest2(exc) );
+        return getAmStatisticsCollector().handleRequest(exc,handleRequest2(exc) );
     }
 
     private Outcome handleRequest2(Exchange exc) throws Exception {
@@ -140,7 +140,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        return amStatisticsCollector.handleResponse(exc, handleResponse2(exc));
+        return getAmStatisticsCollector().handleResponse(exc, handleResponse2(exc));
     }
 
     private Outcome handleResponse2(Exchange exc) {
@@ -236,5 +236,14 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     public void setConfig(String config) {
         this.config = config;
         apiManagementConfiguration.setLocation(this.config);
+    }
+
+    public AMStatisticsCollector getAmStatisticsCollector() {
+        return amStatisticsCollector;
+    }
+
+    @MCChildElement(order = 2)
+    public void setAmStatisticsCollector(AMStatisticsCollector amStatisticsCollector) {
+        this.amStatisticsCollector = amStatisticsCollector;
     }
 }
