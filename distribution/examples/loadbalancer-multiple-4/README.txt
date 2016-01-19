@@ -17,7 +17,7 @@ In this example we will use two LoadBalancerInterceptors to distribute requests 
 
 The first LB is balancing between our first two counters.
 
-The second LB has only one node and returns the third counter.
+The second LB is balancing between our third and fourth counter.
 
 
 To run the example execute the following steps:
@@ -26,10 +26,10 @@ To run the example execute the following steps:
 
 2. Execute service-proxy.bat
 
-3. Open the URL http://localhost:8080/ in your browser and repeatedly refresh (F5). Observe that the response alternates
+3. Open the URL http://localhost:8080/service in your browser and repeatedly refresh (F5). Observe that the response alternates
    between Mock Node 1 and 2.
    
-4. Open the URL http://localhost:8081/ and refresh serveral times. Observe that you now alternate between Mock Node 3
+4. Open the URL http://localhost:8081/service and refresh serveral times. Observe that you now alternate between Mock Node 3
    and Mock Node 4.
 
 5. Open the URL http://localhost:9000/admin/
@@ -38,14 +38,14 @@ To run the example execute the following steps:
 
 6. Click on the link called "balancer1", the click on "Default".
 
-7. Nodes are identified by host name and port.
+7. Nodes are identified by host name and port. Note that both nodes have status "UP".
 
 8. Open http://localhost:9010/clustermanager/down?balancer=balancer1&host=localhost&port=4001 in a different browser
-   tab. (No content will appear.)
+   tab. (No content will appear.) This sets the status of node 2 ( the one on port 4001 ) to "DOWN" and effectively disables it ( in balancer 1 ).
    
 9. Then go back to the admin interface and refresh. Note that the second node now has status "DOWN".
 
-10. Open again the URL http://localhost:8080/ and repeatedly refresh. Note that you now stay on Mock Node 1. 
+10. Open again the URL http://localhost:8080/service and repeatedly refresh. Note that you now stay on Mock Node 1.
 
 
 
