@@ -209,8 +209,11 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	public AbstractSessionIdExtractor getSessionIdExtractor() {
 		return sessionIdExtractor;
 	}
-	
-	@MCChildElement
+
+	/**
+	 * @description Checks if nodes are still available. Sets them to "DOWN" when not reachable, else sets them back up when they are reachable.
+	 */
+	@MCChildElement(order=4)
 	public void setNodeOnlineChecker(NodeOnlineChecker noc)
 	{
 		this.nodeOnlineChecker = noc;
