@@ -13,35 +13,28 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.io.ByteArrayOutputStream;
-import java.net.URLEncoder;
-import java.util.HashMap;
-
-import javax.annotation.concurrent.GuardedBy;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
+
+import javax.annotation.concurrent.GuardedBy;
+import java.io.ByteArrayOutputStream;
+import java.net.URLEncoder;
+import java.util.HashMap;
 
 /**
  * @explanation A <i>token provider</i> using <i>Deutsche Telekom's</i> REST interface <a
@@ -152,12 +145,6 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 							body(baos.toByteArray()).
 							buildExchange();
 
-			exc.setRule(new NullRule() {
-				@Override
-				public SSLProvider getSslOutboundContext() {
-					return new SSLContext(new SSLParser(), new ResolverMap(), null);
-				}
-			});
 			hc.call(exc, false, true);
 
 			if (exc.getResponse().getStatusCode() != 201)
@@ -182,12 +169,6 @@ public class TelekomSMSTokenProvider extends SMSTokenProvider {
 					body(new URLParamUtil.ParamBuilder().add("grant_type", "client_credentials").add("scope", scope).build()).
 					buildExchange();
 
-			exc.setRule(new NullRule() {
-				@Override
-				public SSLProvider getSslOutboundContext() {
-					return new SSLContext(new SSLParser(), new ResolverMap(), null);
-				}
-			});
 			new HttpClient().call(exc, false, true);
 			if (exc.getResponse().getStatusCode() != 200)
 				throw new RuntimeException("Telekom Authentication Server returned: " + exc.getResponse());

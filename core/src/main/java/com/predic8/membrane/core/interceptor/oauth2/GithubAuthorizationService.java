@@ -13,22 +13,17 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
@@ -161,12 +156,6 @@ public class GithubAuthorizationService extends AuthorizationService {
 										+ "&client_secret="
 										+ clientSecret + "&" + "redirect_uri=" + publicURL
 										+ "oauth2callback&grant_type=authorization_code").buildExchange();
-				e.setRule(new NullRule() {
-					@Override
-					public SSLContext getSslOutboundContext() {
-						return new SSLContext(new SSLParser(), null, null);
-					}
-				});
 
 				LogInterceptor logi = null;
 				if (log.isDebugEnabled()) {
@@ -203,12 +192,6 @@ public class GithubAuthorizationService extends AuthorizationService {
 										+ "&client_secret="
 										+ clientSecret + "&" + "redirect_uri=" + publicURL
 										+ "oauth2callback&grant_type=authorization_code").buildExchange();
-				e2.setRule(new NullRule() {
-					@Override
-					public SSLContext getSslOutboundContext() {
-						return new SSLContext(new SSLParser(), null, null);
-					}
-				});
 
 				if (log.isDebugEnabled()) {
 					logi.setHeaderOnly(false);
