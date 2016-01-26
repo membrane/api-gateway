@@ -16,11 +16,13 @@ package com.predic8.membrane.core.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.util.ByteUtil;
+import sun.plugin.dom.exception.InvalidStateException;
 
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
@@ -87,13 +89,30 @@ public class Body extends AbstractBody {
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
 			out.write(buffer, 0, length);
-			// TODO: for improved performance and memory usage, do not retain a copy of
-			// the chunk, if not executing the monitor. Throw an exception in
-			// handleResponse(), if read() is called but was already called from the HttpClient
-			if(!observers.isEmpty()) {
+			// TODO: this check is a temporary workaround only until non-replayable bodies have been figured out
+			if (totalLength <= 100000000) {
 				byte[] chunk = new byte[length];
 				System.arraycopy(buffer, 0, chunk, 0, length);
 				chunks.add(new Chunk(chunk));
+			} else {
+				chunks.add(new Chunk(new byte[0]) {
+					@Override
+					public byte[] getContent() {
+						throw new InvalidStateException("Chunk too big to be retained.");
+					}
+					@Override
+					public void write(OutputStream out) throws IOException {
+						throw new InvalidStateException("Chunk too big to be retained.");
+					}
+					@Override
+					public String toString() {
+						throw new InvalidStateException("Chunk too big to be retained.");
+					}
+					@Override
+					public int copyChunk(byte[] raw, int destPos) {
+						throw new InvalidStateException("Chunk too big to be retained.");
+					}
+				});
 			}
 		}
 		out.finish();
