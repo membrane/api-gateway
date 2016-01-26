@@ -22,7 +22,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.util.ByteUtil;
-import sun.plugin.dom.exception.InvalidStateException;
 
 /**
  * A message body (streaming, if possible). Use a subclass of {@link ChunkedBody} instead, if
@@ -98,19 +97,19 @@ public class Body extends AbstractBody {
 				chunks.add(new Chunk(new byte[0]) {
 					@Override
 					public byte[] getContent() {
-						throw new InvalidStateException("Chunk too big to be retained.");
+						throw new IllegalStateException("Chunk too big to be retained.");
 					}
 					@Override
 					public void write(OutputStream out) throws IOException {
-						throw new InvalidStateException("Chunk too big to be retained.");
+						throw new IllegalStateException("Chunk too big to be retained.");
 					}
 					@Override
 					public String toString() {
-						throw new InvalidStateException("Chunk too big to be retained.");
+						throw new IllegalStateException("Chunk too big to be retained.");
 					}
 					@Override
 					public int copyChunk(byte[] raw, int destPos) {
-						throw new InvalidStateException("Chunk too big to be retained.");
+						throw new IllegalStateException("Chunk too big to be retained.");
 					}
 				});
 			}
