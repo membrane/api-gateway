@@ -1,7 +1,7 @@
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
-	xmlns:spring="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<router>
@@ -11,6 +11,7 @@
 			<balancer name="balancer1">
 				<clusters>
 					<cluster name="Default">
+						<!-- target 1 and 2 that are balanced by balancer 1 -->
 						<node host="localhost" port="4000"/>
 						<node host="localhost" port="4001"/>
 					</cluster>
@@ -22,15 +23,18 @@
 			<balancer name="balancer2">
 				<clusters>
 					<cluster name="Default">
+						<!-- target 3 and 4 that are balanced by balancer 2 -->
 						<node host="localhost" port="4002"/>
 						<node host="localhost" port="4003"/>
 					</cluster>
 				</clusters>
 			</balancer>
 		</serviceProxy>
+		<!-- Interface for setting nodes to up/down state -->
 		<serviceProxy name="Up/Down Push Interface" port="9010">
 			<clusterNotification />
 		</serviceProxy>
+		<!-- the respective target nodes the balancers are balancing on ( the counters )-->
 		<serviceProxy name="Mock Node 1" port="4000">
 			<counter name="Mock Node 1" />
 		</serviceProxy>
@@ -46,7 +50,7 @@
 		<serviceProxy name="Administration" port="9000">
 			<adminConsole />
 		</serviceProxy>
-		
+
 	</router>
-	
+
 </spring:beans>

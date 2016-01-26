@@ -13,14 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.apache.ApacheHttpTransport;
@@ -30,20 +22,24 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @description Together with the {@link OAuth2ResourceInterceptor}, implements request authentication via OAuth2 using
@@ -168,12 +164,6 @@ public class GoogleAuthorizationService extends AuthorizationService {
 						+ "&" + "redirect_uri=" + publicURL + "oauth2callback"
 						+ "&" + "grant_type=authorization_code")
 				.buildExchange();
-				e.setRule(new NullRule() {
-					@Override
-					public SSLContext getSslOutboundContext() {
-						return new SSLContext(new SSLParser(), null, null);
-					}
-				});
 
 				LogInterceptor logi = null;
 				if (log.isDebugEnabled()) {

@@ -13,25 +13,19 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
-import java.net.URLEncoder;
-
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.transport.http.HttpClient;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.rules.NullRule;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
+import java.net.URLEncoder;
 
 /**
  * @explanation A <i>token provider</i> using <i><a
@@ -124,12 +118,6 @@ public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 		} catch (URISyntaxException e1) {
 			logSmsError(primary, exc);
 		}
-		exc.setRule(new NullRule() {
-			@Override
-			public SSLProvider getSslOutboundContext() {
-				return new SSLContext(new SSLParser(), new ResolverMap(), null);
-			}
-		});
 		// TODO: maybe reduce Exchange timeout
 
 		try {

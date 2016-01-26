@@ -15,15 +15,16 @@ package com.predic8.membrane.core.interceptor.apimanagement.statistics;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@MCElement(name="amStatisticsCollector")
 public class AMStatisticsCollector {
 
     private static Logger log = LogManager.getLogger(AMStatisticsCollector.class);
@@ -46,13 +48,15 @@ public class AMStatisticsCollector {
     static final String localHostname;
     static final long startTime = System.currentTimeMillis();
     private AtomicInteger runningId = new AtomicInteger(0);
-    String elasticSearchHost = "localhost";
+    String host = "localhost";
+    private String clientId = null;
+    private String clientSecret = null;
     int elasticSearchPort = 9200;
 
     JsonFactory jsonFactory = new JsonFactory();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     JsonGenerator jsonGenerator;
-    HttpClient client = new HttpClient();
+    HttpClient client;
 
     boolean traceStatistics = true;
     boolean traceExchanges = true;
@@ -68,6 +72,8 @@ public class AMStatisticsCollector {
     }
 
     public AMStatisticsCollector() {
+        HttpClientConfiguration conf = new HttpClientConfiguration();
+        client =  new HttpClient(conf);
         try {
             jsonGenerator = jsonFactory.createGenerator(baos);
         } catch (IOException ignored) {
@@ -174,17 +180,19 @@ public class AMStatisticsCollector {
     }
 
     private void sendJsonToElasticSearch(String path, String json) throws Exception {
-
         Response resp = null;
         synchronized (client) {
-            resp = client.call(new Request.Builder().put(getElasticSearchPath(path)).body(json).buildExchange()).getResponse();
+            Exchange exc = new Request.Builder().put(getElasticSearchPath(path))
+                    .body(json)
+                    .buildExchange();
+
+            if(clientId != null && clientSecret != null)
+                exc.getRequest().getHeader().add(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((clientId + ":" + clientSecret).getBytes("UTF-8")), "UTF-8"));
+
+            resp = client.call(exc).getResponse();
         }
         if (!resp.isOk())
             log.warn("Could not send statistics to elastic search instance. Response: " + resp.getStatusCode() + " - " + resp.getStatusMessage());
-    }
-
-    private String combineJsons(ArrayList<String> jsonStatisticsForRequests) throws IOException {
-        return combineJsons("",jsonStatisticsForRequests);
     }
 
     private String combineJsons(String name, ArrayList<String> jsonStatisticsForRequests) throws IOException {
@@ -235,7 +243,9 @@ public class AMStatisticsCollector {
     }
 
     private String getElasticSearchPath(String path) {
-        return "http://" + elasticSearchHost + ":" + elasticSearchPort + normalizePath(path) + getLocalMachineNameWithSuffix();
+        if(host.equals("localhost"))
+            return "http://" + getHost() + ":" + elasticSearchPort + normalizePath(path) + getLocalMachineNameWithSuffix();
+        return "https://" + getHost() + normalizePath(path) + getLocalMachineNameWithSuffix();
     }
 
     private String normalizePath(String path) {
@@ -344,4 +354,33 @@ public class AMStatisticsCollector {
         return baos.toString();
     }
 
+
+    public String getHost() {
+        return host;
+    }
+
+    @MCAttribute
+    public void setHost(String host) {
+        this.host = host;
+    }
+
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    @MCAttribute
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
+    }
+
+
+    public String getClientSecret() {
+        return clientSecret;
+    }
+
+    @MCAttribute
+    public void setClientSecret(String clientSecret) {
+        this.clientSecret = clientSecret;
+    }
 }
