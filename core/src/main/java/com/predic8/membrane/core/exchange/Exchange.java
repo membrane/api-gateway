@@ -40,6 +40,8 @@ public class Exchange extends AbstractExchange {
 
 	public static final String /*PROPERTY_*/ALLOW_WEBSOCKET = "use-websocket";
 
+	public static final String /*PROPERTY_*/ALLOW_TCP = "use-tcp";
+
 	public static final String /*PROPERTY_*/TRACK_NODE_STATUS = "TRACK_NODE_STATUS";
 
 	public static final String /*PROPERTY_*/SSL_CONTEXT = "SSL_CONTEXT";

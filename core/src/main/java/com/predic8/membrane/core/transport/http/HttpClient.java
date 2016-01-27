@@ -208,9 +208,13 @@ public class HttpClient {
 					if (trackNodeStatus)
 						exc.setNodeStatusCode(counter, response.getStatusCode());
 
-					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToWebSocketsResponse(response)) {
+					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToResponse(response, "websocket")) {
 						log.debug("Upgrading to WebSocket protocol.");
 						newProtocol = "WebSocket";
+					}
+					if (exc.getProperty(Exchange.ALLOW_TCP) == Boolean.TRUE && isUpgradeToResponse(response, "tcp")) {
+						log.debug("Upgrading to TCP protocol.");
+						newProtocol = "TCP";
 					}
 				}
 
@@ -368,10 +372,10 @@ public class HttpClient {
 		});
 	}
 
-	private boolean isUpgradeToWebSocketsResponse(Response res) {
+	private boolean isUpgradeToResponse(Response res, String protocol) {
 		return res.getStatusCode() == 101 &&
 				"upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(Header.CONNECTION)) &&
-				"websocket".equalsIgnoreCase(res.getHeader().getFirstValue(Header.UPGRADE));
+				protocol.equalsIgnoreCase(res.getHeader().getFirstValue(Header.UPGRADE));
 	}
 
 	private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {
