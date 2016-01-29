@@ -12,6 +12,7 @@ _*.swp
 *.iml
 *.eml
 *.idea
+/.m2
 
 # /annot/
 /annot/.classpath
