@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -112,6 +113,10 @@ public abstract class PEMSupport {
                 return o;
             if (o instanceof KeyPair)
                 return o;
+            if (o instanceof PrivateKeyInfo) {
+                JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+                return converter.getPrivateKey((PrivateKeyInfo)o);
+            }
             throw new InvalidParameterException("Expected KeyPair or Key, got " + o.getClass().getName());
         }
     }
