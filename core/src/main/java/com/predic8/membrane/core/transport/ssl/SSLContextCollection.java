@@ -53,7 +53,7 @@ public class SSLContextCollection implements SSLProvider {
 
 	private static final Log log = LogFactory.getLog(SSLContextCollection.class.getName());
 
-	private static Method createSocketMethod;
+	static Method createSocketMethod;
 
 	static {
 		try {
@@ -83,10 +83,9 @@ public class SSLContextCollection implements SSLProvider {
 		}
 
 		public void add(SSLContext sslContext, String hostPattern) {
-			// TODO: 'hostPattern' is ignored
 			if (!sslContexts.contains(sslContext)) {
 				sslContexts.add(sslContext);
-				dnsNames.add(constructHostNamePattern(sslContext));
+				dnsNames.add(hostPattern != null ? hostPattern : constructHostNamePattern(sslContext));
 			}
 		}
 
@@ -211,40 +210,7 @@ public class SSLContextCollection implements SSLProvider {
 		if (sslContext == null)
 			sslContext = sslContexts.get(0);
 
-		SSLSocketFactory serviceSocketFac = sslContext.getSocketFactory();
-
-		ByteArrayInputStream bais = new ByteArrayInputStream(buffer, 0, position);
-
-		SSLSocket serviceSocket;
-		// "serviceSocket = (SSLSocket)serviceSocketFac.createSocket(socket, bais, true);" only compileable with Java 1.8
-		try {
-			serviceSocket = (SSLSocket) createSocketMethod.invoke(serviceSocketFac, new Object[] { socket, bais, true });
-		} catch (IllegalArgumentException e) {
-			throw new RuntimeException(e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException(e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException(e);
-		}
-
-		sslContext.applyCiphers(serviceSocket);
-		if (sslContext.getProtocols() != null) {
-			serviceSocket.setEnabledProtocols(sslContext.getProtocols());
-		} else {
-			String[] protocols = serviceSocket.getEnabledProtocols();
-			Set<String> set = new HashSet<String>();
-			for (String protocol : protocols) {
-				if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
-					continue;
-				}
-				set.add(protocol);
-			}
-			serviceSocket.setEnabledProtocols(set.toArray(new String[0]));
-		}
-		serviceSocket.setWantClientAuth(sslContext.isWantClientAuth());
-		serviceSocket.setNeedClientAuth(sslContext.isNeedClientAuth());
-
-		return serviceSocket;
+		return sslContext.wrap(socket, buffer, position);
 	}
 
 	private SSLContext getSSLContextForHostname(String hostname) {

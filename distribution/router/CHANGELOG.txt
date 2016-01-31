@@ -1,6 +1,9 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [feature] added <sslProxy> which can forward incoming SSL/TLS connections
+  based on their SNI header (without decoding them)
+
 * [example] Added docker example which features a Dockerfile for Docker
   deployment of the latest release version.
 
