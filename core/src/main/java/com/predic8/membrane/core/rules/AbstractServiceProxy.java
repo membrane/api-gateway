@@ -98,7 +98,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		/**
 		 * @description Configures outbound SSL (HTTPS).
 		 */
-		@MCChildElement
+		@MCChildElement(allowForeign = true)
 		public void setSslParser(SSLParser sslParser) {
 			if(getPort() == 80)
 				setPort(443);

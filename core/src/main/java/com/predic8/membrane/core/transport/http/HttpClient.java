@@ -17,7 +17,6 @@ package com.predic8.membrane.core.transport.http;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
@@ -215,6 +214,10 @@ public class HttpClient {
 					if (exc.getProperty(Exchange.ALLOW_TCP) == Boolean.TRUE && isUpgradeToResponse(response, "tcp")) {
 						log.debug("Upgrading to TCP protocol.");
 						newProtocol = "TCP";
+					}
+					if (exc.getProperty(Exchange.ALLOW_SPDY) == Boolean.TRUE && isUpgradeToResponse(response, "SPDY/3.1")) {
+						log.debug("Upgrading to SPDY/3.1 protocol.");
+						newProtocol = "SPDY/3.1";
 					}
 				}
 

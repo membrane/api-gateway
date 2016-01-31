@@ -28,6 +28,8 @@ import org.apache.commons.logging.LogFactory;
 
 import com.predic8.membrane.core.rules.Rule;
 
+import javax.net.ssl.SSLException;
+
 public class StreamPump implements Runnable {
 
 	private static Log log = LogFactory.getLog(StreamPump.class.getName());
@@ -90,6 +92,8 @@ public class StreamPump implements Runnable {
 		} catch (SocketTimeoutException e) {
 			// do nothing
 		} catch (SocketException e) {
+			// do nothing
+		} catch (SSLException e) {
 			// do nothing
 		} catch (IOException e) {
 			log.error("Reading from or writing to stream failed: " + e);
