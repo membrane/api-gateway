@@ -140,6 +140,9 @@ public class SSLContextCollection implements SSLProvider {
 		int position = 0;
 		SSLCapabilities capabilities = null;
 
+		//Set socket read timeout to 30 seconds
+		socket.setSoTimeout(30000);
+
 		// Read the header of TLS record
 		while (position < SSLExplorer.RECORD_HEADER_SIZE) {
 			int count = SSLExplorer.RECORD_HEADER_SIZE - position;
