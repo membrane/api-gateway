@@ -28,11 +28,11 @@ public class EtcdRequestTest {
         String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
 
         try {
-            EtcdResponse respPutYaml = EtcdUtil.createBasicRequest("http://localhost:4001", "/amc", "").setValue("file", source).sendRequest();
-            if(!EtcdUtil.checkOK(respPutYaml)){
+            EtcdResponse respPutYaml = EtcdRequest.create("http://localhost:4001", "/amc", "").setValue("file", source).sendRequest();
+            if(!respPutYaml.is2XX()){
                 throw new RuntimeException();
             }
-            EtcdResponse respPutHash = EtcdUtil.createBasicRequest("http://localhost:4001", "/amc", "").setValue("hash", "12345").sendRequest();
+            EtcdResponse respPutHash = EtcdRequest.create("http://localhost:4001", "/amc", "").setValue("hash", "12345").sendRequest();
         }catch(Exception ignored){
         }
 
@@ -42,8 +42,8 @@ public class EtcdRequestTest {
 
     @Test
     public void testChangeFingerprint(){
-        EtcdResponse respChangeFingerprint = EtcdUtil.createBasicRequest("http://localhost:4001", "/gateways/m1", "/apiconfig").setValue("fingerprint", "1234").sendRequest();
-        if(!EtcdUtil.checkOK(respChangeFingerprint)){
+        EtcdResponse respChangeFingerprint = EtcdRequest.create("http://localhost:4001", "/gateways/m1", "/apiconfig").setValue("fingerprint", "1234").sendRequest();
+        if(!respChangeFingerprint.is2XX()){
             throw new RuntimeException();
         }
     }

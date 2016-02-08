@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor.apimanagement.apiconfig;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.cloud.ExponentialBackoff;
+import com.predic8.membrane.core.cloud.etcd.EtcdRequest;
 import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
-import com.predic8.membrane.core.cloud.etcd.EtcdUtil;
 import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import org.apache.commons.logging.Log;
@@ -60,9 +60,9 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
 
                 while (true) {
                     String baseKey = "/gateways/"+membrane;
-                    EtcdResponse respTTLDirRefresh = EtcdUtil.createBasicRequest(url, baseKey, "")
+                    EtcdResponse respTTLDirRefresh = EtcdRequest.create(url, baseKey, "")
                             .refreshTTL(ttl).sendRequest();
-                    if (!EtcdUtil.checkOK(respTTLDirRefresh)) {
+                    if (!respTTLDirRefresh.is2XX()) {
                         log.warn("Could not contact etcd at " + url);
                         connectionLost = true;
                     }
@@ -88,16 +88,16 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
 
     private boolean publishToEtcd() {
         String baseKey = "/gateways/"+membrane;
-        EtcdResponse respPublishEndpoint = EtcdUtil.createBasicRequest(url,baseKey,"").setValue("endpoint",endpoint).sendRequest();
-        if(!EtcdUtil.checkOK(respPublishEndpoint)){
+        EtcdResponse respPublishEndpoint = EtcdRequest.create(url,baseKey,"").setValue("endpoint",endpoint).sendRequest();
+        if(!respPublishEndpoint.is2XX()){
             return false;
         }
-        EtcdResponse respPublishApiUrl = EtcdUtil.createBasicRequest(url,baseKey,"/apiconfig").setValue("url","http://localhost:8081/api/api.yaml").sendRequest();
-        if(!EtcdUtil.checkOK(respPublishApiUrl)){
+        EtcdResponse respPublishApiUrl = EtcdRequest.create(url,baseKey,"/apiconfig").setValue("url","http://localhost:8081/api/api.yaml").sendRequest();
+        if(!respPublishApiUrl.is2XX()){
             return false;
         }
-        EtcdResponse respPublishApiFingerprint = EtcdUtil.createBasicRequest(url,baseKey,"/apiconfig").setValue("fingerprint","").sendRequest();
-        if(!EtcdUtil.checkOK(respPublishApiFingerprint)){
+        EtcdResponse respPublishApiFingerprint = EtcdRequest.create(url,baseKey,"/apiconfig").setValue("fingerprint","").sendRequest();
+        if(!respPublishApiFingerprint.is2XX()){
             return false;
         }
         return true;

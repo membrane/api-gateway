@@ -154,19 +154,19 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
     public boolean publishToEtcd() {
         try {
             for (EtcdNodeInformation node : nodesFromConfig) {
-                if (!EtcdUtil.checkOK(createDirectoryWithTtl(node))) {
+                if (!createDirectoryWithTtl(node).is2XX()) {
                     return false;
                 }
 
-                if (!EtcdUtil.checkOK(value(node, "name", node.getName()))) {
+                if (!value(node, "name", node.getName()).is2XX()) {
                     return false;
                 }
 
-                if (!EtcdUtil.checkOK(value(node, "port", node.getTargetPort()))) {
+                if (!value(node, "port", node.getTargetPort()).is2XX()) {
                     return false;
                 }
 
-                if (!EtcdUtil.checkOK(value(node, "host", node.getTargetHost()))) {
+                if (!value(node, "host", node.getTargetHost()).is2XX()) {
                     return false;
                 }
 
@@ -182,13 +182,13 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
     }
 
     private EtcdResponse createDirectoryWithTtl(EtcdNodeInformation node) {
-        return EtcdUtil.createBasicRequest(baseUrl, baseKey, node.getModule()).createDir(node.getUuid())
+        return EtcdRequest.create(baseUrl, baseKey, node.getModule()).createDir(node.getUuid())
                 .ttl(ttl).sendRequest();
     }
 
 
     private EtcdResponse value(EtcdNodeInformation node, String name, String value) {
-        return EtcdUtil.createBasicRequest(baseUrl, baseKey, node.getModule()).uuid(node.getUuid())
+        return EtcdRequest.create(baseUrl, baseKey, node.getModule()).uuid(node.getUuid())
                 .setValue(name, value).sendRequest();
     }
 
@@ -232,7 +232,7 @@ public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
     }
 
     private EtcdResponse deleteDir(String module, String uuid) {
-        return EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
+        return EtcdRequest.create(baseUrl, baseKey, module).uuid(uuid)
                 .deleteDir().sendRequest();
     }
 

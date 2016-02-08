@@ -66,8 +66,8 @@ public class EtcdResolver implements SchemaResolver{
         int lastSlash = normalizedUrl.lastIndexOf("/");
         String baseKey = normalizedUrl.substring(0,lastSlash);
         String valueName = normalizedUrl.substring(lastSlash+1,normalizedUrl.length());
-        EtcdResponse respGetValue = EtcdUtil.createBasicRequest(this.url,baseKey,"").getValue(valueName).sendRequest();
-        if(!EtcdUtil.checkOK(respGetValue)) {
+        EtcdResponse respGetValue = EtcdRequest.create(this.url,baseKey,"").getValue(valueName).sendRequest();
+        if(!respGetValue.is2XX()) {
             throw new ResourceRetrievalException(url);
         }
         String value = respGetValue.getValue();
@@ -91,8 +91,8 @@ public class EtcdResolver implements SchemaResolver{
                 int lastSlash = normalizedUrl.lastIndexOf("/");
                 String baseKey = normalizedUrl.substring(0,lastSlash);
                 String valueName = normalizedUrl.substring(lastSlash+1,normalizedUrl.length());
-                EtcdResponse respLongPollForChange = EtcdUtil.createBasicRequest(EtcdResolver.this.url,baseKey,"").getValue(valueName).longPoll().sendRequest();
-                if(!EtcdUtil.checkOK(respLongPollForChange)){
+                EtcdResponse respLongPollForChange = EtcdRequest.create(EtcdResolver.this.url,baseKey,"").getValue(valueName).longPoll().sendRequest();
+                if(!respLongPollForChange.is2XX()){
                 }
                 try {
                     consumer.call(resolve(normalizedUrl));

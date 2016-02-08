@@ -213,38 +213,38 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		ArrayList<EtcdNodeInformation> nodes = new ArrayList<EtcdNodeInformation>();
 		try {
 
-			EtcdResponse respAvailableModules = EtcdUtil.createBasicRequest(baseUrl, baseKey, "").sendRequest();
-			if (!EtcdUtil.checkOK(respAvailableModules)) {
+			EtcdResponse respAvailableModules = EtcdRequest.create(baseUrl, baseKey, "").sendRequest();
+			if (!respAvailableModules.is2XX()) {
 				return nodes;
 			}
 			ArrayList<String> availableModules = respAvailableModules.getDirectories();
 			for (String module : availableModules) {
-				EtcdResponse respAvailableServicesForModule = EtcdUtil.createBasicRequest(baseUrl, baseKey, module)
+				EtcdResponse respAvailableServicesForModule = EtcdRequest.create(baseUrl, baseKey, module)
 						.sendRequest();
-				if (!EtcdUtil.checkOK(respAvailableServicesForModule)) {
+				if (!respAvailableServicesForModule.is2XX()) {
 					return nodes;
 				}
 				ArrayList<String> availableUUIDs = respAvailableServicesForModule.getDirectories();
 				for (String uuid : availableUUIDs) {
 
-					EtcdResponse respName = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
+					EtcdResponse respName = EtcdRequest.create(baseUrl, baseKey, module).uuid(uuid)
 							.getValue("name").sendRequest();
-					if (!EtcdUtil.checkOK(respName)) {
+					if (!respName.is2XX()) {
 						return nodes;
 
 					}
 					String targetName = respName.getValue();
 
-					EtcdResponse respPort = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
+					EtcdResponse respPort = EtcdRequest.create(baseUrl, baseKey, module).uuid(uuid)
 							.getValue("port").sendRequest();
-					if (!EtcdUtil.checkOK(respPort)) {
+					if (!respPort.is2XX()) {
 						return nodes;
 					}
 					String targetPort = respPort.getValue();
 
-					EtcdResponse respHost = EtcdUtil.createBasicRequest(baseUrl, baseKey, module).uuid(uuid)
+					EtcdResponse respHost = EtcdRequest.create(baseUrl, baseKey, module).uuid(uuid)
 							.getValue("host").sendRequest();
-					if (!EtcdUtil.checkOK(respHost)) {
+					if (!respHost.is2XX()) {
 						return nodes;
 					}
 					String targetHost = respHost.getValue();

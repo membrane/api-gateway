@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.apimanagement;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import com.predic8.membrane.core.cloud.etcd.EtcdRequest;
 import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
-import com.predic8.membrane.core.cloud.etcd.EtcdUtil;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
@@ -358,8 +357,8 @@ public class ApiManagementConfiguration {
 
         final String baseKey = "/gateways/" + getMembraneName();
 
-        EtcdResponse respGetConfigUrl = EtcdUtil.createBasicRequest(etcdLocation,baseKey,"/apiconfig").getValue("url").sendRequest();
-        if(!EtcdUtil.checkOK(respGetConfigUrl)){
+        EtcdResponse respGetConfigUrl = EtcdRequest.create(etcdLocation,baseKey,"/apiconfig").getValue("url").sendRequest();
+        if(!respGetConfigUrl.is2XX()){
             log.warn("Could not get config url at " + etcdLocation);
             return;
         }
