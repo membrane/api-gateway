@@ -101,6 +101,8 @@ public class ApiManagementConfiguration {
         setCurrentDir(currentDir);
         setMembraneName(membraneName);
         setLocation(configLocation);
+
+        updateAfterLocationChange();
     }
 
     private Map<String,Policy> parsePolicies(Map<String,Object> yaml) {
@@ -240,7 +242,7 @@ public class ApiManagementConfiguration {
         }
         setPolicies(parsePolicies(yaml));
         setKeys(parsePoliciesForKeys(yaml));
-        log.info("Configuration loaded.");
+        log.info("Configuration loaded. Notifying observers");
         notifyConfigChangeObservers();
     }
 
@@ -276,10 +278,6 @@ public class ApiManagementConfiguration {
 
     public void setLocation(String location) {
         this.location = location;
-        if(getResolver() != null)
-        {
-            updateAfterLocationChange(location);
-        }
     }
 
     private boolean isLocalFile(String location){
@@ -294,7 +292,7 @@ public class ApiManagementConfiguration {
         return isFile;
     }
 
-    public void updateAfterLocationChange(String location){
+    public void updateAfterLocationChange(){
         if(!isLocalFile(location)){
             log.info("Loading configuration from [" + location + "]");
             if(location.startsWith("etcd")){
@@ -364,6 +362,7 @@ public class ApiManagementConfiguration {
         }
         final String configLocation = respGetConfigUrl.getValue();
         setLocation(configLocation); // this gets the resource and loads the config
+        updateAfterLocationChange();
 
         etcdConfigFingerprintLongPollThread = new Thread(new Runnable() {
             @Override
@@ -409,7 +408,7 @@ public class ApiManagementConfiguration {
                 }
             }
             if(this.hashLocation == null) {
-                updateAfterLocationChange(this.location);
+                updateAfterLocationChange();
             }else {
                 setHashLocation(this.hashLocation);
             }
@@ -441,6 +440,10 @@ public class ApiManagementConfiguration {
 
     public void setHashLocation(final String hashLocation) throws IOException {
         this.hashLocation = hashLocation;
+        //afterHashLocationSet(hashLocation);
+    }
+
+    /*private void afterHashLocationSet(final String hashLocation) throws IOException {
         if(getResolver() != null){
             if (!isLocalFile(hashLocation)) {
                 this.hashLocation = hashLocation;
@@ -465,7 +468,7 @@ public class ApiManagementConfiguration {
                 }
             }
         }
-    }
+    }*/
 
     public void setMembraneName(String membraneName) {
         this.membraneName = membraneName;
