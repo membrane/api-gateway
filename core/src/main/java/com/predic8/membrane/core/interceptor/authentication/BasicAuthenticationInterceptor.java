@@ -14,17 +14,6 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
-import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
@@ -33,8 +22,17 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
+import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
+import com.predic8.membrane.core.util.HttpUtil;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
@@ -104,7 +102,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	 */
 	@Required
 	@MCChildElement
-	public void setUsers(List<User> users) {
+	public void setUsers(List<User> users) throws UnsupportedEncodingException {
 		userDataProvider.setUsers(users);
 	}
 

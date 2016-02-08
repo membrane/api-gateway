@@ -13,17 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCOtherAttributes;
 import com.predic8.membrane.core.Router;
+import org.bouncycastle.jcajce.provider.digest.SHA3;
+
+import java.io.UnsupportedEncodingException;
+import java.util.*;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
@@ -45,6 +43,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	private List<User> users = new ArrayList<User>();
 	private Map<String, User> usersByName = new HashMap<String, User>();
+	private boolean useHashedPasswords = false;
 
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {
@@ -57,13 +56,37 @@ public class StaticUserDataProvider implements UserDataProvider {
 		userAttributes = getUsersByName().get(username);
 		if (userAttributes == null)
 			throw new NoSuchElementException();
-		String pw = postData.get("password");
+		String pw = null;
+		if(useHashedPasswords)
+			try {
+				pw = createSHA3Hash(postData.get("password"));
+			} catch (UnsupportedEncodingException e) {
+				throw new RuntimeException(e.getMessage());
+			}
+		else
+			pw = postData.get("password");
 		String pw2;
 		pw2 = userAttributes.getPassword();
 		if (pw2 == null || !pw2.equals(pw))
 			throw new NoSuchElementException();
 		return userAttributes.getAttributes();
 	}
+
+	private String createSHA3Hash(String str) throws UnsupportedEncodingException {
+		return hashToString(new SHA3.DigestSHA3(256).digest(str.getBytes("UTF-8")));
+	}
+
+	public static String hashToString(byte[] hash) {
+		StringBuffer buff = new StringBuffer();
+
+		for (byte b : hash) {
+			buff.append(String.format("%02x", b & 0xFF));
+		}
+
+		return buff.toString();
+	}
+
+
 
 	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
 	public static class User {
@@ -144,7 +167,14 @@ public class StaticUserDataProvider implements UserDataProvider {
 	}
 
 	@MCChildElement
-	public void setUsers(List<User> users) {
+	public void setUsers(List<User> users) throws UnsupportedEncodingException {
+		if(useHashedPasswords){
+			for(User user : users){
+				if(user.getPassword() != null){
+					user.setPassword(createSHA3Hash(user.getPassword()));
+				}
+			}
+		}
 		this.users = users;
 	}
 
@@ -154,6 +184,15 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	public void setUsersByName(Map<String, User> usersByName) {
 		this.usersByName = usersByName;
+	}
+
+	public boolean getUseHashedPasswords() {
+		return useHashedPasswords;
+	}
+
+	@MCAttribute
+	public void setUseHashedPasswords(boolean useHashedPasswords) {
+		this.useHashedPasswords = useHashedPasswords;
 	}
 
 	@Override

@@ -14,20 +14,22 @@
 
 package com.predic8.membrane.core.interceptor.authentication;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
 import com.predic8.membrane.core.HttpRouter;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.test.AssertUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
 
 public class BasicAuthenticationInterceptorIntegrationTest {
 
@@ -58,6 +60,19 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 	public void testAccept() throws Exception {
 		AssertUtils.setupHTTPAuthentication("localhost", 3001, "admin", "admin");
 		AssertUtils.getAndAssert200("http://localhost:3001/axis2/services/BLZService?wsdl");
+	}
+
+	@Test
+	public void testHashedPassword() throws Exception {
+		List<User> users = new ArrayList<User>();
+		users.add(new User("admin", "admin"));
+
+		BasicAuthenticationInterceptor interceptor = new BasicAuthenticationInterceptor();
+		StaticUserDataProvider provider = (StaticUserDataProvider) interceptor.getUserDataProvider();
+		provider.setUseHashedPasswords(true);
+		interceptor.setUsers(users);
+
+		assertEquals("fb001dfcffd1c899f3297871406242f097aecf1a5342ccf3ebcd116146188e4b",interceptor.getUsers().get(0).getPassword());
 	}
 
 	@After
