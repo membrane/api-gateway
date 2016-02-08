@@ -70,7 +70,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
             apiManagementConfiguration = apiConfig.getConfiguration();
         } else {
             log.info("No ApiConfig set. Using default");
-            apiManagementConfiguration = new ApiManagementConfiguration(router.getBaseLocation(), "api.yaml");
+            apiManagementConfiguration = new ApiManagementConfiguration(router.getBaseLocation(), config);
         }
 
         addInterceptors();
@@ -234,8 +234,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
      */
     @MCAttribute
     public void setConfig(String config) {
-        this.config = config;
-        apiManagementConfiguration.setLocation(this.config);
+            this.config = config;
     }
 
     public AMStatisticsCollector getAmStatisticsCollector() {
