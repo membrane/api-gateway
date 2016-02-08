@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 
 import javax.crypto.Cipher;
 import javax.net.ssl.*;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -416,11 +417,11 @@ public class SSLContext implements SSLProvider {
 		return socket;
 	}
 
-	public Socket createSocket(InetAddress host, int port, int connectTimeout) throws IOException {
+	public Socket createSocket(String host, int port, int connectTimeout) throws IOException {
 		Socket s = new Socket();
 		s.connect(new InetSocketAddress(host, port), connectTimeout);
 		SSLSocketFactory sslsf = sslc.getSocketFactory();
-		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host.getHostName(), port, true);
+		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host, port, true);
 		if (protocols != null) {
 			ssls.setEnabledProtocols(protocols);
 		} else {
@@ -438,12 +439,12 @@ public class SSLContext implements SSLProvider {
 		return ssls;
 	}
 
-	public Socket createSocket(InetAddress host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException {
+	public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException {
 		Socket s = new Socket();
 		s.bind(new InetSocketAddress(addr, localPort));
 		s.connect(new InetSocketAddress(host, port), connectTimeout);
 		SSLSocketFactory sslsf = sslc.getSocketFactory();
-		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host.getHostName(), port, true);
+		SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host, port, true);
 		applyCiphers(ssls);
 		if (protocols != null) {
 			ssls.setEnabledProtocols(protocols);
@@ -491,5 +492,41 @@ public class SSLContext implements SSLProvider {
 	 */
 	String getLocation() {
 		return sslParser.getKeyStore() != null ? sslParser.getKeyStore().getLocation() : "null";
+	}
+
+	public Socket wrap(Socket socket, byte[] buffer, int position) throws IOException {
+		SSLSocketFactory serviceSocketFac = getSocketFactory();
+
+		ByteArrayInputStream bais = new ByteArrayInputStream(buffer, 0, position);
+
+		SSLSocket serviceSocket;
+		// "serviceSocket = (SSLSocket)serviceSocketFac.createSocket(socket, bais, true);" only compileable with Java 1.8
+		try {
+			serviceSocket = (SSLSocket) SSLContextCollection.createSocketMethod.invoke(serviceSocketFac, new Object[] { socket, bais, true });
+		} catch (IllegalArgumentException e) {
+			throw new RuntimeException(e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException(e);
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException(e);
+		}
+
+		applyCiphers(serviceSocket);
+		if (getProtocols() != null) {
+			serviceSocket.setEnabledProtocols(getProtocols());
+		} else {
+			String[] protocols = serviceSocket.getEnabledProtocols();
+			Set<String> set = new HashSet<String>();
+			for (String protocol : protocols) {
+				if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
+					continue;
+				}
+				set.add(protocol);
+			}
+			serviceSocket.setEnabledProtocols(set.toArray(new String[0]));
+		}
+		serviceSocket.setWantClientAuth(isWantClientAuth());
+		serviceSocket.setNeedClientAuth(isNeedClientAuth());
+		return serviceSocket;
 	}
 }

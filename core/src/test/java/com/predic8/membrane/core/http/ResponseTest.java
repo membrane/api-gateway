@@ -117,6 +117,7 @@ public class ResponseTest {
 	public void testUnchunkedHtmlWrite() throws Exception {
 		tempOut = new ByteArrayOutputStream();
 		res1.read(in1, true);
+		res1.addObserver(new AbstractMessageObserver() {}); // forces the request to retain the body
 		res1.write(tempOut);
 
 
@@ -147,6 +148,7 @@ public class ResponseTest {
 	public void testUnchunkedImageWrite() throws Exception {
 		tempOut = new ByteArrayOutputStream();
 		res2.read(in2, true);
+		res2.addObserver(new AbstractMessageObserver() {}); // forces the request to retain the body
 		res2.write(tempOut);
 
 

@@ -56,10 +56,10 @@ public class ConnectionManager {
 	private final long autoCloseInterval;
 
 	private static class ConnectionKey {
-		public final InetAddress host;
+		public final String host;
 		public final int port;
 
-		public ConnectionKey(InetAddress host, int port) {
+		public ConnectionKey(String host, int port) {
 			this.host = host;
 			this.port = port;
 		}
@@ -124,7 +124,7 @@ public class ConnectionManager {
 		}, autoCloseInterval, autoCloseInterval);
 	}
 
-	public Connection getConnection(InetAddress host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
+	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
 
 		log.debug("connection requested for host: " + host + " and port: " + port);
 
@@ -163,7 +163,7 @@ public class ConnectionManager {
 			return;
 		}
 
-		ConnectionKey key = new ConnectionKey(connection.socket.getInetAddress(), connection.socket.getPort());
+		ConnectionKey key = new ConnectionKey(connection.getHost(), connection.socket.getPort());
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
 		ArrayList<OldConnection> l;
 		synchronized(this) {

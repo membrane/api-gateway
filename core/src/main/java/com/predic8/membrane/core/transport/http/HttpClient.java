@@ -17,7 +17,6 @@ package com.predic8.membrane.core.transport.http;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URL;
@@ -180,11 +179,10 @@ public class HttpClient {
 			try {
 				log.debug("try # " + counter + " to " + dest);
 				target = init(exc, dest, adjustHostHeader);
-				InetAddress targetAddr = InetAddress.getByName(target.host);
 				if (counter == 0) {
 					con = exc.getTargetConnection();
 					if (con != null) {
-						if (!con.isSame(targetAddr, target.port)) {
+						if (!con.isSame(target.host, target.port)) {
 							con.close();
 							con = null;
 						} else {
@@ -193,7 +191,7 @@ public class HttpClient {
 					}
 				}
 				if (con == null) {
-					con = conMgr.getConnection(targetAddr, target.port, localAddr, getOutboundSSLProvider(exc, target), connectTimeout);
+					con = conMgr.getConnection(target.host, target.port, localAddr, getOutboundSSLProvider(exc, target), connectTimeout);
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}
@@ -209,9 +207,17 @@ public class HttpClient {
 					if (trackNodeStatus)
 						exc.setNodeStatusCode(counter, response.getStatusCode());
 
-					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToWebSocketsResponse(response)) {
+					if (exc.getProperty(Exchange.ALLOW_WEBSOCKET) == Boolean.TRUE && isUpgradeToResponse(response, "websocket")) {
 						log.debug("Upgrading to WebSocket protocol.");
 						newProtocol = "WebSocket";
+					}
+					if (exc.getProperty(Exchange.ALLOW_TCP) == Boolean.TRUE && isUpgradeToResponse(response, "tcp")) {
+						log.debug("Upgrading to TCP protocol.");
+						newProtocol = "TCP";
+					}
+					if (exc.getProperty(Exchange.ALLOW_SPDY) == Boolean.TRUE && isUpgradeToResponse(response, "SPDY/3.1")) {
+						log.debug("Upgrading to SPDY/3.1 protocol.");
+						newProtocol = "SPDY/3.1";
 					}
 				}
 
@@ -369,10 +375,10 @@ public class HttpClient {
 		});
 	}
 
-	private boolean isUpgradeToWebSocketsResponse(Response res) {
+	private boolean isUpgradeToResponse(Response res, String protocol) {
 		return res.getStatusCode() == 101 &&
 				"upgrade".equalsIgnoreCase(res.getHeader().getFirstValue(Header.CONNECTION)) &&
-				"websocket".equalsIgnoreCase(res.getHeader().getFirstValue(Header.UPGRADE));
+				protocol.equalsIgnoreCase(res.getHeader().getFirstValue(Header.UPGRADE));
 	}
 
 	private void handleConnectRequest(Exchange exc, Connection con) throws IOException, EndOfStreamException {

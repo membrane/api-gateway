@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -43,7 +44,7 @@ public abstract class PEMSupport {
             try {
                 instance = new PEMSupportImpl();
             } catch (NoClassDefFoundError e) {
-                throw new RuntimeException("Bouncycastle support classes not found. Please download http://central.maven.org/maven2/org/bouncycastle/bcpkix-jdk15on/1.54/bcpkix-jdk15on-1.54.jar and put it into the 'lib' directory.");
+                throw new RuntimeException("Bouncycastle support classes not found. Please download http://central.maven.org/maven2/org/bouncycastle/bcpkix-jdk15on/1.54/bcpkix-jdk15on-1.54.jar and http://central.maven.org/maven2/org/bouncycastle/bcprov-jdk15on/1.54/bcprov-jdk15on-1.54.jar and put them into the 'lib' directory.");
             }
         return instance;
     }
@@ -112,6 +113,10 @@ public abstract class PEMSupport {
                 return o;
             if (o instanceof KeyPair)
                 return o;
+            if (o instanceof PrivateKeyInfo) {
+                JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+                return converter.getPrivateKey((PrivateKeyInfo)o);
+            }
             throw new InvalidParameterException("Expected KeyPair or Key, got " + o.getClass().getName());
         }
     }
