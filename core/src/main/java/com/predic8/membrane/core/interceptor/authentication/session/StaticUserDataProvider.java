@@ -109,7 +109,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		 */
 		@MCAttribute
 		public void setSms(String value) {
-			attributes.put("username", value);
+			attributes.put("sms", value);
 		}
 
 		public String getSecret() {
@@ -121,7 +121,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		 */
 		@MCAttribute
 		public void setSecret(String value) {
-			attributes.put("username", value);
+			attributes.put("secret", value);
 		}
 
 		public Map<String, String> getAttributes() {
