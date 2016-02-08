@@ -22,8 +22,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
 import com.predic8.membrane.core.HttpRouter;
-import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptor.User;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
@@ -40,8 +40,8 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 
 		BasicAuthenticationInterceptor interceptor = new BasicAuthenticationInterceptor();
 
-		List<User> users = new ArrayList<BasicAuthenticationInterceptor.User>();
-		users.add(new BasicAuthenticationInterceptor.User("admin", "admin"));
+		List<User> users = new ArrayList<User>();
+		users.add(new User("admin", "admin"));
 		interceptor.setUsers(users );
 
 		router.addUserFeatureInterceptor(interceptor);

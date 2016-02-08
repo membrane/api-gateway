@@ -19,11 +19,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
+import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Required;
 
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
@@ -33,6 +34,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.HttpUtil;
+import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider.User;
 
 /**
  * @description Blocks requests which do not have the correct RFC 1945 basic authentication credentials (HTTP header "Authentication: Basic ....").
@@ -41,49 +43,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 @MCElement(name="basicAuthentication")
 public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 
-	@MCElement(name="user", topLevel=false, id="basicAuthentication-user")
-	public static class User {
-		private String name, password;
-
-		public User() {
-		}
-
-		public User(String name, String password) {
-			setName(name);
-			setPassword(password);
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		/**
-		 * @description The user's login.
-		 * @example admin
-		 */
-		@Required
-		@MCAttribute
-		public void setName(String name) {
-			this.name = name;
-		}
-
-		public String getPassword() {
-			return password;
-		}
-
-		/**
-		 * @description The user's password.
-		 * @example s3cr3t
-		 */
-		@Required
-		@MCAttribute
-		public void setPassword(String password) {
-			this.password = password;
-		}
-	}
-
-	private List<User> users = new ArrayList<User>();
-	private Map<String, User> usersByName = new HashMap<String, User>();
+	private StaticUserDataProvider userDataProvider = new StaticUserDataProvider();
 
 	public BasicAuthenticationInterceptor() {
 		name = "Basic Authenticator";
@@ -101,8 +61,8 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	private boolean validUser(Exchange exc) throws Exception {
-		return usersByName.containsKey(getUsername(exc)) &&
-				usersByName.get(getUsername(exc)).getPassword().equals(getPassword(exc));
+		return userDataProvider.getUsersByName().containsKey(getUsername(exc)) &&
+				userDataProvider.getUsersByName().get(getUsername(exc)).getPassword().equals(getPassword(exc));
 	}
 
 	private String getUsername(Exchange exc) throws Exception {
@@ -132,11 +92,11 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	}
 
 	public List<User> getUsers() {
-		return users;
+		return userDataProvider.getUsers();
 	}
 
 	public Map<String, User> getUsersByName() {
-		return usersByName;
+		return userDataProvider.getUsersByName();
 	}
 
 	/**
@@ -145,14 +105,34 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	@Required
 	@MCChildElement
 	public void setUsers(List<User> users) {
-		this.users = users;
+		userDataProvider.setUsers(users);
+	}
+
+	public UserDataProvider getUserDataProvider() {
+		return userDataProvider;
+	}
+
+	/**
+	 * @description The <i>user data provider</i> verifying a combination of a username with a password.
+	 */
+	public void setUserDataProvider(StaticUserDataProvider userDataProvider) {
+		this.userDataProvider = userDataProvider;
 	}
 
 	@Override
 	public void init() throws Exception {
-		usersByName.clear();
-		for (User user : users)
-			usersByName.put(user.getName(), user);
+		//to not alter the interface of "BasicAuthenticationInterceptor" in the config file the "name" attribute is renamed to "username" in code
+		for(User user : getUsers()){
+			if(user.getAttributes().containsKey("name")){
+				String username = user.getAttributes().get("name");
+				user.getAttributes().remove("name");
+				user.getAttributes().put("username", username);
+			}
+		}
+
+		userDataProvider.getUsersByName().clear();
+		for (User user : userDataProvider.getUsers())
+			userDataProvider.getUsersByName().put(user.getUsername(), user);
 	}
 
 	@Override
@@ -166,8 +146,8 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 		sb.append(getShortDescription());
 		sb.append("<br/>");
 		sb.append("Users: ");
-		for (User user : users) {
-			sb.append(StringEscapeUtils.escapeHtml(user.getName()));
+		for (User user : userDataProvider.getUsers()) {
+			sb.append(StringEscapeUtils.escapeHtml(user.getUsername()));
 			sb.append(", ");
 		}
 		sb.delete(sb.length()-2, sb.length());

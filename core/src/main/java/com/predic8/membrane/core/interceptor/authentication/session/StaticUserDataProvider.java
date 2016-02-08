@@ -54,7 +54,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		if (username.equals("error"))
 			throw new RuntimeException();
 		User userAttributes;
-		userAttributes = usersByName.get(username);
+		userAttributes = getUsersByName().get(username);
 		if (userAttributes == null)
 			throw new NoSuchElementException();
 		String pw = postData.get("password");
@@ -68,6 +68,13 @@ public class StaticUserDataProvider implements UserDataProvider {
 	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
 	public static class User {
 		Map<String, String> attributes = new HashMap<String, String>();
+
+		public User() {}
+
+		public User(String username, String password){
+			setUsername(username);
+			setPassword(password);
+		}
 
 		public String getUsername() {
 			return attributes.get("username");
@@ -90,7 +97,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 		 */
 		@MCAttribute
 		public void setPassword(String value) {
-			attributes.put("username", value);
+			attributes.put("password", value);
 		}
 
 		public String getSms() {
@@ -141,9 +148,17 @@ public class StaticUserDataProvider implements UserDataProvider {
 		this.users = users;
 	}
 
+	public Map<String, User> getUsersByName() {
+		return usersByName;
+	}
+
+	public void setUsersByName(Map<String, User> usersByName) {
+		this.usersByName = usersByName;
+	}
+
 	@Override
 	public void init(Router router) {
 		for (User user : users)
-			usersByName.put(user.getUsername(), user);
+			getUsersByName().put(user.getUsername(), user);
 	}
 }
