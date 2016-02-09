@@ -18,9 +18,11 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 
 public class EtcdRequest {
 
@@ -31,6 +33,7 @@ public class EtcdRequest {
 	}
 
 	HttpClient client = new HttpClient();
+	SSLContext ssl = null;
 
 	public HttpClient getClient() {
 		return client;
@@ -66,6 +69,16 @@ public class EtcdRequest {
 
 	public static EtcdRequest create(String url, String baseKey, String module){
 		return new EtcdRequest().url(url).baseKey(baseKey).module(module);
+	}
+
+	public static EtcdRequest create(SSLContext ssl, String url, String baseKey, String module){
+		EtcdRequest req = create(url,baseKey,module);
+		return req.ssl(ssl);
+	}
+
+	private EtcdRequest ssl(SSLContext ssl) {
+		this.ssl = ssl;
+		return this;
 	}
 
 	public EtcdRequest() {
@@ -208,7 +221,8 @@ public class EtcdRequest {
 		if (requestExc == null) {
 			throw new RuntimeException();
 		}
-
+		if(ssl != null)
+			requestExc.setProperty(Exchange.SSL_CONTEXT, ssl);
 		try {
 			return new EtcdResponse(this,  client.call(requestExc).getResponse());
 		} catch (Exception e) {
