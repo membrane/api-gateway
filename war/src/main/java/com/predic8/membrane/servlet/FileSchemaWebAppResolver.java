@@ -26,7 +26,6 @@ import org.apache.commons.logging.LogFactory;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.resolver.SchemaResolver;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public class FileSchemaWebAppResolver implements SchemaResolver {
 
@@ -60,7 +59,7 @@ public class FileSchemaWebAppResolver implements SchemaResolver {
 
 	@Override
 	public void observeChange(String url, Consumer<InputStream> consumer) throws ResourceRetrievalException {
-		throw new NotImplementedException();
+		throw new RuntimeException("Not implemented");
 	}
 
 	@Override
