@@ -17,6 +17,7 @@ package com.predic8.membrane.core.cloud.etcd;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.config.security.SSLParser;
@@ -29,8 +30,6 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
-import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.context.event.EventListener;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -56,20 +55,23 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 	private int waitTimeUntilPollAgain = 1000;
 	private SSLParser ssl = null;
 	private SSLContext sslCtx = null;
+	private AtomicBoolean updateThreadRunning = new AtomicBoolean(false);
 
 	private Thread nodeRefreshThread = new Thread(new Runnable() {
 		@Override
 		public void run() {
-			while (true) {
-				// System.out.println("Refreshing nodes");
+			updateThreadRunning.compareAndSet(false,true);
+			while (updateThreadRunning.get()) {
 				try {
 					setUpServiceProxies(getConfigFromEtcd());
 					Thread.sleep(waitTimeUntilPollAgain);
-				} catch (Exception ignored) {
+				}catch (Exception ignored) {
+				}
+				if(Thread.interrupted()){
+					return;
 				}
 			}
 		}
-
 	});
 
 	public int getPort() {
@@ -116,7 +118,6 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		return false;
 	}
 
-	@EventListener({ ContextRefreshedEvent.class })
 	@Override
 	public void start() {
 		if (router == null) {
@@ -128,6 +129,9 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		try {
 		} catch (Exception ignored) {
 		}
+		if (ssl != null)
+			sslCtx = new SSLContext(ssl, new ResolverMap(), null);
+
 		if (!nodeRefreshThread.isAlive()) {
 			nodeRefreshThread.start();
 		}
@@ -324,6 +328,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 
 	@Override
 	public void stop() {
+		updateThreadRunning.compareAndSet(true,false);
 		nodeRefreshThread.interrupt();
 		try {
 			nodeRefreshThread.join();
@@ -351,15 +356,20 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 
 	@MCChildElement
 	public void setSsl(SSLParser ssl) {
-		if (ssl != null)
-			sslCtx = new SSLContext(ssl, new ResolverMap(), null);
 		this.ssl = ssl;
-
-
 	}
 
 	@Override
 	public void destroy() throws Exception {
 		sslCtx = null;
+		ssl = null;
+		updateThreadRunning.compareAndSet(true,false);
+		nodeRefreshThread.interrupt();
+		try {
+			nodeRefreshThread.join();
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		nodeRefreshThread = null;
 	}
 }
