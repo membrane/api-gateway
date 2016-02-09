@@ -160,9 +160,17 @@ public class LoginDialog {
 							if (!userAttributes.containsKey(param.getKey()))
 								userAttributes.put(param.getKey(), param.getValue());
 					}
-					showPage(exc, 1);
+					if(tokenProvider != null)
+						showPage(exc, 1);
+					else {
+						String target = URLParamUtil.getParams(uriFactory, exc).get("target");
+						if (StringUtils.isEmpty(target))
+							target = "/";
+						exc.setResponse(Response.redirectWithout300(target).build());
+					}
 					sessionManager.createSession(exc).preAuthorize(username, userAttributes);
-					tokenProvider.requestToken(userAttributes);
+					if(tokenProvider != null)
+						tokenProvider.requestToken(userAttributes);
 				} else {
 					showPage(exc, 0);
 				}
@@ -174,7 +182,8 @@ public class LoginDialog {
 				if (exc.getRequest().getMethod().equals("POST")) {
 					String token = URLParamUtil.getParams(uriFactory, exc).get("token");
 					try {
-						tokenProvider.verifyToken(s.getUserAttributes(), token);
+						if(tokenProvider != null)
+							tokenProvider.verifyToken(s.getUserAttributes(), token);
 					} catch (NoSuchElementException e) {
 						if (accountBlocker != null)
 							accountBlocker.fail(s.getUserName());

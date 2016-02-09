@@ -15,6 +15,8 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -95,6 +97,8 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 @MCElement(name="login")
 public class LoginInterceptor extends AbstractInterceptor {
 
+	private static final Log log = LogFactory.getLog(LoginInterceptor.class.getName());
+
 	private String location, path, message;
 	private boolean exposeUserCredentialsToSession;
 
@@ -109,7 +113,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 		if (userDataProvider == null)
 			throw new Exception("No userDataProvider configured. - Cannot work without one.");
 		if (tokenProvider == null)
-			throw new Exception("No tokenProvider configured. - Cannot work without one.");
+			log.info("No Tokenprovider given, two-factor authentication not enabled");
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
 		userDataProvider.init(router);
@@ -119,7 +123,8 @@ public class LoginInterceptor extends AbstractInterceptor {
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-		tokenProvider.init(router);
+		if(tokenProvider != null)
+			tokenProvider.init(router);
 		loginDialog.init(router);
 		sessionManager.init(router);
 		new CleanupThread(sessionManager, accountBlocker).start();
@@ -132,7 +137,12 @@ public class LoginInterceptor extends AbstractInterceptor {
 			return Outcome.RETURN;
 		}
 		Session s = sessionManager.getSession(exc.getRequest());
-		if (s == null || !s.isAuthorized()) {
+		if(s != null && s.isPreAuthorized()){
+			if(tokenProvider == null){
+				s.authorize();
+			}
+		}
+		else if (s == null || !s.isAuthorized()) {
 			return loginDialog.redirectToLogin(exc);
 		}
 
@@ -208,7 +218,6 @@ public class LoginInterceptor extends AbstractInterceptor {
 	 * @description The <i>token provider</i> computing or generating a numeric value used for <a
 	 *              href="http://en.wikipedia.org/wiki/Two_Factor_Authentication">two-factor authentication</a>.
 	 */
-	@Required
 	@MCChildElement(order=4)
 	public void setTokenProvider(TokenProvider tokenProvider) {
 		this.tokenProvider = tokenProvider;
