@@ -33,7 +33,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	@MCElement(name="target", topLevel=false)
 	public static class Target {
 		private String host;
-		private int port = 80;
+		private int port = -1;
 		private String url;
 		private boolean adjustHostHeader = true;
 
@@ -100,8 +100,6 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		 */
 		@MCChildElement(allowForeign = true)
 		public void setSslParser(SSLParser sslParser) {
-			if(getPort() == 80)
-				setPort(443);
 			this.sslParser = sslParser;
 		}
 
@@ -124,6 +122,8 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	@Override
 	public void init() throws Exception {
 		super.init();
+		if(target.port == -1)
+			target.port = target.getSslParser() != null ? 443 : 80;
 		if (target.getSslParser() != null)
 			setSslOutboundContext(new SSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
 	}
