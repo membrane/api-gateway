@@ -224,7 +224,9 @@ public class EtcdRequest {
 		if(ssl != null)
 			requestExc.setProperty(Exchange.SSL_CONTEXT, ssl);
 		try {
-			return new EtcdResponse(this,  client.call(requestExc).getResponse());
+			return new EtcdResponse(this, client.call(requestExc).getResponse());
+		}catch(InterruptedException e){
+			return null;
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}

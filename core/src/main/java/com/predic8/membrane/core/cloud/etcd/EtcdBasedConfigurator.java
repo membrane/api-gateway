@@ -221,108 +221,62 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		runningNodesForModule.get(node.getModule()).remove(node);
 	}
 
+	private EtcdRequest createRequest(String module){
+		if(sslCtx != null)
+			return EtcdRequest.create(sslCtx, baseUrl, baseKey, module);
+		else
+			return EtcdRequest.create(baseUrl, baseKey, module);
+	}
+
 	private ArrayList<EtcdNodeInformation> getConfigFromEtcd() {
 		ArrayList<EtcdNodeInformation> nodes = new ArrayList<EtcdNodeInformation>();
-		if(sslCtx != null) {
-			try {
-
-				EtcdResponse respAvailableModules = EtcdRequest.create(sslCtx, baseUrl, baseKey, "").sendRequest();
-				if (!respAvailableModules.is2XX()) {
+		try {
+			EtcdResponse respAvailableModules = createRequest("").sendRequest();
+			if (!respAvailableModules.is2XX()) {
+				return nodes;
+			}
+			ArrayList<String> availableModules = respAvailableModules.getDirectories();
+			for (String module : availableModules) {
+				EtcdResponse respAvailableServicesForModule = createRequest(module).sendRequest();
+				if (!respAvailableServicesForModule.is2XX()) {
 					return nodes;
 				}
-				ArrayList<String> availableModules = respAvailableModules.getDirectories();
-				for (String module : availableModules) {
-					EtcdResponse respAvailableServicesForModule = EtcdRequest.create(sslCtx, baseUrl, baseKey, module)
-							.sendRequest();
-					if (!respAvailableServicesForModule.is2XX()) {
+				ArrayList<String> availableUUIDs = respAvailableServicesForModule.getDirectories();
+				for (String uuid : availableUUIDs) {
+
+					EtcdResponse respName = createRequest(module).uuid(uuid)
+							.getValue("name").sendRequest();
+					if (!respName.is2XX()) {
+						return nodes;
+
+					}
+					String targetName = respName.getValue();
+
+					EtcdResponse respPort = createRequest(module).uuid(uuid)
+							.getValue("port").sendRequest();
+					if (!respPort.is2XX()) {
 						return nodes;
 					}
-					ArrayList<String> availableUUIDs = respAvailableServicesForModule.getDirectories();
-					for (String uuid : availableUUIDs) {
+					String targetPort = respPort.getValue();
 
-						EtcdResponse respName = EtcdRequest.create(sslCtx, baseUrl, baseKey, module).uuid(uuid)
-								.getValue("name").sendRequest();
-						if (!respName.is2XX()) {
-							return nodes;
-
-						}
-						String targetName = respName.getValue();
-
-						EtcdResponse respPort = EtcdRequest.create(sslCtx, baseUrl, baseKey, module).uuid(uuid)
-								.getValue("port").sendRequest();
-						if (!respPort.is2XX()) {
-							return nodes;
-						}
-						String targetPort = respPort.getValue();
-
-						EtcdResponse respHost = EtcdRequest.create(sslCtx, baseUrl, baseKey, module).uuid(uuid)
-								.getValue("host").sendRequest();
-						if (!respHost.is2XX()) {
-							return nodes;
-						}
-						String targetHost = respHost.getValue();
-
-						EtcdNodeInformation node = new EtcdNodeInformation(module, uuid, targetHost, targetPort,
-								targetName);
-						if (node.isValid()) {
-							nodes.add(node);
-						}
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				log.warn("Error retrieving base info from etcd.");
-			}
-		}else{
-			try {
-				EtcdResponse respAvailableModules = EtcdRequest.create(baseUrl, baseKey, "").sendRequest();
-				if (!respAvailableModules.is2XX()) {
-					return nodes;
-				}
-				ArrayList<String> availableModules = respAvailableModules.getDirectories();
-				for (String module : availableModules) {
-					EtcdResponse respAvailableServicesForModule = EtcdRequest.create(baseUrl, baseKey, module)
-							.sendRequest();
-					if (!respAvailableServicesForModule.is2XX()) {
+					EtcdResponse respHost = createRequest(module).uuid(uuid)
+							.getValue("host").sendRequest();
+					if (!respHost.is2XX()) {
 						return nodes;
 					}
-					ArrayList<String> availableUUIDs = respAvailableServicesForModule.getDirectories();
-					for (String uuid : availableUUIDs) {
+					String targetHost = respHost.getValue();
 
-						EtcdResponse respName = EtcdRequest.create(baseUrl, baseKey, module).uuid(uuid)
-								.getValue("name").sendRequest();
-						if (!respName.is2XX()) {
-							return nodes;
-
-						}
-						String targetName = respName.getValue();
-
-						EtcdResponse respPort = EtcdRequest.create(baseUrl, baseKey, module).uuid(uuid)
-								.getValue("port").sendRequest();
-						if (!respPort.is2XX()) {
-							return nodes;
-						}
-						String targetPort = respPort.getValue();
-
-						EtcdResponse respHost = EtcdRequest.create(sslCtx, baseUrl, baseKey, module).uuid(uuid)
-								.getValue("host").sendRequest();
-						if (!respHost.is2XX()) {
-							return nodes;
-						}
-						String targetHost = respHost.getValue();
-
-						EtcdNodeInformation node = new EtcdNodeInformation(module, uuid, targetHost, targetPort,
-								targetName);
-						if (node.isValid()) {
-							nodes.add(node);
-						}
+					EtcdNodeInformation node = new EtcdNodeInformation(module, uuid, targetHost, targetPort,
+							targetName);
+					if (node.isValid()) {
+						nodes.add(node);
 					}
 				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				log.warn("Error retrieving base info from etcd.");
 			}
+		} catch (Exception e) {
+			log.warn("Error retrieving base info from etcd.");
 		}
+
 		return nodes;
 	}
 
@@ -361,6 +315,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 
 	@Override
 	public void destroy() throws Exception {
+		log.info("Destroying nodes");
 		sslCtx = null;
 		ssl = null;
 		updateThreadRunning.compareAndSet(true,false);
