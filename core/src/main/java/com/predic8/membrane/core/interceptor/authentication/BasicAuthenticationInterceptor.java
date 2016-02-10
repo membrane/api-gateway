@@ -31,6 +31,7 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.UnsupportedEncodingException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 
@@ -102,7 +103,7 @@ public class BasicAuthenticationInterceptor extends AbstractInterceptor {
 	 */
 	@Required
 	@MCChildElement
-	public void setUsers(List<User> users) throws UnsupportedEncodingException {
+	public void setUsers(List<User> users) throws UnsupportedEncodingException, NoSuchAlgorithmException {
 		userDataProvider.setUsers(users);
 	}
 

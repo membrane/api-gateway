@@ -13,15 +13,21 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import com.google.api.client.repackaged.org.apache.commons.codec.binary.Base64;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCOtherAttributes;
 import com.predic8.membrane.core.Router;
-import org.bouncycastle.jcajce.provider.digest.SHA3;
+import org.apache.commons.codec.digest.Crypt;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * @description A <i>user data provider</i> listing all user data in-place in the config file.
@@ -43,7 +49,9 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	private List<User> users = new ArrayList<User>();
 	private Map<String, User> usersByName = new HashMap<String, User>();
-	private boolean useHashedPasswords = false;
+	private BouncyCastleProvider provider = new BouncyCastleProvider();
+	private SecureRandom random = new SecureRandom();
+	private int saltByteSize = 128;
 
 	@Override
 	public Map<String, String> verify(Map<String, String> postData) {
@@ -57,14 +65,23 @@ public class StaticUserDataProvider implements UserDataProvider {
 		if (userAttributes == null)
 			throw new NoSuchElementException();
 		String pw = null;
-		if(useHashedPasswords)
+		String postDataPassword = postData.get("password");
+		if(isHashedPassword(userAttributes.getPassword())) {
+			String userHash = userAttributes.getPassword();
+			if(userHash == null)
+				throw new NoSuchElementException();
+			String[] userHashSplit = userHash.split(Pattern.quote("$"));
+			String algo = userHashSplit[1];
+			String salt = userHashSplit[2];
 			try {
-				pw = createSHA3Hash(postData.get("password"));
+				pw = createPasswdCompatibleHash(algo,postDataPassword,salt);
 			} catch (UnsupportedEncodingException e) {
 				throw new RuntimeException(e.getMessage());
+			} catch (NoSuchAlgorithmException e) {
+				throw new RuntimeException(e.getMessage());
 			}
-		else
-			pw = postData.get("password");
+		}else
+			pw = postDataPassword;
 		String pw2;
 		pw2 = userAttributes.getPassword();
 		if (pw2 == null || !pw2.equals(pw))
@@ -72,21 +89,31 @@ public class StaticUserDataProvider implements UserDataProvider {
 		return userAttributes.getAttributes();
 	}
 
-	private String createSHA3Hash(String str) throws UnsupportedEncodingException {
-		return hashToString(new SHA3.DigestSHA3(256).digest(str.getBytes("UTF-8")));
+	private boolean isHashedPassword(String postDataPassword) {
+		// TODO do a better check here
+		String[] split = postDataPassword.split(Pattern.quote("$"));
+		if(split.length != 4)
+			return false;
+		if(!split[0].isEmpty())
+			return false;
+		if(split[3].length() < 20)
+			return false;
+		return true;
 	}
 
-	public static String hashToString(byte[] hash) {
-		StringBuffer buff = new StringBuffer();
-
-		for (byte b : hash) {
-			buff.append(String.format("%02x", b & 0xFF));
-		}
-
-		return buff.toString();
+	private String createPasswdCompatibleHash(String algo, String password, String salt) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+		return Crypt.crypt(password, "$" + algo + "$" + salt);
 	}
 
-
+	private String createPasswdCompatibleHash(String algo, String password) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+		byte[] salt = new byte[saltByteSize];
+		random.nextBytes(salt);
+		String saltString = Base64.encodeBase64String(salt);
+		if(saltString.length() > 8)
+			saltString = saltString.substring(0, 8);
+		saltString.replaceAll(Pattern.quote("+"),Pattern.quote("."));
+		return createPasswdCompatibleHash(algo,password,saltString);
+	}
 
 	@MCElement(name="user", topLevel=false, id="staticUserDataProvider-user")
 	public static class User {
@@ -167,13 +194,10 @@ public class StaticUserDataProvider implements UserDataProvider {
 	}
 
 	@MCChildElement
-	public void setUsers(List<User> users) throws UnsupportedEncodingException {
-		if(useHashedPasswords){
-			for(User user : users){
-				if(user.getPassword() != null){
-					user.setPassword(createSHA3Hash(user.getPassword()));
-				}
-			}
+	public void setUsers(List<User> users) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+		for(User user : users){
+			getUsersByName().clear();
+			getUsersByName().put(user.getUsername(), user);
 		}
 		this.users = users;
 	}
@@ -184,15 +208,6 @@ public class StaticUserDataProvider implements UserDataProvider {
 
 	public void setUsersByName(Map<String, User> usersByName) {
 		this.usersByName = usersByName;
-	}
-
-	public boolean getUseHashedPasswords() {
-		return useHashedPasswords;
-	}
-
-	@MCAttribute
-	public void setUseHashedPasswords(boolean useHashedPasswords) {
-		this.useHashedPasswords = useHashedPasswords;
 	}
 
 	@Override

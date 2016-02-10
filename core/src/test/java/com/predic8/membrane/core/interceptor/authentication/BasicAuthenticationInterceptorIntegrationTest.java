@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class BasicAuthenticationInterceptorIntegrationTest {
 
@@ -65,14 +65,20 @@ public class BasicAuthenticationInterceptorIntegrationTest {
 	@Test
 	public void testHashedPassword() throws Exception {
 		List<User> users = new ArrayList<User>();
-		users.add(new User("admin", "admin"));
+		User user = new User("admin", "$6$12345678$jwCsYagMo/KNcTDqnrWL25Dy3AfAT5U94abA5a/iPFO.Cx2zAkMpPxZBNKY/P/xiRrCfCFDxdBp7pvNEMoBcr0");
+		users.add(user);
 
 		BasicAuthenticationInterceptor interceptor = new BasicAuthenticationInterceptor();
 		StaticUserDataProvider provider = (StaticUserDataProvider) interceptor.getUserDataProvider();
-		provider.setUseHashedPasswords(true);
 		interceptor.setUsers(users);
 
-		assertEquals("fb001dfcffd1c899f3297871406242f097aecf1a5342ccf3ebcd116146188e4b",interceptor.getUsers().get(0).getPassword());
+		User postData = new User("admin","admin");
+
+		try {
+			provider.verify(postData.getAttributes());
+		}catch(Exception e){
+			fail();
+		}
 	}
 
 	@After
