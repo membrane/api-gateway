@@ -46,7 +46,12 @@ public abstract class AuthorizationService {
 
     protected abstract void init();
     protected abstract String getLoginURL(String securityToken, String publicURL, String pathQuery);
-    protected abstract void authorize(String code, String publicURL, Session session) throws Exception;
+
+    protected abstract String getUserInfoEndpoint();
+
+    protected abstract String getUserIDProperty();
+
+    protected abstract String getTokenEndpoint();
 
 
     public HttpClientConfiguration getHttpClientConfiguration() {

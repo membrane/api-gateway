@@ -18,7 +18,10 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.Util;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -49,244 +52,315 @@ import com.predic8.membrane.core.util.URLParamUtil;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
- *              authorization server as response.
+ * authorization server as response.
  * @topic 6. Security
  */
-@MCElement(name="oauth2Resource")
+@MCElement(name = "oauth2Resource")
 public class OAuth2ResourceInterceptor extends AbstractInterceptor {
-	private static Log log = LogFactory.getLog(OAuth2ResourceInterceptor.class.getName());
+    private static Log log = LogFactory.getLog(OAuth2ResourceInterceptor.class.getName());
 
-	private String loginLocation, loginPath = "/login/", publicURL;
-	private SessionManager sessionManager;
-	private AuthorizationService auth;
+    private String loginLocation, loginPath = "/login/", publicURL;
+    private SessionManager sessionManager;
+    private AuthorizationService auth;
 
-	private final WebServerInterceptor wsi = new WebServerInterceptor();
-	private URIFactory uriFactory;
+    private final WebServerInterceptor wsi = new WebServerInterceptor();
+    private URIFactory uriFactory;
 
-	public String getLoginLocation() {
-		return loginLocation;
-	}
+    public String getLoginLocation() {
+        return loginLocation;
+    }
 
-	/**
-	 * @description location of the login dialog template (a directory containing the <i>index.html</i> file as well as possibly other resources)
-	 * @example file:c:/work/login/
-	 */
-	@Required
-	@MCAttribute
-	public void setLoginLocation(String login) {
-		this.loginLocation = login;
-	}
+    /**
+     * @description location of the login dialog template (a directory containing the <i>index.html</i> file as well as possibly other resources)
+     * @example file:c:/work/login/
+     */
+    @Required
+    @MCAttribute
+    public void setLoginLocation(String login) {
+        this.loginLocation = login;
+    }
 
-	public String getLoginPath() {
-		return loginPath;
-	}
+    public String getLoginPath() {
+        return loginPath;
+    }
 
-	/**
-	 * @description context path of the login dialog
-	 * @default /login/
-	 */
-	@MCAttribute
-	public void setLoginPath(String loginPath) {
-		this.loginPath = loginPath;
-	}
-
-
-	public String getPublicURL() {
-		return publicURL;
-	}
-
-	@Required
-	@MCAttribute
-	public void setPublicURL(String publicURL) {
-		this.publicURL = publicURL;
-	}
-
-	public AuthorizationService getAuthService() {
-		return auth;
-	}
-
-	@Required
-	@MCChildElement(order = 10)
-	public void setAuthService(AuthorizationService auth) {
-		this.auth = auth;
-	}
-
-	public SessionManager getSessionManager() {
-		return sessionManager;
-	}
-
-	@MCChildElement(order = 20)
-	public void setSessionManager(SessionManager sessionManager) {
-		this.sessionManager = sessionManager;
-	}
-
-	@Override
-	public void init(Router router) throws Exception {
-		super.init(router);
-
-		auth.init(router);
-		uriFactory = router.getUriFactory();
-		if (sessionManager == null)
-			sessionManager = new SessionManager();
-		sessionManager.init(router);
-
-		wsi.setDocBase(loginLocation);
-		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
-		wsi.init(router);
-	}
-
-	@Override
-	public Outcome handleRequest(Exchange exc) throws Exception {
-
-		if (isLoginRequest(exc)) {
-			handleLoginRequest(exc);
-			return Outcome.RETURN;
-		}
-
-		Session session = sessionManager.getSession(exc.getRequest());
-
-		if (session == null)
-			return respondWithRedirect(exc);
-
-		if (session.isAuthorized()) {
-			applyBackendAuthorization(exc, session);
-			return Outcome.CONTINUE;
-		}
-
-		if (handleRequest(exc, session.getUserAttributes().get("state"), publicURL, session)) {
-			if (exc.getResponse().getStatusCode() >= 400)
-				session.clear();
-			return Outcome.RETURN;
-		}
-
-		return respondWithRedirect(exc);
-	}
-
-	private void applyBackendAuthorization(Exchange exc, Session s) {
-		Header h = exc.getRequest().getHeader();
-		for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
-			if (e.getKey().startsWith("header")) {
-				String headerName = e.getKey().substring(6);
-				h.removeFields(headerName);
-				h.add(headerName, e.getValue());
-			}
-	}
-
-	private Outcome respondWithRedirect(Exchange exc) {
-		exc.setResponse(Response.redirect(loginPath, false).build());
-		return Outcome.RETURN;
-	}
+    /**
+     * @description context path of the login dialog
+     * @default /login/
+     */
+    @MCAttribute
+    public void setLoginPath(String loginPath) {
+        this.loginPath = loginPath;
+    }
 
 
-	public boolean isLoginRequest(Exchange exc) {
-		URI uri = router.getUriFactory().createWithoutException(exc.getRequest().getUri());
-		return uri.getPath().startsWith(loginPath);
-	}
+    public String getPublicURL() {
+        return publicURL;
+    }
 
-	private void showPage(Exchange exc, String state, Object... params) throws Exception {
-		String target = StringUtils.defaultString(URLParamUtil.getParams(router.getUriFactory(), exc).get("target"));
+    @Required
+    @MCAttribute
+    public void setPublicURL(String publicURL) {
+        this.publicURL = publicURL;
+    }
 
-		exc.getDestinations().set(0, "/index.html");
-		wsi.handleRequest(exc);
+    public AuthorizationService getAuthService() {
+        return auth;
+    }
 
-		Engine engine = new Engine();
-		engine.setErrorHandler(new ErrorHandler() {
+    @Required
+    @MCChildElement(order = 10)
+    public void setAuthService(AuthorizationService auth) {
+        this.auth = auth;
+    }
 
-			@Override
-			public void error(String arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
-				log.error(arg0);
-			}
+    public SessionManager getSessionManager() {
+        return sessionManager;
+    }
 
-			@Override
-			public void error(String arg0, Token arg1) throws ParseException {
-				log.error(arg0);
-			}
-		});
-		Map<String, Object> model = new HashMap<String, Object>();
-		model.put("loginPath", StringEscapeUtils.escapeXml(loginPath));
-		String pathQuery = router.getUriFactory().create(exc.getDestinations().get(0)).getPath(); // TODO: path or pathQuery
-		String url = auth.getLoginURL(state, publicURL, pathQuery);
-		model.put("loginURL", url);
-		model.put("target", StringEscapeUtils.escapeXml(target));
-		model.put("authid", state);
-		for (int i = 0; i < params.length; i += 2)
-			model.put((String) params[i], params[i + 1]);
+    @MCChildElement(order = 20)
+    public void setSessionManager(SessionManager sessionManager) {
+        this.sessionManager = sessionManager;
+    }
 
-		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
-	}
+    @Override
+    public void init(Router router) throws Exception {
+        super.init(router);
 
-	public void handleLoginRequest(Exchange exc) throws Exception {
-		Session s = sessionManager.getSession(exc.getRequest());
+        auth.init(router);
+        uriFactory = router.getUriFactory();
+        if (sessionManager == null)
+            sessionManager = new SessionManager();
+        sessionManager.init(router);
 
-		String uri = exc.getRequest().getUri().substring(loginPath.length() - 1);
-		if (uri.indexOf('?') >= 0)
-			uri = uri.substring(0, uri.indexOf('?'));
-		exc.getDestinations().set(0, uri);
+        wsi.setDocBase(loginLocation);
+        router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
+        wsi.init(router);
+    }
 
-		if (uri.equals("/logout")) {
-			if (s != null)
-				s.clear();
-			exc.setResponse(Response.redirect("/", false).build());
-		} else if (uri.equals("/")) {
-			if (s == null || !s.isAuthorized()) {
-				String state = new BigInteger(130, new SecureRandom()).toString(32);
-				showPage(exc, state);
+    @Override
+    public Outcome handleRequest(Exchange exc) throws Exception {
 
-				Session session = sessionManager.createSession(exc);
+        if (isLoginRequest(exc)) {
+            handleLoginRequest(exc);
+            return Outcome.RETURN;
+        }
 
-				HashMap<String, String> userAttributes = new HashMap<String, String>();
-				userAttributes.put("state", state);
-				session.preAuthorize("", userAttributes);
-			} else {
-				showPage(exc, s.getUserAttributes().get("state"));
-			}
-		} else {
-			wsi.handleRequest(exc);
-		}
-	}
+        Session session = sessionManager.getSession(exc.getRequest());
 
-	public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
-		String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
+        if (session == null)
+            return respondWithRedirect(exc);
 
-		if ("/oauth2callback".equals(path)) {
+        if (session.isAuthorized()) {
+            applyBackendAuthorization(exc, session);
+            return Outcome.CONTINUE;
+        }
 
-			try {
-				Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+        if (handleRequest(exc, session.getUserAttributes().get("state"), publicURL, session)) {
+            if (exc.getResponse().getStatusCode() >= 400)
+                session.clear();
+            return Outcome.RETURN;
+        }
 
-				String state2 = params.get("state");
+        return respondWithRedirect(exc);
+    }
 
-				if (state2 == null)
-					throw new RuntimeException("No CSRF token.");
+    private void applyBackendAuthorization(Exchange exc, Session s) {
+        Header h = exc.getRequest().getHeader();
+        for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
+            if (e.getKey().startsWith("header")) {
+                String headerName = e.getKey().substring(6);
+                h.removeFields(headerName);
+                h.add(headerName, e.getValue());
+            }
+    }
 
-				Map<String, String> param = URLParamUtil.parseQueryString(state2);
+    private Outcome respondWithRedirect(Exchange exc) {
+        exc.setResponse(Response.redirect(loginPath, false).build());
+        return Outcome.RETURN;
+    }
 
-				if (param == null || !param.containsKey("security_token"))
-					throw new RuntimeException("No CSRF token.");
 
-				if (!param.get("security_token").equals(state))
-					throw new RuntimeException("CSRF token mismatch.");
+    public boolean isLoginRequest(Exchange exc) {
+        URI uri = router.getUriFactory().createWithoutException(exc.getRequest().getUri());
+        return uri.getPath().startsWith(loginPath);
+    }
 
-				String url = param.get("url");
-				if (url == null)
-					url = "/";
+    private void showPage(Exchange exc, String state, Object... params) throws Exception {
+        String target = StringUtils.defaultString(URLParamUtil.getParams(router.getUriFactory(), exc).get("target"));
 
-				if (log.isDebugEnabled())
-					log.debug("CSRF token match.");
+        exc.getDestinations().set(0, "/index.html");
+        wsi.handleRequest(exc);
 
-				String code = params.get("code");
-				if (code == null)
-					throw new RuntimeException("No code received.");
+        Engine engine = new Engine();
+        engine.setErrorHandler(new ErrorHandler() {
 
-				auth.authorize(code, publicURL, session);
+            @Override
+            public void error(String arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
+                log.error(arg0);
+            }
 
-				session.authorize();
+            @Override
+            public void error(String arg0, Token arg1) throws ParseException {
+                log.error(arg0);
+            }
+        });
+        Map<String, Object> model = new HashMap<String, Object>();
+        model.put("loginPath", StringEscapeUtils.escapeXml(loginPath));
+        String pathQuery = router.getUriFactory().create(exc.getDestinations().get(0)).getPath(); // TODO: path or pathQuery
+        String url = auth.getLoginURL(state, publicURL, pathQuery);
+        model.put("loginURL", url);
+        model.put("target", StringEscapeUtils.escapeXml(target));
+        model.put("authid", state);
+        for (int i = 0; i < params.length; i += 2)
+            model.put((String) params[i], params[i + 1]);
 
-				exc.setResponse(Response.redirect(url, false).build());
-				return true;
-			} catch (Exception e) {
-				exc.setResponse(Response.badRequest().body(e.getMessage()).build());
-			}
-		}
-		return false;
-	}
+        exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
+    }
+
+    public void handleLoginRequest(Exchange exc) throws Exception {
+        Session s = sessionManager.getSession(exc.getRequest());
+
+        String uri = exc.getRequest().getUri().substring(loginPath.length() - 1);
+        if (uri.indexOf('?') >= 0)
+            uri = uri.substring(0, uri.indexOf('?'));
+        exc.getDestinations().set(0, uri);
+
+        if (uri.equals("/logout")) {
+            if (s != null)
+                s.clear();
+            exc.setResponse(Response.redirect("/", false).build());
+        } else if (uri.equals("/")) {
+            if (s == null || !s.isAuthorized()) {
+                String state = new BigInteger(130, new SecureRandom()).toString(32);
+                showPage(exc, state);
+
+                Session session = sessionManager.createSession(exc);
+
+                HashMap<String, String> userAttributes = new HashMap<String, String>();
+                userAttributes.put("state", state);
+                session.preAuthorize("", userAttributes);
+            } else {
+                showPage(exc, s.getUserAttributes().get("state"));
+            }
+        } else {
+            wsi.handleRequest(exc);
+        }
+    }
+
+    public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
+        String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
+
+        if ("/oauth2callback".equals(path)) {
+
+            try {
+                Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+
+                String state2 = params.get("state");
+
+                if (state2 == null)
+                    throw new RuntimeException("No CSRF token.");
+
+                Map<String, String> param = URLParamUtil.parseQueryString(state2);
+
+                if (param == null || !param.containsKey("security_token"))
+                    throw new RuntimeException("No CSRF token.");
+
+                if (!param.get("security_token").equals(state))
+                    throw new RuntimeException("CSRF token mismatch.");
+
+                String url = param.get("url");
+                if (url == null)
+                    url = "/";
+
+                if (log.isDebugEnabled())
+                    log.debug("CSRF token match.");
+
+                String code = params.get("code");
+                if (code == null)
+                    throw new RuntimeException("No code received.");
+
+                //auth.authorize(code, publicURL, session);
+
+
+                Exchange e = new Request.Builder()
+                        .post(auth.getTokenEndpoint())
+                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .header(Header.ACCEPT, "application/json")
+                        .header(Header.USER_AGENT, Constants.USERAGENT)
+                        .body("code=" + code
+                                + "&client_id=" + auth.getClientId()
+                                + "&client_secret=" + auth.getClientSecret()
+                                + "&redirect_uri=" + publicURL
+                                + "oauth2callback&grant_type=authorization_code")
+                        .buildExchange();
+
+                LogInterceptor logi = null;
+                if (log.isDebugEnabled()) {
+                    logi = new LogInterceptor();
+                    logi.setHeaderOnly(false);
+                    logi.handleRequest(e);
+                }
+
+                Response response = auth.httpClient.call(e).getResponse();
+
+                if (response.getStatusCode() != 200) {
+                    response.getBody().read();
+                    throw new RuntimeException("Authentication server returned " + response.getStatusCode() + ".");
+                }
+
+                if (log.isDebugEnabled())
+                    logi.handleResponse(e);
+
+
+                HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
+
+                if (!json.containsKey("access_token"))
+                    throw new RuntimeException("No access_token received.");
+
+                String token = (String) json.get("access_token"); // and also "scope": "", "token_type": "bearer"
+
+                Exchange e2 = new Request.Builder()
+                        .get(auth.getUserInfoEndpoint())
+                        .header("Authorization", "Bearer " + token)
+                        .header("User-Agent", "Membrane") // Github braucht das hier, Google akzeptiert es auch
+                        .header(Header.ACCEPT, "application/json")
+                        .buildExchange();
+
+                if (log.isDebugEnabled()) {
+                    logi.setHeaderOnly(false);
+                    logi.handleRequest(e);
+                }
+
+                Response response2 = auth.httpClient.call(e2).getResponse();
+
+                if (log.isDebugEnabled())
+                    logi.handleResponse(e2);
+
+                if (response2.getStatusCode() != 200) {
+                    throw new RuntimeException("User data could not be retrieved.");
+                }
+
+                HashMap<String, String> json2 = Util.parseSimpleJSONResponse(response2);
+
+                if (!json2.containsKey(auth.getUserIDProperty()))
+                    throw new RuntimeException("User object does not contain " + auth.getUserIDProperty() + " key.");
+
+                Map<String, String> userAttributes = session.getUserAttributes();
+                String userIdPropertyFixed = auth.getUserIDProperty().substring(0, 1).toUpperCase() + auth.getUserIDProperty().substring(1);
+                synchronized (userAttributes) {
+                    userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, json2.get(auth.getUserIDProperty()));
+                }
+
+
+                session.authorize();
+
+                exc.setResponse(Response.redirect(url, false).build());
+                return true;
+            } catch (Exception e) {
+                exc.setResponse(Response.badRequest().body(e.getMessage()).build());
+            }
+        }
+        return false;
+    }
 }

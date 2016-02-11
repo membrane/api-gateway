@@ -48,9 +48,9 @@ public class GoogleAuthorizationService extends AuthorizationService {
     public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
         // This is the URL that is called by the user's web browser
         return "https://accounts.google.com/o/oauth2/auth?"+
-                "client_id=" + getClientId() + ".apps.googleusercontent.com&"+
+                "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
-                "scope=openid%20email&"+
+                "scope=openid%20email%20profile&"+
                 "redirect_uri=" + publicURL + "oauth2callback&"+
                 "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery
                 //+"&login_hint=jsmith@example.com"
@@ -58,53 +58,24 @@ public class GoogleAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    public void authorize(String code, String publicURL, Session session) throws Exception {
-        Exchange e = new Request.Builder()
-                .post("https://www.googleapis.com/oauth2/v3/token")
-                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .header(Header.HOST, "www.googleapis.com")
-                .header(Header.ACCEPT, "*/*")
-                .header(Header.USER_AGENT, Constants.USERAGENT)
-                .body(    "code=" + code
-                        + "&" + "client_id=" + getClientId() + ".apps.googleusercontent.com"
-                        + "&" + "client_secret=" + getClientSecret()
-                        + "&" + "redirect_uri=" + publicURL + "oauth2callback"
-                        + "&" + "grant_type=authorization_code")
-                .buildExchange();
+    public void setClientId(String clientId) {
+        if (!clientId.endsWith(".apps.googleusercontent.com"))
+            clientId += ".apps.googleusercontent.com";
+        super.setClientId(clientId);
+    }
 
-        LogInterceptor logi = null;
-        if (log.isDebugEnabled()) {
-            logi = new LogInterceptor();
-            logi.setHeaderOnly(false);
-            logi.handleRequest(e);
-        }
+    @Override
+    protected String getTokenEndpoint() {
+        return "https://www.googleapis.com/oauth2/v3/token";
+    }
 
-        Response response = httpClient.call(e).getResponse();
+    @Override
+    protected String getUserInfoEndpoint() {
+        return "https://www.googleapis.com/oauth2/v3/userinfo";
+    }
 
-        if (response.getStatusCode() != 200) {
-            response.getBody().read();
-            throw new RuntimeException("Google Authentication server returned " + response.getStatusCode() + ".");
-        }
-
-        if (log.isDebugEnabled())
-            logi.handleResponse(e);
-
-        HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
-
-        if (!json.containsKey("id_token"))
-            throw new RuntimeException("No id_token received.");
-
-        GoogleIdToken idToken = GoogleIdToken.parse(factory, json.get("id_token"));
-        if (idToken == null)
-            throw new RuntimeException("Token cannot be parsed");
-
-        if (!verifier.verify(idToken) ||
-                !idToken.verifyAudience(Collections.singletonList(getClientId() + ".apps.googleusercontent.com")))
-            throw new RuntimeException("Invalid token");
-
-        Map<String, String> userAttributes = session.getUserAttributes();
-        synchronized (userAttributes) {
-            userAttributes.put("headerX-Authenticated-Email", idToken.getPayload().getEmail());
-        }
+    @Override
+    protected String getUserIDProperty() {
+        return "email"; // "login"
     }
 }

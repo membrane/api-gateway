@@ -21,13 +21,22 @@ public class MembraneAuthorizationService extends AuthorizationService {
     protected void init() {
     }
 
+    protected String getTokenEndpoint() {
+        return null;
+    }
+
     @Override
     protected String getLoginURL(String securityToken, String publicURL, String pathQuery) {
         return null;
     }
 
     @Override
-    protected void authorize(String code, String publicURL, SessionManager.Session session) throws Exception {
+    protected String getUserInfoEndpoint() {
+        return null;
+    }
 
+    @Override
+    protected String getUserIDProperty() {
+        return null;
     }
 }
