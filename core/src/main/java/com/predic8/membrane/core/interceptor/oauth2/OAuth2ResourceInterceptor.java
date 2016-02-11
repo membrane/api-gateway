@@ -18,6 +18,7 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.predic8.membrane.core.util.URIFactory;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -40,6 +41,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
+
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.URI;
@@ -55,10 +57,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 	private static Log log = LogFactory.getLog(OAuth2ResourceInterceptor.class.getName());
 
 	private String loginLocation, loginPath = "/login/", publicURL;
-	private AuthorizationService authorizationService;
 	private SessionManager sessionManager;
+	private AuthorizationService auth;
 
 	private final WebServerInterceptor wsi = new WebServerInterceptor();
+	private URIFactory uriFactory;
 
 	public String getLoginLocation() {
 		return loginLocation;
@@ -98,21 +101,21 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		this.publicURL = publicURL;
 	}
 
-	public AuthorizationService getAuthorizationService() {
-		return authorizationService;
+	public AuthorizationService getAuthService() {
+		return auth;
 	}
 
 	@Required
-	@MCChildElement(order=10)
-	public void setAuthorizationService(AuthorizationService authorizationService) {
-		this.authorizationService = authorizationService;
+	@MCChildElement(order = 10)
+	public void setAuthService(AuthorizationService auth) {
+		this.auth = auth;
 	}
 
 	public SessionManager getSessionManager() {
 		return sessionManager;
 	}
 
-	@MCChildElement(order=20)
+	@MCChildElement(order = 20)
 	public void setSessionManager(SessionManager sessionManager) {
 		this.sessionManager = sessionManager;
 	}
@@ -121,8 +124,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 	public void init(Router router) throws Exception {
 		super.init(router);
 
-		authorizationService.init(router);
-
+		auth.init(router);
+		uriFactory = router.getUriFactory();
 		if (sessionManager == null)
 			sessionManager = new SessionManager();
 		sessionManager.init(router);
@@ -150,7 +153,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 			return Outcome.CONTINUE;
 		}
 
-		if (authorizationService.handleRequest(exc, session.getUserAttributes().get("state"), publicURL, session)) {
+		if (handleRequest(exc, session.getUserAttributes().get("state"), publicURL, session)) {
 			if (exc.getResponse().getStatusCode() >= 400)
 				session.clear();
 			return Outcome.RETURN;
@@ -173,12 +176,6 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		exc.setResponse(Response.redirect(loginPath, false).build());
 		return Outcome.RETURN;
 	}
-
-
-
-
-
-
 
 
 	public boolean isLoginRequest(Exchange exc) {
@@ -208,12 +205,12 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		Map<String, Object> model = new HashMap<String, Object>();
 		model.put("loginPath", StringEscapeUtils.escapeXml(loginPath));
 		String pathQuery = router.getUriFactory().create(exc.getDestinations().get(0)).getPath(); // TODO: path or pathQuery
-		String url = authorizationService.getLoginURL(state, publicURL, pathQuery);
+		String url = auth.getLoginURL(state, publicURL, pathQuery);
 		model.put("loginURL", url);
 		model.put("target", StringEscapeUtils.escapeXml(target));
 		model.put("authid", state);
-		for (int i = 0; i < params.length; i+=2)
-			model.put((String)params[i], params[i+1]);
+		for (int i = 0; i < params.length; i += 2)
+			model.put((String) params[i], params[i + 1]);
 
 		exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
 	}
@@ -221,7 +218,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 	public void handleLoginRequest(Exchange exc) throws Exception {
 		Session s = sessionManager.getSession(exc.getRequest());
 
-		String uri = exc.getRequest().getUri().substring(loginPath.length()-1);
+		String uri = exc.getRequest().getUri().substring(loginPath.length() - 1);
 		if (uri.indexOf('?') >= 0)
 			uri = uri.substring(0, uri.indexOf('?'));
 		exc.getDestinations().set(0, uri);
@@ -248,4 +245,48 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 		}
 	}
 
+	public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
+		String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
+
+		if ("/oauth2callback".equals(path)) {
+
+			try {
+				Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+
+				String state2 = params.get("state");
+
+				if (state2 == null)
+					throw new RuntimeException("No CSRF token.");
+
+				Map<String, String> param = URLParamUtil.parseQueryString(state2);
+
+				if (param == null || !param.containsKey("security_token"))
+					throw new RuntimeException("No CSRF token.");
+
+				if (!param.get("security_token").equals(state))
+					throw new RuntimeException("CSRF token mismatch.");
+
+				String url = param.get("url");
+				if (url == null)
+					url = "/";
+
+				if (log.isDebugEnabled())
+					log.debug("CSRF token match.");
+
+				String code = params.get("code");
+				if (code == null)
+					throw new RuntimeException("No code received.");
+
+				auth.authorize(code, publicURL, session);
+
+				session.authorize();
+
+				exc.setResponse(Response.redirect(url, false).build());
+				return true;
+			} catch (Exception e) {
+				exc.setResponse(Response.badRequest().body(e.getMessage()).build());
+			}
+		}
+		return false;
+	}
 }

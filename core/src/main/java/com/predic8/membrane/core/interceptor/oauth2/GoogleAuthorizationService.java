@@ -1,16 +1,16 @@
-/* Copyright 2013 predic8 GmbH, www.predic8.com
+/*
+ * Copyright 2016 predic8 GmbH, www.predic8.com
+ *    Licensed under the Apache License, Version 2.0 (the "License");
+ *    you may not use this file except in compliance with the License.
+ *    You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *    Unless required by applicable law or agreed to in writing, software
+ *    distributed under the License is distributed on an "AS IS" BASIS,
+ *    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *    See the License for the specific language governing permissions and
+ *    limitations under the License.
+ */
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-   http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
@@ -18,198 +18,93 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.apache.ApacheHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @description Together with the {@link OAuth2ResourceInterceptor}, implements request authentication via OAuth2 using
- *              Google's Authorization Servers.
- * @explanation See the <a
- *              href="https://httprouter.wordpress.com/2013/07/22/protect-your-rest-resources-using-membrane-s-oauth2-feature/"
- *              >Membrane Blog</a> for a brief tutorial.
- */
 @MCElement(name="google", topLevel=false)
 public class GoogleAuthorizationService extends AuthorizationService {
 
-	private static Log log = LogFactory.getLog(GoogleAuthorizationService.class.getName());
+    private JsonFactory factory;
+    private GoogleIdTokenVerifier verifier;
 
-	// properties
-	private String clientId;
-	private String clientSecret;
-	private HttpClientConfiguration httpClientConfiguration;
+    @Override
+    public void init() {
+        factory = new JacksonFactory();
+        verifier = new GoogleIdTokenVerifier(new ApacheHttpTransport(), factory);
+    }
 
-	// fields
-	private HttpClient httpClient;
-	private JsonFactory factory;
-	private GoogleIdTokenVerifier verifier;
-	private URIFactory uriFactory;
+    @Override
+    public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
+        // This is the URL that is called by the user's web browser
+        return "https://accounts.google.com/o/oauth2/auth?"+
+                "client_id=" + getClientId() + ".apps.googleusercontent.com&"+
+                "response_type=code&"+
+                "scope=openid%20email&"+
+                "redirect_uri=" + publicURL + "oauth2callback&"+
+                "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery
+                //+"&login_hint=jsmith@example.com"
+                ;
+    }
 
-	public String getClientId() {
-		return clientId;
-	}
+    @Override
+    public void authorize(String code, String publicURL, Session session) throws Exception {
+        Exchange e = new Request.Builder()
+                .post("https://www.googleapis.com/oauth2/v3/token")
+                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(Header.HOST, "www.googleapis.com")
+                .header(Header.ACCEPT, "*/*")
+                .header(Header.USER_AGENT, Constants.USERAGENT)
+                .body(    "code=" + code
+                        + "&" + "client_id=" + getClientId() + ".apps.googleusercontent.com"
+                        + "&" + "client_secret=" + getClientSecret()
+                        + "&" + "redirect_uri=" + publicURL + "oauth2callback"
+                        + "&" + "grant_type=authorization_code")
+                .buildExchange();
 
-	@Required
-	@MCAttribute
-	public void setClientId(String clientId) {
-		this.clientId = clientId;
-	}
+        LogInterceptor logi = null;
+        if (log.isDebugEnabled()) {
+            logi = new LogInterceptor();
+            logi.setHeaderOnly(false);
+            logi.handleRequest(e);
+        }
 
-	public String getClientSecret() {
-		return clientSecret;
-	}
+        Response response = httpClient.call(e).getResponse();
 
-	@Required
-	@MCAttribute
-	public void setClientSecret(String clientSecret) {
-		this.clientSecret = clientSecret;
-	}
+        if (response.getStatusCode() != 200) {
+            response.getBody().read();
+            throw new RuntimeException("Google Authentication server returned " + response.getStatusCode() + ".");
+        }
 
-	public HttpClientConfiguration getHttpClientConfiguration() {
-		return httpClientConfiguration;
-	}
+        if (log.isDebugEnabled())
+            logi.handleResponse(e);
 
-	@MCAttribute
-	public void setHttpClientConfiguration(
-			HttpClientConfiguration httpClientConfiguration) {
-		this.httpClientConfiguration = httpClientConfiguration;
-	}
+        HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
 
-	@Override
-	public void init(Router router) {
-		httpClient = httpClientConfiguration == null ? router.getResolverMap()
-				.getHTTPSchemaResolver().getHttpClient() : new HttpClient(
-						httpClientConfiguration);
+        if (!json.containsKey("id_token"))
+            throw new RuntimeException("No id_token received.");
 
-				factory = new JacksonFactory();
-				verifier = new GoogleIdTokenVerifier(new ApacheHttpTransport(), factory);
-				uriFactory = router.getUriFactory();
-	}
+        GoogleIdToken idToken = GoogleIdToken.parse(factory, json.get("id_token"));
+        if (idToken == null)
+            throw new RuntimeException("Token cannot be parsed");
 
-	@Override
-	public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
-		// This is the URL that is called by the user's web browser
-		return "https://accounts.google.com/o/oauth2/auth?"+
-				"client_id=" + clientId + ".apps.googleusercontent.com&"+
-				"response_type=code&"+
-				"scope=openid%20email&"+
-				"redirect_uri=" + publicURL + "oauth2callback&"+
-				"state=security_token%3D" + securityToken + "%26url%3D" + pathQuery
-				//+"&login_hint=jsmith@example.com"
-				;
-	}
+        if (!verifier.verify(idToken) ||
+                !idToken.verifyAudience(Collections.singletonList(getClientId() + ".apps.googleusercontent.com")))
+            throw new RuntimeException("Invalid token");
 
-	@Override
-	public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
-		String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
-
-		if ("/oauth2callback".equals(path)) {
-
-			try {
-				Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
-
-				String state2 = params.get("state");
-
-				if (state2 == null)
-					throw new RuntimeException("No CSRF token.");
-
-				Map<String, String> param = URLParamUtil.parseQueryString(state2);
-
-				if (param == null || !param.containsKey("security_token"))
-					throw new RuntimeException("No CSRF token.");
-
-				if (!param.get("security_token").equals(state))
-					throw new RuntimeException("CSRF token mismatch.");
-
-				String url = param.get("url");
-				if (url == null)
-					url = "/";
-
-				if (log.isDebugEnabled())
-					log.debug("CSRF token match.");
-
-				String code = params.get("code");
-				if (code == null)
-					throw new RuntimeException("No code received.");
-
-				// This is the request that Membrane sends to Google's API
-				Exchange e = new Request.Builder()
-				.post("https://www.googleapis.com/oauth2/v3/token")
-				.header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-				.header(Header.HOST, "www.googleapis.com")
-				.header(Header.ACCEPT, "*/*")
-				.header(Header.USER_AGENT, Constants.USERAGENT)
-				.body(    "code=" + code
-						+ "&" + "client_id=" + clientId + ".apps.googleusercontent.com"
-						+ "&" + "client_secret=" + clientSecret
-						+ "&" + "redirect_uri=" + publicURL + "oauth2callback"
-						+ "&" + "grant_type=authorization_code")
-				.buildExchange();
-
-				LogInterceptor logi = null;
-				if (log.isDebugEnabled()) {
-					logi = new LogInterceptor();
-					logi.setHeaderOnly(false);
-					logi.handleRequest(e);
-				}
-
-				Response response = httpClient.call(e).getResponse();
-
-				if (response.getStatusCode() != 200) {
-					response.getBody().read();
-					throw new RuntimeException("Google Authentication server returned " + response.getStatusCode() + ".");
-				}
-
-				if (log.isDebugEnabled())
-					logi.handleResponse(e);
-
-				HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
-
-				if (!json.containsKey("id_token"))
-					throw new RuntimeException("No id_token received.");
-
-				GoogleIdToken idToken = GoogleIdToken.parse(factory, json.get("id_token"));
-				if (idToken == null)
-					throw new RuntimeException("Token cannot be parsed");
-
-				if (!verifier.verify(idToken) ||
-						!idToken.verifyAudience(Collections.singletonList(clientId + ".apps.googleusercontent.com")))
-					throw new RuntimeException("Invalid token");
-
-				Map<String, String> userAttributes = session.getUserAttributes();
-				synchronized (userAttributes) {
-					userAttributes.put("headerX-Authenticated-Email", idToken.getPayload().getEmail());
-				}
-				session.authorize();
-
-				exc.setResponse(Response.redirect(url, false).build());
-				return true;
-			} catch (Exception e) {
-				exc.setResponse(Response.badRequest().body(e.getMessage()).build());
-			}
-		}
-		return false;
-	}
-
-
-
+        Map<String, String> userAttributes = session.getUserAttributes();
+        synchronized (userAttributes) {
+            userAttributes.put("headerX-Authenticated-Email", idToken.getPayload().getEmail());
+        }
+    }
 }
