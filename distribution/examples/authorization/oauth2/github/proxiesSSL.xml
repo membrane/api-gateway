@@ -1,0 +1,62 @@
+<!--
+  ~ Copyright 2016 predic8 GmbH, www.predic8.com
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<serviceProxy port="8080">
+
+			<ssl>
+				<keystore location="../../../conf/membrane.jks" password="secret" keyPassword="secret" />
+				<truststore location="../../../conf/membrane.jks" password="secret" />
+			</ssl>
+
+			<headerFilter>
+				<exclude>X-Authenticated-Login</exclude>
+			</headerFilter>
+
+			<!-- this is for browsers that request a favicon. The request is dropped because it would change the session id -->
+			<if test="exc.getRequestURI().endsWith('favicon.ico')">
+				<groovy>
+					Response.notFound().build()
+				</groovy>
+			</if>
+
+			<oauth2Resource loginLocation="./dialog" publicURL="http://localhost:8080/">
+				<github
+						clientId="Enter client ID from Github here"
+						clientSecret="Enter client Secret from Github here"
+						appName="OAuth2Test" />
+			</oauth2Resource>
+
+			<groovy>
+				def email = exc.request.header.getFirstValue("X-Authenticated-Login")
+				exc.response = Response.ok("Hello " + email + ".").build()
+				RETURN
+			</groovy>
+
+			<!--
+			Use the <target> instead of the <groovy> interceptor to forward requests to another host:
+			<target host="membrane-soa.org" port="80" />
+			-->
+		</serviceProxy>
+
+	</router>
+
+</spring:beans>

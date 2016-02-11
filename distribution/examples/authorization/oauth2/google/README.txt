@@ -1,0 +1,1 @@
+Please follow http://www.membrane-soa.org/service-proxy-doc/4.1/oauth2.htm
