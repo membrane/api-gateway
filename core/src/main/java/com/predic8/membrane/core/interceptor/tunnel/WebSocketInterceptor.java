@@ -15,10 +15,12 @@ package com.predic8.membrane.core.interceptor.tunnel;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.util.URLUtil;
+import org.joda.time.format.PeriodFormat;
 
 /**
  * @description Allow HTTP protocol upgrades to the <a
@@ -31,6 +33,11 @@ import com.predic8.membrane.core.util.URLUtil;
 public class WebSocketInterceptor extends AbstractInterceptor {
 	private String url;
 	private String pathQuery;
+
+	@Override
+	public void init(Router router) throws Exception {
+		name = "Websocket interceptor";
+	}
 
 	public String getUrl() {
 		return url;
@@ -62,5 +69,10 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 			}
 		}
 		return Outcome.CONTINUE;
+	}
+
+	@Override
+	public String getShortDescription() {
+		return "Allow HTTP protocol upgrades to the <a href=\"http://tools.ietf.org/html/rfc6455\">WebSocket protocol</a>. After the upgrade, the connection's data packets are simply forwarded and not inspected.";
 	}
 }
