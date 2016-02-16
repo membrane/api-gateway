@@ -28,6 +28,8 @@ import com.predic8.membrane.annot.MCElement;
 @MCElement(name="serviceProxy")
 public class ServiceProxy extends AbstractServiceProxy {
 
+	private String externalHostname;
+
 	public ServiceProxy() {
 		this.key = new ServiceProxyKey(80);
 	}
@@ -57,6 +59,13 @@ public class ServiceProxy extends AbstractServiceProxy {
 	@MCAttribute
 	public void setMethod(String method) {
 		((ServiceProxyKey)key).setMethod(method);
+	}
+
+	public String getExternalHostname() {return externalHostname;}
+
+	@MCAttribute
+	public void setExternalHostname(String externalHostname){
+		this.externalHostname = externalHostname;
 	}
 
 	public Target getTarget() {

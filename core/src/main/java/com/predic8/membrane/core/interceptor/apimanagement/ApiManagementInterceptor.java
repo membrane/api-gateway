@@ -22,7 +22,9 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.ApiConfig;
 import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.EtcdRegistryApiConfig;
 import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.SimpleApiConfig;
@@ -30,6 +32,8 @@ import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.quota.AMQuota;
 import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.AMRateLimiter;
 import com.predic8.membrane.core.interceptor.apimanagement.statistics.AMStatisticsCollector;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
+import com.predic8.membrane.core.rules.Rule;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -46,7 +50,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     private ApiConfig apiConfig;
     private AMRateLimiter amRateLimiter = null;
     private AMQuota amQuota = null;
-    private AMStatisticsCollector amStatisticsCollector = new AMStatisticsCollector();
+    private AMStatisticsCollector amStatisticsCollector;
     private ApiManagementConfiguration apiManagementConfiguration = null;
     private String config = "api.yaml";
     private final String UNAUTHORIZED_API_KEY = "UNAUTHORIZED_API_KEY";
@@ -108,14 +112,16 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        return getAmStatisticsCollector().handleRequest(exc,handleRequest2(exc) );
+        if(getAmStatisticsCollector() != null)
+            return getAmStatisticsCollector().handleRequest(exc,handleRequest2(exc) );
+        return handleRequest2(exc);
     }
 
     private Outcome handleRequest2(Exchange exc) throws Exception {
         String key = apiKeyRetriever.getKey(exc);
 
         if (key == null) {
-            if (!hasUnauthorizedPolicy(exc)) {
+            if (!(hasUnauthorizedPolicy(exc) || isAdminConsoleCall(exc)) ) {
                 setResponseNoAuthKey(exc);
                 return Outcome.RETURN;
             }
@@ -138,13 +144,31 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         return Outcome.RETURN;
     }
 
+    private boolean isAdminConsoleCall(Exchange exc) {
+        for (Rule r : router.getRuleManager().getRules()) {
+            if (!(r instanceof AbstractServiceProxy)) continue;
+
+            for (Interceptor i : r.getInterceptors()) {
+                if (i instanceof AdminConsoleInterceptor) {
+                    for(Interceptor interceptor : exc.getRule().getInterceptors()){
+                        if(interceptor == i)
+                            return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        return getAmStatisticsCollector().handleResponse(exc, handleResponse2(exc));
+        if(getAmStatisticsCollector() != null)
+            return getAmStatisticsCollector().handleResponse(exc, handleResponse2(exc));
+        return handleResponse2(exc);
     }
 
     private Outcome handleResponse2(Exchange exc) {
-        if (!hasUnauthorizedPolicy(exc) && getAmQuota() != null) {
+        if (!(hasUnauthorizedPolicy(exc) || isAdminConsoleCall(exc)) && getAmQuota() != null) {
             getAmQuota().handleResponse(exc);
         }
         return Outcome.CONTINUE;

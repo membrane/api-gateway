@@ -24,11 +24,13 @@ import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.predic8.membrane.annot.bean.MCUtil;
 import com.predic8.membrane.core.jmx.JmxExporter;
 import com.predic8.membrane.core.jmx.JmxRouter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
@@ -79,7 +81,7 @@ import com.predic8.membrane.core.util.URIFactory;
 		outputName="router-conf.xsd",
 		targetNamespace="http://membrane-soa.org/proxies/1/")
 @MCElement(name="router")
-public class Router implements Lifecycle, ApplicationContextAware {
+public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware {
 
 	private static final Log log = LogFactory.getLog(Router.class.getName());
 
@@ -111,6 +113,7 @@ public class Router implements Lifecycle, ApplicationContextAware {
 	private int retryInitInterval = 5 * 60 * 1000; // 5 minutes
 	private boolean retryInit;
 	private Timer reinitializator;
+	private String id;
 
 	public Router() {
 		ruleManager.setRouter(this);
@@ -508,5 +511,14 @@ public class Router implements Lifecycle, ApplicationContextAware {
 
 	public String getJmx(){
 		return jmxRouterName;
+	}
+
+	@Override
+	public void setBeanName(String s) {
+		this.id = s;
+	}
+
+	public String getId(){
+		return id;
 	}
 }

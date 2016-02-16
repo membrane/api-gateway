@@ -353,11 +353,11 @@ public class ApiManagementConfiguration {
 
         final String etcdLocation = location.substring(7);
 
-        final String baseKey = "/gateways/" + getMembraneName();
+        final String baseKey = "/membrane/" + getMembraneName();
 
         EtcdResponse respGetConfigUrl = EtcdRequest.create(etcdLocation,baseKey,"/apiconfig").getValue("url").sendRequest();
         if(!respGetConfigUrl.is2XX()){
-            log.warn("Could not get config url at " + etcdLocation);
+            log.warn("Could not get config url at " + etcdLocation + baseKey + "/apiconfig");
             return;
         }
         final String configLocation = respGetConfigUrl.getValue();

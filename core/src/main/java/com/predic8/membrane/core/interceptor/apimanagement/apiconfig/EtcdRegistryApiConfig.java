@@ -15,21 +15,35 @@ package com.predic8.membrane.core.interceptor.apimanagement.apiconfig;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.cloud.ExponentialBackoff;
+import com.predic8.membrane.core.cloud.etcd.EtcdNodeInformation;
 import com.predic8.membrane.core.cloud.etcd.EtcdRequest;
 import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
 import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
+import com.predic8.membrane.core.rules.AbstractServiceProxy;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.ServiceProxy;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 @MCElement(name="etcdRegistryApiConfig")
 public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware, ApiConfig, DisposableBean {
@@ -39,8 +53,8 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
     private ApplicationContext context;
     private ApiManagementConfiguration amc;
     private String url;
-    private String membrane;
-    private String endpoint;
+    private String membraneId;
+    private String baseKeyPrefix = "/membrane/";
     private int ttl = 300;
     private int retryDelayMin = 10 * 1000;
     private int retryDelayMax = 10 * 60 * 1000;
@@ -55,11 +69,11 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
             try {
                 ExponentialBackoff.retryAfter(retryDelayMin, retryDelayMax, expDelayFactor,
                         "First publish from thread", jobPublisher);
-
+                initAmc();
                 boolean connectionLost = false;
 
                 while (true) {
-                    String baseKey = "/gateways/"+membrane;
+                    String baseKey = baseKeyPrefix+membraneId;
                     EtcdResponse respTTLDirRefresh = EtcdRequest.create(url, baseKey, "")
                             .refreshTTL(ttl).sendRequest();
                     if (!respTTLDirRefresh.is2XX()) {
@@ -87,20 +101,62 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
     };
 
     private boolean publishToEtcd() {
-        String baseKey = "/gateways/"+membrane;
-        EtcdResponse respPublishEndpoint = EtcdRequest.create(url,baseKey,"").setValue("endpoint",endpoint).sendRequest();
-        if(!respPublishEndpoint.is2XX()){
-            return false;
-        }
+        String baseKey = baseKeyPrefix+membraneId;
         EtcdResponse respPublishApiUrl = EtcdRequest.create(url,baseKey,"/apiconfig").setValue("url","http://localhost:8081/api/api.yaml").sendRequest();
         if(!respPublishApiUrl.is2XX()){
+            System.out.println(respPublishApiUrl.getBody());
             return false;
         }
         EtcdResponse respPublishApiFingerprint = EtcdRequest.create(url,baseKey,"/apiconfig").setValue("fingerprint","").sendRequest();
         if(!respPublishApiFingerprint.is2XX()){
+            System.out.println(respPublishApiFingerprint.getBody());
             return false;
         }
+        EtcdNodeInformation adminConsole = findAdminConsole();
+
+        EtcdResponse respPublishEndpointName = EtcdRequest.create(url,baseKey,"/endpoint").setValue("name",adminConsole.getName()).sendRequest();
+        if(!respPublishEndpointName.is2XX()){
+            System.out.println(respPublishEndpointName.getBody());
+            return false;
+        }
+
+        EtcdResponse respPublishEndpointHost = EtcdRequest.create(url,baseKey,"/endpoint").setValue("host",adminConsole.getTargetHost()).sendRequest();
+        if(!respPublishEndpointHost.is2XX()){
+            System.out.println(respPublishEndpointHost.getBody());
+            return false;
+        }
+
+        EtcdResponse respPublishEndpointPort = EtcdRequest.create(url,baseKey,"/endpoint").setValue("port",adminConsole.getTargetPort()).sendRequest();
+        if(!respPublishEndpointPort.is2XX()){
+            System.out.println(respPublishEndpointPort.getBody());
+            return false;
+        }
+
         return true;
+    }
+
+    private EtcdNodeInformation findAdminConsole() {
+        Object routerObj = context.getBean(Router.class);
+        if(routerObj == null)
+            throw new RuntimeException("Router not found, cannot publish admin console");
+        Router router = (Router) routerObj;
+        for (Rule r : router.getRuleManager().getRules()) {
+            if (!(r instanceof AbstractServiceProxy)) continue;
+
+            for (Interceptor i : r.getInterceptors()) {
+                if (i instanceof AdminConsoleInterceptor) {
+                    String name = r.getName();
+                    String host = ((ServiceProxy) r).getExternalHostname();
+                    if(host == "")
+                        host = getLocalHostname();
+                    String port = Integer.toString(((AbstractServiceProxy) r).getPort());
+                    EtcdNodeInformation node = new EtcdNodeInformation(null,null,host,port,name);
+                    return node;
+
+                }
+            }
+        }
+        throw new RuntimeException("Admin console not found but is needed. Add a service proxy with an admin console.");
     }
 
     @Override
@@ -110,13 +166,13 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
 
     @Override
     public void start() {
-        //TODO fill endpoint with useful info instead of this mockup
-        endpoint = "123.456.789.1";
-
         if(!publisher.isAlive()) {
             log.info("Started membrane publishing");
             publisher.start();
         }
+    }
+
+    public void initAmc(){
         String workingDir = ((BaseLocationApplicationContext)context).getBaseLocation();
         String etcdUrlForAmc = null;
         URL u = null;
@@ -133,7 +189,13 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
             log.error("Url malformed: " + getUrl());
         }
         etcdUrlForAmc = "etcd://" + u.getHost() + ":" + u.getPort();
-        amc = new ApiManagementConfiguration(workingDir,etcdUrlForAmc,getMembrane());
+
+        Object routerObj = context.getBean(Router.class);
+        if(routerObj == null)
+            throw new RuntimeException("Router cannot be found");
+        Router router = (Router) routerObj;
+        membraneId = router.getId();
+        amc = new ApiManagementConfiguration(workingDir,etcdUrlForAmc,membraneId);
     }
 
     @Override
@@ -159,27 +221,6 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
         this.url = url;
     }
 
-    public String getMembrane() {
-        return membrane;
-    }
-
-    /**
-     * @description name for this membrane instance
-     * @default membrane
-     */
-    @MCAttribute
-    public void setMembrane(String membrane) {
-        this.membrane = membrane;
-    }
-
-    public String getEndpoint() {
-        return endpoint;
-    }
-
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
-
     public int getTtl() {
         return ttl;
     }
@@ -195,11 +236,32 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
 
     @Override
     public ApiManagementConfiguration getConfiguration() {
+        // is now initialized in a thread so we need to wait to make sure its not null
+        while (amc == null){
+            try {
+                Thread.sleep(0);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         return amc;
     }
 
     @Override
     public void destroy() throws Exception {
         stop();
+    }
+
+    public String getLocalHostname() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            try {
+                return IOUtils.toString(Runtime.getRuntime().exec("hostname").getInputStream());
+            } catch (IOException e1) {
+                e1.printStackTrace();
+                return "localhost";
+            }
+        }
     }
 }
