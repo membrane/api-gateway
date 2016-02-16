@@ -28,7 +28,6 @@ public abstract class AuthorizationService {
     protected HttpClient httpClient;
     protected Router router;
 
-    // TODO: make properties
     protected HttpClientConfiguration httpClientConfiguration;
     protected String clientId;
     protected String clientSecret;

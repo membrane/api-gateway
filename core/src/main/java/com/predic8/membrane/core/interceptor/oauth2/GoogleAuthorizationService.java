@@ -18,6 +18,7 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.apache.ApacheHttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -27,6 +28,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 import com.predic8.membrane.core.util.Util;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,13 +37,11 @@ import java.util.Map;
 @MCElement(name="google", topLevel=false)
 public class GoogleAuthorizationService extends AuthorizationService {
 
-    private JsonFactory factory;
-    private GoogleIdTokenVerifier verifier;
-
     @Override
     public void init() {
-        factory = new JacksonFactory();
-        verifier = new GoogleIdTokenVerifier(new ApacheHttpTransport(), factory);
+        // for backwards compatibility: adds the suffix to the client id. worked without the suffix before but is now needed
+        if (!clientId.endsWith(".apps.googleusercontent.com"))
+            clientId += ".apps.googleusercontent.com";
     }
 
     @Override
@@ -55,13 +55,6 @@ public class GoogleAuthorizationService extends AuthorizationService {
                 "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery
                 //+"&login_hint=jsmith@example.com"
                 ;
-    }
-
-    @Override
-    public void setClientId(String clientId) {
-        if (!clientId.endsWith(".apps.googleusercontent.com"))
-            clientId += ".apps.googleusercontent.com";
-        super.setClientId(clientId);
     }
 
     @Override
