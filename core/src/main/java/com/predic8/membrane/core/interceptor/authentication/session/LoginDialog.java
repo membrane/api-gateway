@@ -163,7 +163,7 @@ public class LoginDialog {
 					if(tokenProvider != null)
 						showPage(exc, 1);
 					else {
-						String target = URLParamUtil.getParams(uriFactory, exc).get("target");
+						String target = params.get("target");
 						if (StringUtils.isEmpty(target))
 							target = "/";
 						exc.setResponse(Response.redirectWithout300(target).build());
