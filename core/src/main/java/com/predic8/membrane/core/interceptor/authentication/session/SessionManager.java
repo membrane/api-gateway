@@ -66,7 +66,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	}
 
 	public static class Session {
-		private Map<String, String> userAttributes;
+		private Map<String, String> userAttributes = new HashMap<String, String>();
 		private int level = 0;
 		private long lastUse;
 		private String userName;
@@ -89,7 +89,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 
 		public synchronized void preAuthorize(String userName, Map<String, String> userAttributes) {
 			this.userName = userName;
-			this.userAttributes = userAttributes;
+			this.userAttributes.putAll(userAttributes);
 			level = 1;
 		}
 

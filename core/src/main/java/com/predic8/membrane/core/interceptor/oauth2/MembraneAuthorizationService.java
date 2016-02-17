@@ -13,30 +13,88 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import org.apache.commons.io.IOUtils;
+import org.springframework.beans.factory.annotation.Required;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+
+@MCElement(name="membrane")
 public class MembraneAuthorizationService extends AuthorizationService {
+    private String src; // url to wellknown data
+
+    private String tokenEndpoint;
+    private String userInfoEndpoint;
+    private String userIDProperty = "login";
+    private String authorizationEndpoint;
+
 
     @Override
     protected void init() {
+        try {
+            parseSrc(router.getResolverMap().resolve(src));
+        } catch (ResourceRetrievalException e) {
+            throw new RuntimeException(e.getMessage());
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage());
+        }
+    }
+
+    private void parseSrc(InputStream resolve) throws IOException {
+        String file = IOUtils.toString(resolve);
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String,Object> json = mapper.readValue(file,Map.class);
+
+        // without checks
+        tokenEndpoint = (String) json.get("token_endpoint");
+        userInfoEndpoint = (String) json.get("userinfo_endpoint");
+        authorizationEndpoint = (String) json.get("authorization_endpoint");
+
+        System.out.println(tokenEndpoint);
+        System.out.println(userInfoEndpoint);
+        System.out.println(authorizationEndpoint);
+
+
+
     }
 
     protected String getTokenEndpoint() {
-        return null;
+        return tokenEndpoint;
     }
 
     @Override
     protected String getLoginURL(String securityToken, String publicURL, String pathQuery) {
-        return null;
+        return authorizationEndpoint +"?"+
+                "client_id=" + getClientId() + "&"+
+                "response_type=code&"+
+                "scope=profile&"+
+                "redirect_uri=" + publicURL + "oauth2callback&"+
+                "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery;
     }
 
     @Override
     protected String getUserInfoEndpoint() {
-        return null;
+        return userInfoEndpoint;
     }
 
     @Override
     protected String getUserIDProperty() {
-        return null;
+        return userIDProperty;
+    }
+
+    public String getSrc() {
+        return src;
+    }
+
+    @Required
+    @MCAttribute
+    public void setSrc(String src) {
+        this.src = src;
     }
 }

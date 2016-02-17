@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
-class CleanupThread extends Thread {
+public class CleanupThread extends Thread {
 	public interface Cleaner {
 		public void cleanup();
 	}
