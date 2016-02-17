@@ -104,7 +104,11 @@ public class ApiManagementConfiguration {
         setMembraneName(membraneName);
         setLocation(configLocation);
 
-        updateAfterLocationChange();
+        try {
+            updateAfterLocationChange();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Map<String,Policy> parsePolicies(Map<String,Object> yaml) {
@@ -225,7 +229,7 @@ public class ApiManagementConfiguration {
         return result;
     }
 
-    private void parseAndConstructConfiguration(InputStream is){
+    private void parseAndConstructConfiguration(InputStream is) throws IOException {
         String yamlSource = null;
         try {
             yamlSource = IOUtils.toString(is);
@@ -244,6 +248,7 @@ public class ApiManagementConfiguration {
         }
         setPolicies(parsePolicies(yaml));
         setKeys(parsePoliciesForKeys(yaml));
+        is.close();
         log.info("Configuration loaded. Notifying observers");
         notifyConfigChangeObservers();
     }
@@ -294,7 +299,7 @@ public class ApiManagementConfiguration {
         return isFile;
     }
 
-    public void updateAfterLocationChange(){
+    public void updateAfterLocationChange() throws IOException {
         if(!isLocalFile(location)){
             log.info("Loading configuration from [" + location + "]");
             if(location.startsWith("etcd")){
@@ -327,10 +332,11 @@ public class ApiManagementConfiguration {
                     public void call(InputStream inputStream) {
                         log.info("Loading configuration from [" + newLocation + "]");
                         if (!getContextLost()) {
-                            parseAndConstructConfiguration(inputStream);
                             try {
+                                parseAndConstructConfiguration(inputStream);
                                 getResolver().observeChange(newLocation, this);
                             } catch (ResourceRetrievalException ignored) {
+                            } catch (IOException ignored) {
                             }
                         }
                     }
@@ -350,7 +356,7 @@ public class ApiManagementConfiguration {
         }
     }
 
-    private void handleEtcd(String location) {
+    private void handleEtcd(String location) throws IOException {
         // assumption: location is of type "etcd://[url]"
 
         final String etcdLocation = location.substring(7);
