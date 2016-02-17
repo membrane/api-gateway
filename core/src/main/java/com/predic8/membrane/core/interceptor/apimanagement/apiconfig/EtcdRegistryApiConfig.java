@@ -99,7 +99,7 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
 
     private boolean publishToEtcd() {
         String baseKey = baseKeyPrefix+membraneId;
-        EtcdResponse respPublishApiUrl = EtcdRequest.create(url,baseKey,"/apiconfig").setValue("url","http://localhost:8081/api/api.yaml").sendRequest();
+        EtcdResponse respPublishApiUrl = EtcdRequest.create(url,baseKey,"/apiconfig").setValue("url","").sendRequest();
         if(!respPublishApiUrl.is2XX()){
             System.out.println(respPublishApiUrl.getBody());
             return false;

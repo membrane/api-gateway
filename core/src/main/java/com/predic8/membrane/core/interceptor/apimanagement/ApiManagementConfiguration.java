@@ -309,6 +309,8 @@ public class ApiManagementConfiguration {
             }
             return;
         }else {
+            if(location.isEmpty())
+                location = "api.yaml";
             final String newLocation = ResolverMap.combine(getCurrentDir(), location);
             log.info("Loading configuration from [" + newLocation + "]");
             InputStream is = null;
