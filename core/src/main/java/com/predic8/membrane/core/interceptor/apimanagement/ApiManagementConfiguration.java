@@ -50,8 +50,10 @@ public class ApiManagementConfiguration {
     private String currentHash = "";
     private ApplicationContext context;
     public HashSet<Runnable> configChangeObservers = new HashSet<Runnable>();
+    String etcdPathPrefix = "/membrane/";
     private String membraneName;
     private boolean contextLost = false;
+    private Thread etcdConfigFingerprintLongPollThread;
 
     private void notifyConfigChangeObservers(){
         for(Runnable runner : configChangeObservers){
@@ -346,14 +348,12 @@ public class ApiManagementConfiguration {
         }
     }
 
-    private Thread etcdConfigFingerprintLongPollThread;
-
     private void handleEtcd(String location) {
         // assumption: location is of type "etcd://[url]"
 
         final String etcdLocation = location.substring(7);
 
-        final String baseKey = "/membrane/" + getMembraneName();
+        final String baseKey = etcdPathPrefix + getMembraneName();
 
         EtcdResponse respGetConfigUrl = EtcdRequest.create(etcdLocation,baseKey,"/apiconfig").getValue("url").sendRequest();
         if(!respGetConfigUrl.is2XX()){
@@ -363,20 +363,29 @@ public class ApiManagementConfiguration {
         final String configLocation = respGetConfigUrl.getValue();
         setLocation(configLocation); // this gets the resource and loads the config
         updateAfterLocationChange();
+        setLocation(location);
 
-        etcdConfigFingerprintLongPollThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if(!EtcdRequest.create(etcdLocation,baseKey,"/apiconfig").getValue("fingerprint").longPoll().sendRequest().is2XX()){
-                    log.warn("Could not get config fingerprint at " + etcdLocation);
-                    return;
+        if(etcdConfigFingerprintLongPollThread == null) {
+
+            etcdConfigFingerprintLongPollThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        while (!getContextLost()) {
+                            if (!EtcdRequest.create(etcdLocation, baseKey, "/apiconfig").getValue("fingerprint").longPoll().sendRequest().is2XX()) {
+                                log.warn("Could not get config fingerprint at " + etcdLocation);
+                            }
+                            if (!getContextLost()) {
+                                log.info("Noticed configuration change, updating...");
+                                updateAfterLocationChange();
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
                 }
-                if(!getContextLost()) {
-                    setLocation(configLocation);
-                }
-            }
-        });
-        etcdConfigFingerprintLongPollThread.start();
+            });
+            etcdConfigFingerprintLongPollThread.start();
+        }
 
 
 

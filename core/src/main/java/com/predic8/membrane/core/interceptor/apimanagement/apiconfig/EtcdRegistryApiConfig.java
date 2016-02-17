@@ -67,9 +67,6 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
         @Override
         public void run() {
             try {
-                ExponentialBackoff.retryAfter(retryDelayMin, retryDelayMax, expDelayFactor,
-                        "First publish from thread", jobPublisher);
-                initAmc();
                 boolean connectionLost = false;
 
                 while (true) {
@@ -166,8 +163,20 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
 
     @Override
     public void start() {
-        if(!publisher.isAlive()) {
+        Object routerObj = context.getBean(Router.class);
+        if(routerObj == null)
+            throw new RuntimeException("Router cannot be found");
+        Router router = (Router) routerObj;
+        membraneId = router.getId();
+
+        try {
             log.info("Started membrane publishing");
+            ExponentialBackoff.retryAfter(retryDelayMin, retryDelayMax, expDelayFactor,
+                    "First publish from thread", jobPublisher);
+        } catch (InterruptedException ignored) {
+        }
+        initAmc();
+        if(!publisher.isAlive()) {
             publisher.start();
         }
     }
@@ -189,12 +198,6 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
             log.error("Url malformed: " + getUrl());
         }
         etcdUrlForAmc = "etcd://" + u.getHost() + ":" + u.getPort();
-
-        Object routerObj = context.getBean(Router.class);
-        if(routerObj == null)
-            throw new RuntimeException("Router cannot be found");
-        Router router = (Router) routerObj;
-        membraneId = router.getId();
         amc = new ApiManagementConfiguration(workingDir,etcdUrlForAmc,membraneId);
     }
 
@@ -236,14 +239,6 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
 
     @Override
     public ApiManagementConfiguration getConfiguration() {
-        // is now initialized in a thread so we need to wait to make sure its not null
-        while (amc == null){
-            try {
-                Thread.sleep(0);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
         return amc;
     }
 
