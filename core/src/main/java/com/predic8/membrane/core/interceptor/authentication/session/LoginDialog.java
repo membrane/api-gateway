@@ -168,7 +168,11 @@ public class LoginDialog {
 							target = "/";
 						exc.setResponse(Response.redirectWithout300(target).build());
 					}
-					sessionManager.createSession(exc).preAuthorize(username, userAttributes);
+
+					Session session = sessionManager.getSession(exc.getRequest());
+					if(session == null)
+						session = sessionManager.createSession(exc);
+					session.preAuthorize(username, userAttributes);
 					if(tokenProvider != null)
 						tokenProvider.requestToken(userAttributes);
 				} else {

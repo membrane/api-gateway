@@ -17,7 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import org.springframework.beans.factory.annotation.Required;
 
-@MCElement(name="client", topLevel = false)
+@MCElement(name="client", topLevel=false, id="staticClientList-client")
 public class Client {
     private String clientId;
     private String clientSecret;

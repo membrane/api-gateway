@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,10 +27,11 @@ import java.util.NoSuchElementException;
 public class StaticClientList implements ClientList {
 
     private HashMap<String,Client> clientIdsToClients = new HashMap<String, Client>();
+    private List<Client> clients = new ArrayList<Client>();
 
     @Override
     public void init(Router router) {
-
+        setClients(clients); // fix because the setter is called with empty List<Client>
     }
 
     @Override
@@ -40,13 +42,23 @@ public class StaticClientList implements ClientList {
     }
 
     public List<Client> getClients(){
-        return new ArrayList<Client>(clientIdsToClients.values());
+        return clients;
     }
 
     @MCChildElement
     public void setClients(List<Client> clients){
+        this.clients = clients;
+        clientIdsToClients.clear();
         for(Client c : clients){
             clientIdsToClients.put(c.getClientId(),c);
         }
+    }
+
+    public String toString(){
+        StringBuilder builder = new StringBuilder();
+        for(Client c : clientIdsToClients.values()){
+            builder.append(c.getClientId()).append("\n");
+        }
+        return builder.toString();
     }
 }

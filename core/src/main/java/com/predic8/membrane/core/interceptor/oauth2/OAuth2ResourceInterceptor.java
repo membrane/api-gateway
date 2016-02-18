@@ -162,7 +162,16 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return Outcome.RETURN;
         }
 
+        if(isFaviconRequest(exc)){
+            exc.setResponse(Response.badRequest().build());
+            return Outcome.RETURN;
+        }
+
         return respondWithRedirect(exc);
+    }
+
+    private boolean isFaviconRequest(Exchange exc) {
+        return exc.getRequestURI().startsWith("/favicon.ico");
     }
 
     private void applyBackendAuthorization(Exchange exc, Session s) {

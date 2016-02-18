@@ -131,6 +131,11 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 
 	public Session createSession(Exchange exc) {
 		String id = generateSessionID();
+		return createSession(exc,id);
+	}
+
+	public Session createSession(Exchange exc, String id)
+	{
 		Session s = new Session();
 		synchronized (sessions) {
 			sessions.put(id, s);

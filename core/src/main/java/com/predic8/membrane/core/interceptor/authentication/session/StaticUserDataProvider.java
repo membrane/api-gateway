@@ -194,7 +194,7 @@ public class StaticUserDataProvider implements UserDataProvider {
 	}
 
 	@MCChildElement
-	public void setUsers(List<User> users) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+	public void setUsers(List<User> users) {
 		getUsersByName().clear();
 		for(User user : users){
 			getUsersByName().put(user.getUsername(), user);
