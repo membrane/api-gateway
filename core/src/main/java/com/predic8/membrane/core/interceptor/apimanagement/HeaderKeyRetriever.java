@@ -20,4 +20,9 @@ public class HeaderKeyRetriever implements ApiKeyRetriever {
     public String getKey(Exchange exc) {
         return exc.getRequest().getHeader().getFirstValue("Authorization");
     }
+
+    @Override
+    public void removeKey(Exchange exc) {
+        exc.getRequest().getHeader().removeFields("Authorization");
+    }
 }

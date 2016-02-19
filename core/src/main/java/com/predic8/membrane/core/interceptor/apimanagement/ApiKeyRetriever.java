@@ -18,4 +18,5 @@ import com.predic8.membrane.core.exchange.Exchange;
 public interface ApiKeyRetriever {
 
     String getKey(Exchange exc);
+    void removeKey(Exchange exc);
 }

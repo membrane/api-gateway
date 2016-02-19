@@ -165,7 +165,13 @@ public class ApiManagementConfiguration {
                             log.warn("RateLimit object found, but request field is empty");
                             requests = RateLimit.REQUESTS_DEFAULT;
                         }else {
-                            requests = (Integer) requestsObj;
+                            try {
+                                requests = Integer.parseInt((String)requestsObj);
+                            }
+                            catch(NumberFormatException ignored) {
+                                // there is an entry, but its not a number ( maybe empty quotes )
+                                requests = RateLimit.REQUESTS_DEFAULT;
+                            }
                         }
 
                         int interval = -1;
@@ -174,7 +180,11 @@ public class ApiManagementConfiguration {
                             log.warn("RateLimit object found, but interval field is empty. Setting default: \" + RateLimit.INTERVAL_DEFAULT");
                             interval = RateLimit.INTERVAL_DEFAULT;
                         }else {
-                            interval = (Integer)intervalObj;
+                            try {
+                                interval = Integer.parseInt((String)intervalObj);
+                            }catch(NumberFormatException ignored) {
+                                interval = RateLimit.INTERVAL_DEFAULT;
+                            }
                         }
                         rateLimit.setRequests(requests);
                         rateLimit.setInterval(interval);
@@ -196,6 +206,7 @@ public class ApiManagementConfiguration {
                             quotaNumber = ((Number) NumberFormat.getInstance().parse(quotaString)).intValue();
                             quotaSymbolString = quotaString.replaceFirst(Long.toString(quotaNumber),"").toLowerCase();
                         } catch (ParseException ignored) {
+                            quotaNumber = Quota.SIZE_DEFAULT;
                         }
                     }
                     if(quotaSymbolString.length() > 0) {
@@ -214,7 +225,11 @@ public class ApiManagementConfiguration {
                         log.warn("Quota object found, but interval field is empty");
                         quotaInterval = Quota.INTERVAL_DEFAULT;
                     }else {
-                        quotaInterval = (Integer) quotaIntervalObj;
+                        try {
+                            quotaInterval = Integer.parseInt((String) quotaIntervalObj);
+                        }catch (NumberFormatException ignored){
+                            quotaInterval = Quota.INTERVAL_DEFAULT;
+                        }
                     }
 
                     Quota q = new Quota();
