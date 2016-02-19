@@ -141,6 +141,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
+        if(exc.getRequestURI().startsWith("/favicon.ico")){
+            exc.setResponse(Response.badRequest().build());
+            return Outcome.RETURN;
+        }
+
         if (isLoginRequest(exc)) {
             handleLoginRequest(exc);
             return Outcome.RETURN;
@@ -236,8 +241,23 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         exc.getDestinations().set(0, uri);
 
         if (uri.equals("/logout")) {
-            if (s != null)
+            if (s != null) {
+                String token;
+                synchronized (s) {
+                    token = s.getUserAttributes().get("access_token");
+                }
+                Exchange e = new Request.Builder().post(auth.getRevocationEndpoint())
+                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .header(Header.USER_AGENT, Constants.USERAGENT)
+                        .body("token=" + token)
+                        .buildExchange();
+                Response response = auth.httpClient.call(e).getResponse();
+                if (response.getStatusCode() != 200) {
+                    response.getBody().read();
+                    throw new RuntimeException("Revocation of token did not work. Statuscode: " + response.getStatusCode() + ".");
+                }
                 s.clear();
+            }
             exc.setResponse(Response.redirect("/", false).build());
         } else if (uri.equals("/")) {
             if (s == null || !s.isAuthorized()) {
@@ -326,10 +346,14 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 String token = (String) json.get("access_token"); // and also "scope": "", "token_type": "bearer"
 
+                synchronized (session){
+                    session.getUserAttributes().put("access_token",token); // saving for logout
+                }
+
                 Exchange e2 = new Request.Builder()
                         .get(auth.getUserInfoEndpoint())
                         .header("Authorization", json.get("token_type") + " " + token)
-                        .header("User-Agent", "Membrane")
+                        .header("User-Agent", Constants.USERAGENT)
                         .header(Header.ACCEPT, "application/json")
                         .buildExchange();
 

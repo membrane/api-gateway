@@ -32,6 +32,8 @@ import java.util.Map;
 public class GithubAuthorizationService extends AuthorizationService {
     @Override
     protected void init() {
+        if(scope == null)
+            scope = "openid%20email%20profile";
     }
 
     @Override
@@ -39,7 +41,7 @@ public class GithubAuthorizationService extends AuthorizationService {
         return "https://github.com/login/oauth/authorize?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
-                "scope=openid%20email%20profile&"+
+                "scope="+scope+"&"+
                 "redirect_uri=" + publicURL + "oauth2callback&"+
                 "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery
                 //+"&login_hint=jsmith@example.com"
@@ -59,5 +61,10 @@ public class GithubAuthorizationService extends AuthorizationService {
     @Override
     protected String getTokenEndpoint() {
         return "https://github.com/login/oauth/access_token";
+    }
+
+    @Override
+    protected String getRevocationEndpoint() {
+        return null;
     }
 }

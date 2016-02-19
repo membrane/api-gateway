@@ -144,7 +144,7 @@ public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware
                 if (i instanceof AdminConsoleInterceptor) {
                     String name = r.getName();
                     String host = ((ServiceProxy) r).getExternalHostname();
-                    if(host == "")
+                    if(host == null)
                         host = getLocalHostname();
                     String port = Integer.toString(((AbstractServiceProxy) r).getPort());
                     EtcdNodeInformation node = new EtcdNodeInformation(null,null,host,port,name);

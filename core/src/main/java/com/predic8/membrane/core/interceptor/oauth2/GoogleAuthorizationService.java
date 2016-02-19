@@ -42,6 +42,8 @@ public class GoogleAuthorizationService extends AuthorizationService {
         // for backwards compatibility: adds the suffix to the client id. worked without the suffix before but is now needed
         if (!clientId.endsWith(".apps.googleusercontent.com"))
             clientId += ".apps.googleusercontent.com";
+        if(scope == null)
+            scope = "openid%20email%20profile";
     }
 
     @Override
@@ -50,7 +52,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
         return "https://accounts.google.com/o/oauth2/auth?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
-                "scope=openid%20email%20profile&"+
+                "scope="+scope+"&"+
                 "redirect_uri=" + publicURL + "oauth2callback&"+
                 "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery
                 //+"&login_hint=jsmith@example.com"
@@ -60,6 +62,11 @@ public class GoogleAuthorizationService extends AuthorizationService {
     @Override
     protected String getTokenEndpoint() {
         return "https://www.googleapis.com/oauth2/v3/token";
+    }
+
+    @Override
+    protected String getRevocationEndpoint() {
+        return "https://accounts.google.com/o/oauth2/revoke";
     }
 
     @Override

@@ -31,6 +31,7 @@ public abstract class AuthorizationService {
     protected HttpClientConfiguration httpClientConfiguration;
     protected String clientId;
     protected String clientSecret;
+    protected String scope;
 
 
     public void init(Router router){
@@ -51,6 +52,8 @@ public abstract class AuthorizationService {
     protected abstract String getUserIDProperty();
 
     protected abstract String getTokenEndpoint();
+
+    protected abstract String getRevocationEndpoint();
 
 
     public HttpClientConfiguration getHttpClientConfiguration() {
@@ -81,4 +84,14 @@ public abstract class AuthorizationService {
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
     }
+
+    public String getScope() {
+        return scope;
+    }
+
+    @MCAttribute
+    public void setScope(String scope) {
+        this.scope = scope;
+    }
+
 }

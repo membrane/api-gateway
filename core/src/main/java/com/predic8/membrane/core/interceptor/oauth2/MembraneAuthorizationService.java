@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Required;
@@ -33,6 +32,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String userInfoEndpoint;
     private String userIDProperty = "username";
     private String authorizationEndpoint;
+    private String revocationEndpoint;
 
 
     @Override
@@ -44,6 +44,8 @@ public class MembraneAuthorizationService extends AuthorizationService {
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
+        if(scope == null)
+            scope = "profile";
     }
 
     private void parseSrc(InputStream resolve) throws IOException {
@@ -55,10 +57,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
         tokenEndpoint = (String) json.get("token_endpoint");
         userInfoEndpoint = (String) json.get("userinfo_endpoint");
         authorizationEndpoint = (String) json.get("authorization_endpoint");
+        revocationEndpoint = (String) json.get("revocation_endpoint");
 
         System.out.println(tokenEndpoint);
         System.out.println(userInfoEndpoint);
         System.out.println(authorizationEndpoint);
+        System.out.println(revocationEndpoint);
 
 
 
@@ -69,11 +73,16 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
+    protected String getRevocationEndpoint() {
+        return revocationEndpoint;
+    }
+
+    @Override
     protected String getLoginURL(String securityToken, String publicURL, String pathQuery) {
         return authorizationEndpoint +"?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
-                "scope=profile&"+
+                "scope="+scope+"&"+
                 "redirect_uri=" + publicURL + "oauth2callback&"+
                 "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery;
     }
