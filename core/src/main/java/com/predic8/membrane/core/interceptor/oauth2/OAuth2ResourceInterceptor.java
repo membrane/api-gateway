@@ -289,9 +289,6 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 if (code == null)
                     throw new RuntimeException("No code received.");
 
-                //auth.authorize(code, publicURL, session);
-
-
                 Exchange e = new Request.Builder()
                         .post(auth.getTokenEndpoint())
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
@@ -331,8 +328,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 Exchange e2 = new Request.Builder()
                         .get(auth.getUserInfoEndpoint())
-                        .header("Authorization", "Bearer " + token)
-                        .header("User-Agent", "Membrane") // Github braucht das hier, Google akzeptiert es auch
+                        .header("Authorization", json.get("token_type") + " " + token)
+                        .header("User-Agent", "Membrane")
                         .header(Header.ACCEPT, "application/json")
                         .buildExchange();
 
@@ -360,7 +357,6 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 synchronized (userAttributes) {
                     userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, json2.get(auth.getUserIDProperty()));
                 }
-
 
                 session.authorize();
 

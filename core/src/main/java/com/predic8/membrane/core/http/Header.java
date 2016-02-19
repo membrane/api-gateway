@@ -520,4 +520,8 @@ public class Header {
 		add(CACHE_CONTROL, "post-check=0, pre-check=0");
 		add(PRAGMA, "no-cache");
 	}
+
+	public String getAuthorization() {
+		return getFirstValue(AUTHORIZATION);
+	}
 }

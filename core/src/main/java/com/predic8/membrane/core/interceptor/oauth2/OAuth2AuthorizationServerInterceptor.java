@@ -13,7 +13,9 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.github.fge.jsonschema.core.util.URIUtils;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.google.api.client.json.Json;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -26,21 +28,22 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.authentication.session.*;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.membrane.core.util.URLUtil;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
-import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @MCElement(name="oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
-    public static final String AUTHORIZATION_CODE = "AuthorizationCode";
+    public static final String AUTHORIZATION_CODE = "authorization_code";
 
     private String location;
     private String path;
@@ -52,6 +55,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private SessionManager sessionManager;
     private AccountBlocker accountBlocker;
     private ClientList clientList;
+    private TokenGenerator tokenGenerator;
+
+    JsonFactory jsonFactory = new JsonFactory();
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    JsonGenerator jsonGenerator;
 
     private SecureRandom random = new SecureRandom();
     private URIFactory uriFactory;
@@ -62,18 +70,31 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @Override
     public void init(Router router) throws Exception {
         uriFactory = router.getUriFactory();
+        jsonGenerator = jsonFactory.createGenerator(baos);
         if (userDataProvider == null)
             throw new Exception("No userDataProvider configured. - Cannot work without one.");
         if (getClientList() == null)
             throw new Exception("No clientList configured. - Cannot work without one.");
         if (sessionManager == null)
             sessionManager = new SessionManager();
+        if(tokenGenerator == null)
+            tokenGenerator = new BearerTokenGenerator();
         userDataProvider.init(router);
         getClientList().init(router);
         loginDialog = new LoginDialog(getUserDataProvider(), null, getSessionManager(), getAccountBlocker(), getLocation(), getPath(), isExposeUserCredentialsToSession(), getMessage());
         loginDialog.init(router);
         sessionManager.init(router);
         new CleanupThread(sessionManager, accountBlocker).start();
+    }
+
+    protected JsonGenerator getAndResetJsonGenerator(){
+        baos.reset();
+        return jsonGenerator;
+    }
+
+    protected String getStringFromJsonGenerator() throws IOException {
+        jsonGenerator.flush();
+        return baos.toString();
     }
 
     @Override
@@ -89,13 +110,56 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             return redirectToLoginWithSession(exc, extraxtSessionHeader(exc.getResponse()));
         }
         else if(isOAuth2TokenCall(exc)){
-            System.out.println("TOKEN");
+            Map<String,String> params = extractBody(exc.getRequest());
+            if(!authCodesToSession.containsKey(params.get("code"))){
+                exc.setResponse(Response.badRequest().build());
+                return Outcome.RETURN;
+            }
+            Session session = authCodesToSession.get(params.get("code"));
+            authCodesToSession.remove(params.get("code")); // auth codes can only be used one time
+            session.getUserAttributes().putAll(params);
+            String token = tokenGenerator.getToken(session.getUserName(), session.getUserAttributes().get("client_id"));
 
+            JsonGenerator gen = getAndResetJsonGenerator();
+            gen.writeStartObject();
+            gen.writeObjectField("access_token", token);
+            gen.writeObjectField("token_type", tokenGenerator.getTokenType());
+            gen.writeObjectField("expires_in", "null"); // TODO change this
+            gen.writeObjectField("scope", session.getUserAttributes().get("scope"));
+            gen.writeEndObject();
+            String json = getStringFromJsonGenerator();
 
+            exc.setResponse(Response
+                    .ok()
+                    .body(json)
+                    .contentType(MimeType.APPLICATION_JSON_UTF8)
+                    .build());
 
-            // TODO do something here
+            return Outcome.RETURN;
+        }
+        else if(isOAuth2Userinfo(exc)){
+            String userId;
+            String authHeader = exc.getRequest().getHeader().getAuthorization();
+            String token = authHeader.split(" ")[1];
+            try{
+                userId = tokenGenerator.getUsername(token);
+            }catch (NoSuchElementException e){
+                exc.setResponse(Response.badRequest().build());
+                return Outcome.RETURN;
+            }
+            JsonGenerator gen = getAndResetJsonGenerator();
+            gen.writeStartObject();
+            gen.writeObjectField("username", userId);
+            gen.writeEndObject();
+            String json = getStringFromJsonGenerator();
 
-            return Outcome.CONTINUE;
+            exc.setResponse(Response
+                    .ok()
+                    .body(json)
+                    .contentType(MimeType.APPLICATION_JSON_UTF8)
+                    .build());
+
+            return Outcome.RETURN;
         }
         else if (loginDialog.isLoginRequest(exc)) {
             loginDialog.handleLoginRequest(exc);
@@ -121,6 +185,21 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             exc.setResponse(Response.badRequest().build());
             return Outcome.RETURN;
         }
+    }
+
+    private boolean isOAuth2Userinfo(Exchange exc) {
+        return exc.getRequestURI().startsWith("/oauth2/userinfo");
+    }
+
+    private Map<String,String> extractBody(Message msg) {
+        String body = msg.getBodyAsStringDecoded();
+        String[] splitted = body.split("&");
+        HashMap<String,String> params = new HashMap<String, String>();
+        for(String param : splitted){
+            String[] paramSplit = param.split("=");
+            params.put(paramSplit[0],paramSplit[1]);
+        }
+        return params;
     }
 
     private boolean isOAuth2TokenCall(Exchange exc) {
@@ -272,5 +351,14 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 4)
     public void setClientList(ClientList clientList) {
         this.clientList = clientList;
+    }
+
+    public TokenGenerator getTokenGenerator() {
+        return tokenGenerator;
+    }
+
+    @MCChildElement(order = 5)
+    public void setTokenGenerator(TokenGenerator tokenGenerator) {
+        this.tokenGenerator = tokenGenerator;
     }
 }

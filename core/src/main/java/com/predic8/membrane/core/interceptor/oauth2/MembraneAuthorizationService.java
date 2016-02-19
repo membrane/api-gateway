@@ -31,7 +31,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private String tokenEndpoint;
     private String userInfoEndpoint;
-    private String userIDProperty = "login";
+    private String userIDProperty = "username";
     private String authorizationEndpoint;
 
 
