@@ -122,7 +122,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             }
 
             String givenRedirect_uri = params.get("redirect_uri");
-            String knownRedirect_uri = s.getUserAttributes().get("redirect_uri");
+            String knownRedirect_uri = clientList.getClient(params.get("client_id")).getCallbackUrl();
             if(!givenRedirect_uri.equals(knownRedirect_uri)){
                 String json;
                 synchronized (jsonGenerator) {
