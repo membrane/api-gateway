@@ -144,7 +144,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
-        if(exc.getRequestURI().startsWith("/favicon.ico")){
+        if(isFaviconRequest(exc)){
             exc.setResponse(Response.badRequest().build());
             return Outcome.RETURN;
         }
@@ -155,6 +155,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         }
 
         Session session = sessionManager.getSession(exc.getRequest());
+        if(session != null && session.getUserAttributes() == null)
+            session = null; // session was logged out
 
         if (session == null)
             return respondWithRedirect(exc);
@@ -170,10 +172,6 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return Outcome.RETURN;
         }
 
-        if(isFaviconRequest(exc)){
-            exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
-        }
 
         return respondWithRedirect(exc);
     }

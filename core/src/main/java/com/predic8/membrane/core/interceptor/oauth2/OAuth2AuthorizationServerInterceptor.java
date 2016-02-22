@@ -107,6 +107,8 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         synchronized (sessionManager) {
              s = sessionManager.getSession(exc.getRequest());
         }
+        if(s != null && s.getUserAttributes() == null)
+            s = null; // session was logged out
         if(exc.getRequestURI().startsWith("/favicon.ico")){
             exc.setResponse(Response.badRequest().build());
             return Outcome.RETURN;
@@ -226,12 +228,14 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         }
         else if(isOAuth2RevokeCall(exc)){
             Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+            Session session = tokensToSession.get(params.get("token"));
+            session.clear();
+            tokenGenerator.invalidateToken(params.get("token"));
 
             exc.setResponse(Response
                     .ok()
                     .bodyEmpty()
                     .build());
-
             return Outcome.RETURN;
         }
         else if (loginDialog.isLoginRequest(exc)) {
