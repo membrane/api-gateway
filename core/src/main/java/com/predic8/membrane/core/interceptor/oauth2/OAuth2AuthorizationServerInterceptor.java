@@ -120,6 +120,27 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             synchronized (sessionManager) {
                 s = sessionManager.createSession(exc, givenSessionId);
             }
+
+            String givenRedirect_uri = params.get("redirect_uri");
+            String knownRedirect_uri = s.getUserAttributes().get("redirect_uri");
+            if(!givenRedirect_uri.equals(knownRedirect_uri)){
+                String json;
+                synchronized (jsonGenerator) {
+                    JsonGenerator gen = getAndResetJsonGenerator();
+                    gen.writeStartObject();
+                    gen.writeObjectField("error", "invalid_request");
+                    gen.writeEndObject();
+                    json = getStringFromJsonGenerator();
+                }
+
+                exc.setResponse(Response.badRequest()
+                        .body(json)
+                        .contentType(MimeType.APPLICATION_JSON_UTF8)
+                        .build());
+
+                return Outcome.RETURN;
+            }
+
             String givenScopes = params.get("scope");
             String validScopes = verifyScopes(givenScopes);
 

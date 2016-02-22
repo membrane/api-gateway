@@ -330,8 +330,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                         .body("code=" + code
                                 + "&client_id=" + auth.getClientId()
                                 + "&client_secret=" + auth.getClientSecret()
-                                + "&redirect_uri=" + publicURL
-                                + "oauth2callback&grant_type=authorization_code")
+                                + "&redirect_uri=" + publicURL + "oauth2callback"
+                                + "&grant_type=authorization_code")
                         .buildExchange();
 
                 LogInterceptor logi = null;
