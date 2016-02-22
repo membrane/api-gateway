@@ -38,7 +38,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     @Override
     protected void init() {
         try {
-            parseSrc(router.getResolverMap().resolve(src));
+            parseSrc(router.getResolverMap().resolve(src + "/.well-known/openid-configuration"));
         } catch (ResourceRetrievalException e) {
             throw new RuntimeException(e.getMessage());
         } catch (IOException e) {
@@ -95,6 +95,11 @@ public class MembraneAuthorizationService extends AuthorizationService {
     @Override
     protected String getUserIDProperty() {
         return userIDProperty;
+    }
+
+    @MCAttribute
+    public void setUserIDProperty(String userIDProperty) {
+        this.userIDProperty = userIDProperty;
     }
 
     public String getSrc() {

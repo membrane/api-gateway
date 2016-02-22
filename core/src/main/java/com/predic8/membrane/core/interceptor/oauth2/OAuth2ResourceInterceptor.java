@@ -63,7 +63,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private SessionManager sessionManager;
     private AuthorizationService auth;
 
-    private final WebServerInterceptor wsi = new WebServerInterceptor();
+    private WebServerInterceptor wsi;
     private URIFactory uriFactory;
 
     public String getLoginLocation() {
@@ -71,10 +71,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description location of the login dialog template (a directory containing the <i>index.html</i> file as well as possibly other resources)
+     * @description location of the login dialog template (a directory containing the <i>index.html</i> file as well as possibly other resources).
+     *  Required for older browsers to work.
      * @example file:c:/work/login/
      */
-    @Required
     @MCAttribute
     public void setLoginLocation(String login) {
         this.loginLocation = login;
@@ -133,9 +133,12 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             sessionManager = new SessionManager();
         sessionManager.init(router);
 
-        wsi.setDocBase(loginLocation);
-        router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
-        wsi.init(router);
+        if (loginLocation != null) {
+            wsi = new WebServerInterceptor();
+            wsi.setDocBase(loginLocation);
+            router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
+            wsi.init(router);
+        }
     }
 
     @Override
@@ -190,7 +193,19 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     private Outcome respondWithRedirect(Exchange exc) {
-        exc.setResponse(Response.redirect(loginPath, false).build());
+        if (loginLocation == null) {
+            String state = new BigInteger(130, new SecureRandom()).toString(32);
+
+            exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()), false).build());
+
+            Session session = sessionManager.createSession(exc);
+
+            HashMap<String, String> userAttributes = new HashMap<String, String>();
+            userAttributes.put("state", state);
+            session.preAuthorize("", userAttributes);
+        } else {
+            exc.setResponse(Response.redirect(loginPath, false).build());
+        }
         return Outcome.RETURN;
     }
 
@@ -221,7 +236,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         });
         Map<String, Object> model = new HashMap<String, Object>();
         model.put("loginPath", StringEscapeUtils.escapeXml(loginPath));
-        String pathQuery = router.getUriFactory().create(exc.getDestinations().get(0)).getPath(); // TODO: path or pathQuery
+        String pathQuery = "/"; // TODO: save original request and restore it when authorized
         String url = auth.getLoginURL(state, publicURL, pathQuery);
         model.put("loginURL", url);
         model.put("target", StringEscapeUtils.escapeXml(target));
@@ -359,7 +374,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 if (log.isDebugEnabled()) {
                     logi.setHeaderOnly(false);
-                    logi.handleRequest(e);
+                    logi.handleRequest(e2);
                 }
 
                 Response response2 = auth.httpClient.call(e2).getResponse();
