@@ -95,6 +95,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     private void addSupportedAuthorizationGrants() {
         supportedAuthorizationGrants.add("code");
+        supportedAuthorizationGrants.add("token");
     }
 
     protected JsonGenerator getAndResetJsonGenerator(){
@@ -316,12 +317,20 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             }
             String savedCallbackUrl = client.getCallbackUrl();
             if(savedCallbackUrl.equals(sessionRedirectUrl)) {
-                String code;
-                synchronized (s) {
-                    code = generateAuthorizationCode(s);
-                    doBackendAuthorization(code, s);
+                if(s.getUserAttributes().get("response_type").equals("code")) {
+                    String code = generateAuthorizationCode();
+                    authCodesToSession.put(code,s);
+                    return respondWithAuthorizationCodeAndRedirect(exc, code);
                 }
-                return respondWithAuthorizationCodeAndRedirect(exc, code);
+                else if(s.getUserAttributes().get("response_type").equals("token")){
+                    String token;
+                    synchronized (s) {
+                        token = tokenGenerator.getToken(s.getUserName(), s.getUserAttributes().get("username"));
+                    }
+                    return respondWithTokenAndRedirect(exc,token, tokenGenerator.getTokenType());
+                }
+                else
+                    return createParameterizedJsonErrorResponse(exc,"error","unsupported_response_type");
             }
             else {
                 return createParameterizedJsonErrorResponse(exc,"error", "invalid_request");
@@ -332,6 +341,26 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             return createParameterizedJsonErrorResponse(exc,"error", "invalid_request");
             //return createInvalidRequestResponse(exc);
         }
+    }
+
+    private Outcome respondWithTokenAndRedirect(Exchange exc, String token, String tokenType) {
+        Session s = sessionManager.getSession(exc.getRequest());
+        String state;
+        String redirectUrl;
+        String scope;
+        synchronized(s) {
+            state = s.getUserAttributes().get("state");
+            redirectUrl = s.getUserAttributes().get("redirect_uri");
+            scope = s.getUserAttributes().get("scope");
+        }
+
+        exc.setResponse(Response.
+                redirect(redirectUrl+"?access_token="+token + (state == null ? "" : "&state="+state)+ "&token_type=" + tokenType + "&scope=" + scope, false).
+                dontCache().
+                body("").
+                build());
+        extractSessionFromRequestAndAddToResponse(exc);
+        return Outcome.RETURN;
     }
 
     private boolean isAbsoluteUri(String givenRedirect_uri) {
@@ -454,22 +483,21 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return exc.getRequestURI().startsWith("/oauth2/token");
     }
 
-    private void doBackendAuthorization(String code, Session s) {
-        //s.getUserAttributes().put(AUTHORIZATION_CODE,code);
-
-        authCodesToSession.put(code,s);
-    }
-
     private boolean isOAuth2AuthCall(Exchange exc) {
         return exc.getRequestURI().startsWith("/oauth2/auth");
     }
 
     private Outcome respondWithAuthorizationCodeAndRedirect(Exchange exc, String code) throws UnsupportedEncodingException {
         Session s = sessionManager.getSession(exc.getRequest());
-        String state = s.getUserAttributes().get("state");
+        String state;
+        String redirectUrl;
+        synchronized(s) {
+            state = s.getUserAttributes().get("state");
+            redirectUrl = s.getUserAttributes().get("redirect_uri");
+        }
 
         exc.setResponse(Response.
-                redirect(s.getUserAttributes().get("redirect_uri")+"?code="+code + (state == null ? "" : "&state="+state), false).
+                redirect(redirectUrl+"?code="+code + (state == null ? "" : "&state="+state), false).
                 dontCache().
                 body("").
                 build());
@@ -477,7 +505,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return Outcome.RETURN;
     }
 
-    private String generateAuthorizationCode(Session s) {
+    private String generateAuthorizationCode() {
         return new BigInteger(130, random).toString(32);
     }
 
