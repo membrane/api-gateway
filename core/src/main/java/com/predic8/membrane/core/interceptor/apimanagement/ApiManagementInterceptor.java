@@ -180,7 +180,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
             return false;
         }
         for (String unauthedServices : unauthPol.getServiceProxies()) {
-            if (exc.getRule().getName().equals(unauthPol.getServiceProxies().iterator().next())) {
+            if (exc.getRule().getName().equals(unauthedServices)) {
                 return true;
             }
         }
