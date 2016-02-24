@@ -154,6 +154,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
                     params.remove(paramName);
             }
 
+            String givenClientId = params.get("client_id");
+            try {
+                Client client = clientList.getClient(givenClientId);
+            }catch(Exception e){
+                return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
+            }
+
             exc.setResponse(new Response.ResponseBuilder().build());
             String givenSessionId = extractSessionId(extraxtSessionHeader(exc.getRequest()));
             synchronized (sessionManager) {
@@ -214,18 +221,25 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
                 authCodesToSession.remove(params.get("code")); // auth codes can only be used one time
             }
             String username;
-            String clientId;
+
             synchronized(session){
                 username = session.getUserName();
-                clientId = session.getUserAttributes().get("client_id");
                 session.getUserAttributes().putAll(params);
             }
 
             String givenClientId = params.get("client_id");
-            if(!givenClientId.equals(clientId))
-                return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+            String givenClientSecret = params.get("client_secret");
+            Client client;
+            try {
+                client = clientList.getClient(givenClientId);
+            }catch(Exception e){
+                return createParameterizedJsonErrorResponse(exc, "error", "invalid_client");
+            }
 
-            String token = tokenGenerator.getToken(username, clientId);
+            if(!givenClientSecret.equals(client.getClientSecret()))
+                return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
+
+            String token = tokenGenerator.getToken(username, client.getClientId(),client.getClientSecret());
             synchronized (tokensToSession) {
                 tokensToSession.put(token, session);
             }
@@ -308,13 +322,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             Session session = tokensToSession.get(params.get("token"));
             if(session == null)
                 return createParameterizedJsonErrorResponse(exc,"error","invalid_grant");
-            session.clear();
+
             try {
-                tokenGenerator.invalidateToken(params.get("token"), params.get("client_id"));
+                tokenGenerator.invalidateToken(params.get("token"), params.get("client_id"), params.get("client_secret"));
             }catch(Exception e){
                 return createParameterizedJsonErrorResponse(exc,"error","invalid_grant");
             }
-
+            session.clear();
             exc.setResponse(Response
                     .ok()
                     .bodyEmpty()
@@ -345,7 +359,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
                 else if(s.getUserAttributes().get("response_type").equals("token")){
                     String token;
                     synchronized (s) {
-                        token = tokenGenerator.getToken(s.getUserName(), s.getUserAttributes().get("username"));
+                        token = tokenGenerator.getToken(s.getUserName(), client.getClientId(), client.getClientSecret());
                     }
                     return respondWithTokenAndRedirect(exc,token, tokenGenerator.getTokenType());
                 }

@@ -26,10 +26,12 @@ public class BearerTokenGenerator implements TokenGenerator {
     public class User{
         private String username;
         private String clientId;
+        private String clientSecret;
 
-        public User(String username, String clientId){
+        public User(String username, String clientId, String clientSecret){
             this.username = username;
             this.clientId = clientId;
+            this.clientSecret = clientSecret;
         }
 
         public String getUsername() {
@@ -47,6 +49,14 @@ public class BearerTokenGenerator implements TokenGenerator {
         public void setClientId(String clientId) {
             this.clientId = clientId;
         }
+
+        public String getClientSecret() {
+            return clientSecret;
+        }
+
+        public void setClientSecret(String clientSecret) {
+            this.clientSecret = clientSecret;
+        }
     }
 
     private SecureRandom random = new SecureRandom();
@@ -58,9 +68,9 @@ public class BearerTokenGenerator implements TokenGenerator {
     }
 
     @Override
-    public String getToken(String username, String clientId) {
+    public String getToken(String username, String clientId, String clientSecret) {
         String token = new BigInteger(130, random).toString(32);
-        tokenToUser.put(token,new User(username,clientId));
+        tokenToUser.put(token,new User(username,clientId,clientSecret));
         return token;
     }
 
@@ -83,10 +93,12 @@ public class BearerTokenGenerator implements TokenGenerator {
     }
 
     @Override
-    public void invalidateToken(String token, String clientId) throws NoSuchElementException {
+    public void invalidateToken(String token, String clientId, String clientSecret) throws NoSuchElementException {
         User user = tokenToUser.get(token);
         if (!clientId.equals(user.getClientId()))
-            throw new NoSuchElementException("ClientId doesnt match");
+            throw new NoSuchElementException("ClientId doesn't match");
+        if(!clientSecret.equals(user.getClientSecret()))
+            throw new NoSuchElementException("ClientSecret doesn't match");
         tokenToUser.remove(token);
     }
 }

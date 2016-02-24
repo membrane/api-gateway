@@ -17,8 +17,8 @@ import java.util.NoSuchElementException;
 
 public interface TokenGenerator {
     String getTokenType();
-    String getToken(String username, String clientId);
+    String getToken(String username, String clientId, String clientSecret);
     String getUsername(String token) throws NoSuchElementException;
     String getClientId(String token) throws NoSuchElementException;
-    void invalidateToken(String token, String clientId)throws NoSuchElementException;
+    void invalidateToken(String token, String clientId, String clientSecret)throws NoSuchElementException;
 }

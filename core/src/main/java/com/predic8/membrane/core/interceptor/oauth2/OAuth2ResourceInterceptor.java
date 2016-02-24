@@ -262,7 +262,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 Exchange e = new Request.Builder().post(auth.getRevocationEndpoint())
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                         .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .body("token=" + token +"&client_id=" + auth.getClientId())
+                        .body("token=" + token +"&client_id=" + auth.getClientId() + "&client_secret=" + auth.getClientSecret())
                         .buildExchange();
                 Response response = auth.httpClient.call(e).getResponse();
                 if (response.getStatusCode() != 200) {
