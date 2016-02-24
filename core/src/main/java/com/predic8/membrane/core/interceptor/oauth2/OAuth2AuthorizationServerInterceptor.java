@@ -397,8 +397,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
 
         Session session = tokensToSession.get(params.get("token"));
-        if (session == null)
-            return createParameterizedJsonErrorResponse(exc, "error", "invalid_grant");
+        if (session == null) { // token doesnt exist -> token is already invalid
+            exc.setResponse(Response
+                    .ok()
+                    .bodyEmpty()
+                    .build());
+            return Outcome.RETURN;
+        }
 
         try {
             tokenGenerator.invalidateToken(params.get("token"), params.get("client_id"), params.get("client_secret"));
