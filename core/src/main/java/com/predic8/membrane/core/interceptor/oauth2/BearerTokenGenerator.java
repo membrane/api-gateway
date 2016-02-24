@@ -23,8 +23,34 @@ import java.util.NoSuchElementException;
 @MCElement(name="bearerToken")
 public class BearerTokenGenerator implements TokenGenerator {
 
+    public class User{
+        private String username;
+        private String clientId;
+
+        public User(String username, String clientId){
+            this.username = username;
+            this.clientId = clientId;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public void setClientId(String clientId) {
+            this.clientId = clientId;
+        }
+    }
+
     private SecureRandom random = new SecureRandom();
-    private HashMap<String,String> tokenToUsername = new HashMap<String, String>();
+    private HashMap<String,User> tokenToUser = new HashMap<String, User>();
 
     @Override
     public String getTokenType() {
@@ -34,21 +60,33 @@ public class BearerTokenGenerator implements TokenGenerator {
     @Override
     public String getToken(String username, String clientId) {
         String token = new BigInteger(130, random).toString(32);
-        tokenToUsername.put(token,username);
+        tokenToUser.put(token,new User(username,clientId));
         return token;
     }
 
     @Override
     public String getUsername(String token) throws NoSuchElementException {
         try {
-            return tokenToUsername.get(token);
+            return tokenToUser.get(token).getUsername();
         }catch(Exception e){
             throw new NoSuchElementException(e.getMessage());
         }
     }
 
     @Override
-    public void invalidateToken(String token) {
-        tokenToUsername.remove(token);
+    public String getClientId(String token) throws NoSuchElementException {
+        try {
+            return tokenToUser.get(token).getClientId();
+        }catch(Exception e){
+            throw new NoSuchElementException(e.getMessage());
+        }
+    }
+
+    @Override
+    public void invalidateToken(String token, String clientId) throws NoSuchElementException {
+        User user = tokenToUser.get(token);
+        if (!clientId.equals(user.getClientId()))
+            throw new NoSuchElementException("ClientId doesnt match");
+        tokenToUser.remove(token);
     }
 }

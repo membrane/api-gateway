@@ -298,9 +298,22 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         }
         else if(isOAuth2RevokeCall(exc)){
             Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+
+            if(!params.containsKey("token"))
+                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+            if(!params.containsKey("client_id")){
+                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+            }
+
             Session session = tokensToSession.get(params.get("token"));
+            if(session == null)
+                return createParameterizedJsonErrorResponse(exc,"error","invalid_grant");
             session.clear();
-            tokenGenerator.invalidateToken(params.get("token"));
+            try {
+                tokenGenerator.invalidateToken(params.get("token"), params.get("client_id"));
+            }catch(Exception e){
+                return createParameterizedJsonErrorResponse(exc,"error","invalid_grant");
+            }
 
             exc.setResponse(Response
                     .ok()

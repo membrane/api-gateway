@@ -19,5 +19,6 @@ public interface TokenGenerator {
     String getTokenType();
     String getToken(String username, String clientId);
     String getUsername(String token) throws NoSuchElementException;
-    void invalidateToken(String token);
+    String getClientId(String token) throws NoSuchElementException;
+    void invalidateToken(String token, String clientId)throws NoSuchElementException;
 }
