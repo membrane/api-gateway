@@ -39,7 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
-@MCElement(name="oauth2authserver")
+@MCElement(name = "oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     //public static final String AUTHORIZATION_CODE = "authorization_code";
@@ -57,6 +57,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private ClientList clientList;
     private TokenGenerator tokenGenerator;
     private ScopeList scopeList;
+    private JwtGenerator jwtGenerator;
     private HashSet<String> supportedAuthorizationGrants = new HashSet<String>();
 
     JsonFactory jsonFactory = new JsonFactory();
@@ -66,8 +67,8 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private SecureRandom random = new SecureRandom();
     private URIFactory uriFactory;
 
-    private HashMap<String,Session> authCodesToSession = new HashMap<String, Session>();
-    private HashMap<String,Session> tokensToSession = new HashMap<String, Session>();
+    private HashMap<String, Session> authCodesToSession = new HashMap<String, Session>();
+    private HashMap<String, Session> tokensToSession = new HashMap<String, Session>();
 
     @Override
     public void init(Router router) throws Exception {
@@ -79,14 +80,15 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             throw new Exception("No clientList configured. - Cannot work without one.");
         if (sessionManager == null)
             sessionManager = new SessionManager();
-        if(tokenGenerator == null)
+        if (tokenGenerator == null)
             tokenGenerator = new BearerTokenGenerator();
-        if(getScopeList() == null){
+        if (getScopeList() == null) {
             throw new Exception("No scopeList configured. - Cannot work without one");
         }
         userDataProvider.init(router);
         getClientList().init(router);
         getScopeList().init(router);
+        jwtGenerator = new JwtGenerator();
         addSupportedAuthorizationGrants();
         loginDialog = new LoginDialog(getUserDataProvider(), null, getSessionManager(), getAccountBlocker(), getLocation(), getPath(), isExposeUserCredentialsToSession(), getMessage());
         loginDialog.init(router);
@@ -99,7 +101,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         supportedAuthorizationGrants.add("token");
     }
 
-    protected JsonGenerator getAndResetJsonGenerator(){
+    protected JsonGenerator getAndResetJsonGenerator() {
         baos.reset();
         return jsonGenerator;
     }
@@ -110,18 +112,17 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     /**
-     *
      * @param params the number of strings passed as params need to be an even number. Params is an alternating list of strings containing of "name" "value" pairs.
      */
     public Outcome createParameterizedJsonErrorResponse(Exchange exc, String... params) throws IOException {
-        if(params.length % 2 != 0)
+        if (params.length % 2 != 0)
             throw new IllegalArgumentException("The number of strings passed as params is not even");
         String json;
         synchronized (jsonGenerator) {
             JsonGenerator gen = getAndResetJsonGenerator();
             gen.writeStartObject();
-            for(int i = 0; i < params.length;i+=2)
-                gen.writeObjectField(params[i], params[i+1]);
+            for (int i = 0; i < params.length; i += 2)
+                gen.writeObjectField(params[i], params[i + 1]);
             gen.writeEndObject();
             json = getStringFromJsonGenerator();
         }
@@ -135,330 +136,401 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return Outcome.RETURN;
     }
 
-    /**
-     *
-     * @param params the number of strings passed as params need to be an even number. Params is an alternating list of strings containing of "name" "value" pairs.
-     */
-    public Outcome createParameterizedFormUrlencodedRedirect(Exchange exc, String state, String url){
-        if(state != null)
+    public Outcome createParameterizedFormUrlencodedRedirect(Exchange exc, String state, String url) {
+        if (state != null)
             url = url + "&state=" + state;
-        exc.setResponse(Response.redirect(url,false).header(Header.CONTENT_TYPE,"application/x-www-form-urlencoded").bodyEmpty().dontCache().build());
+        exc.setResponse(Response.redirect(url, false).header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded").bodyEmpty().dontCache().build());
         return Outcome.RETURN;
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
+
         SessionManager.Session s;
         synchronized (sessionManager) {
-             s = sessionManager.getSession(exc.getRequest());
+            s = sessionManager.getSession(exc.getRequest());
         }
-        if(s != null && s.getUserAttributes() == null)
+        if (s != null && s.getUserAttributes() == null)
             s = null; // session was logged out
-        if(exc.getRequestURI().startsWith("/favicon.ico")){
+
+        if (exc.getRequestURI().startsWith("/favicon.ico")) {
             exc.setResponse(Response.badRequest().build());
             return Outcome.RETURN;
         }
-        else if(isOAuth2AuthCall(exc)) {
-            if(s==null) {
-                Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
 
-                for (String paramName : params.keySet()) {
-                    if (params.get(paramName).isEmpty())
-                        params.remove(paramName);
-                }
-
-                String givenState = params.get("state");
-
-                String givenClientId = params.get("client_id");
-                if (givenClientId == null)
-                    return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
-
-                Client client;
-                try {
-                    client = clientList.getClient(givenClientId);
-                } catch (Exception e) {
-                    return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
-                }
-
-                    String givenRedirect_uri = params.get("redirect_uri");
-                if (!isAbsoluteUri(givenRedirect_uri))
-                    return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
-                //return createInvalidRequestResponse(exc);
-
-                String knownRedirect_uri = client.getCallbackUrl();
-                if (!givenRedirect_uri.equals(knownRedirect_uri))
-                    return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
-                //return createInvalidRequestResponse(exc);
-
-                //openid specific
-                if (params.containsKey("prompt")) {
-                    String prompt = params.get("prompt");
-                    if (prompt.equals("none"))
-                        return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=login_required");
-                }
-
-
-
-                exc.setResponse(new Response.ResponseBuilder().build());
-                String givenSessionId = extractSessionId(extraxtSessionHeader(exc.getRequest()));
-                synchronized (sessionManager) {
-                    s = sessionManager.createSession(exc, givenSessionId);
-                }
-
-                String givenAuthorizationGrant = params.get("response_type");
-                if (givenAuthorizationGrant == null)
-                    return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=invalid_request");
-                //return createInvalidRequestResponse(exc);
-
-                if (!supportedAuthorizationGrants.contains(givenAuthorizationGrant))
-                    return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=unsupported_response_type");
-                //return createUnsupportedResponseTypeResponse(exc);
-
-
-
-
-                String givenScopes = params.get("scope");
-                if (givenScopes == null)
-                    return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=invalid_request");
-
-                String validScopes = verifyScopes(givenScopes);
-
-                if (validScopes.isEmpty())
-                    return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=invalid_scope");
-                //return createInvalidScopeResponse(exc);
-
-                params.put("scope", validScopes);
-
-                String invalidScopes = hasGivenInvalidScopes(givenScopes, validScopes);
-                if (!invalidScopes.isEmpty())
-                    params.put("scope_invalid", invalidScopes);
-                synchronized (s) {
-                    s.getUserAttributes().putAll(params);
-                }
-                return redirectToLoginWithSession(exc, extraxtSessionHeader(exc.getResponse()));
-            }else{
-                //openid specific
-
-                Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
-
-                for (String paramName : params.keySet()) {
-                    if (params.get(paramName).isEmpty())
-                        params.remove(paramName);
-                }
-
-                if (params.containsKey("prompt")) {
-                    String prompt = params.get("prompt");
-                    if (prompt.equals("login")) {
-                        s.clear();
-                        return redirectToOAuth2AuthEndpoint(exc);
-                    } else if (prompt.equals("none")) {
-                        if(!s.isAuthorized()){
-                            return createParameterizedJsonErrorResponse(exc, "error", "login_required");
-                        }
-                    }
-                }
-                return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
-            }
-        }else if(isOAuth2TokenCall(exc)){
-            Map<String,String> params = extractBody(exc.getRequest());
-
-            for(String paramName : params.keySet()){
-                if(params.get(paramName).isEmpty())
-                    params.remove(paramName);
-            }
-
-            if(!params.containsKey("code"))
-                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
-
-            Session session;
-            synchronized (authCodesToSession) {
-                if (!authCodesToSession.containsKey(params.get("code"))) {
-                    return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
-                }
-                session = authCodesToSession.get(params.get("code"));
-                authCodesToSession.remove(params.get("code")); // auth codes can only be used one time
-            }
-            String username;
-
-            synchronized(session){
-                username = session.getUserName();
-                session.getUserAttributes().putAll(params);
-            }
-
-            String givenClientId = params.get("client_id");
-            String givenClientSecret = params.get("client_secret");
-
-            if(givenClientId == null)
-                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
-            if(givenClientSecret == null)
-                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
-
-            Client client;
-            try {
-                client = clientList.getClient(givenClientId);
-            }catch(Exception e){
-                return createParameterizedJsonErrorResponse(exc, "error", "invalid_client");
-            }
-
-            if(!givenClientSecret.equals(client.getClientSecret()))
-                return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
-
-            String token = tokenGenerator.getToken(username, client.getClientId(),client.getClientSecret());
-            synchronized (tokensToSession) {
-                tokensToSession.put(token, session);
-            }
-
-            String json;
-            synchronized (jsonGenerator) {
-                JsonGenerator gen = getAndResetJsonGenerator();
-                gen.writeStartObject();
-                gen.writeObjectField("access_token", token);
-                gen.writeObjectField("token_type", tokenGenerator.getTokenType());
-                //gen.writeObjectField("expires_in", "null"); // TODO change this
-                gen.writeObjectField("scope", session.getUserAttributes().get("scope"));
-                gen.writeEndObject();
-                json = getStringFromJsonGenerator();
-            }
-
-            // TODO maybe undo this as the session is used internally
-            session.getUserAttributes().remove("password");
-            session.getUserAttributes().remove("client_secret");
-
-
-            exc.setResponse(Response
-                    .ok()
-                    .body(json)
-                    .contentType(MimeType.APPLICATION_JSON_UTF8)
-                    .dontCache()
-                    .build());
-
-            return Outcome.RETURN;
+        if (isOAuth2AuthCall(exc)) {
+            return processAuthorizationEndpoint(exc, s);
         }
-        else if(isOAuth2UserinfoCall(exc)){
-            String authHeader = exc.getRequest().getHeader().getAuthorization();
-            if(authHeader == null)
-                return createNoBodyWwwAuthenticateErrorResponse(exc,400, tokenGenerator.getTokenType() + " error=\"invalid_request\"");
-            String token = authHeader.split(" ")[1];
-
-            if(!tokensToSession.containsKey(token)) {
-                return createNoBodyWwwAuthenticateErrorResponse(exc, 401, tokenGenerator.getTokenType() + " error=\"invalid_token\"");
-            }
-
-            Session session;
-            synchronized (tokensToSession) {
-                session = tokensToSession.get(token);
-            }
-
-            String json;
-            synchronized (jsonGenerator) {
-                JsonGenerator gen = getAndResetJsonGenerator();
-                gen.writeStartObject();
-
-                Map<String, String> scopeProperties;
-                synchronized (session) {
-                    String[] scopes = session.getUserAttributes().get("scope").split(" ");
-                    scopeProperties = scopeList.getScopes(session.getUserAttributes(), scopes);
-                }
-                for (String property : scopeProperties.keySet())
-                    gen.writeObjectField(property, scopeProperties.get(property));
-
-                gen.writeEndObject();
-                json = getStringFromJsonGenerator();
-            }
-
-            exc.setResponse(Response
-                    .ok()
-                    .body(json)
-                    .contentType(MimeType.APPLICATION_JSON_UTF8)
-                    .build());
-
-            return Outcome.RETURN;
+        if (isOAuth2TokenCall(exc)) {
+            return processTokenEndpoint(exc);
         }
-        else if(isOAuth2RevokeCall(exc)){
-            Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
-
-            if(!params.containsKey("token"))
-                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
-            if(!params.containsKey("client_id"))
-                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
-            if(!params.containsKey("client_secret"))
-                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
-
-            Session session = tokensToSession.get(params.get("token"));
-            if(session == null)
-                return createParameterizedJsonErrorResponse(exc,"error","invalid_grant");
-
-            try {
-                tokenGenerator.invalidateToken(params.get("token"), params.get("client_id"), params.get("client_secret"));
-            }catch(Exception e){
-                return createParameterizedJsonErrorResponse(exc,"error","invalid_grant");
-            }
-            session.clear();
-            exc.setResponse(Response
-                    .ok()
-                    .bodyEmpty()
-                    .build());
-            return Outcome.RETURN;
+        if (isOAuth2UserinfoCall(exc)) {
+            return processUserInfoCall(exc);
         }
-        else if (loginDialog.isLoginRequest(exc)) {
+        if (isOAuth2RevokeCall(exc)) {
+            return processRevokationEndpoint(exc);
+        }
+        if (loginDialog.isLoginRequest(exc)) {
             loginDialog.handleLoginRequest(exc);
             extractSessionFromRequestAndAddToResponse(exc);
 
             return Outcome.RETURN;
         }
-        else if (exc.getRequestURI().equals("/") && s != null && s.isPreAuthorized()){
-            s.authorize();
-            Client client;
-            String sessionRedirectUrl;
-            synchronized (s) {
-                client = clientList.getClient(s.getUserAttributes().get("client_id"));
-                sessionRedirectUrl = s.getUserAttributes().get("redirect_uri");
-            }
-            String savedCallbackUrl = client.getCallbackUrl();
-            if(savedCallbackUrl.equals(sessionRedirectUrl)) {
-                if(s.getUserAttributes().get("response_type").equals("code")) {
-                    String code = generateAuthorizationCode();
-                    authCodesToSession.put(code,s);
-                    return respondWithAuthorizationCodeAndRedirect(exc, code);
-                }
-                else if(s.getUserAttributes().get("response_type").equals("token")){
-                    String token;
-                    synchronized (s) {
-                        token = tokenGenerator.getToken(s.getUserName(), client.getClientId(), client.getClientSecret());
-                    }
-                    return respondWithTokenAndRedirect(exc,token, tokenGenerator.getTokenType());
-                }
-                else
-                    return createParameterizedJsonErrorResponse(exc,"error","unsupported_response_type");
-            }
-            else {
-                return createParameterizedJsonErrorResponse(exc,"error", "invalid_request");
-                //return createInvalidRequestResponse(exc);
-            }
+        if (exc.getRequestURI().equals("/") && s != null && s.isPreAuthorized()) {
+            return returnCodeAfterAuthorization(exc, s);
         }
-        else{
-            return createParameterizedJsonErrorResponse(exc,"error", "invalid_request");
-            //return createInvalidRequestResponse(exc);
+        return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+    }
+
+    private Outcome processTokenEndpoint(Exchange exc) throws IOException {
+        Map<String, String> params = extractBody(exc.getRequest());
+
+        removeEmptyParams(params);
+
+        if (!params.containsKey("code"))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+
+        Session session;
+        synchronized (authCodesToSession) {
+            if (!authCodesToSession.containsKey(params.get("code"))) {
+                return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+            }
+            session = authCodesToSession.get(params.get("code"));
+            authCodesToSession.remove(params.get("code")); // auth codes can only be used one time
+        }
+        String username;
+
+        synchronized (session) {
+            username = session.getUserName();
+            session.getUserAttributes().putAll(params);
+        }
+
+        String givenClientId = params.get("client_id");
+        String givenClientSecret = params.get("client_secret");
+
+        if (givenClientId == null)
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+        if (givenClientSecret == null)
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+
+        Client client;
+        try {
+            client = clientList.getClient(givenClientId);
+        } catch (Exception e) {
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_client");
+        }
+
+        if (!givenClientSecret.equals(client.getClientSecret()))
+            return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
+
+        String givenRedirect_uri = params.get("redirect_uri");
+        if (givenRedirect_uri == null)
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+
+        if (!isAbsoluteUri(givenRedirect_uri))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+        //return createInvalidRequestResponse(exc);
+
+        String knownRedirect_uri = client.getCallbackUrl();
+        if (!givenRedirect_uri.equals(knownRedirect_uri))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+
+
+        String token = tokenGenerator.getToken(username, client.getClientId(), client.getClientSecret());
+
+        String idToken = null;
+        if (isOpenIdScope(getScope(session))) {
+            //idToken = jwtGenerator.getIdTokenSigned(...) // TODO
+        }
+
+        synchronized (tokensToSession) {
+            tokensToSession.put(token, session);
+        }
+
+        // TODO maybe undo this as the session is used internally
+        session.getUserAttributes().remove("password");
+        session.getUserAttributes().remove("client_secret");
+
+
+        exc.setResponse(Response
+                .ok()
+                .body(getTokenJSONResponse(session, token, idToken))
+                .contentType(MimeType.APPLICATION_JSON_UTF8)
+                .dontCache()
+                .build());
+
+        return Outcome.RETURN;
+    }
+
+    private Outcome processAuthorizationEndpoint(Exchange exc, Session s) throws Exception {
+        if (s == null) {
+            return processRENAMEME(exc); // TODO
+        }
+        //openid specific
+
+        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+
+        removeEmptyParams(params);
+
+        if (!params.containsKey("prompt"))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+
+        String prompt = params.get("prompt");
+        if (prompt.equals("login")) {
+            s.clear();
+            return redirectToOAuth2AuthEndpoint(exc);
+        }
+        if (prompt.equals("none") && !s.isAuthorized()) {
+            return createParameterizedJsonErrorResponse(exc, "error", "login_required");
+        }
+        return createParameterizedJsonErrorResponse(exc, "error", "login_required");
+    }
+
+    private Outcome processRENAMEME(Exchange exc) throws Exception {
+        Session s;
+        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+        removeEmptyParams(params);
+
+        String givenState = params.get("state");
+
+        String givenClientId = params.get("client_id");
+        if (givenClientId == null)
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+
+        Client client;
+        try {
+            client = clientList.getClient(givenClientId);
+        } catch (Exception e) {
+            return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
+        }
+
+        // TODO new Object for given...
+
+        String givenRedirect_uri = params.get("redirect_uri");
+        if (givenRedirect_uri == null)
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+
+        if (!isAbsoluteUri(givenRedirect_uri))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+        //return createInvalidRequestResponse(exc);
+
+        String knownRedirect_uri = client.getCallbackUrl();
+        if (!givenRedirect_uri.equals(knownRedirect_uri))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+        //return createInvalidRequestResponse(exc);
+
+        //openid specific
+        if (params.containsKey("prompt")) {
+            String prompt = params.get("prompt");
+            if (prompt.equals("none"))
+                return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=login_required");
+        }
+
+
+        exc.setResponse(new Response.ResponseBuilder().build());
+        String givenSessionId = extractSessionId(extraxtSessionHeader(exc.getRequest()));
+        synchronized (sessionManager) {
+            s = sessionManager.createSession(exc, givenSessionId);
+        }
+
+        String givenAuthorizationGrant = params.get("response_type");
+        if (givenAuthorizationGrant == null)
+            return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=invalid_request");
+        //return createInvalidRequestResponse(exc);
+
+        if (!supportedAuthorizationGrants.contains(givenAuthorizationGrant))
+            return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=unsupported_response_type");
+        //return createUnsupportedResponseTypeResponse(exc);
+
+
+        String givenScopes = params.get("scope");
+        if (givenScopes == null)
+            return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=invalid_request");
+
+        String validScopes = verifyScopes(givenScopes);
+
+        if (validScopes.isEmpty())
+            return createParameterizedFormUrlencodedRedirect(exc, givenState, knownRedirect_uri + "?error=invalid_scope");
+        //return createInvalidScopeResponse(exc);
+
+        params.put("scope", validScopes);
+
+        String invalidScopes = hasGivenInvalidScopes(givenScopes, validScopes);
+        if (!invalidScopes.isEmpty())
+            params.put("scope_invalid", invalidScopes);
+        synchronized (s) {
+            s.getUserAttributes().putAll(params);
+        }
+        return redirectToLoginWithSession(exc, extraxtSessionHeader(exc.getResponse()));
+    }
+
+    private Outcome returnCodeAfterAuthorization(Exchange exc, Session s) throws IOException {
+        s.authorize();
+        Client client;
+        String sessionRedirectUrl;
+        synchronized (s) {
+            client = clientList.getClient(s.getUserAttributes().get("client_id"));
+            sessionRedirectUrl = s.getUserAttributes().get("redirect_uri");
+        }
+        if (client.getCallbackUrl().equals(sessionRedirectUrl)) {
+            if (getResponseType(s).equals("code")) {
+                String code = generateAuthorizationCode();
+                authCodesToSession.put(code, s);
+                return respondWithAuthorizationCodeAndRedirect(exc, code);
+            }
+            if (getResponseType(s).equals("token")) {
+                return respondWithTokenAndRedirect(exc, generateAccessToken(s, client), tokenGenerator.getTokenType());
+            }
+            return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
+        }
+        return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+    }
+
+    private Outcome processRevokationEndpoint(Exchange exc) throws Exception {
+        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+
+        if (!params.containsKey("token"))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+        if (!params.containsKey("client_id"))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+        if (!params.containsKey("client_secret"))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+
+        Session session = tokensToSession.get(params.get("token"));
+        if (session == null)
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_grant");
+
+        try {
+            tokenGenerator.invalidateToken(params.get("token"), params.get("client_id"), params.get("client_secret"));
+        } catch (Exception e) {
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_grant");
+        }
+        session.clear();
+        exc.setResponse(Response
+                .ok()
+                .bodyEmpty()
+                .build());
+        return Outcome.RETURN;
+    }
+
+    private Outcome processUserInfoCall(Exchange exc) throws IOException {
+        String authHeader = exc.getRequest().getHeader().getAuthorization();
+        if (authHeader == null)
+            return createNoBodyWwwAuthenticateErrorResponse(exc, 400, tokenGenerator.getTokenType() + " error=\"invalid_request\"");
+        String token = authHeader.split(" ")[1];
+
+        if (!tokensToSession.containsKey(token)) {
+            return createNoBodyWwwAuthenticateErrorResponse(exc, 401, tokenGenerator.getTokenType() + " error=\"invalid_token\"");
+        }
+
+        Session session;
+        synchronized (tokensToSession) {
+            session = tokensToSession.get(token);
+        }
+
+        exc.setResponse(Response
+                .ok()
+                .body(getJSONStringGiveMeABetterName(session))
+                .contentType(MimeType.APPLICATION_JSON_UTF8)
+                .build());
+
+        return Outcome.RETURN;
+    }
+
+    private String getResponseType(Session s) {
+        return s.getUserAttributes().get("response_type");
+    }
+
+    private String generateAccessToken(Session s, Client client) {
+        synchronized (s) {
+            return tokenGenerator.getToken(s.getUserName(), client.getClientId(), client.getClientSecret());
         }
     }
 
+    private String getJSONStringGiveMeABetterName(Session session) throws IOException {
+
+        Map<String, String> scopeProperties = getScopeProperties(session); // Do not Inline! Synchronize
+
+        synchronized (jsonGenerator) {
+            JsonGenerator gen = getAndResetJsonGenerator();
+            gen.writeStartObject();
+
+            for (String property : scopeProperties.keySet())
+                gen.writeObjectField(property, scopeProperties.get(property));
+
+            gen.writeEndObject();
+            return getStringFromJsonGenerator();
+        }
+    }
+
+    private Map<String, String> getScopeProperties(Session session) {
+        synchronized (session) {
+            String[] scopes = session.getUserAttributes().get("scope").split(" ");
+            return scopeList.getScopes(session.getUserAttributes(), scopes);
+        }
+    }
+
+    private String getTokenJSONResponse(Session session, String token, String idToken) throws IOException {
+        String json;
+        synchronized (jsonGenerator) {
+            JsonGenerator gen = getAndResetJsonGenerator();
+            gen.writeStartObject();
+            gen.writeObjectField("access_token", token);
+            gen.writeObjectField("token_type", tokenGenerator.getTokenType());
+            //gen.writeObjectField("expires_in", "null"); // TODO change this
+            gen.writeObjectField("scope", session.getUserAttributes().get("scope"));
+            if (idToken != null)
+                gen.writeObjectField("id_token:", idToken);
+            gen.writeEndObject();
+            json = getStringFromJsonGenerator();
+        }
+        return json;
+    }
+
+    private String getScope(Session session) {
+        synchronized (session) {
+            return session.getUserAttributes().get("scope");
+        }
+    }
+
+    private void removeEmptyParams(Map<String, String> params) {
+        for (String paramName : params.keySet()) {
+            if (params.get(paramName).isEmpty())
+                params.remove(paramName);
+        }
+    }
+
+    private boolean isOpenIdScope(String scope) {
+        if (scope.contains("openid")) {
+            String[] split = scope.split(" ");
+            for (String singleScope : split)
+                if (singleScope.equals("openid"))
+                    return true;
+        }
+        return false;
+    }
+
     private Outcome redirectToOAuth2AuthEndpoint(Exchange exc) {
-        exc.setResponse(Response.redirect(exc.getRequestURI(),false).dontCache().bodyEmpty().build());
+        exc.setResponse(Response.redirect(exc.getRequestURI(), false).dontCache().bodyEmpty().build());
         return Outcome.RETURN;
     }
 
     private Outcome createNoBodyWwwAuthenticateErrorResponse(Exchange exc, int code, String wwwAuthenticateValues) {
         Response.ResponseBuilder resp;
-        switch(code){
-            case 400:   resp = Response.badRequest();
+        switch (code) {
+            case 400:
+                resp = Response.badRequest();
                 break;
-            case 401:   resp = Response.unauthorized();
+            case 401:
+                resp = Response.unauthorized();
                 break;
-            case 403:   resp = Response.forbidden();
+            case 403:
+                resp = Response.forbidden();
                 break;
-            default:    resp = Response.badRequest();
+            default:
+                resp = Response.badRequest();
         }
-        exc.setResponse(resp.bodyEmpty().header(Header.WWW_AUTHENTICATE,wwwAuthenticateValues).build());
+        exc.setResponse(resp.bodyEmpty().header(Header.WWW_AUTHENTICATE, wwwAuthenticateValues).build());
         return Outcome.RETURN;
     }
 
@@ -467,14 +539,14 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         String state;
         String redirectUrl;
         String scope;
-        synchronized(s) {
+        synchronized (s) {
             state = s.getUserAttributes().get("state");
             redirectUrl = s.getUserAttributes().get("redirect_uri");
             scope = s.getUserAttributes().get("scope");
         }
 
         exc.setResponse(Response.
-                redirect(redirectUrl+"?access_token="+token + (state == null ? "" : "&state="+state)+ "&token_type=" + tokenType + "&scope=" + scope, false).
+                redirect(redirectUrl + "?access_token=" + token + (state == null ? "" : "&state=" + state) + "&token_type=" + tokenType + "&scope=" + scope, false).
                 dontCache().
                 body("").
                 build());
@@ -483,70 +555,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     private boolean isAbsoluteUri(String givenRedirect_uri) {
-        try{
+        try {
             // Doing it this way as URIs scheme seems to be wrong
             String[] split = givenRedirect_uri.split("://");
             return split.length == 2;
-        }catch(Exception ignored){
+        } catch (Exception ignored) {
             return false;
         }
-    }
-
-    private Outcome createUnsupportedResponseTypeResponse(Exchange exc) throws IOException {
-        String json;
-        synchronized (jsonGenerator) {
-            JsonGenerator gen = getAndResetJsonGenerator();
-            gen.writeStartObject();
-            gen.writeObjectField("error", "unsupported_response_type");
-            gen.writeEndObject();
-            json = getStringFromJsonGenerator();
-        }
-
-        exc.setResponse(Response.badRequest()
-                .body(json)
-                .contentType(MimeType.APPLICATION_JSON_UTF8)
-                .dontCache()
-                .build());
-
-        return Outcome.RETURN;
-    }
-
-    private Outcome createInvalidScopeResponse(Exchange exc) throws IOException {
-        String json;
-        synchronized (jsonGenerator) {
-            JsonGenerator gen = getAndResetJsonGenerator();
-            gen.writeStartObject();
-            gen.writeObjectField("error", "invalid_scope");
-            gen.writeEndObject();
-            json = getStringFromJsonGenerator();
-        }
-
-        exc.setResponse(Response.badRequest()
-            .body(json)
-            .contentType(MimeType.APPLICATION_JSON_UTF8)
-            .dontCache()
-            .build());
-
-        return Outcome.RETURN;
-    }
-
-    private Outcome createInvalidRequestResponse(Exchange exc) throws IOException {
-        String json;
-        synchronized (jsonGenerator) {
-            JsonGenerator gen = getAndResetJsonGenerator();
-            gen.writeStartObject();
-            gen.writeObjectField("error", "invalid_request");
-            gen.writeEndObject();
-            json = getStringFromJsonGenerator();
-        }
-
-        exc.setResponse(Response.badRequest()
-                .body(json)
-                .contentType(MimeType.APPLICATION_JSON_UTF8)
-                .dontCache()
-                .build());
-
-        return Outcome.RETURN;
     }
 
     private boolean isOAuth2RevokeCall(Exchange exc) {
@@ -554,23 +569,23 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     private String hasGivenInvalidScopes(String givenScopes, String validScopes) {
-        String[] givenScopesSplit = givenScopes.split(" ");
-        String[] validScopesSplit = validScopes.split(" ");
 
-        HashSet<String> given = new HashSet<String>();
-        for(String scope : givenScopesSplit)
-            given.add(scope);
-        HashSet<String> valid = new HashSet<String>();
-        for(String scope : validScopesSplit)
-            valid.add(scope);
+        HashSet<String> valid = toSet(validScopes.split(" "));
 
         StringBuilder builder = new StringBuilder();
 
-        for(String scope : given){
-            if(!valid.contains(scope))
+        for (String scope : toSet(givenScopes.split(" "))) {
+            if (!valid.contains(scope))
                 builder.append(scope).append(" ");
         }
         return builder.toString().trim();
+    }
+
+    private HashSet<String> toSet(String[] array) {
+        HashSet<String> set = new HashSet<String>();
+        for (String s : array)
+            set.add(s);
+        return set;
     }
 
     private String verifyScopes(String scopes) {
@@ -587,13 +602,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return exc.getRequestURI().startsWith("/oauth2/userinfo");
     }
 
-    private Map<String,String> extractBody(Message msg) {
+    private Map<String, String> extractBody(Message msg) {
         String body = msg.getBodyAsStringDecoded();
-        String[] splitted = body.split("&");
-        HashMap<String,String> params = new HashMap<String, String>();
-        for(String param : splitted){
+        String[] split = body.split("&");
+        HashMap<String, String> params = new HashMap<String, String>();
+        for (String param : split) {
             String[] paramSplit = param.split("=");
-            params.put(paramSplit[0],paramSplit[1]);
+            params.put(paramSplit[0], paramSplit[1]);
         }
         return params;
     }
@@ -610,13 +625,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         Session s = sessionManager.getSession(exc.getRequest());
         String state;
         String redirectUrl;
-        synchronized(s) {
+        synchronized (s) {
             state = s.getUserAttributes().get("state");
             redirectUrl = s.getUserAttributes().get("redirect_uri");
         }
 
         exc.setResponse(Response.
-                redirect(redirectUrl+"?code="+code + (state == null ? "" : "&state="+state), false).
+                redirect(redirectUrl + "?code=" + code + (state == null ? "" : "&state=" + state), false).
                 dontCache().
                 body("").
                 build());
@@ -638,16 +653,15 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
                 dontCache().
                 body("").
                 build());
-        addSessionHeader(exc.getResponse(),session);
+        addSessionHeader(exc.getResponse(), session);
         return Outcome.RETURN;
     }
 
-    public HeaderField extraxtSessionHeader(Message msg){
-        for(HeaderField h : msg.getHeader().getAllHeaderFields()) {
+    public HeaderField extraxtSessionHeader(Message msg) {
+        for (HeaderField h : msg.getHeader().getAllHeaderFields()) {
             if (h.getHeaderName().equals("Set-Cookie")) {
                 return h;
-            }
-            else if(h.getHeaderName().equals("Cookie")) {
+            } else if (h.getHeaderName().equals("Cookie")) {
                 h.setHeaderName(new HeaderName("Set-Cookie"));
                 return h;
             }
@@ -655,23 +669,23 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         throw new RuntimeException();
     }
 
-    public String extractSessionId(HeaderField sessionHeader){
-        String[] splitted = sessionHeader.getValue().split(" ");
-        for(String s : splitted){
-            if(s.startsWith("SESSIONID=")){
+    public String extractSessionId(HeaderField sessionHeader) {
+        String[] split = sessionHeader.getValue().split(" ");
+        for (String s : split) {
+            if (s.startsWith("SESSIONID=")) {
                 return s.substring(10);
             }
         }
         throw new RuntimeException();
     }
 
-    public Message addSessionHeader(Message msg, HeaderField session){
+    public Message addSessionHeader(Message msg, HeaderField session) {
         msg.getHeader().add(session);
         return msg;
     }
 
-    public void extractSessionFromRequestAndAddToResponse(Exchange exc){
-        addSessionHeader(exc.getResponse(),extraxtSessionHeader(exc.getRequest()));
+    public void extractSessionFromRequestAndAddToResponse(Exchange exc) {
+        addSessionHeader(exc.getResponse(), extraxtSessionHeader(exc.getRequest()));
     }
 
     @Required
