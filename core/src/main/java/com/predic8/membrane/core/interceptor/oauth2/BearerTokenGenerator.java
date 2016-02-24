@@ -28,7 +28,7 @@ public class BearerTokenGenerator implements TokenGenerator {
 
     @Override
     public String getTokenType() {
-        return "bearer";
+        return "Bearer";
     }
 
     @Override

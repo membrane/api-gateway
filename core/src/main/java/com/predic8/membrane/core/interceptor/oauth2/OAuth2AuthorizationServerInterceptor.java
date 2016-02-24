@@ -258,7 +258,14 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         }
         else if(isOAuth2UserinfoCall(exc)){
             String authHeader = exc.getRequest().getHeader().getAuthorization();
+            if(authHeader == null)
+                return createNoBodyErrorResponse(exc,400, tokenGenerator.getTokenType() + " error=\"invalid_request\"");
             String token = authHeader.split(" ")[1];
+
+            if(!tokensToSession.containsKey(token)) {
+                return createNoBodyErrorResponse(exc, 401, tokenGenerator.getTokenType() + " error=\"invalid_token\"");
+            }
+
             Session session;
             synchronized (tokensToSession) {
                 session = tokensToSession.get(token);
@@ -341,6 +348,21 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             return createParameterizedJsonErrorResponse(exc,"error", "invalid_request");
             //return createInvalidRequestResponse(exc);
         }
+    }
+
+    private Outcome createNoBodyErrorResponse(Exchange exc, int code, String wwwAuthenticateValues) {
+        Response.ResponseBuilder resp;
+        switch(code){
+            case 400:   resp = Response.badRequest();
+                break;
+            case 401:   resp = Response.unauthorized();
+                break;
+            case 403:   resp = Response.forbidden();
+                break;
+            default:    resp = Response.badRequest();
+        }
+        exc.setResponse(resp.bodyEmpty().header(Header.WWW_AUTHENTICATE,wwwAuthenticateValues).build());
+        return Outcome.RETURN;
     }
 
     private Outcome respondWithTokenAndRedirect(Exchange exc, String token, String tokenType) {
