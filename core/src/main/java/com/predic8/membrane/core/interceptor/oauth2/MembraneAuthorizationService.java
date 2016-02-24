@@ -58,14 +58,6 @@ public class MembraneAuthorizationService extends AuthorizationService {
         userInfoEndpoint = (String) json.get("userinfo_endpoint");
         authorizationEndpoint = (String) json.get("authorization_endpoint");
         revocationEndpoint = (String) json.get("revocation_endpoint");
-
-        System.out.println(tokenEndpoint);
-        System.out.println(userInfoEndpoint);
-        System.out.println(authorizationEndpoint);
-        System.out.println(revocationEndpoint);
-
-
-
     }
 
     protected String getTokenEndpoint() {
