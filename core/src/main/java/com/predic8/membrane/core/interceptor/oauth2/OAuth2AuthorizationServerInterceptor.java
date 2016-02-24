@@ -146,7 +146,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             exc.setResponse(Response.badRequest().build());
             return Outcome.RETURN;
         }
-        else if(isOAuth2AuthCall(exc)) {
+        else if(s == null && isOAuth2AuthCall(exc)) {
             Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
 
             for(String paramName : params.keySet()){
