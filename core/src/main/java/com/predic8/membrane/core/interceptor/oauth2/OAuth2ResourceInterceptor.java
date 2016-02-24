@@ -254,7 +254,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         exc.getDestinations().set(0, uri);
 
         if (uri.equals("/logout")) {
-            if (s != null) {
+            if (s != null && s.getUserAttributes() != null) {
                 String token;
                 synchronized (s) {
                     token = s.getUserAttributes().get("access_token");
