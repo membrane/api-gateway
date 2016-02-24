@@ -155,8 +155,12 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             }
 
             String givenClientId = params.get("client_id");
+            if(givenClientId == null)
+                return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+
+            Client client;
             try {
-                Client client = clientList.getClient(givenClientId);
+                client = clientList.getClient(givenClientId);
             }catch(Exception e){
                 return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
             }
@@ -181,7 +185,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
                 return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
                 //return createInvalidRequestResponse(exc);
 
-            String knownRedirect_uri = clientList.getClient(params.get("client_id")).getCallbackUrl();
+            String knownRedirect_uri = client.getCallbackUrl();
             if(!givenRedirect_uri.equals(knownRedirect_uri))
                 return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
                 //return createInvalidRequestResponse(exc);
@@ -212,6 +216,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
                     params.remove(paramName);
             }
 
+            if(!params.containsKey("code"))
+                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+
             Session session;
             synchronized (authCodesToSession) {
                 if (!authCodesToSession.containsKey(params.get("code"))) {
@@ -229,6 +236,12 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
             String givenClientId = params.get("client_id");
             String givenClientSecret = params.get("client_secret");
+
+            if(givenClientId == null)
+                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+            if(givenClientSecret == null)
+                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+
             Client client;
             try {
                 client = clientList.getClient(givenClientId);
@@ -315,9 +328,10 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
             if(!params.containsKey("token"))
                 return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
-            if(!params.containsKey("client_id")){
+            if(!params.containsKey("client_id"))
                 return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
-            }
+            if(!params.containsKey("client_secret"))
+                return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
 
             Session session = tokensToSession.get(params.get("token"));
             if(session == null)
