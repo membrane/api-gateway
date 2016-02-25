@@ -19,7 +19,10 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @MCElement(name="scopes")
 public class ScopeList {

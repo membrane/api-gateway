@@ -13,21 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.Util;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.floreysoft.jmte.Engine;
 import com.floreysoft.jmte.ErrorHandler;
 import com.floreysoft.jmte.message.ParseException;
@@ -39,16 +24,29 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.Util;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the

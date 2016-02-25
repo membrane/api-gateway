@@ -108,6 +108,12 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		public synchronized String getUserName() {
 			return userName;
 		}
+
+		public synchronized void clearCredentials() {
+            // TODO maybe undo this as the session is used internally
+            getUserAttributes().remove("password");
+            getUserAttributes().remove("client_secret");
+        }
 	}
 
 	private String generateSessionID() {

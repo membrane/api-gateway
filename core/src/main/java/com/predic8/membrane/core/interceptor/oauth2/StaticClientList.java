@@ -16,7 +16,6 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
-import org.springframework.beans.factory.annotation.Required;
 
 import java.util.ArrayList;
 import java.util.HashMap;

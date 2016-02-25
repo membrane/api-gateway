@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.apache.commons.logging.Log;
