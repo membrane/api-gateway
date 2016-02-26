@@ -53,7 +53,7 @@ public class EmptyEndpointProcessor extends ExchangeProcessor{
         if (client.getCallbackUrl().equals(sessionRedirectUrl)) {
             if (getResponseType(s).equals("code")) {
                 String code = generateAuthorizationCode();
-                authCodesToSession.put(code, s);
+                authServer.getSessionFinder().addSessionForCode(code,s);
                 return respondWithAuthorizationCodeAndRedirect(exc, code);
             }
             if (getResponseType(s).equals("token")) {

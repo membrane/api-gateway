@@ -23,6 +23,15 @@ public class Client {
     private String clientSecret;
     private String callbackUrl;
 
+    public Client(){
+    }
+
+    public Client(String clientId, String clientSecret, String callbackUrl){
+        this.clientId = clientId;
+        this.clientSecret = clientSecret;
+        this.callbackUrl = callbackUrl;
+    }
+
     public String getClientId() {
         return clientId;
     }

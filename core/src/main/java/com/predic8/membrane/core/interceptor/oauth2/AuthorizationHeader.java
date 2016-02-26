@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
 
 public class AuthorizationHeader {
 

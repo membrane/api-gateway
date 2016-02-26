@@ -24,8 +24,6 @@ import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URIFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 
 public abstract class ExchangeProcessor {
@@ -34,16 +32,12 @@ public abstract class ExchangeProcessor {
     URIFactory uriFactory;
     ReusableJsonGenerator jsonGen = new ReusableJsonGenerator();
 
-    protected HashSet<String> supportedAuthorizationGrants = new HashSet<String>();
-
-    protected HashMap<String, SessionManager.Session> authCodesToSession = new HashMap<String, SessionManager.Session>();
-    protected HashMap<String, SessionManager.Session> tokensToSession = new HashMap<String, SessionManager.Session>();
-
     public abstract boolean isResponsible(Exchange exc);
     public abstract Outcome process(Exchange exc) throws Exception;
 
     public ExchangeProcessor(OAuth2AuthorizationServerInterceptor authServer){
         this.authServer = authServer;
+        uriFactory = authServer.getRouter().getUriFactory();
     }
 
     public Outcome createParameterizedJsonErrorResponse(Exchange exc, String... params) throws IOException {
@@ -94,7 +88,7 @@ public abstract class ExchangeProcessor {
     }
 
     protected void addSupportedAuthorizationGrants() {
-        supportedAuthorizationGrants.add("code");
-        supportedAuthorizationGrants.add("token");
+        authServer.getSupportedAuthorizationGrants().add("code");
+        authServer.getSupportedAuthorizationGrants().add("token");
     }
 }

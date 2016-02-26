@@ -110,7 +110,6 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		}
 
 		public synchronized void clearCredentials() {
-            // TODO maybe undo this as the session is used internally
             getUserAttributes().remove("password");
             getUserAttributes().remove("client_secret");
         }
@@ -125,6 +124,10 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		if (id == null) {
 			return null;
 		}
+		return getSession(id);
+	}
+
+	public Session getSession(String id){
 		Session s;
 		synchronized (sessions) {
 			s = sessions.get(id);

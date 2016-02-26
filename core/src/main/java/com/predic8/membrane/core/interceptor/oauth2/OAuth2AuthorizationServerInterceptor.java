@@ -27,6 +27,8 @@ import com.predic8.membrane.core.interceptor.authentication.session.UserDataProv
 import com.predic8.membrane.core.interceptor.oauth2.processors.*;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.util.HashSet;
+
 @MCElement(name = "oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
@@ -36,6 +38,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private String message;//
     private boolean exposeUserCredentialsToSession;//
 
+    private Router router;
     private UserDataProvider userDataProvider; //
     private SessionManager sessionManager = new SessionManager();//
     private AccountBlocker accountBlocker;//
@@ -44,18 +47,23 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private ScopeList scopeList;//
     private JwtGenerator jwtGenerator;
 
-    private OAuth2Processors processors;
+    private OAuth2Processors processors = new OAuth2Processors();
+    private HashSet<String> supportedAuthorizationGrants = new HashSet<String>();
+    private SessionFinder sessionFinder = new SessionFinder();
 
     @Override
     public void init(Router router) throws Exception {
-        //uriFactory = router.getUriFactory(); TODO: use this in Processor
+        this.setRouter(router);
         if (userDataProvider == null)
             throw new Exception("No userDataProvider configured. - Cannot work without one.");
         if (getClientList() == null)
             throw new Exception("No clientList configured. - Cannot work without one.");
-        if (getScopeList() == null) {
+        if (getScopeList() == null)
             throw new Exception("No scopeList configured. - Cannot work without one");
-        }
+        if(getLocation() == null)
+            throw new Exception("No location configured. - Cannot work without one");
+        if(getPath() == null)
+            throw new Exception("No path configured. - Cannot work without one");
         userDataProvider.init(router);
         getClientList().init(router);
         getScopeList().init(router);
@@ -66,7 +74,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
     private void addDefaultProcessors() {
-        processors
+        getProcessors()
                 .add(new FaviconEndpointProcessor(this))
                 .add(new AuthEndpointProcessor(this))
                 .add(new TokenEndpointProcessor(this))
@@ -80,7 +88,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        return processors.runProcessors(exc);
+        return getProcessors().runProcessors(exc);
     }
 
     public UserDataProvider getUserDataProvider() {
@@ -176,5 +184,38 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 6)
     public void setScopeList(ScopeList scopeList) {
         this.scopeList = scopeList;
+    }
+
+    @Override
+    public Router getRouter() {
+        return router;
+    }
+
+    public void setRouter(Router router) {
+        this.router = router;
+    }
+
+    public HashSet<String> getSupportedAuthorizationGrants() {
+        return supportedAuthorizationGrants;
+    }
+
+    public void setSupportedAuthorizationGrants(HashSet<String> supportedAuthorizationGrants) {
+        this.supportedAuthorizationGrants = supportedAuthorizationGrants;
+    }
+
+    public OAuth2Processors getProcessors() {
+        return processors;
+    }
+
+    public void setProcessors(OAuth2Processors processors) {
+        this.processors = processors;
+    }
+
+    public SessionFinder getSessionFinder() {
+        return sessionFinder;
+    }
+
+    public void setSessionFinder(SessionFinder sessionFinder) {
+        this.sessionFinder = sessionFinder;
     }
 }

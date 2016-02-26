@@ -36,7 +36,9 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
 
     @Override
-    protected void init() {
+    protected void init() throws Exception {
+        if(src == null)
+            throw new Exception("No path configured. - Cannot work without one");
         try {
             parseSrc(router.getResolverMap().resolve(src + "/.well-known/openid-configuration"));
         } catch (ResourceRetrievalException e) {

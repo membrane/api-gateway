@@ -33,6 +33,15 @@ public class ScopeList {
         private String id;
         private String properties;
 
+        public Scope(){
+
+        }
+
+        public Scope(String id, String properties){
+            this.id = id;
+            this.properties = properties;
+        }
+
         public String getId() {
             return id;
         }
