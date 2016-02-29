@@ -48,6 +48,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
         }
         if(scope == null)
             scope = "profile";
+        scope = OAuth2Util.urlencode(scope);
     }
 
     private void parseSrc(InputStream resolve) throws IOException {

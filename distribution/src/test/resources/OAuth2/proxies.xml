@@ -1,0 +1,67 @@
+<!--
+  ~ Copyright 2016 predic8 GmbH, www.predic8.com
+  ~    Licensed under the Apache License, Version 2.0 (the "License");
+  ~    you may not use this file except in compliance with the License.
+  ~    You may obtain a copy of the License at
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~    Unless required by applicable law or agreed to in writing, software
+  ~    distributed under the License is distributed on an "AS IS" BASIS,
+  ~    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~    See the License for the specific language governing permissions and
+  ~    limitations under the License.
+  -->
+
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+	xmlns:spring="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+
+	<router>
+		<serviceProxy port="9000">
+			<webServer docBase="C:\Users\Predic8\git\service-proxy-Master\distribution\conf\oauth2"/>
+		</serviceProxy>
+	</router>
+
+	<router>
+
+		<serviceProxy name="Authorization Server" port="2000">
+	
+			<oauth2authserver path="/login/" location="auth/dialog">
+				<staticUserDataProvider>
+					<user username="john" password="password" email="john@predic8.de" />
+				</staticUserDataProvider>
+				<staticClientList>
+					<client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback" />
+				</staticClientList>
+				<bearerToken/>
+				<scopes>
+					<scope id="username" properties="username"/>
+					<scope id="profile" properties="username email"/>
+				</scopes>
+			</oauth2authserver>
+
+		</serviceProxy>
+
+		<serviceProxy name="Membrane Resource service" port="2001">
+
+			<headerFilter>
+				<exclude>X-Authenticated-Username</exclude>
+			</headerFilter>
+
+			<oauth2Resource publicURL="http://localhost:2001/">
+				<membrane src="http://localhost:9000" clientId="abc" clientSecret="def" scope="username profile profile2" />
+			</oauth2Resource>
+
+			<groovy>
+				def name = exc.request.header.getFirstValue("X-Authenticated-Username")
+				exc.response = Response.ok("Hello " + name + ".").build()
+				RETURN
+			</groovy>
+
+		</serviceProxy>
+	
+	</router>
+	
+</spring:beans>
