@@ -17,6 +17,9 @@ package com.predic8.membrane.core.rules;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
+import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.EtcdRegistryApiConfig;
 
 /**
  * @description <p>
@@ -30,6 +33,15 @@ public class ServiceProxy extends AbstractServiceProxy {
 
 	private String externalHostname;
 
+	@Override
+	public void init() throws Exception {
+		if(externalHostname != null){
+			if(!hasAdminConsole() || !etcdRegistryApiConfigExists())
+				throw new RuntimeException("externalHostname is only usable in combination with AdminConsoleInterceptor and EtcdRegistryApiConfig");
+
+		}
+	}
+
 	public ServiceProxy() {
 		this.key = new ServiceProxyKey(80);
 	}
@@ -38,6 +50,22 @@ public class ServiceProxy extends AbstractServiceProxy {
 		this.key = ruleKey;
 		setTargetHost(targetHost);
 		setTargetPort(targetPort);
+	}
+
+	public boolean hasAdminConsole(){
+		for(Interceptor i : interceptors)
+			if(i instanceof AdminConsoleInterceptor)
+				return true;
+		return false;
+	}
+
+	public boolean etcdRegistryApiConfigExists(){
+		try {
+			if (router.getBeanFactory().getBean(EtcdRegistryApiConfig.class) != null)
+				return true;
+		}catch(Exception ignored){
+		}
+		return false;
 	}
 
 
