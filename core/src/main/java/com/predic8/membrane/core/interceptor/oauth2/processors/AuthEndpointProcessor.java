@@ -16,10 +16,10 @@ package com.predic8.membrane.core.interceptor.oauth2.processors;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.request.AuthcodeWithSessionRequest;
-import com.predic8.membrane.core.interceptor.oauth2.request.AuthcodeWithoutSessionRequest;
+import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithSessionRequest;
+import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithoutSessionRequest;
 
-public class AuthEndpointProcessor extends ExchangeProcessor {
+public class AuthEndpointProcessor extends EndpointProcessor {
 
     public AuthEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
@@ -35,10 +35,10 @@ public class AuthEndpointProcessor extends ExchangeProcessor {
     public Outcome process(Exchange exc) throws Exception {
 
         if(getSession(exc) == null) {
-            exc.setResponse(new AuthcodeWithoutSessionRequest(authServer,exc).validateRequest());
+            exc.setResponse(new AuthWithoutSessionRequest(authServer,exc).validateRequest());
             return Outcome.RETURN;
         }
-        exc.setResponse(new AuthcodeWithSessionRequest(authServer,exc).validateRequest());
+        exc.setResponse(new AuthWithSessionRequest(authServer,exc).validateRequest());
         return Outcome.RETURN;
     }
 }

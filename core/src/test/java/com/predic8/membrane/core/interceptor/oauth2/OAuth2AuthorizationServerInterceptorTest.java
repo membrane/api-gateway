@@ -29,13 +29,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class OAuth2AuthorizationServerInterceptorTest {
 
@@ -54,42 +54,12 @@ public class OAuth2AuthorizationServerInterceptorTest {
     @Before
     public void setUp() throws Exception {
         router = new HttpRouter();
+        initOasi();
+        initMas();
+        initLoginMockParametersForJohn();
+    }
 
-        oasi = new OAuth2AuthorizationServerInterceptor();
-
-        StaticUserDataProvider udp = new StaticUserDataProvider();
-        ArrayList<StaticUserDataProvider.User> users = new ArrayList<StaticUserDataProvider.User>();
-        johnsUserData = new StaticUserDataProvider.User("john", "password");
-        users.add(johnsUserData);
-        udp.setUsers(users);
-        oasi.setUserDataProvider(udp);
-
-        StaticClientList cl = new StaticClientList();
-        ArrayList<Client> clients = new ArrayList<Client>();
-        Client john2 = new Client("abc","def","http://localhost:2001/oauth2callback");
-        clients.add(john2);
-        cl.setClients(clients);
-        oasi.setClientList(cl);
-
-        ScopeList sl = new ScopeList();
-        ArrayList<ScopeList.Scope> scopes = new ArrayList<ScopeList.Scope>();
-        ScopeList.Scope scope = new ScopeList.Scope("profile","username email");
-        scopes.add(scope);
-        sl.setScopes(scopes);
-        oasi.setScopeList(sl);
-
-        oasi.setLocation("src\\test\\resources\\oauth2\\loginDialog\\dialog");
-        oasi.setPath("/login/");
-
-        oasi.init(router);
-
-        mas = new MembraneAuthorizationService();
-        mas.setClientId("abc");
-        mas.setClientSecret("def");
-        mas.setSrc(System.getProperty("user.dir") + "\\src\\test\\resources\\oauth2");
-
-        mas.init(router);
-
+    private void initLoginMockParametersForJohn() {
         afterLoginMockParams = new HashMap<String, String>();
         afterLoginMockParams.put("response_type","code");
         afterLoginMockParams.put("scope","profile");
@@ -99,13 +69,87 @@ public class OAuth2AuthorizationServerInterceptorTest {
         afterLoginMockParams.putAll(johnsUserData.getAttributes());
     }
 
+    private void initMas() throws Exception {
+        mas = new MembraneAuthorizationService();
+        mas.setClientId("abc");
+        mas.setClientSecret("def");
+        mas.setSrc(System.getProperty("user.dir") + "\\src\\test\\resources\\oauth2");
+        mas.init(router);
+    }
+
+    private void initOasi() throws Exception {
+        oasi = new OAuth2AuthorizationServerInterceptor();
+        setOasiUserDataProvider();
+        setOasiClientList();
+        setOasiScopeList();
+        setOasiLocationAndPath();
+        oasi.init(router);
+    }
+
+    private void setOasiLocationAndPath() {
+        oasi.setLocation("src\\test\\resources\\oauth2\\loginDialog\\dialog");
+        oasi.setPath("/login/");
+    }
+
+    private void setOasiScopeList() {
+        ScopeList sl = new ScopeList();
+        ArrayList<ScopeList.Scope> scopes = new ArrayList<ScopeList.Scope>();
+        ScopeList.Scope scope = new ScopeList.Scope("profile","username email");
+        scopes.add(scope);
+        sl.setScopes(scopes);
+        oasi.setScopeList(sl);
+    }
+
+    private void setOasiClientList() {
+        StaticClientList cl = new StaticClientList();
+        ArrayList<Client> clients = new ArrayList<Client>();
+        Client john2 = new Client("abc","def","http://localhost:2001/oauth2callback");
+        clients.add(john2);
+        cl.setClients(clients);
+        oasi.setClientList(cl);
+    }
+
+    private void setOasiUserDataProvider() {
+        StaticUserDataProvider udp = new StaticUserDataProvider();
+        ArrayList<StaticUserDataProvider.User> users = new ArrayList<StaticUserDataProvider.User>();
+        johnsUserData = new StaticUserDataProvider.User("john", "password");
+        users.add(johnsUserData);
+        udp.setUsers(users);
+        oasi.setUserDataProvider(udp);
+    }
+
     @Test
     public void testGoodAuthRequest() throws Exception {
-        Exchange exc = mockGetMethodExchange(mas.getLoginURL("123","http://localhost:2001/", "/"));
+        Exchange exc = getAuthRequestExchange();
 
         oasi.handleRequest(exc);
         assertEquals(307, exc.getResponse().getStatusCode()); // user gets redirected to login when successful
     }
+
+
+
+    public Exchange getAuthRequestExchange() throws Exception {
+        Exchange exc = new Request.Builder().get(mas.getLoginURL("123","http://localhost:2001/", "/")).buildExchange();
+        exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+        makeExchangeValid(exc);
+        return exc;
+    }
+
+    private void makeExchangeValid(final Exchange exc) throws Exception {
+        makeExchangeValid(new Callable<Exchange>() {
+            @Override
+            public Exchange call() throws Exception {
+                return exc;
+            }
+        });
+    }
+
+    //TODO this is duplicated from RequestParameterizedTest -> this will possibly also be an RequestParameterizedTest
+    public static void makeExchangeValid(Callable<Exchange> exc) throws Exception {
+        exc.call().setOriginalRequestUri(exc.call().getRequest().getUri());
+        exc.call().setRule(new NullRule());
+    }
+
 
     private void loginAsJohn(){
         SessionManager.Session session = oasi.getSessionManager().getSession("123");
@@ -122,21 +166,21 @@ public class OAuth2AuthorizationServerInterceptorTest {
         return oasi.getSessionManager().createSession(exc,"123");
     }
 
-    private Exchange mockGetMethodExchange(String uri) throws URISyntaxException {
-        Exchange exc = new Request.Builder().get(uri).buildExchange();
-        exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
-        exc.setOriginalRequestUri(exc.getRequest().getUri());
-        exc.setRule(new NullRule());
-        return exc;
-    }
-
     @Test
     public void testGoodGrantedAuthCode() throws Exception{
         testGoodAuthRequest();
         loginAsJohn();
-        Exchange exc = mockGetMethodExchange("/");
+        Exchange exc = new Request.Builder().get("/").buildExchange();
+        exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+        makeExchangeValid(exc);
 
         oasi.handleRequest(exc);
+        getCodeFromResponse(exc);
+        assertEquals(307,exc.getResponse().getStatusCode());
+
+    }
+
+    private void getCodeFromResponse(Exchange exc) {
         String loc = exc.getResponse().getHeader().getFirstValue("Location");
         for(String s1 : loc.split(Pattern.quote("?"))){
             if(s1.startsWith("code=")){
@@ -147,11 +191,9 @@ public class OAuth2AuthorizationServerInterceptorTest {
                 }
             }
         }
-        assertEquals(307,exc.getResponse().getStatusCode());
-
     }
 
-    private Exchange getMockTokenRequest() throws URISyntaxException {
+    public Exchange getMockTokenRequest() throws Exception {
         Exchange exc = new Request.Builder()
                 .post(mas.getTokenEndpoint())
                 .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
@@ -163,8 +205,7 @@ public class OAuth2AuthorizationServerInterceptorTest {
                         + "&redirect_uri=" + "http://localhost:2001/" + "oauth2callback"
                         + "&grant_type=authorization_code")
                 .buildExchange();
-        exc.setOriginalRequestUri(exc.getRequest().getUri());
-        exc.setRule(new NullRule());
+        makeExchangeValid(exc);
         return exc;
     }
 
@@ -180,15 +221,14 @@ public class OAuth2AuthorizationServerInterceptorTest {
         afterTokenGenerationTokenType = json.get("token_type");
     }
 
-    public Exchange getMockUserinfoRequest() throws URISyntaxException {
+    public Exchange getMockUserinfoRequest() throws Exception {
         Exchange exc = new Request.Builder()
                 .get(mas.getUserInfoEndpoint())
                 .header("Authorization", afterTokenGenerationTokenType + " " + afterTokenGenerationToken)
                 .header("User-Agent", Constants.USERAGENT)
                 .header(Header.ACCEPT, "application/json")
                 .buildExchange();
-        exc.setOriginalRequestUri(exc.getRequest().getUri());
-        exc.setRule(new NullRule());
+        makeExchangeValid(exc);
         return exc;
     }
 

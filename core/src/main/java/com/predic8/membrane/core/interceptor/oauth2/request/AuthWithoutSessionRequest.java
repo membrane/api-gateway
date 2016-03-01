@@ -25,9 +25,9 @@ import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.HashSet;
 
-public class AuthcodeWithoutSessionRequest extends ParameterizedRequest {
+public class AuthWithoutSessionRequest extends ParameterizedRequest {
 
-    public AuthcodeWithoutSessionRequest(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
+    public AuthWithoutSessionRequest(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
     }
 
@@ -38,7 +38,7 @@ public class AuthcodeWithoutSessionRequest extends ParameterizedRequest {
 
         if(getResponseType() == null || getScope() == null)
             return createParameterizedFormUrlencodedRedirect(exc, getState(), getRedirectUri() + "?error=invalid_request");
-        return null;
+        return new NoResponse();
     }
 
     @Override
@@ -53,7 +53,7 @@ public class AuthcodeWithoutSessionRequest extends ParameterizedRequest {
         if (!isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
             return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
 
-        if (noPrompt())
+        if (promptEqualsNone())
             return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=login_required");
 
 
@@ -73,10 +73,10 @@ public class AuthcodeWithoutSessionRequest extends ParameterizedRequest {
 
         exc.setResponse(Response.ResponseBuilder.newInstance().build());
         addParams(createSession(exc,extractSessionId(extraxtSessionHeader(exc.getRequest()))),params);
-        return null;
+        return new NoResponse();
     }
 
-    private boolean noPrompt() {
+    private boolean promptEqualsNone() {
         return getPrompt() != null && getPrompt().equals("none");
     }
 

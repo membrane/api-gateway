@@ -27,7 +27,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
-public class EmptyEndpointProcessor extends ExchangeProcessor{
+public class EmptyEndpointProcessor extends EndpointProcessor {
 
     public EmptyEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);

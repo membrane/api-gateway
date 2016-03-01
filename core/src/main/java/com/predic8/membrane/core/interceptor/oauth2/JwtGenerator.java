@@ -18,6 +18,9 @@ import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
 
 import java.math.BigInteger;
@@ -61,38 +64,63 @@ public class JwtGenerator {
         rsaJsonWebKey.setKeyId(new BigInteger(130, random).toString(32));
     }
 
-    public String getIdTokenSigned(String iss, String sub, String aud, int expirationInSeconds, Claim... additionalClaims) throws JoseException {
+    public String getSignedIdToken(String iss, String sub, String aud, int expirationInSeconds, Claim... additionalClaims) throws JoseException {
+        return getSignedToken(addNonDefaultClaims(getDefaultClaims(iss, sub, aud, expirationInSeconds), additionalClaims));
+    }
 
-        JwtClaims claims = new JwtClaims();
-        claims.setIssuer(iss);
-        claims.setSubject(sub);
-        claims.setAudience(aud);
-        claims.setExpirationTimeMinutesInTheFuture(((float)expirationInSeconds)/60f);
-        claims.setIssuedAtToNow();
-        for(Claim claim : additionalClaims)
-            claims.setClaim(claim.getName(),claim.getValue());
-        claims.setGeneratedJwtId();
-        claims.setNotBeforeMinutesInThePast(2); // not sure what this does
+    private String getSignedToken(JwtClaims claims) throws JoseException {
+        return prepareClaimsSigning(claims).getCompactSerialization();
+    }
 
-
-
+    private JsonWebSignature prepareClaimsSigning(JwtClaims claims) {
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
         jws.setKey(rsaJsonWebKey.getPrivateKey());
         jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
-
-        return jws.getCompactSerialization();
+        return jws;
     }
 
-    public List<Claim> getClaimsFromSignedIdToken(String iss, String aud){
+    private JwtClaims addNonDefaultClaims(JwtClaims claims, Claim[] additionalClaims) {
+        for(Claim claim : additionalClaims)
+            claims.setClaim(claim.getName(),claim.getValue());
+        return claims;
+    }
+
+    private JwtClaims getDefaultClaims(String iss, String sub, String aud, float expirationInSeconds) {
+        JwtClaims claims = new JwtClaims();
+        claims.setIssuer(iss);
+        claims.setSubject(sub);
+        claims.setAudience(aud);
+        claims.setExpirationTimeMinutesInTheFuture(expirationInSeconds /60f);
+        claims.setIssuedAtToNow();
+
+        claims.setGeneratedJwtId();
+        claims.setNotBeforeMinutesInThePast(2);
+        return claims;
+    }
+
+    public List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud) throws InvalidJwtException {
         ArrayList<Claim> result = new ArrayList<Claim>();
 
         // TODO verify and get claims
-
+        JwtClaims claims = processIdTokenToClaims(idToken,iss,aud);
 
 
 
         return result;
+    }
+
+    private JwtClaims processIdTokenToClaims(String idToken, String iss, String aud) throws InvalidJwtException {
+        JwtConsumer jwtConsumer = new JwtConsumerBuilder()
+                .setRequireExpirationTime()
+                .setAllowedClockSkewInSeconds(30)
+                .setRequireSubject()
+                .setExpectedIssuer(iss)
+                .setExpectedAudience(aud)
+                .setVerificationKey(rsaJsonWebKey.getKey())
+                .build();
+
+        return jwtConsumer.processToClaims(idToken);
     }
 }

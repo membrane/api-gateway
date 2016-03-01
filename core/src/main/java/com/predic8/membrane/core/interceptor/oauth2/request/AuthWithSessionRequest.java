@@ -18,9 +18,9 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
-public class AuthcodeWithSessionRequest extends ParameterizedRequest{
+public class AuthWithSessionRequest extends ParameterizedRequest{
 
-    public AuthcodeWithSessionRequest(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
+    public AuthWithSessionRequest(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
     }
 
@@ -29,7 +29,7 @@ public class AuthcodeWithSessionRequest extends ParameterizedRequest{
         if (getPrompt() == null)
             return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
 
-        return  null;
+        return new NoResponse();
     }
 
     @Override
@@ -39,7 +39,7 @@ public class AuthcodeWithSessionRequest extends ParameterizedRequest{
 
         if(getPrompt().equals("none") && !getSession(exc).isAuthorized())
             return createParameterizedJsonErrorResponse(exc,"error","login_required");
-        return null;
+        return new NoResponse();
     }
 
     @Override

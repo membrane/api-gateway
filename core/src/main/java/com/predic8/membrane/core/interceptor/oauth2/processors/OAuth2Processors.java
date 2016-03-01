@@ -20,16 +20,16 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import java.util.ArrayList;
 
 public class OAuth2Processors {
-    ArrayList<ExchangeProcessor> processors = new ArrayList<ExchangeProcessor>();
+    ArrayList<EndpointProcessor> processors = new ArrayList<EndpointProcessor>();
 
-    public OAuth2Processors add(ExchangeProcessor excProc){
+    public OAuth2Processors add(EndpointProcessor excProc){
         processors.add(excProc);
 
         return this;
     }
 
     public Outcome runProcessors(Exchange exc) throws Exception {
-        for(ExchangeProcessor excProc : processors){
+        for(EndpointProcessor excProc : processors){
             if(excProc.isResponsible(exc)) {
                 return excProc.process(exc);
             }

@@ -22,7 +22,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.Map;
 
-public class RevocationEndpointProcessor extends ExchangeProcessor {
+public class RevocationEndpointProcessor extends EndpointProcessor {
 
     public RevocationEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);

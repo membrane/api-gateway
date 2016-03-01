@@ -20,8 +20,10 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.schema.restriction.NormalizedStringRestriction;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
 
 public abstract class ParameterizedRequest {
@@ -48,10 +50,10 @@ public abstract class ParameterizedRequest {
     public Response validateRequest() throws Exception {
         Response resp;
         resp = checkForMissingParameters();
-        if(resp != null)
+        if(resp.getClass() != NoResponse.class)
             return resp;
         resp = validateWithParameters();
-        if(resp != null)
+        if(resp.getClass() != NoResponse.class)
             return resp;
         return getResponse();
     }
@@ -71,10 +73,13 @@ public abstract class ParameterizedRequest {
     }
 
     protected void removeEmptyParams(Map<String, String> params) {
+        ArrayList<String> toRemove = new ArrayList<String>();
         for (String paramName : params.keySet()) {
             if (params.get(paramName).isEmpty())
-                params.remove(paramName);
+                toRemove.add(paramName);
         }
+        for(String paramName : toRemove)
+            params.remove(paramName);
     }
 
     protected Response createParameterizedJsonErrorResponse(Exchange exc, String... params) throws IOException {

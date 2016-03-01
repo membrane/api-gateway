@@ -22,7 +22,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.LoginDialog;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.util.URI;
 
-public class LoginDialogEndpointProcessor extends ExchangeProcessor {
+public class LoginDialogEndpointProcessor extends EndpointProcessor {
 
     private final LoginDialog loginDialog;
 

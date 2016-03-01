@@ -39,7 +39,7 @@ public class UserinfoRequest extends ParameterizedRequest {
             return buildWwwAuthenticateErrorResponse( Response.badRequest(), "invalid_request");
         }
 
-        return null;
+        return new NoResponse();
     }
 
     @Override
@@ -48,7 +48,7 @@ public class UserinfoRequest extends ParameterizedRequest {
             return buildWwwAuthenticateErrorResponse( Response.unauthorized(), "invalid_token");
         }
         sessionProperties = new HashMap<String,String>(authServer.getSessionFinder().getSessionForToken(authHeader.getToken()).getUserAttributes());
-        return null;
+        return new NoResponse();
     }
 
     @Override

@@ -17,7 +17,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
-public class DefaultEndpointProcessor extends ExchangeProcessor{
+public class DefaultEndpointProcessor extends EndpointProcessor {
     public DefaultEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
     }

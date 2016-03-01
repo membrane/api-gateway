@@ -35,13 +35,15 @@ public class TokenRequest extends ParameterizedRequest {
 
     @Override
     protected Response checkForMissingParameters() throws Exception {
-        if(getCode() == null || !authServer.getSessionFinder().hasSessionForCode(getCode()) || getClientId() == null || getClientSecret() == null || getRedirectUri() == null)
+        if(getCode() == null ||  getClientId() == null || getClientSecret() == null || getRedirectUri() == null)
             return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
-        return null;
+        return new NoResponse();
     }
 
     @Override
     protected Response validateWithParameters() throws Exception {
+        if(!authServer.getSessionFinder().hasSessionForCode(getCode()))
+            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
         SessionManager.Session session = authServer.getSessionFinder().getSessionForCode(getCode());
         authServer.getSessionFinder().removeSessionForCode(getCode());
 
@@ -69,14 +71,14 @@ public class TokenRequest extends ParameterizedRequest {
         token = authServer.getTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
         idToken = null;
         if (isOpenIdScope(scope)) {
-            //idToken = jwtGenerator.getIdTokenSigned(...) // TODO
+            //idToken = jwtGenerator.getSignedIdToken(...) // TODO
         }
 
         authServer.getSessionFinder().addSessionForToken(token,session);
         // maybe undo this as the session is used internally
         session.clearCredentials();
 
-        return null;
+        return new NoResponse();
     }
 
     @Override

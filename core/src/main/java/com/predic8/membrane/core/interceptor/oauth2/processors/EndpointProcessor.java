@@ -26,7 +26,7 @@ import com.predic8.membrane.core.util.URIFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public abstract class ExchangeProcessor {
+public abstract class EndpointProcessor {
 
     protected final OAuth2AuthorizationServerInterceptor authServer;
     URIFactory uriFactory;
@@ -35,7 +35,7 @@ public abstract class ExchangeProcessor {
     public abstract boolean isResponsible(Exchange exc);
     public abstract Outcome process(Exchange exc) throws Exception;
 
-    public ExchangeProcessor(OAuth2AuthorizationServerInterceptor authServer){
+    public EndpointProcessor(OAuth2AuthorizationServerInterceptor authServer){
         this.authServer = authServer;
         uriFactory = authServer.getRouter().getUriFactory();
     }

@@ -18,7 +18,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
-public class FaviconEndpointProcessor extends ExchangeProcessor {
+public class FaviconEndpointProcessor extends EndpointProcessor {
 
     public FaviconEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);

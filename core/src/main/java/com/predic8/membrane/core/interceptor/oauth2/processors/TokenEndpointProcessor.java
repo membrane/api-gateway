@@ -18,7 +18,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.request.TokenRequest;
 
-public class TokenEndpointProcessor extends ExchangeProcessor {
+public class TokenEndpointProcessor extends EndpointProcessor {
 
 
     public TokenEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
