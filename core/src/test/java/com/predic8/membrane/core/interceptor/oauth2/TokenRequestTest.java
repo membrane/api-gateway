@@ -14,11 +14,15 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import org.junit.Before;
+import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.*;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.Callable;
 
+@RunWith(Parameterized.class)
 public class TokenRequestTest extends RequestParameterizedTest {
 
     @Before
@@ -28,10 +32,64 @@ public class TokenRequestTest extends RequestParameterizedTest {
         exc = oasit.getMockTokenRequest();
     }
 
-    @Parameterized.Parameters(name = "{0}")
+    @Parameters(name = "{0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-
+            testCodeMissing(),
+            testClientIdMissing(),
+            testClientSecretMissing(),
+            testRedirectUriMissing(),
+            testNoSessionForCode(),
+            testInvalidClient(),
+            testUnauthorizedClient(),
+            testRedirectUriNotAbsolute(),
+            testRedirectUriNotEquals()
         });
     }
+
+    private static Object[] testRedirectUriNotEquals() {
+        return new Object[0];
+    }
+
+    private static Object[] testRedirectUriNotAbsolute() {
+        return new Object[0];
+    }
+
+    private static Object[] testUnauthorizedClient() {
+        return new Object[0];
+    }
+
+    private static Object[] testInvalidClient() {
+        return new Object[0];
+    }
+
+    private static Object[] testNoSessionForCode() {
+        return new Object[0];
+    }
+
+    private static Object[] testRedirectUriMissing() {
+        return new Object[0];
+    }
+
+    private static Object[] testClientSecretMissing() {
+        return new Object[0];
+    }
+
+    private static Object[] testClientIdMissing() {
+        return new Object[0];
+    }
+
+    private static Object[] testCodeMissing() {
+        return new Object[]{"testCodeMissing",removeValueFromRequestUriLazy(getExchange(),getCodeQuery()),400,getInvalidRequestJson(), getResponseBody(getExchange())};
+    }
+
+    private static Callable<String> getCodeQuery(){
+        return new Callable<String>() {
+            @Override
+            public String call() throws Exception {
+                return "code=" + oasit.afterCodeGenerationCode;
+            }
+        };
+    }
+
 }

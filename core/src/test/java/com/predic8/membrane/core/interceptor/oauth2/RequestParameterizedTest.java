@@ -70,6 +70,15 @@ public class RequestParameterizedTest {
         };
     }
 
+    public static Callable<Object> removeValueFromRequestUriLazy(final Callable<Exchange> exc,final Callable<String> lazyValue){
+        return new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                return replaceValueFromRequestUri(exc,lazyValue.call(),"").call();
+            }
+        };
+    }
+
     public static Callable<Object> replaceValueFromRequestUri(final Callable<Exchange> exc, final String value, final String replacement){
         return new Callable<Object>(){
             @Override
