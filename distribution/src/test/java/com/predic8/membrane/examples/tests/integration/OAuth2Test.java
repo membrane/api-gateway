@@ -16,22 +16,55 @@ package com.predic8.membrane.examples.tests.integration;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.test.AssertUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 public class OAuth2Test{
-    @Test
-    public void test() throws Exception{
-        Router router = HttpRouter.init(System.getProperty("user.dir")+ "\\src\\test\\resources\\OAuth2\\proxies.xml");
 
+
+    private Router router;
+
+    @Before
+    public void setUp() throws Exception{
+        router = HttpRouter.init(System.getProperty("user.dir")+ "\\src\\test\\resources\\OAuth2\\proxies.xml");
+    }
+
+    @Test
+    public void testGoodRequest() throws Exception{
         AssertUtils.getAndAssert200("http://localhost:2001");
         String[] headers = new String[2];
         headers[0] = "Content-Type";
         headers[1] = "application/x-www-form-urlencoded";
         AssertUtils.postAndAssert(200,"http://localhost:2000/login/",headers,"target=&username=john&password=password");
         Assert.assertEquals("Hello john.", AssertUtils.getAndAssert200("http://localhost:2000/"));
+    }
 
-        router.shutdown();
+    @Test
+    public void testBadUserCredentials() throws Exception{
+        AssertUtils.getAndAssert200("http://localhost:2001");
+        String[] headers = new String[2];
+        headers[0] = "Content-Type";
+        headers[1] = "application/x-www-form-urlencoded";
+        Assert.assertEquals(true,AssertUtils.postAndAssert(200,"http://localhost:2000/login/",headers,"target=&username=john&password=wrongPassword").contains("Invalid password."));
+        AssertUtils.getAndAssert(400,"http://localhost:2000/");
+    }
 
+    @Test
+    public void testMissingHeader() throws Exception{
+        AssertUtils.getAndAssert200("http://localhost:2001");
+        Assert.assertEquals(true,AssertUtils.postAndAssert(200,"http://localhost:2000/login/","target=&username=john&password=password").contains("Invalid password."));
+        AssertUtils.getAndAssert(400,"http://localhost:2000/");
+    }
+
+    @Test
+    public void testBypassingAuthorizationService() throws Exception{
+        AssertUtils.getAndAssert(400,"http://localhost:2000/oauth2/auth");
+    }
+
+    @After
+    public void tearDown() throws Exception{
+        router.stopAll();
     }
 }
