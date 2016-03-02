@@ -45,22 +45,17 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
 
         s.authorize();
         Client client;
-        String sessionRedirectUrl;
         synchronized (s) {
             client = authServer.getClientList().getClient(s.getUserAttributes().get("client_id"));
-            sessionRedirectUrl = s.getUserAttributes().get("redirect_uri");
         }
-        if (client.getCallbackUrl().equals(sessionRedirectUrl)) {
-            if (getResponseType(s).equals("code")) {
-                String code = generateAuthorizationCode();
-                authServer.getSessionFinder().addSessionForCode(code,s);
-                return respondWithAuthorizationCodeAndRedirect(exc, code);
-            }
-            if (getResponseType(s).equals("token"))
-                return respondWithTokenAndRedirect(exc, generateAccessToken(s, client), authServer.getTokenGenerator().getTokenType());
-            return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
+        if (getResponseType(s).equals("code")) {
+            String code = generateAuthorizationCode();
+            authServer.getSessionFinder().addSessionForCode(code,s);
+            return respondWithAuthorizationCodeAndRedirect(exc, code);
         }
-        return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+        if (getResponseType(s).equals("token"))
+            return respondWithTokenAndRedirect(exc, generateAccessToken(s, client), authServer.getTokenGenerator().getTokenType());
+        return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
     }
 
     protected static String getResponseType(SessionManager.Session s) {

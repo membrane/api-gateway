@@ -24,13 +24,13 @@ import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 public abstract class RequestParameterizedTest {
+
     static OAuth2AuthorizationServerInterceptorTest oasit;
     static Exchange exc;
 
     @Before
     public void setUp() throws Exception{
-        oasit = new OAuth2AuthorizationServerInterceptorTest();
-        oasit.setUp();
+        oasit = OAuth2AuthorizationServerInterceptorTest.createAndSetUp();
     }
 
     @Parameterized.Parameter
@@ -226,6 +226,15 @@ public abstract class RequestParameterizedTest {
             @Override
             public Object call() throws Exception {
                 return "{\"error\":\"invalid_grant\"}";
+            }
+        };
+    }
+
+    public static Callable<Object> getUnsupportedResponseTypeJson(){
+        return new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                return "{\"error\":\"unsupported_response_type\"}";
             }
         };
     }

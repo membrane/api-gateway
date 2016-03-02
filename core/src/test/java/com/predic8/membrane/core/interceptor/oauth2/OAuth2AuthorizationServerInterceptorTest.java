@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +50,12 @@ public class OAuth2AuthorizationServerInterceptorTest {
     String afterTokenGenerationTokenType;
 
     String cookieHeaderContent = "SESSIONID=123";
+
+    public static OAuth2AuthorizationServerInterceptorTest createAndSetUp() throws Exception {
+        OAuth2AuthorizationServerInterceptorTest oasit = new OAuth2AuthorizationServerInterceptorTest();
+        oasit.setUp();
+        return oasit;
+    }
 
 
     @Before
@@ -119,10 +126,18 @@ public class OAuth2AuthorizationServerInterceptorTest {
     }
 
     @Test
+    public void testBadRequest() throws Exception{
+        Exchange exc = getMockBadRequestExchange();
+        oasi.handleRequest(exc);
+        assertEquals(400,exc.getResponse().getStatusCode());
+    }
+
+    @Test
     public void testGoodAuthRequest() throws Exception {
         Exchange exc = getMockAuthRequestExchange();
         oasi.handleRequest(exc);
         assertEquals(307, exc.getResponse().getStatusCode()); // user gets redirected to login when successful
+        loginAsJohn();
     }
 
 
@@ -168,15 +183,20 @@ public class OAuth2AuthorizationServerInterceptorTest {
     @Test
     public void testGoodGrantedAuthCode() throws Exception{
         testGoodAuthRequest();
-        loginAsJohn();
-        Exchange exc = new Request.Builder().get("/").buildExchange();
-        exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+        Exchange exc = getMockEmptyEndpointRequest();
         makeExchangeValid(exc);
 
         oasi.handleRequest(exc);
         getCodeFromResponse(exc);
         assertEquals(307,exc.getResponse().getStatusCode());
 
+    }
+
+    public Exchange getMockEmptyEndpointRequest() throws Exception {
+        Exchange exc =  new Request.Builder().get("/").buildExchange();
+        exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+        makeExchangeValid(exc);
+        return exc;
     }
 
     private void getCodeFromResponse(Exchange exc) {
@@ -261,6 +281,12 @@ public class OAuth2AuthorizationServerInterceptorTest {
 
     @After
     public void teardown() throws IOException {
+    }
+
+    public Exchange getMockBadRequestExchange() throws Exception {
+        Exchange exc = new Request.Builder().get("/thisdoesntexist").buildExchange();
+        makeExchangeValid(exc);
+        return exc;
     }
 }
 
