@@ -41,7 +41,7 @@ public class GithubAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected String getUserIDProperty() {
+    protected String getSubject() {
         return "login";
     }
 

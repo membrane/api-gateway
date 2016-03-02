@@ -29,7 +29,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,7 +87,7 @@ public class OAuth2AuthorizationServerInterceptorTest {
         oasi = new OAuth2AuthorizationServerInterceptor();
         setOasiUserDataProvider();
         setOasiClientList();
-        setOasiScopeList();
+        setOasiClaimList();
         setOasiLocationAndPath();
         oasi.init(router);
     }
@@ -98,13 +97,14 @@ public class OAuth2AuthorizationServerInterceptorTest {
         oasi.setPath("/login/");
     }
 
-    private void setOasiScopeList() {
-        ScopeList sl = new ScopeList();
-        ArrayList<ScopeList.Scope> scopes = new ArrayList<ScopeList.Scope>();
-        ScopeList.Scope scope = new ScopeList.Scope("profile","username email");
+    private void setOasiClaimList() {
+        ClaimList cl = new ClaimList();
+        cl.setValue("username email");
+        ArrayList<ClaimList.Scope> scopes = new ArrayList<ClaimList.Scope>();
+        ClaimList.Scope scope = new ClaimList.Scope("profile","username email");
         scopes.add(scope);
-        sl.setScopes(scopes);
-        oasi.setScopeList(sl);
+        cl.setScopes(scopes);
+        oasi.setClaimList(cl);
     }
 
     private void setOasiClientList() {

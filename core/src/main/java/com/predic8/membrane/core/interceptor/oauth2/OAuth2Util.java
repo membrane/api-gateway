@@ -13,6 +13,11 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.HeaderName;
+import com.predic8.membrane.core.http.Message;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
@@ -20,5 +25,26 @@ public class OAuth2Util {
 
     public static String urlencode(String value) throws UnsupportedEncodingException {
         return URLEncoder.encode(value, "UTF-8").replaceAll("\\+", "%20");
+    }
+
+    public static void extractSessionFromRequestAndAddToResponse(Exchange exc) {
+        addSessionHeader(exc.getResponse(), extraxtSessionHeader(exc.getRequest()));
+    }
+
+    public static HeaderField extraxtSessionHeader(Message msg) {
+        for (HeaderField h : msg.getHeader().getAllHeaderFields()) {
+            if (h.getHeaderName().equals("Set-Cookie")) {
+                return h;
+            } else if (h.getHeaderName().equals("Cookie")) {
+                h.setHeaderName(new HeaderName("Set-Cookie"));
+                return h;
+            }
+        }
+        throw new RuntimeException();
+    }
+
+    public static Message addSessionHeader(Message msg, HeaderField session) {
+        msg.getHeader().add(session);
+        return msg;
     }
 }

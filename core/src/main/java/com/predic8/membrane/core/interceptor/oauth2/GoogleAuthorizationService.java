@@ -56,7 +56,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected String getUserIDProperty() {
+    protected String getSubject() {
         return "email"; // "login"
     }
 }

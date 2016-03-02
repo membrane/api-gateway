@@ -387,13 +387,13 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 HashMap<String, String> json2 = Util.parseSimpleJSONResponse(response2);
 
-                if (!json2.containsKey(auth.getUserIDProperty()))
-                    throw new RuntimeException("User object does not contain " + auth.getUserIDProperty() + " key.");
+                if (!json2.containsKey(auth.getSubject()))
+                    throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");
 
                 Map<String, String> userAttributes = session.getUserAttributes();
-                String userIdPropertyFixed = auth.getUserIDProperty().substring(0, 1).toUpperCase() + auth.getUserIDProperty().substring(1);
+                String userIdPropertyFixed = auth.getSubject().substring(0, 1).toUpperCase() + auth.getSubject().substring(1);
                 synchronized (userAttributes) {
-                    userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, json2.get(auth.getUserIDProperty()));
+                    userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, json2.get(auth.getSubject()));
                 }
 
                 session.authorize();

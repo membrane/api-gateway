@@ -19,7 +19,9 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
+import com.predic8.membrane.core.interceptor.oauth2.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
 
@@ -71,7 +73,7 @@ public class TokenRequest extends ParameterizedRequest {
         token = authServer.getTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
         idToken = null;
         if (isOpenIdScope(scope)) {
-            //idToken = jwtGenerator.getSignedIdToken(...) // TODO
+            idToken = getSignedIdToken(username, client);
         }
 
         authServer.getSessionFinder().addSessionForToken(token,session);
@@ -79,6 +81,10 @@ public class TokenRequest extends ParameterizedRequest {
         session.clearCredentials();
 
         return new NoResponse();
+    }
+
+    private String getSignedIdToken(String username, Client client, JwtGenerator.Claim... claims) throws JoseException {
+        return authServer.getJwtGenerator().getSignedIdToken(authServer.getIssuer(),username,client.getClientId(),10*60,claims);
     }
 
     @Override
@@ -89,16 +95,6 @@ public class TokenRequest extends ParameterizedRequest {
                 .contentType(MimeType.APPLICATION_JSON_UTF8)
                 .dontCache()
                 .build();
-    }
-
-    private boolean isOpenIdScope(String scope) {
-        if (scope.contains("openid")) {
-            String[] split = scope.split(" ");
-            for (String singleScope : split)
-                if (singleScope.equals("openid"))
-                    return true;
-        }
-        return false;
     }
 
     private String getScope(SessionManager.Session session) {
@@ -114,7 +110,7 @@ public class TokenRequest extends ParameterizedRequest {
             gen.writeStartObject();
             gen.writeObjectField("access_token", token);
             gen.writeObjectField("token_type", authServer.getTokenGenerator().getTokenType());
-            //gen.writeObjectField("expires_in", "null"); // TODO change this
+            //gen.writeObjectField("expires_in", "null"); // TODO is optional but maybe useful?
             gen.writeObjectField("scope", scope);
             if (idToken != null)
                 gen.writeObjectField("id_token:", idToken);

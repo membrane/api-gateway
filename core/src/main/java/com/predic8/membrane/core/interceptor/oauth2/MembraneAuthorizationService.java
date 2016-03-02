@@ -30,7 +30,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private String tokenEndpoint;
     private String userInfoEndpoint;
-    private String userIDProperty = "username";
+    private String subject = "username";
     private String authorizationEndpoint;
     private String revocationEndpoint;
 
@@ -88,13 +88,13 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected String getUserIDProperty() {
-        return userIDProperty;
+    protected String getSubject() {
+        return subject;
     }
 
     @MCAttribute
-    public void setUserIDProperty(String userIDProperty) {
-        this.userIDProperty = userIDProperty;
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
     public String getSrc() {

@@ -44,9 +44,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private AccountBlocker accountBlocker;//
     private ClientList clientList;//
     private TokenGenerator tokenGenerator = new BearerTokenGenerator();
-    private ScopeList scopeList;//
-    private JwtGenerator jwtGenerator;
+    private ClaimList claimList;//
 
+    private JwtGenerator jwtGenerator;
     private OAuth2Processors processors = new OAuth2Processors();
     private HashSet<String> supportedAuthorizationGrants = new HashSet<String>();
     private SessionFinder sessionFinder = new SessionFinder();
@@ -58,7 +58,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             throw new Exception("No userDataProvider configured. - Cannot work without one.");
         if (getClientList() == null)
             throw new Exception("No clientList configured. - Cannot work without one.");
-        if (getScopeList() == null)
+        if (getClaimList() == null)
             throw new Exception("No scopeList configured. - Cannot work without one");
         if(getLocation() == null)
             throw new Exception("No location configured. - Cannot work without one");
@@ -66,7 +66,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             throw new Exception("No path configured. - Cannot work without one");
         userDataProvider.init(router);
         getClientList().init(router);
-        getScopeList().init(router);
+        getClaimList().init(router);
         jwtGenerator = new JwtGenerator();
         sessionManager.init(router);
         addDefaultProcessors();
@@ -176,16 +176,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         this.tokenGenerator = tokenGenerator;
     }
 
-    public ScopeList getScopeList() {
-        return scopeList;
-    }
-
-    @Required
-    @MCChildElement(order = 6)
-    public void setScopeList(ScopeList scopeList) {
-        this.scopeList = scopeList;
-    }
-
     @Override
     public Router getRouter() {
         return router;
@@ -217,5 +207,23 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     public void setSessionFinder(SessionFinder sessionFinder) {
         this.sessionFinder = sessionFinder;
+    }
+
+    public JwtGenerator getJwtGenerator() {
+        return jwtGenerator;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public ClaimList getClaimList() {
+        return claimList;
+    }
+
+    @Required
+    @MCChildElement(order = 6)
+    public void setClaimList(ClaimList claimList) {
+        this.claimList = claimList;
     }
 }

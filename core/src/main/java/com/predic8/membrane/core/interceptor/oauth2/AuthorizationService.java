@@ -52,7 +52,7 @@ public abstract class AuthorizationService {
 
     protected abstract String getUserInfoEndpoint();
 
-    protected abstract String getUserIDProperty();
+    protected abstract String getSubject();
 
     protected abstract String getTokenEndpoint();
 

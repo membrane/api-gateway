@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInt
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class UserinfoRequest extends ParameterizedRequest {
@@ -62,22 +63,26 @@ public class UserinfoRequest extends ParameterizedRequest {
 
     protected String getUserDataAsJson(Map<String,String> sessionProperties) throws IOException {
 
-        Map<String, String> scopeProperties = getScopeProperties(sessionProperties); // Do not Inline! Synchronize
+        Map<String, String> claims = getClaimsFromScopes(sessionProperties);
 
         synchronized (jsonGen) {
             JsonGenerator gen = jsonGen.resetAndGet();
             gen.writeStartObject();
 
-            for (String property : scopeProperties.keySet())
-                gen.writeObjectField(property, scopeProperties.get(property));
+            for (String property : claims.keySet())
+                gen.writeObjectField(property, claims.get(property));
 
             gen.writeEndObject();
             return jsonGen.getJson();
         }
     }
 
-    private Map<String, String> getScopeProperties(Map<String,String> sessionProperties) {
+    private Map<String, String> getClaimsFromScopes(Map<String,String> sessionProperties) {
         String[] scopes = sessionProperties.get("scope").split(" ");
-        return authServer.getScopeList().getScopes(sessionProperties, scopes);
+        HashSet<String> claims = new HashSet<String>();
+        for(String scope : scopes){
+            claims.addAll(authServer.getClaimList().getClaimsForScope(scope));
+        }
+        return authServer.getClaimList().getClaimsFromSession(sessionProperties, claims);
     }
 }

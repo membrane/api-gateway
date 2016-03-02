@@ -27,8 +27,8 @@
 	<router>
 
 		<serviceProxy name="Authorization Server" port="2000">
-	
-			<oauth2authserver path="/login/" location="auth/dialog">
+
+			<oauth2authserver path="/login/" location="./auth/dialog">
 				<staticUserDataProvider>
 					<user username="john" password="password" email="john@predic8.de" />
 				</staticUserDataProvider>
@@ -36,10 +36,10 @@
 					<client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback" />
 				</staticClientList>
 				<bearerToken/>
-				<scopes>
-					<scope id="username" properties="username"/>
-					<scope id="profile" properties="username email"/>
-				</scopes>
+				<claims value="username email">
+					<scope id="username" claims="username"/>
+					<scope id="profile" claims="username email"/>
+				</claims>
 			</oauth2authserver>
 
 		</serviceProxy>

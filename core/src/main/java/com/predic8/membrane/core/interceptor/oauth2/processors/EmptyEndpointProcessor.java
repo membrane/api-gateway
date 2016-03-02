@@ -20,8 +20,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.*;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -44,95 +43,28 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
         SessionManager.Session s = getSession(exc);
 
         s.authorize();
-        Client client;
-        synchronized (s) {
-            client = authServer.getClientList().getClient(s.getUserAttributes().get("client_id"));
-        }
         if (getResponseType(s).equals("code")) {
-            String code = generateAuthorizationCode();
-            authServer.getSessionFinder().addSessionForCode(code,s);
-            return respondWithAuthorizationCodeAndRedirect(exc, code);
+            return new AuthorizationCodeFlow(authServer,exc,s).getResponse();
+
         }
         if (getResponseType(s).equals("token"))
-            return respondWithTokenAndRedirect(exc, generateAccessToken(s, client), authServer.getTokenGenerator().getTokenType());
+            return new TokenFlow(authServer,exc,s).getResponse();
         return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
     }
 
     protected static String getResponseType(SessionManager.Session s) {
-        return s.getUserAttributes().get("response_type");
-    }
-
-    protected static String generateAuthorizationCode() {
-        return new BigInteger(130, new SecureRandom()).toString(32);
-    }
-
-    protected Outcome respondWithTokenAndRedirect(Exchange exc, String token, String tokenType) {
-        SessionManager.Session s = getSession(exc);
-        String state;
-        String redirectUrl;
-        String scope;
-        synchronized (s) {
-            state = s.getUserAttributes().get("state");
-            redirectUrl = s.getUserAttributes().get("redirect_uri");
-            scope = s.getUserAttributes().get("scope");
-        }
-
-        exc.setResponse(Response.
-                redirect(redirectUrl + "?access_token=" + token + stateQuery(state) + "&token_type=" + tokenType + "&scope=" + scope, false).
-                dontCache().
-                body("").
-                build());
-        extractSessionFromRequestAndAddToResponse(exc);
-        return Outcome.RETURN;
-    }
-
-    private String stateQuery(String state) {
-        return state == null ? "" : "&state=" + state;
-    }
-
-    protected Outcome respondWithAuthorizationCodeAndRedirect(Exchange exc, String code) throws UnsupportedEncodingException {
-        SessionManager.Session s = getSession(exc);
-        String state;
-        String redirectUrl;
-        synchronized (s) {
-            state = s.getUserAttributes().get("state");
-            redirectUrl = s.getUserAttributes().get("redirect_uri");
-        }
-
-        exc.setResponse(Response.
-                redirect(redirectUrl + "?code=" + code + stateQuery(state), false).
-                dontCache().
-                body("").
-                build());
-        extractSessionFromRequestAndAddToResponse(exc);
-        return Outcome.RETURN;
-    }
-
-    // TODO
-    public static HeaderField extraxtSessionHeader(Message msg) {
-        for (HeaderField h : msg.getHeader().getAllHeaderFields()) {
-            if (h.getHeaderName().equals("Set-Cookie")) {
-                return h;
-            } else if (h.getHeaderName().equals("Cookie")) {
-                h.setHeaderName(new HeaderName("Set-Cookie"));
-                return h;
-            }
-        }
-        throw new RuntimeException();
-    }
-
-    public Message addSessionHeader(Message msg, HeaderField session) {
-        msg.getHeader().add(session);
-        return msg;
-    }
-
-    public void extractSessionFromRequestAndAddToResponse(Exchange exc) {
-        addSessionHeader(exc.getResponse(), extraxtSessionHeader(exc.getRequest()));
-    }
-
-    private String generateAccessToken(SessionManager.Session s, Client client) {
-        synchronized (s) {
-            return authServer.getTokenGenerator().getToken(s.getUserName(), client.getClientId(), client.getClientSecret());
+        synchronized(s) {
+            return s.getUserAttributes().get("response_type");
         }
     }
+
+
+
+
+
+
+
+
+
+
 }

@@ -65,6 +65,9 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         if (validScopes.isEmpty())
             return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_scope");
 
+        if( containsOpenIdScopeAndIsNotCodeRequest(validScopes))
+            return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_request");
+
         setScope(validScopes);
 
         String invalidScopes = hasGivenInvalidScopes(getScope(), validScopes);
@@ -74,6 +77,10 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         exc.setResponse(Response.ResponseBuilder.newInstance().build());
         addParams(createSession(exc,extractSessionId(extraxtSessionHeader(exc.getRequest()))),params);
         return new NoResponse();
+    }
+
+    private boolean containsOpenIdScopeAndIsNotCodeRequest(String scopes) {
+        return isOpenIdScope(scopes) && !getResponseType().equals("code");
     }
 
     private boolean promptEqualsNone() {
@@ -89,7 +96,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         String[] scopeList = scopes.split(" ");
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < scopeList.length; i++) {
-            if (authServer.getScopeList().scopeExists(scopeList[i]))
+            if (authServer.getClaimList().scopeExists(scopeList[i]))
                 builder.append(scopeList[i]).append(" ");
         }
         return builder.toString().trim();
