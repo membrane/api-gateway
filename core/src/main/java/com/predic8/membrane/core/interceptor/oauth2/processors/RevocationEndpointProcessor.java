@@ -40,7 +40,6 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
         if (!params.containsKey("token") || !params.containsKey("client_id") ||!params.containsKey("client_secret"))
             return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
 
-        authServer.getSessionFinder().getSessionForToken(params.get("token"));
         SessionManager.Session session = authServer.getSessionFinder().getSessionForToken(params.get("token"));
         if (session == null) { // token doesnt exist -> token is already invalid
             exc.setResponse(Response

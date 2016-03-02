@@ -120,15 +120,14 @@ public class OAuth2AuthorizationServerInterceptorTest {
 
     @Test
     public void testGoodAuthRequest() throws Exception {
-        Exchange exc = getAuthRequestExchange();
-
+        Exchange exc = getMockAuthRequestExchange();
         oasi.handleRequest(exc);
         assertEquals(307, exc.getResponse().getStatusCode()); // user gets redirected to login when successful
     }
 
 
 
-    public Exchange getAuthRequestExchange() throws Exception {
+    public Exchange getMockAuthRequestExchange() throws Exception {
         Exchange exc = new Request.Builder().get(mas.getLoginURL("123","http://localhost:2001/", "/")).buildExchange();
         exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
         makeExchangeValid(exc);
@@ -238,9 +237,26 @@ public class OAuth2AuthorizationServerInterceptorTest {
         Exchange exc = getMockUserinfoRequest();
         oasi.handleRequest(exc);
         assertEquals(200, exc.getResponse().getStatusCode());
-
         HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
         assertEquals("john",json.get("username"));
+    }
+
+    public Exchange getMockRevocationRequest() throws Exception {
+        Exchange exc = new Request.Builder().post(mas.getRevocationEndpoint())
+                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(Header.USER_AGENT, Constants.USERAGENT)
+                .body("token=" + afterTokenGenerationToken +"&client_id=" + mas.getClientId() + "&client_secret=" + mas.getClientSecret())
+                .buildExchange();
+        makeExchangeValid(exc);
+        return exc;
+    }
+
+    @Test
+    public void testGoodRevocationRequest() throws Exception{
+        testGoodTokenRequest();
+        Exchange exc = getMockRevocationRequest();
+        oasi.handleRequest(exc);
+        assertEquals(200, exc.getResponse().getStatusCode());
     }
 
     @After

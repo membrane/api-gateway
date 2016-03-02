@@ -15,16 +15,16 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.http.Message;
 
-public class AuthorizationHeader {
+public class TokenAuthorizationHeader {
 
-    protected Message message;
+    protected String value;
 
-    public AuthorizationHeader(Message msg) {
-        message = msg;
+    public TokenAuthorizationHeader(Message msg) {
+        value = msg.getHeader().getAuthorization();
     }
 
     public String getAuthorizationHeader() {
-        return message.getHeader().getAuthorization();
+        return value;
     }
 
     public boolean isSet() {
@@ -33,5 +33,16 @@ public class AuthorizationHeader {
 
     public String getToken(){
         return getAuthorizationHeader().split(" ")[1];
+    }
+
+    public String getTokenType(){
+        return getAuthorizationHeader().split(" ")[0];
+    }
+
+    public boolean isValid() {
+        String[] split = getAuthorizationHeader().split(" ");
+        if(split.length < 2 || split[0].isEmpty() || split[1].isEmpty())
+            return false;
+        return true;
     }
 }

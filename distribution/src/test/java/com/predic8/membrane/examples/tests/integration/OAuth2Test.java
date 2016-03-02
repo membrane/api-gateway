@@ -32,7 +32,7 @@ public class OAuth2Test{
     }
 
     @Test
-    public void testGoodRequest() throws Exception{
+    public void testGoodLoginRequest() throws Exception{
         AssertUtils.getAndAssert200("http://localhost:2001");
         String[] headers = new String[2];
         headers[0] = "Content-Type";
@@ -61,6 +61,12 @@ public class OAuth2Test{
     @Test
     public void testBypassingAuthorizationService() throws Exception{
         AssertUtils.getAndAssert(400,"http://localhost:2000/oauth2/auth");
+    }
+
+    @Test
+    public void testLogout() throws Exception{
+        testGoodLoginRequest();
+        AssertUtils.getAndAssert200("http://localhost:2001/login/logout");
     }
 
     @After

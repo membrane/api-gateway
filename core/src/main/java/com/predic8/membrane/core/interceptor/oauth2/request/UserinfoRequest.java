@@ -17,7 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.oauth2.AuthorizationHeader;
+import com.predic8.membrane.core.interceptor.oauth2.TokenAuthorizationHeader;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class UserinfoRequest extends ParameterizedRequest {
-    private AuthorizationHeader authHeader;
+    private TokenAuthorizationHeader authHeader;
     private HashMap<String, String> sessionProperties;
 
     public UserinfoRequest(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
@@ -34,7 +34,7 @@ public class UserinfoRequest extends ParameterizedRequest {
 
     @Override
     protected Response checkForMissingParameters() throws Exception {
-        authHeader = new AuthorizationHeader(exc.getRequest());
+        authHeader = new TokenAuthorizationHeader(exc.getRequest());
         if (!authHeader.isSet()){
             return buildWwwAuthenticateErrorResponse( Response.badRequest(), "invalid_request");
         }
@@ -44,7 +44,7 @@ public class UserinfoRequest extends ParameterizedRequest {
 
     @Override
     protected Response validateWithParameters() throws Exception {
-        if(!authServer.getSessionFinder().hasSessionForToken(authHeader.getToken())) {
+        if(!authHeader.isValid() || !authServer.getSessionFinder().hasSessionForToken(authHeader.getToken())) {
             return buildWwwAuthenticateErrorResponse( Response.unauthorized(), "invalid_token");
         }
         sessionProperties = new HashMap<String,String>(authServer.getSessionFinder().getSessionForToken(authHeader.getToken()).getUserAttributes());
@@ -55,12 +55,12 @@ public class UserinfoRequest extends ParameterizedRequest {
     protected Response getResponse() throws Exception {
         return Response
                 .ok()
-                .body(getJSONStringGiveMeABetterName(sessionProperties))
+                .body(getUserDataAsJson(sessionProperties))
                 .contentType(MimeType.APPLICATION_JSON_UTF8)
                 .build();
     }
 
-    protected String getJSONStringGiveMeABetterName(Map<String,String> sessionProperties) throws IOException {
+    protected String getUserDataAsJson(Map<String,String> sessionProperties) throws IOException {
 
         Map<String, String> scopeProperties = getScopeProperties(sessionProperties); // Do not Inline! Synchronize
 

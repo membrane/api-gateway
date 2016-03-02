@@ -56,9 +56,8 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
                 authServer.getSessionFinder().addSessionForCode(code,s);
                 return respondWithAuthorizationCodeAndRedirect(exc, code);
             }
-            if (getResponseType(s).equals("token")) {
+            if (getResponseType(s).equals("token"))
                 return respondWithTokenAndRedirect(exc, generateAccessToken(s, client), authServer.getTokenGenerator().getTokenType());
-            }
             return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
         }
         return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
