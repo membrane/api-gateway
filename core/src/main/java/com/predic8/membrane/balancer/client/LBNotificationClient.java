@@ -24,11 +24,7 @@ import java.util.Properties;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.MissingArgumentException;
-import org.apache.commons.cli.Options;
+import org.apache.commons.cli.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.logging.Log;
@@ -60,7 +56,7 @@ public class LBNotificationClient {
 	}
 
 	public void run(String[] args) throws Exception {
-		CommandLine cl = new BasicParser().parse(getOptions(), args, false);
+		CommandLine cl = new DefaultParser().parse(getOptions(), args, false);
 		if (cl.hasOption('h') || args.length < 2) {
 			printUsage();
 			return;

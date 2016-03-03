@@ -95,6 +95,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 			assertContains(".java:", result);
 
 			AssertUtils.closeConnections();
+			AssertUtils.setupHTTPAuthentication("localhost", 9000, "admin", "membrane");
 
 			pxu.updateWith(
 					"<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" +
@@ -124,6 +125,7 @@ public class QuickstartSOAPTest extends DistributionExtractingTestcase {
 			assertContainsNot(".java:", result);
 
 			AssertUtils.closeConnections();
+			AssertUtils.setupHTTPAuthentication("localhost", 9000, "admin", "membrane");
 
 			pxu.updateWith(
 					"<spring:beans xmlns=\"http://membrane-soa.org/proxies/1/\"\r\n" +

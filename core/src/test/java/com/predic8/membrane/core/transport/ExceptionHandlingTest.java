@@ -23,6 +23,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.Assert;
 
 import org.apache.http.HttpEntity;
@@ -33,7 +34,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -111,7 +111,7 @@ public class ExceptionHandlingTest {
 
 	public static String getAndAssert(int expectedHttpStatusCode, HttpUriRequest request) throws ParseException, IOException {
 		if (hc == null)
-			hc = new DefaultHttpClient();
+			hc = HttpClientBuilder.create().build();
 		HttpResponse res = hc.execute(request);
 		try {
 			assertEquals(expectedHttpStatusCode, res.getStatusLine().getStatusCode());

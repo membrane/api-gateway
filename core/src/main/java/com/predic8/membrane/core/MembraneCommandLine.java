@@ -21,7 +21,7 @@ public class MembraneCommandLine {
 	CommandLine cl;
 
 	public void parse(String[] args) throws ParseException {
-		cl = new BasicParser().parse(getOptions(), args, true);
+		cl = new DefaultParser().parse(getOptions(), args, true);
 	}
 
 	public void printUsage() {
