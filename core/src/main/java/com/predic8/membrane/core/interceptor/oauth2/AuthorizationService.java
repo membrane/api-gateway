@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.apache.commons.logging.Log;
@@ -34,7 +33,11 @@ public abstract class AuthorizationService {
     protected String scope;
 
 
-    public void init(Router router){
+    public void init(Router router) throws Exception {
+        if(clientId == null)
+            throw new Exception("No clientId configured. - Cannot work without one");
+        if(clientSecret == null)
+            throw new Exception("No clientSecret configured. - Cannot work without one");
         log = LogFactory.getLog(this.getClass().getName());
 
         httpClient = getHttpClientConfiguration() == null ? router.getResolverMap()
@@ -44,12 +47,12 @@ public abstract class AuthorizationService {
         init();
     }
 
-    protected abstract void init();
+    protected abstract void init() throws Exception;
     protected abstract String getLoginURL(String securityToken, String publicURL, String pathQuery);
 
     protected abstract String getUserInfoEndpoint();
 
-    protected abstract String getUserIDProperty();
+    protected abstract String getSubject();
 
     protected abstract String getTokenEndpoint();
 

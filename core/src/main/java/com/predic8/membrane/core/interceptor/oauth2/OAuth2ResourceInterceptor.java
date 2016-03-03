@@ -13,21 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Map;
-
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.Util;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.floreysoft.jmte.Engine;
 import com.floreysoft.jmte.ErrorHandler;
 import com.floreysoft.jmte.message.ParseException;
@@ -39,16 +24,29 @@ import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.URI;
+import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.Util;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -139,12 +137,15 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
             wsi.init(router);
         }
+
+        if(!publicURL.endsWith("/"))
+            publicURL += "/";
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
-        if(exc.getRequestURI().startsWith("/favicon.ico")){
+        if(isFaviconRequest(exc)){
             exc.setResponse(Response.badRequest().build());
             return Outcome.RETURN;
         }
@@ -155,6 +156,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         }
 
         Session session = sessionManager.getSession(exc.getRequest());
+        if(session != null && session.getUserAttributes() == null)
+            session = null; // session was logged out
 
         if (session == null)
             return respondWithRedirect(exc);
@@ -170,10 +173,6 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return Outcome.RETURN;
         }
 
-        if(isFaviconRequest(exc)){
-            exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
-        }
 
         return respondWithRedirect(exc);
     }
@@ -256,7 +255,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         exc.getDestinations().set(0, uri);
 
         if (uri.equals("/logout")) {
-            if (s != null) {
+            if (s != null && s.getUserAttributes() != null) {
                 String token;
                 synchronized (s) {
                     token = s.getUserAttributes().get("access_token");
@@ -264,7 +263,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 Exchange e = new Request.Builder().post(auth.getRevocationEndpoint())
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                         .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .body("token=" + token)
+                        .body("token=" + token +"&client_id=" + auth.getClientId() + "&client_secret=" + auth.getClientSecret())
                         .buildExchange();
                 Response response = auth.httpClient.call(e).getResponse();
                 if (response.getStatusCode() != 200) {
@@ -332,8 +331,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                         .body("code=" + code
                                 + "&client_id=" + auth.getClientId()
                                 + "&client_secret=" + auth.getClientSecret()
-                                + "&redirect_uri=" + publicURL
-                                + "oauth2callback&grant_type=authorization_code")
+                                + "&redirect_uri=" + publicURL + "oauth2callback"
+                                + "&grant_type=authorization_code")
                         .buildExchange();
 
                 LogInterceptor logi = null;
@@ -388,13 +387,13 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 HashMap<String, String> json2 = Util.parseSimpleJSONResponse(response2);
 
-                if (!json2.containsKey(auth.getUserIDProperty()))
-                    throw new RuntimeException("User object does not contain " + auth.getUserIDProperty() + " key.");
+                if (!json2.containsKey(auth.getSubject()))
+                    throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");
 
                 Map<String, String> userAttributes = session.getUserAttributes();
-                String userIdPropertyFixed = auth.getUserIDProperty().substring(0, 1).toUpperCase() + auth.getUserIDProperty().substring(1);
+                String userIdPropertyFixed = auth.getSubject().substring(0, 1).toUpperCase() + auth.getSubject().substring(1);
                 synchronized (userAttributes) {
-                    userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, json2.get(auth.getUserIDProperty()));
+                    userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, json2.get(auth.getSubject()));
                 }
 
                 session.authorize();

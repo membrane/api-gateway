@@ -30,13 +30,15 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private String tokenEndpoint;
     private String userInfoEndpoint;
-    private String userIDProperty = "username";
+    private String subject = "username";
     private String authorizationEndpoint;
     private String revocationEndpoint;
 
 
     @Override
-    protected void init() {
+    protected void init() throws Exception {
+        if(src == null)
+            throw new Exception("No path configured. - Cannot work without one");
         try {
             parseSrc(router.getResolverMap().resolve(src + "/.well-known/openid-configuration"));
         } catch (ResourceRetrievalException e) {
@@ -46,6 +48,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
         }
         if(scope == null)
             scope = "profile";
+        scope = OAuth2Util.urlencode(scope);
     }
 
     private void parseSrc(InputStream resolve) throws IOException {
@@ -58,14 +61,6 @@ public class MembraneAuthorizationService extends AuthorizationService {
         userInfoEndpoint = (String) json.get("userinfo_endpoint");
         authorizationEndpoint = (String) json.get("authorization_endpoint");
         revocationEndpoint = (String) json.get("revocation_endpoint");
-
-        System.out.println(tokenEndpoint);
-        System.out.println(userInfoEndpoint);
-        System.out.println(authorizationEndpoint);
-        System.out.println(revocationEndpoint);
-
-
-
     }
 
     protected String getTokenEndpoint() {
@@ -93,13 +88,13 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected String getUserIDProperty() {
-        return userIDProperty;
+    protected String getSubject() {
+        return subject;
     }
 
     @MCAttribute
-    public void setUserIDProperty(String userIDProperty) {
-        this.userIDProperty = userIDProperty;
+    public void setSubject(String subject) {
+        this.subject = subject;
     }
 
     public String getSrc() {

@@ -95,6 +95,8 @@ public class Header {
 
 	public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
 
+	public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
@@ -523,5 +525,13 @@ public class Header {
 
 	public String getAuthorization() {
 		return getFirstValue(AUTHORIZATION);
+	}
+
+	public void setWwwAuthenticate(String params){
+		setValue(WWW_AUTHENTICATE,params);
+	}
+
+	public String getWwwAuthenticate(){
+		return getFirstValue(WWW_AUTHENTICATE);
 	}
 }

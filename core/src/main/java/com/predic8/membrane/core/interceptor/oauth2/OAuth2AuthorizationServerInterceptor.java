@@ -13,385 +13,86 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.interceptor.authentication.session.*;
-import com.predic8.membrane.core.util.URIFactory;
-import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.interceptor.authentication.session.AccountBlocker;
+import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
+import com.predic8.membrane.core.interceptor.oauth2.processors.*;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.security.SecureRandom;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 
-@MCElement(name="oauth2authserver")
+@MCElement(name = "oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
-    public static final String AUTHORIZATION_CODE = "authorization_code";
+    private String issuer;
+    private String location;//
+    private String path;//
+    private String message;//
+    private boolean exposeUserCredentialsToSession;//
 
-    private String location;
-    private String path;
-    private String message;
-    private boolean exposeUserCredentialsToSession;
+    private Router router;
+    private UserDataProvider userDataProvider; //
+    private SessionManager sessionManager = new SessionManager();//
+    private AccountBlocker accountBlocker;//
+    private ClientList clientList;//
+    private TokenGenerator tokenGenerator = new BearerTokenGenerator();
+    private ClaimList claimList;//
 
-    private UserDataProvider userDataProvider;
-    private LoginDialog loginDialog;
-    private SessionManager sessionManager;
-    private AccountBlocker accountBlocker;
-    private ClientList clientList;
-    private TokenGenerator tokenGenerator;
-    private ScopeList scopeList;
-
-    JsonFactory jsonFactory = new JsonFactory();
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    JsonGenerator jsonGenerator;
-
-    private SecureRandom random = new SecureRandom();
-    private URIFactory uriFactory;
-
-    private HashMap<String,Session> authCodesToSession = new HashMap<String, Session>();
-    private HashMap<String,Session> tokensToSession = new HashMap<String, Session>();
+    private JwtGenerator jwtGenerator;
+    private OAuth2Processors processors = new OAuth2Processors();
+    private HashSet<String> supportedAuthorizationGrants = new HashSet<String>();
+    private SessionFinder sessionFinder = new SessionFinder();
 
     @Override
     public void init(Router router) throws Exception {
-        uriFactory = router.getUriFactory();
-        jsonGenerator = jsonFactory.createGenerator(baos);
+        this.setRouter(router);
         if (userDataProvider == null)
             throw new Exception("No userDataProvider configured. - Cannot work without one.");
         if (getClientList() == null)
             throw new Exception("No clientList configured. - Cannot work without one.");
-        if (sessionManager == null)
-            sessionManager = new SessionManager();
-        if(tokenGenerator == null)
-            tokenGenerator = new BearerTokenGenerator();
-        if(getScopeList() == null){
+        if (getClaimList() == null)
             throw new Exception("No scopeList configured. - Cannot work without one");
-        }
+        if(getLocation() == null)
+            throw new Exception("No location configured. - Cannot work without one");
+        if(getPath() == null)
+            throw new Exception("No path configured. - Cannot work without one");
         userDataProvider.init(router);
         getClientList().init(router);
-        getScopeList().init(router);
-        loginDialog = new LoginDialog(getUserDataProvider(), null, getSessionManager(), getAccountBlocker(), getLocation(), getPath(), isExposeUserCredentialsToSession(), getMessage());
-        loginDialog.init(router);
+        getClaimList().init(router);
+        jwtGenerator = new JwtGenerator();
         sessionManager.init(router);
+        addDefaultProcessors();
         new CleanupThread(sessionManager, accountBlocker).start();
     }
 
-    protected JsonGenerator getAndResetJsonGenerator(){
-        baos.reset();
-        return jsonGenerator;
+    private void addDefaultProcessors() {
+        getProcessors()
+                .add(new FaviconEndpointProcessor(this))
+                .add(new AuthEndpointProcessor(this))
+                .add(new TokenEndpointProcessor(this))
+                .add(new UserinfoEndpointProcessor(this))
+                .add(new RevocationEndpointProcessor(this))
+                .add(new LoginDialogEndpointProcessor(this))
+                .add(new EmptyEndpointProcessor(this))
+                .add(new DefaultEndpointProcessor(this));
     }
 
-    protected String getStringFromJsonGenerator() throws IOException {
-        jsonGenerator.flush();
-        return baos.toString();
-    }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
-        SessionManager.Session s;
-        synchronized (sessionManager) {
-             s = sessionManager.getSession(exc.getRequest());
-        }
-        if(exc.getRequestURI().startsWith("/favicon.ico")){
-            exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
-        }
-        else if(isOAuth2AuthCall(exc)) {
-            Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
-            exc.setResponse(new Response.ResponseBuilder().build());
-            String givenSessionId = extractSessionId(extraxtSessionHeader(exc.getRequest()));
-            synchronized (sessionManager) {
-                s = sessionManager.createSession(exc, givenSessionId);
-            }
-            String givenScopes = params.get("scope");
-            String validScopes = verifyScopes(givenScopes);
-
-            if(validScopes.isEmpty()){
-                String json;
-                synchronized (jsonGenerator) {
-                    JsonGenerator gen = getAndResetJsonGenerator();
-                    gen.writeStartObject();
-                    gen.writeObjectField("error", "invalid_scope");
-                    gen.writeEndObject();
-                    json = getStringFromJsonGenerator();
-                }
-
-                exc.setResponse(Response.badRequest()
-                    .body(json)
-                    .contentType(MimeType.APPLICATION_JSON_UTF8)
-                    .build());
-
-                return Outcome.RETURN;
-            }
-
-            String invalidScopes = hasGivenInvalidScopes(givenScopes,validScopes);
-            params.put("scope",validScopes);
-            if(!invalidScopes.isEmpty())
-                params.put("scope_invalid",invalidScopes);
-            synchronized (s) {
-                s.getUserAttributes().putAll(params);
-            }
-            return redirectToLoginWithSession(exc, extraxtSessionHeader(exc.getResponse()));
-        }
-        else if(isOAuth2TokenCall(exc)){
-            Map<String,String> params = extractBody(exc.getRequest());
-            Session session;
-            synchronized (authCodesToSession) {
-                if (!authCodesToSession.containsKey(params.get("code"))) {
-                    exc.setResponse(Response.badRequest().build());
-                    return Outcome.RETURN;
-                }
-                session = authCodesToSession.get(params.get("code"));
-                authCodesToSession.remove(params.get("code")); // auth codes can only be used one time
-            }
-            String username;
-            String clientId;
-            synchronized(session){
-                username = session.getUserName();
-                clientId = session.getUserAttributes().get("client_id");
-                session.getUserAttributes().putAll(params);
-            }
-            String token = tokenGenerator.getToken(username, clientId);
-            synchronized (tokensToSession) {
-                tokensToSession.put(token, session);
-            }
-
-            String json;
-            synchronized (jsonGenerator) {
-                JsonGenerator gen = getAndResetJsonGenerator();
-                gen.writeStartObject();
-                gen.writeObjectField("access_token", token);
-                gen.writeObjectField("token_type", tokenGenerator.getTokenType());
-                gen.writeObjectField("expires_in", "null"); // TODO change this
-                gen.writeObjectField("scope", session.getUserAttributes().get("scope"));
-                gen.writeEndObject();
-                json = getStringFromJsonGenerator();
-            }
-
-            exc.setResponse(Response
-                    .ok()
-                    .body(json)
-                    .contentType(MimeType.APPLICATION_JSON_UTF8)
-                    .build());
-
-            return Outcome.RETURN;
-        }
-        else if(isOAuth2UserinfoCall(exc)){
-            String authHeader = exc.getRequest().getHeader().getAuthorization();
-            String token = authHeader.split(" ")[1];
-            Session session;
-            synchronized (tokensToSession) {
-                session = tokensToSession.get(token);
-            }
-
-            String json;
-            synchronized (jsonGenerator) {
-                JsonGenerator gen = getAndResetJsonGenerator();
-                gen.writeStartObject();
-
-                Map<String, String> scopeProperties;
-                synchronized (session) {
-                    String[] scopes = session.getUserAttributes().get("scope").split(" ");
-                    scopeProperties = scopeList.getScopes(session.getUserAttributes(), scopes);
-                }
-                for (String property : scopeProperties.keySet())
-                    gen.writeObjectField(property, scopeProperties.get(property));
-
-                gen.writeEndObject();
-                json = getStringFromJsonGenerator();
-            }
-
-            exc.setResponse(Response
-                    .ok()
-                    .body(json)
-                    .contentType(MimeType.APPLICATION_JSON_UTF8)
-                    .build());
-
-            return Outcome.RETURN;
-        }
-        else if(isOAuth2RevokeCall(exc)){
-            Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
-
-            exc.setResponse(Response
-                    .ok()
-                    .bodyEmpty()
-                    .build());
-
-            return Outcome.RETURN;
-        }
-        else if (loginDialog.isLoginRequest(exc)) {
-            loginDialog.handleLoginRequest(exc);
-            extractSessionFromRequestAndAddToResponse(exc);
-
-            return Outcome.RETURN;
-        }
-        else if (exc.getRequestURI().equals("/") && s != null && s.isPreAuthorized()){
-            s.authorize();
-            Client client;
-            String sessionRedirectUrl;
-            synchronized (s) {
-                client = clientList.getClient(s.getUserAttributes().get("client_id"));
-                sessionRedirectUrl = s.getUserAttributes().get("redirect_uri");
-            }
-            String savedCallbackUrl = client.getCallbackUrl();
-            if(savedCallbackUrl.equals(sessionRedirectUrl)) {
-                String code;
-                synchronized (s) {
-                    code = generateAuthorizationCode(s);
-                    doBackendAuthorization(code, s);
-                }
-                return respondWithAuthorizationCodeAndRedirect(exc, code);
-            }
-            else {
-                exc.setResponse(Response.badRequest().build());
-                return Outcome.RETURN;
-            }
-        }
-        else{
-            exc.setResponse(Response.badRequest().build());
-            return Outcome.RETURN;
-        }
-    }
-
-    private boolean isOAuth2RevokeCall(Exchange exc) {
-        return exc.getRequestURI().startsWith("/oauth2/revoke");
-    }
-
-    private String hasGivenInvalidScopes(String givenScopes, String validScopes) {
-        String[] givenScopesSplit = givenScopes.split(" ");
-        String[] validScopesSplit = validScopes.split(" ");
-
-        HashSet<String> given = new HashSet<String>();
-        for(String scope : givenScopesSplit)
-            given.add(scope);
-        HashSet<String> valid = new HashSet<String>();
-        for(String scope : validScopesSplit)
-            valid.add(scope);
-
-        StringBuilder builder = new StringBuilder();
-
-        for(String scope : given){
-            if(!valid.contains(scope))
-                builder.append(scope).append(" ");
-        }
-        return builder.toString().trim();
-    }
-
-    private String verifyScopes(String scopes) {
-        String[] scopeList = scopes.split(" ");
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < scopeList.length; i++) {
-            if (this.scopeList.scopeExists(scopeList[i]))
-                builder.append(scopeList[i]).append(" ");
-        }
-        return builder.toString().trim();
-    }
-
-    private boolean isOAuth2UserinfoCall(Exchange exc) {
-        return exc.getRequestURI().startsWith("/oauth2/userinfo");
-    }
-
-    private Map<String,String> extractBody(Message msg) {
-        String body = msg.getBodyAsStringDecoded();
-        String[] splitted = body.split("&");
-        HashMap<String,String> params = new HashMap<String, String>();
-        for(String param : splitted){
-            String[] paramSplit = param.split("=");
-            params.put(paramSplit[0],paramSplit[1]);
-        }
-        return params;
-    }
-
-    private boolean isOAuth2TokenCall(Exchange exc) {
-        return exc.getRequestURI().startsWith("/oauth2/token");
-    }
-
-    private void doBackendAuthorization(String code, Session s) {
-        s.getUserAttributes().put(AUTHORIZATION_CODE,code);
-
-        authCodesToSession.put(code,s);
-    }
-
-    private boolean isOAuth2AuthCall(Exchange exc) {
-        return exc.getRequestURI().startsWith("/oauth2/auth");
-    }
-
-    private Outcome respondWithAuthorizationCodeAndRedirect(Exchange exc, String code) throws UnsupportedEncodingException {
-        Session s = sessionManager.getSession(exc.getRequest());
-        String state = s.getUserAttributes().get("state");
-
-        exc.setResponse(Response.
-                redirect(s.getUserAttributes().get("redirect_uri")+"?code="+code + (state == null ? "" : "&state="+state), false).
-                dontCache().
-                body("").
-                build());
-        extractSessionFromRequestAndAddToResponse(exc);
-        return Outcome.RETURN;
-    }
-
-    private String generateAuthorizationCode(Session s) {
-        return new BigInteger(130, random).toString(32);
+        return getProcessors().runProcessors(exc);
     }
 
     public UserDataProvider getUserDataProvider() {
         return userDataProvider;
-    }
-
-    public Outcome redirectToLoginWithSession(Exchange exc, HeaderField session) throws MalformedURLException, UnsupportedEncodingException {
-        exc.setResponse(Response.
-                redirect(path, false).
-                dontCache().
-                body("").
-                build());
-        addSessionHeader(exc.getResponse(),session);
-        return Outcome.RETURN;
-    }
-
-    public HeaderField extraxtSessionHeader(Message msg){
-        for(HeaderField h : msg.getHeader().getAllHeaderFields()) {
-            if (h.getHeaderName().equals("Set-Cookie")) {
-                return h;
-            }
-            else if(h.getHeaderName().equals("Cookie")) {
-                h.setHeaderName(new HeaderName("Set-Cookie"));
-                return h;
-            }
-        }
-        throw new RuntimeException();
-    }
-
-    public String extractSessionId(HeaderField sessionHeader){
-        String[] splitted = sessionHeader.getValue().split(" ");
-        for(String s : splitted){
-            if(s.startsWith("SESSIONID=")){
-                return s.substring(10);
-            }
-        }
-        throw new RuntimeException();
-    }
-
-    public Message addSessionHeader(Message msg, HeaderField session){
-        msg.getHeader().add(session);
-        return msg;
-    }
-
-    public void extractSessionFromRequestAndAddToResponse(Exchange exc){
-        addSessionHeader(exc.getResponse(),extraxtSessionHeader(exc.getRequest()));
     }
 
     @Required
@@ -408,7 +109,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     public void setSessionManager(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
     }
-
 
     public String getLocation() {
         return location;
@@ -476,12 +176,54 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         this.tokenGenerator = tokenGenerator;
     }
 
-    public ScopeList getScopeList() {
-        return scopeList;
+    @Override
+    public Router getRouter() {
+        return router;
     }
 
+    public void setRouter(Router router) {
+        this.router = router;
+    }
+
+    public HashSet<String> getSupportedAuthorizationGrants() {
+        return supportedAuthorizationGrants;
+    }
+
+    public void setSupportedAuthorizationGrants(HashSet<String> supportedAuthorizationGrants) {
+        this.supportedAuthorizationGrants = supportedAuthorizationGrants;
+    }
+
+    public OAuth2Processors getProcessors() {
+        return processors;
+    }
+
+    public void setProcessors(OAuth2Processors processors) {
+        this.processors = processors;
+    }
+
+    public SessionFinder getSessionFinder() {
+        return sessionFinder;
+    }
+
+    public void setSessionFinder(SessionFinder sessionFinder) {
+        this.sessionFinder = sessionFinder;
+    }
+
+    public JwtGenerator getJwtGenerator() {
+        return jwtGenerator;
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    public ClaimList getClaimList() {
+        return claimList;
+    }
+
+    @Required
     @MCChildElement(order = 6)
-    public void setScopeList(ScopeList scopeList) {
-        this.scopeList = scopeList;
+    public void setClaimList(ClaimList claimList) {
+        this.claimList = claimList;
     }
 }

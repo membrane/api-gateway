@@ -11,14 +11,9 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2.request;
 
-import java.util.NoSuchElementException;
+import com.predic8.membrane.core.http.Response;
 
-public interface TokenGenerator {
-    String getTokenType();
-    String getToken(String username, String clientId, String clientSecret);
-    String getUsername(String token) throws NoSuchElementException;
-    String getClientId(String token) throws NoSuchElementException;
-    void invalidateToken(String token, String clientId, String clientSecret)throws NoSuchElementException;
+public class NoResponse extends Response {
 }

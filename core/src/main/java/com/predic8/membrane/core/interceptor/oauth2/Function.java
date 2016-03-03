@@ -13,12 +13,11 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import java.util.NoSuchElementException;
+import java.io.IOException;
 
-public interface TokenGenerator {
-    String getTokenType();
-    String getToken(String username, String clientId, String clientSecret);
-    String getUsername(String token) throws NoSuchElementException;
-    String getClientId(String token) throws NoSuchElementException;
-    void invalidateToken(String token, String clientId, String clientSecret)throws NoSuchElementException;
+/**
+ * Created by Predic8 on 25.02.2016.
+ */
+public interface Function<T,R> {
+    R call(T param) throws IOException;
 }

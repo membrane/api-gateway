@@ -108,6 +108,11 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		public synchronized String getUserName() {
 			return userName;
 		}
+
+		public synchronized void clearCredentials() {
+            getUserAttributes().remove("password");
+            getUserAttributes().remove("client_secret");
+        }
 	}
 
 	private String generateSessionID() {
@@ -119,6 +124,10 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		if (id == null) {
 			return null;
 		}
+		return getSession(id);
+	}
+
+	public Session getSession(String id){
 		Session s;
 		synchronized (sessions) {
 			s = sessions.get(id);

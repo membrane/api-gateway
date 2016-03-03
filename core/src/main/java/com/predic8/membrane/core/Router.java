@@ -215,6 +215,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 			transport.closeAll();
 	}
 
+	public void shutdownAll() throws IOException{
+		for(String s : this.getBeanFactory().getBeanNamesForType(Router.class)){
+			((Router) this.getBeanFactory().getBean(s)).shutdown();
+		}
+	}
+
 	/**
 	 * Closes all ports (if any were opened), but does not wait for running exchanges to complete.
 	 *
@@ -375,6 +381,12 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 			throw new RuntimeException(e);
 		}
 		running = false;
+	}
+
+	public void stopAll(){
+		for(String s : this.getBeanFactory().getBeanNamesForType(Router.class)){
+			((Router) this.getBeanFactory().getBean(s)).stop();
+		}
 	}
 
 	@Override

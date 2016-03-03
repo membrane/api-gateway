@@ -13,20 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.util.Util;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @MCElement(name="github", topLevel=false)
 public class GithubAuthorizationService extends AuthorizationService {
@@ -54,7 +41,7 @@ public class GithubAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected String getUserIDProperty() {
+    protected String getSubject() {
         return "login";
     }
 

@@ -13,26 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.apache.ApacheHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
-import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.LogInterceptor;
-import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
-import com.predic8.membrane.core.util.Util;
-import org.springframework.beans.factory.annotation.Required;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 @MCElement(name="google", topLevel=false)
 public class GoogleAuthorizationService extends AuthorizationService {
@@ -75,7 +56,7 @@ public class GoogleAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected String getUserIDProperty() {
+    protected String getSubject() {
         return "email"; // "login"
     }
 }
