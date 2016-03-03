@@ -33,18 +33,18 @@ import java.util.HashSet;
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     private String issuer;
-    private String location;//
-    private String path;//
-    private String message;//
-    private boolean exposeUserCredentialsToSession;//
+    private String location;
+    private String path;
+    private String message;
+    private boolean exposeUserCredentialsToSession;
 
     private Router router;
-    private UserDataProvider userDataProvider; //
-    private SessionManager sessionManager = new SessionManager();//
-    private AccountBlocker accountBlocker;//
-    private ClientList clientList;//
+    private UserDataProvider userDataProvider;
+    private SessionManager sessionManager = new SessionManager();
+    private AccountBlocker accountBlocker;
+    private ClientList clientList;
     private TokenGenerator tokenGenerator = new BearerTokenGenerator();
-    private ClaimList claimList;//
+    private ClaimList claimList;
 
     private JwtGenerator jwtGenerator;
     private OAuth2Processors processors = new OAuth2Processors();
@@ -217,6 +217,12 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return issuer;
     }
 
+    @Required
+    @MCAttribute
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
+    }
+
     public ClaimList getClaimList() {
         return claimList;
     }
@@ -226,4 +232,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     public void setClaimList(ClaimList claimList) {
         this.claimList = claimList;
     }
+
+
 }

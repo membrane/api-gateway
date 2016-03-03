@@ -18,25 +18,15 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URLParamUtil;
-import com.predic8.schema.restriction.NormalizedStringRestriction;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
 public abstract class ParameterizedRequest {
-
-    public static final String REDIRECT_URI = "redirect_uri";
-    public static final String CLIENT_ID = "client_id";
-    public static final String RESPONSE_TYPE = "response_type";
-    public static final String SCOPE = "scope";
-    public static final String STATE = "state";
-    public static final String PROMPT = "prompt";
-    public static final String SCOPE_INVALID = "scope_invalid";
-    public static final String CODE = "code";
-    public static final String CLIENT_SECRET = "client_secret";
 
     protected Exchange exc;
     protected OAuth2AuthorizationServerInterceptor authServer;
@@ -174,39 +164,41 @@ public abstract class ParameterizedRequest {
     }
 
     public String getPrompt() {
-        return params.get(PROMPT);
+        return params.get(ParamNames.PROMPT);
     }
 
     public String getClientId() {
-        return params.get(CLIENT_ID);
+        return params.get(ParamNames.CLIENT_ID);
     }
 
     public String getRedirectUri() {
-        return params.get(REDIRECT_URI);
+        return params.get(ParamNames.REDIRECT_URI);
     }
 
     public String getResponseType() {
-        return params.get(RESPONSE_TYPE);
+        return params.get(ParamNames.RESPONSE_TYPE);
     }
 
     public String getScope() {
-        return params.get(SCOPE);
+        return params.get(ParamNames.SCOPE);
     }
 
     public String getState() {
-        return params.get(STATE);
+        return params.get(ParamNames.STATE);
     }
 
     public void setScope(String scope){
-        params.put(SCOPE,scope);
+        params.put(ParamNames.SCOPE,scope);
     }
 
     public void setScopeInvalid(String invalidScopes){
-        params.put(SCOPE_INVALID,invalidScopes);
+        params.put(ParamNames.SCOPE_INVALID,invalidScopes);
     }
 
-    public String getCode(){return params.get(CODE);}
+    public String getCode(){return params.get(ParamNames.CODE);}
 
-    public String getClientSecret(){return params.get(CLIENT_SECRET);}
+    public String getClientSecret(){return params.get(ParamNames.CLIENT_SECRET);}
+
+    public String getClaims(){return params.get(ParamNames.CLAIMS);}
 
 }
