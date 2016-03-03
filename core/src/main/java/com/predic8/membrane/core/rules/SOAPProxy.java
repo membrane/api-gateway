@@ -258,6 +258,8 @@ public class SOAPProxy extends AbstractServiceProxy {
 
 	@Override
 	public void init() throws Exception {
+		super.init();
+
 		if (wsdl == null)
 			return;
 
