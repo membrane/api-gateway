@@ -23,7 +23,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 
@@ -40,7 +40,7 @@ public class ReleaseConfigurationTest {
 	@Test
 	public void testReachable() throws ClientProtocolException, IOException {
 		String secret = "Web Services";
-		HttpClient hc = new DefaultHttpClient();
+		HttpClient hc = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(getBaseURL());
 		post.setEntity(new StringEntity(secret));
 		HttpResponse res = hc.execute(post);

@@ -16,7 +16,8 @@ package com.predic8.membrane.core.transport.http;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -61,7 +62,7 @@ public class IllegalCharactersInURLTest {
 
 	@Test(expected=IllegalArgumentException.class)
 	public void apacheHttpClient() throws Exception {
-		DefaultHttpClient hc = new DefaultHttpClient();
+		CloseableHttpClient hc = HttpClientBuilder.create().build();
 		HttpResponse res = hc.execute(new HttpGet("http://localhost:3027/foo{}"));
 		Assert.assertEquals(200, res.getStatusLine().getStatusCode());
 	}

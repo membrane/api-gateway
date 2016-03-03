@@ -26,7 +26,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,7 +55,7 @@ public class ForwardingTest {
 	@Test
 	public void testReachable() throws ClientProtocolException, IOException {
 		String secret = "secret452363763";
-		HttpClient hc = new DefaultHttpClient();
+		HttpClient hc = HttpClientBuilder.create().build();
 		HttpPost post = new HttpPost(getBaseURL());
 		post.setEntity(new StringEntity(secret));
 		HttpResponse res = hc.execute(post);
@@ -65,7 +65,7 @@ public class ForwardingTest {
 	}
 
 	private void testQueryParam(String param) throws ClientProtocolException, IOException {
-		HttpClient hc = new DefaultHttpClient();
+		HttpClient hc = HttpClientBuilder.create().build();
 		HttpGet get = new HttpGet(getBaseURL() + "?" + param);
 		HttpResponse res = hc.execute(get);
 		assertEquals(200, res.getStatusLine().getStatusCode());
