@@ -43,10 +43,10 @@ public class ClaimsParameter {
 
     public static String writeCompleteJson(String userinfoClaims, String idTokenClaims) throws IOException {
         String[] userinfo = null;
-        if(userinfoClaims != null || !userinfoClaims.isEmpty())
+        if(userinfoClaims != null && !userinfoClaims.isEmpty())
             userinfo = userinfoClaims.split(" ");
         String[] idToken = null;
-        if(idTokenClaims != null || !idTokenClaims.isEmpty())
+        if(idTokenClaims != null && !idTokenClaims.isEmpty())
             idToken = idTokenClaims.split(" ");
         return writeCompleteJson(userinfo, idToken);
     }
@@ -56,6 +56,8 @@ public class ClaimsParameter {
     }
 
     public static String writeCompleteJson(ReusableJsonGenerator jsonGen, String[] userinfoClaims, String[] idTokenClaims) throws IOException {
+        if(userinfoClaims == null && idTokenClaims == null)
+            return "";
         JsonGenerator gen = jsonGen.resetAndGet();
         gen.writeStartObject();
         if(userinfoClaims != null)

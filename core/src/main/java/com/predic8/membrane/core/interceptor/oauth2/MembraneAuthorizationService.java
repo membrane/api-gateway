@@ -57,6 +57,8 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private void prepareClaimsForLoginUrl() throws IOException {
         claimsParameter = ClaimsParameter.writeCompleteJson(claims,claimsIdt);
+        if(claimsParameter.isEmpty())
+            claimsParameter = null;
     }
 
     private void adjustScope() throws UnsupportedEncodingException {
@@ -101,7 +103,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
         if(claimsParameter == null)
             return "";
         try {
-            return "claims=" + OAuth2Util.urlencode(claimsParameter);
+            return "&claims=" + OAuth2Util.urlencode(claimsParameter);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             return "";
