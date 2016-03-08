@@ -41,6 +41,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ApiManagementConfiguration {
 
+    public static final String UNAUTHORIZED_POLICY_NAME = "unauthorized";
+    public static final String UNAUTHORIZED_API_KEY = "UNAUTHORIZED_API_KEY";
     private static String currentDir;
 
     private static Logger log = LogManager.getLogger(ApiManagementConfiguration.class);
@@ -264,8 +266,18 @@ public class ApiManagementConfiguration {
         setPolicies(parsePolicies(yaml));
         setKeys(parsePoliciesForKeys(yaml));
         is.close();
+        setUnauthorizedKey();
         log.info("Configuration loaded. Notifying observers");
         notifyConfigChangeObservers();
+    }
+
+    private void setUnauthorizedKey() {
+        Key unauthorizedKey = new Key();
+        unauthorizedKey.setName(UNAUTHORIZED_API_KEY);
+        HashSet<Policy> unauthorizedPolicySet = new HashSet<Policy>();
+        unauthorizedPolicySet.add(getPolicies().get(UNAUTHORIZED_POLICY_NAME));
+        unauthorizedKey.setPolicies(unauthorizedPolicySet);
+        getKeys().put(unauthorizedKey.getName(),unauthorizedKey);
     }
 
     private Map<String,Key> parsePoliciesForKeys(Map<String, Object> yaml) {
