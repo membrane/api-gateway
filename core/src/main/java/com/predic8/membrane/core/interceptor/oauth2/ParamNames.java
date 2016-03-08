@@ -24,4 +24,5 @@ public class ParamNames {
     public static final String CODE = "code";
     public static final String CLIENT_SECRET = "client_secret";
     public static final String CLAIMS = "claims";
+    public static final String ID_TOKEN = "id_token";
 }
