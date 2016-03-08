@@ -13,9 +13,10 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.parameter;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
+import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -38,6 +39,38 @@ public class ClaimsParameter {
         this.supportedClaims = supportedClaims;
         if(claimsParameter != null && !claimsParameter.isEmpty())
             parseClaimsParameter(claimsParameter);
+    }
+
+    public static String writeCompleteJson(String userinfoClaims, String idTokenClaims) throws IOException {
+        String[] userinfo = null;
+        if(userinfoClaims != null || !userinfoClaims.isEmpty())
+            userinfo = userinfoClaims.split(" ");
+        String[] idToken = null;
+        if(idTokenClaims != null || !idTokenClaims.isEmpty())
+            idToken = idTokenClaims.split(" ");
+        return writeCompleteJson(userinfo, idToken);
+    }
+
+    public static String writeCompleteJson(String[] userinfoClaims, String[] idTokenClaims) throws IOException {
+        return writeCompleteJson(new ReusableJsonGenerator(),userinfoClaims,idTokenClaims);
+    }
+
+    public static String writeCompleteJson(ReusableJsonGenerator jsonGen, String[] userinfoClaims, String[] idTokenClaims) throws IOException {
+        JsonGenerator gen = jsonGen.resetAndGet();
+        gen.writeStartObject();
+        if(userinfoClaims != null)
+            writeSingleClaimsObject(gen,USERINFO,userinfoClaims);
+        if(idTokenClaims != null)
+            writeSingleClaimsObject(gen,ID_TOKEN,idTokenClaims);
+        gen.writeEndObject();
+        return jsonGen.getJson();
+    }
+
+    static void writeSingleClaimsObject(JsonGenerator gen, String objectName, String... claims) throws IOException {
+        gen.writeObjectFieldStart(objectName);
+        for(String claim : claims)
+            gen.writeObjectField(claim,null);
+        gen.writeEndObject();
     }
 
     private void parseClaimsParameter(String claimsParameter) {

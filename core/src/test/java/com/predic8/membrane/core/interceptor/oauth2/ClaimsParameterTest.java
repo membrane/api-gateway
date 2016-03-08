@@ -51,28 +51,14 @@ public class ClaimsParameterTest {
         assertEquals(getMockClaimsIdToken(),cp.toJson());
     }
 
-    private static String writeSingleObjectJson(String objName, String... claims) throws IOException {
-        ReusableJsonGenerator jsonGen = new ReusableJsonGenerator();
-        JsonGenerator gen = jsonGen.resetAndGet();
-        gen.writeStartObject();
-        writeMockClaimsSingleObject(gen,objName,claims);
-        gen.writeEndObject();
-        return jsonGen.getJson();
-    }
-
     static String getMockClaimsUserinfo() throws IOException {
-        return writeSingleObjectJson("userinfo","email");
+        String[] userinfoClaims = {"email"};
+        return ClaimsParameter.writeCompleteJson(userinfoClaims,null);
     }
 
     static String getMockClaimsIdToken() throws IOException {
-        return writeSingleObjectJson("id_token","sub");
-    }
-
-    static void writeMockClaimsSingleObject(JsonGenerator gen, String objectName,String... claims) throws IOException {
-        gen.writeObjectFieldStart(objectName);
-        for(String claim : claims)
-            gen.writeObjectField(claim,null);
-        gen.writeEndObject();
+        String[] idTokenClaims = {"sub"};
+        return ClaimsParameter.writeCompleteJson(null,idTokenClaims);
     }
 
 
