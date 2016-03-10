@@ -21,9 +21,12 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class TokenRequest extends ParameterizedRequest {
 
@@ -73,7 +76,13 @@ public class TokenRequest extends ParameterizedRequest {
         token = authServer.getTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
         idToken = null;
         if (isOpenIdScope(scope)) {
-            idToken = getSignedIdToken(username, client);
+            ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),getClaims());
+            ArrayList<JwtGenerator.Claim> claims = new ArrayList<JwtGenerator.Claim>();
+            if(cp.hasClaims()) {
+                for (String claim : cp.getIdTokenClaims())
+                    claims.add(JwtGenerator.Claim.createDefaultClaim(claim));
+            }
+            idToken = getSignedIdToken(username, client, claims.toArray(new JwtGenerator.Claim[0]));
         }
 
         authServer.getSessionFinder().addSessionForToken(token,session);
@@ -111,9 +120,9 @@ public class TokenRequest extends ParameterizedRequest {
             gen.writeObjectField("access_token", token);
             gen.writeObjectField("token_type", authServer.getTokenGenerator().getTokenType());
             //gen.writeObjectField("expires_in", "null"); // TODO is optional but maybe useful?
-            gen.writeObjectField("scope", scope);
+            gen.writeObjectField(ParamNames.SCOPE, scope);
             if (idToken != null)
-                gen.writeObjectField("id_token:", idToken);
+                gen.writeObjectField(ParamNames.ID_TOKEN, idToken);
             gen.writeEndObject();
             json = jsonGen.getJson();
         }

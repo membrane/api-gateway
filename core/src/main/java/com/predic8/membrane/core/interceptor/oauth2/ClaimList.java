@@ -24,6 +24,14 @@ import java.util.*;
 
 @MCElement(name="claims")
 public class ClaimList {
+    public HashSet<String> getSupportedClaims() {
+        return supportedClaims;
+    }
+
+    public void setSupportedClaims(HashSet<String> supportedClaims) {
+        this.supportedClaims = supportedClaims;
+    }
+
     @MCElement(name="scope", topLevel=false, id="claims-scope")
     public static class Scope{
         private String id;
@@ -68,18 +76,17 @@ public class ClaimList {
     HashMap<String,HashSet<String>> scopesToClaims = new HashMap<String, HashSet<String>>();
 
     private String value;
-    private HashSet<String> supportedClaims;
+    private HashSet<String> supportedClaims = new HashSet<String>();
 
     public void init(Router router){
-        supportedClaims = new HashSet<String>(Arrays.asList(value.split(" ")));
         setScopes(scopes);
     }
 
-    public HashSet<String> getSupportedClaims(String claimsToCheck){
+    public HashSet<String> getValidClaims(String claimsToCheck){
         HashSet<String> result = new HashSet<String>();
         String[] split = claimsToCheck.split(" ");
         for(String providedClaim : split)
-            if(supportedClaims.contains(providedClaim))
+            if(getSupportedClaims().contains(providedClaim))
                 result.add(providedClaim);
         return result;
     }
@@ -93,6 +100,19 @@ public class ClaimList {
 
     public HashSet<String> getClaimsForScope(String scope) {
         return scopesToClaims.get(scope);
+    }
+
+    private String hashSetToString(HashSet<String> set){
+        StringBuilder builder = new StringBuilder();
+        boolean first = true;
+        for(String element : set){
+            if(first) {
+                first = false;
+                builder.append(element);
+            } else
+                builder.append(" ").append(element);
+        }
+        return builder.toString();
     }
 
     public boolean scopeExists(String s) {
@@ -115,11 +135,25 @@ public class ClaimList {
 
     @MCChildElement(order = 1)
     public void setScopes(List<Scope> scopes) {
+        createSupportedClaims();
+        addOpenidScope(scopes);
         scopesToClaims.clear();
-        for(Scope scope : scopes){
-            String[] claims = scope.claims.split(" ");
-            scopesToClaims.put(scope.id,new HashSet<String>(Arrays.asList(claims)));
+        for(Scope scope : scopes) {
+            scopesToClaims.put(scope.id, getValidClaims(scope.getClaims()));
+            scope.setClaims(hashSetToString(getValidClaims(scope.getClaims())));
         }
         this.scopes = scopes;
+    }
+
+    private void addOpenidScope(List<Scope> scopes) {
+        for(Scope scope : scopes){
+            if(scope.id.equals("openid"))
+                return;
+        }
+        scopes.add(new Scope("openid",""));
+    }
+
+    private void createSupportedClaims() {
+        setSupportedClaims(new HashSet<String>(Arrays.asList(value.split(" "))));
     }
 }

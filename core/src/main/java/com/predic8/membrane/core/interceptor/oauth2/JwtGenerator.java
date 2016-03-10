@@ -54,6 +54,10 @@ public class JwtGenerator {
         public void setValue(String value) {
             this.value = value;
         }
+
+        public static Claim createDefaultClaim(String claim) {
+            return new Claim(claim,null);
+        }
     }
 
     private SecureRandom random = new SecureRandom();

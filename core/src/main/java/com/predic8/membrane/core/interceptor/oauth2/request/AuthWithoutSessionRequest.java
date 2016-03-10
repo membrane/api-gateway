@@ -19,7 +19,10 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
@@ -65,8 +68,12 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         if (validScopes.isEmpty())
             return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_scope");
 
-        if( containsOpenIdScopeAndIsNotCodeRequest(validScopes))
-            return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_request");
+        if(isOpenIdScope(validScopes)) {
+            if (!isCodeRequest())
+                return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_request");
+            addValidClaimsToParams();
+        }else
+            removeClaimsWhenNotOpenidScope();
 
         setScope(validScopes);
 
@@ -74,13 +81,27 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         if (!invalidScopes.isEmpty())
             setScopeInvalid(invalidScopes);
 
+
+
         exc.setResponse(Response.ResponseBuilder.newInstance().build());
         addParams(createSession(exc,extractSessionId(extraxtSessionHeader(exc.getRequest()))),params);
         return new NoResponse();
     }
 
-    private boolean containsOpenIdScopeAndIsNotCodeRequest(String scopes) {
-        return isOpenIdScope(scopes) && !getResponseType().equals("code");
+    private void removeClaimsWhenNotOpenidScope() {
+        params.remove(ParamNames.CLAIMS);
+    }
+
+    private void addValidClaimsToParams() throws IOException {
+        if(getClaims() != null) {
+            ClaimsParameter claims = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(), getClaims());
+            if(claims.hasClaims())
+                params.put(ParamNames.CLAIMS, claims.toJson());
+        }
+    }
+
+    private boolean isCodeRequest() {
+        return getResponseType().equals("code");
     }
 
     private boolean promptEqualsNone() {

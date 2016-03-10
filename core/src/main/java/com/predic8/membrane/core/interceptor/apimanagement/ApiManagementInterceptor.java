@@ -53,7 +53,6 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     private AMStatisticsCollector amStatisticsCollector;
     private ApiManagementConfiguration apiManagementConfiguration = null;
     private String config = "api.yaml";
-    private final String UNAUTHORIZED_API_KEY = "UNAUTHORIZED_API_KEY";
     private ApiKeyRetriever apiKeyRetriever = new HeaderKeyRetriever();
 
     @Override
@@ -121,12 +120,14 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         String key = apiKeyRetriever.getKey(exc);
         apiKeyRetriever.removeKey(exc);
         if (key == null) {
-            if (!(hasUnauthorizedPolicy(exc) || isAdminConsoleCall(exc)) ) {
+            exc.setProperty(Exchange.API_KEY, ApiManagementConfiguration.UNAUTHORIZED_API_KEY);
+            key = ApiManagementConfiguration.UNAUTHORIZED_API_KEY;
+            if(!hasUnauthorizedPolicy(exc)){
+                if(isAdminConsoleCall(exc))
+                    return Outcome.CONTINUE;
                 setResponseNoAuthKey(exc);
                 return Outcome.RETURN;
             }
-            exc.setProperty(Exchange.API_KEY, UNAUTHORIZED_API_KEY);
-            return Outcome.CONTINUE;
         }
         exc.setProperty(Exchange.API_KEY, key);
         AuthorizationResult auth = getAuthorization(exc, key);
@@ -139,7 +140,6 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
             }
             return Outcome.CONTINUE;
         }
-
         setResponsePolicyDenied(exc, auth);
         return Outcome.RETURN;
     }
@@ -175,7 +175,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     }
 
     private boolean hasUnauthorizedPolicy(Exchange exc) {
-        Policy unauthPol = apiManagementConfiguration.getPolicies().get("unauthorized");
+        Policy unauthPol = apiManagementConfiguration.getPolicies().get(ApiManagementConfiguration.UNAUTHORIZED_POLICY_NAME);
         if (unauthPol == null) {
             return false;
         }

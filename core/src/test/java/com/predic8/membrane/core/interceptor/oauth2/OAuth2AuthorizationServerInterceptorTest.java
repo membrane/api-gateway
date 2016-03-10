@@ -24,13 +24,16 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.rules.NullRule;
 import com.predic8.membrane.core.util.Util;
+import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.mail.internet.ParseException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
@@ -88,18 +91,19 @@ public class OAuth2AuthorizationServerInterceptorTest {
         setOasiUserDataProvider();
         setOasiClientList();
         setOasiClaimList();
-        setOasiLocationAndPath();
+        setOasiProperties();
         oasi.init(router);
     }
 
-    private void setOasiLocationAndPath() {
+    private void setOasiProperties() {
         oasi.setLocation("src\\test\\resources\\oauth2\\loginDialog\\dialog");
         oasi.setPath("/login/");
+        oasi.setIssuer("http://Localhost:2001");
     }
 
     private void setOasiClaimList() {
         ClaimList cl = new ClaimList();
-        cl.setValue("username email");
+        cl.setValue("username email sub");
         ArrayList<ClaimList.Scope> scopes = new ArrayList<ClaimList.Scope>();
         ClaimList.Scope scope = new ClaimList.Scope("profile","username email");
         scopes.add(scope);
@@ -136,8 +140,16 @@ public class OAuth2AuthorizationServerInterceptorTest {
     public void testGoodAuthRequest() throws Exception {
         Exchange exc = getMockAuthRequestExchange();
         oasi.handleRequest(exc);
-        assertEquals(307, exc.getResponse().getStatusCode()); // user gets redirected to login when successful
+        assertEquals(307, exc.getResponse().getStatusCode());
         loginAsJohn();
+    }
+
+    @Test
+    public void testGoodAuthOpenidRequest() throws Exception{
+        Exchange exc = getMockAuthOpenidRequestExchange();
+        oasi.handleRequest(exc);
+        assertEquals(307, exc.getResponse().getStatusCode());
+        loginAsJohnOpenid();
     }
 
 
@@ -145,6 +157,14 @@ public class OAuth2AuthorizationServerInterceptorTest {
     public Exchange getMockAuthRequestExchange() throws Exception {
         Exchange exc = new Request.Builder().get(mas.getLoginURL("123","http://localhost:2001/", "/")).buildExchange();
         exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+        makeExchangeValid(exc);
+        return exc;
+    }
+
+    public Exchange getMockAuthOpenidRequestExchange() throws Exception{
+        Exchange exc = getMockAuthRequestExchange();
+        exc.getRequest().setUri(exc.getRequest().getUri()+ "&claims=" + OAuth2Util.urlencode(OAuth2TestUtil.getMockClaims()));
+        exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote("scope=profile"),"scope=" + OAuth2Util.urlencode("profile openid")));
         makeExchangeValid(exc);
         return exc;
     }
@@ -158,7 +178,7 @@ public class OAuth2AuthorizationServerInterceptorTest {
         });
     }
 
-    //TODO this is duplicated from RequestParameterizedTest -> this will possibly also be an RequestParameterizedTest
+    //TODO this is duplicated from RequestParameterizedTest -> this class will possibly also be an RequestParameterizedTest
     public static void makeExchangeValid(Callable<Exchange> exc) throws Exception {
         exc.call().setOriginalRequestUri(exc.call().getRequest().getUri());
         exc.call().setRule(new NullRule());
@@ -173,6 +193,11 @@ public class OAuth2AuthorizationServerInterceptorTest {
         session.preAuthorize("john", afterLoginMockParams);
     }
 
+    private void loginAsJohnOpenid(){
+        loginAsJohn();
+        oasi.getSessionManager().getSession("123").getUserAttributes().put(ParamNames.SCOPE,"profile openid");
+    }
+
     private SessionManager.Session createMockSession() {
         Exchange exc = new Exchange(null);
         exc.setResponse(new Response.ResponseBuilder().build());
@@ -184,12 +209,20 @@ public class OAuth2AuthorizationServerInterceptorTest {
     public void testGoodGrantedAuthCode() throws Exception{
         testGoodAuthRequest();
         Exchange exc = getMockEmptyEndpointRequest();
-        makeExchangeValid(exc);
 
         oasi.handleRequest(exc);
-        getCodeFromResponse(exc);
         assertEquals(307,exc.getResponse().getStatusCode());
+        getCodeFromResponse(exc);
+    }
 
+    @Test
+    public void testGoodGrantedAuthCodeOpenid() throws Exception{
+        testGoodAuthOpenidRequest();
+        Exchange exc = getMockEmptyEndpointRequest();
+
+        oasi.handleRequest(exc);
+        assertEquals(307,exc.getResponse().getStatusCode());
+        getCodeFromResponse(exc);
     }
 
     public Exchange getMockEmptyEndpointRequest() throws Exception {
@@ -235,6 +268,33 @@ public class OAuth2AuthorizationServerInterceptorTest {
 
         oasi.handleRequest(exc);
         assertEquals(200,exc.getResponse().getStatusCode());
+        getTokenAndTokenTypeFromResponse(exc);
+    }
+
+    @Test
+    public void testGoodTokenOpenidRequest() throws Exception{
+        testGoodGrantedAuthCodeOpenid();
+        Exchange exc = getMockTokenRequest();
+
+        oasi.handleRequest(exc);
+        assertEquals(200,exc.getResponse().getStatusCode());
+        assertEquals(true,idTokenIsValid(exc.getResponse()));
+        getTokenAndTokenTypeFromResponse(exc);
+    }
+
+    private boolean idTokenIsValid(Response response) throws IOException, ParseException {
+
+        // TODO: currently only checks if signature is valid -> also check if requested claims are in it
+        HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
+        try {
+            List<JwtGenerator.Claim> claims = oasi.getJwtGenerator().getClaimsFromSignedIdToken(json.get(ParamNames.ID_TOKEN), oasi.getIssuer(), "abc");
+            return true;
+        } catch (InvalidJwtException e) {
+            return false;
+        }
+    }
+
+    private void getTokenAndTokenTypeFromResponse(Exchange exc) throws IOException, ParseException {
         HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
         afterTokenGenerationToken = json.get("access_token");
         afterTokenGenerationTokenType = json.get("token_type");
@@ -254,6 +314,16 @@ public class OAuth2AuthorizationServerInterceptorTest {
     @Test
     public void testGoodUserinfoRequest() throws Exception{
         testGoodTokenRequest();
+        Exchange exc = getMockUserinfoRequest();
+        oasi.handleRequest(exc);
+        assertEquals(200, exc.getResponse().getStatusCode());
+        HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
+        assertEquals("john",json.get("username"));
+    }
+
+    @Test
+    public void testGoodUserinfoRequestOpenid() throws Exception{
+        testGoodTokenOpenidRequest();
         Exchange exc = getMockUserinfoRequest();
         oasi.handleRequest(exc);
         assertEquals(200, exc.getResponse().getStatusCode());

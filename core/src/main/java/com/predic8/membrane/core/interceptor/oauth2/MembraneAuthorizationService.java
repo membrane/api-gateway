@@ -16,12 +16,14 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
 @MCElement(name="membrane")
@@ -33,6 +35,9 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String subject = "username";
     private String authorizationEndpoint;
     private String revocationEndpoint;
+    private String claims;
+    private String claimsIdt;
+    private String claimsParameter;
 
 
     @Override
@@ -46,6 +51,17 @@ public class MembraneAuthorizationService extends AuthorizationService {
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
+        adjustScope();
+        prepareClaimsForLoginUrl();
+    }
+
+    private void prepareClaimsForLoginUrl() throws IOException {
+        claimsParameter = ClaimsParameter.writeCompleteJson(claims,claimsIdt);
+        if(claimsParameter.isEmpty())
+            claimsParameter = null;
+    }
+
+    private void adjustScope() throws UnsupportedEncodingException {
         if(scope == null)
             scope = "profile";
         scope = OAuth2Util.urlencode(scope);
@@ -79,7 +95,19 @@ public class MembraneAuthorizationService extends AuthorizationService {
                 "response_type=code&"+
                 "scope="+scope+"&"+
                 "redirect_uri=" + publicURL + "oauth2callback&"+
-                "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery;
+                "state=security_token%3D" + securityToken + "%26url%3D" + pathQuery +
+                getClaimsParameter();
+    }
+
+    private String getClaimsParameter() {
+        if(claimsParameter == null)
+            return "";
+        try {
+            return "&claims=" + OAuth2Util.urlencode(claimsParameter);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 
     @Override
@@ -105,5 +133,31 @@ public class MembraneAuthorizationService extends AuthorizationService {
     @MCAttribute
     public void setSrc(String src) {
         this.src = src;
+    }
+
+    public String getClaims() {
+        return claims;
+    }
+
+    /**
+     *
+     * @description claims that are requested for the userinfo endpoint
+     */
+    @MCAttribute
+    public void setClaims(String claims) {
+        this.claims = claims;
+    }
+
+    public String getClaimsIdt() {
+        return claimsIdt;
+    }
+
+    /**
+     *
+     * @description claims that are requested for the id_token
+     */
+    @MCAttribute
+    public void setClaimsIdt(String claimsIdt) {
+        this.claimsIdt = claimsIdt;
     }
 }
