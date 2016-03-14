@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.predic8.membrane.core.exchange.Exchange;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -33,17 +32,17 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                testOpenidScopeAndTokenResponseType(),
+                testOpenidScopeButIsTokenResponseType(),
                 testHasClaimsButIsNotOpenid(),
         });
     }
 
     private static Object[] testHasClaimsButIsNotOpenid() {
-        return new Object[]{"testHasClaimsButIsNotOpenid", replaceValueFromRequestUri(getExchange(),"scope=profile%20openid","scope=profile"),307, getBool(true), sessionHasNoClaimsParam()};
+        return new Object[]{"testHasClaimsButIsNotOpenid", replaceValueFromRequestUri(getExchange(),"scope=openid","scope=profile"),307, getBool(true), sessionHasNoClaimsParam()};
     }
 
-    private static Object[] testOpenidScopeAndTokenResponseType() {
-        return new Object[]{"testOpenidScopeAndTokenResponseType",replaceValueFromRequestUri(getExchange(),"response_type=code","response_type=token"),307,getBool(true),responseContainsValueInLocationHeader(getExchange(),"error=invalid_request")};
+    private static Object[] testOpenidScopeButIsTokenResponseType() {
+        return new Object[]{"testOpenidScopeButIsTokenResponseType",replaceValueFromRequestUri(getExchange(),"response_type=code","response_type=token"),307,getBool(true),responseContainsValueInLocationHeader(getExchange(),"error=invalid_request")};
     }
 
     private static Callable<Object> sessionHasNoClaimsParam() {

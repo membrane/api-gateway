@@ -124,6 +124,7 @@ public class OAuth2AuthorizationServerInterceptorTest {
         StaticUserDataProvider udp = new StaticUserDataProvider();
         ArrayList<StaticUserDataProvider.User> users = new ArrayList<StaticUserDataProvider.User>();
         johnsUserData = new StaticUserDataProvider.User("john", "password");
+        johnsUserData.getAttributes().put("email","e@mail.com");
         users.add(johnsUserData);
         udp.setUsers(users);
         oasi.setUserDataProvider(udp);
@@ -164,7 +165,7 @@ public class OAuth2AuthorizationServerInterceptorTest {
     public Exchange getMockAuthOpenidRequestExchange() throws Exception{
         Exchange exc = getMockAuthRequestExchange();
         exc.getRequest().setUri(exc.getRequest().getUri()+ "&claims=" + OAuth2Util.urlencode(OAuth2TestUtil.getMockClaims()));
-        exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote("scope=profile"),"scope=" + OAuth2Util.urlencode("profile openid")));
+        exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote("scope=profile"),"scope=" + OAuth2Util.urlencode("openid")));
         makeExchangeValid(exc);
         return exc;
     }
@@ -193,9 +194,10 @@ public class OAuth2AuthorizationServerInterceptorTest {
         session.preAuthorize("john", afterLoginMockParams);
     }
 
-    private void loginAsJohnOpenid(){
+    private void loginAsJohnOpenid() throws IOException {
         loginAsJohn();
-        oasi.getSessionManager().getSession("123").getUserAttributes().put(ParamNames.SCOPE,"profile openid");
+        oasi.getSessionManager().getSession("123").getUserAttributes().put(ParamNames.SCOPE,"openid");
+        oasi.getSessionManager().getSession("123").getUserAttributes().put(ParamNames.CLAIMS, OAuth2TestUtil.getMockClaims());
     }
 
     private SessionManager.Session createMockSession() {
@@ -283,7 +285,6 @@ public class OAuth2AuthorizationServerInterceptorTest {
     }
 
     private boolean idTokenIsValid(Response response) throws IOException, ParseException {
-
         // TODO: currently only checks if signature is valid -> also check if requested claims are in it
         HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
         try {
@@ -328,7 +329,7 @@ public class OAuth2AuthorizationServerInterceptorTest {
         oasi.handleRequest(exc);
         assertEquals(200, exc.getResponse().getStatusCode());
         HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
-        assertEquals("john",json.get("username"));
+        assertEquals("e@mail.com",json.get("email"));
     }
 
     public Exchange getMockRevocationRequest() throws Exception {

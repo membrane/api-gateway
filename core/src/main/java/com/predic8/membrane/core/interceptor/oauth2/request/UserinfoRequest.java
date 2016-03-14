@@ -17,8 +17,10 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.TokenAuthorizationHeader;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -63,7 +65,10 @@ public class UserinfoRequest extends ParameterizedRequest {
 
     protected String getUserDataAsJson(Map<String,String> sessionProperties) throws IOException {
 
-        Map<String, String> claims = getClaimsFromScopes(sessionProperties);
+        Map<String, String> claims = new HashMap<String, String>();
+        if(isOpenIdScope(sessionProperties.get(ParamNames.SCOPE)))
+            claims.putAll(getClaimsFromClaimsParameter(sessionProperties));
+        claims.putAll(getClaimsFromScopes(sessionProperties));
 
         synchronized (jsonGen) {
             JsonGenerator gen = jsonGen.resetAndGet();
@@ -77,8 +82,13 @@ public class UserinfoRequest extends ParameterizedRequest {
         }
     }
 
+    private Map<String, String> getClaimsFromClaimsParameter(Map<String, String> sessionProperties) {
+        ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),sessionProperties.get(ParamNames.CLAIMS));
+        return authServer.getClaimList().getClaimsFromSession(sessionProperties, cp.getUserinfoClaims());
+    }
+
     private Map<String, String> getClaimsFromScopes(Map<String,String> sessionProperties) {
-        String[] scopes = sessionProperties.get("scope").split(" ");
+        String[] scopes = sessionProperties.get(ParamNames.SCOPE).split(" ");
         HashSet<String> claims = new HashSet<String>();
         for(String scope : scopes){
             claims.addAll(authServer.getClaimList().getClaimsForScope(scope));

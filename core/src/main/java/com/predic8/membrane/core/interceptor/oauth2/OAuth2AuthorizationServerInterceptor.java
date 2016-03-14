@@ -50,10 +50,12 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private OAuth2Processors processors = new OAuth2Processors();
     private HashSet<String> supportedAuthorizationGrants = new HashSet<String>();
     private SessionFinder sessionFinder = new SessionFinder();
+    private WellknownFile wellknownFile = new WellknownFile();
 
     @Override
     public void init(Router router) throws Exception {
         this.setRouter(router);
+        getWellknownFile().init(router,this);
         if (userDataProvider == null)
             throw new Exception("No userDataProvider configured. - Cannot work without one.");
         if (getClientList() == null)
@@ -81,10 +83,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
                 .add(new UserinfoEndpointProcessor(this))
                 .add(new RevocationEndpointProcessor(this))
                 .add(new LoginDialogEndpointProcessor(this))
+                .add(new WellknownEndpointProcessor(this))
+                .add(new CertsEndpointProcessor(this))
                 .add(new EmptyEndpointProcessor(this))
                 .add(new DefaultEndpointProcessor(this));
     }
-
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
@@ -234,4 +237,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     }
 
 
+    public WellknownFile getWellknownFile() {
+        return wellknownFile;
+    }
+
+    public void setWellknownFile(WellknownFile wellknownFile) {
+        this.wellknownFile = wellknownFile;
+    }
 }

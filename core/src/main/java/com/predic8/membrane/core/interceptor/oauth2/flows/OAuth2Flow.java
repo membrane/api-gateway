@@ -11,11 +11,12 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2.flows;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 
 public abstract class OAuth2Flow {
     protected OAuth2AuthorizationServerInterceptor authServer;

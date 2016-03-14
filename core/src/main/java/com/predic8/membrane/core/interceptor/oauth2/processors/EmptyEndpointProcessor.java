@@ -14,17 +14,11 @@
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.HeaderName;
-import com.predic8.membrane.core.http.Message;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.*;
-
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
+import com.predic8.membrane.core.interceptor.oauth2.flows.CodeFlow;
+import com.predic8.membrane.core.interceptor.oauth2.flows.TokenFlow;
 
 public class EmptyEndpointProcessor extends EndpointProcessor {
 
@@ -44,7 +38,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
 
         s.authorize();
         if (getResponseType(s).equals("code")) {
-            return new AuthorizationCodeFlow(authServer,exc,s).getResponse();
+            return new CodeFlow(authServer,exc,s).getResponse();
 
         }
         if (getResponseType(s).equals("token"))

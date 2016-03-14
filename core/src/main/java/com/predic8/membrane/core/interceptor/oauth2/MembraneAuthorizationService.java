@@ -43,7 +43,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     @Override
     protected void init() throws Exception {
         if(src == null)
-            throw new Exception("No path configured. - Cannot work without one");
+            throw new Exception("No wellknown file source configured. - Cannot work without one");
         try {
             parseSrc(router.getResolverMap().resolve(src + "/.well-known/openid-configuration"));
         } catch (ResourceRetrievalException e) {

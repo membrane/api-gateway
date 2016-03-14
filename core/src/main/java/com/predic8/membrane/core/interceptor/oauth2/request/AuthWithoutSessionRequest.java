@@ -71,6 +71,8 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         if(isOpenIdScope(validScopes)) {
             if (!isCodeRequest())
                 return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_request");
+
+            //Parses the claims parameter into a json object. Claim values are always ignored and set to "null" as it is optional to react to those values
             addValidClaimsToParams();
         }else
             removeClaimsWhenNotOpenidScope();

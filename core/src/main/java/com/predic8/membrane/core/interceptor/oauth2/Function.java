@@ -15,9 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import java.io.IOException;
 
-/**
- * Created by Predic8 on 25.02.2016.
- */
 public interface Function<T,R> {
-    R call(T param) throws IOException;
+    R call(T param);
 }

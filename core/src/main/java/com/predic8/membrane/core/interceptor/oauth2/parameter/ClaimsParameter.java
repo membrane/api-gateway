@@ -30,10 +30,8 @@ public class ClaimsParameter {
     private Map<String,Object> cleanedJson;
 
     /**
-     *
      * @param supportedClaims is the list of claims that are specified in a ClaimsList object
      * @param claimsParameter is a parameter value from the request
-     * @throws IOException is thrown when the claimsParameter is not a valid json object
      */
     public ClaimsParameter(HashSet<String> supportedClaims, String claimsParameter){
         this.supportedClaims = supportedClaims;

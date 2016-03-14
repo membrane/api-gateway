@@ -17,6 +17,7 @@ import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
+import org.jose4j.jws.RsaUsingShaAlgorithm;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
@@ -29,6 +30,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class JwtGenerator {
+
+    public String getJwk() {
+        return rsaJsonWebKey.toJson();
+    }
 
     public static class Claim{
         private String name;
@@ -66,6 +71,8 @@ public class JwtGenerator {
     public JwtGenerator() throws JoseException {
         rsaJsonWebKey = RsaJwkGenerator.generateJwk(2048);
         rsaJsonWebKey.setKeyId(new BigInteger(130, random).toString(32));
+        rsaJsonWebKey.setUse("sig");
+        rsaJsonWebKey.setAlgorithm("RS256");
     }
 
     public String getSignedIdToken(String iss, String sub, String aud, int expirationInSeconds, Claim... additionalClaims) throws JoseException {

@@ -82,6 +82,14 @@ public class ClaimList {
         setScopes(scopes);
     }
 
+    public String getSupportedScopes(){
+        return toString(scopes);
+    }
+
+    public String getSupportedClaimsAsString(){
+        return toString(supportedClaims);
+    }
+
     public HashSet<String> getValidClaims(String claimsToCheck){
         HashSet<String> result = new HashSet<String>();
         String[] split = claimsToCheck.split(" ");
@@ -102,17 +110,32 @@ public class ClaimList {
         return scopesToClaims.get(scope);
     }
 
-    private String hashSetToString(HashSet<String> set){
+    /**
+     * takes any iterable and converts it to a string by calling fun on every element
+     */
+    private <T> String toString(Iterable<T> iterable, Function<T,String> fun){
         StringBuilder builder = new StringBuilder();
-        boolean first = true;
-        for(String element : set){
-            if(first) {
-                first = false;
-                builder.append(element);
-            } else
-                builder.append(" ").append(element);
-        }
-        return builder.toString();
+        for(T element : iterable)
+            builder.append(" ").append(fun.call(element));
+        return builder.toString().trim();
+    }
+
+    private <T> String toString(Iterable<T> iterable){
+        return toString(iterable, new Function<T, String>() {
+            @Override
+            public String call(T param) {
+                return param.toString();
+            }
+        });
+    }
+
+    private String toString(List<Scope> scopes){
+        return toString(scopes, new Function<Scope, String>() {
+            @Override
+            public String call(Scope param) {
+                return param.getId();
+            }
+        });
     }
 
     public boolean scopeExists(String s) {
@@ -140,7 +163,7 @@ public class ClaimList {
         scopesToClaims.clear();
         for(Scope scope : scopes) {
             scopesToClaims.put(scope.id, getValidClaims(scope.getClaims()));
-            scope.setClaims(hashSetToString(getValidClaims(scope.getClaims())));
+            scope.setClaims(toString(getValidClaims(scope.getClaims())));
         }
         this.scopes = scopes;
     }

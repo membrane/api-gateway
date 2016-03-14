@@ -4,13 +4,6 @@
 			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
-
-	<router>
-		<serviceProxy port="9000">
-			<webServer docBase="C:\Users\Predic8\git\service-proxy-Master\distribution\conf\oauth2"/>
-		</serviceProxy>
-	</router>
-
 	<router>
 
 		<serviceProxy name="Authorization Server" port="2000">
@@ -31,6 +24,9 @@
 
 		</serviceProxy>
 
+	</router>
+
+	<router>
 		<serviceProxy name="Membrane Resource service" port="2001">
 
 			<headerFilter>
@@ -38,7 +34,7 @@
 			</headerFilter>
 
 			<oauth2Resource publicURL="http://localhost:2001/">
-				<membrane src="http://localhost:9000" clientId="abc" clientSecret="def" scope="username profile profile2" />
+				<membrane src="http://localhost:2000" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
 			</oauth2Resource>
 
 			<groovy>
@@ -48,7 +44,6 @@
 			</groovy>
 
 		</serviceProxy>
-
 	</router>
 
 </spring:beans>

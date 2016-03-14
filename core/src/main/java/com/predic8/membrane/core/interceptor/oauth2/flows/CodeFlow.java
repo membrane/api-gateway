@@ -11,49 +11,49 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2.flows;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 
-public class TokenFlow extends OAuth2Flow {
-    public TokenFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc, SessionManager.Session s) {
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+
+public class CodeFlow extends OAuth2Flow{
+
+    public CodeFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc, SessionManager.Session s) {
         super(authServer, exc, s);
     }
 
-    @Override
-    public Outcome getResponse() {
-        Client client;
-        synchronized (session) {
-            client = authServer.getClientList().getClient(session.getUserAttributes().get("client_id"));
-        }
-        return respondWithTokenAndRedirect(exc, generateAccessToken(session, client), authServer.getTokenGenerator().getTokenType(),session);
+    public Outcome getResponse() throws UnsupportedEncodingException {
+        String code = generateAuthorizationCode();
+        authServer.getSessionFinder().addSessionForCode(code,session);
+        return respondWithAuthorizationCodeAndRedirect(exc, code, session);
     }
 
-    private Outcome respondWithTokenAndRedirect(Exchange exc, String token, String tokenType, SessionManager.Session s) {
+    protected static String generateAuthorizationCode() {
+        return new BigInteger(130, new SecureRandom()).toString(32);
+    }
+
+    protected Outcome respondWithAuthorizationCodeAndRedirect(Exchange exc, String code, SessionManager.Session s) throws UnsupportedEncodingException {
         String state;
         String redirectUrl;
-        String scope;
         synchronized (s) {
             state = s.getUserAttributes().get("state");
             redirectUrl = s.getUserAttributes().get("redirect_uri");
-            scope = s.getUserAttributes().get("scope");
         }
 
         exc.setResponse(Response.
-                redirect(redirectUrl + "?access_token=" + token + stateQuery(state) + "&token_type=" + tokenType + "&scope=" + scope, false).
+                redirect(redirectUrl + "?code=" + code + stateQuery(state), false).
                 dontCache().
                 body("").
                 build());
         OAuth2Util.extractSessionFromRequestAndAddToResponse(exc);
         return Outcome.RETURN;
-    }
-
-    private String generateAccessToken(SessionManager.Session s, Client client) {
-        synchronized (s) {
-            return authServer.getTokenGenerator().getToken(s.getUserName(), client.getClientId(), client.getClientSecret());
-        }
     }
 }
