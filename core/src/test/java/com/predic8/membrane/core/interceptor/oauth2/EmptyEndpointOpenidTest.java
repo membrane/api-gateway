@@ -39,7 +39,7 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
     }
 
     private static Object[] testConsentNotGiven() {
-        return new Object[]{"testConsentNotGiven", setConsentToFalse(getExchange()),400,getConsentRequiredJson(),getResponseBody(getExchange())};
+        return new Object[]{"testConsentNotGiven", setConsentToFalse(getExchange()),400,getConsentRequiredJson(),getResponseBody()};
     }
 
     private static Callable<Object> setConsentToFalse(Callable<Exchange> exchange) {

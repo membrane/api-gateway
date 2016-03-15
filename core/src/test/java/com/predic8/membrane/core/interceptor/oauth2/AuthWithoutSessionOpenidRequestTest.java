@@ -38,11 +38,11 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
     }
 
     private static Object[] testHasClaimsButIsNotOpenid() {
-        return new Object[]{"testHasClaimsButIsNotOpenid", replaceValueFromRequestUri(getExchange(),"scope=openid","scope=profile"),307, getBool(true), sessionHasNoClaimsParam()};
+        return new Object[]{"testHasClaimsButIsNotOpenid", replaceValueFromRequestUri("scope=openid","scope=profile"),307, getBool(true), sessionHasNoClaimsParam()};
     }
 
     private static Object[] testOpenidScopeButIsTokenResponseType() {
-        return new Object[]{"testOpenidScopeButIsTokenResponseType",replaceValueFromRequestUri(getExchange(),"response_type=code","response_type=token"),307,getBool(true),responseContainsValueInLocationHeader(getExchange(),"error=invalid_request")};
+        return new Object[]{"testOpenidScopeButIsTokenResponseType",replaceValueFromRequestUri("response_type=code","response_type=token"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
     }
 
     private static Callable<Object> sessionHasNoClaimsParam() {

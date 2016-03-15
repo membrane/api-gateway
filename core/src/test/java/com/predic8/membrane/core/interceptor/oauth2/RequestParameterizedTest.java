@@ -61,11 +61,11 @@ public abstract class RequestParameterizedTest {
         };
     }
 
-    public static Callable<Object> removeValueFromRequestUri(final Callable<Exchange> exc, final String value){
+    public static Callable<Object> removeValueFromRequestUri(final String value){
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                return replaceValueFromRequestUri(exc,value,"").call();
+                return replaceValueFromRequestUri(value,"").call();
             }
         };
     }
@@ -79,11 +79,11 @@ public abstract class RequestParameterizedTest {
         };
     }*/
 
-    public static Callable<Object> replaceValueFromRequestUri(final Callable<Exchange> exc, final String value, final String replacement){
+    public static Callable<Object> replaceValueFromRequestUri(final String value, final String replacement){
         return new Callable<Object>(){
             @Override
             public Object call() throws Exception {
-                exc.call().getRequest().setUri(exc.call().getRequest().getUri().replaceFirst(Pattern.quote(value),replacement));
+                exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote(value),replacement));
                 makeExchangeValid(exc);
                 return this;
             }
@@ -101,51 +101,51 @@ public abstract class RequestParameterizedTest {
         };
     }*/
 
-    public static Callable<Object> replaceValueFromRequestBody(final Callable<Exchange> exc, final String value, final String replacement){
+    public static Callable<Object> replaceValueFromRequestBody(final String value, final String replacement){
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                exc.call().getRequest().setBodyContent(exc.call().getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value),replacement).getBytes());
+                exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value),replacement).getBytes());
                 makeExchangeValid(exc);
                 return this;
             }
         };
     }
 
-    public static Callable<Object> replaceValueFromRequestBodyLazy(final Callable<Exchange> exc, final Callable<String> value, final Callable<String> replacement){
+    public static Callable<Object> replaceValueFromRequestBodyLazy(final Callable<String> value, final Callable<String> replacement){
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                exc.call().getRequest().setBodyContent(exc.call().getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value.call()),replacement.call()).getBytes());
+                exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value.call()),replacement.call()).getBytes());
                 makeExchangeValid(exc);
                 return this;
             }
         };
     }
 
-    public static Callable<Object> removeValueFromRequestBody(final Callable<Exchange> exc, final String value){
+    public static Callable<Object> removeValueFromRequestBody(final String value){
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                return replaceValueFromRequestBody(exc,value,"").call();
+                return replaceValueFromRequestBody(value,"").call();
             }
         };
     }
 
-    public static Callable<Object> removeValueFromRequestBodyLazy(final Callable<Exchange> exc, final Callable<String> value){
+    public static Callable<Object> removeValueFromRequestBodyLazy(final Callable<String> value){
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                return replaceValueFromRequestBody(exc,value.call(),"").call();
+                return replaceValueFromRequestBody(value.call(),"").call();
             }
         };
     }
 
-    public static Callable<Object> responseContainsValueInLocationHeader(final Callable<Exchange> exc, final String value){
+    public static Callable<Object> responseContainsValueInLocationHeader(final String value){
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                return exc.call().getResponse().getHeader().getFirstValue("Location").contains(value);
+                return exc.getResponse().getHeader().getFirstValue("Location").contains(value);
             }
         };
 
@@ -178,27 +178,27 @@ public abstract class RequestParameterizedTest {
         };
     }
 
-    public static void makeExchangeValid(Callable<Exchange> exc) throws Exception {
-        exc.call().setOriginalRequestUri(exc.call().getRequest().getUri());
-        exc.call().setRule(new NullRule());
+    public static void makeExchangeValid(Exchange exc) throws Exception {
+        exc.setOriginalRequestUri(exc.getRequest().getUri());
+        exc.setRule(new NullRule());
     }
 
-    public static Callable<Object> addValueToRequestUri(final Callable<Exchange> exc, final String value) {
+    public static Callable<Object> addValueToRequestUri(final String value) {
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                exc.call().getRequest().setUri(exc.call().getRequest().getUri() + "&" + value);
+                exc.getRequest().setUri(exc.getRequest().getUri() + "&" + value);
                 makeExchangeValid(exc);
                 return this;
             }
         };
     }
 
-    public static Callable<Object> getResponseBody(final Callable<Exchange> exc){
+    public static Callable<Object> getResponseBody(){
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                return exc.call().getResponse().getBodyAsStringDecoded();
+                return exc.getResponse().getBodyAsStringDecoded();
             }
         };
     }

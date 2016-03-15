@@ -47,42 +47,42 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
     }
 
     private static Object[] testPromptIsNone() {
-        return new Object[]{"testPromptIsNone",addValueToRequestUri(getExchange(),"prompt=none"),307,getBool(true),responseContainsValueInLocationHeader(getExchange(),"error=login_required")};
+        return new Object[]{"testPromptIsNone",addValueToRequestUri("prompt=none"),307,getBool(true),responseContainsValueInLocationHeader("error=login_required")};
     }
 
     private static Object[] testEmptyScopeList() {
-        return new Object[]{"testEmptyScopeList",replaceValueFromRequestUri(getExchange(),"scope=profile","scope=123456789"),307,getBool(true),responseContainsValueInLocationHeader(getExchange(),"error=invalid_scope")};
+        return new Object[]{"testEmptyScopeList",replaceValueFromRequestUri("scope=profile","scope=123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_scope")};
     }
 
     private static Object[] testUnsupportedResponseType() {
-        return new Object[]{"testUnsupportedResponseType",replaceValueFromRequestUri(getExchange(),"response_type=code","response_type=code123456789"),307,getBool(true),responseContainsValueInLocationHeader(getExchange(),"error=unsupported_response_type")};
+        return new Object[]{"testUnsupportedResponseType",replaceValueFromRequestUri("response_type=code","response_type=code123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=unsupported_response_type")};
     }
 
     private static Object[] testRedirectUriNotEqauls() {
-        return new Object[]{"testRedirectUriNotEqauls",replaceValueFromRequestUri(getExchange(),"redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=http://localhost:2001/oauth2callback2"),400,getInvalidRequestJson(), getResponseBody(getExchange())};
+        return new Object[]{"testRedirectUriNotEqauls",replaceValueFromRequestUri("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=http://localhost:2001/oauth2callback2"),400,getInvalidRequestJson(), getResponseBody()};
     }
 
     private static Object[] testRedirectUriNotAbsolute() {
-        return new Object[]{"testRedirectUriNotAbsolute",replaceValueFromRequestUri(getExchange(),"redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody(getExchange())};
+        return new Object[]{"testRedirectUriNotAbsolute",replaceValueFromRequestUri("redirect_uri=http://localhost:2001/oauth2callback","redirect_uri=localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody()};
     }
 
     private static Object[] testResponseTypeMissing() {
-        return new Object[]{"testResponseTypeMissing",removeValueFromRequestUri(getExchange(),"&response_type=code"),307,getBool(true),responseContainsValueInLocationHeader(getExchange(),"error=invalid_request")};
+        return new Object[]{"testResponseTypeMissing",removeValueFromRequestUri("&response_type=code"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
     }
 
     private static Object[] testRedirectUriMissing() {
-        return new Object[]{"testRedirectUriMissing",removeValueFromRequestUri(getExchange(),"&redirect_uri=http://localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody(getExchange())};
+        return new Object[]{"testRedirectUriMissing",removeValueFromRequestUri("&redirect_uri=http://localhost:2001/oauth2callback"),400,getInvalidRequestJson(), getResponseBody()};
     }
 
     private static Object[] testInvalidClientId() {
-        return new Object[]{"testInvalidClientId",replaceValueFromRequestUri(getExchange(),"client_id=abc","client_id=cba"),400,getUnauthorizedClientJson(), getResponseBody(getExchange())};
+        return new Object[]{"testInvalidClientId",replaceValueFromRequestUri("client_id=abc","client_id=cba"),400,getUnauthorizedClientJson(), getResponseBody()};
     }
 
     private static Object[] testClientIdMissing() {
-        return new Object[]{"testClientIdMissing",removeValueFromRequestUri(getExchange(),"client_id=abc&"),400,getInvalidRequestJson(), getResponseBody(getExchange())};
+        return new Object[]{"testClientIdMissing",removeValueFromRequestUri("client_id=abc&"),400,getInvalidRequestJson(), getResponseBody()};
     }
 
     private static Object[] testScopeMissing() {
-        return new Object[]{"testScopeMissing",removeValueFromRequestUri(getExchange(),"&scope=profile"),307,getBool(true),responseContainsValueInLocationHeader(getExchange(),"error=invalid_request")};
+        return new Object[]{"testScopeMissing",removeValueFromRequestUri("&scope=profile"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
     }
 }

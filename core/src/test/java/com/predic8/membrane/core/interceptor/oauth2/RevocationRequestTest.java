@@ -43,27 +43,27 @@ public class RevocationRequestTest extends RequestParameterizedTest{
     }
 
     private static Object[] testWrongCredentialsClientSecret() {
-        return new Object[]{"testWrongCredentialsClientId", replaceValueFromRequestBody(getExchange(),"&client_secret=def","&client_secret=123456789"),400,getInvalidGrantJson(), getResponseBody(getExchange())};
+        return new Object[]{"testWrongCredentialsClientId", replaceValueFromRequestBody("&client_secret=def","&client_secret=123456789"),400,getInvalidGrantJson(), getResponseBody()};
     }
 
     private static Object[] testWrongCredentialsClientId() {
-        return new Object[]{"testWrongCredentialsClientId", replaceValueFromRequestBody(getExchange(),"client_id=abc","client_id=123456789"),400,getInvalidGrantJson(), getResponseBody(getExchange())};
+        return new Object[]{"testWrongCredentialsClientId", replaceValueFromRequestBody("client_id=abc","client_id=123456789"),400,getInvalidGrantJson(), getResponseBody()};
     }
 
     private static Object[] testWrongToken() {
-        return new Object[]{"testWrongToken", replaceValueFromRequestBodyLazy(getExchange(),getTokenQuery(),getWrongTokenQuery()),200,getEmptyBody(), getResponseBody(getExchange())};
+        return new Object[]{"testWrongToken", replaceValueFromRequestBodyLazy(getTokenQuery(),getWrongTokenQuery()),200,getEmptyBody(), getResponseBody()};
     }
 
     private static Object[] testClientSecretMissing() {
-        return new Object[]{"testClientSecretMissing", removeValueFromRequestBody(getExchange(),"&client_secret=def"),400,getInvalidRequestJson(), getResponseBody(getExchange())};
+        return new Object[]{"testClientSecretMissing", removeValueFromRequestBody("&client_secret=def"),400,getInvalidRequestJson(), getResponseBody()};
     }
 
     private static Object[] testClientIdMissing() {
-        return new Object[]{"testClientIdMissing", removeValueFromRequestBody(getExchange(),"&client_id=abc"),400,getInvalidRequestJson(), getResponseBody(getExchange())};
+        return new Object[]{"testClientIdMissing", removeValueFromRequestBody("&client_id=abc"),400,getInvalidRequestJson(), getResponseBody()};
     }
 
     private static Object[] testTokenMissing() {
-        return new Object[]{"testTokenMissing", removeValueFromRequestBodyLazy(getExchange(),getTokenQuery()),400,getInvalidRequestJson(), getResponseBody(getExchange())};
+        return new Object[]{"testTokenMissing", removeValueFromRequestBodyLazy(getTokenQuery()),400,getInvalidRequestJson(), getResponseBody()};
     }
 
     private static Callable<String> getTokenQuery(){

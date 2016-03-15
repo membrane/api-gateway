@@ -40,14 +40,14 @@ public class AuthWithSessionRequestTest extends RequestParameterizedTest {
     }
 
     private static Object[] testPromptValueUnknown() {
-        return new Object[]{"testPromptValueUnknown",addValueToRequestUri(getExchange(),"prompt=123456789"),400,getLoginRequiredJson(),getResponseBody(getExchange())};
+        return new Object[]{"testPromptValueUnknown",addValueToRequestUri("prompt=123456789"),400,getLoginRequiredJson(),getResponseBody()};
     }
 
     private static Object[] testPromptEqualsNone() {
-        return new Object[]{"testPromptEqualsNone",addValueToRequestUri(getExchange(),"prompt=none"),400,getLoginRequiredJson(),getResponseBody(getExchange())};
+        return new Object[]{"testPromptEqualsNone",addValueToRequestUri("prompt=none"),400,getLoginRequiredJson(),getResponseBody()};
     }
 
     private static Object[] testPromptEqualsLogin() {
-        return new Object[]{"testPromptEqualsLogin",addValueToRequestUri(getExchange(),"prompt=login"),307,getBool(true),responseContainsValueInLocationHeader(getExchange(),"/oauth2/auth")};
+        return new Object[]{"testPromptEqualsLogin",addValueToRequestUri("prompt=login"),307,getBool(true),responseContainsValueInLocationHeader("/oauth2/auth")};
     }
 }
