@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.rules.NullRule;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,43 +69,23 @@ public abstract class RequestParameterizedTest {
         };
     }
 
-    /*public static Callable<Object> removeValueFromRequestUriLazy(final Callable<Exchange> exc,final Callable<String> lazyValue){
-        return new Callable<Object>() {
-            @Override
-            public Object call() throws Exception {
-                return replaceValueFromRequestUri(exc,lazyValue.call(),"").call();
-            }
-        };
-    }*/
-
     public static Callable<Object> replaceValueFromRequestUri(final String value, final String replacement){
         return new Callable<Object>(){
             @Override
             public Object call() throws Exception {
                 exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote(value),replacement));
-                makeExchangeValid(exc);
+                OAuth2TestUtil.makeExchangeValid(exc);
                 return this;
             }
         };
     }
-
-    /*public static Callable<Object> replaceValueFromRequestUriLazy(final Callable<Exchange> exc, final Callable<String> value, final Callable<String> replacement){
-        return new Callable<Object>(){
-            @Override
-            public Object call() throws Exception {
-                exc.call().getRequest().setUri(exc.call().getRequest().getUri().replaceFirst(Pattern.quote(value.call()),replacement.call()));
-                makeExchangeValid(exc);
-                return this;
-            }
-        };
-    }*/
 
     public static Callable<Object> replaceValueFromRequestBody(final String value, final String replacement){
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
                 exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value),replacement).getBytes());
-                makeExchangeValid(exc);
+                OAuth2TestUtil.makeExchangeValid(exc);
                 return this;
             }
         };
@@ -117,7 +96,7 @@ public abstract class RequestParameterizedTest {
             @Override
             public Object call() throws Exception {
                 exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value.call()),replacement.call()).getBytes());
-                makeExchangeValid(exc);
+                OAuth2TestUtil.makeExchangeValid(exc);
                 return this;
             }
         };
@@ -178,17 +157,12 @@ public abstract class RequestParameterizedTest {
         };
     }
 
-    public static void makeExchangeValid(Exchange exc) throws Exception {
-        exc.setOriginalRequestUri(exc.getRequest().getUri());
-        exc.setRule(new NullRule());
-    }
-
     public static Callable<Object> addValueToRequestUri(final String value) {
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
                 exc.getRequest().setUri(exc.getRequest().getUri() + "&" + value);
-                makeExchangeValid(exc);
+                OAuth2TestUtil.makeExchangeValid(exc);
                 return this;
             }
         };

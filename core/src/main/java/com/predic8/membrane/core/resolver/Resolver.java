@@ -13,7 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core.resolver;
 
-import com.predic8.wsdl.Input;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;

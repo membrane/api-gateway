@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.resolver;
 
 import com.google.common.collect.Lists;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
 import java.io.*;
 import java.nio.file.*;
@@ -44,7 +45,7 @@ public class FileSchemaResolver implements SchemaResolver {
 								watchServiceForFile.remove(url);
 								watchedFiles.remove(url);
 								inputStreamConsumer.call(resolve(url));
-							} catch (ResourceRetrievalException ignored) {
+							} catch (Exception ignored) {
 							}
 						}
 					}

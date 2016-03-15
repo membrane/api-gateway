@@ -16,7 +16,7 @@ package com.predic8.membrane.core.cloud.etcd;
 import com.google.common.collect.Lists;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.resolver.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.resolver.SchemaResolver;
 
@@ -87,7 +87,7 @@ public class EtcdResolver implements SchemaResolver{
                 }
                 try {
                     consumer.call(resolve(normalizedUrl));
-                } catch (ResourceRetrievalException ignored) {
+                } catch (Exception ignored) {
                 }
                 synchronized (etcdWatchThreads) {
                     etcdWatchThreads.remove(Thread.currentThread());

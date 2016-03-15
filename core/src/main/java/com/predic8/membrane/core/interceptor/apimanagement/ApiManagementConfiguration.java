@@ -19,7 +19,7 @@ import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
-import com.predic8.membrane.core.resolver.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;

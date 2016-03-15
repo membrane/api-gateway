@@ -62,23 +62,6 @@ public abstract class EndpointProcessor {
         return Outcome.RETURN;
     }
 
-    protected void removeEmptyParams(Map<String, String> params) {
-        for (String paramName : params.keySet()) {
-            if (params.get(paramName).isEmpty())
-                params.remove(paramName);
-        }
-    }
-
-    protected boolean isAbsoluteUri(String givenRedirect_uri) {
-        try {
-            // Doing it this way as URIs scheme seems to be wrong
-            String[] split = givenRedirect_uri.split("://");
-            return split.length == 2;
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
-
     protected SessionManager.Session getSession(Exchange exc) {
         SessionManager.Session session;
         synchronized (authServer.getSessionManager()) {

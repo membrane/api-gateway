@@ -153,8 +153,6 @@ public class OAuth2AuthorizationServerInterceptorTest {
         loginAsJohnOpenid();
     }
 
-
-
     public Exchange getMockAuthRequestExchange() throws Exception {
         Exchange exc = new Request.Builder().get(mas.getLoginURL("123","http://localhost:2001/", "/")).buildExchange();
         exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
@@ -319,6 +317,10 @@ public class OAuth2AuthorizationServerInterceptorTest {
         Exchange exc = getMockUserinfoRequest();
         oasi.handleRequest(exc);
         assertEquals(200, exc.getResponse().getStatusCode());
+        userinfoRequestPostprocessing(exc);
+    }
+
+    private void userinfoRequestPostprocessing(Exchange exc) throws IOException, ParseException {
         HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
         assertEquals("john",json.get("username"));
     }

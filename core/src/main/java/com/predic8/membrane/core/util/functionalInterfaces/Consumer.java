@@ -11,10 +11,8 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.util.functionalInterfaces;
 
-import java.io.IOException;
-
-public interface Function<T,R> {
-    R call(T param);
+public interface Consumer<T> {
+    void call(T t) throws Exception;
 }

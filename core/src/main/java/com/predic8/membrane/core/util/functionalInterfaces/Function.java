@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 predic8 GmbH, www.predic8.com
+ * Copyright 2016 predic8 GmbH, www.predic8.com
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
  *    You may obtain a copy of the License at
@@ -11,8 +11,10 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.resolver;
+package com.predic8.membrane.core.util.functionalInterfaces;
 
-public interface Consumer<T> {
-    void call(T t);
+import java.io.IOException;
+
+public interface Function<T,R> {
+    R call(T param);
 }

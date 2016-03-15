@@ -24,6 +24,7 @@ import java.util.List;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.cloud.etcd.*;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 

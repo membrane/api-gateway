@@ -19,7 +19,7 @@ import java.util.List;
 
 import javax.servlet.ServletContext;
 
-import com.predic8.membrane.core.resolver.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

@@ -14,6 +14,8 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.rules.NullRule;
 
 import java.io.IOException;
 
@@ -32,5 +34,10 @@ public class OAuth2TestUtil {
             gen.writeEndObject();
         gen.writeEndObject();
         return jsonGen.getJson();
+    }
+
+    public static void makeExchangeValid(Exchange exc) throws Exception {
+        exc.setOriginalRequestUri(exc.getRequest().getUri());
+        exc.setRule(new NullRule());
     }
 }

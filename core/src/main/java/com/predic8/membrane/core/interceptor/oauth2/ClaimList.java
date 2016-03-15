@@ -17,6 +17,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.util.*;

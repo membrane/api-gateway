@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
 public class ClasspathSchemaResolver implements SchemaResolver {
 

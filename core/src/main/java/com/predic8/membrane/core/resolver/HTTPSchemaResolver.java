@@ -18,8 +18,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,6 +32,7 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.URIFactory;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
 @MCElement(name = "httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
