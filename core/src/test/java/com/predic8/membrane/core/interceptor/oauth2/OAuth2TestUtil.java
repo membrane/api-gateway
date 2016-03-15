@@ -28,6 +28,7 @@ public class OAuth2TestUtil {
             gen.writeEndObject();
             gen.writeObjectFieldStart("id_token");
                 gen.writeObjectField("sub",null);
+                gen.writeObjectField("email",null);
             gen.writeEndObject();
         gen.writeEndObject();
         return jsonGen.getJson();

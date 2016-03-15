@@ -289,7 +289,7 @@ public class OAuth2AuthorizationServerInterceptorTest {
         // TODO: currently only checks if signature is valid -> also check if requested claims are in it
         HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
         try {
-            List<JwtGenerator.Claim> claims = oasi.getJwtGenerator().getClaimsFromSignedIdToken(json.get(ParamNames.ID_TOKEN), oasi.getIssuer(), "abc");
+            oasi.getJwtGenerator().getClaimsFromSignedIdToken(json.get(ParamNames.ID_TOKEN), oasi.getIssuer(), "abc");
             return true;
         } catch (InvalidJwtException e) {
             return false;
