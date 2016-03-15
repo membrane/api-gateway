@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -99,9 +100,12 @@ public class ClaimsParameter {
     }
 
     private void cleanFromInvalidClaims(Map<String, Object> json) {
+        ArrayList<String> toRemove = new ArrayList<String>();
         for(String claim : json.keySet())
             if(!supportedClaims.contains(claim))
-                json.remove(claim);
+                toRemove.add(claim);
+        for(String claim : toRemove)
+            json.remove(claim);
     }
 
     public boolean hasClaims(){

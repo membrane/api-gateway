@@ -42,7 +42,7 @@ public class ClaimsParameterTest {
     @Test
     public void testParsingNoIdToken() throws Exception{
         cp = new ClaimsParameter(createSupportedClaims("email"), OAuth2TestUtil.getMockClaims());
-        assertEquals(getMockClaimsUserinfo(),cp.toJson());
+        assertEquals(getMockClaimsEmailInBoth(),cp.toJson());
     }
 
     @Test
@@ -59,6 +59,12 @@ public class ClaimsParameterTest {
     static String getMockClaimsIdToken() throws IOException {
         String[] idTokenClaims = {"sub"};
         return ClaimsParameter.writeCompleteJson(null,idTokenClaims);
+    }
+
+    static String getMockClaimsEmailInBoth() throws IOException {
+        String[] userinfoClaims = {"email"};
+        String[] idTokenClaims = {"email"};
+        return ClaimsParameter.writeCompleteJson(userinfoClaims,idTokenClaims);
     }
 
 
