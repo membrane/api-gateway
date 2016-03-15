@@ -18,10 +18,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
-import com.predic8.membrane.core.interceptor.oauth2.JwtGenerator;
-import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
+import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import org.jose4j.lang.JoseException;
 
@@ -75,7 +72,7 @@ public class TokenRequest extends ParameterizedRequest {
         scope = getScope(session);
         token = authServer.getTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
         idToken = null;
-        if (isOpenIdScope(scope)) {
+        if (OAuth2Util.isOpenIdScope(scope)) {
             ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),getClaims());
             ArrayList<JwtGenerator.Claim> claims = new ArrayList<JwtGenerator.Claim>();
             if(cp.hasClaims()) {

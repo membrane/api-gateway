@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.*;
@@ -35,15 +36,27 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     @Override
     public Outcome process(Exchange exc) throws Exception {
         SessionManager.Session s = getSession(exc);
-
-        s.authorize();
-        if (getResponseType(s).equals("code")) {
-            return new CodeFlow(authServer,exc,s).getResponse();
-
+        if(!OAuth2Util.isOpenIdScope(s.getUserAttributes().get(ParamNames.SCOPE)))
+            s.getUserAttributes().put("consent","true");
+        if(!s.getUserAttributes().containsKey("consent")){
+            return redirectToConsentPage(exc);
         }
-        if (getResponseType(s).equals("token"))
-            return new TokenFlow(authServer,exc,s).getResponse();
-        return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
+        if(s.getUserAttributes().get("consent").equals("true")) {
+            s.authorize();
+            if (getResponseType(s).equals("code")) {
+                return new CodeFlow(authServer, exc, s).getResponse();
+
+            }
+            if (getResponseType(s).equals("token"))
+                return new TokenFlow(authServer, exc, s).getResponse();
+            return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
+        }
+        return createParameterizedJsonErrorResponse(exc, "error", "consent_required");
+    }
+
+    private Outcome redirectToConsentPage(Exchange exc) {
+        exc.setResponse(Response.redirect("/login/consent",false).dontCache().bodyEmpty().build());
+        return Outcome.RETURN;
     }
 
     protected static String getResponseType(SessionManager.Session s) {

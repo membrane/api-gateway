@@ -238,4 +238,13 @@ public abstract class RequestParameterizedTest {
             }
         };
     }
+
+    public static Callable<Object> getConsentRequiredJson(){
+        return new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                return "{\"error\":\"consent_required\"}";
+            }
+        };
+    }
 }

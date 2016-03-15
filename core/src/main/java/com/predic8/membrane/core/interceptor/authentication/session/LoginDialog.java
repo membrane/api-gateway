@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -109,8 +110,14 @@ public class LoginDialog {
 		Map<String, Object> model = new HashMap<String, Object>();
 		model.put("action", StringEscapeUtils.escapeXml(path));
 		model.put("target", StringEscapeUtils.escapeXml(target));
+		if(page == 0)
+			model.put("login", true);
 		if (page == 1)
 			model.put("token", true);
+		if(page == 2) {
+			model.put("consent", true);
+			model.put("action",StringEscapeUtils.escapeXml(path)+ "consent");
+		}
 		for (int i = 0; i < params.length; i+=2)
 			model.put((String)params[i], params[i+1]);
 
@@ -129,6 +136,11 @@ public class LoginDialog {
 			if (s != null)
 				s.clear();
 			exc.setResponse(Response.redirect(path, false).body("").build());
+		} else if(uri.equals("/consent")){
+			if(exc.getRequest().getMethod().equals("POST"))
+				processConsentPageResult(exc, s);
+			else
+				showConsentPage(exc, s);
 		} else if (uri.equals("/")) {
 			if (s == null || !s.isPreAuthorized()) {
 				if (exc.getRequest().getMethod().equals("POST")) {
@@ -219,6 +231,32 @@ public class LoginDialog {
 		} else {
 			wsi.handleRequest(exc);
 		}
+	}
+
+	private void processConsentPageResult(Exchange exc, Session s) throws Exception {
+		putConsentInSession(exc, s);
+		redirectAfterConsent(exc);
+	}
+
+	private void redirectAfterConsent(Exchange exc) throws Exception {
+		String target = URLParamUtil.getParams(uriFactory, exc).get("target");
+		if (StringUtils.isEmpty(target))
+			target = "/";
+		exc.setResponse(Response.redirectWithout300(target).build());
+	}
+
+	private void putConsentInSession(Exchange exc, Session s) throws Exception {
+		Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+		String consentResult = "false";
+		if(params.get("consent").equals("Accept"))
+            consentResult = "true";
+		s.getUserAttributes().put("consent",consentResult);
+	}
+
+	private void showConsentPage(Exchange exc, Session s) throws Exception {
+		String[] scopes = s.getUserAttributes().get(ParamNames.SCOPE).split(" ");
+		String[] claims = s.getUserAttributes().get(ParamNames.CLAIMS).split(" ");
+		showPage(exc,2,"scopes", scopes, "claims", claims);
 	}
 
 	public Outcome redirectToLogin(Exchange exc) throws MalformedURLException, UnsupportedEncodingException {

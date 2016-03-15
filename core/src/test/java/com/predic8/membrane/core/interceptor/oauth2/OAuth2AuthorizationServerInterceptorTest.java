@@ -198,6 +198,7 @@ public class OAuth2AuthorizationServerInterceptorTest {
         loginAsJohn();
         oasi.getSessionManager().getSession("123").getUserAttributes().put(ParamNames.SCOPE,"openid");
         oasi.getSessionManager().getSession("123").getUserAttributes().put(ParamNames.CLAIMS, OAuth2TestUtil.getMockClaims());
+        oasi.getSessionManager().getSession("123").getUserAttributes().put("consent","true");
     }
 
     private SessionManager.Session createMockSession() {

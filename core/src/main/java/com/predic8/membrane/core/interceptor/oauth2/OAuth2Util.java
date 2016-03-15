@@ -47,4 +47,14 @@ public class OAuth2Util {
         msg.getHeader().add(session);
         return msg;
     }
+
+    public static boolean isOpenIdScope(String scope) {
+        if (scope.contains("openid")) {
+            String[] split = scope.split(" ");
+            for (String singleScope : split)
+                if (singleScope.equals("openid"))
+                    return true;
+        }
+        return false;
+    }
 }

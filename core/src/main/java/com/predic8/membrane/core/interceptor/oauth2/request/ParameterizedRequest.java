@@ -153,16 +153,6 @@ public abstract class ParameterizedRequest {
         }
     }
 
-    protected boolean isOpenIdScope(String scope) {
-        if (scope.contains("openid")) {
-            String[] split = scope.split(" ");
-            for (String singleScope : split)
-                if (singleScope.equals("openid"))
-                    return true;
-        }
-        return false;
-    }
-
     public String getPrompt() {
         return params.get(ParamNames.PROMPT);
     }

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.TokenAuthorizationHeader;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
@@ -66,7 +67,7 @@ public class UserinfoRequest extends ParameterizedRequest {
     protected String getUserDataAsJson(Map<String,String> sessionProperties) throws IOException {
 
         Map<String, String> claims = new HashMap<String, String>();
-        if(isOpenIdScope(sessionProperties.get(ParamNames.SCOPE)))
+        if(OAuth2Util.isOpenIdScope(sessionProperties.get(ParamNames.SCOPE)))
             claims.putAll(getClaimsFromClaimsParameter(sessionProperties));
         claims.putAll(getClaimsFromScopes(sessionProperties));
 

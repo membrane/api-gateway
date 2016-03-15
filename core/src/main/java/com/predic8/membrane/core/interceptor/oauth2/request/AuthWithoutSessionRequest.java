@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 
@@ -68,7 +69,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         if (validScopes.isEmpty())
             return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_scope");
 
-        if(isOpenIdScope(validScopes)) {
+        if(OAuth2Util.isOpenIdScope(validScopes)) {
             if (!isCodeRequest())
                 return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=invalid_request");
 

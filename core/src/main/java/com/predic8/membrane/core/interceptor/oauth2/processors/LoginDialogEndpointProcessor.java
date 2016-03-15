@@ -15,11 +15,11 @@ package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.LoginDialog;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.util.URI;
 
 public class LoginDialogEndpointProcessor extends EndpointProcessor {
@@ -51,26 +51,13 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
         return Outcome.RETURN;
     }
 
-    // TODO
-    public static HeaderField extraxtSessionHeader(Message msg) {
-        for (HeaderField h : msg.getHeader().getAllHeaderFields()) {
-            if (h.getHeaderName().equals("Set-Cookie")) {
-                return h;
-            } else if (h.getHeaderName().equals("Cookie")) {
-                h.setHeaderName(new HeaderName("Set-Cookie"));
-                return h;
-            }
-        }
-        throw new RuntimeException();
-    }
-
     public Message addSessionHeader(Message msg, HeaderField session) {
         msg.getHeader().add(session);
         return msg;
     }
 
     public void extractSessionFromRequestAndAddToResponse(Exchange exc) {
-        addSessionHeader(exc.getResponse(), extraxtSessionHeader(exc.getRequest()));
+        addSessionHeader(exc.getResponse(), OAuth2Util.extraxtSessionHeader(exc.getRequest()));
     }
 
 
