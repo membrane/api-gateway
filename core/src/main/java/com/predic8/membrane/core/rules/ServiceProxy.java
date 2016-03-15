@@ -35,6 +35,7 @@ public class ServiceProxy extends AbstractServiceProxy {
 
 	@Override
 	public void init() throws Exception {
+		super.init();
 		if(externalHostname != null){
 			if(!hasAdminConsole() || !etcdRegistryApiConfigExists())
 				throw new RuntimeException("externalHostname is only usable in combination with AdminConsoleInterceptor and EtcdRegistryApiConfig");
