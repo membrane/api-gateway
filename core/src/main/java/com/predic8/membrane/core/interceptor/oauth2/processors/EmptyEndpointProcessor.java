@@ -20,6 +20,11 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.flows.CodeFlow;
 import com.predic8.membrane.core.interceptor.oauth2.flows.TokenFlow;
+import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import com.predic8.membrane.core.util.functionalInterfaces.Function;
+
+import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
 
 public class EmptyEndpointProcessor extends EndpointProcessor {
 
@@ -36,23 +41,90 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     @Override
     public Outcome process(Exchange exc) throws Exception {
         SessionManager.Session s = getSession(exc);
-        if(!OAuth2Util.isOpenIdScope(s.getUserAttributes().get(ParamNames.SCOPE)))
-            s.getUserAttributes().put("consent","true");
-        if(!s.getUserAttributes().containsKey("consent")){
-            return redirectToConsentPage(exc);
-        }
-        if(s.getUserAttributes().get("consent").equals("true")) {
-            s.authorize();
-            if (getResponseType(s).equals("code")) {
-                return new CodeFlow(authServer, exc, s).getResponse();
-
+        synchronized (s) {
+            if (!OAuth2Util.isOpenIdScope(s.getUserAttributes().get(ParamNames.SCOPE)))
+                s.getUserAttributes().put("consent", "true");
+            if (!s.getUserAttributes().containsKey("consent")) {
+                addConsentPageDataToSession(s);
+                return redirectToConsentPage(exc);
             }
-            if (getResponseType(s).equals("token"))
-                return new TokenFlow(authServer, exc, s).getResponse();
-            return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
+            if (s.getUserAttributes().get("consent").equals("true")) {
+                s.authorize();
+                if (getResponseType(s).equals("code")) {
+                    return new CodeFlow(authServer, exc, s).getResponse();
+
+                }
+                if (getResponseType(s).equals("token"))
+                    return new TokenFlow(authServer, exc, s).getResponse();
+                return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
+            }
         }
         return createParameterizedJsonErrorResponse(exc, "error", "consent_required");
     }
+
+    private void addConsentPageDataToSession(SessionManager.Session s) throws UnsupportedEncodingException {
+        s.getUserAttributes().put(ConsentPageFile.SCOPE_DESCRIPTIONS, getScopeDescriptions(s.getUserAttributes().get(ParamNames.SCOPE).split(" ")));
+        s.getUserAttributes().put(ConsentPageFile.CLAIM_DESCRIPTIONS, getClaimDescriptions(processClaimsParameterToClaimsString(s.getUserAttributes().get(ParamNames.CLAIMS))));
+    }
+
+    private String[] processClaimsParameterToClaimsString(String claimsParam) {
+        ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),claimsParam);
+        StringBuilder builder = new StringBuilder();
+
+        HashSet<String> userinfo = cp.getUserinfoClaims();
+        for(String claim : userinfo)
+            builder.append(" ").append(claim);
+
+        HashSet<String> idToken = cp.getIdTokenClaims();
+        for(String claim : idToken)
+            builder.append(" ").append(claim);
+
+        return builder.toString().trim().split(" ");
+    }
+
+    private String getClaimDescriptions(String[] claims) throws UnsupportedEncodingException {
+        return createDescription(claims, new Function<String, String>() {
+            @Override
+            public String call(String param) {
+                return ClaimRenamer.convert(param);
+            }
+        },new Function<String, String>() {
+            @Override
+            public String call(String claimParam) {
+                return authServer.getConsentPageFile().convertClaim(ClaimRenamer.convert(claimParam));
+            }
+        });
+    }
+
+    private String getScopeDescriptions(String[] scopes) throws UnsupportedEncodingException {
+        return createDescription(scopes, new Function<String, String>() {
+            @Override
+            public String call(String param) {
+                if(param.equals("openid"))
+                    return "";
+                return param;
+            }
+        },new Function<String, String>() {
+            @Override
+            public String call(String scopeParam) {
+                return authServer.getConsentPageFile().convertScope(scopeParam);
+            }
+        });
+    }
+
+    private String createDescription(String[] params, Function<String,String> paramNameConverter, Function<String,String> paramValueConverter) throws UnsupportedEncodingException {
+        StringBuilder builder = new StringBuilder();
+        HashSet<String> alreadyAddedParams = new HashSet<String>();
+        for(String param : params) {
+            String correctedParamName = paramNameConverter.call(param);
+            if(!correctedParamName.isEmpty() && !alreadyAddedParams.contains(correctedParamName)){
+                alreadyAddedParams.add(correctedParamName);
+                builder.append(" ").append(correctedParamName).append(" ").append(OAuth2Util.urlencode(paramValueConverter.call(param)));
+            }
+        }
+        return builder.toString().trim();
+    }
+
 
     private Outcome redirectToConsentPage(Exchange exc) {
         exc.setResponse(Response.redirect("/login/consent",false).dontCache().bodyEmpty().build());

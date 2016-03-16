@@ -18,7 +18,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
 import java.io.IOException;
-import java.util.HashSet;
 
 public class WellknownFile {
 
@@ -100,15 +99,6 @@ public class WellknownFile {
 
     private String getSupportedOasiScopes() {
         return oasi.getClaimList().getSupportedScopes();
-    }
-
-    private String toString(HashSet<String> set){
-        StringBuilder builder = new StringBuilder();
-        if(set.size() > 0)
-            builder.append(set.iterator().next());
-        for(String value : set)
-            builder.append(" ").append(value);
-        return builder.toString();
     }
 
     private void writeWellknown() throws IOException {

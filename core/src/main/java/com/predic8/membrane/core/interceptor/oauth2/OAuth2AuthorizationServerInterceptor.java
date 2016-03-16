@@ -36,6 +36,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private String location;
     private String path;
     private String message;
+    private String consentFile;
     private boolean exposeUserCredentialsToSession;
 
     private Router router;
@@ -51,11 +52,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private HashSet<String> supportedAuthorizationGrants = new HashSet<String>();
     private SessionFinder sessionFinder = new SessionFinder();
     private WellknownFile wellknownFile = new WellknownFile();
+    private ConsentPageFile consentPageFile = new ConsentPageFile();
 
     @Override
     public void init(Router router) throws Exception {
         this.setRouter(router);
         getWellknownFile().init(router,this);
+        getConsentPageFile().init(router,getConsentFile());
         if (userDataProvider == null)
             throw new Exception("No userDataProvider configured. - Cannot work without one.");
         if (getClientList() == null)
@@ -243,5 +246,22 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     public void setWellknownFile(WellknownFile wellknownFile) {
         this.wellknownFile = wellknownFile;
+    }
+
+    public String getConsentFile() {
+        return consentFile;
+    }
+
+    @MCAttribute
+    public void setConsentFile(String consentFile) {
+        this.consentFile = consentFile;
+    }
+
+    public ConsentPageFile getConsentPageFile() {
+        return consentPageFile;
+    }
+
+    public void setConsentPageFile(ConsentPageFile consentPageFile) {
+        this.consentPageFile = consentPageFile;
     }
 }

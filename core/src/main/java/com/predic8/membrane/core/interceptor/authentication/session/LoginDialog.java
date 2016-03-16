@@ -16,10 +16,10 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
 
+import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
@@ -234,8 +234,14 @@ public class LoginDialog {
 	}
 
 	private void processConsentPageResult(Exchange exc, Session s) throws Exception {
+		removeConsentPageDataFromSession(s);
 		putConsentInSession(exc, s);
 		redirectAfterConsent(exc);
+	}
+
+	private void removeConsentPageDataFromSession(Session s) {
+		s.getUserAttributes().remove(ConsentPageFile.SCOPE_DESCRIPTIONS);
+		s.getUserAttributes().remove(ConsentPageFile.CLAIM_DESCRIPTIONS);
 	}
 
 	private void redirectAfterConsent(Exchange exc) throws Exception {
@@ -254,9 +260,41 @@ public class LoginDialog {
 	}
 
 	private void showConsentPage(Exchange exc, Session s) throws Exception {
-		String[] scopes = s.getUserAttributes().get(ParamNames.SCOPE).split(" ");
-		String[] claims = s.getUserAttributes().get(ParamNames.CLAIMS).split(" ");
-		showPage(exc,2,"scopes", scopes, "claims", claims);
+
+		String[] decodedScopes = prepareScopesFromSession(s);
+		String[] decodedClaims = prepareClaimsFromSession(s);
+		showPage(exc,2,"scopes", decodedScopes, "claims", decodedClaims);
+	}
+
+	private String[] prepareClaimsFromSession(Session s) throws UnsupportedEncodingException {
+		return prepareStringArray(decodeClaimsFromSession(s));
+	}
+
+	private String[] prepareScopesFromSession(Session s) throws UnsupportedEncodingException {
+		return prepareStringArray(decodeScopesFromSession(s));
+	}
+
+	private String[] prepareStringArray(String[] array){
+		if(array[0].isEmpty())
+			array = null;
+		List<String> result = new ArrayList<String>();
+		for(int i = 0; i < array.length;i+=2)
+			result.add(array[i] + ": " + array[i+1]);
+		return result.toArray(new String[0]);
+	}
+
+	private String[] decodeClaimsFromSession(Session s) throws UnsupportedEncodingException {
+		String[] claims = s.getUserAttributes().get(ConsentPageFile.CLAIM_DESCRIPTIONS).split(" ");
+		for(int i = 0; i < claims.length;i++)
+			claims[i] = OAuth2Util.urldecode(claims[i]);
+		return claims;
+	}
+
+	private String[] decodeScopesFromSession(Session s) throws UnsupportedEncodingException {
+		String[] scopes = s.getUserAttributes().get(ConsentPageFile.SCOPE_DESCRIPTIONS).split(" ");
+		for(int i = 0; i < scopes.length;i++)
+			scopes[i] = OAuth2Util.urldecode(scopes[i]);
+		return scopes;
 	}
 
 	public Outcome redirectToLogin(Exchange exc) throws MalformedURLException, UnsupportedEncodingException {

@@ -19,12 +19,17 @@ import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Message;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 
 public class OAuth2Util {
 
     public static String urlencode(String value) throws UnsupportedEncodingException {
         return URLEncoder.encode(value, "UTF-8").replaceAll("\\+", "%20");
+    }
+
+    public static String urldecode(String value) throws UnsupportedEncodingException {
+        return URLDecoder.decode(value, "UTF-8").replaceAll("\\+", "%20");
     }
 
     public static void extractSessionFromRequestAndAddToResponse(Exchange exc) {

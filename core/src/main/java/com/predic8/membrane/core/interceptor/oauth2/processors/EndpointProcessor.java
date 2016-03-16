@@ -24,7 +24,6 @@ import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URIFactory;
 
 import java.io.IOException;
-import java.util.Map;
 
 public abstract class EndpointProcessor {
 
