@@ -62,7 +62,7 @@ public class LogInterceptor extends AbstractInterceptor {
 	}
 
 	/**
-	 * @default false
+	 * @default true
 	 * @description If set to true only the HTTP header will be logged.
 	 */
 	@MCAttribute
