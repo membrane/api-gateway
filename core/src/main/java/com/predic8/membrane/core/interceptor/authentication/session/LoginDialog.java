@@ -20,7 +20,6 @@ import java.util.*;
 
 import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
-import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -240,6 +239,8 @@ public class LoginDialog {
 	}
 
 	private void removeConsentPageDataFromSession(Session s) {
+		s.getUserAttributes().remove(ConsentPageFile.PRODUCT_NAME);
+		s.getUserAttributes().remove(ConsentPageFile.LOGO_URL);
 		s.getUserAttributes().remove(ConsentPageFile.SCOPE_DESCRIPTIONS);
 		s.getUserAttributes().remove(ConsentPageFile.CLAIM_DESCRIPTIONS);
 	}
@@ -260,10 +261,22 @@ public class LoginDialog {
 	}
 
 	private void showConsentPage(Exchange exc, Session s) throws Exception {
+		String productName = s.getUserAttributes().get(ConsentPageFile.PRODUCT_NAME);
+		String logoUrl = s.getUserAttributes().get(ConsentPageFile.LOGO_URL);
+		Map<String,String> scopes = doubleStringArrayToMap(prepareScopesFromSession(s));
+		Map<String,String> claims = doubleStringArrayToMap(prepareClaimsFromSession(s));
+		showPage(exc,2,ConsentPageFile.PRODUCT_NAME,productName,ConsentPageFile.LOGO_URL,logoUrl,"scopes", scopes, "claims", claims);
+	}
 
-		String[] decodedScopes = prepareScopesFromSession(s);
-		String[] decodedClaims = prepareClaimsFromSession(s);
-		showPage(exc,2,"scopes", decodedScopes, "claims", decodedClaims);
+	private Map<String, String> doubleStringArrayToMap(String[] strings) {
+		HashMap<String, String> result = new HashMap<String, String>();
+		for(String string : strings) {
+			String[] str = string.split(" ");
+			for(int i = 2; i < str.length;i++)
+				str[1] += " " + str[i];
+			result.put(str[0], str[1]);
+		}
+		return result;
 	}
 
 	private String[] prepareClaimsFromSession(Session s) throws UnsupportedEncodingException {

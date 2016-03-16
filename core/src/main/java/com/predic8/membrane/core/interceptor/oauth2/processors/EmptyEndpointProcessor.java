@@ -63,6 +63,8 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     }
 
     private void addConsentPageDataToSession(SessionManager.Session s) throws UnsupportedEncodingException {
+        s.getUserAttributes().put(ConsentPageFile.PRODUCT_NAME, authServer.getConsentPageFile().getProductName());
+        s.getUserAttributes().put(ConsentPageFile.LOGO_URL,authServer.getConsentPageFile().getLogoUrl());
         s.getUserAttributes().put(ConsentPageFile.SCOPE_DESCRIPTIONS, getScopeDescriptions(s.getUserAttributes().get(ParamNames.SCOPE).split(" ")));
         s.getUserAttributes().put(ConsentPageFile.CLAIM_DESCRIPTIONS, getClaimDescriptions(processClaimsParameterToClaimsString(s.getUserAttributes().get(ParamNames.CLAIMS))));
     }

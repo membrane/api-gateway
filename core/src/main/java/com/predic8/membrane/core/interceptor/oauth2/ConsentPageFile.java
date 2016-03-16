@@ -33,8 +33,8 @@ public class ConsentPageFile {
     public static final String CLAIMS = "claims";
     private ResolverMap resolver;
 
-    String productName;
-    String logoUrl;
+    private String productName;
+    private String logoUrl;
     HashMap<String,String> scopesToDescriptions = new HashMap<String, String>();
     HashMap<String,String> claimsToDescriptions = new HashMap<String, String>();
     private Map<String, Object> json;
@@ -61,8 +61,8 @@ public class ConsentPageFile {
     }
 
     private void parseProductAndLogo() {
-        productName = (String) json.get(PRODUCT_NAME);
-        logoUrl = (String) json.get(LOGO_URL);
+        setProductName((String) json.get(PRODUCT_NAME));
+        setLogoUrl((String) json.get(LOGO_URL));
     }
 
     private void parseClaims() {
@@ -94,5 +94,21 @@ public class ConsentPageFile {
         if(!claimsToDescriptions.containsKey(claim))
             return claim;
         return claimsToDescriptions.get(claim);
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
     }
 }
