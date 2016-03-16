@@ -28,7 +28,6 @@ import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import javax.mail.internet.ParseException;
@@ -37,10 +36,8 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
+public abstract class OAuth2AuthorizationServerInterceptorBase {
 
-@RunWith(Parameterized.class)
-public class OAuth2AuthorizationServerInterceptorNewTest {
 
     static Router router;
     static Exchange exc;
@@ -52,54 +49,9 @@ public class OAuth2AuthorizationServerInterceptorNewTest {
     static String afterTokenGenerationToken;
     static String afterTokenGenerationTokenType;
 
-    public static String sessionId = "123";
-    public static String cookieHeaderContent = "SESSIONID=" + sessionId;
+    public static String cookieHeaderContent = "SESSIONID=" + OAuth2TestUtil.sessionId;
 
-    @Before
-    public void setUp() throws Exception{
-        router = new HttpRouter();
-        initOasi();
-        initMas();
-        initLoginMockParametersForJohn();
-    }
-
-    @Parameterized.Parameters(name = "{0}")
-    public static Collection<Object[]> data() throws Exception {
-        return Arrays.asList(new Object[][] {
-                testBadRequest(),
-                testGoodAuthRequest(),
-                testGoodGrantedAuthCode(),
-                testGoodTokenRequest(),
-                testGoodUserinfoRequest(),
-                testGoodRevocationRequest()
-        });
-    }
-
-    private static Object[] testGoodRevocationRequest() throws Exception{
-        return new Object[]{"testGoodRevocationRequest", runTest("testGoodTokenRequest"),getMockRevocationRequest(),200,noPostprocessing()};
-    }
-
-    private static Object[] testGoodUserinfoRequest() throws Exception{
-        return new Object[]{"testGoodUserinfoRequest", runTest("testGoodTokenRequest"),getMockUserinfoRequest(),200,userinfoRequestPostprocessing()};
-    }
-
-    private static Object[] testGoodTokenRequest() throws Exception{
-        return new Object[]{"testGoodTokenRequest",runTest("testGoodGrantedAuthCode"),getMockTokenRequest(),200, getTokenAndTokenTypeFromResponse()};
-    }
-
-    private static Object[] testGoodGrantedAuthCode() throws Exception {
-        return new Object[]{"testGoodGrantedAuthCode",runTest("testGoodAuthRequest"), getMockEmptyEndpointRequest(), 307, getCodeFromResponse()};
-    }
-
-    private static Object[] testGoodAuthRequest() throws Exception {
-        return new Object[]{"testGoodAuthRequest", noPreprocessing(), getMockAuthRequestExchange(),307, loginAsJohn()};
-    }
-
-    private static Object[] testBadRequest() throws Exception {
-        return new Object[]{"testBadRequest", noPreprocessing(), getMockBadRequestExchange(),400, noPostprocessing()};
-    }
-
-    private static Consumer<Exchange> noPostprocessing() {
+    static Consumer<Exchange> noPostprocessing() {
         return new Consumer<Exchange>() {
             @Override
             public void call(Exchange exchange) {
@@ -108,7 +60,7 @@ public class OAuth2AuthorizationServerInterceptorNewTest {
         };
     }
 
-    private static Runnable noPreprocessing() {
+    static Runnable noPreprocessing() {
         return new Runnable() {
             @Override
             public void run() {
@@ -117,20 +69,11 @@ public class OAuth2AuthorizationServerInterceptorNewTest {
         };
     }
 
-    public static Callable<Exchange> getMockBadRequestExchange() throws Exception {
-        return new Callable<Exchange>() {
-            @Override
-            public Exchange call() throws Exception {
-                return new Request.Builder().get("/thisdoesntexist").buildExchange();
-            }
-        };
-    }
-
     public static Callable<Exchange> getMockAuthRequestExchange() throws Exception {
         return new Callable<Exchange>() {
             @Override
             public Exchange call() throws Exception {
-                Exchange exc = new Request.Builder().get(mas.getLoginURL("123","http://localhost:2001/", "/")).buildExchange();
+                Exchange exc = new Request.Builder().get(mas.getLoginURL("123security","http://localhost:2001/", "/")).buildExchange();
                 exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
                 return exc;
             }
@@ -141,7 +84,7 @@ public class OAuth2AuthorizationServerInterceptorNewTest {
         return new Consumer<Exchange>() {
             @Override
             public void call(Exchange exchange) {
-                SessionManager.Session session = oasi.getSessionManager().getSession("123");
+                SessionManager.Session session = oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId);
                 if(session == null){
                     session = createMockSession();
                 }
@@ -161,7 +104,7 @@ public class OAuth2AuthorizationServerInterceptorNewTest {
         };
     }
 
-    private static Consumer<Exchange> getCodeFromResponse() {
+    static Consumer<Exchange> getCodeFromResponse() {
         return new Consumer<Exchange>() {
             @Override
             public void call(Exchange exc) {
@@ -198,7 +141,7 @@ public class OAuth2AuthorizationServerInterceptorNewTest {
         };
     }
 
-    private static Consumer<Exchange> getTokenAndTokenTypeFromResponse() throws IOException, ParseException {
+    static Consumer<Exchange> getTokenAndTokenTypeFromResponse() throws IOException, ParseException {
         return new Consumer<Exchange>() {
             @Override
             public void call(Exchange exc) throws Exception {
@@ -223,27 +166,42 @@ public class OAuth2AuthorizationServerInterceptorNewTest {
         };
     }
 
-    private static Consumer<Exchange> userinfoRequestPostprocessing() throws IOException, ParseException {
-        return new Consumer<Exchange>() {
-            @Override
-            public void call(Exchange exchange) throws Exception {
-                HashMap<String, String> json = Util.parseSimpleJSONResponse(exc.getResponse());
-                assertEquals("john",json.get("username"));
-            }
-        };
+    public static Runnable runUntilGoodTokenRequest() {
+        return runTest(OAuth2AuthorizationServerInterceptorNormalTest.class,"testGoodTokenRequest");
     }
 
-    public static Callable<Exchange> getMockRevocationRequest() throws Exception {
-        return new Callable<Exchange>() {
-            @Override
-            public Exchange call() throws Exception {
-                return new Request.Builder().post(mas.getRevocationEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .body("token=" + afterTokenGenerationToken +"&client_id=" + mas.getClientId() + "&client_secret=" + mas.getClientSecret())
-                        .buildExchange();
-            }
-        };
+    public static Runnable runUntilGoodGrantedAuthCode() {
+        return runTest(OAuth2AuthorizationServerInterceptorNormalTest.class,"testGoodGrantedAuthCode");
+    }
+
+    public static Runnable runUntilGoodAuthRequest() {
+        return runTest(OAuth2AuthorizationServerInterceptorNormalTest.class,"testGoodAuthRequest");
+    }
+
+    public static Runnable runUntilGoodTokenOpenidRequest() {
+        return runTest(OAuth2AuthorizationServerInterceptorOpenidTest.class,"testGoodTokenRequest");
+    }
+
+    public static Runnable runUntilGoodGrantedAuthCodeOpenid() {
+        return runTest(OAuth2AuthorizationServerInterceptorOpenidTest.class,"testGoodGrantedAuthCode");
+    }
+
+    public static Runnable runUntilGoodAuthOpenidRequest() {
+        return runTest(OAuth2AuthorizationServerInterceptorOpenidTest.class,"testGoodAuthRequest");
+    }
+
+    @Before
+    public void setUp() throws Exception{
+        router = new HttpRouter();
+        initOasi();
+        initMas();
+        initLoginMockParametersForJohn();
+    }
+
+    @Parameterized.Parameters(name = "{0}")
+    public static Collection<Object[]> data() throws Exception {
+        return Arrays.asList(new Object[][] {
+        });
     }
 
     @Parameterized.Parameter
@@ -267,12 +225,12 @@ public class OAuth2AuthorizationServerInterceptorNewTest {
         postprocessing.call(exc);
     }
 
-    private static Runnable runTest(final String name){
+    protected static <T>Runnable runTest(final Class<T> caller, final String name){
         return new Runnable() {
             @Override
             public void run() {
                 try {
-                    List<Object[]> allParams = (List<Object[]>) data();
+                    List<Object[]> allParams = (List<Object[]>) caller.getMethod("data").invoke(null);
                     Object[] params = null;
                     for (Object[] p : allParams) {
                         if (name.equals(p[0])){
@@ -363,10 +321,10 @@ public class OAuth2AuthorizationServerInterceptorNewTest {
         oasi.setUserDataProvider(udp);
     }
 
-    private static SessionManager.Session createMockSession() {
+    protected static SessionManager.Session createMockSession() {
         Exchange exc = new Exchange(null);
         exc.setResponse(new Response.ResponseBuilder().build());
         exc.setRule(new NullRule());
-        return oasi.getSessionManager().createSession(exc,"123");
+        return oasi.getSessionManager().createSession(exc, OAuth2TestUtil.sessionId);
     }
 }

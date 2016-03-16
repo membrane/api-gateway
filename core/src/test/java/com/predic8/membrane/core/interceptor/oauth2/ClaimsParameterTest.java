@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import org.junit.Test;
 

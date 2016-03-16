@@ -24,12 +24,13 @@ import java.util.regex.Pattern;
 
 public abstract class RequestParameterizedTest {
 
-    static OAuth2AuthorizationServerInterceptorTest oasit;
-    static Exchange exc;
+    protected static OAuth2AuthorizationServerInterceptorBase oasit;
+    protected static Exchange exc;
 
     @Before
     public void setUp() throws Exception{
-        oasit = OAuth2AuthorizationServerInterceptorTest.createAndSetUp();
+        oasit = new OAuth2AuthorizationServerInterceptorNormalTest();
+        oasit.setUp();
     }
 
     @Parameterized.Parameter
@@ -46,6 +47,7 @@ public abstract class RequestParameterizedTest {
     @Test
     public void test() throws Exception {
         modification.call();
+        OAuth2TestUtil.makeExchangeValid(exc);
         oasit.oasi.handleRequest(exc);
         Assert.assertEquals(expectedStatusCode,exc.getResponse().getStatusCode());
         Assert.assertEquals(expectedResult.call(),actualResult.call());
@@ -74,7 +76,6 @@ public abstract class RequestParameterizedTest {
             @Override
             public Object call() throws Exception {
                 exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote(value),replacement));
-                OAuth2TestUtil.makeExchangeValid(exc);
                 return this;
             }
         };
@@ -85,7 +86,6 @@ public abstract class RequestParameterizedTest {
             @Override
             public Object call() throws Exception {
                 exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value),replacement).getBytes());
-                OAuth2TestUtil.makeExchangeValid(exc);
                 return this;
             }
         };
@@ -96,7 +96,6 @@ public abstract class RequestParameterizedTest {
             @Override
             public Object call() throws Exception {
                 exc.getRequest().setBodyContent(exc.getRequest().getBodyAsStringDecoded().replaceFirst(Pattern.quote(value.call()),replacement.call()).getBytes());
-                OAuth2TestUtil.makeExchangeValid(exc);
                 return this;
             }
         };
@@ -162,7 +161,6 @@ public abstract class RequestParameterizedTest {
             @Override
             public Object call() throws Exception {
                 exc.getRequest().setUri(exc.getRequest().getUri() + "&" + value);
-                OAuth2TestUtil.makeExchangeValid(exc);
                 return this;
             }
         };

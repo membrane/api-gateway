@@ -26,7 +26,7 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
     @Before
     public void setUp() throws Exception{
         super.setUp();
-        exc = oasit.getMockAuthOpenidRequestExchange();
+        exc = OAuth2AuthorizationServerInterceptorOpenidTest.getMockAuthOpenidRequestExchange().call();
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -49,7 +49,7 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                return !oasit.oasi.getSessionManager().getSession("123").getUserAttributes().containsKey(ParamNames.CLAIMS);
+                return !oasit.oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().containsKey(ParamNames.CLAIMS);
             }
         };
     }

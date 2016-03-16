@@ -17,7 +17,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.*;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,8 +28,8 @@ public class UserinfoRequestTest extends RequestParameterizedTest {
     @Before
     public void setUp() throws Exception{
         super.setUp();
-        oasit.testGoodTokenRequest();
-        exc = oasit.getMockUserinfoRequest();
+        oasit.runUntilGoodTokenRequest().run();
+        exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockUserinfoRequest().call();
     }
 
     @Parameters(name = "{0}")

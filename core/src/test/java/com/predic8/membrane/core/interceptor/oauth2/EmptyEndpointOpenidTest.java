@@ -27,8 +27,8 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
     @Before
     public void setUp() throws Exception{
         super.setUp();
-        oasit.testGoodAuthOpenidRequest();
-        exc = oasit.getMockEmptyEndpointRequest();
+        oasit.runUntilGoodAuthOpenidRequest().run();
+        exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockEmptyEndpointRequest().call();
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -46,7 +46,7 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                return oasit.oasi.getSessionManager().getSession("123").getUserAttributes().put("consent","false");
+                return oasit.oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put("consent","false");
             }
         };
     }

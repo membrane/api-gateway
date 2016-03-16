@@ -21,6 +21,8 @@ import java.io.IOException;
 
 public class OAuth2TestUtil {
 
+    public static String sessionId = "123";
+
     static String getMockClaims() throws IOException {
         ReusableJsonGenerator jsonGen = new ReusableJsonGenerator();
         JsonGenerator gen = jsonGen.resetAndGet();

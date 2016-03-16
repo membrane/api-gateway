@@ -26,8 +26,8 @@ public class AuthWithSessionRequestTest extends RequestParameterizedTest {
     @Before
     public void setUp() throws Exception{
         super.setUp();
-        oasit.testGoodAuthRequest();
-        exc = oasit.getMockAuthRequestExchange();
+        oasit.runUntilGoodAuthRequest().run();
+        exc = oasit.getMockAuthRequestExchange().call();
     }
 
     @Parameterized.Parameters(name = "{0}")

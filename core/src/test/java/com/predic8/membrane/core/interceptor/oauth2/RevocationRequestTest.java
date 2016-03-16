@@ -26,8 +26,8 @@ public class RevocationRequestTest extends RequestParameterizedTest{
     @Before
     public void setUp() throws Exception{
         super.setUp();
-        oasit.testGoodTokenRequest();
-        exc = oasit.getMockRevocationRequest();
+        oasit.runUntilGoodTokenRequest().run();
+        exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockRevocationRequest().call();
     }
 
     @Parameterized.Parameters(name = "{0}")

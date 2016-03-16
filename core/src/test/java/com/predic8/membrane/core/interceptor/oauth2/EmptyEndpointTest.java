@@ -27,8 +27,8 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
     @Before
     public void setUp() throws Exception{
         super.setUp();
-        oasit.testGoodAuthRequest();
-        exc = oasit.getMockEmptyEndpointRequest();
+        oasit.runUntilGoodAuthRequest().run();
+        exc = OAuth2AuthorizationServerInterceptorNormalTest.getMockEmptyEndpointRequest().call();
     }
 
     @Parameterized.Parameters(name = "{0}")
@@ -83,7 +83,7 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
     }
 
     private static void modifySessionAttributes(String name, String value){
-        oasit.oasi.getSessionManager().getSession("123").getUserAttributes().put(name,value);
+        oasit.oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put(name,value);
     }
 
 
