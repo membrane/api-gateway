@@ -239,6 +239,8 @@ public class LoginDialog {
 	}
 
 	private void removeConsentPageDataFromSession(Session s) {
+		if(s == null)
+			return;
 		s.getUserAttributes().remove(ConsentPageFile.PRODUCT_NAME);
 		s.getUserAttributes().remove(ConsentPageFile.LOGO_URL);
 		s.getUserAttributes().remove(ConsentPageFile.SCOPE_DESCRIPTIONS);
@@ -253,6 +255,8 @@ public class LoginDialog {
 	}
 
 	private void putConsentInSession(Exchange exc, Session s) throws Exception {
+		if(s == null)
+			return;
 		Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
 		String consentResult = "false";
 		if(params.get("consent").equals("Accept"))
@@ -261,6 +265,10 @@ public class LoginDialog {
 	}
 
 	private void showConsentPage(Exchange exc, Session s) throws Exception {
+		if(s == null){
+			showPage(exc,2,ConsentPageFile.PRODUCT_NAME,null,ConsentPageFile.LOGO_URL,null,"scopes", null, "claims", null);
+			return;
+		}
 		String productName = s.getUserAttributes().get(ConsentPageFile.PRODUCT_NAME);
 		String logoUrl = s.getUserAttributes().get(ConsentPageFile.LOGO_URL);
 		Map<String,String> scopes = doubleStringArrayToMap(prepareScopesFromSession(s));
