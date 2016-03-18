@@ -34,7 +34,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     private String issuer;
     private String location;
-    private String path;
+    private String path = "/login/";
     private String message;
     private String consentFile;
     private boolean exposeUserCredentialsToSession;
@@ -56,6 +56,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     @Override
     public void init(Router router) throws Exception {
+        name = "OAuth2AuthorizationServerInterceptor";
+        setFlow(Flow.Set.REQUEST);
+
         this.setRouter(router);
         getWellknownFile().init(router,this);
         getConsentPageFile().init(router,getConsentFile());
@@ -130,7 +133,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return path;
     }
 
-    @Required
     @MCAttribute
     public void setPath(String path) {
         this.path = path;
@@ -263,5 +265,10 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     public void setConsentPageFile(ConsentPageFile consentPageFile) {
         this.consentPageFile = consentPageFile;
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "TODO: This is the authorization server in the oauth2 authentication process";
     }
 }

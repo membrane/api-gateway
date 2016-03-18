@@ -14,6 +14,11 @@
             <target host="thomas-bayer.com" port="80"/>
 
         </serviceProxy>
+
+        <serviceProxy port="9001">
+            <adminConsole/>
+        </serviceProxy>
+
     </router>
 
 </spring:beans>

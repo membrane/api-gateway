@@ -1,6 +1,6 @@
 @echo off
 if not "%MEMBRANE_HOME%" == "" goto homeSet
-set "MEMBRANE_HOME=%cd%\..\..\..\..\.."
+set "MEMBRANE_HOME=%cd%\..\..\.."
 echo "%MEMBRANE_HOME%"
 if exist "%MEMBRANE_HOME%\service-proxy.bat" goto homeOk
 

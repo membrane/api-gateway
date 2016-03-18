@@ -57,7 +57,9 @@ import java.util.Map;
 public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private static Log log = LogFactory.getLog(OAuth2ResourceInterceptor.class.getName());
 
-    private String loginLocation, loginPath = "/login/", publicURL;
+    private String loginLocation;
+    private String loginPath = "/login/";
+    private String publicURL;
     private SessionManager sessionManager;
     private AuthorizationService auth;
 
@@ -123,6 +125,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
     @Override
     public void init(Router router) throws Exception {
+        name = "OAuth2ResourceInterceptor";
+        setFlow(Flow.Set.REQUEST);
+
         super.init(router);
 
         auth.init(router);
@@ -150,7 +155,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return Outcome.RETURN;
         }
 
-        if (isLoginRequest(exc)) {
+            if (isLoginRequest(exc)) {
             handleLoginRequest(exc);
             return Outcome.RETURN;
         }
@@ -405,5 +410,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             }
         }
         return false;
+    }
+
+    @Override
+    public String getShortDescription() {
+        return "TODO: This is the client/resource in the oauth2 authentication process";
     }
 }
