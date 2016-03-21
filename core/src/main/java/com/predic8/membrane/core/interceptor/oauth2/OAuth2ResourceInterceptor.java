@@ -170,7 +170,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return respondWithRedirect(exc);
 
         if (session.isAuthorized()) {
-            exc.setProperty("oauth2",OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
+            exc.setProperty(Exchange.OAUTH2,OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
             applyBackendAuthorization(exc, session);
             return Outcome.CONTINUE;
         }

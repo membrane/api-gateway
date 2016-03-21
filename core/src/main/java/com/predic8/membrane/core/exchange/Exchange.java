@@ -50,6 +50,8 @@ public class Exchange extends AbstractExchange {
 
 	public static final String API_KEY = "API_KEY";
 
+	public static final String OAUTH2 = "oauth2";
+
 	private static Log log = LogFactory.getLog(Exchange.class.getName());
 
 	private AbstractHttpHandler handler;
