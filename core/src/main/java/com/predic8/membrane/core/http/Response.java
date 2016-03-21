@@ -238,6 +238,13 @@ public class Response extends Message {
 				body(htmlMessage("Bad Gateway", message));
 	}
 
+	public static ResponseBuilder gatewayTimeout(String message) {
+		return ResponseBuilder.newInstance().
+				status(504, "Gateway timeout").
+				contentType(MimeType.TEXT_HTML_UTF8).
+				body(htmlMessage("Gateway timeout", message));
+	}
+
 	public static ResponseBuilder forbidden() {
 		return ResponseBuilder.newInstance().
 				status(403, "Forbidden").
