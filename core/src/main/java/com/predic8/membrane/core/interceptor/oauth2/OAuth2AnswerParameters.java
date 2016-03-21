@@ -13,29 +13,34 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
 public class OAuth2AnswerParameters {
 
-    private String access_token;
-    private String id_token;
+    private String accessToken;
+    private String tokenType;
+    private String idToken;
     private HashMap<String,String> userinfo = new HashMap<String, String>();
 
-
-    public String getAccess_token() {
-        return access_token;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    public void setAccess_token(String access_token) {
-        this.access_token = access_token;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
-    public String getId_token() {
-        return id_token;
+    public String getIdToken() {
+        return idToken;
     }
 
-    public void setId_token(String id_token) {
-        this.id_token = id_token;
+    public void setIdToken(String idToken) {
+        this.idToken = idToken;
     }
 
     public HashMap<String, String> getUserinfo() {
@@ -44,5 +49,21 @@ public class OAuth2AnswerParameters {
 
     public void setUserinfo(HashMap<String, String> userinfo) {
         this.userinfo = userinfo;
+    }
+
+    public void setTokenType(String tokenType) {
+        this.tokenType = tokenType;
+    }
+
+    public String getTokenType() {
+        return tokenType;
+    }
+
+    public String serialize() throws JsonProcessingException, UnsupportedEncodingException {
+        return OAuth2Util.urlencode(new ObjectMapper().writeValueAsString(this));
+    }
+
+    public static OAuth2AnswerParameters deserialize(String oauth2answer) throws IOException {
+        return new ObjectMapper().readValue(OAuth2Util.urldecode(oauth2answer),OAuth2AnswerParameters.class);
     }
 }

@@ -427,4 +427,11 @@ public abstract class AbstractExchange {
 
 	public abstract long getId();
 
+	public Map<String, Object> getProperties() {
+		return properties;
+	}
+
+	public void setProperties(Map<String, Object> properties) {
+		this.properties = properties;
+	}
 }

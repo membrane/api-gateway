@@ -56,6 +56,7 @@ import java.util.Map;
  */
 @MCElement(name = "oauth2Resource")
 public class OAuth2ResourceInterceptor extends AbstractInterceptor {
+    public static final String OAUTH2_ANSWER = "oauth2Answer";
     private static Log log = LogFactory.getLog(OAuth2ResourceInterceptor.class.getName());
 
     private String loginLocation;
@@ -169,6 +170,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return respondWithRedirect(exc);
 
         if (session.isAuthorized()) {
+            exc.setProperty("oauth2",OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
             applyBackendAuthorization(exc, session);
             return Outcome.CONTINUE;
         }
@@ -195,6 +197,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 h.removeFields(headerName);
                 h.add(headerName, e.getValue());
             }
+
     }
 
     private Outcome respondWithRedirect(Exchange exc) {
@@ -372,9 +375,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     session.getUserAttributes().put("access_token",token); // saving for logout
                 }
 
-                oauth2Answer.setAccess_token(token);
+                oauth2Answer.setAccessToken(token);
+                oauth2Answer.setTokenType(json.get("token_type"));
                 if(json.containsKey("id_token"))
-                    oauth2Answer.setId_token(json.get("id_token"));
+                    oauth2Answer.setIdToken(json.get("id_token"));
 
                 Exchange e2 = new Request.Builder()
                         .get(auth.getUserInfoEndpoint())
@@ -401,7 +405,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 oauth2Answer.setUserinfo(json2);
 
-                exc.setProperty("oauth2",oauth2Answer);
+                session.getUserAttributes().put(OAUTH2_ANSWER,oauth2Answer.serialize());
 
                 if (!json2.containsKey(auth.getSubject()))
                     throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");
