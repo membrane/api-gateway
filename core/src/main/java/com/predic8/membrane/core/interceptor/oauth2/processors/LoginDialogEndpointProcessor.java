@@ -34,7 +34,6 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        addSupportedAuthorizationGrants();
     }
 
     @Override

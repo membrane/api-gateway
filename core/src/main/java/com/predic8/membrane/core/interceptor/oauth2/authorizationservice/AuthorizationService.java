@@ -11,7 +11,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
@@ -24,7 +24,7 @@ import org.springframework.beans.factory.annotation.Required;
 public abstract class AuthorizationService {
     protected Log log;
 
-    protected HttpClient httpClient;
+    private HttpClient httpClient;
     protected Router router;
 
     protected HttpClientConfiguration httpClientConfiguration;
@@ -40,23 +40,23 @@ public abstract class AuthorizationService {
             throw new Exception("No clientSecret configured. - Cannot work without one");
         log = LogFactory.getLog(this.getClass().getName());
 
-        httpClient = getHttpClientConfiguration() == null ? router.getResolverMap()
+        setHttpClient(getHttpClientConfiguration() == null ? router.getResolverMap()
                 .getHTTPSchemaResolver().getHttpClient() : new HttpClient(
-                getHttpClientConfiguration());
+                getHttpClientConfiguration()));
         this.router = router;
         init();
     }
 
-    protected abstract void init() throws Exception;
-    protected abstract String getLoginURL(String securityToken, String publicURL, String pathQuery);
+    public abstract void init() throws Exception;
+    public abstract String getLoginURL(String securityToken, String publicURL, String pathQuery);
 
-    protected abstract String getUserInfoEndpoint();
+    public abstract String getUserInfoEndpoint();
 
-    protected abstract String getSubject();
+    public abstract String getSubject();
 
-    protected abstract String getTokenEndpoint();
+    public abstract String getTokenEndpoint();
 
-    protected abstract String getRevocationEndpoint();
+    public abstract String getRevocationEndpoint();
 
 
     public HttpClientConfiguration getHttpClientConfiguration() {
@@ -97,4 +97,11 @@ public abstract class AuthorizationService {
         this.scope = scope;
     }
 
+    public HttpClient getHttpClient() {
+        return httpClient;
+    }
+
+    public void setHttpClient(HttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
 }

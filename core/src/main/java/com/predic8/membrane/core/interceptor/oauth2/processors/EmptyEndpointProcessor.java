@@ -19,6 +19,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.flows.CodeFlow;
+import com.predic8.membrane.core.interceptor.oauth2.flows.IdTokenTokenFlow;
 import com.predic8.membrane.core.interceptor.oauth2.flows.TokenFlow;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.util.functionalInterfaces.Function;
@@ -50,16 +51,20 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
             }
             if (s.getUserAttributes().get("consent").equals("true")) {
                 s.authorize();
-                if (getResponseType(s).equals("code")) {
-                    return new CodeFlow(authServer, exc, s).getResponse();
-
-                }
-                if (getResponseType(s).equals("token"))
-                    return new TokenFlow(authServer, exc, s).getResponse();
-                return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
+                return startOAuth2Flow(exc, s);
             }
         }
         return createParameterizedJsonErrorResponse(exc, "error", "consent_required");
+    }
+
+    private Outcome startOAuth2Flow(Exchange exc, SessionManager.Session s) throws Exception {
+        if (getResponseType(s).equals("code"))
+            return new CodeFlow(authServer, exc, s).getResponse();
+        if (getResponseType(s).equals("token"))
+            return new TokenFlow(authServer, exc, s).getResponse();
+        if(getResponseType(s).equals("id_token token"))
+            return new IdTokenTokenFlow(authServer,exc,s).getResponse();
+        return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
     }
 
     private void addConsentPageDataToSession(SessionManager.Session s) throws UnsupportedEncodingException {

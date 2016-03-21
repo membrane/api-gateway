@@ -82,9 +82,5 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
         };
     }
 
-    private static void modifySessionAttributes(String name, String value){
-        oasit.oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put(name,value);
-    }
-
 
 }

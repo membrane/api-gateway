@@ -31,6 +31,7 @@ import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
+import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.util.URI;
@@ -270,7 +271,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                         .header(Header.USER_AGENT, Constants.USERAGENT)
                         .body("token=" + token +"&client_id=" + auth.getClientId() + "&client_secret=" + auth.getClientSecret())
                         .buildExchange();
-                Response response = auth.httpClient.call(e).getResponse();
+                Response response = auth.getHttpClient().call(e).getResponse();
                 if (response.getStatusCode() != 200) {
                     response.getBody().read();
                     throw new RuntimeException("Revocation of token did not work. Statuscode: " + response.getStatusCode() + ".");
@@ -347,7 +348,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     logi.handleRequest(e);
                 }
 
-                Response response = auth.httpClient.call(e).getResponse();
+                Response response = auth.getHttpClient().call(e).getResponse();
 
                 if (response.getStatusCode() != 200) {
                     response.getBody().read();
@@ -365,9 +366,15 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 String token = (String) json.get("access_token"); // and also "scope": "", "token_type": "bearer"
 
+                OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
+
                 synchronized (session){
                     session.getUserAttributes().put("access_token",token); // saving for logout
                 }
+
+                oauth2Answer.setAccess_token(token);
+                if(json.containsKey("id_token"))
+                    oauth2Answer.setId_token(json.get("id_token"));
 
                 Exchange e2 = new Request.Builder()
                         .get(auth.getUserInfoEndpoint())
@@ -381,7 +388,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     logi.handleRequest(e2);
                 }
 
-                Response response2 = auth.httpClient.call(e2).getResponse();
+                Response response2 = auth.getHttpClient().call(e2).getResponse();
 
                 if (log.isDebugEnabled())
                     logi.handleResponse(e2);
@@ -391,6 +398,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 }
 
                 HashMap<String, String> json2 = Util.parseSimpleJSONResponse(response2);
+
+                oauth2Answer.setUserinfo(json2);
+
+                exc.setProperty("oauth2",oauth2Answer);
 
                 if (!json2.containsKey(auth.getSubject()))
                     throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");

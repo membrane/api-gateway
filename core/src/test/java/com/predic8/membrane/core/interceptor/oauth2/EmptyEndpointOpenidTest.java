@@ -34,8 +34,13 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
     @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][] {
-                testConsentNotGiven()
+                testConsentNotGiven(),
+                testIdTokenTokenResponse()
         });
+    }
+
+    private static Object[] testIdTokenTokenResponse() {
+        return new Object[] {"testIdTokenTokenResponse", modifySessionToIdTokenTokenResponseType(),307,getBool(true),responseContainsValueInLocationHeader("id_token=")};
     }
 
     private static Object[] testConsentNotGiven() {
@@ -47,6 +52,16 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
             @Override
             public Object call() throws Exception {
                 return oasit.oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put("consent","false");
+            }
+        };
+    }
+
+    private static Callable<Object> modifySessionToIdTokenTokenResponseType() {
+        return new Callable<Object>() {
+            @Override
+            public Object call() throws Exception {
+                modifySessionAttributes("response_type","id_token token");
+                return this;
             }
         };
     }

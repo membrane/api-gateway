@@ -27,6 +27,8 @@ public abstract class RequestParameterizedTest {
     protected static OAuth2AuthorizationServerInterceptorBase oasit;
     protected static Exchange exc;
 
+
+
     @Before
     public void setUp() throws Exception{
         oasit = new OAuth2AuthorizationServerInterceptorNormalTest();
@@ -218,5 +220,9 @@ public abstract class RequestParameterizedTest {
                 return "{\"error\":\"consent_required\"}";
             }
         };
+    }
+
+    public static void modifySessionAttributes(String name, String value){
+        oasit.oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put(name,value);
     }
 }

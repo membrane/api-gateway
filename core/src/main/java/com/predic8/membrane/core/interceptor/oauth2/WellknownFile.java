@@ -18,6 +18,8 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
 
 public class WellknownFile {
 
@@ -75,7 +77,7 @@ public class WellknownFile {
         return resolver.combine(getOauth2Issuer(),"/oauth2/");
     }
 
-    private void getValuesFromOasi() {
+    private void getValuesFromOasi() throws UnsupportedEncodingException {
         if(oasi == null)
             return;
 
@@ -85,7 +87,7 @@ public class WellknownFile {
         setUserinfoEndpoint(baseOauth2Url() + "userinfo");
         setRevocationEndpoint(baseOauth2Url() + "revoke");
         setJwksUri(baseOauth2Url() + "certs");
-        setSupportedResponseTypes("code token");
+        setSupportedResponseTypes(oasi.getSupportedAuthorizationGrants());
         setSupportedSubjectType("public");
         setSupportedIdTokenSigningAlgValues("RS256");
         setSupportedScopes(getSupportedOasiScopes());
@@ -145,7 +147,7 @@ public class WellknownFile {
     private void stringEnumToJson(String name, String... enumeration) throws IOException {
         jsonGen.writeArrayFieldStart(name);
         for(String value : enumeration)
-            jsonGen.writeString(value);
+            jsonGen.writeString(OAuth2Util.urldecode(value));
         jsonGen.writeEndArray();
     }
 
@@ -231,6 +233,13 @@ public class WellknownFile {
 
     protected String getSupportedResponseTypes() {
         return supportedResponseTypes;
+    }
+
+    protected void setSupportedResponseTypes(HashSet<String> supportedResponseTypes) throws UnsupportedEncodingException {
+        StringBuilder builder = new StringBuilder();
+        for(String resp : supportedResponseTypes)
+            builder.append(" ").append(OAuth2Util.urlencode(resp));
+        setSupportedResponseTypes(builder.toString().trim());
     }
 
     protected void setSupportedResponseTypes(String supportedResponseTypes) {

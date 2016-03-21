@@ -11,14 +11,14 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.MCElement;
 
 @MCElement(name="github", topLevel=false)
 public class GithubAuthorizationService extends AuthorizationService {
     @Override
-    protected void init() {
+    public void init() {
         if(scope == null)
             scope = "openid%20email%20profile";
     }
@@ -36,22 +36,22 @@ public class GithubAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected String getUserInfoEndpoint() {
+    public String getUserInfoEndpoint() {
         return "https://api.github.com/user";
     }
 
     @Override
-    protected String getSubject() {
+    public String getSubject() {
         return "login";
     }
 
     @Override
-    protected String getTokenEndpoint() {
+    public String getTokenEndpoint() {
         return "https://github.com/login/oauth/access_token";
     }
 
     @Override
-    protected String getRevocationEndpoint() {
+    public String getRevocationEndpoint() {
         return null;
     }
 }

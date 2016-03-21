@@ -32,7 +32,7 @@ public class TokenFlow extends OAuth2Flow {
         synchronized (session) {
             client = authServer.getClientList().getClient(session.getUserAttributes().get("client_id"));
         }
-        return respondWithTokenAndRedirect(exc, generateAccessToken(session, client), authServer.getTokenGenerator().getTokenType(),session);
+        return respondWithTokenAndRedirect(exc, generateAccessToken(client), authServer.getTokenGenerator().getTokenType(),session);
     }
 
     private Outcome respondWithTokenAndRedirect(Exchange exc, String token, String tokenType, SessionManager.Session s) {
@@ -54,9 +54,11 @@ public class TokenFlow extends OAuth2Flow {
         return Outcome.RETURN;
     }
 
-    private String generateAccessToken(SessionManager.Session s, Client client) {
-        synchronized (s) {
-            return authServer.getTokenGenerator().getToken(s.getUserName(), client.getClientId(), client.getClientSecret());
+    public String generateAccessToken(Client client) {
+        synchronized (session) {
+            String token = authServer.getTokenGenerator().getToken(session.getUserName(), client.getClientId(), client.getClientSecret());
+            authServer.getSessionFinder().addSessionForToken(token,session);
+            return token;
         }
     }
 }

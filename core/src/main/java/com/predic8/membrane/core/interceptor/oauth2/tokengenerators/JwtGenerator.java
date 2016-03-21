@@ -11,7 +11,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
@@ -57,10 +57,6 @@ public class JwtGenerator {
 
         public void setValue(String value) {
             this.value = value;
-        }
-
-        public static Claim createDefaultClaim(String claim) {
-            return new Claim(claim,null);
         }
     }
 

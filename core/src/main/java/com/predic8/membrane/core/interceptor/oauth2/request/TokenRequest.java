@@ -19,7 +19,9 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.*;
+import com.predic8.membrane.core.interceptor.oauth2.flows.TokenFlow;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
@@ -71,22 +73,32 @@ public class TokenRequest extends ParameterizedRequest {
 
         scope = getScope(session);
         token = authServer.getTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
+        authServer.getSessionFinder().addSessionForToken(token,session);
         idToken = null;
         if (OAuth2Util.isOpenIdScope(scope)) {
-            ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),session.getUserAttributes().get(ParamNames.CLAIMS));
-            ArrayList<JwtGenerator.Claim> claims = new ArrayList<JwtGenerator.Claim>();
-            if(cp.hasClaims()) {
-                for (String claim : cp.getIdTokenClaims())
-                    claims.add(new JwtGenerator.Claim(claim,session.getUserAttributes().get(ClaimRenamer.convert(claim))));
-            }
-            idToken = getSignedIdToken(username, client, claims.toArray(new JwtGenerator.Claim[0]));
+            idToken = createSignedIdToken(session, username, client);
         }
 
-        authServer.getSessionFinder().addSessionForToken(token,session);
+
+
         // maybe undo this as the session is used internally
         session.clearCredentials();
 
         return new NoResponse();
+    }
+
+    private JwtGenerator.Claim[] getValidIdTokenClaims(SessionManager.Session session){
+        ClaimsParameter cp = new ClaimsParameter(authServer.getClaimList().getSupportedClaims(),session.getUserAttributes().get(ParamNames.CLAIMS));
+        ArrayList<JwtGenerator.Claim> claims = new ArrayList<JwtGenerator.Claim>();
+        if(cp.hasClaims()) {
+            for (String claim : cp.getIdTokenClaims())
+                claims.add(new JwtGenerator.Claim(claim,session.getUserAttributes().get(ClaimRenamer.convert(claim))));
+        }
+        return claims.toArray(new JwtGenerator.Claim[0]);
+    }
+
+    private String createSignedIdToken(SessionManager.Session session, String username, Client client) throws JoseException {
+        return getSignedIdToken(username, client, getValidIdTokenClaims(session));
     }
 
     private String getSignedIdToken(String username, Client client, JwtGenerator.Claim... claims) throws JoseException {

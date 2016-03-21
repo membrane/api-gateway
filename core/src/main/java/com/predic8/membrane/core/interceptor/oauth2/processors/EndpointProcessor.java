@@ -69,8 +69,4 @@ public abstract class EndpointProcessor {
         return session;
     }
 
-    protected void addSupportedAuthorizationGrants() {
-        authServer.getSupportedAuthorizationGrants().add("code");
-        authServer.getSupportedAuthorizationGrants().add("token");
-    }
 }

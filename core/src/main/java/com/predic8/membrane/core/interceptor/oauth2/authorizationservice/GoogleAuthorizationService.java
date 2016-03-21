@@ -11,7 +11,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.MCElement;
 
@@ -41,22 +41,22 @@ public class GoogleAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected String getTokenEndpoint() {
+    public String getTokenEndpoint() {
         return "https://www.googleapis.com/oauth2/v3/token";
     }
 
     @Override
-    protected String getRevocationEndpoint() {
+    public String getRevocationEndpoint() {
         return "https://accounts.google.com/o/oauth2/revoke";
     }
 
     @Override
-    protected String getUserInfoEndpoint() {
+    public String getUserInfoEndpoint() {
         return "https://www.googleapis.com/oauth2/v3/userinfo";
     }
 
     @Override
-    protected String getSubject() {
+    public String getSubject() {
         return "email"; // "login"
     }
 }

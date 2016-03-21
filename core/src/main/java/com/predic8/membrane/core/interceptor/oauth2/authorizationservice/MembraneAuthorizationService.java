@@ -11,11 +11,13 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2;
+package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import org.apache.commons.io.IOUtils;
@@ -32,7 +34,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private String tokenEndpoint;
     private String userInfoEndpoint;
-    private String subject = "username";
+    private String subject = ClaimRenamer.convert("sub");
     private String authorizationEndpoint;
     private String revocationEndpoint;
     private String claims;
@@ -41,7 +43,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
 
     @Override
-    protected void init() throws Exception {
+    public void init() throws Exception {
         if(src == null)
             throw new Exception("No wellknown file source configured. - Cannot work without one");
         try {
@@ -79,17 +81,17 @@ public class MembraneAuthorizationService extends AuthorizationService {
         revocationEndpoint = (String) json.get("revocation_endpoint");
     }
 
-    protected String getTokenEndpoint() {
+    public String getTokenEndpoint() {
         return tokenEndpoint;
     }
 
     @Override
-    protected String getRevocationEndpoint() {
+    public String getRevocationEndpoint() {
         return revocationEndpoint;
     }
 
     @Override
-    protected String getLoginURL(String securityToken, String publicURL, String pathQuery) {
+    public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
         return authorizationEndpoint +"?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
@@ -111,12 +113,12 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     @Override
-    protected String getUserInfoEndpoint() {
+    public String getUserInfoEndpoint() {
         return userInfoEndpoint;
     }
 
     @Override
-    protected String getSubject() {
+    public String getSubject() {
         return subject;
     }
 

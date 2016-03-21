@@ -25,6 +25,9 @@ import com.predic8.membrane.core.interceptor.authentication.session.CleanupThrea
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 import com.predic8.membrane.core.interceptor.oauth2.processors.*;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenGenerator;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.TokenGenerator;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.util.HashSet;
@@ -60,6 +63,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         setFlow(Flow.Set.REQUEST);
 
         this.setRouter(router);
+        addSupportedAuthorizationGrants();
         getWellknownFile().init(router,this);
         getConsentPageFile().init(router,getConsentFile());
         if (userDataProvider == null)
@@ -270,5 +274,11 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     @Override
     public String getShortDescription() {
         return "TODO: This is the authorization server in the oauth2 authentication process";
+    }
+
+    public void addSupportedAuthorizationGrants() {
+        getSupportedAuthorizationGrants().add("code");
+        getSupportedAuthorizationGrants().add("token");
+        getSupportedAuthorizationGrants().add("id_token token");
     }
 }
