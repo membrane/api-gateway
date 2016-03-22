@@ -67,6 +67,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
     private WebServerInterceptor wsi;
     private URIFactory uriFactory;
+    private boolean firstInitWhenDynamicAuthorizationService;
+    private boolean initPublicURLOnFirstExchange = false;
 
     public String getLoginLocation() {
         return loginLocation;
@@ -100,7 +102,6 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         return publicURL;
     }
 
-    @Required
     @MCAttribute
     public void setPublicURL(String publicURL) {
         this.publicURL = publicURL;
@@ -145,19 +146,34 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             wsi.init(router);
         }
 
-        if(!publicURL.endsWith("/"))
-            publicURL += "/";
+        if(publicURL == null)
+            initPublicURLOnFirstExchange = true;
+        else
+            normalizePublicURL();
+
+        firstInitWhenDynamicAuthorizationService = getAuthService().supportsDynamicRegistration();
+        if(!getAuthService().supportsDynamicRegistration())
+            firstInitWhenDynamicAuthorizationService = false;
     }
 
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
+
+        if(initPublicURLOnFirstExchange)
+            setPublicURL(exc);
+
+        if(firstInitWhenDynamicAuthorizationService){
+            firstInitWhenDynamicAuthorizationService = false;
+
+            getAuthService().dynamicRegistration(exc,publicURL);
+        }
 
         if(isFaviconRequest(exc)){
             exc.setResponse(Response.badRequest().build());
             return Outcome.RETURN;
         }
 
-            if (isLoginRequest(exc)) {
+        if (isLoginRequest(exc)) {
             handleLoginRequest(exc);
             return Outcome.RETURN;
         }
@@ -183,6 +199,18 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
 
         return respondWithRedirect(exc);
+    }
+
+    private void setPublicURL(Exchange exc) {
+        publicURL = exc.getOriginalHostHeaderHost() + ":" + exc.getOriginalHostHeaderPort();
+        normalizePublicURL();
+    }
+
+    private void normalizePublicURL() {
+        if(!publicURL.endsWith("/"))
+            publicURL += "/";
+        if(!OAuth2Util.isAbsoluteUri(publicURL))
+            publicURL = "http://" + publicURL;
     }
 
     private boolean isFaviconRequest(Exchange exc) {
@@ -303,7 +331,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
         String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
 
-        if ("/oauth2callback".equals(path)) {
+        if(path == null)
+            return false;
+
+
+        if(path.endsWith("/oauth2callback")) {
 
             try {
                 Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);

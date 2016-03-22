@@ -19,7 +19,6 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.*;
-import com.predic8.membrane.core.interceptor.oauth2.flows.TokenFlow;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import org.jose4j.lang.JoseException;
@@ -68,7 +67,7 @@ public class TokenRequest extends ParameterizedRequest {
         if(!getClientSecret().equals(client.getClientSecret()))
             return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
 
-        if(!isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
+        if(!OAuth2Util.isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
             return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
 
         scope = getScope(session);

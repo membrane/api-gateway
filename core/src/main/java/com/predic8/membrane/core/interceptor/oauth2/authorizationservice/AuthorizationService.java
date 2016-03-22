@@ -15,11 +15,11 @@ package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 public abstract class AuthorizationService {
     protected Log log;
@@ -32,12 +32,14 @@ public abstract class AuthorizationService {
     protected String clientSecret;
     protected String scope;
 
+    protected boolean supportsDynamicRegistration = false;
+
+    public boolean supportsDynamicRegistration(){
+        return supportsDynamicRegistration;
+    }
+
 
     public void init(Router router) throws Exception {
-        if(clientId == null)
-            throw new Exception("No clientId configured. - Cannot work without one");
-        if(clientSecret == null)
-            throw new Exception("No clientSecret configured. - Cannot work without one");
         log = LogFactory.getLog(this.getClass().getName());
 
         setHttpClient(getHttpClientConfiguration() == null ? router.getResolverMap()
@@ -45,6 +47,8 @@ public abstract class AuthorizationService {
                 getHttpClientConfiguration()));
         this.router = router;
         init();
+        if(!supportsDynamicRegistration())
+            checkForClientIdAndSecret();
     }
 
     public abstract void init() throws Exception;
@@ -57,6 +61,19 @@ public abstract class AuthorizationService {
     public abstract String getTokenEndpoint();
 
     public abstract String getRevocationEndpoint();
+
+    protected void doDynamicRegistration(Exchange exc, String publicURL) throws Exception {
+    }
+
+    public void dynamicRegistration(Exchange exc, String publicURL) throws Exception {
+        if(supportsDynamicRegistration())
+            doDynamicRegistration(exc,publicURL);
+    }
+
+    protected void checkForClientIdAndSecret(){
+        if(clientId == null || clientSecret == null)
+            throw new RuntimeException(this.getClass().getSimpleName() + " cannot work without specified clientId and clientSecret");
+    }
 
 
     public HttpClientConfiguration getHttpClientConfiguration() {
@@ -72,7 +89,6 @@ public abstract class AuthorizationService {
         return clientId;
     }
 
-    @Required
     @MCAttribute
     public void setClientId(String clientId) {
         this.clientId = clientId;
@@ -82,7 +98,6 @@ public abstract class AuthorizationService {
         return clientSecret;
     }
 
-    @Required
     @MCAttribute
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;

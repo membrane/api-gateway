@@ -15,11 +15,15 @@ package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
+import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Required;
 
@@ -30,16 +34,22 @@ import java.util.Map;
 
 @MCElement(name="membrane")
 public class MembraneAuthorizationService extends AuthorizationService {
-    private String src; // url to wellknown data
+    private String src; // url to OpenID-Provider data
 
     private String tokenEndpoint;
     private String userInfoEndpoint;
     private String subject = ClaimRenamer.convert("sub");
     private String authorizationEndpoint;
     private String revocationEndpoint;
+    private String registrationEndpoint;
     private String claims;
     private String claimsIdt;
     private String claimsParameter;
+    private String callbackUri;
+
+    private DynamicRegistration dynamicRegistration;
+
+    private static final String defaultCallbackUri = "/oauth2callback";
 
 
     @Override
@@ -53,8 +63,38 @@ public class MembraneAuthorizationService extends AuthorizationService {
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
         }
+        if(dynamicRegistration != null){
+            dynamicRegistration.init(router);
+            supportsDynamicRegistration = true;
+        }
         adjustScope();
         prepareClaimsForLoginUrl();
+    }
+
+    @Override
+    protected void doDynamicRegistration(Exchange exc, String publicURL) throws Exception {
+        if(clientId != null && clientSecret != null)
+            return;
+        if(dynamicRegistration == null || registrationEndpoint == null || registrationEndpoint.isEmpty())
+            throw new RuntimeException("A registration bean is required and src needs to specify a registration endpoint");
+
+        createCallbackUri(exc,publicURL);
+        dynamicRegistrationIfNeeded();
+    }
+
+    private void createCallbackUri(Exchange exc, String publicURL) {
+        if(exc.getRule() instanceof ServiceProxy && ((ServiceProxy) exc.getRule()).getPath() != null)
+            callbackUri = publicURL + ((ServiceProxy) exc.getRule()).getPath().toString().substring(1) + defaultCallbackUri;
+        callbackUri = publicURL + defaultCallbackUri;
+    }
+
+    private void dynamicRegistrationIfNeeded() throws Exception {
+        setClientIdAndSecret(dynamicRegistration.registerWithCallbackAt(callbackUri,registrationEndpoint));
+    }
+
+    private void setClientIdAndSecret(Client client) {
+        clientId = client.getClientId();
+        clientSecret = client.getClientSecret();
     }
 
     private void prepareClaimsForLoginUrl() throws IOException {
@@ -79,6 +119,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
         userInfoEndpoint = (String) json.get("userinfo_endpoint");
         authorizationEndpoint = (String) json.get("authorization_endpoint");
         revocationEndpoint = (String) json.get("revocation_endpoint");
+        registrationEndpoint = (String) json.get("registration_endpoint");
     }
 
     public String getTokenEndpoint() {
@@ -161,5 +202,17 @@ public class MembraneAuthorizationService extends AuthorizationService {
     @MCAttribute
     public void setClaimsIdt(String claimsIdt) {
         this.claimsIdt = claimsIdt;
+    }
+
+    public DynamicRegistration getDynamicRegistration() {
+        return dynamicRegistration;
+    }
+
+    /**
+     * @description defines a chain of interceptors that are run for the dynamic registration process of openid-connect
+     */
+    @MCChildElement
+    public void setDynamicRegistration(DynamicRegistration dynamicRegistration) {
+        this.dynamicRegistration = dynamicRegistration;
     }
 }

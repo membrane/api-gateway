@@ -40,4 +40,12 @@ public class ReusableJsonGenerator {
         jsonGenerator.flush();
         return baos.toString();
     }
+
+    public String toString() {
+        try {
+            return getJson();
+        } catch (IOException e) {
+            return null;
+        }
+    }
 }

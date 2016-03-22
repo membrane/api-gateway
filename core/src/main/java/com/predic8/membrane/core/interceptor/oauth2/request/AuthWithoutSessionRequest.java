@@ -54,7 +54,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
             return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
         }
 
-        if (!isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
+        if (!OAuth2Util.isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
             return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
 
         if (promptEqualsNone())

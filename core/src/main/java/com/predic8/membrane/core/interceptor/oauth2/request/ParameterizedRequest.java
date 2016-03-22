@@ -102,16 +102,6 @@ public abstract class ParameterizedRequest {
         return builder.bodyEmpty().header(Header.WWW_AUTHENTICATE, authServer.getTokenGenerator().getTokenType() + " error=\""+errorValue+"\"").build();
     }
 
-    protected boolean isAbsoluteUri(String givenRedirect_uri) {
-        try {
-            // Doing it this way as URIs scheme seems to be wrong
-            String[] split = givenRedirect_uri.split("://");
-            return split.length == 2;
-        } catch (Exception ignored) {
-            return false;
-        }
-    }
-
     protected HeaderField extraxtSessionHeader(Message msg) {
         for (HeaderField h : msg.getHeader().getAllHeaderFields()) {
             if (h.getHeaderName().equals("Set-Cookie")) {
