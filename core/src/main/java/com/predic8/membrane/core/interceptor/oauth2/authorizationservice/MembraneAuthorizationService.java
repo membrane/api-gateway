@@ -17,7 +17,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
@@ -56,16 +60,20 @@ public class MembraneAuthorizationService extends AuthorizationService {
     public void init() throws Exception {
         if(src == null)
             throw new Exception("No wellknown file source configured. - Cannot work without one");
+        if(dynamicRegistration != null){
+            dynamicRegistration.init(router);
+            supportsDynamicRegistration = true;
+        }
         try {
-            parseSrc(router.getResolverMap().resolve(src + "/.well-known/openid-configuration"));
+            String url = src + "/.well-known/openid-configuration";
+
+            parseSrc(dynamicRegistration != null ?
+                dynamicRegistration.retrieveOpenIDConfiguration(url) :
+                router.getResolverMap().resolve(url));
         } catch (ResourceRetrievalException e) {
             throw new RuntimeException(e.getMessage());
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage());
-        }
-        if(dynamicRegistration != null){
-            dynamicRegistration.init(router);
-            supportsDynamicRegistration = true;
         }
         adjustScope();
         prepareClaimsForLoginUrl();
@@ -211,7 +219,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     /**
      * @description defines a chain of interceptors that are run for the dynamic registration process of openid-connect
      */
-    @MCChildElement
+    @MCChildElement(order=10)
     public void setDynamicRegistration(DynamicRegistration dynamicRegistration) {
         this.dynamicRegistration = dynamicRegistration;
     }

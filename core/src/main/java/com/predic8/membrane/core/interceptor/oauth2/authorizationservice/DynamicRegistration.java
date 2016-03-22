@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
@@ -28,9 +29,12 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.util.Util;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,14 +45,21 @@ public class DynamicRegistration {
     ReusableJsonGenerator jsonGenerator = new ReusableJsonGenerator();
 
     private List<Interceptor> interceptors = new ArrayList<Interceptor>();
+    private SSLParser sslParser;
+    private SSLContext sslContext;
     private InterceptorFlowController flowController = new InterceptorFlowController();
     private HttpClient client = new HttpClient();
 
     public void init(Router router) throws Exception {
+        if (sslParser != null)
+            sslContext = new SSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
         for(Interceptor i : interceptors)
             i.init(router);
     }
 
+    public InputStream retrieveOpenIDConfiguration(String uri) throws Exception {
+        return doRequest(new Request.Builder().get(uri).buildExchange()).getBodyAsStream();
+    }
 
     public Client registerWithCallbackAt(String callbackUri, String registrationEndpoint) throws Exception {
         Exchange exc = new Request.Builder()
@@ -57,13 +68,7 @@ public class DynamicRegistration {
                 .body(getRegistrationBody(callbackUri))
                 .buildExchange();
 
-        if(flowController.invokeRequestHandlers(exc,interceptors) != Outcome.CONTINUE)
-            throw new RuntimeException("Registration interceptorchain had a problem");
-
-        Response response = client.call(exc).getResponse();
-
-        if(response.getStatusCode() < 200 || response.getStatusCode() > 201)
-            throw new RuntimeException("Registration endpoint didn't return successful: " + response.getStatusMessage());
+        Response response = doRequest(exc);
 
         HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
 
@@ -71,6 +76,20 @@ public class DynamicRegistration {
             throw new RuntimeException("Registration endpoint didn't return clientId/clientSecret");
 
         return new Client(json.get("client_id"),json.get("client_secret"),"");
+    }
+
+    private Response doRequest(Exchange exc) throws Exception {
+        if (sslContext != null)
+            exc.setProperty(Exchange.SSL_CONTEXT, sslContext);
+
+        if(flowController.invokeRequestHandlers(exc,interceptors) != Outcome.CONTINUE)
+            throw new RuntimeException("Registration interceptorchain had a problem");
+
+        Response response = client.call(exc).getResponse();
+
+        if(response.getStatusCode() < 200 || response.getStatusCode() > 201)
+            throw new RuntimeException("Registration endpoint didn't return successful: " + response.getStatusMessage());
+        return response;
     }
 
     private String getRegistrationBody(String callbackUri) throws IOException {
@@ -83,11 +102,20 @@ public class DynamicRegistration {
         return jsonGenerator.getJson();
     }
 
+    public SSLParser getSslParser() {
+        return sslParser;
+    }
+
+    @MCChildElement(order = 10, allowForeign = true)
+    public void setSslParser(SSLParser sslParser) {
+        this.sslParser = sslParser;
+    }
+
     public List<Interceptor> getInterceptors() {
         return interceptors;
     }
 
-    @MCChildElement
+    @MCChildElement(order = 20)
     public void setInterceptors(List<Interceptor> interceptors) {
         this.interceptors = interceptors;
     }

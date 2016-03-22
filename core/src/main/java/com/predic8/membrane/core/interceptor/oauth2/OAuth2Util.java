@@ -64,12 +64,6 @@ public class OAuth2Util {
     }
 
     public static boolean isAbsoluteUri(String uri) {
-        try {
-            // Doing it this way as URIs scheme seems to be wrong
-            String[] split = uri.split("://");
-            return split.length == 2;
-        } catch (Exception ignored) {
-            return false;
-        }
+        return uri.contains("://");
     }
 }

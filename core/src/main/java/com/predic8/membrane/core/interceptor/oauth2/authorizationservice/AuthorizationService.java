@@ -14,10 +14,14 @@
 package com.predic8.membrane.core.interceptor.oauth2.authorizationservice;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -31,6 +35,8 @@ public abstract class AuthorizationService {
     protected String clientId;
     protected String clientSecret;
     protected String scope;
+    private SSLParser sslParser;
+    private SSLContext sslContext;
 
     protected boolean supportsDynamicRegistration = false;
 
@@ -45,6 +51,8 @@ public abstract class AuthorizationService {
         setHttpClient(getHttpClientConfiguration() == null ? router.getResolverMap()
                 .getHTTPSchemaResolver().getHttpClient() : new HttpClient(
                 getHttpClientConfiguration()));
+        if (sslParser != null)
+            sslContext = new SSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
         this.router = router;
         init();
         if(!supportsDynamicRegistration())
@@ -118,5 +126,20 @@ public abstract class AuthorizationService {
 
     public void setHttpClient(HttpClient httpClient) {
         this.httpClient = httpClient;
+    }
+
+    public Response doRequest(Exchange e) throws Exception {
+        if (sslContext != null)
+            e.setProperty(Exchange.SSL_CONTEXT, sslContext);
+        return getHttpClient().call(e).getResponse();
+    }
+
+    public SSLParser getSslParser() {
+        return sslParser;
+    }
+
+    @MCChildElement(order=20, allowForeign = true)
+    public void setSslParser(SSLParser sslParser) {
+        this.sslParser = sslParser;
     }
 }

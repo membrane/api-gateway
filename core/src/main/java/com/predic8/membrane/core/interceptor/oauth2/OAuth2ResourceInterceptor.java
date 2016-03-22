@@ -202,15 +202,13 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     private void setPublicURL(Exchange exc) {
-        publicURL = exc.getOriginalHostHeaderHost() + ":" + exc.getOriginalHostHeaderPort();
+        publicURL = (exc.getRule().getSslInboundContext() != null ? "https://" : "http://") + exc.getOriginalHostHeader();
         normalizePublicURL();
     }
 
     private void normalizePublicURL() {
         if(!publicURL.endsWith("/"))
             publicURL += "/";
-        if(!OAuth2Util.isAbsoluteUri(publicURL))
-            publicURL = "http://" + publicURL;
     }
 
     private boolean isFaviconRequest(Exchange exc) {
@@ -302,7 +300,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                         .header(Header.USER_AGENT, Constants.USERAGENT)
                         .body("token=" + token +"&client_id=" + auth.getClientId() + "&client_secret=" + auth.getClientSecret())
                         .buildExchange();
-                Response response = auth.getHttpClient().call(e).getResponse();
+                Response response = auth.doRequest(e);
                 if (response.getStatusCode() != 200) {
                     response.getBody().read();
                     throw new RuntimeException("Revocation of token did not work. Statuscode: " + response.getStatusCode() + ".");
@@ -383,7 +381,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     logi.handleRequest(e);
                 }
 
-                Response response = auth.getHttpClient().call(e).getResponse();
+                Response response = auth.doRequest(e);
 
                 if (response.getStatusCode() != 200) {
                     response.getBody().read();
@@ -424,7 +422,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     logi.handleRequest(e2);
                 }
 
-                Response response2 = auth.getHttpClient().call(e2).getResponse();
+                Response response2 = auth.doRequest(e2);
 
                 if (log.isDebugEnabled())
                     logi.handleResponse(e2);
