@@ -11,6 +11,12 @@
                 <membrane src="http://localhost:2000" clientId="abc" clientSecret="def" scope="openid profile" claims="username" claimsIdt="sub" />
             </oauth2Resource>
 
+            <groovy>
+                def oauth2 = exc.properties['oauth2']
+                exc.request.getHeader().add('Authorization',oauth2.userinfo.email)
+                CONTINUE
+            </groovy>
+
             <target host="thomas-bayer.com" port="80"/>
 
         </serviceProxy>
