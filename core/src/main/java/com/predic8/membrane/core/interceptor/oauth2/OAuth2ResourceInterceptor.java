@@ -34,6 +34,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
@@ -203,7 +204,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
     private void setPublicURL(Exchange exc) {
         publicURL = (exc.getRule().getSslInboundContext() != null ? "https://" : "http://") + exc.getOriginalHostHeader();
+        RuleKey key = exc.getRule().getKey();
+        if (!key.isPathRegExp() && key.getPath() != null)
+            publicURL += key.getPath();
         normalizePublicURL();
+        initPublicURLOnFirstExchange = false;
     }
 
     private void normalizePublicURL() {
