@@ -274,6 +274,8 @@ public class CacheInterceptor extends AbstractInterceptor {
 			if (headerName.startsWith("x-"))
 				continue;
 			if (!allowedRequestHeaders.contains(headerName)) {
+				if (headerName.equals("connection") && "close".equals(header.getValue().toLowerCase(Locale.US)))
+					continue;
 				if (emitWarning)
 					log.warn("Could not cache request because of '" + header.getHeaderName() + "' header:\n" + request.getStartLine() + request.getHeader());
 				return false;
