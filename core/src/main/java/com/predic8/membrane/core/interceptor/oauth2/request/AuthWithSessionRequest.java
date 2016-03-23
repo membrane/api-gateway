@@ -33,7 +33,7 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
     }
 
     @Override
-    protected Response validateWithParameters() throws Exception {
+    protected Response processWithParameters() throws Exception {
         if(getPrompt().equals("login"))
             return clearSessionAndRedirectToAuthEndpoint(exc);
 

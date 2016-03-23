@@ -47,7 +47,7 @@ public class UserinfoRequest extends ParameterizedRequest {
     }
 
     @Override
-    protected Response validateWithParameters() throws Exception {
+    protected Response processWithParameters() throws Exception {
         if(!authHeader.isValid() || !authServer.getSessionFinder().hasSessionForToken(authHeader.getToken())) {
             return buildWwwAuthenticateErrorResponse( Response.unauthorized(), "invalid_token");
         }

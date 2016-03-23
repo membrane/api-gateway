@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
@@ -34,7 +35,7 @@ public abstract class ParameterizedRequest {
     protected ReusableJsonGenerator jsonGen;
 
     protected abstract Response checkForMissingParameters() throws Exception;
-    protected abstract Response validateWithParameters() throws Exception;
+    protected abstract Response processWithParameters() throws Exception;
     protected abstract Response getResponse() throws Exception;
 
     public Response validateRequest() throws Exception {
@@ -42,7 +43,7 @@ public abstract class ParameterizedRequest {
         resp = checkForMissingParameters();
         if(resp.getClass() != NoResponse.class)
             return resp;
-        resp = validateWithParameters();
+        resp = processWithParameters();
         if(resp.getClass() != NoResponse.class)
             return resp;
         return getResponse();
@@ -143,6 +144,35 @@ public abstract class ParameterizedRequest {
         }
     }
 
+    protected boolean verifyUserThroughParams(){
+        try {
+            authServer.getUserDataProvider().verify(params);
+            return true;
+        }catch (Exception ignored){
+            return false;
+        }
+    }
+
+    protected SessionManager.Session createSessionForAuthorizedUserWithParams() {
+        SessionManager.Session session = authServer.getSessionManager().createSession(exc);
+        session.preAuthorize(getUsername(),params);
+        session.authorize();
+        return session;
+    }
+
+    protected boolean verifyClientThroughParams(){
+        try {
+            Client client = authServer.getClientList().getClient(getClientId());
+            return client.verify(getClientId(),getClientSecret());
+        }catch(Exception e){
+            return false;
+        }
+    }
+
+    protected String createTokenForVerifiedUserAndClient(){
+        return authServer.getTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
+    }
+
     public String getPrompt() {
         return params.get(ParamNames.PROMPT);
     }
@@ -180,5 +210,11 @@ public abstract class ParameterizedRequest {
     public String getClientSecret(){return params.get(ParamNames.CLIENT_SECRET);}
 
     public String getClaims(){return params.get(ParamNames.CLAIMS);}
+
+    public String getGrantType(){return params.get(ParamNames.GRANT_TYPE);}
+
+    public String getUsername(){return params.get(ParamNames.USERNAME);}
+
+    public String getPassword(){return params.get(ParamNames.PASSWORD);}
 
 }

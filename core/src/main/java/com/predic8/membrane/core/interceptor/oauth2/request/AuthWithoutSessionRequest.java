@@ -46,7 +46,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
     }
 
     @Override
-    protected Response validateWithParameters() throws Exception {
+    protected Response processWithParameters() throws Exception {
         Client client;
         try {
             client = authServer.getClientList().getClient(getClientId());

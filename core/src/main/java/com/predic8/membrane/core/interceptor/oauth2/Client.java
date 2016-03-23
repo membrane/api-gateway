@@ -32,6 +32,12 @@ public class Client {
         this.callbackUrl = callbackUrl;
     }
 
+    public boolean verify(String clientId, String clientSecret){
+        if(!this.clientId.equals(clientId) || !this.clientSecret.equals(clientSecret))
+            return false;
+        return true;
+    }
+
     public String getClientId() {
         return clientId;
     }

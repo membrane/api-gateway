@@ -11,7 +11,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.interceptor.oauth2.request;
+package com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -20,21 +20,20 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
+import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
+import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import org.jose4j.lang.JoseException;
 
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class TokenRequest extends ParameterizedRequest {
+public class AuthorizationCodeFlow extends TokenRequest {
 
-    private String scope;
-    private String token;
-    private String idToken;
-
-    public TokenRequest(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
+    public AuthorizationCodeFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
     }
+
 
     @Override
     protected Response checkForMissingParameters() throws Exception {
@@ -44,7 +43,7 @@ public class TokenRequest extends ParameterizedRequest {
     }
 
     @Override
-    protected Response validateWithParameters() throws Exception {
+    protected Response processWithParameters() throws Exception {
         if(!authServer.getSessionFinder().hasSessionForCode(getCode()))
             return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
         SessionManager.Session session = authServer.getSessionFinder().getSessionForCode(getCode());
@@ -77,11 +76,6 @@ public class TokenRequest extends ParameterizedRequest {
         if (OAuth2Util.isOpenIdScope(scope)) {
             idToken = createSignedIdToken(session, username, client);
         }
-
-
-
-        // maybe undo this as the session is used internally
-        session.clearCredentials();
 
         return new NoResponse();
     }
@@ -118,22 +112,5 @@ public class TokenRequest extends ParameterizedRequest {
         synchronized (session) {
             return session.getUserAttributes().get("scope");
         }
-    }
-
-    protected String getTokenJSONResponse(String scope, String token, String idToken) throws IOException {
-        String json;
-        synchronized (jsonGen) {
-            JsonGenerator gen = jsonGen.resetAndGet();
-            gen.writeStartObject();
-            gen.writeObjectField("access_token", token);
-            gen.writeObjectField("token_type", authServer.getTokenGenerator().getTokenType());
-            //gen.writeObjectField("expires_in", "null"); // TODO is optional but maybe useful?
-            gen.writeObjectField(ParamNames.SCOPE, scope);
-            if (idToken != null)
-                gen.writeObjectField(ParamNames.ID_TOKEN, idToken);
-            gen.writeEndObject();
-            json = jsonGen.getJson();
-        }
-        return json;
     }
 }

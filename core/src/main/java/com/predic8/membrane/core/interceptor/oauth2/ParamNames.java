@@ -25,4 +25,7 @@ public class ParamNames {
     public static final String CLIENT_SECRET = "client_secret";
     public static final String CLAIMS = "claims";
     public static final String ID_TOKEN = "id_token";
+    public static final String GRANT_TYPE = "grant_type";
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
 }

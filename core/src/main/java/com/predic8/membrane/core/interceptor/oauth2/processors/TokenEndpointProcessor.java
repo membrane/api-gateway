@@ -16,7 +16,8 @@ package com.predic8.membrane.core.interceptor.oauth2.processors;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.request.TokenRequest;
+import com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest.AuthorizationCodeFlow;
+import com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest.TokenFlowDecider;
 
 public class TokenEndpointProcessor extends EndpointProcessor {
 
@@ -32,7 +33,7 @@ public class TokenEndpointProcessor extends EndpointProcessor {
 
     @Override
     public Outcome process(Exchange exc) throws Exception {
-        exc.setResponse(new TokenRequest(authServer,exc).validateRequest());
+        exc.setResponse(new TokenFlowDecider(authServer,exc).getFlow().validateRequest());
         return Outcome.RETURN;
     }
 }
