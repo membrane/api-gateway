@@ -125,6 +125,10 @@ public class Exchange extends AbstractExchange {
 		return originalHostHeader.replaceFirst(".*:", "");
 	}
 
+	public String getOriginalHostHeader() {
+		return originalHostHeader;
+	}
+
 	public void setOriginalHostHeader(String hostHeader) {
 		originalHostHeader = hostHeader;
 	}

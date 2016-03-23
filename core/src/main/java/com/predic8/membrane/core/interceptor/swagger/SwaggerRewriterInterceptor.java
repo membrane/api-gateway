@@ -118,7 +118,7 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 	}
 
 	private String exc2originalHostPort(Exchange exc) {
-		return exc.getOriginalHostHeaderHost() + (exc.getOriginalHostHeaderPort().length() > 0 ? ":" + exc.getOriginalHostHeaderPort() : "");
+		return exc.getOriginalHostHeader();
 	}
 
 	@Override
