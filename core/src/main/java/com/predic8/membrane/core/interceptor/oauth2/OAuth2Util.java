@@ -54,7 +54,7 @@ public class OAuth2Util {
     }
 
     public static boolean isOpenIdScope(String scope) {
-        if (scope.contains("openid")) {
+        if (scope != null && !scope.isEmpty() && scope.contains("openid")) {
             String[] split = scope.split(" ");
             for (String singleScope : split)
                 if (singleScope.equals("openid"))

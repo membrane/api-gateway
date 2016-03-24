@@ -67,9 +67,11 @@ public class UserinfoRequest extends ParameterizedRequest {
     protected String getUserDataAsJson(Map<String,String> sessionProperties) throws IOException {
 
         Map<String, String> claims = new HashMap<String, String>();
-        if(OAuth2Util.isOpenIdScope(sessionProperties.get(ParamNames.SCOPE)))
-            claims.putAll(getClaimsFromClaimsParameter(sessionProperties));
-        claims.putAll(getClaimsFromScopes(sessionProperties));
+        if(sessionProperties.get(ParamNames.SCOPE) != null) {
+            if (OAuth2Util.isOpenIdScope(sessionProperties.get(ParamNames.SCOPE)))
+                claims.putAll(getClaimsFromClaimsParameter(sessionProperties));
+            claims.putAll(getClaimsFromScopes(sessionProperties));
+        }
 
         synchronized (jsonGen) {
             JsonGenerator gen = jsonGen.resetAndGet();
