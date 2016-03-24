@@ -21,7 +21,7 @@ public class URLUtil {
 	public static String getPathQuery(URIFactory uriFactory, String uri) throws URISyntaxException {
 		URI u = uriFactory.create(uri);
 		String query = u.getRawQuery();
-		return u.getPath() + (query == null ? "" : "?" + query);
+		return (u.getPath().isEmpty() ? "/" : u.getPath()) + (query == null ? "" : "?" + query);
 	}
 
 	public static String getName(URIFactory uriFactory, String uri) throws URISyntaxException {
