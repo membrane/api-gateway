@@ -87,14 +87,29 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			exc.setTimeResReceived(System.currentTimeMillis());
 			return Outcome.RETURN;
 		} catch (ResourceRetrievalException e) {
-			for (String i : index) {
-				try {
-					exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase, uri + i)));
+			String uri2 = uri;
+			if (!uri2.endsWith("/")) {
+				uri2 += "/";
+				for (String i : index) {
+					try {
+						router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), docBase, uri2 + i));
+						// no exception? then the URI was a directory without trailing slash
+						exc.setResponse(Response.redirect(exc.getRequest().getUri() + "/", false).build());
+						return Outcome.RETURN;
+					} catch (Exception e2) {
+						continue;
+					}
+				}
+			} else {
+				for (String i : index) {
+					try {
+						exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase, uri2 + i)));
 
-					exc.setReceived();
-					exc.setTimeResReceived(System.currentTimeMillis());
-					return Outcome.RETURN;
-				} catch (FileNotFoundException e2) {
+						exc.setReceived();
+						exc.setTimeResReceived(System.currentTimeMillis());
+						return Outcome.RETURN;
+					} catch (FileNotFoundException e2) {
+					}
 				}
 			}
 
