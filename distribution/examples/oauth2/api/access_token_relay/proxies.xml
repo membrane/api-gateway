@@ -1,0 +1,32 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<spring:bean id="httpClientGroovy" class="com.predic8.membrane.core.transport.http.HttpClient"/>
+
+	<router>
+		<serviceProxy name="Access Token Relay" port="2002">
+
+			<request>
+				<groovy>
+					def client = spring.getBean("httpClientGroovy")
+					def auth =  exc.request.header.getFirstValue("Authorization")
+					def e = new Request.Builder().get("http://localhost:2000/oauth2/userinfo").header("Authorization",auth).buildExchange()
+					def response = client.call(e).getResponse()
+					if(response.statusCode != 200){
+						exc.setResponse(new Response().badRequest().build())
+						RETURN
+					}else{
+						CONTINUE
+					}
+				</groovy>
+			</request>
+			<target host="thomas-bayer.com" port="80"/>
+
+		</serviceProxy>
+	</router>
+
+</spring:beans>
