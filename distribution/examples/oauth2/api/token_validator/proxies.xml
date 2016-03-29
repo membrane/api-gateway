@@ -8,7 +8,7 @@
 	<spring:bean id="httpClientGroovy" class="com.predic8.membrane.core.transport.http.HttpClient"/>
 
 	<router>
-		<serviceProxy name="Access Token Relay" port="2002">
+		<serviceProxy name="Token Validator" port="2002">
 
 			<request>
 				<groovy>
@@ -26,6 +26,10 @@
 			</request>
 			<target host="thomas-bayer.com" port="80"/>
 
+		</serviceProxy>
+
+		<serviceProxy port="9002">
+			<adminConsole/>
 		</serviceProxy>
 	</router>
 
