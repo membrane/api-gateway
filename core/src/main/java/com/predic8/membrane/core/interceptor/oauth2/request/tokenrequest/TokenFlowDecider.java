@@ -34,6 +34,8 @@ public class TokenFlowDecider {
     public TokenFlowDecider(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         params = URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc);
         flow = new ErrorFlow(authServer,exc);
+        if(getGrantType() == null)
+            return;
         if(getGrantType().equals(AUTHORIZATION_CODE)) {
             flow = new AuthorizationCodeFlow(authServer, exc);
             return;
@@ -47,10 +49,6 @@ public class TokenFlowDecider {
             return;
         }
 
-    }
-
-    private boolean grantTypeParameterIsAvailable(){
-        return params.containsKey(ParamNames.GRANT_TYPE);
     }
 
     private String getGrantType() {
