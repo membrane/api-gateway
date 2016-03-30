@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 
 public class ErrorFlow extends ParameterizedRequest {
@@ -26,16 +27,16 @@ public class ErrorFlow extends ParameterizedRequest {
 
     @Override
     protected Response checkForMissingParameters() throws Exception {
-        return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+        return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
     }
 
     @Override
     protected Response processWithParameters() throws Exception {
-        return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+        return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
     }
 
     @Override
     protected Response getResponse() throws Exception {
-        return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+        return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
     }
 }

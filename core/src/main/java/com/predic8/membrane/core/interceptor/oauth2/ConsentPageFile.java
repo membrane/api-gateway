@@ -21,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ConsentPageFile {
 
@@ -35,8 +36,8 @@ public class ConsentPageFile {
 
     private String productName;
     private String logoUrl;
-    HashMap<String,String> scopesToDescriptions = new HashMap<String, String>();
-    HashMap<String,String> claimsToDescriptions = new HashMap<String, String>();
+    ConcurrentHashMap<String,String> scopesToDescriptions = new ConcurrentHashMap<String, String>();
+    ConcurrentHashMap<String,String> claimsToDescriptions = new ConcurrentHashMap<String, String>();
     private Map<String, Object> json;
 
 

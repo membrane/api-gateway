@@ -13,11 +13,12 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.HeaderField;
-import com.predic8.membrane.core.http.HeaderName;
-import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.interceptor.Outcome;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -65,5 +66,25 @@ public class OAuth2Util {
 
     public static boolean isAbsoluteUri(String uri) {
         return uri.contains("://");
+    }
+
+    public static Response createParameterizedJsonErrorResponse(Exchange exc, ReusableJsonGenerator jsonGen, String... params) throws IOException {
+        if (params.length % 2 != 0)
+            throw new IllegalArgumentException("The number of strings passed as params is not even");
+        String json;
+        synchronized (jsonGen) {
+            JsonGenerator gen = jsonGen.resetAndGet();
+            gen.writeStartObject();
+            for (int i = 0; i < params.length; i += 2)
+                gen.writeObjectField(params[i], params[i + 1]);
+            gen.writeEndObject();
+            json = jsonGen.getJson();
+        }
+
+        return Response.badRequest()
+                .body(json)
+                .contentType(MimeType.APPLICATION_JSON_UTF8)
+                .dontCache()
+                .build();
     }
 }

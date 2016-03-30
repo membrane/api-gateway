@@ -73,26 +73,6 @@ public abstract class ParameterizedRequest {
             params.remove(paramName);
     }
 
-    protected Response createParameterizedJsonErrorResponse(Exchange exc, String... params) throws IOException {
-        if (params.length % 2 != 0)
-            throw new IllegalArgumentException("The number of strings passed as params is not even");
-        String json;
-        synchronized (jsonGen) {
-            JsonGenerator gen = jsonGen.resetAndGet();
-            gen.writeStartObject();
-            for (int i = 0; i < params.length; i += 2)
-                gen.writeObjectField(params[i], params[i + 1]);
-            gen.writeEndObject();
-            json = jsonGen.getJson();
-        }
-
-        return Response.badRequest()
-                .body(json)
-                .contentType(MimeType.APPLICATION_JSON_UTF8)
-                .dontCache()
-                .build();
-    }
-
     protected Response createParameterizedFormUrlencodedRedirect(Exchange exc, String state, String url) {
         if (state != null)
             url += "&state=" + state;
@@ -101,18 +81,6 @@ public abstract class ParameterizedRequest {
 
     protected Response buildWwwAuthenticateErrorResponse(Response.ResponseBuilder builder, String errorValue) {
         return builder.bodyEmpty().header(Header.WWW_AUTHENTICATE, authServer.getTokenGenerator().getTokenType() + " error=\""+errorValue+"\"").build();
-    }
-
-    protected HeaderField extraxtSessionHeader(Message msg) {
-        for (HeaderField h : msg.getHeader().getAllHeaderFields()) {
-            if (h.getHeaderName().equals("Set-Cookie")) {
-                return h;
-            } else if (h.getHeaderName().equals("Cookie")) {
-                h.setHeaderName(new HeaderName("Set-Cookie"));
-                return h;
-            }
-        }
-        throw new RuntimeException();
     }
 
     protected static String extractSessionId(HeaderField sessionHeader) {
@@ -155,8 +123,10 @@ public abstract class ParameterizedRequest {
 
     protected SessionManager.Session createSessionForAuthorizedUserWithParams() {
         SessionManager.Session session = authServer.getSessionManager().createSession(exc);
-        session.preAuthorize(getUsername(),params);
-        session.authorize();
+        synchronized(session) {
+            session.preAuthorize(getUsername(), params);
+            session.authorize();
+        }
         return session;
     }
 

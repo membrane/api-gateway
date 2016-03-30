@@ -17,6 +17,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 
 public class AuthWithSessionRequest extends ParameterizedRequest{
 
@@ -27,7 +28,7 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
     @Override
     protected Response checkForMissingParameters() throws Exception {
         if (getPrompt() == null)
-            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_request");
 
         return new NoResponse();
     }
@@ -38,13 +39,13 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
             return clearSessionAndRedirectToAuthEndpoint(exc);
 
         if(getPrompt().equals("none") && !getSession(exc).isAuthorized())
-            return createParameterizedJsonErrorResponse(exc,"error","login_required");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error","login_required");
         return new NoResponse();
     }
 
     @Override
     protected Response getResponse() throws Exception {
-        return createParameterizedJsonErrorResponse(exc, "error", "login_required");
+        return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "login_required");
     }
 
     private Response clearSessionAndRedirectToAuthEndpoint(Exchange exc){

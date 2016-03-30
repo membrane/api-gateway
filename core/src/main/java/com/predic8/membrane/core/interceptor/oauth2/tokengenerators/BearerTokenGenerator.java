@@ -19,6 +19,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
 
 @MCElement(name="bearerToken")
 public class BearerTokenGenerator implements TokenGenerator {
@@ -60,7 +61,7 @@ public class BearerTokenGenerator implements TokenGenerator {
     }
 
     private SecureRandom random = new SecureRandom();
-    private HashMap<String,User> tokenToUser = new HashMap<String, User>();
+    private ConcurrentHashMap<String,User> tokenToUser = new ConcurrentHashMap<String, User>();
 
     @Override
     public String getTokenType() {

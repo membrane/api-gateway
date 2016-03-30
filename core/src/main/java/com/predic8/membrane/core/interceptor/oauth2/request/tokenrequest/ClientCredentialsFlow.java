@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
 import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 
@@ -29,17 +30,17 @@ public class ClientCredentialsFlow extends ParameterizedRequest {
     protected Response checkForMissingParameters() throws Exception {
         // TODO also check for client id and client secret and additionally for the username ( else we cant create tokens )
         if(getGrantType() == null)
-            return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
         return new NoResponse();
     }
 
     @Override
     protected Response processWithParameters() throws Exception {
-        return createParameterizedJsonErrorResponse(exc,"error","not_yet_implemented");
+        return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","not_yet_implemented");
     }
 
     @Override
     protected Response getResponse() throws Exception {
-        return createParameterizedJsonErrorResponse(exc,"error","not_yet_implemented");
+        return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","not_yet_implemented");
     }
 }

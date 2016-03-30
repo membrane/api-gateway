@@ -241,10 +241,12 @@ public class LoginDialog {
 	private void removeConsentPageDataFromSession(Session s) {
 		if(s == null)
 			return;
-		s.getUserAttributes().remove(ConsentPageFile.PRODUCT_NAME);
-		s.getUserAttributes().remove(ConsentPageFile.LOGO_URL);
-		s.getUserAttributes().remove(ConsentPageFile.SCOPE_DESCRIPTIONS);
-		s.getUserAttributes().remove(ConsentPageFile.CLAIM_DESCRIPTIONS);
+		synchronized (s) {
+			s.getUserAttributes().remove(ConsentPageFile.PRODUCT_NAME);
+			s.getUserAttributes().remove(ConsentPageFile.LOGO_URL);
+			s.getUserAttributes().remove(ConsentPageFile.SCOPE_DESCRIPTIONS);
+			s.getUserAttributes().remove(ConsentPageFile.CLAIM_DESCRIPTIONS);
+		}
 	}
 
 	private void redirectAfterConsent(Exchange exc) throws Exception {
@@ -261,7 +263,9 @@ public class LoginDialog {
 		String consentResult = "false";
 		if(params.get("consent").equals("Accept"))
             consentResult = "true";
-		s.getUserAttributes().put("consent",consentResult);
+		synchronized (s) {
+			s.getUserAttributes().put("consent", consentResult);
+		}
 	}
 
 	private void showConsentPage(Exchange exc, Session s) throws Exception {
@@ -269,11 +273,14 @@ public class LoginDialog {
 			showPage(exc,2,ConsentPageFile.PRODUCT_NAME,null,ConsentPageFile.LOGO_URL,null,"scopes", null, "claims", null);
 			return;
 		}
-		String productName = s.getUserAttributes().get(ConsentPageFile.PRODUCT_NAME);
-		String logoUrl = s.getUserAttributes().get(ConsentPageFile.LOGO_URL);
-		Map<String,String> scopes = doubleStringArrayToMap(prepareScopesFromSession(s));
-		Map<String,String> claims = doubleStringArrayToMap(prepareClaimsFromSession(s));
-		showPage(exc,2,ConsentPageFile.PRODUCT_NAME,productName,ConsentPageFile.LOGO_URL,logoUrl,"scopes", scopes, "claims", claims);
+		synchronized(s) {
+			String productName = s.getUserAttributes().get(ConsentPageFile.PRODUCT_NAME);
+			String logoUrl = s.getUserAttributes().get(ConsentPageFile.LOGO_URL);
+			Map<String, String> scopes = doubleStringArrayToMap(prepareScopesFromSession(s));
+			Map<String, String> claims = doubleStringArrayToMap(prepareClaimsFromSession(s));
+			showPage(exc,2,ConsentPageFile.PRODUCT_NAME,productName,ConsentPageFile.LOGO_URL,logoUrl,"scopes", scopes, "claims", claims);
+		}
+
 	}
 
 	private Map<String, String> doubleStringArrayToMap(String[] strings) {

@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
@@ -21,11 +20,9 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.*;
 import com.predic8.membrane.core.interceptor.oauth2.parameter.ClaimsParameter;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
-import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import org.jose4j.lang.JoseException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class AuthorizationCodeFlow extends TokenRequest {
@@ -38,14 +35,14 @@ public class AuthorizationCodeFlow extends TokenRequest {
     @Override
     protected Response checkForMissingParameters() throws Exception {
         if(getCode() == null ||  getClientId() == null || getClientSecret() == null || getRedirectUri() == null)
-            return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
         return new NoResponse();
     }
 
     @Override
     protected Response processWithParameters() throws Exception {
         if(!authServer.getSessionFinder().hasSessionForCode(getCode()))
-            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_request");
         SessionManager.Session session = authServer.getSessionFinder().getSessionForCode(getCode());
         authServer.getSessionFinder().removeSessionForCode(getCode());
 
@@ -60,14 +57,14 @@ public class AuthorizationCodeFlow extends TokenRequest {
                 client = authServer.getClientList().getClient(getClientId());
             }
         } catch (Exception e) {
-            return createParameterizedJsonErrorResponse(exc, "error", "invalid_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "invalid_client");
         }
 
         if(!getClientSecret().equals(client.getClientSecret()))
-            return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "unauthorized_client");
 
         if(!OAuth2Util.isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
-            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_request");
 
         scope = getScope(session);
         token = authServer.getTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());

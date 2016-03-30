@@ -54,7 +54,8 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
                 return startOAuth2Flow(exc, s);
             }
         }
-        return createParameterizedJsonErrorResponse(exc, "error", "consent_required");
+        exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "consent_required"));
+        return Outcome.RETURN;
     }
 
     private Outcome startOAuth2Flow(Exchange exc, SessionManager.Session s) throws Exception {
@@ -64,7 +65,8 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
             return new TokenFlow(authServer, exc, s).getResponse();
         if(getResponseType(s).equals("id_token token"))
             return new IdTokenTokenFlow(authServer,exc,s).getResponse();
-        return createParameterizedJsonErrorResponse(exc, "error", "unsupported_response_type");
+        exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "unsupported_response_type"));
+        return Outcome.RETURN;
     }
 
     private void addConsentPageDataToSession(SessionManager.Session s) throws UnsupportedEncodingException {

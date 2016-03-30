@@ -17,6 +17,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
@@ -38,7 +39,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
     @Override
     protected Response checkForMissingParameters() throws Exception {
         if(getClientId() == null || getRedirectUri() == null)
-            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_request");
 
         if(getResponseType() == null || getScope() == null)
             return createParameterizedFormUrlencodedRedirect(exc, getState(), getRedirectUri() + "?error=invalid_request");
@@ -51,11 +52,11 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         try {
             client = authServer.getClientList().getClient(getClientId());
         } catch (Exception e) {
-            return createParameterizedJsonErrorResponse(exc, "error", "unauthorized_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "unauthorized_client");
         }
 
         if (!OAuth2Util.isAbsoluteUri(getRedirectUri()) || !getRedirectUri().equals(client.getCallbackUrl()))
-            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_request");
 
         if (promptEqualsNone())
             return createParameterizedFormUrlencodedRedirect(exc, getState(), client.getCallbackUrl() + "?error=login_required");
@@ -87,7 +88,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
 
 
         exc.setResponse(Response.ResponseBuilder.newInstance().build());
-        addParams(createSession(exc,extractSessionId(extraxtSessionHeader(exc.getRequest()))),params);
+        addParams(createSession(exc,extractSessionId(OAuth2Util.extraxtSessionHeader(exc.getRequest()))),params);
         return new NoResponse();
     }
 
@@ -113,7 +114,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
 
     @Override
     protected Response getResponse() throws Exception {
-        return redirectToLoginWithSession(exc, extraxtSessionHeader(exc.getResponse()));
+        return redirectToLoginWithSession(exc, OAuth2Util.extraxtSessionHeader(exc.getResponse()));
     }
 
     protected String verifyScopes(String scopes) {

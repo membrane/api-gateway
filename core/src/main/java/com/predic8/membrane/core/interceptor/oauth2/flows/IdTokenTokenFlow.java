@@ -36,8 +36,10 @@ public class IdTokenTokenFlow extends OAuth2Flow {
 
     public IdTokenTokenFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc, SessionManager.Session s) throws JoseException {
         super(authServer, exc, s);
-        client = authServer.getClientList().getClient(session.getUserAttributes().get("client_id"));
-        username = s.getUserName();
+        synchronized (s) {
+            client = authServer.getClientList().getClient(session.getUserAttributes().get("client_id"));
+            username = s.getUserName();
+        }
 
         tokenFlow = new TokenFlow(authServer,exc,session);
         token = tokenFlow.generateAccessToken(client);

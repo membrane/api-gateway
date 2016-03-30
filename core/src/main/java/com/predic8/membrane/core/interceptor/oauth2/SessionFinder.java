@@ -16,11 +16,12 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionFinder {
 
-    private HashMap<String, SessionManager.Session> authCodesToSession = new HashMap<String, SessionManager.Session>();
-    private HashMap<String, SessionManager.Session> tokensToSession = new HashMap<String, SessionManager.Session>();
+    private ConcurrentHashMap<String, SessionManager.Session> authCodesToSession = new ConcurrentHashMap<String, SessionManager.Session>();
+    private ConcurrentHashMap<String, SessionManager.Session> tokensToSession = new ConcurrentHashMap<String, SessionManager.Session>();
 
     public void addSessionForCode(String code, SessionManager.Session session){
         synchronized (authCodesToSession) {

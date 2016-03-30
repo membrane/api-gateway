@@ -39,28 +39,6 @@ public abstract class EndpointProcessor {
         uriFactory = authServer.getRouter().getUriFactory();
     }
 
-    public Outcome createParameterizedJsonErrorResponse(Exchange exc, String... params) throws IOException {
-        if (params.length % 2 != 0)
-            throw new IllegalArgumentException("The number of strings passed as params is not even");
-        String json;
-        synchronized (jsonGen) {
-            JsonGenerator gen = jsonGen.resetAndGet();
-            gen.writeStartObject();
-            for (int i = 0; i < params.length; i += 2)
-                gen.writeObjectField(params[i], params[i + 1]);
-            gen.writeEndObject();
-            json = jsonGen.getJson();
-        }
-
-        exc.setResponse(Response.badRequest()
-                .body(json)
-                .contentType(MimeType.APPLICATION_JSON_UTF8)
-                .dontCache()
-                .build());
-
-        return Outcome.RETURN;
-    }
-
     protected SessionManager.Session getSession(Exchange exc) {
         SessionManager.Session session;
         synchronized (authServer.getSessionManager()) {

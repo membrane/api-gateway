@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.oauth2.processors;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 
 public class DefaultEndpointProcessor extends EndpointProcessor {
     public DefaultEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
@@ -29,6 +30,7 @@ public class DefaultEndpointProcessor extends EndpointProcessor {
 
     @Override
     public Outcome process(Exchange exc) throws Exception {
-        return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+        exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_request"));
+        return Outcome.RETURN;
     }
 }

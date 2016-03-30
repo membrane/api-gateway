@@ -18,8 +18,8 @@ import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
-import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 
 import java.io.IOException;
 
@@ -32,7 +32,7 @@ public class PasswordFlow extends TokenRequest {
     @Override
     protected Response checkForMissingParameters() throws Exception {
         if(getGrantType() == null || getUsername() == null || getPassword() == null || getClientId() == null || getClientSecret() == null)
-            return createParameterizedJsonErrorResponse(exc,"error","invalid_request");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
         return new NoResponse();
     }
 
@@ -40,13 +40,11 @@ public class PasswordFlow extends TokenRequest {
     protected Response processWithParameters() throws Exception {
 
         if(!verifyClientThroughParams())
-            return createParameterizedJsonErrorResponse(exc,"error","unauthorized_client");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","unauthorized_client");
 
         if(!verifyUserThroughParams())
-            return createParameterizedJsonErrorResponse(exc,"error","access_denied");
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","access_denied");
 
-
-        token = createTokenForVerifiedUserAndClient();
 
         scope = getScope() == null ? "" : getScope();
         idToken = null;
@@ -55,7 +53,9 @@ public class PasswordFlow extends TokenRequest {
         exc.setResponse(getEarlyResponse());
 
         SessionManager.Session session = createSessionForAuthorizedUserWithParams();
-        session.getUserAttributes().put(ACCESS_TOKEN, token);
+        synchronized(session) {
+            session.getUserAttributes().put(ACCESS_TOKEN, token);
+        }
         authServer.getSessionFinder().addSessionForToken(token,session);
 
         return new NoResponse();

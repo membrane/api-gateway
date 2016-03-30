@@ -18,6 +18,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.Map;
@@ -37,8 +38,10 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
     public Outcome process(Exchange exc) throws Exception {
         Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
 
-        if (!params.containsKey("token") || !params.containsKey("client_id") ||!params.containsKey("client_secret"))
-            return createParameterizedJsonErrorResponse(exc, "error", "invalid_request");
+        if (!params.containsKey("token") || !params.containsKey("client_id") ||!params.containsKey("client_secret")) {
+            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "invalid_request"));
+            return Outcome.RETURN;
+        }
 
         SessionManager.Session session = authServer.getSessionFinder().getSessionForToken(params.get("token"));
         if (session == null) { // token doesnt exist -> token is already invalid
@@ -52,9 +55,12 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
         try {
             authServer.getTokenGenerator().invalidateToken(params.get("token"), params.get("client_id"), params.get("client_secret"));
         } catch (Exception e) {
-            return createParameterizedJsonErrorResponse(exc, "error", "invalid_grant");
+            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant"));
+            return Outcome.RETURN;
         }
-        session.clear();
+        synchronized(session) {
+            session.clear();
+        }
         exc.setResponse(Response
                 .ok()
                 .bodyEmpty()
