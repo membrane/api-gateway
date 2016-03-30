@@ -10,20 +10,7 @@
 	<router>
 		<serviceProxy name="Token Validator" port="2002">
 
-			<request>
-				<groovy>
-					def client = spring.getBean("httpClientGroovy")
-					def auth =  exc.request.header.getFirstValue("Authorization")
-					def e = new Request.Builder().get("http://localhost:2000/oauth2/userinfo").header("Authorization",auth).buildExchange()
-					def response = client.call(e).getResponse()
-					if(response.statusCode != 200){
-						exc.setResponse(new Response().badRequest().build())
-						RETURN
-					}else{
-						CONTINUE
-					}
-				</groovy>
-			</request>
+			<tokenValidator endpoint="http://localhost:2000/oauth2/userinfo"/>
 			<target host="thomas-bayer.com" port="80"/>
 
 		</serviceProxy>

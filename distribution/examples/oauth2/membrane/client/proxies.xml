@@ -11,9 +11,12 @@
                 <membrane src="http://localhost:2000" clientId="abc" clientSecret="def" scope="openid profile" claims="username" claimsIdt="sub" />
             </oauth2Resource>
 
+            <!-- This is optional. You can use the information from the authentication server and pass it to the resource server or do
+             anything you want. -->
             <groovy>
                 def oauth2 = exc.properties['oauth2']
-                exc.request.getHeader().add('Authorization',oauth2.userinfo.email)
+                <!-- Put the eMail of the user into the request header X-EMAIL and pass it to the protected server. -->
+                exc.request.getHeader().add('X-EMAIL',oauth2.userinfo.email)
                 CONTINUE
             </groovy>
 
