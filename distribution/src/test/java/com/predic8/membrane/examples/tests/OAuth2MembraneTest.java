@@ -14,6 +14,34 @@
 package com.predic8.membrane.examples.tests;
 
 import com.predic8.membrane.examples.DistributionExtractingTestcase;
+import com.predic8.membrane.examples.Process2;
+import com.predic8.membrane.examples.util.BufferLogger;
+import com.predic8.membrane.test.AssertUtils;
+import org.junit.Assert;
+import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 public class OAuth2MembraneTest extends DistributionExtractingTestcase {
+
+    @Test
+    public void test() throws Exception {
+        Process2 sl = new Process2.Builder().in(getExampleDir("oauth2/membrane/authorization_server")).script("service-proxy").waitForMembrane()
+                .start();
+
+        Process2 sl2 = new Process2.Builder().in(getExampleDir("oauth2/membrane/client")).script("service-proxy").waitForMembrane()
+                .start();
+        try {
+            AssertUtils.getAndAssert200("http://localhost:2001");
+            String[] headers = new String[2];
+            headers[0] = "Content-Type";
+            headers[1] = "application/x-www-form-urlencoded";
+            AssertUtils.postAndAssert(200,"http://localhost:2000/login/",headers,"target=&username=john&password=password");
+            AssertUtils.postAndAssert(200,"http://localhost:2000/login/consent",headers,"target=&consent=Accept");
+            Assert.assertEquals(AssertUtils.getAndAssert200("http://thomas-bayer.com"), AssertUtils.getAndAssert200("http://localhost:2000/"));
+        } finally {
+            sl.killScript();
+            sl2.killScript();
+        }
+    }
 }
