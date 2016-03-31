@@ -5,10 +5,10 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-        <serviceProxy name="Membrane Resource service" port="2001">
+        <serviceProxy name="Membrane Resource service" port="8080">
 
-            <oauth2Resource publicURL="http://localhost:2001/">
-                <membrane src="http://localhost:2000" clientId="abc" clientSecret="def" scope="openid profile" claims="username" claimsIdt="sub" />
+            <oauth2Resource>
+                <membrane subject="sub" src="https://accounts.google.com" clientId="YOUR CLIENT ID HERE" clientSecret="YOUR CLIENT SECRET HERE" scope="openid email profile" claims="name" claimsIdt="email" />
             </oauth2Resource>
 
             <!-- This is optional. You can use the information from the authentication server and pass it to the resource server or do

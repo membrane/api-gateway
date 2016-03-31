@@ -33,7 +33,7 @@ public class OAuth2ApiTest extends DistributionExtractingTestcase {
 
         BufferLogger b = new BufferLogger();
         Process2 sl3 = new Process2.Builder().in(getExampleDir("oauth2/api")).withWatcher(b).script("start").waitAfterStartFor("OK").start();
-        // sl3 can fail because at least the start.sh is very fragile in parsing the response of the acces token. If the number or order of the params changes then start.sh will fail.
+        // sl3 can fail because at least the start.sh is very fragile in parsing the response for the access token. If the number or order of the params changes then start.sh will fail.
         try {
             //This is kind of redundant as sl3 already waits until "OK" is written or timeouts when its not
             assertTrue(b.toString().contains("OK"));
