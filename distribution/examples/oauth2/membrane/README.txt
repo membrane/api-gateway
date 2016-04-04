@@ -1,1 +1,1 @@
-Please follow http://localhost:7000/service-proxy-doc/4.2/security/oauth2/flows/code/example.htm
+Please follow http://www.membrane-soa.org/service-proxy-doc/4.2/security/oauth2/flows/code/example.htm

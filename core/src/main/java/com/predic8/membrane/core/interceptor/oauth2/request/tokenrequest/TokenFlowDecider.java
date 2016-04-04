@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.xml.Param;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
@@ -45,7 +44,7 @@ public class TokenFlowDecider {
             return;
         }
         if(getGrantType().equals(CLIENT_CREDENTIALS)){
-            flow = new ClientCredentialsFlow(authServer,exc);
+            flow = new CredentialsFlow(authServer,exc);
             return;
         }
 

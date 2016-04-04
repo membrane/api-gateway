@@ -14,33 +14,61 @@
 package com.predic8.membrane.core.interceptor.oauth2.request.tokenrequest;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
 import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 
-public class ClientCredentialsFlow extends ParameterizedRequest {
+import java.io.IOException;
 
-    public ClientCredentialsFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
+public class CredentialsFlow extends TokenRequest {
+
+    public CredentialsFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
     }
 
     @Override
     protected Response checkForMissingParameters() throws Exception {
         // TODO also check for client id and client secret and additionally for the username ( else we cant create tokens )
-        if(getGrantType() == null)
+        if(getGrantType() == null || getClientId() == null || getClientSecret() == null)
             return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
         return new NoResponse();
     }
 
     @Override
     protected Response processWithParameters() throws Exception {
-        return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","not_yet_implemented");
+        if(!verifyClientThroughParams())
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","unauthorized_client");
+
+        scope = getScope() == null ? "" : getScope();
+        idToken = null;
+        token = createTokenForVerifiedClient();
+
+        exc.setResponse(getEarlyResponse());
+
+        SessionManager.Session session = createSessionForAuthorizedClientWithParams();
+        synchronized(session) {
+            session.getUserAttributes().put(ACCESS_TOKEN, token);
+        }
+        authServer.getSessionFinder().addSessionForToken(token,session);
+
+        return new NoResponse();
     }
 
     @Override
     protected Response getResponse() throws Exception {
-        return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","not_yet_implemented");
+        return exc.getResponse();
+    }
+
+    private Response getEarlyResponse() throws IOException {
+        return Response
+                .ok()
+                .body(getTokenJSONResponse(scope, token, idToken))
+                .contentType(MimeType.APPLICATION_JSON_UTF8)
+                .dontCache()
+                .build();
     }
 }

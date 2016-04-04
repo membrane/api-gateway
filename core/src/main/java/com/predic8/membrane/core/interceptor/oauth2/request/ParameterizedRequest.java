@@ -130,6 +130,15 @@ public abstract class ParameterizedRequest {
         return session;
     }
 
+    protected SessionManager.Session createSessionForAuthorizedClientWithParams() {
+        SessionManager.Session session = authServer.getSessionManager().createSession(exc);
+        synchronized(session) {
+            session.preAuthorize(getClientId(), params);
+            session.authorize();
+        }
+        return session;
+    }
+
     protected boolean verifyClientThroughParams(){
         try {
             Client client = authServer.getClientList().getClient(getClientId());
@@ -141,6 +150,10 @@ public abstract class ParameterizedRequest {
 
     protected String createTokenForVerifiedUserAndClient(){
         return authServer.getTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
+    }
+
+    protected String createTokenForVerifiedClient(){
+        return authServer.getTokenGenerator().getToken(getClientId(), getClientId(), getClientSecret());
     }
 
     public String getPrompt() {
