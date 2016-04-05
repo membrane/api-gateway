@@ -1,13 +1,58 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>Javascript client</title>
-
-
 </head>
 <body>
+<script></script>
+    <script>
+        var redirect = function(){
+        window.location = 'http://localhost:2000/oauth2/auth?response_type=token&client_id=' + encodeURIComponent('abc') + '&redirect_uri='
+                + encodeURIComponent('http://localhost:2001/oauth2callback') + '&scope=' + 'profile';
+        };
 
+        var getParams = function(){
+            var querysRaw = window.location.search.substring(1).split('&');
+            var result = new Object();
+            for(var i = 0; i < querysRaw.length;i++){
+                var pair = querysRaw[i].split("=");
+                result[pair[0]] = pair[1];
+            }
+            sessionStorage.setItem("auth",result.token_type + " " + result.access_token)
+            return result;
+        };
+
+        var validateAccessToken = function(auth){
+            var  xmlhttp = new XMLHttpRequest();
+            xmlhttp.open('GET',"http://localhost:2000/oauth2/userinfo",true);
+            xmlhttp.setRequestHeader("Authorization", auth);
+            xmlhttp.send(null);
+            xmlhttp.onreadystatechange = function() {
+                if (xmlhttp.readyState == 4) {
+                    if ( xmlhttp.status == 200) {
+
+                        alert("Validation successful.")
+                    }
+                    else {
+                        sessionStorage.clear();
+                        redirect();
+                    }
+                }
+            }
+        }
+
+        var accessToken = sessionStorage.getItem("auth");
+
+        if(accessToken){
+            validateAccessToken(accessToken);
+        }
+        else if (window.location.pathname == "/oauth2callback") {
+            getParams();
+            validateAccessToken( sessionStorage.getItem("auth"));
+        } else{
+            redirect();
+        }
+    </script>
 </body>
 </html>

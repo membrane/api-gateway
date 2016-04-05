@@ -56,7 +56,7 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
     }
 
     public void extractSessionFromRequestAndAddToResponse(Exchange exc) {
-        addSessionHeader(exc.getResponse(), OAuth2Util.extraxtSessionHeader(exc.getRequest()));
+        addSessionHeader(exc.getResponse(), OAuth2Util.extractSessionHeader(exc.getRequest()));
     }
 
 

@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.Outcome;
 
 import java.util.ArrayList;
@@ -31,9 +32,23 @@ public class OAuth2Processors {
     public Outcome runProcessors(Exchange exc) throws Exception {
         for(EndpointProcessor excProc : processors){
             if(excProc.isResponsible(exc)) {
-                return excProc.process(exc);
+                Outcome result = excProc.process(exc);
+                postProcessing(exc);
+                return result;
             }
         }
         throw new RuntimeException("No OAuthEndpointProcessor found. This should never happen!");
+    }
+
+    private void postProcessing(Exchange exc){
+        addAccessControlAllowOriginHeader(exc);
+    }
+
+    private void addAccessControlAllowOriginHeader(Exchange exc) {
+        String origin = exc.getRequest().getHeader().getFirstValue(Header.ORIGIN);
+        if(origin == null || origin.isEmpty())
+            return;
+        exc.getResponse().getHeader().add(Header.ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        exc.getResponse().getHeader().add("Access-Control-Allow-Credentials", "true");
     }
 }

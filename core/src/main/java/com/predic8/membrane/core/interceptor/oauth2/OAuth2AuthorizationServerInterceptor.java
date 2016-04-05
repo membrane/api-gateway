@@ -87,6 +87,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     private void addDefaultProcessors() {
         getProcessors()
+                .add(new InvalidMethodProcessor(this))
                 .add(new FaviconEndpointProcessor(this))
                 .add(new AuthEndpointProcessor(this))
                 .add(new TokenEndpointProcessor(this))

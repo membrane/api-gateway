@@ -16,12 +16,15 @@ package com.predic8.membrane.core.interceptor.oauth2;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
-import com.predic8.membrane.core.interceptor.Outcome;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.regex.Pattern;
 
 public class OAuth2Util {
 
@@ -34,19 +37,51 @@ public class OAuth2Util {
     }
 
     public static void extractSessionFromRequestAndAddToResponse(Exchange exc) {
-        addSessionHeader(exc.getResponse(), extraxtSessionHeader(exc.getRequest()));
+        addSessionHeader(exc.getResponse(), extractSessionHeader(exc.getRequest()));
     }
 
-    public static HeaderField extraxtSessionHeader(Message msg) {
+    public static HeaderField extractSessionHeader(Message msg) {
         for (HeaderField h : msg.getHeader().getAllHeaderFields()) {
             if (h.getHeaderName().equals("Set-Cookie")) {
+                removeDuplicateSessionValues(h);
                 return h;
             } else if (h.getHeaderName().equals("Cookie")) {
                 h.setHeaderName(new HeaderName("Set-Cookie"));
+                removeDuplicateSessionValues(h);
                 return h;
             }
         }
-        throw new RuntimeException();
+        return new HeaderField("Set-Cookie", "SESSIONID=" + new BigInteger(130, new SecureRandom()).toString(32));
+    }
+
+    private static void removeDuplicateSessionValues(HeaderField header) {
+        HashMap<String,String> uniqueValues = new HashMap<String, String>();
+        String[] values = header.getValue().split(Pattern.quote(";"));
+
+        for(String value : values){
+            String[] temp = value.split(Pattern.quote("="));
+
+            if(!uniqueValues.containsKey(temp[0]))
+                uniqueValues.put(temp[0].trim(), createSessionValue(temp));
+        }
+
+        header.setValue(buildSessionHeaderValue(uniqueValues));
+    }
+
+    private static String buildSessionHeaderValue(HashMap<String, String> uniqueValues) {
+        StringBuilder builder = new StringBuilder();
+        for(String key : uniqueValues.keySet())
+            builder.append(";").append(key).append("=").append(uniqueValues.get(key));
+        builder.deleteCharAt(0);
+        return builder.toString();
+    }
+
+    private static String createSessionValue(String[] temp) {
+        String param = "";
+        for(int i = 1; i < temp.length;i++)
+            param += temp[i] + "=";
+        param = param.substring(0,param.length()-1);
+        return param.trim();
     }
 
     public static Message addSessionHeader(Message msg, HeaderField session) {

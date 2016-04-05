@@ -97,6 +97,10 @@ public class Header {
 
 	public static final String WWW_AUTHENTICATE = "WWW-Authenticate";
 
+	public static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+
+	public static final String ORIGIN = "Origin";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
@@ -111,6 +115,8 @@ public class Header {
 	private static final Pattern maxPattern = Pattern.compile("max\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
 
 	private static final Log log = LogFactory.getLog(Header.class.getName());
+
+
 
 	private final ArrayList<HeaderField> fields = new ArrayList<HeaderField>();
 

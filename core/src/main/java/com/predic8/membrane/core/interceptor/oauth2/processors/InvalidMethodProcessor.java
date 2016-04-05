@@ -14,31 +14,28 @@
 package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
-import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithSessionRequest;
-import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithoutSessionRequest;
 
-public class AuthEndpointProcessor extends EndpointProcessor {
-
-    public AuthEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
+public class InvalidMethodProcessor extends EndpointProcessor {
+    public InvalidMethodProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
     }
 
-
     @Override
     public boolean isResponsible(Exchange exc) {
-        return exc.getRequestURI().startsWith("/oauth2/auth");
+        return !(exc.getRequest().getMethod().equals(Request.METHOD_GET) || exc.getRequest().getMethod().equals(Request.METHOD_POST));
     }
 
     @Override
     public Outcome process(Exchange exc) throws Exception {
-
-        if(getSession(exc) == null || !getSession(exc).isPreAuthorized()) {
-            exc.setResponse(new AuthWithoutSessionRequest(authServer,exc).validateRequest());
-            return Outcome.RETURN;
-        }
-        exc.setResponse(new AuthWithSessionRequest(authServer,exc).validateRequest());
+        exc.setResponse(Response.
+                ok().
+                header("Access-Control-Allow-Methods","GET,POST").
+                header("Access-Control-Allow-Headers","Authorization").
+                build());
         return Outcome.RETURN;
     }
 }

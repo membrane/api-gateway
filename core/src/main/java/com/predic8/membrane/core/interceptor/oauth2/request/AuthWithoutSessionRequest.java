@@ -17,7 +17,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.HeaderField;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
@@ -88,7 +88,10 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
 
 
         exc.setResponse(Response.ResponseBuilder.newInstance().build());
-        addParams(createSession(exc,extractSessionId(OAuth2Util.extraxtSessionHeader(exc.getRequest()))),params);
+        SessionManager.Session session = getSession(exc);
+        if(session == null)
+            session = createSession(exc,extractSessionId(OAuth2Util.extractSessionHeader(exc.getRequest())));
+        addParams(session,params);
         return new NoResponse();
     }
 
@@ -114,7 +117,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
 
     @Override
     protected Response getResponse() throws Exception {
-        return redirectToLoginWithSession(exc, OAuth2Util.extraxtSessionHeader(exc.getResponse()));
+        return redirectToLoginWithSession(exc, OAuth2Util.extractSessionHeader(exc.getResponse()));
     }
 
     protected String verifyScopes(String scopes) {
