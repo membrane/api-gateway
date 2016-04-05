@@ -26,6 +26,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public abstract class ParameterizedRequest {
 
@@ -84,7 +85,7 @@ public abstract class ParameterizedRequest {
     }
 
     protected static String extractSessionId(HeaderField sessionHeader) {
-        for (String s : sessionHeader.getValue().split(" ")) {
+        for (String s : sessionHeader.getValue().split(Pattern.quote(";"))) {
             if (s.startsWith("SESSIONID=")) {
                 return s.substring(10);
             }
@@ -99,11 +100,9 @@ public abstract class ParameterizedRequest {
     }
 
     protected SessionManager.Session getSession(Exchange exc) {
-        SessionManager.Session session;
         synchronized (authServer.getSessionManager()) {
-            session = authServer.getSessionManager().getSession(exc.getRequest());
+            return authServer.getSessionManager().getSession(exc.getRequest());
         }
-        return session;
     }
 
     protected void addParams(SessionManager.Session session, Map<String,String> params){

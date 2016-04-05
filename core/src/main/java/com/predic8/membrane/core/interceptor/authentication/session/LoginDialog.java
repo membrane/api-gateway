@@ -312,17 +312,23 @@ public class LoginDialog {
 	}
 
 	private String[] decodeClaimsFromSession(Session s) throws UnsupportedEncodingException {
-		String[] claims = s.getUserAttributes().get(ConsentPageFile.CLAIM_DESCRIPTIONS).split(" ");
-		for(int i = 0; i < claims.length;i++)
-			claims[i] = OAuth2Util.urldecode(claims[i]);
-		return claims;
+		if(s.getUserAttributes().containsKey(ConsentPageFile.CLAIM_DESCRIPTIONS)) {
+			String[] claims = s.getUserAttributes().get(ConsentPageFile.CLAIM_DESCRIPTIONS).split(" ");
+			for (int i = 0; i < claims.length; i++)
+				claims[i] = OAuth2Util.urldecode(claims[i]);
+			return claims;
+		}
+		return new String[0];
 	}
 
 	private String[] decodeScopesFromSession(Session s) throws UnsupportedEncodingException {
-		String[] scopes = s.getUserAttributes().get(ConsentPageFile.SCOPE_DESCRIPTIONS).split(" ");
-		for(int i = 0; i < scopes.length;i++)
-			scopes[i] = OAuth2Util.urldecode(scopes[i]);
-		return scopes;
+		if(s.getUserAttributes().containsKey(ConsentPageFile.SCOPE_DESCRIPTIONS)) {
+			String[] scopes = s.getUserAttributes().get(ConsentPageFile.SCOPE_DESCRIPTIONS).split(" ");
+			for (int i = 0; i < scopes.length; i++)
+				scopes[i] = OAuth2Util.urldecode(scopes[i]);
+			return scopes;
+		}
+		return new String[0];
 	}
 
 	public Outcome redirectToLogin(Exchange exc) throws MalformedURLException, UnsupportedEncodingException {
