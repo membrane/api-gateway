@@ -138,6 +138,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         uriFactory = router.getUriFactory();
         if (sessionManager == null)
             sessionManager = new SessionManager();
+        sessionManager.setCookieName("SESSION_ID_CLIENT"); // TODO maybe do this differently as now the attribute in the bean is overwritten ( when set from external proxies.xml )
         sessionManager.init(router);
 
         if (loginLocation != null) {
