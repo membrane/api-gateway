@@ -21,6 +21,7 @@ import java.util.UUID;
 
 import javax.xml.stream.XMLStreamReader;
 
+import com.github.fge.jsonschema.core.keyword.syntax.checkers.common.ExclusiveMaximumSyntaxChecker;
 import org.apache.commons.lang.StringUtils;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -52,6 +53,8 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 
 	// TODO: bind session also to remote IP (for public Membrane release)
 	HashMap<String, Session> sessions = new HashMap<String, SessionManager.Session>();
+	private final static String SESSION_ID = "SESSION_ID";
+	private final static String SESSION = "SESSION";
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
@@ -63,6 +66,23 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 	public void init(Router router) {
 		cookieName = StringUtils.defaultIfEmpty(cookieName, "SESSIONID");
 		timeout = timeout == 0 ? 300000 : timeout;
+	}
+
+	/**
+	 * Sets the Session Cookie on the response, if necessary (e.g. a session was created)
+     */
+	public void postProcess(Exchange exc) {
+		String cookieValue = (String) exc.getProperty(SESSION_ID);
+		if (cookieValue != null)
+			exc.getResponse().getHeader().addCookieSession(cookieName, cookieValue);
+	}
+
+	public Session getOrCreateSession(Exchange exc) {
+		Session s = getSession(exc);
+		if (s == null) {
+			s = createSession(exc);
+		}
+		return s;
 	}
 
 	public static class Session {
@@ -84,7 +104,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 
 		public synchronized void clear() {
 			level = 0;
-			userAttributes = null;
+			userAttributes = new HashMap<String, String>();
 		}
 
 		public synchronized void preAuthorize(String userName, Map<String, String> userAttributes) {
@@ -119,15 +139,18 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return UUID.randomUUID().toString();
 	}
 
-	public Session getSession(Request request) {
-		String id = request.getHeader().getFirstCookie(cookieName);
+	public Session getSession(Exchange exc) {
+		Session s = (Session) exc.getProperty(SESSION);
+		if (s != null)
+			return s;
+		String id = exc.getRequest().getHeader().getFirstCookie(cookieName);
 		if (id == null) {
 			return null;
 		}
 		return getSession(id);
 	}
 
-	public Session getSession(String id){
+	private Session getSession(String id){
 		Session s;
 		synchronized (sessions) {
 			s = sessions.get(id);
@@ -143,16 +166,21 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return createSession(exc,id);
 	}
 
-	public Session createSession(Exchange exc, String id)
+	private Session createSession(Exchange exc, String id)
 	{
 		Session s = new Session();
 		synchronized (sessions) {
 			sessions.put(id, s);
 		}
-		exc.getResponse().getHeader().addCookieSession(cookieName, id + "; "+
+		String cookieValue = id + "; " +
 				(domain != null ? "Domain=" + domain + "; " : "") +
 				"Path=/" +
-				(exc.getRule().getSslInboundContext() != null ? "; Secure" : ""));
+				(exc.getRule().getSslInboundContext() != null ? "; Secure" : "");
+		if (exc.getResponse() == null)
+			exc.setProperty(SESSION_ID, cookieValue);
+		else
+			exc.getResponse().getHeader().addCookieSession(cookieName, cookieValue);
+		exc.setProperty(SESSION, s);
 		return s;
 	}
 

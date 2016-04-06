@@ -14,12 +14,14 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 @RunWith(Parameterized.class)
@@ -51,7 +53,12 @@ public class EmptyEndpointOpenidTest extends RequestParameterizedTest{
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                return oasit.oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put("consent","false");
+                SessionManager.Session s = oasit.oasi.getSessionManager().getSession(exc);
+                Map<String, String> userAttributes = s.getUserAttributes();
+                synchronized (userAttributes) {
+                    userAttributes.put("consent", "false");
+                }
+                return this;
             }
         };
     }

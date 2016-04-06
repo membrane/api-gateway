@@ -14,11 +14,13 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runners.Parameterized;
 
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
@@ -51,6 +53,10 @@ public abstract class RequestParameterizedTest {
         modification.call();
         OAuth2TestUtil.makeExchangeValid(exc);
         oasit.oasi.handleRequest(exc);
+
+        System.out.println(exc.getRequest());
+        System.out.println(exc.getResponse());
+
         Assert.assertEquals(expectedStatusCode,exc.getResponse().getStatusCode());
         Assert.assertEquals(expectedResult.call(),actualResult.call());
     }
@@ -223,6 +229,10 @@ public abstract class RequestParameterizedTest {
     }
 
     public static void modifySessionAttributes(String name, String value){
-        oasit.oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put(name,value);
+        SessionManager.Session s = oasit.oasi.getSessionManager().getOrCreateSession(exc);
+        Map<String, String> userAttributes = s.getUserAttributes();
+        synchronized (userAttributes) {
+            userAttributes.put(name, value);
+        }
     }
 }

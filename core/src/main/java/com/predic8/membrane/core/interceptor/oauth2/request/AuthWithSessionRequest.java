@@ -38,7 +38,7 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
         if(getPrompt().equals("login"))
             return clearSessionAndRedirectToAuthEndpoint(exc);
 
-        if(getPrompt().equals("none") && !getSession(exc).isAuthorized())
+        if(getPrompt().equals("none") && !authServer.getSessionManager().getOrCreateSession(exc).isAuthorized())
             return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error","login_required");
         return new NoResponse();
     }
@@ -49,8 +49,9 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
     }
 
     private Response clearSessionAndRedirectToAuthEndpoint(Exchange exc){
-        SessionManager.Session session = getSession(exc);
-        session.clear();
+        SessionManager.Session session = authServer.getSessionManager().getSession(exc);
+        if (session != null)
+            session.clear();
         return redirectToOAuth2AuthEndpoint(exc);
     }
 

@@ -39,12 +39,4 @@ public abstract class EndpointProcessor {
         uriFactory = authServer.getRouter().getUriFactory();
     }
 
-    protected SessionManager.Session getSession(Exchange exc) {
-        SessionManager.Session session;
-        synchronized (authServer.getSessionManager()) {
-            session = authServer.getSessionManager().getSession(exc.getRequest());
-        }
-        return session;
-    }
-
 }

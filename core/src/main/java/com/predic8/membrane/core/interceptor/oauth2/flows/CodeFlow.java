@@ -53,7 +53,7 @@ public class CodeFlow extends OAuth2Flow{
                 dontCache().
                 body("").
                 build());
-        OAuth2Util.extractSessionFromRequestAndAddToResponse(exc);
+        
         return Outcome.RETURN;
     }
 }

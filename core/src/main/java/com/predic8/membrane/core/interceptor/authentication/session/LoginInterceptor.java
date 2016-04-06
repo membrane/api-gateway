@@ -136,7 +136,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 			loginDialog.handleLoginRequest(exc);
 			return Outcome.RETURN;
 		}
-		Session s = sessionManager.getSession(exc.getRequest());
+		Session s = sessionManager.getSession(exc);
 		if(s != null && s.isPreAuthorized()){
 			if(tokenProvider == null){
 				s.authorize();

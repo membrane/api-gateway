@@ -50,8 +50,6 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     static String afterTokenGenerationToken;
     static String afterTokenGenerationTokenType;
 
-    public static String cookieHeaderContent = "SESSIONID=" + OAuth2TestUtil.sessionId;
-
     static Consumer<Exchange> noPostprocessing() {
         return new Consumer<Exchange>() {
             @Override
@@ -75,7 +73,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             @Override
             public Exchange call() throws Exception {
                 Exchange exc = new Request.Builder().get(mas.getLoginURL("123security","http://localhost:2001/", "/")).buildExchange();
-                exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+                //TODO exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
                 return exc;
             }
         };
@@ -85,10 +83,8 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         return new Consumer<Exchange>() {
             @Override
             public void call(Exchange exchange) {
-                SessionManager.Session session = oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId);
-                if(session == null){
-                    session = createMockSession();
-                }
+                SessionManager.Session session = oasi.getSessionManager().getOrCreateSession(exchange);
+                // TODO: maybe remember session
                 session.preAuthorize("john", afterLoginMockParams);
             }
         };
@@ -99,7 +95,8 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             @Override
             public Exchange call() throws Exception {
                 Exchange exc =  new Request.Builder().get("/").buildExchange();
-                exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+                //TODO exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+                OAuth2TestUtil.makeExchangeValid(exc);
                 return exc;
             }
         };
@@ -322,10 +319,4 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         oasi.setUserDataProvider(udp);
     }
 
-    protected static SessionManager.Session createMockSession() {
-        Exchange exc = new Exchange(null);
-        exc.setResponse(new Response.ResponseBuilder().build());
-        exc.setRule(new NullRule());
-        return oasi.getSessionManager().createSession(exc, OAuth2TestUtil.sessionId);
-    }
 }

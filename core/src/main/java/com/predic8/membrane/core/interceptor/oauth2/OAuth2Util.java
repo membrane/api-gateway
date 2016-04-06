@@ -36,24 +36,6 @@ public class OAuth2Util {
         return URLDecoder.decode(value, "UTF-8").replaceAll("\\+", "%20");
     }
 
-    public static void extractSessionFromRequestAndAddToResponse(Exchange exc) {
-        addSessionHeader(exc.getResponse(), extractSessionHeader(exc.getRequest()));
-    }
-
-    public static HeaderField extractSessionHeader(Message msg) {
-        for (HeaderField h : msg.getHeader().getAllHeaderFields()) {
-            if (h.getHeaderName().equals("Set-Cookie")) {
-                removeDuplicateSessionValues(h);
-                return h;
-            } else if (h.getHeaderName().equals("Cookie")) {
-                h.setHeaderName(new HeaderName("Set-Cookie"));
-                removeDuplicateSessionValues(h);
-                return h;
-            }
-        }
-        return new HeaderField("Set-Cookie", "SESSIONID=" + new BigInteger(130, new SecureRandom()).toString(32));
-    }
-
     private static void removeDuplicateSessionValues(HeaderField header) {
         HashMap<String,String> uniqueValues = new HashMap<String, String>();
         String[] values = header.getValue().split(Pattern.quote(";"));

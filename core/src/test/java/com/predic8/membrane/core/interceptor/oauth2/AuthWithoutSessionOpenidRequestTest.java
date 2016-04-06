@@ -13,12 +13,14 @@
 
 package com.predic8.membrane.core.interceptor.oauth2;
 
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 @RunWith(Parameterized.class)
@@ -49,7 +51,11 @@ public class AuthWithoutSessionOpenidRequestTest extends RequestParameterizedTes
         return new Callable<Object>() {
             @Override
             public Object call() throws Exception {
-                return !oasit.oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().containsKey(ParamNames.CLAIMS);
+                SessionManager.Session s = oasit.oasi.getSessionManager().getOrCreateSession(exc);
+                Map<String, String> userAttributes = s.getUserAttributes();
+                synchronized (userAttributes) {
+                    return !userAttributes.containsKey(ParamNames.CLAIMS);
+                }
             }
         };
     }

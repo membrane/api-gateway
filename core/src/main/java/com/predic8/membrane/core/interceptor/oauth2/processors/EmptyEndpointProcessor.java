@@ -35,13 +35,13 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
 
     @Override
     public boolean isResponsible(Exchange exc) {
-        SessionManager.Session s = getSession(exc);
+        SessionManager.Session s = authServer.getSessionManager().getSession(exc);
         return exc.getRequestURI().equals("/") && s != null && s.isPreAuthorized();
     }
 
     @Override
     public Outcome process(Exchange exc) throws Exception {
-        SessionManager.Session s = getSession(exc);
+        SessionManager.Session s = authServer.getSessionManager().getOrCreateSession(exc);
         synchronized (s) {
             if (!OAuth2Util.isOpenIdScope(s.getUserAttributes().get(ParamNames.SCOPE)))
                 s.getUserAttributes().put("consent", "true");

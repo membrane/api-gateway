@@ -182,6 +182,8 @@ public class CacheInterceptor extends AbstractInterceptor {
 	}
 
 	static long fromRFC(String timestamp) throws ParseException {
+		if (timestamp == null)
+			return 0;
 		SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
 		return dateFormat.parse(timestamp).getTime();
 	}
@@ -217,6 +219,9 @@ public class CacheInterceptor extends AbstractInterceptor {
 						break;
 					case 404:
 						store.put(dest, new NegativeNode());
+						break;
+					case 302:
+						store.put(dest, new PositiveNode(exc));
 						break;
 					default:
 						log.warn("Could not cache HTTP response because of its status code " + exc.getResponse().getStatusCode() + ".");
@@ -266,6 +271,9 @@ public class CacheInterceptor extends AbstractInterceptor {
 		allowedResponseHeaders.add("content-type");
 		allowedResponseHeaders.add("expires");
 		allowedResponseHeaders.add("cache-control");
+		allowedResponseHeaders.add("location");
+		allowedResponseHeaders.add("link");
+		allowedResponseHeaders.add("transfer-encoding");
 	}
 
 	private boolean canCache(Request request, boolean emitWarning) {

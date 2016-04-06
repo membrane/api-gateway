@@ -39,24 +39,14 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
     @Override
     public boolean isResponsible(Exchange exc) {
         URI uri = uriFactory.createWithoutException(exc.getRequest().getUri());
-        return uri.getPath().startsWith(authServer.getPath()) && getSession(exc) != null;
+        return uri.getPath().startsWith(authServer.getPath()) && authServer.getSessionManager().getSession(exc) != null; // TODO: check session for parameters
     }
 
     @Override
     public Outcome process(Exchange exc) throws Exception {
         loginDialog.handleLoginRequest(exc);
-        extractSessionFromRequestAndAddToResponse(exc);
 
         return Outcome.RETURN;
-    }
-
-    public Message addSessionHeader(Message msg, HeaderField session) {
-        msg.getHeader().add(session);
-        return msg;
-    }
-
-    public void extractSessionFromRequestAndAddToResponse(Exchange exc) {
-        addSessionHeader(exc.getResponse(), OAuth2Util.extractSessionHeader(exc.getRequest()));
     }
 
 

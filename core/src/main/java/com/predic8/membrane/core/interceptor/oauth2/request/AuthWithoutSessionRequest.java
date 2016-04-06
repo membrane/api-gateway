@@ -85,12 +85,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         if (!invalidScopes.isEmpty())
             setScopeInvalid(invalidScopes);
 
-
-
-        exc.setResponse(Response.ResponseBuilder.newInstance().build());
-        SessionManager.Session session = getSession(exc);
-        if(session == null)
-            session = createSession(exc,extractSessionId(OAuth2Util.extractSessionHeader(exc.getRequest())));
+        SessionManager.Session session = authServer.getSessionManager().getOrCreateSession(exc);
         addParams(session,params);
         return new NoResponse();
     }
@@ -117,7 +112,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
 
     @Override
     protected Response getResponse() throws Exception {
-        return redirectToLoginWithSession(exc, OAuth2Util.extractSessionHeader(exc.getResponse()));
+        return redirectToLogin();
     }
 
     protected String verifyScopes(String scopes) {
@@ -143,18 +138,13 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
         return builder.toString().trim();
     }
 
-    protected Response redirectToLoginWithSession(Exchange exc, HeaderField session) throws MalformedURLException, UnsupportedEncodingException {
+    protected Response redirectToLogin() throws MalformedURLException, UnsupportedEncodingException {
         Response resp = Response.
                 redirect(authServer.getPath(), false).
                 dontCache().
                 body("").
                 build();
-        addSessionHeader(resp, session);
         return resp;
     }
 
-    public static Message addSessionHeader(Message msg, HeaderField session) {
-        msg.getHeader().add(session);
-        return msg;
-    }
 }

@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2.processors;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithSessionRequest;
 import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithoutSessionRequest;
@@ -34,7 +35,9 @@ public class AuthEndpointProcessor extends EndpointProcessor {
     @Override
     public Outcome process(Exchange exc) throws Exception {
 
-        if(getSession(exc) == null || !getSession(exc).isPreAuthorized()) {
+        SessionManager.Session s = authServer.getSessionManager().getSession(exc); // TODO: replace with getOrCreateSession() and collapse AuthWithSession and AuthWithoutSession
+
+        if(s == null || !s.isPreAuthorized()) {
             exc.setResponse(new AuthWithoutSessionRequest(authServer,exc).validateRequest());
             return Outcome.RETURN;
         }

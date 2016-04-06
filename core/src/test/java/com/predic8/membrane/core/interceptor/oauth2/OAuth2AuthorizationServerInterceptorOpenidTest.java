@@ -15,6 +15,7 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.util.Util;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import org.jose4j.jwt.consumer.InvalidJwtException;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
@@ -71,9 +73,13 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
             @Override
             public void call(Exchange exc) throws Exception {
                 loginAsJohn().call(exc);
-                oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put(ParamNames.SCOPE,"openid");
-                oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put(ParamNames.CLAIMS, OAuth2TestUtil.getMockClaims());
-                oasi.getSessionManager().getSession(OAuth2TestUtil.sessionId).getUserAttributes().put("consent","true");
+                SessionManager.Session s = oasi.getSessionManager().getOrCreateSession(exc);
+                Map<String, String> userAttributes = s.getUserAttributes();
+                synchronized (userAttributes) {
+                    userAttributes.put(ParamNames.SCOPE, "openid");
+                    userAttributes.put(ParamNames.CLAIMS, OAuth2TestUtil.getMockClaims());
+                    userAttributes.put("consent", "true");
+                }
             }
         };
     }

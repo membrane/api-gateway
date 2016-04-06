@@ -70,7 +70,10 @@ class PositiveNode extends Node {
 		ResponseBuilder builder = Response.ok();
 		if (contentType != null)
 			builder.contentType(contentType);
-		return builder.header(Header.LAST_MODIFIED, CacheInterceptor.toRFC(lastModified)).body(content).build();
+		if (lastModified != 0)
+			return builder.header(Header.LAST_MODIFIED, CacheInterceptor.toRFC(lastModified)).body(content).build();
+		else
+			return builder.body(content).build();
 	}
 
 	@Override

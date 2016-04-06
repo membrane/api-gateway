@@ -84,30 +84,10 @@ public abstract class ParameterizedRequest {
         return builder.bodyEmpty().header(Header.WWW_AUTHENTICATE, authServer.getTokenGenerator().getTokenType() + " error=\""+errorValue+"\"").build();
     }
 
-    protected static String extractSessionId(HeaderField sessionHeader) {
-        for (String s : sessionHeader.getValue().split(Pattern.quote(";"))) {
-            if (s.startsWith("SESSIONID=")) {
-                return s.substring(10);
-            }
-        }
-        throw new RuntimeException("SessionId not found in Session header!");
-    }
-
-    protected SessionManager.Session createSession(Exchange exc, String sessionId){
-        synchronized (authServer.getSessionManager()) {
-            return authServer.getSessionManager().createSession(exc, sessionId);
-        }
-    }
-
-    protected SessionManager.Session getSession(Exchange exc) {
-        synchronized (authServer.getSessionManager()) {
-            return authServer.getSessionManager().getSession(exc.getRequest());
-        }
-    }
-
     protected void addParams(SessionManager.Session session, Map<String,String> params){
-        synchronized (session) {
-            session.getUserAttributes().putAll(params);
+        Map<String, String> userAttributes = session.getUserAttributes();
+        synchronized (userAttributes) {
+            userAttributes.putAll(params);
         }
     }
 

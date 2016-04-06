@@ -158,8 +158,14 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public final Outcome handleRequest(Exchange exc) throws Exception {
+        Outcome outcome = handleRequestInternal(exc);
+        if (outcome != Outcome.CONTINUE)
+            sessionManager.postProcess(exc);
+        return outcome;
+    }
 
+    private Outcome handleRequestInternal(Exchange exc) throws Exception {
         if(initPublicURLOnFirstExchange)
             setPublicURL(exc);
 
@@ -179,7 +185,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return Outcome.RETURN;
         }
 
-        Session session = sessionManager.getSession(exc.getRequest());
+        Session session = sessionManager.getSession(exc);
         if(session != null && session.getUserAttributes() == null)
             session = null; // session was logged out
 
@@ -200,6 +206,12 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
 
         return respondWithRedirect(exc);
+    }
+
+    @Override
+    public Outcome handleResponse(Exchange exc) throws Exception {
+        sessionManager.postProcess(exc);
+        return super.handleResponse(exc);
     }
 
     private void setPublicURL(Exchange exc) {
@@ -287,7 +299,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     public void handleLoginRequest(Exchange exc) throws Exception {
-        Session s = sessionManager.getSession(exc.getRequest());
+        Session s = sessionManager.getSession(exc);
 
         String uri = exc.getRequest().getUri().substring(loginPath.length() - 1);
         if (uri.indexOf('?') >= 0)

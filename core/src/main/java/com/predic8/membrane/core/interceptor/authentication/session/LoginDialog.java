@@ -124,7 +124,7 @@ public class LoginDialog {
 	}
 
 	public void handleLoginRequest(Exchange exc) throws Exception {
-		Session s = sessionManager.getSession(exc.getRequest());
+		Session s = sessionManager.getSession(exc);
 
 		String uri = exc.getRequest().getUri().substring(path.length()-1);
 		if (uri.indexOf('?') >= 0)
@@ -180,9 +180,7 @@ public class LoginDialog {
 						exc.setResponse(Response.redirectWithout300(target).build());
 					}
 
-					Session session = sessionManager.getSession(exc.getRequest());
-					if(session == null)
-						session = sessionManager.createSession(exc);
+					Session session = sessionManager.getOrCreateSession(exc);
 					session.preAuthorize(username, userAttributes);
 					if(tokenProvider != null)
 						tokenProvider.requestToken(userAttributes);
