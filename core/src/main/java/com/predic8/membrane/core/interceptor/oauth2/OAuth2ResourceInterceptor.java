@@ -316,13 +316,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 Exchange e = new Request.Builder().post(auth.getRevocationEndpoint())
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                         .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .body("token=" + token +"&client_id=" + auth.getClientId() + "&client_secret=" + auth.getClientSecret())
+                        .body("token=" + token) // TODO maybe send client credentials ( as it was before ) but Google doesn't accept that
                         .buildExchange();
                 Response response = auth.doRequest(e);
-                if (response.getStatusCode() != 200) {
-                    response.getBody().read();
+                if (response.getStatusCode() != 200)
                     throw new RuntimeException("Revocation of token did not work. Statuscode: " + response.getStatusCode() + ".");
-                }
                 s.clear();
             }
             exc.setResponse(Response.redirect("/", false).build());

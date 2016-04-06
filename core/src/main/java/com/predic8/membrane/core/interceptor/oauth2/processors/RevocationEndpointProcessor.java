@@ -17,8 +17,10 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
+import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.Map;
@@ -38,7 +40,7 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
     public Outcome process(Exchange exc) throws Exception {
         Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
 
-        if (!params.containsKey("token") || !params.containsKey("client_id") ||!params.containsKey("client_secret")) {
+        if (!params.containsKey("token")) {
             exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "invalid_request"));
             return Outcome.RETURN;
         }
@@ -52,8 +54,24 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
             return Outcome.RETURN;
         }
 
+        Client client;
+        Map<String, String> userAttributes = session.getUserAttributes();
+        synchronized (userAttributes){
+            try {
+                client = authServer.getClientList().getClient(userAttributes.get(ParamNames.CLIENT_ID));
+            }
+            catch(Exception e){
+                // This should never happen
+                exc.setResponse(Response
+                        .ok()
+                        .bodyEmpty()
+                        .build());
+                return Outcome.RETURN;
+            }
+        }
+
         try {
-            authServer.getTokenGenerator().invalidateToken(params.get("token"), params.get("client_id"), params.get("client_secret"));
+            authServer.getTokenGenerator().invalidateToken(params.get("token"), client.getClientId(), client.getClientSecret());
         } catch (Exception e) {
             exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_grant"));
             return Outcome.RETURN;
