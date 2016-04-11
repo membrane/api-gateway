@@ -60,6 +60,11 @@ public abstract class AuthorizationService {
     }
 
     public abstract void init() throws Exception;
+
+    public abstract String getIssuer();
+
+    public abstract String getJwksEndpoint() throws Exception;
+
     public abstract String getLoginURL(String securityToken, String publicURL, String pathQuery);
 
     public abstract String getUserInfoEndpoint();

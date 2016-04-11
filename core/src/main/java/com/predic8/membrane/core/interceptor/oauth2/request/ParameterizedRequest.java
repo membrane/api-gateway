@@ -13,9 +13,9 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.request;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
@@ -23,10 +23,8 @@ import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URLParamUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 public abstract class ParameterizedRequest {
 

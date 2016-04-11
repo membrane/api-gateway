@@ -20,7 +20,6 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
-import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 
 import java.io.IOException;
 

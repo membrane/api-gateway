@@ -34,7 +34,6 @@ import com.predic8.membrane.core.util.Util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

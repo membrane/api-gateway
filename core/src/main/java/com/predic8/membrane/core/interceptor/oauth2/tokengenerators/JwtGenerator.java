@@ -13,6 +13,7 @@
 
 package com.predic8.membrane.core.interceptor.oauth2.tokengenerators;
 
+import org.jose4j.jwk.HttpsJwks;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
@@ -21,9 +22,12 @@ import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+import org.jose4j.keys.resolvers.HttpsJwksVerificationKeyResolver;
+import org.jose4j.keys.resolvers.VerificationKeyResolver;
 import org.jose4j.lang.JoseException;
 
 import java.math.BigInteger;
+import java.security.Key;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +35,7 @@ import java.util.List;
 public class JwtGenerator {
 
     public String getJwk() {
-        return rsaJsonWebKey.toJson();
+        return "{\"keys\": [ " + rsaJsonWebKey.toJson() + "]}";
     }
 
     public static class Claim{
@@ -108,23 +112,70 @@ public class JwtGenerator {
 
     public List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud) throws InvalidJwtException {
         ArrayList<Claim> result = new ArrayList<Claim>();
-
-        // TODO verify and get claims
         JwtClaims claims = processIdTokenToClaims(idToken,iss,aud);
 
+        for(String claim : claims.getClaimsMap().keySet()){
+            result.add(new Claim(claim,String.valueOf(claims.getClaimValue(claim))));
+        }
 
+        return result;
+    }
+
+    public static List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud, Key key) throws InvalidJwtException {
+
+        JwtClaims claims = processIdTokenToClaims(idToken,iss,aud,key);
+
+        return getClaimsFromClaimsMap(claims);
+    }
+
+    public static List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud, VerificationKeyResolver resolver) throws InvalidJwtException {
+
+        JwtClaims claims = processIdTokenToClaims(idToken,iss,aud,resolver);
+
+        return getClaimsFromClaimsMap(claims);
+    }
+
+    public static List<Claim> getClaimsFromSignedIdToken(String idToken, String iss, String aud, String jwksUrl) throws InvalidJwtException {
+
+        JwtClaims claims = processIdTokenToClaims(idToken,iss,aud,new HttpsJwksVerificationKeyResolver(new HttpsJwks(jwksUrl)));
+
+        return getClaimsFromClaimsMap(claims);
+    }
+
+    private static List<Claim> getClaimsFromClaimsMap(JwtClaims claims) {
+        ArrayList<Claim> result = new ArrayList<Claim>();
+        for(String claim : claims.getClaimsMap().keySet()){
+            result.add(new Claim(claim,String.valueOf(claims.getClaimValue(claim))));
+        }
 
         return result;
     }
 
     private JwtClaims processIdTokenToClaims(String idToken, String iss, String aud) throws InvalidJwtException {
+        return processIdTokenToClaims(idToken,iss,aud,rsaJsonWebKey.getKey());
+    }
+
+    private static JwtClaims processIdTokenToClaims(String idToken, String iss, String aud, Key key) throws InvalidJwtException {
         JwtConsumer jwtConsumer = new JwtConsumerBuilder()
                 .setRequireExpirationTime()
                 .setAllowedClockSkewInSeconds(30)
                 .setRequireSubject()
                 .setExpectedIssuer(iss)
                 .setExpectedAudience(aud)
-                .setVerificationKey(rsaJsonWebKey.getKey())
+                .setVerificationKey(key)
+                .build();
+
+        return jwtConsumer.processToClaims(idToken);
+    }
+
+    private static JwtClaims processIdTokenToClaims(String idToken, String iss, String aud, VerificationKeyResolver resolver) throws InvalidJwtException {
+        JwtConsumer jwtConsumer = new JwtConsumerBuilder()
+                .setRequireExpirationTime()
+                .setAllowedClockSkewInSeconds(30)
+                .setRequireSubject()
+                .setExpectedIssuer(iss)
+                .setExpectedAudience(aud)
+                .setVerificationKeyResolver(resolver)
                 .build();
 
         return jwtConsumer.processToClaims(idToken);
