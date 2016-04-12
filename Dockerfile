@@ -28,4 +28,6 @@ RUN /maven/apache-maven-*/bin/mvn install ; exit 0
 
 ADD . /app
 
+ENV MAVEN_OPTS="-XX:MaxPermSize=128m"
+
 RUN /maven/apache-maven-*/bin/mvn install
