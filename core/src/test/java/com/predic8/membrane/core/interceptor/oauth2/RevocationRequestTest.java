@@ -55,11 +55,11 @@ public class RevocationRequestTest extends RequestParameterizedTest{
     }
 
     private static Object[] testClientSecretMissing() {
-        return new Object[]{"testClientSecretMissing", removeValueFromRequestBody("&client_secret=def"),400,getInvalidRequestJson(), getResponseBody()};
+        return new Object[]{"testClientSecretMissing", removeValueFromRequestBody("&client_secret=def"),200,getEmptyBody(), getResponseBody()};
     }
 
     private static Object[] testClientIdMissing() {
-        return new Object[]{"testClientIdMissing", removeValueFromRequestBody("&client_id=abc"),400,getInvalidRequestJson(), getResponseBody()};
+        return new Object[]{"testClientIdMissing", removeValueFromRequestBody("&client_id=abc"),200,getEmptyBody(), getResponseBody()};
     }
 
     private static Object[] testTokenMissing() {

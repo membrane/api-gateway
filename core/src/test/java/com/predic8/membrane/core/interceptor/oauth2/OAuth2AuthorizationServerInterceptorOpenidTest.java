@@ -91,6 +91,7 @@ public class OAuth2AuthorizationServerInterceptorOpenidTest extends OAuth2Author
                 Exchange exc = getMockAuthRequestExchange().call();
                 exc.getRequest().setUri(exc.getRequest().getUri()+ "&claims=" + OAuth2Util.urlencode(OAuth2TestUtil.getMockClaims()));
                 exc.getRequest().setUri(exc.getRequest().getUri().replaceFirst(Pattern.quote("scope=profile"),"scope=" + OAuth2Util.urlencode("openid")));
+                exc.getRequest().getHeader().add("Cookie",oasi.getSessionManager().getCookieName() + "=" + OAuth2TestUtil.sessionId);
                 return exc;
             }
         };

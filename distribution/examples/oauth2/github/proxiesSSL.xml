@@ -25,7 +25,7 @@
 				</groovy>
 			</if>
 
-			<oauth2Resource loginLocation="./dialog" publicURL="http://localhost:8080/">
+			<oauth2Resource publicURL="http://localhost:8080/">
 				<github
 						clientId="Enter client ID from Github here"
 						clientSecret="Enter client Secret from Github here" />

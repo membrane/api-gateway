@@ -19,7 +19,6 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

@@ -32,6 +32,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.RuleKey;
@@ -138,6 +139,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         uriFactory = router.getUriFactory();
         if (sessionManager == null)
             sessionManager = new SessionManager();
+        sessionManager.setCookieName("SESSION_ID_CLIENT"); // TODO maybe do this differently as now the attribute in the bean is overwritten ( when set from external proxies.xml )
         sessionManager.init(router);
 
         if (loginLocation != null) {
@@ -315,13 +317,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 Exchange e = new Request.Builder().post(auth.getRevocationEndpoint())
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                         .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .body("token=" + token +"&client_id=" + auth.getClientId() + "&client_secret=" + auth.getClientSecret())
+                        .body("token=" + token) // TODO maybe send client credentials ( as it was before ) but Google doesn't accept that
                         .buildExchange();
                 Response response = auth.doRequest(e);
-                if (response.getStatusCode() != 200) {
-                    response.getBody().read();
+                if (response.getStatusCode() != 200)
                     throw new RuntimeException("Revocation of token did not work. Statuscode: " + response.getStatusCode() + ".");
-                }
                 s.clear();
             }
             exc.setResponse(Response.redirect("/", false).build());
@@ -424,8 +424,13 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 oauth2Answer.setAccessToken(token);
                 oauth2Answer.setTokenType(json.get("token_type"));
-                if(json.containsKey("id_token"))
-                    oauth2Answer.setIdToken(json.get("id_token"));
+                if(json.containsKey("id_token")) {
+                    if (idTokenIsValid(json.get("id_token")))
+                        oauth2Answer.setIdToken(json.get("id_token"));
+                    else
+                        oauth2Answer.setIdToken("INVALID");
+                }
+
 
                 Exchange e2 = new Request.Builder()
                         .get(auth.getUserInfoEndpoint())
@@ -472,6 +477,16 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             }
         }
         return false;
+    }
+
+    private boolean idTokenIsValid(String idToken) throws Exception {
+        //TODO maybe change this to return claims and also save them in the oauth2AnswerParameters
+        try {
+            JwtGenerator.getClaimsFromSignedIdToken(idToken, getAuthService().getIssuer(), getAuthService().getClientId(), getAuthService().getJwksEndpoint());
+            return true;
+        }catch(Exception e){
+            return false;
+        }
     }
 
     @Override

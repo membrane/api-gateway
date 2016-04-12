@@ -15,7 +15,6 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 
-import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class SessionFinder {

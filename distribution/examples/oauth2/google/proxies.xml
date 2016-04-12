@@ -13,14 +13,7 @@
 				<exclude>X-Authenticated-Email</exclude>
 			</headerFilter>
 
-			<!-- this is for browsers that request a favicon. The request is dropped because it would change the session id -->
-			<if test="exc.getRequestURI().endsWith('favicon.ico')">
-				<groovy>
-					Response.notFound().build()
-				</groovy>
-			</if>
-
-			<oauth2Resource loginLocation="./dialog" publicURL="http://localhost:8080/">
+			<oauth2Resource publicURL="http://localhost:8080/">
 				<google
 					clientId="Enter client ID from Google here"
 					clientSecret="Enter client Secret from Google here" />

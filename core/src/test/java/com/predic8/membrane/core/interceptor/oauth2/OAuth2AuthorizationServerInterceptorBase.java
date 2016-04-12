@@ -20,6 +20,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.cookie.Cookies;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.StaticUserDataProvider;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
@@ -73,7 +74,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             @Override
             public Exchange call() throws Exception {
                 Exchange exc = new Request.Builder().get(mas.getLoginURL("123security","http://localhost:2001/", "/")).buildExchange();
-                //TODO exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+                exc.getRequest().getHeader().add("Cookie",oasi.getSessionManager().getCookieName() + "=" + OAuth2TestUtil.sessionId);
                 return exc;
             }
         };
@@ -84,7 +85,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             @Override
             public void call(Exchange exchange) {
                 SessionManager.Session session = oasi.getSessionManager().getOrCreateSession(exchange);
-                // TODO: maybe remember session
+                OAuth2TestUtil.sessionId = exchange.getResponse().getHeader().getFirstValue("Set-Cookie").split(Pattern.quote("="))[1].split(Pattern.quote(";"))[0];
                 session.preAuthorize("john", afterLoginMockParams);
             }
         };
@@ -95,7 +96,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
             @Override
             public Exchange call() throws Exception {
                 Exchange exc =  new Request.Builder().get("/").buildExchange();
-                //TODO exc.getRequest().getHeader().add("Cookie",cookieHeaderContent);
+                exc.getRequest().getHeader().add("Cookie",oasi.getSessionManager().getCookieName() + "=" + OAuth2TestUtil.sessionId);
                 OAuth2TestUtil.makeExchangeValid(exc);
                 return exc;
             }

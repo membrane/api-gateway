@@ -15,14 +15,15 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.*;
+import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.MimeType;
+import com.predic8.membrane.core.http.Response;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 

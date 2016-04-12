@@ -17,11 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.oauth2.ClaimRenamer;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
@@ -46,6 +42,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String authorizationEndpoint;
     private String revocationEndpoint;
     private String registrationEndpoint;
+    private String jwksEndpoint;
     private String claims;
     private String claimsIdt;
     private String claimsParameter;
@@ -77,6 +74,16 @@ public class MembraneAuthorizationService extends AuthorizationService {
         }
         adjustScope();
         prepareClaimsForLoginUrl();
+    }
+
+    @Override
+    public String getIssuer() {
+        return src;
+    }
+
+    @Override
+    public String getJwksEndpoint() throws Exception {
+        return jwksEndpoint;
     }
 
     @Override
@@ -128,6 +135,8 @@ public class MembraneAuthorizationService extends AuthorizationService {
         authorizationEndpoint = (String) json.get("authorization_endpoint");
         revocationEndpoint = (String) json.get("revocation_endpoint");
         registrationEndpoint = (String) json.get("registration_endpoint");
+        jwksEndpoint = (String) json.get("jwks_uri");
+
     }
 
     public String getTokenEndpoint() {

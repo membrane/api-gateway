@@ -28,6 +28,16 @@ public class GoogleAuthorizationService extends AuthorizationService {
     }
 
     @Override
+    public String getIssuer() {
+        return "https://accounts.google.com";
+    }
+
+    @Override
+    public String getJwksEndpoint() throws Exception{
+        return "https://www.googleapis.com/oauth2/v3/certs";
+    }
+
+    @Override
     public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
         // This is the URL that is called by the user's web browser
         return "https://accounts.google.com/o/oauth2/auth?"+

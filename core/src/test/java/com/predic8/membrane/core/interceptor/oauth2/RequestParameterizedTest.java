@@ -54,9 +54,6 @@ public abstract class RequestParameterizedTest {
         OAuth2TestUtil.makeExchangeValid(exc);
         oasit.oasi.handleRequest(exc);
 
-        System.out.println(exc.getRequest());
-        System.out.println(exc.getResponse());
-
         Assert.assertEquals(expectedStatusCode,exc.getResponse().getStatusCode());
         Assert.assertEquals(expectedResult.call(),actualResult.call());
     }

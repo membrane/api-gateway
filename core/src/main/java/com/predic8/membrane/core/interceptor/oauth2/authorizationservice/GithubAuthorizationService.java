@@ -24,6 +24,16 @@ public class GithubAuthorizationService extends AuthorizationService {
     }
 
     @Override
+    public String getIssuer() {
+        return "https://github.com"; // github is no openid provider, so this doesn't work
+    }
+
+    @Override
+    public String getJwksEndpoint() {
+        return "";
+    }
+
+    @Override
     public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
         return "https://github.com/login/oauth/authorize?"+
                 "client_id=" + getClientId() + "&"+
