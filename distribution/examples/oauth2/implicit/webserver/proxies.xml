@@ -21,13 +21,13 @@
 		<serviceProxy name="Membrane Resource service" port="2001">
 			<path>/oauth2callback</path>
 			<groovy>
-				Response.ok(new File("C:\\Users\\Predic8\\git\\service-proxy-Master\\distribution\\conf\\JavaScriptClient.html").text).build()
+				Response.ok(new File("..\\JavaScriptClient.html").text).build()
 			</groovy>
 		</serviceProxy>
 
 		<serviceProxy name="Membrane Resource service" port="2001">
 			<groovy>
-				Response.ok(new File("C:\\Users\\Predic8\\git\\service-proxy-Master\\distribution\\conf\\JavaScriptClient.html").text).build()
+				Response.ok(new File("..\\JavaScriptClient.html").text).build()
 			</groovy>
 		</serviceProxy>
 	</router>
