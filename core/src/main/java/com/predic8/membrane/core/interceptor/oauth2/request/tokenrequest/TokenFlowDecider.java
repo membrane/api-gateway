@@ -37,14 +37,17 @@ public class TokenFlowDecider {
             return;
         if(getGrantType().equals(AUTHORIZATION_CODE)) {
             flow = new AuthorizationCodeFlow(authServer, exc);
+            authServer.getStatistics().codeFlow();
             return;
         }
         if(getGrantType().equals(PASSWORD)){
             flow = new PasswordFlow(authServer,exc);
+            authServer.getStatistics().passwordFlow();
             return;
         }
         if(getGrantType().equals(CLIENT_CREDENTIALS)){
             flow = new CredentialsFlow(authServer,exc);
+            authServer.getStatistics().clientCredentialsFlow();
             return;
         }
 

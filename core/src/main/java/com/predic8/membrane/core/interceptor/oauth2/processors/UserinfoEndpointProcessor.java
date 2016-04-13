@@ -33,6 +33,10 @@ public class UserinfoEndpointProcessor extends EndpointProcessor {
     @Override
     public Outcome process(Exchange exc) throws Exception {
         exc.setResponse(new UserinfoRequest(authServer,exc).validateRequest());
+        if(exc.getResponse().getStatusCode() == 200)
+            authServer.getStatistics().accessTokenValid();
+        else
+            authServer.getStatistics().accessTokenInvalid();
         return Outcome.RETURN;
     }
 }

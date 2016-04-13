@@ -33,6 +33,8 @@ public class TokenEndpointProcessor extends EndpointProcessor {
     @Override
     public Outcome process(Exchange exc) throws Exception {
         exc.setResponse(new TokenFlowDecider(authServer,exc).getFlow().validateRequest());
+        if(exc.getResponse().getStatusCode() == 200)
+            authServer.getStatistics().accessTokenCreated();
         return Outcome.RETURN;
     }
 }

@@ -61,8 +61,10 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     private Outcome startOAuth2Flow(Exchange exc, SessionManager.Session s) throws Exception {
         if (getResponseType(s).equals("code"))
             return new CodeFlow(authServer, exc, s).getResponse();
-        if (getResponseType(s).equals("token"))
+        if (getResponseType(s).equals("token")) {
+            authServer.getStatistics().implicitFlow();
             return new TokenFlow(authServer, exc, s).getResponse();
+        }
         if(getResponseType(s).equals("id_token token"))
             return new IdTokenTokenFlow(authServer,exc,s).getResponse();
         exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen, "error", "unsupported_response_type"));

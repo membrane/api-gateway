@@ -66,6 +66,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private String publicURL;
     private SessionManager sessionManager;
     private AuthorizationService auth;
+    private OAuth2Statistics statistics;
 
     private WebServerInterceptor wsi;
     private URIFactory uriFactory;
@@ -130,12 +131,13 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
     @Override
     public void init(Router router) throws Exception {
-        name = "OAuth2ResourceInterceptor";
-        setFlow(Flow.Set.REQUEST);
+        name = "OAuth 2 Client";
+        setFlow(Flow.Set.REQUEST_RESPONSE);
 
         super.init(router);
 
         auth.init(router);
+        statistics = new OAuth2Statistics();
         uriFactory = router.getUriFactory();
         if (sessionManager == null)
             sessionManager = new SessionManager();
@@ -197,6 +199,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if (session.isAuthorized()) {
             exc.setProperty(Exchange.OAUTH2,OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
             applyBackendAuthorization(exc, session);
+            statistics.successfulRequest();
             return Outcome.CONTINUE;
         }
 
@@ -450,8 +453,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     logi.handleResponse(e2);
 
                 if (response2.getStatusCode() != 200) {
+                    statistics.accessTokenInvalid();
                     throw new RuntimeException("User data could not be retrieved.");
                 }
+
+                statistics.accessTokenValid();
 
                 HashMap<String, String> json2 = Util.parseSimpleJSONResponse(response2);
 
@@ -491,6 +497,6 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "TODO: This is the client/resource in the oauth2 authentication process";
+        return "Client of the oauth2 authentication process.\n" + statistics.toString();
     }
 }

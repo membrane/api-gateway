@@ -49,6 +49,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private ClientList clientList;
     private TokenGenerator tokenGenerator = new BearerTokenGenerator();
     private ClaimList claimList;
+    private OAuth2Statistics statistics;
 
     private JwtGenerator jwtGenerator;
     private OAuth2Processors processors = new OAuth2Processors();
@@ -59,8 +60,8 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     @Override
     public void init(Router router) throws Exception {
-        name = "OAuth2AuthorizationServerInterceptor";
-        setFlow(Flow.Set.REQUEST);
+        name = "OAuth 2 Authorization Server";
+        setFlow(Flow.Set.REQUEST_RESPONSE);
 
         this.setRouter(router);
         addSupportedAuthorizationGrants();
@@ -81,6 +82,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         getClaimList().init(router);
         jwtGenerator = new JwtGenerator();
         sessionManager.init(router);
+        statistics = new OAuth2Statistics();
         addDefaultProcessors();
         new CleanupThread(sessionManager, accountBlocker).start();
     }
@@ -283,12 +285,20 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     @Override
     public String getShortDescription() {
-        return "TODO: This is the authorization server in the oauth2 authentication process";
+        return "Authorization server of the oauth2 authentication process.\n" + statistics.toString();
     }
 
     public void addSupportedAuthorizationGrants() {
         getSupportedAuthorizationGrants().add("code");
         getSupportedAuthorizationGrants().add("token");
         getSupportedAuthorizationGrants().add("id_token token");
+    }
+
+    public OAuth2Statistics getStatistics() {
+        return statistics;
+    }
+
+    public void setStatistics(OAuth2Statistics statistics) {
+        this.statistics = statistics;
     }
 }
