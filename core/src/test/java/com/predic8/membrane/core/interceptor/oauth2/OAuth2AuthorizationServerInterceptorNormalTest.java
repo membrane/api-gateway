@@ -19,6 +19,7 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.Util;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import javafx.util.Callback;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -103,6 +104,30 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                         .header(Header.USER_AGENT, Constants.USERAGENT)
                         .body("token=" + afterTokenGenerationToken +"&client_id=" + mas.getClientId() + "&client_secret=" + mas.getClientSecret())
+                        .buildExchange();
+            }
+        };
+    }
+
+    public static Callable<Exchange> getMockPasswordRequestExchange() throws Exception {
+        return new Callable<Exchange>() {
+            @Override
+            public Exchange call() throws Exception {
+                return new Request.Builder().post(mas.getTokenEndpoint())
+                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .body("grant_type=password&username=john&password=password&client_id=abc&client_secret=def")
+                        .buildExchange();
+            }
+        };
+    }
+
+    public static Callable<Exchange> getMockClientCredentialsRequestExchange() throws Exception {
+        return new Callable<Exchange>() {
+            @Override
+            public Exchange call() throws Exception {
+                return new Request.Builder().post(mas.getTokenEndpoint())
+                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .body("grant_type=password&client_id=abc&client_secret=def")
                         .buildExchange();
             }
         };
