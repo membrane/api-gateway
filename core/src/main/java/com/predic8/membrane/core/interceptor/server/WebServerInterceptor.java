@@ -74,7 +74,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 
-		if (uri.startsWith("/"))
+		if (uri.startsWith("/") && uri.length() > 1)
 			uri = uri.substring(1);
 
 
