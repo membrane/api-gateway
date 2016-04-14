@@ -19,7 +19,6 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.util.Util;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
-import javafx.util.Callback;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
