@@ -19,6 +19,7 @@
 					clientSecret="Enter client Secret from Github here" />
 			</oauth2Resource>
 
+			<!-- this will act as the secret resource to make the example simple. See below in the comments for an alternative -->
 			<groovy>
 				def email = exc.request.header.getFirstValue("X-Authenticated-Login")
 				exc.response = Response.ok("Hello " + email + ".").build()
