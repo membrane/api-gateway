@@ -77,8 +77,8 @@
 		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 		<gpg.keyname>5B8A65F6</gpg.keyname>
-		<javac.source>1.6</javac.source>
-		<javac.target>1.6</javac.target>
+		<javac.source>1.8</javac.source>
+		<javac.target>1.8</javac.target>
 		<jackson.version>2.6.3</jackson.version> <!-- This version is used by google-http-client-jackson2 -->
 		<spring.version>4.2.3.RELEASE</spring.version>
 		<jaxws.version>2.2.10</jaxws.version>
