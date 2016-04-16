@@ -71,6 +71,7 @@
 		<module>war</module>
 		<module>sar</module>
 		<module>test</module>
+		<module>maven-plugin</module>
 	</modules>
 
 	<properties>
