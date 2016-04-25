@@ -27,7 +27,7 @@ main(){
 	command -v git >/dev/null 2>&1 || { echo >&2 "git is required but it's not installed.  Aborting."; exit 1; }
 	git clone https://github.com/membrane/api-management.git
 
-	cp proxies.xml ../../../conf/proxies.xml -R
+	cp ../proxies.xml ./conf/proxies.xml -R
 
 	echo '
 	#/bin/sh
