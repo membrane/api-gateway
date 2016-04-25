@@ -5,7 +5,7 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
     <router>
-        <serviceProxy name="Membrane Resource service" port="2001">
+        <serviceProxy name="Resource Service" port="2001">
 
             <oauth2Resource publicURL="http://localhost:2001/">
                 <membrane src="http://localhost:2000" clientId="abc" clientSecret="def" scope="openid profile" claims="username" claimsIdt="sub" />
@@ -14,9 +14,9 @@
             <!-- This is optional. You can use the information from the authentication server and pass it to the resource server or do
              anything you want. -->
             <groovy>
-                def oauth2 = exc.properties['oauth2']
+                def oauth2 = exc.properties.oauth2
                 <!-- Put the eMail of the user into the request header X-EMAIL and pass it to the protected server. -->
-                exc.request.getHeader().setValue('X-EMAIL',oauth2.userinfo.email)
+                exc.request.header.setValue('X-EMAIL',oauth2.userinfo.email)
                 CONTINUE
             </groovy>
 
