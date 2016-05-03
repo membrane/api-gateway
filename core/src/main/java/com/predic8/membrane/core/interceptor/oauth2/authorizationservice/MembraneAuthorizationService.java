@@ -50,7 +50,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     private DynamicRegistration dynamicRegistration;
 
-    private static final String defaultCallbackUri = "/oauth2callback";
+    private static final String defaultCallbackUri = "oauth2callback";
 
 
     @Override
@@ -98,8 +98,6 @@ public class MembraneAuthorizationService extends AuthorizationService {
     }
 
     private void createCallbackUri(Exchange exc, String publicURL) {
-        if(exc.getRule() instanceof ServiceProxy && ((ServiceProxy) exc.getRule()).getPath() != null)
-            callbackUri = publicURL + ((ServiceProxy) exc.getRule()).getPath().toString().substring(1) + defaultCallbackUri;
         callbackUri = publicURL + defaultCallbackUri;
     }
 
