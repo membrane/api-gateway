@@ -13,7 +13,6 @@
 
 package com.predic8.membrane.core.interceptor.javascript;
 
-import com.google.common.base.Function;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -21,22 +20,40 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.lang.java.JavascriptLanguageSupport;
 import com.predic8.membrane.core.util.TextUtil;
 import org.apache.commons.lang.StringEscapeUtils;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 import java.util.HashMap;
-import java.util.Map;
 
-@MCElement(name = "javascript", mixed = true)
-public class JavascriptInterceptor extends AbstractInterceptor {
 
+/**
+ * This interceptor isn't threadsafe and will be removed removed in subsequent commits.
+ */
+
+@Deprecated
+@MCElement(name = "javascriptOLD", mixed = true)
+public class JavaScriptInterceptorOLD extends AbstractInterceptor {
     private String src = "";
+    private String modifiedScript;
 
-    private Function<Map<String, Object>, Object> script;
+    ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
 
-    public JavascriptInterceptor() {
+    public JavaScriptInterceptorOLD(){
         name = "Javascript";
+    }
+
+
+    @Override
+    public void init() throws Exception {
+        if (router == null)
+            return;
+        if ("".equals(src))
+            return;
+
+        modifiedScript = getScriptWithImports();
     }
 
     @Override
@@ -55,27 +72,15 @@ public class JavascriptInterceptor extends AbstractInterceptor {
             runScript(exc, Flow.ABORT);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (ScriptException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    @Override
-    public void init() {
-        if (router == null)
-            return;
-        if ("".equals(src))
-            return;
+    private Outcome runScript(Exchange exc, Flow flow) throws InterruptedException, ScriptException {
+        addScriptParameters(exc, flow);
 
-        script = new JavascriptLanguageSupport().compileScript(router, src);
-
-    }
-
-    private Outcome runScript(Exchange exc, Flow flow) throws InterruptedException {
-        HashMap<String, Object> parameters = new HashMap<String, Object>();
-        parameters.put("exc", exc);
-        parameters.put("flow", flow);
-        parameters.put("spring", router.getBeanFactory());
-
-        Object res = script.apply(parameters);
+        Object res = runScript();
 
         if (res instanceof Outcome) {
             return (Outcome) res;
@@ -90,8 +95,31 @@ public class JavascriptInterceptor extends AbstractInterceptor {
             exc.setRequest((Request) res);
         }
         return Outcome.CONTINUE;
-
     }
+
+    private String getScriptWithImports() {
+        return "var imports = new JavaImporter(com.predic8.membrane.core.interceptor.Outcome," +
+                "com.predic8.membrane.core.http" +
+                ")\n" +
+                "with(imports){\n" +
+                        getSrc() +
+                        "\n}";
+    }
+
+    private Object runScript() throws ScriptException {
+        return engine.eval(modifiedScript);
+    }
+
+    private void addScriptParameters(Exchange exc, Flow flow) {
+        HashMap<String, Object> parameters = new HashMap<String, Object>();
+        parameters.put("exc", exc);
+        parameters.put("flow", flow);
+        parameters.put("spring", router.getBeanFactory());
+
+        for(String name : parameters.keySet())
+            engine.put(name,parameters.get(name));
+    }
+
 
     public String getSrc() {
         return src;

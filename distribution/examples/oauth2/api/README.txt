@@ -1,1 +1,1 @@
-Please follow http://www.membrane-soa.org/service-proxy-doc/4.2/security/oauth2/flows/password/example.htm
+Please follow http://www.membrane-soa.org/service-proxy-doc/4.2/oauth2-password-flow-sample.htm

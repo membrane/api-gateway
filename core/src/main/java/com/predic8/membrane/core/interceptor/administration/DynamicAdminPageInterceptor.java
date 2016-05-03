@@ -20,6 +20,7 @@ import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -263,6 +264,20 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			throws Exception {
 		StringWriter writer = new StringWriter();
 		return respond(new AdminPageBuilder(writer, router, relativeRootPath, params, readOnly) {
+
+			static final int mb = 1024*1024;
+			final DecimalFormat formatter = new DecimalFormat("#.00");
+
+			private String formatMemoryValue(float value){
+				float newValue = value / (float)mb;
+
+				String unit = "MB";
+				if(newValue > 1024)
+					unit = "GB";
+
+				return formatter.format(newValue) + " " + unit;
+			}
+
 			@Override
 			protected int getSelectedTab() {
 				return TAB_ID_SYSTEM;
@@ -272,10 +287,8 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 			protected void createTabContent() {
 				h2().text("System").end();
 
-				long total = Runtime.getRuntime().totalMemory();
-				long free = Runtime.getRuntime().freeMemory();
-				p().text("Availabe system memory: " + total).end();
-				p().text("Free system memory: " + free).end();
+				p().text("Availabe system memory: " + formatMemoryValue(Runtime.getRuntime().totalMemory())).end();
+				p().text("Free system memory: " + formatMemoryValue(Runtime.getRuntime().freeMemory())).end();
 
 				p().text("Membrane version: " + Constants.VERSION).end();
 

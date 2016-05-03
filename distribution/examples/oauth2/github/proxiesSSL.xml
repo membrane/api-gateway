@@ -18,19 +18,13 @@
 				<exclude>X-Authenticated-Login</exclude>
 			</headerFilter>
 
-			<!-- this is for browsers that request a favicon. The request is dropped because it would change the session id -->
-			<if test="exc.getRequestURI().endsWith('favicon.ico')">
-				<groovy>
-					Response.notFound().build()
-				</groovy>
-			</if>
-
 			<oauth2Resource publicURL="http://localhost:8080/">
 				<github
 						clientId="Enter client ID from Github here"
 						clientSecret="Enter client Secret from Github here" />
 			</oauth2Resource>
 
+			<!-- this will act as the secret resource to make the example simple. See below in the comments for an alternative -->
 			<groovy>
 				def email = exc.request.header.getFirstValue("X-Authenticated-Login")
 				exc.response = Response.ok("Hello " + email + ".").build()

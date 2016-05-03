@@ -107,4 +107,28 @@ public class OAuth2AuthorizationServerInterceptorNormalTest extends OAuth2Author
             }
         };
     }
+
+    public static Callable<Exchange> getMockPasswordRequestExchange() throws Exception {
+        return new Callable<Exchange>() {
+            @Override
+            public Exchange call() throws Exception {
+                return new Request.Builder().post(mas.getTokenEndpoint())
+                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .body("grant_type=password&username=john&password=password&client_id=abc&client_secret=def")
+                        .buildExchange();
+            }
+        };
+    }
+
+    public static Callable<Exchange> getMockClientCredentialsRequestExchange() throws Exception {
+        return new Callable<Exchange>() {
+            @Override
+            public Exchange call() throws Exception {
+                return new Request.Builder().post(mas.getTokenEndpoint())
+                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .body("grant_type=password&client_id=abc&client_secret=def")
+                        .buildExchange();
+            }
+        };
+    }
 }
