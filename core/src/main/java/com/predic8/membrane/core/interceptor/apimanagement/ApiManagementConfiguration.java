@@ -161,33 +161,9 @@ public class ApiManagementConfiguration {
                     LinkedHashMap<String,Object> rateLimitData = (LinkedHashMap<String, Object>) rateLimitObj;
                         RateLimit rateLimit = new RateLimit();
 
-                        int requests = -1;
-                        Object requestsObj = rateLimitData.get("requests");
-                        if(requestsObj == null){
-                            log.warn("RateLimit object found, but request field is empty");
-                            requests = RateLimit.REQUESTS_DEFAULT;
-                        }else {
-                            try {
-                                requests = Integer.parseInt((String)requestsObj);
-                            }
-                            catch(NumberFormatException ignored) {
-                                // there is an entry, but its not a number ( maybe empty quotes )
-                                requests = RateLimit.REQUESTS_DEFAULT;
-                            }
-                        }
+                        int requests = parseObjectValue(rateLimitData.get("requests"),RateLimit.REQUESTS_DEFAULT);
+                        int interval = parseObjectValue(rateLimitData.get("interval"),RateLimit.INTERVAL_DEFAULT);
 
-                        int interval = -1;
-                        Object intervalObj = rateLimitData.get("interval");
-                        if(intervalObj == null) {
-                            log.warn("RateLimit object found, but interval field is empty. Setting default: \" + RateLimit.INTERVAL_DEFAULT");
-                            interval = RateLimit.INTERVAL_DEFAULT;
-                        }else {
-                            try {
-                                interval = Integer.parseInt((String)intervalObj);
-                            }catch(NumberFormatException ignored) {
-                                interval = RateLimit.INTERVAL_DEFAULT;
-                            }
-                        }
                         rateLimit.setRequests(requests);
                         rateLimit.setInterval(interval);
                         policy.setRateLimit(rateLimit);
@@ -197,42 +173,8 @@ public class ApiManagementConfiguration {
                 if(quotaObj != null){
                     LinkedHashMap<String,Object> quota = (LinkedHashMap<String, Object>) quotaObj;
                     Object quotaSizeObj = quota.get("size");
-                    long quotaNumber = 0;
-                    String quotaSymbolString = "";
-                    if(quotaSizeObj == null){
-                        log.warn("Quota object found, but size field is empty");
-                        quotaNumber = Quota.SIZE_DEFAULT;
-                    }else{
-                        try {
-                            String quotaString = (String) quotaSizeObj;
-                            quotaNumber = ((Number) NumberFormat.getInstance().parse(quotaString)).intValue();
-                            quotaSymbolString = quotaString.replaceFirst(Long.toString(quotaNumber),"").toLowerCase();
-                        } catch (ParseException ignored) {
-                            quotaNumber = Quota.SIZE_DEFAULT;
-                        }
-                    }
-                    if(quotaSymbolString.length() > 0) {
-                        char quotaSymbol = quotaSymbolString.charAt(0);
-                        switch (quotaSymbol) {
-                            case 'g': quotaNumber *= 1024;
-                            case 'm': quotaNumber *= 1024;
-                            case 'k': quotaNumber *= 1024;
-                            case 'b':
-                            default:
-                        }
-                    }
-                    Object quotaIntervalObj = quota.get("interval");
-                    int quotaInterval = 0;
-                    if(quotaIntervalObj == null){
-                        log.warn("Quota object found, but interval field is empty");
-                        quotaInterval = Quota.INTERVAL_DEFAULT;
-                    }else {
-                        try {
-                            quotaInterval = Integer.parseInt((String) quotaIntervalObj);
-                        }catch (NumberFormatException ignored){
-                            quotaInterval = Quota.INTERVAL_DEFAULT;
-                        }
-                    }
+                    long quotaNumber = getQuotaNumber(quotaSizeObj);
+                    int quotaInterval = parseObjectValue(quota.get("interval"),Quota.INTERVAL_DEFAULT);
 
                     Quota q = new Quota();
                     q.setSize(quotaNumber);
@@ -244,6 +186,48 @@ public class ApiManagementConfiguration {
             }
         }
         return result;
+    }
+
+    private long getQuotaNumber(Object quotaSizeObj) {
+        long quotaNumber = 0;
+        String quotaSymbolString = "";
+        if(quotaSizeObj == null){
+            log.warn("Quota object found, but size field is empty");
+            quotaNumber = Quota.SIZE_DEFAULT;
+        }else{
+            try {
+                String quotaString = (String) quotaSizeObj;
+                quotaNumber = ((Number) NumberFormat.getInstance().parse(quotaString)).intValue();
+                quotaSymbolString = quotaString.replaceFirst(Long.toString(quotaNumber),"").toLowerCase();
+            } catch (ParseException ignored) {
+                quotaNumber = Quota.SIZE_DEFAULT;
+            }
+        }
+        if(quotaSymbolString.length() > 0) {
+            char quotaSymbol = quotaSymbolString.charAt(0);
+            switch (quotaSymbol) {
+                case 'g': quotaNumber *= 1024;
+                case 'm': quotaNumber *= 1024;
+                case 'k': quotaNumber *= 1024;
+                case 'b':
+                default:
+            }
+        }
+        return quotaNumber;
+    }
+
+    private int parseObjectValue(Object obj, int defaultValue){
+        if(obj == null)
+            return defaultValue;
+        try{
+            return (int)obj;
+        }catch(ClassCastException ex){
+            try {
+                return Integer.parseInt((String) obj);
+            }catch(NumberFormatException ex2){
+                return defaultValue;
+            }
+        }
     }
 
     private void parseAndConstructConfiguration(InputStream is) throws IOException {
