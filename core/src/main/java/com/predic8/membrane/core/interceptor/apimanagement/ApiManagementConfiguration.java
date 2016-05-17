@@ -22,6 +22,7 @@ import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -36,6 +37,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -161,8 +163,8 @@ public class ApiManagementConfiguration {
                     LinkedHashMap<String,Object> rateLimitData = (LinkedHashMap<String, Object>) rateLimitObj;
                         RateLimit rateLimit = new RateLimit();
 
-                        int requests = parseObjectValue(rateLimitData.get("requests"),RateLimit.REQUESTS_DEFAULT);
-                        int interval = parseObjectValue(rateLimitData.get("interval"),RateLimit.INTERVAL_DEFAULT);
+                        int requests = parseInteger(rateLimitData.get("requests"),RateLimit.REQUESTS_DEFAULT);
+                        int interval = parseInteger(rateLimitData.get("interval"),RateLimit.INTERVAL_DEFAULT);
 
                         rateLimit.setRequests(requests);
                         rateLimit.setInterval(interval);
@@ -174,7 +176,7 @@ public class ApiManagementConfiguration {
                     LinkedHashMap<String,Object> quota = (LinkedHashMap<String, Object>) quotaObj;
                     Object quotaSizeObj = quota.get("size");
                     long quotaNumber = getQuotaNumber(quotaSizeObj);
-                    int quotaInterval = parseObjectValue(quota.get("interval"),Quota.INTERVAL_DEFAULT);
+                    int quotaInterval = parseInteger(quota.get("interval"),Quota.INTERVAL_DEFAULT);
 
                     Quota q = new Quota();
                     q.setSize(quotaNumber);
@@ -182,10 +184,39 @@ public class ApiManagementConfiguration {
                     policy.setQuota(q);
                 }
 
+                parseUnauthenticatedField(yamlPolicyDef,policy);
+
+
                 result.put(policyName,policy);
             }
         }
         return result;
+    }
+
+    private void parseUnauthenticatedField(LinkedHashMap<String, Object> yamlPolicyDef, Policy policy) {
+        policy.setUnauthenticated(parseBoolean(yamlPolicyDef.get("unauthenticated"),false));
+    }
+
+
+    private <T> T StringToTypeConverter(Object obj, T defObj, Function<String,T> stringToTypeConverter){
+        if(obj == null)
+            return defObj;
+        if(obj instanceof String)
+            return stringToTypeConverter.call((String) obj);
+        try {
+            return (T) obj;
+        }catch(Exception ignored2){
+            log.error("Could not parse policies file. Please make sure that the file is valid.");
+            return defObj;
+        }
+    }
+
+    private String parseString(Object obj, String defObj){
+        return StringToTypeConverter(obj,defObj, (value) -> {return value;});
+    }
+
+    private boolean parseBoolean(Object obj, Boolean defObj){
+        return StringToTypeConverter(obj,defObj,(value) -> {return Boolean.parseBoolean(value);});
     }
 
     private long getQuotaNumber(Object quotaSizeObj) {
@@ -216,18 +247,8 @@ public class ApiManagementConfiguration {
         return quotaNumber;
     }
 
-    private int parseObjectValue(Object obj, int defaultValue){
-        if(obj == null)
-            return defaultValue;
-        try{
-            return (int)obj;
-        }catch(ClassCastException ex){
-            try {
-                return Integer.parseInt((String) obj);
-            }catch(NumberFormatException ex2){
-                return defaultValue;
-            }
-        }
+    private int parseInteger(Object obj, int defaultValue){
+        return StringToTypeConverter(obj,defaultValue,(value) ->{return Integer.parseInt(value);});
     }
 
     private void parseAndConstructConfiguration(InputStream is) throws IOException {
@@ -275,6 +296,9 @@ public class ApiManagementConfiguration {
             Key keyRes = new Key();
             String keyName = (String) key.get("key");
             keyRes.setName(keyName);
+
+            parseExpiration(key,keyRes);
+
             List<Object> policiesForKey = (List<Object>) key.get("policies");
             HashSet<Policy> policies = new HashSet<Policy>();
             for(Object polObj : policiesForKey){
@@ -283,10 +307,23 @@ public class ApiManagementConfiguration {
                 policies.add(p);
             }
             keyRes.setPolicies(policies);
+
             result.put(keyName,keyRes);
         }
 
         return result;
+    }
+
+    private void parseExpiration(LinkedHashMap<String, Object> keyYaml, Key key) {
+        String expirationString = parseString(keyYaml.get("expiration"),null);
+        LocalDateTime expiration = null;
+        if(expirationString != null)
+            try {
+                expiration = LocalDateTime.parse(expirationString);
+            }catch(Exception e){
+                log.error("Could not read expiration");
+            }
+        key.setExpiration(expiration);
     }
 
 

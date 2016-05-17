@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -117,31 +118,47 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     }
 
     private Outcome handleRequest2(Exchange exc) throws Exception {
-        String key = apiKeyRetriever.getKey(exc);
-        apiKeyRetriever.removeKey(exc);
-        if (key == null) {
-            exc.setProperty(Exchange.API_KEY, ApiManagementConfiguration.UNAUTHORIZED_API_KEY);
-            key = ApiManagementConfiguration.UNAUTHORIZED_API_KEY;
-            if(!hasUnauthorizedPolicy(exc)){
-                if(isAdminConsoleCall(exc))
-                    return Outcome.CONTINUE;
-                setResponseNoAuthKey(exc);
-                return Outcome.RETURN;
-            }
+        String key = getAndRemoveKey(exc);
+        if (!keyExists(key) || isAdminConsoleCall(exc)) {
+            return processUnauthorizedRequest(exc);
         }
         exc.setProperty(Exchange.API_KEY, key);
+
         AuthorizationResult auth = getAuthorization(exc, key);
         if (auth.isAuthorized()) {
-            if (getAmRateLimiter() != null && getAmRateLimiter().handleRequest(exc) == Outcome.RETURN) {
-                return Outcome.RETURN;
-            }
-            if (getAmQuota() != null && getAmQuota().handleRequest(exc) == Outcome.RETURN) {
-                return Outcome.RETURN;
-            }
-            return Outcome.CONTINUE;
+            return processAuthorizedRequest(exc);
         }
         setResponsePolicyDenied(exc, auth);
         return Outcome.RETURN;
+    }
+
+    private boolean keyExists(String key) {
+        return apiManagementConfiguration.getKeys().containsKey(key);
+    }
+
+    private Outcome processAuthorizedRequest(Exchange exc) throws Exception {
+        if (getAmRateLimiter() != null && getAmRateLimiter().handleRequest(exc) == Outcome.RETURN) {
+            return Outcome.RETURN;
+        }
+        if (getAmQuota() != null && getAmQuota().handleRequest(exc) == Outcome.RETURN) {
+            return Outcome.RETURN;
+        }
+        return Outcome.CONTINUE;
+    }
+
+    private Outcome processUnauthorizedRequest(Exchange exc) {
+        exc.setProperty(Exchange.API_KEY, ApiManagementConfiguration.UNAUTHORIZED_API_KEY);
+
+        if(hasUnauthorizedPolicy(exc) || isAdminConsoleCall(exc))
+            return Outcome.CONTINUE;
+        setResponseNoAuthKey(exc);
+        return Outcome.RETURN;
+    }
+
+    private String getAndRemoveKey(Exchange exc) {
+        String key = apiKeyRetriever.getKey(exc);
+        apiKeyRetriever.removeKey(exc);
+        return key;
     }
 
     private boolean isAdminConsoleCall(Exchange exc) {
@@ -175,29 +192,37 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     }
 
     private boolean hasUnauthorizedPolicy(Exchange exc) {
-        Policy unauthPol = apiManagementConfiguration.getPolicies().get(ApiManagementConfiguration.UNAUTHORIZED_POLICY_NAME);
-        if (unauthPol == null) {
-            return false;
-        }
-        for (String unauthedServices : unauthPol.getServiceProxies()) {
-            if (exc.getRule().getName().equals(unauthedServices)) {
+        String requestedServiceProxy = exc.getRule().getName();
+        for(Policy pol : apiManagementConfiguration.getPolicies().values())
+            if(pol.getServiceProxies().contains(requestedServiceProxy) && pol.isUnauthenticated())
                 return true;
-            }
-        }
         return false;
     }
 
     public AuthorizationResult getAuthorization(Exchange exc, String apiKey) {
-        if (!apiManagementConfiguration.getKeys().containsKey(apiKey)) {
+        if (!keyExists(apiKey))
             return AuthorizationResult.getAuthorizedFalse("API key not found");
-        }
+        if(keyIsExpired(apiKey))
+            return AuthorizationResult.getAuthorizedFalse("API key expired");
 
-        for (Policy policy : apiManagementConfiguration.getKeys().get(apiKey).getPolicies()) {
+        for (Policy policy : getKey(apiKey).getPolicies()) {
             if (policy.getServiceProxies().contains(exc.getRule().getName())) {
                 return AuthorizationResult.getAuthorizedTrue();
             }
         }
         return AuthorizationResult.getAuthorizedFalse("Service not available: " + exc.getRule().getName());
+    }
+
+    private boolean keyIsExpired(String apiKey) {
+        if(getKey(apiKey).getExpiration() == null)
+            return false;
+        if(getKey(apiKey).getExpiration().isBefore(LocalDateTime.now()))
+            return true;
+        return false;
+    }
+
+    private Key getKey(String apiKey) {
+        return apiManagementConfiguration.getKeys().get(apiKey);
     }
 
     private byte[] buildJsonErrorMessage(Response res) {

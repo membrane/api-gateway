@@ -21,6 +21,7 @@ public class Policy
     private RateLimit rateLimit = new RateLimit();
     private Quota quota = new Quota();
     private HashSet<String> serviceProxies = new HashSet<String>();
+    private boolean unauthenticated = false;
 
     public RateLimit getRateLimit() {
         return rateLimit;
@@ -63,5 +64,13 @@ public class Policy
 
     public void setQuota(Quota quota) {
         this.quota = quota;
+    }
+
+    public boolean isUnauthenticated() {
+        return unauthenticated;
+    }
+
+    public void setUnauthenticated(boolean unauthenticated) {
+        this.unauthenticated = unauthenticated;
     }
 }
