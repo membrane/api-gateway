@@ -119,7 +119,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
 
     private Outcome handleRequest2(Exchange exc) throws Exception {
         String key = getAndRemoveKey(exc);
-        if (!keyExists(key) || isAdminConsoleCall(exc)) {
+        if (key == null || isAdminConsoleCall(exc)) {
             return processUnauthorizedRequest(exc);
         }
         exc.setProperty(Exchange.API_KEY, key);
