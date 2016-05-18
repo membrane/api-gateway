@@ -202,7 +202,10 @@ public class ApiManagementConfiguration {
         if(obj == null)
             return defObj;
         if(obj instanceof String)
-            return stringToTypeConverter.call((String) obj);
+            if(((String)obj).isEmpty())
+                return defObj;
+            else
+                return stringToTypeConverter.call((String) obj);
         try {
             return (T) obj;
         }catch(Exception ignored2){

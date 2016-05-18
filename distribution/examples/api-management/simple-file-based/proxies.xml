@@ -15,7 +15,7 @@
 			<exchangeStore />
 			<dispatching />
 
-			<!-- API Management is activated by putting it in the transport chain between dispatching and reveryProxying -->
+			<!-- API Management is activated by putting it in the transport chain between dispatching and reverseProxying -->
 			<apiManagement>
 				<!-- API Management currently has 2 interceptors, a rate limiter and quota ( bandwidth limiter ) -->
 				<amRateLimiter/>

@@ -12,13 +12,15 @@ policies:
         - "Web Page"
         - "Names API"
   - policy:
-        id: "unauthorized"
+        id: "Admin Console"
+        unauthenticated: true
         serviceProxy:
           - "AdminConsole"
 
 
 keys:
   - key: "abcdefg"
+    expiration: "2020-01-01T12:00:00"
     policies:
       - "TrialAppX"
       - "Customer"
