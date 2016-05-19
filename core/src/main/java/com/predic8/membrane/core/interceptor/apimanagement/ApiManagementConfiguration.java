@@ -238,12 +238,14 @@ public class ApiManagementConfiguration {
             }
         }
         if(quotaSymbolString.length() > 0) {
-            char quotaSymbol = quotaSymbolString.charAt(0);
-            switch (quotaSymbol) {
-                case 'g': quotaNumber *= 1024;
-                case 'm': quotaNumber *= 1024;
-                case 'k': quotaNumber *= 1024;
-                case 'b':
+            switch (quotaSymbolString) {
+                case "gb":
+                case "g": quotaNumber *= 1024;
+                case "mb":
+                case "m": quotaNumber *= 1024;
+                case "kb":
+                case "k": quotaNumber *= 1024;
+                case "b":
                 default:
             }
         }
