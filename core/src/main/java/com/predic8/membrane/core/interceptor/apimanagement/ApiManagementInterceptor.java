@@ -39,7 +39,7 @@ import org.apache.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 
@@ -216,7 +216,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     private boolean keyIsExpired(String apiKey) {
         if(getKey(apiKey).getExpiration() == null)
             return false;
-        if(getKey(apiKey).getExpiration().isBefore(LocalDateTime.now()))
+        if(getKey(apiKey).getExpiration().isBefore(Instant.now()))
             return true;
         return false;
     }

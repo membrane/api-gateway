@@ -11,14 +11,14 @@ In this example we will send requests to a service with and without an API key. 
 
 2. run the service-proxy.bat/.sh
 
-3. run the command line
+3. open the command line
 
 4. run: curl -s -i -D - -o /dev/null localhost:8080
 
-5. observe a http 401 unauthorized response
+5. observe an HTTP 401 unauthorized response
 
 6. run: curl -s -i -D - -o /dev/null -H "Authorization: abcdefg" localhost:8080
 
-7. observe a http 200 response
+7. observe an HTTP 200 response
 
 Please follow to http://membrane-soa.org/FILL_SOMETHING_USEFUL_IN_HERE_WHEN_AVAILABLE/ for a detailed explanation.

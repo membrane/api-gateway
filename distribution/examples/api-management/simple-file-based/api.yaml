@@ -11,16 +11,11 @@ policies:
       serviceProxy:
         - "Web Page"
         - "Names API"
-  - policy:
-        id: "Admin Console"
-        unauthenticated: true
-        serviceProxy:
-          - "AdminConsole"
 
 
 keys:
   - key: "abcdefg"
-    expiration: "2020-01-01T12:00:00"
+    expires: "2020-01-01T12:00:00Z"
     policies:
       - "TrialAppX"
       - "Customer"

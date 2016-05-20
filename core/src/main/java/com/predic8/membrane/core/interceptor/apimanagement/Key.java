@@ -15,12 +15,12 @@ package com.predic8.membrane.core.interceptor.apimanagement;
 
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashSet;
 
 public class Key {
     private String name = "";
-    private LocalDateTime expiration;
+    private Instant expiration;
     private HashSet<Policy> policies = new HashSet<Policy>();
 
     public String getName() {
@@ -49,11 +49,11 @@ public class Key {
         return builder.toString();
     }
 
-    public LocalDateTime getExpiration() {
+    public Instant getExpiration() {
         return expiration;
     }
 
-    public void setExpiration(LocalDateTime expiration) {
+    public void setExpiration(Instant expiration) {
         this.expiration = expiration;
     }
 }

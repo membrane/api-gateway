@@ -19,9 +19,9 @@ import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
@@ -37,7 +37,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -320,11 +320,11 @@ public class ApiManagementConfiguration {
     }
 
     private void parseExpiration(LinkedHashMap<String, Object> keyYaml, Key key) {
-        String expirationString = parseString(keyYaml.get("expiration"),null);
-        LocalDateTime expiration = null;
+        String expirationString = parseString(keyYaml.get("expires"),null);
+        Instant expiration = null;
         if(expirationString != null)
             try {
-                expiration = LocalDateTime.parse(expirationString);
+                expiration = Instant.parse(expirationString);
             }catch(Exception e){
                 log.error("Could not read expiration");
             }
