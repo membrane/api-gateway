@@ -84,11 +84,6 @@ public class JavascriptLanguageSupport extends LanguageSupport {
     }
 
     private String getScriptWithImports(String src) {
-        return "var imports = new JavaImporter(com.predic8.membrane.core.interceptor.Outcome," +
-                "com.predic8.membrane.core.http" +
-                ")\n" +
-                "with(imports){\n" +
-                src +
-                "\n}";
+        return src;
     }
 }
