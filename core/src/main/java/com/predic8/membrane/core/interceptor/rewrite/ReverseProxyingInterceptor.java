@@ -68,7 +68,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		// rewrite to our schema, host and port
 		exc.getRequest().getHeader().setValue(Header.DESTINATION,
 				Relocator.getNewLocation(destination, target.getProtocol(),
-						target.getHost(), target.getPort() == -1 ? target.getDefaultPort() : target.getPort()));
+						target.getHost(), target.getPort() == -1 ? target.getDefaultPort() : target.getPort(), exc.getHandler().getContextPath(exc)));
 		return Outcome.CONTINUE;
 	}
 
@@ -98,7 +98,7 @@ public class ReverseProxyingInterceptor extends AbstractInterceptor {
 		// rewrite to our schema, host and port
 		exc.getResponse().getHeader().setValue(Header.LOCATION,
 				Relocator.getNewLocation(location, getProtocol(exc),
-						exc.getOriginalHostHeaderHost(), getPort(exc)));
+						exc.getOriginalHostHeaderHost(), getPort(exc), exc.getHandler().getContextPath(exc)));
 		return Outcome.CONTINUE;
 	}
 
