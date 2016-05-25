@@ -19,9 +19,10 @@ import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
-import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -36,13 +37,11 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ApiManagementConfiguration {
-
-    public static final String UNAUTHORIZED_POLICY_NAME = "unauthorized";
-    public static final String UNAUTHORIZED_API_KEY = "UNAUTHORIZED_API_KEY";
     private static String currentDir;
 
     private static Logger log = LogManager.getLogger(ApiManagementConfiguration.class);
@@ -161,33 +160,9 @@ public class ApiManagementConfiguration {
                     LinkedHashMap<String,Object> rateLimitData = (LinkedHashMap<String, Object>) rateLimitObj;
                         RateLimit rateLimit = new RateLimit();
 
-                        int requests = -1;
-                        Object requestsObj = rateLimitData.get("requests");
-                        if(requestsObj == null){
-                            log.warn("RateLimit object found, but request field is empty");
-                            requests = RateLimit.REQUESTS_DEFAULT;
-                        }else {
-                            try {
-                                requests = Integer.parseInt((String)requestsObj);
-                            }
-                            catch(NumberFormatException ignored) {
-                                // there is an entry, but its not a number ( maybe empty quotes )
-                                requests = RateLimit.REQUESTS_DEFAULT;
-                            }
-                        }
+                        int requests = parseInteger(rateLimitData.get("requests"),RateLimit.REQUESTS_DEFAULT);
+                        int interval = parseInteger(rateLimitData.get("interval"),RateLimit.INTERVAL_DEFAULT);
 
-                        int interval = -1;
-                        Object intervalObj = rateLimitData.get("interval");
-                        if(intervalObj == null) {
-                            log.warn("RateLimit object found, but interval field is empty. Setting default: \" + RateLimit.INTERVAL_DEFAULT");
-                            interval = RateLimit.INTERVAL_DEFAULT;
-                        }else {
-                            try {
-                                interval = Integer.parseInt((String)intervalObj);
-                            }catch(NumberFormatException ignored) {
-                                interval = RateLimit.INTERVAL_DEFAULT;
-                            }
-                        }
                         rateLimit.setRequests(requests);
                         rateLimit.setInterval(interval);
                         policy.setRateLimit(rateLimit);
@@ -197,42 +172,8 @@ public class ApiManagementConfiguration {
                 if(quotaObj != null){
                     LinkedHashMap<String,Object> quota = (LinkedHashMap<String, Object>) quotaObj;
                     Object quotaSizeObj = quota.get("size");
-                    long quotaNumber = 0;
-                    String quotaSymbolString = "";
-                    if(quotaSizeObj == null){
-                        log.warn("Quota object found, but size field is empty");
-                        quotaNumber = Quota.SIZE_DEFAULT;
-                    }else{
-                        try {
-                            String quotaString = (String) quotaSizeObj;
-                            quotaNumber = ((Number) NumberFormat.getInstance().parse(quotaString)).intValue();
-                            quotaSymbolString = quotaString.replaceFirst(Long.toString(quotaNumber),"").toLowerCase();
-                        } catch (ParseException ignored) {
-                            quotaNumber = Quota.SIZE_DEFAULT;
-                        }
-                    }
-                    if(quotaSymbolString.length() > 0) {
-                        char quotaSymbol = quotaSymbolString.charAt(0);
-                        switch (quotaSymbol) {
-                            case 'g': quotaNumber *= 1024;
-                            case 'm': quotaNumber *= 1024;
-                            case 'k': quotaNumber *= 1024;
-                            case 'b':
-                            default:
-                        }
-                    }
-                    Object quotaIntervalObj = quota.get("interval");
-                    int quotaInterval = 0;
-                    if(quotaIntervalObj == null){
-                        log.warn("Quota object found, but interval field is empty");
-                        quotaInterval = Quota.INTERVAL_DEFAULT;
-                    }else {
-                        try {
-                            quotaInterval = Integer.parseInt((String) quotaIntervalObj);
-                        }catch (NumberFormatException ignored){
-                            quotaInterval = Quota.INTERVAL_DEFAULT;
-                        }
-                    }
+                    long quotaNumber = getQuotaNumber(quotaSizeObj);
+                    int quotaInterval = parseInteger(quota.get("interval"),Quota.INTERVAL_DEFAULT);
 
                     Quota q = new Quota();
                     q.setSize(quotaNumber);
@@ -240,10 +181,76 @@ public class ApiManagementConfiguration {
                     policy.setQuota(q);
                 }
 
+                parseUnauthenticatedField(yamlPolicyDef,policy);
+
+
                 result.put(policyName,policy);
             }
         }
         return result;
+    }
+
+    private void parseUnauthenticatedField(LinkedHashMap<String, Object> yamlPolicyDef, Policy policy) {
+        policy.setUnauthenticated(parseBoolean(yamlPolicyDef.get("unauthenticated"),false));
+    }
+
+
+    private <T> T StringToTypeConverter(Object obj, T defObj, Function<String,T> stringToTypeConverter){
+        if(obj == null)
+            return defObj;
+        if(obj instanceof String)
+            if(((String)obj).isEmpty())
+                return defObj;
+            else
+                return stringToTypeConverter.call((String) obj);
+        try {
+            return (T) obj;
+        }catch(Exception ignored2){
+            log.error("Could not parse policies file. Please make sure that the file is valid.");
+            return defObj;
+        }
+    }
+
+    private String parseString(Object obj, String defObj){
+        return StringToTypeConverter(obj,defObj, (value) -> {return value;});
+    }
+
+    private boolean parseBoolean(Object obj, Boolean defObj){
+        return StringToTypeConverter(obj,defObj,(value) -> {return Boolean.parseBoolean(value);});
+    }
+
+    private long getQuotaNumber(Object quotaSizeObj) {
+        long quotaNumber = 0;
+        String quotaSymbolString = "";
+        if(quotaSizeObj == null){
+            log.warn("Quota object found, but size field is empty");
+            quotaNumber = Quota.SIZE_DEFAULT;
+        }else{
+            try {
+                String quotaString = (String) quotaSizeObj;
+                quotaNumber = ((Number) NumberFormat.getInstance().parse(quotaString)).intValue();
+                quotaSymbolString = quotaString.replaceFirst(Long.toString(quotaNumber),"").toLowerCase();
+            } catch (ParseException ignored) {
+                quotaNumber = Quota.SIZE_DEFAULT;
+            }
+        }
+        if(quotaSymbolString.length() > 0) {
+            switch (quotaSymbolString) {
+                case "gb":
+                case "g": quotaNumber *= 1024;
+                case "mb":
+                case "m": quotaNumber *= 1024;
+                case "kb":
+                case "k": quotaNumber *= 1024;
+                case "b":
+                default:
+            }
+        }
+        return quotaNumber;
+    }
+
+    private int parseInteger(Object obj, int defaultValue){
+        return StringToTypeConverter(obj,defaultValue,(value) ->{return Integer.parseInt(value);});
     }
 
     private void parseAndConstructConfiguration(InputStream is) throws IOException {
@@ -266,18 +273,26 @@ public class ApiManagementConfiguration {
         setPolicies(parsePolicies(yaml));
         setKeys(parsePoliciesForKeys(yaml));
         is.close();
-        setUnauthorizedKey();
         log.info("Configuration loaded. Notifying observers");
         notifyConfigChangeObservers();
     }
 
-    private void setUnauthorizedKey() {
-        Key unauthorizedKey = new Key();
-        unauthorizedKey.setName(UNAUTHORIZED_API_KEY);
-        HashSet<Policy> unauthorizedPolicySet = new HashSet<Policy>();
-        unauthorizedPolicySet.add(getPolicies().get(UNAUTHORIZED_POLICY_NAME));
-        unauthorizedKey.setPolicies(unauthorizedPolicySet);
-        getKeys().put(unauthorizedKey.getName(),unauthorizedKey);
+    public HashSet<Policy> getUnauthenticatedPolicies() {
+        HashSet<Policy> result = new HashSet<>();
+        for(Policy p : getPolicies().values())
+            if(p.isUnauthenticated())
+                result.add(p);
+        return result;
+    }
+
+    public void addIpAsApiKeyIfNeeded(String ip) {
+        if(!getKeys().containsKey(ip)){
+            Key key = new Key();
+            key.setName(ip);
+            key.setExpiration(null);
+            key.setPolicies(getUnauthenticatedPolicies());
+            getKeys().put(ip,key);
+        }
     }
 
     private Map<String,Key> parsePoliciesForKeys(Map<String, Object> yaml) {
@@ -291,6 +306,9 @@ public class ApiManagementConfiguration {
             Key keyRes = new Key();
             String keyName = (String) key.get("key");
             keyRes.setName(keyName);
+
+            parseExpiration(key,keyRes);
+
             List<Object> policiesForKey = (List<Object>) key.get("policies");
             HashSet<Policy> policies = new HashSet<Policy>();
             for(Object polObj : policiesForKey){
@@ -299,10 +317,23 @@ public class ApiManagementConfiguration {
                 policies.add(p);
             }
             keyRes.setPolicies(policies);
+
             result.put(keyName,keyRes);
         }
 
         return result;
+    }
+
+    private void parseExpiration(LinkedHashMap<String, Object> keyYaml, Key key) {
+        String expirationString = parseString(keyYaml.get("expires"),null);
+        Instant expiration = null;
+        if(expirationString != null)
+            try {
+                expiration = Instant.parse(expirationString);
+            }catch(Exception e){
+                log.error("Could not read expiration");
+            }
+        key.setExpiration(expiration);
     }
 
 

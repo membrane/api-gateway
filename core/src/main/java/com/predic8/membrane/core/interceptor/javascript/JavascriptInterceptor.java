@@ -74,6 +74,8 @@ public class JavascriptInterceptor extends AbstractInterceptor {
         parameters.put("exc", exc);
         parameters.put("flow", flow);
         parameters.put("spring", router.getBeanFactory());
+        parameters.put("Outcome", Outcome.class);
+        addHttpPackage(parameters);
 
         Object res = script.apply(parameters);
 
@@ -90,6 +92,10 @@ public class JavascriptInterceptor extends AbstractInterceptor {
             exc.setRequest((Request) res);
         }
         return Outcome.CONTINUE;
+
+    }
+
+    private void addHttpPackage(HashMap<String, Object> parameters) {
 
     }
 
