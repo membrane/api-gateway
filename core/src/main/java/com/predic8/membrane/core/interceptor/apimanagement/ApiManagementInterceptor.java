@@ -119,7 +119,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
 
     private Outcome handleRequest2(Exchange exc) throws Exception {
         String key = getAndRemoveKey(exc);
-        if (key == null || isAdminConsoleCall(exc)) {
+        if (key == null || !apiManagementConfiguration.getKeys().containsKey(key) || isAdminConsoleCall(exc)) {
             return processUnauthorizedRequest(exc);
         }
         exc.setProperty(Exchange.API_KEY, key);
@@ -146,11 +146,16 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         return Outcome.CONTINUE;
     }
 
-    private Outcome processUnauthorizedRequest(Exchange exc) {
-        exc.setProperty(Exchange.API_KEY, ApiManagementConfiguration.UNAUTHORIZED_API_KEY);
+    private Outcome processUnauthorizedRequest(Exchange exc) throws Exception {
+        String ip = exc.getRemoteAddrIp();
+        exc.setProperty(Exchange.API_KEY, ip);
 
-        if(hasUnauthorizedPolicy(exc) || isAdminConsoleCall(exc))
+        apiManagementConfiguration.addIpAsApiKeyIfNeeded(ip);
+
+        if(isAdminConsoleCall(exc))
             return Outcome.CONTINUE;
+        if(hasUnauthorizedPolicy(exc))
+            return processAuthorizedRequest(exc);
         setResponseNoAuthKey(exc);
         return Outcome.RETURN;
     }
