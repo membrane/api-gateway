@@ -14,24 +14,17 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.net.ssl.SNIServerName;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -45,27 +38,11 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
  * Manages multiple {@link SSLContext}s using the same port. This is only possible when using SSL with
  * "Server Name Indication", see http://en.wikipedia.org/wiki/Server_Name_Indication .
  *
- * This requires Java 8 (at runtime only, using reflection and dummy classes for compilation). Using the
- * inner {@link Builder} class, no Java 8 feature will be used, if not required by the configution. If the
- * configuration ("proxies.xml") requires Java 8 and it is not available, an exception will be thrown.
+ * This requires Java 8.
  */
 public class SSLContextCollection implements SSLProvider {
 
 	private static final Log log = LogFactory.getLog(SSLContextCollection.class.getName());
-
-	static Method createSocketMethod;
-
-	static {
-		try {
-			createSocketMethod = SSLSocketFactory.class.getMethod("createSocket", new Class[] { Socket.class,
-					InputStream.class, Boolean.TYPE });
-		} catch (SecurityException e) {
-			throw new RuntimeException(e);
-		} catch (NoSuchMethodException e) {
-			// do nothing
-		}
-	}
-
 
 	public static class Builder {
 		private List<String> dnsNames = new ArrayList<String>();
@@ -75,8 +52,6 @@ public class SSLContextCollection implements SSLProvider {
 			if (sslContexts.isEmpty())
 				throw new IllegalStateException("No SSLContext's were added to this Builder before invoking build().");
 			if (sslContexts.size() > 1) {
-				if (createSocketMethod == null)
-					throw new ConfigurationException("Using <serviceProxy>s with different <ssl> configurations on the same @port requires a Java 8 runtime (which added support for SSL with Server Name Indication).");
 				return new SSLContextCollection(sslContexts, dnsNames);
 			} else
 				return sslContexts.get(0);

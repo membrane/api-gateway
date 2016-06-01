@@ -28,8 +28,6 @@ import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -51,8 +49,6 @@ public class SSLContext implements SSLProvider {
 
 	private static final Log log = LogFactory.getLog(SSLContext.class.getName());
 
-	private static Method setUseCipherSuitesOrderMethod, getSSLParametersMethod, setSSLParametersMethod;
-
 	static {
 		String dhKeySize = System.getProperty("jdk.tls.ephemeralDHKeySize");
 		if (dhKeySize == null || "legacy".equals(dhKeySize))
@@ -63,15 +59,6 @@ public class SSLContext implements SSLProvider {
 			if (limitedStrength)
 				log.warn("Your Java Virtual Machine does not have unlimited strength cryptography. If it is legal in your country, we strongly advise installing the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files.");
 		} catch (NoSuchAlgorithmException ignored) {
-		}
-		try {
-			getSSLParametersMethod = SSLServerSocket.class.getMethod("getSSLParameters", new Class[] {});
-			setSSLParametersMethod = SSLServerSocket.class.getMethod("setSSLParameters", new Class[] { SSLParameters.class });
-			setUseCipherSuitesOrderMethod = SSLParameters.class.getMethod("setUseCipherSuitesOrder", new Class[] { Boolean.TYPE });
-		} catch (SecurityException e) {
-			throw new RuntimeException(e);
-		} catch (NoSuchMethodException e) {
-			// do nothing
 		}
 	}
 
@@ -207,8 +194,6 @@ public class SSLContext implements SSLProvider {
 				sortCiphers(ciphers);
 				this.ciphers = ciphers.toArray(new String[ciphers.size()]);
 			}
-			if (setUseCipherSuitesOrderMethod == null)
-				log.warn("Cannot set the cipher suite order before Java 8. This prevents Forward Secrecy with some SSL clients.");
 
 			if (sslParser.getProtocols() != null) {
 				protocols = sslParser.getProtocols().split(",");
@@ -357,38 +342,15 @@ public class SSLContext implements SSLProvider {
 
 	public void applyCiphers(SSLServerSocket sslServerSocket) {
 		if (ciphers != null) {
-			if (getSSLParametersMethod == null || setSSLParametersMethod == null) {
-				sslServerSocket.setEnabledCipherSuites(ciphers);
-			} else {
-				SSLParameters sslParameters;
-				try {
-					// "sslParameters = sslServerSocket.getSSLParameters();" works only on Java 7+
-					sslParameters = (SSLParameters) getSSLParametersMethod.invoke(sslServerSocket, new Object[] {});
-					applyCipherOrdering(sslParameters);
-					sslParameters.setCipherSuites(ciphers);
-					// "sslServerSocket.setSSLParameters(sslParameters);" works only on Java 7+
-					setSSLParametersMethod.invoke(sslServerSocket, new Object[] { sslParameters });
-				} catch (IllegalAccessException e) {
-					throw new RuntimeException(e);
-				} catch (InvocationTargetException e) {
-					throw new RuntimeException(e);
-				}
-			}
+			SSLParameters sslParameters = sslServerSocket.getSSLParameters();
+			applyCipherOrdering(sslParameters);
+			sslParameters.setCipherSuites(ciphers);
+			sslServerSocket.setSSLParameters(sslParameters);
 		}
 	}
 
 	private void applyCipherOrdering(SSLParameters sslParameters) {
-		// "sslParameters.setUseCipherSuitesOrder(true);" works only on Java 8
-		try {
-			if (setUseCipherSuitesOrderMethod != null)
-				setUseCipherSuitesOrderMethod.invoke(sslParameters, true);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException(e);
-		} catch (IllegalArgumentException e) {
-			throw new RuntimeException(e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException(e);
-		}
+		sslParameters.setUseCipherSuitesOrder(true);
 	}
 
 	public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException {
@@ -499,17 +461,7 @@ public class SSLContext implements SSLProvider {
 
 		ByteArrayInputStream bais = new ByteArrayInputStream(buffer, 0, position);
 
-		SSLSocket serviceSocket;
-		// "serviceSocket = (SSLSocket)serviceSocketFac.createSocket(socket, bais, true);" only compileable with Java 1.8
-		try {
-			serviceSocket = (SSLSocket) SSLContextCollection.createSocketMethod.invoke(serviceSocketFac, new Object[] { socket, bais, true });
-		} catch (IllegalArgumentException e) {
-			throw new RuntimeException(e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException(e);
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException(e);
-		}
+		SSLSocket serviceSocket = (SSLSocket)serviceSocketFac.createSocket(socket, bais, true);
 
 		applyCiphers(serviceSocket);
 		if (getProtocols() != null) {
