@@ -11,28 +11,26 @@
 
 	<router>
 
-		<!-- This service proxy adds a custom header to the request and logs all response headers with the help of Javascript interceptors -->
+		<!-- This service proxy adds a custom header to the request and logs all response headers with help of Javascript interceptors -->
 		<serviceProxy name="Javascript header" port="2000">
 			<request>
 				<javascript>
 					var value = spring.getBean('mySpringBean');
 					<!-- the X-Javascript header is added -->
 					exc.getRequest().getHeader().add("X-Javascript", value);
-					print("X-Javascript header added with value :" + value);
-					print("---");
-					Outcome.CONTINUE;
+					print("X-Javascript header added with value: " + value);
+					CONTINUE;
 				</javascript>
 			</request>
 			<response>
 				<javascript>
 					print("Response headers:");
-					<!-- all headers a printed to the console -->
+					<!-- all headers are printed to the console -->
 					var headerFields = exc.getResponse().getHeader().getAllHeaderFields();
 					for(i=0; i &lt; headerFields.length;i++){
 						print(headerFields[i]);
 					}
-					print("---");
-					Outcome.CONTINUE;
+					CONTINUE;
 				</javascript>
 			</response>
 			<target host="membrane-soa.org" port="80" />
@@ -42,8 +40,9 @@
 		<serviceProxy name="Javascript hello" port="2001">
 			<request>
 				<javascript>
-					exc.setResponse(Response.ok("---Hello from Javascript interceptor!---").build());
-					Outcome.RETURN;
+					var resp = new Response.static();
+					exc.setResponse(Response.static.ok("---Hello from Javascript interceptor!---").build());
+					RETURN;
 				</javascript>
 			</request>
 

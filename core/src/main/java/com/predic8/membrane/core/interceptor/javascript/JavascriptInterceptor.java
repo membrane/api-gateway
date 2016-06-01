@@ -22,11 +22,13 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.java.JavascriptLanguageSupport;
+import com.predic8.membrane.core.util.ClassFinder;
 import com.predic8.membrane.core.util.TextUtil;
 import org.apache.commons.lang.StringEscapeUtils;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.*;
 
 @MCElement(name = "javascript", mixed = true)
 public class JavascriptInterceptor extends AbstractInterceptor {
@@ -55,6 +57,12 @@ public class JavascriptInterceptor extends AbstractInterceptor {
             runScript(exc, Flow.ABORT);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         }
     }
 
@@ -69,12 +77,12 @@ public class JavascriptInterceptor extends AbstractInterceptor {
 
     }
 
-    private Outcome runScript(Exchange exc, Flow flow) throws InterruptedException {
+    private Outcome runScript(Exchange exc, Flow flow) throws InterruptedException, IOException, ClassNotFoundException {
         HashMap<String, Object> parameters = new HashMap<String, Object>();
         parameters.put("exc", exc);
         parameters.put("flow", flow);
         parameters.put("spring", router.getBeanFactory());
-        parameters.put("Outcome", Outcome.class);
+        addOutcomeObjects(parameters);
         addHttpPackage(parameters);
 
         Object res = script.apply(parameters);
@@ -95,8 +103,20 @@ public class JavascriptInterceptor extends AbstractInterceptor {
 
     }
 
-    private void addHttpPackage(HashMap<String, Object> parameters) {
+    private void addOutcomeObjects(HashMap<String, Object> parameters) {
+        parameters.put("Outcome", Outcome.class);
+        parameters.put("RETURN", Outcome.RETURN);
+        parameters.put("CONTINUE", Outcome.CONTINUE);
+        parameters.put("ABORT", Outcome.ABORT);
+    }
 
+    private void addHttpPackage(HashMap<String, Object> parameters) throws IOException, ClassNotFoundException {
+        String httpPackage = "com.predic8.membrane.core.http";
+        List<Class<?>> classes = ClassFinder.find(router.getBeanFactory().getClassLoader(), httpPackage);
+        for(Class c : classes) {
+            if(c.getPackage().getName().equals(httpPackage) && !c.getSimpleName().isEmpty())
+                parameters.put(c.getSimpleName(), c);
+        }
     }
 
     public String getSrc() {

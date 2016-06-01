@@ -16,7 +16,7 @@ Execute the following steps:
 
 4. run "curl localhost:2001" in the command line
 
-5. see a custom response from the curl request
+5. see a custom response from the Javascript interceptor
 
 NOTES
 
