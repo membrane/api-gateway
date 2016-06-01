@@ -17,7 +17,6 @@ package com.predic8.membrane.core.transport.ssl;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -32,7 +31,6 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.KeyStore;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.TrustStore;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
 
 public class SSLContextTest {
 
@@ -51,7 +49,7 @@ public class SSLContextTest {
 		}
 
 		public SSLContext build() {
-			return new SSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+			return new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
 		}
 
 		private SSLContextBuilder withCiphers(String ciphers) {

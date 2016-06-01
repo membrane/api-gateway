@@ -19,7 +19,7 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
 public abstract class AbstractServiceProxy extends SSLableProxy {
 
@@ -125,7 +125,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		if(target.port == -1)
 			target.port = target.getSslParser() != null ? 443 : 80;
 		if (target.getSslParser() != null)
-			setSslOutboundContext(new SSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
+			setSslOutboundContext(new StaticSSLContext(target.getSslParser(), router.getResolverMap(), router.getBaseLocation()));
 	}
 
 	public String getHost() {

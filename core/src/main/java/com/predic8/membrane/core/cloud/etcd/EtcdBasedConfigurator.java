@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -130,7 +131,7 @@ public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle
 		} catch (Exception ignored) {
 		}
 		if (ssl != null)
-			sslCtx = new SSLContext(ssl, new ResolverMap(), null);
+			sslCtx = new StaticSSLContext(ssl, new ResolverMap(), null);
 
 		if (!nodeRefreshThread.isAlive()) {
 			nodeRefreshThread.start();

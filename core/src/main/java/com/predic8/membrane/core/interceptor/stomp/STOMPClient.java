@@ -14,8 +14,7 @@ limitations under the License. */
 
 package com.predic8.membrane.core.interceptor.stomp;
 
-import java.net.Inet4Address;
-
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -30,7 +29,6 @@ import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.ConnectionManager;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 @MCElement(name="stompClient")
@@ -101,7 +99,7 @@ public class STOMPClient extends AbstractInterceptor {
 	public void init() throws Exception {
 		connectionManager = new ConnectionManager(connectionConfiguration.getKeepAliveTimeout());
 		if (sslOutboundParser != null)
-			sslOutboundProvider = new SSLContext(sslOutboundParser, router.getResolverMap(), router.getBaseLocation());
+			sslOutboundProvider = new StaticSSLContext(sslOutboundParser, router.getResolverMap(), router.getBaseLocation());
 	}
 
 	@Override

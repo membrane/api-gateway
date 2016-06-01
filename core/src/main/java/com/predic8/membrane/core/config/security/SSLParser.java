@@ -27,6 +27,7 @@ public class SSLParser {
 
 	private KeyStore keyStore;
 	private Key key;
+	private KeyGenerator keyGenerator;
 	private TrustStore trustStore;
 	private Trust trust;
 	private String algorithm;
@@ -76,11 +77,23 @@ public class SSLParser {
 		this.key = key;
 	}
 
+	public KeyGenerator getKeyGenerator() {
+		return keyGenerator;
+	}
+
+	/**
+	 * @description Used to dynamically generate a key for the incoming connection on the fly.
+	 */
+	@MCChildElement(order=3)
+	public void setKeyGenerator(KeyGenerator keyGenerator) {
+		this.keyGenerator = keyGenerator;
+	}
+
 	public TrustStore getTrustStore() {
 		return trustStore;
 	}
 
-	@MCChildElement(order=3)
+	@MCChildElement(order=4)
 	public void setTrustStore(TrustStore trustStore) {
 		this.trustStore = trustStore;
 	}
@@ -169,7 +182,7 @@ public class SSLParser {
 	/**
 	 * @description Used to manually compose the truststore.
      */
-	@MCChildElement(order=4)
+	@MCChildElement(order=5)
 	public void setTrust(Trust trust) {
 		this.trust = trust;
 	}

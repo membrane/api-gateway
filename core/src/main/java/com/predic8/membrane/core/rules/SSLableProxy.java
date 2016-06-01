@@ -14,6 +14,8 @@ limitations under the License. */
 
 package com.predic8.membrane.core.rules;
 
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
+import com.predic8.membrane.core.transport.ssl.GeneratingSSLContext;
 import org.apache.commons.lang.StringUtils;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -58,8 +60,12 @@ public abstract class SSLableProxy extends AbstractProxy {
 
 	@Override
 	public void init() throws Exception {
-		if (sslInboundParser != null)
-			setSslInboundContext(new SSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+		if (sslInboundParser != null) {
+			if (sslInboundParser.getKeyGenerator() != null)
+				setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+			else
+				setSslInboundContext(new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+		}
 	}
 
 	@Override

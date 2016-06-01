@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.GuardedBy;
 
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -40,7 +41,6 @@ import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
@@ -154,7 +154,7 @@ public class HttpClient {
 
 	private static synchronized SSLProvider getDefaultSSLProvider() {
 		if (defaultSSLProvider == null)
-			defaultSSLProvider = new SSLContext(new SSLParser(), null, null);
+			defaultSSLProvider = new StaticSSLContext(new SSLParser(), null, null);
 		return defaultSSLProvider;
 	}
 

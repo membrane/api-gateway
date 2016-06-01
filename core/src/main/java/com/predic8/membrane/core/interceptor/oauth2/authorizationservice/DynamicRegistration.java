@@ -29,6 +29,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.transport.http.HttpClient;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.util.Util;
 
@@ -51,7 +52,7 @@ public class DynamicRegistration {
 
     public void init(Router router) throws Exception {
         if (sslParser != null)
-            sslContext = new SSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
+            sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
         for(Interceptor i : interceptors)
             i.init(router);
     }

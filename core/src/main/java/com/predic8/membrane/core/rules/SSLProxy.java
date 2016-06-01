@@ -22,12 +22,11 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.ConnectionManager;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.transport.http.StreamPump;
 import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import org.apache.commons.logging.Log;
@@ -180,7 +179,7 @@ public class SSLProxy implements Rule {
 
     @Override
     public SSLContext getSslInboundContext() {
-        return new SSLContext(new SSLParser(), router.getResolverMap(), router.getBaseLocation()) {
+        return new StaticSSLContext(new SSLParser(), router.getResolverMap(), router.getBaseLocation()) {
 
             @Override
             public Socket wrap(Socket socket, byte[] buffer, int position) throws IOException {
