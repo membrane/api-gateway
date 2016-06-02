@@ -37,6 +37,7 @@ public class JavascriptInterceptor extends AbstractInterceptor {
 
     private Function<Map<String, Object>, Object> script;
     private JavascriptLanguageSupport jls;
+    private HashMap<String, Object> implicitClasses;
 
     public JavascriptInterceptor() {
         name = "Javascript";
@@ -68,13 +69,14 @@ public class JavascriptInterceptor extends AbstractInterceptor {
     }
 
     @Override
-    public void init() {
+    public void init() throws IOException, ClassNotFoundException {
         if (router == null)
             return;
         if ("".equals(src))
             return;
 
         jls = new JavascriptLanguageSupport();
+        implicitClasses = getJavascriptTypesForHttpClasses();
         script = jls.compileScript(router, src);
 
     }
@@ -85,9 +87,8 @@ public class JavascriptInterceptor extends AbstractInterceptor {
         parameters.put("flow", flow);
         parameters.put("spring", router.getBeanFactory());
         addOutcomeObjects(parameters);
-        HashMap<String, Object> classes = getHttpPackageClasses();
 
-        parameters.putAll(getJavascriptTypesForClasses(classes));
+        parameters.putAll(implicitClasses);
         Object res = script.apply(parameters);
 
         if (res instanceof Outcome) {
@@ -104,6 +105,10 @@ public class JavascriptInterceptor extends AbstractInterceptor {
         }
         return Outcome.CONTINUE;
 
+    }
+
+    private HashMap<String, Object> getJavascriptTypesForHttpClasses() throws IOException, ClassNotFoundException {
+        return getJavascriptTypesForClasses(getHttpPackageClasses());
     }
 
     private HashMap<String, Object> getJavascriptTypesForClasses(HashMap<String, Object> classes) {

@@ -21,12 +21,6 @@
 			</target>
 		</serviceProxy>
 
-		<serviceProxy port="2001">
-			<target host="https://api.predic8.de/shop/orders/7958" port="443">
-				<ssl/>
-			</target>
-		</serviceProxy>
-
 		<!-- open the admin console on http://localhost:9000 and have a look at the interceptors -->
 		<serviceProxy port="9000">
 			<adminConsole/>
