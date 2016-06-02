@@ -50,7 +50,8 @@ import com.predic8.membrane.core.resolver.ResolverMap;
  *              Don't use, this does NOT implement valid HTTP caching.
  *              </p>
  *              <p>
- *                  We currently just use this class to cache a bunch of Debian Repositories for offline use.
+ *                  We currently just use this class to cache a bunch of Debian and Ubuntu Repositories as well as
+ *                  the Docker Registry for offline use.
  *                  The cache does not revalidate any responses, so machines querying the cache for Debian
  *                  package updates will be stuck in the past until the cache (on disk) is cleared manually. -
  *                  This is - simply put - the only use case, where using this class makes any sense.
@@ -109,7 +110,11 @@ public class CacheInterceptor extends AbstractInterceptor {
 		}
 
 		private String encode(String url) {
-			return Base64.encodeBase64String(url.getBytes(Constants.UTF_8_CHARSET));
+			String res = Base64.encodeBase64String(url.getBytes(Constants.UTF_8_CHARSET));
+			if (res.length() > 120) {
+				res = res.substring(0, 100) + "-" + res.hashCode();
+			}
+			return res;
 		}
 
 		@Override
@@ -217,10 +222,13 @@ public class CacheInterceptor extends AbstractInterceptor {
 					case 200:
 						store.put(dest, new PositiveNode(exc));
 						break;
+					case 401:
 					case 404:
-						store.put(dest, new NegativeNode());
+						store.put(dest, new NegativeNode(exc));
 						break;
+					case 301:
 					case 302:
+					case 307:
 						store.put(dest, new PositiveNode(exc));
 						break;
 					default:
@@ -249,6 +257,8 @@ public class CacheInterceptor extends AbstractInterceptor {
 		return super.handleResponse(exc);
 	}
 
+	private boolean force = true;
+
 	private HashSet<String> allowedRequestHeaders = new HashSet<String>();
 	private HashSet<String> allowedResponseHeaders = new HashSet<String>();
 
@@ -258,6 +268,11 @@ public class CacheInterceptor extends AbstractInterceptor {
 		allowedRequestHeaders.add("if-modified-since");
 		allowedRequestHeaders.add("user-agent");
 		allowedRequestHeaders.add("accept");
+		if (force) {
+			allowedRequestHeaders.add("accept-encoding");
+			allowedRequestHeaders.add("authorization");
+		}
+		allowedRequestHeaders.add("referer");
 
 		allowedResponseHeaders.add("date");
 		allowedResponseHeaders.add("server");
@@ -274,6 +289,18 @@ public class CacheInterceptor extends AbstractInterceptor {
 		allowedResponseHeaders.add("location");
 		allowedResponseHeaders.add("link");
 		allowedResponseHeaders.add("transfer-encoding");
+		allowedResponseHeaders.add("status");
+		allowedResponseHeaders.add("content-disposition");
+		allowedResponseHeaders.add("content-security-policy");
+		allowedResponseHeaders.add("strict-transport-security");
+		allowedResponseHeaders.add("via");
+
+		if (force) {
+			allowedResponseHeaders.add("set-cookie");
+			allowedResponseHeaders.add("docker-distribution-api-version");
+			allowedResponseHeaders.add("www-authenticate");
+			allowedResponseHeaders.add("docker-content-digest");
+		}
 	}
 
 	private boolean canCache(Request request, boolean emitWarning) {
@@ -283,6 +310,10 @@ public class CacheInterceptor extends AbstractInterceptor {
 				continue;
 			if (!allowedRequestHeaders.contains(headerName)) {
 				if (headerName.equals("connection") && "close".equals(header.getValue().toLowerCase(Locale.US)))
+					continue;
+				if (headerName.equals("connection") && "keep-alive".equals(header.getValue().toLowerCase(Locale.US)))
+					continue;
+				if (headerName.equals("accept-encoding") && "identity".equals(header.getValue().toLowerCase(Locale.US)))
 					continue;
 				if (emitWarning)
 					log.warn("Could not cache request because of '" + header.getHeaderName() + "' header:\n" + request.getStartLine() + request.getHeader());

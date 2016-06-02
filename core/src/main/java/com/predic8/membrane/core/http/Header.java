@@ -540,4 +540,16 @@ public class Header {
 	public String getWwwAuthenticate(){
 		return getFirstValue(WWW_AUTHENTICATE);
 	}
+
+	public String getNormalizedValue(String headerName) {
+		StringBuilder sb = new StringBuilder();
+		for (HeaderField headerField : fields) {
+			if (headerField.getHeaderName().equals(headerName)) {
+				if (sb.length() > 0)
+					sb.append(",");
+				sb.append(headerField.getValue());
+			}
+		}
+		return sb.length() == 0 ? null : sb.toString();
+	}
 }
