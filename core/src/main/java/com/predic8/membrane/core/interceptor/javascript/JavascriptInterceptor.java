@@ -21,7 +21,7 @@ import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.lang.java.JavascriptLanguageSupport;
+import com.predic8.membrane.core.lang.javascript.JavascriptLanguageSupport;
 import com.predic8.membrane.core.util.ClassFinder;
 import com.predic8.membrane.core.util.TextUtil;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -36,6 +36,7 @@ public class JavascriptInterceptor extends AbstractInterceptor {
     private String src = "";
 
     private Function<Map<String, Object>, Object> script;
+    private JavascriptLanguageSupport jls;
 
     public JavascriptInterceptor() {
         name = "Javascript";
@@ -73,7 +74,8 @@ public class JavascriptInterceptor extends AbstractInterceptor {
         if ("".equals(src))
             return;
 
-        script = new JavascriptLanguageSupport().compileScript(router, src);
+        jls = new JavascriptLanguageSupport();
+        script = jls.compileScript(router, src);
 
     }
 
@@ -83,8 +85,9 @@ public class JavascriptInterceptor extends AbstractInterceptor {
         parameters.put("flow", flow);
         parameters.put("spring", router.getBeanFactory());
         addOutcomeObjects(parameters);
-        addHttpPackage(parameters);
+        HashMap<String, Object> classes = getHttpPackageClasses();
 
+        parameters.putAll(getJavascriptTypesForClasses(classes));
         Object res = script.apply(parameters);
 
         if (res instanceof Outcome) {
@@ -103,6 +106,19 @@ public class JavascriptInterceptor extends AbstractInterceptor {
 
     }
 
+    private HashMap<String, Object> getJavascriptTypesForClasses(HashMap<String, Object> classes) {
+        HashMap<String, Object> result = new HashMap<>();
+        for(Object clazz : classes.values()){
+            Class<?> clazzz = (Class<?>) clazz;
+            String scriptSrc = clazzz.getSimpleName() + ".static;";
+            //TODO this is hacky, do this differently ( maybe do this one time at startup )
+            Object jsType = jls.compileScript(router, scriptSrc).apply(classes);
+
+            result.put(clazzz.getSimpleName(),jsType);
+        }
+        return result;
+    }
+
     private void addOutcomeObjects(HashMap<String, Object> parameters) {
         parameters.put("Outcome", Outcome.class);
         parameters.put("RETURN", Outcome.RETURN);
@@ -110,13 +126,15 @@ public class JavascriptInterceptor extends AbstractInterceptor {
         parameters.put("ABORT", Outcome.ABORT);
     }
 
-    private void addHttpPackage(HashMap<String, Object> parameters) throws IOException, ClassNotFoundException {
+    private HashMap<String, Object> getHttpPackageClasses() throws IOException, ClassNotFoundException {
         String httpPackage = "com.predic8.membrane.core.http";
+        HashMap<String, Object> result = new HashMap<>();
         List<Class<?>> classes = ClassFinder.find(router.getBeanFactory().getClassLoader(), httpPackage);
         for(Class c : classes) {
             if(c.getPackage().getName().equals(httpPackage) && !c.getSimpleName().isEmpty())
-                parameters.put(c.getSimpleName(), c);
+                result.put(c.getSimpleName(), c);
         }
+        return result;
     }
 
     public String getSrc() {

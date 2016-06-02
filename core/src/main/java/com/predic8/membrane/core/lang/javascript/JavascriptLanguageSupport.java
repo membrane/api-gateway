@@ -11,7 +11,7 @@
  *    limitations under the License.
  */
 
-package com.predic8.membrane.core.lang.java;
+package com.predic8.membrane.core.lang.javascript;
 
 import com.google.common.base.Function;
 import com.predic8.membrane.core.Router;
@@ -32,11 +32,12 @@ public class JavascriptLanguageSupport extends LanguageSupport {
     private abstract class JavascriptScriptExecutorPool<R> extends ScriptExecutorPool<ScriptEngine,R>{
         private final String javascriptCode;
 
-        ScriptEngineManager sce = new ScriptEngineManager();
+        ScriptEngineManager sce;
         final static String javascriptEngineName = "nashorn";
 
         private JavascriptScriptExecutorPool(Router router, String expression) {
             this.javascriptCode = expression;
+            sce = new ScriptEngineManager();
             init(router);
         }
 

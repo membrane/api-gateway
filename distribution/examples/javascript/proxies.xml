@@ -40,8 +40,7 @@
 		<serviceProxy name="Javascript hello" port="2001">
 			<request>
 				<javascript>
-					var resp = new Response.static();
-					exc.setResponse(Response.static.ok("---Hello from Javascript interceptor!---").build());
+					exc.setResponse(Response.ok("---Hello from Javascript interceptor!---").build());
 					RETURN;
 				</javascript>
 			</request>

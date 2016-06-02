@@ -13,7 +13,7 @@
 				<javascript>
 					load('converter.js');
 					var data = JSON.parse(exc.getResponse().getBodyAsStringDecoded());
-					Response.static.ok(JSON.stringify(convert(data))).build();
+					Response.ok(JSON.stringify(convert(data))).build();
 				</javascript>
 			</response>
 			<target host="api.predic8.de" port="443">
