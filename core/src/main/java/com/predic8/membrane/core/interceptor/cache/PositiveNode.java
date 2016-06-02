@@ -36,6 +36,8 @@ class PositiveNode extends Node {
 	long lastModified;
 	String contentType;
 	String inResponseToAccept;
+	String location;
+	int status;
 
 	public PositiveNode(Exchange exchange) throws IOException, ParseException {
 		Request request = exchange.getRequest();
@@ -43,7 +45,9 @@ class PositiveNode extends Node {
 		content = ByteUtil.getByteArrayData(response.getBodyAsStreamDecoded());
 		contentType = response.getHeader().getFirstValue(Header.CONTENT_TYPE);
 		lastModified = CacheInterceptor.fromRFC(response.getHeader().getFirstValue(Header.LAST_MODIFIED));
-		inResponseToAccept = request.getHeader().getFirstValue(Header.ACCEPT);
+		inResponseToAccept = request.getHeader().getNormalizedValue(Header.ACCEPT);
+		location = response.getHeader().getFirstValue(Header.LOCATION);
+		status = response.getStatusCode();
 
 		/*
 		if (contentType == null) {
@@ -68,8 +72,12 @@ class PositiveNode extends Node {
 			}
 		}
 		ResponseBuilder builder = Response.ok();
+		if (status >= 300 && status < 400)
+			builder.status(status, "Moved.");
 		if (contentType != null)
 			builder.contentType(contentType);
+		if (location != null)
+			builder.header(Header.LOCATION, location);
 		if (lastModified != 0)
 			return builder.header(Header.LAST_MODIFIED, CacheInterceptor.toRFC(lastModified)).body(content).build();
 		else
@@ -81,6 +89,8 @@ class PositiveNode extends Node {
 		String accept = request.getHeader().getFirstValue("accept");
 		if (accept != null) {
 			if (inResponseToAccept.equals(accept))
+				return true;
+			if (inResponseToAccept.startsWith(accept + ",") || inResponseToAccept.endsWith("," + accept) || inResponseToAccept.contains("," + accept + ","))
 				return true;
 			if (accept.endsWith("*")) {
 				accept = accept.substring(0, accept.length() - 1);

@@ -13,15 +13,22 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.cache;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 
 class NegativeNode extends Node {
 	private static final long serialVersionUID = 1L;
 
+	int status;
+
+	public NegativeNode(Exchange exc) {
+		status = exc.getResponse().getStatusCode();
+	}
+
 	@Override
 	public Response toResponse(Request request) {
-		return Response.notFound().build();
+		return Response.notFound().status(status, "Not OK.").build();
 	}
 
 }

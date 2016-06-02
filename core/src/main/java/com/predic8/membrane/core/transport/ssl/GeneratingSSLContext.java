@@ -223,7 +223,7 @@ public class GeneratingSSLContext extends SSLContext {
 
         X509v3CertificateBuilder myCertificateGenerator = new X509v3CertificateBuilder(
                 caName, new BigInteger("1"), new Date(
-                System.currentTimeMillis()), new Date(
+                System.currentTimeMillis() - 30 * 24 * 24 * 60 * 60 * 1000), new Date(
                 System.currentTimeMillis() + 30 * 365 * 24 * 60 * 60
                         * 1000), new org.bouncycastle.asn1.x500.X500Name(subjectName), keyInfo);
 
