@@ -13,16 +13,10 @@
 				<javascript>
 					load('converter.js');
 					var data = JSON.parse(exc.getResponse().getBodyAsStringDecoded());
-					Response.static.ok(JSON.stringify(convert(data))).build();
+					Response.ok(JSON.stringify(convert(data))).build();
 				</javascript>
 			</response>
 			<target host="api.predic8.de" port="443">
-				<ssl/>
-			</target>
-		</serviceProxy>
-
-		<serviceProxy port="2001">
-			<target host="https://api.predic8.de/shop/orders/7958" port="443">
 				<ssl/>
 			</target>
 		</serviceProxy>

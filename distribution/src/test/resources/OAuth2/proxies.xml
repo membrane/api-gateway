@@ -46,4 +46,28 @@
 		</serviceProxy>
 	</router>
 
+	<router>
+		<serviceProxy name="Race condition client" port="2002">
+
+			<headerFilter>
+				<exclude>X-Authenticated-Username</exclude>
+			</headerFilter>
+
+			<oauth2Resource publicURL="http://localhost:2002/">
+				<membrane src="http://localhost:2000" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
+			</oauth2Resource>
+
+			<groovy>
+				if(exc.request.uri.equals("/test1")){
+					exc.response = Response.ok("Test1.").build()
+					RETURN
+				}else{
+					exc.response = Response.ok("Test2.").build()
+					RETURN
+				}
+			</groovy>
+
+		</serviceProxy>
+	</router>
+
 </spring:beans>

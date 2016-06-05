@@ -8,17 +8,15 @@ In this example we will use Javascript to transform a JSON object response into 
 
 Execute the following steps in the $MEMBRANE_HOME/examples/json2json-transformation folder:
 
-1. take note that the data is acquired from "api.predic8.de" through a request
+1. take note that the data is acquired from "api.predic8.de/shop/orders/7958" through a request
 
 2. take a look at converter.js. This script transforms the data
 
 3. run service-proxy.sh/.bat
 
-4. download cURL from https://curl.haxx.se/download.html and install it
+4. open "curl localhost:2000/shop/orders/7958" in the command line
 
-5. run "curl localhost:2000" in the command line
-
-6. see the transformed JSON object
+5. see the transformed JSON object
 
 NOTES
 
