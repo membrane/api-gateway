@@ -1,26 +1,24 @@
-FROM	ubuntu:14.04
+FROM	anapsix/alpine-java
 
-RUN 	apt-get install -y software-properties-common && \
-		apt-get install unzip && \
-		add-apt-repository -y ppa:webupd8team/java && \
-		apt-get update
-RUN		echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
-		apt-get install -y oracle-java8-installer
-RUN		rm -rf /var/lib/apt/lists/* && \
-		rm -rf /var/cache/oracle-jdk8-installer
+RUN	apk update && apk add curl
 
-ENV		JAVA_HOME /usr/lib/jvm/java-8-oracle
+RUN	wget https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64 && \
+	chmod +x jq-linux64 && \
+	mv jq-linux64 /usr/bin/jq
 
-ENV		MEMBRANE_DOWNLOAD_URL "http://repository.membrane-soa.org/service/local/artifact/maven/content?r=releases&g=org.membrane-soa&a=membrane-service-proxy&v=LATEST&e=zip"
+ENV	MEMBRANE_DOWNLOAD_URL="curl https://api.github.com/repos/membrane/service-proxy/releases | jq '.[0].assets[].browser_download_url' -r"
 
-RUN		wget -L -P /opt ${MEMBRANE_DOWNLOAD_URL} --content-disposition && \
-		cd /opt && \
-		unzip *.zip && \
-		rm *.zip && \
-		ln -s membrane-service-proxy-* membrane
+RUN	echo $MEMBRANE_DOWNLOAD_URL
 
-COPY	proxies.xml /opt/membrane/conf/
+#RUN	wget -P /opt ${MEMBRANE_DOWNLOAD_URL} && \
+#	cd /opt && \
+#	ls -la && \
+#	unzip *.zip && \
+#	rm *.zip && \
+#	ln -s membrane-service-proxy-* membrane
 
-EXPOSE	8000-9900
+#COPY	proxies.xml /opt/membrane/conf/
 
-ENTRYPOINT	["/opt/membrane/service-proxy.sh"]
+#EXPOSE	8000-9900
+
+#ENTRYPOINT	["/opt/membrane/service-proxy.sh"]

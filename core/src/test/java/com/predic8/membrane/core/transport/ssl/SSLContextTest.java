@@ -88,15 +88,6 @@ public class SSLContextTest {
 		testCombination(server, client);
 	}
 
-	@Test
-	public void simpleConfigWithWeakCipher() throws Exception {
-		if (System.getProperty("java.specification.version").startsWith("1.6"))
-			return; // throws "Unknown cipher" elsewise
-		SSLContext server = cb().withCiphers("TLS_ECDH_anon_WITH_RC4_128_SHA").build();
-		SSLContext client = cb().withCiphers("TLS_ECDH_anon_WITH_RC4_128_SHA").build();
-		testCombination(server, client);
-	}
-
 	@Test(expected=Exception.class)
 	public void serverKeyOnlyWithoutClientTrust() throws Exception {
 		SSLContext server = cb().withKeyStore("classpath:/ssl-rsa.keystore").build();
