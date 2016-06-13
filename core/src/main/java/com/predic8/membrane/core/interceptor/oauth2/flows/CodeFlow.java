@@ -18,6 +18,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -31,6 +32,9 @@ public class CodeFlow extends OAuth2Flow{
 
     public Outcome getResponse() throws UnsupportedEncodingException {
         String code = generateAuthorizationCode();
+        synchronized(session){
+            session.getUserAttributes().put(ParamNames.CODE,code);
+        }
         authServer.getSessionFinder().addSessionForCode(code,session);
         return respondWithAuthorizationCodeAndRedirect(exc, code, session);
     }

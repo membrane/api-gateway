@@ -18,6 +18,9 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
+
+import java.io.IOException;
 
 public class AuthWithSessionRequest extends ParameterizedRequest{
 
@@ -27,14 +30,26 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
 
     @Override
     protected Response checkForMissingParameters() throws Exception {
-        if (getPrompt() == null)
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_request");
-
         return new NoResponse();
     }
 
     @Override
     protected Response processWithParameters() throws Exception {
+        if(getPrompt() != null)
+            return doOpenIDPrompt();
+        return redirectToEmptyEndpoint();
+
+    }
+
+    private Response redirectToEmptyEndpoint() {
+        SessionManager.Session session = authServer.getSessionManager().getOrCreateSession(exc);
+        synchronized(session){
+            session.getUserAttributes().put(ParamNames.STATE,params.get(ParamNames.STATE));
+        }
+        return Response.redirect("/",false).build();
+    }
+
+    private Response doOpenIDPrompt() throws IOException {
         if(getPrompt().equals("login"))
             return clearSessionAndRedirectToAuthEndpoint(exc);
 

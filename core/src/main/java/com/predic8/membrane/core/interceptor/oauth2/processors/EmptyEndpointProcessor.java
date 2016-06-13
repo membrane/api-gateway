@@ -36,7 +36,7 @@ public class EmptyEndpointProcessor extends EndpointProcessor {
     @Override
     public boolean isResponsible(Exchange exc) {
         SessionManager.Session s = authServer.getSessionManager().getSession(exc);
-        return exc.getRequestURI().equals("/") && s != null && s.isPreAuthorized();
+        return exc.getRequestURI().equals("/") && s != null && (s.isPreAuthorized() || s.isAuthorized() );
     }
 
     @Override
