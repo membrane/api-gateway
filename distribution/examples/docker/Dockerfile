@@ -13,4 +13,4 @@ COPY proxies.xml /opt/membrane/conf/
 
 EXPOSE 8000-9900
 
-#ENTRYPOINT ["/opt/membrane/service-proxy.sh"]
+ENTRYPOINT ["/opt/membrane/service-proxy.sh"]
