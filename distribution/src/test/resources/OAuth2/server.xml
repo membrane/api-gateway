@@ -6,14 +6,14 @@
 
 	<router>
 
-		<serviceProxy name="Authorization Server" port="2000">
+		<serviceProxy name="Authorization Server" port="2010">
 
-			<oauth2authserver path="/login/" location="./auth/dialog" issuer="http://localhost:2000">
+			<oauth2authserver path="/login/" location="./auth/dialog" issuer="http://localhost:2010">
 				<staticUserDataProvider>
 					<user username="john" password="password" email="john@predic8.de" />
 				</staticUserDataProvider>
 				<staticClientList>
-					<client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback" />
+					<client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2011/oauth2callback" />
 				</staticClientList>
 				<bearerToken/>
 				<claims value="aud email iss sub username">

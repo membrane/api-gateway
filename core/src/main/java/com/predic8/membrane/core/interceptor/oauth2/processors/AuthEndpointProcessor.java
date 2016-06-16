@@ -17,8 +17,10 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithSessionRequest;
 import com.predic8.membrane.core.interceptor.oauth2.request.AuthWithoutSessionRequest;
+import com.predic8.membrane.core.util.URLParamUtil;
 
 public class AuthEndpointProcessor extends EndpointProcessor {
 
@@ -44,7 +46,9 @@ public class AuthEndpointProcessor extends EndpointProcessor {
         //if(s == null || (!s.isPreAuthorized() && !s.isAuthorized())) {
         exc.setResponse(new AuthWithoutSessionRequest(authServer,exc).validateRequest());
         return Outcome.RETURN;
+    }
 
-
+    private String getState(Exchange exc) throws Exception {
+        return URLParamUtil.getParams(authServer.getRouter().getUriFactory(), exc).get(ParamNames.STATE);
     }
 }

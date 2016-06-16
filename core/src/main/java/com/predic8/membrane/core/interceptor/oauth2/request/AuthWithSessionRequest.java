@@ -44,9 +44,9 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
     private Response redirectToEmptyEndpoint() {
         SessionManager.Session session = authServer.getSessionManager().getOrCreateSession(exc);
         synchronized(session){
-            session.getUserAttributes().put(ParamNames.STATE,params.get(ParamNames.STATE));
+            session.getUserAttributes().put(ParamNames.STATE,getState());
         }
-        return Response.redirect("/",false).build();
+        return Response.redirect("/?" + getState(),false).build();
     }
 
     private Response doOpenIDPrompt() throws IOException {

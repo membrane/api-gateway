@@ -210,6 +210,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return Outcome.RETURN;
         }
 
+        if(session.getUserAttributes().isEmpty()) {
+            exc.setResponse(Response.ok("You have been logged out.").build());
+            return Outcome.RETURN;
+        }
 
         return respondWithRedirect(exc);
     }
@@ -374,14 +378,21 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 if (param == null || !param.containsKey("security_token"))
                     throw new RuntimeException("No CSRF token.");
 
-                if (!param.get("security_token").equals(state))
+                boolean csrfMatch = false;
+
+                for(String state3 : stateToOriginalUrl.keySet())
+                    if (param.get("security_token").equals(state3))
+                        csrfMatch = true;
+
+                if(!csrfMatch)
                     throw new RuntimeException("CSRF token mismatch.");
 
 
 
-                String url = stateToOriginalUrl.remove(state);
+                String url = stateToOriginalUrl.get(param.get("security_token"));
                 if (url == null)
                     url = "/";
+                stateToOriginalUrl.remove(state2);
 
                 if (log.isDebugEnabled())
                     log.debug("CSRF token match.");

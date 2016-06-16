@@ -5,14 +5,14 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<router>
-		<serviceProxy name="Race condition client" port="2001">
+		<serviceProxy name="Race condition client" port="2011">
 
 			<headerFilter>
 				<exclude>X-Authenticated-Username</exclude>
 			</headerFilter>
 
 			<oauth2Resource>
-				<membrane src="http://localhost:2000" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
+				<membrane src="http://localhost:2010" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
 			</oauth2Resource>
 
 			<groovy>

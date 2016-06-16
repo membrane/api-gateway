@@ -67,7 +67,7 @@ public class OAuth2RaceCondition {
         login(hc);
         System.out.println("Logged in");
         ExecutorService executor = Executors.newFixedThreadPool(2);
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 10; i++) {
 
 //            HttpClient hc1 = HttpClientBuilder.create().build();
 //            login(hc1);
@@ -81,7 +81,8 @@ public class OAuth2RaceCondition {
                 results[j] = executor.submit(() -> {
                     try {
                         int uri = (fj %2 == 0 ? 1 : 2);
-                        HttpGet get = new HttpGet("http://localhost:2001/test" + uri);
+                        String url = "http://localhost:2011/test" + uri;
+                        HttpGet get = new HttpGet(url);
                         //setNoRedirects(get);
                         cdl.countDown();
                         cdl.await();
@@ -112,12 +113,12 @@ public class OAuth2RaceCondition {
     }
 
     private void login(HttpClient client) throws IOException {
-        HttpGet clientGet = new HttpGet("http://localhost:2001");
+        HttpGet clientGet = new HttpGet("http://localhost:2011");
         try(CloseableHttpResponse clientGetRes = (CloseableHttpResponse) client.execute(clientGet)) {
             assertEquals(200, clientGetRes.getStatusLine().getStatusCode());
         }
 
-        HttpPost loginPost = new HttpPost("http://localhost:2000/login/");
+        HttpPost loginPost = new HttpPost("http://localhost:2010/login/");
         loginPost.addHeader("Content-Type", "application/x-www-form-urlencoded");
         loginPost.setEntity(new UrlEncodedFormEntity(Lists.newArrayList(
                 new BasicNameValuePair("username", "john"),
@@ -127,7 +128,7 @@ public class OAuth2RaceCondition {
             assertEquals(200, loginPostRes.getStatusLine().getStatusCode());
         }
 
-        HttpGet followGet = new HttpGet("http://localhost:2000/");
+        HttpGet followGet = new HttpGet("http://localhost:2010/");
         try(CloseableHttpResponse followGetRes = (CloseableHttpResponse) client.execute(followGet)) {
             assertEquals(200, followGetRes.getStatusLine().getStatusCode());
         }
