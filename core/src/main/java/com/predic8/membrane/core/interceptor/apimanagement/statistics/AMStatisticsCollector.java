@@ -51,7 +51,6 @@ public class AMStatisticsCollector {
     String host = "localhost";
     private String clientId = null;
     private String clientSecret = null;
-    int elasticSearchPort = 9200;
 
     JsonFactory jsonFactory = new JsonFactory();
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -134,6 +133,9 @@ public class AMStatisticsCollector {
             gen.writeStartObject();
             gen.writeObjectField("excId", exc.getId());
             gen.writeObjectField("excApiKey", apiKey);
+            gen.writeObjectField("service", exc.getRule().getName());
+            gen.writeObjectField("uri", exc.getOriginalRequestUri());
+            gen.writeObjectField("method", exc.getRequest().getMethod());
             gen.writeObjectFieldStart("Request");
             collectFromMessage(gen, exc.getRequest());
             gen.writeEndObject();
@@ -192,7 +194,7 @@ public class AMStatisticsCollector {
             resp = client.call(exc).getResponse();
         }
         if (!resp.isOk())
-            log.warn("Could not send statistics to elastic search instance. Response: " + resp.getStatusCode() + " - " + resp.getStatusMessage());
+            log.warn("Could not send statistics to elastic search instance. Response: " + resp.getStatusCode() + " - " + resp.getStatusMessage() + " - " + resp.getBodyAsStringDecoded());
     }
 
     private String combineJsons(String name, ArrayList<String> jsonStatisticsForRequests) throws IOException {
@@ -225,6 +227,9 @@ public class AMStatisticsCollector {
             gen.writeStartObject();
             gen.writeObjectField("excId", exc.getId());
             gen.writeObjectField("excApiKey", apiKey);
+            gen.writeObjectField("service", exc.getRule().getName());
+            gen.writeObjectField("uri", exc.getOriginalRequestUri());
+            gen.writeObjectField("method", exc.getRequest().getMethod());
             gen.writeObjectField("excStatus", exc.getStatus().toString());
             gen.writeObjectField("code", exc.getResponse().getStatusCode());
             gen.writeObjectField("time", getInflightTime(exc));
@@ -243,9 +248,9 @@ public class AMStatisticsCollector {
     }
 
     private String getElasticSearchPath(String path) {
-        if(host.equals("localhost"))
-            return "http://" + getHost() + ":" + elasticSearchPort + normalizePath(path) + getLocalMachineNameWithSuffix();
-        return "https://" + getHost() + normalizePath(path) + getLocalMachineNameWithSuffix();
+//        if(host.equals("localhost"))
+//            return "http://" + getHost() + ":" + elasticSearchPort + normalizePath(path) + getLocalMachineNameWithSuffix();
+        return getHost() + normalizePath(path) + getLocalMachineNameWithSuffix();
     }
 
     private String normalizePath(String path) {
