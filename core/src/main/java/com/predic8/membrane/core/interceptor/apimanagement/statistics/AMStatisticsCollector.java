@@ -132,6 +132,7 @@ public class AMStatisticsCollector {
         try {
             gen.writeStartObject();
             gen.writeObjectField("excId", exc.getId());
+            gen.writeObjectField("excTime", exc.getTime().toInstant().toString());
             gen.writeObjectField("excApiKey", apiKey);
             gen.writeObjectField("service", exc.getRule().getName());
             gen.writeObjectField("uri", exc.getOriginalRequestUri());
@@ -226,6 +227,7 @@ public class AMStatisticsCollector {
         try {
             gen.writeStartObject();
             gen.writeObjectField("excId", exc.getId());
+            gen.writeObjectField("excTime", exc.getTime().toInstant().toString());
             gen.writeObjectField("excApiKey", apiKey);
             gen.writeObjectField("service", exc.getRule().getName());
             gen.writeObjectField("uri", exc.getOriginalRequestUri());
