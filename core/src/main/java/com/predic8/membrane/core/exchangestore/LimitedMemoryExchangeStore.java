@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.exchangestore;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,16 +31,19 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
-import com.predic8.membrane.core.model.IExchangeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 /**
  * @description Store Exchange objects in-memory. Only the newest exchanges will be kept to keep the store below the configured memory limit.
  */
 @MCElement(name="limitedMemoryExchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
+
+	private static Logger log = LogManager.getLogger(LimitedMemoryExchangeStore.class);
 
 	private int maxSize = 1000000;
 	private int currentSize;
@@ -241,9 +245,40 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return maxSize;
 	}
 
+	static final int additionalMemoryToAddInMb = 100;
+
 	@MCAttribute
 	public void setMaxSize(int maxSize) {
 		this.maxSize = maxSize;
+		if(this.maxSize > (Runtime.getRuntime().totalMemory()-additionalMemoryToAddInMb*1024*1024))
+			showWarningNotEnoughMemory();
+	}
+
+	private void showWarningNotEnoughMemory() {
+
+		String seperator = "=========================================================================================";
+		log.warn(seperator);
+		log.warn(seperator);
+		log.warn("You current LimitedMemoryExchangeStore max size is near the max available JVM heap space.");
+		log.warn("LimitedMemoryExchangeStore max size: " + formatTwoDecimals(getLmesMaxSizeInMb()) + "mb");
+		log.warn("Java Virtual Machine heap size: " + formatTwoDecimals(getJvmHeapSizeInMb()) + "mb");
+		log.warn("Suggestion: add \"-Xmx"+Math.round(getLmesMaxSizeInMb()+additionalMemoryToAddInMb+1)+"m\" as additional parameter in the Membrane starter script");
+		log.warn(seperator);
+		log.warn(seperator);
+	}
+
+	private float getJvmHeapSizeInMb() {
+		return ((float)Runtime.getRuntime().totalMemory()/1024)/1024;
+	}
+
+
+	private float getLmesMaxSizeInMb() {
+		return ((float)(maxSize) /1024)/1024;
+	}
+
+	private String formatTwoDecimals(float number){
+		DecimalFormat formatter = new DecimalFormat("#.##");
+		return formatter.format(number);
 	}
 
 	private synchronized void modify() {
