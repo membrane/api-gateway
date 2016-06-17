@@ -332,10 +332,12 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 		} else {
 			gen.writeNullField("reqContentLength");
 		}
-
 		gen.writeStringField("respContentType", exc.getResponseContentType());
-		gen.writeStringField("respContentLength",
-				exc.getResponseContentType());
+		if (exc.getResponseContentLength()!=-1) {
+			gen.writeNumberField("respContentLength", exc.getResponseContentLength());
+		} else {
+			gen.writeNullField("respContentLength");
+		}
 
 		gen.writeNumberField("duration",
 				exc.getTimeResReceived() - exc.getTimeReqSent());
