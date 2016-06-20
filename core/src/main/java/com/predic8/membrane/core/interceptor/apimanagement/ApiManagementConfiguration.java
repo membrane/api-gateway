@@ -117,7 +117,7 @@ public class ApiManagementConfiguration {
         Object policies = yaml.get("policies");
         if(policies == null)
         {
-            log.warn("\"policies\" keyword not found");
+            log.warn("No policies in policy file");
             return result;
         }
         List<Object> yamlPolicies = (List<Object>) policies;
@@ -301,6 +301,10 @@ public class ApiManagementConfiguration {
         // assumption: the yaml is valid
 
         List<Object> keys = (List<Object>) yaml.get("keys");
+        if(keys == null) {
+            log.info("No API keys in policy file");
+            return result;
+        }
         for(Object keyObject : keys){
             LinkedHashMap<String,Object> key = (LinkedHashMap<String, Object>) keyObject;
             Key keyRes = new Key();
