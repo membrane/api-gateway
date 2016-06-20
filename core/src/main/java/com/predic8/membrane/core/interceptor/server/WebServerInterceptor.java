@@ -17,6 +17,8 @@ import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 
@@ -187,7 +189,15 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	public void setDocBase(String docBase) {
 		if (!docBase.endsWith("/"))
 			docBase += "/";
-		this.docBase = docBase;
+		try {
+			this.docBase = getAbsolutePathWithSchemePrefix(docBase);
+		}catch(Exception e){
+			this.docBase = docBase; // fallback
+		}
+	}
+
+	private String getAbsolutePathWithSchemePrefix(String path) {
+		return Paths.get(path).toAbsolutePath().toUri().toString();
 	}
 
 	public String getIndex() {
