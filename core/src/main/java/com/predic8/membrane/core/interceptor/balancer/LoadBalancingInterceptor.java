@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.predic8.membrane.core.Router;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -51,6 +52,12 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	public LoadBalancingInterceptor() {
 		name = "Balancer";
+	}
+
+	@Override
+	public void init(Router router) throws Exception {
+		super.init(router);
+
 	}
 
 	@Override
@@ -203,7 +210,9 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 
 	public List<Node> getEndpoints() {
-		return balancer.getAvailableNodesByCluster(Cluster.DEFAULT_NAME);
+		if(balancer.getClusters().size() == 1) // can now name single cluster different to "Default", multiple clusters *should* be handled differently
+			return balancer.getClusters().get(0).getNodes();
+		return balancer.getAvailableNodesByCluster(Cluster.DEFAULT_NAME); // fallback
 	}
 
 	public AbstractSessionIdExtractor getSessionIdExtractor() {

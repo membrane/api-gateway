@@ -373,7 +373,7 @@ public class AdminPageBuilder extends Html {
 		for (Cluster c : BalancerUtil.lookupBalancer(router, balancerName).getClusters()) {
 			tr();
 			td();
-			createLink(c.getName(), "clusters", "show", createQueryString("balancer", balancerName, "cluster", c.getName()));
+			createLink(!c.getName().isEmpty() ? c.getName() : "<unnamed>", "clusters", "show", createQueryString("balancer", balancerName, "cluster", c.getName()));
 			end();
 
 			createTds(String.valueOf(BalancerUtil.lookupBalancer(router, balancerName).
