@@ -108,6 +108,8 @@ public class Header {
 	public static final String TIMEOUT = "timeout";
 	public static final String MAX = "max";
 
+	public static final String CLOSE = "close";
+
 	private static final Pattern mediaTypePattern = Pattern.compile("(.+)/([^;]+)(;.*)?");
 	private static final Pattern parameterPattern = Pattern.compile("(.+)=\"?([^\"]+)\"?");
 
@@ -302,14 +304,14 @@ public class Header {
 		if (getProxyConnection() == null)
 			return false;
 
-		return "close".equalsIgnoreCase(getProxyConnection());
+		return CLOSE.equalsIgnoreCase(getProxyConnection());
 	}
 
 	public boolean isConnectionClose() {
 		if (getConnection() == null)
 			return false;
 
-		return "close".equalsIgnoreCase(getConnection());
+		return CLOSE.equalsIgnoreCase(getConnection());
 	}
 
 	public boolean hasContentLength() {

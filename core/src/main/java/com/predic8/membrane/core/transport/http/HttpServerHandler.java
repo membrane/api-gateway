@@ -276,6 +276,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	}
 
 	protected void writeResponse(Response res) throws Exception{
+		if (res.isRedirect())
+			res.getHeader().setConnection(Header.CLOSE);
 		res.write(srcOut);
 		srcOut.flush();
 		exchange.setTimeResSent(System.currentTimeMillis());
