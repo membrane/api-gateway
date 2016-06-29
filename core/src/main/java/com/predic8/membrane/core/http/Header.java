@@ -289,7 +289,7 @@ public class Header {
 	}
 
 	public void setConnection(String connection) {
-		add(CONNECTION, connection);
+		setValue(CONNECTION, connection);
 	}
 
 	public String getProxyConnection() {
