@@ -60,7 +60,8 @@ public class SSLContextCollection implements SSLProvider {
 		public void add(SSLContext sslContext, String hostPattern) {
 			if (!sslContexts.contains(sslContext)) {
 				sslContexts.add(sslContext);
-				dnsNames.add(hostPattern != null ? hostPattern : constructHostNamePattern(sslContext));
+				// see https://github.com/membrane/service-proxy/issues/259
+				dnsNames.add(/*hostPattern != null ? hostPattern :*/ constructHostNamePattern(sslContext));
 			}
 		}
 
