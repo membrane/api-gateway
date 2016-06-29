@@ -22,7 +22,8 @@ public class NoResponseException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	public NoResponseException() {
+	public NoResponseException(Exception e) {
+		super(e);
 	}
 
 

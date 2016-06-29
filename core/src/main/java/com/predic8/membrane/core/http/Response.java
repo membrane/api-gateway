@@ -318,7 +318,7 @@ public class Response extends Message {
 			line = HttpUtil.readLine(in);
 		} catch (EOFWhileReadingLineException e) {
 			if (e.getLineSoFar().length() == 0)
-				throw new NoResponseException();
+				throw new NoResponseException(e);
 			throw new EOFWhileReadingFirstLineException(e.getLineSoFar());
 		}
 
