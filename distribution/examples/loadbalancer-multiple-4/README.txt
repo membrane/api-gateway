@@ -50,7 +50,6 @@ To run the example execute the following steps:
 
 
 NOTE:
-The <cluster> elements in the configuration have to have name="Default" at the moment.
 
 The names of <balancer> and <cluster> elements have to be simple (e.g. no spaces or special characters)
 for the web administration interface and LB client (see load-balancer-client-2) to work. 

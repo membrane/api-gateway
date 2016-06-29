@@ -1,0 +1,29 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<serviceProxy name="Authorization Server" port="2010">
+
+			<oauth2authserver path="/login/" location="./auth/dialog" issuer="http://localhost:2010">
+				<staticUserDataProvider>
+					<user username="john" password="password" email="john@predic8.de" />
+				</staticUserDataProvider>
+				<staticClientList>
+					<client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2011/oauth2callback" />
+				</staticClientList>
+				<bearerToken/>
+				<claims value="aud email iss sub username">
+					<scope id="username" claims="username"/>
+					<scope id="profile" claims="username email password"/>
+				</claims>
+			</oauth2authserver>
+
+		</serviceProxy>
+
+	</router>
+
+</spring:beans>

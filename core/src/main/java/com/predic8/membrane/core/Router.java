@@ -31,6 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.Lifecycle;
@@ -267,7 +268,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 				transport = new HttpTransport();
 
 			init();
-			setJmx(jmxRouterName);
+			initJmx();
 			getRuleManager().openPorts();
 
 			try {
@@ -284,17 +285,37 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 			throw new RuntimeException(e);
 		}
 
-		try {
+		startJmx();
+
+		running = true;
+		log.info(Constants.PRODUCT_NAME + " " + Constants.VERSION + " up and running!");
+	}
+
+	private void startJmx() {
+		try{
 			Object exporterObj = getBeanFactory().getBean(JmxExporter.JMX_EXPORTER_NAME);
 			if (exporterObj != null) {
 				((JmxExporter) exporterObj).initAfterBeansAdded();
 			}
+		}catch(NoSuchBeanDefinitionException ignored){
+			// If bean is not available, then dont start jmx
 		}
-		catch(Exception ignored){
-		}
+	}
 
-		running = true;
-		log.info(Constants.PRODUCT_NAME + " " + Constants.VERSION + " up and running!");
+	private void initJmx() {
+		if (beanFactory != null) {
+			try {
+				Object exporterObj = beanFactory.getBean(JmxExporter.JMX_EXPORTER_NAME);
+				if (exporterObj != null) {
+					JmxExporter exporter = (JmxExporter) exporterObj;
+					String prefix = "org.membrane-soa:00=routers, name=";
+					//exporter.removeBean(prefix + jmxRouterName);
+					exporter.addBean(prefix + jmxRouterName, new JmxRouter(this, exporter));
+				}
+			}catch(NoSuchBeanDefinitionException ignored){
+				// If bean is not available, then dont init jmx
+			}
+		}
 	}
 
 	private void startHotDeployment() {
@@ -495,30 +516,7 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 
 	@MCAttribute
 	public void setJmx(String name){
-		try {
-			if(jmxRouterName != null)
-				if (name == null || name.isEmpty())
-					return;
-
-			if (beanFactory != null) {
-				try {
-					Object exporterObj = beanFactory.getBean(JmxExporter.JMX_EXPORTER_NAME);
-					if (exporterObj != null) {
-						JmxExporter exporter = (JmxExporter) exporterObj;
-						String prefix = "org.membrane-soa:00=routers, name=";
-						//exporter.removeBean(prefix + jmxRouterName);
-						exporter.addBean(prefix + name, new JmxRouter(this, exporter));
-					}
-				}
-				catch(Exception ignored){
-
-				}
-			}
-			jmxRouterName = name;
-		}
-		catch(Exception e){
-			e.printStackTrace();
-		}
+		jmxRouterName = name;
 	}
 
 	public String getJmx(){

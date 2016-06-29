@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.jmx;
 
 import com.predic8.membrane.annot.MCElement;
-import org.apache.commons.logging.Log;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
@@ -23,14 +22,9 @@ import org.springframework.context.Lifecycle;
 import org.springframework.jmx.export.MBeanExporter;
 import org.springframework.jmx.export.annotation.AnnotationJmxAttributeSource;
 import org.springframework.jmx.export.assembler.MetadataMBeanInfoAssembler;
-import org.springframework.jmx.export.metadata.JmxAttributeSource;
-import org.springframework.jmx.support.MBeanRegistrationSupport;
 import org.springframework.jmx.support.RegistrationPolicy;
 
 import java.util.HashMap;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 @MCElement(name=JmxExporter.JMX_EXPORTER_NAME)
 public class JmxExporter extends MBeanExporter implements Lifecycle, ApplicationContextAware, DisposableBean {
@@ -82,8 +76,7 @@ public class JmxExporter extends MBeanExporter implements Lifecycle, Application
         jmxBeans.remove(fullyQualifiedMBeanName);
     }
 
-    public void initAfterBeansAdded()
-    {
+    public void initAfterBeansAdded(){
         exporter.setBeans(jmxBeans);
         exporter.afterPropertiesSet();
         exporter.afterSingletonsInstantiated();

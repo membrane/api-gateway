@@ -1,0 +1,31 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+		<serviceProxy name="Race condition client" port="2011">
+
+			<headerFilter>
+				<exclude>X-Authenticated-Username</exclude>
+			</headerFilter>
+
+			<oauth2Resource>
+				<membrane src="http://localhost:2010" clientId="abc" clientSecret="def" scope="username profile profile2" claims="username" claimsIdt="sub" />
+			</oauth2Resource>
+
+			<groovy>
+				if(exc.request.uri.equals("/test1")){
+					exc.response = Response.ok("Test1.").build()
+					RETURN
+				}else{
+					exc.response = Response.ok("Test2.").build()
+					RETURN
+				}
+			</groovy>
+
+		</serviceProxy>
+	</router>
+
+</spring:beans>

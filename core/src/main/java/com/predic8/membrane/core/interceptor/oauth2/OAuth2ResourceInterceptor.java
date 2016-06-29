@@ -50,6 +50,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -67,6 +68,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private SessionManager sessionManager;
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
+
+    private ConcurrentHashMap<String,String> stateToOriginalUrl = new ConcurrentHashMap<>();
 
     private WebServerInterceptor wsi;
     private URIFactory uriFactory;
@@ -190,8 +193,6 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         }
 
         Session session = sessionManager.getSession(exc);
-        if(session != null && session.getUserAttributes() == null)
-            session = null; // session was logged out
 
         if (session == null)
             return respondWithRedirect(exc);
@@ -209,6 +210,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return Outcome.RETURN;
         }
 
+        if(session.getUserAttributes().isEmpty()) {
+            exc.setResponse(Response.ok("You have been logged out.").build());
+            return Outcome.RETURN;
+        }
 
         return respondWithRedirect(exc);
     }
@@ -254,11 +259,16 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
             exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()), false).build());
 
-            Session session = sessionManager.createSession(exc);
+            stateToOriginalUrl.put(state,exc.getRequestURI());
 
-            HashMap<String, String> userAttributes = new HashMap<String, String>();
-            userAttributes.put("state", state);
-            session.preAuthorize("", userAttributes);
+            Session session = sessionManager.getOrCreateSession(exc);
+            synchronized(session){
+                if(session.getUserAttributes().containsKey(ParamNames.STATE))
+                    state = session.getUserAttributes().get(ParamNames.STATE) + " " + state;
+                if(!session.isPreAuthorized() || !session.isAuthorized())
+                    session.preAuthorize("",new HashMap<>());
+                session.getUserAttributes().put(ParamNames.STATE,state);
+            }
         } else {
             exc.setResponse(Response.redirect(loginPath, false).build());
         }
@@ -368,12 +378,21 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 if (param == null || !param.containsKey("security_token"))
                     throw new RuntimeException("No CSRF token.");
 
-                if (!param.get("security_token").equals(state))
+                boolean csrfMatch = false;
+
+                for(String state3 : stateToOriginalUrl.keySet())
+                    if (param.get("security_token").equals(state3))
+                        csrfMatch = true;
+
+                if(!csrfMatch)
                     throw new RuntimeException("CSRF token mismatch.");
 
-                String url = param.get("url");
+
+
+                String url = stateToOriginalUrl.get(param.get("security_token"));
                 if (url == null)
                     url = "/";
+                stateToOriginalUrl.remove(state2);
 
                 if (log.isDebugEnabled())
                     log.debug("CSRF token match.");

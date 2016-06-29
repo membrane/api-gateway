@@ -18,6 +18,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -209,8 +211,13 @@ public class JDBCUtil {
 
 	public static boolean tableExists(Connection con, String table) throws SQLException {
 		DatabaseMetaData meta = con.getMetaData();
-		ResultSet rs = meta.getTables("", null, table, null);
-		return rs.next();
+		String [] types= {"TABLE"};
+		ResultSet rs = meta.getTables("", null, "%", types);
+		Set tables=new TreeSet(String.CASE_INSENSITIVE_ORDER);
+		while (rs.next()) {
+			tables.add(rs.getString(3));
+		}
+		return tables.contains(table);
 	}
 
 }

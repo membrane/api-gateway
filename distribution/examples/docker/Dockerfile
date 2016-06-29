@@ -1,26 +1,16 @@
-FROM	ubuntu:14.04
+FROM	anapsix/alpine-java
 
-RUN 	apt-get install -y software-properties-common && \
-		apt-get install unzip && \
-		add-apt-repository -y ppa:webupd8team/java && \
-		apt-get update
-RUN		echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
-		apt-get install -y oracle-java8-installer
-RUN		rm -rf /var/lib/apt/lists/* && \
-		rm -rf /var/cache/oracle-jdk8-installer
+RUN	apk update && apk add curl wget openssl
 
-ENV		JAVA_HOME /usr/lib/jvm/java-8-oracle
+RUN	curl -s https://api.github.com/repos/membrane/service-proxy/releases | grep browser_download_url | head -n 1 | cut -d '"' -f 4 | xargs wget -P /opt
+RUN cd /opt && \
+	ls -la && \
+	unzip *.zip && \
+	rm *.zip && \
+	ln -s membrane-service-proxy-* membrane
 
-ENV		MEMBRANE_DOWNLOAD_URL "http://repository.membrane-soa.org/service/local/artifact/maven/content?r=releases&g=org.membrane-soa&a=membrane-service-proxy&v=LATEST&e=zip"
+COPY proxies.xml /opt/membrane/conf/
 
-RUN		wget -L -P /opt ${MEMBRANE_DOWNLOAD_URL} --content-disposition && \
-		cd /opt && \
-		unzip *.zip && \
-		rm *.zip && \
-		ln -s membrane-service-proxy-* membrane
+EXPOSE 8000-9900
 
-COPY	proxies.xml /opt/membrane/conf/
-
-EXPOSE	8000-9900
-
-ENTRYPOINT	["/opt/membrane/service-proxy.sh"]
+ENTRYPOINT ["/opt/membrane/service-proxy.sh"]

@@ -30,6 +30,7 @@ import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.TokenGenerator;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.util.HashMap;
 import java.util.HashSet;
 
 @MCElement(name = "oauth2authserver")

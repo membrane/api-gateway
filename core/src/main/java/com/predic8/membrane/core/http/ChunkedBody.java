@@ -94,11 +94,12 @@ public class ChunkedBody extends AbstractBody {
 					inputStream.read(); // CR
 					inputStream.read(); // LF
 
+					bodyComplete = true;
+
 					for (MessageObserver observer : observers)
 						observer.bodyComplete(ChunkedBody.this);
 					observers.clear();
 
-					bodyComplete = true;
 					return null;
 				}
 			}
