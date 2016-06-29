@@ -294,12 +294,14 @@ public class CacheInterceptor extends AbstractInterceptor {
 		allowedResponseHeaders.add("content-security-policy");
 		allowedResponseHeaders.add("strict-transport-security");
 		allowedResponseHeaders.add("via");
+		allowedResponseHeaders.add("fastly-debug-digest");
 
 		if (force) {
 			allowedResponseHeaders.add("set-cookie");
 			allowedResponseHeaders.add("docker-distribution-api-version");
 			allowedResponseHeaders.add("www-authenticate");
 			allowedResponseHeaders.add("docker-content-digest");
+			allowedResponseHeaders.add("cookie");
 		}
 	}
 
@@ -309,7 +311,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 			if (headerName.startsWith("x-"))
 				continue;
 			if (!allowedRequestHeaders.contains(headerName)) {
-				if (headerName.equals("connection") && "close".equals(header.getValue().toLowerCase(Locale.US)))
+				if (headerName.equals("connection") && Header.CLOSE.equals(header.getValue().toLowerCase(Locale.US)))
 					continue;
 				if (headerName.equals("connection") && "keep-alive".equals(header.getValue().toLowerCase(Locale.US)))
 					continue;
