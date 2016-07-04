@@ -17,6 +17,7 @@ import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
@@ -196,6 +197,13 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	}
 
 	private String getAbsolutePathWithSchemePrefix(String path) {
+		try {
+			URI uri = new URI(path);
+			if(uri.getScheme() != null)
+				return path;
+		}catch(Exception ignored){
+		}
+
 		String newPath = Paths.get(path).toAbsolutePath().toUri().toString();
 		if(!newPath.endsWith("/"))
 			return newPath + "/";
