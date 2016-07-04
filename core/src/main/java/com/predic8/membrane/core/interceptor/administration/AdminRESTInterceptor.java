@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.predic8.membrane.core.exchange.ExchangeState;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -333,11 +334,14 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 			gen.writeNullField("reqContentLength");
 		}
 		gen.writeStringField("respContentType", exc.getResponseContentType());
-		if (exc.getResponseContentLength()!=-1) {
-			gen.writeNumberField("respContentLength", exc.getResponseContentLength());
-		} else {
-			gen.writeNullField("respContentLength");
-		}
+		if(exc.getStatus() == ExchangeState.RECEIVED || exc.getStatus() == ExchangeState.COMPLETED)
+			if (exc.getResponseContentLength()!=-1) {
+				gen.writeNumberField("respContentLength", exc.getResponseContentLength());
+			} else {
+				gen.writeNullField("respContentLength");
+			}
+		else
+			gen.writeStringField("respContentLength", "Not finished");
 
 		gen.writeNumberField("duration",
 				exc.getTimeResReceived() - exc.getTimeReqSent());
