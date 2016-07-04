@@ -41,6 +41,10 @@ public abstract class Transport {
 	private boolean printStackTrace = false;
 	private boolean reverseDNS = true;
 
+	public String getOpenBackendConnections(int port){
+		return "N/A";
+	}
+
 	public List<Interceptor> getInterceptors() {
 		return interceptors;
 	}

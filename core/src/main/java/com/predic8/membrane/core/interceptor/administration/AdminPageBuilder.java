@@ -30,13 +30,9 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
+import com.predic8.membrane.core.rules.*;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -55,11 +51,6 @@ import com.predic8.membrane.core.interceptor.balancer.Node;
 import com.predic8.membrane.core.interceptor.balancer.Session;
 import com.predic8.membrane.core.interceptor.flow.RequestInterceptor;
 import com.predic8.membrane.core.interceptor.flow.ResponseInterceptor;
-import com.predic8.membrane.core.rules.AbstractProxy;
-import com.predic8.membrane.core.rules.AbstractServiceProxy;
-import com.predic8.membrane.core.rules.ProxyRule;
-import com.predic8.membrane.core.rules.Rule;
-import com.predic8.membrane.core.rules.StatisticCollector;
 import com.predic8.membrane.core.transport.http.StreamPump;
 import com.predic8.membrane.core.util.TextUtil;
 
@@ -81,6 +72,7 @@ public class AdminPageBuilder extends Html {
 	private final StringWriter writer;
 	private final String relativeRootPath;
 	private final boolean readOnly;
+	private HashMap<StatisticCollector, String> numberOfBackendConnections = new HashMap<>();
 
 	static public String createHRef(String ctrl, String action, String query) {
 		return "/admin/"+ctrl+(action!=null?"/"+action:"")+(query!=null?"?"+query:"");
@@ -452,7 +444,7 @@ public class AdminPageBuilder extends Html {
 		thead();
 		tr();
 		createThs("Name", "Count", "Minimum Time", "Maximum Time", "Average Time",
-				"Total Request Body Bytes", "Total Response Body Bytes");
+				"Total Request Body Bytes", "Total Response Body Bytes", "Open Connections");
 		end();
 		end();
 		tbody();
@@ -466,11 +458,16 @@ public class AdminPageBuilder extends Html {
 					""+statisticCollector.getMaxTime(),
 					""+statisticCollector.getAvgTime(),
 					""+statisticCollector.getBytesSent(),
-					""+statisticCollector.getBytesReceived());
+					""+statisticCollector.getBytesReceived(),
+					""+getBackendConnections(statisticCollector));
 			end();
 		}
 		end();
 		end();
+	}
+
+	private String getBackendConnections(StatisticCollector statisticCollector) {
+		return numberOfBackendConnections.get(statisticCollector);
 	}
 
 	protected void createStreamPumpsTable() throws UnsupportedEncodingException {
@@ -582,13 +579,16 @@ public class AdminPageBuilder extends Html {
 
 	private Map<String, StatisticCollector> getStatistics() {
 		Map<String, StatisticCollector> res = new TreeMap<String, StatisticCollector>();
+		HashMap<StatisticCollector,String> backendConnections = new HashMap<>();
 		for (Rule r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractProxy)) continue;
 			StatisticCollector sc = new StatisticCollector(true);
 			for (StatisticCollector s : ((AbstractProxy) r).getStatisticsByStatusCodes().values())
 				sc.collectFrom(s);
 			res.put(r.getName(), sc);
+			backendConnections.put(sc,router.getTransport().getOpenBackendConnections(r.getKey().getPort()));
 		}
+		numberOfBackendConnections = backendConnections;
 		return res;
 	}
 

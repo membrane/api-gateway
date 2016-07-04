@@ -171,6 +171,14 @@ public class HttpTransport extends Transport {
 		}
 	}
 
+	@Override
+	public String getOpenBackendConnections(int port) {
+		for(IpPort ipPort : portListenerMapping.keySet())
+			if(ipPort.port == port)
+				return Integer.toString(portListenerMapping.get(ipPort).getNumberOfOpenConnections());
+		return "N/A";
+	}
+
 	public int getCoreThreadPoolSize() {
 		return executorService.getCorePoolSize();
 	}

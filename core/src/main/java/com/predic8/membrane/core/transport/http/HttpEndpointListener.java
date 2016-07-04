@@ -126,6 +126,10 @@ public class HttpEndpointListener extends Thread {
 		openSockets.remove(socket);
 	}
 
+	public int getNumberOfOpenConnections(){
+		return openSockets.size();
+	}
+
 	public HttpTransport getTransport() {
 		return transport;
 	}
