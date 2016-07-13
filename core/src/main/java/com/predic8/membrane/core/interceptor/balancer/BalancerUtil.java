@@ -108,5 +108,10 @@ public class BalancerUtil {
 		return lookupBalancer(router, balancerName).getSessionsByNode(cName, node);
 	}
 
+	public static String getSingleClusterNameOrDefault(Balancer balancer){
+		if(balancer.getClusters().size() == 1)
+			return balancer.getClusters().get(0).getName();
+		return Cluster.DEFAULT_NAME;
+	}
 
 }

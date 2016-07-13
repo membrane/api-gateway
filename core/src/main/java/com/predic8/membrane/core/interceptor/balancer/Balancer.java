@@ -37,7 +37,7 @@ public class Balancer extends AbstractXmlElement {
 	private SessionCleanupThread sct;
 
 	public Balancer() {
-		addCluster(Cluster.DEFAULT_NAME);
+		addCluster(BalancerUtil.getSingleClusterNameOrDefault(this));
 		sct = new SessionCleanupThread(clusters);
 		sct.start();
 	}

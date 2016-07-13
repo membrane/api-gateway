@@ -113,7 +113,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 			String sessionId = getSessionId(exc.getResponse());
 
 			if (sessionId != null) {
-				balancer.addSession2Cluster(sessionId, Cluster.DEFAULT_NAME, (Node) exc.getProperty("dispatchedNode"));
+				balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), (Node) exc.getProperty("dispatchedNode"));
 			}
 		}
 
@@ -160,7 +160,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 		if (s == null || s.getNode().isDown()) {
 			log.debug("assigning new node for session id " + sessionId
 					+ (s != null ? " (old node was " + s.getNode() + ")" : ""));
-			balancer.addSession2Cluster(sessionId, Cluster.DEFAULT_NAME, strategy.dispatch(this));
+			balancer.addSession2Cluster(sessionId, BalancerUtil.getSingleClusterNameOrDefault(balancer), strategy.dispatch(this));
 		}
 		s = getSession(sessionId);
 		s.used();
@@ -168,7 +168,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 
 	private Session getSession(String sessionId) {
-		return balancer.getSessions(Cluster.DEFAULT_NAME).get(sessionId);
+		return balancer.getSessions(BalancerUtil.getSingleClusterNameOrDefault(balancer)).get(sessionId);
 	}
 
 	private String getSessionId(Message msg) throws Exception {
@@ -210,9 +210,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	}
 
 	public List<Node> getEndpoints() {
-		if(balancer.getClusters().size() == 1) // can now name single cluster different to "Default", multiple clusters *should* be handled differently
-			return balancer.getClusters().get(0).getNodes();
-		return balancer.getAvailableNodesByCluster(Cluster.DEFAULT_NAME); // fallback
+		return balancer.getAvailableNodesByCluster(BalancerUtil.getSingleClusterNameOrDefault(balancer)); // fallback
 	}
 
 	public AbstractSessionIdExtractor getSessionIdExtractor() {
