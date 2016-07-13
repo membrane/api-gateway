@@ -173,6 +173,7 @@ public class HttpClient {
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
+			dest = normalizeDestination(dest);
 			HostColonPort target = null;
 			try {
 				log.debug("try # " + counter + " to " + dest);
@@ -281,6 +282,13 @@ public class HttpClient {
 			}
 		}
 		throw exception;
+	}
+
+	private String normalizeDestination(String dest) throws MalformedURLException {
+		URL url = new URL(dest);
+		if(url.getFile() != null && url.getFile().isEmpty())
+            url = new URL(dest + "/");
+		return url.toString();
 	}
 
 	private void applyKeepAliveHeader(Response response, Connection con) {
