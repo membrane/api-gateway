@@ -111,7 +111,10 @@ public class HttpClient {
 		else {
 			if (!dest.startsWith("http"))
 				throw new MalformedURLException("The exchange's destination URL ("+dest+") does not start with 'http'. Please specify a <target> within your <serviceProxy>.");
+			String originalUri = req.getUri();
 			req.setUri(HttpUtil.getPathAndQueryString(dest));
+			if("/".equals(originalUri) && req.getUri().isEmpty())
+				req.setUri("/");
 		}
 	}
 
@@ -173,7 +176,6 @@ public class HttpClient {
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
-			dest = normalizeDestination(dest);
 			HostColonPort target = null;
 			try {
 				log.debug("try # " + counter + " to " + dest);
@@ -282,13 +284,6 @@ public class HttpClient {
 			}
 		}
 		throw exception;
-	}
-
-	private String normalizeDestination(String dest) throws MalformedURLException {
-		URL url = new URL(dest);
-		if(url.getFile() != null && url.getFile().isEmpty())
-            url = new URL(dest + "/");
-		return url.toString();
 	}
 
 	private void applyKeepAliveHeader(Response response, Connection con) {
