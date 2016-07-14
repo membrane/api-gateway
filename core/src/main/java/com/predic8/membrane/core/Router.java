@@ -292,13 +292,15 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 	}
 
 	private void startJmx() {
-		try{
-			Object exporterObj = getBeanFactory().getBean(JmxExporter.JMX_EXPORTER_NAME);
-			if (exporterObj != null) {
-				((JmxExporter) exporterObj).initAfterBeansAdded();
+		if(getBeanFactory() != null) {
+			try{
+				Object exporterObj = getBeanFactory().getBean(JmxExporter.JMX_EXPORTER_NAME);
+				if (exporterObj != null) {
+					((JmxExporter) exporterObj).initAfterBeansAdded();
+				}
+			}catch(NoSuchBeanDefinitionException ignored){
+				// If bean is not available, then dont start jmx
 			}
-		}catch(NoSuchBeanDefinitionException ignored){
-			// If bean is not available, then dont start jmx
 		}
 	}
 
