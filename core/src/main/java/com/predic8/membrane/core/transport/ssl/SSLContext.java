@@ -17,8 +17,8 @@ package com.predic8.membrane.core.transport.ssl;
 import com.google.common.base.*;
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.config.security.SSLParser;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSocket;
@@ -32,7 +32,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 
 public abstract class SSLContext implements SSLProvider {
-    private static final Log log = LogFactory.getLog(SSLContext.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(SSLContext.class.getName());
 
     protected String[] ciphers;
     protected String[] protocols;

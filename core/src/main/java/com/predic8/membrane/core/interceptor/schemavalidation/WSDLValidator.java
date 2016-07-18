@@ -21,8 +21,8 @@ import java.util.ArrayList;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.transform.Source;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
@@ -37,8 +37,7 @@ import com.predic8.wsdl.WSDLParser;
 import com.predic8.wsdl.WSDLParserContext;
 
 public class WSDLValidator extends AbstractXMLSchemaValidator {
-	static Log log = LogFactory
-			.getLog(WSDLValidator.class.getName());
+	static Logger log = LoggerFactory.getLogger(WSDLValidator.class.getName());
 
 	public WSDLValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler, boolean skipFaults) throws Exception {
 		super(resourceResolver, location, failureHandler, skipFaults);

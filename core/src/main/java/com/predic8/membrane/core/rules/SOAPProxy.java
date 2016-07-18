@@ -22,8 +22,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.collect.Lists;
@@ -62,7 +62,7 @@ import com.predic8.wsdl.WSDLParserContext;
  */
 @MCElement(name="soapProxy")
 public class SOAPProxy extends AbstractServiceProxy {
-	private static final Log log = LogFactory.getLog(SOAPProxy.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(SOAPProxy.class.getName());
 	private static final Pattern relativePathPattern = Pattern.compile("^./[^/?]*\\?");
 
 	// configuration attributes

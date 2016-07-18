@@ -19,8 +19,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -29,7 +29,7 @@ import com.predic8.membrane.core.config.AbstractXmlElement;
 @MCElement(name="clusters", topLevel=false)
 public class Balancer extends AbstractXmlElement {
 	public static final String DEFAULT_NAME = "Default";
-	private static Log log = LogFactory.getLog(Balancer.class.getName());
+	private static Logger log = LoggerFactory.getLogger(Balancer.class.getName());
 
 	private final Map<String, Cluster> clusters = new Hashtable<String, Cluster>();
 	private String name = DEFAULT_NAME;

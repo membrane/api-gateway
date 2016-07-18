@@ -22,8 +22,8 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.AbstractXmlElement;
@@ -32,7 +32,7 @@ import com.predic8.membrane.core.util.TextUtil;
 
 public class Resource extends AbstractXmlElement {
 
-	private static Log log = LogFactory.getLog(Resource.class.getName());
+	private static Logger log = LoggerFactory.getLogger(Resource.class.getName());
 
 	public static final String ELEMENT_NAME = "resource";
 

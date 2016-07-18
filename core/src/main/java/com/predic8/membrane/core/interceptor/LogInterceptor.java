@@ -14,7 +14,7 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -118,22 +118,22 @@ public class LogInterceptor extends AbstractInterceptor {
 	private void log(String msg) {
 		switch (level) {
 		case TRACE:
-			LogFactory.getLog(category).trace(msg);
+			LoggerFactory.getLogger(category).trace(msg);
 			break;
 		case DEBUG:
-			LogFactory.getLog(category).debug(msg);
+			LoggerFactory.getLogger(category).debug(msg);
 			break;
 		case INFO:
-			LogFactory.getLog(category).info(msg);
+			LoggerFactory.getLogger(category).info(msg);
 			break;
 		case WARN:
-			LogFactory.getLog(category).warn(msg);
+			LoggerFactory.getLogger(category).warn(msg);
 			break;
 		case ERROR:
-			LogFactory.getLog(category).error(msg);
+			LoggerFactory.getLogger(category).error(msg);
 			break;
 		case FATAL:
-			LogFactory.getLog(category).fatal(msg);
+			LoggerFactory.getLogger(category).error(msg);
 			break;
 		}
 

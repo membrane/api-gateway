@@ -17,14 +17,14 @@ package com.predic8.membrane.core.interceptor.administration;
 
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 import static org.apache.commons.lang.time.DurationFormatUtils.formatDurationHMS;
-import static org.apache.log4j.Level.ALL;
-import static org.apache.log4j.Level.DEBUG;
-import static org.apache.log4j.Level.ERROR;
-import static org.apache.log4j.Level.FATAL;
-import static org.apache.log4j.Level.INFO;
-import static org.apache.log4j.Level.OFF;
-import static org.apache.log4j.Level.TRACE;
-import static org.apache.log4j.Level.WARN;
+//import static org.apache.log4j.Level.ALL;
+//import static org.apache.log4j.Level.DEBUG;
+//import static org.apache.log4j.Level.ERROR;
+//import static org.apache.log4j.Level.FATAL;
+//import static org.apache.log4j.Level.INFO;
+//import static org.apache.log4j.Level.OFF;
+//import static org.apache.log4j.Level.TRACE;
+//import static org.apache.log4j.Level.WARN;
 
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -34,8 +34,8 @@ import java.util.*;
 
 import com.predic8.membrane.core.rules.*;
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.core.Constants;
@@ -965,8 +965,9 @@ public class AdminPageBuilder extends Html {
 		end();
 	}
 
-	protected void createLogConfigurationEditor() {
-		Logger root = Logger.getRootLogger();
+	//slf4j change
+	/*protected void createLogConfigurationEditor() {
+		Logger root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 		Level rootLevel = root.getLevel();
 
 		if (readOnly) {
@@ -993,6 +994,6 @@ public class AdminPageBuilder extends Html {
 		br();
 		input().type("submit").value("Change log4j config");
 		end();
-	}
+	}*/
 }
 

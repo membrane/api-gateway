@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -42,7 +42,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name="statisticsCSV")
 public class StatisticsCSVInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(StatisticsCSVInterceptor.class
+	private static Logger log = LoggerFactory.getLogger(StatisticsCSVInterceptor.class
 			.getName());
 
 	// maps all fileName objects used by instances of this class to themselves.

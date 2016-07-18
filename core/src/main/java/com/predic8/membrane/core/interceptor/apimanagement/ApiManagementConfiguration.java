@@ -24,8 +24,8 @@ import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 
@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ApiManagementConfiguration {
     private static String currentDir;
 
-    private static Logger log = LogManager.getLogger(ApiManagementConfiguration.class);
+    private static Logger log = LoggerFactory.getLogger(ApiManagementConfiguration.class);
     private ResolverMap resolver = null;
     private String location = null;
     private String hashLocation = null;

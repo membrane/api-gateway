@@ -22,8 +22,8 @@ import java.sql.Statement;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -45,7 +45,7 @@ import com.predic8.membrane.core.util.URLParamUtil;
 
 @MCElement(name="statisticsProvider")
 public class StatisticsProvider extends AbstractInterceptor implements ApplicationContextAware {
-	private static Log log = LogFactory.getLog(StatisticsProvider.class
+	private static Logger log = LoggerFactory.getLogger(StatisticsProvider.class
 			.getName());
 
 	private final JsonFactory jsonFactory = new JsonFactory(); // thread-safe

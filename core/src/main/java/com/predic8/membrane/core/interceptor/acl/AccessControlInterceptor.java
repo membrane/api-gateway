@@ -19,8 +19,8 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -41,7 +41,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 @MCElement(name="accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {
 
-	private static final Log log = LogFactory.getLog(AccessControlInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(AccessControlInterceptor.class.getName());
 
 	private String file;
 
@@ -58,7 +58,7 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 		try {
 			resource = accessControl.getResourceFor(exc.getOriginalRequestUri());
 		} catch (Exception e) {
-			log.error(e);
+			log.error("",e);
 			setResponseToAccessDenied(exc);
 			return Outcome.ABORT;
 		}

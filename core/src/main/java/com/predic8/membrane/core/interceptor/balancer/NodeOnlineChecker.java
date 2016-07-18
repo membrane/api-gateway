@@ -23,8 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.predic8.membrane.annot.MCAttribute;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -92,7 +92,7 @@ public class NodeOnlineChecker {
         }
     }
 
-    private static Log log = LogFactory.getLog(NodeOnlineChecker.class.getName());
+    private static Logger log = LoggerFactory.getLogger(NodeOnlineChecker.class.getName());
     LoadBalancingInterceptor lbi;
     ConcurrentHashMap<String, BadNode> badNodesForDestinations = new ConcurrentHashMap<String, BadNode>();
     HashSet<BadNode> offlineNodes = new HashSet<BadNode>();

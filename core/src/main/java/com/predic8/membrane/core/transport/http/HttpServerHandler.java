@@ -28,8 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractBody;
@@ -44,7 +44,7 @@ import com.predic8.membrane.core.util.Util;
 
 public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 
-	private static final Log log = LogFactory.getLog(HttpServerHandler.class);
+	private static final Logger log = LoggerFactory.getLogger(HttpServerHandler.class);
 	private static final AtomicInteger counter = new AtomicInteger();
 
 	private final HttpEndpointListener endpointListener;

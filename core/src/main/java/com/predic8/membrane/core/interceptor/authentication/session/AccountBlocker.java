@@ -21,8 +21,8 @@ import java.util.Map;
 import javax.xml.stream.XMLStreamReader;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -64,7 +64,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.CleanupThrea
  */
 @MCElement(name="accountBlocker")
 public class AccountBlocker extends AbstractXmlElement implements Cleaner {
-	private static Log log = LogFactory.getLog(AccountBlocker.class.getName());
+	private static Logger log = LoggerFactory.getLogger(AccountBlocker.class.getName());
 
 	private int blockWholeSystemAfter = 1000000;
 	private int afterFailedLogins = 5;

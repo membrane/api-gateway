@@ -17,11 +17,11 @@ package com.predic8.membrane.core.rules;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ServiceProxyKey extends AbstractRuleKey {
-	private static Log log = LogFactory.getLog(ServiceProxyKey.class.getName());
+	private static Logger log = LoggerFactory.getLogger(ServiceProxyKey.class.getName());
 
 	private String method = "*";
 	private String host = "*";

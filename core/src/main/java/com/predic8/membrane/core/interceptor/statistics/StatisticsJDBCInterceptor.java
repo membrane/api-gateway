@@ -22,8 +22,8 @@ import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 import javax.sql.DataSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.ApplicationContext;
@@ -47,7 +47,7 @@ import com.predic8.membrane.core.interceptor.statistics.util.JDBCUtil;
 public class StatisticsJDBCInterceptor extends AbstractInterceptor implements ApplicationContextAware {
 	private static final String DATASOURCE_BEAN_ID_ATTRIBUTE_CANNOT_BE_USED = "datasource bean id attribute cannot be used";
 
-	private static Log log = LogFactory.getLog(StatisticsJDBCInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(StatisticsJDBCInterceptor.class.getName());
 
 	private ApplicationContext applicationContext;
 	private DataSource dataSource;

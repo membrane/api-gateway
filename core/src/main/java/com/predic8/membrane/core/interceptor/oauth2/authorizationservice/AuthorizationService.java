@@ -23,11 +23,11 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AuthorizationService {
-    protected Log log;
+    protected Logger log;
 
     private HttpClient httpClient;
     protected Router router;
@@ -47,7 +47,7 @@ public abstract class AuthorizationService {
 
 
     public void init(Router router) throws Exception {
-        log = LogFactory.getLog(this.getClass().getName());
+        log = LoggerFactory.getLogger(this.getClass().getName());
 
         setHttpClient(getHttpClientConfiguration() == null ? router.getResolverMap()
                 .getHTTPSchemaResolver().getHttpClient() : new HttpClient(

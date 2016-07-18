@@ -34,8 +34,8 @@ import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.AMRateLim
 import com.predic8.membrane.core.interceptor.apimanagement.statistics.AMStatisticsCollector;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,7 +47,7 @@ import java.util.Map;
 public class ApiManagementInterceptor extends AbstractInterceptor {
 
     public static final String APPLICATION_JSON = "application/json"; // @TODO use constant somewhere else
-    private static Logger log = LogManager.getLogger(ApiManagementInterceptor.class);
+    private static Logger log = LoggerFactory.getLogger(ApiManagementInterceptor.class);
     private ApiConfig apiConfig;
     private AMRateLimiter amRateLimiter = null;
     private AMQuota amQuota = null;

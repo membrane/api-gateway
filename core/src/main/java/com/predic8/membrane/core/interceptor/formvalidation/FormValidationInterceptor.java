@@ -22,8 +22,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -102,7 +102,7 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 
 	}
 
-	private static Log log = LogFactory.getLog(FormValidationInterceptor.class
+	private static Logger log = LoggerFactory.getLogger(FormValidationInterceptor.class
 			.getName());
 
 	private List<Field> fields = new ArrayList<Field>();

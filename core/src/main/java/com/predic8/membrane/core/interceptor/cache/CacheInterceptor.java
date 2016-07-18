@@ -27,8 +27,8 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -61,7 +61,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 @MCElement(name="cache")
 public class CacheInterceptor extends AbstractInterceptor {
 
-	static final Log log = LogFactory.getLog(CacheInterceptor.class.getName());
+	static final Logger log = LoggerFactory.getLogger(CacheInterceptor.class.getName());
 
 	private Store store;
 

@@ -15,7 +15,8 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import javax.xml.stream.*;
 
-import org.apache.commons.logging.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -29,7 +30,7 @@ import com.predic8.membrane.core.http.Message;
 @MCElement(name="xmlSessionIdExtractor")
 public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
-	private static Log log = LogFactory.getLog(XMLElementSessionIdExtractor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XMLElementSessionIdExtractor.class.getName());
 
 	private String localName;
 	private String namespace;

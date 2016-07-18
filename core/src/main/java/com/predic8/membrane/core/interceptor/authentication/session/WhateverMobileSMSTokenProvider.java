@@ -19,8 +19,8 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.UnsupportedEncodingException;
@@ -54,7 +54,7 @@ import java.net.URLEncoder;
 @MCElement(name="whateverMobileSMSTokenProvider", topLevel=false)
 public class WhateverMobileSMSTokenProvider extends SMSTokenProvider {
 
-	private static Log log = LogFactory.getLog(WhateverMobileSMSTokenProvider.class.getName());
+	private static Logger log = LoggerFactory.getLogger(WhateverMobileSMSTokenProvider.class.getName());
 
 	private HttpClient hc;
 

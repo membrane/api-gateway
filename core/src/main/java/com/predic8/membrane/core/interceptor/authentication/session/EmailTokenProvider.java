@@ -24,8 +24,8 @@ import javax.mail.Session;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.floreysoft.jmte.Engine;
@@ -64,7 +64,7 @@ import com.sun.mail.smtp.SMTPTransport;
 @MCElement(name="emailTokenProvider", topLevel=false)
 public class EmailTokenProvider extends NumericTokenProvider {
 
-	private static Log log = LogFactory.getLog(EmailTokenProvider.class.getName());
+	private static Logger log = LoggerFactory.getLogger(EmailTokenProvider.class.getName());
 
 	private boolean simulate = false;
 

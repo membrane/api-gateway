@@ -32,8 +32,8 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -87,7 +87,7 @@ import com.predic8.membrane.core.Router;
 @MCElement(name="ldapUserDataProvider", topLevel=false)
 public class LDAPUserDataProvider implements UserDataProvider {
 
-	private static Log log = LogFactory.getLog(LDAPUserDataProvider.class.getName());
+	private static Logger log = LoggerFactory.getLogger(LDAPUserDataProvider.class.getName());
 
 	String url; // the LDAP server
 	String base; // the base DN
@@ -263,7 +263,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		} catch (NoSuchElementException e) {
 			throw e;
 		} catch (AuthenticationException e) {
-			log.debug(e);
+			log.debug("",e);
 			throw new NoSuchElementException();
 		} catch (Exception e) {
 			throw new RuntimeException(e);

@@ -35,8 +35,8 @@ import javax.xml.stream.events.XMLEvent;
 
 import org.apache.commons.fileupload.MultipartStream;
 import org.apache.commons.fileupload.MultipartStream.MalformedStreamException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Header;
@@ -52,7 +52,7 @@ import com.predic8.membrane.core.util.MessageUtil;
  */
 @ThreadSafe
 public class XOPReconstitutor {
-	private static Log log = LogFactory.getLog(XOPReconstitutor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XOPReconstitutor.class.getName());
 	private static final String XOP_NAMESPACE_URI = "http://www.w3.org/2004/08/xop/include";
 
 	private final XMLInputFactory xmlInputFactory;

@@ -28,8 +28,8 @@ import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -51,7 +51,7 @@ import com.predic8.membrane.core.util.TextUtil;
 @MCElement(name="fileExchangeStore")
 public class FileExchangeStore extends AbstractExchangeStore {
 
-	private static Log log = LogFactory.getLog(FileExchangeStore.class
+	private static Logger log = LoggerFactory.getLogger(FileExchangeStore.class
 			.getName());
 
 	private static AtomicInteger counter = new AtomicInteger();
@@ -121,7 +121,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 						writeFile(exc.getResponse(), buf2.toString());
 				}
 			} catch (Exception e) {
-				log.error(e, e);
+				log.error("{}",e, e);
 			}
 		} else {
 			log.error("Directory does not exists or file is not a directory: "+ buf.toString());

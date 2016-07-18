@@ -25,8 +25,8 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -45,7 +45,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 @MCElement(name="transport")
 public class HttpTransport extends Transport {
 
-	private static Log log = LogFactory.getLog(HttpTransport.class.getName());
+	private static Logger log = LoggerFactory.getLogger(HttpTransport.class.getName());
 
 	public static final String SOURCE_HOSTNAME = "com.predic8.membrane.transport.http.source.Hostname";
 	public static final String HEADER_HOST = "com.predic8.membrane.transport.http.header.Host";

@@ -24,8 +24,8 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.predic8.membrane.core.interceptor.authentication.session.totp.PasscodeGenerator.Signer;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class containing implementation of HOTP/TOTP. Generates OTP codes for one or
@@ -38,7 +38,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Cem Paya (cemp@google.com)
  */
 public class OtpProvider {
-	private static Log log = LogFactory.getLog(OtpProvider.class.getName());
+	private static Logger log = LoggerFactory.getLogger(OtpProvider.class.getName());
 
 	private static final int PIN_LENGTH = 6; // HOTP or TOTP
 

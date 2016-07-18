@@ -24,8 +24,8 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Message;
@@ -36,7 +36,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.schema.Schema;
 
 public class XMLSchemaValidator extends AbstractXMLSchemaValidator {
-	private static Log log = LogFactory.getLog(XMLSchemaValidator.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XMLSchemaValidator.class.getName());
 
 	public XMLSchemaValidator(ResolverMap resourceResolver, String location, ValidatorInterceptor.FailureHandler failureHandler) throws Exception {
 		super(resourceResolver, location, failureHandler);

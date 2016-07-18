@@ -26,8 +26,8 @@ import java.util.regex.Pattern;
 
 import javax.net.ssl.SNIServerName;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.oracle.util.ssl.SSLCapabilities;
 import com.oracle.util.ssl.SSLExplorer;
@@ -42,7 +42,7 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
  */
 public class SSLContextCollection implements SSLProvider {
 
-	private static final Log log = LogFactory.getLog(SSLContextCollection.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(SSLContextCollection.class.getName());
 
 	public static class Builder {
 		private List<String> dnsNames = new ArrayList<String>();

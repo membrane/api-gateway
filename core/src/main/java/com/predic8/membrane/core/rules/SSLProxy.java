@@ -29,8 +29,8 @@ import com.predic8.membrane.core.transport.http.client.ConnectionConfiguration;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
@@ -41,7 +41,7 @@ import java.util.Map;
 
 @MCElement(name="sslProxy")
 public class SSLProxy implements Rule {
-    private static Log log = LogFactory.getLog(SSLProxy.class.getName());
+    private static Logger log = LoggerFactory.getLogger(SSLProxy.class.getName());
 
     private Target target;
     private ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();

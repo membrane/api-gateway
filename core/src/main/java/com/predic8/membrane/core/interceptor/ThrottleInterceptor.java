@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.interceptor;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -30,7 +30,7 @@ import com.predic8.membrane.core.http.Response;
  */
 @MCElement(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {
-	private static Log log = LogFactory.getLog(ThrottleInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(ThrottleInterceptor.class.getName());
 
 	private long delay = 0;
 	private int maxThreads = 0;

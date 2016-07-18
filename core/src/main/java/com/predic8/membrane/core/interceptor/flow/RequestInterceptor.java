@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor.flow;
 
 import java.util.EnumSet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -31,7 +31,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name="request", topLevel=false)
 public class RequestInterceptor extends AbstractFlowInterceptor {
 
-	private static final Log log = LogFactory.getLog(RequestInterceptor.class);
+	private static final Logger log = LoggerFactory.getLogger(RequestInterceptor.class);
 
 	public RequestInterceptor() {
 		name = "Request Interceptor";

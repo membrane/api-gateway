@@ -25,8 +25,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import com.predic8.membrane.core.interceptor.apimanagement.Key;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.format.DateTimeFormat;
@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @MCElement(name="amQuota")
 public class AMQuota {
 
-    private static Logger log = LogManager.getLogger(AMQuota.class);
+    private static Logger log = LoggerFactory.getLogger(AMQuota.class);
     private ApiManagementConfiguration amc;
 
     public ConcurrentHashMap<String, ApiKeyByteCounter> keyByteCounter = new ConcurrentHashMap<String, ApiKeyByteCounter>();

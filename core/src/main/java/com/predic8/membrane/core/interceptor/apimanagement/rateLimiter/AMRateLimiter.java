@@ -24,8 +24,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.apimanagement.ApiManagementConfiguration;
 import com.predic8.membrane.core.interceptor.apimanagement.Key;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.joda.time.format.DateTimeFormat;
@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @MCElement(name="amRateLimiter")
 public class AMRateLimiter {
 
-    private static Logger log = LogManager.getLogger(AMRateLimiter.class);
+    private static Logger log = LoggerFactory.getLogger(AMRateLimiter.class);
     private ApiManagementConfiguration amc;
 
     public ConcurrentHashMap<String, ApiKeyRequestCounter> keyInformation = new ConcurrentHashMap<String, ApiKeyRequestCounter>();

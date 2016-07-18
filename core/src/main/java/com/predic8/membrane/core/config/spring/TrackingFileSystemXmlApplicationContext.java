@@ -22,8 +22,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionStoreException;
@@ -41,7 +41,7 @@ import org.xml.sax.SAXParseException;
  */
 public class TrackingFileSystemXmlApplicationContext extends FileSystemXmlApplicationContext implements
 TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory {
-	private static final Log log = LogFactory.getLog(TrackingFileSystemXmlApplicationContext.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(TrackingFileSystemXmlApplicationContext.class.getName());
 
 	private List<File> files = new ArrayList<File>();
 
@@ -59,7 +59,7 @@ TrackingApplicationContext, BaseLocationApplicationContext, CheckableBeanFactory
 		try {
 			files.add(r.getFile());
 		} catch (IOException e) {
-			log.debug(e);
+			log.debug("",e);
 		}
 		return new Resource() {
 			Resource r2 = r;

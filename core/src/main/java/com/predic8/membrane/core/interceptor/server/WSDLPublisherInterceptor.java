@@ -20,8 +20,8 @@ import java.util.Queue;
 
 import javax.annotation.concurrent.GuardedBy;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -50,7 +50,7 @@ import com.predic8.membrane.core.ws.relocator.Relocator.PathRewriter;
 @MCElement(name="wsdlPublisher")
 public class WSDLPublisherInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LogManager.getLogger(WSDLPublisherInterceptor.class);
+	private static Logger log = LoggerFactory.getLogger(WSDLPublisherInterceptor.class);
 
 	public WSDLPublisherInterceptor() {
 		name = "WSDL Publisher";

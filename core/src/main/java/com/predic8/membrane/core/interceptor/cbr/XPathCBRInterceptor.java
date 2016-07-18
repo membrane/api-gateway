@@ -23,8 +23,8 @@ import java.util.Map;
 
 import javax.xml.xpath.XPathConstants;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.xml.sax.InputSource;
 
@@ -43,7 +43,7 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name="switch")
 public class XPathCBRInterceptor extends AbstractInterceptor {
-	private static Log log = LogFactory.getLog(XPathCBRInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XPathCBRInterceptor.class.getName());
 
 	private List<Case> cases = new ArrayList<Case>();
 	private Map<String, String> namespaces;

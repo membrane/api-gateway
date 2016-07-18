@@ -26,8 +26,8 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -41,7 +41,7 @@ import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.schema.Schema;
 
 public abstract class AbstractXMLSchemaValidator implements IValidator {
-	private static Log log = LogFactory.getLog(AbstractXMLSchemaValidator.class.getName());
+	private static Logger log = LoggerFactory.getLogger(AbstractXMLSchemaValidator.class.getName());
 
 	private final ArrayBlockingQueue<List<Validator>> validators;
 	protected final XOPReconstitutor xopr;

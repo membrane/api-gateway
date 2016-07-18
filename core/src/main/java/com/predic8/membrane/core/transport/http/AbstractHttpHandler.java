@@ -22,8 +22,8 @@ import java.net.InetAddress;
 import java.net.URISyntaxException;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
@@ -41,7 +41,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public abstract class AbstractHttpHandler  {
 
-	private static Log log = LogFactory.getLog(AbstractHttpHandler.class.getName());
+	private static Logger log = LoggerFactory.getLogger(AbstractHttpHandler.class.getName());
 
 	protected Exchange exchange;
 	protected Request srcReq;

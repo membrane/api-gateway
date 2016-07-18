@@ -20,8 +20,8 @@ import java.security.InvalidParameterException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 
@@ -35,7 +35,7 @@ import com.predic8.membrane.core.interceptor.administration.Mapping;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 public abstract class RESTInterceptor extends AbstractInterceptor {
-	private static Log log = LogFactory.getLog(RESTInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(RESTInterceptor.class.getName());
 	private boolean readOnly;
 
 	private final JsonFactory jsonFactory = new JsonFactory(); // thread-safe after configuration

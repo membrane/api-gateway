@@ -16,8 +16,8 @@ package com.predic8.membrane.core.rules;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -35,7 +35,7 @@ import com.predic8.membrane.core.transport.http.HttpClient;
  */
 @MCElement(name="swaggerProxy")
 public class SwaggerProxy extends ServiceProxy {
-	private static Log log = LogFactory.getLog(SwaggerProxy.class.getName());
+	private static Logger log = LoggerFactory.getLogger(SwaggerProxy.class.getName());
 
 	private String swaggerUrl;
 	private boolean allowUI = true;
@@ -63,7 +63,7 @@ public class SwaggerProxy extends ServiceProxy {
 		HttpClient hc = new HttpClient(router.getHttpClientConfig());
 		Exchange ex = hc.call(new Request.Builder().get(swaggerUrl).buildExchange());
 		if (ex.getResponse().getStatusCode() != 200) {
-			log.fatal("Couldn't fetch Swagger URL!");
+			log.error("Couldn't fetch Swagger URL!");
 			throw new Exception("Couldn't fetch Swagger URL!");
 		}
 		// parse swaggerUrl

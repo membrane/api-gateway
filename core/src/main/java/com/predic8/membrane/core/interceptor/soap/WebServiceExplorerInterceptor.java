@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
@@ -56,7 +56,7 @@ import com.predic8.wstool.creator.SOARequestCreator;
 @MCElement(name="webServiceExplorer")
 public class WebServiceExplorerInterceptor extends RESTInterceptor {
 
-	private static Log log = LogFactory.getLog(WebServiceExplorerInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(WebServiceExplorerInterceptor.class.getName());
 
 	private String wsdl;
 	private String portName;

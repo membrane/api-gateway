@@ -27,8 +27,8 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -77,7 +77,7 @@ import java.util.HashMap;
  */
 @MCElement(name="telekomSMSTokenProvider", topLevel=false)
 public class TelekomSMSTokenProvider extends SMSTokenProvider {
-	private static Log log = LogFactory.getLog(TelekomSMSTokenProvider.class.getName());
+	private static Logger log = LoggerFactory.getLogger(TelekomSMSTokenProvider.class.getName());
 
 	private HttpClient hc;
 

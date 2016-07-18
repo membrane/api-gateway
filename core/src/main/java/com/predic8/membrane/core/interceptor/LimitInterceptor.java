@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -42,7 +42,7 @@ import com.predic8.membrane.core.http.Response;
 @MCElement(name="limit")
 public class LimitInterceptor extends AbstractInterceptor {
 
-	private static Logger log = LogManager.getLogger(LimitInterceptor.class);
+	private static Logger log = LoggerFactory.getLogger(LimitInterceptor.class);
 
 	private long maxBodyLength = -1;
 

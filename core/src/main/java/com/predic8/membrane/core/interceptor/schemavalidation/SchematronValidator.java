@@ -37,8 +37,8 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -53,7 +53,7 @@ import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
 public class SchematronValidator implements IValidator {
-	private static Log log = LogFactory.getLog(SchematronValidator.class.getName());
+	private static Logger log = LoggerFactory.getLogger(SchematronValidator.class.getName());
 
 	private final ArrayBlockingQueue<Transformer> transformers;
 	private final XMLInputFactory xmlInputFactory;

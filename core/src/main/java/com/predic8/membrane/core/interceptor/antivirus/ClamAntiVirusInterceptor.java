@@ -21,8 +21,8 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import fi.solita.clamav.ClamAVClient;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,7 +30,7 @@ import java.io.InputStream;
 @MCElement(name="clamav")
 public class ClamAntiVirusInterceptor extends AbstractInterceptor {
 
-    private static Logger log = LogManager.getLogger(ClamAntiVirusInterceptor.class);
+    private static Logger log = LoggerFactory.getLogger(ClamAntiVirusInterceptor.class);
 
     private String host = "localhost";
     private String port = "3310";

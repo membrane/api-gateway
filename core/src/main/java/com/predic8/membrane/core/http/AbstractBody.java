@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.predic8.membrane.core.Constants;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A HTTP message body (request or response), as it is received or constructed
@@ -41,7 +41,7 @@ import org.apache.commons.logging.LogFactory;
  * situation.
  */
 public abstract class AbstractBody {
-	private static final Log log = LogFactory.getLog(AbstractBody.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(AbstractBody.class.getName());
 
 	boolean read;
 

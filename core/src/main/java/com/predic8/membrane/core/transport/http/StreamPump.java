@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.rules.Rule;
 
@@ -32,7 +32,7 @@ import javax.net.ssl.SSLException;
 
 public class StreamPump implements Runnable {
 
-	private static Log log = LogFactory.getLog(StreamPump.class.getName());
+	private static Logger log = LoggerFactory.getLogger(StreamPump.class.getName());
 
 	public static class StreamPumpStats {
 		private static ArrayList<StreamPump> pumps = new ArrayList<StreamPump>();

@@ -24,8 +24,8 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
@@ -50,7 +50,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
  */
 public class ConnectionManager {
 
-	private static Log log = LogFactory.getLog(ConnectionManager.class.getName());
+	private static Logger log = LoggerFactory.getLogger(ConnectionManager.class.getName());
 
 	private final long keepAliveTimeout;
 	private final long autoCloseInterval;

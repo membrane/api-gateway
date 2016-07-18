@@ -15,8 +15,8 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -97,7 +97,7 @@ import com.predic8.membrane.core.interceptor.authentication.session.SessionManag
 @MCElement(name="login")
 public class LoginInterceptor extends AbstractInterceptor {
 
-	private static final Log log = LogFactory.getLog(LoginInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(LoginInterceptor.class.getName());
 
 	private String location, path, message;
 	private boolean exposeUserCredentialsToSession;

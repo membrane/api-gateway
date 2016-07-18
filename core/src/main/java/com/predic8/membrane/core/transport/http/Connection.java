@@ -27,8 +27,8 @@ import java.net.UnknownHostException;
 
 import javax.net.ssl.SSLSocket;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.AbstractBody;
@@ -53,7 +53,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
  */
 public class Connection implements MessageObserver {
 
-	private static Log log = LogFactory.getLog(Connection.class.getName());
+	private static Logger log = LoggerFactory.getLogger(Connection.class.getName());
 
 	public final ConnectionManager mgr;
 	public final String host;

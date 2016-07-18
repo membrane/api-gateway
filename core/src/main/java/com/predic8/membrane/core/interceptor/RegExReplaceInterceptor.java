@@ -15,8 +15,8 @@ package com.predic8.membrane.core.interceptor;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -33,7 +33,7 @@ import com.predic8.membrane.core.http.Message;
 @MCElement(name="regExReplacer")
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(RegExReplaceInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(RegExReplaceInterceptor.class.getName());
 
 	private String regex;
 	private String replace;

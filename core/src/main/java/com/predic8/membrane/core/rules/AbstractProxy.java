@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -30,7 +30,7 @@ import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public abstract class AbstractProxy implements Rule {
-	private static final Log log = LogFactory.getLog(AbstractProxy.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(AbstractProxy.class.getName());
 
 	protected String name = "";
 
@@ -184,7 +184,7 @@ public abstract class AbstractProxy implements Rule {
 		} catch (Exception e) {
 			if (!router.isRetryInit())
 				throw e;
-			log.error(e);
+			log.error("",e);
 			active = false;
 			error = e.getMessage();
 		}

@@ -34,8 +34,8 @@ import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @description Store Exchange objects in-memory. Only the newest exchanges will be kept to keep the store below the configured memory limit.
@@ -43,7 +43,7 @@ import org.apache.log4j.Logger;
 @MCElement(name="limitedMemoryExchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
-	private static Logger log = LogManager.getLogger(LimitedMemoryExchangeStore.class);
+	private static Logger log = LoggerFactory.getLogger(LimitedMemoryExchangeStore.class);
 
 	private int maxSize = 1000000;
 	private int currentSize;

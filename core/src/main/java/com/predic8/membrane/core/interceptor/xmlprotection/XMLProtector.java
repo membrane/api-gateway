@@ -26,8 +26,8 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Filters XML streams, removing potentially malicious elements:
@@ -43,7 +43,7 @@ import org.apache.commons.logging.LogFactory;
  * an error response should be returned to the requestor.
  */
 public class XMLProtector {
-	private static Log log = LogFactory.getLog(XMLProtector.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XMLProtector.class.getName());
 	private static XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
 	static {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, false);

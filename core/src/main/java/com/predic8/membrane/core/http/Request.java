@@ -22,8 +22,8 @@ import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.Constants;
@@ -38,7 +38,7 @@ import com.predic8.membrane.core.util.URLUtil;
 
 public class Request extends Message {
 
-	private static final Log LOG = LogFactory.getLog(Request.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Request.class.getName());
 	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
 
 	public static final String METHOD_GET = "GET";
@@ -136,10 +136,10 @@ public class Request extends Message {
 
 	@Override
 	protected void createBody(InputStream in) throws IOException {
-		LOG.debug("createBody");
+		log.debug("createBody");
 
 		if (isBodyEmpty()) {
-			LOG.debug("empty body created");
+			log.debug("empty body created");
 			body = new EmptyBody();
 			return;
 		}

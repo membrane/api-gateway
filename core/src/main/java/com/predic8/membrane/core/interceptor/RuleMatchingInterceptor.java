@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor;
 
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -36,7 +36,7 @@ import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 @MCElement(name="ruleMatching")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(RuleMatchingInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(RuleMatchingInterceptor.class.getName());
 
 	private boolean xForwardedForEnabled = true;
 	private int maxXForwardedForHeaders = 20;

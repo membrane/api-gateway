@@ -20,8 +20,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
@@ -32,7 +32,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 
 public class Response extends Message {
 
-	private static final Log LOG = LogFactory.getLog(Response.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Response.class.getName());
 	private static final Pattern pattern = Pattern.compile("HTTP/(.+?) (.+?) (.+?)$");
 
 	private int statusCode;
@@ -77,7 +77,7 @@ public class Response extends Message {
 						try {
 							stream.close();
 						} catch (IOException e) {
-							LOG.error("Could not close body stream.", e);
+							log.error("Could not close body stream.", e);
 						}
 					}
 				});
@@ -356,7 +356,7 @@ public class Response extends Message {
 			return;
 
 		if (isBodyEmpty()) {
-			LOG.debug("empty body created");
+			log.debug("empty body created");
 			body = new EmptyBody();
 			return;
 		}

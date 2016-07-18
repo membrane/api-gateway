@@ -18,8 +18,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.AbstractRefreshableApplicationContext;
 
 import com.predic8.membrane.core.config.spring.CheckableBeanFactory;
@@ -27,7 +27,7 @@ import com.predic8.membrane.core.config.spring.CheckableBeanFactory.InvalidConfi
 
 public class HotDeploymentThread extends Thread {
 
-	private static Log log = LogFactory.getLog(HotDeploymentThread.class.getName());
+	private static Logger log = LoggerFactory.getLogger(HotDeploymentThread.class.getName());
 
 	private List<HotDeploymentThread.FileInfo> files = new ArrayList<HotDeploymentThread.FileInfo>();
 	protected AbstractRefreshableApplicationContext applicationContext;

@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor.cache;
 import java.io.IOException;
 import java.text.ParseException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -29,7 +29,7 @@ import com.predic8.membrane.core.util.ByteUtil;
 class PositiveNode extends Node {
 	private static final long serialVersionUID = 1L;
 
-	static final Log log = LogFactory.getLog(PositiveNode.class.getName());
+	static final Logger log = LoggerFactory.getLogger(PositiveNode.class.getName());
 
 
 	byte[] content;

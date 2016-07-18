@@ -20,8 +20,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.http.Header;
@@ -52,7 +52,7 @@ public class Exchange extends AbstractExchange {
 
 	public static final String OAUTH2 = "oauth2";
 
-	private static Log log = LogFactory.getLog(Exchange.class.getName());
+	private static Logger log = LoggerFactory.getLogger(Exchange.class.getName());
 
 	private AbstractHttpHandler handler;
 

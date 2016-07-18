@@ -27,8 +27,8 @@ import java.util.concurrent.Executors;
 import com.predic8.membrane.annot.bean.MCUtil;
 import com.predic8.membrane.core.jmx.JmxExporter;
 import com.predic8.membrane.core.jmx.JmxRouter;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -84,7 +84,7 @@ import com.predic8.membrane.core.util.URIFactory;
 @MCElement(name="router")
 public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware {
 
-	private static final Log log = LogFactory.getLog(Router.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Router.class.getName());
 
 	/**
 	 * In case more than one <router hotDeploy="true" /> starts within the same

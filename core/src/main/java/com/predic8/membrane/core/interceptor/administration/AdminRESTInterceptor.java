@@ -24,8 +24,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.predic8.membrane.core.exchange.ExchangeState;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -50,7 +50,7 @@ import com.predic8.membrane.core.util.TextUtil;
 public class AdminRESTInterceptor extends RESTInterceptor {
 
 	@SuppressWarnings("unused")
-	private static Log log = LogFactory.getLog(AdminRESTInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(AdminRESTInterceptor.class.getName());
 
 	@Mapping("/admin/rest/clients(/?\\?.*)?")
 	public Response getClients(QueryParameter params, String relativeRootPath) throws Exception {

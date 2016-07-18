@@ -25,8 +25,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.ws.relocator.Relocator;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @description Rewrites the scheme, hostname and port in the "Location" header in HTTP responses,
@@ -36,7 +36,7 @@ import org.apache.commons.logging.LogFactory;
  */
 @MCElement(name="reverseProxying")
 public class ReverseProxyingInterceptor extends AbstractInterceptor {
-	private static final Log log = LogFactory.getLog(ReverseProxyingInterceptor.class);
+	private static final Logger log = LoggerFactory.getLogger(ReverseProxyingInterceptor.class);
 
 	public ReverseProxyingInterceptor() {
 		name = "Reverse Proxy";

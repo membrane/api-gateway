@@ -22,8 +22,8 @@ import com.predic8.membrane.core.interceptor.oauth2.ConsentPageFile;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.floreysoft.jmte.Engine;
 import com.floreysoft.jmte.ErrorHandler;
@@ -42,7 +42,7 @@ import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 public class LoginDialog {
-	private static Log log = LogFactory.getLog(LoginDialog.class.getName());
+	private static Logger log = LoggerFactory.getLogger(LoginDialog.class.getName());
 
 	private String path, message;
 	private boolean exposeUserCredentialsToSession;
@@ -162,7 +162,7 @@ public class LoginDialog {
 						showPage(exc, 0, "error", "INVALID_PASSWORD");
 						return;
 					} catch (Exception e) {
-						log.error(e);
+						log.error("",e);
 						showPage(exc, 0, "error", "INTERNAL_SERVER_ERROR");
 						return;
 					}
@@ -204,7 +204,7 @@ public class LoginDialog {
 						showPage(exc, 0, "error", "INVALID_TOKEN");
 						return;
 					} catch (Exception e) {
-						log.error(e);
+						log.error("",e);
 						s.clear();
 						showPage(exc, 0, "error", "INTERNAL_SERVER_ERROR");
 						return;

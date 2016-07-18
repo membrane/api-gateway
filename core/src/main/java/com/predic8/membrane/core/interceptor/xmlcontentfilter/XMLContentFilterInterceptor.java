@@ -15,7 +15,8 @@ package com.predic8.membrane.core.interceptor.xmlcontentfilter;
 
 import javax.xml.xpath.XPathExpressionException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -51,7 +52,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name="xmlContentFilter")
 public class XMLContentFilterInterceptor extends AbstractInterceptor {
 
-	private static final Logger LOG = Logger.getLogger(XMLContentFilterInterceptor.class);
+	private static final Logger LOG = LoggerFactory.getLogger(XMLContentFilterInterceptor.class);
 
 	private String xPath;
 	private XMLContentFilter xmlContentFilter;

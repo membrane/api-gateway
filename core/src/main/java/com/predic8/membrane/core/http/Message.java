@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
@@ -32,7 +32,7 @@ import com.predic8.membrane.core.util.MessageUtil;
  */
 public abstract class Message {
 
-	private static Log log = LogFactory.getLog(Message.class.getName());
+	private static Logger log = LoggerFactory.getLogger(Message.class.getName());
 
 	protected Header header;
 

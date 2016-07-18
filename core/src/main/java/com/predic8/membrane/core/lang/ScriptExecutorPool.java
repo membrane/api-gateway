@@ -17,14 +17,14 @@ package com.predic8.membrane.core.lang;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Function;
 import com.predic8.membrane.core.Router;
 
 public abstract class ScriptExecutorPool<T, R> implements Function<Map<String, Object>, R> {
-	private static final Log log = LogFactory.getLog(ScriptExecutorPool.class);
+	private static final Logger log = LoggerFactory.getLogger(ScriptExecutorPool.class);
 
 	private static final int concurrency = Runtime.getRuntime().availableProcessors() * 2;
 	ArrayBlockingQueue<T> scripts = new ArrayBlockingQueue<T>(concurrency);

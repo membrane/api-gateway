@@ -19,8 +19,8 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
@@ -34,7 +34,7 @@ import com.predic8.membrane.core.http.Response;
 @MCElement(name="counter")
 public class CountInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(CountInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(CountInterceptor.class.getName());
 
 	private int counter;
 

@@ -16,13 +16,13 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import java.security.InvalidParameterException;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 
 public abstract class SMSTokenProvider extends NumericTokenProvider {
-	private static Log log = LogFactory.getLog(SMSTokenProvider.class.getName());
+	private static Logger log = LoggerFactory.getLogger(SMSTokenProvider.class.getName());
 
 	protected String prefixText = "Token: ";
 	private boolean simulate;

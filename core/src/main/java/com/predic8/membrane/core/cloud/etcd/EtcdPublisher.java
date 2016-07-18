@@ -18,8 +18,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.UUID;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -37,7 +37,7 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 
 @MCElement(name = "etcdPublisher")
 public class EtcdPublisher implements ApplicationContextAware, Lifecycle {
-    private static final Log log = LogFactory.getLog(EtcdPublisher.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(EtcdPublisher.class.getName());
 
     private ApplicationContext context;
     private HashMap<String, ArrayList<String>> modulesToUUIDs = new HashMap<String, ArrayList<String>>();

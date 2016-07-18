@@ -24,8 +24,8 @@ import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
@@ -44,7 +44,7 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 @MCElement(name = "etcdBasedConfigurator")
 public class EtcdBasedConfigurator implements ApplicationContextAware, Lifecycle, DisposableBean {
 
-	private static final Log log = LogFactory.getLog(EtcdBasedConfigurator.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(EtcdBasedConfigurator.class.getName());
 
 	private ApplicationContext context;
 	private int port = 8080;

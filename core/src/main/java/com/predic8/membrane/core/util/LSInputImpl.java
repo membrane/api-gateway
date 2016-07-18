@@ -17,15 +17,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.ls.LSInput;
 
 import com.predic8.membrane.core.Constants;
 
 public class LSInputImpl implements LSInput {
 
-	private static Log log = LogFactory.getLog(LSInputImpl.class.getName());
+	private static Logger log = LoggerFactory.getLogger(LSInputImpl.class.getName());
 
 	private String publicId;
 	private String systemId;

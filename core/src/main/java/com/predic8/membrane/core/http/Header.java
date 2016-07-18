@@ -23,7 +23,8 @@ import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.logging.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 
 import com.predic8.membrane.core.Constants;
@@ -116,7 +117,7 @@ public class Header {
 	private static final Pattern timeoutPattern = Pattern.compile("timeout\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
 	private static final Pattern maxPattern = Pattern.compile("max\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
 
-	private static final Log log = LogFactory.getLog(Header.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(Header.class.getName());
 
 
 

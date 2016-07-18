@@ -27,15 +27,15 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 
 public class XSLTTransformer {
-	private static Log log = LogFactory.getLog(XSLTTransformer.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XSLTTransformer.class.getName());
 
 	private final TransformerFactory fac;
 	private final ArrayBlockingQueue<Transformer> transformers;

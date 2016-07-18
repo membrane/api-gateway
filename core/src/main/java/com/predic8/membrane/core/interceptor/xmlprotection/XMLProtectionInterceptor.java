@@ -18,8 +18,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -37,7 +37,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name="xmlProtection")
 public class XMLProtectionInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(XMLProtectionInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(XMLProtectionInterceptor.class.getName());
 
 	private int maxAttibuteCount = 1000;
 	private int maxElementNameLength = 1000;

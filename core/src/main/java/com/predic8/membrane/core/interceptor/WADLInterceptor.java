@@ -23,8 +23,8 @@ import java.io.OutputStreamWriter;
 
 import javax.xml.namespace.QName;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
@@ -34,7 +34,7 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
 @MCElement(name="wadlRewriter")
 public class WADLInterceptor extends RelocatingInterceptor {
 
-	private static Log log = LogFactory.getLog(WADLInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(WADLInterceptor.class.getName());
 
 	public WADLInterceptor() {
 		name = "WADL Rewriting Interceptor";

@@ -14,8 +14,8 @@
 
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -39,7 +39,7 @@ import com.predic8.membrane.core.util.TextUtil;
  */
 @MCElement(name="validator")
 public class ValidatorInterceptor extends AbstractInterceptor implements ApplicationContextAware {
-	private static Log log = LogFactory.getLog(ValidatorInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(ValidatorInterceptor.class.getName());
 
 	private String wsdl;
 	private String schema;

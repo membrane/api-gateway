@@ -20,16 +20,15 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 
 public class SOAPUtil {
-	private static final Log log = LogFactory
-			.getLog(SOAPUtil.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(SOAPUtil.class.getName());
 
 	public static boolean isSOAP(XMLInputFactory xmlInputFactory, XOPReconstitutor xopr, Message msg) {
 		try {

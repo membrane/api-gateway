@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.rest;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -25,7 +25,7 @@ import com.predic8.membrane.core.interceptor.Outcome;
 @MCElement(name="http2xml")
 public class HTTP2XMLInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(HTTP2XMLInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(HTTP2XMLInterceptor.class.getName());
 
 	public HTTP2XMLInterceptor() {
 		name = "HTTP 2 XML";

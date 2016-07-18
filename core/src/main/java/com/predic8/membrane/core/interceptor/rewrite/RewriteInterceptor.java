@@ -21,8 +21,8 @@ import java.util.ListIterator;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
@@ -135,7 +135,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 
 	}
 
-	private static Log log = LogFactory.getLog(RewriteInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(RewriteInterceptor.class.getName());
 
 	private List<Mapping> mappings = new ArrayList<Mapping>();
 

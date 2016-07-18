@@ -35,11 +35,11 @@ import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractExchange {
-	private static final Log log = LogFactory.getLog(AbstractExchange.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(AbstractExchange.class.getName());
 
 	protected Request request;
 	private Response response;

@@ -17,8 +17,8 @@ package com.predic8.membrane.core.interceptor.flow;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.base.Function;
@@ -49,7 +49,7 @@ import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
  */
 @MCElement(name="if")
 public class ConditionalInterceptor extends AbstractFlowInterceptor {
-	private static final Log log = LogFactory.getLog(InterceptorFlowController.class);
+	private static final Logger log = LoggerFactory.getLogger(InterceptorFlowController.class);
 
 	// configuration
 	private String test;

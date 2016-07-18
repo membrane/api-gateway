@@ -16,7 +16,8 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import java.util.*;
 
-import org.apache.commons.logging.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -26,7 +27,7 @@ import com.predic8.membrane.core.interceptor.balancer.Node.Status;
 @MCElement(name="cluster", topLevel=false)
 public class Cluster {
 
-	private static Log log = LogFactory.getLog(Cluster.class.getName());
+	private static Logger log = LoggerFactory.getLogger(Cluster.class.getName());
 
 	public static final String DEFAULT_NAME = "Default";
 

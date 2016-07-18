@@ -28,11 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -60,7 +57,7 @@ import com.predic8.membrane.core.util.URLUtil;
  * Handles the dynamic part of the admin console (= requests starting with "/admin/").
  */
 public class DynamicAdminPageInterceptor extends AbstractInterceptor {
-	private static Log log = LogFactory.getLog(DynamicAdminPageInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(DynamicAdminPageInterceptor.class.getName());
 	private boolean readOnly;
 
 	@Override
@@ -292,7 +289,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 
 				p().text("Membrane version: " + Constants.VERSION).end();
 
-				createLogConfigurationEditor();
+				//createLogConfigurationEditor();
 			}
 		}.createPage());
 	}
@@ -901,7 +898,8 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		return Response.forbidden("The admin console is configured to be readOnly.").build();
 	}
 
-	@Mapping("/admin/log/level")
+	//slf4j change
+	/*@Mapping("/admin/log/level")
 	public Response handleChangeLogLevelRequest(Map<String, String> params, String relativeRootPath) throws Exception {
 		if (readOnly)
 			return createReadOnlyErrorResponse();
@@ -916,6 +914,6 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 		String config = params.get("logconfig");
 		PropertyConfigurator.configure(new ByteArrayInputStream(config.getBytes()));
 		return handleSystemRequest(params, relativeRootPath);
-	}
+	}*/
 
 }

@@ -28,8 +28,8 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationContext;
@@ -45,7 +45,7 @@ import java.net.UnknownHostException;
 @MCElement(name="etcdRegistryApiConfig")
 public class EtcdRegistryApiConfig implements Lifecycle, ApplicationContextAware, ApiConfig, DisposableBean {
 
-    private static final Log log = LogFactory.getLog(EtcdRegistryApiConfig.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(EtcdRegistryApiConfig.class.getName());
 
     private ApplicationContext context;
     private ApiManagementConfiguration amc;

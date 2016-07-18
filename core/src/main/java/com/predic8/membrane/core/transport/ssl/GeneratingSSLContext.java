@@ -22,8 +22,8 @@ import com.oracle.util.ssl.SSLCapabilities;
 import com.oracle.util.ssl.SSLExplorer;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.resolver.ResolverMap;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -58,7 +58,7 @@ import java.util.Date;
 import java.util.List;
 
 public class GeneratingSSLContext extends SSLContext {
-    private static final Log log = LogFactory.getLog(GeneratingSSLContext.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(GeneratingSSLContext.class.getName());
 
     private final PrivateKey caPrivate;
     private final SSLParser sslParser;

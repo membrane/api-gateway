@@ -33,12 +33,12 @@ import com.predic8.beautifier.HtmlBeautifierFormatter;
 import com.predic8.beautifier.PlainBeautifierFormatter;
 import com.predic8.beautifier.XMLBeautifier;
 import com.predic8.beautifier.XMLBeautifierFormatter;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class TextUtil {
-	private static Log log = LogFactory.getLog(TextUtil.class.getName());
+	private static Logger log = LoggerFactory.getLogger(TextUtil.class.getName());
 
 	private static final char[] source;
 	private static final String[] replace;

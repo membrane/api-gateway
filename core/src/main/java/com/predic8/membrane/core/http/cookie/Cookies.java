@@ -19,8 +19,8 @@ package com.predic8.membrane.core.http.cookie;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -38,7 +38,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public final class Cookies {
 
-	private static final Log log = LogFactory.getLog(Cookies.class);
+	private static final Logger log = LoggerFactory.getLogger(Cookies.class);
 
 	// expected average number of cookies per request
 	public static final int INITIAL_SIZE=4;

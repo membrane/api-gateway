@@ -15,12 +15,12 @@ package com.predic8.membrane.core.rules;
 
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractRuleKey implements RuleKey {
 
-	private static Log log = LogFactory.getLog(AbstractRuleKey.class.getName());
+	private static Logger log = LoggerFactory.getLogger(AbstractRuleKey.class.getName());
 
 	/**
 	 * -1 is used as a wildcard. It is used by HttpServletHandler, since its port

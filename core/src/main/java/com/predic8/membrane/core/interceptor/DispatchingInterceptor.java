@@ -15,8 +15,8 @@ package com.predic8.membrane.core.interceptor;
 
 import java.net.URL;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -35,7 +35,7 @@ import com.predic8.membrane.core.rules.AbstractServiceProxy;
 @MCElement(name="dispatching")
 public class DispatchingInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(DispatchingInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(DispatchingInterceptor.class.getName());
 
 	public DispatchingInterceptor() {
 		name = "Dispatching Interceptor";

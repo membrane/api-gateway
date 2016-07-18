@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.config.ConfigurationException;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
@@ -40,7 +40,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public class RuleManager {
 
-	private static Log log = LogFactory.getLog(RuleManager.class.getName());
+	private static Logger log = LoggerFactory.getLogger(RuleManager.class.getName());
 
 	private Router router;
 

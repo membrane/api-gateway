@@ -28,8 +28,8 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.http.MediaType;
 
@@ -152,7 +152,7 @@ public class REST2SOAPInterceptor extends SOAPRESTHelper {
 		}
 	}
 
-	private static Log log = LogFactory.getLog(REST2SOAPInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
 
 	private List<Mapping> mappings = new ArrayList<Mapping>();
 	private Boolean isSOAP12;

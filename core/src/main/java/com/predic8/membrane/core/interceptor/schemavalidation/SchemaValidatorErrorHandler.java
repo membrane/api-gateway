@@ -13,15 +13,15 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.schemavalidation;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 public class SchemaValidatorErrorHandler implements ErrorHandler {
 
-	private static Log log = LogFactory.getLog(SchemaValidatorErrorHandler.class.getName());
+	private static Logger log = LoggerFactory.getLogger(SchemaValidatorErrorHandler.class.getName());
 
 	private Exception exception;
 

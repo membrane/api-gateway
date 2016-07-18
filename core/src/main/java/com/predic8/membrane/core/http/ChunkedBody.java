@@ -19,8 +19,8 @@ import static com.predic8.membrane.core.http.ChunkedBodyTransferrer.ZERO;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.util.ByteUtil;
@@ -33,7 +33,7 @@ import com.predic8.membrane.core.util.HttpUtil;
  */
 public class ChunkedBody extends AbstractBody {
 
-	private static final Log log = LogFactory.getLog(ChunkedBody.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(ChunkedBody.class.getName());
 	private InputStream inputStream;
 
 	public ChunkedBody(InputStream in) {

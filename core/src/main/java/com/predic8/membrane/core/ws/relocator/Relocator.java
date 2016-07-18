@@ -36,12 +36,12 @@ import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
 import com.predic8.membrane.core.Constants;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @NotThreadSafe
 public class Relocator {
-	private static Log log = LogFactory.getLog(Relocator.class.getName());
+	private static Logger log = LoggerFactory.getLogger(Relocator.class.getName());
 
 	private final XMLEventFactory fac = XMLEventFactory.newInstance();
 

@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -52,7 +52,7 @@ import com.predic8.membrane.core.util.TextUtil;
 @MCElement(name="webServer")
 public class WebServerInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(WebServerInterceptor.class
+	private static Logger log = LoggerFactory.getLogger(WebServerInterceptor.class
 			.getName());
 
 	private static String[] EMPTY = new String[0];

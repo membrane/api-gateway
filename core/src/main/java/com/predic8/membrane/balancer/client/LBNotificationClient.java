@@ -27,8 +27,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.cli.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
@@ -40,7 +40,7 @@ import com.predic8.membrane.core.util.MessageUtil;
 
 public class LBNotificationClient {
 
-	private static Log log = LogFactory.getLog(LBNotificationClient.class.getName());
+	private static Logger log = LoggerFactory.getLogger(LBNotificationClient.class.getName());
 
 	private String propertiesFile = "client.properties";
 	private String cmd;

@@ -19,12 +19,12 @@ import java.net.InetAddress;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.EndOfStreamException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
-	private static Log log = LogFactory.getLog(HttpResendHandler.class.getName());
+	private static Logger log = LoggerFactory.getLogger(HttpResendHandler.class.getName());
 
 	public HttpResendHandler(Exchange exc, HttpTransport transport) {
 		super(transport);

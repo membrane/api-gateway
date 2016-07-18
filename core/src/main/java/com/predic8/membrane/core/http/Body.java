@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.util.ByteUtil;
 
@@ -42,7 +42,7 @@ public class Body extends AbstractBody {
 		BUFFER_SIZE = bufferSize == null ? 8192 : Integer.parseInt(bufferSize);
 	}
 
-	private static Log log = LogFactory.getLog(Body.class.getName());
+	private static Logger log = LoggerFactory.getLogger(Body.class.getName());
 	private final InputStream inputStream;
 	private final int length;
 

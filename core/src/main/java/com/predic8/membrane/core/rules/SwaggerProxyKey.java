@@ -18,14 +18,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.swagger.models.Path;
 import io.swagger.models.Swagger;
 
 public class SwaggerProxyKey extends ServiceProxyKey {
-	private static Log log = LogFactory.getLog(SwaggerProxyKey.class.getName());
+	private static Logger log = LoggerFactory.getLogger(SwaggerProxyKey.class.getName());
 
 	private Swagger swagger;
 	private boolean allowUI;

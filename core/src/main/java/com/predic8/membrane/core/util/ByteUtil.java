@@ -22,14 +22,14 @@ import java.util.List;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.http.Chunk;
 
 public class ByteUtil {
 
-	private static Log log = LogFactory.getLog(ByteUtil.class.getName());
+	private static Logger log = LoggerFactory.getLogger(ByteUtil.class.getName());
 
 	public static byte[] readByteArray(InputStream in, int length) throws IOException {
 		if (length < 0)

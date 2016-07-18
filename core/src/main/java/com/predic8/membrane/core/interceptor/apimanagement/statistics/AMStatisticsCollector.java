@@ -26,8 +26,8 @@ import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @MCElement(name="amStatisticsCollector")
 public class AMStatisticsCollector {
 
-    private static Logger log = LogManager.getLogger(AMStatisticsCollector.class);
+    private static Logger log = LoggerFactory.getLogger(AMStatisticsCollector.class);
     public static final String API_STATISTICS_PATH = "/api/statistics/";
     public static final String API_EXCHANGES_PATH = "/api/exchanges/";
     boolean shutdown = false;

@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor;
 import java.net.ConnectException;
 import java.net.UnknownHostException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -39,7 +39,7 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 @MCElement(name="httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(HTTPClientInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
 
 	private boolean failOverOn5XX;
 	private boolean adjustHostHeader = true;

@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.services;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class DummyWebServiceInterceptor extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(DummyWebServiceInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(DummyWebServiceInterceptor.class.getName());
 
     private AtomicLong counter = new AtomicLong();
 

@@ -19,8 +19,8 @@ import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.config.security.Store;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.TrustManagerWrapper;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
 import javax.net.ssl.*;
@@ -45,7 +45,7 @@ public class StaticSSLContext extends SSLContext {
     private static boolean default_certificate_warned = false;
     private static boolean limitedStrength;
 
-    private static final Log log = LogFactory.getLog(StaticSSLContext.class.getName());
+    private static final Logger log = LoggerFactory.getLogger(StaticSSLContext.class.getName());
 
     static {
         String dhKeySize = System.getProperty("jdk.tls.ephemeralDHKeySize");

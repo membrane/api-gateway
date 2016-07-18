@@ -27,8 +27,8 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Message;
@@ -48,7 +48,7 @@ public class XML2HTTP {
 		xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 	}
 
-	private static Log log = LogFactory.getLog(XML2HTTP.class);
+	private static Logger log = LoggerFactory.getLogger(XML2HTTP.class);
 
 	/**
 	 * Checks, if the response contains an XML doc with NS {@link Constants#HTTP_NS}.

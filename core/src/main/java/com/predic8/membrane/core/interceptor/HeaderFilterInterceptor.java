@@ -17,7 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import com.predic8.membrane.annot.MCChildElement;
@@ -36,7 +37,7 @@ import com.predic8.membrane.core.http.Message;
 @MCElement(name="headerFilter")
 public class HeaderFilterInterceptor extends AbstractInterceptor {
 
-	private static final Logger log = Logger.getLogger(HeaderFilterInterceptor.class);
+	private static final Logger log = LoggerFactory.getLogger(HeaderFilterInterceptor.class);
 
 	private List<Rule> rules = new ArrayList<Rule>();
 

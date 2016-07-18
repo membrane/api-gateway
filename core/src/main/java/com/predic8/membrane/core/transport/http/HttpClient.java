@@ -26,8 +26,8 @@ import java.nio.ByteBuffer;
 import javax.annotation.concurrent.GuardedBy;
 
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.security.SSLParser;
@@ -54,7 +54,7 @@ import com.predic8.membrane.core.util.Util;
  */
 public class HttpClient {
 
-	private static Log log = LogFactory.getLog(HttpClient.class.getName());
+	private static Logger log = LoggerFactory.getLogger(HttpClient.class.getName());
 	@GuardedBy("HttpClient.class")
 	private static SSLProvider defaultSSLProvider;
 
@@ -321,9 +321,9 @@ public class HttpClient {
 			msg.append(Constants.ISO_8859_1_CHARSET.decode(ByteBuffer.wrap(baos.toByteArray())));
 
 			if (e != null)
-				log.debug(msg, e);
+				log.debug("{}",msg, e);
 			else
-				log.debug(msg);
+				log.debug("{}",msg);
 		}
 	}
 

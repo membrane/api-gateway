@@ -31,8 +31,8 @@ import java.net.URLDecoder;
 
 import javax.xml.namespace.QName;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.googlecode.jatl.Html;
 import com.predic8.membrane.annot.MCAttribute;
@@ -53,7 +53,7 @@ import com.predic8.membrane.core.ws.relocator.Relocator;
 @MCElement(name="wsdlRewriter")
 public class WSDLInterceptor extends RelocatingInterceptor {
 
-	private static Log log = LogFactory.getLog(WSDLInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(WSDLInterceptor.class.getName());
 
 	private String registryWSDLRegisterURL;
 	private boolean rewriteEndpoint = true;
@@ -125,7 +125,7 @@ public class WSDLInterceptor extends RelocatingInterceptor {
 		try {
 			Response res = hc.call(createExchange(uri)).getResponse();
 			if (res.getStatusCode() != 200)
-				log.warn(res);
+				log.warn("{}",res);
 		} catch (Exception e) {
 			log.error("", e);
 		}

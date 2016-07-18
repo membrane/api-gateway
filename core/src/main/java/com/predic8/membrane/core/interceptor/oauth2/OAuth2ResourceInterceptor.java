@@ -42,8 +42,8 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
 import java.math.BigInteger;
@@ -60,7 +60,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @MCElement(name = "oauth2Resource")
 public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     public static final String OAUTH2_ANSWER = "oauth2Answer";
-    private static Log log = LogFactory.getLog(OAuth2ResourceInterceptor.class.getName());
+    private static Logger log = LoggerFactory.getLogger(OAuth2ResourceInterceptor.class.getName());
 
     private String loginLocation;
     private String loginPath = "/login/";

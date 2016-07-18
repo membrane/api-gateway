@@ -24,15 +24,15 @@ import java.security.InvalidParameterException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.transport.PortOccupiedException;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public class HttpEndpointListener extends Thread {
 
-	private static final Log log = LogFactory.getLog(HttpEndpointListener.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(HttpEndpointListener.class.getName());
 
 	private final ServerSocket serverSocket;
 	private final HttpTransport transport;
@@ -79,11 +79,11 @@ public class HttpEndpointListener extends Thread {
 					log.debug("socket closed.");
 					break;
 				} else
-					log.error(e);
+					log.error("",e);
 			} catch (NullPointerException e) {
 				// Ignore this. serverSocket variable is set null during a loop in the process of closing server socket.
 			} catch (Exception e) {
-				log.error(e);
+				log.error("",e);
 			}
 		}
 	}

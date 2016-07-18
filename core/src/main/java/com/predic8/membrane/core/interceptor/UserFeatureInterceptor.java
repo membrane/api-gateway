@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -29,7 +29,7 @@ import com.predic8.membrane.core.rules.Rule;
 @MCElement(name="userFeature")
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
-	private static final Log log = LogFactory.getLog(UserFeatureInterceptor.class.getName());
+	private static final Logger log = LoggerFactory.getLogger(UserFeatureInterceptor.class.getName());
 	private static final InterceptorFlowController flowController = new InterceptorFlowController();
 
 	public UserFeatureInterceptor() {

@@ -20,8 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -32,7 +32,7 @@ import com.predic8.membrane.core.interceptor.xslt.XSLTTransformer;
 
 abstract class SOAPRESTHelper extends AbstractInterceptor {
 
-	private static Log log = LogFactory.getLog(REST2SOAPInterceptor.class.getName());
+	private static Logger log = LoggerFactory.getLogger(REST2SOAPInterceptor.class.getName());
 
 	private final ConcurrentHashMap<String, XSLTTransformer> xsltTransformers =
 			new ConcurrentHashMap<String, XSLTTransformer>();
