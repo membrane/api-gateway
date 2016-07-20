@@ -14,6 +14,7 @@
 
 package com.predic8.membrane.core.transport.ssl;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -22,7 +23,7 @@ import java.net.Socket;
 public interface SSLProvider {
 	public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException;
 	public Socket wrapAcceptedSocket(Socket socket) throws IOException;
-	public Socket createSocket(String host, int port, int connectTimeout) throws IOException;
-	public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException;
+	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException;
+	public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException;
 
 }

@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,6 +28,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
+
+import javax.annotation.Nullable;
 
 /**
  * Pools TCP/IP connections, holding them open for a configurable number of milliseconds.
@@ -58,15 +59,22 @@ public class ConnectionManager {
 	private static class ConnectionKey {
 		public final String host;
 		public final int port;
+		@Nullable public String serverName;
 
 		public ConnectionKey(String host, int port) {
 			this.host = host;
 			this.port = port;
 		}
 
+		public ConnectionKey(String host, int port, String serverName) {
+			this.host = host;
+			this.port = port;
+			this.serverName = serverName;
+		}
+
 		@Override
 		public int hashCode() {
-			return Objects.hashCode(host, port);
+			return Objects.hashCode(host, port,serverName);
 		}
 
 		@Override
@@ -74,7 +82,9 @@ public class ConnectionManager {
 			if (!(obj instanceof ConnectionKey) || obj == null)
 				return false;
 			ConnectionKey other = (ConnectionKey)obj;
-			return host.equals(other.host) && port == other.port;
+			return host.equals(other.host)
+					&& port == other.port
+					&& Objects.equal(serverName,other.serverName);
 		}
 
 		@Override
@@ -124,13 +134,13 @@ public class ConnectionManager {
 		}, autoCloseInterval, autoCloseInterval);
 	}
 
-	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
+	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout, @Nullable String sniServerName) throws UnknownHostException, IOException {
 
 		log.debug("connection requested for host: " + host + " and port: " + port);
 
 		log.debug("Number of connections in pool: " + numberInPool.get());
 
-		ConnectionKey key = new ConnectionKey(host, port);
+		ConnectionKey key = new ConnectionKey(host, port,sniServerName);
 		long now = System.currentTimeMillis();
 
 		synchronized(this) {
@@ -149,9 +159,13 @@ public class ConnectionManager {
 			}
 		}
 
-		Connection result = Connection.open(host, port, localHost, sslProvider, this, connectTimeout);
+		Connection result = Connection.open(host, port, localHost, sslProvider, this, connectTimeout,sniServerName);
 		numberInPool.incrementAndGet();
 		return result;
+	}
+
+	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout) throws UnknownHostException, IOException {
+		return getConnection(host,port,localHost,sslProvider,connectTimeout,null);
 	}
 
 	public void releaseConnection(Connection connection) {
@@ -163,7 +177,7 @@ public class ConnectionManager {
 			return;
 		}
 
-		ConnectionKey key = new ConnectionKey(connection.getHost(), connection.socket.getPort());
+		ConnectionKey key = new ConnectionKey(connection.getHost(), connection.socket.getPort(),connection.getSniServerName());
 		OldConnection o = new OldConnection(connection, keepAliveTimeout);
 		ArrayList<OldConnection> l;
 		synchronized(this) {

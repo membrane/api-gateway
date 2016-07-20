@@ -52,6 +52,8 @@ public class Exchange extends AbstractExchange {
 
 	public static final String OAUTH2 = "oauth2";
 
+	public static final String SNI_SERVER_NAME = "SNI_SERVER_NAME";
+
 	private static Logger log = LoggerFactory.getLogger(Exchange.class.getName());
 
 	private AbstractHttpHandler handler;

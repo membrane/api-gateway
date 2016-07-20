@@ -186,6 +186,10 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		return target.getUrl();
 	}
 
+	public SSLParser getTargetSSL() {
+		return target.getSslParser();
+	}
+
 	@Override
 	public boolean isTargetAdjustHostHeader() {
 		return target.isAdjustHostHeader();

@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SNIServerName;
 
 import org.slf4j.Logger;
@@ -206,13 +207,13 @@ public class SSLContextCollection implements SSLProvider {
 
 	@Override
 	public Socket createSocket(String host, int port, InetAddress addr,
-			int localPort, int connectTimeout) throws IOException {
-		return getSSLContextForHostname(host).createSocket(host, port, addr, localPort, connectTimeout);
+			int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
+		return getSSLContextForHostname(host).createSocket(host, port, addr, localPort, connectTimeout,sniServerName);
 	}
 
 	@Override
-	public Socket createSocket(String host, int port, int connectTimeout)
+	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName)
 			throws IOException {
-		return getSSLContextForHostname(host).createSocket(host, port, connectTimeout);
+		return getSSLContextForHostname(host).createSocket(host, port, connectTimeout, sniServerName);
 	}
 }

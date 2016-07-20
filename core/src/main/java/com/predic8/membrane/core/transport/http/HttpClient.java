@@ -192,7 +192,7 @@ public class HttpClient {
 					}
 				}
 				if (con == null) {
-					con = conMgr.getConnection(target.host, target.port, localAddr, getOutboundSSLProvider(exc, target), connectTimeout);
+					con = conMgr.getConnection(target.host, target.port, localAddr, getOutboundSSLProvider(exc, target), connectTimeout, getSNIServerName(exc));
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}
@@ -284,6 +284,13 @@ public class HttpClient {
 			}
 		}
 		throw exception;
+	}
+
+	private String getSNIServerName(Exchange exc) {
+		Object sniObject = exc.getProperty(Exchange.SNI_SERVER_NAME);
+		if(sniObject == null)
+			return null;
+		return (String) sniObject;
 	}
 
 	private void applyKeepAliveHeader(Response response, Connection con) {

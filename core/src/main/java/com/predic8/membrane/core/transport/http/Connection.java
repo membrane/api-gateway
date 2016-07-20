@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLSocket;
 
 import org.slf4j.Logger;
@@ -60,6 +61,7 @@ public class Connection implements MessageObserver {
 	public Socket socket;
 	public InputStream in;
 	public OutputStream out;
+    private String sniServerName;
 
 	private long lastUse;
 	private long timeout;
@@ -73,14 +75,14 @@ public class Connection implements MessageObserver {
 		return open(host, port, localHost, sslProvider, null, connectTimeout);
 	}
 
-	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
-		Connection con = new Connection(mgr, host);
+	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout, @Nullable String sniServername) throws UnknownHostException, IOException {
+		Connection con = new Connection(mgr, host,sniServername);
 
 		if (sslProvider != null) {
 			if (isNullOrEmpty(localHost))
-				con.socket = sslProvider.createSocket(host, port, connectTimeout);
+				con.socket = sslProvider.createSocket(host, port, connectTimeout,sniServername);
 			else
-				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0, connectTimeout);
+				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0, connectTimeout,sniServername);
 		} else {
 			if (isNullOrEmpty(localHost)) {
 				con.socket = new Socket();
@@ -99,9 +101,14 @@ public class Connection implements MessageObserver {
 		return con;
 	}
 
-	private Connection(ConnectionManager mgr, String host) {
+	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
+		return open(host,port,localHost,sslProvider,mgr,connectTimeout,null);
+	}
+
+	private Connection(ConnectionManager mgr, String host, @Nullable String sniServerName) {
 		this.mgr = mgr;
 		this.host = host;
+        this.sniServerName = sniServerName;
 	}
 
 	public boolean isSame(String host, int port) {
@@ -224,4 +231,12 @@ public class Connection implements MessageObserver {
 	public String toString() {
 		return socket.getRemoteSocketAddress().toString();
 	}
+
+    public String getSniServerName() {
+        return sniServerName;
+    }
+
+    public void setSniServerName(String sniServerName) {
+        this.sniServerName = sniServerName;
+    }
 }

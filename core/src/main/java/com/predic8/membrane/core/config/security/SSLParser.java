@@ -37,6 +37,7 @@ public class SSLParser {
 	private String clientAuth;
 	private boolean ignoreTimestampCheckFailure;
 	private String endpointIdentificationAlgorithm = "HTTPS";
+	private String serverName;
 
 	@Override
 	public boolean equals(Object obj) {
@@ -52,7 +53,8 @@ public class SSLParser {
 				&& Objects.equal(ciphers, other.ciphers)
 				&& Objects.equal(clientAuth, other.clientAuth)
 				&& Objects.equal(ignoreTimestampCheckFailure, other.ignoreTimestampCheckFailure)
-				&& Objects.equal(endpointIdentificationAlgorithm, other.endpointIdentificationAlgorithm);
+				&& Objects.equal(endpointIdentificationAlgorithm, other.endpointIdentificationAlgorithm)
+				&& Objects.equal(serverName, other.serverName);
 	}
 
 
@@ -198,5 +200,19 @@ public class SSLParser {
 	@MCAttribute
 	public void setEndpointIdentificationAlgorithm(String endpointIdentificationAlgorithm) {
 		this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
+	}
+
+	public String getServerName() {
+		return serverName;
+	}
+
+	/**
+	* @description Setting the serverName tells Java to use the SNI (http://www.rfc-base.org/txt/rfc-3546.txt) on outbound
+	*		 TLS connections to indicate to the TLS server, which hostname the client wants to connect to.
+	* @default same as target hostname.
+	 */
+	@MCAttribute
+	public void setServerName(String serverName) {
+		this.serverName = serverName;
 	}
 }

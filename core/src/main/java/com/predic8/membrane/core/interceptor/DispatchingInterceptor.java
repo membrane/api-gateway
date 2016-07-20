@@ -47,12 +47,22 @@ public class DispatchingInterceptor extends AbstractInterceptor {
 
 		if (exc.getRule() instanceof AbstractServiceProxy) {
 			exc.getDestinations().add(getForwardingDestination(exc));
+			setSNIPropertyOnExchange(exc);
 			return Outcome.CONTINUE;
 		}
 
 		exc.getDestinations().add(exc.getRequest().getUri());
 
 		return Outcome.CONTINUE;
+	}
+
+	private void setSNIPropertyOnExchange(Exchange exc) {
+		AbstractServiceProxy asp = (AbstractServiceProxy) exc.getRule();
+		if(asp.getTargetSSL() != null) {
+			String sni = asp.getTargetSSL().getServerName();
+			if (sni != null)
+				exc.setProperty(Exchange.SNI_SERVER_NAME, sni);
+		}
 	}
 
 	public static String getForwardingDestination(Exchange exc) throws Exception {

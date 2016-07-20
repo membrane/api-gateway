@@ -37,6 +37,7 @@ import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -248,12 +249,12 @@ public class GeneratingSSLContext extends SSLContext {
     }
 
     @Override
-    public Socket createSocket(String host, int port, int connectTimeout) throws IOException {
+    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
         throw new IllegalStateException("not implemented");
     }
 
     @Override
-    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException {
+    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
         throw new IllegalStateException("not implemented");
     }
 

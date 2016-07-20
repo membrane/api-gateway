@@ -22,8 +22,10 @@ import com.predic8.membrane.core.transport.TrustManagerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import javax.crypto.Cipher;
 import javax.net.ssl.*;
+import javax.validation.constraints.NotNull;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -277,11 +279,12 @@ public class StaticSSLContext extends SSLContext {
         return socket;
     }
 
-    public Socket createSocket(String host, int port, int connectTimeout) throws IOException {
+    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
         Socket s = new Socket();
         s.connect(new InetSocketAddress(host, port), connectTimeout);
         SSLSocketFactory sslsf = sslc.getSocketFactory();
         SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host, port, true);
+        applySNI(ssls, sniServerName,host);
         if (protocols != null) {
             ssls.setEnabledProtocols(protocols);
         } else {
@@ -299,13 +302,14 @@ public class StaticSSLContext extends SSLContext {
         return ssls;
     }
 
-    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout) throws IOException {
+    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
         Socket s = new Socket();
         s.bind(new InetSocketAddress(addr, localPort));
         s.connect(new InetSocketAddress(host, port), connectTimeout);
         SSLSocketFactory sslsf = sslc.getSocketFactory();
         SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host, port, true);
         applyCiphers(ssls);
+        applySNI(ssls, sniServerName,host);
         if (protocols != null) {
             ssls.setEnabledProtocols(protocols);
         } else {
@@ -320,6 +324,21 @@ public class StaticSSLContext extends SSLContext {
             ssls.setEnabledProtocols(set.toArray(new String[0]));
         }
         return ssls;
+    }
+
+    private void applySNI(@NotNull SSLSocket ssls, @Nullable String sniServerName, @NotNull String defaultHost) {
+        if(sniServerName != null && sniServerName.isEmpty())
+            return;
+        if(sniServerName == null)
+            sniServerName = defaultHost;
+
+        SNIHostName name = new SNIHostName(sniServerName.getBytes()); // mvn complains here when not putting in "bytes" even though there is a constructor for "string"
+        List<SNIServerName> serverNames = new ArrayList<>(1);
+        serverNames.add(name);
+
+        SSLParameters params = ssls.getSSLParameters();
+        params.setServerNames(serverNames);
+        ssls.setSSLParameters(params);
     }
 
     SSLSocketFactory getSocketFactory() {
