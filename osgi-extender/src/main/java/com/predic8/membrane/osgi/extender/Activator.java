@@ -41,7 +41,7 @@ public class Activator implements BundleActivator {
 		context = arg0;
 
 		logServiceReference = arg0.getServiceReference(LogService.class.getName());
-		OsgiAppender.setLogService((LogService) arg0.getService(logServiceReference));
+		//OsgiAppender.setLogService((LogService) arg0.getService(logServiceReference));
 
 		Properties p = new Properties();
 		p.put("osgi.service.blueprint.namespace", new NamespaceUtil().getTargetNamespaces().toArray(new String[0]));
@@ -52,7 +52,7 @@ public class Activator implements BundleActivator {
 
 	public void stop(BundleContext arg0) throws Exception {
 		registerService.unregister();
-		OsgiAppender.setLogService(null);
+		//OsgiAppender.setLogService(null);
 		arg0.ungetService(logServiceReference);
 	}
 
