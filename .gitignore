@@ -52,6 +52,9 @@ _*.swp
 /core/temp
 /core/.DS_Store
 
+# /maven-plugin
+/maven-plugin/target
+
 # /distribution/
 /distribution/.classpath
 /distribution/.project
@@ -105,3 +108,4 @@ _*.swp
 # Intellj
 *.iml
 .idea
+maven-plugin/target/surefire/
