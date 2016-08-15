@@ -65,6 +65,8 @@ public class HttpEndpointListener extends Thread {
 				Socket socket = serverSocket.accept();
 				openSockets.put(socket, Boolean.TRUE);
 				try {
+					if (log.isDebugEnabled())
+						log.debug("Accepted connection from " + socket.getRemoteSocketAddress());
 					transport.getExecutorService().execute(new HttpServerHandler(socket, this));
 				} catch (RejectedExecutionException e) {
 					openSockets.remove(socket);
