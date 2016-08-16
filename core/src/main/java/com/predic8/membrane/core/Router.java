@@ -247,8 +247,8 @@ public class Router implements Lifecycle, ApplicationContextAware, BeanNameAware
 		throw new IllegalArgumentException("No parent proxy found for the given interceptor.");
 	}
 
-	public void add(ServiceProxy serviceProxy) throws IOException {
-		ruleManager.addProxyAndOpenPortIfNew(serviceProxy);
+	public void add(Rule rule) throws IOException {
+		ruleManager.addProxyAndOpenPortIfNew(rule);
 	}
 
 	public void init() throws Exception {

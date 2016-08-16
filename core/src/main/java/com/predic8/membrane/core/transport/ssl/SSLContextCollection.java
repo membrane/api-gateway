@@ -216,4 +216,10 @@ public class SSLContextCollection implements SSLProvider {
 			throws IOException {
 		return getSSLContextForHostname(host).createSocket(host, port, connectTimeout, sniServerName);
 	}
+
+	@Override
+	public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName)
+			throws IOException {
+		return getSSLContextForHostname(host).createSocket(s, host, port, connectTimeout, sniServerName);
+	}
 }

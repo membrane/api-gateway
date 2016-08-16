@@ -20,6 +20,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.transport.ssl.GeneratingSSLContext;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -55,6 +58,9 @@ public abstract class AbstractProxy implements Rule {
 	private String error;
 
 	protected Router router;
+
+	private SSLContext sslInboundContext;
+	private SSLParser sslInboundParser;
 
 	public AbstractProxy() {
 	}
@@ -161,9 +167,25 @@ public abstract class AbstractProxy implements Rule {
 
 	protected abstract AbstractProxy getNewInstance();
 
+	public SSLParser getSslInboundParser() {
+		return sslInboundParser;
+	}
+
+	/**
+	 * @description Configures the usage of inbound SSL (HTTPS).
+	 */
+	@MCChildElement(order=75)
+	public void setSslInboundParser(SSLParser sslInboundParser) {
+		this.sslInboundParser = sslInboundParser;
+	}
+
 	@Override
 	public SSLContext getSslInboundContext() {
-		return null;
+		return sslInboundContext;
+	}
+
+	protected void setSslInboundContext(SSLContext sslInboundContext) {
+		this.sslInboundContext = sslInboundContext;
 	}
 
 	@Override
@@ -190,7 +212,14 @@ public abstract class AbstractProxy implements Rule {
 		}
 	}
 
-	public abstract void init() throws Exception;
+	public void init() throws Exception {
+		if (sslInboundParser != null) {
+			if (sslInboundParser.getKeyGenerator() != null)
+				setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+			else
+				setSslInboundContext(new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
+		}
+	}
 
 	public boolean isTargetAdjustHostHeader() {
 		return false;

@@ -279,11 +279,9 @@ public class StaticSSLContext extends SSLContext {
         return socket;
     }
 
-    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
-        Socket s = new Socket();
-        s.connect(new InetSocketAddress(host, port), connectTimeout);
+    public Socket createSocket(Socket socket, String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
         SSLSocketFactory sslsf = sslc.getSocketFactory();
-        SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host, port, true);
+        SSLSocket ssls = (SSLSocket) sslsf.createSocket(socket, host, port, true);
         applySNI(ssls, sniServerName,host);
         if (protocols != null) {
             ssls.setEnabledProtocols(protocols);
@@ -302,28 +300,17 @@ public class StaticSSLContext extends SSLContext {
         return ssls;
     }
 
+    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
+        Socket s = new Socket();
+        s.connect(new InetSocketAddress(host, port), connectTimeout);
+        return createSocket(s, host, port, connectTimeout, sniServerName);
+    }
+
     public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
         Socket s = new Socket();
         s.bind(new InetSocketAddress(addr, localPort));
         s.connect(new InetSocketAddress(host, port), connectTimeout);
-        SSLSocketFactory sslsf = sslc.getSocketFactory();
-        SSLSocket ssls = (SSLSocket) sslsf.createSocket(s, host, port, true);
-        applyCiphers(ssls);
-        applySNI(ssls, sniServerName,host);
-        if (protocols != null) {
-            ssls.setEnabledProtocols(protocols);
-        } else {
-            String[] protocols = ssls.getEnabledProtocols();
-            Set<String> set = new HashSet<String>();
-            for (String protocol : protocols) {
-                if (protocol.equals("SSLv3") || protocol.equals("SSLv2Hello")) {
-                    continue;
-                }
-                set.add(protocol);
-            }
-            ssls.setEnabledProtocols(set.toArray(new String[0]));
-        }
-        return ssls;
+        return createSocket(s, host, port, connectTimeout, sniServerName);
     }
 
     private void applySNI(@NotNull SSLSocket ssls, @Nullable String sniServerName, @NotNull String defaultHost) {
