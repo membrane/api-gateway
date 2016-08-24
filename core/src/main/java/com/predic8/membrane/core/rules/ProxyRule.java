@@ -64,9 +64,4 @@ public class ProxyRule extends AbstractProxy {
 	public void setIp(String ip) {
 		((ProxyRuleKey)key).setIp(ip);
 	}
-
-	@Override
-	public void init() throws Exception {
-		// do nothing
-	}
 }

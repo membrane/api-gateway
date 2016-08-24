@@ -25,17 +25,7 @@ import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 public abstract class SSLableProxy extends AbstractProxy {
-	private SSLParser sslInboundParser;
-	private SSLContext sslInboundContext, sslOutboundContext;
-
-	@Override
-	public SSLContext getSslInboundContext() {
-		return sslInboundContext;
-	}
-
-	protected void setSslInboundContext(SSLContext sslInboundContext) {
-		this.sslInboundContext = sslInboundContext;
-	}
+	private SSLContext sslOutboundContext;
 
 	@Override
 	public SSLProvider getSslOutboundContext() {
@@ -46,27 +36,6 @@ public abstract class SSLableProxy extends AbstractProxy {
 		this.sslOutboundContext = sslOutboundContext;
 	}
 
-	public SSLParser getSslInboundParser() {
-		return sslInboundParser;
-	}
-
-	/**
-	 * @description Configures the usage of inbound SSL (HTTPS).
-	 */
-	@MCChildElement(order=75)
-	public void setSslInboundParser(SSLParser sslInboundParser) {
-		this.sslInboundParser = sslInboundParser;
-	}
-
-	@Override
-	public void init() throws Exception {
-		if (sslInboundParser != null) {
-			if (sslInboundParser.getKeyGenerator() != null)
-				setSslInboundContext(new GeneratingSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
-			else
-				setSslInboundContext(new StaticSSLContext(sslInboundParser, router.getResolverMap(), router.getBaseLocation()));
-		}
-	}
 
 	@Override
 	public String getName() {

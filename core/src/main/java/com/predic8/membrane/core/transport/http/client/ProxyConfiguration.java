@@ -14,6 +14,8 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
+import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.core.config.security.SSLParser;
 import org.apache.commons.codec.binary.Base64;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -36,6 +38,8 @@ public class ProxyConfiguration {
 	private String username;
 
 	private String password;
+
+	private SSLParser sslParser;
 
 	public String getHost() {
 		return host;
@@ -80,6 +84,15 @@ public class ProxyConfiguration {
 	@MCAttribute
 	public void setAuthentication(boolean authentication) {
 		this.authentication = authentication;
+	}
+
+	public SSLParser getSslParser() {
+		return sslParser;
+	}
+
+	@MCChildElement
+	public void setSslParser(SSLParser sslParser) {
+		this.sslParser = sslParser;
 	}
 
 	/**

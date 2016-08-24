@@ -25,6 +25,8 @@ import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.GuardedBy;
 
+import com.predic8.membrane.core.resolver.ResolverMap;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +61,7 @@ public class HttpClient {
 	private static SSLProvider defaultSSLProvider;
 
 	private final ProxyConfiguration proxy;
+	private final SSLContext proxySSLContext;
 	private final AuthenticationConfiguration authentication;
 
 	/**
@@ -87,6 +90,10 @@ public class HttpClient {
 
 	public HttpClient(HttpClientConfiguration configuration) {
 		proxy = configuration.getProxy();
+		if (proxy != null && proxy.getSslParser() != null)
+			proxySSLContext = new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
+		else
+			proxySSLContext = null;
 		authentication = configuration.getAuthentication();
 		maxRetries = configuration.getMaxRetries();
 
@@ -119,9 +126,6 @@ public class HttpClient {
 	}
 
 	private HostColonPort getTargetHostAndPort(boolean connect, String dest) throws MalformedURLException, UnknownHostException {
-		if (proxy != null)
-			return new HostColonPort(false, proxy.getHost(), proxy.getPort());
-
 		if (connect)
 			return new HostColonPort(false, dest);
 
@@ -131,10 +135,6 @@ public class HttpClient {
 	private HostColonPort init(Exchange exc, String dest, boolean adjustHostHeader) throws UnknownHostException, IOException, MalformedURLException {
 		setRequestURI(exc.getRequest(), dest);
 		HostColonPort target = getTargetHostAndPort(exc.getRequest().isCONNECTRequest(), dest);
-
-		if (proxy != null && proxy.isAuthentication()) {
-			exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
-		}
 
 		if (authentication != null)
 			exc.getRequest().getHeader().setAuthorization(authentication.getUsername(), authentication.getPassword());
@@ -191,11 +191,15 @@ public class HttpClient {
 						}
 					}
 				}
+				SSLProvider sslProvider = getOutboundSSLProvider(exc, target);
 				if (con == null) {
-					con = conMgr.getConnection(target.host, target.port, localAddr, getOutboundSSLProvider(exc, target), connectTimeout, getSNIServerName(exc));
+					con = conMgr.getConnection(target.host, target.port, localAddr, sslProvider, connectTimeout, getSNIServerName(exc), proxy, proxySSLContext);
 					con.setKeepAttachedToExchange(exc.getRequest().isBindTargetConnectionToIncoming());
 					exc.setTargetConnection(con);
 				}
+				if (proxy != null && sslProvider == null)
+					// if we use a proxy for a plain HTTP (=non-HTTPS) request, attach the proxy credentials.
+					exc.getRequest().getHeader().setProxyAutorization(proxy.getCredentials());
 				Response response;
 				String newProtocol = null;
 

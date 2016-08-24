@@ -15,11 +15,7 @@ package com.predic8.membrane.core.transport.http;
 
 import static com.predic8.membrane.core.util.TextUtil.isNullOrEmpty;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -28,6 +24,8 @@ import java.net.UnknownHostException;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLSocket;
 
+import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +59,9 @@ public class Connection implements MessageObserver {
 	public Socket socket;
 	public InputStream in;
 	public OutputStream out;
+	private SSLProvider sslProvider;
     private String sniServerName;
+	private ProxyConfiguration proxyConfiguration;
 
 	private long lastUse;
 	private long timeout;
@@ -75,14 +75,27 @@ public class Connection implements MessageObserver {
 		return open(host, port, localHost, sslProvider, null, connectTimeout);
 	}
 
-	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout, @Nullable String sniServername) throws UnknownHostException, IOException {
-		Connection con = new Connection(mgr, host,sniServername);
+	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr,
+								  int connectTimeout, @Nullable String sniServername, @Nullable ProxyConfiguration proxy,
+								  @Nullable SSLProvider proxySSLProvider) throws UnknownHostException, IOException {
+		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy);
+
+		String origHost = host;
+		int origPort = port;
+		SSLProvider origSSLProvider = sslProvider;
+		String origSniServername = sniServername;
+		if (proxy != null) {
+			sslProvider = proxySSLProvider;
+			host = proxy.getHost();
+			port = proxy.getPort();
+			sniServername = null;
+		}
 
 		if (sslProvider != null) {
 			if (isNullOrEmpty(localHost))
-				con.socket = sslProvider.createSocket(host, port, connectTimeout,sniServername);
+				con.socket = sslProvider.createSocket(host, port, connectTimeout, sniServername);
 			else
-				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0, connectTimeout,sniServername);
+				con.socket = sslProvider.createSocket(host, port, InetAddress.getByName(localHost), 0, connectTimeout, sniServername);
 		} else {
 			if (isNullOrEmpty(localHost)) {
 				con.socket = new Socket();
@@ -91,6 +104,11 @@ public class Connection implements MessageObserver {
 				con.socket.bind(new InetSocketAddress(InetAddress.getByName(localHost), 0));
 			}
 			con.socket.connect(new InetSocketAddress(host, port), connectTimeout);
+		}
+
+		if (proxy != null && origSSLProvider != null) {
+			con.doTunnelHandshake(proxy, con.socket, origHost, origPort);
+			con.socket = origSSLProvider.createSocket(con.socket, origHost, origPort, connectTimeout, origSniServername);
 		}
 
 		log.debug("Opened connection on localPort: " + con.socket.getLocalPort());
@@ -102,13 +120,15 @@ public class Connection implements MessageObserver {
 	}
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr, int connectTimeout) throws UnknownHostException, IOException {
-		return open(host,port,localHost,sslProvider,mgr,connectTimeout,null);
+		return open(host,port,localHost,sslProvider,mgr,connectTimeout,null,null,null);
 	}
 
-	private Connection(ConnectionManager mgr, String host, @Nullable String sniServerName) {
+	private Connection(ConnectionManager mgr, String host, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy) {
 		this.mgr = mgr;
 		this.host = host;
+		this.sslProvider = sslProvider;
         this.sniServerName = sniServerName;
+		this.proxyConfiguration = proxy;
 	}
 
 	public boolean isSame(String host, int port) {
@@ -236,7 +256,130 @@ public class Connection implements MessageObserver {
         return sniServerName;
     }
 
-    public void setSniServerName(String sniServerName) {
-        this.sniServerName = sniServerName;
-    }
+	public ProxyConfiguration getProxyConfiguration() {
+		return proxyConfiguration;
+	}
+
+
+	// From https://docs.oracle.com/javase/7/docs/technotes/guides/security/jsse/samples/sockets/client/SSLSocketClientWithTunneling.java
+	/*
+	 *
+	 * Copyright (c) 1994, 2004, Oracle and/or its affiliates. All rights reserved.
+	 *
+	 * Redistribution and use in source and binary forms, with or
+	 * without modification, are permitted provided that the following
+	 * conditions are met:
+	 *
+	 * -Redistribution of source code must retain the above copyright
+	 * notice, this list of conditions and the following disclaimer.
+	 *
+	 * Redistribution in binary form must reproduce the above copyright
+	 * notice, this list of conditions and the following disclaimer in
+	 * the documentation and/or other materials provided with the
+	 * distribution.
+	 *
+	 * Neither the name of Oracle nor the names of
+	 * contributors may be used to endorse or promote products derived
+	 * from this software without specific prior written permission.
+	 *
+	 * This software is provided "AS IS," without a warranty of any
+	 * kind. ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND
+	 * WARRANTIES, INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+	 * FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT, ARE HEREBY
+	 * EXCLUDED. SUN MICROSYSTEMS, INC. ("SUN") AND ITS LICENSORS SHALL
+	 * NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY LICENSEE AS A RESULT
+	 * OF USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS
+	 * DERIVATIVES. IN NO EVENT WILL SUN OR ITS LICENSORS BE LIABLE FOR
+	 * ANY LOST REVENUE, PROFIT OR DATA, OR FOR DIRECT, INDIRECT,
+	 * SPECIAL, CONSEQUENTIAL, INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER
+	 * CAUSED AND REGARDLESS OF THE THEORY OF LIABILITY, ARISING OUT OF
+	 * THE USE OF OR INABILITY TO USE THIS SOFTWARE, EVEN IF SUN HAS
+	 * BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+	 *
+	 * You acknowledge that this software is not designed, licensed or
+	 * intended for use in the design, construction, operation or
+	 * maintenance of any nuclear facility.
+	 */
+	/*
+   * Tell our tunnel where we want to CONNECT, and look for the
+   * right reply.  Throw IOException if anything goes wrong.
+   */
+	private void doTunnelHandshake(ProxyConfiguration proxy, Socket tunnel, String host, int port)
+			throws IOException {
+		if (log.isDebugEnabled())
+			log.debug("send 'CONNECT " + host + ":" + port + "' to " + proxy.getHost() + ((proxy.isAuthentication()) ? " authenticated" : "") );
+		OutputStream out = tunnel.getOutputStream();
+		String msg = "CONNECT " + host + ":" + port + " HTTP/1.0\r\n"
+				+ "User-Agent: " + Constants.USERAGENT + "\r\n"
+				+ (proxy.isAuthentication() ? ("Proxy-Authorization: " + proxy.getCredentials() + "\r\n") : "")
+				+ "\r\n";
+		byte b[];
+		try {
+          /*
+           * We really do want ASCII7 -- the http protocol doesn't change
+           * with locale.
+           */
+			b = msg.getBytes("ASCII7");
+		} catch (UnsupportedEncodingException ignored) {
+          /*
+           * If ASCII7 isn't there, something serious is wrong, but
+           * Paranoia Is Good (tm)
+           */
+			b = msg.getBytes();
+		}
+		out.write(b);
+		out.flush();
+
+      /*
+       * We need to store the reply so we can create a detailed
+       * error message to the user.
+       */
+		byte            reply[] = new byte[1024];
+		int             replyLen = 0;
+		int             newlinesSeen = 0;
+		boolean         headerDone = false;     /* Done on first newline */
+
+		InputStream     in = tunnel.getInputStream();
+
+		while (newlinesSeen < 2) {
+			int i = in.read();
+			if (i < 0) {
+				throw new IOException("Unexpected EOF from proxy");
+			}
+			if (i == '\n') {
+				headerDone = true;
+				++newlinesSeen;
+			} else if (i != '\r') {
+				newlinesSeen = 0;
+				if (!headerDone && replyLen < reply.length) {
+					reply[replyLen++] = (byte) i;
+				}
+			}
+		}
+
+      /*
+       * Converting the byte array to a string is slightly wasteful
+       * in the case where the connection was successful, but it's
+       * insignificant compared to the network overhead.
+       */
+		String replyStr;
+		try {
+			replyStr = new String(reply, 0, replyLen, "ASCII7");
+		} catch (UnsupportedEncodingException ignored) {
+			replyStr = new String(reply, 0, replyLen);
+		}
+
+      /* We asked for HTTP/1.0, so we should get that back */
+		if (!replyStr.startsWith("HTTP/1.1 200")) {
+			throw new IOException("Unable to tunnel through "
+					+ proxy.getHost() + ":" + proxy.getPort()
+					+ ".  Proxy returns \"" + replyStr + "\"");
+		}
+
+      /* tunneling Handshake was successful! */
+	}
+
+	public SSLProvider getSslProvider() {
+		return sslProvider;
+	}
 }

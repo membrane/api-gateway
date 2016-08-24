@@ -18,9 +18,7 @@ import static com.predic8.membrane.test.AssertUtils.postAndAssert;
 import java.io.IOException;
 
 import org.apache.http.client.ClientProtocolException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
@@ -30,13 +28,13 @@ import com.predic8.membrane.core.rules.ServiceProxyKey;
 
 public class LimitInterceptorTest {
 
-	private HttpRouter router;
+	private static HttpRouter router;
 
-	@Before
-	public void before() throws Exception {
+	@BeforeClass
+	public static void before() throws Exception {
 		router = new HttpRouter();
 
-		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3026), "", -1);
+		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey("*", "*", ".*", 3026), "", -1);
 
 		LimitInterceptor wi = new LimitInterceptor();
 		wi.setMaxBodyLength(10);
@@ -52,8 +50,8 @@ public class LimitInterceptorTest {
 		router.init();
 	}
 
-	@After
-	public void after() throws IOException {
+	@AfterClass
+	public static void after() throws IOException {
 		router.shutdown();
 	}
 
