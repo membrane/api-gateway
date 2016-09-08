@@ -17,7 +17,6 @@ import static com.predic8.membrane.core.interceptor.rest.RESTInterceptor.getRela
 import static com.predic8.membrane.core.util.HttpUtil.createResponse;
 import static com.predic8.membrane.core.util.URLParamUtil.createQueryString;
 
-import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.text.DecimalFormat;
@@ -690,12 +689,20 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				a().id("reload-data-button").classAttr("mb-button").text("Reload data").end();
 				label().forAttr("reload-data-checkbox").checkbox().checked("true").id("reload-data-checkbox").text("Auto Reload").end();
 				end();
-				h3().text(getMessagesText()).end();
+				addMessageText();
 				createMessageStatisticsTable();
 			}
 
-			private String getMessagesText() {
+			private void addMessageText() {
+				if(!(router.getExchangeStore() instanceof LimitedMemoryExchangeStore))
+					h3().text("Messages").end();
 				if (router.getExchangeStore() instanceof LimitedMemoryExchangeStore) {
+					h3().text(getLimitedMemoryExchangeStoreMessageText()).a().href("http://www.membrane-soa.org/service-proxy-doc/4.2/configuration/reference/limitedMemoryExchangeStore.htm").text("(What is this?)").end(2);
+				}
+			}
+
+			private String getLimitedMemoryExchangeStoreMessageText() {
+
 					LimitedMemoryExchangeStore lmes = (LimitedMemoryExchangeStore)router.getExchangeStore();
 					float usage = 100.0f * lmes.getCurrentSize() / lmes.getMaxSize();
 					Long oldestTimeResSent = lmes.getOldestTimeResSent();
@@ -707,8 +714,6 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 							" (limited to last %.2f MB%s)",
 							lmes.getMaxSize()/1000000.,
 							usageStr);
-				}
-				return "Messages";
 			}
 
 		}.createPage();
