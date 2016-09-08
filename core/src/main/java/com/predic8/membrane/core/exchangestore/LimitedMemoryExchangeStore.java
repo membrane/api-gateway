@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @description Store Exchange objects in-memory. Only the newest exchanges will be kept to keep the store below the configured memory limit.
+ * @description Stores exchange objects in-memory until a memory threshold is reached. When the threshold is reached and new exchanges arrive then old exchanges will be dropped (starting from oldest ascending) until the exchange can be stored. The LimitedMemoryExchangeStore is the default ExchangeStore Membrane uses.
  */
 @MCElement(name="limitedMemoryExchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
@@ -241,6 +241,11 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		return exc.getHeapSizeEstimation()+currentSize <= maxSize;
 	}
 
+	/**
+	 * @description Threshold limit in bytes until old exchanges are dropped.
+	 * @example 1048576<i>(1Mb)</i>
+	 * @default 1000000
+	 */
 	public int getMaxSize() {
 		return maxSize;
 	}
