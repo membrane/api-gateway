@@ -28,5 +28,13 @@ CLASSPATH="$MEMBRANE_HOME/conf"
 CLASSPATH="$CLASSPATH:$MEMBRANE_HOME/starter.jar"
 export CLASSPATH
 cd "$MEMBRANE_HOME"
+
+major=$(java -version 2>&1 | head -n 1 | cut -d'"' -f2 | cut -d'.' -f2)
+
+if [ "$major" -lt "8" ]
+then
+    echo "You are running Java $major. Membrane needs atleast Java 8. Please install a newer Java version from http://www.oracle.com/technetwork/java/javase/downloads/index.html"
+fi
+
 echo Membrane Router running...
 java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter "$@"
