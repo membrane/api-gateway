@@ -48,13 +48,15 @@ public abstract class SSLContext implements SSLProvider {
                     throw new InvalidParameterException("Unknown cipher " + cipher);
                 if (cipher.contains("_RC4_"))
                     log.warn("Cipher " + cipher + " uses RC4, which is deprecated.");
+                if (cipher.contains("_3DES_"))
+                    log.warn("Cipher " + cipher + " uses 3DES, which is deprecated.");
             }
         } else {
             // use all default ciphers except those using RC4
             String supportedCiphers[] = sslc.getSocketFactory().getDefaultCipherSuites();
             ArrayList<String> ciphers = new ArrayList<String>(supportedCiphers.length);
             for (String cipher : supportedCiphers)
-                if (!cipher.contains("_RC4_"))
+                if (!cipher.contains("_RC4_") && !cipher.contains("_3DES_"))
                     ciphers.add(cipher);
             sortCiphers(ciphers);
             this.ciphers = ciphers.toArray(new String[ciphers.size()]);

@@ -1,6 +1,12 @@
 Membrane Service Proxy Change Log
 =============================================================================
 
+* [changed behavior] Don't use _3DES_ ciphers by default anymore, as they are
+  considered insecure. Warn, if they were manually specified in the
+  proxies.xml file.
+
+* ...
+
 * [feature] added <sslProxy> which can forward incoming SSL/TLS connections
   based on their SNI header (without decoding them)
 
