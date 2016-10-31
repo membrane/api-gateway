@@ -181,6 +181,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 				sourceSocket.close();
 			}
 		} catch (Exception e2) {
+			if (e2.getMessage().contains("Socket closed"))
+				return;
 			log.error("problems closing socket on remote port: "
 					+ sourceSocket.getPort() + " on remote host: "
 					+ sourceSocket.getInetAddress(), e2);

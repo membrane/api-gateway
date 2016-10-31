@@ -58,31 +58,11 @@ public class SSLContextCollection implements SSLProvider {
 				return sslContexts.get(0);
 		}
 
-		public void add(SSLContext sslContext, String hostPattern) {
+		public void add(SSLContext sslContext) {
 			if (!sslContexts.contains(sslContext)) {
 				sslContexts.add(sslContext);
-				// see https://github.com/membrane/service-proxy/issues/259
-				dnsNames.add(/*hostPattern != null ? hostPattern :*/ constructHostNamePattern(sslContext));
+				dnsNames.add(sslContext.constructHostNamePattern());
 			}
-		}
-
-		private String constructHostNamePattern(SSLContext sslContext) {
-			StringBuilder sb = null;
-			List<String> dnsNames = sslContext.getDnsNames();
-			if (dnsNames == null)
-				throw new RuntimeException("Could not extract DNS names from the first key's certificate in " + sslContext.getLocation());
-			for (String dnsName : dnsNames) {
-				if (sb == null)
-					sb = new StringBuilder();
-				else
-					sb.append(" ");
-				sb.append(dnsName);
-			}
-			if (sb == null) {
-				log.warn("Could not retrieve DNS hostname for certificate, using '*': " + sslContext.getLocation());
-				return "*";
-			}
-			return sb.toString();
 		}
 	}
 

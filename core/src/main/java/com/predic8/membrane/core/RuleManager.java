@@ -146,7 +146,7 @@ public class RuleManager {
 						builder = new SSLContextCollection.Builder();
 						sslContexts.put(ipPort, builder);
 					}
-					builder.add(sslContext, rule.getKey().getHost());
+					builder.add(sslContext);
 				}
 			}
 

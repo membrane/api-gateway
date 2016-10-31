@@ -216,6 +216,11 @@ public class SSLProxy implements Rule {
                 }
                 throw new SocketException("SSL Forwarding Connection closed.");
             }
+
+            @Override
+            public String constructHostNamePattern() {
+                return getKey().getHost();
+            }
         };
     }
 

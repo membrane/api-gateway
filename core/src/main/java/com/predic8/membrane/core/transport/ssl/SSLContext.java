@@ -161,6 +161,25 @@ public abstract class SSLContext implements SSLProvider {
             ciphers.set(i, cipherInfos.get(i).cipher);
     }
 
+    public String constructHostNamePattern() {
+        StringBuilder sb = null;
+        List<String> dnsNames = getDnsNames();
+        if (dnsNames == null)
+            throw new RuntimeException("Could not extract DNS names from the first key's certificate in " + getLocation());
+        for (String dnsName : dnsNames) {
+            if (sb == null)
+                sb = new StringBuilder();
+            else
+                sb.append(" ");
+            sb.append(dnsName);
+        }
+        if (sb == null) {
+            log.warn("Could not retrieve DNS hostname for certificate, using '*': " + getLocation());
+            return "*";
+        }
+        return sb.toString();
+    }
+
     private static class CipherInfo {
         public final String cipher;
         public final int points;
