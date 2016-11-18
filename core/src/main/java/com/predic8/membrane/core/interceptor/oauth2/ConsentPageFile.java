@@ -46,7 +46,7 @@ public class ConsentPageFile {
             createDefaults();
             return;
         }
-        parseFile(getFromUrl(url));
+        parseFile(getFromUrl(resolver.combine(router.getBaseLocation(),url)));
     }
 
     private void parseFile(String consentPageFile) throws IOException {
