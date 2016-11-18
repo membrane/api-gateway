@@ -78,8 +78,9 @@ public class LoginDialog {
 
 	public void init(Router router) throws Exception {
 		uriFactory = router.getUriFactory();
-		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
 		wsi.init(router);
+		router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "index.html")).close();
+
 	}
 
 	public boolean isLoginRequest(Exchange exc) {
