@@ -42,7 +42,7 @@ public class CredentialsFlow extends TokenRequest {
         if(!verifyClientThroughParams())
             return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","unauthorized_client");
 
-        scope = getScope() == null ? "" : getScope();
+        scope = getScope();
         idToken = null;
         token = createTokenForVerifiedClient();
 
@@ -65,7 +65,7 @@ public class CredentialsFlow extends TokenRequest {
     private Response getEarlyResponse() throws IOException {
         return Response
                 .ok()
-                .body(getTokenJSONResponse(scope, token, idToken))
+                .body(getTokenJSONResponse())
                 .contentType(MimeType.APPLICATION_JSON_UTF8)
                 .dontCache()
                 .build();

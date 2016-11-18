@@ -17,24 +17,25 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
-import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInterceptor;
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
+import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
+import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.Optional;
+import java.util.NoSuchElementException;
 
-public class PasswordFlow extends TokenRequest {
+public class RefreshTokenFlow extends TokenRequest {
 
-    public PasswordFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
+
+    public RefreshTokenFlow(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
     }
 
     @Override
     protected Response checkForMissingParameters() throws Exception {
-        if(getGrantType() == null || getUsername() == null || getPassword() == null || getClientId() == null || getClientSecret() == null)
+        if(getRefreshToken() == null || getClientId() == null || getClientSecret() == null)
             return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","invalid_request");
         return new NoResponse();
     }
@@ -45,34 +46,40 @@ public class PasswordFlow extends TokenRequest {
         if(!verifyClientThroughParams())
             return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","unauthorized_client");
 
-        Map<String,String> userParams = verifyUserThroughParams();
-        if(userParams == null)
-            return OAuth2Util.createParameterizedJsonErrorResponse(exc,jsonGen,"error","access_denied");
+        String username;
+        try {
+            username = authServer.getRefreshTokenGenerator().getUsername(getRefreshToken());
+        }catch(NoSuchElementException ex){
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_request");
+        }
 
+        params.put(ParamNames.USERNAME,username);
+
+        try {
+            authServer.getRefreshTokenGenerator().invalidateToken(getRefreshToken(), getClientId(), getClientSecret());
+        }catch(NoSuchElementException ex){
+            return OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen,"error", "invalid_grant");
+        }
+
+        // TODO check if scope is "narrower" than before
 
         scope = getScope();
         idToken = null;
-        token = createTokenForVerifiedUserAndClient();
+        token = authServer.getTokenGenerator().getToken(getUsername(),getClientId(),getClientSecret());
         refreshToken = authServer.getRefreshTokenGenerator().getToken(getUsername(), getClientId(), getClientSecret());
 
-        exc.setResponse(getEarlyResponse());
-
-        SessionManager.Session session = createSessionForAuthorizedUserWithParams();
+        SessionManager.Session session = getSessionForAuthorizedUserWithParams();
         synchronized(session) {
             session.getUserAttributes().put(ACCESS_TOKEN, token);
-            session.getUserAttributes().putAll(userParams);
         }
         authServer.getSessionFinder().addSessionForToken(token,session);
 
         return new NoResponse();
+
     }
 
     @Override
     protected Response getResponse() throws Exception {
-        return exc.getResponse();
-    }
-
-    private Response getEarlyResponse() throws IOException {
         return Response
                 .ok()
                 .body(getTokenJSONResponse())
@@ -80,4 +87,5 @@ public class PasswordFlow extends TokenRequest {
                 .dontCache()
                 .build();
     }
+
 }

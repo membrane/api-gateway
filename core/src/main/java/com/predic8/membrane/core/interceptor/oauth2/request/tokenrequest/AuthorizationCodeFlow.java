@@ -70,6 +70,7 @@ public class AuthorizationCodeFlow extends TokenRequest {
         token = authServer.getTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
         authServer.getSessionFinder().addSessionForToken(token,session);
         idToken = null;
+        refreshToken = authServer.getRefreshTokenGenerator().getToken(username, client.getClientId(), client.getClientSecret());
         if (OAuth2Util.isOpenIdScope(scope)) {
             idToken = createSignedIdToken(session, username, client);
         }
@@ -99,7 +100,7 @@ public class AuthorizationCodeFlow extends TokenRequest {
     protected Response getResponse() throws Exception {
         return Response
                 .ok()
-                .body(getTokenJSONResponse(scope, token, idToken))
+                .body(getTokenJSONResponse())
                 .contentType(MimeType.APPLICATION_JSON_UTF8)
                 .dontCache()
                 .build();

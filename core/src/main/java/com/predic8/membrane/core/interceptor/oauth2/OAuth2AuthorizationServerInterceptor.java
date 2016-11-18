@@ -49,6 +49,9 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private AccountBlocker accountBlocker;
     private ClientList clientList;
     private TokenGenerator tokenGenerator = new BearerTokenGenerator();
+
+
+    private TokenGenerator refreshTokenGenerator = new BearerTokenGenerator();
     private ClaimList claimList;
     private OAuth2Statistics statistics;
 
@@ -301,5 +304,14 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     public void setStatistics(OAuth2Statistics statistics) {
         this.statistics = statistics;
+    }
+
+
+    public TokenGenerator getRefreshTokenGenerator() {
+        return refreshTokenGenerator;
+    }
+
+    public void setRefreshTokenGenerator(TokenGenerator refreshTokenGenerator) {
+        this.refreshTokenGenerator = refreshTokenGenerator;
     }
 }

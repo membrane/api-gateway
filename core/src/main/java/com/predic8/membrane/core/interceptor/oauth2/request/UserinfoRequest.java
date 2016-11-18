@@ -52,6 +52,11 @@ public class UserinfoRequest extends ParameterizedRequest {
             return buildWwwAuthenticateErrorResponse( Response.unauthorized(), "invalid_token");
         }
         sessionProperties = new HashMap<String,String>(authServer.getSessionFinder().getSessionForToken(authHeader.getToken()).getUserAttributes());
+
+        String token = authHeader.getToken();
+        String username = authServer.getTokenGenerator().getUsername(token);
+
+
         return new NoResponse();
     }
 
