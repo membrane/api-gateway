@@ -58,6 +58,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	private static String[] EMPTY = new String[0];
 
 	String docBase = "docBase";
+	boolean docBaseIsNormalized = false;
 	String[] index = EMPTY;
 	boolean generateIndex;
 
@@ -66,7 +67,28 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	}
 
 	@Override
+	public void init() throws Exception {
+		super.init();
+		normalizeDocBase();
+	}
+
+	private void normalizeDocBase() {
+		// deferred init of docBase because router is needed
+		if(!docBaseIsNormalized) {
+			if (!docBase.endsWith("/"))
+				docBase += "/";
+			try {
+				this.docBase = getAbsolutePathWithSchemePrefix(docBase);
+			} catch (Exception e) {
+			}
+			docBaseIsNormalized = true;
+		}
+	}
+
+	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
+		normalizeDocBase();
+
 		String uri = router.getUriFactory().create(exc.getDestinations().get(0)).getPath();
 
 		log.debug("request: " + uri);
@@ -187,13 +209,10 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	@Required
 	@MCAttribute
 	public void setDocBase(String docBase) {
-		if (!docBase.endsWith("/"))
-			docBase += "/";
-		try {
-			this.docBase = getAbsolutePathWithSchemePrefix(docBase);
-		}catch(Exception e){
-			this.docBase = docBase; // fallback
-		}
+		if(!docBase.endsWith("/"))
+			docBase = docBase + "/";
+		this.docBase = docBase;
+		docBaseIsNormalized = false;
 	}
 
 	private String getAbsolutePathWithSchemePrefix(String path) {
@@ -204,7 +223,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
 		}catch(Exception ignored){
 		}
 
-		String newPath = Paths.get(path).toAbsolutePath().toUri().toString();
+
+		String newPath = router.getResolverMap().combine(router.getBaseLocation(),path);
 		if(!newPath.endsWith("/"))
 			return newPath + "/";
 		return newPath;

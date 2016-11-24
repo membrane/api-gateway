@@ -66,10 +66,8 @@ public class StaticUserDataProvider implements UserDataProvider {
 			throw new NoSuchElementException();
 		String pw = null;
 		String postDataPassword = postData.get("password");
-		if(isHashedPassword(userAttributes.getPassword())) {
+		if(userAttributes.getPassword() != null && isHashedPassword(userAttributes.getPassword())) {
 			String userHash = userAttributes.getPassword();
-			if(userHash == null)
-				throw new NoSuchElementException();
 			String[] userHashSplit = userHash.split(Pattern.quote("$"));
 			String algo = userHashSplit[1];
 			String salt = userHashSplit[2];

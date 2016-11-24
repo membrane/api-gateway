@@ -24,6 +24,7 @@ import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 
 public abstract class ParameterizedRequest {
@@ -89,12 +90,11 @@ public abstract class ParameterizedRequest {
         }
     }
 
-    protected boolean verifyUserThroughParams(){
+    protected Map<String, String> verifyUserThroughParams(){
         try {
-            authServer.getUserDataProvider().verify(params);
-            return true;
+            return authServer.getUserDataProvider().verify(params);
         }catch (Exception ignored){
-            return false;
+            return null;
         }
     }
 
@@ -105,6 +105,10 @@ public abstract class ParameterizedRequest {
             session.authorize();
         }
         return session;
+    }
+
+    protected SessionManager.Session getSessionForAuthorizedUserWithParams(){
+        return authServer.getSessionManager().getSession(exc);
     }
 
     protected SessionManager.Session createSessionForAuthorizedClientWithParams() {
@@ -176,5 +180,7 @@ public abstract class ParameterizedRequest {
     public String getUsername(){return params.get(ParamNames.USERNAME);}
 
     public String getPassword(){return params.get(ParamNames.PASSWORD);}
+
+    public String getRefreshToken(){return params.get(ParamNames.REFRESH_TOKEN);}
 
 }

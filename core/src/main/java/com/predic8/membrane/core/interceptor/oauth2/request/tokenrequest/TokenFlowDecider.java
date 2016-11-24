@@ -23,9 +23,11 @@ import java.util.Map;
 
 public class TokenFlowDecider {
 
-    public static final String AUTHORIZATION_CODE = "authorization_code";
-    public static final String PASSWORD = "password";
+    private static final String AUTHORIZATION_CODE = "authorization_code";
+    private static final String PASSWORD = "password";
     private static final String CLIENT_CREDENTIALS = "client_credentials";
+    private static final String REFRESH_TOKEN = "refresh_token";
+
 
     Map<String,String> params;
     ParameterizedRequest flow;
@@ -49,6 +51,10 @@ public class TokenFlowDecider {
             flow = new CredentialsFlow(authServer,exc);
             authServer.getStatistics().clientCredentialsFlow();
             return;
+        }
+        if(getGrantType().equals(REFRESH_TOKEN)){
+            flow = new RefreshTokenFlow(authServer,exc);
+            authServer.getStatistics().refreshTokenFlow();
         }
 
     }

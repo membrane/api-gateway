@@ -20,6 +20,7 @@ import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public abstract class TokenRequest extends ParameterizedRequest {
 
@@ -28,12 +29,13 @@ public abstract class TokenRequest extends ParameterizedRequest {
     protected String scope;
     protected String token;
     protected String idToken;
+    protected String refreshToken;
 
     public TokenRequest(OAuth2AuthorizationServerInterceptor authServer, Exchange exc) throws Exception {
         super(authServer, exc);
     }
 
-    protected String getTokenJSONResponse(String scope, String token, String idToken) throws IOException {
+    protected String getTokenJSONResponse() throws IOException {
         String json;
         synchronized (jsonGen) {
             JsonGenerator gen = jsonGen.resetAndGet();
@@ -45,6 +47,8 @@ public abstract class TokenRequest extends ParameterizedRequest {
                 gen.writeObjectField(ParamNames.SCOPE, scope);
             if (idToken != null && !idToken.isEmpty())
                 gen.writeObjectField(ParamNames.ID_TOKEN, idToken);
+            if(refreshToken != null && !refreshToken.isEmpty())
+                gen.writeObjectField(ParamNames.REFRESH_TOKEN,refreshToken);
             gen.writeEndObject();
             json = jsonGen.getJson();
         }

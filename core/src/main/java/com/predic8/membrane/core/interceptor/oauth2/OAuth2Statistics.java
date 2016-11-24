@@ -23,6 +23,9 @@ public class OAuth2Statistics {
     private int implicitFlow;
     private int passwordFlow;
     private int clientCredentialsFlow;
+
+
+    private int refreshTokenFlow;
     private StringBuilder builder = new StringBuilder();
 
     private String newLine = "<br/>";
@@ -39,6 +42,7 @@ public class OAuth2Statistics {
         writeLine(implicitFlow,"Implicit flow requests");
         writeLine(passwordFlow,"Password flow requests");
         writeLine(clientCredentialsFlow,"Client credentials flow requests");
+        writeLine(refreshTokenFlow,"Refresh token requests");
         return builder.toString().substring(0,builder.length() - newLine.length());
     }
 
@@ -76,6 +80,10 @@ public class OAuth2Statistics {
 
     public synchronized void clientCredentialsFlow(){
         clientCredentialsFlow++;
+    }
+
+    public synchronized void refreshTokenFlow() {
+        refreshTokenFlow++;
     }
 
     public int getSuccessfulRequests() {
@@ -140,5 +148,13 @@ public class OAuth2Statistics {
 
     public void setClientCredentialsFlow(int clientCredentialsFlow) {
         this.clientCredentialsFlow = clientCredentialsFlow;
+    }
+
+    public int getRefreshTokenFlow() {
+        return refreshTokenFlow;
+    }
+
+    public void setRefreshTokenFlow(int refreshTokenFlow) {
+        this.refreshTokenFlow = refreshTokenFlow;
     }
 }
