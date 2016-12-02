@@ -106,20 +106,22 @@ public class JSONValidator implements IValidator {
         for (String message : errors)
         	jg.writeString(message);
         jg.close();
-        	
+        				
 		if (failureHandler != null) {
 			failureHandler.handleFailure(new String(baos.toByteArray(), UTF8), exc);
 			exc.setResponse(Response.badRequest().
+					header("Access-Control-Allow-Origin",  "*"). // enable cross-origin ajax response
 					contentType("application/json;charset=utf-8").
 					body("{\"error\":\"error\"}".getBytes(UTF8)).
 					build());
 		} else {
 	        exc.setResponse(Response.badRequest().
+					header("Access-Control-Allow-Origin",  "*"). // enable cross-origin ajax response
 	        		contentType("application/json;charset=utf-8").
 	        		body(baos.toByteArray()).
 	        		build());
 		}
-		
+
         invalid.incrementAndGet();
 		return Outcome.ABORT;
 	}
