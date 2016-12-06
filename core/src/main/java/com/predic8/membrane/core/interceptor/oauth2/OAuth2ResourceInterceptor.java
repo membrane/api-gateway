@@ -17,6 +17,8 @@ import com.floreysoft.jmte.Engine;
 import com.floreysoft.jmte.ErrorHandler;
 import com.floreysoft.jmte.message.ParseException;
 import com.floreysoft.jmte.token.Token;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -51,6 +53,7 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @description Allows only authorized HTTP requests to pass through. Unauthorized requests get a redirect to the
@@ -68,6 +71,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private SessionManager sessionManager;
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
+    private Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
+
+    private int revalidateTokenAfter = 600;
 
     private ConcurrentHashMap<String,String> stateToOriginalUrl = new ConcurrentHashMap<>();
 
@@ -130,6 +136,20 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     @MCChildElement(order = 20)
     public void setSessionManager(SessionManager sessionManager) {
         this.sessionManager = sessionManager;
+    }
+
+
+    public int getRevalidateTokenAfter() {
+        return revalidateTokenAfter;
+    }
+
+    /**
+     * @description time in seconds until a oauth2 access token is revalidatet with authorization server
+     * @default 600
+     */
+    @MCAttribute
+    public void setRevalidateTokenAfter(int revalidateTokenAfter) {
+        this.revalidateTokenAfter = revalidateTokenAfter;
     }
 
     @Override
@@ -197,6 +217,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if (session == null)
             return respondWithRedirect(exc);
 
+        if(session.getUserAttributes().get(OAUTH2_ANSWER) != null && tokenNeedsRevalidation(session.getUserAttributes().get(ParamNames.ACCESS_TOKEN))) {
+            revalidateToken(session);
+        }
+
         if (session.isAuthorized()) {
             exc.setProperty(Exchange.OAUTH2,OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
             applyBackendAuthorization(exc, session);
@@ -209,13 +233,29 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 session.clear();
             return Outcome.RETURN;
         }
-
-        if(session.getUserAttributes().isEmpty()) {
-            exc.setResponse(Response.ok("You have been logged out.").build());
-            return Outcome.RETURN;
-        }
-
         return respondWithRedirect(exc);
+    }
+
+    private void revalidateToken(Session session) throws Exception {
+        OAuth2AnswerParameters params = OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER));
+        Exchange e2 = new Request.Builder()
+                .get(auth.getUserInfoEndpoint())
+                .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
+                .header("User-Agent", Constants.USERAGENT)
+                .header(Header.ACCEPT, "application/json")
+                .buildExchange();
+
+        Response response2 = auth.doRequest(e2);
+
+
+        if (response2.getStatusCode() != 200) {
+            session.clear();
+        }
+    }
+
+    private boolean tokenNeedsRevalidation(String token) {
+        return validTokens.getIfPresent(token) == null;
+
     }
 
     @Override
@@ -453,6 +493,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                         oauth2Answer.setIdToken("INVALID");
                 }
 
+                validTokens.put(token,true);
 
                 Exchange e2 = new Request.Builder()
                         .get(auth.getUserInfoEndpoint())
@@ -518,4 +559,5 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     public String getShortDescription() {
         return "Client of the oauth2 authentication process.\n" + statistics.toString();
     }
+
 }
