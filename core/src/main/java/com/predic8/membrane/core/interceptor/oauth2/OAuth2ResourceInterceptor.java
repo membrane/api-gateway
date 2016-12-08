@@ -73,7 +73,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private OAuth2Statistics statistics;
     private Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
 
-    private int revalidateTokenAfter = 600;
+    private int revalidateTokenAfter = -1;
 
     private ConcurrentHashMap<String,String> stateToOriginalUrl = new ConcurrentHashMap<>();
 
@@ -144,8 +144,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description time in seconds until a oauth2 access token is revalidatet with authorization server
-     * @default 600
+     * @description time in seconds until a oauth2 access token is revalidatet with authorization server. This is disabled for values < 0
+     * @default -1
      */
     @MCAttribute
     public void setRevalidateTokenAfter(int revalidateTokenAfter) {
@@ -254,6 +254,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     private boolean tokenNeedsRevalidation(String token) {
+        if(revalidateTokenAfter < 0)
+            return false;
         return validTokens.getIfPresent(token) == null;
 
     }
