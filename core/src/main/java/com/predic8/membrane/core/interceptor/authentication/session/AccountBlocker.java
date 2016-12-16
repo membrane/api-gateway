@@ -89,8 +89,8 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 		}
 		
 		private synchronized void fail() {
-			long firstFail = tries[current];
 			current = ++current % afterFailedLogins;
+			long firstFail = tries[current];
 			long now = tries[current] = System.currentTimeMillis();
 			if (firstFail == 0)
 				return;
