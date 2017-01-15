@@ -144,7 +144,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     /**
-     * @description time in seconds until a oauth2 access token is revalidatet with authorization server. This is disabled for values < 0
+     * @description time in seconds until a oauth2 access token is revalidatet with authorization server. This is disabled for values &lt; 0
      * @default -1
      */
     @MCAttribute
