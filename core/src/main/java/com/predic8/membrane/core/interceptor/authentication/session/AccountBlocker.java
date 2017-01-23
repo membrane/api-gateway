@@ -131,7 +131,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 		}
 	}
 	
-	public void fail(String username) {
+	public boolean fail(String username) {
 		Info info, info2 = new Info();
 		synchronized (users) {
 			info = users.get(username);
@@ -142,6 +142,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 			}
 		}
 		info.fail();
+		return info.isBlocked();
 	}
 	
 	public void cleanup() {

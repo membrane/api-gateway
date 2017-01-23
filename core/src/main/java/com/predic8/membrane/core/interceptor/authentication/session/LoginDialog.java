@@ -17,9 +17,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -147,9 +149,12 @@ public class LoginDialog {
 					try {
 						userAttributes = userDataProvider.verify(params);
 					} catch (NoSuchElementException e) {
-						if (accountBlocker != null)
-							accountBlocker.fail(username);
-						showPage(exc, 0, "error", "INVALID_PASSWORD");
+						List<String> params2 = Lists.newArrayList("error", "INVALID_PASSWORD");
+						if (accountBlocker != null) {
+							if (accountBlocker.fail(username))
+								params2.addAll(Lists.newArrayList("accountBlocked", "true"));
+						}
+						showPage(exc, 0, params2.toArray());
 						return;
 					} catch (Exception e) {
 						log.error(e);
@@ -177,10 +182,12 @@ public class LoginDialog {
 					try {
 						tokenProvider.verifyToken(s.getUserAttributes(), token);
 					} catch (NoSuchElementException e) {
+						List<String> params = Lists.newArrayList("error", "INVALID_TOKEN");
 						if (accountBlocker != null)
-							accountBlocker.fail(s.getUserName());
+							if (accountBlocker.fail(s.getUserName()))
+								params.addAll(Lists.newArrayList("accountBlocked", "true"));
 						s.clear();
-						showPage(exc, 0, "error", "INVALID_TOKEN");
+						showPage(exc, 0, params.toArray());
 						return;
 					} catch (Exception e) {
 						log.error(e);
