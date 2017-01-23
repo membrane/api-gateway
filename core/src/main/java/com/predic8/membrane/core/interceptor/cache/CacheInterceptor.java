@@ -295,6 +295,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 		allowedResponseHeaders.add("strict-transport-security");
 		allowedResponseHeaders.add("via");
 		allowedResponseHeaders.add("fastly-debug-digest");
+		allowedResponseHeaders.add("access-control-allow-origin");
 
 		if (force) {
 			allowedResponseHeaders.add("set-cookie");
