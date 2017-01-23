@@ -79,7 +79,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 		private long blockedUntil;
 		
 		public Info() {
-			tries = new long[afterFailedLogins];
+			tries = new long[afterFailedLogins-1];
 		}
 		
 		public synchronized boolean isBlocked() {
@@ -89,7 +89,7 @@ public class AccountBlocker extends AbstractXmlElement implements Cleaner {
 		}
 		
 		private synchronized void fail() {
-			current = ++current % afterFailedLogins;
+			current = ++current % tries.length;
 			long firstFail = tries[current];
 			long now = tries[current] = System.currentTimeMillis();
 			if (firstFail == 0)

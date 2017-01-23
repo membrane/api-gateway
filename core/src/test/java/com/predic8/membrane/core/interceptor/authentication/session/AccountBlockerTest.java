@@ -12,7 +12,7 @@ public class AccountBlockerTest {
         AccountBlocker ab = new AccountBlocker();
         ab.setBlockFor(1000);
         ab.setAfterFailedLoginsWithin(1000);
-        ab.setAfterFailedLogins(9);
+        ab.setAfterFailedLogins(10);
 
         for (int i = 1; i <= 10 ; i++) {
             Assert.isTrue(!ab.isBlocked("foo"), "login should not be blocked in loop " + i);
