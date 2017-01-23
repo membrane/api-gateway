@@ -61,10 +61,14 @@ public class BalancerUtil {
 	}
 
 	public static boolean hasLoadBalancing(Router router) {
-		for (Rule r : router.getRuleManager().getRules())
-			for (Interceptor i : r.getInterceptors())
+		for (Rule r : router.getRuleManager().getRules()) {
+			List<Interceptor> interceptors = r.getInterceptors();
+			if (interceptors == null)
+				continue;
+			for (Interceptor i : interceptors)
 				if (i instanceof LoadBalancingInterceptor)
 					return true;
+		}
 		return false;
 	}
 
