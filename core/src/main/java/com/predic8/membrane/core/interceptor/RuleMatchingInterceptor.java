@@ -147,7 +147,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 	private String getXForwardedProtoHeaderValue(AbstractExchange exc) {
 		String proto = ((Exchange)exc).getRule().getSslInboundContext() != null ? "https" : "http";
 		if (getXForwardedProto(exc) != null )
-			return getXForwardedProto(exc) + ", " + proto;
+			return getXForwardedProto(exc);
 
 		return proto;
 	}
