@@ -58,6 +58,8 @@ public class Header {
 
 	public static final String X_FORWARDED_FOR = "X-Forwarded-For";
 
+	public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
+
 	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
 
 	public static final String SOAP_ACTION = "SOAPAction";
@@ -352,6 +354,14 @@ public class Header {
 
 	public String getXForwardedFor() {
 		return getFirstValue(X_FORWARDED_FOR);
+	}
+
+	public void setXForwardedProto(String value) {
+		setValue(X_FORWARDED_PROTO, value);
+	}
+
+	public String getXForwardedProto() {
+		return getFirstValue(X_FORWARDED_PROTO);
 	}
 
 	public String getContentEncoding() {

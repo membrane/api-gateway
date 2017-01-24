@@ -127,6 +127,14 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 					r.getHeader().toString());
 		}
 		h.setXForwardedFor(getXForwardedForHeaderValue(exc));
+
+		if (h.getNumberOf(Header.X_FORWARDED_PROTO) > maxXForwardedForHeaders) {
+			Request r = exc.getRequest();
+			throw new RuntimeException("Request caused " + Header.X_FORWARDED_PROTO + " flood: " + r.getStartLine() +
+					r.getHeader().toString());
+		}
+		h.setXForwardedProto(getXForwardedProtoHeaderValue(exc));
+
 	}
 
 	private String getXForwardedForHeaderValue(AbstractExchange exc) {
@@ -136,8 +144,20 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return exc.getRemoteAddrIp();
 	}
 
+	private String getXForwardedProtoHeaderValue(AbstractExchange exc) {
+		String proto = ((Exchange)exc).getRule().getSslInboundContext() != null ? "https" : "http";
+		if (getXForwardedProto(exc) != null )
+			return getXForwardedProto(exc) + ", " + proto;
+
+		return proto;
+	}
+
 	private String getXForwardedFor(AbstractExchange exc) {
 		return exc.getRequest().getHeader().getXForwardedFor();
+	}
+
+	private String getXForwardedProto(AbstractExchange exc) {
+		return exc.getRequest().getHeader().getXForwardedProto();
 	}
 
 	@Override
