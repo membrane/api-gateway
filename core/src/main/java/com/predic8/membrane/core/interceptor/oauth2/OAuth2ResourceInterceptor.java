@@ -214,11 +214,29 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
         Session session = sessionManager.getSession(exc);
 
+        if (session == null) {
+            String auth = exc.getRequest().getHeader().getFirstValue(Header.AUTHORIZATION);
+            if (auth != null && auth.substring(0, 7).equalsIgnoreCase("Bearer ")) {
+                session = sessionManager.createSession(exc);
+                session.getUserAttributes().put(ParamNames.ACCESS_TOKEN, auth.substring(7));
+                OAuth2AnswerParameters oauth2Answer = new OAuth2AnswerParameters();
+                oauth2Answer.setAccessToken(auth.substring(7));
+                oauth2Answer.setTokenType("Bearer");
+                HashMap<String, String> userinfo = revalidateToken(oauth2Answer);
+                if (userinfo == null)
+                    return respondWithRedirect(exc);
+                oauth2Answer.setUserinfo(userinfo);
+                session.getUserAttributes().put(OAUTH2_ANSWER,oauth2Answer.serialize());
+                processUserInfo(userinfo, session);
+            }
+        }
+
         if (session == null)
             return respondWithRedirect(exc);
 
         if(session.getUserAttributes().get(OAUTH2_ANSWER) != null && tokenNeedsRevalidation(session.getUserAttributes().get(ParamNames.ACCESS_TOKEN))) {
-            revalidateToken(session);
+            if (revalidateToken(OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER))) == null)
+                session.clear();
         }
 
         if (session.isAuthorized()) {
@@ -236,8 +254,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         return respondWithRedirect(exc);
     }
 
-    private void revalidateToken(Session session) throws Exception {
-        OAuth2AnswerParameters params = OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER));
+    private HashMap<String, String> revalidateToken(OAuth2AnswerParameters params) throws Exception {
         Exchange e2 = new Request.Builder()
                 .get(auth.getUserInfoEndpoint())
                 .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
@@ -249,7 +266,11 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
 
         if (response2.getStatusCode() != 200) {
-            session.clear();
+            statistics.accessTokenInvalid();
+            return null;
+        } else {
+            statistics.accessTokenValid();
+            return Util.parseSimpleJSONResponse(response2);
         }
     }
 
@@ -527,16 +548,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 session.getUserAttributes().put(OAUTH2_ANSWER,oauth2Answer.serialize());
 
-                if (!json2.containsKey(auth.getSubject()))
-                    throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");
-
-                Map<String, String> userAttributes = session.getUserAttributes();
-                String userIdPropertyFixed = auth.getSubject().substring(0, 1).toUpperCase() + auth.getSubject().substring(1);
-                synchronized (userAttributes) {
-                    userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, json2.get(auth.getSubject()));
-                }
-
-                session.authorize();
+                processUserInfo(json2, session);
 
                 exc.setResponse(Response.redirect(url, false).build());
                 return true;
@@ -545,6 +557,19 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             }
         }
         return false;
+    }
+
+    private void processUserInfo(Map<String, String> userInfo, Session session) {
+        if (!userInfo.containsKey(auth.getSubject()))
+            throw new RuntimeException("User object does not contain " + auth.getSubject() + " key.");
+
+        Map<String, String> userAttributes = session.getUserAttributes();
+        String userIdPropertyFixed = auth.getSubject().substring(0, 1).toUpperCase() + auth.getSubject().substring(1);
+        synchronized (userAttributes) {
+            userAttributes.put("headerX-Authenticated-" + userIdPropertyFixed, userInfo.get(auth.getSubject()));
+        }
+
+        session.authorize();
     }
 
     private boolean idTokenIsValid(String idToken) throws Exception {
