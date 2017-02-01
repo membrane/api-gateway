@@ -29,7 +29,9 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 @MCElement(name="membrane")
 public class MembraneAuthorizationService extends AuthorizationService {
@@ -39,6 +41,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
     private String userInfoEndpoint;
     private String subject = ClaimRenamer.convert("sub");
     private String authorizationEndpoint;
+    private String publicAuthorizationEndpoint;
     private String revocationEndpoint;
     private String registrationEndpoint;
     private String jwksEndpoint;
@@ -61,11 +64,26 @@ public class MembraneAuthorizationService extends AuthorizationService {
             supportsDynamicRegistration = true;
         }
         try {
-            String url = src + "/.well-known/openid-configuration";
+            String[] urls = src.split(Pattern.quote(" "));
+            if(urls.length == 1) {
+                String url = urls[0] + "/.well-known/openid-configuration";
 
-            parseSrc(dynamicRegistration != null ?
-                dynamicRegistration.retrieveOpenIDConfiguration(url) :
-                router.getResolverMap().resolve(url));
+                parseSrc(dynamicRegistration != null ?
+                        dynamicRegistration.retrieveOpenIDConfiguration(url) :
+                        router.getResolverMap().resolve(url));
+            }
+            else if(urls.length == 2){
+                String internalUrl = urls[1] + "/.well-known/openid-configuration";
+
+
+                parseSrc(dynamicRegistration != null ?
+                        dynamicRegistration.retrieveOpenIDConfiguration(internalUrl) :
+                        router.getResolverMap().resolve(internalUrl));
+
+                publicAuthorizationEndpoint = urls[0] + new URI(authorizationEndpoint).getPath();
+            }
+            else if(urls.length > 2)
+                throw new RuntimeException("src property is not set correctly: " + src);
         } catch (ResourceRetrievalException e) {
             throw new RuntimeException(e.getMessage());
         } catch (IOException e) {
@@ -87,6 +105,7 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     @Override
     protected void doDynamicRegistration(Exchange exc, String publicURL) throws Exception {
+
         if(clientId != null && clientSecret != null)
             return;
         if(dynamicRegistration == null || registrationEndpoint == null || registrationEndpoint.isEmpty())
@@ -147,7 +166,10 @@ public class MembraneAuthorizationService extends AuthorizationService {
 
     @Override
     public String getLoginURL(String securityToken, String publicURL, String pathQuery) {
-        return authorizationEndpoint +"?"+
+        String endpoint = publicAuthorizationEndpoint;
+        if(endpoint == null)
+            endpoint = authorizationEndpoint;
+        return endpoint +"?"+
                 "client_id=" + getClientId() + "&"+
                 "response_type=code&"+
                 "scope="+scope+"&"+
