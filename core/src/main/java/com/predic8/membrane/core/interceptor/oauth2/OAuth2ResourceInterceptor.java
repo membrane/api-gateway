@@ -288,7 +288,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     }
 
     private void setPublicURL(Exchange exc) {
-        publicURL = (exc.getRule().getSslInboundContext() != null ? "https://" : "http://") + exc.getOriginalHostHeader();
+        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
+        boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
+        publicURL = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
         RuleKey key = exc.getRule().getKey();
         if (!key.isPathRegExp() && key.getPath() != null)
             publicURL += key.getPath();
