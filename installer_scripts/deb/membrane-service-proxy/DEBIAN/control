@@ -1,0 +1,9 @@
+Package: membrane-service-proxy 
+Version: 4.0-12
+Section: net 
+Priority: optional
+Architecture: all
+Depends: bash (>= 2.05a-11), adduser (>= 3.11), coreutils, java6-runtime-headless|java7-runtime-headless
+Maintainer: Ismail KOKSAL <mismailkoksal@gmail.com>
+Homepage: http://nginx.net
+Description: Lightweight Web Services Monitoring and Governance
