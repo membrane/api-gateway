@@ -188,7 +188,7 @@ public class LoginDialog {
 					Session session = sessionManager.getOrCreateSession(exc);
 					session.preAuthorize(username, userAttributes);
 					if(tokenProvider != null)
-						tokenProvider.requestToken(userAttributes);
+						tokenProvider.requestToken(session.getUserAttributes());
 				} else {
 					showPage(exc, 0);
 				}
