@@ -52,6 +52,8 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	private InputStream srcIn;
 	private OutputStream srcOut;
 
+	private boolean showSSLExceptions = true;
+
 
 	public HttpServerHandler(Socket socket, HttpEndpointListener endpointListener) throws IOException {
 		super(endpointListener.getTransport());
@@ -67,8 +69,13 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	private void setup() throws IOException {
 		this.exchange = new Exchange(this);
 		SSLProvider sslProvider = endpointListener.getSslProvider();
-		if (sslProvider != null)
+		if (sslProvider != null) {
+			showSSLExceptions = sslProvider.showSSLExceptions();
 			sourceSocket = sslProvider.wrapAcceptedSocket(sourceSocket);
+		}else{
+			// if there is no SSLProvider then there shouldn't be any ssl exceptions showing here
+			showSSLExceptions = false;
+		}
 		log.debug("New ServerThread created. " + counter.incrementAndGet());
 		srcIn = new BufferedInputStream(sourceSocket.getInputStream(), 2048);
 		srcOut = new BufferedOutputStream(sourceSocket.getOutputStream(), 2048);
@@ -130,12 +137,14 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		} catch (SocketException se) {
 			log.debug("client socket closed");
 		} catch (SSLException s) {
-			if (s.getCause() instanceof SSLException)
-				s = (SSLException) s.getCause();
-			if (s.getCause() instanceof SocketException)
-				log.debug("ssl socket closed");
-			else
-				log.error("", s);
+			if(showSSLExceptions) {
+				if (s.getCause() instanceof SSLException)
+					s = (SSLException) s.getCause();
+				if (s.getCause() instanceof SocketException)
+					log.debug("ssl socket closed");
+				else
+					log.error("", s);
+			}
 		} catch (IOException e) {
 			log.error("", e);
 		} catch (EndOfStreamException e) {

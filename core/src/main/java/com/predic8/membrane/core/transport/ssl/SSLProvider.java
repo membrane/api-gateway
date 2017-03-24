@@ -31,4 +31,5 @@ public interface SSLProvider {
 	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException;
 	public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException;
 
+	public boolean showSSLExceptions();
 }
