@@ -44,6 +44,11 @@ public class EmptyBody extends AbstractBody {
 	}
 
 	@Override
+	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+		//ignore
+	}
+
+	@Override
 	protected byte[] getRawLocal() throws IOException {
 		return new byte[0];
 	}

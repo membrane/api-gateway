@@ -107,11 +107,22 @@ public abstract class AbstractBody {
 
 	public void write(AbstractBodyTransferrer out) throws IOException {
 		if (!read) {
-			for (MessageObserver observer : observers)
-				observer.bodyRequested(this);
+			boolean relevantObservers = true;
+			if(observers.size() == 1){
+				MessageObserver obs = observers.get(0);
+				if(obs.getClass().getName().contains("Response$ResponseBuilder")){
+					relevantObservers = false;
+					writeStreamed(out);
+				}
+			}
+			if(relevantObservers) {
+				for (MessageObserver observer : observers)
+					observer.bodyRequested(this);
 
-			writeNotRead(out);
+				writeNotRead(out);
+			}
 			return;
+
 		}
 
 		writeAlreadyRead(out);
@@ -120,6 +131,11 @@ public abstract class AbstractBody {
 	protected abstract void writeAlreadyRead(AbstractBodyTransferrer out) throws IOException;
 
 	protected abstract void writeNotRead(AbstractBodyTransferrer out) throws IOException;
+
+	/**
+	 * Is called when there are no observers that need to read the body. Streams the body without reading it
+	 */
+	protected abstract void writeStreamed(AbstractBodyTransferrer out) throws IOException;
 
 	/**
 	 * Warning: Calling this method will trigger reading the body from the client, disabling "streaming".
