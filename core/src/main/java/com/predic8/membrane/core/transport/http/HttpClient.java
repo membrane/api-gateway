@@ -362,8 +362,16 @@ public class HttpClient {
 		final HttpServerHandler hsr = (HttpServerHandler)exc.getHandler();
 		String source = hsr.getSourceSocket().getRemoteSocketAddress().toString();
 		String dest = con.toString();
-		final StreamPump a = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule());
-		final StreamPump b = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule());
+		final StreamPump a;
+		final StreamPump b;
+		if("WebSocket".equals(protocol)){
+			a = new WebSocketStreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule(),true);
+			b = new WebSocketStreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule(),false);
+		}
+		else {
+			a = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule());
+			b = new StreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule());
+		}
 
 		hsr.getSourceSocket().setSoTimeout(0);
 
@@ -372,10 +380,10 @@ public class HttpClient {
 			@Override
 			public void setExchangeFinished() {
 				String threadName = Thread.currentThread().getName();
-				new Thread(a, threadName + " " + protocol + " Backward Thread").start();
+				new Thread(b, threadName + " " + protocol + " Backward Thread").start();
 				try {
 					Thread.currentThread().setName(threadName + " " + protocol + " Onward Thread");
-					b.run();
+					a.run();
 				} finally {
 					try {
 						con.close();

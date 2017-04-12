@@ -32,7 +32,7 @@ import javax.net.ssl.SSLException;
 
 public class StreamPump implements Runnable {
 
-	private static Logger log = LoggerFactory.getLogger(StreamPump.class.getName());
+	protected static Logger log = LoggerFactory.getLogger(StreamPump.class.getName());
 
 	public static class StreamPumpStats {
 		private static ArrayList<StreamPump> pumps = new ArrayList<StreamPump>();
@@ -57,11 +57,11 @@ public class StreamPump implements Runnable {
 	}
 
 	// operational members
-	private final InputStream in;
-	private final OutputStream out;
-	private StreamPumpStats stats;
+	protected final InputStream in;
+	protected final OutputStream out;
+	protected StreamPumpStats stats;
 	// statistical members
-	private AtomicLong bytesTransferred;
+	protected AtomicLong bytesTransferred;
 	private String pumpName;
 	private final long creationTime;
 	private Rule rule;
