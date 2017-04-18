@@ -365,8 +365,12 @@ public class HttpClient {
 		final StreamPump a;
 		final StreamPump b;
 		if("WebSocket".equals(protocol)){
-			a = new WebSocketStreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule(),true);
-			b = new WebSocketStreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule(),false);
+			WebSocketStreamPump aTemp = new WebSocketStreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule(),true);
+			WebSocketStreamPump bTemp = new WebSocketStreamPump(con.in, hsr.getSrcOut(), streamPumpStats, protocol + " " + source + " <- " + dest, exc.getRule(),false);
+			aTemp.init(bTemp);
+			bTemp.init(aTemp);
+			a = aTemp;
+			b = bTemp;
 		}
 		else {
 			a = new StreamPump(hsr.getSrcIn(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, exc.getRule());
