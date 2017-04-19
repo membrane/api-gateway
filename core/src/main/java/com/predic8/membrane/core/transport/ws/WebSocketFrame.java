@@ -11,7 +11,7 @@ import java.util.ArrayList;
 
 public class WebSocketFrame {
 
-    private String error = "";
+    private String error = null;
     boolean finalFragment;
     private boolean rsv1;
     private boolean rsv2;
@@ -26,7 +26,7 @@ public class WebSocketFrame {
 
     }
 
-    public WebSocketFrame(boolean finalFragment, boolean rsv1, boolean rsv2, boolean rsv3, int opcode, boolean mask, int payloadLength, byte[] maskKey, byte[] payload) {
+    public WebSocketFrame(boolean finalFragment, boolean rsv1, boolean rsv2, boolean rsv3, int opcode, boolean mask, long payloadLength, byte[] maskKey, byte[] payload) {
         this.finalFragment = finalFragment;
         this.rsv1 = rsv1;
         this.rsv2 = rsv2;
@@ -36,6 +36,7 @@ public class WebSocketFrame {
         this.payloadLength = payloadLength;
         this.maskKey = maskKey;
         this.payload = payload;
+
 
         if(opcode == 8)
             error = calcError();
@@ -57,16 +58,34 @@ public class WebSocketFrame {
 
         byte maskAndPayloadLength = 0;
         maskAndPayloadLength = ByteUtil.setBitValueBigEndian(maskAndPayloadLength,0,this.isMasked);
-        if(this.payloadLength >= 126)
-            throw new RuntimeException("NYI length >= 126");
-        if(this.payloadLength < 126)
-            maskAndPayloadLength = ByteUtil.setBitValuesBigEndian(maskAndPayloadLength,1,7,(int)this.payloadLength);
+        int additionalPayloadBytes = getExtendedPayloadSize();
+
+        maskAndPayloadLength = ByteUtil.setBitValuesBigEndian(maskAndPayloadLength,1,7,(int)this.payloadLength);
 
         result[0] = finAndReservedAndOpcode;
         result[1] = maskAndPayloadLength;
+
+        byte[] additionalPayloadLength = null;
+
+        if(additionalPayloadBytes == 2){
+            byte[] extendedPayloadLength = ByteBuffer.allocate(4).putInt(payload.length).array();
+            byte[] correctedExtendedPayloadLength = new byte[2];
+            for(int i = 2; i < extendedPayloadLength.length;i++)
+                correctedExtendedPayloadLength[i-2] = extendedPayloadLength[i];
+            additionalPayloadLength = correctedExtendedPayloadLength;
+        }
+        if(additionalPayloadBytes == 8){
+            additionalPayloadLength = ByteBuffer.allocate(8).putLong(payload.length).array();
+        }
+        if(additionalPayloadLength != null)
+            for(int i = 0; i < additionalPayloadBytes; i++){
+                result[2+i] = additionalPayloadLength[i];
+            }
+
+
         int maskKeyLength = maskKey != null ? maskKey.length : 0;
         for(int i = 0; i < maskKeyLength; i++)
-            result[2+i] = maskKey[i];
+            result[2+additionalPayloadBytes+i] = maskKey[i];
         int payloadLength = payload != null ? payload.length : 0;
         byte[] newPayload = new byte[payload.length]; // copy to not have side-effects from possible masking
         for(int i = 0; i < payload.length;i++)
@@ -80,15 +99,26 @@ public class WebSocketFrame {
             }
         }
         for(int i = 0; i < payloadLength; i++)
-            result[2 + maskKeyLength + i] = newPayload[i];
+            result[2+additionalPayloadBytes + maskKeyLength + i] = newPayload[i];
 
         out.write(result);
         out.flush();
 
     }
 
+    private int getExtendedPayloadSize(){
+        if(this.payloadLength >= 126){
+            if(this.payloadLength == 126){
+                return 2;
+            }else{
+                return 8;
+            }
+        }else
+            return 0;
+    }
+
     private int getSizeInBytes() {
-        return 2 + (maskKey != null ? maskKey.length : 0) + (payload != null ? payload.length : 0);
+        return 2 + getExtendedPayloadSize() + (maskKey != null ? maskKey.length : 0) + (payload != null ? payload.length : 0);
     }
 
 

@@ -12,7 +12,7 @@ import java.util.List;
 
 public class WebSocketStreamPump extends StreamPump {
 
-    //pumpsToRight = from sender to recipient "sender -> recipient"
+    //pumpsToRight == true: from sender to recipient "sender -> recipient"
     public WebSocketStreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Rule rule, boolean pumpsToRight) {
         super(in, out, stats, name, rule);
         this.pumpsToRight = pumpsToRight;
@@ -39,10 +39,10 @@ public class WebSocketStreamPump extends StreamPump {
                 frameAssembler.getNextFrame(frame -> {
                     try {
                         if (pumpsToRight) {
-                            System.out.println("pumptoright");
+                            //System.out.println("==client to server==");
                             passFrameToChainElement(0, true, frame);
                         } else {
-                            System.out.println("pumptoleft");
+                            //System.out.println("==server to client==");
                             passFrameToChainElement(chain.size() - 1, false, frame);
                         }
                     }catch(Exception e){
@@ -70,7 +70,7 @@ public class WebSocketStreamPump extends StreamPump {
             //log.error("Reading from or writing to stream failed: " + e);
         } catch (Exception e) {
             connectionIsOpen = false;
-            //e.printStackTrace();
+            e.printStackTrace();
         } finally {
             try {
                 out.close();
