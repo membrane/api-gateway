@@ -14,13 +14,18 @@
 package com.predic8.membrane.core.interceptor.tunnel;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.util.URLUtil;
 import org.joda.time.format.PeriodFormat;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @description Allow HTTP protocol upgrades to the <a
@@ -33,25 +38,11 @@ import org.joda.time.format.PeriodFormat;
 public class WebSocketInterceptor extends AbstractInterceptor {
 	private String url;
 	private String pathQuery;
+	private List<WebSocketInterceptorInterface> interceptors = new ArrayList<>();
 
 	@Override
 	public void init(Router router) throws Exception {
 		name = "Websocket interceptor";
-	}
-
-	public String getUrl() {
-		return url;
-	}
-
-	/**
-	 * @description The URL the WebSocket connection will be forwarded to. The (host,port) pair specifies the target server.
-	 * The (path,query) part are sent to the target server on the initial request. (For example, ActiveMQ listens on port
-	 * 61614 and expects the incoming WebSocket connection to have a path '/' and empty query.)
-	 * @example http://localhost:61614/
-	 */
-	@MCAttribute
-	public void setUrl(String url) {
-		this.url = url;
 	}
 
 	@Override
@@ -74,5 +65,29 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 	@Override
 	public String getShortDescription() {
 		return "Allow HTTP protocol upgrades to the <a href=\"http://tools.ietf.org/html/rfc6455\">WebSocket protocol</a>. After the upgrade, the connection's data packets are simply forwarded and not inspected.";
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	/**
+	 * @description The URL the WebSocket connection will be forwarded to. The (host,port) pair specifies the target server.
+	 * The (path,query) part are sent to the target server on the initial request. (For example, ActiveMQ listens on port
+	 * 61614 and expects the incoming WebSocket connection to have a path '/' and empty query.)
+	 * @example http://localhost:61614/
+	 */
+	@MCAttribute
+	public void setUrl(String url) {
+		this.url = url;
+	}
+
+	public List<WebSocketInterceptorInterface> getInterceptors() {
+		return interceptors;
+	}
+
+	@MCChildElement
+	public void setInterceptors(List<WebSocketInterceptorInterface> interceptors) {
+		this.interceptors = interceptors;
 	}
 }

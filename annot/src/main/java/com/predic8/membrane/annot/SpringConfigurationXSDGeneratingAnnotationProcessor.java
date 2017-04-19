@@ -18,20 +18,13 @@ import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
@@ -327,9 +320,12 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 				cei.setEi(ii);
 				cei.setAnnotation(b);
 				cei.setE((ExecutableElement) e2);
-				TypeMirror setterArgType = cei.getE().getParameters().get(0).asType();
+				List<? extends VariableElement> parameters = cei.getE().getParameters();
+				if (parameters.size() == 0)
+					throw new ProcessingException("Setter must have exactly one parameter.", e2);
+				TypeMirror setterArgType = parameters.get(0).asType();
 				if (!(setterArgType instanceof DeclaredType))
-					throw new ProcessingException("Setter argument must be of an @MCElement-annotated type.", cei.getE().getParameters().get(0));
+					throw new ProcessingException("Setter argument must be of an @MCElement-annotated type.", parameters.get(0));
 				cei.setTypeDeclaration((TypeElement) ((DeclaredType) setterArgType).asElement());
 				cei.setPropertyName(AnnotUtils.dejavaify(e2.getSimpleName().toString().substring(3)));
 				cei.setRequired(isRequired(e2));

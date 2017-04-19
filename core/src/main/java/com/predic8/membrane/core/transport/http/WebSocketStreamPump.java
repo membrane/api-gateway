@@ -1,9 +1,11 @@
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
-import com.predic8.membrane.core.transport.ws.WebSocketInterceptor;
+import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -17,13 +19,17 @@ public class WebSocketStreamPump extends StreamPump {
         super(in, out, stats, name, rule);
         this.pumpsToRight = pumpsToRight;
         frameAssembler = new WebSocketFrameAssembler(in);
+        for(Interceptor i : rule.getInterceptors()){
+            if(i instanceof WebSocketInterceptor)
+                chain = ((WebSocketInterceptor)i).getInterceptors();
+        }
     }
 
     public void init(WebSocketStreamPump otherStreamPump){
         this.otherStreamPump = otherStreamPump;
     }
 
-    List<WebSocketInterceptor> chain = new ArrayList<>(); // TODO: initialize
+    List<WebSocketInterceptorInterface> chain = new ArrayList<>();
     WebSocketStreamPump otherStreamPump;
     private final boolean pumpsToRight;
     boolean connectionIsOpen = true;
@@ -36,7 +42,7 @@ public class WebSocketStreamPump extends StreamPump {
         //if (stats != null)
         //    stats.registerPump(this);
         try {
-                frameAssembler.getNextFrame(frame -> {
+                frameAssembler.readFrames(frame -> {
                     try {
                         if (pumpsToRight) {
                             //System.out.println("==client to server==");
@@ -91,13 +97,15 @@ public class WebSocketStreamPump extends StreamPump {
             return;
         }
         if (i == -1) {
-            synchronized (otherStreamPump.out) {
-                frame.write(otherStreamPump.out);
+            OutputStream target = pumpsToRight ? otherStreamPump.out : out;
+            synchronized (target) {
+                frame.write(target);
             }
         } else if (chain.size() == i) {
             // write frame to out
-            synchronized (out) {
-                frame.write(out);
+            OutputStream target = pumpsToRight ? out : otherStreamPump.out;
+            synchronized (target) {
+                frame.write(target);
             }
         } else {
             chain.get(i).handleFrame(frame, frameTravelsToRight, frame1 -> {

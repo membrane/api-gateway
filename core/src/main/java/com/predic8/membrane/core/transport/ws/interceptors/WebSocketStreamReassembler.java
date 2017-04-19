@@ -1,15 +1,19 @@
-package com.predic8.membrane.core.transport.ws;
+package com.predic8.membrane.core.transport.ws.interceptors;
 
 import com.predic8.membrane.annot.MCChildElement;
+import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.InterceptorFlowController;
-import com.sun.javafx.scene.control.skin.VirtualFlow;
+import com.predic8.membrane.core.transport.ws.WebSocketFrame;
+import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
+import com.predic8.membrane.core.transport.ws.WebSocketSender;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class WebSocketStreamReassembler implements WebSocketInterceptor {
+@MCElement(name = "streamReassembler")
+public class WebSocketStreamReassembler implements WebSocketInterceptorInterface {
 
     List<Interceptor> interceptors = new ArrayList<>();
 
@@ -23,11 +27,11 @@ public class WebSocketStreamReassembler implements WebSocketInterceptor {
         }
     }
 
-    @MCChildElement
     public List<Interceptor> getInterceptors() {
         return interceptors;
     }
 
+    @MCChildElement
     public void setInterceptors(List<Interceptor> interceptors) {
         this.interceptors = interceptors;
     }
