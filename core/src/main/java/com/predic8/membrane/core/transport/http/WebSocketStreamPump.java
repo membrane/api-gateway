@@ -20,9 +20,18 @@ public class WebSocketStreamPump extends StreamPump {
         this.pumpsToRight = pumpsToRight;
         frameAssembler = new WebSocketFrameAssembler(in);
         for(Interceptor i : rule.getInterceptors()){
-            if(i instanceof WebSocketInterceptor)
-                chain = ((WebSocketInterceptor)i).getInterceptors();
+            if(i instanceof WebSocketInterceptor) {
+                chain = ((WebSocketInterceptor) i).getInterceptors();
+                for(WebSocketInterceptorInterface i2 : chain)
+                    try {
+                        i2.init(i.getRouter());
+                    } catch (Exception e) {
+                        log.error("Could not init WebSocketInterceptors:" + e.getMessage());
+                    }
+                break;
+            }
         }
+
     }
 
     public void init(WebSocketStreamPump otherStreamPump){

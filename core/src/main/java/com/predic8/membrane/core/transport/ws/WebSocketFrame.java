@@ -164,6 +164,7 @@ public class WebSocketFrame {
 
     public void setPayload(byte[] payload) {
         this.payload = payload;
+        this.payloadLength = payload.length;
     }
 
     /**

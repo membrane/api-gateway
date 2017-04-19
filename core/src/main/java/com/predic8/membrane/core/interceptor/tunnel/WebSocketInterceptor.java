@@ -43,6 +43,7 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 	@Override
 	public void init(Router router) throws Exception {
 		name = "Websocket interceptor";
+		this.router = router;
 	}
 
 	@Override
