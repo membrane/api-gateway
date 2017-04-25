@@ -19,10 +19,10 @@ public class WebSocketStreamPump extends StreamPump {
         super(in, out, stats, name, rule);
         this.pumpsToRight = pumpsToRight;
         frameAssembler = new WebSocketFrameAssembler(in);
-        for(Interceptor i : rule.getInterceptors()){
-            if(i instanceof WebSocketInterceptor) {
+        for (Interceptor i : rule.getInterceptors()) {
+            if (i instanceof WebSocketInterceptor) {
                 chain = ((WebSocketInterceptor) i).getInterceptors();
-                for(WebSocketInterceptorInterface i2 : chain)
+                for (WebSocketInterceptorInterface i2 : chain)
                     try {
                         i2.init(i.getRouter());
                     } catch (Exception e) {
@@ -34,7 +34,7 @@ public class WebSocketStreamPump extends StreamPump {
 
     }
 
-    public void init(WebSocketStreamPump otherStreamPump){
+    public void init(WebSocketStreamPump otherStreamPump) {
         this.otherStreamPump = otherStreamPump;
     }
 
@@ -46,26 +46,26 @@ public class WebSocketStreamPump extends StreamPump {
 
     @Override
     public void run() {
-        if(otherStreamPump == null)
+        if (otherStreamPump == null)
             throw new RuntimeException("Call init with other WebSocketStreamPump (backward direction)");
         //if (stats != null)
         //    stats.registerPump(this);
         try {
-                frameAssembler.readFrames(frame -> {
-                    try {
-                        if (pumpsToRight) {
-                            //System.out.println("==client to server==");
-                            passFrameToChainElement(0, true, frame);
-                        } else {
-                            //System.out.println("==server to client==");
-                            passFrameToChainElement(chain.size() - 1, false, frame);
-                        }
-                    }catch(Exception e){
-                        e.printStackTrace();
+            frameAssembler.readFrames(frame -> {
+                try {
+                    if (pumpsToRight) {
+                        //System.out.println("==client to server==");
+                        passFrameToChainElement(0, true, frame);
+                    } else {
+                        //System.out.println("==server to client==");
+                        passFrameToChainElement(chain.size() - 1, false, frame);
                     }
-                });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
 
-                // pass frame to WSInterceptor chain
+            // pass frame to WSInterceptor chain
 
             /*
             while ((length = in.read(buffer)) > 0) {
@@ -75,13 +75,13 @@ public class WebSocketStreamPump extends StreamPump {
                     bytesTransferred.addAndGet(length);
             }
             */
-        //} catch (SocketTimeoutException e) {
+            //} catch (SocketTimeoutException e) {
             // do nothing
-        //} catch (SocketException e) {
+            //} catch (SocketException e) {
             // do nothing
-        //} catch (SSLException e) {
+            //} catch (SSLException e) {
             // do nothing
-        //} catch (IOException e) {
+            //} catch (IOException e) {
             //log.error("Reading from or writing to stream failed: " + e);
         } catch (Exception e) {
             connectionIsOpen = false;
@@ -98,7 +98,7 @@ public class WebSocketStreamPump extends StreamPump {
     }
 
     private void passFrameToChainElement(int i, boolean frameTravelsToRight, WebSocketFrame frame) throws Exception {
-        if(chain.isEmpty()){
+        if (chain.isEmpty()) {
             if (true)
                 synchronized (out) {
                     frame.write(out);

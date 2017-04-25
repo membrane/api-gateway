@@ -1,20 +1,13 @@
 package com.predic8.membrane.core.transport.ws;
 
 import com.predic8.membrane.core.util.ByteUtil;
-import com.sun.javaws.exceptions.InvalidArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Queue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class WebSocketFrame {
 
@@ -33,7 +26,7 @@ public class WebSocketFrame {
     final byte[] maskKey = new byte[4];
     byte[] payload = new byte[INITIAL_BUFFER_SIZE];
 
-    public WebSocketFrame(){
+    public WebSocketFrame() {
 
     }
 
@@ -47,49 +40,49 @@ public class WebSocketFrame {
         byte[] result = new byte[getSizeInBytes()];
 
         byte finAndReservedAndOpcode = 0;
-        finAndReservedAndOpcode = ByteUtil.setBitValueBigEndian(finAndReservedAndOpcode,0, finalFragment);
-        finAndReservedAndOpcode = ByteUtil.setBitValueBigEndian(finAndReservedAndOpcode,1,rsv1);
-        finAndReservedAndOpcode = ByteUtil.setBitValueBigEndian(finAndReservedAndOpcode,2,rsv2);
-        finAndReservedAndOpcode = ByteUtil.setBitValueBigEndian(finAndReservedAndOpcode,3,rsv3);
-        finAndReservedAndOpcode = ByteUtil.setBitValuesBigEndian(finAndReservedAndOpcode,4,7,opcode);
+        finAndReservedAndOpcode = ByteUtil.setBitValueBigEndian(finAndReservedAndOpcode, 0, finalFragment);
+        finAndReservedAndOpcode = ByteUtil.setBitValueBigEndian(finAndReservedAndOpcode, 1, rsv1);
+        finAndReservedAndOpcode = ByteUtil.setBitValueBigEndian(finAndReservedAndOpcode, 2, rsv2);
+        finAndReservedAndOpcode = ByteUtil.setBitValueBigEndian(finAndReservedAndOpcode, 3, rsv3);
+        finAndReservedAndOpcode = ByteUtil.setBitValuesBigEndian(finAndReservedAndOpcode, 4, 7, opcode);
 
         byte maskAndPayloadLength = 0;
-        maskAndPayloadLength = ByteUtil.setBitValueBigEndian(maskAndPayloadLength,0,this.isMasked);
+        maskAndPayloadLength = ByteUtil.setBitValueBigEndian(maskAndPayloadLength, 0, this.isMasked);
         int additionalPayloadBytes = getExtendedPayloadSize(computePayloadField());
 
-        maskAndPayloadLength = ByteUtil.setBitValuesBigEndian(maskAndPayloadLength,1,7, computePayloadField());
+        maskAndPayloadLength = ByteUtil.setBitValuesBigEndian(maskAndPayloadLength, 1, 7, computePayloadField());
 
         result[0] = finAndReservedAndOpcode;
         result[1] = maskAndPayloadLength;
 
         byte[] additionalPayloadLength = null;
 
-        if(additionalPayloadBytes == 2){
-            byte[] extendedPayloadLength = ByteBuffer.allocate(4).putInt((int)payloadLength).array();
+        if (additionalPayloadBytes == 2) {
+            byte[] extendedPayloadLength = ByteBuffer.allocate(4).putInt((int) payloadLength).array();
             byte[] correctedExtendedPayloadLength = new byte[2];
-            for(int i = 2; i < extendedPayloadLength.length;i++)
-                correctedExtendedPayloadLength[i-2] = extendedPayloadLength[i];
+            for (int i = 2; i < extendedPayloadLength.length; i++)
+                correctedExtendedPayloadLength[i - 2] = extendedPayloadLength[i];
             additionalPayloadLength = correctedExtendedPayloadLength;
         }
-        if(additionalPayloadBytes == 8){
-            additionalPayloadLength = ByteBuffer.allocate(8).putLong((int)payloadLength).array();
+        if (additionalPayloadBytes == 8) {
+            additionalPayloadLength = ByteBuffer.allocate(8).putLong((int) payloadLength).array();
         }
-        if(additionalPayloadLength != null)
-            for(int i = 0; i < additionalPayloadBytes; i++){
-                result[2+i] = additionalPayloadLength[i];
+        if (additionalPayloadLength != null)
+            for (int i = 0; i < additionalPayloadBytes; i++) {
+                result[2 + i] = additionalPayloadLength[i];
             }
 
 
         int maskKeyLength = isMasked ? maskKey.length : 0;
-        for(int i = 0; i < maskKeyLength; i++)
-            result[2+additionalPayloadBytes+i] = maskKey[i];
+        for (int i = 0; i < maskKeyLength; i++)
+            result[2 + additionalPayloadBytes + i] = maskKey[i];
 
         int payloadOffset = 2 + additionalPayloadBytes + maskKeyLength;
-        System.arraycopy(payload, 0, result, payloadOffset, (int)payloadLength);
+        System.arraycopy(payload, 0, result, payloadOffset, (int) payloadLength);
 
-        if(isMasked){
+        if (isMasked) {
             int maskIndex = 0;
-            for(int i = 0; i < payloadLength; i++) {
+            for (int i = 0; i < payloadLength; i++) {
                 result[payloadOffset + i] = (byte) (result[payloadOffset + i] ^ maskKey[maskIndex]);
                 maskIndex = (maskIndex + 1) % 4;
             }
@@ -108,19 +101,19 @@ public class WebSocketFrame {
         return 127;
     }
 
-    private int getExtendedPayloadSize(int size){
-        if(size >= 126){
-            if(size == 126){
+    private int getExtendedPayloadSize(int size) {
+        if (size >= 126) {
+            if (size == 126) {
                 return 2;
-            }else{
+            } else {
                 return 8;
             }
-        }else
+        } else
             return 0;
     }
 
     private int getSizeInBytes() {
-        return 2 + getExtendedPayloadSize(computePayloadField()) + (maskKey != null ? maskKey.length : 0) + (payload != null ? (int)payloadLength : 0);
+        return 2 + getExtendedPayloadSize(computePayloadField()) + (maskKey != null ? maskKey.length : 0) + (payload != null ? (int) payloadLength : 0);
     }
 
 
@@ -174,61 +167,61 @@ public class WebSocketFrame {
      * @return the number of bytes read. if > 0, this class has been properly initialized with the frame data read.
      */
     public int tryRead(byte[] buffer, int offset, int length) {
-        if(length == 0)
+        if (length == 0)
             return 0;
 
         int origOffset = offset;
 
         byte finAndReservedAndOpCode = buffer[offset++];
-        finalFragment = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode,0);
-        if(!finalFragment)
+        finalFragment = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 0);
+        if (!finalFragment)
             return 0;
-        rsv1 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode,1);
-        rsv2 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode,2);
-        rsv3 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode,3);
-        opcode = ByteUtil.getValueOfBits(finAndReservedAndOpCode, 4,7);
+        rsv1 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 1);
+        rsv2 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 2);
+        rsv3 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 3);
+        opcode = ByteUtil.getValueOfBits(finAndReservedAndOpCode, 4, 7);
 
         byte maskAndPayloadLength = buffer[offset++];
-        isMasked = ByteUtil.getBitValueBigEndian(maskAndPayloadLength,0);
-        payloadLength = ByteUtil.getValueOfBits(maskAndPayloadLength,1,7);
-        if(payloadLength >= 126){
-            if(payloadLength == 126){
+        isMasked = ByteUtil.getBitValueBigEndian(maskAndPayloadLength, 0);
+        payloadLength = ByteUtil.getValueOfBits(maskAndPayloadLength, 1, 7);
+        if (payloadLength >= 126) {
+            if (payloadLength == 126) {
                 byte[] newPayloadLength = new byte[4];
-                for(int i = 2; i < newPayloadLength.length;i++)
+                for (int i = 2; i < newPayloadLength.length; i++)
                     newPayloadLength[i] = buffer[offset++];
                 payloadLength = ByteBuffer.wrap(newPayloadLength).getInt();
-            }else{
+            } else {
                 byte[] newPayloadLength = new byte[8];
-                for(int i = 0; i < newPayloadLength.length;i++)
+                for (int i = 0; i < newPayloadLength.length; i++)
                     newPayloadLength[i] = buffer[offset++];
                 payloadLength = ByteBuffer.wrap(newPayloadLength).getLong();
             }
         }
 
-        if(isMasked) {
+        if (isMasked) {
             for (int i = 0; i < 4; i++)
                 maskKey[i] = buffer[offset++];
         }
 
-        if(payloadLength > Integer.MAX_VALUE || payloadLength < 0) {
+        if (payloadLength > Integer.MAX_VALUE || payloadLength < 0) {
             log.warn("Payload of ws message is bigger than Integer.MAX_VALUE which is currently not supported. Message will be truncated");
             payloadLength = Integer.MAX_VALUE;
         }
         // ensure that 'payload' buffer is large enough
         if (payload.length < payloadLength)
-            payload = new byte[(int)payloadLength];
+            payload = new byte[(int) payloadLength];
 
         int maskIndex = 0;
-        for(int i = 0; i < payloadLength; i++) {
+        for (int i = 0; i < payloadLength; i++) {
             payload[i] = buffer[offset++];
-            if(isMasked)
+            if (isMasked)
                 payload[i] = (byte) (payload[i] ^ maskKey[maskIndex]);
             maskIndex = (maskIndex + 1) % 4;
         }
 
         // TODO: directly set the fields (or better: use them during parsing)
 
-        if(opcode == 8)
+        if (opcode == 8)
             error = calcError();
 
 
@@ -248,7 +241,7 @@ public class WebSocketFrame {
                 ", isMasked=" + isMasked +
                 ", payloadLength=" + payloadLength +
                 (isMasked ? (", maskKey=" + Arrays.toString(maskKey)) : "") +
-                ", payload=" + new String(payload, 0, (int)payloadLength) +
+                ", payload=" + new String(payload, 0, (int) payloadLength) +
                 '}';
     }
 }
