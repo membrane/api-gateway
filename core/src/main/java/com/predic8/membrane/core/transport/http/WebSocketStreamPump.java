@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.transport.http;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.tunnel.WebSocketInterceptor;
 import com.predic8.membrane.core.rules.Rule;
@@ -15,10 +16,10 @@ import java.util.List;
 public class WebSocketStreamPump extends StreamPump {
 
     //pumpsToRight == true: from sender to recipient "sender -> recipient"
-    public WebSocketStreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Rule rule, boolean pumpsToRight) {
+    public WebSocketStreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Rule rule, boolean pumpsToRight, Exchange originalExchange) {
         super(in, out, stats, name, rule);
         this.pumpsToRight = pumpsToRight;
-        frameAssembler = new WebSocketFrameAssembler(in);
+        frameAssembler = new WebSocketFrameAssembler(in,originalExchange);
         for (Interceptor i : rule.getInterceptors()) {
             if (i instanceof WebSocketInterceptor) {
                 chain = ((WebSocketInterceptor) i).getInterceptors();

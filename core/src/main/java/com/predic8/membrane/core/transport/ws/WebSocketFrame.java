@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.transport.ws;
 
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +16,7 @@ public class WebSocketFrame {
 
     final static int INITIAL_BUFFER_SIZE = 8192;
 
+    Exchange originalExchange;
     private String error = null;
     boolean finalFragment;
     private boolean rsv1;
@@ -241,7 +243,15 @@ public class WebSocketFrame {
                 ", isMasked=" + isMasked +
                 ", payloadLength=" + payloadLength +
                 (isMasked ? (", maskKey=" + Arrays.toString(maskKey)) : "") +
-                ", payload=" + new String(payload, 0, (int) payloadLength) +
+                ", payload=" + (opcode == 8 ? new String(payload, 2, (int) payloadLength-2) : new String(payload, 0, (int) payloadLength)) +
                 '}';
+    }
+
+    public Exchange getOriginalExchange() {
+        return originalExchange;
+    }
+
+    public void setOriginalExchange(Exchange originalExchange) {
+        this.originalExchange = originalExchange;
     }
 }

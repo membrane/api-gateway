@@ -56,13 +56,18 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
 
     private void modifyOriginalFrameWithExchange(WebSocketFrame wsStompFrame, Exchange exc) {
         builder.setLength(0);
-        builder.append(exc.getRequest().getMethod()).append("\n");
-        for (HeaderField header : exc.getRequest().getHeader().getAllHeaderFields()) {
-            if (!header.equals(Header.CONTENT_LENGTH))
-                builder.append(header.getHeaderName()).append(":").append(header.getValue()).append("\n");
+        if(exc.getRequest().getMethod().isEmpty()){
+            // this is a heart-beat
+            builder.append("\n");
+        }else {
+            builder.append(exc.getRequest().getMethod()).append("\n");
+            for (HeaderField header : exc.getRequest().getHeader().getAllHeaderFields()) {
+                if (!header.equals(Header.CONTENT_LENGTH))
+                    builder.append(header.getHeaderName()).append(":").append(header.getValue()).append("\n");
+            }
+            builder.append("\n");
+            builder.append(exc.getRequest().getBody());
         }
-        builder.append("\n");
-        builder.append(exc.getRequest().getBody());
 
         byte[] payload = builder.toString().getBytes();
 
@@ -76,23 +81,37 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
         String verb = payload.substring(0, payload.indexOf('\n'));
         payload = payload.replace(verb + "\n", "");
 
-        String headers = payload.substring(0, payload.indexOf("\n\n"));
+        int contentLength = -1;
         Header headersObj = new Header();
-        String[] headersSplit = headers.split("\n");
-        for (String header : headersSplit) {
-            String[] headerKeyValue = header.split(":");
-            if (headerKeyValue.length == 1)
-                headersObj.add(headerKeyValue[0], "");
-            else
-                headersObj.add(headerKeyValue[0], headerKeyValue[1]);
+        if(payload.indexOf("\n\n") > -1) {
+            // this is a non-heart-beat
+
+            String headers = payload.substring(0, payload.indexOf("\n\n"));
+
+            String[] headersSplit = headers.split("\n");
+            for (String header : headersSplit) {
+                String[] headerKeyValue = header.split(":");
+                if (headerKeyValue.length == 1)
+                    headersObj.add(headerKeyValue[0], "");
+                else
+                    headersObj.add(headerKeyValue[0], header.substring(header.indexOf(":") + 1));
+            }
+
+            payload = payload.replace(headers + "\n\n", "");
+
+
+            if (headersObj.hasContentLength())
+                contentLength = headersObj.getContentLength();
         }
-
-        payload = payload.replace(headers + "\n\n", "");
-
-        boolean hasContentLength = headersObj.hasContentLength();
         Exchange result = new Request.Builder().method(verb).header(headersObj).body(payload).buildExchange();
-        if (!hasContentLength && result.getRequest().getHeader().hasContentLength())
+        if (contentLength == -1)
             result.getRequest().getHeader().removeFields(Header.CONTENT_LENGTH);
+        else
+            result.getRequest().getHeader().setContentLength(contentLength);
+
+        if(wsStompFrame.getOriginalExchange() != null)
+            result.setProperty(Exchange.WS_ORIGINAL_EXCHANGE,wsStompFrame.getOriginalExchange());
+
         return result;
     }
 

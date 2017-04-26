@@ -54,6 +54,8 @@ public class Exchange extends AbstractExchange {
 
 	public static final String SNI_SERVER_NAME = "SNI_SERVER_NAME";
 
+	public static final String WS_ORIGINAL_EXCHANGE = "WS_ORIGINAL_EXCHANGE";
+
 	private static Logger log = LoggerFactory.getLogger(Exchange.class.getName());
 
 	private AbstractHttpHandler handler;
