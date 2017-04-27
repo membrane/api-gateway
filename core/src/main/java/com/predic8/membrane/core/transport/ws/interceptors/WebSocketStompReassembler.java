@@ -18,15 +18,18 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.HeaderField;
+import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.transport.ws.WebSocketSender;
+import com.predic8.membrane.core.util.EndOfStreamException;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +52,7 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
         }
         Exchange exc = convertToExchange(wsStompFrame);
 
+        // TODO: this changes, as soon as we introduce the STOMPInterceptor
         //if (frameTravelsToRight) {
         if (true) {
             for (int i = 0; i < interceptors.size(); i++)
@@ -66,14 +70,16 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
         sender.handleFrame(wsStompFrame);
     }
 
-    private StringBuilder builder = new StringBuilder();
+    private ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-    private void modifyOriginalFrameWithExchange(WebSocketFrame wsStompFrame, Exchange exc) {
-        builder.setLength(0);
-        if(exc.getRequest().getMethod().isEmpty()){
+    private void modifyOriginalFrameWithExchange(WebSocketFrame wsStompFrame, Exchange exc) throws IOException {
+        baos.reset();
+        if (exc.getRequest().getMethod().isEmpty()) {
             // this is a heart-beat
-            builder.append("\n");
-        }else {
+            baos.write('\n');
+        } else {
+            exc.getRequest().writeSTOMP(baos);
+            /*
             builder.append(exc.getRequest().getMethod()).append("\n");
             for (HeaderField header : exc.getRequest().getHeader().getAllHeaderFields()) {
                 if (!header.equals(Header.CONTENT_LENGTH))
@@ -81,16 +87,37 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
             }
             builder.append("\n");
             builder.append(exc.getRequest().getBody());
+            */
+
+            baos.write(0);
         }
 
-        byte[] payload = builder.toString().getBytes();
+        //byte[] payload = builder.toString().getBytes();
 
-        wsStompFrame.setPayload(payload);
+        wsStompFrame.setPayload(baos.toByteArray());
     }
 
-    private Exchange convertToExchange(WebSocketFrame wsStompFrame) {
+    private Exchange convertToExchange(WebSocketFrame wsStompFrame) throws IOException, EndOfStreamException {
         byte[] realPayload = new byte[(int) wsStompFrame.getPayloadLength()];
         System.arraycopy(wsStompFrame.getPayload(), 0, realPayload, 0, (int) wsStompFrame.getPayloadLength());
+
+        if (wsStompFrame.getPayloadLength() == 0)
+            throw new IOException("Empty STOMP frame.");
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(wsStompFrame.getPayload(), 0, (int) wsStompFrame.getPayloadLength() - 1);
+        Request request = new Request();
+
+        if (isHeartBeat(wsStompFrame)) {
+            request.setMethod("");
+            request.setBody(new Body(bais));
+        } else {
+            if (wsStompFrame.getPayload()[(int) wsStompFrame.getPayloadLength() - 1] != 0)
+                throw new IOException("STOMP frame is not terminated by \\0.");
+
+            request.read(bais, true);
+        }
+
+        /*
         String payload = new String(realPayload);
         String verb = payload.substring(0, payload.indexOf('\n'));
         payload = payload.replace(verb + "\n", "");
@@ -122,11 +149,21 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
             result.getRequest().getHeader().removeFields(Header.CONTENT_LENGTH);
         else
             result.getRequest().getHeader().setContentLength(contentLength);
+        */
 
-        if(wsStompFrame.getOriginalExchange() != null)
-            result.setProperty(Exchange.WS_ORIGINAL_EXCHANGE,wsStompFrame.getOriginalExchange());
+        Exchange result = new Exchange(null);
+        result.setRequest(request);
+
+        if (wsStompFrame.getOriginalExchange() != null)
+            result.setProperty(Exchange.WS_ORIGINAL_EXCHANGE, wsStompFrame.getOriginalExchange());
 
         return result;
+    }
+
+    private boolean isHeartBeat(WebSocketFrame frame) {
+        return
+                (frame.getPayloadLength() == 2 && frame.getPayload()[0] == 0x0D && frame.getPayload()[1] == 0x0A) ||
+                        (frame.getPayloadLength() == 1 && frame.getPayload()[0] == 0x0A);
     }
 
     public List<Interceptor> getInterceptors() {
