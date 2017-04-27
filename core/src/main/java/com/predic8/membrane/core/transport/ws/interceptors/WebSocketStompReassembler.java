@@ -79,20 +79,9 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
             baos.write('\n');
         } else {
             exc.getRequest().writeSTOMP(baos);
-            /*
-            builder.append(exc.getRequest().getMethod()).append("\n");
-            for (HeaderField header : exc.getRequest().getHeader().getAllHeaderFields()) {
-                if (!header.equals(Header.CONTENT_LENGTH))
-                    builder.append(header.getHeaderName()).append(":").append(header.getValue()).append("\n");
-            }
-            builder.append("\n");
-            builder.append(exc.getRequest().getBody());
-            */
 
             baos.write(0);
         }
-
-        //byte[] payload = builder.toString().getBytes();
 
         wsStompFrame.setPayload(baos.toByteArray());
     }
@@ -117,40 +106,6 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
             request.read(bais, true);
         }
 
-        /*
-        String payload = new String(realPayload);
-        String verb = payload.substring(0, payload.indexOf('\n'));
-        payload = payload.replace(verb + "\n", "");
-
-        int contentLength = -1;
-        Header headersObj = new Header();
-        if(payload.indexOf("\n\n") > -1) {
-            // this is a non-heart-beat
-
-            String headers = payload.substring(0, payload.indexOf("\n\n"));
-
-            String[] headersSplit = headers.split("\n");
-            for (String header : headersSplit) {
-                String[] headerKeyValue = header.split(":");
-                if (headerKeyValue.length == 1)
-                    headersObj.add(headerKeyValue[0], "");
-                else
-                    headersObj.add(headerKeyValue[0], header.substring(header.indexOf(":") + 1));
-            }
-
-            payload = payload.replace(headers + "\n\n", "");
-
-
-            if (headersObj.hasContentLength())
-                contentLength = headersObj.getContentLength();
-        }
-        Exchange result = new Request.Builder().method(verb).header(headersObj).body(payload).buildExchange();
-        if (contentLength == -1)
-            result.getRequest().getHeader().removeFields(Header.CONTENT_LENGTH);
-        else
-            result.getRequest().getHeader().setContentLength(contentLength);
-        */
-
         Exchange result = new Exchange(null);
         result.setRequest(request);
 
@@ -159,7 +114,6 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
 
         return result;
     }
-
     private boolean isHeartBeat(WebSocketFrame frame) {
         return
                 (frame.getPayloadLength() == 2 && frame.getPayload()[0] == 0x0D && frame.getPayload()[1] == 0x0A) ||

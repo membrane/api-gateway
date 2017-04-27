@@ -63,8 +63,6 @@ public class WebSocketStreamPump extends StreamPump {
     public void run() {
         if (otherStreamPump == null)
             throw new RuntimeException("Call init with other WebSocketStreamPump (backward direction)");
-        //if (stats != null)
-        //    stats.registerPump(this);
         try {
             frameAssembler.readFrames(frame -> {
                 try {
@@ -79,25 +77,6 @@ public class WebSocketStreamPump extends StreamPump {
                     e.printStackTrace();
                 }
             });
-
-            // pass frame to WSInterceptor chain
-
-            /*
-            while ((length = in.read(buffer)) > 0) {
-                out.write(buffer, 0, length);
-                out.flush();
-                if (stats != null)
-                    bytesTransferred.addAndGet(length);
-            }
-            */
-            //} catch (SocketTimeoutException e) {
-            // do nothing
-            //} catch (SocketException e) {
-            // do nothing
-            //} catch (SSLException e) {
-            // do nothing
-            //} catch (IOException e) {
-            //log.error("Reading from or writing to stream failed: " + e);
         } catch (Exception e) {
             connectionIsOpen = false;
             e.printStackTrace();
@@ -107,8 +86,6 @@ public class WebSocketStreamPump extends StreamPump {
             } catch (Exception e) {
                 // ignore
             }
-            //if (stats != null)
-            //    stats.unregisterPump(this);
         }
     }
 
@@ -126,7 +103,6 @@ public class WebSocketStreamPump extends StreamPump {
                 frame.write(target);
             }
         } else if (chain.size() == i) {
-            // write frame to out
             OutputStream target = pumpsToRight ? out : otherStreamPump.out;
             synchronized (target) {
                 frame.write(target);
