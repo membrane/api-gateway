@@ -1,0 +1,34 @@
+<spring:beans xmlns="http://membrane-soa.org/proxies/1/"
+			  xmlns:spring="http://www.springframework.org/schema/beans"
+			  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			  xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+            http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
+
+	<router>
+
+		<serviceProxy port="4443">
+			<!-- Membrane does not support WebSocket Extensions for now, so we remove the header -->
+			<groovy>
+				if(exc.getRequest() != null)
+					exc.getRequest().getHeader().removeFields("Sec-WebSocket-Extensions");
+				if(exc.getResponse() != null)
+					exc.getResponse().getHeader().removeFields("Sec-WebSocket-Extensions");
+			</groovy>
+
+			<webSocket url="http://localhost:61614/">
+				<wsStompReassembler>
+					<groovy>
+						def method = exc.getRequest().getMethod();
+						def header = exc.getRequest().getHeader();
+						def body = "[MEMBRANE]: " + exc.getRequest().getBodyAsStringDecoded();
+						exc.setRequest(new Request.Builder().method(method).header(header).body(body).build());
+					</groovy>
+				</wsStompReassembler>
+				<wsLog/>
+			</webSocket>
+			<webServer docBase="." index="index.html" />
+		</serviceProxy>
+
+	</router>
+
+</spring:beans>
