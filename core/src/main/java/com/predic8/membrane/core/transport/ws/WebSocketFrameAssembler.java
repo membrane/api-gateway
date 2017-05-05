@@ -41,7 +41,7 @@ public class WebSocketFrameAssembler {
     public synchronized void readFrames(Consumer<WebSocketFrame> consumer) throws IOException {
         int read;
         WebSocketFrame frame = new WebSocketFrame();
-        if(originalExchange != null)
+        if (originalExchange != null)
             frame.setOriginalExchange(originalExchange);
         int offset = 0;
         int handled;

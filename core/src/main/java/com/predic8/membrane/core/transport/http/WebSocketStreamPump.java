@@ -21,6 +21,8 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,12 +30,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WebSocketStreamPump extends StreamPump {
+    protected static Logger log = LoggerFactory.getLogger(WebSocketStreamPump.class.getName());
 
     //pumpsToRight == true: from sender to recipient "sender -> recipient"
     public WebSocketStreamPump(InputStream in, OutputStream out, StreamPumpStats stats, String name, Rule rule, boolean pumpsToRight, Exchange originalExchange) {
         super(in, out, stats, name, rule);
         this.pumpsToRight = pumpsToRight;
-        frameAssembler = new WebSocketFrameAssembler(in,originalExchange);
+        frameAssembler = new WebSocketFrameAssembler(in, originalExchange);
         for (Interceptor i : rule.getInterceptors()) {
             if (i instanceof WebSocketInterceptor) {
                 chain = ((WebSocketInterceptor) i).getInterceptors();
@@ -79,7 +82,10 @@ public class WebSocketStreamPump extends StreamPump {
             });
         } catch (Exception e) {
             connectionIsOpen = false;
-            e.printStackTrace();
+            String entity = (pumpsToRight ? "client to server" : "server to client");
+
+            log.debug("",e);
+            log.info("Connection from " + entity + ": " + e.getMessage());
         } finally {
             try {
                 out.close();

@@ -114,6 +114,7 @@ public class WebSocketStompReassembler implements WebSocketInterceptorInterface 
 
         return result;
     }
+
     private boolean isHeartBeat(WebSocketFrame frame) {
         return
                 (frame.getPayloadLength() == 2 && frame.getPayload()[0] == 0x0D && frame.getPayload()[1] == 0x0A) ||

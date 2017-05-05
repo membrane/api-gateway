@@ -257,7 +257,7 @@ public class WebSocketFrame {
                 ", isMasked=" + isMasked +
                 ", payloadLength=" + payloadLength +
                 (isMasked ? (", maskKey=" + Arrays.toString(maskKey)) : "") +
-                ", payload=" + (opcode == 8 ? new String(payload, 2, (int) payloadLength-2) : new String(payload, 0, (int) payloadLength)) +
+                ", payload=" + (opcode == 8 ? new String(payload, 2, (int) payloadLength - 2) : new String(payload, 0, (int) payloadLength)) +
                 '}';
     }
 
