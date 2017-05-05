@@ -29,7 +29,7 @@ public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
 
     @Override
     public void handleFrame(WebSocketFrame frame, boolean frameTravelsToRight, WebSocketSender sender) throws Exception {
-        System.out.println("Frame travels to " + (frameTravelsToRight ? "right" : "left"));
+        System.out.println("Frame travels from " + (frameTravelsToRight ? "client to server" : "server to client"));
         System.out.println(frame.toString());
         sender.handleFrame(frame);
     }

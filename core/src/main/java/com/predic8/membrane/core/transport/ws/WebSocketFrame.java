@@ -129,7 +129,7 @@ public class WebSocketFrame {
     }
 
     private int getSizeInBytes() {
-        return 2 + getExtendedPayloadSize(computePayloadField()) + (maskKey != null ? maskKey.length : 0) + (payload != null ? (int) payloadLength : 0);
+        return 2 + getExtendedPayloadSize(computePayloadField()) + (isMasked ? maskKey.length : 0) + (payload != null ? (int) payloadLength : 0);
     }
 
 
