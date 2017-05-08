@@ -115,7 +115,18 @@ public class WebServerInterceptor extends AbstractInterceptor {
         } catch (ResourceRetrievalException e) {
             for (String i : index) {
                 try {
-                    exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase, i)));
+                    exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase, uri + i)));
+
+                    exc.setReceived();
+                    exc.setTimeResReceived(System.currentTimeMillis());
+                    return Outcome.RETURN;
+                } catch (FileNotFoundException e2) {
+                }
+            }
+            String uri2 = uri + "/";
+            for (String i : index) {
+                try {
+                    exc.setResponse(createResponse(router.getResolverMap(), ResolverMap.combine(router.getBaseLocation(), docBase, uri2 + i)));
 
                     exc.setReceived();
                     exc.setTimeResReceived(System.currentTimeMillis());
