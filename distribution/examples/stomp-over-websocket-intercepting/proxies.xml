@@ -6,7 +6,7 @@
 
 	<router>
 
-		<serviceProxy port="4443">
+		<serviceProxy port="9998">
 			<!-- Membrane does not support WebSocket Extensions for now, so we remove the header -->
 			<groovy>
 				if(exc.getRequest() != null)
@@ -32,10 +32,10 @@
 				<!-- logs the content of a WebSocket frame to the console  -->
 				<wsLog/>
 			</webSocket>
-			<target host="localhost" port="4444"/>
+			<target host="localhost" port="9999"/>
 		</serviceProxy>
 
-		<serviceProxy port="4444">
+		<serviceProxy port="9999">
 			<webServer docBase="." index="index.html" />
 		</serviceProxy>
 

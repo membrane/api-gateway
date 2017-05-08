@@ -1,4 +1,4 @@
-WEBSOCKET STOMP EXAMPLE
+STOMP OVER WEBSOCKET INTERCEPTING
 
 In this example we are going to see how STOMP-over-WebSocket messages are routed through Membrane Service Proxy.
 Additionally regular interceptors can be run on those messages (with limitations) in addition to all WebSocket
@@ -16,9 +16,10 @@ https://tools.ietf.org/html/rfc6455
 
 PREPARATIONS
 
-1. download the latest ActiveMQ release at https://github.com/apache/activemq/releases (v5.14.5 as of now)
-2. navigate to the bin/activemq folder in a console
-3. start ActiveMQ by running "activemq start" in the console. This window will remain open
+1. Download the latest ActiveMQ release at https://github.com/apache/activemq/releases (v5.14.5 as of now)
+2. Navigate to the bin/activemq folder in a console
+3. Start ActiveMQ by running "activemq start" in the console. This window will remain open
+
 
 
 
@@ -27,11 +28,11 @@ RUNNING THE EXAMPLE
 
 To run the example execute the following steps:
 
-1. start Membrane Service proxy by running the service-proxy.[bat|sh]
-2. look at the console window and wait until "Membrane ... up and running!". This window will remain open
-3. open http://localhost:4443
-4. observe a message appearing on the website
-5. look at the console window of Membrane Service Proxy and observe the changed STOMP message
+1. Start Membrane Service proxy by running the service-proxy.[bat|sh] in this folder
+2. Look at the console window and wait until "Membrane ... up and running!". This window will remain open
+3. Open http://localhost:9998
+4. Observe a message appearing on the website
+5. Look at the console window of Membrane Service Proxy and observe the changed STOMP message
 
 
 
@@ -43,7 +44,7 @@ The following part describes the example in detail.
 First, take a look at the proxies.xml file.
 
 [...]
-<serviceProxy port="4443">
+<serviceProxy port="9998">
     [...]
     <!-- WebSocket intercepting starts here -->
     <webSocket url="http://localhost:61614/">
@@ -62,12 +63,12 @@ First, take a look at the proxies.xml file.
         <!-- logs the content of a WebSocket frame to the console  -->
         <wsLog/>
     </webSocket>
-    <target host="localhost" port="4444"/>
+    <target host="localhost" port="9999"/>
     [...]
 </serviceProxy>
 [...]
 
-In it you will find a service proxy that listens on port 4443.
+In it you will find a service proxy that listens on port 9998.
 In this service proxy you will find a webSocket element that contains wsStompReassembler and wsLog elements. The
 webSocket element can read and write WebSocket frames and has ActiveMQ on port 61614 as a target. The wsStompReassembler
 element wraps a STOMP message in a Membrane-typical exchange for further processing. The wsLog element is an interceptor

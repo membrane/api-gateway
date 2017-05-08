@@ -10,15 +10,20 @@ https://tools.ietf.org/html/rfc6455
 
 
 
+PREPARATIONS
+1. Download the latest Node.js release at https://github.com/nodejs/node/releases (v7.10.0 as of now) and install it
+
+
+
 RUNNING THE EXAMPLE
 
 To run the example execute the following steps:
 
-1. start Membrane Service proxy by running the service-proxy.[bat|sh]
-2. look at the console window and wait until "Membrane ... up and running!". This window will remain open
-3. start some WebSocket communication by running the startWebsocket.[bat|sh]
-4. wait until the WebSocket application is done. It will close its window when finished
-5. look at the console window of Membrane Service Proxy and observe the content of the WebSocket stream
+1. Start Membrane Service proxy by running the service-proxy.[bat|sh] in this folder
+2. Look at the console window and wait until "Membrane ... up and running!". This window will remain open
+3. Start some WebSocket communication by running the startWebsocket.[bat|sh]
+4. Wait until the WebSocket application is done. It will close its window when finished
+5. Look at the console window of Membrane Service Proxy and observe the content of the WebSocket stream
 
 
 
