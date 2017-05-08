@@ -15,12 +15,15 @@ package com.predic8.membrane.core.interceptor.server;
 
 import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -74,8 +77,9 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
 	private void normalizeDocBase() {
 		// deferred init of docBase because router is needed
+		docBase = docBase.replaceAll(Pattern.quote("\\"),"/");
 		if(!docBaseIsNormalized) {
-			if (!docBase.endsWith("/"))
+			if (!docBase.endsWith(File.separator))
 				docBase += "/";
 			try {
 				this.docBase = getAbsolutePathWithSchemePrefix(docBase);
@@ -98,7 +102,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
 			return Outcome.ABORT;
 		}
 
-		if (uri.startsWith("/") && uri.length() > 1)
+		if (uri.startsWith("/"))
 			uri = uri.substring(1);
 
 
@@ -209,22 +213,24 @@ public class WebServerInterceptor extends AbstractInterceptor {
 	@Required
 	@MCAttribute
 	public void setDocBase(String docBase) {
-		if(!docBase.endsWith("/"))
-			docBase = docBase + "/";
+		//if(!docBase.endsWith("/"))
+		//	docBase = docBase + "/";
 		this.docBase = docBase;
 		docBaseIsNormalized = false;
 	}
 
 	private String getAbsolutePathWithSchemePrefix(String path) {
 		try {
-			URI uri = new URI(path);
-			if(uri.getScheme() != null)
-				return path;
+			Path p = Paths.get(path);
+			if(p.isAbsolute())
+				return p.toUri().toString();
 		}catch(Exception ignored){
 		}
 
 
 		String newPath = router.getResolverMap().combine(router.getBaseLocation(),path);
+		if(newPath.endsWith(File.separator+File.separator))
+			newPath = newPath.substring(0,newPath.length()-1);
 		if(!newPath.endsWith("/"))
 			return newPath + "/";
 		return newPath;
