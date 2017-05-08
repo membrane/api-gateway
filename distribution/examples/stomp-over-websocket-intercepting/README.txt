@@ -1,5 +1,3 @@
-<=== CURRENTLY NOT WORKING ===>
-
 WEBSOCKET STOMP EXAMPLE
 
 In this example we are going to see how STOMP-over-WebSocket messages are routed through Membrane Service Proxy.
@@ -47,18 +45,24 @@ First, take a look at the proxies.xml file.
 [...]
 <serviceProxy port="4443">
     [...]
+    <!-- WebSocket intercepting starts here -->
     <webSocket url="http://localhost:61614/">
+        <!-- the wsStompReassembler take a STOMP over WebSocket frame and constructs an exchange from it -->
         <wsStompReassembler>
+            <!-- modify the exchange to have a "[MEMBRANE]:" prefix -->
             <groovy>
                 def method = exc.getRequest().getMethod();
                 def header = exc.getRequest().getHeader();
-                def body = "[MEMBRANE]: " + exc.getRequest().getBodyAsStringDecoded();
+                def body = exc.getRequest().getBodyAsStringDecoded();
+                if(exc.getRequest().getMethod() == "SEND")
+                    body = "[MEMBRANE]: " + exc.getRequest().getBodyAsStringDecoded();
                 exc.setRequest(new Request.Builder().method(method).header(header).body(body).build());
             </groovy>
         </wsStompReassembler>
+        <!-- logs the content of a WebSocket frame to the console  -->
         <wsLog/>
     </webSocket>
-    <webServer docBase="." index="index.html" />
+    <target host="localhost" port="4444"/>
     [...]
 </serviceProxy>
 [...]
@@ -68,7 +72,8 @@ In this service proxy you will find a webSocket element that contains wsStompRea
 webSocket element can read and write WebSocket frames and has ActiveMQ on port 61614 as a target. The wsStompReassembler
 element wraps a STOMP message in a Membrane-typical exchange for further processing. The wsLog element is an interceptor
 that just logs the content of the WebSocket frame to the console of Membrane Service Proxy.
-The last element of the service proxy is a webServer element that hosts a website for the STOMP over WebSockets client.
+The last element of the service proxy is a target element that points to a web server from Membrane Service Proxy
+hosting a website for this example.
 
 The wsStompReassembler runs typical Membrane Service Proxy interceptors on a STOMP message. There are some limitations:
  (1) only the request of an exchange is used ( in both directions )
@@ -76,8 +81,3 @@ The wsStompReassembler runs typical Membrane Service Proxy interceptors on a STO
  (3) the target cannot be changed and is defined by the enclosing webSocket element
 In this example a groovy interceptor is run on the STOMP over WebSocket message. The interceptor changes the content of
 the message by prepending a prefix to the body of the message.
-
-
-
-
-
