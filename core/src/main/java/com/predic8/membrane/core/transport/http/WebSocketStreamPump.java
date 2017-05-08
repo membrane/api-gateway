@@ -85,7 +85,7 @@ public class WebSocketStreamPump extends StreamPump {
             String entity = (pumpsToRight ? "client to server" : "server to client");
 
             log.debug("",e);
-            log.info("Connection from " + entity + ": " + e.getMessage());
+            log.info("Connection from " + entity + ": " + e.fillInStackTrace().toString());
         } finally {
             try {
                 out.close();
