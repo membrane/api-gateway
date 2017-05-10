@@ -121,4 +121,53 @@ public class ByteUtil {
 		return null;
 	}
 
+	public static int getValueOfBits(byte b, int minBitPosition, int maxBitPosition){
+        byte result = 0;
+        for(int i = minBitPosition; i <= maxBitPosition; i++){
+            if(getBitValueBigEndian(b,i))
+                result = setBitValueBigEndian(result,i,true);
+        }
+        return Byte.toUnsignedInt(result);
+    }
+
+	public static boolean getBitValueBigEndian(byte b, int position){
+        return getBitValue(b,position,true);
+    }
+
+	public static boolean getBitValue(byte b, int position, boolean isBigEndian){
+        if(isBigEndian)
+            position = 7 - position;
+        return (b & (1 << position)) != 0;
+    }
+
+	public static byte setBitValue(byte b, int position, boolean value, boolean isBigEndian){
+        if(isBigEndian)
+            position = 7 - position;
+
+        if(value)
+            b |= (1 << position);
+        else
+            b &= ~(1 << position);
+        return b;
+    }
+
+	public static byte setBitValueBigEndian(byte b, int position, boolean value) {
+        return setBitValue(b,position,value,true);
+    }
+
+    public static byte setBitValues(byte b, int beginning, int end, int value){
+		byte valByte = (byte)value;
+		for(int i = beginning; i <= end;i++)
+			if(getBitValueBigEndian(valByte,i))
+				b = setBitValueBigEndian(b,i,true);
+		return b;
+	}
+
+	public static byte setBitValuesBigEndian(byte b, int beginning, int end, int value){
+    	return setBitValues(b,beginning, end,value);
+	}
+
+	public static int getNumberOfBits(int i){
+		return Integer.SIZE-Integer.numberOfLeadingZeros(i);
+	}
 }

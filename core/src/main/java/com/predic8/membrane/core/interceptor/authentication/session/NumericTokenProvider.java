@@ -13,11 +13,16 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.security.SecureRandom;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
 public abstract class NumericTokenProvider implements TokenProvider {
+
+	Logger log = LoggerFactory.getLogger(NumericTokenProvider.class);
 
 	private final SecureRandom r = new SecureRandom();
 
@@ -49,8 +54,10 @@ public abstract class NumericTokenProvider implements TokenProvider {
 		synchronized (userAttributes) {
 			t1 = userAttributes.get("token");
 		}
-		if (t1 == null || !t1.equals(token))
+		if (t1 == null || !t1.equals(token)) {
+			log.info("The given token was not equal to generated token.\nGenerated token: \"" + t1 + "\"\nGiven token: \"" + token + "\"\nUser: \"" + userAttributes.get("username")+ "\"");
 			throw new NoSuchElementException();
+		}
 	}
 
 }

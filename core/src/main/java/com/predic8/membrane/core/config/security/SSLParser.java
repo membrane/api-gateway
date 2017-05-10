@@ -38,6 +38,7 @@ public class SSLParser {
 	private boolean ignoreTimestampCheckFailure;
 	private String endpointIdentificationAlgorithm = "HTTPS";
 	private String serverName;
+	private boolean showSSLExceptions = true;
 
 	@Override
 	public boolean equals(Object obj) {
@@ -54,7 +55,8 @@ public class SSLParser {
 				&& Objects.equal(clientAuth, other.clientAuth)
 				&& Objects.equal(ignoreTimestampCheckFailure, other.ignoreTimestampCheckFailure)
 				&& Objects.equal(endpointIdentificationAlgorithm, other.endpointIdentificationAlgorithm)
-				&& Objects.equal(serverName, other.serverName);
+				&& Objects.equal(serverName, other.serverName)
+				&& Objects.equal(showSSLExceptions, other.showSSLExceptions);
 	}
 
 
@@ -214,5 +216,18 @@ public class SSLParser {
 	@MCAttribute
 	public void setServerName(String serverName) {
 		this.serverName = serverName;
+	}
+
+	public boolean isShowSSLExceptions() {
+		return showSSLExceptions;
+	}
+
+	/**
+	 * @description Tells Membrane to show SSL exceptions in its log
+	 * @default true
+	 */
+	@MCAttribute
+	public void setShowSSLExceptions(boolean showSSLExceptions) {
+		this.showSSLExceptions = showSSLExceptions;
 	}
 }

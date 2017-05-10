@@ -1,0 +1,15 @@
+{
+  "name": "websocket_responder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "test"
+  },
+  "author": "predic8 GmbH",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "ws": "^2.3.1"
+  }
+}

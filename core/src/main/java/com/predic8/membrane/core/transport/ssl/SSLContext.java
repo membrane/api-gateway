@@ -39,7 +39,10 @@ public abstract class SSLContext implements SSLProvider {
     protected boolean wantClientAuth, needClientAuth;
     protected String endpointIdentificationAlgorithm;
 
+    private boolean showSSLExceptions = true;
+
     public void init(SSLParser sslParser, javax.net.ssl.SSLContext sslc) {
+        showSSLExceptions = sslParser.isShowSSLExceptions();
         if (sslParser.getCiphers() != null) {
             ciphers = sslParser.getCiphers().split(",");
             Set<String> supportedCiphers = Sets.newHashSet(sslc.getSocketFactory().getSupportedCipherSuites());
@@ -217,6 +220,11 @@ public abstract class SSLContext implements SSLProvider {
             }
             log.warn(sb.toString());
         }
+    }
+
+    @Override
+    public boolean showSSLExceptions(){
+        return showSSLExceptions;
     }
 
 }

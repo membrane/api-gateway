@@ -88,34 +88,27 @@ public class Body extends AbstractBody {
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
 			totalLength += length;
 			out.write(buffer, 0, length);
-			// TODO: this check is a temporary workaround only until non-replayable bodies have been figured out
-			if (totalLength <= 100000000) {
-				byte[] chunk = new byte[length];
-				System.arraycopy(buffer, 0, chunk, 0, length);
-				chunks.add(new Chunk(chunk));
-			} else {
-				chunks.add(new Chunk(new byte[0]) {
-					@Override
-					public byte[] getContent() {
-						throw new IllegalStateException("Chunk too big to be retained.");
-					}
-					@Override
-					public void write(OutputStream out) throws IOException {
-						throw new IllegalStateException("Chunk too big to be retained.");
-					}
-					@Override
-					public String toString() {
-						throw new IllegalStateException("Chunk too big to be retained.");
-					}
-					@Override
-					public int copyChunk(byte[] raw, int destPos) {
-						throw new IllegalStateException("Chunk too big to be retained.");
-					}
-				});
-			}
+			byte[] chunk = new byte[length];
+			System.arraycopy(buffer, 0, chunk, 0, length);
+			chunks.add(new Chunk(chunk));
 		}
+
 		out.finish();
 		markAsRead();
+	}
+
+	@Override
+	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+		byte[] buffer = new byte[BUFFER_SIZE];
+
+		int totalLength = 0;
+		int length = 0;
+		chunks.clear();
+		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
+			totalLength += length;
+			out.write(buffer, 0, length);
+		}
+		out.finish();
 	}
 
 	@Override

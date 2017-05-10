@@ -192,6 +192,14 @@ public class SSLContextCollection implements SSLProvider {
 	}
 
 	@Override
+	public boolean showSSLExceptions() {
+		for(SSLContext ctx : sslContexts)
+			if(ctx.showSSLExceptions() == false)
+				return false;
+		return true;
+	}
+
+	@Override
 	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName)
 			throws IOException {
 		return getSSLContextForHostname(host).createSocket(host, port, connectTimeout, sniServerName);

@@ -40,6 +40,7 @@ public class Request extends Message {
 
 	private static final Logger log = LoggerFactory.getLogger(Request.class.getName());
 	private static final Pattern pattern = Pattern.compile("(.+?) (.+?) HTTP/(.+?)$");
+	private static final Pattern stompPattern = Pattern.compile("^(.+?)$");
 
 	public static final String METHOD_GET = "GET";
 	public static final String METHOD_POST = "POST";
@@ -74,8 +75,8 @@ public class Request extends Message {
 				method = matcher.group(1);
 				uri = matcher.group(2);
 				version = matcher.group(3);
-			} else if ("CONNECT".equalsIgnoreCase(firstLine)) {
-				method = "CONNECT";
+			} else if (stompPattern.matcher(firstLine).find()) {
+				method = firstLine;
 				uri = "";
 				version = "STOMP";
 			} else {
@@ -214,11 +215,12 @@ public class Request extends Message {
 	}
 
 	public final void writeSTOMP(OutputStream out) throws IOException {
-		out.write("CONNECT".getBytes(Constants.UTF_8));
+		out.write(getMethod().getBytes(Constants.UTF_8));
 		out.write(10);
 		for (HeaderField hf : header.getAllHeaderFields())
 			out.write((hf.getHeaderName().toString() + ":" + hf.getValue() + "\n").getBytes(Constants.UTF_8));
 		out.write(10);
+		body.write(new PlainBodyTransferrer(out));
 	}
 
 

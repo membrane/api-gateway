@@ -123,6 +123,21 @@ public class ChunkedBody extends AbstractBody {
 		markAsRead();
 	}
 
+	@Override
+	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
+		log.debug("writeStreamed");
+		int chunkSize;
+		while ((chunkSize = HttpUtil.readChunkSize(inputStream)) > 0) {
+			Chunk chunk = new Chunk(ByteUtil.readByteArray(inputStream, chunkSize));
+			out.write(chunk);
+			inputStream.read(); // CR
+			inputStream.read(); // LF
+		}
+		inputStream.read(); // CR
+		inputStream.read(); // LF-
+		out.finish();
+	}
+
 	protected int getRawLength() throws IOException {
 		if (chunks.isEmpty())
 			return 0;
