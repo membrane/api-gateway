@@ -183,15 +183,13 @@ public class WebSocketFrame {
      * @return the number of bytes read. if > 0, this class has been properly initialized with the frame data read.
      */
     public int tryRead(byte[] buffer, int offset, int length) {
-        if (length == 0)
+        if (length < 2)
             return 0;
 
         int origOffset = offset;
 
         byte finAndReservedAndOpCode = buffer[offset++];
         finalFragment = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 0);
-        if (!finalFragment)
-            return 0;
         rsv1 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 1);
         rsv2 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 2);
         rsv3 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 3);
@@ -223,6 +221,9 @@ public class WebSocketFrame {
             log.warn("Payload of ws message is bigger than Integer.MAX_VALUE which is currently not supported. Message will be truncated");
             payloadLength = Integer.MAX_VALUE;
         }
+        // if payloadLength is bigger than what can currently be in the buffer then we haven't read the whole frame
+        if(payloadLength > length)
+            return 0;
         // ensure that 'payload' buffer is large enough
         if (payload.length < payloadLength)
             payload = new byte[(int) payloadLength];
