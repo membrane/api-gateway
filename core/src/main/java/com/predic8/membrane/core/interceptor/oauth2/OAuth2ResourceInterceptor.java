@@ -556,6 +556,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 return true;
             } catch (Exception e) {
                 exc.setResponse(Response.badRequest().body(e.getMessage()).build());
+                return true;
             }
         }
         return false;
