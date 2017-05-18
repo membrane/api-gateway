@@ -1,0 +1,1 @@
+mvn package & copy target\custom-websocket-interceptor-1.0.jar ..\..\..\lib\custom-websocket-interceptor-1.0.jar
