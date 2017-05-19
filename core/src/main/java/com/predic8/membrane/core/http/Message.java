@@ -65,6 +65,15 @@ public abstract class Message {
 
 		if (createBody)
 			createBody(in);
+
+		if(this.isBodyEmpty()) {
+		    if(this instanceof Request)
+		        if("GET".equals(((Request)this).getMethod())) {
+                    header.removeFields(Header.CONTENT_LENGTH);
+                    header.removeFields(Header.CONTENT_TYPE);
+                    header.removeFields(Header.CONTENT_ENCODING);
+                }
+		}
 	}
 
 	public void readBody() throws IOException {
