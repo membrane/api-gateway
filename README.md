@@ -3,18 +3,15 @@ Membrane Service Proxy
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
 
-Check the [Repository at GitHub](https://github.com/membrane/service-proxy) for the latest source code. Read the [CHANGELOG](https://github.com/membrane/service-proxy/blob/master/distribution/router/CHANGELOG.txt) for recent changes.
+Reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used
 
-What is Membrane?
------------------
-Membrane Service Proxy is an open source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
+*   as an API Gateway
+*   for HTTP based integration
+*   as a security proxy
+*   as a WebSockets and STOMP router
 
-*   a Service Virtualization layer,
-*   an API Gateway,
-*   a synchronous ESB for HTTP based Integration,
-*   a Security Proxy.
 
-To get started, follow the [SOAP](http://membrane-soa.org/esb-doc/current/soap-quickstart.htm) and [REST](http://membrane-soa.org/esb-doc/current/rest-quickstart.htm) tutorials or have a look at the [examples](http://membrane-soa.org/esb-doc/current/interceptors/examples.htm) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
+To get started, follow the [REST](http://membrane-soa.org/esb-doc/current/rest-quickstart.htm) and [SOAP](http://membrane-soa.org/esb-doc/current/soap-quickstart.htm) tutorials or have a look at the [examples](http://membrane-soa.org/esb-doc/current/interceptors/examples.htm) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
 
 Get Started
 -----------
