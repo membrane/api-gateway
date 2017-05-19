@@ -3,12 +3,13 @@ Membrane Service Proxy
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
 
-Membrane Service Proxy is an open source, reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used as
+Reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used
 
-*   a Service Virtualization layer,
-*   an API Gateway,
-*   a synchronous ESB for HTTP based Integration,
-*   a Security Proxy.
+*   as an API Gateway
+*   for HTTP based integration
+*   as a security proxy
+*   as a WebSockets and STOMP router
+
 
 To get started, follow the [REST](http://membrane-soa.org/esb-doc/current/rest-quickstart.htm) and [SOAP](http://membrane-soa.org/esb-doc/current/soap-quickstart.htm) tutorials or have a look at the [examples](http://membrane-soa.org/esb-doc/current/interceptors/examples.htm) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
 
