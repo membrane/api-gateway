@@ -104,7 +104,7 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 
 	@Override
 	public Outcome handleRequest(Exchange exc) throws Exception {
-		handleMessage(exc.getResponse());
+		handleMessage(exc.getRequest());
 		return Outcome.CONTINUE;
 	}
 

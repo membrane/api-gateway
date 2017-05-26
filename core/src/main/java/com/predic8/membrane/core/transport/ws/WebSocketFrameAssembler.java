@@ -51,11 +51,14 @@ public class WebSocketFrameAssembler {
 
             while ((handled = frame.tryRead(buffer, 0, offset)) > 0) {
                 consumer.accept(frame);
-
                 System.arraycopy(buffer, handled, buffer, 0, offset - handled);
                 offset -= handled;
             }
-
+            if(offset >= buffer.length && handled == 0){
+                byte[] newBuffer = new byte[buffer.length*2];
+                System.arraycopy(buffer,0,newBuffer,0,buffer.length);
+                buffer = newBuffer;
+            }
         }
     }
 
