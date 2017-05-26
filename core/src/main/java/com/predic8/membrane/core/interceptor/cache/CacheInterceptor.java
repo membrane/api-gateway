@@ -271,6 +271,7 @@ public class CacheInterceptor extends AbstractInterceptor {
 		if (force) {
 			allowedRequestHeaders.add("accept-encoding");
 			allowedRequestHeaders.add("authorization");
+			allowedRequestHeaders.add("pragma");
 		}
 		allowedRequestHeaders.add("referer");
 
