@@ -50,3 +50,111 @@ Add features like logging or XML Schema validation against a WSDL document:
 	<log />
 </soapProxy>
 ```
+Dynamically manipulate and monitor messages with Groovy and JavaScript (Rhino): 
+
+Groovy
+```xml
+<serviceProxy port="2000">
+  	<groovy>
+    	exc.request.header.add("X-Groovy", "Hello from Groovy")
+    	CONTINUE
+  	</groovy>
+	<target host="membrane-soa.org" port="80" />
+</serviceProxy>
+```
+JavaScript
+```xml
+<serviceProxy name="Javascript header" port="2000">
+  	<javascript>
+    	exc.getRequest().getHeader().add("X-Javascript", "Hello from JavaScript");
+   		CONTINUE;
+  	</javascript>
+	<target host="membrane-soa.org" port="80" />
+</serviceProxy>
+```
+
+Use the widely adopted OAuth2/OpenID Framework to secure endpoints:
+```xml
+<serviceProxy name="Resource Service" port="2001">
+    <oauth2Resource>
+        <membrane src="https://accounts.google.com" clientId="INSERT_CLIENT_ID" clientSecret="INSERT_CLIENT_SECRET" scope="email profile" subject="sub"/>
+    </oauth2Resource>    
+    <groovy>
+        def oauth2 = exc.properties.oauth2
+        exc.request.header.setValue('X-EMAIL',oauth2.userinfo.email)
+        CONTINUE
+    </groovy>
+    <target host="thomas-bayer.com" port="80"/>
+</serviceProxy>
+```
+Find examples for usage of the OAuth2/OpenID Client on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-openid.htm)
+
+Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider: 
+```xml
+<serviceProxy name="Authorization Server" port="2000">
+    <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
+        <staticUserDataProvider>
+        	<user username="john" password="password" email="john@predic8.de" />
+        </staticUserDataProvider>
+        	<staticClientList>
+        <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback" />
+        </staticClientList>
+    	<bearerToken/>
+        <claims value="aud email iss sub username">
+        	<scope id="username" claims="username"/>
+        	<scope id="profile" claims="username email password"/>
+        </claims>
+    </oauth2authserver>
+</serviceProxy>
+```
+Find examples for usage of the OAuth2/OpenID Server on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-code-flow-example.htm)
+
+
+Secure an endpoint with basic authentication: 
+```xml
+<serviceProxy port="2000">
+    <basicAuthentication>
+        <user name="bob" password="secret" />
+    </basicAuthentication>
+    <target host="www.thomas-bayer.com" port="80" />
+</serviceProxy>
+```
+
+Route and intercept WebSocket traffic:
+```xml
+<serviceProxy port="9999">
+        <webSocket url="http://my.websocket.server:1234">
+            <wsLog/>
+        </webSocket>
+    <target port="8080" host="localhost"/>
+</serviceProxy>
+```
+find examples of usage of this feature on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/websocket-routing-intercepting.htm)
+
+Limit the number of requests in a given timeframe:
+```xml
+<serviceProxy port="2000">
+    <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
+    <target host="www.google.de" port="80" />
+</serviceProxy>
+```
+Rewrite URLs:
+```xml
+<serviceProxy port="2000">
+    <rewriter>
+    	<map from="^/goodlookingpath/(.*)" to="/backendpath/$1" />
+    </rewriter>
+    <target host="my.backend.server" port="80" />
+</serviceProxy>
+```
+
+Monitor HTTP traffic:
+```xml
+<serviceProxy port="2000">
+    <log/>
+    <target host="membrane-soa.org" port="80" />
+</serviceProxy>
+```
+
+
+
