@@ -25,6 +25,10 @@ public class LoginDialogEndpointProcessor extends EndpointProcessor {
 
     public LoginDialogEndpointProcessor(OAuth2AuthorizationServerInterceptor authServer) {
         super(authServer);
+        if(authServer.isLoginViewDisabled()) {
+            loginDialog = null;
+            return;
+        }
         loginDialog = new LoginDialog(authServer.getUserDataProvider(), null, authServer.getSessionManager(), authServer.getAccountBlocker(), authServer.getLocation(), authServer.getPath(), authServer.isExposeUserCredentialsToSession(), authServer.getMessage());
         try {
             loginDialog.init(authServer.getRouter());

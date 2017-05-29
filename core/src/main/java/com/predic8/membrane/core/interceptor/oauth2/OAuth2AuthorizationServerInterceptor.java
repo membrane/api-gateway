@@ -28,13 +28,15 @@ import com.predic8.membrane.core.interceptor.oauth2.processors.*;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.BearerTokenGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.TokenGenerator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.HashMap;
 import java.util.HashSet;
 
 @MCElement(name = "oauth2authserver")
 public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
+    private static Logger log = LoggerFactory.getLogger(OAuth2AuthorizationServerInterceptor.class.getName());
 
     private String issuer;
     private String location;
@@ -42,6 +44,7 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
     private String message;
     private String consentFile;
     private boolean exposeUserCredentialsToSession;
+    private boolean loginViewDisabled = false;
 
     private Router router;
     private UserDataProvider userDataProvider;
@@ -77,8 +80,18 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
             throw new Exception("No clientList configured. - Cannot work without one.");
         if (getClaimList() == null)
             throw new Exception("No scopeList configured. - Cannot work without one");
-        if(getLocation() == null)
-            throw new Exception("No location configured. - Cannot work without one");
+        if(getLocation() == null) {
+            log.warn("===========================================================================================");
+            log.warn("IMPORTANT: No location configured - Authorization code and implicit flows are not available");
+            log.warn("===========================================================================================");
+            loginViewDisabled = true;
+        }
+        if(getConsentFile() == null && !isLoginViewDisabled()){
+            log.warn("==============================================================================================");
+            log.warn("IMPORTANT: No consentFile configured - Authorization code and implicit flows are not available");
+            log.warn("==============================================================================================");
+            loginViewDisabled = true;
+        }
         if(getPath() == null)
             throw new Exception("No path configured. - Cannot work without one");
         userDataProvider.init(router);
@@ -143,7 +156,6 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
         return location;
     }
 
-    @Required
     @MCAttribute
     public void setLocation(String location) {
         this.location = location;
@@ -313,5 +325,13 @@ public class OAuth2AuthorizationServerInterceptor extends AbstractInterceptor {
 
     public void setRefreshTokenGenerator(TokenGenerator refreshTokenGenerator) {
         this.refreshTokenGenerator = refreshTokenGenerator;
+    }
+
+    public boolean isLoginViewDisabled() {
+        return loginViewDisabled;
+    }
+
+    public void setLoginViewDisabled(boolean loginViewDisabled) {
+        this.loginViewDisabled = loginViewDisabled;
     }
 }
