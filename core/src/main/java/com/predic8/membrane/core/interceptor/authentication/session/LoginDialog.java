@@ -309,7 +309,7 @@ public class LoginDialog {
 
 	private String[] prepareStringArray(String[] array){
 		if(array[0].isEmpty())
-			array = null;
+			return new String[0];
 		List<String> result = new ArrayList<String>();
 		for(int i = 0; i < array.length;i+=2)
 			result.add(array[i] + ": " + array[i+1]);
