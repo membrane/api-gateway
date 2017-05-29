@@ -20,6 +20,7 @@ import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -117,6 +118,8 @@ public class ClaimsParameter {
     }
 
     private Map<String,Object> getObject(String objectName){
+        if(cleanedJson == null || cleanedJson.get(objectName) == null)
+            return new HashMap<>();
         return (Map<String, Object>) cleanedJson.get(objectName);
     }
 
