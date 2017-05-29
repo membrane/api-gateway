@@ -16,7 +16,7 @@ To get started, follow the [REST](http://membrane-soa.org/esb-doc/current/rest-q
 Get Started
 -----------
 
-Download the [binary](http://membrane-soa.org/downloads/http-router.htm).
+Download the [binary](https://github.com/membrane/service-proxy/releases).
 
 Unpack.
 
