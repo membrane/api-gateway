@@ -284,6 +284,7 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
 
     private void setOasiProperties() {
         oasi.setLocation("src\\test\\resources\\oauth2\\loginDialog\\dialog");
+        oasi.setConsentFile("src\\test\\resources\\oauth2\\consentFile.json");
         oasi.setPath("/login/");
         oasi.setIssuer("http://Localhost:2001");
     }
