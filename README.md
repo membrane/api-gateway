@@ -129,7 +129,7 @@ Route and intercept WebSocket traffic:
     <target port="8080" host="localhost"/>
 </serviceProxy>
 ```
-find examples of usage of this feature on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/websocket-routing-intercepting.htm)
+Find examples of usage of this feature on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/websocket-routing-intercepting.htm)
 
 Limit the number of requests in a given timeframe:
 ```xml
