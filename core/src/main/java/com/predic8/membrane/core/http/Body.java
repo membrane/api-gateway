@@ -109,6 +109,7 @@ public class Body extends AbstractBody {
 			out.write(buffer, 0, length);
 		}
 		out.finish();
+		markAsRead();
 	}
 
 	@Override

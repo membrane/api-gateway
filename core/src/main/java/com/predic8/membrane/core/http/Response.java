@@ -65,22 +65,31 @@ public class Response extends Message {
 			return this;
 		}
 
+		private class BodyCompleteMessageObserver extends AbstractMessageObserver implements NonRelevantBodyObserver{
+
+			private final InputStream stream;
+
+			public BodyCompleteMessageObserver(InputStream stream) {
+				this.stream = stream;
+			}
+
+			@Override
+			public void bodyComplete(AbstractBody body) {
+				try {
+					stream.close();
+				} catch (IOException e) {
+					log.error("Could not close body stream.", e);
+				}
+			}
+		}
+
 		public ResponseBuilder body(final InputStream stream, boolean closeStreamWhenDone) throws IOException {
 			// use chunking, since Content-Length is not known
 			res.getHeader().removeFields(Header.CONTENT_LENGTH);
 			res.getHeader().setValue(Header.TRANSFER_ENCODING, Header.CHUNKED);
 			Body b = new Body(stream);
 			if (closeStreamWhenDone) {
-				b.addObserver(new AbstractMessageObserver() {
-					@Override
-					public void bodyComplete(AbstractBody body) {
-						try {
-							stream.close();
-						} catch (IOException e) {
-							log.error("Could not close body stream.", e);
-						}
-					}
-				});
+				b.addObserver(new BodyCompleteMessageObserver(stream));
 			}
 			res.setBody(b);
 			return this;

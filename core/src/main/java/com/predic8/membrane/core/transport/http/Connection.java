@@ -25,15 +25,12 @@ import javax.annotation.Nullable;
 import javax.net.ssl.SSLSocket;
 
 import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.AbstractBody;
-import com.predic8.membrane.core.http.MessageObserver;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 /**
@@ -50,7 +47,7 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
  * response body has fully been read and it should deassociate itself from the
  * exchange.
  */
-public class Connection implements MessageObserver {
+public class Connection implements MessageObserver, NonRelevantBodyObserver {
 
 	private static Logger log = LoggerFactory.getLogger(Connection.class.getName());
 

@@ -107,22 +107,18 @@ public abstract class AbstractBody {
 
 	public void write(AbstractBodyTransferrer out) throws IOException {
 		if (!read) {
-			boolean relevantObservers = true;
-			if(observers.size() == 1){
-				MessageObserver obs = observers.get(0);
-				if(obs.getClass().getName().contains("Response$ResponseBuilder")){
-					relevantObservers = false;
-					writeStreamed(out);
-				}
-			}
+			boolean relevantObservers = false;
+			for(MessageObserver obs : observers)
+				if(!(obs instanceof NonRelevantBodyObserver))
+					relevantObservers = true;
 			if(relevantObservers) {
 				for (MessageObserver observer : observers)
 					observer.bodyRequested(this);
 
 				writeNotRead(out);
-			}
+			}else
+				writeStreamed(out);
 			return;
-
 		}
 
 		writeAlreadyRead(out);
