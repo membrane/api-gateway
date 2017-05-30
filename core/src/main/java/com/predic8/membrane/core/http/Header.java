@@ -104,6 +104,8 @@ public class Header {
 
 	public static final String ORIGIN = "Origin";
 
+	public static final String X_HTTP_METHOD_OVERRIDE = "X-HTTP-Method-Override";
+
 	// Header field values
 
 	public static final String CHUNKED = "chunked";
@@ -123,7 +125,7 @@ public class Header {
 
 
 
-	private final ArrayList<HeaderField> fields = new ArrayList<HeaderField>();
+    private final ArrayList<HeaderField> fields = new ArrayList<HeaderField>();
 
 	public Header() {
 	}
