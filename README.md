@@ -29,6 +29,8 @@ Run the samples in the examples directory or go to the [website](http://membrane
 Samples
 -------
 
+### Web Services
+
 Hosting virtual REST services is easy:
 ```xml
 <serviceProxy port="80">
@@ -50,9 +52,11 @@ Add features like logging or XML Schema validation against a WSDL document:
 	<log />
 </soapProxy>
 ```
-Dynamically manipulate and monitor messages with Groovy and JavaScript (Rhino): 
 
-Groovy
+### Monitoring and manipulation
+
+Dynamically manipulate and monitor messages with Groovy and JavaScript (Nashorn): 
+
 ```xml
 <serviceProxy port="2000">
   	<groovy>
@@ -62,9 +66,8 @@ Groovy
 	<target host="membrane-soa.org" port="80" />
 </serviceProxy>
 ```
-JavaScript
 ```xml
-<serviceProxy name="Javascript header" port="2000">
+<serviceProxy port="2000">
   	<javascript>
     	exc.getRequest().getHeader().add("X-Javascript", "Hello from JavaScript");
    		CONTINUE;
@@ -73,65 +76,18 @@ JavaScript
 </serviceProxy>
 ```
 
-Use the widely adopted OAuth2/OpenID Framework to secure endpoints:
-```xml
-<serviceProxy name="Resource Service" port="2001">
-    <oauth2Resource>
-        <membrane src="https://accounts.google.com" clientId="INSERT_CLIENT_ID" clientSecret="INSERT_CLIENT_SECRET" scope="email profile" subject="sub"/>
-    </oauth2Resource>    
-    <groovy>
-        def oauth2 = exc.properties.oauth2
-        exc.request.header.setValue('X-EMAIL',oauth2.userinfo.email)
-        CONTINUE
-    </groovy>
-    <target host="thomas-bayer.com" port="80"/>
-</serviceProxy>
-```
-Find examples for usage of the OAuth2/OpenID Client on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-openid.htm)
-
-Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider: 
-```xml
-<serviceProxy name="Authorization Server" port="2000">
-    <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
-        <staticUserDataProvider>
-        	<user username="john" password="password" email="john@predic8.de" />
-        </staticUserDataProvider>
-        	<staticClientList>
-        <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback" />
-        </staticClientList>
-    	<bearerToken/>
-        <claims value="aud email iss sub username">
-        	<scope id="username" claims="username"/>
-        	<scope id="profile" claims="username email password"/>
-        </claims>
-    </oauth2authserver>
-</serviceProxy>
-```
-Find examples for usage of the OAuth2/OpenID Server on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-code-flow-example.htm)
-
-
-Secure an endpoint with basic authentication: 
-```xml
-<serviceProxy port="2000">
-    <basicAuthentication>
-        <user name="bob" password="secret" />
-    </basicAuthentication>
-    <target host="www.thomas-bayer.com" port="80" />
-</serviceProxy>
-```
-
 Route and intercept WebSocket traffic:
 ```xml
-<serviceProxy port="9999">
+<serviceProxy port="2000">
         <webSocket url="http://my.websocket.server:1234">
             <wsLog/>
         </webSocket>
     <target port="8080" host="localhost"/>
 </serviceProxy>
 ```
-Find examples of usage of this feature on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/websocket-routing-intercepting.htm)
+(_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/websocket-routing-intercepting.htm)_)
 
-Limit the number of requests in a given timeframe:
+Limit the number of requests in a given time frame:
 ```xml
 <serviceProxy port="2000">
     <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
@@ -156,5 +112,95 @@ Monitor HTTP traffic:
 </serviceProxy>
 ```
 
+### Security
 
+Use the widely adopted OAuth2/OpenID Framework to secure endpoints:
+```xml
+<serviceProxy name="Resource Service" port="2001">
+    <oauth2Resource>
+        <membrane src="https://accounts.google.com" clientId="INSERT_CLIENT_ID" clientSecret="INSERT_CLIENT_SECRET" scope="email profile" subject="sub"/>
+    </oauth2Resource>    
+    <groovy>
+        def oauth2 = exc.properties.oauth2
+        exc.request.header.setValue('X-EMAIL',oauth2.userinfo.email)
+        CONTINUE
+    </groovy>
+    <target host="thomas-bayer.com" port="80"/>
+</serviceProxy>
+```
+(_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-openid.htm)_)
 
+Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider: 
+```xml
+<serviceProxy name="Authorization Server" port="2000">
+    <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
+        <staticUserDataProvider>
+        	<user username="john" password="password" email="john@predic8.de" />
+        </staticUserDataProvider>
+        	<staticClientList>
+        <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback" />
+        </staticClientList>
+    	<bearerToken/>
+        <claims value="aud email iss sub username">
+        	<scope id="username" claims="username"/>
+        	<scope id="profile" claims="username email password"/>
+        </claims>
+    </oauth2authserver>
+</serviceProxy>
+```
+(_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-code-flow-example.htm)_)
+
+Secure an endpoint with basic authentication: 
+```xml
+<serviceProxy port="2000">
+    <basicAuthentication>
+        <user name="bob" password="secret" />
+    </basicAuthentication>
+    <target host="www.thomas-bayer.com" port="80" />
+</serviceProxy>
+```
+
+Route to SSL/TLS secured endpoints:
+```xml
+<serviceProxy port="8080">
+	<target host="www.predic8.de" port="443">
+		<ssl/>
+	</target>
+</serviceProxy>
+```
+
+Secure endpoints with SSL/TLS:
+```xml
+<serviceProxy port="443">
+	<ssl>
+		<keystore location="membrane.jks" password="secret" keyPassword="secret" />
+		<truststore location="membrane.jks" password="secret" />
+	</ssl>
+	<target host="www.predic8.de" />
+</serviceProxy>
+```
+
+Limit the number of incoming requests:
+```xml
+<serviceProxy port="2000">
+    <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
+    <target host="www.predic8.de" port="80" />
+</serviceProxy>
+```
+
+### Clustering
+
+Distribute your workload to multiple nodes:
+```xml
+<serviceProxy name="Balancer" port="8080">
+    <balancer name="balancer">
+        <clusters>
+            <cluster name="Default">
+                <node host="my.backend.service-1" port="4000"/>
+                <node host="my.backend.service-2" port="4000"/>
+                <node host="my.backend.service-3" port="4000"/>
+            </cluster>
+        </clusters>
+    </balancer>
+</serviceProxy>
+```
