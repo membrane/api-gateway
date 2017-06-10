@@ -38,6 +38,8 @@ import com.predic8.membrane.core.transport.Transport;
 import com.predic8.membrane.core.util.ContentTypeDetector;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 public abstract class AbstractHttpHandler  {
 
@@ -63,6 +65,11 @@ public abstract class AbstractHttpHandler  {
 	public abstract void shutdownInput() throws IOException;
 	public abstract InetAddress getLocalAddress();
 	public abstract int getLocalPort();
+  public abstract OutputStream getSrcOut();
+  public abstract InputStream getSrcIn();
+  public abstract String getRemoteAddress();
+  
+  
 
 
 	protected void invokeHandlers() throws IOException, EndOfStreamException, AbortException, NoMoreRequestsException, EOFWhileReadingFirstLineException {

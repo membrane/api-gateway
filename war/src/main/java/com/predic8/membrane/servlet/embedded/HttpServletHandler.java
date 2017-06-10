@@ -37,6 +37,8 @@ import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.util.DNSCache;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 class HttpServletHandler extends AbstractHttpHandler {
 	private static final Log log = LogFactory.getLog(HttpServletHandler.class);
@@ -181,5 +183,20 @@ class HttpServletHandler extends AbstractHttpHandler {
 	public String getContextPath(Exchange exc) {
 		return ((HttpServletRequest)exc.getProperty(Exchange.HTTP_SERVLET_REQUEST)).getContextPath();
 	}
+
+  @Override
+  public OutputStream getSrcOut() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  @Override
+  public InputStream getSrcIn() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  @Override
+  public String getRemoteAddress() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
 
 }

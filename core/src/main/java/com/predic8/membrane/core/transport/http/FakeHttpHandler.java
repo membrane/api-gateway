@@ -14,6 +14,8 @@
 package com.predic8.membrane.core.transport.http;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 
 public class FakeHttpHandler extends AbstractHttpHandler {
@@ -38,5 +40,20 @@ public class FakeHttpHandler extends AbstractHttpHandler {
 	public int getLocalPort() {
 		return port;
 	}
+
+  @Override
+  public OutputStream getSrcOut() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  @Override
+  public InputStream getSrcIn() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  @Override
+  public String getRemoteAddress() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
 
 }

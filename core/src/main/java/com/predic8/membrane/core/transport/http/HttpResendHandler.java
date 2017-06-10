@@ -19,6 +19,8 @@ import java.net.InetAddress;
 
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.util.EndOfStreamException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,5 +67,20 @@ public class HttpResendHandler extends AbstractHttpHandler implements Runnable {
 	public int getLocalPort() {
 		return 0;
 	}
+
+  @Override
+  public OutputStream getSrcOut() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  @Override
+  public InputStream getSrcIn() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
+
+  @Override
+  public String getRemoteAddress() {
+    throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  }
 
 }

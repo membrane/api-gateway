@@ -310,16 +310,23 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 		return sourceSocket.getLocalPort();
 	}
 
+	public Socket getSourceSocket() {
+		return sourceSocket;
+	}
+  
+  @Override
 	public InputStream getSrcIn() {
 		return srcIn;
 	}
 
+  @Override
 	public OutputStream getSrcOut() {
 		return srcOut;
 	}
 
-	public Socket getSourceSocket() {
-		return sourceSocket;
-	}
+  @Override
+  public String getRemoteAddress() {
+    return getSourceSocket().getRemoteSocketAddress().toString();
+  }  
 
 }
