@@ -16,8 +16,6 @@ package com.predic8.membrane.core.interceptor;
 
 import java.util.EnumSet;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 
@@ -59,7 +57,7 @@ public class AbstractInterceptor implements Interceptor {
 		return id;
 	}
 
-	@MCAttribute
+	
 	public void setId(String id) {
 		this.id = id;
 	}
@@ -85,10 +83,7 @@ public class AbstractInterceptor implements Interceptor {
 
 	@Override
 	public final String getHelpId() {
-		MCElement annotation = getClass().getAnnotation(MCElement.class);
-		if (annotation == null)
-			return null;
-		return annotation.name();
+		return getClass().getName();
 	}
 
 	/**

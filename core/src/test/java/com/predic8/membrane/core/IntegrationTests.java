@@ -18,17 +18,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import com.predic8.membrane.core.config.SpringReferencesTest;
 import com.predic8.membrane.core.http.MethodTest;
-import com.predic8.membrane.core.interceptor.AdjustContentLengthIntegrationTest;
-import com.predic8.membrane.core.interceptor.LimitInterceptorTest;
-import com.predic8.membrane.core.interceptor.RegExReplaceInterceptorTest;
-import com.predic8.membrane.core.interceptor.authentication.BasicAuthenticationInterceptorIntegrationTest;
-import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptorIntegrationTest;
-import com.predic8.membrane.core.interceptor.server.WSDLPublisherTest;
-import com.predic8.membrane.core.resolver.ResolverTest;
-import com.predic8.membrane.core.rules.SOAPProxyIntegrationTest;
-import com.predic8.membrane.core.rules.UnavailableSoapProxyTest;
 import com.predic8.membrane.core.transport.ExceptionHandlingTest;
 import com.predic8.membrane.core.transport.http.BoundConnectionTest;
 import com.predic8.membrane.core.transport.http.IllegalCharactersInURLTest;
@@ -41,21 +31,13 @@ import com.predic8.membrane.integration.ViaProxyTest;
 import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 
 @RunWith(Suite.class)
-@SuiteClasses({ MethodTest.class, RegExReplaceInterceptorTest.class,
+@SuiteClasses({ MethodTest.class, 
 	Http10Test.class, Http11Test.class,
 	AccessControlInterceptorIntegrationTest.class,
 	LoadBalancingInterceptorTest.class,
-	REST2SOAPInterceptorIntegrationTest.class,
 	InterceptorInvocationTest.class,
-	BasicAuthenticationInterceptorIntegrationTest.class,
 	ViaProxyTest.class, ProxySSLConnectionMethodTest.class,
-	AdjustContentLengthIntegrationTest.class,
 	BoundConnectionTest.class, ExceptionHandlingTest.class,
-	WSDLPublisherTest.class, LimitInterceptorTest.class,
-	SOAPProxyIntegrationTest.class,
-	SpringReferencesTest.class,
-	ResolverTest.class,
-	UnavailableSoapProxyTest.class,
 	IllegalCharactersInURLTest.class,
 	ProxySSLTest.class })
 public class IntegrationTests {

@@ -17,15 +17,9 @@ package com.predic8.membrane.core.interceptor;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
-import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.Rule;
 
@@ -35,11 +29,9 @@ import com.predic8.membrane.core.rules.Rule;
  *              might both be required for the exchange to be saved.
  * @topic 5. Monitoring, Logging and Statistics
  */
-@MCElement(name="exchangeStore")
-public class ExchangeStoreInterceptor extends AbstractInterceptor implements ApplicationContextAware {
+public class ExchangeStoreInterceptor extends AbstractInterceptor {
 
 	private static final String BEAN_ID_ATTRIBUTE_CANNOT_BE_USED = "bean id attribute cannot be used";
-	private ApplicationContext applicationContext;
 
 	private ExchangeStore store;
 	private String exchangeStoreBeanId;
@@ -53,11 +45,6 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	public ExchangeStoreInterceptor(ExchangeStore exchangeStore) {
 		this();
 		setExchangeStore(exchangeStore);
-	}
-
-	@Override
-	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-		this.applicationContext = applicationContext;
 	}
 
 	@Override
@@ -93,7 +80,6 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	 * @description Bean name of the exchange store defined as a spring bean.
 	 * @example forgetfulExchangeStore
 	 */
-	@MCAttribute(attributeName="name")
 	public void setExchangeStore(ExchangeStore exchangeStore) {
 		store = exchangeStore;
 		exchangeStoreBeanId = BEAN_ID_ATTRIBUTE_CANNOT_BE_USED;
@@ -117,8 +103,6 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 	public void init() throws Exception {
 		if (exchangeStoreBeanId == BEAN_ID_ATTRIBUTE_CANNOT_BE_USED)
 			; // do nothing as "store" was already set via #setExchangeStore(ExchangeStore)
-		else if (exchangeStoreBeanId != null)
-			store = applicationContext.getBean(exchangeStoreBeanId, ExchangeStore.class);
 		else
 			store = router.getExchangeStore();
 
@@ -130,9 +114,9 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 			if (!(r instanceof AbstractServiceProxy)) continue;
 
 			for (Interceptor i : r.getInterceptors()) {
-				if (i instanceof AdminConsoleInterceptor) {
-					serviceProxiesContainingAdminConsole.add((AbstractServiceProxy)r);
-				}
+//				if (i instanceof AdminConsoleInterceptor) {
+//					serviceProxiesContainingAdminConsole.add((AbstractServiceProxy)r);
+//				}
 			}
 		}
 	}

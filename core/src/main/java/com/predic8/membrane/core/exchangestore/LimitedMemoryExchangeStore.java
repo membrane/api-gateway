@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
@@ -40,7 +38,6 @@ import org.slf4j.LoggerFactory;
 /**
  * @description Stores exchange objects in-memory until a memory threshold is reached. When the threshold is reached and new exchanges arrive then old exchanges will be dropped (starting from oldest ascending) until the exchange can be stored. The LimitedMemoryExchangeStore is the default ExchangeStore Membrane uses.
  */
-@MCElement(name="limitedMemoryExchangeStore")
 public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private static Logger log = LoggerFactory.getLogger(LimitedMemoryExchangeStore.class);
@@ -252,7 +249,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	static final int additionalMemoryToAddInMb = 100;
 
-	@MCAttribute
+	
 	public void setMaxSize(int maxSize) {
 		this.maxSize = maxSize;
 		if(this.maxSize > (Runtime.getRuntime().totalMemory()-additionalMemoryToAddInMb*1024*1024))

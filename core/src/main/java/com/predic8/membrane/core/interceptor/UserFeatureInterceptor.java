@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCElement;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.rules.Rule;
 
@@ -26,7 +26,6 @@ import com.predic8.membrane.core.rules.Rule;
  * Not that we do not implement handleResponse() as this will be
  * automatically done by the stack-unwinding in {@link InterceptorFlowController}.
  */
-@MCElement(name="userFeature")
 public class UserFeatureInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(UserFeatureInterceptor.class.getName());

@@ -24,11 +24,7 @@ import javax.xml.stream.XMLStreamWriter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -40,10 +36,8 @@ import com.predic8.membrane.core.util.URLParamUtil;
  * @description Using the formValidation interceptor you can validate the input of HTML forms.
  * @topic 4. Interceptors/Features
  */
-@MCElement(name="formValidation")
 public class FormValidationInterceptor extends AbstractInterceptor {
 
-	@MCElement(name="field", topLevel=false, id="formValidation-field")
 	public static class Field extends AbstractXmlElement {
 		public String name;
 		public String regex;
@@ -78,8 +72,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 		 * @description Name of the form parameter.
 		 * @example age
 		 */
-		@Required
-		@MCAttribute
+		
+		
 		public void setName(String name) {
 			this.name = name;
 		}
@@ -92,8 +86,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 		 * @description Java Regular expression
 		 * @example \d+
 		 */
-		@Required
-		@MCAttribute
+		
+		
 		public void setRegex(String regex) {
 			this.regex = regex;
 			pattern = Pattern.compile(regex);
@@ -148,8 +142,8 @@ public class FormValidationInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Specifies the name of the parameter and the regex to match against.
 	 */
-	@Required
-	@MCChildElement
+	
+	
 	public void setFields(List<Field> fields) {
 		this.fields = fields;
 	}

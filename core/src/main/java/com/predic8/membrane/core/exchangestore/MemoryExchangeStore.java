@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.interceptor.Interceptor.Flow;
 import com.predic8.membrane.core.model.IExchangesStoreListener;
@@ -34,7 +33,6 @@ import com.predic8.membrane.core.rules.StatisticCollector;
  * @description Stores all exchanges in-memory. The Java heap will overflow if this store is used to store too many
  *              Exchanges. Use for Membrane Monitor only.
  */
-@MCElement(name="memoryExchangeStore")
 public class MemoryExchangeStore extends AbstractExchangeStore {
 
 	private Map<RuleKey, List<AbstractExchange>> exchangesMap = new HashMap<RuleKey, List<AbstractExchange>>();

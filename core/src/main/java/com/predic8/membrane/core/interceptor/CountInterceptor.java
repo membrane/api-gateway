@@ -21,17 +21,13 @@ import java.net.UnknownHostException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
 import com.predic8.membrane.core.http.Response;
 
-@MCElement(name="counter")
 public class CountInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LoggerFactory.getLogger(CountInterceptor.class.getName());
@@ -76,8 +72,7 @@ public class CountInterceptor extends AbstractInterceptor {
 	 * @description Sets the name that will be displayed on the web page.
 	 * @example Mock Node 1
 	 */
-	@Required
-	@MCAttribute(attributeName="name")
+	
 	@Override
 	public void setDisplayName(String name) {
 		if (name.startsWith("Counter: "))

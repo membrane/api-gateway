@@ -28,8 +28,6 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.model.IPortChangeListener;
 import com.predic8.membrane.core.transport.Transport;
@@ -42,7 +40,6 @@ import com.predic8.membrane.core.transport.ssl.SSLProvider;
  *              through the router.
  *              </p>
  */
-@MCElement(name="transport")
 public class HttpTransport extends Transport {
 
 	private static Logger log = LoggerFactory.getLogger(HttpTransport.class.getName());
@@ -188,7 +185,7 @@ public class HttpTransport extends Transport {
 	 * @default 20
 	 * @example 5
 	 */
-	@MCAttribute
+	
 	public void setCoreThreadPoolSize(int corePoolSize) {
 		executorService.setCorePoolSize(corePoolSize);
 	}
@@ -202,7 +199,7 @@ public class HttpTransport extends Transport {
 	 * @default <i>no limit</i>
 	 * @example 300
 	 */
-	@MCAttribute
+	
 	public void setMaxThreadPoolSize(int value) {
 		executorService.setMaximumPoolSize(value);
 	}
@@ -219,7 +216,7 @@ public class HttpTransport extends Transport {
 	 * @description Socket timout in ms.
 	 * @default 30000
 	 */
-	@MCAttribute
+	
 	public void setSocketTimeout(int timeout) {
 		this.socketTimeout = timeout;
 	}
@@ -236,7 +233,7 @@ public class HttpTransport extends Transport {
 	 *              immediately.)
 	 * @default true
 	 */
-	@MCAttribute
+	
 	public void setTcpNoDelay(boolean tcpNoDelay) {
 		this.tcpNoDelay = tcpNoDelay;
 	}
@@ -257,7 +254,7 @@ public class HttpTransport extends Transport {
 	 * to a non-zero number of milliseconds forces connections to be closed after this time.
 	 * @default 30000
 	 */
-	@MCAttribute
+	
 	public void setForceSocketCloseOnHotDeployAfter(int forceSocketCloseOnHotDeployAfter) {
 		this.forceSocketCloseOnHotDeployAfter = forceSocketCloseOnHotDeployAfter;
 	}

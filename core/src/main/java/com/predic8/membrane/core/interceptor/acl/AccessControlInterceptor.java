@@ -21,10 +21,8 @@ import javax.xml.stream.XMLStreamReader;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -38,7 +36,6 @@ import com.predic8.membrane.core.resolver.ResolverMap;
  *              requested resource.
  * @topic 6. Security
  */
-@MCElement(name="accessControl")
 public class AccessControlInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(AccessControlInterceptor.class.getName());
@@ -79,8 +76,8 @@ public class AccessControlInterceptor extends AbstractInterceptor {
 	 * @description Location of the ACL file.
 	 * @example acl/acl.xml
 	 */
-	@Required
-	@MCAttribute
+	
+	
 	public void setFile(String file) {
 		this.file = file;
 	}

@@ -19,11 +19,10 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.google.common.base.Function;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -47,7 +46,6 @@ import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
  * <li>What happens to ABORT handling of interceptor A in <code>&lt;request&gt;&lt;if test="..."&gt;&lt;A /&gt;&lt;/if&gt;&lt;/response&gt;</code></li>
  * </ul>
  */
-@MCElement(name="if")
 public class ConditionalInterceptor extends AbstractFlowInterceptor {
 	private static final Logger log = LoggerFactory.getLogger(InterceptorFlowController.class);
 
@@ -101,7 +99,7 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 	 * @description the language of the 'test' condition
 	 * @example groovy
 	 */
-	@MCAttribute
+	
 	public void setLanguage(LanguageType language) {
 		this.language = language;
 	}
@@ -113,8 +111,8 @@ public class ConditionalInterceptor extends AbstractFlowInterceptor {
 	 * @description the condition to be tested
 	 * @example exc.request.header.userAgentSupportsSNI
 	 */
-	@Required
-	@MCAttribute
+	
+	
 	public void setTest(String test) {
 		this.test = test;
 	}

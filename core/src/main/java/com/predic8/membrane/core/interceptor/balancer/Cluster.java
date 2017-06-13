@@ -19,12 +19,10 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.interceptor.balancer.Node.Status;
 
-@MCElement(name="cluster", topLevel=false)
 public class Cluster {
 
 	private static Logger log = LoggerFactory.getLogger(Cluster.class.getName());
@@ -115,7 +113,7 @@ public class Cluster {
 	/**
 	 * @description Specifies a node.
 	 */
-	@MCChildElement
+	
 	public void setNodes(List<Node> nodes) {
 		this.nodes.clear();
 		this.nodes.addAll(nodes);
@@ -129,7 +127,7 @@ public class Cluster {
 	 * @description Sets the name of the cluster.
 	 * @default Default
 	 */
-	@MCAttribute
+	
 	public void setName(String name) {
 		this.name = name;
 	}

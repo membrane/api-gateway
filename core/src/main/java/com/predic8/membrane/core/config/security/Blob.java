@@ -15,12 +15,7 @@ limitations under the License. */
 package com.predic8.membrane.core.config.security;
 
 import com.google.common.base.Objects;
-import com.predic8.io.IOUtil;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.resolver.ResourceRetrievalException;
 import com.predic8.membrane.core.util.ByteUtil;
 
 import java.io.IOException;
@@ -41,7 +36,6 @@ public abstract class Blob {
     public String getContent() {
         return content;
     }
-    @MCTextContent
     public void setContent(String content) {
         this.content = content;
     }
@@ -49,7 +43,7 @@ public abstract class Blob {
     public String getLocation() {
         return location;
     }
-    @MCAttribute
+    
     public void setLocation(String location) {
         this.location = location;
     }
@@ -70,6 +64,6 @@ public abstract class Blob {
      * The name of this XML element.
      */
     private String getName() {
-        return getClass().getAnnotation(MCElement.class).name();
+        return getClass().getName();
     }
 }

@@ -23,12 +23,8 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -42,7 +38,6 @@ import com.predic8.membrane.core.util.URLUtil;
  *              </p>
  * @topic 4. Interceptors/Features
  */
-@MCElement(name="rewriter")
 public class RewriteInterceptor extends AbstractInterceptor {
 
 	public enum Type {
@@ -51,8 +46,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		REDIRECT_PERMANENT,
 	}
 
-	@MCElement(name="map", topLevel=false, id="rewriter-map")
-	public static class Mapping {
+  public static class Mapping {
 		public String to;
 		public String from;
 		private Type do_;
@@ -92,8 +86,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		 * @description Java Regular expression
 		 * @example ^/bank/(.*)
 		 */
-		@Required
-		@MCAttribute
+		
+		
 		public void setFrom(String from) {
 			this.from = from;
 			if (from == null)
@@ -110,8 +104,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		 * @description Replacement string. Can contain references to matching groups.
 		 * @example /axis2/$1
 		 */
-		@Required
-		@MCAttribute
+		
+		
 		public void setTo(String to) {
 			this.to = to;
 		}
@@ -127,7 +121,7 @@ public class RewriteInterceptor extends AbstractInterceptor {
 		 * @default rewrite (default) or redirect (if "to" contains "://")
 		 * @example redirect-temporary
 		 */
-		@MCAttribute
+		
 		public void setDo(Type do_) {
 			this.do_ = do_;
 		}
@@ -229,8 +223,8 @@ public class RewriteInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Defines a regex and a replacement for the rewriting of the URI.
 	 */
-	@Required
-	@MCChildElement
+	
+	
 	public void setMappings(List<Mapping> mappings) {
 		this.mappings = mappings;
 	}

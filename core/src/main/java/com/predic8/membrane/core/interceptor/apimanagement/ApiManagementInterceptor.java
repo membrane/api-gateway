@@ -15,19 +15,13 @@ package com.predic8.membrane.core.interceptor.apimanagement;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
 import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.ApiConfig;
-import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.EtcdRegistryApiConfig;
-import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.SimpleApiConfig;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.quota.AMQuota;
 import com.predic8.membrane.core.interceptor.apimanagement.rateLimiter.AMRateLimiter;
@@ -43,7 +37,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 
-@MCElement(name = "apiManagement")
 public class ApiManagementInterceptor extends AbstractInterceptor {
 
     public static final String APPLICATION_JSON = "application/json"; // @TODO use constant somewhere else
@@ -60,15 +53,15 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
     public void init(Router router) throws Exception {
         super.init(router);
 
-        Map<String, ApiConfig> apiConfigs = router.getBeanFactory().getBeansOfType(ApiConfig.class);
-        String etcdRegistryApiConfigCorrected = getCorrectedName(EtcdRegistryApiConfig.class.getSimpleName());
-        String simpleApiConfigCorrected = getCorrectedName(SimpleApiConfig.class.getSimpleName());
+//        Map<String, ApiConfig> apiConfigs = router.getBeanFactory().getBeansOfType(ApiConfig.class);
+//        String etcdRegistryApiConfigCorrected = getCorrectedName(EtcdRegistryApiConfig.class.getSimpleName());
+//        String simpleApiConfigCorrected = getCorrectedName(SimpleApiConfig.class.getSimpleName());
 
-        if (apiConfigs.containsKey(etcdRegistryApiConfigCorrected)) {
-            apiConfig = apiConfigs.get(etcdRegistryApiConfigCorrected);
-        } else if (apiConfigs.containsKey(simpleApiConfigCorrected)) {
-            apiConfig = apiConfigs.get(simpleApiConfigCorrected);
-        }
+//        if (apiConfigs.containsKey(etcdRegistryApiConfigCorrected)) {
+//            apiConfig = apiConfigs.get(etcdRegistryApiConfigCorrected);
+//        } else if (apiConfigs.containsKey(simpleApiConfigCorrected)) {
+//            apiConfig = apiConfigs.get(simpleApiConfigCorrected);
+//        }
         if (apiConfig != null) {
             log.info("used apiConfig: " + apiConfig.getClass().getSimpleName());
             apiManagementConfiguration = apiConfig.getConfiguration();
@@ -171,12 +164,12 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
             if (!(r instanceof AbstractServiceProxy)) continue;
 
             for (Interceptor i : r.getInterceptors()) {
-                if (i instanceof AdminConsoleInterceptor) {
-                    for(Interceptor interceptor : exc.getRule().getInterceptors()){
-                        if(interceptor == i)
-                            return true;
-                    }
-                }
+//                if (i instanceof AdminConsoleInterceptor) {
+//                    for(Interceptor interceptor : exc.getRule().getInterceptors()){
+//                        if(interceptor == i)
+//                            return true;
+//                    }
+//                }
             }
         }
         return false;
@@ -264,7 +257,6 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         return amRateLimiter;
     }
 
-    @MCChildElement(order = 0)
     public void setAmRateLimiter(AMRateLimiter amRateLimiter) {
         this.amRateLimiter = amRateLimiter;
     }
@@ -273,7 +265,6 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         return amQuota;
     }
 
-    @MCChildElement(order = 1)
     public void setAmQuota(AMQuota amQuota) {
         this.amQuota = amQuota;
     }
@@ -286,7 +277,7 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
      * @description the location of the configuration
      * @default api.yaml
      */
-    @MCAttribute
+    
     public void setConfig(String config) {
             this.config = config;
     }
@@ -295,7 +286,6 @@ public class ApiManagementInterceptor extends AbstractInterceptor {
         return amStatisticsCollector;
     }
 
-    @MCChildElement(order = 2)
     public void setAmStatisticsCollector(AMStatisticsCollector amStatisticsCollector) {
         this.amStatisticsCollector = amStatisticsCollector;
     }

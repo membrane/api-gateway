@@ -22,15 +22,14 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.predic8.membrane.annot.MCAttribute;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCElement;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import org.joda.time.DateTime;
 
-@MCElement(name = "nodeOnlineChecker")
 public class NodeOnlineChecker {
 
 
@@ -246,7 +245,7 @@ public class NodeOnlineChecker {
      * @description the time in seconds until offline nodes are checked again. -1 to disable
      * @default -1
      */
-    @MCAttribute
+    
     public void setRetryTimeInSeconds(int retryTimeInSeconds) {
         this.retryTimeInSeconds = retryTimeInSeconds;
     }
@@ -259,7 +258,7 @@ public class NodeOnlineChecker {
      * @description the number of times a node has to fail with a 5XX statuscode until it is taken down
      * @default 10
      */
-    @MCAttribute
+    
     public void setNodeCounterLimit5XX(int nodeCounterLimit5XX) {
         this.nodeCounterLimit5XX = nodeCounterLimit5XX;
     }

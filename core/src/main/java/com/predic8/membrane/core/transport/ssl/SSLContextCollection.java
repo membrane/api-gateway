@@ -187,7 +187,7 @@ public class SSLContextCollection implements SSLProvider {
 
 	@Override
 	public Socket createSocket(String host, int port, InetAddress addr,
-			int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
+			int localPort, int connectTimeout, String sniServerName) throws IOException {
 		return getSSLContextForHostname(host).createSocket(host, port, addr, localPort, connectTimeout,sniServerName);
 	}
 
@@ -200,13 +200,13 @@ public class SSLContextCollection implements SSLProvider {
 	}
 
 	@Override
-	public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName)
+	public Socket createSocket(String host, int port, int connectTimeout, String sniServerName)
 			throws IOException {
 		return getSSLContextForHostname(host).createSocket(host, port, connectTimeout, sniServerName);
 	}
 
 	@Override
-	public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName)
+	public Socket createSocket(Socket s, String host, int port, int connectTimeout, String sniServerName)
 			throws IOException {
 		return getSSLContextForHostname(host).createSocket(s, host, port, connectTimeout, sniServerName);
 	}

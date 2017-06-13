@@ -22,10 +22,8 @@ import com.predic8.membrane.core.transport.TrustManagerWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import javax.crypto.Cipher;
 import javax.net.ssl.*;
-import javax.validation.constraints.NotNull;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -279,7 +277,7 @@ public class StaticSSLContext extends SSLContext {
         return socket;
     }
 
-    public Socket createSocket(Socket socket, String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
+    public Socket createSocket(Socket socket, String host, int port, int connectTimeout, String sniServerName) throws IOException {
         SSLSocketFactory sslsf = sslc.getSocketFactory();
         SSLSocket ssls = (SSLSocket) sslsf.createSocket(socket, host, port, true);
         applySNI(ssls, sniServerName,host);
@@ -300,20 +298,20 @@ public class StaticSSLContext extends SSLContext {
         return ssls;
     }
 
-    public Socket createSocket(String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
+    public Socket createSocket(String host, int port, int connectTimeout, String sniServerName) throws IOException {
         Socket s = new Socket();
         s.connect(new InetSocketAddress(host, port), connectTimeout);
         return createSocket(s, host, port, connectTimeout, sniServerName);
     }
 
-    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
+    public Socket createSocket(String host, int port, InetAddress addr, int localPort, int connectTimeout, String sniServerName) throws IOException {
         Socket s = new Socket();
         s.bind(new InetSocketAddress(addr, localPort));
         s.connect(new InetSocketAddress(host, port), connectTimeout);
         return createSocket(s, host, port, connectTimeout, sniServerName);
     }
 
-    private void applySNI(@NotNull SSLSocket ssls, @Nullable String sniServerName, @NotNull String defaultHost) {
+    private void applySNI(SSLSocket ssls, String sniServerName, String defaultHost) {
         if(sniServerName != null && sniServerName.isEmpty())
             return;
         if(sniServerName == null)

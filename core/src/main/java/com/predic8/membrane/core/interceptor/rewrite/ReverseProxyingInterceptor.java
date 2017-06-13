@@ -17,7 +17,6 @@ package com.predic8.membrane.core.interceptor.rewrite;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -34,7 +33,6 @@ import org.slf4j.LoggerFactory;
  * hostnames and ports used to access Membrane Service Proxy vs. the target HTTP server.
  * @topic 4. Interceptors/Features
  */
-@MCElement(name="reverseProxying")
 public class ReverseProxyingInterceptor extends AbstractInterceptor {
 	private static final Logger log = LoggerFactory.getLogger(ReverseProxyingInterceptor.class);
 

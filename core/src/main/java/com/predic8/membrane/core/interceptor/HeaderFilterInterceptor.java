@@ -19,11 +19,6 @@ import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
@@ -34,7 +29,6 @@ import com.predic8.membrane.core.http.Message;
  * The first matching child element will be acted upon by the filter.
  * @topic 4. Interceptors/Features
  */
-@MCElement(name="headerFilter")
 public class HeaderFilterInterceptor extends AbstractInterceptor {
 
 	private static final Logger log = LoggerFactory.getLogger(HeaderFilterInterceptor.class);
@@ -66,7 +60,6 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 			return pattern;
 		}
 
-		@MCTextContent
 		public void setPattern(String pattern) {
 			this.pattern = pattern;
 			p = Pattern.compile(pattern);
@@ -85,7 +78,6 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Contains a Java regex for <i>including</i> message headers.
 	 */
-	@MCElement(name="include", mixed=true)
 	public static class Include extends Rule {
 		public Include() {
 			super(Action.KEEP);
@@ -95,7 +87,6 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Contains a Java regex for <i>excluding</i> message headers.
 	 */
-	@MCElement(name="exclude", mixed=true)
 	public static class Exclude extends Rule {
 		public Exclude() {
 			super(Action.REMOVE);
@@ -147,8 +138,8 @@ public class HeaderFilterInterceptor extends AbstractInterceptor {
 	/**
 	 * @description List of actions to take (either allowing or removing HTTP headers).
 	 */
-	@Required
-	@MCChildElement
+	
+	
 	public void setRules(List<Rule> rules) {
 		this.rules = rules;
 	}

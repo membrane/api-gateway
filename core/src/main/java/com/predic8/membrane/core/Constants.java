@@ -20,7 +20,6 @@ import java.util.Properties;
 
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.rest.REST2SOAPInterceptor;
 
 public class Constants {
 

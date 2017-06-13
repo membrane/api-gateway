@@ -17,8 +17,8 @@ package com.predic8.membrane.core.interceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 
@@ -28,7 +28,6 @@ import com.predic8.membrane.core.http.Response;
  *              </p>
  * @topic 6. Security
  */
-@MCElement(name="throttle")
 public class ThrottleInterceptor extends AbstractInterceptor {
 	private static Logger log = LoggerFactory.getLogger(ThrottleInterceptor.class.getName());
 
@@ -93,7 +92,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	 * @default 0
 	 * @example 1000
 	 */
-	@MCAttribute
+	
 	public void setDelay(long delay) {
 		this.delay = delay;
 	}
@@ -107,7 +106,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	 * @default 0
 	 * @example 5
 	 */
-	@MCAttribute
+	
 	public void setMaxThreads(int maxThreads) {
 		this.maxThreads = maxThreads;
 	}
@@ -122,7 +121,7 @@ public class ThrottleInterceptor extends AbstractInterceptor {
 	 * @default 0
 	 * @example 3000
 	 */
-	@MCAttribute
+	
 	public void setBusyDelay(int busyDelay) {
 		this.busyDelay = busyDelay;
 	}

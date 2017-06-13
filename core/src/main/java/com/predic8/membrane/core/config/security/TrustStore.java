@@ -14,10 +14,7 @@
 package com.predic8.membrane.core.config.security;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name="truststore")
 public class TrustStore extends Store {
 
 	protected String algorithm;
@@ -36,7 +33,7 @@ public class TrustStore extends Store {
 		return algorithm;
 	}
 
-	@MCAttribute
+	
 	public void setAlgorithm(String algorithm) {
 		this.algorithm = algorithm;
 	}

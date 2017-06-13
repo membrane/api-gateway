@@ -19,8 +19,6 @@ import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Body;
 import com.predic8.membrane.core.http.Message;
@@ -39,7 +37,6 @@ import com.predic8.membrane.core.http.Response;
  *              </p>
  * @topic 6. Security
  */
-@MCElement(name="limit")
 public class LimitInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LoggerFactory.getLogger(LimitInterceptor.class);
@@ -73,7 +70,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 	 * @description The maximal length of a message body.
 	 * @example 10485760
 	 */
-	@MCAttribute
+	
 	public void setMaxBodyLength(long maxBodyLength) {
 		this.maxBodyLength = maxBodyLength;
 	}

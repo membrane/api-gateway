@@ -63,9 +63,9 @@ public class ConnectionManager {
 
 		public final String host;
 		public final int port;
-		@Nullable private SSLProvider sslProvider;
-		@Nullable public String serverName;
-		@Nullable public ProxyConfiguration proxy;
+		private SSLProvider sslProvider;
+		public String serverName;
+		public ProxyConfiguration proxy;
 
 		public ConnectionKey(String host, int port, SSLProvider sslProvider, String serverName, ProxyConfiguration proxy) {
 			this.host = host;
@@ -139,8 +139,8 @@ public class ConnectionManager {
 		}, autoCloseInterval, autoCloseInterval);
 	}
 
-	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout, @Nullable String sniServerName,
-		@Nullable ProxyConfiguration proxy, @Nullable SSLContext proxySSLContext) throws UnknownHostException, IOException {
+	public Connection getConnection(String host, int port, String localHost, SSLProvider sslProvider, int connectTimeout, String sniServerName,
+		ProxyConfiguration proxy, SSLContext proxySSLContext) throws UnknownHostException, IOException {
 
 		log.debug("connection requested for " + host + ":" + port + (proxy != null ? " via " + proxy.getHost() + ":" + proxy.getPort() : ""));
 

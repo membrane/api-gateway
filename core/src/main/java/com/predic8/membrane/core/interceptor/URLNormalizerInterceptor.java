@@ -13,7 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor;
 
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 
 /**
@@ -30,7 +29,6 @@ import com.predic8.membrane.core.exchange.Exchange;
  *              </p>
  * @topic 4. Interceptors/Features
  */
-@MCElement(name="urlNormalizer")
 public class URLNormalizerInterceptor extends AbstractInterceptor {
 
 	@Override

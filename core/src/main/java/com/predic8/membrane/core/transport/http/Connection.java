@@ -21,7 +21,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-import javax.annotation.Nullable;
 import javax.net.ssl.SSLSocket;
 
 import com.predic8.membrane.core.Constants;
@@ -76,8 +75,8 @@ public class Connection implements MessageObserver {
 	}
 
 	public static Connection open(String host, int port, String localHost, SSLProvider sslProvider, ConnectionManager mgr,
-								  int connectTimeout, @Nullable String sniServername, @Nullable ProxyConfiguration proxy,
-								  @Nullable SSLProvider proxySSLProvider) throws UnknownHostException, IOException {
+								  int connectTimeout, String sniServername, ProxyConfiguration proxy,
+								  SSLProvider proxySSLProvider) throws UnknownHostException, IOException {
 		Connection con = new Connection(mgr, host, sslProvider, sniServername, proxy);
 
 		String origHost = host;
@@ -123,7 +122,7 @@ public class Connection implements MessageObserver {
 		return open(host,port,localHost,sslProvider,mgr,connectTimeout,null,null,null);
 	}
 
-	private Connection(ConnectionManager mgr, String host, @Nullable SSLProvider sslProvider, @Nullable String sniServerName, @Nullable ProxyConfiguration proxy) {
+	private Connection(ConnectionManager mgr, String host, SSLProvider sslProvider, String sniServerName, ProxyConfiguration proxy) {
 		this.mgr = mgr;
 		this.host = host;
 		this.sslProvider = sslProvider;

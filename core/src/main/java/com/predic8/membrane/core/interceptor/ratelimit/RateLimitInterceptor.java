@@ -22,11 +22,6 @@ import org.joda.time.Duration;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.PeriodFormat;
-import org.joda.time.format.PeriodFormatter;
-import org.joda.time.format.PeriodFormatterBuilder;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.MimeType;
@@ -38,7 +33,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
 /**
  * @description Allows rate limiting (Experimental)
  */
-@MCElement(name = "rateLimiter")
 public class RateLimitInterceptor extends AbstractInterceptor {
 
 	public RateLimitStrategy rateLimitStrategy;
@@ -96,7 +90,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	 * @description number of requests
 	 * @default 1000
 	 */
-	@MCAttribute
+	
 	public void setRequestLimit(int rl) {
 		rateLimitStrategy.setRequestLimit(rl);
 	}
@@ -110,7 +104,7 @@ public class RateLimitInterceptor extends AbstractInterceptor {
 	 *              time in seconds
 	 * @default PT3600S
 	 */
-	@MCAttribute
+	
 	public void setRequestLimitDuration(String rld) {
 		setRequestLimitDuration(Duration.parse(rld));
 	}

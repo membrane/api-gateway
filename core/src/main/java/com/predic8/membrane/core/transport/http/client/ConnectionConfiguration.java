@@ -13,10 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name="connection", topLevel=false)
+
+
 public class ConnectionConfiguration {
 
 	private long keepAliveTimeout = 4000;
@@ -33,7 +32,7 @@ public class ConnectionConfiguration {
 	 * @default 4000
 	 * @example 30000
 	 */
-	@MCAttribute
+	
 	public void setKeepAliveTimeout(long keepAliveTimeout) {
 		this.keepAliveTimeout = keepAliveTimeout;
 	}
@@ -46,7 +45,7 @@ public class ConnectionConfiguration {
 	 * @description Socket timeout (connect, read, etc.) in milliseconds.
 	 * @default 10000
 	 */
-	@MCAttribute
+	
 	public void setTimeout(int timeout) {
 		this.connectTimeout = timeout;
 	}
@@ -59,7 +58,7 @@ public class ConnectionConfiguration {
 	 * @description The local IP address to use for outbound connections.
 	 * @default not set
 	 */
-	@MCAttribute
+	
 	public void setLocalAddr(String localAddr) {
 		this.localAddr = localAddr;
 	}

@@ -16,15 +16,12 @@ package com.predic8.membrane.core.rules;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 
 /**
  * @description
  * Clients can send HTTP requests to a proxy that forward the request to a Web server. It acts onbehalf of the client.
  * @topic 2. Proxies
  */
-@MCElement(name="proxy")
 public class ProxyRule extends AbstractProxy {
 
 	public static final String ELEMENT_NAME = "proxy";
@@ -51,7 +48,7 @@ public class ProxyRule extends AbstractProxy {
 		return ((ProxyRuleKey)key).getPort();
 	}
 
-	@MCAttribute
+	
 	public void setPort(int port) {
 		((ProxyRuleKey)key).setPort(port);
 	}
@@ -60,7 +57,7 @@ public class ProxyRule extends AbstractProxy {
 		return ((ProxyRuleKey)key).getIp();
 	}
 
-	@MCAttribute
+	
 	public void setIp(String ip) {
 		((ProxyRuleKey)key).setIp(ip);
 	}

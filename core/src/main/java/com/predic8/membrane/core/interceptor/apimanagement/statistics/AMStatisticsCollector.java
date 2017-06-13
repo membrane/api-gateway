@@ -15,8 +15,8 @@ package com.predic8.membrane.core.interceptor.apimanagement.statistics;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.interceptor.Outcome;
@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@MCElement(name="amStatisticsCollector")
 public class AMStatisticsCollector {
 
     private static Logger log = LoggerFactory.getLogger(AMStatisticsCollector.class);
@@ -366,7 +365,7 @@ public class AMStatisticsCollector {
         return host;
     }
 
-    @MCAttribute
+    
     public void setHost(String host) {
         this.host = host;
     }
@@ -376,7 +375,7 @@ public class AMStatisticsCollector {
         return clientId;
     }
 
-    @MCAttribute
+    
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
@@ -386,7 +385,7 @@ public class AMStatisticsCollector {
         return clientSecret;
     }
 
-    @MCAttribute
+    
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
     }

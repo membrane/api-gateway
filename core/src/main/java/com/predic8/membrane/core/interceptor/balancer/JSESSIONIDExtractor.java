@@ -20,14 +20,13 @@ import javax.xml.stream.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCElement;
+
 import com.predic8.membrane.core.http.Message;
 
 /**
  * @description The <i>jSessionIdExtractor</i> extracts the JSESSIONID from a
  *              message and provides it to the {@link Balancer}.
  */
-@MCElement(name="jSessionIdExtractor")
 public class JSESSIONIDExtractor extends AbstractSessionIdExtractor {
 
 	private static Logger log = LoggerFactory.getLogger(JSESSIONIDExtractor.class.getName());

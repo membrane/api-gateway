@@ -14,7 +14,6 @@
 package com.predic8.membrane.core.config.security;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.MCAttribute;
 
 public abstract class Store {
 
@@ -38,7 +37,7 @@ public abstract class Store {
 		return location;
 	}
 
-	@MCAttribute
+	
 	public void setLocation(String location) {
 		this.location = location;
 	}
@@ -47,7 +46,7 @@ public abstract class Store {
 		return password;
 	}
 
-	@MCAttribute
+	
 	public void setPassword(String password) {
 		this.password = password;
 	}
@@ -56,7 +55,7 @@ public abstract class Store {
 		return type;
 	}
 
-	@MCAttribute
+	
 	public void setType(String type) {
 		this.type = type;
 	}
@@ -65,7 +64,7 @@ public abstract class Store {
 		return provider;
 	}
 
-	@MCAttribute
+	
 	public void setProvider(String provider) {
 		this.provider = provider;
 	}

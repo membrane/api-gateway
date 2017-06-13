@@ -21,9 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
@@ -35,7 +32,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
  * @explanation May only be used as interceptor in a ServiceProxy.
  * @topic 7. Clustering and Loadbalancing
  */
-@MCElement(name="balancer")
 public class LoadBalancingInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LoggerFactory.getLogger(LoadBalancingInterceptor.class
@@ -183,7 +179,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	 * @example balancer1
 	 * @default Default
 	 */
-	@MCAttribute
+	
 	public void setName(String name) throws Exception {
 		balancer.setName(name);
 	}
@@ -204,7 +200,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Sets the strategy used to choose the backend nodes.
 	 */
-	@MCChildElement(order=3)
 	public void setDispatchingStrategy(DispatchingStrategy strategy) {
 		this.strategy = strategy;
 	}
@@ -220,7 +215,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Checks if nodes are still available. Sets them to "DOWN" when not reachable, else sets them back up when they are reachable.
 	 */
-	@MCChildElement(order=4)
 	public void setNodeOnlineChecker(NodeOnlineChecker noc)
 	{
 		this.nodeOnlineChecker = noc;
@@ -235,7 +229,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Sets the strategy used to extract a session ID from incoming HTTP requests.
 	 */
-	@MCChildElement(order=1)
 	public void setSessionIdExtractor(
 			AbstractSessionIdExtractor sessionIdExtractor) {
 		this.sessionIdExtractor = sessionIdExtractor;
@@ -256,7 +249,6 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Specifies a list of clusters.
 	 */
-	@MCChildElement(order=2)
 	public void setClustersFromSpring(List<Balancer> balancers) {
 		List<Cluster> clusters = new ArrayList<Cluster>();
 		for (Balancer balancer : balancers)
@@ -292,7 +284,7 @@ public class LoadBalancingInterceptor extends AbstractInterceptor {
 	 * @example 600000 <i>(10min)</i>
 	 * @default 3600000
 	 */
-	@MCAttribute
+	
 	public void setSessionTimeout(long sessionTimeout) {
 		balancer.setSessionTimeout(sessionTimeout);
 	}

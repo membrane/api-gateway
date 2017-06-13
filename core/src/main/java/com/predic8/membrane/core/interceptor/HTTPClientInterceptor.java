@@ -19,9 +19,6 @@ import java.net.UnknownHostException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -36,7 +33,6 @@ import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
  *              its outgoing HTTP connection that is different from the global
  *              configuration in the transport.
  */
-@MCElement(name="httpClient")
 public class HTTPClientInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LoggerFactory.getLogger(HTTPClientInterceptor.class.getName());
@@ -95,7 +91,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	 *              500&lt;=<i>x</i>&lt;600 was received.
 	 * @default false
 	 */
-	@MCAttribute
+	
 	public void setFailOverOn5XX(boolean failOverOn5XX) {
 		this.failOverOn5XX = failOverOn5XX;
 	}
@@ -109,7 +105,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 	 * @explanation Set this to <i>false</i>, if the incoming HTTP "Host" header should not be modified.
 	 * @default true
 	 */
-	@MCAttribute
+	
 	public void setAdjustHostHeader(boolean adjustHostHeader) {
 		this.adjustHostHeader = adjustHostHeader;
 	}
@@ -118,7 +114,7 @@ public class HTTPClientInterceptor extends AbstractInterceptor {
 		return httpClientConfig;
 	}
 
-	@MCChildElement
+	
 	public void setHttpClientConfig(HttpClientConfiguration httpClientConfig) {
 		this.httpClientConfig = httpClientConfig;
 	}

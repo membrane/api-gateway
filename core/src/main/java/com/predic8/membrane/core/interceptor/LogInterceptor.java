@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor;
 
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 
@@ -28,7 +28,6 @@ import com.predic8.membrane.core.http.Message;
  *              <i>conf/log4j.properties</i> file.
  * @topic 5. Monitoring, Logging and Statistics
  */
-@MCElement(name="log")
 public class LogInterceptor extends AbstractInterceptor {
 
 	public enum Level {
@@ -65,7 +64,7 @@ public class LogInterceptor extends AbstractInterceptor {
 	 * @default true
 	 * @description If set to true only the HTTP header will be logged.
 	 */
-	@MCAttribute
+	
 	public void setHeaderOnly(boolean headerOnly) {
 		this.headerOnly = headerOnly;
 	}
@@ -79,7 +78,7 @@ public class LogInterceptor extends AbstractInterceptor {
 	 * @description Sets the log level.
 	 * @example WARN
 	 */
-	@MCAttribute
+	
 	public void setLevel(Level level) {
 		this.level = level;
 	}
@@ -148,7 +147,7 @@ public class LogInterceptor extends AbstractInterceptor {
 	 * @description Sets the category of the logged message.
 	 * @example Membrane
 	 */
-	@MCAttribute
+	
 	public void setCategory(String category) {
 		this.category = category;
 	}

@@ -14,8 +14,6 @@
 package com.predic8.membrane.core.interceptor.apimanagement;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import com.predic8.membrane.core.cloud.etcd.EtcdRequest;
-import com.predic8.membrane.core.cloud.etcd.EtcdResponse;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Quota;
 import com.predic8.membrane.core.interceptor.apimanagement.policy.RateLimit;
@@ -26,8 +24,6 @@ import com.predic8.membrane.core.util.functionalInterfaces.Function;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,12 +45,12 @@ public class ApiManagementConfiguration {
     private String location = null;
     private String hashLocation = null;
     private String currentHash = "";
-    private ApplicationContext context;
+//    private ApplicationContext context;
     public HashSet<Runnable> configChangeObservers = new HashSet<Runnable>();
-    String etcdPathPrefix = "/membrane/";
+//    String etcdPathPrefix = "/membrane/";
     private String membraneName;
     private boolean contextLost = false;
-    private Thread etcdConfigFingerprintLongPollThread;
+//    private Thread etcdConfigFingerprintLongPollThread;
 
     private void notifyConfigChangeObservers(){
         for(Runnable runner : configChangeObservers){
@@ -364,16 +360,16 @@ public class ApiManagementConfiguration {
     public void updateAfterLocationChange() throws IOException {
         if(!isLocalFile(location)){
             log.info("Loading configuration from [" + location + "]");
-            if(location.startsWith("etcd")){
-                handleEtcd(location);
-            }else {
+//            if(location.startsWith("etcd")){
+//                handleEtcd(location);
+//            }else {
                 try {
                     parseAndConstructConfiguration(getResolver().resolve(location));
                 } catch (ResourceRetrievalException e) {
                     log.error("Could not retrieve resource");
                     return;
                 }
-            }
+//            }
             return;
         }else {
             if(location.isEmpty())
@@ -418,52 +414,6 @@ public class ApiManagementConfiguration {
         }
     }
 
-    private void handleEtcd(String location) throws IOException {
-        // assumption: location is of type "etcd://[url]"
-
-        final String etcdLocation = location.substring(7);
-
-        final String baseKey = etcdPathPrefix + getMembraneName();
-
-        EtcdResponse respGetConfigUrl = EtcdRequest.create(etcdLocation,baseKey,"/apiconfig").getValue("url").sendRequest();
-        if(!respGetConfigUrl.is2XX()){
-            log.warn("Could not get config url at " + etcdLocation + baseKey + "/apiconfig");
-            return;
-        }
-        final String configLocation = respGetConfigUrl.getValue();
-        setLocation(configLocation); // this gets the resource and loads the config
-        updateAfterLocationChange();
-        setLocation(location);
-
-        if(etcdConfigFingerprintLongPollThread == null) {
-
-            etcdConfigFingerprintLongPollThread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        while (!getContextLost()) {
-                            if (!EtcdRequest.create(etcdLocation, baseKey, "/apiconfig").getValue("fingerprint").longPoll().sendRequest().is2XX()) {
-                                log.warn("Could not get config fingerprint at " + etcdLocation);
-                            }
-                            if (!getContextLost()) {
-                                log.info("Noticed configuration change, updating...");
-                                updateAfterLocationChange();
-                            }
-                        }
-                    } catch (Exception ignored) {
-                    }
-                }
-            });
-            etcdConfigFingerprintLongPollThread.start();
-        }
-
-
-
-    }
-
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.context = applicationContext;
-    }
 
     public static final String DEFAULT_RESOLVER_NAME = "resolverMap";
 
@@ -472,14 +422,14 @@ public class ApiManagementConfiguration {
             if (getResolver() == null) {
                 Object defaultResolver = null;
                 try {
-                    if(context != null) {
-                        defaultResolver = context.getBean("resolverMap");
-                        if (defaultResolver != null) {
-                            setResolver((ResolverMap) defaultResolver);
-                        }
-                    }else{
+//                    if(context != null) {
+//                        defaultResolver = context.getBean("resolverMap");
+//                        if (defaultResolver != null) {
+//                            setResolver((ResolverMap) defaultResolver);
+//                        }
+//                    }else{
                         log.error("Context not set");
-                    }
+//                    }
                 } catch (Exception ignored) {
                 }
                 if (getResolver() == null) {

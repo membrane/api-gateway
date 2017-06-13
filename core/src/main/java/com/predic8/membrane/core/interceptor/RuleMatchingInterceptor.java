@@ -19,8 +19,6 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -33,7 +31,6 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 
-@MCElement(name="ruleMatching")
 public class RuleMatchingInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LoggerFactory.getLogger(RuleMatchingInterceptor.class.getName());
@@ -169,7 +166,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return xForwardedForEnabled;
 	}
 
-	@MCAttribute
+	
 	public void setxForwardedForEnabled(boolean xForwardedForEnabled) {
 		this.xForwardedForEnabled = xForwardedForEnabled;
 	}
@@ -178,7 +175,7 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		return maxXForwardedForHeaders;
 	}
 
-	@MCAttribute
+	
 	public void setMaxXForwardedForHeaders(int maxXForwardedForHeaders) {
 		this.maxXForwardedForHeaders = maxXForwardedForHeaders;
 	}

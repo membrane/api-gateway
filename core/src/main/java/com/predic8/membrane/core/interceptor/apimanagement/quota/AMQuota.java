@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.apimanagement.quota;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.predic8.membrane.annot.MCElement;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
@@ -41,7 +41,6 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Unfinished
  */
-@MCElement(name="amQuota")
 public class AMQuota {
 
     private static Logger log = LoggerFactory.getLogger(AMQuota.class);

@@ -14,9 +14,6 @@
 
 package com.predic8.membrane.core.rules;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
@@ -30,7 +27,6 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	 *              <a href="http://ms.org:8080/esb-doc/configuration/reference/router.htm">content based router</a>.
 	 *              </p>
 	 */
-	@MCElement(name="target", topLevel=false)
 	public static class Target {
 		private String host;
 		private int port = -1;
@@ -58,7 +54,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		 * @description Host address of the target.
 		 * @example localhost, 192.168.1.1
 		 */
-		@MCAttribute
+		
 		public void setHost(String host) {
 			this.host = host;
 		}
@@ -72,7 +68,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		 * @default 80
 		 * @example 8080
 		 */
-		@MCAttribute
+		
 		public void setPort(int port) {
 			this.port = port;
 		}
@@ -85,7 +81,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		 * @description Absolute URL of the target. If this is set, <i>host</i> and <i>port</i> will be ignored.
 		 * @example http://membrane-soa.org
 		 */
-		@MCAttribute
+		
 		public void setUrl(String url) {
 			this.url = url;
 		}
@@ -98,7 +94,6 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 		/**
 		 * @description Configures outbound SSL (HTTPS).
 		 */
-		@MCChildElement(allowForeign = true)
 		public void setSslParser(SSLParser sslParser) {
 			this.sslParser = sslParser;
 		}
@@ -107,7 +102,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 			return adjustHostHeader;
 		}
 
-		@MCAttribute
+		
 		public void setAdjustHostHeader(boolean adjustHostHeader) {
 			this.adjustHostHeader = adjustHostHeader;
 		}
@@ -142,7 +137,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	 * @default <i>not set</i>
 	 * @example predic8.de *.predic8.de
 	 */
-	@MCAttribute
+	
 	public void setHost(String host) {
 		((ServiceProxyKey)key).setHost(host);
 	}
@@ -164,7 +159,6 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	 *              automatically be configured.
 	 *              </p>
 	 */
-	@MCChildElement(order=50)
 	public void setPath(Path path) {
 		AbstractRuleKey k = (AbstractRuleKey)key;
 		k.setUsePathPattern(path != null);

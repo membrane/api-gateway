@@ -17,10 +17,6 @@ import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderField;
@@ -30,7 +26,6 @@ import com.predic8.membrane.core.http.Message;
  * @description Runs a regular-expression-replacement on either the message body (default) or all header values.
  * @topic 4. Interceptors/Features
  */
-@MCElement(name="regExReplacer")
 public class RegExReplaceInterceptor extends AbstractInterceptor {
 
 	private static Logger log = LoggerFactory.getLogger(RegExReplaceInterceptor.class.getName());
@@ -87,8 +82,8 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	 * @description Regex to match against the body.
 	 * @example Hallo
 	 */
-	@Required
-	@MCAttribute
+	
+	
 	public void setRegex(String regex) {
 		this.regex = regex;
 	}
@@ -100,8 +95,8 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	 * @description String used to replace matched parts.
 	 * @example Hello
 	 */
-	@Required
-	@MCAttribute
+	
+	
 	public void setReplace(String replace) {
 		this.replace = replace;
 	}
@@ -115,7 +110,7 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	 * @default body
 	 * @example header
 	 */
-	@MCAttribute
+	
 	public void setTarget(TargetType target) {
 		this.target = target;
 	}

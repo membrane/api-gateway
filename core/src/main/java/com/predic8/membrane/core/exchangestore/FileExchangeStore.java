@@ -30,10 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.http.AbstractBody;
@@ -48,7 +44,6 @@ import com.predic8.membrane.core.util.TextUtil;
 /**
  * The output file is UTF-8 encoded.
  */
-@MCElement(name="fileExchangeStore")
 public class FileExchangeStore extends AbstractExchangeStore {
 
 	private static Logger log = LoggerFactory.getLogger(FileExchangeStore.class
@@ -290,8 +285,8 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	 * @description Directory where the exchanges are saved.
 	 * @example logs
 	 */
-	@Required
-	@MCAttribute
+	
+	
 	public void setDir(String dir) {
 		this.dir = dir;
 	}
@@ -306,7 +301,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	 *              formatted nicely.
 	 * @example true
 	 */
-	@MCAttribute
+	
 	public void setRaw(boolean raw) {
 		this.raw = raw;
 	}
@@ -320,7 +315,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	 *              log files.
 	 * @example true
 	 */
-	@MCAttribute
+	
 	public void setSaveBodyOnly(boolean saveBodyOnly) {
 		this.saveBodyOnly = saveBodyOnly;
 	}
@@ -335,7 +330,7 @@ public class FileExchangeStore extends AbstractExchangeStore {
 	 *              logs.
 	 * @example 60
 	 */
-	@MCAttribute
+	
 	public void setMaxDays(int maxDays) {
 		this.maxDays = maxDays;
 	}

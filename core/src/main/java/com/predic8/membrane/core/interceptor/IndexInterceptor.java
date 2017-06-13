@@ -21,7 +21,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
@@ -38,7 +37,6 @@ import com.predic8.membrane.core.transport.http.HttpServerHandler;
  *              SSL or Username and Password.
  * @topic 8. SOAP based Web Services
  */
-@MCElement(name="index", id="index-interceptor")
 public class IndexInterceptor extends AbstractInterceptor {
 
 	private static class ServiceInfo {

@@ -29,8 +29,8 @@ import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -41,7 +41,6 @@ import com.predic8.membrane.core.interceptor.Outcome;
  * @explanation See also examples/loadbalancer-client-2 in the Membrane Service Proxy distribution.
  * @topic 7. Clustering and Loadbalancing
  */
-@MCElement(name="clusterNotification")
 public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	private static Logger log = LoggerFactory.getLogger(ClusterNotificationInterceptor.class.getName());
 
@@ -149,7 +148,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Set Push Interface to encrypted mode.
 	 */
-	@MCAttribute
+	
 	public void setValidateSignature(boolean validateSignature) {
 		this.validateSignature = validateSignature;
 	}
@@ -162,7 +161,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	 * @description Timestamp invalidation period. (0=unlimited)
 	 * @example 5000
 	 */
-	@MCAttribute
+	
 	public void setTimeout(int timeout) {
 		this.timeout = timeout;
 	}
@@ -175,7 +174,7 @@ public class ClusterNotificationInterceptor extends AbstractInterceptor {
 	 * @description Key used by encryption as hex string
 	 * @example 6f488a642b740fb70c5250987a284dc0
 	 */
-	@MCAttribute
+	
 	public void setKeyHex(String keyHex) {
 		this.keyHex = keyHex;
 	}

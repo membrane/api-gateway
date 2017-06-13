@@ -16,13 +16,11 @@ package com.predic8.membrane.core.interceptor.cbr;
 
 import javax.xml.stream.*;
 
-import org.springframework.beans.factory.annotation.Required;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
-@MCElement(name="case", topLevel=false, id="switch-case")
 public class Case extends AbstractXmlElement {
 
 	private String url;
@@ -43,7 +41,7 @@ public class Case extends AbstractXmlElement {
 	 * @description Target URL
 	 * @example http://predic8.com/fastorder
 	 */
-	@MCAttribute
+	
 	public void setUrl(String url) {
 		this.url = url;
 	}
@@ -54,7 +52,7 @@ public class Case extends AbstractXmlElement {
 		return null;
 	}
 
-	@MCAttribute
+	
 	public void setService(String service) {
 		url = "service:" + service;
 	}
@@ -67,8 +65,8 @@ public class Case extends AbstractXmlElement {
 	 * @description XPath expression.
 	 * @example //fastorder/
 	 */
-	@Required
-	@MCAttribute
+	
+	
 	public void setxPath(String xPath) {
 		this.xPath = xPath;
 	}

@@ -14,12 +14,7 @@
 
 package com.predic8.membrane.core.rules;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.interceptor.Interceptor;
-import com.predic8.membrane.core.interceptor.administration.AdminConsoleInterceptor;
-import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.EtcdRegistryApiConfig;
 
 /**
  * @description <p>
@@ -28,7 +23,6 @@ import com.predic8.membrane.core.interceptor.apimanagement.apiconfig.EtcdRegistr
  *              </p>
  * @topic 2. Proxies
  */
-@MCElement(name="serviceProxy")
 public class ServiceProxy extends AbstractServiceProxy {
 
 	private String externalHostname;
@@ -54,18 +48,18 @@ public class ServiceProxy extends AbstractServiceProxy {
 	}
 
 	public boolean hasAdminConsole(){
-		for(Interceptor i : interceptors)
-			if(i instanceof AdminConsoleInterceptor)
-				return true;
+//		for(Interceptor i : interceptors)
+//			if(i instanceof AdminConsoleInterceptor)
+//				return true;
 		return false;
 	}
 
 	public boolean etcdRegistryApiConfigExists(){
-		try {
-			if (router.getBeanFactory().getBean(EtcdRegistryApiConfig.class) != null)
-				return true;
-		}catch(Exception ignored){
-		}
+//		try {
+//			if (router.getBeanFactory().getBean(EtcdRegistryApiConfig.class) != null)
+//				return true;
+//		}catch(Exception ignored){
+//		}
 		return false;
 	}
 
@@ -85,14 +79,14 @@ public class ServiceProxy extends AbstractServiceProxy {
 	 * @default *
 	 * @example GET
 	 */
-	@MCAttribute
+	
 	public void setMethod(String method) {
 		((ServiceProxyKey)key).setMethod(method);
 	}
 
 	public String getExternalHostname() {return externalHostname;}
 
-	@MCAttribute
+	
 	public void setExternalHostname(String externalHostname){
 		this.externalHostname = externalHostname;
 	}
@@ -101,7 +95,6 @@ public class ServiceProxy extends AbstractServiceProxy {
 		return target;
 	}
 
-	@MCChildElement(order=150)
 	public void setTarget(Target target) {
 		this.target = target;
 	}

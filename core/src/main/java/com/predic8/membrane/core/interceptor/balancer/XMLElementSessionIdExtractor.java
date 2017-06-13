@@ -17,17 +17,12 @@ import javax.xml.stream.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.FixedStreamReader;
 import com.predic8.membrane.core.http.Message;
 
 /**
  * @description Extracts a session ID from an XML HTTP request body based on the qualified name of an XML element.
  */
-@MCElement(name="xmlSessionIdExtractor")
 public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 
 	private static Logger log = LoggerFactory.getLogger(XMLElementSessionIdExtractor.class.getName());
@@ -74,8 +69,8 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 	 * @description Specifies local name of session element.
 	 * @example session
 	 */
-	@Required
-	@MCAttribute
+	
+	
 	public void setLocalName(String localName) {
 		this.localName = localName;
 	}
@@ -88,8 +83,8 @@ public class XMLElementSessionIdExtractor extends AbstractSessionIdExtractor {
 	 * @description Specifies namespace of session element.
 	 * @example http://chat.predic8.com/
 	 */
-	@Required
-	@MCAttribute
+	
+	
 	public void setNamespace(String namespace) {
 		this.namespace = namespace;
 	}

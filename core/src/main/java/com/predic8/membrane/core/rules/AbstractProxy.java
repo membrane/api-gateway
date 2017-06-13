@@ -24,8 +24,6 @@ import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.transport.ssl.GeneratingSSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -79,7 +77,6 @@ public abstract class AbstractProxy implements Rule {
 		return interceptors;
 	}
 
-	@MCChildElement(allowForeign=true, order=100)
 	public void setInterceptors(List<Interceptor> interceptors) {
 		this.interceptors = interceptors;
 	}
@@ -104,7 +101,7 @@ public abstract class AbstractProxy implements Rule {
 	 * @description The name as shown in the Admin Console.
 	 * @default By default, a name will be automatically generated from the target host, port, etc.
 	 */
-	@MCAttribute
+	
 	public void setName(String name) {
 		if (name == null)
 			return;
@@ -120,7 +117,7 @@ public abstract class AbstractProxy implements Rule {
 	 * @description <i>legacy attribute</i> for usage by Membrane Monitor
 	 * @default false
 	 */
-	@MCAttribute
+	
 	public void setBlockRequest(boolean blockStatus) {
 		this.blockRequest = blockStatus;
 	}
@@ -129,7 +126,7 @@ public abstract class AbstractProxy implements Rule {
 	 * @description <i>legacy attribute</i> for usage by Membrane Monitor
 	 * @default false
 	 */
-	@MCAttribute
+	
 	public void setBlockResponse(boolean blockStatus) {
 		this.blockResponse = blockStatus;
 	}
@@ -174,7 +171,6 @@ public abstract class AbstractProxy implements Rule {
 	/**
 	 * @description Configures the usage of inbound SSL (HTTPS).
 	 */
-	@MCChildElement(order=75)
 	public void setSslInboundParser(SSLParser sslInboundParser) {
 		this.sslInboundParser = sslInboundParser;
 	}

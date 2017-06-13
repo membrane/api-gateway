@@ -15,7 +15,7 @@ package com.predic8.membrane.core.interceptor.balancer;
 
 import javax.xml.stream.*;
 
-import com.predic8.membrane.annot.MCElement;
+
 import com.predic8.membrane.core.config.AbstractXmlElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 
@@ -26,7 +26,6 @@ import java.util.List;
  * This strategy is agnostic to every other factor, such as sessions and endpoint performance.
  * All endpoints that are considered to be UP are in.
  */
-@MCElement(name="roundRobinStrategy")
 public class RoundRobinStrategy extends AbstractXmlElement implements DispatchingStrategy {
 
 	private int last = -1;

@@ -38,7 +38,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.schemavalidation.ValidatorInterceptor.FailureHandler;
 import com.predic8.membrane.core.resolver.ResolverMap;
 
 public class JSONValidator implements IValidator {
@@ -47,15 +46,15 @@ public class JSONValidator implements IValidator {
 	private JsonSchema schema;
 	private final ResolverMap resourceResolver;
 	private final String jsonSchema;
-	private final ValidatorInterceptor.FailureHandler failureHandler;
 
 	private final AtomicLong valid = new AtomicLong();
 	private final AtomicLong invalid = new AtomicLong();
 
-	public JSONValidator(ResolverMap resourceResolver, String jsonSchema, ValidatorInterceptor.FailureHandler failureHandler) throws IOException {
+	public JSONValidator(ResolverMap resourceResolver, String jsonSchema
+//          , ValidatorInterceptor.FailureHandler failureHandler
+  ) throws IOException {
 		this.resourceResolver = resourceResolver;
 		this.jsonSchema = jsonSchema;
-		this.failureHandler = failureHandler;
 		createValidators();
 	}
 
@@ -84,18 +83,18 @@ public class JSONValidator implements IValidator {
 			return Outcome.CONTINUE;
 		}
 
-		if (failureHandler == FailureHandler.VOID) {
-			StringBuilder message = new StringBuilder();
-			message.append(source);
-			message.append(": ");
-			for (String error : errors) {
-				message.append(error);
-				message.append(";");
-			}
-			exc.setProperty("error", message.toString());
-			invalid.incrementAndGet();
-			return Outcome.ABORT;
-		}
+//		if (failureHandler == FailureHandler.VOID) {
+//			StringBuilder message = new StringBuilder();
+//			message.append(source);
+//			message.append(": ");
+//			for (String error : errors) {
+//				message.append(error);
+//				message.append(";");
+//			}
+//			exc.setProperty("error", message.toString());
+//			invalid.incrementAndGet();
+//			return Outcome.ABORT;
+//		}
 
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		JsonGenerator jg = new JsonFactory().createGenerator(baos);
@@ -107,18 +106,18 @@ public class JSONValidator implements IValidator {
 			jg.writeString(message);
 		jg.close();
 
-		if (failureHandler != null) {
-			failureHandler.handleFailure(new String(baos.toByteArray(), UTF8), exc);
-			exc.setResponse(Response.badRequest().
-					contentType("application/json;charset=utf-8").
-					body("{\"error\":\"error\"}".getBytes(UTF8)).
-					build());
-		} else {
+//		if (failureHandler != null) {
+//			failureHandler.handleFailure(new String(baos.toByteArray(), UTF8), exc);
+//			exc.setResponse(Response.badRequest().
+//					contentType("application/json;charset=utf-8").
+//					body("{\"error\":\"error\"}".getBytes(UTF8)).
+//					build());
+//		} else {
 			exc.setResponse(Response.badRequest().
 					contentType("application/json;charset=utf-8").
 					body(baos.toByteArray()).
 					build());
-		}
+//		}
 
 		invalid.incrementAndGet();
 		return Outcome.ABORT;

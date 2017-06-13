@@ -63,12 +63,10 @@
 	</mailingLists>
 
 	<modules>
-		<module>annot</module>
 		<module>core</module>
 		<module>distribution</module>
 		<module>osgi</module>
 		<module>osgi-extender</module>
-		<module>war</module>
 		<module>sar</module>
 		<module>test</module>
 	</modules>
@@ -80,7 +78,7 @@
 		<javac.source>1.8</javac.source>
 		<javac.target>1.8</javac.target>
 		<jackson.version>2.8.3</jackson.version> <!-- This version is used by google-http-client-jackson2 -->
-		<spring.version>4.2.3.RELEASE</spring.version>
+		<!--<spring.version>4.2.3.RELEASE</spring.version>-->
 		<jaxws.version>2.2.10</jaxws.version>
 		<slf4j.version>1.7.13</slf4j.version>
 		<felix.osgi.version>1.4.0</felix.osgi.version>
@@ -198,7 +196,8 @@
 
 			<!-- ensure that all spring dependencies (both direct and
 			     transitive) are at the same version -->
-			<dependency>
+           
+<!--			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-framework-bom</artifactId>
 				<version>${spring.version}</version>
@@ -221,7 +220,7 @@
 				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
-				<!-- Used nowhere currently (2015-11-09) -->
+				 Used nowhere currently (2015-11-09) 
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-expression</artifactId>
 				<version>${spring.version}</version>
@@ -230,7 +229,9 @@
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-web</artifactId>
 				<version>${spring.version}</version>
-			</dependency>
+			</dependency>-->
+      
+      
 			<dependency>
 				<groupId>com.googlecode.jatl</groupId>
 				<artifactId>jatl</artifactId>
@@ -402,7 +403,7 @@
 	</dependencyManagement>
 
 
-	<repositories>
+<!--	<repositories>
 		<repository>
 			<id>com.springsource.repository.bundles.external</id>
 			<name>SpringSource Enterprise Bundle Repository - External Bundle Releases</name>
@@ -412,7 +413,7 @@
 			<id>predic8-releases</id>
 			<url>http://repository.membrane-soa.org/content/groups/public</url>
 		</repository>
-	</repositories>
+	</repositories>-->
 
 
 	<build>
@@ -466,7 +467,7 @@
 					</execution>
 				</executions>
 				<configuration>
-					<tags>
+<!--					<tags>
 						<tag>
 							<name>MCAttribute</name>
 							<head>MCAttribute</head>
@@ -502,7 +503,7 @@
 							<head>Topic</head>
 							<placement>a</placement>
 						</tag>
-					</tags>
+					</tags>-->
 				</configuration>
 			</plugin>
 

@@ -20,8 +20,6 @@ import java.util.Map;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import com.google.common.base.Function;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -33,7 +31,6 @@ import com.predic8.membrane.core.util.TextUtil;
 /**
  * @topic 4. Interceptors/Features
  */
-@MCElement(name = "groovy", mixed = true)
 public class GroovyInterceptor extends AbstractInterceptor {
 	private String src = "";
 
@@ -77,7 +74,7 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		HashMap<String, Object> parameters = new HashMap<String, Object>();
 		parameters.put("exc", exc);
 		parameters.put("flow", flow);
-		parameters.put("spring", router.getBeanFactory());
+//		parameters.put("spring", router.getBeanFactory());
 
 		Object res = script.apply(parameters);
 
@@ -101,7 +98,6 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		return src;
 	}
 
-	@MCTextContent
 	public void setSrc(String src) {
 		this.src = src;
 	}

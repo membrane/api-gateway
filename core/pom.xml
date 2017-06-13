@@ -27,10 +27,10 @@
 	</parent>
 
 	<dependencies>
-		<dependency>
+<!--		<dependency>
 			<groupId>org.membrane-soa</groupId>
 			<artifactId>service-proxy-annot</artifactId>
-		</dependency>
+		</dependency>-->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
@@ -100,10 +100,10 @@
 			<groupId>com.predic8</groupId>
 			<artifactId>xmlbeautifier</artifactId>
 		</dependency>
-		<dependency>
+<!--		<dependency>
 			<groupId>javax.annotation</groupId>
 			<artifactId>com.springsource.javax.annotation</artifactId>
-		</dependency>
+		</dependency>-->
 		<dependency>
 			<groupId>commons-fileupload</groupId>
 			<artifactId>commons-fileupload</artifactId>
@@ -130,7 +130,7 @@
 			<groupId>javax.mail</groupId>
 			<artifactId>mail</artifactId>
 		</dependency>
-		<dependency>
+<!--		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-beans</artifactId>
 			<scope>provided</scope>
@@ -144,7 +144,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
-		</dependency>
+		</dependency>-->
 
 		<dependency>
 			<groupId>org.apache.aries.blueprint</groupId>
@@ -198,6 +198,16 @@
 		<dependency>
 			<groupId>io.swagger</groupId>
 			<artifactId>swagger-parser</artifactId>
+		 <exclusions>
+		  <exclusion>
+		   <groupId>io.swagger</groupId>
+		   <artifactId>swagger-annotations</artifactId>
+		  </exclusion>
+		  <exclusion>
+		   <groupId>io.swagger</groupId>
+		   <artifactId>swagger-core</artifactId>
+		  </exclusion>
+		 </exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
@@ -239,9 +249,9 @@
 				<configuration>
 					<source>${javac.source}</source>
 					<target>${javac.target}</target>
-					<annotationProcessors>
+<!--					<annotationProcessors>
 						<annotationProcessor>com.predic8.membrane.annot.SpringConfigurationXSDGeneratingAnnotationProcessor</annotationProcessor>
-					</annotationProcessors>
+					</annotationProcessors>-->
 				</configuration>
 			</plugin>
 

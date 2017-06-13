@@ -14,15 +14,13 @@
 
 package com.predic8.membrane.core.transport.http.client;
 
-import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.core.config.security.SSLParser;
 import org.apache.commons.codec.binary.Base64;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.Constants;
 
-@MCElement(name="proxy", topLevel=false, id="proxy-configuration")
 public class ProxyConfiguration {
 
 	public static final String ATTRIBUTE_ACTIVE = "active";
@@ -45,7 +43,7 @@ public class ProxyConfiguration {
 		return host;
 	}
 
-	@MCAttribute
+	
 	public void setHost(String host) {
 		this.host = host;
 	}
@@ -54,7 +52,7 @@ public class ProxyConfiguration {
 		return port;
 	}
 
-	@MCAttribute
+	
 	public void setPort(int proxyPort) {
 		this.port = proxyPort;
 	}
@@ -63,7 +61,7 @@ public class ProxyConfiguration {
 		return password;
 	}
 
-	@MCAttribute
+	
 	public void setPassword(String password) {
 		this.password = password;
 	}
@@ -72,7 +70,7 @@ public class ProxyConfiguration {
 		return username;
 	}
 
-	@MCAttribute
+	
 	public void setUsername(String username) {
 		this.username = username;
 	}
@@ -81,7 +79,7 @@ public class ProxyConfiguration {
 		return authentication;
 	}
 
-	@MCAttribute
+	
 	public void setAuthentication(boolean authentication) {
 		this.authentication = authentication;
 	}
@@ -90,7 +88,7 @@ public class ProxyConfiguration {
 		return sslParser;
 	}
 
-	@MCChildElement
+	
 	public void setSslParser(SSLParser sslParser) {
 		this.sslParser = sslParser;
 	}

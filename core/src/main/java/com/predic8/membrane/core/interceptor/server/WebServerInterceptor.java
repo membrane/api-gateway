@@ -13,8 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.server;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -25,7 +25,6 @@ import com.predic8.membrane.core.util.TextUtil;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,7 +49,6 @@ import static com.predic8.membrane.core.util.HttpUtil.createHeaders;
  * </p>
  * @topic 4. Interceptors/Features
  */
-@MCElement(name = "webServer")
 public class WebServerInterceptor extends AbstractInterceptor {
 
     private static Logger log = LoggerFactory.getLogger(WebServerInterceptor.class
@@ -204,8 +202,8 @@ public class WebServerInterceptor extends AbstractInterceptor {
      * @default docBase
      * @example docBase
      */
-    @Required
-    @MCAttribute
+    
+    
     public void setDocBase(String docBase) {
         //if(!docBase.endsWith("/"))
         //	docBase = docBase + "/";
@@ -234,7 +232,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         return StringUtils.join(index, ",");
     }
 
-    @MCAttribute
+    
     public void setIndex(String i) {
         if (i == null)
             index = EMPTY;
@@ -246,7 +244,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
         return generateIndex;
     }
 
-    @MCAttribute
+    
     public void setGenerateIndex(boolean generateIndex) {
         this.generateIndex = generateIndex;
     }

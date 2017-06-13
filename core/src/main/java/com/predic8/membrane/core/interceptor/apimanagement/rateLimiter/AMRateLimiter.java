@@ -16,7 +16,7 @@ package com.predic8.membrane.core.interceptor.apimanagement.rateLimiter;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.predic8.membrane.annot.MCElement;
+
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
@@ -40,7 +40,6 @@ import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@MCElement(name="amRateLimiter")
 public class AMRateLimiter {
 
     private static Logger log = LoggerFactory.getLogger(AMRateLimiter.class);

@@ -19,8 +19,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
+
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.interceptor.DispatchingInterceptor;
 import com.predic8.membrane.core.interceptor.ExchangeStoreInterceptor;
@@ -49,7 +48,6 @@ public abstract class Transport {
 		return interceptors;
 	}
 
-	@MCChildElement(allowForeign=true)
 	public void setInterceptors(List<Interceptor> interceptors) {
 		this.interceptors = interceptors;
 	}
@@ -83,7 +81,7 @@ public abstract class Transport {
 	 * @description Whether the stack traces of exceptions thrown by interceptors should be returned in the HTTP response.
 	 * @default false
 	 */
-	@MCAttribute
+	
 	public void setPrintStackTrace(boolean printStackTrace) {
 		this.printStackTrace = printStackTrace;
 	}
@@ -105,7 +103,7 @@ public abstract class Transport {
 	 * @description Whether the remote address should automatically reverse-looked up for incoming connections.
 	 * @default true
 	 */
-	@MCAttribute
+	
 	public void setReverseDNS(boolean reverseDNS) {
 		this.reverseDNS = reverseDNS;
 	}

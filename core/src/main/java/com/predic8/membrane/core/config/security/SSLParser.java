@@ -14,15 +14,11 @@
 package com.predic8.membrane.core.config.security;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 
 /**
  * @description <p>Configures inbound or outbound SSL connections.</p>
  * @topic 6. Security
  */
-@MCElement(name="ssl")
 public class SSLParser {
 
 	private KeyStore keyStore;
@@ -64,7 +60,6 @@ public class SSLParser {
 		return keyStore;
 	}
 
-	@MCChildElement(order=1)
 	public void setKeyStore(KeyStore keyStore) {
 		this.keyStore = keyStore;
 	}
@@ -76,7 +71,6 @@ public class SSLParser {
 	/**
 	 * @description Used to manually compose the keystore.
 	 */
-	@MCChildElement(order=2)
 	public void setKey(Key key) {
 		this.key = key;
 	}
@@ -88,7 +82,6 @@ public class SSLParser {
 	/**
 	 * @description Used to dynamically generate a key for the incoming connection on the fly.
 	 */
-	@MCChildElement(order=3)
 	public void setKeyGenerator(KeyGenerator keyGenerator) {
 		this.keyGenerator = keyGenerator;
 	}
@@ -97,7 +90,6 @@ public class SSLParser {
 		return trustStore;
 	}
 
-	@MCChildElement(order=4)
 	public void setTrustStore(TrustStore trustStore) {
 		this.trustStore = trustStore;
 	}
@@ -111,7 +103,6 @@ public class SSLParser {
 	 * @default java default
 	 * @example SunX509
 	 */
-	@MCAttribute
 	public void setAlgorithm(String algorithm) {
 		this.algorithm = algorithm;
 	}
@@ -124,7 +115,7 @@ public class SSLParser {
 	 * @description <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/SSLContext.html#getInstance%28java.lang.String%29">SSLContext.getInstance()</a>
 	 * @default TLS
 	 */
-	@MCAttribute
+	
 	public void setProtocol(String protocol) {
 		this.protocol = protocol;
 	}
@@ -137,7 +128,7 @@ public class SSLParser {
 	 * @description <a href="http://docs.oracle.com/javase/6/docs/api/javax/net/ssl/SSLSocket.html#setEnabledProtocols%28java.lang.String[]%29">SSLSocket.setEnabledProtocols()</a>
 	 * @default TLS*
 	 */
-	@MCAttribute
+	
 	public void setProtocols(String protocols) {
 		this.protocols = protocols;
 	}
@@ -151,7 +142,7 @@ public class SSLParser {
 	 * @default all system default ciphers
 	 * @example TLS_ECDH_anon_WITH_RC4_128_SHA
 	 */
-	@MCAttribute
+	
 	public void setCiphers(String ciphers) {
 		this.ciphers = ciphers;
 	}
@@ -165,7 +156,7 @@ public class SSLParser {
 	 * @default <i>not set</i>
 	 * @example <tt>need</tt>
 	 */
-	@MCAttribute
+	
 	public void setClientAuth(String clientAuth) {
 		this.clientAuth = clientAuth;
 	}
@@ -174,7 +165,7 @@ public class SSLParser {
 		return ignoreTimestampCheckFailure;
 	}
 
-	@MCAttribute
+	
 	public void setIgnoreTimestampCheckFailure(boolean ignoreTimestampCheckFailure) {
 		this.ignoreTimestampCheckFailure = ignoreTimestampCheckFailure;
 	}
@@ -186,7 +177,6 @@ public class SSLParser {
 	/**
 	 * @description Used to manually compose the truststore.
      */
-	@MCChildElement(order=5)
 	public void setTrust(Trust trust) {
 		this.trust = trust;
 	}
@@ -199,7 +189,7 @@ public class SSLParser {
 	 * @description See <a href="http://docs.oracle.com/javase/7/docs/api/javax/net/ssl/SSLParameters.html#setEndpointIdentificationAlgorithm%28java.lang.String%29">setEndpointIdentificationAlgorithm()</a>.
 	 * @default HTTPS
      */
-	@MCAttribute
+	
 	public void setEndpointIdentificationAlgorithm(String endpointIdentificationAlgorithm) {
 		this.endpointIdentificationAlgorithm = endpointIdentificationAlgorithm;
 	}
@@ -213,7 +203,7 @@ public class SSLParser {
 	*		 TLS connections to indicate to the TLS server, which hostname the client wants to connect to.
 	* @default same as target hostname.
 	 */
-	@MCAttribute
+	
 	public void setServerName(String serverName) {
 		this.serverName = serverName;
 	}
@@ -226,7 +216,7 @@ public class SSLParser {
 	 * @description Tells Membrane to show SSL exceptions in its log
 	 * @default true
 	 */
-	@MCAttribute
+	
 	public void setShowSSLExceptions(boolean showSSLExceptions) {
 		this.showSSLExceptions = showSSLExceptions;
 	}

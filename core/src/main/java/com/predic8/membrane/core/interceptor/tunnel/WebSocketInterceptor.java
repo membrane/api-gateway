@@ -13,16 +13,12 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.tunnel;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.util.URLUtil;
-import org.joda.time.format.PeriodFormat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +30,6 @@ import java.util.List;
  *              and not inspected.
  * @default false
  */
-@MCElement(name = "webSocket")
 public class WebSocketInterceptor extends AbstractInterceptor {
 	private String url;
 	private String pathQuery;
@@ -78,7 +73,7 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 	 * 61614 and expects the incoming WebSocket connection to have a path '/' and empty query.)
 	 * @example http://localhost:61614/
 	 */
-	@MCAttribute
+	
 	public void setUrl(String url) {
 		this.url = url;
 	}
@@ -87,7 +82,7 @@ public class WebSocketInterceptor extends AbstractInterceptor {
 		return interceptors;
 	}
 
-	@MCChildElement
+	
 	public void setInterceptors(List<WebSocketInterceptorInterface> interceptors) {
 		this.interceptors = interceptors;
 	}

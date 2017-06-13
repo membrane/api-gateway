@@ -40,7 +40,7 @@ public class IllegalCharactersInURLTest {
 	@Before
 	public void init() throws Exception {
 		r = new HttpRouter();
-		r.setHotDeploy(false);
+//		r.setHotDeploy(false);
 		r.add(new ServiceProxy(new ServiceProxyKey(3027), "localhost", 3028));
 		ServiceProxy sp2 = new ServiceProxy(new ServiceProxyKey(3028), null, 80);
 		sp2.getInterceptors().add(new AbstractInterceptor() {

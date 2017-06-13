@@ -15,16 +15,13 @@
 package com.predic8.membrane.core.config.security;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name="keystore")
 public class KeyStore extends Store {
 
 	private String keyPassword;
 	private String keyAlias;
 
-	@Override
+  @Override
 	public boolean equals(Object obj) {
 		if (!(obj instanceof KeyStore))
 			return false;
@@ -39,7 +36,6 @@ public class KeyStore extends Store {
 		return keyPassword;
 	}
 
-	@MCAttribute
 	public void setKeyPassword(String keyPassword) {
 		this.keyPassword = keyPassword;
 	}
@@ -48,7 +44,6 @@ public class KeyStore extends Store {
 		return keyAlias;
 	}
 
-	@MCAttribute
 	public void setKeyAlias(String keyAlias) {
 		this.keyAlias = keyAlias;
 	}

@@ -15,9 +15,8 @@ limitations under the License. */
 package com.predic8.membrane.core.rules;
 
 import com.google.common.base.Objects;
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
+
+
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -31,7 +30,6 @@ import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -39,14 +37,12 @@ import java.net.SocketException;
 import java.util.List;
 import java.util.Map;
 
-@MCElement(name="sslProxy")
 public class SSLProxy implements Rule {
     private static Logger log = LoggerFactory.getLogger(SSLProxy.class.getName());
 
     private Target target;
     private ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
 
-    @MCElement(id = "sslProxy-target", name="target", topLevel = false)
     public static class Target {
         private int port = -1;
         private String host;
@@ -55,7 +51,7 @@ public class SSLProxy implements Rule {
             return port;
         }
 
-        @MCAttribute
+        
         public void setPort(int port) {
             this.port = port;
         }
@@ -64,7 +60,7 @@ public class SSLProxy implements Rule {
             return host;
         }
 
-        @MCAttribute
+        
         public void setHost(String host) {
             this.host = host;
         }
@@ -74,7 +70,6 @@ public class SSLProxy implements Rule {
         return connectionConfiguration;
     }
 
-    @MCChildElement(order = 0)
     public void setConnectionConfiguration(ConnectionConfiguration connectionConfiguration) {
         this.connectionConfiguration = connectionConfiguration;
     }
@@ -83,8 +78,7 @@ public class SSLProxy implements Rule {
         return target;
     }
 
-    @Required
-    @MCChildElement(order = 100)
+    
     public void setTarget(Target target) {
         this.target = target;
     }
@@ -115,7 +109,7 @@ public class SSLProxy implements Rule {
         return port;
     }
 
-    @MCAttribute
+    
     public void setPort(int port) {
         this.port = port;
     }
@@ -126,7 +120,7 @@ public class SSLProxy implements Rule {
         return host;
     }
 
-    @MCAttribute
+    
     public void setHost(String host) {
         this.host = host;
     }

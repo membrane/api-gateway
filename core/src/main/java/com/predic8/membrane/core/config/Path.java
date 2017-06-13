@@ -14,10 +14,6 @@
 
 package com.predic8.membrane.core.config;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
-
 /**
  * @explanation <p>
  *              The value of the content will be taken to match the path.
@@ -33,7 +29,6 @@ import com.predic8.membrane.annot.MCTextContent;
  *              attribute must not be present.
  *              </p>
  */
-@MCElement(name="path", topLevel=false, mixed=true)
 public class Path {
 
 	public static final String ELEMENT_NAME = "path";
@@ -59,7 +54,6 @@ public class Path {
 	 * @default false
 	 * @example true
 	 */
-	@MCAttribute(attributeName="isRegExp")
 	public void setRegExp(boolean regExp) {
 		this.regExp = regExp;
 	}
@@ -68,7 +62,6 @@ public class Path {
 		return value;
 	}
 
-	@MCTextContent
 	public void setValue(String value) {
 		this.value = value;
 	}

@@ -16,10 +16,7 @@ package com.predic8.membrane.core.util;
 
 import java.net.URISyntaxException;
 
-import com.predic8.membrane.annot.MCAttribute;
-import com.predic8.membrane.annot.MCElement;
 
-@MCElement(name = "uriFactory")
 public class URIFactory {
 
 	private boolean allowIllegalCharacters;
@@ -37,7 +34,7 @@ public class URIFactory {
 		return allowIllegalCharacters;
 	}
 
-	@MCAttribute
+	
 	public void setAllowIllegalCharacters(boolean allowIllegalCharacters) {
 		this.allowIllegalCharacters = allowIllegalCharacters;
 	}
@@ -46,7 +43,7 @@ public class URIFactory {
 		return autoEscapeBackslashes;
 	}
 
-	@MCAttribute
+	
 	public void setAutoEscapeBackslashes(boolean autoEscapeBackslashes) {
 		this.autoEscapeBackslashes = autoEscapeBackslashes;
 	}

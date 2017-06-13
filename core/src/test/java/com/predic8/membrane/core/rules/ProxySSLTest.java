@@ -62,7 +62,7 @@ public class ProxySSLTest {
     public void test() throws Exception {
         // Step 1: create the backend
         Router backend = new Router();
-        backend.setHotDeploy(false);
+//        backend.setHotDeploy(false);
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(backendPort), null, 0);
         if (backendUsesSSL) {
             SSLParser ssl = new SSLParser();
@@ -81,7 +81,7 @@ public class ProxySSLTest {
         AtomicInteger proxyCounter = new AtomicInteger();
 
         Router proxyRouter = new Router();
-        proxyRouter.setHotDeploy(false);
+//        proxyRouter.setHotDeploy(false);
         ProxyRule proxy = new ProxyRule(new ProxyRuleKey(proxyPort));
         proxy.getInterceptors().add(new AbstractInterceptor() {
             @Override

@@ -27,7 +27,6 @@ import org.xml.sax.helpers.XMLReaderFactory;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.http.Message;
 import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.interceptor.schemavalidation.SOAPXMLFilter;
 
 public class MessageUtil {
 
@@ -47,10 +46,6 @@ public class MessageUtil {
 			return ByteUtil.getDecompressedData(res.getBody().getContent());
 		}
 		return res.getBody().getContent();
-	}
-
-	public static Source getSOAPBody(InputStream stream) throws Exception {
-		return new SAXSource(new SOAPXMLFilter(XMLReaderFactory.createXMLReader()), new InputSource(stream));
 	}
 
 	public static Request getGetRequest(String uri) {

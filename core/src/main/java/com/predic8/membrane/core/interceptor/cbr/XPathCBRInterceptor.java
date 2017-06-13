@@ -25,12 +25,9 @@ import javax.xml.xpath.XPathConstants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
 import org.xml.sax.InputSource;
 
 import com.googlecode.jatl.Html;
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
@@ -41,7 +38,6 @@ import com.predic8.membrane.core.util.TextUtil;
  * @description Changes an exchange's target based on a series of XPath expressions.
  * @topic 3. Enterprise Integration Patterns
  */
-@MCElement(name="switch")
 public class XPathCBRInterceptor extends AbstractInterceptor {
 	private static Logger log = LoggerFactory.getLogger(XPathCBRInterceptor.class.getName());
 
@@ -97,8 +93,8 @@ public class XPathCBRInterceptor extends AbstractInterceptor {
 	/**
 	 * @description Specifies a XPath expression and a target URL.
 	 */
-	@Required
-	@MCChildElement
+	
+	
 	public void setCases(List<Case> cases) {
 		this.cases = cases;
 	}

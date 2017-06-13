@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.google.common.collect.Lists;
-import com.predic8.membrane.annot.MCElement;
+
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
@@ -34,7 +34,6 @@ import com.predic8.membrane.core.util.ByteUtil;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 
-@MCElement(name = "httpSchemaResolver")
 public class HTTPSchemaResolver implements SchemaResolver {
 
     private ConcurrentHashMap<String,String> watchedUrlMd5s = new ConcurrentHashMap<String,String>();

@@ -22,11 +22,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.predic8.membrane.annot.MCChildElement;
-import com.predic8.membrane.annot.MCElement;
+
 import com.predic8.membrane.core.config.AbstractXmlElement;
 
-@MCElement(name="clusters", topLevel=false)
 public class Balancer extends AbstractXmlElement {
 	public static final String DEFAULT_NAME = "Default";
 	private static Logger log = LoggerFactory.getLogger(Balancer.class.getName());
@@ -109,7 +107,7 @@ public class Balancer extends AbstractXmlElement {
 	/**
 	 * @description A list of clusters.
 	 */
-	@MCChildElement
+	
 	public void setClusters(List<Cluster> clusters) {
 		this.clusters.clear();
 		for (Cluster cluster : clusters)
