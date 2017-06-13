@@ -1,6 +1,0 @@
-<server>
-		<mbean code="com.predic8.membrane.core.RouterService" name="com.predic8:service=RouterService">
-			 <attribute name="MonitorBeansXml">classpath:/META-INF/monitor-beans.xml</attribute>			
-			 <attribute name="ProxiesXml">classpath:/META-INF/proxies.xml</attribute>			
-		</mbean>
-</server>

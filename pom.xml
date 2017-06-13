@@ -65,9 +65,6 @@
 	<modules>
 		<module>core</module>
 		<module>distribution</module>
-		<module>osgi</module>
-		<module>osgi-extender</module>
-		<module>sar</module>
 		<module>test</module>
 	</modules>
 
