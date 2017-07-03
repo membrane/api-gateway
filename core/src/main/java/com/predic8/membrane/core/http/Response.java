@@ -33,7 +33,7 @@ import com.predic8.membrane.core.util.HttpUtil;
 public class Response extends Message {
 
 	private static final Log LOG = LogFactory.getLog(Response.class.getName());
-	private static final Pattern pattern = Pattern.compile("HTTP/(.+?) (.+?) (.+?)$");
+	private static final Pattern pattern = Pattern.compile("HTTP/(\\d\\.\\d) (\\d\\d\\d)( (.*?))?$");
 
 	private int statusCode;
 	private String statusMessage;
@@ -304,11 +304,11 @@ public class Response extends Message {
 		boolean find = matcher.find();
 
 		if (!find) {
-			return;
+			throw new RuntimeException("Invalid server response: " + line);
 		}
 		version = matcher.group(1);
 		statusCode = Integer.parseInt(matcher.group(2));
-		statusMessage = matcher.group(3);
+		statusMessage = matcher.group(4);
 
 	}
 

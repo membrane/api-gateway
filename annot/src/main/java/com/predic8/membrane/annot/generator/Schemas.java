@@ -80,13 +80,13 @@ public class Schemas {
 				"\r\n" +
 				"<xsd:simpleType name=\"spel_number\">\r\n" + 
 				"    <xsd:restriction base=\"xsd:string\">\r\n" + 
-				"        <xsd:pattern value=\"-?[0-9]+|\\#\\{.*\\}\"></xsd:pattern>\r\n" +
+				"        <xsd:pattern value=\"-?[0-9]+|\\#\\{.*\\}|\\$\\{.*\\}\"></xsd:pattern>\r\n" +
 				"    </xsd:restriction>\r\n" + 
 				"</xsd:simpleType>\r\n" + 
 				"\r\n" + 
 				"<xsd:simpleType name=\"spel_boolean\">\r\n" + 
 				"    <xsd:restriction base=\"xsd:string\">\r\n" + 
-				"        <xsd:pattern value=\"[01]|true|false|\\#\\{.*\\}\"></xsd:pattern>\r\n" + 
+				"        <xsd:pattern value=\"[01]|true|false|\\#\\{.*\\}|\\$\\{.*\\}\"></xsd:pattern>\r\n" +
 				"    </xsd:restriction>\r\n" + 
 				"</xsd:simpleType>\r\n\r\n");
 		assembleDeclarations(w, m, main);
