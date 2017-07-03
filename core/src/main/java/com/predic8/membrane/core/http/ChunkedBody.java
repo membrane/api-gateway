@@ -136,6 +136,7 @@ public class ChunkedBody extends AbstractBody {
 		inputStream.read(); // CR
 		inputStream.read(); // LF-
 		out.finish();
+		markAsRead();
 	}
 
 	protected int getRawLength() throws IOException {

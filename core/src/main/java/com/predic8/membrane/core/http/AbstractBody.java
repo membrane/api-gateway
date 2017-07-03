@@ -47,6 +47,7 @@ public abstract class AbstractBody {
 
 	protected List<Chunk> chunks = new ArrayList<Chunk>();
 	protected List<MessageObserver> observers = new ArrayList<MessageObserver>(1);
+	private boolean wasStreamed = false;
 
 	public void read() throws IOException {
 		if (read)
@@ -116,8 +117,10 @@ public abstract class AbstractBody {
 					observer.bodyRequested(this);
 
 				writeNotRead(out);
-			}else
+			}else {
 				writeStreamed(out);
+				wasStreamed = true;
+			}
 			return;
 		}
 
@@ -206,5 +209,13 @@ public abstract class AbstractBody {
 
 	List<MessageObserver> getObservers() {
 		return observers;
+	}
+
+	public boolean wasStreamed() {
+		return wasStreamed;
+	}
+
+	public void setWasStreamed(boolean wasStreamed) {
+		this.wasStreamed = wasStreamed;
 	}
 }

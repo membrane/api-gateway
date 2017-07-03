@@ -14,39 +14,29 @@
 
 package com.predic8.membrane.core.transport.http;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.MalformedURLException;
-import java.net.SocketException;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-
-import javax.annotation.concurrent.GuardedBy;
-
-import com.predic8.membrane.core.resolver.ResolverMap;
-import com.predic8.membrane.core.transport.ssl.SSLContext;
-import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.ChunkedBodyTransferrer;
-import com.predic8.membrane.core.http.Header;
-import com.predic8.membrane.core.http.PlainBodyTransferrer;
-import com.predic8.membrane.core.http.Request;
-import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.http.*;
 import com.predic8.membrane.core.model.AbstractExchangeViewerListener;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.transport.http.client.AuthenticationConfiguration;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 import com.predic8.membrane.core.transport.http.client.ProxyConfiguration;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.annotation.concurrent.GuardedBy;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.*;
+import java.nio.ByteBuffer;
 
 /**
  * HttpClient with possibly multiple selectable destinations, with internal logic to auto-retry and to
@@ -173,6 +163,7 @@ public class HttpClient {
 		Exception exception = null;
 		Object trackNodeStatusObj = exc.getProperty(Exchange.TRACK_NODE_STATUS);
 		boolean trackNodeStatus = trackNodeStatusObj != null && trackNodeStatusObj instanceof Boolean && (Boolean)trackNodeStatusObj;
+		disableStreamingForRetries(exc);
 		while (counter < maxRetries) {
 			Connection con = null;
 			String dest = getDestination(exc, counter);
@@ -288,6 +279,19 @@ public class HttpClient {
 			}
 		}
 		throw exception;
+	}
+
+	private void disableStreamingForRetries(Exchange exc) {
+		if(maxRetries > 1)
+			exc.getRequest().addObserver(new MessageObserver() {
+				@Override
+				public void bodyRequested(AbstractBody body) {
+				}
+
+				@Override
+				public void bodyComplete(AbstractBody body) {
+				}
+			});
 	}
 
 	private String getSNIServerName(Exchange exc) {
