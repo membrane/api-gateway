@@ -45,4 +45,10 @@ public class URLUtilTest {
 		assertEquals("", parseQueryString("name=anna&age=").get("age"));
 	}
 
+	@Test
+	public void testDecodePath() throws Exception{
+		URI u = new URI(true,"/path/to%20my/resource");
+		assertEquals("/path/to my/resource", u.getPath());
+		assertEquals("/path/to%20my/resource",u.getRawPath());
+	}
 }

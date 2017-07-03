@@ -52,6 +52,7 @@ public class ConfigSerializationTest {
 	// list of examples that do not work
 	public static List<String> EXCLUDED = Arrays.asList(new String[] {
 			"custom-interceptor", // has external classpath dependencies
+			"custom-websocket-interceptor", // has external classpath dependencies
 			"logging-jdbc", // contains a reference to a DataSource bean (not serializable)
 			"proxy" // contains more than one <router> (not supported by MCUtil#fromXML())
 	});

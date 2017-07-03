@@ -190,8 +190,12 @@ public class ResponseTest {
 		assertEquals(res3.getStatusCode(), resTemp.getStatusCode());
 		assertEquals(res3.getStatusMessage(), resTemp.getStatusMessage());
 
-		assertEquals(res3.getBody().getContent().length, resTemp.getBody().getContent().length);
-		assertTrue(Arrays.equals(res3.getBody().getContent(), resTemp.getBody().getContent()));
+		if(!res3.getBody().wasStreamed()) {
+			assertEquals(res3.getBody().getContent().length, resTemp.getBody().getContent().length);
+			assertTrue(Arrays.equals(res3.getBody().getContent(), resTemp.getBody().getContent()));
+		}else
+			assertEquals(res3.getBody().getContent().length, 0);
+
 	}
 
 	@Test

@@ -72,6 +72,12 @@ public class URI {
 		return pathDecoded;
 	}
 
+	public String getRawPath() {
+		if(uri != null)
+			return uri.getRawPath();
+		return path;
+	}
+
 	public String getQuery() {
 		if (uri != null)
 			return uri.getQuery();
