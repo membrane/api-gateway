@@ -3,7 +3,7 @@ Membrane Service Proxy
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
 
-Reverse HTTP proxy framework written in Java, licensed under ASF 2.0, that can be used
+Reverse HTTP proxy framework written in Java, that can be used
 
 *   as an API Gateway
 *   for HTTP based integration
@@ -29,7 +29,7 @@ Run the samples in the examples directory or go to the [website](http://membrane
 Samples
 -------
 
-### Web Services
+### REST
 
 Hosting virtual REST services is easy:
 ```xml
@@ -38,6 +38,8 @@ Hosting virtual REST services is easy:
     <target host="www.thomas-bayer.com" />
 </serviceProxy>
 ```
+
+### SOAP
 
 SOAP proxies configure themselves by analysing WSDL:
 ```xml
