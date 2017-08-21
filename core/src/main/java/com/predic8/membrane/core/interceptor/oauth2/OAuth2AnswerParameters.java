@@ -15,9 +15,11 @@ package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JSR310Module;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 
 public class OAuth2AnswerParameters {
@@ -26,6 +28,9 @@ public class OAuth2AnswerParameters {
     private String tokenType;
     private String idToken;
     private HashMap<String,String> userinfo = new HashMap<String, String>();
+    private String expiration;
+    private LocalDateTime receivedAt;
+    private String refreshToken;
 
     public String getAccessToken() {
         return accessToken;
@@ -60,10 +65,40 @@ public class OAuth2AnswerParameters {
     }
 
     public String serialize() throws JsonProcessingException, UnsupportedEncodingException {
-        return OAuth2Util.urlencode(new ObjectMapper().writeValueAsString(this));
+        return OAuth2Util.urlencode(getObjectMapper().writeValueAsString(this));
     }
 
     public static OAuth2AnswerParameters deserialize(String oauth2answer) throws IOException {
-        return new ObjectMapper().readValue(OAuth2Util.urldecode(oauth2answer),OAuth2AnswerParameters.class);
+        return getObjectMapper().readValue(OAuth2Util.urldecode(oauth2answer),OAuth2AnswerParameters.class);
+    }
+
+    private static ObjectMapper getObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JSR310Module());
+        return mapper;
+    }
+
+    public void setExpiration(String expiration) {
+        this.expiration = expiration;
+    }
+
+    public String getExpiration() {
+        return expiration;
+    }
+
+    public void setReceivedAt(LocalDateTime receivedAt) {
+        this.receivedAt = receivedAt;
+    }
+
+    public LocalDateTime getReceivedAt() {
+        return receivedAt;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 }

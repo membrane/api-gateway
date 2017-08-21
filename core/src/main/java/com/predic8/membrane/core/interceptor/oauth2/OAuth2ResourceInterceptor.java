@@ -48,8 +48,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -239,6 +241,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 session.clear();
         }
 
+
+        if(refreshingOfAccessTokenIsNeeded(session))
+            refreshAccessToken(session);
+
         if (session.isAuthorized()) {
             exc.setProperty(Exchange.OAUTH2,OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
             applyBackendAuthorization(exc, session);
@@ -254,7 +260,49 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         return respondWithRedirect(exc);
     }
 
+    private void refreshAccessToken(Session session) throws Exception {
+        OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER));
+        Exchange refreshTokenExchange = new Request.Builder()
+                .post(auth.getTokenEndpoint())
+                .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                .header(Header.ACCEPT, "application/json")
+                .header(Header.USER_AGENT, Constants.USERAGENT)
+                .body("&grant_type=refresh_token"
+                        + "&refresh_token=" + oauth2Params.getRefreshToken())
+                .buildExchange();
+
+        Response refreshTokenResponse = auth.doRequest(refreshTokenExchange);
+        if(!refreshTokenResponse.isOk()){
+            refreshTokenResponse.getBody().read();
+            throw new RuntimeException("Statuscode from authorization server for refresh token request: " + refreshTokenResponse.getStatusCode());
+        }
+
+        HashMap<String, String> json = Util.parseSimpleJSONResponse(refreshTokenResponse);
+        oauth2Params.setAccessToken(json.get("access_token"));
+        oauth2Params.setRefreshToken(json.get("refresh_token"));
+        oauth2Params.setExpiration(json.get("expires_in"));
+        oauth2Params.setReceivedAt(LocalDateTime.now());
+        if(json.containsKey("id_token")) {
+            if (idTokenIsValid(json.get("id_token")))
+                oauth2Params.setIdToken(json.get("id_token"));
+            else
+                oauth2Params.setIdToken("INVALID");
+        }
+
+        session.getUserAttributes().put(OAUTH2_ANSWER,oauth2Params.serialize());
+    }
+
+    private boolean refreshingOfAccessTokenIsNeeded(Session session) throws IOException {
+        if(session.getUserAttributes().get(OAUTH2_ANSWER) == null)
+            return false;
+
+        OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER));
+
+        return LocalDateTime.now().isAfter(oauth2Params.getReceivedAt().plusSeconds(Long.parseLong(oauth2Params.getExpiration())).minusSeconds(60)); // refresh token 60 seconds before expiration
+    }
+
     private HashMap<String, String> revalidateToken(OAuth2AnswerParameters params) throws Exception {
+
         Exchange e2 = new Request.Builder()
                 .get(auth.getUserInfoEndpoint())
                 .header("Authorization", params.getTokenType() + " " + params.getAccessToken())
@@ -495,7 +543,6 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 if (log.isDebugEnabled())
                     logi.handleResponse(e);
 
-
                 HashMap<String, String> json = Util.parseSimpleJSONResponse(response);
 
                 if (!json.containsKey("access_token"))
@@ -511,6 +558,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 oauth2Answer.setAccessToken(token);
                 oauth2Answer.setTokenType(json.get("token_type"));
+                oauth2Answer.setExpiration(json.get("expires_in"));
+                oauth2Answer.setRefreshToken(json.get("refresh_token"));
+                oauth2Answer.setReceivedAt(LocalDateTime.now());
                 if(json.containsKey("id_token")) {
                     if (idTokenIsValid(json.get("id_token")))
                         oauth2Answer.setIdToken(json.get("id_token"));
