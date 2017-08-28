@@ -10,9 +10,6 @@ Reverse HTTP proxy framework written in Java, that can be used
 *   as a security proxy
 *   as a WebSockets and STOMP router
 
-
-To get started, follow the [REST](http://membrane-soa.org/esb-doc/current/rest-quickstart.htm) and [SOAP](http://membrane-soa.org/esb-doc/current/soap-quickstart.htm) tutorials or have a look at the [examples](http://membrane-soa.org/esb-doc/current/interceptors/examples.htm) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
-
 Get Started
 -----------
 
@@ -24,7 +21,7 @@ Start `service-proxy.sh` or `service-proxy.bat`.
 
 Have a look at the main configuration file `conf/proxies.xml`. Changes to this file are instantly deployed.
 
-Run the samples in the examples directory or go to the [website](http://membrane-soa.org/service-proxy/) for more documentation.
+Run the samples in the examples folder, follow the [REST](https://www.membrane-soa.org/service-proxy-doc/4.4/rest-quickstart.htm) or [SOAP](https://www.membrane-soa.org/service-proxy-doc/4.4/soap-quickstart.htm) tutorials, see the [Documentation](https://www.membrane-soa.org/service-proxy-doc/) or the [FAQ](https://github.com/membrane/service-proxy/wiki/Membrane-Service-Proxy-FAQ).
 
 Samples
 -------
