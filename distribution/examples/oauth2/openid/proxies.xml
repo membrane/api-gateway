@@ -7,6 +7,7 @@
     <router>
         <serviceProxy name="Membrane Resource service" port="8080">
 
+            <!-- Protects a resource with OAuth2 - blocks on invalid login -->
             <oauth2Resource>
                 <membrane subject="sub" src="https://accounts.google.com" clientId="YOUR CLIENT ID HERE" clientSecret="YOUR CLIENT SECRET HERE" scope="openid email profile" claims="name" claimsIdt="email" />
             </oauth2Resource>
@@ -20,8 +21,17 @@
                 CONTINUE
             </groovy>
 
-            <target host="thomas-bayer.com" port="80"/>
+            <!-- Route to the protected resource on valid access token -->
+            <target host="localhost" port="2002"/>
 
+        </serviceProxy>
+
+        <!-- Protected resource -->
+        <serviceProxy port="2002">
+            <groovy>
+                exc.setResponse(Response.ok("Hello " + exc.request.header.getFirstValue("X-EMAIL")).build())
+                RETURN
+            </groovy>
         </serviceProxy>
 
         <serviceProxy port="9001">
