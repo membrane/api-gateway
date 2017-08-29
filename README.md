@@ -3,11 +3,11 @@ Membrane Service Proxy
 [![GitHub release](https://img.shields.io/github/release/membrane/service-proxy.svg)](https://github.com/membrane/service-proxy/releases/latest)
 [![Hex.pm](https://img.shields.io/hexpm/l/plug.svg)](https://raw.githubusercontent.com/membrane/service-proxy/master/distribution/router/LICENSE.txt)
 
-Reverse HTTP proxy framework written in Java, that can be used
+Reverse HTTP proxy (framework) written in Java, that can be used
 
-*   as an API Gateway
-*   for HTTP based integration
+*   as an API gateway
 *   as a security proxy
+*   for HTTP based integration
 *   as a WebSockets and STOMP router
 
 Get Started
@@ -28,23 +28,34 @@ Samples
 
 ### REST
 
-Hosting virtual REST services is easy:
+Routing requests from localhost:80 to localhost:8080 :
 ```xml
 <serviceProxy port="80">
-    <path>/restnames/</path>
-    <target host="www.thomas-bayer.com" />
+    <target host="localhost" port="8080" />
 </serviceProxy>
 ```
+
+Routing only requests with path /foo :
+
+```xml
+<serviceProxy port="80">
+    <path>/foo</path>
+    <target host="localhost" port="8080" />
+</serviceProxy>
+```
+
 
 ### SOAP
 
 SOAP proxies configure themselves by analysing WSDL:
+
 ```xml
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
 </soapProxy>
 ```
 
 Add features like logging or XML Schema validation against a WSDL document:
+
 ```xml
 <soapProxy wsdl="http://thomas-bayer.com/axis2/services/BLZService?wsdl">
 	<validator />
@@ -52,48 +63,16 @@ Add features like logging or XML Schema validation against a WSDL document:
 </soapProxy>
 ```
 
-### Monitoring and manipulation
-
-Dynamically manipulate and monitor messages with Groovy and JavaScript (Nashorn): 
-
-```xml
-<serviceProxy port="2000">
-  	<groovy>
-    	exc.request.header.add("X-Groovy", "Hello from Groovy")
-    	CONTINUE
-  	</groovy>
-	<target host="membrane-soa.org" port="80" />
-</serviceProxy>
-```
-```xml
-<serviceProxy port="2000">
-  	<javascript>
-    	exc.getRequest().getHeader().add("X-Javascript", "Hello from JavaScript");
-   		CONTINUE;
-  	</javascript>
-	<target host="membrane-soa.org" port="80" />
-</serviceProxy>
-```
-
-Route and intercept WebSocket traffic:
-```xml
-<serviceProxy port="2000">
-        <webSocket url="http://my.websocket.server:1234">
-            <wsLog/>
-        </webSocket>
-    <target port="8080" host="localhost"/>
-</serviceProxy>
-```
-(_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/websocket-routing-intercepting.htm)_)
-
 Limit the number of requests in a given time frame:
+
 ```xml
-<serviceProxy port="2000">
+<serviceProxy port="80">
     <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
-    <target host="www.google.de" port="80" />
+    <target host="localhost" port="8080" />
 </serviceProxy>
 ```
 Rewrite URLs:
+
 ```xml
 <serviceProxy port="2000">
     <rewriter>
@@ -107,13 +86,51 @@ Monitor HTTP traffic:
 ```xml
 <serviceProxy port="2000">
     <log/>
-    <target host="membrane-soa.org" port="80" />
+    <target host="localhost" port="8080" />
 </serviceProxy>
 ```
+
+### Monitoring and manipulation
+
+Dynamically manipulate and monitor messages with Groovy and JavaScript (Nashorn):
+
+```xml
+<serviceProxy port="2000">
+  	<groovy>
+    	exc.request.header.add("X-Groovy", "Hello from Groovy")
+    	CONTINUE
+  	</groovy>
+	<target host="localhost" port="8080" />
+</serviceProxy>
+```
+```xml
+<serviceProxy port="2000">
+  	<javascript>
+    	exc.getRequest().getHeader().add("X-Javascript", "Hello from JavaScript");
+   		CONTINUE;
+  	</javascript>
+	<target host="localhost" port="8080" />
+</serviceProxy>
+```
+
+Route and intercept WebSocket traffic:
+
+```xml
+<serviceProxy port="2000">
+        <webSocket url="http://my.websocket.server:1234">
+            <wsLog/>
+        </webSocket>
+    <target port="8080" host="localhost"/>
+</serviceProxy>
+```
+(_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/websocket-routing-intercepting.htm)_)
+
+
 
 ### Security
 
 Use the widely adopted OAuth2/OpenID Framework to secure endpoints:
+
 ```xml
 <serviceProxy name="Resource Service" port="2001">
     <oauth2Resource>
@@ -129,7 +146,7 @@ Use the widely adopted OAuth2/OpenID Framework to secure endpoints:
 ```
 (_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-openid.htm)_)
 
-Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider: 
+Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider:
 ```xml
 <serviceProxy name="Authorization Server" port="2000">
     <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
@@ -149,13 +166,13 @@ Operate your own OAuth2/OpenID AuthorizationServer/Identity Provider:
 ```
 (_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/oauth2-code-flow-example.htm)_)
 
-Secure an endpoint with basic authentication: 
+Secure an endpoint with basic authentication:
 ```xml
 <serviceProxy port="2000">
     <basicAuthentication>
         <user name="bob" password="secret" />
     </basicAuthentication>
-    <target host="www.thomas-bayer.com" port="80" />
+    <target host="localhost" port="8080" />
 </serviceProxy>
 ```
 
@@ -175,15 +192,16 @@ Secure endpoints with SSL/TLS:
 		<keystore location="membrane.jks" password="secret" keyPassword="secret" />
 		<truststore location="membrane.jks" password="secret" />
 	</ssl>
-	<target host="www.predic8.de" />
+	<target host="localhost" port="8080"  />
 </serviceProxy>
 ```
 
 Limit the number of incoming requests:
+
 ```xml
 <serviceProxy port="2000">
     <rateLimiter requestLimit="3" requestLimitDuration="PT30S"/>
-    <target host="www.predic8.de" port="80" />
+    <target host="localhost" port="8080" />
 </serviceProxy>
 ```
 
@@ -203,3 +221,5 @@ Distribute your workload to multiple nodes:
     </balancer>
 </serviceProxy>
 ```
+
+See [configuration reference](https://www.membrane-soa.org/service-proxy-doc/4.4/configuration/reference/) for much more.
