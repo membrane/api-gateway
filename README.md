@@ -125,8 +125,6 @@ Route and intercept WebSocket traffic:
 ```
 (_Find an example on [membrane-soa.org](http://www.membrane-soa.org/service-proxy-doc/4.4/websocket-routing-intercepting.htm)_)
 
-
-
 ### Security
 
 Use the widely adopted OAuth2/OpenID Framework to secure endpoints:
