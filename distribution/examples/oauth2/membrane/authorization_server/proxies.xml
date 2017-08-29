@@ -6,19 +6,28 @@
 
     <router>
 
-        <serviceProxy name="Authorization Server" port="2000">
+        <serviceProxy name="Authorization Server" port="7000">
 
-            <oauth2authserver location="logindialog" issuer="http://localhost:2000" consentFile="consentFile.json">
+            <oauth2authserver issuer="http://localhost:7000" location="logindialog" consentFile="consentFile.json">
+
+                <!-- UserDataProvider is exchangeable, e.g. for a database table -->
                 <staticUserDataProvider>
                     <user username="john" password="password" email="john@predic8.de" />
                 </staticUserDataProvider>
+
                 <staticClientList>
-                    <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2001/oauth2callback" />
+                    <client clientId="abc" clientSecret="def" callbackUrl="http://localhost:2000/oauth2callback" />
                 </staticClientList>
+
+                <!-- Generates tokens in the given format -->
                 <bearerToken/>
+
                 <claims value="aud email iss sub username">
+
+                    <!-- Scopes are defined from the claims exposed above -->
                     <scope id="username" claims="username"/>
-                    <scope id="profile" claims="username email password"/>
+                    <scope id="profile" claims="username email"/>
+
                 </claims>
             </oauth2authserver>
 

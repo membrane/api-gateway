@@ -18,14 +18,14 @@
 					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
 
 	<router>
-		<serviceProxy name="Membrane Resource service" port="2001">
+		<serviceProxy name="Membrane Resource service" port="2000">
 			<path>/oauth2callback</path>
 			<groovy>
 				Response.ok(new File("..\\JavaScriptClient.html").text).build()
 			</groovy>
 		</serviceProxy>
 
-		<serviceProxy name="Membrane Resource service" port="2001">
+		<serviceProxy name="Membrane Resource service" port="2000">
 			<groovy>
 				Response.ok(new File("..\\JavaScriptClient.html").text).build()
 			</groovy>

@@ -23,8 +23,8 @@ public class OAuth2TrustedClient {
 
     static String clientId = "abc";
     static String clientSecret = "def";
-    static String tokenEndpoint = "http://localhost:2000/oauth2/token";
-    static String target = "http://localhost:2002";
+    static String tokenEndpoint = "http://localhost:7000/oauth2/token";
+    static String target = "http://localhost:2000";
 
     static String username = "john";
     static String password = "password";
