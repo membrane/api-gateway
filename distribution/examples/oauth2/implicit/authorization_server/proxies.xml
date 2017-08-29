@@ -8,7 +8,7 @@
 
         <serviceProxy name="Authorization Server" port="7000">
 
-            <oauth2authserver issuer="http://localhost:7000">
+            <oauth2authserver issuer="http://localhost:7000" location="logindialog" consentFile="consentFile.json">
 
                 <!-- UserDataProvider is exchangeable, e.g. for a database table -->
                 <staticUserDataProvider>
