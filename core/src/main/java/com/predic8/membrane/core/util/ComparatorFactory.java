@@ -68,8 +68,8 @@ public class ComparatorFactory {
 				}
 			});
 		} else if ("reqContentLength".equals(propName)) {
-			return new PropertyComparator<AbstractExchange, Integer>(order, new PropertyComparator.ValueResolver<AbstractExchange, Integer>() {
-				public Integer get(AbstractExchange exc) {
+			return new PropertyComparator<AbstractExchange, Long>(order, new PropertyComparator.ValueResolver<AbstractExchange, Long>() {
+				public Long get(AbstractExchange exc) {
 					return exc.getRequestContentLength();
 				}
 			});
@@ -80,8 +80,8 @@ public class ComparatorFactory {
 				}
 			});
 		} else if ("respContentLength".equals(propName)) {
-			return new PropertyComparator<AbstractExchange, Integer>(order, new PropertyComparator.ValueResolver<AbstractExchange, Integer>() {
-				public Integer get(AbstractExchange exc) {
+			return new PropertyComparator<AbstractExchange, Long>(order, new PropertyComparator.ValueResolver<AbstractExchange, Long>() {
+				public Long get(AbstractExchange exc) {
 					return exc.getResponseContentLength();
 				}
 			});

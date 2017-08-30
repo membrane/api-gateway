@@ -61,6 +61,10 @@ public abstract class AbstractBody {
 		markAsRead();
 	}
 
+	public void discard() throws IOException {
+		read();
+	}
+
 	protected void markAsRead() {
 		if (read)
 			return;

@@ -44,8 +44,8 @@ public class AMQuotaInterceptorTest {
 
         ApiManagementConfiguration amc = new ApiManagementConfiguration(System.getProperty("user.dir") , "src\\test\\resources\\apimanagement\\api.yaml");
 
-        int reqSize = exc.getRequest().getHeader().toString().getBytes().length+exc.getRequest().getHeader().getContentLength();
-        int respSize = exc.getResponse().getHeader().toString().getBytes().length+exc.getResponse().getHeader().getContentLength();
+        long reqSize = exc.getRequest().getHeader().toString().getBytes().length+exc.getRequest().getHeader().getContentLength();
+        long respSize = exc.getResponse().getHeader().toString().getBytes().length+exc.getResponse().getHeader().getContentLength();
 
         assertEquals(31+5,reqSize);
         assertEquals(34+11,respSize);

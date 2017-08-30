@@ -280,6 +280,15 @@ public class Request extends Message {
 			return this;
 		}
 
+		public Builder body(long contentLength, InputStream body) throws IOException {
+			req.body = new Body(body, contentLength);
+			Header header = req.getHeader();
+			header.removeFields(Header.CONTENT_ENCODING);
+			header.removeFields(Header.TRANSFER_ENCODING);
+			header.setContentLength(contentLength);
+			return this;
+		}
+
 		public Builder post(URIFactory uriFactory, String url) throws URISyntaxException {
 			return method(Request.METHOD_POST).url(uriFactory, url);
 		}

@@ -312,8 +312,8 @@ public abstract class AbstractExchange {
 		return "";
 	}
 
-	public int getResponseContentLength() {
-		int length = getResponse().getHeader().getContentLength();
+	public long getResponseContentLength() {
+		long length = getResponse().getHeader().getContentLength();
 		if (length != -1)
 			return length;
 
@@ -328,7 +328,7 @@ public abstract class AbstractExchange {
 		return -1;
 	}
 
-	public int getRequestContentLength() {
+	public long getRequestContentLength() {
 		return getRequest().getHeader().getContentLength();
 	}
 

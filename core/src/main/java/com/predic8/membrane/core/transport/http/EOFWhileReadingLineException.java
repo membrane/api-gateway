@@ -30,7 +30,7 @@ public class EOFWhileReadingLineException extends RuntimeException {
 
 	@Override
 	public String getMessage() {
-		return super.getMessage() + " line so far: \"" + lineSoFar + "\"";
+		return "line so far: \"" + lineSoFar + "\"";
 	}
 
 }

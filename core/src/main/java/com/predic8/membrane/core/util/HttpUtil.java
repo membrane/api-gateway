@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import com.predic8.membrane.core.transport.http.LineTooLongException;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import com.predic8.membrane.core.Constants;
@@ -39,6 +40,12 @@ import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 public class HttpUtil {
 
 	private static DateFormat GMT_DATE_FORMAT = createGMTDateFormat();
+	private final static int MAX_LINE_LENGTH;
+
+	static {
+		String maxLineLength = System.getProperty("membrane.core.http.body.maxlinelength");
+		MAX_LINE_LENGTH = maxLineLength == null ? 8092 : Integer.parseInt(maxLineLength);
+	}
 
 	public static DateFormat createGMTDateFormat() {
 		SimpleDateFormat GMT_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
@@ -51,6 +58,7 @@ public class HttpUtil {
 		StringBuilder line = new StringBuilder(128);
 
 		int b;
+		int l = 0;
 		while ((b = in.read()) != -1) {
 			if (b == 13) {
 				in.read();
@@ -64,6 +72,8 @@ public class HttpUtil {
 			}
 
 			line.append((char) b);
+			if (++l == MAX_LINE_LENGTH)
+				throw new LineTooLongException(line.toString());
 		}
 
 		throw new EOFWhileReadingLineException(line.toString());

@@ -97,11 +97,11 @@ public class JDBCUtil {
 
 		REQUEST_CONTENT_TYPE + " VARCHAR(100), " +
 
-		REQUEST_CONTENT_LENGTH + " INT, " +
+		REQUEST_CONTENT_LENGTH + " BIGINT, " +
 
 		RESPONSE_CONTENT_TYPE + " VARCHAR(100), " +
 
-		RESPONSE_CONTENT_LENGTH + " INT, " +
+		RESPONSE_CONTENT_LENGTH + " BIGINT, " +
 
 		DURATION + " INT, " +
 
@@ -182,9 +182,9 @@ public class JDBCUtil {
 		prepSt.setString(++ startIndex, exc.getRemoteAddr());
 		prepSt.setString(++ startIndex, exc.getServer());
 		prepSt.setString(++ startIndex, exc.getRequestContentType());
-		prepSt.setInt(++ startIndex, exc.getRequestContentLength());
+		prepSt.setLong(++ startIndex, exc.getRequestContentLength());
 		prepSt.setString(++ startIndex, exc.getResponseContentType());
-		prepSt.setInt(++ startIndex, exc.getResponseContentLength());
+		prepSt.setLong(++ startIndex, exc.getResponseContentLength());
 		prepSt.setLong(++ startIndex, (exc.getTimeResReceived() - exc.getTimeReqSent()));
 
 		prepSt.setString(++ startIndex, getFilePath(exc));

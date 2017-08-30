@@ -237,7 +237,7 @@ public class Header {
 		setValue(HOST, value);
 	}
 
-	public void setContentLength(int length) {
+	public void setContentLength(long length) {
 		setValue(CONTENT_LENGTH, "" + length);
 	}
 
@@ -249,10 +249,10 @@ public class Header {
 		return CHUNKED.equals(getFirstValue(TRANSFER_ENCODING));
 	}
 
-	public int getContentLength() {
+	public long getContentLength() {
 		if (!hasContentLength())
 			return -1;
-		return Integer.parseInt(getFirstValue(CONTENT_LENGTH));
+		return Long.parseLong(getFirstValue(CONTENT_LENGTH));
 	}
 
 	public String getContentType() {
