@@ -7,8 +7,8 @@
 <body>
     <script>
         var redirect = function(){
-        window.location = 'http://localhost:2000/oauth2/auth?response_type=token&client_id=' + encodeURIComponent('abc') + '&redirect_uri='
-                + encodeURIComponent('http://localhost:2001/oauth2callback') + '&scope=' + 'profile';
+        window.location = 'http://localhost:7000/oauth2/auth?response_type=token&client_id=' + encodeURIComponent('abc') + '&redirect_uri='
+                + encodeURIComponent('http://localhost:2000/oauth2callback') + '&scope=' + 'profile';
         };
 
         var getParams = function(){
@@ -24,7 +24,7 @@
 
         var validateAccessToken = function(auth){
             var  xmlhttp = new XMLHttpRequest();
-            xmlhttp.open('GET',"http://localhost:2000/oauth2/userinfo",true);
+            xmlhttp.open('GET',"http://localhost:7000/oauth2/userinfo",true);
             xmlhttp.setRequestHeader("Authorization", auth);
             xmlhttp.send(null);
             xmlhttp.onreadystatechange = function() {
