@@ -82,7 +82,7 @@ public class LimitInterceptor extends AbstractInterceptor {
 		if (maxBodyLength == -1)
 			return Outcome.CONTINUE;
 
-		int len = msg.getHeader().getContentLength();
+		long len = msg.getHeader().getContentLength();
 		if (len != -1 && len > maxBodyLength) {
 			log.info("Message length (" + len + ") exceeded limit (" + maxBodyLength + ")");
 			exc.setResponse(createFailureResponse());

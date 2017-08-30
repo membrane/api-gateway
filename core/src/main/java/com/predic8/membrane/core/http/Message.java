@@ -71,6 +71,13 @@ public abstract class Message {
 		body.read();
 	}
 
+	public void discardBody() throws IOException {
+		if (body.getObservers().size() == 0)
+			body.discard();
+		else
+			body.read();
+	}
+
 	public AbstractBody getBody() {
 		return body;
 	}

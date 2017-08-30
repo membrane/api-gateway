@@ -36,22 +36,25 @@ import com.predic8.membrane.core.util.ByteUtil;
 public class Body extends AbstractBody {
 
 	private final static int BUFFER_SIZE;
+	private final static int MAX_CHUNK_LENGTH;
 
 	static {
 		String bufferSize = System.getProperty("membrane.core.http.body.buffersize");
 		BUFFER_SIZE = bufferSize == null ? 8192 : Integer.parseInt(bufferSize);
+		String maxChunkLength = System.getProperty("membrane.core.http.body.maxchunklength");
+		MAX_CHUNK_LENGTH = maxChunkLength == null ? 1000000000 : Integer.parseInt(maxChunkLength);
 	}
 
 	private static Logger log = LoggerFactory.getLogger(Body.class.getName());
 	private final InputStream inputStream;
-	private final int length;
+	private final long length;
 
 
 	public Body(InputStream in) throws IOException {
 		this(in, -1);
 	}
 
-	public Body(InputStream in, int length) throws IOException {
+	public Body(InputStream in, long length) throws IOException {
 		this.inputStream = in;
 		this.length = length;
 	}
@@ -66,7 +69,27 @@ public class Body extends AbstractBody {
 
 	@Override
 	protected void readLocal() throws IOException {
-		chunks.add(new Chunk(ByteUtil.readByteArray(inputStream, length)));
+		long l = length;
+		while (l > 0 || l == -1) {
+			int chunkLength = l > MAX_CHUNK_LENGTH ? MAX_CHUNK_LENGTH : (int)l;
+			chunks.add(new Chunk(ByteUtil.readByteArray(inputStream, chunkLength)));
+			l -= chunkLength;
+		}
+	}
+
+	public void discard() throws IOException {
+		if (read)
+			return;
+
+		for (MessageObserver observer : observers)
+			observer.bodyRequested(this);
+
+		chunks.clear();
+		long toSkip = length;
+		while (toSkip > 0) {
+			toSkip -= inputStream.skip(toSkip);
+		}
+		markAsRead();
 	}
 
 	@Override
@@ -82,7 +105,7 @@ public class Body extends AbstractBody {
 	protected void writeNotRead(AbstractBodyTransferrer out) throws IOException {
 		byte[] buffer = new byte[BUFFER_SIZE];
 
-		int totalLength = 0;
+		long totalLength = 0;
 		int length = 0;
 		chunks.clear();
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {
@@ -101,7 +124,7 @@ public class Body extends AbstractBody {
 	protected void writeStreamed(AbstractBodyTransferrer out) throws IOException {
 		byte[] buffer = new byte[BUFFER_SIZE];
 
-		int totalLength = 0;
+		long totalLength = 0;
 		int length = 0;
 		chunks.clear();
 		while ((this.length > totalLength || this.length == -1) && (length = inputStream.read(buffer)) > 0) {

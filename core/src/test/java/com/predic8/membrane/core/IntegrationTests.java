@@ -13,6 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.core;
 
+import com.predic8.membrane.core.http.LargeBodyTest;
 import com.predic8.membrane.core.rules.ProxySSLTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -57,7 +58,8 @@ import com.predic8.membrane.interceptor.LoadBalancingInterceptorTest;
 	ResolverTest.class,
 	UnavailableSoapProxyTest.class,
 	IllegalCharactersInURLTest.class,
-	ProxySSLTest.class })
+	ProxySSLTest.class,
+	LargeBodyTest.class})
 public class IntegrationTests {
 	/*
 	@BeforeClass

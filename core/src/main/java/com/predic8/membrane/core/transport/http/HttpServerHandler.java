@@ -266,7 +266,7 @@ public class HttpServerHandler extends AbstractHttpHandler implements Runnable {
 	 */
 	private void removeBodyFromBuffer() throws IOException {
 		if (!exchange.getRequest().getHeader().is100ContinueExpected() || srcIn.available() > 0) {
-			exchange.getRequest().readBody();
+			exchange.getRequest().discardBody();
 		}
 	}
 
