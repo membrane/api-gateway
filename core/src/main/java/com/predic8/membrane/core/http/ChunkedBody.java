@@ -63,13 +63,20 @@ public class ChunkedBody extends AbstractBody {
 
 	@Override
 	protected void readLocal() throws IOException {
-		if(hasRelevantObservers())
-			chunks.addAll(HttpUtil.readChunks(inputStream));
-		else
-			HttpUtil.readChunksAndDrop(inputStream);
+		chunks.addAll(HttpUtil.readChunks(inputStream));
 	}
 
+	@Override
+	public void discard() throws IOException {
+		if (read)
+			return;
 
+		for (MessageObserver observer : observers)
+			observer.bodyRequested(this);
+
+		HttpUtil.readChunksAndDrop(inputStream);
+		markAsRead();
+	}
 
 	boolean bodyObserved = false;
 	boolean bodyComplete = false;
