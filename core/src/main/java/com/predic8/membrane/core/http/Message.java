@@ -72,10 +72,10 @@ public abstract class Message {
 	}
 
 	public void discardBody() throws IOException {
-		if (body.getObservers().size() == 0)
-			body.discard();
-		else
+		if (body.hasRelevantObservers())
 			body.read();
+		else
+			body.discard();
 	}
 
 	public AbstractBody getBody() {

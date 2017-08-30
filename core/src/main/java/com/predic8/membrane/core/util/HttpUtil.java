@@ -255,6 +255,17 @@ public class HttpUtil {
 		return chunks;
 	}
 
+	public static void readChunksAndDrop(InputStream in) throws IOException {
+		int chunkSize;
+		while ((chunkSize = readChunkSize(in)) > 0) {
+			ByteUtil.readByteArray(in, chunkSize);
+			in.read(); // CR
+			in.read(); // LF
+		}
+		in.read(); // CR
+		in.read(); // LF
+	}
+
 	public static String getHostName(String destination) throws MalformedURLException {
 		return new URL(destination).getHost();
 	}

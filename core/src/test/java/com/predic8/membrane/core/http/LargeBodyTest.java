@@ -3,13 +3,15 @@ package com.predic8.membrane.core.http;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
+import com.predic8.membrane.core.interceptor.HTTPClientInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
-import com.predic8.membrane.core.interceptor.groovy.GroovyInterceptor;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import org.junit.*;
+import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
+import org.junit.After;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,8 +23,13 @@ import static com.predic8.membrane.core.http.Header.TRANSFER_ENCODING;
 public class LargeBodyTest {
 
     private HttpRouter router, router2;
+    private HttpClientConfiguration hcc;
 
     public void setup() throws Exception {
+        // streaming only works for maxRetries = 1
+        hcc = new HttpClientConfiguration();
+        hcc.setMaxRetries(1);
+
         Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3040), "thomas-bayer.com", 80);
         rule.getInterceptors().add(new AbstractInterceptor() {
             @Override
@@ -32,14 +39,19 @@ public class LargeBodyTest {
             }
         });
         router = new HttpRouter();
+
+        ((HTTPClientInterceptor) router.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
+
         router.getRuleManager().addProxyAndOpenPortIfNew(rule);
         router.init();
 
         Rule rule1 = new ServiceProxy(new ServiceProxyKey("localhost", "POST", ".*", 3041), "localhost", 3040);
         router2 = new HttpRouter();
+
+        ((HTTPClientInterceptor) router2.getTransport().getInterceptors().get(3)).setHttpClientConfig(hcc);
+
         router2.getRuleManager().addProxyAndOpenPortIfNew(rule1);
         router2.init();
-
     }
 
     @After
@@ -56,7 +68,7 @@ public class LargeBodyTest {
         long len = Integer.MAX_VALUE + 1l;
 
         Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).buildExchange();
-        new HttpClient().call(e);
+        new HttpClient(hcc).call(e);
     }
 
     @Test
@@ -65,7 +77,7 @@ public class LargeBodyTest {
         long len = Integer.MAX_VALUE + 1l;
 
         Exchange e = new Request.Builder().post("http://localhost:3041/foo").body(len, new ConstantInputStream(len)).header(TRANSFER_ENCODING, CHUNKED).buildExchange();
-        new HttpClient().call(e);
+        new HttpClient(hcc).call(e);
     }
 
     private static class ConstantInputStream extends InputStream {

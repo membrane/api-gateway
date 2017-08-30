@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.predic8.membrane.core.Constants;
 import org.slf4j.Logger;
@@ -181,6 +182,10 @@ public abstract class AbstractBody {
 	}
 
 	protected abstract byte[] getRawLocal() throws IOException;
+
+	protected boolean hasRelevantObservers() {
+		return observers.stream().filter(messageObserver -> !(messageObserver instanceof NonRelevantBodyObserver)).collect(Collectors.toList()).size() > 0;
+	}
 
 	/**
 	 * Supposes UTF-8 encoding. Should therefore not be used
