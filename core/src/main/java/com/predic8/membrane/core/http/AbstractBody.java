@@ -216,7 +216,7 @@ public abstract class AbstractBody {
 		observers.add(observer);
 	}
 
-	List<MessageObserver> getObservers() {
+	public List<MessageObserver> getObservers() {
 		return observers;
 	}
 
