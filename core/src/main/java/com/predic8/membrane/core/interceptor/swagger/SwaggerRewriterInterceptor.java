@@ -16,8 +16,8 @@ package com.predic8.membrane.core.interceptor.swagger;
 
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
 import java.util.List;
 import java.util.regex.Pattern;
 

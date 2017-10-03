@@ -36,7 +36,7 @@ import java.util.List;
 @MCElement(name = "wsStompReassembler")
 public class WebSocketStompReassembler implements WebSocketInterceptorInterface {
 
-    List<Interceptor> interceptors = new ArrayList<>();
+    List<Interceptor> interceptors = new ArrayList<Interceptor>();
 
     @Override
     public void init(Router router) throws Exception {

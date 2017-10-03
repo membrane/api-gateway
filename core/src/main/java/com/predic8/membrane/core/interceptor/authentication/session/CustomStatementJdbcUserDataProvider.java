@@ -87,7 +87,7 @@ public class CustomStatementJdbcUserDataProvider implements  UserDataProvider {
             ResultSet rs = preparedStatement.executeQuery();
             ResultSetMetaData rsmd = rs.getMetaData();
 
-            HashMap<String, String> result = new HashMap<>();
+            HashMap<String, String> result = new HashMap<String, String>();
             if (!rs.next())
                 throw new NoSuchElementException();
             result.put(sqlResultAttribute, rs.getObject(1).toString());

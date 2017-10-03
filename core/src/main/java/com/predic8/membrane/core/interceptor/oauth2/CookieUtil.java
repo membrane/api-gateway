@@ -38,7 +38,7 @@ public class CookieUtil {
     }
 
     private static ArrayList<String> removeOwnCookieNameFromCookieHeader(String ownCookieName, String[] cookies) {
-        ArrayList<String> newCookies = new ArrayList<>();
+        ArrayList<String> newCookies = new ArrayList<String>();
         for(String cookie : cookies)
             if(!cookie.trim().startsWith(ownCookieName))
                 newCookies.add(cookie.trim());

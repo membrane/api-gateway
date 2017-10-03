@@ -77,7 +77,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
     private int revalidateTokenAfter = -1;
 
-    private ConcurrentHashMap<String,String> stateToOriginalUrl = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String,String> stateToOriginalUrl = new ConcurrentHashMap<String,String>();
 
     private WebServerInterceptor wsi;
     private URIFactory uriFactory;
@@ -381,7 +381,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 if(session.getUserAttributes().containsKey(ParamNames.STATE))
                     state = session.getUserAttributes().get(ParamNames.STATE) + " " + state;
                 if(!session.isPreAuthorized() || !session.isAuthorized())
-                    session.preAuthorize("",new HashMap<>());
+                    session.preAuthorize("",new HashMap<String,String>());
                 session.getUserAttributes().put(ParamNames.STATE,state);
             }
         } else {

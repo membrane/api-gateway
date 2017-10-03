@@ -112,7 +112,7 @@ public class JavascriptInterceptor extends AbstractInterceptor {
     }
 
     private HashMap<String, Object> getJavascriptTypesForClasses(HashMap<String, Object> classes) {
-        HashMap<String, Object> result = new HashMap<>();
+        HashMap<String, Object> result = new HashMap<String, Object>();
         for(Object clazz : classes.values()){
             Class<?> clazzz = (Class<?>) clazz;
             String scriptSrc = clazzz.getSimpleName() + ".static;";
@@ -133,7 +133,7 @@ public class JavascriptInterceptor extends AbstractInterceptor {
 
     private HashMap<String, Object> getHttpPackageClasses() throws IOException, ClassNotFoundException {
         String httpPackage = "com.predic8.membrane.core.http";
-        HashMap<String, Object> result = new HashMap<>();
+        HashMap<String, Object> result = new HashMap<String, Object>();
         List<Class<?>> classes = ClassFinder.find(router.getBeanFactory().getClassLoader(), httpPackage);
         for(Class c : classes) {
             if(c.getPackage().getName().equals(httpPackage) && !c.getSimpleName().isEmpty())

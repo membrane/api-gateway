@@ -212,11 +212,23 @@ public class ApiManagementConfiguration {
     }
 
     private String parseString(Object obj, String defObj){
-        return StringToTypeConverter(obj,defObj, (value) -> {return value;});
+        //return StringToTypeConverter(obj,defObj, (value) -> {return value;});
+        return StringToTypeConverter(obj, defObj, new Function<String, String>() {
+            @Override
+            public String call(String value) {
+                return value;
+            }
+        });
     }
 
     private boolean parseBoolean(Object obj, Boolean defObj){
-        return StringToTypeConverter(obj,defObj,(value) -> {return Boolean.parseBoolean(value);});
+        //return StringToTypeConverter(obj,defObj,(value) -> {return Boolean.parseBoolean(value);});
+        return StringToTypeConverter(obj, defObj, new Function<String, Boolean>() {
+            @Override
+            public Boolean call(String value) {
+                return Boolean.parseBoolean(value);
+            }
+        });
     }
 
     private long getQuotaNumber(Object quotaSizeObj) {
@@ -235,6 +247,7 @@ public class ApiManagementConfiguration {
             }
         }
         if(quotaSymbolString.length() > 0) {
+            /*
             switch (quotaSymbolString) {
                 case "gb":
                 case "g": quotaNumber *= 1024;
@@ -245,12 +258,26 @@ public class ApiManagementConfiguration {
                 case "b":
                 default:
             }
+            */
+            if (quotaSymbolString.equals("gb") || quotaSymbolString.equals("g"))
+                quotaNumber *= 1024;
+            else if (quotaSymbolString.equals("mb") || quotaSymbolString.equals("m"))
+                quotaNumber *= 1024;
+            else if (quotaSymbolString.equals("kb") || quotaSymbolString.equals("k"))
+                quotaNumber *= 1024;
+            
         }
         return quotaNumber;
     }
 
     private int parseInteger(Object obj, int defaultValue){
-        return StringToTypeConverter(obj,defaultValue,(value) ->{return Integer.parseInt(value);});
+        //return StringToTypeConverter(obj,defaultValue,(value) ->{return Integer.parseInt(value);});
+        return StringToTypeConverter(obj, defaultValue, new Function<String, Integer>() {
+            @Override
+            public Integer call(String value) {
+                return Integer.parseInt(value);
+            }
+        });
     }
 
     private void parseAndConstructConfiguration(InputStream is) throws IOException {
@@ -278,7 +305,7 @@ public class ApiManagementConfiguration {
     }
 
     public HashSet<Policy> getUnauthenticatedPolicies() {
-        HashSet<Policy> result = new HashSet<>();
+        HashSet<Policy> result = new HashSet<Policy>();
         for(Policy p : getPolicies().values())
             if(p.isUnauthenticated())
                 result.add(p);

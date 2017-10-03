@@ -119,7 +119,7 @@ public class ClaimsParameter {
 
     private Map<String,Object> getObject(String objectName){
         if(cleanedJson == null || cleanedJson.get(objectName) == null)
-            return new HashMap<>();
+            return new HashMap<String,Object>();
         return (Map<String, Object>) cleanedJson.get(objectName);
     }
 

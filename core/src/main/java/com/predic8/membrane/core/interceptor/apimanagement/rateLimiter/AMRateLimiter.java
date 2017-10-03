@@ -57,7 +57,7 @@ public class AMRateLimiter {
         @Override
         public void run() {
             log.info("Getting new config");
-            keyInformation = new ConcurrentHashMap<>();
+            keyInformation = new ConcurrentHashMap<String, ApiKeyRequestCounter>();
             fillPolicyCleanupTimes();
         }
     };

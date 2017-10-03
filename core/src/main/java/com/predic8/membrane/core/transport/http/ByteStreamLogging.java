@@ -46,7 +46,7 @@ public class ByteStreamLogging {
         log.info(sb.toString());
     }
 
-    public static OutputStream wrapConnectionOutputStream(Connection con, String name) {
+    public static OutputStream wrapConnectionOutputStream(final Connection con, final String name) {
         return new OutputStream() {
             @Override
             public void write(int b) throws IOException {
@@ -78,7 +78,7 @@ public class ByteStreamLogging {
         };
     }
 
-    public static InputStream wrapConnectionInputStream(Connection con, String name) {
+    public static InputStream wrapConnectionInputStream(final Connection con, final String name) {
         return new InputStream() {
             @Override
             public int read() throws IOException {

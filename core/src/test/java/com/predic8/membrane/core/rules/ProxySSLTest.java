@@ -78,7 +78,7 @@ public class ProxySSLTest {
         backend.start();
 
         // Step 2: put a proxy in front of it
-        AtomicInteger proxyCounter = new AtomicInteger();
+        final AtomicInteger proxyCounter = new AtomicInteger();
 
         Router proxyRouter = new Router();
         proxyRouter.setHotDeploy(false);

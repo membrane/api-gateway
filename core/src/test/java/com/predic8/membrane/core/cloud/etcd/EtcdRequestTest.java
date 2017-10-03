@@ -14,18 +14,22 @@
 
 package com.predic8.membrane.core.cloud.etcd;
 
+import java.io.File;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.Scanner;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
 
 public class EtcdRequestTest {
 
     @Test
     public void testFillEtcdWithYaml() throws IOException {
-        String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
+        String path = System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml";
+        String source = new Scanner(new File(path)).useDelimiter("\\Z").next();
+        //String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
 
         try {
             EtcdResponse respPutYaml = EtcdRequest.create("http://localhost:4001", "/amc", "").setValue("file", source).sendRequest();

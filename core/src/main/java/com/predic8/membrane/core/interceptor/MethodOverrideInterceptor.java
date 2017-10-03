@@ -35,9 +35,8 @@ public class MethodOverrideInterceptor extends AbstractInterceptor {
         if(methodHeader == null)
             return Outcome.CONTINUE;
 
-        switch(methodHeader){
-            case "GET": handleGet(exc);
-                        break;
+        if(methodHeader.equals("GET")){
+            handleGet(exc);
         }
 
         exc.getRequest().getHeader().removeFields(Header.X_HTTP_METHOD_OVERRIDE);

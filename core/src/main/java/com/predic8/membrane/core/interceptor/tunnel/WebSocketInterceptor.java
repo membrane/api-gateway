@@ -38,7 +38,7 @@ import java.util.List;
 public class WebSocketInterceptor extends AbstractInterceptor {
 	private String url;
 	private String pathQuery;
-	private List<WebSocketInterceptorInterface> interceptors = new ArrayList<>();
+	private List<WebSocketInterceptorInterface> interceptors = new ArrayList<WebSocketInterceptorInterface>();
 
 	@Override
 	public void init(Router router) throws Exception {

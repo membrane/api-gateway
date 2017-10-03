@@ -14,20 +14,25 @@
 package com.predic8.membrane.core.interceptor.apimanagement;
 
 import com.predic8.membrane.core.interceptor.apimanagement.policy.Policy;
+import java.io.File;
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Scanner;
 
 public class ApiManagementConfigurationTest {
 
     @Test
     public void testParseYaml() throws Exception {
-        String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
+        
+        String path = System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml";
+        String source = new Scanner(new File(path)).useDelimiter("\\Z").next();
+        //String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
 
         ApiManagementConfiguration conf = new ApiManagementConfiguration();
         conf.setLocation(source);

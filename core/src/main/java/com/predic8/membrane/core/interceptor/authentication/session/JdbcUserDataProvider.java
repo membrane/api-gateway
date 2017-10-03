@@ -121,7 +121,7 @@ public class JdbcUserDataProvider implements  UserDataProvider {
             ResultSet rs = preparedStatement.executeQuery();
             ResultSetMetaData rsmd = rs.getMetaData();
 
-            result = new HashMap<>();
+            result = new HashMap<String,String>();
             while(rs.next()){
                 for(int i = 1; i <= rsmd.getColumnCount();i++)
                     result.put(rsmd.getColumnName(i),rs.getObject(i).toString());

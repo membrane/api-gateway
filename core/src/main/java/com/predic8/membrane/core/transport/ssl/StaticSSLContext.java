@@ -320,7 +320,7 @@ public class StaticSSLContext extends SSLContext {
             sniServerName = defaultHost;
 
         SNIHostName name = new SNIHostName(sniServerName.getBytes()); // mvn complains here when not putting in "bytes" even though there is a constructor for "string"
-        List<SNIServerName> serverNames = new ArrayList<>(1);
+        List<SNIServerName> serverNames = new ArrayList<SNIServerName>(1);
         serverNames.add(name);
 
         SSLParameters params = ssls.getSSLParameters();

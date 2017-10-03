@@ -72,7 +72,7 @@ public class AdminPageBuilder extends Html {
 	private final StringWriter writer;
 	private final String relativeRootPath;
 	private final boolean readOnly;
-	private HashMap<StatisticCollector, String> numberOfBackendConnections = new HashMap<>();
+	private HashMap<StatisticCollector, String> numberOfBackendConnections = new HashMap<StatisticCollector, String>();
 
 	static public String createHRef(String ctrl, String action, String query) {
 		return "/admin/"+ctrl+(action!=null?"/"+action:"")+(query!=null?"?"+query:"");
@@ -579,7 +579,7 @@ public class AdminPageBuilder extends Html {
 
 	private Map<String, StatisticCollector> getStatistics() {
 		Map<String, StatisticCollector> res = new TreeMap<String, StatisticCollector>();
-		HashMap<StatisticCollector,String> backendConnections = new HashMap<>();
+		HashMap<StatisticCollector,String> backendConnections = new HashMap<StatisticCollector,String>();
 		for (Rule r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractProxy)) continue;
 			StatisticCollector sc = new StatisticCollector(true);

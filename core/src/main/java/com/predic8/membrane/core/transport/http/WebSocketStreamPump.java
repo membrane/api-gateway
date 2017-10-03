@@ -21,6 +21,7 @@ import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketFrameAssembler;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
+import com.predic8.membrane.core.transport.ws.WebSocketSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class WebSocketStreamPump extends StreamPump {
     protected static Logger log = LoggerFactory.getLogger(WebSocketStreamPump.class.getName());
@@ -56,7 +58,7 @@ public class WebSocketStreamPump extends StreamPump {
         this.otherStreamPump = otherStreamPump;
     }
 
-    List<WebSocketInterceptorInterface> chain = new ArrayList<>();
+    List<WebSocketInterceptorInterface> chain = new ArrayList<WebSocketInterceptorInterface>();
     WebSocketStreamPump otherStreamPump;
     private final boolean pumpsToRight;
     boolean connectionIsOpen = true;
@@ -67,6 +69,7 @@ public class WebSocketStreamPump extends StreamPump {
         if (otherStreamPump == null)
             throw new RuntimeException("Call init with other WebSocketStreamPump (backward direction)");
         try {
+            /*
             frameAssembler.readFrames(frame -> {
                 try {
                     if (pumpsToRight) {
@@ -78,6 +81,23 @@ public class WebSocketStreamPump extends StreamPump {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
+                }
+            });
+            */
+            frameAssembler.readFrames(new Consumer<WebSocketFrame>() {
+                @Override
+                public void accept(WebSocketFrame frame) {
+                    try {
+                    if (pumpsToRight) {
+                        //System.out.println("==client to server==");
+                        passFrameToChainElement(0, true, frame);
+                    } else {
+                        //System.out.println("==server to client==");
+                        passFrameToChainElement(chain.size() - 1, false, frame);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
                 }
             });
         } catch (Exception e) {
@@ -95,7 +115,7 @@ public class WebSocketStreamPump extends StreamPump {
         }
     }
 
-    private void passFrameToChainElement(int i, boolean frameTravelsToRight, WebSocketFrame frame) throws Exception {
+    private void passFrameToChainElement(final int i, final boolean frameTravelsToRight, WebSocketFrame frame) throws Exception {
         if (chain.isEmpty()) {
             if (true)
                 synchronized (out) {
@@ -114,8 +134,16 @@ public class WebSocketStreamPump extends StreamPump {
                 frame.write(target);
             }
         } else {
+            /*
             chain.get(i).handleFrame(frame, frameTravelsToRight, frame1 -> {
                 passFrameToChainElement(i + (frameTravelsToRight ? 1 : -1), frameTravelsToRight, frame1);
+            });
+            */
+            chain.get(i).handleFrame(frame, frameTravelsToRight, new WebSocketSender() {
+                @Override
+                public void handleFrame(WebSocketFrame frame1) throws Exception {
+                    passFrameToChainElement(i + (frameTravelsToRight ? 1 : -1), frameTravelsToRight, frame1);
+                }
             });
         }
     }

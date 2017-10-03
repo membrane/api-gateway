@@ -34,6 +34,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -62,7 +63,7 @@ public class OAuth2RaceCondition {
 
     @Test
     public void testSessionIdStateRaceCondition() throws Exception {
-        HttpClient hc = HttpClientBuilder.create().build();
+        final HttpClient hc = HttpClientBuilder.create().build();
 
         login(hc);
         System.out.println("Logged in");
@@ -74,10 +75,12 @@ public class OAuth2RaceCondition {
             Future<Exception>[] results = new Future[2];
 
             int parallelReqs = 2;
-            CountDownLatch cdl = new CountDownLatch(parallelReqs);
+            final CountDownLatch cdl = new CountDownLatch(parallelReqs);
 
-            for (int j = 0; j < parallelReqs; j++) {
+            for (int j = 0; j < parallelReqs; j++) 
+            {
                 final int fj = j;
+                /*
                 results[j] = executor.submit(() -> {
                     try {
                         int uri = (fj %2 == 0 ? 1 : 2);
@@ -97,7 +100,51 @@ public class OAuth2RaceCondition {
                         return e;
                     }
                 });
+                */
+                
+                results[j] = executor.submit(new Callable<Exception>() {
+                    @Override
+                    public Exception call() throws Exception 
+                    {
+                        try 
+                        {
+                            int uri = (fj %2 == 0 ? 1 : 2);
+                            String url = "http://localhost:2011/test" + uri;
+                            HttpGet get = new HttpGet(url);
+                            //setNoRedirects(get);
+                            cdl.countDown();
+                            cdl.await();
+                            CloseableHttpResponse getRes = null;
+                            try
+                            {
+                                getRes = (CloseableHttpResponse) hc.execute(get);
+                                assertEquals(200, getRes.getStatusLine().getStatusCode());
+                                String resText = EntityUtils.toString(getRes.getEntity(),"UTF-8");
+                                System.out.println("Called: Test" + uri + ".\nActual: " + resText);
+                                assertTrue(resText.contains(Integer.toString(uri)));
+                                return null;
+                            }
+                            catch (Exception e) 
+                            {
+                               return e;
+                           }
+                           finally
+                           {
+                               getRes.close();
+
+                           }
+                        }
+                        catch (Exception x)
+                        {
+                            return x;
+                        }
+                    }    
+                    });
+                
+                
             }
+            
+                        
             for (int j = 0; j < parallelReqs; j++) {
                 results[j].get();
             }
@@ -114,8 +161,15 @@ public class OAuth2RaceCondition {
 
     private void login(HttpClient client) throws IOException {
         HttpGet clientGet = new HttpGet("http://localhost:2011");
-        try(CloseableHttpResponse clientGetRes = (CloseableHttpResponse) client.execute(clientGet)) {
+        CloseableHttpResponse clientGetRes = null;
+        try
+        {
+            clientGetRes = (CloseableHttpResponse) client.execute(clientGet);
             assertEquals(200, clientGetRes.getStatusLine().getStatusCode());
+        }
+        finally
+        {
+            clientGetRes.close();
         }
 
         HttpPost loginPost = new HttpPost("http://localhost:2010/login/");
@@ -124,13 +178,28 @@ public class OAuth2RaceCondition {
                 new BasicNameValuePair("username", "john"),
                 new BasicNameValuePair("password", "password")
         )));
-        try(CloseableHttpResponse loginPostRes = (CloseableHttpResponse) client.execute(loginPost)) {
+        
+        CloseableHttpResponse loginPostRes = null;
+        try
+        {
+            loginPostRes = (CloseableHttpResponse) client.execute(loginPost);
             assertEquals(200, loginPostRes.getStatusLine().getStatusCode());
+        }
+        finally
+        {
+            loginPostRes.close();
         }
 
         HttpGet followGet = new HttpGet("http://localhost:2010/");
-        try(CloseableHttpResponse followGetRes = (CloseableHttpResponse) client.execute(followGet)) {
+        CloseableHttpResponse followGetRes = null;
+        try
+        {
+            followGetRes = (CloseableHttpResponse) client.execute(followGet);
             assertEquals(200, followGetRes.getStatusLine().getStatusCode());
+        }
+        finally
+        {
+            followGetRes.close();
         }
         this.client.stopAll();
         this.client = HttpRouter.init(System.getProperty("user.dir") + "\\src\\test\\resources\\OAuth2\\client.xml");

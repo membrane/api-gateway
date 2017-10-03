@@ -59,7 +59,7 @@ public class AMQuota {
         public void run() {
             log.info("Getting new config");
             fillPolicyQuotas();
-            keyByteCounter = new ConcurrentHashMap<>();
+            keyByteCounter = new ConcurrentHashMap<String, ApiKeyByteCounter>();
         }
     };
 

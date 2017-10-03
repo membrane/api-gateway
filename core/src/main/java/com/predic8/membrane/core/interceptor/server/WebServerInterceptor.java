@@ -30,8 +30,9 @@ import org.springframework.beans.factory.annotation.Required;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
+import org.apache.commons.io.FilenameUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -215,9 +216,11 @@ public class WebServerInterceptor extends AbstractInterceptor {
 
     private String getAbsolutePathWithSchemePrefix(String path) {
         try {
-            Path p = Paths.get(path);
-            if (p.isAbsolute())
-                return p.toUri().toString();
+            if (FilenameUtils.getPrefixLength(path) != 0)
+                return "file://"+path;
+            //Path p = Paths.get(path);
+            //if (p.isAbsolute())
+            //    return p.toUri().toString();
         } catch (Exception ignored) {
         }
 

@@ -184,7 +184,17 @@ public abstract class AbstractBody {
 	protected abstract byte[] getRawLocal() throws IOException;
 
 	protected boolean hasRelevantObservers() {
-		return observers.stream().filter(messageObserver -> !(messageObserver instanceof NonRelevantBodyObserver)).collect(Collectors.toList()).size() > 0;
+		//return observers.stream().filter(messageObserver -> !(messageObserver instanceof NonRelevantBodyObserver)).collect(Collectors.toList()).size() > 0;
+                boolean hasRelevant = false;
+                for (MessageObserver o: observers)
+                {
+                    if ( ! (o instanceof NonRelevantBodyObserver))
+                    {
+                        hasRelevant = true;
+                        break;
+                    }
+                }
+                return hasRelevant;
 	}
 
 	/**
