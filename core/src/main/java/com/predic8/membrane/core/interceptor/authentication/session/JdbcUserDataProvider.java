@@ -28,16 +28,12 @@ import java.util.NoSuchElementException;
 
 @MCElement(name="jdbcUserDataProvider")
 public class JdbcUserDataProvider implements  UserDataProvider {
-    private static Logger log = LoggerFactory.getLogger(JdbcUserDataProvider.class.getName());
-
-    private Router router;
-
+    private static final Logger log = LoggerFactory.getLogger(JdbcUserDataProvider.class.getName());
     DataSource datasource;
-
     String tableName;
     String userColumnName;
     String passwordColumnName;
-
+    private Router router;
 
     @Override
     public void init(Router router) {
@@ -70,10 +66,12 @@ public class JdbcUserDataProvider implements  UserDataProvider {
             statement = con.createStatement();
             statement.executeUpdate(getCreateTableSql());
         }finally{
-            if(statement != null)
+            if (statement != null) {
                 statement.close();
-            if(con != null)
+            }
+            if (con != null) {
                 con.close();
+            }
         }
 
     }
@@ -81,34 +79,41 @@ public class JdbcUserDataProvider implements  UserDataProvider {
     private String getCreateTableSql() {
         StringBuilder sql = new StringBuilder();
         sql.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append("(")
+                .append("id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, ")
                 .append(userColumnName).append(" varchar NOT NULL, ")
                 .append(passwordColumnName).append(" varchar NOT NULL, ")
-                .append("PRIMARY KEY(").append(userColumnName).append("));");
+                .append("salt varchar NOT NULL, ")
+                .append("verified boolean NOT NULL DEFAULT false")
+                .append(");");
         return sql.toString();
     }
 
     private void getDatasourceIfNull() {
-        if(datasource != null)
+        if (datasource != null) {
             return;
+        }
 
         Map<String, DataSource> beans = router.getBeanFactory().getBeansOfType(DataSource.class);
 
         DataSource[] datasources = beans.values().toArray(new DataSource[0]);
-        if(datasources.length > 0)
+        if (datasources.length > 0) {
             datasource = datasources[0];
-        else
+        } else {
             throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
+        }
     }
 
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
         String username = postData.get("username");
-        if (username == null)
+        if (username == null) {
             throw new NoSuchElementException();
+        }
 
         String password = postData.get("password");
-        if (password == null)
+        if (password == null) {
             throw new NoSuchElementException();
+        }
 
         Connection con = null;
         PreparedStatement preparedStatement = null;
@@ -123,16 +128,20 @@ public class JdbcUserDataProvider implements  UserDataProvider {
 
             result = new HashMap<>();
             while(rs.next()){
-                for(int i = 1; i <= rsmd.getColumnCount();i++)
-                    result.put(rsmd.getColumnName(i),rs.getObject(i).toString());
+                for (int i = 1; i <= rsmd.getColumnCount(); i++) {
+                    result.put(rsmd.getColumnName(i), rs.getObject(i).toString());
+                }
             }
 
-            if(rs != null)
+            if (rs != null) {
                 rs.close();
-            if(preparedStatement != null)
+            }
+            if (preparedStatement != null) {
                 preparedStatement.close();
-            if(con != null)
+            }
+            if (con != null) {
                 con.close();
+            }
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -140,8 +149,9 @@ public class JdbcUserDataProvider implements  UserDataProvider {
         }
 
 
-        if(result != null && username.equals(result.get(userColumnName)) && password.equals(result.get(passwordColumnName)))
+        if (result != null && username.equals(result.get(userColumnName)) && password.equals(result.get(passwordColumnName))) {
             return result;
+        }
         throw new NoSuchElementException();
     }
 
