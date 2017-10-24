@@ -192,7 +192,7 @@ public abstract class SSLContext implements SSLProvider {
             int points = 0;
             if (supportsPFS(cipher))
                 points = 100;
-            points += getAESStrength(cipher) * 2;
+            points += getAESStrength(cipher) * 5;
             points += getSHAStrength(cipher) * 2;
             if (supportsAESGCM(cipher))
                 points += 1;
