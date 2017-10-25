@@ -37,8 +37,16 @@ public class SecurityUtils {
         }
 
         saltString.replaceAll(Pattern.quote("+"), Pattern.quote("."));
-        saltString = "$6$" + saltString;
 
+        return createPasswdCompatibleHash(password, saltString);
+    }
+
+    public static String extractSalt(String password) {
+        return password.split(Pattern.quote("$"))[2];
+    }
+
+    public static String createPasswdCompatibleHash(String password, String saltString) {
+        saltString = "$6$" + saltString;
         return Crypt.crypt(password, saltString);
     }
 }

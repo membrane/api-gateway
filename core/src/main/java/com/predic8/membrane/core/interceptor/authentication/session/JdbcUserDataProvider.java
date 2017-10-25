@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.authentication.session;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.interceptor.registration.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -26,8 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-@MCElement(name="jdbcUserDataProvider")
-public class JdbcUserDataProvider implements  UserDataProvider {
+@MCElement(name = "jdbcUserDataProvider")
+public class JdbcUserDataProvider implements UserDataProvider {
     private static final Logger log = LoggerFactory.getLogger(JdbcUserDataProvider.class.getName());
     DataSource datasource;
     String tableName;
@@ -65,7 +66,7 @@ public class JdbcUserDataProvider implements  UserDataProvider {
             con = datasource.getConnection();
             statement = con.createStatement();
             statement.executeUpdate(getCreateTableSql());
-        }finally{
+        } finally {
             if (statement != null) {
                 statement.close();
             }
@@ -78,11 +79,10 @@ public class JdbcUserDataProvider implements  UserDataProvider {
 
     private String getCreateTableSql() {
         StringBuilder sql = new StringBuilder();
-        sql.append("CREATE TABLE IF NOT EXISTS ").append(tableName).append("(")
+        sql.append(String.format("CREATE TABLE IF NOT EXISTS %s", getTableName())).append("(")
                 .append("id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, ")
-                .append(userColumnName).append(" varchar NOT NULL, ")
-                .append(passwordColumnName).append(" varchar NOT NULL, ")
-                .append("salt varchar NOT NULL, ")
+                .append(String.format("%s varchar NOT NULL, ", getUserColumnName()))
+                .append(String.format("%s varchar NOT NULL, ", getPasswordColumnName()))
                 .append("verified boolean NOT NULL DEFAULT false")
                 .append(");");
         return sql.toString();
@@ -117,17 +117,17 @@ public class JdbcUserDataProvider implements  UserDataProvider {
 
         Connection con = null;
         PreparedStatement preparedStatement = null;
-        HashMap<String,String> result = null;
-        try{
+        HashMap<String, String> result = null;
+        try {
             con = datasource.getConnection();
             preparedStatement = con.prepareStatement(createGetUsersSql());
-            preparedStatement.setString(1,username);
+            preparedStatement.setString(1, username);
 
             ResultSet rs = preparedStatement.executeQuery();
             ResultSetMetaData rsmd = rs.getMetaData();
 
             result = new HashMap<>();
-            while(rs.next()){
+            while (rs.next()) {
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                     result.put(rsmd.getColumnName(i), rs.getObject(i).toString());
                 }
@@ -148,9 +148,15 @@ public class JdbcUserDataProvider implements  UserDataProvider {
             log.error(e.getMessage());
         }
 
+        if (result != null) {
+            String passwordFromDB = result.get(getPasswordColumnName());
+            if (!SecurityUtils.isHashedPassword(password)) {
+                password = SecurityUtils.createPasswdCompatibleHash(password, SecurityUtils.extractSalt(passwordFromDB));
+            }
 
-        if (result != null && username.equals(result.get(userColumnName)) && password.equals(result.get(passwordColumnName))) {
-            return result;
+            if (username.equals(result.get(getUserColumnName())) && password.equals(passwordFromDB)) {
+                return result;
+            }
         }
         throw new NoSuchElementException();
     }
@@ -158,11 +164,10 @@ public class JdbcUserDataProvider implements  UserDataProvider {
     private String createGetUsersSql() {
         StringBuilder sql = new StringBuilder();
 
-        sql.append("SElECT * FROM ").append(tableName)
-                .append(" WHERE ").append(userColumnName).append("=?");
+        sql.append("SElECT * FROM ").append(getTableName())
+                .append(" WHERE ").append(getUserColumnName()).append("=?");
         return sql.toString();
     }
-
 
     public DataSource getDatasource() {
         return datasource;
@@ -174,7 +179,7 @@ public class JdbcUserDataProvider implements  UserDataProvider {
     }
 
     public String getTableName() {
-        return tableName;
+        return tableName.toUpperCase();
     }
 
     @MCAttribute
@@ -184,7 +189,7 @@ public class JdbcUserDataProvider implements  UserDataProvider {
     }
 
     public String getUserColumnName() {
-        return userColumnName;
+        return userColumnName.toUpperCase();
     }
 
     @MCAttribute
@@ -194,7 +199,7 @@ public class JdbcUserDataProvider implements  UserDataProvider {
     }
 
     public String getPasswordColumnName() {
-        return passwordColumnName;
+        return passwordColumnName.toUpperCase();
     }
 
     @MCAttribute
