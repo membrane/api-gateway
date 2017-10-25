@@ -28,7 +28,6 @@ import com.predic8.membrane.core.interceptor.registration.entity.User;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 /**
  * @description Allows account registration (!Experimental!)
@@ -60,15 +59,17 @@ public class RegistrationInterceptor extends AbstractInterceptor {
         //user.setConfirmed(false); DB setzt als Standardwert 'false' gesetzt
 
         try (Connection connection = userDataProvider.getDatasource().getConnection()) {
-            if (isAccountnameAvailable(user, connection)) {
-                return ErrorMessages.returnErrorUserAlreadyExists(exc);
+            try (ResultSet rs = connection.createStatement().executeQuery(getIsAccountNameAvailableSQL(user))) {
+                if (rs.next() && rs.getInt(1) != 0) {
+                    return ErrorMessages.returnErrorUserAlreadyExists(exc);
+                }
             }
 
             if (!SecurityUtils.isHashedPassword(user.getPassword())) {
                 user.setPassword(SecurityUtils.createPasswdCompatibleHash(user.getPassword()));
             }
 
-            connection.createStatement().executeUpdate(String.format("INSERT INTO %s (%s, %s) VALUES('%s', '%s')", userDataProvider.getTableName(), userDataProvider.getUserColumnName(), userDataProvider.getPasswordColumnName(), user.getEmail(), user.getPassword()));
+            connection.createStatement().executeUpdate(getInsertAccountIntoDatabaseSQL(user));
         }
 
         //TODO: Save user mit flag if confirmated
@@ -78,13 +79,23 @@ public class RegistrationInterceptor extends AbstractInterceptor {
         return Outcome.RETURN;
     }
 
-    private boolean isAccountnameAvailable(User user, Connection connection) throws SQLException {
-        try (ResultSet rs = connection.createStatement().executeQuery(String.format("SELECT COUNT(*) FROM %s WHERE %s = '%s'", userDataProvider.getTableName(), userDataProvider.getUserColumnName(), user.getEmail()))) {
-            if (rs.next() && rs.getInt(1) != 0) {
-                return true;
-            }
-        }
-        return false;
+    private String getInsertAccountIntoDatabaseSQL(User user) {
+        StringBuilder sql = new StringBuilder();
+
+        sql.append(String.format("INSERT INTO %s", userDataProvider.getTableName()));
+        sql.append(String.format(" (%s, %s)", userDataProvider.getUserColumnName(), userDataProvider.getPasswordColumnName()));
+        sql.append(String.format(" VALUES('%s', '%s')", user.getEmail(), user.getPassword()));
+
+        return sql.toString();
+    }
+
+    private String getIsAccountNameAvailableSQL(User user) {
+        StringBuilder sql = new StringBuilder();
+
+        sql.append(String.format("SELECT COUNT(*) FROM %s", userDataProvider.getTableName()));
+        sql.append(String.format(" WHERE %s = '%s'", userDataProvider.getUserColumnName(), user.getEmail()));
+
+        return sql.toString();
     }
 }
 
