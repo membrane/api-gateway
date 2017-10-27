@@ -114,7 +114,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
 
             result = new HashMap<>();
             while (rs.next()) for (int i = 1; i <= rsmd.getColumnCount(); i++)
-                result.put(rsmd.getColumnName(i), rs.getObject(i).toString());
+                result.put(rsmd.getColumnName(i).toLowerCase(), rs.getObject(i).toString());
 
             rs.close();
             preparedStatement.close();
@@ -126,13 +126,14 @@ public class JdbcUserDataProvider implements UserDataProvider {
         }
 
         if (result != null && result.size() > 0) {
-            String passwordFromDB = result.get(getPasswordColumnName());
+            String passwordFromDB = result.get(getPasswordColumnName().toLowerCase());
             if (!SecurityUtils.isHashedPassword(password))
                 password = SecurityUtils.createPasswdCompatibleHash(password, SecurityUtils.extractSalt(passwordFromDB));
 
-            if (username.equals(result.get(getUserColumnName())) && password.equals(passwordFromDB)) return result;
+            if (username.equals(result.get(getUserColumnName().toLowerCase())) && password.equals(passwordFromDB))
+                return result;
         }
-        
+
         throw new NoSuchElementException();
     }
 

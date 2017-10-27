@@ -89,7 +89,7 @@ public class RegistrationInterceptor extends AbstractInterceptor {
 /*
 * Example Proxies.xml
 *
-*     <spring:bean id="accountDB" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+    <spring:bean id="accountDB" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
         <spring:property name="driverClassName" value="org.h2.Driver"/>
         <spring:property name="username" value="sa"/>
         <spring:property name="password" value=""/>
@@ -103,7 +103,15 @@ public class RegistrationInterceptor extends AbstractInterceptor {
         <spring:property name="tableName" value="useraccount"/>
     </spring:bean>
 
+    <!--Registration Server-->
+    <router>
+        <serviceProxy name="localhost" port="8080">
+            <path>/user-registration</path>
+            <accountRegistration/>
+        </serviceProxy>
+    </router>
 
+    <!--Authorization Server-->
     <router>
         <serviceProxy name="Authorization Server" port="7000">
             <oauth2authserver issuer="http://localhost:7000" location="logindialog" consentFile="consentFile.json">
@@ -117,28 +125,21 @@ public class RegistrationInterceptor extends AbstractInterceptor {
                 <!-- Generates tokens in the given format -->
                 <bearerToken/>
 
-                <claims value="aud email iss sub username">
+                <claims value="email">
                     <!-- Scopes are defined from the claims exposed above -->
-                    <scope id="username" claims="username"/>
-                    <scope id="profile" claims="username email"/>
-
+                    <scope id="profil" claims="email"/>
                 </claims>
             </oauth2authserver>
         </serviceProxy>
     </router>
 
-
+    <!--Authorization Client-->
     <router>
-        <serviceProxy name="localhost" port="8080">
-            <path>/user-registration</path>
-            <accountRegistration/>
-		</serviceProxy>
-
         <serviceProxy name="Resource Service" port="2000">
             <!-- Protects a resource with OAuth2 - blocks on invalid login -->
             <oauth2Resource publicURL="http://localhost:2000/">
-                <membrane src="http://localhost:7000" clientId="abc" clientSecret="def" scope="openid profile"
-                          claims="username" claimsIdt="sub"/>
+                <membrane subject="email" src="http://localhost:7000" clientId="abc" clientSecret="def2000"
+                          scope="openid profil"/>
             </oauth2Resource>
 
             <!-- Use the information from the authentication server and pass it to the resource server (optional) -->
@@ -160,5 +161,4 @@ public class RegistrationInterceptor extends AbstractInterceptor {
             </groovy>
         </serviceProxy>
     </router>
-
 * */
