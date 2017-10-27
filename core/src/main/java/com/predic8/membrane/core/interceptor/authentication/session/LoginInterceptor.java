@@ -13,12 +13,6 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Required;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
@@ -28,6 +22,11 @@ import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
+
+import java.util.Map;
 
 /**
  * @description <p>
@@ -110,12 +109,9 @@ public class LoginInterceptor extends AbstractInterceptor {
 
 	@Override
 	public void init() throws Exception {
-		if (userDataProvider == null)
-			throw new Exception("No userDataProvider configured. - Cannot work without one.");
-		if (tokenProvider == null)
-			log.info("No Tokenprovider given, two-factor authentication not enabled");
-		if (sessionManager == null)
-			sessionManager = new SessionManager();
+		if (userDataProvider == null) throw new Exception("No userDataProvider configured. - Cannot work without one.");
+		if (tokenProvider == null) log.info("No Tokenprovider given, two-factor authentication not enabled");
+		if (sessionManager == null) sessionManager = new SessionManager();
 		userDataProvider.init(router);
 		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path, exposeUserCredentialsToSession, message);
 	}
@@ -123,8 +119,7 @@ public class LoginInterceptor extends AbstractInterceptor {
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-		if(tokenProvider != null)
-			tokenProvider.init(router);
+		if (tokenProvider != null) tokenProvider.init(router);
 		loginDialog.init(router);
 		sessionManager.init(router);
 		new CleanupThread(sessionManager, accountBlocker).start();
@@ -137,22 +132,16 @@ public class LoginInterceptor extends AbstractInterceptor {
 			return Outcome.RETURN;
 		}
 		Session s = sessionManager.getSession(exc);
-		if(s != null && s.isPreAuthorized()){
-			if(tokenProvider == null){
-				s.authorize();
-			}
-		}
-		else if (s == null || !s.isAuthorized()) {
-			return loginDialog.redirectToLogin(exc);
-		}
+		if (s != null && s.isPreAuthorized()) if (tokenProvider == null) s.authorize();
+		else
+			if (!s.isAuthorized()) return loginDialog.redirectToLogin(exc);
 
 		applyBackendAuthorization(exc, s);
 		return super.handleRequest(exc);
 	}
 
 	private void applyBackendAuthorization(Exchange exc, Session s) {
-		if (getId() != null)
-			exc.setProperty(getId() + "-session", s);
+		if (getId() != null) exc.setProperty(getId() + "-session", s);
 		Header h = exc.getRequest().getHeader();
 		for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
 			if (e.getKey().startsWith("header")) {

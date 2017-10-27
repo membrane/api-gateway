@@ -82,7 +82,6 @@ _*.swp
 /osgi-extender/.classpath
 /osgi-extender/target
 /osgi-extender/.project
-/osgi-extender/.settings
 
 # /sar/
 /sar/.settings
@@ -106,6 +105,7 @@ _*.swp
 
 
 # Intellj
-*.iml
 .idea
 maven-plugin/target/surefire/
+/distribution/conf/consentFile.json
+/distribution/conf/logindialog/

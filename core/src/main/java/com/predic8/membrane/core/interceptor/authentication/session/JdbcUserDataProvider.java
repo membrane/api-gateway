@@ -30,10 +30,10 @@ import java.util.NoSuchElementException;
 @MCElement(name = "jdbcUserDataProvider")
 public class JdbcUserDataProvider implements UserDataProvider {
     private static final Logger log = LoggerFactory.getLogger(JdbcUserDataProvider.class.getName());
-    DataSource datasource;
-    String tableName;
-    String userColumnName;
-    String passwordColumnName;
+    private DataSource datasource;
+    private String tableName;
+    private String userColumnName;
+    private String passwordColumnName;
     private Router router;
 
     @Override
@@ -67,53 +67,39 @@ public class JdbcUserDataProvider implements UserDataProvider {
             statement = con.createStatement();
             statement.executeUpdate(getCreateTableSql());
         } finally {
-            if (statement != null) {
-                statement.close();
-            }
-            if (con != null) {
-                con.close();
-            }
+            if (statement != null) statement.close();
+            if (con != null) con.close();
         }
 
     }
 
     private String getCreateTableSql() {
-        StringBuilder sql = new StringBuilder();
-        sql.append(String.format("CREATE TABLE IF NOT EXISTS %s", getTableName())).append("(")
-                .append("id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, ")
-                .append(String.format("%s varchar NOT NULL, ", getUserColumnName()))
-                .append(String.format("%s varchar NOT NULL, ", getPasswordColumnName()))
-                .append("verified boolean NOT NULL DEFAULT false")
-                .append(");");
-        return sql.toString();
+        return "CREATE TABLE IF NOT EXISTS " + getTableName() + "(" +
+                "id bigint NOT NULL PRIMARY KEY AUTO_INCREMENT, " +
+                getUserColumnName() + " varchar NOT NULL, " +
+                getPasswordColumnName() + " varchar NOT NULL, " +
+                "verified boolean NOT NULL DEFAULT false" +
+                ");";
     }
 
     private void getDatasourceIfNull() {
-        if (datasource != null) {
-            return;
-        }
+        if (datasource != null) return;
 
         Map<String, DataSource> beans = router.getBeanFactory().getBeansOfType(DataSource.class);
 
         DataSource[] datasources = beans.values().toArray(new DataSource[0]);
-        if (datasources.length > 0) {
-            datasource = datasources[0];
-        } else {
+        if (datasources.length > 0) datasource = datasources[0];
+        else
             throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
-        }
     }
 
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
         String username = postData.get("username");
-        if (username == null) {
-            throw new NoSuchElementException();
-        }
+        if (username == null) throw new NoSuchElementException();
 
         String password = postData.get("password");
-        if (password == null) {
-            throw new NoSuchElementException();
-        }
+        if (password == null) throw new NoSuchElementException();
 
         Connection con = null;
         PreparedStatement preparedStatement = null;
@@ -127,21 +113,12 @@ public class JdbcUserDataProvider implements UserDataProvider {
             ResultSetMetaData rsmd = rs.getMetaData();
 
             result = new HashMap<>();
-            while (rs.next()) {
-                for (int i = 1; i <= rsmd.getColumnCount(); i++) {
-                    result.put(rsmd.getColumnName(i), rs.getObject(i).toString());
-                }
-            }
+            while (rs.next()) for (int i = 1; i <= rsmd.getColumnCount(); i++)
+                result.put(rsmd.getColumnName(i), rs.getObject(i).toString());
 
-            if (rs != null) {
-                rs.close();
-            }
-            if (preparedStatement != null) {
-                preparedStatement.close();
-            }
-            if (con != null) {
-                con.close();
-            }
+            rs.close();
+            preparedStatement.close();
+            con.close();
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -150,23 +127,17 @@ public class JdbcUserDataProvider implements UserDataProvider {
 
         if (result != null) {
             String passwordFromDB = result.get(getPasswordColumnName());
-            if (!SecurityUtils.isHashedPassword(password)) {
+            if (!SecurityUtils.isHashedPassword(password))
                 password = SecurityUtils.createPasswdCompatibleHash(password, SecurityUtils.extractSalt(passwordFromDB));
-            }
 
-            if (username.equals(result.get(getUserColumnName())) && password.equals(passwordFromDB)) {
-                return result;
-            }
+            if (username.equals(result.get(getUserColumnName())) && password.equals(passwordFromDB)) return result;
         }
         throw new NoSuchElementException();
     }
 
     private String createGetUsersSql() {
-        StringBuilder sql = new StringBuilder();
-
-        sql.append("SElECT * FROM ").append(getTableName())
-                .append(" WHERE ").append(getUserColumnName()).append("=?");
-        return sql.toString();
+        return "SElECT * FROM " + getTableName() +
+                " WHERE " + getUserColumnName() + "=?";
     }
 
     public DataSource getDatasource() {

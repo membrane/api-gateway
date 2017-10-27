@@ -46,11 +46,9 @@ public class RegistrationInterceptor extends AbstractInterceptor {
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
         Request request = exc.getRequest();
-        if (!request.isPOSTRequest()) {
-            return ErrorMessages.returnErrorBadRequest(exc);
-        }
+        if (!request.isPOSTRequest()) return ErrorMessages.returnErrorBadRequest(exc);
 
-        User user = null;
+        User user;
         try {
             user = new ObjectMapper().readValue(request.getBodyAsStringDecoded(), User.class);
         } catch (IOException e) {
@@ -60,14 +58,11 @@ public class RegistrationInterceptor extends AbstractInterceptor {
 
         try (Connection connection = userDataProvider.getDatasource().getConnection()) {
             try (ResultSet rs = connection.createStatement().executeQuery(getIsAccountNameAvailableSQL(user))) {
-                if (rs.next() && rs.getInt(1) != 0) {
-                    return ErrorMessages.returnErrorUserAlreadyExists(exc);
-                }
+                if (rs.next() && rs.getInt(1) != 0) return ErrorMessages.returnErrorUserAlreadyExists(exc);
             }
 
-            if (!SecurityUtils.isHashedPassword(user.getPassword())) {
+            if (!SecurityUtils.isHashedPassword(user.getPassword()))
                 user.setPassword(SecurityUtils.createPasswdCompatibleHash(user.getPassword()));
-            }
 
             connection.createStatement().executeUpdate(getInsertAccountIntoDatabaseSQL(user));
         }
@@ -80,22 +75,14 @@ public class RegistrationInterceptor extends AbstractInterceptor {
     }
 
     private String getInsertAccountIntoDatabaseSQL(User user) {
-        StringBuilder sql = new StringBuilder();
-
-        sql.append(String.format("INSERT INTO %s", userDataProvider.getTableName()));
-        sql.append(String.format(" (%s, %s)", userDataProvider.getUserColumnName(), userDataProvider.getPasswordColumnName()));
-        sql.append(String.format(" VALUES('%s', '%s')", user.getEmail(), user.getPassword()));
-
-        return sql.toString();
+        return String.format("INSERT INTO %s", userDataProvider.getTableName()) +
+                " (" + userDataProvider.getUserColumnName() + ", " + userDataProvider.getPasswordColumnName() + ")" +
+                " VALUES('" + user.getEmail() + "', '" + user.getPassword() + "')";
     }
 
     private String getIsAccountNameAvailableSQL(User user) {
-        StringBuilder sql = new StringBuilder();
-
-        sql.append(String.format("SELECT COUNT(*) FROM %s", userDataProvider.getTableName()));
-        sql.append(String.format(" WHERE %s = '%s'", userDataProvider.getUserColumnName(), user.getEmail()));
-
-        return sql.toString();
+        return "SELECT COUNT(*) FROM " + userDataProvider.getTableName() +
+                " WHERE " + userDataProvider.getUserColumnName() + " = '" + user.getEmail() + "'";
     }
 }
 

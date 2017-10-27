@@ -15,28 +15,15 @@ public class SecurityUtils {
     public static boolean isHashedPassword(String postDataPassword) {
         // TODO do a better check here
         String[] split = postDataPassword.split(Pattern.quote("$"));
-        if (split.length != 4) {
-            return false;
-        }
-        if (!split[0].isEmpty()) {
-            return false;
-        }
-        if (split[3].length() < 20) {
-            return false;
-        }
-        return true;
+        return split.length == 4 && split[0].isEmpty() && split[3].length() >= 20;
     }
 
-    public static String createPasswdCompatibleHash(String password) throws UnsupportedEncodingException, NoSuchAlgorithmException {
+    static String createPasswdCompatibleHash(String password) throws UnsupportedEncodingException, NoSuchAlgorithmException {
         byte[] salt = new byte[128];
         new SecureRandom().nextBytes(salt);
 
         String saltString = Base64.encodeBase64String(salt);
-        if (saltString.length() > 16) {
-            saltString = saltString.substring(0, 16);
-        }
-
-        saltString.replaceAll(Pattern.quote("+"), Pattern.quote("."));
+        if (saltString.length() > 16) saltString = saltString.substring(0, 16);
 
         return createPasswdCompatibleHash(password, saltString);
     }
