@@ -125,13 +125,14 @@ public class JdbcUserDataProvider implements UserDataProvider {
             log.error(e.getMessage());
         }
 
-        if (result != null) {
+        if (result != null && result.size() > 0) {
             String passwordFromDB = result.get(getPasswordColumnName());
             if (!SecurityUtils.isHashedPassword(password))
                 password = SecurityUtils.createPasswdCompatibleHash(password, SecurityUtils.extractSalt(passwordFromDB));
 
             if (username.equals(result.get(getUserColumnName())) && password.equals(passwordFromDB)) return result;
         }
+        
         throw new NoSuchElementException();
     }
 
