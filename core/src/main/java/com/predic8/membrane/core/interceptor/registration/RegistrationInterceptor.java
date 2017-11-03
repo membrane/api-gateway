@@ -105,7 +105,7 @@ public class RegistrationInterceptor extends AbstractInterceptor {
 
     <!--Registration Server-->
     <router>
-        <serviceProxy name="localhost" port="8080">
+        <serviceProxy name="localhost" port="8081">
             <path>/user-registration</path>
             <accountRegistration/>
         </serviceProxy>
@@ -119,7 +119,8 @@ public class RegistrationInterceptor extends AbstractInterceptor {
                 <jdbcUserDataProvider userColumnName="email" passwordColumnName="password" tableName="useraccount"/>
 
                 <staticClientList>
-                    <client clientId="abc" clientSecret="def2000" callbackUrl="http://localhost:2000/oauth2callback"/>
+                    <client clientId="abc" clientSecret="def2000"
+                            callbackUrl="http://localhost:10000/membrane/oauth2callback"/>
                 </staticClientList>
 
                 <!-- Generates tokens in the given format -->
@@ -159,6 +160,36 @@ public class RegistrationInterceptor extends AbstractInterceptor {
                 exc.request.header.getFirstValue("X-EMAIL")).build())
                 RETURN
             </groovy>
+        </serviceProxy>
+
+        <serviceProxy port="10000">
+            <path>/membrane</path>
+            <!-- Protects a resource with OAuth2 - blocks on invalid login -->
+            <oauth2Resource>
+                <membrane subject="email" src="http://localhost:7000" clientId="abc" clientSecret="def2000"
+                          scope="openid profil"/>
+            </oauth2Resource>
+
+            <!-- Use the information from the authentication server and pass it to the resource server (optional) -->
+            <groovy>
+                def oauth2 = exc.properties.oauth2
+                <!-- Put the eMail into the header X-EMAIL and pass it to the protected server. -->
+                exc.request.header.setValue('X-TOKEN-PROVIDER',"membrane")
+                exc.request.header.setValue('Authorization',"Bearer "+oauth2.accessToken)
+                CONTINUE
+            </groovy>
+
+            <log/>
+
+            <rewriter>
+                <map from="/membrane/(.*)" to="/$1"/>
+            </rewriter>
+
+            <target host="localhost" port="10000"/>
+        </serviceProxy>
+
+        <serviceProxy port="10000">
+            <target host="localhost" port="8080"/>
         </serviceProxy>
     </router>
 * */
