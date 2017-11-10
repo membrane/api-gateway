@@ -191,9 +191,35 @@ public abstract class SSLContext implements SSLProvider {
             this.cipher = cipher;
             int points = 0;
             if (supportsPFS(cipher))
-                points = 1;
+                points = 100;
+            points += getAESStrength(cipher) * 5;
+            points += getSHAStrength(cipher) * 2;
+            if (supportsAESGCM(cipher))
+                points += 1;
 
             this.points = points;
+        }
+
+        private boolean supportsAESGCM(String cipher) {
+            return cipher.contains("_GCM_");
+        }
+
+        private int getAESStrength(String cipher) {
+            if (cipher.contains("_AES_512_"))
+                return 2;
+            if (cipher.contains("_AES_256_"))
+                return 1;
+            if (cipher.contains("_AES_128_"))
+                return 0;
+            return 0;
+        }
+
+        private int getSHAStrength(String cipher) {
+            if (cipher.endsWith("_SHA384"))
+                return 2;
+            if (cipher.endsWith("_SHA256"))
+                return 1;
+            return 0;
         }
 
         private boolean supportsPFS(String cipher2) {
