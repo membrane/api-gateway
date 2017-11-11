@@ -89,6 +89,11 @@ public class RegistrationInterceptor extends AbstractInterceptor {
 /*
 * Example Proxies.xml
 *
+<spring:beans xmlns:spring="http://www.springframework.org/schema/beans"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xmlns="http://membrane-soa.org/proxies/1/"
+              xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+					    http://membrane-soa.org/proxies/1/ http://membrane-soa.org/schemas/proxies-1.xsd">
     <spring:bean id="accountDB" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
         <spring:property name="driverClassName" value="org.h2.Driver"/>
         <spring:property name="username" value="sa"/>
@@ -120,7 +125,7 @@ public class RegistrationInterceptor extends AbstractInterceptor {
 
                 <staticClientList>
                     <client clientId="abc" clientSecret="def2000"
-                            callbackUrl="http://localhost:10000/membrane/oauth2callback"/>
+                            callbackUrl="http://localhost:2000/oauth2callback"/>
                 </staticClientList>
 
                 <!-- Generates tokens in the given format -->
@@ -134,62 +139,74 @@ public class RegistrationInterceptor extends AbstractInterceptor {
         </serviceProxy>
     </router>
 
-    <!--Authorization Client-->
+    <!--Resource Service-->
     <router>
+        <!-- Login with membrane as oauth2 provider -->
         <serviceProxy name="Resource Service" port="2000">
+
+            <groovy>
+                println("Erster1");
+                println(exc.getRequest().getUri());
+            </groovy>
+
             <!-- Protects a resource with OAuth2 - blocks on invalid login -->
             <oauth2Resource publicURL="http://localhost:2000/">
                 <membrane subject="email" src="http://localhost:7000" clientId="abc" clientSecret="def2000"
                           scope="openid profil"/>
             </oauth2Resource>
 
+            <groovy>
+                println("Erster2");
+                println(exc.getRequest().getUri());
+            </groovy>
+
             <!-- Use the information from the authentication server and pass it to the resource server (optional) -->
             <groovy>
                 def oauth2 = exc.properties.oauth2
                 <!-- Put the eMail into the header X-EMAIL and pass it to the protected server. -->
                 exc.request.header.setValue('X-EMAIL',oauth2.userinfo.email)
-                CONTINUE
-            </groovy>
-
-            <target host="localhost" port="3000"/>
-        </serviceProxy>
-
-        <serviceProxy port="3000">
-            <groovy>
-                exc.setResponse(Response.ok("You accessed the protected resource! Hello " +
-                exc.request.header.getFirstValue("X-EMAIL")).build())
-                RETURN
-            </groovy>
-        </serviceProxy>
-
-        <serviceProxy port="10000">
-            <path>/membrane</path>
-            <!-- Protects a resource with OAuth2 - blocks on invalid login -->
-            <oauth2Resource>
-                <membrane subject="email" src="http://localhost:7000" clientId="abc" clientSecret="def2000"
-                          scope="openid profil"/>
-            </oauth2Resource>
-
-            <!-- Use the information from the authentication server and pass it to the resource server (optional) -->
-            <groovy>
-                def oauth2 = exc.properties.oauth2
-                <!-- Put the eMail into the header X-EMAIL and pass it to the protected server. -->
                 exc.request.header.setValue('X-TOKEN-PROVIDER',"membrane")
                 exc.request.header.setValue('Authorization',"Bearer "+oauth2.accessToken)
                 CONTINUE
             </groovy>
 
-            <log/>
-
-            <rewriter>
-                <map from="/membrane/(.*)" to="/$1"/>
-            </rewriter>
+            <groovy>
+                println("Erster3");
+                println(exc.getRequest().getUri());
+            </groovy>
 
             <target host="localhost" port="10000"/>
         </serviceProxy>
+    </router>
 
+    <!-- Unterscheidet zwischen 3rd party oauth2 und membrane oauth2 -->
+    <router>
+        <!-- Login with membrane as oauth2 provider -->
         <serviceProxy port="10000">
+            <path>/membrane</path>
+
+            <rewriter>
+                <map from="^/membrane/(.*)" to="/$1"/>
+            </rewriter>
+
+            <groovy>
+                println("Membrane Weiterleitung");
+                println(exc.getRequest().getUri());
+            </groovy>
+            <target host="localhost" port="2000"/>
+        </serviceProxy>
+
+        <!-- Login with 3rd party oauth2 provider -->
+        <serviceProxy port="10000">
+            <groovy>
+                println("3rdParty Weiterleitung");
+                println(exc.getRequest().getUri());
+            </groovy>
             <target host="localhost" port="8080"/>
         </serviceProxy>
     </router>
+</spring:beans>
+
+        <!-- localhost:10000/membrane/swagger-ui.html -->
+        <!-- localhost:10000/swagger-ui.html -->
 * */
