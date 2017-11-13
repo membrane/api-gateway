@@ -4,7 +4,7 @@ ARGUMENTS="$@"
 homeSet() {
 	echo "MEMBRANE_HOME variable is now set"
 	if [ "$JAVA_HOME" ] ; then
-		exec java "-Djava.ext.dirs=$JAVA_HOME/jre/lib/ext/:$MEMBRANE_HOME/lib/" com.predic8.membrane.balancer.client.LBNotificationClient $ARGUMENTS
+		exec java -cp "${JAVA_HOME}/jre/lib/ext/*:${MEMBRANE_HOME}/lib/*" com.predic8.membrane.balancer.client.LBNotificationClient $ARGUMENTS
 	else
 		echo "Please set the JAVA_HOME environment variable."
 	fi

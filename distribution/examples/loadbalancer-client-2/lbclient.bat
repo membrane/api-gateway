@@ -16,4 +16,4 @@ exit
 
 :homeOk
 if not exist "%JAVA_HOME%" goto javaHomeMissing
-java "-Djava.ext.dirs=%JAVA_HOME%/jre/lib/ext/;%MEMBRANE_HOME%/lib/" -cp %MEMBRANE_HOME%/conf/  com.predic8.membrane.balancer.client.LBNotificationClient %1 %2 %3 %4 %5 %6 %7 %8 %9
+java -cp "%JAVA_HOME%\jre\lib\ext\*;%MEMBRANE_HOME%\lib\*;%MEMBRANE_HOME%\conf\*" com.predic8.membrane.balancer.client.LBNotificationClient %1 %2 %3 %4 %5 %6 %7 %8 %9
