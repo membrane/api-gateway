@@ -87,6 +87,7 @@ public class JwtGenerator {
         jws.setPayload(claims.toJson());
         jws.setKey(rsaJsonWebKey.getPrivateKey());
         jws.setKeyIdHeaderValue(rsaJsonWebKey.getKeyId());
+        jws.setHeader("typ","JWT");
         jws.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
         return jws;
     }
