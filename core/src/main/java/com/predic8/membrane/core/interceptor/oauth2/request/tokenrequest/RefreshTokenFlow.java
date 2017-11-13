@@ -21,9 +21,7 @@ import com.predic8.membrane.core.interceptor.oauth2.OAuth2AuthorizationServerInt
 import com.predic8.membrane.core.interceptor.oauth2.OAuth2Util;
 import com.predic8.membrane.core.interceptor.oauth2.ParamNames;
 import com.predic8.membrane.core.interceptor.oauth2.request.NoResponse;
-import com.predic8.membrane.core.interceptor.oauth2.request.ParameterizedRequest;
 
-import java.io.IOException;
 import java.util.NoSuchElementException;
 
 public class RefreshTokenFlow extends TokenRequest {

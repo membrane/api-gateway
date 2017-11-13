@@ -24,7 +24,6 @@ import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
 import com.predic8.membrane.core.util.URLParamUtil;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Map;
 
 public abstract class ParameterizedRequest {

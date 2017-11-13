@@ -236,17 +236,23 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if (session == null)
             return respondWithRedirect(exc);
 
-        if(session.getUserAttributes().get(OAUTH2_ANSWER) != null && tokenNeedsRevalidation(session.getUserAttributes().get(ParamNames.ACCESS_TOKEN))) {
+
+        if (session.getUserAttributes().get(OAUTH2_ANSWER) != null && tokenNeedsRevalidation(session.getUserAttributes().get(ParamNames.ACCESS_TOKEN))) {
             if (revalidateToken(OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER))) == null)
                 session.clear();
         }
 
+        if(session.getUserAttributes().get(OAUTH2_ANSWER) != null)
+            exc.setProperty(Exchange.OAUTH2, OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
 
-        if(refreshingOfAccessTokenIsNeeded(session))
-            refreshAccessToken(session);
+        if (refreshingOfAccessTokenIsNeeded(session)) {
+            synchronized (session) {
+                refreshAccessToken(session);
+                exc.setProperty(Exchange.OAUTH2, OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
+            }
+        }
 
         if (session.isAuthorized()) {
-            exc.setProperty(Exchange.OAUTH2,OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
             applyBackendAuthorization(exc, session);
             statistics.successfulRequest();
             return Outcome.CONTINUE;
@@ -256,11 +262,16 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             if (exc.getResponse().getStatusCode() >= 400)
                 session.clear();
             return Outcome.RETURN;
-        }
+            }
+
         return respondWithRedirect(exc);
     }
 
     private void refreshAccessToken(Session session) throws Exception {
+
+        if(!refreshingOfAccessTokenIsNeeded(session))
+            return;
+
         OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER));
         Exchange refreshTokenExchange = new Request.Builder()
                 .post(auth.getTokenEndpoint())
@@ -272,24 +283,29 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 .buildExchange();
 
         Response refreshTokenResponse = auth.doRequest(refreshTokenExchange);
-        if(!refreshTokenResponse.isOk()){
+        if (!refreshTokenResponse.isOk()) {
             refreshTokenResponse.getBody().read();
             throw new RuntimeException("Statuscode from authorization server for refresh token request: " + refreshTokenResponse.getStatusCode());
         }
 
         HashMap<String, String> json = Util.parseSimpleJSONResponse(refreshTokenResponse);
+        if (json.get("access_token") == null || json.get("refresh_token") == null) {
+            refreshTokenResponse.getBody().read();
+            throw new RuntimeException("Statuscode was ok but no access_token and refresh_token was received: " + refreshTokenResponse.getStatusCode());
+        }
         oauth2Params.setAccessToken(json.get("access_token"));
         oauth2Params.setRefreshToken(json.get("refresh_token"));
         oauth2Params.setExpiration(json.get("expires_in"));
         oauth2Params.setReceivedAt(LocalDateTime.now());
-        if(json.containsKey("id_token")) {
+        if (json.containsKey("id_token")) {
             if (idTokenIsValid(json.get("id_token")))
                 oauth2Params.setIdToken(json.get("id_token"));
             else
                 oauth2Params.setIdToken("INVALID");
         }
 
-        session.getUserAttributes().put(OAUTH2_ANSWER,oauth2Params.serialize());
+        session.getUserAttributes().put(OAUTH2_ANSWER, oauth2Params.serialize());
+
     }
 
     private boolean refreshingOfAccessTokenIsNeeded(Session session) throws IOException {
@@ -297,10 +313,10 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return false;
 
         OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER));
-        if(oauth2Params.getExpiration() == null || oauth2Params.getExpiration().isEmpty())
+        if(oauth2Params.getRefreshToken() != null && oauth2Params.getExpiration() == null || oauth2Params.getExpiration().isEmpty())
             return false;
 
-        return LocalDateTime.now().isAfter(oauth2Params.getReceivedAt().plusSeconds(Long.parseLong(oauth2Params.getExpiration())).minusSeconds(60)); // refresh token 60 seconds before expiration
+        return LocalDateTime.now().isAfter(oauth2Params.getReceivedAt().plusSeconds(Long.parseLong(oauth2Params.getExpiration())).minusSeconds(5)); // refresh token 5 seconds before expiration
     }
 
     private HashMap<String, String> revalidateToken(OAuth2AnswerParameters params) throws Exception {
