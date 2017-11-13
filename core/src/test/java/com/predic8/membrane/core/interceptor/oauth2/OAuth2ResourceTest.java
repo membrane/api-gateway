@@ -19,8 +19,6 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.CountInterceptor;
-import com.predic8.membrane.core.interceptor.MockInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
 import com.predic8.membrane.core.rules.ServiceProxy;
@@ -37,7 +35,6 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class OAuth2ResourceTest {
 
