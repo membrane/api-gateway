@@ -39,8 +39,10 @@ public class JdbcUserDataProvider implements UserDataProvider {
     @Override
     public void init(Router router) {
         this.router = router;
+
         sanitizeUserInputs();
         getDatasourceIfNull();
+
         try {
             createTableIfNeeded();
         } catch (SQLException e) {
@@ -58,19 +60,19 @@ public class JdbcUserDataProvider implements UserDataProvider {
     }
 
     private void createTableIfNeeded() throws SQLException {
-
-
         Connection con = null;
         Statement statement = null;
+
         try {
             con = datasource.getConnection();
             statement = con.createStatement();
             statement.executeUpdate(getCreateTableSql());
         } finally {
-            if (statement != null) statement.close();
-            if (con != null) con.close();
+            if (statement != null)
+                statement.close();
+            if (con != null)
+                con.close();
         }
-
     }
 
     private String getCreateTableSql() {
@@ -83,12 +85,14 @@ public class JdbcUserDataProvider implements UserDataProvider {
     }
 
     private void getDatasourceIfNull() {
-        if (datasource != null) return;
+        if (datasource != null)
+            return;
 
         Map<String, DataSource> beans = router.getBeanFactory().getBeansOfType(DataSource.class);
 
         DataSource[] datasources = beans.values().toArray(new DataSource[0]);
-        if (datasources.length > 0) datasource = datasources[0];
+        if (datasources.length > 0)
+            datasource = datasources[0];
         else
             throw new RuntimeException("No datasource found - specifiy a DataSource bean in your Membrane configuration");
     }
@@ -96,10 +100,12 @@ public class JdbcUserDataProvider implements UserDataProvider {
     @Override
     public Map<String, String> verify(Map<String, String> postData) {
         String username = postData.get("username");
-        if (username == null) throw new NoSuchElementException();
+        if (username == null)
+            throw new NoSuchElementException();
 
         String password = postData.get("password");
-        if (password == null) throw new NoSuchElementException();
+        if (password == null)
+            throw new NoSuchElementException();
 
         Connection con = null;
         PreparedStatement preparedStatement = null;
@@ -138,7 +144,7 @@ public class JdbcUserDataProvider implements UserDataProvider {
     }
 
     private String createGetUsersSql() {
-        return "SElECT * FROM " + getTableName() +
+        return "SELECT * FROM " + getTableName() +
                 " WHERE " + getUserColumnName() + "=?";
     }
 
