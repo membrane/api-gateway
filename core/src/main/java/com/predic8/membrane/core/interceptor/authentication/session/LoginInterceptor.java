@@ -109,9 +109,12 @@ public class LoginInterceptor extends AbstractInterceptor {
 
 	@Override
 	public void init() throws Exception {
-		if (userDataProvider == null) throw new Exception("No userDataProvider configured. - Cannot work without one.");
-		if (tokenProvider == null) log.info("No Tokenprovider given, two-factor authentication not enabled");
-		if (sessionManager == null) sessionManager = new SessionManager();
+		if (userDataProvider == null)
+			throw new Exception("No userDataProvider configured. - Cannot work without one.");
+		if (tokenProvider == null)
+			log.info("No Tokenprovider given, two-factor authentication not enabled");
+		if (sessionManager == null)
+			sessionManager = new SessionManager();
 		userDataProvider.init(router);
 		loginDialog = new LoginDialog(userDataProvider, tokenProvider, sessionManager, accountBlocker, location, path, exposeUserCredentialsToSession, message);
 	}
@@ -119,8 +122,9 @@ public class LoginInterceptor extends AbstractInterceptor {
 	@Override
 	public void init(Router router) throws Exception {
 		super.init(router);
-		if (tokenProvider != null) tokenProvider.init(router);
-		loginDialog.init(router);
+        if (tokenProvider != null)
+            tokenProvider.init(router);
+        loginDialog.init(router);
 		sessionManager.init(router);
 		new CleanupThread(sessionManager, accountBlocker).start();
 	}
@@ -132,17 +136,23 @@ public class LoginInterceptor extends AbstractInterceptor {
 			return Outcome.RETURN;
 		}
 		Session s = sessionManager.getSession(exc);
-		if (s != null && s.isPreAuthorized()) if (tokenProvider == null) s.authorize();
-		else
-			if (!s.isAuthorized()) return loginDialog.redirectToLogin(exc);
+        if (s != null && s.isPreAuthorized()) {
+            if (tokenProvider == null) {
+                s.authorize();
+            }
+        }
+        else if (s == null || !s.isAuthorized()) {
+            return loginDialog.redirectToLogin(exc);
+        }
 
 		applyBackendAuthorization(exc, s);
 		return super.handleRequest(exc);
 	}
 
 	private void applyBackendAuthorization(Exchange exc, Session s) {
-		if (getId() != null) exc.setProperty(getId() + "-session", s);
-		Header h = exc.getRequest().getHeader();
+        if (getId() != null)
+            exc.setProperty(getId() + "-session", s);
+        Header h = exc.getRequest().getHeader();
 		for (Map.Entry<String, String> e : s.getUserAttributes().entrySet())
 			if (e.getKey().startsWith("header")) {
 				String headerName = e.getKey().substring(6);
