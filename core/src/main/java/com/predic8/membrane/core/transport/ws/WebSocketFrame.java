@@ -262,6 +262,75 @@ public class WebSocketFrame {
                 '}';
     }
 
+    private String toHex(byte[] buffer, int offset, int length) {
+        if (length == 0)
+            return "";
+
+        if (offset + length >= buffer.length)
+            throw new IllegalArgumentException();
+
+        int i = -1;
+        StringBuffer total = new StringBuffer();
+        StringBuffer hex = new StringBuffer();
+        StringBuffer ascii = new StringBuffer();
+
+        while(true) {
+            i++;
+
+            byte b = buffer[offset + i];
+            if (b < 32 || b >= 128)
+                ascii.append('.');
+            else
+                ascii.append((char)b);
+
+            for (int d = 0; d < 2; d++) {
+                int e = b;
+                if (e < 0)
+                    e += 256;
+                e = (d == 0 ? e / 16 : e) % 16;
+                hex.append((char)(e < 10 ? e + '0' : e - 10 + 'A'));
+            }
+
+            if (i % 2 == 1)
+                hex.append(' ');
+
+            if (i == length-1) {
+                while (hex.length() < 40)
+                    hex.append(' ');
+            }
+
+            if (i % 16 == 15 || i == length-1) {
+                total.append(hex.toString());
+                total.append(' ');
+                total.append(ascii.toString());
+                total.append('\n');
+
+                hex.delete(0, hex.length());
+                ascii.delete(0, ascii.length());
+            }
+
+            if (i == length-1)
+                break;
+        }
+
+        return total.toString();
+    }
+
+    public String toStringHex() {
+        return "WebSocketFrame{" +
+                "error='" + error + '\'' +
+                ", finalFragment=" + finalFragment +
+                ", rsv1=" + rsv1 +
+                ", rsv2=" + rsv2 +
+                ", rsv3=" + rsv3 +
+                ", opcode=" + opcode +
+                ", isMasked=" + isMasked +
+                ", payloadLength=" + payloadLength +
+                (isMasked ? (", maskKey=" + Arrays.toString(maskKey)) : "") +
+                ", payload=\n" + (opcode == 8 ? toHex(payload, 2, (int) payloadLength - 2) : toHex(payload, 0, (int) payloadLength)) +
+                '}';
+    }
+
     public Exchange getOriginalExchange() {
         return originalExchange;
     }

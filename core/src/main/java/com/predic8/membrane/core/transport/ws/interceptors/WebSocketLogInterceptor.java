@@ -14,23 +14,42 @@
 
 package com.predic8.membrane.core.transport.ws.interceptors;
 
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.transport.ws.WebSocketFrame;
 import com.predic8.membrane.core.transport.ws.WebSocketInterceptorInterface;
 import com.predic8.membrane.core.transport.ws.WebSocketSender;
 
+import static com.predic8.membrane.core.transport.ws.interceptors.WebSocketLogInterceptor.Encoding.HEX;
+
 @MCElement(name = "wsLog")
 public class WebSocketLogInterceptor implements WebSocketInterceptorInterface {
+    public enum Encoding {
+        RAW,
+        HEX
+    }
+
+    private Encoding encoding = Encoding.RAW;
+
     @Override
     public void init(Router router) throws Exception {
 
     }
 
+    public Encoding getEncoding() {
+        return encoding;
+    }
+
+    @MCAttribute
+    public void setEncoding(Encoding encoding) {
+        this.encoding = encoding;
+    }
+
     @Override
     public void handleFrame(WebSocketFrame frame, boolean frameTravelsToRight, WebSocketSender sender) throws Exception {
         System.out.println("Frame travels from " + (frameTravelsToRight ? "client to server" : "server to client"));
-        System.out.println(frame.toString());
+        System.out.println(encoding == HEX ? frame.toStringHex() : frame.toString());
         sender.handleFrame(frame);
     }
 }
