@@ -266,7 +266,7 @@ public class WebSocketFrame {
         if (length == 0)
             return "";
 
-        if (offset + length >= buffer.length)
+        if (offset + length > buffer.length)
             throw new IllegalArgumentException();
 
         int i = -1;
