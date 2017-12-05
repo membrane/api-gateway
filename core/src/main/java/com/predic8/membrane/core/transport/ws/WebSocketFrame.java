@@ -19,6 +19,7 @@ import com.predic8.membrane.core.util.ByteUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -44,6 +45,18 @@ public class WebSocketFrame {
 
     public WebSocketFrame() {
 
+    }
+
+    public WebSocketFrame(boolean fin, boolean rsv1, boolean rsv2, boolean rsv3, int opcode, boolean isMasked, byte[] maskingKey, byte[] payload) {
+        this.finalFragment = fin;
+        this.rsv1 = rsv1;
+        this.rsv2 = rsv2;
+        this.rsv3 = rsv3;
+        this.opcode = opcode;
+        this.isMasked = isMasked;
+        payloadLength = payload.length;
+        System.arraycopy(this.maskKey,0,maskingKey,0,maskingKey.length);
+        System.arraycopy(this.payload,0,payload,0,payload.length);
     }
 
     private String calcError() {
@@ -195,16 +208,20 @@ public class WebSocketFrame {
         rsv3 = ByteUtil.getBitValueBigEndian(finAndReservedAndOpCode, 3);
         opcode = ByteUtil.getValueOfBits(finAndReservedAndOpCode, 4, 7);
 
+        int headerLength = 2;
+
         byte maskAndPayloadLength = buffer[offset++];
         isMasked = ByteUtil.getBitValueBigEndian(maskAndPayloadLength, 0);
         payloadLength = ByteUtil.getValueOfBits(maskAndPayloadLength, 1, 7);
         if (payloadLength >= 126) {
             if (payloadLength == 126) {
+                headerLength += 2;
                 byte[] newPayloadLength = new byte[4];
                 for (int i = 2; i < newPayloadLength.length; i++)
                     newPayloadLength[i] = buffer[offset++];
                 payloadLength = ByteBuffer.wrap(newPayloadLength).getInt();
             } else {
+                headerLength += 8;
                 byte[] newPayloadLength = new byte[8];
                 for (int i = 0; i < newPayloadLength.length; i++)
                     newPayloadLength[i] = buffer[offset++];
@@ -213,6 +230,7 @@ public class WebSocketFrame {
         }
 
         if (isMasked) {
+            headerLength += 4;
             for (int i = 0; i < 4; i++)
                 maskKey[i] = buffer[offset++];
         }
@@ -222,7 +240,7 @@ public class WebSocketFrame {
             payloadLength = Integer.MAX_VALUE;
         }
         // if payloadLength is bigger than what can currently be in the buffer then we haven't read the whole frame
-        if(payloadLength > length)
+        if(payloadLength > length-headerLength)
             return 0;
         // ensure that 'payload' buffer is large enough
         if (payload.length < payloadLength)
@@ -329,6 +347,12 @@ public class WebSocketFrame {
                 (isMasked ? (", maskKey=" + Arrays.toString(maskKey)) : "") +
                 ", payload=\n" + (opcode == 8 ? toHex(payload, 2, (int) payloadLength - 2) : toHex(payload, 0, (int) payloadLength)) +
                 '}';
+    }
+
+    public byte[] toBytes() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        write(baos);
+        return baos.toByteArray();
     }
 
     public Exchange getOriginalExchange() {
