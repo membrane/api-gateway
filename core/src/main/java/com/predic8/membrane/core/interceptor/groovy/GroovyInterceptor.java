@@ -17,6 +17,7 @@ package com.predic8.membrane.core.interceptor.groovy;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.predic8.membrane.core.rules.ServiceProxy;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import com.google.common.base.Function;
@@ -29,12 +30,15 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
 import com.predic8.membrane.core.util.TextUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @topic 4. Interceptors/Features
  */
 @MCElement(name = "groovy", mixed = true)
 public class GroovyInterceptor extends AbstractInterceptor {
+	Logger log = LoggerFactory.getLogger(GroovyInterceptor.class);
 	private String src = "";
 
 	private Function<Map<String, Object>, Object> script;
@@ -78,8 +82,13 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		parameters.put("exc", exc);
 		parameters.put("flow", flow);
 		parameters.put("spring", router.getBeanFactory());
-
-		Object res = script.apply(parameters);
+		Object res = null;
+		try {
+			 res = script.apply(parameters);
+		}catch (Exception e){
+			logGroovyException(flow, e);
+			return Outcome.ABORT;
+		}
 
 		if (res instanceof Outcome) {
 			return (Outcome) res;
@@ -95,6 +104,13 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		}
 		return Outcome.CONTINUE;
 
+	}
+
+	private void logGroovyException(Flow flow, Exception e) {
+		ServiceProxy sp = getRule();
+		log.error("Exception in Groovy script in service proxy '" + sp.getName() + "' on port " + sp.getPort() + " with path " + (sp.getPath() != null ? sp.getPath() : "*"));
+		log.error("Flow: " + flow.name());
+		e.printStackTrace();
 	}
 
 	public String getSrc() {

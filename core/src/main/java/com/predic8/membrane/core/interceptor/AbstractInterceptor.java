@@ -20,6 +20,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.rules.Rule;
 
 public class AbstractInterceptor implements Interceptor {
 
@@ -101,6 +102,20 @@ public class AbstractInterceptor implements Interceptor {
 	public void init(Router router) throws Exception {
 		this.router = router;
 		init();
+	}
+
+	public <T extends Rule> T getRule(){
+		return (T)getRouter()
+				.getRuleManager()
+				.getRules()
+				.stream()
+				.filter(rule -> rule
+						.getInterceptors()
+						.stream()
+						.filter(interceptor -> interceptor == this)
+						.count() > 0)
+				.findAny()
+				.get();
 	}
 
 	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
