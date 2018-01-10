@@ -16,10 +16,10 @@ package com.predic8.membrane.core.interceptor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Request;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.predic8.membrane.core.Router;
@@ -29,33 +29,49 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.rules.Rule;
 
+import java.util.regex.Pattern;
+
 public class RegExReplaceInterceptorTest {
 
 	private Router router;
 
-	@Before
-	public void setUp() throws Exception {
+	@Test
+	public void testReplace() throws Exception {
 		router = Router.init("src/test/resources/regex-monitor-beans.xml");
 		Rule serverRule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3009), "www.predic8.de", 80);
 		router.getRuleManager().addProxyAndOpenPortIfNew(serverRule);
 		router.init();
+
+		try {
+			HttpClient client = new HttpClient();
+
+			GetMethod method = new GetMethod("http://localhost:3009");
+			method.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
+			method.setRequestHeader(Header.SOAP_ACTION, "");
+
+			assertEquals(200, client.executeMethod(method));
+
+			assertTrue(new String(method.getResponseBody()).contains("Membrane RegEx Replacement Is Cool"));
+		}finally {
+			router.shutdown();
+		}
 	}
 
 	@Test
-	public void testReplace() throws Exception {
-		HttpClient client = new HttpClient();
+	public void testReplaceBinary() throws Exception {
+		String example = "Hello";
 
-		GetMethod method = new GetMethod("http://localhost:3009");
-		method.setRequestHeader(Header.CONTENT_TYPE, MimeType.TEXT_XML_UTF8);
-		method.setRequestHeader(Header.SOAP_ACTION, "");
+		RegExReplaceInterceptor regexp = new RegExReplaceInterceptor();
+		regexp.setRegex(Pattern.quote(example));
+		regexp.setReplace("Membrane");
 
-		assertEquals(200, client.executeMethod(method));
+		Exchange exc = new Request.Builder().body(example).header("Content-Type","text/plain").buildExchange();
 
-		assertTrue(new String(method.getResponseBody()).contains("Membrane RegEx Replacement Is Cool"));
-	}
+		regexp.handleRequest(exc);
+		assertTrue(exc.getRequest().getBodyAsStringDecoded().equals("Membrane"));
 
-	@After
-	public void tearDown() throws Exception {
-		router.shutdown();
+		exc = new Request.Builder().body(example).header("Content-Type","application/octet-stream").buildExchange();
+		regexp.handleRequest(exc);
+		assertTrue(exc.getRequest().getBodyAsStringDecoded().equals(example));
 	}
 }
