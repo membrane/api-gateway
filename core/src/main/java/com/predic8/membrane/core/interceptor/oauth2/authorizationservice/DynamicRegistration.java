@@ -28,6 +28,7 @@ import com.predic8.membrane.core.interceptor.InterceptorFlowController;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.Client;
 import com.predic8.membrane.core.interceptor.oauth2.ReusableJsonGenerator;
+import com.predic8.membrane.core.transport.http.AbortException;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
@@ -83,9 +84,15 @@ public class DynamicRegistration {
             exc.setProperty(Exchange.SSL_CONTEXT, sslContext);
 
         if(flowController.invokeRequestHandlers(exc,interceptors) != Outcome.CONTINUE)
-            throw new RuntimeException("Registration interceptorchain had a problem");
+            throw new RuntimeException("Registration interceptorchain (request) had a problem");
 
         Response response = client.call(exc).getResponse();
+
+        try{
+            flowController.invokeResponseHandlers(exc);
+        } catch (AbortException e){
+            throw new RuntimeException("Registration interceptorchain (response) had a problem");
+        }
 
         if(response.getStatusCode() < 200 || response.getStatusCode() > 201)
             throw new RuntimeException("Registration endpoint didn't return successful: " + response.getStatusMessage());

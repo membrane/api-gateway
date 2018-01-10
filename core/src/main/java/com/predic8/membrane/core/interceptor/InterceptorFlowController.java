@@ -117,7 +117,7 @@ public class InterceptorFlowController {
 	 * Runs all response handlers for interceptors that have been collected on
 	 * the exchange's stack so far.
 	 */
-	private void invokeResponseHandlers(Exchange exchange) throws Exception {
+	public void invokeResponseHandlers(Exchange exchange) throws Exception {
 		boolean logDebug = log.isDebugEnabled();
 
 		Interceptor i;
