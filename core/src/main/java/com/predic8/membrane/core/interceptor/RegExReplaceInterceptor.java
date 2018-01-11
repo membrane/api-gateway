@@ -73,22 +73,13 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	}
 
 	private void replaceBody(Message res) throws IOException, Exception {
-		if(isBinaryContentType(res))
+		if(res.getHeader().isBinaryContentType())
 			return;
 		log.debug("pattern: " +regex);
 		log.debug("replacement: " +replace);
 
 		res.setBodyContent(res.getBodyAsStringDecoded().replaceAll(regex, replace).getBytes(res.getCharset()));
 		res.getHeader().removeFields("Content-Encoding");
-	}
-
-	private boolean isBinaryContentType(Message res) {
-		String contentType = res.getHeader().getContentType();
-		// incomplete list - better safe than sorry!
-		return contentType.startsWith("audio/")
-				|| contentType.startsWith("image/")
-				|| contentType.startsWith("video/")
-				|| contentType.startsWith("application/octet-stream");
 	}
 
 	public String getRegex() {

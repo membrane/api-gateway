@@ -567,4 +567,13 @@ public class Header {
 		}
 		return sb.length() == 0 ? null : sb.toString();
 	}
+
+	public boolean isBinaryContentType() {
+		String contentType = getContentType();
+		// incomplete list - better safe than sorry!
+		return contentType.startsWith("audio/")
+				|| contentType.startsWith("image/")
+				|| contentType.startsWith("video/")
+				|| contentType.startsWith("application/octet-stream");
+	}
 }
