@@ -124,6 +124,11 @@ public class XOPReconstitutor {
 			public String getStartLine() {
 				throw new RuntimeException("not implemented.");
 			}
+
+			@Override
+			public <T extends Message> T createSnapshot() {
+				throw new RuntimeException("not implemented.");
+			}
 		};
 		m.setBodyContent(body);
 

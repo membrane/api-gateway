@@ -14,21 +14,20 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringEscapeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingFirstLineException;
 import com.predic8.membrane.core.transport.http.EOFWhileReadingLineException;
 import com.predic8.membrane.core.transport.http.NoResponseException;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Response extends Message {
 
@@ -432,5 +431,15 @@ public class Response extends Message {
 		return super.estimateHeapSize() +
 				12 +
 				(statusMessage != null ? 2*statusMessage.length() : 0);
+	}
+
+	@Override
+	public <T extends Message> T createSnapshot() throws Exception {
+		Response result = this.createMessageSnapshot(new Response());
+
+		result.setStatusCode(this.getStatusCode());
+		result.setStatusMessage(this.getStatusMessage());
+
+		return (T) result;
 	}
 }

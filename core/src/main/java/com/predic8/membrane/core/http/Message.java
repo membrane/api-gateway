@@ -14,18 +14,17 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.multipart.XOPReconstitutor;
 import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.MessageUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * A HTTP message (request or response).
@@ -370,4 +369,22 @@ public abstract class Message {
 		}
 	}
 
+    public abstract <T extends Message> T createSnapshot() throws Exception;
+
+	public <T extends Message> T createMessageSnapshot(T result) throws IOException {
+		result.setHeader(new Header(this.getHeader()));
+		result.setBody(new Body(this.getBodyAsStream()));
+		result.setErrorMessage(this.getErrorMessage());
+		result.setReleased(this.isReleased());
+
+		return result;
+	}
+
+	public boolean isReleased() {
+		return released;
+	}
+
+	public void setReleased(boolean released) {
+		this.released = released;
+	}
 }

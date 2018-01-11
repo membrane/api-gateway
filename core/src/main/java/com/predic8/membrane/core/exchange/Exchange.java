@@ -14,15 +14,6 @@
 
 package com.predic8.membrane.core.exchange;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.predic8.membrane.core.TerminateException;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Message;
@@ -33,6 +24,14 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.AbstractHttpHandler;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.util.HttpUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Exchange extends AbstractExchange {
 
@@ -227,6 +226,15 @@ public class Exchange extends AbstractExchange {
 	public long getId() {
 		return id;
 	}
+
+	@Override
+	public AbstractExchange createSnapshot() throws Exception {
+		Exchange exc = updateCopy(this,new Exchange(null));
+		exc.setId(this.getId());
+		return exc;
+	}
+
+
 
 	public void setId(long id) {
 		this.id = id;

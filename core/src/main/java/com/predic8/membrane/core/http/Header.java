@@ -14,24 +14,30 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.*;
-import java.security.InvalidParameterException;
-import java.util.*;
-import java.util.regex.*;
-
-import javax.mail.internet.ContentType;
-import javax.mail.internet.ParseException;
-
+import com.predic8.membrane.core.Constants;
+import com.predic8.membrane.core.http.cookie.Cookies;
+import com.predic8.membrane.core.http.cookie.MimeHeaders;
+import com.predic8.membrane.core.http.cookie.ServerCookie;
+import com.predic8.membrane.core.util.EndOfStreamException;
+import com.predic8.membrane.core.util.HttpUtil;
 import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 
-import com.predic8.membrane.core.Constants;
-import com.predic8.membrane.core.http.cookie.Cookies;
-import com.predic8.membrane.core.http.cookie.MimeHeaders;
-import com.predic8.membrane.core.http.cookie.ServerCookie;
-import com.predic8.membrane.core.util.*;
+import javax.mail.internet.ContentType;
+import javax.mail.internet.ParseException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The headers of a HTTP message.
@@ -570,6 +576,9 @@ public class Header {
 
 	public boolean isBinaryContentType() {
 		String contentType = getContentType();
+		if(contentType == null)
+			return false;
+
 		// incomplete list - better safe than sorry!
 		return contentType.startsWith("audio/")
 				|| contentType.startsWith("image/")

@@ -14,16 +14,6 @@
 
 package com.predic8.membrane.core.exchangestore;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.exchange.AbstractExchange;
@@ -37,6 +27,10 @@ import com.predic8.membrane.core.rules.StatisticCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.DecimalFormat;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * @description Stores exchange objects in-memory until a memory threshold is reached. When the threshold is reached and new exchanges arrive then old exchanges will be dropped (starting from oldest ascending) until the exchange can be stored. The LimitedMemoryExchangeStore is the default ExchangeStore Membrane uses.
  */
@@ -47,6 +41,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private int maxSize = 1000000;
 	private int currentSize;
+	private boolean newAlgorithm = false;
 
 	/**
 	 * EVERY time that exchanges or inflight is changed, modify() MUST be called afterwards
@@ -57,9 +52,80 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	private long lastModification = System.currentTimeMillis();
 
 	public void snap(final AbstractExchange exc, final Flow flow) {
+		if(newAlgorithm) {
+			newSnap(exc, flow);
+		}else
+			oldSnap(exc, flow);
+	}
+
+	private void newSnap(AbstractExchange exc, Flow flow) {
+		AbstractExchange excCopy = null;
+		try {
+            if (flow == Flow.REQUEST) {
+				excCopy = cleanSnapshot(exc.createSnapshot());
+				snapInternal(excCopy, flow);
+			}
+            else
+                excCopy = cleanSnapshot(Exchange.updateCopy(exc, getExchangeById((int) exc.getId())));
+			addObservers(exc, excCopy, flow);
+			modify();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+	}
+
+	private void addObservers(AbstractExchange exc, AbstractExchange excCopy, Flow flow) throws Exception {
+		Message msg = null;
+		if(flow == Flow.REQUEST) {
+			msg = exc.getRequest();
+		}
+		else
+			msg = exc.getResponse();
+
+		msg.addObserver(new MessageObserver() {
+			@Override
+			public void bodyRequested(AbstractBody body) {
+
+			}
+
+			@Override
+			public void bodyComplete(AbstractBody body) {
+				try {
+                    cleanSnapshot(Exchange.updateCopy(exc,excCopy));
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+			}
+		});
+		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
+			@Override
+			public void setExchangeFinished() {
+				try {
+                    cleanSnapshot(Exchange.updateCopy(exc,excCopy));
+
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+        cleanSnapshot(Exchange.updateCopy(exc,excCopy));
+	}
+
+	public <T extends AbstractExchange> T cleanSnapshot(T snapshot){
+	    if(snapshot.getRequest() != null)
+	        if(snapshot.getRequest().getHeader().isBinaryContentType())
+	            snapshot.getRequest().setBody(new EmptyBody());
+        if(snapshot.getResponse() != null)
+            if(snapshot.getResponse().getHeader().isBinaryContentType())
+                snapshot.getResponse().setBody(new EmptyBody());
+
+        return snapshot;
+    }
+
+	private void oldSnap(AbstractExchange exc, Flow flow) {
 		// TODO: [fix me] support multi-snap
 		// TODO: [fix me] snap message headers and request *here*, not in observer/response
-
 		exc.addExchangeViewerListener(new AbstractExchangeViewerListener() {
 			@Override
 			public void setExchangeFinished() {
@@ -198,12 +264,12 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	@Override
 	public synchronized AbstractExchange getExchangeById(int id) {
 		for (AbstractExchange exc : getAllExchangesAsList()) {
-			if (exc.hashCode() == id) {
+			if (exc.getId() == id) {
 				return exc;
 			}
 		}
 		for (AbstractExchange exc : inflight.keySet())
-			if (exc.hashCode() == id) {
+			if (exc.getId() == id) {
 				return exc;
 			}
 		return null;
@@ -223,7 +289,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	public synchronized int getCurrentSize() {
-		return currentSize;
+		return exchanges.stream().map(abstractExchange -> abstractExchange.getHeapSizeEstimation()).reduce(0,(a,b) -> a+b);
 	}
 
 	public synchronized Long getOldestTimeResSent() {
@@ -238,7 +304,7 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 	}
 
 	private boolean hasEnoughSpace(AbstractExchange exc) {
-		return exc.getHeapSizeEstimation()+currentSize <= maxSize;
+		return exc.getHeapSizeEstimation()+getCurrentSize() <= maxSize;
 	}
 
 	/**
@@ -261,15 +327,15 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 
 	private void showWarningNotEnoughMemory() {
 
-		String seperator = "=========================================================================================";
-		log.warn(seperator);
-		log.warn(seperator);
+		String separator = "=========================================================================================";
+		log.warn(separator);
+		log.warn(separator);
 		log.warn("You current LimitedMemoryExchangeStore max size is near the max available JVM heap space.");
 		log.warn("LimitedMemoryExchangeStore max size: " + formatTwoDecimals(getLmesMaxSizeInMb()) + "mb");
 		log.warn("Java Virtual Machine heap size: " + formatTwoDecimals(getJvmHeapSizeInMb()) + "mb");
 		log.warn("Suggestion: add \"-Xmx"+Math.round(getLmesMaxSizeInMb()+additionalMemoryToAddInMb+1)+"m\" as additional parameter in the Membrane starter script");
-		log.warn(seperator);
-		log.warn(seperator);
+		log.warn(separator);
+		log.warn(separator);
 	}
 
 	private float getJvmHeapSizeInMb() {
@@ -307,4 +373,12 @@ public class LimitedMemoryExchangeStore extends AbstractExchangeStore {
 		}
 	}
 
+	public boolean isNewAlgorithm() {
+		return newAlgorithm;
+	}
+
+	@MCAttribute
+	public void setNewAlgorithm(boolean newAlgorithm) {
+		this.newAlgorithm = newAlgorithm;
+	}
 }
