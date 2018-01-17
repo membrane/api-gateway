@@ -14,17 +14,6 @@
 
 package com.predic8.membrane.core.http;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URISyntaxException;
-import java.util.HashSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.Sets;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -35,6 +24,16 @@ import com.predic8.membrane.core.util.EndOfStreamException;
 import com.predic8.membrane.core.util.HttpUtil;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Request extends Message {
 
@@ -212,6 +211,16 @@ public class Request extends Message {
 				12 +
 				(method != null ? 2*method.length() : 0) +
 				(uri != null ? 2*uri.length() : 0);
+	}
+
+	@Override
+	public <T extends Message> T createSnapshot() throws Exception {
+		Request result = this.createMessageSnapshot(new Request());
+
+		result.setUri(this.getUri());
+		result.setMethod(this.getMethod());
+
+		return (T) result;
 	}
 
 	public final void writeSTOMP(OutputStream out) throws IOException {

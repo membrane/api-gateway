@@ -14,18 +14,6 @@
 
 package com.predic8.membrane.core.exchange;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.DateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -37,6 +25,13 @@ import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.DateFormat;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class AbstractExchange {
 	private static final Logger log = LoggerFactory.getLogger(AbstractExchange.class.getName());
@@ -73,7 +68,7 @@ public abstract class AbstractExchange {
 	private String remoteAddr;
 	private String remoteAddrIp;
 
-	private final ArrayList<Interceptor> interceptorStack = new ArrayList<Interceptor>(10);
+	private ArrayList<Interceptor> interceptorStack = new ArrayList<Interceptor>(10);
 
 	private int estimatedHeapSize = -1;
 
@@ -94,6 +89,10 @@ public abstract class AbstractExchange {
 			destinations.add(dest);
 		}
 		rule = original.getRule();
+	}
+
+	public void setStatus(ExchangeState state) {
+		this.status = state;
 	}
 
 	public ExchangeState getStatus() {
@@ -213,6 +212,10 @@ public abstract class AbstractExchange {
 		if (refresh) {
 			notifyExchangeFinished();
 		}
+	}
+
+	public void setForceToStop(boolean forceToStop) {
+		this.forceToStop = forceToStop;
 	}
 
 	public boolean isForcedToStop() {
@@ -353,6 +356,10 @@ public abstract class AbstractExchange {
 		return contentType;
 	}
 
+	public void setDestinations(List<String> destinations) {
+		this.destinations = destinations;
+	}
+
 	/**
 	 * @return Probably never empty.
 	 *         Is this guaranteed to always contain at least 1 entry? There are many hardcoded calls with
@@ -418,6 +425,31 @@ public abstract class AbstractExchange {
 				(response != null ? response.estimateHeapSize() : 0);
 	}
 
+	public static <T extends AbstractExchange> T updateCopy(T source, T copy) throws Exception {
+		if(source.getRequest() != null)
+			copy.setRequest(source.getRequest().createSnapshot());
+		if(source.getResponse() != null)
+			copy.setResponse(source.getResponse().createSnapshot());
+
+		copy.setOriginalRequestUri(source.getOriginalRequestUri());
+		copy.setTime(source.getTime());
+		copy.setErrorMessage(source.getErrorMessage());
+		copy.setRule(source.getRule());
+		copy.setProperties(new HashMap<>(source.getProperties()));
+		copy.setStatus(source.getStatus());
+		copy.setForceToStop(source.isForcedToStop());
+		copy.setTimeReqSent(source.getTimeReqSent());
+		copy.setTimeReqReceived(source.getTimeReqReceived());
+		copy.setTimeResSent(source.getTimeResSent());
+		copy.setTimeResReceived(source.getTimeResReceived());
+		copy.setDestinations(source.getDestinations().stream().collect(Collectors.toList()));
+		copy.setRemoteAddr(source.getRemoteAddr());
+		copy.setRemoteAddrIp(source.getRemoteAddrIp());
+		copy.setInterceptorStack(source.getInterceptorStack().stream().collect(Collectors.toCollection(ArrayList::new)));
+
+		return copy;
+	}
+
 	/**
 	 * Prepares for long-term storage (for example, in-memory {@link ExchangeStore}s).
 	 */
@@ -434,4 +466,16 @@ public abstract class AbstractExchange {
 	public void setProperties(Map<String, Object> properties) {
 		this.properties = properties;
 	}
+
+	public abstract <T extends AbstractExchange> T createSnapshot() throws Exception;
+
+	public ArrayList<Interceptor> getInterceptorStack() {
+		return interceptorStack;
+	}
+
+	public void setInterceptorStack(ArrayList<Interceptor> interceptorStack){
+		this.interceptorStack = interceptorStack;
+	}
+
+
 }

@@ -73,6 +73,8 @@ public class RegExReplaceInterceptor extends AbstractInterceptor {
 	}
 
 	private void replaceBody(Message res) throws IOException, Exception {
+		if(res.getHeader().isBinaryContentType())
+			return;
 		log.debug("pattern: " +regex);
 		log.debug("replacement: " +replace);
 
