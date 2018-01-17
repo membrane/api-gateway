@@ -7,10 +7,10 @@
 	configurations you can find in the examples directory of the Membrane ESB distribution.
 	
 	A quick start guide is available at: 
-	http://membrane-soa.org/esb-doc/current/overview/ .
+	https://membrane-soa.org/service-proxy-doc/current/overview/ .
 	
 	See the reference at:
-	http://membrane-soa.org/esb-doc/current/configuration/reference/ .  
+	https://membrane-soa.org/service-proxy-doc/current/configuration/reference/ .
 -->
 <spring:beans xmlns="http://membrane-soa.org/proxies/1/"
 	xmlns:spring="http://www.springframework.org/schema/beans"

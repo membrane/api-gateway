@@ -7,7 +7,7 @@
 	configurations you can find in the examples directory.
 
 	Have a look at
-	http://membrane-soa.org/esb-doc/current/configuration/proxy-configuration.htm for
+	https://membrane-soa.org/service-proxy-doc/current/configuration/proxy-configuration.htm for
 	documentation and a reference explaining what XML elements can be used
 	how and where.
 	

@@ -27,7 +27,7 @@ public abstract class AbstractServiceProxy extends SSLableProxy {
 	 * @description <p>
 	 *              The destination where the service proxy will send messages to. Use the target element, if you want
 	 *              to send the messages to a static target. If you want to use dynamic destinations have a look at the
-	 *              <a href="http://ms.org:8080/esb-doc/configuration/reference/router.htm">content based router</a>.
+	 *              <a href="https://membrane-soa.org/service-proxy-doc/configuration/reference/router.htm">content based router</a>.
 	 *              </p>
 	 */
 	@MCElement(name="target", topLevel=false)

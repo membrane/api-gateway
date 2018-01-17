@@ -4,7 +4,7 @@
 	<display-name>Membrane Web Application</display-name>
 	<description>
 		The Membrane Web application exposes the full Membrane functionality through any J2EE-compliant web server.
-		See http://membrane-soa.org/esb-doc/ for more information.
+		See https://membrane-soa.org/service-proxy-doc/ for more information.
 	</description>
     
     <!-- 
