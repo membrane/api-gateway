@@ -60,10 +60,11 @@ public class ResolverMap implements Cloneable, Resolver {
 
 		String parent = locations[0];
 		String relativeChild = locations[1];
+
 		if (relativeChild.contains(":/") || relativeChild.contains(":\\") || parent == null || parent.length() == 0)
 			return relativeChild;
 		if (parent.startsWith("file://")) {
-			if (relativeChild.startsWith("\\"))
+			if (relativeChild.startsWith("\\") || relativeChild.startsWith("/"))
 				return "file://" + new File(relativeChild).getAbsolutePath();
 			//System.err.println(FileSchemaResolver.normalize(parent));
 			File parentFile = new File(FileSchemaResolver.normalize(parent));
