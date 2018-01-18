@@ -31,6 +31,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.LogInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.interceptor.authentication.session.CleanupThread;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager;
 import com.predic8.membrane.core.interceptor.authentication.session.SessionManager.Session;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.AuthorizationService;
@@ -184,6 +185,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         firstInitWhenDynamicAuthorizationService = getAuthService().supportsDynamicRegistration();
         if(!getAuthService().supportsDynamicRegistration())
             firstInitWhenDynamicAuthorizationService = false;
+
+        new CleanupThread(sessionManager).start();
     }
 
     @Override
