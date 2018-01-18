@@ -101,7 +101,7 @@ public abstract class AbstractHttpHandler  {
 			msg = e.toString();
 		}
 		String comment = "Stack traces can be " + (printStackTrace ? "dis" : "en") + "abled by setting the "+
-				"@printStackTrace attribute on <a href=\"http://membrane-soa.org/esb-doc/current/configuration/reference/transport.htm\">transport</a>. " +
+				"@printStackTrace attribute on <a href=\"https://membrane-soa.org/service-proxy-doc/current/configuration/reference/transport.htm\">transport</a>. " +
 				"More details might be found in the log.";
 
 		Response error = null;
