@@ -470,6 +470,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 if (response.getStatusCode() != 200)
                     throw new RuntimeException("Revocation of token did not work. Statuscode: " + response.getStatusCode() + ".");
                 s.clear();
+                sessionManager.removeSession(exc);
             }
             exc.setResponse(Response.redirect("/", false).build());
         } else if (uri.equals("/")) {

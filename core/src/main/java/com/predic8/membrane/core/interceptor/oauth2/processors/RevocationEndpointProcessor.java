@@ -86,6 +86,12 @@ public class RevocationEndpointProcessor extends EndpointProcessor {
         synchronized(session) {
             session.clear();
         }
+        synchronized (authServer.getSessionManager()){
+            authServer.getSessionManager().removeSession(session);
+        }
+        synchronized (authServer.getSessionFinder()){
+            authServer.getSessionFinder().removeSessionForToken(params.get("token"));
+        }
         exc.setResponse(Response
                 .ok()
                 .bodyEmpty()

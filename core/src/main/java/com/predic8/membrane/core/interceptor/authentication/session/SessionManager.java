@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.xml.stream.XMLStreamReader;
 
@@ -85,7 +86,32 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 		return s;
 	}
 
-	public static class Session {
+    public void removeSession(Exchange exc) {
+		String id = exc.getRequest().getHeader().getFirstCookie(cookieName);
+		if(id != null) {
+			synchronized (sessions) {
+				sessions.remove(id);
+			}
+			return;
+		}
+		Session s = getSession(exc);
+		removeSession(s);
+    }
+
+    public void removeSession(Session s){
+		if(s != null){
+
+			synchronized (sessions){
+				List<String> remove = sessions.keySet().stream().filter(sId -> {
+					Session other = sessions.get(sId);
+					return s == other;
+				}).collect(Collectors.toList());
+				remove.forEach(sId -> sessions.remove(sId));
+			}
+		}
+	}
+
+    public static class Session {
 		private Map<String, String> userAttributes = new HashMap<String, String>();
 		private int level = 0;
 		private long lastUse;

@@ -8,7 +8,7 @@
 
 		<serviceProxy name="Authorization Server" port="2010">
 
-			<oauth2authserver path="/login/" location="./auth/dialog" issuer="http://localhost:2010">
+			<oauth2authserver path="/login/" location="./auth" consentFile="consentFile.json" issuer="http://localhost:2010">
 				<staticUserDataProvider>
 					<user username="john" password="password" email="john@predic8.de" />
 				</staticUserDataProvider>
