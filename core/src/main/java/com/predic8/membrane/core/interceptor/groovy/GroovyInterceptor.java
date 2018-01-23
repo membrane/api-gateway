@@ -16,6 +16,7 @@ package com.predic8.membrane.core.interceptor.groovy;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import com.predic8.membrane.core.rules.ServiceProxy;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -30,6 +31,7 @@ import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.lang.groovy.GroovyLanguageSupport;
 import com.predic8.membrane.core.util.TextUtil;
+import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,7 +75,12 @@ public class GroovyInterceptor extends AbstractInterceptor {
 		if ("".equals(src))
 			return;
 
-		script = new GroovyLanguageSupport().compileScript(router, src);
+		try {
+			script = new GroovyLanguageSupport().compileScript(router, src);
+		}catch (MultipleCompilationErrorsException e){
+			logGroovyException(null,e);
+			throw new RuntimeException(e);
+		}
 
 	}
 
@@ -107,10 +114,16 @@ public class GroovyInterceptor extends AbstractInterceptor {
 	}
 
 	private void logGroovyException(Flow flow, Exception e) {
-		ServiceProxy sp = getRule();
-		log.error("Exception in Groovy script in service proxy '" + sp.getName() + "' on port " + sp.getPort() + " with path " + (sp.getPath() != null ? sp.getPath() : "*"));
-		log.error("Flow: " + flow.name());
-		e.printStackTrace();
+		try {
+			ServiceProxy sp = getRule();
+			log.error("Exception in Groovy script in service proxy '" + sp.getName() + "' on port " + sp.getPort() + " with path " + (sp.getPath() != null ? sp.getPath().getValue() : "*"));
+			if (flow != null)
+				log.error("Flow: " + flow.name());
+			else
+				log.error("There is possibly a syntax error in the groovy script (compilation error)");
+		}catch (NoSuchElementException e2){
+			//ignore
+		}
 	}
 
 	public String getSrc() {

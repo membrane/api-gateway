@@ -20,6 +20,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.interceptor.flow.AbstractFlowInterceptor;
 import com.predic8.membrane.core.rules.Rule;
 
 public class AbstractInterceptor implements Interceptor {
@@ -112,10 +113,17 @@ public class AbstractInterceptor implements Interceptor {
 				.filter(rule -> rule
 						.getInterceptors()
 						.stream()
-						.filter(interceptor -> interceptor == this)
+						.filter(interceptor -> hasSameReferenceAs(interceptor))
 						.count() > 0)
 				.findAny()
 				.get();
+	}
+
+	private boolean hasSameReferenceAs(Interceptor i){
+		if(i instanceof AbstractFlowInterceptor){
+			return ((AbstractFlowInterceptor) i).getInterceptors().stream().filter(interceptor -> hasSameReferenceAs(interceptor)).count() > 0;
+		}
+		return i == this;
 	}
 
 	public Router getRouter() { //wird von ReadRulesConfigurationTest aufgerufen.
