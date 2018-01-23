@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.exchange;
 
 import com.predic8.membrane.core.exchangestore.ExchangeStore;
+import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.Interceptor;
@@ -23,6 +24,7 @@ import com.predic8.membrane.core.model.IExchangesStoreListener;
 import com.predic8.membrane.core.rules.AbstractServiceProxy;
 import com.predic8.membrane.core.rules.ProxyRule;
 import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.RuleKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -448,6 +450,17 @@ public abstract class AbstractExchange {
 		copy.setInterceptorStack(source.getInterceptorStack().stream().collect(Collectors.toCollection(ArrayList::new)));
 
 		return copy;
+	}
+
+	public String getPublicUrl(){
+		String xForwardedProto = getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
+		boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : getRule().getSslInboundContext() != null;
+		String publicURL = (isHTTPS ? "https://" : "http://") + getRequest().getHeader().getHost().replaceFirst(".*:", "");
+		RuleKey key = getRule().getKey();
+		if (!key.isPathRegExp() && key.getPath() != null)
+			publicURL += key.getPath();
+
+		return publicURL;
 	}
 
 	/**
