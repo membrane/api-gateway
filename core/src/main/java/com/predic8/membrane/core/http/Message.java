@@ -387,4 +387,8 @@ public abstract class Message {
 	public void setReleased(boolean released) {
 		this.released = released;
 	}
+
+    public boolean containsObserver(MessageObserver obs){
+		return body.observers.contains(obs);
+	}
 }
