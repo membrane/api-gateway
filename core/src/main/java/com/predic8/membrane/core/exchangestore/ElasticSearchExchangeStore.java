@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,6 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     HttpClient client;
     static Logger log = LoggerFactory.getLogger(ElasticSearchExchangeStore.class);
-    String elasticSearchBasePath = null;
     int updateIntervalMs = 1000;
     Map<Long,AbstractExchangeSnapshot> shortTermMemoryForBatching = new HashMap<>();
     Thread updateJob;
@@ -100,7 +100,8 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                 .header("Content-Type","application/x-ndjson")
                 .body(data.toString())
                 .buildExchange();
-        elasticSearchExc = client.call(elasticSearchExc);
+
+        client.call(elasticSearchExc);
     }
 
     private static String getLocalHostname() {
@@ -126,11 +127,6 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     @Override
     public void snap(AbstractExchange exc, Interceptor.Flow flow) {
-        if(!init)
-            init();
-        if(elasticSearchBasePath == null)
-            initElasticSearchBasePath(exc);
-
         DynamicAbstractExchangeSnapshot excCopy = null;
         try {
             if (flow == Interceptor.Flow.REQUEST) {
@@ -144,10 +140,6 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private void initElasticSearchBasePath(AbstractExchange exc) {
-        elasticSearchBasePath = "/membrane/" + exc.getPublicUrl() + "/exchanges/";
     }
 
     private void addForElasticSearch(AbstractExchangeSnapshot exc) {
@@ -187,11 +179,28 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
                     .buildExchange();
             exc = client.call(exc);
             Map res = mapper.readValue(exc.getResponse().getBodyAsStringDecoded(),Map.class);
-            Map excJson = (Map)((Map)((List)((Map)res.get("hits")).get("hits")).get(0)).get("_source");
+            Map excJson = getSourceElementFromElasticSearchResponse(res).get(0);
             return mapper.readValue(mapper.writeValueAsString(excJson),AbstractExchangeSnapshot.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<Map> getSourceElementFromElasticSearchResponse(Map response){
+        return getSourceElementFromHitsElement(getHitsElementFromElasticSearchResponse(response));
+    }
+
+    public List getHitsElementFromElasticSearchResponse(Map response){
+        return ((List)((Map)response.get("hits")).get("hits"));
+    }
+
+    public List<Map> getSourceElementFromHitsElement(List hits){
+        return (List)hits.stream().map(hit -> ((Map)hit).get("_source")).collect(Collectors.toList());
+    }
+
+    @Override
+    public AbstractExchange getExchangeById(int id) {
+        return getFromElasticSearchById(id).toAbstractExchange();
     }
 
     @Override
@@ -226,12 +235,26 @@ public class ElasticSearchExchangeStore extends AbstractExchangeStore {
 
     @Override
     public Object[] getAllExchanges() {
-        return new Object[0];
+        return getAllExchangesAsList().toArray();
     }
 
     @Override
     public List<AbstractExchange> getAllExchangesAsList() {
-        return null;
+        try{
+            Exchange exc = new Request.Builder().get(location + ":" + port + "/" + index + "/" + type + "/_search").buildExchange();
+            exc = client.call(exc);
+
+            List sources = getSourceElementFromElasticSearchResponse(mapper.readValue(exc.getResponse().getBodyAsStringDecoded(),Map.class));
+            return (List)sources.stream().map(source -> {
+                try {
+                    return mapper.readValue(mapper.writeValueAsString(source),AbstractExchangeSnapshot.class).toAbstractExchange();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }).collect(Collectors.toList());
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     public HttpClient getClient() {

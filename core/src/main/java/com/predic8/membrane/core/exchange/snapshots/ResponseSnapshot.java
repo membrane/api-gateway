@@ -33,4 +33,13 @@ public class ResponseSnapshot extends MessageSnapshot {
     public void setStatusMessage(String statusMessage) {
         this.statusMessage = statusMessage;
     }
+
+    public Response toResponse() {
+        Response result = new Response();
+        result.setHeader(convertHeader());
+        result.setBody(convertBody());
+        result.setStatusCode(getStatusCode());
+        result.setStatusMessage(getStatusMessage());
+        return result;
+    }
 }

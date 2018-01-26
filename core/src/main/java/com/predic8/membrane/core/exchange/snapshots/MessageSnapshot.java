@@ -1,6 +1,6 @@
 package com.predic8.membrane.core.exchange.snapshots;
 
-import com.predic8.membrane.core.http.Message;
+import com.predic8.membrane.core.http.*;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,5 +34,17 @@ public class MessageSnapshot {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public Header convertHeader(){
+        Header result = new Header();
+        header.keySet().stream().forEach(key -> result.add(key,header.get(key)));
+        return result;
+    }
+
+    public AbstractBody convertBody(){
+        if(body == null)
+            return new EmptyBody();
+        return new Body(body.getBytes());
     }
 }

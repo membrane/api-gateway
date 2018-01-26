@@ -1,11 +1,21 @@
 package com.predic8.membrane.core.exchange.snapshots;
 
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
+import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.exchange.ExchangeState;
+import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.rules.AbstractProxy;
+import com.predic8.membrane.core.rules.Rule;
+import com.predic8.membrane.core.rules.RuleKey;
+import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
 import javax.naming.OperationNotSupportedException;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class AbstractExchangeSnapshot {
@@ -23,6 +33,8 @@ public class AbstractExchangeSnapshot {
     List<String> destinations;
     String remoteAddr;
     String remoteAddrIp;
+    FakeRule rule;
+    String server;
 
     long id;
 
@@ -51,8 +63,35 @@ public class AbstractExchangeSnapshot {
         setRemoteAddr(source.getRemoteAddr());
         setRemoteAddrIp(source.getRemoteAddrIp());
         setId(source.getId());
+        setRule(new FakeRule(source.getRule()));
+        setServer(source.getServer());
 
         return (T)this;
+    }
+
+    public AbstractExchange toAbstractExchange(){
+        Exchange exc = new Exchange(null);
+
+        if(getRequest() != null)
+            exc.setRequest(this.getRequest().toRequest());
+        if(getResponse() != null)
+            exc.setResponse(this.getResponse().toResponse());
+
+        exc.setOriginalRequestUri(getOriginalRequestUri());
+        exc.setTime(getTime());
+        exc.setErrorMessage(getErrorMessage());
+        exc.setStatus(getStatus());
+        exc.setTimeReqSent(getTimeReqSent());
+        exc.setTimeReqReceived(getTimeReqReceived());
+        exc.setTimeResSent(getTimeResSent());
+        exc.setTimeResReceived(getTimeResReceived());
+        exc.setDestinations(getDestinations().stream().collect(Collectors.toList()));
+        exc.setRemoteAddr(getRemoteAddr());
+        exc.setRemoteAddrIp(getRemoteAddrIp());
+        exc.setId(getId());
+        exc.setRule(getRule());
+
+        return exc;
     }
 
     public RequestSnapshot getRequest() {
@@ -165,5 +204,21 @@ public class AbstractExchangeSnapshot {
 
     public void setRemoteAddrIp(String remoteAddrIp) {
         this.remoteAddrIp = remoteAddrIp;
+    }
+
+    public FakeRule getRule() {
+        return rule;
+    }
+
+    public void setRule(FakeRule rule) {
+        this.rule = rule;
+    }
+
+    public String getServer() {
+        return server;
+    }
+
+    public void setServer(String server) {
+        this.server = server;
     }
 }

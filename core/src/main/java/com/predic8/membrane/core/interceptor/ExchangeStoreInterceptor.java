@@ -50,8 +50,9 @@ public class ExchangeStoreInterceptor extends AbstractInterceptor implements App
 		name = "  Store Interceptor";
 	}
 
-	public ExchangeStoreInterceptor(ExchangeStore exchangeStore) {
+	public ExchangeStoreInterceptor(ExchangeStore exchangeStore) throws Exception {
 		this();
+		exchangeStore.init();
 		setExchangeStore(exchangeStore);
 	}
 

@@ -33,4 +33,13 @@ public class RequestSnapshot extends MessageSnapshot {
     public void setUri(String uri) {
         this.uri = uri;
     }
+
+    public Request toRequest() {
+        Request request = new Request();
+        request.setHeader(convertHeader());
+        request.setBody(convertBody());
+        request.setMethod(getMethod());
+        request.setUri(getUri());
+        return request;
+    }
 }
