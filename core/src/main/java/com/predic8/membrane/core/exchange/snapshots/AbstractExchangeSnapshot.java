@@ -1,5 +1,6 @@
 package com.predic8.membrane.core.exchange.snapshots;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class AbstractExchangeSnapshot {
 
     RequestSnapshot request;
@@ -90,6 +92,7 @@ public class AbstractExchangeSnapshot {
         exc.setRemoteAddrIp(getRemoteAddrIp());
         exc.setId(getId());
         exc.setRule(getRule());
+        setServer(getServer());
 
         return exc;
     }
