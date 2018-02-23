@@ -37,4 +37,4 @@ then
 fi
 
 echo Membrane Router running...
-java  -classpath "$CLASSPATH" com.predic8.membrane.core.Starter "$@"
+java $JAVA_OPTS -classpath "$CLASSPATH" com.predic8.membrane.core.Starter "$@"
