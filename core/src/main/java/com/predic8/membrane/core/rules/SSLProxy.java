@@ -179,49 +179,7 @@ public class SSLProxy implements Rule {
 
     @Override
     public SSLContext getSslInboundContext() {
-        return new StaticSSLContext(new SSLParser(), router.getResolverMap(), router.getBaseLocation()) {
-
-            @Override
-            public Socket wrap(Socket socket, byte[] buffer, int position) throws IOException {
-                int port = target.getPort();
-                if (port == -1)
-                    port = getPort();
-
-                StreamPump.StreamPumpStats streamPumpStats = router.getStatistics().getStreamPumpStats();
-                String protocol = "SSL";
-
-                Connection con = cm.getConnection(target.getHost(), port, connectionConfiguration.getLocalAddr(), null, connectionConfiguration.getTimeout());
-
-                con.out.write(buffer, 0, position);
-                con.out.flush();
-
-                String source = socket.getRemoteSocketAddress().toString();
-                String dest = con.toString();
-                final StreamPump a = new StreamPump(con.in, socket.getOutputStream(), streamPumpStats, protocol + " " + source + " <- " + dest, SSLProxy.this);
-                final StreamPump b = new StreamPump(socket.getInputStream(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, SSLProxy.this);
-
-                socket.setSoTimeout(0);
-
-                String threadName = Thread.currentThread().getName();
-                new Thread(a, threadName + " " + protocol + " Backward Thread").start();
-                try {
-                    Thread.currentThread().setName(threadName + " " + protocol + " Onward Thread");
-                    b.run();
-                } finally {
-                    try {
-                        con.close();
-                    } catch (IOException e) {
-                        log.debug("", e);
-                    }
-                }
-                throw new SocketException("SSL Forwarding Connection closed.");
-            }
-
-            @Override
-            public String constructHostNamePattern() {
-                return getKey().getHost();
-            }
-        };
+        return new ForwardingStaticSSLContext();
     }
 
     @Override
@@ -350,6 +308,66 @@ public class SSLProxy implements Rule {
                 return false;
             MyRuleKey other = (MyRuleKey)obj;
             return Objects.equal(getHost(), other.getHost()) && getPort() == other.getPort();
+        }
+    }
+
+    private class ForwardingStaticSSLContext extends StaticSSLContext {
+
+        public ForwardingStaticSSLContext() {
+            super(new SSLParser(), SSLProxy.this.router.getResolverMap(), SSLProxy.this.router.getBaseLocation());
+        }
+
+        @Override
+        public Socket wrap(Socket socket, byte[] buffer, int position) throws IOException {
+            int port = target.getPort();
+            if (port == -1)
+                port = getPort();
+
+            StreamPump.StreamPumpStats streamPumpStats = router.getStatistics().getStreamPumpStats();
+            String protocol = "SSL";
+
+            Connection con = cm.getConnection(target.getHost(), port, connectionConfiguration.getLocalAddr(), null, connectionConfiguration.getTimeout());
+
+            con.out.write(buffer, 0, position);
+            con.out.flush();
+
+            String source = socket.getRemoteSocketAddress().toString();
+            String dest = con.toString();
+            final StreamPump a = new StreamPump(con.in, socket.getOutputStream(), streamPumpStats, protocol + " " + source + " <- " + dest, SSLProxy.this);
+            final StreamPump b = new StreamPump(socket.getInputStream(), con.out, streamPumpStats, protocol + " " + source + " -> " + dest, SSLProxy.this);
+
+            socket.setSoTimeout(0);
+
+            String threadName = Thread.currentThread().getName();
+            new Thread(a, threadName + " " + protocol + " Backward Thread").start();
+            try {
+                Thread.currentThread().setName(threadName + " " + protocol + " Onward Thread");
+                b.run();
+            } finally {
+                try {
+                    con.close();
+                } catch (IOException e) {
+                    log.debug("", e);
+                }
+            }
+            throw new SocketException("SSL Forwarding Connection closed.");
+        }
+
+        @Override
+        public String constructHostNamePattern() {
+            return getKey().getHost();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof ForwardingStaticSSLContext))
+                return false;
+            ForwardingStaticSSLContext other = (ForwardingStaticSSLContext)obj;
+            return Objects.equal(SSLProxy.this, other.getSSLProxy());
+        }
+
+        public SSLProxy getSSLProxy() {
+            return SSLProxy.this;
         }
     }
 }
