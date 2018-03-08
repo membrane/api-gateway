@@ -87,6 +87,7 @@ public class OAuth2ResourceTest {
                         accessTokens.add(excCallResource2.getResponse().getBodyAsStringDecoded());
                     }
                 }catch (Exception e){
+                    e.printStackTrace();
                 }
             }));
 

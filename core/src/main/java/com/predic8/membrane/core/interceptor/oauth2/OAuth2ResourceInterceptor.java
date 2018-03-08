@@ -78,7 +78,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
     private int revalidateTokenAfter = -1;
 
-    private ConcurrentHashMap<String,String> stateToOriginalUrl = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String,Request> stateToOriginalUrl = new ConcurrentHashMap<>();
 
     private WebServerInterceptor wsi;
     private URIFactory uriFactory;
@@ -262,10 +262,14 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         }
 
         if (handleRequest(exc, session.getUserAttributes().get("state"), publicURL, session)) {
+            if(exc.getResponse() == null && exc.getRequest() != null && session.isAuthorized() && session.getUserAttributes().containsKey(OAUTH2_ANSWER)) {
+                exc.setProperty(Exchange.OAUTH2, OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER)));
+                return Outcome.CONTINUE;
+            }
             if (exc.getResponse().getStatusCode() >= 400)
                 session.clear();
             return Outcome.RETURN;
-            }
+        }
 
         return respondWithRedirect(exc);
     }
@@ -391,9 +395,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if (loginLocation == null) {
             String state = new BigInteger(130, new SecureRandom()).toString(32);
 
-            exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()), false).build());
+            exc.setResponse(Response.redirectGet(auth.getLoginURL(state, publicURL, exc.getRequestURI())).build());
 
-            stateToOriginalUrl.put(state,exc.getRequestURI());
+            stateToOriginalUrl.put(state,exc.getRequest());
 
             Session session = sessionManager.getOrCreateSession(exc);
             synchronized(session){
@@ -404,7 +408,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                 session.getUserAttributes().put(ParamNames.STATE,state);
             }
         } else {
-            exc.setResponse(Response.redirect(loginPath, false).build());
+            exc.setResponse(Response.redirectGet(loginPath).build());
         }
         return Outcome.RETURN;
     }
@@ -523,8 +527,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     throw new RuntimeException("CSRF token mismatch.");
 
 
-
-                String url = stateToOriginalUrl.get(param.get("security_token"));
+                Request originalRequest = stateToOriginalUrl.get(param.get("security_token"));
+                String url = originalRequest.getUri();
                 if (url == null)
                     url = "/";
                 stateToOriginalUrl.remove(state2);
@@ -624,7 +628,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 processUserInfo(json2, session);
 
-                exc.setResponse(Response.redirect(url, false).build());
+                exc.setRequest(originalRequest);
                 return true;
             } catch (Exception e) {
                 exc.setResponse(Response.badRequest().body(e.getMessage()).build());
