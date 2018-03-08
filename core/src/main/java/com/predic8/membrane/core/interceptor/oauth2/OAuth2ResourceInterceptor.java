@@ -316,7 +316,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return false;
 
         OAuth2AnswerParameters oauth2Params = OAuth2AnswerParameters.deserialize(session.getUserAttributes().get(OAUTH2_ANSWER));
-        if(oauth2Params.getRefreshToken() != null && oauth2Params.getExpiration() == null || oauth2Params.getExpiration().isEmpty())
+        if((oauth2Params.getRefreshToken() == null || oauth2Params.getRefreshToken().isEmpty()) && (oauth2Params.getExpiration() == null || oauth2Params.getExpiration().isEmpty()))
             return false;
 
         return LocalDateTime.now().isAfter(oauth2Params.getReceivedAt().plusSeconds(Long.parseLong(oauth2Params.getExpiration())).minusSeconds(5)); // refresh token 5 seconds before expiration
