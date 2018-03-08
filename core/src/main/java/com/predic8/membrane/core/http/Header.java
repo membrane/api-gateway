@@ -66,6 +66,8 @@ public class Header {
 
 	public static final String X_FORWARDED_PROTO = "X-Forwarded-Proto";
 
+	public static final String X_FORWARDED_HOST = "X-Forwarded-Host";
+
 	public static final String PROXY_AUTHORIZATION = "Proxy-Authorization";
 
 	public static final String SOAP_ACTION = "SOAPAction";
@@ -131,7 +133,7 @@ public class Header {
 
 
 
-    private final ArrayList<HeaderField> fields = new ArrayList<HeaderField>();
+	private final ArrayList<HeaderField> fields = new ArrayList<HeaderField>();
 
 	public Header() {
 	}
@@ -584,5 +586,13 @@ public class Header {
 				|| contentType.startsWith("image/")
 				|| contentType.startsWith("video/")
 				|| contentType.startsWith("application/octet-stream");
+	}
+
+	public String getXForwardedHost() {
+		return getFirstValue(X_FORWARDED_HOST);
+	}
+
+	public void setXForwardedHost(String xForwardedHostHeaderValue) {
+		setValue(X_FORWARDED_HOST,xForwardedHostHeaderValue);
 	}
 }

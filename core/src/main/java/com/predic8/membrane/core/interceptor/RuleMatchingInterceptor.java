@@ -135,6 +135,24 @@ public class RuleMatchingInterceptor extends AbstractInterceptor {
 		}
 		h.setXForwardedProto(getXForwardedProtoHeaderValue(exc));
 
+
+		if (h.getNumberOf(Header.X_FORWARDED_HOST) > maxXForwardedForHeaders) {
+			Request r = exc.getRequest();
+			throw new RuntimeException("Request caused " + Header.X_FORWARDED_HOST + " flood: " + r.getStartLine() +
+					r.getHeader().toString());
+		}
+		h.setXForwardedHost(getXForwardedHostHeaderValue(exc));
+
+	}
+
+	private String getXForwardedHostHeaderValue(AbstractExchange exc) {
+		if(getXForwardedHost(exc) != null)
+			return getXForwardedHost(exc) + ", " + exc.getRequest().getHeader().getHost();
+		return exc.getRequest().getHeader().getHost();
+	}
+
+	private String getXForwardedHost(AbstractExchange exc) {
+		return exc.getRequest().getHeader().getXForwardedHost();
 	}
 
 	private String getXForwardedForHeaderValue(AbstractExchange exc) {
