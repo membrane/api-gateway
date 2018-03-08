@@ -62,7 +62,7 @@ public class CodeFlow extends OAuth2Flow{
         }
 
         exc.setResponse(Response.
-                redirect(redirectUrl + "?code=" + code + stateQuery(state), false).
+                redirectGet(redirectUrl + "?code=" + code + stateQuery(state)).
                 dontCache().
                 body("").
                 build());
