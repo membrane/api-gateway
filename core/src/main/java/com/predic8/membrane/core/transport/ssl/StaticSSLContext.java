@@ -33,10 +33,8 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.*;
+import java.security.cert.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateParsingException;
-import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
@@ -137,26 +135,40 @@ public class StaticSSLContext extends SSLContext {
             }
 
             TrustManagerFactory tmf = null;
+            KeyStore ts = null;
+            String trustAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+            String checkRevocation = null;
             if (sslParser.getTrustStore() != null) {
-                String trustAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
                 if (sslParser.getTrustStore().getAlgorithm() != null)
                     trustAlgorithm = sslParser.getTrustStore().getAlgorithm();
-                KeyStore ks = openKeyStore(sslParser.getTrustStore(), keyStoreType, null, resourceResolver, baseLocation);
-                tmf = TrustManagerFactory.getInstance(trustAlgorithm);
-                tmf.init(ks);
+                ts = openKeyStore(sslParser.getTrustStore(), keyStoreType, null, resourceResolver, baseLocation);
+                checkRevocation = sslParser.getTrustStore().getCheckRevocation();
             }
             if (sslParser.getTrust() != null) {
                 if (tmf != null)
                     throw new InvalidParameterException("<trust> may not be used together with <truststore>.");
+                if (sslParser.getTrust().getAlgorithm() != null)
+                    trustAlgorithm = sslParser.getTrust().getAlgorithm();
 
-                KeyStore ks = KeyStore.getInstance(keyStoreType);
-                ks.load(null, "".toCharArray());
+                ts = KeyStore.getInstance(keyStoreType);
+                ts.load(null, "".toCharArray());
 
                 for (int j = 0; j < sslParser.getTrust().getCertificateList().size(); j++)
-                    ks.setCertificateEntry("inlinePemCertificate" + j, PEMSupport.getInstance().parseCertificate(sslParser.getTrust().getCertificateList().get(j).get(resourceResolver, baseLocation)));
-
-                tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-                tmf.init(ks);
+                    ts.setCertificateEntry("inlinePemCertificate" + j, PEMSupport.getInstance().parseCertificate(sslParser.getTrust().getCertificateList().get(j).get(resourceResolver, baseLocation)));
+                checkRevocation = sslParser.getTrust().getCheckRevocation();
+            }
+            if (ts != null) {
+                CertPathBuilder cpb = CertPathBuilder.getInstance(trustAlgorithm);
+                PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(ts, new X509CertSelector());
+                if (checkRevocation != null) {
+                    PKIXRevocationChecker rc = (PKIXRevocationChecker) cpb.getRevocationChecker();
+                    EnumSet<PKIXRevocationChecker.Option> options = EnumSet.noneOf(PKIXRevocationChecker.Option.class);
+                    for (String option : checkRevocation.split(","))
+                        options.add(PKIXRevocationChecker.Option.valueOf(option));
+                    pkixParams.addCertPathChecker(rc);
+                }
+                tmf = TrustManagerFactory.getInstance(trustAlgorithm);
+                tmf.init( new CertPathTrustManagerParameters(pkixParams) );
             }
 
             TrustManager[] tms = tmf != null ? tmf.getTrustManagers() : null /* trust anyone: new TrustManager[] { new NullTrustManager() } */;

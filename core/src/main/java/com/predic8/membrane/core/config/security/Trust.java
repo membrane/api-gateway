@@ -15,6 +15,7 @@
 package com.predic8.membrane.core.config.security;
 
 import com.google.common.base.Objects;
+import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 
@@ -29,6 +30,8 @@ import java.util.List;
  */
 @MCElement(name="trust")
 public class Trust {
+    protected String algorithm;
+    protected String checkRevocation;
     List<Certificate> certificateList = new ArrayList<Certificate>();
 
     @Override
@@ -46,5 +49,23 @@ public class Trust {
     @MCChildElement
     public void setCertificateList(List<Certificate> certificateList) {
         this.certificateList = certificateList;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    @MCAttribute
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
+    }
+
+    public String getCheckRevocation() {
+        return checkRevocation;
+    }
+
+    @MCAttribute
+    public void setCheckRevocation(String checkRevocation) {
+        this.checkRevocation = checkRevocation;
     }
 }

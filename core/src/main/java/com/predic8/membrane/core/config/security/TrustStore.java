@@ -21,6 +21,7 @@ import com.predic8.membrane.annot.MCElement;
 public class TrustStore extends Store {
 
 	protected String algorithm;
+	protected String checkRevocation;
 
 	@Override
 	public boolean equals(Object obj) {
@@ -41,4 +42,12 @@ public class TrustStore extends Store {
 		this.algorithm = algorithm;
 	}
 
+	public String getCheckRevocation() {
+		return checkRevocation;
+	}
+
+	@MCAttribute
+	public void setCheckRevocation(String checkRevocation) {
+		this.checkRevocation = checkRevocation;
+	}
 }
