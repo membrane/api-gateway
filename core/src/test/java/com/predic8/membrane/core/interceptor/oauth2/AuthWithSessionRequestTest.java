@@ -48,6 +48,6 @@ public class AuthWithSessionRequestTest extends RequestParameterizedTest {
     }
 
     private static Object[] testPromptEqualsLogin() {
-        return new Object[]{"testPromptEqualsLogin",addValueToRequestUri("prompt=login"),307,getBool(true),responseContainsValueInLocationHeader("/oauth2/auth")};
+        return new Object[]{"testPromptEqualsLogin",addValueToRequestUri("prompt=login"),303,getBool(true),responseContainsValueInLocationHeader("/oauth2/auth")};
     }
 }

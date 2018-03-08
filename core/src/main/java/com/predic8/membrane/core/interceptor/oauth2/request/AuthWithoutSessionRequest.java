@@ -138,7 +138,7 @@ public class AuthWithoutSessionRequest extends ParameterizedRequest {
 
     protected Response redirectToLogin() throws MalformedURLException, UnsupportedEncodingException {
         Response resp = Response.
-                redirect(authServer.getPath(), false).
+                redirectGet(authServer.getPath()).
                 dontCache().
                 body("").
                 build();
