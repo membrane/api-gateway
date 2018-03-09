@@ -47,7 +47,6 @@ public class RouterCLI {
 			System.err.println("Fatal error: " + e.getMessage());
 			System.exit(1);
 		} catch (Exception ex) {
-		    LOG.error(ex.getMessage(), ex);
 			ex.printStackTrace();
 			System.exit(1);
 		}

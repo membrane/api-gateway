@@ -122,7 +122,9 @@ public class GroovyInterceptor extends AbstractInterceptor {
 			else
 				log.error("There is possibly a syntax error in the groovy script (compilation error)");
 		}catch (NoSuchElementException e2){
-			//ignore
+			//ignore - logging should not break anything
+		}finally{
+			e.printStackTrace();
 		}
 	}
 
