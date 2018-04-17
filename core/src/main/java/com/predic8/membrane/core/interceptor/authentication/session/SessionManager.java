@@ -74,7 +74,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
      */
 	public void postProcess(Exchange exc) {
 		String cookieValue = (String) exc.getProperty(SESSION_ID);
-		if (cookieValue != null)
+		if (cookieValue != null && exc.getResponse() != null)
 			exc.getResponse().getHeader().addCookieSession(cookieName, cookieValue);
 	}
 
@@ -202,10 +202,7 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 				(domain != null ? "Domain=" + domain + "; " : "") +
 				"Path=/" +
 				(exc.getRule().getSslInboundContext() != null ? "; Secure" : "");
-		if (exc.getResponse() == null)
-			exc.setProperty(SESSION_ID, cookieValue);
-		else
-			exc.getResponse().getHeader().addCookieSession(cookieName, cookieValue);
+		exc.setProperty(SESSION_ID, cookieValue);
 		exc.setProperty(SESSION, s);
 		return s;
 	}

@@ -66,6 +66,7 @@ import java.util.concurrent.TimeUnit;
 @MCElement(name = "oauth2Resource")
 public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     public static final String OAUTH2_ANSWER = "oauth2Answer";
+    public static final String OA2REDIRECT = "oa2redirect";
     private static Logger log = LoggerFactory.getLogger(OAuth2ResourceInterceptor.class.getName());
 
     private String loginLocation;
@@ -74,11 +75,12 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
     private SessionManager sessionManager;
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
-    private Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(5, TimeUnit.SECONDS).build();
+    private Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
+    private Cache<String,Exchange> stateToRedirect = CacheBuilder.newBuilder().expireAfterWrite(1,TimeUnit.MINUTES).build();
 
     private int revalidateTokenAfter = -1;
 
-    private ConcurrentHashMap<String,Request> stateToOriginalUrl = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<String,Exchange> stateToOriginalUrl = new ConcurrentHashMap<>();
 
     private WebServerInterceptor wsi;
     private URIFactory uriFactory;
@@ -212,6 +214,9 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             return Outcome.RETURN;
         }
 
+        if(isOAuth2RedirectRequest(exc))
+            handleOriginalRequest(exc);
+
         if (isLoginRequest(exc)) {
             handleLoginRequest(exc);
             return Outcome.RETURN;
@@ -272,6 +277,23 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         }
 
         return respondWithRedirect(exc);
+    }
+
+    private void handleOriginalRequest(Exchange exc) throws Exception {
+        Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
+        String oa2redirect = params.get(OA2REDIRECT);
+
+        Exchange originalExchange = null;
+        synchronized (stateToRedirect) {
+            originalExchange = stateToRedirect.getIfPresent(oa2redirect);
+            stateToRedirect.invalidate(oa2redirect);
+        }
+
+        doOriginalRequest(exc,originalExchange);
+    }
+
+    private boolean isOAuth2RedirectRequest(Exchange exc) {
+        return exc.getOriginalRequestUri().contains(OA2REDIRECT);
     }
 
     private void refreshAccessToken(Session session) throws Exception {
@@ -397,7 +419,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
             exc.setResponse(Response.redirectGet(auth.getLoginURL(state, publicURL, exc.getRequestURI())).build());
 
-            stateToOriginalUrl.put(state,exc.getRequest());
+            stateToOriginalUrl.put(state,exc);
 
             Session session = sessionManager.getOrCreateSession(exc);
             synchronized(session){
@@ -527,8 +549,8 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
                     throw new RuntimeException("CSRF token mismatch.");
 
 
-                Request originalRequest = stateToOriginalUrl.get(param.get("security_token"));
-                String url = originalRequest.getUri();
+                Exchange originalRequest = stateToOriginalUrl.get(param.get("security_token"));
+                String url = originalRequest.getRequest().getUri();
                 if (url == null)
                     url = "/";
                 stateToOriginalUrl.remove(state2);
@@ -628,7 +650,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
 
                 processUserInfo(json2, session);
 
-                exc.setRequest(originalRequest);
+                doRedirect(exc,originalRequest);
                 return true;
             } catch (Exception e) {
                 exc.setResponse(Response.badRequest().body(e.getMessage()).build());
@@ -636,6 +658,28 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
             }
         }
         return false;
+    }
+
+    private void doRedirect(Exchange exc, Exchange originalRequest) {
+        if(exc.getRequest().getMethod().equals("GET")){
+            exc.setResponse(Response.redirect(originalRequest.getRequestURI(),false).build());
+        }else {
+            String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
+            synchronized (stateToRedirect) {
+                stateToRedirect.put(oa2redirect, originalRequest);
+            }
+            String delimiter = originalRequest.getRequestURI().contains("?") ? "&" : "?";
+            exc.setResponse(Response.redirect(originalRequest.getRequestURI() + delimiter + OA2REDIRECT + "=" + oa2redirect, false).build());
+        }
+    }
+
+    private void doOriginalRequest(Exchange exc, Exchange originalRequest) throws Exception {
+        originalRequest.getRequest().getHeader().add("Cookie",exc.getRequest().getHeader().getFirstValue("Cookie"));
+        originalRequest.getDestinations().clear();
+        String xForwardedProto = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
+        String xForwardedHost = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_HOST);
+        String originalRequestUri = originalRequest.getOriginalRequestUri();
+        originalRequest.getDestinations().add(xForwardedProto + "://" + xForwardedHost + originalRequestUri);
     }
 
     private void processUserInfo(Map<String, String> userInfo, Session session) {
