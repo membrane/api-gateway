@@ -120,6 +120,22 @@ public class SSLProxy implements Rule {
         this.port = port;
     }
 
+    String ip;
+
+    public String getIp() {
+        return ip;
+    }
+
+    /**
+     * @description If present, binds the port only on the specified IP. Useful for hosts with multiple IP addresses.
+     * @default <i>not set</i>
+     * @example 127.0.0.1
+     */
+    @MCAttribute
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
     String host;
 
     public String getHost() {
@@ -279,7 +295,7 @@ public class SSLProxy implements Rule {
 
         @Override
         public String getIp() {
-            return null;
+            return ip;
         }
 
         @Override

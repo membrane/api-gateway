@@ -158,17 +158,19 @@ public class StaticSSLContext extends SSLContext {
                 checkRevocation = sslParser.getTrust().getCheckRevocation();
             }
             if (ts != null) {
-                CertPathBuilder cpb = CertPathBuilder.getInstance(trustAlgorithm);
-                PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(ts, new X509CertSelector());
+                tmf = TrustManagerFactory.getInstance(trustAlgorithm);
                 if (checkRevocation != null) {
+                    CertPathBuilder cpb = CertPathBuilder.getInstance(trustAlgorithm);
+                    PKIXBuilderParameters pkixParams = new PKIXBuilderParameters(ts, new X509CertSelector());
                     PKIXRevocationChecker rc = (PKIXRevocationChecker) cpb.getRevocationChecker();
                     EnumSet<PKIXRevocationChecker.Option> options = EnumSet.noneOf(PKIXRevocationChecker.Option.class);
                     for (String option : checkRevocation.split(","))
                         options.add(PKIXRevocationChecker.Option.valueOf(option));
                     pkixParams.addCertPathChecker(rc);
+                    tmf.init( new CertPathTrustManagerParameters(pkixParams) );
+                } else {
+                    tmf.init(ts);
                 }
-                tmf = TrustManagerFactory.getInstance(trustAlgorithm);
-                tmf.init( new CertPathTrustManagerParameters(pkixParams) );
             }
 
             TrustManager[] tms = tmf != null ? tmf.getTrustManagers() : null /* trust anyone: new TrustManager[] { new NullTrustManager() } */;
