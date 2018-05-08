@@ -204,6 +204,8 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 				(exc.getRule().getSslInboundContext() != null ? "; Secure" : "");
 		exc.setProperty(SESSION_ID, cookieValue);
 		exc.setProperty(SESSION, s);
+		if (exc.getResponse() != null)
+			exc.getResponse().getHeader().addCookieSession(cookieName, cookieValue);
 		return s;
 	}
 
