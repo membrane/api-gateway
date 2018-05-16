@@ -90,7 +90,7 @@ public class STOMPClient extends AbstractInterceptor {
 	/**
 	 * @description Configures outbound SSL (STOMP via SSL).
 	 */
-	@MCChildElement(order=2)
+	@MCChildElement(allowForeign = true, order=2)
 	public void setSslOutboundParser(SSLParser sslParser) {
 		this.sslOutboundParser = sslParser;
 	}
