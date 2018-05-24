@@ -18,14 +18,23 @@ import java.security.InvalidParameterException;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.config.spring.BaseLocationApplicationContext;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 @MCElement(name="httpClientConfig")
-public class HttpClientConfiguration {
+public class HttpClientConfiguration implements ApplicationContextAware {
 
 	private int maxRetries = 5;
 	private ConnectionConfiguration connection = new ConnectionConfiguration();
 	private ProxyConfiguration proxy;
 	private AuthenticationConfiguration authentication;
+	private SSLParser sslParser;
+	private String baseLocation;
+
+
 
 	public ConnectionConfiguration getConnection() {
 		return connection;
@@ -72,5 +81,28 @@ public class HttpClientConfiguration {
 	@MCAttribute
 	public void setMaxRetries(int maxRetries) {
 		this.maxRetries = maxRetries;
+	}
+
+	public SSLParser getSslParser() {
+		return sslParser;
+	}
+
+	@MCChildElement(order=4, allowForeign = true)
+	public void setSslParser(SSLParser sslParser) {
+		this.sslParser = sslParser;
+	}
+
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		if (applicationContext instanceof BaseLocationApplicationContext)
+			setBaseLocation(((BaseLocationApplicationContext)applicationContext).getBaseLocation());
+	}
+
+	public String getBaseLocation() {
+		return baseLocation;
+	}
+
+	public void setBaseLocation(String baseLocation) {
+		this.baseLocation = baseLocation;
 	}
 }

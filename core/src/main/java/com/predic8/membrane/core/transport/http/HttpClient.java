@@ -70,6 +70,7 @@ public class HttpClient {
 	private final int maxRetries;
 	private final int connectTimeout;
 	private final String localAddr;
+	private final SSLContext sslContext;
 
 	private final ConnectionManager conMgr;
 	private StreamPump.StreamPumpStats streamPumpStats;
@@ -84,6 +85,12 @@ public class HttpClient {
 			proxySSLContext = new StaticSSLContext(proxy.getSslParser(), new ResolverMap(), null);
 		else
 			proxySSLContext = null;
+		if (configuration.getSslParser() != null) {
+			if (configuration.getBaseLocation() == null)
+				throw new RuntimeException("Cannot find keystores as base location is unknown");
+			sslContext = new StaticSSLContext(configuration.getSslParser(), new ResolverMap(), configuration.getBaseLocation());
+		}else
+			sslContext = null;
 		authentication = configuration.getAuthentication();
 		maxRetries = configuration.getMaxRetries();
 
@@ -140,8 +147,11 @@ public class HttpClient {
 		Object sslPropObj = exc.getProperty(Exchange.SSL_CONTEXT);
 		if(sslPropObj != null)
 			return (SSLProvider) sslPropObj;
-		if (hcp.useSSL)
-			return getDefaultSSLProvider();
+		if(hcp.useSSL)
+			if(sslContext != null)
+				return sslContext;
+			else
+				return getDefaultSSLProvider();
 		return null;
 	}
 
