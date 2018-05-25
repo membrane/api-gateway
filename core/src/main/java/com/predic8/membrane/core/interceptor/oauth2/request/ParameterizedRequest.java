@@ -75,7 +75,7 @@ public abstract class ParameterizedRequest {
     protected Response createParameterizedFormUrlencodedRedirect(Exchange exc, String state, String url) {
         if (state != null)
             url += "&state=" + state;
-        return Response.redirectGet(url).header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded").bodyEmpty().dontCache().build();
+        return Response.redirect(url,false).header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded").bodyEmpty().dontCache().build();
     }
 
     protected Response buildWwwAuthenticateErrorResponse(Response.ResponseBuilder builder, String errorValue) {

@@ -417,7 +417,7 @@ public class OAuth2ResourceInterceptor extends AbstractInterceptor {
         if (loginLocation == null) {
             String state = new BigInteger(130, new SecureRandom()).toString(32);
 
-            exc.setResponse(Response.redirectGet(auth.getLoginURL(state, publicURL, exc.getRequestURI())).build());
+            exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()),false).build());
 
             stateToOriginalUrl.put(state,exc);
 

@@ -71,6 +71,6 @@ public class AuthWithSessionRequest extends ParameterizedRequest{
     }
 
     private static Response redirectToOAuth2AuthEndpoint(Exchange exc) {
-        return Response.redirectGet(exc.getRequestURI()).dontCache().bodyEmpty().build();
+        return Response.redirect(exc.getRequestURI(),false).dontCache().bodyEmpty().build();
     }
 }

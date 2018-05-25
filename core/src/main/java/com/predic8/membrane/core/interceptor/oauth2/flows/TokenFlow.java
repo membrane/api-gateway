@@ -45,7 +45,7 @@ public class TokenFlow extends OAuth2Flow {
         }
 
         exc.setResponse(Response.
-                redirectGet(redirectUrl + "?access_token=" + token + stateQuery(state) + "&token_type=" + tokenType + "&scope=" + scope).
+                redirect(redirectUrl + "?access_token=" + token + stateQuery(state) + "&token_type=" + tokenType + "&scope=" + scope,false).
                 dontCache().
                 body("").
                 build());
