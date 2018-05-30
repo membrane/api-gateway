@@ -151,7 +151,7 @@ public class Exchange extends AbstractExchange {
 	}
 
 	public void collectStatistics() {
-		rule.collectStatisticsFrom(this);
+		rule.getStatisticCollector().collect(this);
 	}
 
 	/**

@@ -129,6 +129,18 @@ public class StatisticCollector {
 		return goodCount == 0 ? "" : "" + nf.format(((double)totalTime)/goodCount) + " ms";
 	}
 
+	public long getGoodTotalTime() {
+		return totalTime;
+	}
+
+	public long getGoodTotalBytesReceived() {
+		return totalBytesReceived;
+	}
+
+	public long getGoodTotalBytesSent() {
+		return totalBytesSent;
+	}
+
 	public String getBytesSent() {
 		return goodCount == 0 ? "" : "" + nf.format(totalBytesSent);
 	}

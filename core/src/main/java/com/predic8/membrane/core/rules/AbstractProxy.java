@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.predic8.membrane.core.config.security.SSLParser;
@@ -49,10 +50,7 @@ public abstract class AbstractProxy implements Rule {
 	 */
 	protected String localHost;
 
-	/**
-	 * Map<Status Code, StatisticCollector>
-	 */
-	private ConcurrentHashMap<Integer, StatisticCollector> statusCodes = new ConcurrentHashMap<Integer, StatisticCollector>();
+	private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
 
 	private boolean active;
 	private String error;
@@ -132,37 +130,6 @@ public abstract class AbstractProxy implements Rule {
 	@MCAttribute
 	public void setBlockResponse(boolean blockStatus) {
 		this.blockResponse = blockStatus;
-	}
-
-	private StatisticCollector getStatisticCollectorByStatusCode(int code) {
-		StatisticCollector sc = statusCodes.get(code);
-		if (sc == null) {
-			sc = new StatisticCollector(true);
-			StatisticCollector sc2 = statusCodes.putIfAbsent(code, sc);
-			if (sc2 != null)
-				sc = sc2;
-		}
-		return sc;
-	}
-
-	public void collectStatisticsFrom(Exchange exc) {
-		StatisticCollector sc = getStatisticCollectorByStatusCode(exc
-				.getResponse().getStatusCode());
-		synchronized (sc) {
-			sc.collectFrom(exc);
-		}
-	}
-
-	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
-		return statusCodes;
-	}
-
-	public int getCount() {
-		int c = 0;
-		for (StatisticCollector statisticCollector : statusCodes.values()) {
-			c += statisticCollector.getCount();
-		}
-		return c;
 	}
 
 	protected abstract AbstractProxy getNewInstance();
@@ -246,4 +213,8 @@ public abstract class AbstractProxy implements Rule {
 		return clone;
 	}
 
+	@Override
+	public RuleStatisticCollector getStatisticCollector() {
+		return ruleStatisticCollector;
+	}
 }

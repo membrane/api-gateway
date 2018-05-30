@@ -26,6 +26,7 @@ import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.rules.StatisticCollector;
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
@@ -122,18 +123,8 @@ public class FakeRule implements Rule {
     }
 
     @Override
-    public void collectStatisticsFrom(Exchange exc) {
-
-    }
-
-    @Override
-    public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
+    public RuleStatisticCollector getStatisticCollector() {
         return null;
-    }
-
-    @Override
-    public int getCount() {
-        return 0;
     }
 
     @Override

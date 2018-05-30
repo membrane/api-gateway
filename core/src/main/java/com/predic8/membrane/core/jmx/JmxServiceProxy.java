@@ -50,6 +50,6 @@ public class JmxServiceProxy {
 
     @ManagedAttribute
     public int getProcessedExchanges(){
-        return rule.getCount();
+        return rule.getStatisticCollector().getCount();
     }
 }

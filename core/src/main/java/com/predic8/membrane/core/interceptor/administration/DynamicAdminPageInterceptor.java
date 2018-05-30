@@ -118,7 +118,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 				createServiceProxyVisualization(rule, relativeRootPath);
 				end();
 				div().id("tab2");
-				createStatusCodesTable(rule.getStatisticsByStatusCodes());
+				createStatusCodesTable(rule.getStatisticCollector().getStatisticsByStatusCodes());
 				br();
 				createButton("View Messages", "calls", null, createQueryString("proxy", rule.toString()));
 				end();
@@ -154,7 +154,7 @@ public class DynamicAdminPageInterceptor extends AbstractInterceptor {
 					end();
 				}
 				h2().text("Status Codes").end();
-				createStatusCodesTable(rule.getStatisticsByStatusCodes());
+				createStatusCodesTable(rule.getStatisticCollector().getStatisticsByStatusCodes());
 				h2().text("Interceptors").end();
 				createInterceptorTable(rule.getInterceptors());
 			}

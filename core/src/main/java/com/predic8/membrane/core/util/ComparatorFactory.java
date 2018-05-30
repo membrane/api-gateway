@@ -148,7 +148,7 @@ public class ComparatorFactory {
 		} else if ("count".equals(propName)) {
 			return new PropertyComparator<AbstractServiceProxy, Integer>(order, new PropertyComparator.ValueResolver<AbstractServiceProxy, Integer>() {
 				public Integer get(AbstractServiceProxy p) {
-					return p.getCount();
+					return p.getStatisticCollector().getCount();
 				}
 			});
 		} else if ("name".equals(propName)) {

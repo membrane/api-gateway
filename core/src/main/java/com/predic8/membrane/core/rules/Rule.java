@@ -19,6 +19,7 @@ import java.util.Map;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
 import com.predic8.membrane.core.transport.ssl.SSLProvider;
 
@@ -44,11 +45,7 @@ public interface Rule extends Cloneable {
 
 	public void setBlockResponse(boolean blockStatus);
 
-	public void collectStatisticsFrom(Exchange exc);
-
-	public Map<Integer, StatisticCollector> getStatisticsByStatusCodes();
-
-	public int getCount();
+	public RuleStatisticCollector getStatisticCollector();
 
 	public SSLContext getSslInboundContext();
 

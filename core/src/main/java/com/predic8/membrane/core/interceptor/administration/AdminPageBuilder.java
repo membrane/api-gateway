@@ -269,7 +269,7 @@ public class AdminPageBuilder extends Html {
 			createLink(rule.toString(), "proxy", "show", createQueryString("name",RuleUtil.getRuleIdentifier(rule)));
 			end();
 			createTds(rule.getKey().getPort() == -1 ? "" : ""+rule.getKey().getPort(),
-					""+rule.getCount());
+					""+rule.getStatisticCollector().getCount());
 			if (!readOnly)
 				td().a().href("/admin/proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(rule),"UTF-8")).span().classAttr("ui-icon ui-icon-trash").end(3);
 			end();
@@ -583,7 +583,7 @@ public class AdminPageBuilder extends Html {
 		for (Rule r : router.getRuleManager().getRules()) {
 			if (!(r instanceof AbstractProxy)) continue;
 			StatisticCollector sc = new StatisticCollector(true);
-			for (StatisticCollector s : ((AbstractProxy) r).getStatisticsByStatusCodes().values())
+			for (StatisticCollector s : ((AbstractProxy) r).getStatisticCollector().getStatisticsByStatusCodes().values())
 				sc.collectFrom(s);
 			res.put(r.getName(), sc);
 			backendConnections.put(sc,router.getTransport().getOpenBackendConnections(r.getKey().getPort()));

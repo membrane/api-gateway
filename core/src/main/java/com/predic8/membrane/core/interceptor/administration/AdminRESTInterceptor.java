@@ -128,7 +128,7 @@ public class AdminRESTInterceptor extends RESTInterceptor {
 					gen.writeStringField("path", p.getKey().getPath());
 					gen.writeStringField("targetHost", p.getTargetHost());
 					gen.writeNumberField("targetPort", p.getTargetPort());
-					gen.writeNumberField("count", p.getCount());
+					gen.writeNumberField("count", p.getStatisticCollector().getCount());
 					gen.writeObjectFieldStart("actions");
 					if (!isReadOnly()) {
 						gen.writeStringField("delete", "/admin/service-proxy/delete?name="+URLEncoder.encode(RuleUtil.getRuleIdentifier(p),"UTF-8"));

@@ -22,6 +22,7 @@ import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.Interceptor;
+import com.predic8.membrane.core.stats.RuleStatisticCollector;
 import com.predic8.membrane.core.transport.http.Connection;
 import com.predic8.membrane.core.transport.http.ConnectionManager;
 import com.predic8.membrane.core.transport.http.StreamPump;
@@ -45,6 +46,7 @@ public class SSLProxy implements Rule {
 
     private Target target;
     private ConnectionConfiguration connectionConfiguration = new ConnectionConfiguration();
+    private RuleStatisticCollector ruleStatisticCollector = new RuleStatisticCollector();
 
     @MCElement(id = "sslProxy-target", name="target", topLevel = false)
     public static class Target {
@@ -177,18 +179,8 @@ public class SSLProxy implements Rule {
     }
 
     @Override
-    public void collectStatisticsFrom(Exchange exc) {
-
-    }
-
-    @Override
-    public Map<Integer, StatisticCollector> getStatisticsByStatusCodes() {
-        return null;
-    }
-
-    @Override
-    public int getCount() {
-        return 0;
+    public RuleStatisticCollector getStatisticCollector() {
+        return ruleStatisticCollector;
     }
 
     ConnectionManager cm;
