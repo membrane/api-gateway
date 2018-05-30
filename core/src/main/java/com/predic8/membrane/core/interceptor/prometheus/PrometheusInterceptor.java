@@ -75,7 +75,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     private void buildPrometheusStyleResponse(Context ctx) {
         ctx.resetAll();
         for (Rule r : router.getRuleManager().getRules()) {
-            if (!ctx.seenRules.add(r.getName())) {
+            if (!ctx.seenRules.add(prometheusCompatibleName(r.getName()))) {
                 // the prometheus format is not allowed to contain the same metric more than once
                 if (issuedDuplicateRuleNameWarning)
                     continue;
@@ -128,7 +128,9 @@ public class PrometheusInterceptor extends AbstractInterceptor {
     }
 
     ConcurrentHashMap<String, String> names = new ConcurrentHashMap<>();
-    Pattern ILLEGAL_CHARS = Pattern.compile("[ :\n\r\"\\\\]");
+    // see https://prometheus.io/docs/concepts/data_model/
+    Pattern ILLEGAL_FIRST_CHAR = Pattern.compile("^[^a-zA-Z_:]");
+    Pattern ILLEGAL_CHARS = Pattern.compile("[^a-zA-Z0-9_:]");
 
     private String prometheusCompatibleName(String name) {
         String result = names.get(name);
@@ -138,6 +140,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
         result = prettyPrint(name);
 
         result = ILLEGAL_CHARS.matcher(result).replaceAll("_");
+        result = ILLEGAL_FIRST_CHAR.matcher(result).replaceAll("_");
         names.put(name, result);
 
         return result;
