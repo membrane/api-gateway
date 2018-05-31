@@ -70,10 +70,19 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             sb.setLength(0);
             seenRules.clear();
         }
+
+        private void collect() {
+            sb.append(s1);
+            sb.append(s2);
+            sb.append(s3);
+            sb.append(s4);
+            sb.append(s5);
+        }
     }
 
     private void buildPrometheusStyleResponse(Context ctx) {
         ctx.resetAll();
+        ctx.reset();
         for (Rule r : router.getRuleManager().getRules()) {
             if (!ctx.seenRules.add(prometheusCompatibleName(r.getName()))) {
                 // the prometheus format is not allowed to contain the same metric more than once
@@ -86,12 +95,12 @@ public class PrometheusInterceptor extends AbstractInterceptor {
 
             buildStatuscodeLines(ctx, r);
         }
+        ctx.collect();
+
     }
 
     private void buildStatuscodeLines(Context ctx, Rule rule) {
         Map<Integer, StatisticCollector> stats = rule.getStatisticCollector().getStatisticsByStatusCodes();
-
-        ctx.reset();
 
         for (Integer code : stats.keySet()) {
             buildLine(ctx.s1, rule.getName(), stats.get(code).getCount(), "code", code, "count");
@@ -101,23 +110,20 @@ public class PrometheusInterceptor extends AbstractInterceptor {
             buildLine(ctx.s5, rule.getName(), stats.get(code).getGoodTotalBytesReceived(), "code", code, "good_bytes_res_body");
         }
 
-        ctx.sb.append(ctx.s1);
-        ctx.sb.append(ctx.s2);
-        ctx.sb.append(ctx.s3);
-        ctx.sb.append(ctx.s4);
-        ctx.sb.append(ctx.s5);
     }
 
     /**
      * see https://prometheus.io/docs/instrumenting/exposition_formats/ .
      */
     private StringBuilder buildLine(StringBuilder sb, String ruleName, long value, String labelName, int labelValue, String postFix) {
-        String prometheusName = prometheusCompatibleName(ruleName + "_" + postFix);
+        String prometheusName = prometheusCompatibleName("membrane_" + postFix);
         if (sb.length() == 0) {
             sb.append("# TYPE " + prometheusName + " counter\n");
         }
         sb.append(prometheusName);
-        sb.append("{");
+        sb.append("{rule=\"");
+        sb.append(prometheusCompatibleName(ruleName));
+        sb.append("\",");
         sb.append(prometheusCompatibleName(labelName));
         sb.append("=\"");
         sb.append(labelValue);
