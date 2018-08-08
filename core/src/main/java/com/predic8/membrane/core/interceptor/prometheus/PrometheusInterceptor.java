@@ -88,7 +88,7 @@ public class PrometheusInterceptor extends AbstractInterceptor {
                 // the prometheus format is not allowed to contain the same metric more than once
                 if (issuedDuplicateRuleNameWarning)
                     continue;
-                LOG.warn("The prometheus interceptor detected the same rule name more than once.");
+                LOG.warn("The prometheus interceptor detected the same rule name more than once: " + r.getName());
                 issuedDuplicateRuleNameWarning = true;
                 continue;
             }
