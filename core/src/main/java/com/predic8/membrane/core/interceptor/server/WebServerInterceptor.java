@@ -120,7 +120,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     exc.setReceived();
                     exc.setTimeResReceived(System.currentTimeMillis());
                     return Outcome.RETURN;
-                } catch (FileNotFoundException e2) {
+                } catch (ResourceRetrievalException e2) {
                 }
             }
             String uri2 = uri + "/";
@@ -131,7 +131,7 @@ public class WebServerInterceptor extends AbstractInterceptor {
                     exc.setReceived();
                     exc.setTimeResReceived(System.currentTimeMillis());
                     return Outcome.RETURN;
-                } catch (FileNotFoundException e2) {
+                } catch (ResourceRetrievalException e2) {
                 }
             }
         }
