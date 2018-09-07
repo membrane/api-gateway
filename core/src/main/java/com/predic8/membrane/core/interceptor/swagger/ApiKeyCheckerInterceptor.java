@@ -4,10 +4,12 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.Path;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.util.URLUtil;
 
 @MCElement(name = "apiKeyChecker")
@@ -28,6 +30,16 @@ public class ApiKeyCheckerInterceptor extends AbstractInterceptor {
     public Outcome handleRequest(Exchange exc) throws Exception {
         if (allowSwagger) {
             String path = exc.getRequest().getUri();
+
+            if (exc.getRule() instanceof ServiceProxy) {
+                Path path1 = ((ServiceProxy) exc.getRule()).getPath();
+                if (path1 != null) {
+                    if (!path1.isRegExp())
+                        if (path.startsWith(path1.getValue()))
+                            path = path.substring(path1.getValue().length());
+                }
+            }
+
             if (path.equals("/swagger-ui.html")
             || path.startsWith("/swagger-resources")
             || path.startsWith("/webjars/springfox-swagger-ui")
