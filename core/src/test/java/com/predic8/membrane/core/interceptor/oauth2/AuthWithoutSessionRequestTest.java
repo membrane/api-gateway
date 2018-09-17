@@ -47,15 +47,15 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
     }
 
     private static Object[] testPromptIsNone() {
-        return new Object[]{"testPromptIsNone",addValueToRequestUri("prompt=none"),303,getBool(true),responseContainsValueInLocationHeader("error=login_required")};
+        return new Object[]{"testPromptIsNone",addValueToRequestUri("prompt=none"),307,getBool(true),responseContainsValueInLocationHeader("error=login_required")};
     }
 
     private static Object[] testEmptyScopeList() {
-        return new Object[]{"testEmptyScopeList",replaceValueFromRequestUri("scope=profile","scope=123456789"),303,getBool(true),responseContainsValueInLocationHeader("error=invalid_scope")};
+        return new Object[]{"testEmptyScopeList",replaceValueFromRequestUri("scope=profile","scope=123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_scope")};
     }
 
     private static Object[] testUnsupportedResponseType() {
-        return new Object[]{"testUnsupportedResponseType",replaceValueFromRequestUri("response_type=code","response_type=code123456789"),303,getBool(true),responseContainsValueInLocationHeader("error=unsupported_response_type")};
+        return new Object[]{"testUnsupportedResponseType",replaceValueFromRequestUri("response_type=code","response_type=code123456789"),307,getBool(true),responseContainsValueInLocationHeader("error=unsupported_response_type")};
     }
 
     private static Object[] testRedirectUriNotEqauls() {
@@ -67,7 +67,7 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
     }
 
     private static Object[] testResponseTypeMissing() {
-        return new Object[]{"testResponseTypeMissing",removeValueFromRequestUri("&response_type=code"),303,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
+        return new Object[]{"testResponseTypeMissing",removeValueFromRequestUri("&response_type=code"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
     }
 
     private static Object[] testRedirectUriMissing() {
@@ -83,6 +83,6 @@ public class AuthWithoutSessionRequestTest extends RequestParameterizedTest{
     }
 
     private static Object[] testScopeMissing() {
-        return new Object[]{"testScopeMissing",removeValueFromRequestUri("&scope=profile"),303,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
+        return new Object[]{"testScopeMissing",removeValueFromRequestUri("&scope=profile"),307,getBool(true),responseContainsValueInLocationHeader("error=invalid_request")};
     }
 }
