@@ -25,7 +25,7 @@ public class EtcdRequestTest {
 
     @Test
     public void testFillEtcdWithYaml() throws IOException {
-        String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "\\src\\test\\resources\\apimanagement\\api.yaml")), Charset.defaultCharset());
+        String source =  new String(Files.readAllBytes(Paths.get(System.getProperty("user.dir") + "/src/test/resources/apimanagement/api.yaml")), Charset.defaultCharset());
 
         try {
             EtcdResponse respPutYaml = EtcdRequest.create("http://localhost:4001", "/amc", "").setValue("file", source).sendRequest();

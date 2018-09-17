@@ -269,8 +269,9 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
         mas = new MembraneAuthorizationService();
         mas.setClientId("abc");
         mas.setClientSecret("def");
-        mas.setSrc(System.getProperty("user.dir") + "\\src\\test\\resources\\oauth2");
+        mas.setSrc(System.getProperty("user.dir") + "/src/test/resources/oauth2");
         mas.init(router);
+        mas.init2();
     }
 
     private void initOasi() throws Exception {
@@ -283,8 +284,8 @@ public abstract class OAuth2AuthorizationServerInterceptorBase {
     }
 
     private void setOasiProperties() {
-        oasi.setLocation("src\\test\\resources\\oauth2\\loginDialog\\dialog");
-        oasi.setConsentFile("src\\test\\resources\\oauth2\\consentFile.json");
+        oasi.setLocation("src/test/resources/oauth2/loginDialog/dialog");
+        oasi.setConsentFile("src/test/resources/oauth2/consentFile.json");
         oasi.setPath("/login/");
         oasi.setIssuer("http://Localhost:2001");
     }
