@@ -45,11 +45,11 @@ public class EmptyEndpointTest extends RequestParameterizedTest{
     }
 
     private static Object[] testTokenResponse() {
-        return new Object[]{"testTokenResponse", modifySessionToTokenResponseType(),303,getBool(true),responseContainsValueInLocationHeader("token=")};
+        return new Object[]{"testTokenResponse", modifySessionToTokenResponseType(),307,getBool(true),responseContainsValueInLocationHeader("token=")};
     }
 
     private static Object[] testCodeResponse() {
-        return new Object[]{"testCodeResponse", modifySessionToCodeResponseType(),303,getBool(true),responseContainsValueInLocationHeader("code=")};
+        return new Object[]{"testCodeResponse", modifySessionToCodeResponseType(),307,getBool(true),responseContainsValueInLocationHeader("code=")};
     }
 
     private static Callable<Object> modifySessionToCodeResponseType() {
