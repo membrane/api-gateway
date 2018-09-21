@@ -30,7 +30,9 @@ public class DefaultEndpointProcessor extends EndpointProcessor {
 
     @Override
     public Outcome process(Exchange exc) throws Exception {
-        exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_request"));
+    	if (exc.getResponse() == null) {
+            exc.setResponse(OAuth2Util.createParameterizedJsonErrorResponse(exc, jsonGen, "error", "invalid_request"));    		
+    	}
         return Outcome.RETURN;
     }
 }
