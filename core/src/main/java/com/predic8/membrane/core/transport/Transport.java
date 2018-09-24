@@ -40,6 +40,7 @@ public abstract class Transport {
 	private Router router;
 	private boolean printStackTrace = false;
 	private boolean reverseDNS = true;
+	int concurrentConnectionLimitPerIp = 60;
 
 	public String getOpenBackendConnections(int port){
 		return "N/A";
@@ -108,5 +109,18 @@ public abstract class Transport {
 	@MCAttribute
 	public void setReverseDNS(boolean reverseDNS) {
 		this.reverseDNS = reverseDNS;
+	}
+
+	public int getConcurrentConnectionLimitPerIp() {
+		return concurrentConnectionLimitPerIp;
+	}
+
+	/**
+	 * @description limits the number of concurrent connections from one ip
+	 * @default 60
+	 */
+	@MCAttribute
+	public void setConcurrentConnectionLimitPerIp(int concurrentConnectionLimitPerIp) {
+		this.concurrentConnectionLimitPerIp = concurrentConnectionLimitPerIp;
 	}
 }
