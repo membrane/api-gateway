@@ -586,6 +586,7 @@ public final class SSLExplorer {
 			versionMap.put(0x0301, "TLSv1");
 			versionMap.put(0x0302, "TLSv1.1");
 			versionMap.put(0x0303, "TLSv1.2");
+			versionMap.put(0x0304, "TLSv1.3");
 		}
 
 		SSLCapabilitiesImpl(byte recordMajorVersion, byte recordMinorVersion,
