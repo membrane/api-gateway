@@ -58,6 +58,10 @@ public class StaticSSLContext extends SSLContext {
                 log.warn("Your Java Virtual Machine does not have unlimited strength cryptography. If it is legal in your country, we strongly advise installing the Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files.");
         } catch (NoSuchAlgorithmException ignored) {
         }
+
+        String enableStatusRequestExtension = System.getProperty("jdk.tls.server.enableStatusRequestExtension");
+        if (enableStatusRequestExtension == null)
+            System.setProperty("jdk.tls.server.enableStatusRequestExtension", "true");
     }
 
 
