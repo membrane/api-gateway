@@ -195,7 +195,7 @@ public abstract class SSLContext implements SSLProvider {
             points += getAESStrength(cipher) * 5;
             points += getSHAStrength(cipher) * 2;
             if (supportsAESGCM(cipher))
-                points += 1;
+                points += 15;
 
             this.points = points;
         }
