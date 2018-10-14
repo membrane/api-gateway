@@ -13,6 +13,9 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.authentication.session;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -32,6 +35,9 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
+import com.predic8.membrane.core.config.security.SSLParser;
+import com.predic8.membrane.core.transport.ssl.SSLContext;
+import com.predic8.membrane.core.transport.ssl.StaticSSLContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -101,6 +107,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 	boolean readAttributesAsSelf = true; // whether reading the user's attributes requires authentication
 	HashMap<String, String> attributeMap = new HashMap<String, String>(); // maps LDAP attributes to TokenGenerator attributes
 	AttributeMap map;
+	SSLParser sslParser;
 
 	@MCElement(name="map", topLevel=false, id="ldapUserDataProvider-map")
 	public static class AttributeMap {
@@ -161,6 +168,8 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			env.put(Context.SECURITY_PRINCIPAL, binddn);
 			env.put(Context.SECURITY_CREDENTIALS, bindpw);
 		}
+		if (sslParser != null)
+			env.put("java.naming.ldap.factory.socket", CustomSocketFactory.class.getName());
 
 		HashMap<String, String> userAttrs = new HashMap<String, String>();
 		String uid;
@@ -395,6 +404,15 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		}
 	}
 
+	public SSLParser getSslParser() {
+		return sslParser;
+	}
+
+	@MCChildElement(order=100, allowForeign = true)
+	public void setSslParser(SSLParser sslParser) {
+		this.sslParser = sslParser;
+	}
+
 	@Override
 	public void init(Router router) {
 		if (passwordAttribute != null && readAttributesAsSelf)
@@ -407,15 +425,36 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		if (passwordAttribute != null) {
 			attributeMap.put(passwordAttribute, "_pass");
 		}
+
+		if (sslParser != null)
+			CustomSocketFactory.sslContext = new StaticSSLContext(sslParser, router.getResolverMap(), router.getBaseLocation());
 	}
 
 	public AttributeMap getMap() {
 		return map;
 	}
 
-	@MCChildElement
+	@MCChildElement(order=200)
 	public void setMap(AttributeMap map) {
 		this.map = map;
 	}
 
+	public static class CustomSocketFactory {
+		public static SSLContext sslContext;
+		public static int connectTimeout = 60000;
+
+		private static CustomSocketFactory instance;
+
+		public static CustomSocketFactory getDefault() {
+			synchronized (CustomSocketFactory.class) {
+				if (instance == null)
+					instance = new CustomSocketFactory();
+			}
+			return instance;
+		}
+
+		public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+			return sslContext.createSocket(host, port, connectTimeout, host);
+		}
+	}
 }
