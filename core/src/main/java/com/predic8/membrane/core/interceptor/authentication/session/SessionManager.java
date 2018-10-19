@@ -54,8 +54,8 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 
 	// TODO: bind session also to remote IP (for public Membrane release)
 	HashMap<String, Session> sessions = new HashMap<String, SessionManager.Session>();
-	private final static String SESSION_ID = "SESSION_ID";
-	private final static String SESSION = "SESSION";
+	protected final static String SESSION_ID = "SESSION_ID";
+	protected final static String SESSION = "SESSION";
 
 	@Override
 	protected void parseAttributes(XMLStreamReader token) throws Exception {
@@ -128,6 +128,10 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 			return userAttributes;
 		}
 
+		public synchronized void setUserAttributes(Map<String, String> userAttributes) {
+			this.userAttributes = userAttributes;
+		}
+
 		public synchronized void clear() {
 			level = 0;
 			userAttributes = new HashMap<String, String>();
@@ -155,10 +159,22 @@ public class SessionManager extends AbstractXmlElement implements Cleaner {
 			return userName;
 		}
 
+		protected synchronized void setUserName(String userName) {
+			this.userName = userName;
+		}
+
 		public synchronized void clearCredentials() {
             getUserAttributes().remove("password");
             getUserAttributes().remove("client_secret");
         }
+
+		protected synchronized int getLevel() {
+			return level;
+		}
+
+		protected synchronized void setLevel(int level) {
+			this.level = level;
+		}
 	}
 
 	private String generateSessionID() {
