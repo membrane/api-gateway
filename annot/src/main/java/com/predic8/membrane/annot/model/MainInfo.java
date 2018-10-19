@@ -13,10 +13,7 @@
    limitations under the License. */
 package com.predic8.membrane.annot.model;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -32,7 +29,12 @@ public class MainInfo {
 
 	private List<ElementInfo> iis = new ArrayList<ElementInfo>();
 	private Map<TypeElement, ChildElementDeclarationInfo> childElementDeclarations = new HashMap<TypeElement, ChildElementDeclarationInfo>();
-	private Map<TypeElement, ElementInfo> elements = new HashMap<TypeElement, ElementInfo>();
+	private Map<TypeElement, ElementInfo> elements = new TreeMap<TypeElement, ElementInfo>(new Comparator<TypeElement>() {
+		@Override
+		public int compare(TypeElement o1, TypeElement o2) {
+			return o1.getSimpleName().toString().compareTo(o2.getSimpleName().toString());
+		}
+	});
 	private Map<String, ElementInfo> globals = new HashMap<String, ElementInfo>();
 	private Map<String, ElementInfo> ids = new HashMap<String, ElementInfo>();
 
