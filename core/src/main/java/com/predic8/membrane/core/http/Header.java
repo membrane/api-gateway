@@ -425,7 +425,11 @@ public class Header {
 	}
 
 	public void addCookieSession(String cookieName, String value) {
-		add(SET_COOKIE, cookieName + "=" + value);
+		addRawCookieSession(cookieName + "=" + value);
+	}
+
+	public void addRawCookieSession(String cookie){
+		add(SET_COOKIE, cookie);
 	}
 
 	public String getFirstCookie(String cookieName) {

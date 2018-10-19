@@ -135,6 +135,17 @@
 			<groupId>javax.mail</groupId>
 			<artifactId>mail</artifactId>
 		</dependency>
+
+		<!--
+			Clone this from https://github.com/xorpherion/OAuth2-OpenID and do a mvn install on it.
+			Currently in development - will be hosted on maven in the future
+		-->
+		<dependency>
+			<groupId>com.bornium</groupId>
+			<artifactId>oauth2-openid</artifactId>
+			<version>1.0.1-SNAPSHOT</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-beans</artifactId>
