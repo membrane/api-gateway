@@ -4,6 +4,8 @@ import com.bornium.security.oauth2openid.token.IdTokenProvider;
 import com.bornium.security.oauth2openid.token.IdTokenVerifier;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
+import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.http.Header;
 import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
@@ -13,9 +15,10 @@ import org.jose4j.lang.JoseException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,10 +57,14 @@ public class JwtSessionManager extends SessionManager {
     }
 
     @Override
-    protected Map<String, String> cookieValueToAttributes(String cookie) {
+    protected Map<String, Object> cookieValueToAttributes(String cookie) {
         //TODO jwts are immutable -> can use cache with expiration to speed this up --- Map<JWT,SESSION.CONTENT>
         try {
-            return idTokenVerifier.verifyAndGetClaims(cookie);
+            return idTokenVerifier.verifySignedJwt(cookie)
+                    .entrySet()
+                    .stream()
+                    .filter(entry -> !entry.getKey().equals("exp")) // filter default jwt claim - its not part of a session
+                    .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         } catch (InvalidJwtException e) {
             log.warn("Could not verify cookie: " + cookie);
             e.printStackTrace();
@@ -74,15 +81,31 @@ public class JwtSessionManager extends SessionManager {
 
     private String createJwtRepresentation(Session s) {
         try {
-            return idTokenProvider.createIdToken(null, "", null, validTime, Instant.now().toString(), null, s.get());
+            return idTokenProvider.createSignedJwt(validTime, s.get());
         } catch (JoseException e) {
             throw new RuntimeException("Could not create JWT representation of session", e);
         }
     }
 
     @Override
-    public long getExpiration(Session session) {
-        return 0;
+    public List<String> getInvalidCookies(Exchange exc, String validCookie) {
+        String valid = validCookie.split("=true")[0];
+        String cookieHeader = exc.getRequest().getHeader().getFirstValue(Header.COOKIE);
+        String[] cookiesRaw = cookieHeader.split(Pattern.quote("=true"));
+        return Stream
+                .of(cookiesRaw)
+                .map(cookie -> {
+                    if (cookie.startsWith("ey"))
+                        return cookie;
+
+                    int index = cookie.indexOf("ey");
+                    if (index == -1)
+                        return cookie;
+                    return cookie.substring(index, cookie.length());
+                })
+                .filter(cookie -> cookie.startsWith("ey"))
+                .filter(cookie -> !cookie.equals(valid))
+                .collect(Collectors.toList());
     }
 
     public String getKey() {

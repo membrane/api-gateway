@@ -5,25 +5,25 @@ import java.util.stream.Collectors;
 
 public class Session {
 
-    Map<String, String> content;
+    Map<String, Object> content;
 
-    public Session(Map<String, String> content) {
+    public Session(Map<String, Object> content) {
         this.content = content;
     }
 
-    public String get(String key) {
-        return getValues(key).get(key);
+    public <T> T get(String key) {
+        return (T)getValues(key).get(key);
     }
 
     public void remove(String key) {
         removeValues(key);
     }
 
-    public void put(String value, String s) {
-        putValues(Collections.singletonMap(value, s));
+    public <T> void put(String key, T value) {
+        putValues(Collections.singletonMap(key, value));
     }
 
-    public Map<String, String> getValues(String... keys) {
+    public Map<String, Object> getValues(String... keys) {
         Set<String> keysUnique = new HashSet<>(Arrays.asList(keys));
         return content
                 .entrySet()
@@ -41,11 +41,11 @@ public class Session {
                 .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
     }
 
-    public void putValues(Map<String, String> map) {
+    public void putValues(Map<String, Object> map) {
         content.putAll(map);
     }
 
-    public Map<String, String> get() {
+    public Map<String, Object> get() {
         return content;
     }
 

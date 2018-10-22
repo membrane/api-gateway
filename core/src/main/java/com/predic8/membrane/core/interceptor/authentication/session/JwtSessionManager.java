@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@MCElement(name="jwtSessionManager", mixed = true)
+@MCElement(name="jwtSessionManager2", mixed = true)
 public class JwtSessionManager extends SessionManager {
 
     private SecureRandom random = new SecureRandom();
