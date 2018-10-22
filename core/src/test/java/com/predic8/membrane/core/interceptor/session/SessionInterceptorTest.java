@@ -42,22 +42,7 @@ public class SessionInterceptorTest {
         AtomicLong counter = new AtomicLong(0);
         List<Long> vals = new ArrayList<>();
 
-        AbstractInterceptorWithSession interceptor = new AbstractInterceptorWithSession() {
-            @Override
-            public Outcome handleRequest(Exchange exc) throws Exception {
-                Session s = getSessionManager().getSession(exc);
-                vals.add(s.get("value"));
-                long nextVal = counter.getAndIncrement();
-                s.put("value", nextVal);
-                vals.add(s.get("value"));
-                return Outcome.CONTINUE;
-            }
-
-            @Override
-            protected Outcome handleResponseInternal(Exchange exc) throws Exception {
-                return Outcome.CONTINUE;
-            }
-        };
+        AbstractInterceptorWithSession interceptor = defineInterceptor(counter,vals);
 
         router.addUserFeatureInterceptor(interceptor);
         router.init();
@@ -84,6 +69,60 @@ public class SessionInterceptorTest {
             assertEquals(index,vals.get(i).intValue());
         }
         assertEquals(49,vals.get(99).intValue());
+    }
+
+    @Test
+    public void expirationTest() throws Exception{
+        Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
+        router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+
+        AtomicLong counter = new AtomicLong(0);
+        List<Long> vals = new ArrayList<>();
+
+        AbstractInterceptorWithSession interceptor = defineInterceptor(counter, vals);
+
+        router.addUserFeatureInterceptor(interceptor);
+        router.init();
+
+        interceptor.getSessionManager().setExpiresAfterSeconds(0);
+
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        IntStream.range(0, 3).forEach(i -> {
+            HttpGet httpGet = new HttpGet("http://localhost:3001");
+            try {
+                CloseableHttpResponse response = httpClient.execute(httpGet);
+
+                try {
+                    EntityUtils.consume(response.getEntity());
+                } finally {
+                    response.close();
+                }
+                Thread.sleep(1000);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        vals.stream().forEach(val -> System.out.println(val));
+    }
+
+    private AbstractInterceptorWithSession defineInterceptor(AtomicLong counter, List<Long> vals) {
+        return new AbstractInterceptorWithSession() {
+                @Override
+                public Outcome handleRequest(Exchange exc) throws Exception {
+                    Session s = getSessionManager().getSession(exc);
+                    vals.add(s.get("value"));
+                    long nextVal = counter.getAndIncrement();
+                    s.put("value", nextVal);
+                    vals.add(s.get("value"));
+                    return Outcome.CONTINUE;
+                }
+
+                @Override
+                protected Outcome handleResponseInternal(Exchange exc) throws Exception {
+                    return Outcome.CONTINUE;
+                }
+            };
     }
 
     @After

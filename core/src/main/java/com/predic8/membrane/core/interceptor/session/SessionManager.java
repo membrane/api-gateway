@@ -7,6 +7,11 @@ import com.predic8.membrane.core.http.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,7 +25,7 @@ public abstract class SessionManager {
 
     public static final String SESSION = "SESSION";
 
-    long timeout;
+    long expiresAfterSeconds = 15*60;
     String domain;
 
     /**
@@ -67,7 +72,10 @@ public abstract class SessionManager {
     }
 
     private void setCookieForCurrentSession(Exchange exc, String currentSessionCookieValue) {
-        exc.getResponse().getHeader().setValue(Header.SET_COOKIE, currentSessionCookieValue);
+        exc.getResponse().getHeader()
+                .setValue(Header.SET_COOKIE, currentSessionCookieValue
+                        + "; Max-Age: " + expiresAfterSeconds
+                        + "; Expires: " + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))));
     }
 
     private void setCookieForExpiredSessions(Exchange exc, String currentSessionCookieValue) {
@@ -132,13 +140,13 @@ public abstract class SessionManager {
     }
 
 
-    public long getTimeout() {
-        return timeout;
+    public long getExpiresAfterSeconds() {
+        return expiresAfterSeconds;
     }
 
     @MCAttribute
-    public void setTimeout(long timeout) {
-        this.timeout = timeout;
+    public void setExpiresAfterSeconds(long expiresAfterSeconds) {
+        this.expiresAfterSeconds = expiresAfterSeconds;
     }
 
     public String getDomain() {
