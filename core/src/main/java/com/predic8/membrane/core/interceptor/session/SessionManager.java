@@ -28,7 +28,7 @@ public abstract class SessionManager {
     String sameSite = null;
 
     /**
-     * Transforms a cookie value into a freshly (new'ed) session instance.
+     * Transforms a cookie value into its attributes
      *
      * @param cookie
      * @return
