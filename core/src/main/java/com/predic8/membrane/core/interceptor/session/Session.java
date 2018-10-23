@@ -12,7 +12,7 @@ public class Session {
     }
 
     public <T> T get(String key) {
-        return (T)getValues(key).get(key);
+        return (T) getValues(key).get(key);
     }
 
     public void remove(String key) {

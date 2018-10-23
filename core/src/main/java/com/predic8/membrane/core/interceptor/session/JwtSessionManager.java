@@ -5,7 +5,6 @@ import com.bornium.security.oauth2openid.token.IdTokenVerifier;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.exchange.Exchange;
-import com.predic8.membrane.core.http.Header;
 import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
@@ -73,9 +72,9 @@ public class JwtSessionManager extends SessionManager {
     }
 
     @Override
-    protected Map<Session, String> getCookieValues(Session... session) {
+    protected Map<Session, String> getCookieValues(Session... sessions) {
         return Stream
-                .of(session)
+                .of(sessions)
                 .collect(Collectors.toMap(s -> s, s -> createJwtRepresentation(s)));
     }
 
@@ -89,11 +88,8 @@ public class JwtSessionManager extends SessionManager {
 
     @Override
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
-        String valid = validCookie.split("=true")[0];
-        String cookieHeader = exc.getRequest().getHeader().getFirstValue(Header.COOKIE);
-        String[] cookiesRaw = cookieHeader.split(Pattern.quote("=true"));
         return Stream
-                .of(cookiesRaw)
+                .of(getAllCookieKeys(exc))
                 .map(cookie -> {
                     if (cookie.startsWith("ey"))
                         return cookie;
@@ -101,12 +97,24 @@ public class JwtSessionManager extends SessionManager {
                     int index = cookie.indexOf("ey");
                     if (index == -1)
                         return cookie;
-                    return cookie.substring(index, cookie.length());
+                    return cookie.substring(index);
                 })
                 .filter(cookie -> cookie.startsWith("ey"))
-                .filter(cookie -> !cookie.equals(valid))
-                .map(cookie -> cookie + "=true")
+                .filter(cookie -> !cookie.equals(getKeyOfCookie(validCookie)))
+                .map(cookie -> addValueToCookie(cookie))
                 .collect(Collectors.toList());
+    }
+
+    private String addValueToCookie(String cookie) {
+        return cookie + "=true";
+    }
+
+    private String[] getAllCookieKeys(Exchange exc) {
+        return getCookieHeader(exc).split(Pattern.quote("=true"));
+    }
+
+    private String getKeyOfCookie(String validCookie) {
+        return validCookie.split("=true")[0];
     }
 
     public String getKey() {

@@ -11,21 +11,18 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class SessionManager {
 
+    public static final String SESSION_VALUE_SEPARATOR = ",";
     Logger log = LoggerFactory.getLogger(SessionManager.class);
 
     public static final String SESSION = "SESSION";
 
-    long expiresAfterSeconds = 15*60;
+    long expiresAfterSeconds = 15 * 60;
     String domain;
 
     /**
@@ -47,6 +44,7 @@ public abstract class SessionManager {
     /**
      * Get all cookies String representations from the request that are not valid anymore, e.g. because the cookie is a self contained value and has changed or expired (e.g. jwt).
      * Should return cookie values in the form of key=value.
+     *
      * @param exc
      * @param validCookie is the cookie value representation of the currently active session. Is key=value
      * @return
@@ -54,59 +52,69 @@ public abstract class SessionManager {
     public abstract List<String> getInvalidCookies(Exchange exc, String validCookie);
 
     public void postProcess(Exchange exc) {
-        if (exc.getProperty(SESSION) == null)
-            return;
-
-        try {
-            if (exc.getResponse() == null)
-                exc.setResponse(new Response());
-
-            setCookieHeaderHandling(exc, getCurrentSessionCookieValue((Session) exc.getProperty(SESSION)));
-        } catch (Exception e) {
-            throw new RuntimeException("The newly created session could not be persisted in the Set-Cookie header", e);
-        }
+        getSessionFromExchange(exc).ifPresent(session -> {
+            try {
+                createDefaultResponseIfNeeded(exc);
+                handleSetCookieHeaderForResponse(exc, getCookieValue(session));
+            } catch (Exception e) {
+                throw new RuntimeException("The newly created session could not be persisted in the Set-Cookie header", e);
+            }
+        });
     }
 
-    private void setCookieHeaderHandling(Exchange exc, String currentSessionCookieValue) {
-        setCookieForCurrentSession(exc, currentSessionCookieValue);
+    private void createDefaultResponseIfNeeded(Exchange exc) {
+        if (exc.getResponse() == null)
+            exc.setResponse(new Response());
+    }
+
+    private void handleSetCookieHeaderForResponse(Exchange exc, String currentSessionCookieValue) {
+        if (!cookieIsAlreadySet(exc, currentSessionCookieValue))
+            setCookieForCurrentSession(exc, currentSessionCookieValue);
         setCookieForExpiredSessions(exc, currentSessionCookieValue);
+    }
+
+    private boolean cookieIsAlreadySet(Exchange exc, String currentSessionCookieValue) {
+        return Optional
+                .ofNullable(getCookieHeader(exc))
+                .orElseGet(String::new)
+                .contains(currentSessionCookieValue);
     }
 
     private void setCookieForCurrentSession(Exchange exc, String currentSessionCookieValue) {
         exc.getResponse().getHeader()
                 .setValue(Header.SET_COOKIE, currentSessionCookieValue
-                        + ";Max-Age=" + expiresAfterSeconds
-                        + ";Expires=" + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))) + ";");
+                        + ";" + String.join(";", createCookieAttributes(exc)));
     }
 
     private void setCookieForExpiredSessions(Exchange exc, String currentSessionCookieValue) {
-        cookiesToExpire(exc, currentSessionCookieValue).stream().forEach(cookie -> {
-            exc.getResponse().getHeader().add(Header.SET_COOKIE, cookie);
-        });
+        cookiesToExpire(exc, currentSessionCookieValue).stream()
+                .forEach(cookie -> exc.getResponse().getHeader().add(Header.SET_COOKIE, cookie));
     }
 
     private List<String> cookiesToExpire(Exchange exc, String currentSessionCookieValue) {
-        List<String> removeCookiesValue = new ArrayList<>();
-        if (exc.getRequest().getHeader().getFirstValue(Header.COOKIE) != null)
-            removeCookiesValue.addAll(expireCookies(getInvalidCookies(exc, currentSessionCookieValue)));
-        return removeCookiesValue;
+        if (getCookieHeader(exc) != null)
+            return expireCookies(getInvalidCookies(exc, currentSessionCookieValue));
+
+        return new ArrayList<>();
     }
 
-    private String getCurrentSessionCookieValue(Session s) throws Exception {
-        return getCookieValues(s).values().stream().findFirst().orElseThrow(Exception::new) + "=true";
+    private String getCookieValue(Session s) throws Exception {
+        return getCookieValues(s)
+                .values()
+                .stream()
+                .findFirst()
+                .orElseThrow(Exception::new) + "=true";
     }
 
     private List<String> expireCookies(List<String> invalidCookies) {
         return invalidCookies
                 .stream()
-                .map(cookie -> cookie + ";Expires=Thu, 01 Jan 1970 00:00:00 GMT;")
+                .map(cookie -> cookie + ";" + String.join(";", createInvalidationAttributes()))
                 .collect(Collectors.toList());
     }
 
-
-
     protected Session getSessionInternal(Exchange exc) {
-        if (exc.getRequest().getHeader().getFirstValue(Header.COOKIE) == null)
+        if (getCookieHeader(exc) == null)
             return new Session(new HashMap<>());
 
         return new Session(mergeCookies(exc));
@@ -116,7 +124,7 @@ public abstract class SessionManager {
         return convertCookiesToAttributes(exc)
                 .stream()
                 .flatMap(map -> map.entrySet().stream())
-                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(), (e1, e2) -> e1 + "," + e2));
+                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(), (e1, e2) -> e1 + SESSION_VALUE_SEPARATOR + e2));
     }
 
     private List<Map<String, Object>> convertCookiesToAttributes(Exchange exc) {
@@ -127,17 +135,38 @@ public abstract class SessionManager {
     }
 
     public Session getSession(Exchange exc) {
-        Session s = (Session) exc.getProperty(SESSION);
-        if (s != null)
-            return s;
-        s = getSessionInternal(exc);
-        exc.setProperty(SESSION, s);
-        return s;
+        return getSessionFromExchange(exc).orElse(getSessionFromManager(exc));
+    }
+
+    private Session getSessionFromManager(Exchange exc) {
+        exc.setProperty(SESSION, getSessionInternal(exc));
+        return getSessionFromExchange(exc).get();
+    }
+
+
+    private Optional<Session> getSessionFromExchange(Exchange exc) {
+        return Optional.ofNullable((Session) exc.getProperty(SESSION));
+    }
+
+    public List<String> createCookieAttributes(Exchange exc) {
+        return Stream.of(
+                "Max-Age=" + expiresAfterSeconds,
+                "Expires=" + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))),
+                exc.getRule().getSslInboundContext() != null ? "Secure" : null
+        )
+                .filter(attr -> attr != null)
+                .collect(Collectors.toList());
+    }
+
+    public List<String> createInvalidationAttributes() {
+        return Stream.of(
+                "Expires=Thu, 01 Jan 1970 00:00:00 GMT"
+        ).collect(Collectors.toList());
     }
 
 
     protected String[] getCookies(Exchange exc) {
-        return exc.getRequest().getHeader().getFirstValue(Header.COOKIE).split(";");
+        return getCookieHeader(exc).split(";");
     }
 
 
@@ -160,4 +189,7 @@ public abstract class SessionManager {
     }
 
 
+    protected String getCookieHeader(Exchange exc) {
+        return exc.getRequest().getHeader().getFirstValue(Header.COOKIE);
+    }
 }
