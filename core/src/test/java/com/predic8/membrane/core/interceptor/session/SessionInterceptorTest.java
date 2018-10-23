@@ -39,8 +39,7 @@ public class SessionInterceptorTest {
 
     @Test
     public void generalSessionUsageTest() throws Exception {
-        Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
-        router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+        router.getRuleManager().addProxyAndOpenPortIfNew(createTestServiceProxy());
 
         AtomicLong counter = new AtomicLong(0);
         List<Long> vals = new ArrayList<>();
@@ -50,9 +49,7 @@ public class SessionInterceptorTest {
         router.addUserFeatureInterceptor(interceptor);
         router.init();
 
-        IntStream.range(0, 50).forEach(i -> {
-            sendRequest(httpClient);
-        });
+        IntStream.range(0, 50).forEach(i -> sendRequest(httpClient));
 
         assertEquals(null,vals.get(0));
         for(int i = 1; i < 98; i+=2){
@@ -62,10 +59,13 @@ public class SessionInterceptorTest {
         assertEquals(49,vals.get(99).intValue());
     }
 
+    private ServiceProxy createTestServiceProxy() {
+        return new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
+    }
+
     @Test
     public void expirationTest() throws Exception{
-        Rule rule = new ServiceProxy(new ServiceProxyKey("localhost", "*", ".*", 3001), "thomas-bayer.com", 80);
-        router.getRuleManager().addProxyAndOpenPortIfNew(rule);
+        router.getRuleManager().addProxyAndOpenPortIfNew(createTestServiceProxy());
 
         AtomicLong counter = new AtomicLong(0);
         List<Long> vals = new ArrayList<>();
@@ -77,9 +77,7 @@ public class SessionInterceptorTest {
 
         interceptor.getSessionManager().setExpiresAfterSeconds(0);
 
-        IntStream.range(0, 50).forEach(i -> {
-            sendRequest(httpClient);
-        });
+        IntStream.range(0, 50).forEach(i -> sendRequest(httpClient));
 
         for(int i = 0; i < 100; i+=2)
             assertEquals(null,vals.get(i));

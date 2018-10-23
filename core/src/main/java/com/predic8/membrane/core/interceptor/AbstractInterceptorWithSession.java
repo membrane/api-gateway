@@ -15,6 +15,12 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
             sessionManager = new JwtSessionManager();
     }
 
+    /**
+     * Do not override handleResponse like usual but use this method to implement your own handle response logic
+     * @param exc
+     * @return
+     * @throws Exception
+     */
     protected abstract Outcome handleResponseInternal(Exchange exc) throws Exception;
 
     @Override
