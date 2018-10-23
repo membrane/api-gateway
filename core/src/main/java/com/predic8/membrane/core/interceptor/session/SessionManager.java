@@ -24,6 +24,8 @@ public abstract class SessionManager {
 
     long expiresAfterSeconds = 15 * 60;
     String domain;
+    boolean httpOnly = false;
+    String sameSite = null;
 
     /**
      * Transforms a cookie value into a freshly (new'ed) session instance.
@@ -152,7 +154,12 @@ public abstract class SessionManager {
         return Stream.of(
                 "Max-Age=" + expiresAfterSeconds,
                 "Expires=" + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))),
-                exc.getRule().getSslInboundContext() != null ? "Secure" : null
+                "Path=/",
+
+                exc.getRule().getSslInboundContext() != null ? "Secure" : null,
+                domain != null ? "Domain=" + domain + "; " : null,
+                httpOnly ? "HttpOnly" : null,
+                sameSite != null ? "SameSite="+sameSite : null
         )
                 .filter(attr -> attr != null)
                 .collect(Collectors.toList());
@@ -191,5 +198,23 @@ public abstract class SessionManager {
 
     protected String getCookieHeader(Exchange exc) {
         return exc.getRequest().getHeader().getFirstValue(Header.COOKIE);
+    }
+
+    public boolean isHttpOnly() {
+        return httpOnly;
+    }
+
+    @MCAttribute
+    public void setHttpOnly(boolean httpOnly) {
+        this.httpOnly = httpOnly;
+    }
+
+    public String getSameSite() {
+        return sameSite;
+    }
+
+    @MCAttribute
+    public void setSameSite(String sameSite) {
+        this.sameSite = sameSite;
     }
 }
