@@ -19,11 +19,8 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {
-        long time = System.nanoTime();
         Outcome outcome = handleResponseInternal(exc);
         sessionManager.postProcess(exc);
-        time = System.nanoTime() - time;
-        System.out.println("time: " + time/1000000000d);
         return outcome;
     }
 

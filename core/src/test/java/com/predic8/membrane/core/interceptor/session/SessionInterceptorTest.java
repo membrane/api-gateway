@@ -7,6 +7,8 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -19,7 +21,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
@@ -28,10 +29,12 @@ import static org.junit.Assert.assertEquals;
 public class SessionInterceptorTest {
 
     private HttpRouter router;
+    private CloseableHttpClient httpClient;
 
     @Before
     public void setUp() {
         router = new HttpRouter();
+        httpClient = createHttpClient();
     }
 
     @Test
@@ -47,20 +50,8 @@ public class SessionInterceptorTest {
         router.addUserFeatureInterceptor(interceptor);
         router.init();
 
-        CloseableHttpClient httpClient = HttpClients.createDefault();
         IntStream.range(0, 50).forEach(i -> {
-            HttpGet httpGet = new HttpGet("http://localhost:3001");
-            try {
-                CloseableHttpResponse response = httpClient.execute(httpGet);
-
-                try {
-                    EntityUtils.consume(response.getEntity());
-                } finally {
-                    response.close();
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            sendRequest(httpClient);
         });
 
         assertEquals(null,vals.get(0));
@@ -86,24 +77,31 @@ public class SessionInterceptorTest {
 
         interceptor.getSessionManager().setExpiresAfterSeconds(0);
 
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        IntStream.range(0, 3).forEach(i -> {
-            HttpGet httpGet = new HttpGet("http://localhost:3001");
-            try {
-                CloseableHttpResponse response = httpClient.execute(httpGet);
-
-                try {
-                    EntityUtils.consume(response.getEntity());
-                } finally {
-                    response.close();
-                }
-                Thread.sleep(1000);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+        IntStream.range(0, 50).forEach(i -> {
+            sendRequest(httpClient);
         });
 
-        vals.stream().forEach(val -> System.out.println(val));
+        for(int i = 0; i < 100; i+=2)
+            assertEquals(null,vals.get(i));
+    }
+
+    private CloseableHttpClient createHttpClient() {
+        return HttpClients.custom().setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()).build();
+    }
+
+    private void sendRequest(CloseableHttpClient httpClient) {
+        HttpGet httpGet = new HttpGet("http://localhost:3001");
+        try {
+            CloseableHttpResponse response = httpClient.execute(httpGet);
+
+            try {
+                EntityUtils.consume(response.getEntity());
+            } finally {
+                response.close();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private AbstractInterceptorWithSession defineInterceptor(AtomicLong counter, List<Long> vals) {
@@ -127,6 +125,7 @@ public class SessionInterceptorTest {
 
     @After
     public void tearDown() throws IOException {
+        httpClient.close();
         router.shutdown();
     }
 }

@@ -105,6 +105,7 @@ public class JwtSessionManager extends SessionManager {
                 })
                 .filter(cookie -> cookie.startsWith("ey"))
                 .filter(cookie -> !cookie.equals(valid))
+                .map(cookie -> cookie + "=true")
                 .collect(Collectors.toList());
     }
 

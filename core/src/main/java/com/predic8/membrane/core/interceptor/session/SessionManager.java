@@ -45,9 +45,10 @@ public abstract class SessionManager {
     protected abstract Map<Session, String> getCookieValues(Session... session);
 
     /**
-     * Get all cookies String representations from the request that are not valid anymore, e.g. because the cookie is a self contained value and has changed (e.g. jwt)
+     * Get all cookies String representations from the request that are not valid anymore, e.g. because the cookie is a self contained value and has changed or expired (e.g. jwt).
+     * Should return cookie values in the form of key=value.
      * @param exc
-     * @param validCookie is the cookie value representation of the currently active session
+     * @param validCookie is the cookie value representation of the currently active session. Is key=value
      * @return
      */
     public abstract List<String> getInvalidCookies(Exchange exc, String validCookie);
@@ -74,8 +75,8 @@ public abstract class SessionManager {
     private void setCookieForCurrentSession(Exchange exc, String currentSessionCookieValue) {
         exc.getResponse().getHeader()
                 .setValue(Header.SET_COOKIE, currentSessionCookieValue
-                        + "; Max-Age: " + expiresAfterSeconds
-                        + "; Expires: " + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))));
+                        + ";Max-Age=" + expiresAfterSeconds
+                        + ";Expires=" + DateTimeFormatter.RFC_1123_DATE_TIME.format(OffsetDateTime.now(ZoneOffset.UTC).plus(Duration.ofSeconds(expiresAfterSeconds))) + ";");
     }
 
     private void setCookieForExpiredSessions(Exchange exc, String currentSessionCookieValue) {
@@ -98,7 +99,7 @@ public abstract class SessionManager {
     private List<String> expireCookies(List<String> invalidCookies) {
         return invalidCookies
                 .stream()
-                .map(cookie -> cookie + "; Expires=Thursday, 01-January-1970 00:00:00 GMT")
+                .map(cookie -> cookie + ";Expires=Thu, 01 Jan 1970 00:00:00 GMT;")
                 .collect(Collectors.toList());
     }
 
