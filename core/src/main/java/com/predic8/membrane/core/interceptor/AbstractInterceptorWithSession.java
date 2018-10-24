@@ -16,12 +16,27 @@ public abstract class AbstractInterceptorWithSession extends AbstractInterceptor
     }
 
     /**
+     * Do not override handleRequest like usual but use this method to implement your own handle request logic
+     * @param exc
+     * @return
+     * @throws Exception
+     */
+    protected abstract Outcome handleRequestInternal(Exchange exc) throws Exception;
+
+    /**
      * Do not override handleResponse like usual but use this method to implement your own handle response logic
      * @param exc
      * @return
      * @throws Exception
      */
     protected abstract Outcome handleResponseInternal(Exchange exc) throws Exception;
+
+    @Override
+    public Outcome handleRequest(Exchange exc) throws Exception {
+        Outcome outcome = handleRequestInternal(exc);
+        sessionManager.postProcess(exc);
+        return outcome;
+    }
 
     @Override
     public Outcome handleResponse(Exchange exc) throws Exception {

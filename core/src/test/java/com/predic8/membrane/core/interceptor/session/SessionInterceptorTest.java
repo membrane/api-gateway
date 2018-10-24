@@ -105,7 +105,7 @@ public class SessionInterceptorTest {
     private AbstractInterceptorWithSession defineInterceptor(AtomicLong counter, List<Long> vals) {
         return new AbstractInterceptorWithSession() {
                 @Override
-                public Outcome handleRequest(Exchange exc) throws Exception {
+                public Outcome handleRequestInternal(Exchange exc) throws Exception {
                     Session s = getSessionManager().getSession(exc);
                     vals.add(s.get("value"));
                     long nextVal = counter.getAndIncrement();

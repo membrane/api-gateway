@@ -5,25 +5,37 @@ import java.util.stream.Collectors;
 
 public class Session {
 
+    public enum AuthorizationLevel{
+        ANONYMOUS,
+        VERIFIED
+    }
+
+    protected final static String INTERNAL_PREFIX = "_internal_";
+    protected final static String AUTHORIZATION_LEVEL = "auth_level";
+
+    private String usernameKeyName;
     Map<String, Object> content;
 
-    public Session(Map<String, Object> content) {
+    public Session(String usernameKeyName, Map<String, Object> content) {
+        this.usernameKeyName = usernameKeyName;
         this.content = content;
+        if(getInternal(AUTHORIZATION_LEVEL) == null)
+            setAuthorization(AuthorizationLevel.ANONYMOUS);
+    }
+
+    public Session(Map<String, Object> content) {
+        this("username",content);
     }
 
     public <T> T get(String key) {
-        return (T) getValues(key).get(key);
-    }
-
-    public void remove(String key) {
-        removeValues(key);
+        return (T) getMultiple(key).get(key);
     }
 
     public <T> void put(String key, T value) {
-        putValues(Collections.singletonMap(key, value));
+        put(Collections.singletonMap(key, value));
     }
 
-    public Map<String, Object> getValues(String... keys) {
+    public Map<String, Object> getMultiple(String... keys) {
         Set<String> keysUnique = new HashSet<>(Arrays.asList(keys));
         return content
                 .entrySet()
@@ -32,7 +44,7 @@ public class Session {
                 .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
     }
 
-    public void removeValues(String... keys) {
+    public void remove(String... keys) {
         Set<String> keysUnique = new HashSet<>(Arrays.asList(keys));
         content
                 .entrySet()
@@ -41,7 +53,7 @@ public class Session {
                 .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
     }
 
-    public void putValues(Map<String, Object> map) {
+    public void put(Map<String, Object> map) {
         content.putAll(map);
     }
 
@@ -51,6 +63,52 @@ public class Session {
 
     public void clear() {
         content.clear();
+    }
+
+    public void setUsername(String username){
+        put(usernameKeyName,username);
+    }
+
+    public <T> T getUsername(){
+        return get(usernameKeyName);
+    }
+
+    public void authorize(String username){
+        setUsername(username);
+        setAuthorization(AuthorizationLevel.VERIFIED);
+    }
+
+    protected void setAuthorization(AuthorizationLevel level) {
+        putInternal(AUTHORIZATION_LEVEL, level.name());
+    }
+
+    protected AuthorizationLevel getAuthorization(){
+        return AuthorizationLevel.valueOf(getInternal(AUTHORIZATION_LEVEL));
+    }
+
+    public boolean isVerified(){
+        return getAuthorization() == AuthorizationLevel.VERIFIED && getUsername() != null;
+    }
+
+    public void clearAuthentication(){
+        removeInternal(usernameKeyName);
+        removeInternal(AUTHORIZATION_LEVEL);
+    }
+
+    protected String internalKey(String key){
+        return INTERNAL_PREFIX+key;
+    }
+
+    protected <T> void putInternal(String key, T value){
+        put(internalKey(key),value);
+    }
+
+    protected <T> T getInternal(String key){
+        return get(internalKey(key));
+    }
+
+    protected void removeInternal(String key) {
+        remove(internalKey(key));
     }
 
 }

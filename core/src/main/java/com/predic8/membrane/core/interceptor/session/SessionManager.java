@@ -23,6 +23,7 @@ public abstract class SessionManager {
 
     public static final String SESSION = "SESSION";
 
+    String usernameKeyName = "username";
     long expiresAfterSeconds = 15 * 60;
     String domain;
     boolean httpOnly = false;
@@ -53,6 +54,14 @@ public abstract class SessionManager {
      * @return
      */
     public abstract List<String> getInvalidCookies(Exchange exc, String validCookie);
+
+    /**
+     * Gets called for every cookie value. Returns if the cookie value is managed by this manager instance, e.g. jwt session manager checks if the cookie is a jwt.
+     * Cookie is in format key=value
+     * @param cookie
+     * @return
+     */
+    protected abstract boolean isManagedBySessionManager(String cookie);
 
     public void postProcess(Exchange exc) {
         getSessionFromExchange(exc).ifPresent(session -> {
@@ -118,9 +127,9 @@ public abstract class SessionManager {
 
     protected Session getSessionInternal(Exchange exc) {
         if (getCookieHeader(exc) == null)
-            return new Session(new HashMap<>());
+            return new Session(usernameKeyName,new HashMap<>());
 
-        return new Session(mergeCookies(exc));
+        return new Session(usernameKeyName,mergeCookies(exc));
     }
 
     private Map<String, Object> mergeCookies(Exchange exc) {
@@ -137,8 +146,6 @@ public abstract class SessionManager {
                 .map(cookie -> cookieValueToAttributes(cookie.split("=")[0]))
                 .collect(Collectors.toList());
     }
-
-    protected abstract boolean isManagedBySessionManager(String cookie);
 
     public Session getSession(Exchange exc) {
         Optional<Session> sessionFromExchange = getSessionFromExchange(exc);

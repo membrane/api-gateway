@@ -41,7 +41,7 @@ public class OAuth2AuthorizationServer2Interceptor extends AbstractInterceptorWi
     }
 
     @Override
-    public Outcome handleRequest(Exchange exc) throws Exception {
+    public Outcome handleRequestInternal(Exchange exc) throws Exception {
         com.bornium.http.Exchange internalExc = authorizationServer.invokeOn(Convert.convertFromMembraneExchange(exc));
         exc.setResponse(Convert.convertToMembraneResponse(internalExc.getResponse()));
         exc.getProperties().putAll(internalExc.getProperties());
