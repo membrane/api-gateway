@@ -90,27 +90,20 @@ public class JwtSessionManager extends SessionManager {
     public List<String> getInvalidCookies(Exchange exc, String validCookie) {
         return Stream
                 .of(getAllCookieKeys(exc))
-                .map(cookie -> {
-                    if (cookie.startsWith("ey"))
-                        return cookie;
-
-                    int index = cookie.indexOf("ey");
-                    if (index == -1)
-                        return cookie;
-                    return cookie.substring(index);
-                })
-                .filter(cookie -> cookie.startsWith("ey"))
+                .map(cookie -> cookie.split("=true")[0].trim())
+                .filter(cookie -> isManagedBySessionManager(cookie))
                 .filter(cookie -> !cookie.equals(getKeyOfCookie(validCookie)))
                 .map(cookie -> addValueToCookie(cookie))
                 .collect(Collectors.toList());
     }
 
-    private String addValueToCookie(String cookie) {
-        return cookie + "=true";
+    @Override
+    protected boolean isManagedBySessionManager(String cookie) {
+        return cookie.trim().startsWith("ey");
     }
 
-    private String[] getAllCookieKeys(Exchange exc) {
-        return getCookieHeader(exc).split(Pattern.quote("=true"));
+    private String addValueToCookie(String cookie) {
+        return cookie + "=true";
     }
 
     private String getKeyOfCookie(String validCookie) {

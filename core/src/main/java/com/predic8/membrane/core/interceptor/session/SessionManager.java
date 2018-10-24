@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -132,12 +133,19 @@ public abstract class SessionManager {
     private List<Map<String, Object>> convertCookiesToAttributes(Exchange exc) {
         return Stream
                 .of(getCookies(exc))
+                .filter(cookie -> isManagedBySessionManager(cookie))
                 .map(cookie -> cookieValueToAttributes(cookie.split("=")[0]))
                 .collect(Collectors.toList());
     }
 
+    protected abstract boolean isManagedBySessionManager(String cookie);
+
     public Session getSession(Exchange exc) {
-        return getSessionFromExchange(exc).orElse(getSessionFromManager(exc));
+        Optional<Session> sessionFromExchange = getSessionFromExchange(exc);
+        if(sessionFromExchange.isPresent()) // have to do it like this and not with .orElse because getSessionFromManager would be called unnecessarily (overwriting session property)
+            return sessionFromExchange.get();
+
+        return getSessionFromManager(exc);
     }
 
     private Session getSessionFromManager(Exchange exc) {
@@ -167,8 +175,12 @@ public abstract class SessionManager {
 
     public List<String> createInvalidationAttributes() {
         return Stream.of(
-                "Expires=Thu, 01 Jan 1970 00:00:00 GMT"
-        ).collect(Collectors.toList());
+                "Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+                "Path=/",
+                domain != null ? "Domain=" + domain + "; " : null
+        )
+                .filter(attr -> attr != null)
+                .collect(Collectors.toList());
     }
 
 
@@ -216,5 +228,9 @@ public abstract class SessionManager {
     @MCAttribute
     public void setSameSite(String sameSite) {
         this.sameSite = sameSite;
+    }
+
+    protected String[] getAllCookieKeys(Exchange exc) {
+        return getCookieHeader(exc).split(Pattern.quote(";"));
     }
 }

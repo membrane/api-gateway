@@ -20,14 +20,16 @@ public class OAuth2AuthorizationServer2Interceptor extends AbstractInterceptorWi
     AuthorizationServer authorizationServer;
     ClientList clientList;
     private UserDataProvider userDataProvider;
-    private String subClaimName;
+    private String subClaimName = "username";
     private String issuer;
     private Set<String> supportedClaims;
-    private String contextPath;
+    private String contextPath = "";
 
     @Override
     public void init() throws Exception {
         super.init();
+        clientList.init(router);
+        userDataProvider.init(router);
         authorizationServer = new AuthorizationServer(new MembraneProvidedServices(
                 getSessionManager(),
                 clientList,
@@ -42,6 +44,8 @@ public class OAuth2AuthorizationServer2Interceptor extends AbstractInterceptorWi
     public Outcome handleRequest(Exchange exc) throws Exception {
         com.bornium.http.Exchange internalExc = authorizationServer.invokeOn(Convert.convertFromMembraneExchange(exc));
         exc.setResponse(Convert.convertToMembraneResponse(internalExc.getResponse()));
+        exc.getProperties().putAll(internalExc.getProperties());
+        handleResponse(exc); // as we RETURN directly from handle request we need to trigger session management
         return Outcome.RETURN;
     }
 

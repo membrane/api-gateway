@@ -8,11 +8,9 @@ public class Claim {
     String claimName;
 
     public Claim(){
-
     }
 
     public Claim(String claim) {
-
     }
 
     public String getClaimName() {

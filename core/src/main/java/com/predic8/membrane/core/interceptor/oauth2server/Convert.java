@@ -39,7 +39,9 @@ public class Convert {
     }
 
     public static Exchange convertFromMembraneExchange(com.predic8.membrane.core.exchange.Exchange memExc){
-        return new Exchange(Convert.convertFromMembraneRequest(memExc.getRequest()),Convert.convertFromMembraneResponse(memExc.getResponse()));
+        Exchange exchange = new Exchange(Convert.convertFromMembraneRequest(memExc.getRequest()), Convert.convertFromMembraneResponse(memExc.getResponse()));
+        exchange.setProperties(memExc.getProperties());
+        return exchange;
     }
 
     public static com.predic8.membrane.core.http.Request convertToMembraneRequest(Request request) {
@@ -71,6 +73,7 @@ public class Convert {
         com.predic8.membrane.core.exchange.Exchange memExc = new com.predic8.membrane.core.exchange.Exchange(null);
         memExc.setRequest(Convert.convertToMembraneRequest(exc.getRequest()));
         memExc.setResponse(Convert.convertToMembraneResponse(exc.getResponse()));
+        memExc.setProperties(exc.getProperties());
         return memExc;
     }
 

@@ -21,6 +21,11 @@ public class MembraneProvidedServices implements ProvidedServices {
 
     Logger log = LoggerFactory.getLogger(MembraneProvidedServices.class);
 
+    Cache<String,Map<String,String>> verifiedUsers = CacheBuilder
+            .newBuilder()
+            .expireAfterAccess(1, TimeUnit.HOURS)
+            .build();
+
     private SessionManager sessionManager;
     private ClientList clientList;
     private com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider userDataProvider;
@@ -50,7 +55,9 @@ public class MembraneProvidedServices implements ProvidedServices {
         return new SessionProvider() {
             @Override
             public Session getSession(Exchange exc) {
-                com.predic8.membrane.core.interceptor.session.Session memSession = sessionManager.getSession(Convert.convertToMembraneExchange(exc));
+                com.predic8.membrane.core.exchange.Exchange memExc = Convert.convertToMembraneExchange(exc);
+                com.predic8.membrane.core.interceptor.session.Session memSession = sessionManager.getSession(memExc);
+                exc.getProperties().putAll(memExc.getProperties());
                 return new Session() {
 
                     @Override
@@ -110,10 +117,6 @@ public class MembraneProvidedServices implements ProvidedServices {
 
     @Override
     public UserDataProvider getUserDataProvider() {
-        Cache<String,Map<String,String>> verifiedUsers = CacheBuilder
-                .newBuilder()
-                .expireAfterAccess(1, TimeUnit.HOURS)
-                .build();
 
         return new UserDataProvider() {
             @Override
@@ -165,5 +168,10 @@ public class MembraneProvidedServices implements ProvidedServices {
     @Override
     public String getContextPath() {
         return contextPath;
+    }
+
+    @Override
+    public String getSubClaimName() {
+        return "username";
     }
 }
