@@ -250,22 +250,13 @@ public class SpringConfigurationXSDGeneratingAnnotationProcessor extends Abstrac
 						ChildElementDeclarationInfo cedi = f.getValue();
 						ElementInfo ei = main.getElements().get(f.getKey());
 
-
 						if (ei != null)
 							cedi.getElementInfo().add(ei);
 						else {
-
-						}
-                        for (Map.Entry<TypeElement, ElementInfo> e : main.getElements().entrySet())
-                        	if (processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType())) {
-                        		//if (ei != null) {
-								//	System.out.println("here: " + e.getKey().asType().toString() + " / " + ei.getElement().asType().toString());
-								//	System.out.println("      " + e.getValue().getId() + " / " + ei.getId());
-								//}
-								if (!((ei != null) && e.getKey().asType().toString().equals(ei.getElement().asType().toString())) &&
-										!((ei != null) && e.getValue().getId().equals(ei.getId())))
+							for (Map.Entry<TypeElement, ElementInfo> e : main.getElements().entrySet())
+								if (processingEnv.getTypeUtils().isAssignable(e.getKey().asType(), f.getKey().asType()))
 									cedi.getElementInfo().add(e.getValue());
-							}
+						}
 
 						for (ElementInfo ei2 : cedi.getElementInfo())
 							ei2.addUsedBy(f.getValue());
