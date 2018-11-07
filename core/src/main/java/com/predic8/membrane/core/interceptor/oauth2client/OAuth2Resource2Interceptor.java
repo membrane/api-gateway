@@ -44,6 +44,7 @@ import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -541,9 +542,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                         .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
                         .header(Header.ACCEPT, "application/json")
                         .header(Header.USER_AGENT, Constants.USERAGENT)
+                        .header(Header.AUTHORIZATION, "Basic " + new String(Base64.encodeBase64((auth.getClientId() + ":" + auth.getClientSecret()).getBytes())))
                         .body("code=" + code
-                                + "&client_id=" + auth.getClientId()
-                                + "&client_secret=" + auth.getClientSecret()
                                 + "&redirect_uri=" + publicURL + "oauth2callback"
                                 + "&grant_type=authorization_code")
                         .buildExchange();
