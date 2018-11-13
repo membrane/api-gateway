@@ -21,6 +21,7 @@ import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
+import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
@@ -50,6 +51,8 @@ public class OAuth2ResourceTest {
         return "http://"+serverHost + ":" + clientPort;
     }
 
+    private final int limit = 1000;
+
     // this test also implicitly tests concurrency on oauth2resource
     @Test
     public void testUseRefreshTokenOnTokenExpiration() throws Exception {
@@ -58,6 +61,7 @@ public class OAuth2ResourceTest {
         mockAuthServer.init();
 
         HttpRouter oauth2Resource = new HttpRouter();
+        oauth2Resource.getTransport().setConcurrentConnectionLimitPerIp(limit);
         oauth2Resource.getRuleManager().addProxyAndOpenPortIfNew(getConfiguredOAuth2Resource());
         oauth2Resource.init();
 
@@ -73,7 +77,6 @@ public class OAuth2ResourceTest {
         excFollowRedirectToClient = httpClient.call(excFollowRedirectToClient);
 
         Set<String> accessTokens = new HashSet<>();
-        int limit = 1000;
         List<Thread> threadList = new ArrayList<>();
         CountDownLatch cdl = new CountDownLatch(limit);
         for(int i = 0; i < limit; i++) {
@@ -100,7 +103,9 @@ public class OAuth2ResourceTest {
                 e.printStackTrace();
             }
         });
-        assertTrue(accessTokens.size() == limit);
+        synchronized (accessTokens) {
+            assertTrue(accessTokens.size() == limit);
+        }
     }
 
     private ServiceProxy getMockAuthServiceProxy() throws IOException {
@@ -165,7 +170,7 @@ public class OAuth2ResourceTest {
 
         ServiceProxy sp = new ServiceProxy(new ServiceProxyKey(clientPort),null,99999);
 
-        OAuth2ResourceInterceptor oAuth2ResourceInterceptor = new OAuth2ResourceInterceptor();
+        OAuth2Resource2Interceptor oAuth2ResourceInterceptor = new OAuth2Resource2Interceptor();
         MembraneAuthorizationService auth = new MembraneAuthorizationService();
         auth.setSrc(getServerAddress());
         auth.setClientId("2343243242");
