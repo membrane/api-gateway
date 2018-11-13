@@ -14,27 +14,38 @@
 package com.predic8.membrane.core.interceptor.oauth2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.core.HttpRouter;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
-import com.predic8.membrane.core.interceptor.AbstractInterceptor;
-import com.predic8.membrane.core.interceptor.Outcome;
+import com.predic8.membrane.core.http.cookie.CookieSupport;
+import com.predic8.membrane.core.http.cookie.Cookies;
+import com.predic8.membrane.core.http.cookie.MimeHeaders;
+import com.predic8.membrane.core.http.cookie.ServerCookie;
+import com.predic8.membrane.core.interceptor.*;
 import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.MembraneAuthorizationService;
 import com.predic8.membrane.core.interceptor.oauth2client.OAuth2Resource2Interceptor;
+import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.ServiceProxy;
 import com.predic8.membrane.core.rules.ServiceProxyKey;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
+import com.predic8.membrane.core.util.URLUtil;
+import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.net.URL;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class OAuth2ResourceTest {
@@ -52,6 +63,7 @@ public class OAuth2ResourceTest {
     }
 
     private final int limit = 1000;
+    private ObjectMapper om = new ObjectMapper();
 
     // this test also implicitly tests concurrency on oauth2resource
     @Test
@@ -65,16 +77,11 @@ public class OAuth2ResourceTest {
         oauth2Resource.getRuleManager().addProxyAndOpenPortIfNew(getConfiguredOAuth2Resource());
         oauth2Resource.init();
 
-        HttpClient httpClient = new HttpClient();
         Exchange excCallResource = new Request.Builder().get(getClientAddress()).buildExchange();
-        excCallResource = httpClient.call(excCallResource);
-        String cookie = excCallResource.getResponse().getHeader().getFirstValue("Set-Cookie");
 
-        Exchange excFollowRedirectToAuth = new Request.Builder().header("Cookie",cookie).get(excCallResource.getResponse().getHeader().getFirstValue("Location")).buildExchange();
-        excFollowRedirectToAuth = httpClient.call(excFollowRedirectToAuth);
+        Consumer<Exchange> cookieHandlingRedirectingHttpClient = handleRedirect(cookieManager(httpClient()));
 
-        Exchange excFollowRedirectToClient = new Request.Builder().header("Cookie",cookie).get(excFollowRedirectToAuth.getResponse().getHeader().getFirstValue("Location")).buildExchange();
-        excFollowRedirectToClient = httpClient.call(excFollowRedirectToClient);
+        cookieHandlingRedirectingHttpClient.call(excCallResource);
 
         Set<String> accessTokens = new HashSet<>();
         List<Thread> threadList = new ArrayList<>();
@@ -84,10 +91,14 @@ public class OAuth2ResourceTest {
                 try {
                     cdl.countDown();
                     cdl.await();
-                    Exchange excCallResource2 = new Request.Builder().get(getClientAddress()).header("Cookie", cookie).buildExchange();
-                    excCallResource2 = httpClient.call(excCallResource2);
+                    String uuid = UUID.randomUUID().toString();
+                    Exchange excCallResource2 = new Request.Builder().get(getClientAddress() + "/" + uuid).buildExchange();
+                    cookieHandlingRedirectingHttpClient.call(excCallResource2);
+                    Map body = om.readValue(excCallResource2.getResponse().getBodyAsStringDecoded(), Map.class);
+                    String path = (String)body.get("path");
+                    Assert.assertEquals("/" + uuid, path);
                     synchronized (accessTokens) {
-                        accessTokens.add(excCallResource2.getResponse().getBodyAsStringDecoded());
+                        accessTokens.add((String)body.get("accessToken"));
                     }
                 }catch (Exception e){
                     e.printStackTrace();
@@ -104,8 +115,87 @@ public class OAuth2ResourceTest {
             }
         });
         synchronized (accessTokens) {
-            assertTrue(accessTokens.size() == limit);
+            assertEquals(accessTokens.size(), limit);
         }
+    }
+
+    // this implementation does NOT implement a correct cookie manager, but fulfills this test's requirements
+    private Consumer<Exchange> cookieManager(Consumer<Exchange> consumer) {
+        return new Consumer<Exchange>() {
+            Map<String, Map<String, String>> cookie = new HashMap<>();
+
+            @Override
+            public void call(Exchange exc) throws Exception {
+                String domain = new URL(exc.getDestinations().get(0)).getHost();
+                Map<String, String> cookies;
+                synchronized (cookie) {
+                    cookies = cookie.get(domain);
+                }
+                if (cookies != null)
+                    synchronized (cookies) {
+                        cookies.forEach((k, v) -> exc.getRequest().getHeader().setValue("Cookie", k + "=" + v));
+                    }
+                consumer.call(exc);
+                Cookies cookiesR = new Cookies(new MimeHeaders(exc.getResponse().getHeader()) {
+                    @Override
+                    public int findHeader(String string, int pos) {
+                        if (string.equals("Cookie"))
+                            return super.findHeader("Set-Cookie", pos);
+                        return super.findHeader(string, pos);
+                    }
+                });
+                if (cookiesR.getCookieCount() > 0) {
+                    if (cookies == null) {
+                        cookies = new HashMap<>();
+                        synchronized (cookie) {
+                            // recheck whether there are still no cookies yet
+                            Map<String, String> cookies2 = cookie.get(domain);
+                            if (cookies2 != null)
+                                cookies = cookies2;
+                            else
+                                cookie.put(domain, cookies);
+                        }
+                    }
+                    synchronized (cookies) {
+                        cookies.put(cookiesR.getCookie(0).getName().toString(), cookiesR.getCookie(0).getValue().toString());
+                    }
+                }
+            }
+        };
+    }
+
+    private Consumer<Exchange> handleRedirect(Consumer<Exchange> consumer) throws Exception {
+        return new Consumer<Exchange>() {
+            @Override
+            public void call(Exchange exc) throws Exception {
+                ArrayList urls = new ArrayList<>();
+                while (true) {
+                    if (urls.size() == 19)
+                        throw new RuntimeException("Too many redirects: " + urls);
+                    consumer.call(exc);
+
+                    int statusCode = exc.getResponse().getStatusCode();
+                    String location = exc.getResponse().getHeader().getFirstValue("Location");
+                    if (statusCode < 300 || statusCode >= 400 || location == null)
+                        break;
+                    if (!location.contains("://"))
+                        location = ResolverMap.combine(exc.getDestinations().get(0), location);
+                    urls.add(location);
+                    exc = new Request.Builder().get(location).buildExchange();
+                }
+            }
+        };
+    }
+
+    private Consumer<Exchange> httpClient() {
+        return new Consumer<Exchange>() {
+            HttpClient httpClient = new HttpClient();
+
+            @Override
+            public void call(Exchange exchange) throws Exception {
+                httpClient.call(exchange);
+            }
+        };
     }
 
     private ServiceProxy getMockAuthServiceProxy() throws IOException {
@@ -184,7 +274,15 @@ public class OAuth2ResourceTest {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
                 OAuth2AnswerParameters answer = OAuth2AnswerParameters.deserialize(String.valueOf(exc.getProperty(Exchange.OAUTH2)));
-                exc.setResponse(Response.ok(answer.getAccessToken()).build());
+                String accessToken = answer.getAccessToken();
+                Map body = ImmutableMap.of(
+                        "accessToken", accessToken,
+                        "path", exc.getRequestURI(),
+                        "method", exc.getRequest().getMethod(),
+                        "body", exc.getRequest().getBodyAsStringDecoded()
+                );
+
+                exc.setResponse(Response.ok(om.writeValueAsString(body)).build());
                 return Outcome.RETURN;
             }
         });
