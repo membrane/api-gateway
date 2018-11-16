@@ -205,8 +205,15 @@ public class LDAPUserDataProvider implements UserDataProvider {
 			env.put(Context.SECURITY_AUTHENTICATION, "simple");
 			env.put(Context.SECURITY_PRINCIPAL, uid + "," + base);
 			env.put(Context.SECURITY_CREDENTIALS, password);
-			DirContext ctx2 = new InitialDirContext(env);
-			try {
+			DirContext ctx2;
+            ClassLoader old2 = Thread.currentThread().getContextClassLoader();
+            try {
+                Thread.currentThread().setContextClassLoader(CustomSocketFactory.class.getClassLoader());
+                ctx2 = new InitialDirContext(env);
+            } finally {
+                Thread.currentThread().setContextClassLoader(old2);
+            }
+            try {
 				if (readAttributesAsSelf)
 					searchUser(login, userAttrs, ctx2);
 			} finally {
