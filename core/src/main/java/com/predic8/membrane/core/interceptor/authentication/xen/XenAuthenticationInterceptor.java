@@ -8,11 +8,13 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.annot.MCTextContent;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.interceptor.authentication.session.UserDataProvider;
 import org.jose4j.json.JsonUtil;
+import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jws.AlgorithmIdentifiers;
@@ -27,6 +29,7 @@ import org.jose4j.keys.resolvers.JwksVerificationKeyResolver;
 import org.jose4j.lang.JoseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -124,15 +127,18 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         }
     }
 
-    @MCElement(name = "jwtSessionManager", mixed = true, topLevel = false, id = "xenAuthentication-jwtSessionManager")
+    @MCElement(name = "jwtSessionManager", topLevel = false, id = "xenAuthentication-jwtSessionManager")
     public static class JwtSessionManager implements XenSessionManager {
-        private String audience, key;
+        private String audience;
+
+        private Jwk jwk;
 
         private RsaJsonWebKey rsaJsonWebKey;
 
         private final SecureRandom random = new SecureRandom();
 
         public void init(Router router) throws Exception {
+            String key = jwk.get(router.getResolverMap(), router.getBaseLocation());
             if (key == null || key.length() == 0)
                 rsaJsonWebKey = generateKey();
             else
@@ -145,7 +151,7 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
             rsaJsonWebKey.setUse("sig");
             rsaJsonWebKey.setAlgorithm("RS256");
 
-            LOG.warn("Using dynamically genererated key, you should write this as <jwtSessionManager ...>" + rsaJsonWebKey.toJson() + "</jwtSessionManager> .");
+            LOG.warn("Using dynamically genererated key, you should write this as <jwtSessionManager ...><jwk>" + rsaJsonWebKey.toJson(JsonWebKey.OutputControlLevel.INCLUDE_PRIVATE) + "</jwk></jwtSessionManager> .");
 
             return rsaJsonWebKey;
         }
@@ -197,15 +203,6 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
             return jwtClaims;
         }
 
-        public String getKey() {
-            return key;
-        }
-
-        @MCTextContent
-        public void setKey(String key) {
-            this.key = key;
-        }
-
         public String getAudience() {
             return audience;
         }
@@ -213,6 +210,21 @@ public class XenAuthenticationInterceptor extends AbstractInterceptor {
         @MCAttribute
         public void setAudience(String audience) {
             this.audience = audience;
+        }
+
+        public Jwk getJwk() {
+            return jwk;
+        }
+
+        @Required
+        @MCChildElement
+        public void setJwk(Jwk jwk) {
+            this.jwk = jwk;
+        }
+
+        @MCElement(name="jwk", mixed = true, topLevel = false, id="xenAuthentication-jwtSessionManager-jwk")
+        public static class Jwk extends Blob {
+
         }
     }
 
