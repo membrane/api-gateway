@@ -80,6 +80,7 @@ public class OAuth2ResourceTest {
     public void init() throws IOException {
         mockAuthServer = new HttpRouter();
         mockAuthServer.setHotDeploy(false);
+        mockAuthServer.getTransport().setConcurrentConnectionLimitPerIp(limit);
         mockAuthServer.getRuleManager().addProxyAndOpenPortIfNew(getMockAuthServiceProxy());
         mockAuthServer.start();
 

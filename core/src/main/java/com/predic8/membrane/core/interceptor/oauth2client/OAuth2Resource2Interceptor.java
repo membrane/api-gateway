@@ -401,6 +401,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
             exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()),false).build());
 
+            readBodyFromStreamIntoMemory(exc);
             stateToOriginalUrl.put(state,exc);
 
             Session session = getSessionManager().getSession(exc);
@@ -411,6 +412,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             exc.setResponse(Response.redirect(loginPath,false).build());
         }
         return Outcome.RETURN;
+    }
+
+    private void readBodyFromStreamIntoMemory(Exchange exc) {
+        exc.getRequest().getBodyAsStringDecoded();
     }
 
 
@@ -633,7 +638,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private void doRedirect(Exchange exc, Exchange originalRequest) {
-        if(exc.getRequest().getMethod().equals("GET")){
+        if(originalRequest.getRequest().getMethod().equals("GET")){
             exc.setResponse(Response.redirect(originalRequest.getRequestURI(),false).build());
         }else {
             String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
@@ -647,11 +652,16 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     private void doOriginalRequest(Exchange exc, Exchange originalRequest) throws Exception {
         originalRequest.getRequest().getHeader().add("Cookie",exc.getRequest().getHeader().getFirstValue("Cookie"));
-        originalRequest.getDestinations().clear();
+        exc.setRequest(originalRequest.getRequest());
+
+        exc.getDestinations().clear();
         String xForwardedProto = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
         String xForwardedHost = originalRequest.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_HOST);
         String originalRequestUri = originalRequest.getOriginalRequestUri();
-        originalRequest.getDestinations().add(xForwardedProto + "://" + xForwardedHost + originalRequestUri);
+        exc.getDestinations().add(xForwardedProto + "://" + xForwardedHost + originalRequestUri);
+
+        exc.setOriginalRequestUri(originalRequest.getOriginalRequestUri());
+        exc.setOriginalHostHeader(originalRequest.getOriginalHostHeader());
     }
 
     private void processUserInfo(Map<String, String> userInfo, Session session) {
