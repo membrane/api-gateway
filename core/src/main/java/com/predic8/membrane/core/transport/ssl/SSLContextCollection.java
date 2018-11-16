@@ -186,6 +186,11 @@ public class SSLContextCollection implements SSLProvider {
 	}
 
 	@Override
+	public Socket createSocket() throws IOException {
+		throw new IllegalStateException("not implemented");
+	}
+
+	@Override
 	public Socket createSocket(String host, int port, InetAddress addr,
 			int localPort, int connectTimeout, @Nullable String sniServerName) throws IOException {
 		return getSSLContextForHostname(host).createSocket(host, port, addr, localPort, connectTimeout,sniServerName);

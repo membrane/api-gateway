@@ -297,10 +297,7 @@ public class StaticSSLContext extends SSLContext {
         return socket;
     }
 
-    public Socket createSocket(Socket socket, String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
-        SSLSocketFactory sslsf = sslc.getSocketFactory();
-        SSLSocket ssls = (SSLSocket) sslsf.createSocket(socket, host, port, true);
-        applySNI(ssls, sniServerName,host);
+    private void prepare(SSLSocket ssls) {
         if (protocols != null) {
             ssls.setEnabledProtocols(protocols);
         } else {
@@ -315,6 +312,20 @@ public class StaticSSLContext extends SSLContext {
             ssls.setEnabledProtocols(set.toArray(new String[0]));
         }
         applyCiphers(ssls);
+    }
+
+    @Override
+    public Socket createSocket() throws IOException {
+        SSLSocket ssls = (SSLSocket) sslc.getSocketFactory().createSocket();
+        prepare(ssls);
+        return ssls;
+    }
+
+    public Socket createSocket(Socket socket, String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
+        SSLSocketFactory sslsf = sslc.getSocketFactory();
+        SSLSocket ssls = (SSLSocket) sslsf.createSocket(socket, host, port, true);
+        applySNI(ssls, sniServerName,host);
+        prepare(ssls);
         return ssls;
     }
 

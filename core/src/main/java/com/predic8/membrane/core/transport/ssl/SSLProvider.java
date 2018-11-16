@@ -23,6 +23,7 @@ import java.net.Socket;
 public interface SSLProvider {
 	public ServerSocket createServerSocket(int port, int backlog, InetAddress bindAddress) throws IOException;
 	public Socket wrapAcceptedSocket(Socket socket) throws IOException;
+	public Socket createSocket() throws IOException;
 	/**
 	 * @param host relevant to verify the server cert only
 	 * @param port relevant to verify the server cert only

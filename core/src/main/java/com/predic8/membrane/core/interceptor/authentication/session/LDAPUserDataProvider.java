@@ -14,6 +14,7 @@
 package com.predic8.membrane.core.interceptor.authentication.session;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import javax.net.SocketFactory;
 
 import com.predic8.membrane.core.config.security.SSLParser;
 import com.predic8.membrane.core.transport.ssl.SSLContext;
@@ -174,7 +176,14 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		HashMap<String, String> userAttrs = new HashMap<String, String>();
 		String uid;
 
-		DirContext ctx = new InitialDirContext(env);
+		DirContext ctx;
+		ClassLoader old = Thread.currentThread().getContextClassLoader();
+		try {
+			Thread.currentThread().setContextClassLoader(CustomSocketFactory.class.getClassLoader());
+			ctx = new InitialDirContext(env);
+		} finally {
+			Thread.currentThread().setContextClassLoader(old);
+		}
 		try {
 			uid = searchUser(login, userAttrs, ctx);
 		} finally {
@@ -439,7 +448,7 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		this.map = map;
 	}
 
-	public static class CustomSocketFactory {
+	public static class CustomSocketFactory extends SocketFactory {
 		public static SSLContext sslContext;
 		public static int connectTimeout = 60000;
 
@@ -456,5 +465,25 @@ public class LDAPUserDataProvider implements UserDataProvider {
 		public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
 			return sslContext.createSocket(host, port, connectTimeout, host);
 		}
+
+		@Override
+		public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException, UnknownHostException {
+			return sslContext.createSocket(host, port, localHost, localPort, connectTimeout, host);
+		}
+
+		@Override
+		public Socket createSocket(InetAddress host, int port) throws IOException {
+			throw new RuntimeException("not implemented");
+		}
+
+		@Override
+		public Socket createSocket(InetAddress address, int port, InetAddress localAddress, int localPort) throws IOException {
+			throw new RuntimeException("not implemented");
+		}
+
+		public Socket createSocket() throws IOException {
+			return sslContext.createSocket();
+		}
+
 	}
 }

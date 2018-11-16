@@ -249,6 +249,11 @@ public class GeneratingSSLContext extends SSLContext {
     }
 
     @Override
+    public Socket createSocket() throws IOException {
+        throw new IllegalStateException("not implemented");
+    }
+
+    @Override
     public Socket createSocket(Socket s, String host, int port, int connectTimeout, @Nullable String sniServerName) throws IOException {
         throw new IllegalStateException("not implemented");
     }
