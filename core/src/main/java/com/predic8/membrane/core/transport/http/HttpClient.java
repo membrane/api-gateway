@@ -116,7 +116,11 @@ public class HttpClient {
 			if (!dest.startsWith("http"))
 				throw new MalformedURLException("The exchange's destination URL ("+dest+") does not start with 'http'. Please specify a <target> within your <serviceProxy>.");
 			String originalUri = req.getUri();
-			req.setUri(HttpUtil.getPathAndQueryString(dest));
+			try {
+				req.setUri(HttpUtil.getPathAndQueryString(dest));
+			} catch (MalformedURLException e) {
+				throw new RuntimeException("while handling destination '" + dest + "'", e);
+			}
 			if("/".equals(originalUri) && req.getUri().isEmpty())
 				req.setUri("/");
 		}
