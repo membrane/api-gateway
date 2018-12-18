@@ -8,14 +8,13 @@ import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Request;
+import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.interceptor.AbstractInterceptor;
 import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.HttpClient;
-import com.predic8.membrane.core.transport.http.HttpServerHandler;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.util.Map;
 
 @MCElement(name = "gatekeeper")
 public class GateKeeperClientInterceptor extends AbstractInterceptor {
@@ -53,17 +52,28 @@ public class GateKeeperClientInterceptor extends AbstractInterceptor {
         String clientIP = exc.getRemoteAddrIp();
 
 
-        Exchange exc2 = httpClient.call(new Request.Builder().post(this.url).body(
+        Exchange exc2 = httpClient.call(new Request.Builder().post(this.url).header("Content-Type", "application/json").body(
             om.writeValueAsString(ImmutableMap.builder()
                     .put("rule", ruleName)
                     .put("clientIP", clientIP)
                     .build())
         ).buildExchange());
 
-        if(exc2.getResponse().getStatusCode() == 401)
-            return Outcome.RETURN;
-        return Outcome.CONTINUE;
 
+        if(exc2.getResponse().getStatusCode() != 200)
+            return createResponse(exc);
+
+        Map result = om.readValue(exc2.getResponse().getBodyAsStreamDecoded(), Map.class);
+        boolean gate = (boolean) result.get("gate");
+
+        if (gate)
+            return Outcome.CONTINUE;
+        return createResponse(exc);
+    }
+
+    private Outcome createResponse(Exchange exc) {
+        exc.setResponse(Response.forbidden().build());
+        return Outcome.RETURN;
     }
 
     public String getUrl() {
