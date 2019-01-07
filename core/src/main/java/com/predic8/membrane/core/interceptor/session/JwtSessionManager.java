@@ -2,14 +2,19 @@ package com.predic8.membrane.core.interceptor.session;
 
 import com.bornium.security.oauth2openid.token.IdTokenProvider;
 import com.bornium.security.oauth2openid.token.IdTokenVerifier;
+import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
-import com.predic8.membrane.annot.MCTextContent;
+import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.config.security.Blob;
 import com.predic8.membrane.core.exchange.Exchange;
 import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
 import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
+import org.springframework.beans.factory.annotation.Required;
 
 import java.math.BigInteger;
 import java.security.SecureRandom;
@@ -17,31 +22,28 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@MCElement(name = "jwtSessionManager", mixed = true)
+@MCElement(name = "jwtSessionManager")
 public class JwtSessionManager extends SessionManager {
 
     private SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
 
-    private String key;
     private Duration validTime = Duration.ofMinutes(10);
 
     IdTokenProvider idTokenProvider;
     IdTokenVerifier idTokenVerifier;
 
-    public JwtSessionManager() throws Exception {
-        this(null);
-    }
+    Jwk jwk;
+    boolean verbose = false;
 
-    public JwtSessionManager(String key) throws Exception {
-        if (key == null)
+    public void init(Router router) throws Exception {
+        if (jwk == null)
             rsaJsonWebKey = generateKey();
         else
-            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(key));
+            rsaJsonWebKey = new RsaJsonWebKey(JsonUtil.parseJson(jwk.get(router.getResolverMap(), router.getBaseLocation())));
 
         idTokenProvider = new IdTokenProvider(rsaJsonWebKey);
         idTokenVerifier = new IdTokenVerifier(idTokenProvider.getJwk());
@@ -59,13 +61,20 @@ public class JwtSessionManager extends SessionManager {
     protected Map<String, Object> cookieValueToAttributes(String cookie) {
         //TODO jwts are immutable -> can use cache with expiration to speed this up --- Map<JWT,SESSION.CONTENT>
         try {
-            return idTokenVerifier.verifySignedJwt(cookie)
+            //skip signature check as it was already performed beforehand
+
+            return idTokenVerifier.createCustomJwtValidator()
+                    .setSkipSignatureVerification()
+                    .build()
+                    .processToClaims(cookie)
+                    .getClaimsMap()
+
                     .entrySet()
                     .stream()
-                    .filter(entry -> !entry.getKey().equals("exp")) // filter default jwt claim - its not part of a session
+                    //.filter(entry -> !entry.getKey().equals("exp") && !entry.getKey().equals("iss")) // filter default jwt claims - those are not part of a session
                     .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         } catch (InvalidJwtException e) {
-            log.warn("Could not verify cookie: " + cookie);
+            log.warn("Could not verify cookie: " + cookie + "\nPossible Reason: Cookie is not signed by and thus not a session of this instance");
             e.printStackTrace();
         }
         return new HashMap<>();
@@ -80,7 +89,7 @@ public class JwtSessionManager extends SessionManager {
 
     private String createJwtRepresentation(Session s) {
         try {
-            return idTokenProvider.createSignedJwt(validTime, s.get());
+            return idTokenProvider.createIdTokenNoNullClaims(issuer,null,null,validTime,null,null,s.get());
         } catch (JoseException e) {
             throw new RuntimeException("Could not create JWT representation of session", e);
         }
@@ -91,7 +100,18 @@ public class JwtSessionManager extends SessionManager {
         return Stream
                 .of(getAllCookieKeys(exc))
                 .map(cookie -> cookie.split("=true")[0].trim())
-                .filter(cookie -> isManagedBySessionManager(cookie))
+                .filter(cookie -> {
+                    try {
+                        preCheckIssuerWithoutValidatingSignature(validCookie);
+                        return true;
+                    } catch (InvalidJwtException e) {
+                        // this should only happen if the issuer doesn't add up
+                        // wrong issuer happens *all the time* so we do not want to print here to not spam the log of membrane
+                        if(verbose)
+                            e.printStackTrace();
+                    }
+                    return false;
+                })
                 .filter(cookie -> !cookie.equals(getKeyOfCookie(validCookie)))
                 .map(cookie -> addValueToCookie(cookie))
                 .collect(Collectors.toList());
@@ -99,7 +119,32 @@ public class JwtSessionManager extends SessionManager {
 
     @Override
     protected boolean isManagedBySessionManager(String cookie) {
-        return cookie.trim().startsWith("ey");
+        try {
+            preCheckIssuerWithoutValidatingSignature(cookie);
+            validateSignatureOfJwt(cookie);
+            return true;
+        } catch (InvalidJwtException e) {
+            // this should only happen if the issuer doesn't add up or the signature is malformed
+            // wrong issuer happens *all the time* so we do not want to print here to not spam the log of membrane
+            if(verbose)
+                e.printStackTrace();
+        }
+        return false;
+    }
+
+    private void validateSignatureOfJwt(String cookie) throws InvalidJwtException {
+        idTokenVerifier.createCustomJwtValidator()
+                .setExpectedIssuer(issuer)
+                .build()
+                .processToClaims(cookie);
+    }
+
+    private void preCheckIssuerWithoutValidatingSignature(String cookie) throws InvalidJwtException {
+        new JwtConsumerBuilder()
+                .setSkipSignatureVerification()
+                .setExpectedIssuer(issuer)
+                .build()
+                .processToClaims(cookie);
     }
 
     private String addValueToCookie(String cookie) {
@@ -110,12 +155,27 @@ public class JwtSessionManager extends SessionManager {
         return validCookie.split("=true")[0];
     }
 
-    public String getKey() {
-        return key;
+    public Jwk getJwk() {
+        return jwk;
     }
 
-    @MCTextContent
-    public void setKey(String key) {
-        this.key = key;
+    @Required
+    @MCChildElement
+    public void setJwk(Jwk jwk) {
+        this.jwk = jwk;
+    }
+
+    @MCElement(name="jwk", mixed = true, topLevel = false, id="jwtSessionManager-jwk")
+    public static class Jwk extends Blob {
+
+    }
+
+    public boolean isVerbose() {
+        return verbose;
+    }
+
+    @MCAttribute
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
     }
 }

@@ -71,8 +71,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public static final String OA2REDIRECT = "oa2redirect";
     private static Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
 
-    private String loginLocation;
-    private String loginPath = "/login/";
     private String publicURL;
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
@@ -87,33 +85,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     private URIFactory uriFactory;
     private boolean firstInitWhenDynamicAuthorizationService;
     private boolean initPublicURLOnFirstExchange = false;
-
-    public String getLoginLocation() {
-        return loginLocation;
-    }
-
-    /**
-     * @description location of the login dialog template (a directory containing the <i>index.html</i> file as well as possibly other resources).
-     *  Required for older browsers to work.
-     * @example file:c:/work/login/
-     */
-    @MCAttribute
-    public void setLoginLocation(String login) {
-        this.loginLocation = login;
-    }
-
-    public String getLoginPath() {
-        return loginPath;
-    }
-
-    /**
-     * @description context path of the login dialog
-     * @default /login/
-     */
-    @MCAttribute
-    public void setLoginPath(String loginPath) {
-        this.loginPath = loginPath;
-    }
 
 
     public String getPublicURL() {
@@ -160,13 +131,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         statistics = new OAuth2Statistics();
         uriFactory = router.getUriFactory();
 
-        if (loginLocation != null) {
-            wsi = new WebServerInterceptor();
-            wsi.setDocBase(loginLocation);
-            router.getResolverMap().resolve(ResolverMap.combine(router.getBaseLocation(), wsi.getDocBase(), "./index.html")).close();
-            wsi.init(router);
-        }
-
         if(publicURL == null)
             initPublicURLOnFirstExchange = true;
         else
@@ -199,11 +163,6 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
         if(isOAuth2RedirectRequest(exc))
             handleOriginalRequest(exc);
-
-        if (isLoginRequest(exc)) {
-            handleLoginRequest(exc);
-            return Outcome.RETURN;
-        }
 
         Session session = getSessionManager().getSession(exc);
 
@@ -396,105 +355,22 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private Outcome respondWithRedirect(Exchange exc) {
-        if (loginLocation == null) {
-            String state = new BigInteger(130, new SecureRandom()).toString(32);
+        String state = new BigInteger(130, new SecureRandom()).toString(32);
 
-            exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()),false).build());
+        exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()),false).build());
 
-            readBodyFromStreamIntoMemory(exc);
-            stateToOriginalUrl.put(state,exc);
+        readBodyFromStreamIntoMemory(exc);
+        stateToOriginalUrl.put(state,exc);
 
-            Session session = getSessionManager().getSession(exc);
-            if(session.get().containsKey(ParamNames.STATE))
-                state = session.get(ParamNames.STATE) + " " + state;
-            session.put(ParamNames.STATE,state);
-        } else {
-            exc.setResponse(Response.redirect(loginPath,false).build());
-        }
+        Session session = getSessionManager().getSession(exc);
+        if(session.get().containsKey(ParamNames.STATE))
+            state = session.get(ParamNames.STATE) + " " + state;
+        session.put(ParamNames.STATE,state);
         return Outcome.RETURN;
     }
 
     private void readBodyFromStreamIntoMemory(Exchange exc) {
         exc.getRequest().getBodyAsStringDecoded();
-    }
-
-
-    public boolean isLoginRequest(Exchange exc) {
-        URI uri = router.getUriFactory().createWithoutException(exc.getRequest().getUri());
-        return uri.getPath().startsWith(loginPath);
-    }
-
-    private void showPage(Exchange exc, String state, Object... params) throws Exception {
-        String target = StringUtils.defaultString(URLParamUtil.getParams(router.getUriFactory(), exc).get("target"));
-
-        exc.getDestinations().set(0, "/index.html");
-        wsi.handleRequest(exc);
-
-        Engine engine = new Engine();
-        engine.setErrorHandler(new ErrorHandler() {
-
-            @Override
-            public void error(String arg0, Token arg1, Map<String, Object> arg2) throws ParseException {
-                log.error(arg0);
-            }
-
-            @Override
-            public void error(String arg0, Token arg1) throws ParseException {
-                log.error(arg0);
-            }
-        });
-        Map<String, Object> model = new HashMap<String, Object>();
-        model.put("loginPath", StringEscapeUtils.escapeXml(loginPath));
-        String pathQuery = "/"; // TODO: save original request and restore it when authorized
-        String url = auth.getLoginURL(state, publicURL, pathQuery);
-        model.put("loginURL", url);
-        model.put("target", StringEscapeUtils.escapeXml(target));
-        model.put("authid", state);
-        for (int i = 0; i < params.length; i += 2)
-            model.put((String) params[i], params[i + 1]);
-
-        exc.getResponse().setBodyContent(engine.transform(exc.getResponse().getBodyAsStringDecoded(), model).getBytes(Constants.UTF_8_CHARSET));
-    }
-
-    public void handleLoginRequest(Exchange exc) throws Exception {
-        Session s = getSessionManager().getSession(exc);
-
-        String uri = exc.getRequest().getUri().substring(loginPath.length() - 1);
-        if (uri.indexOf('?') >= 0)
-            uri = uri.substring(0, uri.indexOf('?'));
-        exc.getDestinations().set(0, uri);
-
-        if (uri.equals("/logout")) {
-            if (s != null && s.get() != null) {
-                String token = s.get("access_token");
-                Exchange e = new Request.Builder().post(auth.getRevocationEndpoint())
-                        .header(Header.CONTENT_TYPE, "application/x-www-form-urlencoded")
-                        .header(Header.USER_AGENT, Constants.USERAGENT)
-                        .body("token=" + token) // TODO maybe send client credentials ( as it was before ) but Google doesn't accept that
-                        .buildExchange();
-                Response response = auth.doRequest(e);
-                if (response.getStatusCode() != 200)
-                    throw new RuntimeException("Revocation of token did not work. Statuscode: " + response.getStatusCode() + ".");
-                s.clear();
-                getSessionManager().getSession(exc).clearAuthentication();
-            }
-            exc.setResponse(Response.redirect("/", false).build());
-        } else if (uri.equals("/")) {
-            if (s == null || !s.isVerified()) {
-                String state = new BigInteger(130, new SecureRandom()).toString(32);
-                showPage(exc, state);
-
-                Session session = getSessionManager().getSession(exc);
-
-                HashMap<String, Object> userAttributes = new HashMap<>();
-                userAttributes.put("state", state);
-                session.put(userAttributes);
-            } else {
-                showPage(exc, s.get("state"));
-            }
-        } else {
-            wsi.handleRequest(exc);
-        }
     }
 
     public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {

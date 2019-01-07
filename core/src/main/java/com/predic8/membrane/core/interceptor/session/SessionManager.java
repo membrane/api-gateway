@@ -1,9 +1,11 @@
 package com.predic8.membrane.core.interceptor.session;
 
 import com.predic8.membrane.annot.MCAttribute;
+import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.rules.RuleKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +31,27 @@ public abstract class SessionManager {
     boolean httpOnly = false;
     String sameSite = null;
 
+    String issuer;
+
+    private void initIssuer(Exchange exc) {
+        String xForwardedProto = exc.getRequest().getHeader().getFirstValue(Header.X_FORWARDED_PROTO);
+        boolean isHTTPS = xForwardedProto != null ? "https".equals(xForwardedProto) : exc.getRule().getSslInboundContext() != null;
+        issuer = (isHTTPS ? "https://" : "http://") + exc.getOriginalHostHeader();
+        RuleKey key = exc.getRule().getKey();
+        if (!key.isPathRegExp() && key.getPath() != null)
+            issuer += key.getPath();
+        normalizePublicURL();
+    }
+
+    private void normalizePublicURL() {
+        if(!issuer.endsWith("/"))
+            issuer += "/";
+    }
+
+    public abstract void init(Router router) throws Exception;
+
     /**
-     * Transforms a cookie value into its attributes
+     * Transforms a cookie value into its attributes. The cookie should be assumed valid as @isManagedBySessionManager was called beforehand
      *
      * @param cookie
      * @return
@@ -56,7 +77,7 @@ public abstract class SessionManager {
     public abstract List<String> getInvalidCookies(Exchange exc, String validCookie);
 
     /**
-     * Gets called for every cookie value. Returns if the cookie value is managed by this manager instance, e.g. jwt session manager checks if the cookie is a jwt.
+     * Gets called for every cookie value. Returns if the cookie value is managed by this manager instance, e.g. jwt session manager checks if the cookie is a jwt, if it has the correct issuer and if the signature is valid.
      * Cookie is in format key=value
      * @param cookie
      * @return
@@ -64,6 +85,9 @@ public abstract class SessionManager {
     protected abstract boolean isManagedBySessionManager(String cookie);
 
     public void postProcess(Exchange exc) {
+        if(issuer == null)
+            initIssuer(exc);
+
         getSessionFromExchange(exc).ifPresent(session -> {
             try {
                 createDefaultResponseIfNeeded(exc);
@@ -239,5 +263,14 @@ public abstract class SessionManager {
 
     protected String[] getAllCookieKeys(Exchange exc) {
         return getCookieHeader(exc).split(Pattern.quote(";"));
+    }
+
+    public String getIssuer() {
+        return issuer;
+    }
+
+    @MCAttribute
+    public void setIssuer(String issuer) {
+        this.issuer = issuer;
     }
 }
