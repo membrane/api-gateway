@@ -1,6 +1,10 @@
 package com.predic8.membrane.core.interceptor.gatekeeper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.annot.MCChildElement;
@@ -14,7 +18,9 @@ import com.predic8.membrane.core.interceptor.Outcome;
 import com.predic8.membrane.core.transport.http.HttpClient;
 import com.predic8.membrane.core.transport.http.client.HttpClientConfiguration;
 
+import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @MCElement(name = "gatekeeper")
 public class GateKeeperClientInterceptor extends AbstractInterceptor {
@@ -45,6 +51,8 @@ public class GateKeeperClientInterceptor extends AbstractInterceptor {
         httpClient = new HttpClient(httpClientConfiguration);
     }
 
+    Cache<String, Map> cache = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).build();
+
     @Override
     public Outcome handleRequest(Exchange exc) throws Exception {
 
@@ -52,23 +60,35 @@ public class GateKeeperClientInterceptor extends AbstractInterceptor {
         String clientIP = exc.getRemoteAddrIp();
 
 
+        String body = om.writeValueAsString(ImmutableMap.builder()
+                .put("rule", ruleName)
+                .put("clientIP", clientIP)
+                .build());
+
+        Map result = cache.getIfPresent(body);
+        if (result == null)
+            result = getResult(body);
+        if (result.get("error") != null)
+            return createResponse(exc);
+        boolean gate = (boolean) result.get("gate");
+
+        if (gate) {
+            cache.put(body, result);
+            return Outcome.CONTINUE;
+        }
+        return createResponse(exc);
+    }
+
+    private Map getResult(String body) throws Exception {
         Exchange exc2 = httpClient.call(new Request.Builder().post(this.url).header("Content-Type", "application/json").body(
-            om.writeValueAsString(ImmutableMap.builder()
-                    .put("rule", ruleName)
-                    .put("clientIP", clientIP)
-                    .build())
+                body
         ).buildExchange());
 
 
         if(exc2.getResponse().getStatusCode() != 200)
-            return createResponse(exc);
+            return ImmutableMap.of("error", "status " + exc2.getResponse().getStatusCode());
 
-        Map result = om.readValue(exc2.getResponse().getBodyAsStreamDecoded(), Map.class);
-        boolean gate = (boolean) result.get("gate");
-
-        if (gate)
-            return Outcome.CONTINUE;
-        return createResponse(exc);
+        return ImmutableMap.copyOf(om.readValue(exc2.getResponse().getBodyAsStreamDecoded(), Map.class));
     }
 
     private Outcome createResponse(Exchange exc) {
