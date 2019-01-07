@@ -51,6 +51,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -166,10 +167,72 @@ public class OAuth2ResourceTest {
         }
     }
 
+    @Test
+    public void testStateMerge() throws Exception {
+        int limit = 2;
+        CountDownLatch cdl = new CountDownLatch(limit);
+
+        AtomicInteger goodTests = new AtomicInteger();
+
+        mockAuthServer.getTransport().getInterceptors().add(0, new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                cdl.countDown();
+                cdl.await();
+
+                return super.handleRequest(exc);
+            }
+        });
+
+        List<Thread> threadList = new ArrayList<>();
+        for(int i = 0; i < limit; i++) {
+            int j = i;
+            Thread thread = new Thread(() -> {
+                try {
+
+                    Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
+
+                    excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+                    Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+                    assertEquals("/init" + j, (String) body2.get("path"));
+
+                    goodTests.incrementAndGet();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
+            thread.setName("init getter " + i);
+            thread.start();
+            threadList.add(thread);
+        }
+
+        for (Thread thread : threadList)
+            thread.join();
+
+        int j = 3;
+        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
+
+        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
+        Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
+        Assert.assertEquals("/init" + j, (String) body2.get("path"));
+
+
+        assertEquals(limit, goodTests.get());
+
+        // TODO: test whether cookies were merged
+        // DEBUG code
+        for (Map.Entry<String, Map<String, String>> c : cookie.entrySet()) {
+            for (Map.Entry<String, String> d : c.getValue().entrySet()) {
+                System.out.println(c.getKey() + " " + d.getKey() + " " + d.getValue());
+            }
+        }
+    }
+
+    Map<String, Map<String, String>> cookie = new HashMap<>();
+
     // this implementation does NOT implement a correct cookie manager, but fulfills this test's requirements
     private Function<Exchange, Exchange> cookieManager(Function<Exchange, Exchange> consumer) {
         return new Function<Exchange, Exchange>() {
-            Map<String, Map<String, String>> cookie = new HashMap<>();
 
             @Override
             public Exchange call(Exchange exc) {
@@ -191,6 +254,8 @@ public class OAuth2ResourceTest {
                 exc = consumer.call(exc);
 
                 for (HeaderField headerField : exc.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"))) {
+                    System.out.println("[" + Thread.currentThread().getName() + "] from "+domain+" got Set-Cookie: " + headerField.getValue());
+
                     String value = headerField.getValue().substring(0, headerField.getValue().indexOf(";"));
                     boolean expired = headerField.getValue().contains("1970");
 
@@ -199,13 +264,13 @@ public class OAuth2ResourceTest {
 
                     if (cookies == null) {
                         cookies = new HashMap<>();
-                        synchronized (this.cookie) {
+                        synchronized (cookie) {
                             // recheck whether there are still no cookies yet
-                            Map<String, String> cookies2 = this.cookie.get(domain);
+                            Map<String, String> cookies2 = cookie.get(domain);
                             if (cookies2 != null)
                                 cookies = cookies2;
                             else
-                                this.cookie.put(domain, cookies);
+                                cookie.put(domain, cookies);
                         }
                     }
 
