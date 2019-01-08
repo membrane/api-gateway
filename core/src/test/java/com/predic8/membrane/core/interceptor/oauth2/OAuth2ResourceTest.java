@@ -37,6 +37,10 @@ import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.URLUtil;
 import com.predic8.membrane.core.util.functionalInterfaces.Consumer;
 import com.predic8.membrane.core.util.functionalInterfaces.Function;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.consumer.InvalidJwtException;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -191,7 +195,7 @@ public class OAuth2ResourceTest {
                 try {
 
                     Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
-
+                    System.out.println("[" + Thread.currentThread().getName() + "] getting " + excCallResource.getDestinations().get(0));
                     excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
                     Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
                     assertEquals("/init" + j, (String) body2.get("path"));
@@ -209,9 +213,13 @@ public class OAuth2ResourceTest {
         for (Thread thread : threadList)
             thread.join();
 
-        int j = 3;
-        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
+        System.out.println("joined");
 
+        countCookies();
+
+        int j = limit+1;
+        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/init" + j).buildExchange();
+        System.out.println("[" + Thread.currentThread().getName() + "] getting " + excCallResource.getDestinations().get(0));
         excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource);
         Map body2 = om.readValue(excCallResource.getResponse().getBodyAsStream(), Map.class);
         Assert.assertEquals("/init" + j, (String) body2.get("path"));
@@ -220,12 +228,38 @@ public class OAuth2ResourceTest {
         assertEquals(limit, goodTests.get());
 
         // TODO: test whether cookies were merged
+        countCookies();
+    }
+
+    private void countCookies() {
+        JwtConsumer jwtc = new JwtConsumerBuilder()
+                .setSkipSignatureVerification()
+                .setExpectedIssuer("http://localhost:31337/")
+                .build();
+
+        int count = 0;
+
         // DEBUG code
         for (Map.Entry<String, Map<String, String>> c : cookie.entrySet()) {
             for (Map.Entry<String, String> d : c.getValue().entrySet()) {
                 System.out.println(c.getKey() + " " + d.getKey() + " " + d.getValue());
+                try {
+                    JwtClaims jwtClaims = jwtc.processToClaims(d.getKey());
+                    for (Map.Entry<String, Object> entry : jwtClaims.getClaimsMap().entrySet()) {
+                        System.out.println(" " + entry.getKey() + ": " + entry.getValue());
+                    }
+                    System.out.println("mine");
+                    count++;
+                } catch (InvalidJwtException e) {
+                    e.printStackTrace();
+                }
             }
         }
+
+        System.out.println("count = " + count);
+
+
+
     }
 
     Map<String, Map<String, String>> cookie = new HashMap<>();
@@ -256,6 +290,7 @@ public class OAuth2ResourceTest {
                 for (HeaderField headerField : exc.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"))) {
                     System.out.println("[" + Thread.currentThread().getName() + "] from "+domain+" got Set-Cookie: " + headerField.getValue());
 
+
                     String value = headerField.getValue().substring(0, headerField.getValue().indexOf(";"));
                     boolean expired = headerField.getValue().contains("1970");
 
@@ -275,10 +310,25 @@ public class OAuth2ResourceTest {
                     }
 
                     if (expired) {
+                        System.out.println("[" + Thread.currentThread().getName() + "] removing cookie.");
                         synchronized (cookies) {
                             cookies.remove(key);
                         }
                     } else {
+                        try {
+                            JwtConsumer jwtc = new JwtConsumerBuilder()
+                                    .setSkipSignatureVerification()
+                                    .build();
+
+                            String v = headerField.getValue();
+                            JwtClaims claims = jwtc.processToClaims(v.substring(0, v.indexOf("=")));
+                            for (Map.Entry<String, Object> entry : claims.getClaimsMap().entrySet()) {
+                                System.out.println("[" + Thread.currentThread().getName() + "] " + entry.getKey() + ": " + entry.getValue());
+                            }
+                        } catch (InvalidJwtException e) {
+                            //ignore
+                        }
+
                         synchronized (cookies) {
                             cookies.put(key, value);
                         }
@@ -312,6 +362,8 @@ public class OAuth2ResourceTest {
                     } catch (URISyntaxException e) {
                         throw new RuntimeException(e);
                     }
+
+                    System.out.println("[" + Thread.currentThread().getName() + "] redirected to " + exc.getDestinations().get(0));
                 }
                 return exc;
             }
@@ -371,7 +423,7 @@ public class OAuth2ResourceTest {
                     Map<String,String> res = new HashMap<>();
                     res.put("access_token",new BigInteger(130, rand).toString(32));
                     res.put("token_type","bearer");
-                    res.put("expires_in","1");
+                    res.put("expires_in","100");
                     res.put("refresh_token",new BigInteger(130, rand).toString(32));
                     exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType("application/json").build());
 
