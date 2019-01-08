@@ -85,8 +85,10 @@ public abstract class SessionManager {
     protected abstract boolean isManagedBySessionManager(String cookie);
 
     public void postProcess(Exchange exc) {
-        if(issuer == null)
-            initIssuer(exc);
+        synchronized (this) {
+            if (issuer == null)
+                initIssuer(exc);
+        }
 
         getSessionFromExchange(exc).ifPresent(session -> {
             try {
