@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Required;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,7 +103,7 @@ public class JwtSessionManager extends SessionManager {
                 .map(cookie -> cookie.split("=true")[0].trim())
                 .filter(cookie -> {
                     try {
-                        preCheckIssuerWithoutValidatingSignature(validCookie);
+                        preCheckIssuerWithoutValidatingSignature(cookie);
                         return true;
                     } catch (InvalidJwtException e) {
                         // this should only happen if the issuer doesn't add up

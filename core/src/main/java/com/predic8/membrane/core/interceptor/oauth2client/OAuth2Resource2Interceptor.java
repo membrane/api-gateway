@@ -38,6 +38,7 @@ import com.predic8.membrane.core.interceptor.oauth2.authorizationservice.Authori
 import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator;
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.session.Session;
+import com.predic8.membrane.core.interceptor.session.SessionManager;
 import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.RuleKey;
 import com.predic8.membrane.core.util.URI;
@@ -55,6 +56,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -208,7 +210,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
             return Outcome.CONTINUE;
         }
 
-        if (handleRequest(exc, session.get("state"), publicURL, session)) {
+        if (handleRequest(exc, publicURL, session)) {
             if(exc.getResponse() == null && exc.getRequest() != null && session.isVerified() && session.get().containsKey(OAUTH2_ANSWER)) {
                 exc.setProperty(Exchange.OAUTH2, OAuth2AnswerParameters.deserialize(session.get(OAUTH2_ANSWER)));
                 return Outcome.CONTINUE;
@@ -373,7 +375,7 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         exc.getRequest().getBodyAsStringDecoded();
     }
 
-    public boolean handleRequest(Exchange exc, String state, String publicURL, Session session) throws Exception {
+    public boolean handleRequest(Exchange exc, String publicURL, Session session) throws Exception {
         String path = uriFactory.create(exc.getDestinations().get(0)).getPath();
 
         if(path == null)
@@ -387,25 +389,15 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
                 String state2 = params.get("state");
 
-                if (state2 == null)
-                    throw new RuntimeException("No CSRF token.");
+                String stateFromUri = getSecurityTokenFromState(state2);
 
-                Map<String, String> param = URLParamUtil.parseQueryString(state2);
-
-                if (param == null || !param.containsKey("security_token"))
-                    throw new RuntimeException("No CSRF token.");
-
-                boolean csrfMatch = false;
-
-                for(String state3 : stateToOriginalUrl.keySet())
-                    if (param.get("security_token").equals(state3))
-                        csrfMatch = true;
-
-                if(!csrfMatch)
+                if(!csrfTokenMatches(session, stateFromUri))
                     throw new RuntimeException("CSRF token mismatch.");
 
+                // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
+                session.put(ParamNames.STATE,stateFromUri);
 
-                Exchange originalRequest = stateToOriginalUrl.get(param.get("security_token"));
+                Exchange originalRequest = stateToOriginalUrl.get(stateFromUri);
                 String url = originalRequest.getRequest().getUri();
                 if (url == null)
                     url = "/";
@@ -506,11 +498,32 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 doRedirect(exc,originalRequest);
                 return true;
             } catch (Exception e) {
+                e.printStackTrace();
                 exc.setResponse(Response.badRequest().body(e.getMessage()).build());
                 return true;
             }
         }
         return false;
+    }
+
+    private String getSecurityTokenFromState(String state2) {
+        if (state2 == null)
+            throw new RuntimeException("No CSRF token.");
+
+        Map<String, String> param = URLParamUtil.parseQueryString(state2);
+
+        if (param == null || !param.containsKey("security_token"))
+            throw new RuntimeException("No CSRF token.");
+
+        return param.get("security_token");
+    }
+
+    private boolean csrfTokenMatches(Session session, String state2) {
+        return Arrays
+                .asList(session.get(ParamNames.STATE).toString().split(SessionManager.SESSION_VALUE_SEPARATOR))
+                .stream()
+                .filter(s -> s.equals(state2))
+                .count() == 1;
     }
 
     private void doRedirect(Exchange exc, Exchange originalRequest) {

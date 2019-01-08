@@ -4,6 +4,7 @@ import com.predic8.membrane.annot.MCAttribute;
 import com.predic8.membrane.core.Router;
 import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
+import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Response;
 import com.predic8.membrane.core.rules.RuleKey;
 import org.slf4j.Logger;
@@ -155,19 +156,18 @@ public abstract class SessionManager {
         if (getCookieHeader(exc) == null)
             return new Session(usernameKeyName,new HashMap<>());
 
-        return new Session(usernameKeyName,mergeCookies(exc));
+        return new Session(usernameKeyName, mergeCookies(exc));
     }
 
     private Map<String, Object> mergeCookies(Exchange exc) {
         return convertCookiesToAttributes(exc)
                 .stream()
                 .flatMap(map -> map.entrySet().stream())
-                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(), (e1, e2) -> e1 + SESSION_VALUE_SEPARATOR + e2));
+                .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue(), (e1, e2) -> e1 != null && e1.equals(e2) ? e1 : e1 + SESSION_VALUE_SEPARATOR + e2));
     }
 
     private List<Map<String, Object>> convertCookiesToAttributes(Exchange exc) {
-        return Stream
-                .of(getCookies(exc))
+        return getCookies(exc)
                 .filter(cookie -> isManagedBySessionManager(cookie))
                 .map(cookie -> cookieValueToAttributes(cookie.split("=")[0]))
                 .collect(Collectors.toList());
@@ -217,8 +217,8 @@ public abstract class SessionManager {
     }
 
 
-    protected String[] getCookies(Exchange exc) {
-        return getCookieHeader(exc).split(";");
+    protected Stream<String> getCookies(Exchange exc) {
+        return exc.getRequest().getHeader().getValues(new HeaderName(Header.COOKIE)).stream().map(s -> s.getValue().split(";")).flatMap(Arrays::stream);
     }
 
 
@@ -242,7 +242,7 @@ public abstract class SessionManager {
 
 
     protected String getCookieHeader(Exchange exc) {
-        return exc.getRequest().getHeader().getFirstValue(Header.COOKIE);
+        return getCookies(exc).collect(Collectors.joining(";"));
     }
 
     public boolean isHttpOnly() {

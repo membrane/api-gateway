@@ -283,8 +283,8 @@ public class OAuth2ResourceTest {
                 if (cookies != null)
                     synchronized (cookies) {
                         Exchange finalExc = exc;
-                        cookies.forEach((k, v) -> finalExc.getRequest().getHeader().setValue("Cookie", k + "=" + v));
-                    }
+                        cookies.forEach((k, v) -> finalExc.getRequest().getHeader().add("Cookie", k + "=" + v));
+                }
                 exc = consumer.call(exc);
 
                 for (HeaderField headerField : exc.getResponse().getHeader().getValues(new HeaderName("Set-Cookie"))) {
@@ -421,9 +421,9 @@ public class OAuth2ResourceTest {
                 }else if(exc.getRequestURI().startsWith("/token")){
                     ObjectMapper om = new ObjectMapper();
                     Map<String,String> res = new HashMap<>();
-                    res.put("access_token",new BigInteger(130, rand).toString(32));
+                    res.put("access_token", new BigInteger(130, rand).toString(32));
                     res.put("token_type","bearer");
-                    res.put("expires_in","100");
+                    res.put("expires_in","1");
                     res.put("refresh_token",new BigInteger(130, rand).toString(32));
                     exc.setResponse(Response.ok(om.writeValueAsString(res)).contentType("application/json").build());
 

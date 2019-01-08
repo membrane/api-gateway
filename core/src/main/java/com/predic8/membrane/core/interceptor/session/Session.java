@@ -83,7 +83,13 @@ public class Session {
     }
 
     protected AuthorizationLevel getAuthorization(){
-        return AuthorizationLevel.valueOf(getInternal(AUTHORIZATION_LEVEL));
+        try {
+            return AuthorizationLevel.valueOf(getInternal(AUTHORIZATION_LEVEL));
+        }catch (IllegalArgumentException e){
+            // e.g. No enum constant com.predic8.membrane.core.interceptor.session.Session.AuthorizationLevel.ANONYMOUS,ANONYMOUS
+            setAuthorization(AuthorizationLevel.ANONYMOUS);
+            return AuthorizationLevel.ANONYMOUS;
+        }
     }
 
     public boolean isVerified(){
