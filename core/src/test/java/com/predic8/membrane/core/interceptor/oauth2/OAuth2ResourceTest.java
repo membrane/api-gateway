@@ -51,8 +51,10 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class OAuth2ResourceTest {
 
@@ -224,6 +226,42 @@ public class OAuth2ResourceTest {
 
         assertEquals(1, countCookies());
     }
+
+    @Test
+    public void testStateAttack() throws Exception {
+        AtomicReference<String> ref = new AtomicReference<>();
+        AtomicInteger state = new AtomicInteger();
+        // state 0: the attacker aborts the OAuth2 flow at the AS
+        // state 1: the helpless user continues using the same link
+
+        mockAuthServer.getTransport().getInterceptors().add(2, new AbstractInterceptor() {
+            @Override
+            public Outcome handleRequest(Exchange exc) throws Exception {
+                if (state.get() == 0) {
+                    ref.set(exc.getOriginalRequestUri());
+                    state.set(1);
+                    exc.setResponse(Response.internalServerError().body("").build());
+                    return Outcome.RETURN;
+                }
+
+                return super.handleRequest(exc);
+            }
+        });
+
+
+        Exchange excCallResource = new Request.Builder().get(getClientAddress() + "/malicious").buildExchange();
+        LOG.debug("getting " + excCallResource.getDestinations().get(0));
+        excCallResource = cookieHandlingRedirectingHttpClient.call(excCallResource); // will be aborted
+
+        cookie.clear(); // send the auth link to some helpless (other) user
+
+        excCallResource = cookieHandlingRedirectingHttpClient.call(new Request.Builder().get("http://localhost:1337" + ref.get()).buildExchange());
+
+        assertEquals(400, excCallResource.getResponse().getStatusCode());
+
+        assertTrue(excCallResource.getResponse().getBodyAsStringDecoded().contains("CSRF"));
+    }
+
 
     private int countCookies() {
         JwtConsumer jwtc = new JwtConsumerBuilder()
