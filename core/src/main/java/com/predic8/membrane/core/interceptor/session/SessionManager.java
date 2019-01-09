@@ -52,7 +52,7 @@ public abstract class SessionManager {
     public abstract void init(Router router) throws Exception;
 
     /**
-     * Transforms a cookie value into its attributes. The cookie should be assumed valid as @isManagedBySessionManager was called beforehand
+     * Transforms a cookie value into its attributes. The cookie should be assumed valid as @isValidCookieForThisSessionManager was called beforehand
      *
      * @param cookie
      * @return
@@ -78,12 +78,16 @@ public abstract class SessionManager {
     public abstract List<String> getInvalidCookies(Exchange exc, String validCookie);
 
     /**
-     * Gets called for every cookie value. Returns if the cookie value is managed by this manager instance, e.g. jwt session manager checks if the cookie is a jwt, if it has the correct issuer and if the signature is valid.
+     * Gets called for every cookie value. Returns if the cookie value is valid and managed by this manager instance, e.g. jwt session manager checks if the cookie is a jwt, if it has the correct issuer, if it is not expired and if the signature is valid.
      * Cookie is in format key=value
      * @param cookie
      * @return
      */
-    protected abstract boolean isManagedBySessionManager(String cookie);
+    protected abstract boolean isValidCookieForThisSessionManager(String cookie);
+
+
+    protected abstract boolean cookieRenewalNeeded(String cookie);
+
 
     public void postProcess(Exchange exc) {
         synchronized (this) {
@@ -94,7 +98,7 @@ public abstract class SessionManager {
         getSessionFromExchange(exc).ifPresent(session -> {
             try {
                 createDefaultResponseIfNeeded(exc);
-                handleSetCookieHeaderForResponse(exc, getCookieValue(session));
+                handleSetCookieHeaderForResponse(exc, session);
             } catch (Exception e) {
                 throw new RuntimeException("The newly created session could not be persisted in the Set-Cookie header", e);
             }
@@ -106,10 +110,16 @@ public abstract class SessionManager {
             exc.setResponse(new Response());
     }
 
-    private void handleSetCookieHeaderForResponse(Exchange exc, String currentSessionCookieValue) {
-        if (!cookieIsAlreadySet(exc, currentSessionCookieValue))
-            setCookieForCurrentSession(exc, currentSessionCookieValue);
-        setCookieForExpiredSessions(exc, currentSessionCookieValue);
+    private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
+        String cookieValue = getCookieValue(session);
+
+        if(session.isDirty() || cookieRenewalNeeded(cookieValue) || !cookieIsAlreadySet(exc,cookieValue))
+            setCookieForCurrentSession(exc, cookieValue);
+
+        /*if(!cookieIsAlreadySet(exc, cookieValue))
+                setCookieForCurrentSession(exc, cookieValue);*/
+
+        setCookieForExpiredSessions(exc, cookieValue);
     }
 
     private boolean cookieIsAlreadySet(Exchange exc, String currentSessionCookieValue) {
@@ -168,7 +178,7 @@ public abstract class SessionManager {
 
     private List<Map<String, Object>> convertCookiesToAttributes(Exchange exc) {
         return getCookies(exc)
-                .filter(cookie -> isManagedBySessionManager(cookie))
+                .filter(cookie -> isValidCookieForThisSessionManager(cookie))
                 .map(cookie -> cookieValueToAttributes(cookie.split("=")[0]))
                 .collect(Collectors.toList());
     }

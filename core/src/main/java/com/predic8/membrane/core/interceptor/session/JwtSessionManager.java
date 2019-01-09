@@ -11,6 +11,8 @@ import com.predic8.membrane.core.exchange.Exchange;
 import org.jose4j.json.JsonUtil;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jwk.RsaJwkGenerator;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.MalformedClaimException;
 import org.jose4j.jwt.consumer.InvalidJwtException;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 import org.jose4j.lang.JoseException;
@@ -19,7 +21,7 @@ import org.springframework.beans.factory.annotation.Required;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.Arrays;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,8 @@ public class JwtSessionManager extends SessionManager {
     private SecureRandom random = new SecureRandom();
     private RsaJsonWebKey rsaJsonWebKey;
 
-    private Duration validTime = Duration.ofMinutes(10);
+    private Duration validTime = Duration.ofSeconds(expiresAfterSeconds);
+    private Duration renewalTime = validTime.dividedBy(3);
 
     IdTokenProvider idTokenProvider;
     IdTokenVerifier idTokenVerifier;
@@ -103,7 +106,7 @@ public class JwtSessionManager extends SessionManager {
                 .map(cookie -> cookie.split("=true")[0].trim())
                 .filter(cookie -> {
                     try {
-                        preCheckIssuerWithoutValidatingSignature(cookie);
+                        checkJwtWithoutVerifyingSignature(cookie);
                         return true;
                     } catch (InvalidJwtException e) {
                         // this should only happen if the issuer doesn't add up
@@ -119,9 +122,9 @@ public class JwtSessionManager extends SessionManager {
     }
 
     @Override
-    protected boolean isManagedBySessionManager(String cookie) {
+    protected boolean isValidCookieForThisSessionManager(String cookie) {
         try {
-            preCheckIssuerWithoutValidatingSignature(cookie);
+            checkJwtWithoutVerifyingSignature(cookie);
             validateSignatureOfJwt(cookie);
             return true;
         } catch (InvalidJwtException e) {
@@ -133,17 +136,31 @@ public class JwtSessionManager extends SessionManager {
         return false;
     }
 
-    private void validateSignatureOfJwt(String cookie) throws InvalidJwtException {
-        idTokenVerifier.createCustomJwtValidator()
+    @Override
+    protected boolean cookieRenewalNeeded(String cookie) {
+        try {
+            JwtClaims claims = checkJwtWithoutVerifyingSignature(cookie);
+            return Instant.ofEpochSecond(claims.getIssuedAt().getValue()).plus(renewalTime).isBefore(Instant.now());
+        } catch (InvalidJwtException e) {
+            e.printStackTrace();
+        } catch (MalformedClaimException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private JwtClaims validateSignatureOfJwt(String cookie) throws InvalidJwtException {
+        return idTokenVerifier.createCustomJwtValidator()
                 .setExpectedIssuer(issuer)
                 .build()
                 .processToClaims(cookie);
     }
 
-    private void preCheckIssuerWithoutValidatingSignature(String cookie) throws InvalidJwtException {
-        new JwtConsumerBuilder()
+    private JwtClaims checkJwtWithoutVerifyingSignature(String cookie) throws InvalidJwtException {
+        return new JwtConsumerBuilder()
                 .setSkipSignatureVerification()
                 .setExpectedIssuer(issuer)
+                .setRequireExpirationTime()
                 .build()
                 .processToClaims(cookie);
     }
