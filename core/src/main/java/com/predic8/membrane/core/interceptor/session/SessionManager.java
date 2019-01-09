@@ -6,6 +6,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.rules.RuleKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ public abstract class SessionManager {
     Logger log = LoggerFactory.getLogger(SessionManager.class);
 
     public static final String SESSION = "SESSION";
+    public static final String SESSION_COOKIE_ORIGINAL = "SESSION_COOKIE_ORIGINAL";
 
     String usernameKeyName = "username";
     long expiresAfterSeconds = 15 * 60;
@@ -86,7 +88,12 @@ public abstract class SessionManager {
     protected abstract boolean isValidCookieForThisSessionManager(String cookie);
 
 
-    protected abstract boolean cookieRenewalNeeded(String cookie);
+    /**
+     * Gets called when session was not modified. Should check, if session needs to be renewed (e.g. jwt expiration).
+     * @param originalCookie the original cookie from which the session was created (can be different from current session)
+     * @return
+     */
+    protected abstract boolean cookieRenewalNeeded(String originalCookie);
 
 
     public void postProcess(Exchange exc) {
@@ -107,19 +114,21 @@ public abstract class SessionManager {
 
     private void createDefaultResponseIfNeeded(Exchange exc) {
         if (exc.getResponse() == null)
-            exc.setResponse(new Response());
+            exc.setResponse(Response.ok().build());
     }
 
     private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
-        String cookieValue = getCookieValue(session);
+        String originalCookieValueAtBeginning = exc.getProperty(SESSION_COOKIE_ORIGINAL).toString();
 
-        if(session.isDirty() || cookieRenewalNeeded(cookieValue) || !cookieIsAlreadySet(exc,cookieValue))
-            setCookieForCurrentSession(exc, cookieValue);
+        if(session.isDirty() || cookieRenewalNeeded(originalCookieValueAtBeginning) || thereIsNoCookieHeaderInRequest(exc, originalCookieValueAtBeginning)){
+            String currentCookieValueOfSession = getCookieValue(session);
+            setCookieForCurrentSession(exc, currentCookieValueOfSession);
+            setCookieForExpiredSessions(exc, currentCookieValueOfSession);
+        }
+    }
 
-        /*if(!cookieIsAlreadySet(exc, cookieValue))
-                setCookieForCurrentSession(exc, cookieValue);*/
-
-        setCookieForExpiredSessions(exc, cookieValue);
+    private boolean thereIsNoCookieHeaderInRequest(Exchange exc, String originalCookieValueAtBeginning) {
+        return originalCookieValueAtBeginning != null && !originalCookieValueAtBeginning.isEmpty() && !cookieIsAlreadySet(exc, originalCookieValueAtBeginning);
     }
 
     private boolean cookieIsAlreadySet(Exchange exc, String currentSessionCookieValue) {
@@ -188,7 +197,13 @@ public abstract class SessionManager {
         if(sessionFromExchange.isPresent()) // have to do it like this and not with .orElse because getSessionFromManager would be called unnecessarily (overwriting session property)
             return sessionFromExchange.get();
 
-        return getSessionFromManager(exc);
+        Session sessionFromManager = getSessionFromManager(exc);
+        try {
+            exc.setProperty(SESSION_COOKIE_ORIGINAL, getCookieValue(sessionFromManager));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sessionFromManager;
     }
 
     private Session getSessionFromManager(Exchange exc) {

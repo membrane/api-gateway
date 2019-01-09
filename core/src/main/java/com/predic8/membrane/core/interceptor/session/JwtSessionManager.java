@@ -28,6 +28,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Take care - this session manager saves values in the session for internal use -> those are reserved keywords and cannot be used
+ * The keywords are "iss","exp","nbf","iat".
+ */
 @MCElement(name = "jwtSessionManager")
 public class JwtSessionManager extends SessionManager {
 
@@ -93,10 +97,17 @@ public class JwtSessionManager extends SessionManager {
 
     private String createJwtRepresentation(Session s) {
         try {
-            return idTokenProvider.createIdTokenNoNullClaims(issuer,null,null,validTime,null,null,s.get());
+            Map filteredSession = filterSession(s.get());
+            return idTokenProvider.createIdTokenNoNullClaims(issuer,null,null,validTime,null,null,filteredSession);
         } catch (JoseException e) {
             throw new RuntimeException("Could not create JWT representation of session", e);
         }
+    }
+
+    private Map filterSession(Map<String, Object> stringObjectMap) {
+        Map result = new HashMap(stringObjectMap);
+        Stream.of("iss","exp","nbf","iat").forEach(claim -> result.remove(claim));
+        return result;
     }
 
     @Override
@@ -137,9 +148,9 @@ public class JwtSessionManager extends SessionManager {
     }
 
     @Override
-    protected boolean cookieRenewalNeeded(String cookie) {
+    protected boolean cookieRenewalNeeded(String originalCookie) {
         try {
-            JwtClaims claims = checkJwtWithoutVerifyingSignature(cookie);
+            JwtClaims claims = processToClaims(originalCookie);
             return Instant.ofEpochSecond(claims.getIssuedAt().getValue()).plus(renewalTime).isBefore(Instant.now());
         } catch (InvalidJwtException e) {
             e.printStackTrace();
@@ -161,6 +172,13 @@ public class JwtSessionManager extends SessionManager {
                 .setSkipSignatureVerification()
                 .setExpectedIssuer(issuer)
                 .setRequireExpirationTime()
+                .build()
+                .processToClaims(cookie);
+    }
+
+    private JwtClaims processToClaims(String cookie) throws InvalidJwtException {
+        return new JwtConsumerBuilder()
+                .setSkipSignatureVerification()
                 .build()
                 .processToClaims(cookie);
     }
@@ -195,5 +213,21 @@ public class JwtSessionManager extends SessionManager {
     @MCAttribute
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
+    }
+
+    public Duration getValidTime() {
+        return validTime;
+    }
+
+    public void setValidTime(Duration validTime) {
+        this.validTime = validTime;
+    }
+
+    public Duration getRenewalTime() {
+        return renewalTime;
+    }
+
+    public void setRenewalTime(Duration renewalTime) {
+        this.renewalTime = renewalTime;
     }
 }

@@ -20,12 +20,14 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +38,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 public class SessionInterceptorTest {
 
@@ -116,11 +119,73 @@ public class SessionInterceptorTest {
         });
     }
 
+    @Test
+    public void renewalOnReadOnlySession() throws Exception{
+        router.getRuleManager().addProxyAndOpenPortIfNew(createTestServiceProxy());
+
+        AbstractInterceptorWithSession createAndReadOnlySessionInterceptor = createAndReadOnlySessionInterceptor();
+        router.addUserFeatureInterceptor(createAndReadOnlySessionInterceptor);
+        router.addUserFeatureInterceptor(testResponseInterceptor());
+        router.init();
+
+        List<Map<String,Object>> bodies = new ArrayList<>();
+
+        int lowerBound = 0;
+        int upperBound = 10;
+
+        IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
+
+        bodies.stream().forEach(body -> printCookie(body));
+
+        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
+            assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));
+        });
+
+        String cookieOne = getCookieKey(bodies.get(upperBound-1));
+
+
+        Duration origRenewalTime = ((JwtSessionManager)createAndReadOnlySessionInterceptor.getSessionManager()).getRenewalTime();
+        Thread.sleep(1000);
+        ((JwtSessionManager)createAndReadOnlySessionInterceptor.getSessionManager()).setRenewalTime(Duration.ofMillis(0));
+        sendRequest();
+        ((JwtSessionManager)createAndReadOnlySessionInterceptor.getSessionManager()).setRenewalTime(origRenewalTime);
+
+        System.out.println("After sleep");
+
+        bodies.clear();
+
+        IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
+
+        bodies.stream().forEach(body -> printCookie(body));
+
+        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
+            assertEquals(getCookieKey(bodies.get(i)),getCookieKey(bodies.get(i+1)));
+        });
+
+        String cookieTwo = getCookieKey(bodies.get(upperBound-1));
+
+
+
+        assertNotEquals(cookieOne,cookieTwo);
+
+    }
+
+    public void printCookie(Map body){
+        System.out.println(getCookieKey(body));
+    }
+
+    public String getCookieKey(Map cookie){
+        String raw = ((Map)cookie.get("request")).get("Cookie").toString();
+        return raw.split("=")[0];
+    }
+
     private AbstractInterceptor testResponseInterceptor() {
         return new AbstractInterceptor() {
             @Override
             public Outcome handleRequest(Exchange exc) throws Exception {
-                exc.setResponse(Response.ok(createTestResponseBody(exc)).build());
+                if(exc.getResponse() == null)
+                    exc.setResponse(Response.ok().build());
+                exc.getResponse().setBodyContent(createTestResponseBody(exc).getBytes());
                 return Outcome.RETURN;
             }
 
@@ -173,7 +238,7 @@ public class SessionInterceptorTest {
     }
 
     private CloseableHttpClient createHttpClient() {
-        return HttpClients.custom().setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()).build();
+        return HttpClients.custom().setConnectionManager(new BasicHttpClientConnectionManager()).setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()).build();
     }
 
     private Map<String,Object> sendRequest() {
