@@ -6,6 +6,7 @@ import com.predic8.membrane.core.exchange.Exchange;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.HeaderName;
 import com.predic8.membrane.core.http.Response;
+import com.predic8.membrane.core.interceptor.Interceptor;
 import com.predic8.membrane.core.rules.RuleKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ public abstract class SessionManager {
     Logger log = LoggerFactory.getLogger(SessionManager.class);
 
     public static final String SESSION = "SESSION";
+    public static final String SESSION_COOKIE_ORIGINAL = "SESSION_COOKIE_ORIGINAL";
 
     String usernameKeyName = "username";
     long expiresAfterSeconds = 15 * 60;
@@ -52,7 +54,7 @@ public abstract class SessionManager {
     public abstract void init(Router router) throws Exception;
 
     /**
-     * Transforms a cookie value into its attributes. The cookie should be assumed valid as @isManagedBySessionManager was called beforehand
+     * Transforms a cookie value into its attributes. The cookie should be assumed valid as @isValidCookieForThisSessionManager was called beforehand
      *
      * @param cookie
      * @return
@@ -78,12 +80,21 @@ public abstract class SessionManager {
     public abstract List<String> getInvalidCookies(Exchange exc, String validCookie);
 
     /**
-     * Gets called for every cookie value. Returns if the cookie value is managed by this manager instance, e.g. jwt session manager checks if the cookie is a jwt, if it has the correct issuer and if the signature is valid.
+     * Gets called for every cookie value. Returns if the cookie value is valid and managed by this manager instance, e.g. jwt session manager checks if the cookie is a jwt, if it has the correct issuer, if it is not expired and if the signature is valid.
      * Cookie is in format key=value
      * @param cookie
      * @return
      */
-    protected abstract boolean isManagedBySessionManager(String cookie);
+    protected abstract boolean isValidCookieForThisSessionManager(String cookie);
+
+
+    /**
+     * Gets called when session was not modified. Should check, if session needs to be renewed (e.g. jwt expiration).
+     * @param originalCookie the original cookie from which the session was created (can be different from current session)
+     * @return
+     */
+    protected abstract boolean cookieRenewalNeeded(String originalCookie);
+
 
     public void postProcess(Exchange exc) {
         synchronized (this) {
@@ -94,7 +105,7 @@ public abstract class SessionManager {
         getSessionFromExchange(exc).ifPresent(session -> {
             try {
                 createDefaultResponseIfNeeded(exc);
-                handleSetCookieHeaderForResponse(exc, getCookieValue(session));
+                handleSetCookieHeaderForResponse(exc, session);
             } catch (Exception e) {
                 throw new RuntimeException("The newly created session could not be persisted in the Set-Cookie header", e);
             }
@@ -103,13 +114,21 @@ public abstract class SessionManager {
 
     private void createDefaultResponseIfNeeded(Exchange exc) {
         if (exc.getResponse() == null)
-            exc.setResponse(new Response());
+            exc.setResponse(Response.ok().build());
     }
 
-    private void handleSetCookieHeaderForResponse(Exchange exc, String currentSessionCookieValue) {
-        if (!cookieIsAlreadySet(exc, currentSessionCookieValue))
-            setCookieForCurrentSession(exc, currentSessionCookieValue);
-        setCookieForExpiredSessions(exc, currentSessionCookieValue);
+    private void handleSetCookieHeaderForResponse(Exchange exc, Session session) throws Exception {
+        String originalCookieValueAtBeginning = exc.getProperty(SESSION_COOKIE_ORIGINAL).toString();
+
+        if(session.isDirty() || cookieRenewalNeeded(originalCookieValueAtBeginning) || thereIsNoCookieHeaderInRequest(exc, originalCookieValueAtBeginning)){
+            String currentCookieValueOfSession = getCookieValue(session);
+            setCookieForCurrentSession(exc, currentCookieValueOfSession);
+            setCookieForExpiredSessions(exc, currentCookieValueOfSession);
+        }
+    }
+
+    private boolean thereIsNoCookieHeaderInRequest(Exchange exc, String originalCookieValueAtBeginning) {
+        return originalCookieValueAtBeginning != null && !originalCookieValueAtBeginning.isEmpty() && !cookieIsAlreadySet(exc, originalCookieValueAtBeginning);
     }
 
     private boolean cookieIsAlreadySet(Exchange exc, String currentSessionCookieValue) {
@@ -168,7 +187,7 @@ public abstract class SessionManager {
 
     private List<Map<String, Object>> convertCookiesToAttributes(Exchange exc) {
         return getCookies(exc)
-                .filter(cookie -> isManagedBySessionManager(cookie))
+                .filter(cookie -> isValidCookieForThisSessionManager(cookie))
                 .map(cookie -> cookieValueToAttributes(cookie.split("=")[0]))
                 .collect(Collectors.toList());
     }
@@ -178,7 +197,13 @@ public abstract class SessionManager {
         if(sessionFromExchange.isPresent()) // have to do it like this and not with .orElse because getSessionFromManager would be called unnecessarily (overwriting session property)
             return sessionFromExchange.get();
 
-        return getSessionFromManager(exc);
+        Session sessionFromManager = getSessionFromManager(exc);
+        try {
+            exc.setProperty(SESSION_COOKIE_ORIGINAL, getCookieValue(sessionFromManager));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return sessionFromManager;
     }
 
     private Session getSessionFromManager(Exchange exc) {

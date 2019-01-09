@@ -16,11 +16,14 @@ public class Session {
     private String usernameKeyName;
     Map<String, Object> content;
 
+    boolean isDirty;
+
     public Session(String usernameKeyName, Map<String, Object> content) {
         this.usernameKeyName = usernameKeyName;
         this.content = content;
         if(getInternal(AUTHORIZATION_LEVEL) == null)
             setAuthorization(AuthorizationLevel.ANONYMOUS);
+        isDirty = false;
     }
 
     public Session(Map<String, Object> content) {
@@ -46,15 +49,21 @@ public class Session {
 
     public void remove(String... keys) {
         Set<String> keysUnique = new HashSet<>(Arrays.asList(keys));
-        content
+        content = content
                 .entrySet()
                 .stream()
                 .filter(entry -> !keysUnique.contains(entry.getKey()))
                 .collect(Collectors.toMap(entry -> entry.getKey(), entry -> entry.getValue()));
+        dirty();
     }
 
     public void put(Map<String, Object> map) {
         content.putAll(map);
+        dirty();
+    }
+
+    private void dirty() {
+        isDirty = true;
     }
 
     public Map<String, Object> get() {
@@ -117,4 +126,11 @@ public class Session {
         remove(internalKey(key));
     }
 
+    public boolean isDirty() {
+        return isDirty;
+    }
+
+    public void setDirty(boolean dirty) {
+        isDirty = dirty;
+    }
 }
