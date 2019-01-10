@@ -100,7 +100,7 @@ public class SessionInterceptorTest {
     }
 
     @Test
-    public void noRenewalOnReadOnlySession() throws Exception{
+    public void noUnneededRenewalOnReadOnlySession() throws Exception{
         router.getRuleManager().addProxyAndOpenPortIfNew(createTestServiceProxy());
 
         router.addUserFeatureInterceptor(createAndReadOnlySessionInterceptor());
@@ -110,13 +110,11 @@ public class SessionInterceptorTest {
         List<Map<String,Object>> bodies = new ArrayList<>();
 
         int lowerBound = 0;
-        int upperBound = 100;
+        int upperBound = 1000;
 
         IntStream.range(lowerBound, upperBound).forEach(i -> bodies.add(sendRequest()));
 
-        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> {
-            assertEquals(bodies.get(i),bodies.get(i+1));
-        });
+        IntStream.range(lowerBound+1,upperBound-1).forEach(i -> assertEquals(bodies.get(i),bodies.get(i+1)));
     }
 
     @Test
