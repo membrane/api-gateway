@@ -45,7 +45,6 @@ public class OAuth2AuthorizationServer2Interceptor extends AbstractInterceptorWi
         com.bornium.http.Exchange internalExc = authorizationServer.invokeOn(Convert.convertFromMembraneExchange(exc));
         exc.setResponse(Convert.convertToMembraneResponse(internalExc.getResponse()));
         exc.getProperties().putAll(internalExc.getProperties());
-        handleResponse(exc); // as we RETURN directly from handle request we need to trigger session management
         return Outcome.RETURN;
     }
 
