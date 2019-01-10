@@ -13,10 +13,8 @@
    limitations under the License. */
 package com.predic8.membrane.core.interceptor.oauth2client;
 
-import com.floreysoft.jmte.Engine;
-import com.floreysoft.jmte.ErrorHandler;
-import com.floreysoft.jmte.message.ParseException;
-import com.floreysoft.jmte.token.Token;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.predic8.membrane.annot.MCAttribute;
@@ -24,7 +22,9 @@ import com.predic8.membrane.annot.MCChildElement;
 import com.predic8.membrane.annot.MCElement;
 import com.predic8.membrane.core.Constants;
 import com.predic8.membrane.core.Router;
+import com.predic8.membrane.core.exchange.AbstractExchange;
 import com.predic8.membrane.core.exchange.Exchange;
+import com.predic8.membrane.core.exchange.snapshots.AbstractExchangeSnapshot;
 import com.predic8.membrane.core.http.Header;
 import com.predic8.membrane.core.http.Request;
 import com.predic8.membrane.core.http.Response;
@@ -39,15 +39,11 @@ import com.predic8.membrane.core.interceptor.oauth2.tokengenerators.JwtGenerator
 import com.predic8.membrane.core.interceptor.server.WebServerInterceptor;
 import com.predic8.membrane.core.interceptor.session.Session;
 import com.predic8.membrane.core.interceptor.session.SessionManager;
-import com.predic8.membrane.core.resolver.ResolverMap;
 import com.predic8.membrane.core.rules.RuleKey;
-import com.predic8.membrane.core.util.URI;
 import com.predic8.membrane.core.util.URIFactory;
 import com.predic8.membrane.core.util.URLParamUtil;
 import com.predic8.membrane.core.util.Util;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Required;
@@ -60,7 +56,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -72,17 +67,16 @@ import java.util.concurrent.TimeUnit;
 public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     public static final String OAUTH2_ANSWER = "oauth2Answer";
     public static final String OA2REDIRECT = "oa2redirect";
+    public static final String ORIGINAL_REQUEST_PREFIX = "_original_request_for_state_";
+    public static final String OA2REDIRECT_PREFIX = "_redirect_for_oa2redirect_";
     private static Logger log = LoggerFactory.getLogger(OAuth2Resource2Interceptor.class.getName());
 
     private String publicURL;
     private AuthorizationService auth;
     private OAuth2Statistics statistics;
     private Cache<String,Boolean> validTokens = CacheBuilder.newBuilder().expireAfterWrite(10, TimeUnit.MINUTES).build();
-    private Cache<String,Exchange> stateToRedirect = CacheBuilder.newBuilder().expireAfterWrite(1,TimeUnit.MINUTES).build();
 
     private int revalidateTokenAfter = -1;
-
-    private ConcurrentHashMap<String,Exchange> stateToOriginalUrl = new ConcurrentHashMap<>();
 
     private WebServerInterceptor wsi;
     private URIFactory uriFactory;
@@ -228,11 +222,10 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         Map<String, String> params = URLParamUtil.getParams(uriFactory, exc);
         String oa2redirect = params.get(OA2REDIRECT);
 
-        Exchange originalExchange = null;
-        synchronized (stateToRedirect) {
-            originalExchange = stateToRedirect.getIfPresent(oa2redirect);
-            stateToRedirect.invalidate(oa2redirect);
-        }
+        Session session = getSessionManager().getSession(exc);
+
+        AbstractExchange originalExchange = new ObjectMapper().readValue(session.get(oa2redictKeyNameInSession(oa2redirect)).toString(),AbstractExchangeSnapshot.class).toAbstractExchange();
+        session.remove(oa2redictKeyNameInSession(oa2redirect));
 
         doOriginalRequest(exc,originalExchange);
     }
@@ -357,19 +350,34 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
 
     }
 
-    private Outcome respondWithRedirect(Exchange exc) {
+    private Outcome respondWithRedirect(Exchange exc) throws JsonProcessingException {
         String state = new BigInteger(130, new SecureRandom()).toString(32);
 
         exc.setResponse(Response.redirect(auth.getLoginURL(state, publicURL, exc.getRequestURI()),false).build());
 
         readBodyFromStreamIntoMemory(exc);
-        stateToOriginalUrl.put(state,exc);
 
         Session session = getSessionManager().getSession(exc);
+
+        session.put(originalRequestKeyNameInSession(state),new ObjectMapper().writeValueAsString(new AbstractExchangeSnapshot(exc)));
+
         if(session.get().containsKey(ParamNames.STATE))
             state = session.get(ParamNames.STATE) + " " + state;
         session.put(ParamNames.STATE,state);
+
         return Outcome.RETURN;
+    }
+
+    private String originalRequestKeyNameInSession(String state) {
+        return prefixValue(ORIGINAL_REQUEST_PREFIX,state);
+    }
+
+    private String oa2redictKeyNameInSession(String oa2redirect) {
+        return prefixValue(OA2REDIRECT_PREFIX,oa2redirect);
+    }
+
+    private String prefixValue(String prefix,String value){
+        return prefix + value;
     }
 
     private void readBodyFromStreamIntoMemory(Exchange exc) {
@@ -398,11 +406,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 // state in session can be "merged" -> save the selected state in session overwriting the possibly merged value
                 session.put(ParamNames.STATE,stateFromUri);
 
-                Exchange originalRequest = stateToOriginalUrl.get(stateFromUri);
+                AbstractExchangeSnapshot originalRequest = new ObjectMapper().readValue(session.get(originalRequestKeyNameInSession(stateFromUri)).toString(),AbstractExchangeSnapshot.class);
                 String url = originalRequest.getRequest().getUri();
                 if (url == null)
                     url = "/";
-                stateToOriginalUrl.remove(state2);
+                session.remove(originalRequestKeyNameInSession(stateFromUri));
 
                 if (log.isDebugEnabled())
                     log.debug("CSRF token match.");
@@ -530,20 +538,22 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
                 .count() == 1;
     }
 
-    private void doRedirect(Exchange exc, Exchange originalRequest) {
+    private void doRedirect(Exchange exc, AbstractExchangeSnapshot originalRequest) throws JsonProcessingException {
         if(originalRequest.getRequest().getMethod().equals("GET")){
-            exc.setResponse(Response.redirect(originalRequest.getRequestURI(),false).build());
+            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri(),false).build());
         }else {
             String oa2redirect = new BigInteger(130, new SecureRandom()).toString(32);
-            synchronized (stateToRedirect) {
-                stateToRedirect.put(oa2redirect, originalRequest);
-            }
-            String delimiter = originalRequest.getRequestURI().contains("?") ? "&" : "?";
-            exc.setResponse(Response.redirect(originalRequest.getRequestURI() + delimiter + OA2REDIRECT + "=" + oa2redirect, false).build());
+
+            Session session = getSessionManager().getSession(exc);
+            session.put(oa2redictKeyNameInSession(oa2redirect),new ObjectMapper().writeValueAsString(originalRequest));
+
+
+            String delimiter = originalRequest.getOriginalRequestUri().contains("?") ? "&" : "?";
+            exc.setResponse(Response.redirect(originalRequest.getOriginalRequestUri() + delimiter + OA2REDIRECT + "=" + oa2redirect, false).build());
         }
     }
 
-    private void doOriginalRequest(Exchange exc, Exchange originalRequest) throws Exception {
+    private void doOriginalRequest(Exchange exc, AbstractExchange originalRequest) throws Exception {
         originalRequest.getRequest().getHeader().add("Cookie",exc.getRequest().getHeader().getFirstValue("Cookie"));
         exc.setRequest(originalRequest.getRequest());
 
@@ -553,8 +563,8 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
         String originalRequestUri = originalRequest.getOriginalRequestUri();
         exc.getDestinations().add(xForwardedProto + "://" + xForwardedHost + originalRequestUri);
 
-        exc.setOriginalRequestUri(originalRequest.getOriginalRequestUri());
-        exc.setOriginalHostHeader(originalRequest.getOriginalHostHeader());
+        exc.setOriginalRequestUri(originalRequestUri);
+        exc.setOriginalHostHeader(xForwardedHost);
     }
 
     private void processUserInfo(Map<String, String> userInfo, Session session) {
