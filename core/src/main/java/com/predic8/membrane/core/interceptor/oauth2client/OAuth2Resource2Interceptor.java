@@ -59,6 +59,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -519,8 +520,11 @@ public class OAuth2Resource2Interceptor extends AbstractInterceptorWithSession {
     }
 
     private boolean csrfTokenMatches(Session session, String state2) {
+        Optional<Object> sessionRaw = Optional.ofNullable(session.get(ParamNames.STATE));
+        if(!sessionRaw.isPresent())
+            return false;
         return Arrays
-                .asList(session.get(ParamNames.STATE).toString().split(SessionManager.SESSION_VALUE_SEPARATOR))
+                .asList(sessionRaw.get().toString().split(SessionManager.SESSION_VALUE_SEPARATOR))
                 .stream()
                 .filter(s -> s.equals(state2))
                 .count() == 1;
