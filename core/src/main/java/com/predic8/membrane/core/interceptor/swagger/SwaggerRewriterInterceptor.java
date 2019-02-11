@@ -109,12 +109,16 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 						&& exc.getResponse().getHeader().getContentType().equals(MediaType.TEXT_HTML_VALUE)
 				)) {
 			String from = "(http(s)?://)" + Pattern.quote(((ServiceProxy) exc.getRule()).getTarget().getHost()) + "(/.*\\.js(on)?)";
-			String to = "$1" + exc2originalHostPort(exc) + "$3";
+			String to = "http" + (isTLS(exc) ? "s" : "") + "://" + exc2originalHostPort(exc) + "$3";
 			byte[] body = exc.getResponse().getBodyAsStringDecoded().replaceAll(from, to).getBytes(exc.getResponse().getCharset());
 			exc.getResponse().setBodyContent(body);
 		}
 
 		return super.handleResponse(exc);
+	}
+
+	private boolean isTLS(Exchange exc) {
+		return exc.getRule().getSslInboundContext() != null;
 	}
 
 	private String exc2originalHostPort(Exchange exc) {
