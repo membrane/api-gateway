@@ -15,19 +15,17 @@
 package com.predic8.membrane.core.interceptor.swagger;
 
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import com.predic8.membrane.core.rules.Rule;
 import com.predic8.membrane.core.rules.SwaggerProxy;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.parser.OpenAPIV3Parser;
 import org.apache.commons.io.IOUtils;
 import org.springframework.http.MediaType;
 
-import io.swagger.models.Swagger;
-import io.swagger.parser.SwaggerParser;
 import io.swagger.util.Json;
 
 import com.predic8.membrane.annot.MCAttribute;
@@ -43,25 +41,25 @@ import com.predic8.membrane.core.rules.ServiceProxy;
 @MCElement(name = "swaggerRewriter")
 public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 
-	private Swagger swagger;
+	private SwaggerCompatibleOpenAPI swagger;
 	private boolean rewriteUI = true;
 	private String swaggerUrl;
 	private String swaggerJson = "swagger.json";
 
 	public SwaggerRewriterInterceptor() { this(null, true, "swagger.json"); } // 0-parameter ctor needed because of MCElement
-	public SwaggerRewriterInterceptor(Swagger swag) {
+	public SwaggerRewriterInterceptor(SwaggerCompatibleOpenAPI swag) {
 		this(swag, true, "swagger.json");
 	}
-	public SwaggerRewriterInterceptor(Swagger swag, boolean rewrite) {
+	public SwaggerRewriterInterceptor(SwaggerCompatibleOpenAPI swag, boolean rewrite) {
 		this(swag, rewrite, "swagger.json");
 	}
-	public SwaggerRewriterInterceptor(Swagger swag, boolean rewrite, String json) {
+	public SwaggerRewriterInterceptor(SwaggerCompatibleOpenAPI swag, boolean rewrite, String json) {
 		name = "Swagger Rewriter";
 		this.swagger = swag;
 		this.rewriteUI = rewrite;
 		this.swaggerJson = json;
 	}
-	public SwaggerRewriterInterceptor(Swagger swag, String swagUrl) {
+	public SwaggerRewriterInterceptor(SwaggerCompatibleOpenAPI swag, String swagUrl) {
 		this(swag);
 		this.swaggerUrl = swagUrl;
 	}
@@ -78,7 +76,7 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 		// use default if no SwaggerProxy is found
 		if(this.swagger == null) {
 			String swaggerSource = IOUtils.toString(this.getRouter().getResolverMap().resolve(this.swaggerJson));
-			this.swagger = new SwaggerParser().parse(swaggerSource);
+			this.swagger = (SwaggerCompatibleOpenAPI) new OpenAPIV3Parser().readContents(swaggerSource).getOpenAPI();
 			this.swaggerUrl = this.swaggerJson;
 		}
 
@@ -97,7 +95,7 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 
 		// replacement in swagger.json
 		if (exc.getRequest().getUri().endsWith(swaggerJson) && exc.getResponseContentType().equalsIgnoreCase(MediaType.APPLICATION_JSON_VALUE)) {
-			Swagger swagBody = new SwaggerParser().parse(exc.getResponse().getBodyAsStringDecoded());
+			SwaggerCompatibleOpenAPI swagBody = (SwaggerCompatibleOpenAPI) new OpenAPIV3Parser().readContents(exc.getResponse().getBodyAsStringDecoded()).getOpenAPI();
 			swagBody.setHost(exc2originalHostPort(exc));
 			exc.getResponse().setBodyContent(Json.pretty(swagBody).getBytes(exc.getResponse().getCharset()));
 		}
@@ -127,7 +125,7 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 
 	@Override
 	public String getShortDescription() {
-		String uipath = "http://" + swagger.getHost();
+		String uipath = "http://" + swagger.getServers().get(0).getUrl(); // TODO check for duplicated http(s)
 		String jsonpath = "http://" + swagger.getHost() + swagger.getBasePath() + "/" + swaggerJson;
 		return "Rewriting <b>" + swagger.getHost() + "</b><br/>"
 				+ "Allow and Rewrite UI = " + rewriteUI + "<br/>"
@@ -135,10 +133,10 @@ public class SwaggerRewriterInterceptor extends AbstractInterceptor {
 				+ "JSON Specification: <a target='_blank' href='" + jsonpath + "'>" + jsonpath + "</a><br/>";
 	}
 
-	public Swagger getSwagger() {
+	public OpenAPI getSwagger() {
 		return swagger;
 	}
-	public void setSwagger(Swagger swagger) {
+	public void setSwagger(SwaggerCompatibleOpenAPI swagger) {
 		this.swagger = swagger;
 	}
 

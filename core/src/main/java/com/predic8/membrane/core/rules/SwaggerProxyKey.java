@@ -18,6 +18,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +30,7 @@ import io.swagger.models.Swagger;
 public class SwaggerProxyKey extends ServiceProxyKey {
 	private static Logger log = LoggerFactory.getLogger(SwaggerProxyKey.class.getName());
 
-	private Swagger swagger;
+	private OpenAPI swagger;
 	private boolean allowUI;
 
 	public SwaggerProxyKey(int port) {
@@ -64,8 +67,8 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 		}
 
 		// check if request is in Swagger specification
-		Map<String, Path> paths = swagger.getPaths();
-		for (Entry<String, Path> p : paths.entrySet()) {
+		Paths paths = swagger.getPaths();
+		for (Entry<String, PathItem> p : paths.entrySet()) {
 			if (pathTemplateMatch(uri, p.getKey()) && methodMatch(method, p.getValue())) {
 				log.debug("Request is a Swagger call according to specification");
 				return true;
@@ -79,11 +82,11 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 	private boolean pathTemplateMatch(String calledURI, String specName) {
 		final String IDENTIFIER = "[-_a-zA-Z0-9]+";
 		specName = specName.replaceAll("\\{" + IDENTIFIER + "\\}", IDENTIFIER);
-		String spec = swagger.getBasePath() + specName;
+		String spec = swagger.getPaths() + specName; //.getBasePath() + specName; // TODO
 		return Pattern.matches(spec, calledURI);
 	}
 
-	private boolean methodMatch(String method, Path path) {
+	private boolean methodMatch(String method, PathItem path) {
 		return method.equalsIgnoreCase("GET") && path.getGet() != null
 			|| method.equalsIgnoreCase("POST") && path.getPost() != null
 			|| method.equalsIgnoreCase("HEAD") && path.getHead() != null
@@ -119,10 +122,10 @@ public class SwaggerProxyKey extends ServiceProxyKey {
 		).contains(path);
 	}
 
-	public Swagger getSwagger() {
+	public OpenAPI getSwagger() {
 		return swagger;
 	}
-	public void setSwagger(Swagger swag) {
+	public void setSwagger(OpenAPI swag) {
 		this.swagger = swag;
 	}
 
