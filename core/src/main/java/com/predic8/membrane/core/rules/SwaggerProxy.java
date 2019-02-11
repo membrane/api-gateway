@@ -68,6 +68,10 @@ public class SwaggerProxy extends ServiceProxy {
 		}
 		// parse swaggerUrl
 		swagger = new SwaggerParser().parse(ex.getResponse().getBodyAsStringDecoded());
+		if (swagger == null) {
+			// TODO Deal with it
+			throw new Exception("couldn't parse Swagger definition. OpenAPI?");
+		}
 		// pass swagger specification to Swagger Key
 		((SwaggerProxyKey)key).setSwagger(swagger);
 		((SwaggerProxyKey)key).setAllowUI(allowUI);
